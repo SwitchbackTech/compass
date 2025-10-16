@@ -205,7 +205,13 @@ class UserService {
     const sync = await reInitSyncByIntegration(
       "google",
       userId,
-      cCalendarList,
+      // Create a temporary calendarList structure for backward compatibility
+      {
+        user: userId,
+        google: {
+          items: updatedCalendars.map((cal) => cal.metadata),
+        },
+      },
       calListNextSyncToken,
     );
 
