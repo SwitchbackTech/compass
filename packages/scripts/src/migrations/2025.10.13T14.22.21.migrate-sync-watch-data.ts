@@ -39,15 +39,12 @@ export default class Migration implements RunnableMigration<MigrationContext> {
         "google.events": { $exists: true, $ne: [] },
         "google.events.expiration": { $exists: true },
       },
-      { batchSize: 100 },
+      { batchSize: 1000 },
     );
 
     let migratedCount = 0;
 
-    while (await cursor.hasNext()) {
-      const syncDoc = await cursor.next();
-
-      if (!syncDoc) continue;
+    for await (const syncDoc of cursor) {
       if ((syncDoc?.google?.events?.length ?? 0) < 1) continue;
 
       const watchDocuments: Array<WithId<Omit<Schema_Watch, "_id">>> = [];

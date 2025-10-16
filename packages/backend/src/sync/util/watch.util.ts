@@ -1,6 +1,9 @@
+import { Logger } from "@core/logger/winston.logger";
 import { zBase64String } from "@core/types/type.utils";
 import { ChannelToken, ChannelTokenSchema } from "@core/types/watch.types";
 import { ENV } from "@backend/common/constants/env.constants";
+
+const logger = Logger("app:sync.watch.util");
 
 export function encodeChannelToken(
   _channelData: Omit<ChannelToken, "token"> & { token?: string },
@@ -31,8 +34,9 @@ export function decodeChannelToken(_token: string): ChannelToken | undefined {
     if (data.token !== ENV.TOKEN_GCAL_NOTIFICATION) return undefined;
 
     return data;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (_) {
+  } catch (err) {
+    logger.error("Failed to decode channel token:", err);
+
     return undefined;
   }
 }

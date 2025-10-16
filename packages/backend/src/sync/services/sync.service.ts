@@ -294,7 +294,7 @@ class SyncService {
   };
 
   runMaintenance = async () => {
-    const cursor = mongoService.user.find().batchSize(100);
+    const cursor = mongoService.user.find().batchSize(1000);
     const refresh: Array<{ user: string; payload: Schema_Watch[] }> = [];
     const prune: Array<{ user: string; payload: Schema_Watch[] }> = [];
     const ignore: Array<{ user: string; payload: Schema_Watch[] }> = [];
@@ -306,11 +306,7 @@ class SyncService {
     let refreshed = 0;
     let resynced = 0;
 
-    while (await cursor.hasNext()) {
-      const user = await cursor.next();
-
-      if (!user) continue;
-
+    for await (const user of cursor) {
       const run = await this.runMaintenanceByUser(user._id.toString(), {
         log: false,
       });
