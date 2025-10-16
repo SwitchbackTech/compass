@@ -14,7 +14,6 @@ export interface KeyboardShortcutsConfig {
   onEscape?: () => void;
 
   // Conditions
-  isAddingTask?: boolean;
   isEditingTask?: boolean;
   hasFocusedTask?: boolean;
   isInInput?: boolean;
@@ -30,7 +29,6 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
     onCompleteTask,
     onEscape,
     onFocusTasks,
-    isAddingTask,
     isEditingTask,
     hasFocusedTask,
     isInInput,
@@ -58,7 +56,7 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
         return;
       }
 
-      if (key === "t" && !isAddingTask && !isInInput) {
+      if (key === "t") {
         e.preventDefault();
         onAddTask?.();
         return;
@@ -98,7 +96,6 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
       onCompleteTask,
       onEscape,
       onFocusTasks,
-      isAddingTask,
       isEditingTask,
       hasFocusedTask,
       isInInput,

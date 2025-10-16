@@ -17,7 +17,6 @@ describe("useKeyboardShortcuts", () => {
       onFocusTasks: jest.fn(),
       onPrevTask: jest.fn(),
       onEscape: jest.fn(),
-      isAddingTask: false,
       isEditingTask: false,
       hasFocusedTask: false,
       isInInput: false,
@@ -55,16 +54,6 @@ describe("useKeyboardShortcuts", () => {
     window.dispatchEvent(event);
 
     expect(mockConfig.onAddTask).toHaveBeenCalled();
-  });
-
-  it("should not call onAddTask when already adding a task", () => {
-    mockConfig.isAddingTask = true;
-    renderHook(() => useTodayViewShortcuts(mockConfig));
-
-    const event = new KeyboardEvent("keydown", { key: "t" });
-    window.dispatchEvent(event);
-
-    expect(mockConfig.onAddTask).not.toHaveBeenCalled();
   });
 
   it("should call onCompleteTask when Enter is pressed with focused task", () => {
@@ -128,5 +117,25 @@ describe("useKeyboardShortcuts", () => {
     expect(mockConfig.onEscape).toHaveBeenCalled();
 
     document.body.removeChild(input);
+  });
+
+  it("should allow 't' shortcut to always work when not in input", () => {
+    // Simulate the scenario: user presses 't' multiple times
+    renderHook(() => useTodayViewShortcuts(mockConfig));
+
+    // First 't' press - should work
+    let event = new KeyboardEvent("keydown", { key: "t" });
+    window.dispatchEvent(event);
+    expect(mockConfig.onAddTask).toHaveBeenCalledTimes(1);
+
+    // Second 't' press - should work (no longer blocked by isAddingTask)
+    event = new KeyboardEvent("keydown", { key: "t" });
+    window.dispatchEvent(event);
+    expect(mockConfig.onAddTask).toHaveBeenCalledTimes(2);
+
+    // Third 't' press - should work
+    event = new KeyboardEvent("keydown", { key: "t" });
+    window.dispatchEvent(event);
+    expect(mockConfig.onAddTask).toHaveBeenCalledTimes(3);
   });
 });

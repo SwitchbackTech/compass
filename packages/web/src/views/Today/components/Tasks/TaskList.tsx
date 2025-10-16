@@ -8,8 +8,13 @@ import { Tasks } from "./Tasks";
 import { useTaskListInputFocus } from "./useTaskListInputFocus";
 
 export function TaskList() {
-  const { addTask, editInputRef, editingTaskId } = useTasks();
-  const [isAddingTask, setIsAddingTask] = useState(false);
+  const {
+    addTask,
+    editInputRef,
+    editingTaskId,
+    isAddingTask,
+    setIsAddingTask,
+  } = useTasks();
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [isHoveringAddBlock, setIsHoveringAddBlock] = useState(false);
 
@@ -98,6 +103,8 @@ export function TaskList() {
                 onChange={(e) => setNewTaskTitle(e.target.value)}
                 onKeyDown={handleAddTaskKeyDown}
                 onBlur={() => {
+                  // Only exit adding mode if the field is empty
+                  // If there's text, let the user press Enter to add the task
                   if (!newTaskTitle.trim()) {
                     setIsAddingTask(false);
                   }

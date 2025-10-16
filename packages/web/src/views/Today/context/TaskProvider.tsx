@@ -27,6 +27,8 @@ interface TaskContextValue {
   setEditingTitle: (title: string) => void;
   editingTaskId: string | null;
   setEditingTaskId: (taskId: string | null) => void;
+  isAddingTask: boolean;
+  setIsAddingTask: (isAdding: boolean) => void;
 }
 const TaskContext = createContext<TaskContextValue | undefined>(undefined);
 
@@ -43,6 +45,7 @@ export function TaskProvider({
   const [editingTitle, setEditingTitle] = useState("");
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [selectedTaskIndex, setSelectedTaskIndex] = useState(0);
+  const [isAddingTask, setIsAddingTask] = useState(false);
 
   const editInputRef = useRef<HTMLInputElement>(null);
   const lastLoadedKeyRef = useRef<string | null>(null);
@@ -113,6 +116,8 @@ export function TaskProvider({
     setEditingTaskId,
     selectedTaskIndex,
     setSelectedTaskIndex,
+    isAddingTask,
+    setIsAddingTask,
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
