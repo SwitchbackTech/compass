@@ -1,5 +1,14 @@
 import { ID_ADD_TASK_BUTTON } from "@web/common/constants/web.constants";
 
+export const isEditable = (target: EventTarget | null) => {
+  const isEditableTarget =
+    target instanceof HTMLElement &&
+    (target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
+      target.getAttribute("contenteditable") === "true");
+  return isEditableTarget;
+};
+
 const findAddTaskButton = () => {
   const labelledButton = document.querySelector<HTMLButtonElement>(
     'button[aria-label="Add task"]',

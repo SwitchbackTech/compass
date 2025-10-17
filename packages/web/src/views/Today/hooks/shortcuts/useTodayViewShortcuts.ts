@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from "react";
+import { isEditable } from "../../util/shortcut.util";
 
 export interface KeyboardShortcutsConfig {
   // Task management
@@ -36,56 +37,51 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
     (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
       const target = e.target as EventTarget | null;
-      const isEditableTarget =
-        target instanceof HTMLElement &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.getAttribute("contenteditable") === "true");
 
       // Don't intercept when typing in inputs (except for Escape)
-      if (isEditableTarget && e.key !== "Escape") {
+      if (key !== "escape" && isEditable(target)) {
         return;
       }
 
-      // Task management shortcuts
-      if (key === "u") {
-        e.preventDefault();
-        onFocusTasks?.();
-        return;
-      }
-
-      if (key === "t") {
-        e.preventDefault();
-        onAddTask?.();
-        return;
-      }
-
-      if (key === "e") {
-        e.preventDefault();
-        onEditTask?.();
-        return;
-      }
-
-      // Task completion with Enter
-      if (e.key === "Enter" && hasFocusedTask && !isEditingTask) {
-        const activeElement = document.activeElement as HTMLElement | null;
-        const isTaskButton =
-          activeElement?.getAttribute("role") === "checkbox" &&
-          activeElement?.dataset?.taskId;
-
-        // Let the task button handle Enter if it's focused
-        if (!isTaskButton) {
+      switch (key) {
+        case "u":
           e.preventDefault();
-          onCompleteTask?.();
-          return;
-        }
-      }
+          onFocusTasks?.();
+          break;
 
-      // Escape handling
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onEscape?.();
-        return;
+        case "t":
+          e.preventDefault();
+          onAddTask?.();
+          break;
+
+        case "e":
+          e.preventDefault();
+          onEditTask?.();
+          break;
+
+        case "enter":
+          if (hasFocusedTask && !isEditingTask) {
+            const activeElement = document.activeElement as HTMLElement | null;
+            const isTaskButton =
+              activeElement?.getAttribute("role") === "checkbox" &&
+              activeElement?.dataset?.taskId;
+
+            // Let the task button handle Enter if it's focused
+            if (!isTaskButton) {
+              e.preventDefault();
+              onCompleteTask?.();
+            }
+          }
+          break;
+
+        case "escape":
+          e.preventDefault();
+          onEscape?.();
+          break;
+
+        default:
+          // No action for unhandled keys
+          break;
       }
     },
     [
