@@ -1,11 +1,12 @@
 import { useCallback, useEffect } from "react";
-import { isEditable } from "../../util/shortcut.util";
+import { isEditable, isFocusedOnTaskCheckbox } from "../../util/shortcut.util";
 
 export interface KeyboardShortcutsConfig {
   // Task management
   onAddTask?: () => void;
   onEditTask?: () => void;
   onCompleteTask?: () => void;
+  onDeleteTask?: () => void;
   onFocusTasks?: () => void;
 
   // Task navigation
@@ -27,6 +28,7 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
     onAddTask,
     onEditTask,
     onCompleteTask,
+    onDeleteTask,
     onEscape,
     onFocusTasks,
     isEditingTask,
@@ -59,7 +61,7 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
           onEditTask?.();
           break;
 
-        case "enter":
+        case "enter": {
           if (hasFocusedTask && !isEditingTask) {
             const activeElement = document.activeElement as HTMLElement | null;
             const isTaskButton =
@@ -73,6 +75,21 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
             }
           }
           break;
+        }
+
+        case "delete": {
+          // Don't handle Delete key if we're in an editable element
+          if (isEditable(target)) {
+            return;
+          }
+
+          // Only delete if focused on a task checkbox, not an input
+          if (isFocusedOnTaskCheckbox()) {
+            e.preventDefault();
+            onDeleteTask?.();
+          }
+          break;
+        }
 
         case "escape":
           e.preventDefault();
@@ -88,6 +105,7 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
       onAddTask,
       onEditTask,
       onCompleteTask,
+      onDeleteTask,
       onEscape,
       onFocusTasks,
       isEditingTask,

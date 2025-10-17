@@ -14,6 +14,7 @@ export const TodayViewContent = () => {
     setSelectedTaskIndex,
     setEditingTaskId,
     setEditingTitle,
+    deleteTask,
   } = useTasks();
 
   const hasFocusedTask =
@@ -38,9 +39,20 @@ export const TodayViewContent = () => {
     }
   };
 
+  const handleDeleteTask = () => {
+    // Get the task ID directly from the active element
+    const activeElement = document.activeElement as HTMLElement | null;
+    const taskId = activeElement?.dataset?.taskId;
+
+    if (taskId) {
+      deleteTask(taskId);
+    }
+  };
+
   useTodayViewShortcuts({
     onAddTask: focusOnAddTaskInput,
     onEditTask: handleEditTask,
+    onDeleteTask: handleDeleteTask,
     onFocusTasks: focusOnFirstTask,
     hasFocusedTask,
   });

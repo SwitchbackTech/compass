@@ -50,6 +50,7 @@ export const Task = ({
         aria-checked={task.status === "completed"}
         aria-label={`Toggle ${task.title}`}
         tabIndex={0}
+        data-task-id={task.id}
         onFocus={() => {
           onFocus?.(index);
         }}

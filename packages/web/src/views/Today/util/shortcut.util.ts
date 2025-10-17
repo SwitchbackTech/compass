@@ -1,5 +1,14 @@
 import { ID_ADD_TASK_BUTTON } from "@web/common/constants/web.constants";
 
+export const isFocusedOnTaskCheckbox = () => {
+  // Check if we're focused on a task checkbox
+  const activeElement = document.activeElement as HTMLElement | null;
+  const isTaskButton =
+    activeElement?.getAttribute("role") === "checkbox" &&
+    activeElement?.dataset?.taskId;
+  return isTaskButton;
+};
+
 export const isEditable = (target: EventTarget | null) => {
   const isEditableTarget =
     target instanceof HTMLElement &&
@@ -11,7 +20,7 @@ export const isEditable = (target: EventTarget | null) => {
 
 const findAddTaskButton = () => {
   const labelledButton = document.querySelector<HTMLButtonElement>(
-    'button[aria-label="Add task"]',
+    'button[aria-label="Add new task"]',
   );
   if (labelledButton) return labelledButton;
 
