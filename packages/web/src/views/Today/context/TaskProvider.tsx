@@ -20,6 +20,21 @@ interface TaskContextValue {
   setIsAddingTask: (isAdding: boolean) => void;
   isCancellingEdit: boolean;
   setIsCancellingEdit: (isCancelling: boolean) => void;
+  focusOnCheckbox: (index: number) => void;
+  onCheckboxKeyDown: (
+    e: React.KeyboardEvent,
+    taskId: string,
+    title: string,
+  ) => void;
+  onInputBlur: (taskId: string) => void;
+  onInputClick: (taskId: string, index: number) => void;
+  onInputKeyDown: (
+    e: React.KeyboardEvent,
+    taskId: string,
+    index: number,
+  ) => void;
+  onTitleChange: (title: string) => void;
+  onStatusToggle: (id: string) => void;
 }
 const TaskContext = createContext<TaskContextValue | undefined>(undefined);
 
@@ -33,7 +48,15 @@ export function TaskProvider({
   currentDate = new Date(),
 }: TaskProviderProps) {
   const state = useTaskState({ currentDate });
-  const actions = useTaskActions({ setTasks: state.setTasks });
+  const actions = useTaskActions({
+    setTasks: state.setTasks,
+    tasks: state.tasks,
+    editingTitle: state.editingTitle,
+    setEditingTitle: state.setEditingTitle,
+    setEditingTaskId: state.setEditingTaskId,
+    isCancellingEdit: state.isCancellingEdit,
+    setIsCancellingEdit: state.setIsCancellingEdit,
+  });
 
   useTaskEffects({
     tasks: state.tasks,
@@ -58,6 +81,13 @@ export function TaskProvider({
     setIsAddingTask: state.setIsAddingTask,
     isCancellingEdit: state.isCancellingEdit,
     setIsCancellingEdit: state.setIsCancellingEdit,
+    focusOnCheckbox: actions.focusOnCheckbox,
+    onCheckboxKeyDown: actions.onCheckboxKeyDown,
+    onInputBlur: actions.onInputBlur,
+    onInputClick: actions.onInputClick,
+    onInputKeyDown: actions.onInputKeyDown,
+    onTitleChange: state.setEditingTitle,
+    onStatusToggle: actions.toggleTaskStatus,
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
