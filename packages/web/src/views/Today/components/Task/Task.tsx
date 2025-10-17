@@ -19,7 +19,7 @@ interface TaskProps {
     e: React.KeyboardEvent,
     taskId: string,
     index: number,
-    value: HTMLInputElement["value"],
+    value: string,
   ) => void;
   onStatusToggle: (id: string) => void;
   onTitleChange: (title: string) => void;
@@ -73,12 +73,7 @@ export const Task = ({
           onClick={() => onInputClick(task.id)}
           onBlur={() => onInputBlur(task.id)}
           onKeyDown={(e) =>
-            onInputKeyDown(
-              e,
-              task.id,
-              index,
-              (e.target as HTMLInputElement).value,
-            )
+            onInputKeyDown(e, task.id, index, e.currentTarget.value)
           }
           onChange={(e) => onTitleChange(e.target.value)}
         />
