@@ -27,7 +27,7 @@ interface TaskContextValue {
     title: string,
   ) => void;
   onInputBlur: (taskId: string) => void;
-  onInputClick: (taskId: string, index: number) => void;
+  onInputClick: (taskId: string) => void;
   onInputKeyDown: (
     e: React.KeyboardEvent,
     taskId: string,

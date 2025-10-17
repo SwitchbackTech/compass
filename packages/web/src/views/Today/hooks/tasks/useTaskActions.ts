@@ -24,7 +24,7 @@ interface UseTaskActionsReturn {
     title: string,
   ) => void;
   onInputBlur: (taskId: string) => void;
-  onInputClick: (taskId: string, index: number) => void;
+  onInputClick: (taskId: string) => void;
   onInputKeyDown: (
     e: React.KeyboardEvent,
     taskId: string,
@@ -96,7 +96,6 @@ export function useTaskActions({
       e.preventDefault();
       toggleTaskStatus(taskId);
     } else if (e.key.toLocaleLowerCase() === "e") {
-      console.log("editing task", taskId);
       e.preventDefault();
       e.stopPropagation();
       setEditingTaskId(taskId);
@@ -135,8 +134,7 @@ export function useTaskActions({
     setEditingTitle("");
   };
 
-  const onInputClick = (taskId: string, index: number) => {
-    console.log("onInputClick", taskId, index);
+  const onInputClick = (taskId: string) => {
     setEditingTaskId(taskId);
     setEditingTitle(tasks.find((task) => task.id === taskId)?.title || "");
   };
