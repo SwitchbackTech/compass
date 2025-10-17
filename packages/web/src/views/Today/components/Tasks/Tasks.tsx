@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React from "react";
 import { useTasks } from "../../context/TaskProvider";
 import { Task } from "../Task/Task";
 
@@ -16,8 +16,6 @@ export const Tasks = () => {
     isCancellingEdit,
     setIsCancellingEdit,
   } = useTasks();
-
-  const isEscPressedRef = useRef(false);
 
   const focusOnCheckbox = (index: number) => {
     const checkbox = document.querySelector(
@@ -57,27 +55,23 @@ export const Tasks = () => {
   };
 
   const onInputBlur = (taskId: string) => {
-    // Small delay to allow ESC handler to set the flag first
-    setTimeout(() => {
-      if (isEscPressedRef.current) {
-        // Don't update the task title if ESC was pressed
-        isEscPressedRef.current = false;
-        setIsCancellingEdit(false);
-        return;
-      }
+    if (isCancellingEdit) {
+      // Don't update the task title if we're canceling the edit
+      setIsCancellingEdit(false);
+      return;
+    }
 
-      if (isCancellingEdit) {
-        // Don't update the task title if we're canceling the edit
-        setIsCancellingEdit(false);
-        return;
-      }
+    // Find the current task to check if it has been reverted
+    const currentTask = tasks.find((task) => task.id === taskId);
+    const title = editingTitle.trim();
+    const shouldUpdateTitle =
+      currentTask && title && title !== currentTask.title;
 
-      if (editingTitle.trim()) {
-        updateTaskTitle(taskId, editingTitle.trim());
-      }
-      setEditingTaskId(null);
-      setEditingTitle("");
-    }, 0);
+    if (shouldUpdateTitle) {
+      updateTaskTitle(taskId, title);
+    }
+    setEditingTaskId(null);
+    setEditingTitle("");
   };
 
   const onInputClick = (taskId: string, index: number) => {
@@ -106,10 +100,15 @@ export const Tasks = () => {
       focusOnCheckbox(index);
     } else if (e.key === "Escape") {
       e.preventDefault();
-      // Set the ref flag to prevent onInputBlur from updating the task
-      isEscPressedRef.current = true;
-      setIsCancellingEdit(true);
-      // Clear editing state to revert to original task title
+      // Get the original task title and revert to it
+      const originalTask = tasks.find((task) => task.id === taskId);
+      if (originalTask) {
+        // Use setTimeout to ensure this runs after the blur event
+        setTimeout(() => {
+          updateTaskTitle(taskId, originalTask.title);
+        }, 0);
+      }
+      // Clear editing state
       setEditingTaskId(null);
       setEditingTitle("");
       focusOnCheckbox(index);
