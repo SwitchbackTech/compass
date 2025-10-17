@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { useTodayEvents } from "../../hooks/useTodayEvents";
+import { useTodayEvents } from "../../hooks/events/useTodayEvents";
 
 export function CalendarAgenda() {
   const events = useTodayEvents();

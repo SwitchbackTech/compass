@@ -1,32 +1,41 @@
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { v4 as uuidv4 } from "uuid";
+import React, { createContext, useContext } from "react";
+import { useTaskActions } from "../hooks/tasks/useTaskActions";
+import { useTaskEffects } from "../hooks/tasks/useTaskEffects";
+import { useTaskState } from "../hooks/tasks/useTaskState";
 import { Task } from "../task.types";
-import { sortTasksByStatus } from "../util/sort.task";
-import {
-  getDateKey,
-  loadTasksFromStorage,
-  saveTasksToStorage,
-} from "../util/storage.util";
 
 interface TaskContextValue {
   tasks: Task[];
-  addTask: (title: string) => Task;
-  updateTaskTitle: (taskId: string, title: string) => void;
-  toggleTaskStatus: (taskId: string) => void;
-  deleteTask: (taskId: string) => void;
-  editInputRef: React.RefObject<HTMLInputElement>;
   editingTitle: string;
+  editingTaskId: string | null;
+  isAddingTask: boolean;
+  isCancellingEdit: boolean;
   selectedTaskIndex: number;
+  addTask: (title: string) => Task;
+  deleteTask: (taskId: string) => void;
+  focusOnCheckbox: (index: number) => void;
+  focusOnInputByIndex: (index: number) => void;
+  onCheckboxKeyDown: (
+    e: React.KeyboardEvent,
+    taskId: string,
+    title: string,
+  ) => void;
+  onInputBlur: (taskId: string) => void;
+  onInputClick: (taskId: string) => void;
+  onInputKeyDown: (
+    e: React.KeyboardEvent,
+    taskId: string,
+    index: number,
+  ) => void;
+  onTitleChange: (title: string) => void;
+  onStatusToggle: (id: string) => void;
   setSelectedTaskIndex: (index: number) => void;
   setEditingTitle: (title: string) => void;
-  editingTaskId: string | null;
   setEditingTaskId: (taskId: string | null) => void;
+  setIsAddingTask: (isAdding: boolean) => void;
+  setIsCancellingEdit: (isCancelling: boolean) => void;
+  toggleTaskStatus: (taskId: string) => void;
+  updateTaskTitle: (taskId: string, title: string) => void;
 }
 const TaskContext = createContext<TaskContextValue | undefined>(undefined);
 
@@ -39,80 +48,48 @@ export function TaskProvider({
   children,
   currentDate = new Date(),
 }: TaskProviderProps) {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [editingTitle, setEditingTitle] = useState("");
-  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-  const [selectedTaskIndex, setSelectedTaskIndex] = useState(0);
+  const state = useTaskState({ currentDate });
+  const actions = useTaskActions({
+    setTasks: state.setTasks,
+    tasks: state.tasks,
+    editingTitle: state.editingTitle,
+    setEditingTitle: state.setEditingTitle,
+    setEditingTaskId: state.setEditingTaskId,
+    isCancellingEdit: state.isCancellingEdit,
+    setIsCancellingEdit: state.setIsCancellingEdit,
+  });
 
-  const editInputRef = useRef<HTMLInputElement>(null);
-  const lastLoadedKeyRef = useRef<string | null>(null);
-  const dateKey = getDateKey(currentDate);
-
-  // Load tasks from localStorage when date changes
-  useEffect(() => {
-    if (lastLoadedKeyRef.current === dateKey) return;
-    lastLoadedKeyRef.current = dateKey;
-
-    const loadedTasks = loadTasksFromStorage(dateKey);
-    const sortedTasks = sortTasksByStatus(loadedTasks);
-    setTasks(sortedTasks);
-  }, [dateKey]);
-
-  // Save tasks to localStorage whenever they change
-  useEffect(() => {
-    saveTasksToStorage(dateKey, tasks);
-  }, [tasks, dateKey]);
-
-  const addTask = (title: string): Task => {
-    const newTask: Task = {
-      id: `task-${uuidv4()}`,
-      title,
-      status: "todo",
-      createdAt: new Date().toISOString(),
-    };
-
-    setTasks((prev) => sortTasksByStatus([...prev, newTask]));
-    return newTask;
-  };
-
-  const updateTaskTitle = (taskId: string, title: string) => {
-    setTasks((prev) =>
-      prev.map((task) => (task.id === taskId ? { ...task, title } : task)),
-    );
-  };
-
-  const toggleTaskStatus = (taskId: string) => {
-    setTasks((prev) => {
-      const updatedTasks = prev.map((task) => {
-        if (task.id === taskId) {
-          const newStatus: "todo" | "completed" =
-            task.status === "completed" ? "todo" : "completed";
-          return { ...task, status: newStatus };
-        }
-        return task;
-      });
-
-      return sortTasksByStatus(updatedTasks);
-    });
-  };
-
-  const deleteTask = (taskId: string) => {
-    setTasks((prev) => prev.filter((task) => task.id !== taskId));
-  };
+  useTaskEffects({
+    tasks: state.tasks,
+    dateKey: state.dateKey,
+    lastLoadedKeyRef: state.lastLoadedKeyRef,
+    setTasks: state.setTasks,
+  });
 
   const value: TaskContextValue = {
-    tasks,
-    addTask,
-    updateTaskTitle,
-    toggleTaskStatus,
-    deleteTask,
-    editInputRef,
-    editingTitle,
-    setEditingTitle,
-    editingTaskId,
-    setEditingTaskId,
-    selectedTaskIndex,
-    setSelectedTaskIndex,
+    tasks: state.tasks,
+    editingTitle: state.editingTitle,
+    editingTaskId: state.editingTaskId,
+    selectedTaskIndex: state.selectedTaskIndex,
+    isAddingTask: state.isAddingTask,
+    isCancellingEdit: state.isCancellingEdit,
+    addTask: actions.addTask,
+    deleteTask: actions.deleteTask,
+    focusOnCheckbox: actions.focusOnCheckbox,
+    focusOnInputByIndex: actions.focusOnInputByIndex,
+    onCheckboxKeyDown: actions.onCheckboxKeyDown,
+    onInputBlur: actions.onInputBlur,
+    onInputClick: actions.onInputClick,
+    onInputKeyDown: actions.onInputKeyDown,
+    onTitleChange: state.setEditingTitle,
+    onStatusToggle: actions.toggleTaskStatus,
+    setEditingTitle: state.setEditingTitle,
+    setEditingTaskId: state.setEditingTaskId,
+    setSelectedTaskIndex: state.setSelectedTaskIndex,
+    setIsAddingTask: state.setIsAddingTask,
+    setIsCancellingEdit: state.setIsCancellingEdit,
+    toggleTaskStatus: actions.toggleTaskStatus,
+    updateTaskTitle: actions.updateTaskTitle,
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;

@@ -69,7 +69,6 @@ export const ShortcutsOverlay = () => {
     ];
     todayCalendar = [
       { k: "i", label: "Focus on calendar" },
-      { k: "Esc", label: "Clear focus" },
       { k: "e", label: "Edit event title" },
       { k: "Delete", label: "Delete event" },
       { k: "↑", label: "Move up 15m" },

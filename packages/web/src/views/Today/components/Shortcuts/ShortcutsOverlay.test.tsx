@@ -34,7 +34,6 @@ describe("ShortcutsOverlay", () => {
 
     expect(screen.getByText("Calendar")).toBeInTheDocument();
     expect(screen.getByText("Focus on calendar")).toBeInTheDocument();
-    expect(screen.getByText("Clear focus")).toBeInTheDocument();
     expect(screen.getByText("Edit event title")).toBeInTheDocument();
     expect(screen.getByText("Delete event")).toBeInTheDocument();
     expect(screen.getByText("Move up 15m")).toBeInTheDocument();

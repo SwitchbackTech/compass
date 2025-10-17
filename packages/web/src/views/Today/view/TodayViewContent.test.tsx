@@ -16,8 +16,8 @@ jest.mock("../components/CalendarAgenda/CalendarAgenda", () => ({
 // Mock the keyboard shortcuts hook
 const mockUseTodayViewShortcuts = jest.fn();
 
-jest.mock("../hooks/useTodayViewShortcuts", () => {
-  const actual = jest.requireActual("../hooks/useTodayViewShortcuts");
+jest.mock("../hooks/shortcuts/useTodayViewShortcuts", () => {
+  const actual = jest.requireActual("../hooks/shortcuts/useTodayViewShortcuts");
   return {
     ...actual,
     useTodayViewShortcuts: (
@@ -48,11 +48,14 @@ describe("TodayViewContent", () => {
 
   it("focuses the add task input when typing the 't' shortcut", async () => {
     const actualShortcuts = jest.requireActual(
-      "../hooks/useTodayViewShortcuts",
+      "../hooks/shortcuts/useTodayViewShortcuts",
     );
 
     mockUseTodayViewShortcuts.mockImplementation((config) =>
-      actualShortcuts.useTodayViewShortcuts(config),
+      actualShortcuts.useTodayViewShortcuts({
+        ...config,
+        onFocusTasks: config.onFocusTasks || jest.fn(),
+      }),
     );
 
     const user = userEvent.setup();

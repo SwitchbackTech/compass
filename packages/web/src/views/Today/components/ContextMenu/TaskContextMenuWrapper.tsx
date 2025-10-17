@@ -8,6 +8,7 @@ import {
 } from "@floating-ui/react";
 import { useTasks } from "../../context/TaskProvider";
 import { Task } from "../../task.types";
+import { getTaskIdFromElement } from "../../util/task.locate";
 import { TaskContextMenu } from "./TaskContextMenu";
 
 interface TaskItemsWrapperProps {
@@ -39,14 +40,15 @@ export const TaskContextMenuWrapper = ({ children }: TaskItemsWrapperProps) => {
       return;
     }
 
-    // Find the task element by looking for data-task-id attribute
-    const taskElement = target.closest("[data-task-id]");
-    if (!taskElement) {
+    // Get task ID from data attribute
+    const taskId = getTaskIdFromElement(target);
+    if (!taskId) {
       return;
     }
 
-    const taskId = taskElement.getAttribute("data-task-id");
-    if (!taskId) {
+    // Find the task by ID
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) {
       return;
     }
 
@@ -66,13 +68,6 @@ export const TaskContextMenuWrapper = ({ children }: TaskItemsWrapperProps) => {
         toJSON: () => ({}),
       }),
     });
-
-    // Find the actual task from the tasks array
-    const task = tasks.find((t) => t.id === taskId);
-    if (!task) {
-      console.error("Task not found for id:", taskId);
-      return;
-    }
 
     setSelectedTask(task);
     setIsOpen(true);

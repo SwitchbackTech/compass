@@ -1,25 +1,48 @@
 import React from "react";
 import { CalendarAgenda } from "../components/CalendarAgenda/CalendarAgenda";
 import { ShortcutsOverlay } from "../components/Shortcuts/ShortcutsOverlay";
-import { TaskList } from "../components/Tasks/TaskList";
-import { useTodayViewShortcuts } from "../hooks/useTodayViewShortcuts";
-import { focusOnAddTaskInput } from "../util/shortcut.util";
+import { TaskList } from "../components/TaskList/TaskList";
+import { useTasks } from "../context/TaskProvider";
+import { useTodayViewShortcuts } from "../hooks/shortcuts/useTodayViewShortcuts";
+import { focusOnAddTaskInput, focusOnFirstTask } from "../util/shortcut.util";
 
 export const TodayViewContent = () => {
-  const activeElement =
-    typeof document !== "undefined"
-      ? (document.activeElement as HTMLElement | null)
-      : null;
-  const isEditableElement =
-    (typeof HTMLInputElement !== "undefined" &&
-      activeElement instanceof HTMLInputElement) ||
-    (typeof HTMLTextAreaElement !== "undefined" &&
-      activeElement instanceof HTMLTextAreaElement) ||
-    activeElement?.getAttribute("contenteditable") === "true";
+  const {
+    tasks,
+    selectedTaskIndex,
+    focusOnInputByIndex,
+    setSelectedTaskIndex,
+    setEditingTaskId,
+    setEditingTitle,
+  } = useTasks();
+
+  const hasFocusedTask =
+    selectedTaskIndex >= 0 && selectedTaskIndex < tasks.length;
+
+  const getTaskIndexToEdit = () => {
+    if (hasFocusedTask) {
+      return selectedTaskIndex;
+    } else if (tasks.length > 0) {
+      return 0;
+    }
+    return -1;
+  };
+
+  const handleEditTask = () => {
+    const taskIndexToEdit = getTaskIndexToEdit();
+    if (taskIndexToEdit >= 0) {
+      setEditingTaskId(tasks[taskIndexToEdit].id);
+      setEditingTitle(tasks[taskIndexToEdit].title);
+      setSelectedTaskIndex(taskIndexToEdit);
+      focusOnInputByIndex(taskIndexToEdit);
+    }
+  };
 
   useTodayViewShortcuts({
     onAddTask: focusOnAddTaskInput,
-    isInInput: isEditableElement,
+    onEditTask: handleEditTask,
+    onFocusTasks: focusOnFirstTask,
+    hasFocusedTask,
   });
 
   return (
