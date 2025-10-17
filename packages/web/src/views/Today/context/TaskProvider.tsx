@@ -1,18 +1,8 @@
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { v4 as uuidv4 } from "uuid";
+import React, { createContext, useContext } from "react";
+import { useTaskActions } from "../hooks/tasks/useTaskActions";
+import { useTaskEffects } from "../hooks/tasks/useTaskEffects";
+import { useTaskState } from "../hooks/tasks/useTaskState";
 import { Task } from "../task.types";
-import { sortTasksByStatus } from "../util/sort.task";
-import {
-  getDateKey,
-  loadTasksFromStorage,
-  saveTasksToStorage,
-} from "../util/storage.util";
 
 interface TaskContextValue {
   tasks: Task[];
@@ -42,84 +32,32 @@ export function TaskProvider({
   children,
   currentDate = new Date(),
 }: TaskProviderProps) {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [editingTitle, setEditingTitle] = useState("");
-  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-  const [selectedTaskIndex, setSelectedTaskIndex] = useState(0);
-  const [isAddingTask, setIsAddingTask] = useState(false);
-  const [isCancellingEdit, setIsCancellingEdit] = useState(false);
+  const state = useTaskState({ currentDate });
+  const actions = useTaskActions({ setTasks: state.setTasks });
 
-  const lastLoadedKeyRef = useRef<string | null>(null);
-  const dateKey = getDateKey(currentDate);
-
-  // Load tasks from localStorage when date changes
-  useEffect(() => {
-    if (lastLoadedKeyRef.current === dateKey) return;
-    lastLoadedKeyRef.current = dateKey;
-
-    const loadedTasks = loadTasksFromStorage(dateKey);
-    const sortedTasks = sortTasksByStatus(loadedTasks);
-    setTasks(sortedTasks);
-  }, [dateKey]);
-
-  // Save tasks to localStorage whenever they change
-  useEffect(() => {
-    saveTasksToStorage(dateKey, tasks);
-  }, [tasks, dateKey]);
-
-  const addTask = (title: string): Task => {
-    const newTask: Task = {
-      id: `task-${uuidv4()}`,
-      title,
-      status: "todo",
-      createdAt: new Date().toISOString(),
-    };
-
-    setTasks((prev) => sortTasksByStatus([...prev, newTask]));
-    return newTask;
-  };
-
-  const updateTaskTitle = (taskId: string, title: string) => {
-    setTasks((prev) =>
-      prev.map((task) => (task.id === taskId ? { ...task, title } : task)),
-    );
-  };
-
-  const toggleTaskStatus = (taskId: string) => {
-    setTasks((prev) => {
-      const updatedTasks = prev.map((task) => {
-        if (task.id === taskId) {
-          const newStatus: "todo" | "completed" =
-            task.status === "completed" ? "todo" : "completed";
-          return { ...task, status: newStatus };
-        }
-        return task;
-      });
-
-      return sortTasksByStatus(updatedTasks);
-    });
-  };
-
-  const deleteTask = (taskId: string) => {
-    setTasks((prev) => prev.filter((task) => task.id !== taskId));
-  };
+  useTaskEffects({
+    tasks: state.tasks,
+    dateKey: state.dateKey,
+    lastLoadedKeyRef: state.lastLoadedKeyRef,
+    setTasks: state.setTasks,
+  });
 
   const value: TaskContextValue = {
-    tasks,
-    addTask,
-    updateTaskTitle,
-    toggleTaskStatus,
-    deleteTask,
-    editingTitle,
-    setEditingTitle,
-    editingTaskId,
-    setEditingTaskId,
-    selectedTaskIndex,
-    setSelectedTaskIndex,
-    isAddingTask,
-    setIsAddingTask,
-    isCancellingEdit,
-    setIsCancellingEdit,
+    tasks: state.tasks,
+    addTask: actions.addTask,
+    updateTaskTitle: actions.updateTaskTitle,
+    toggleTaskStatus: actions.toggleTaskStatus,
+    deleteTask: actions.deleteTask,
+    editingTitle: state.editingTitle,
+    setEditingTitle: state.setEditingTitle,
+    editingTaskId: state.editingTaskId,
+    setEditingTaskId: state.setEditingTaskId,
+    selectedTaskIndex: state.selectedTaskIndex,
+    setSelectedTaskIndex: state.setSelectedTaskIndex,
+    isAddingTask: state.isAddingTask,
+    setIsAddingTask: state.setIsAddingTask,
+    isCancellingEdit: state.isCancellingEdit,
+    setIsCancellingEdit: state.setIsCancellingEdit,
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
