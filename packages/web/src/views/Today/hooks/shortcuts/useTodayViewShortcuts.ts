@@ -60,7 +60,7 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
         return;
       }
 
-      if (key === "e" && hasFocusedTask) {
+      if (key === "e") {
         e.preventDefault();
         onEditTask?.();
         return;

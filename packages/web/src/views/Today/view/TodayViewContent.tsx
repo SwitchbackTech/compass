@@ -3,23 +3,30 @@ import { CalendarAgenda } from "../components/CalendarAgenda/CalendarAgenda";
 import { ShortcutsOverlay } from "../components/Shortcuts/ShortcutsOverlay";
 import { TaskList } from "../components/TaskList/TaskList";
 import { useTasks } from "../context/TaskProvider";
-import { useTodayViewShortcuts } from "../hooks/useTodayViewShortcuts";
+import { useTodayViewShortcuts } from "../hooks/shortcuts/useTodayViewShortcuts";
 import { focusOnAddTaskInput, focusOnFirstTask } from "../util/shortcut.util";
 
 export const TodayViewContent = () => {
-  const { tasks, setEditingTaskId, setEditingTitle, selectedTaskIndex } =
-    useTasks();
-
-  const handleEditTask = () => {
-    const selectedTask = tasks[selectedTaskIndex];
-    if (selectedTask) {
-      setEditingTaskId(selectedTask.id);
-      setEditingTitle(selectedTask.title);
-    }
-  };
+  const { tasks, selectedTaskIndex, onInputClick } = useTasks();
 
   const hasFocusedTask =
     selectedTaskIndex >= 0 && selectedTaskIndex < tasks.length;
+
+  const inferTaskToEdit = () => {
+    if (hasFocusedTask) {
+      return tasks[selectedTaskIndex];
+    } else if (tasks.length > 0) {
+      return tasks[0];
+    }
+    return null;
+  };
+
+  const handleEditTask = () => {
+    const taskToEdit = inferTaskToEdit();
+    if (taskToEdit) {
+      onInputClick(taskToEdit.id);
+    }
+  };
 
   useTodayViewShortcuts({
     onAddTask: focusOnAddTaskInput,

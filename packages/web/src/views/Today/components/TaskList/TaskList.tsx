@@ -1,10 +1,9 @@
 import dayjs from "dayjs";
 import React, { useRef, useState } from "react";
-import { ID_ADD_TASK_BUTTON } from "@web/common/constants/web.constants";
 import { useTasks } from "../../context/TaskProvider";
+import { AddTaskActiveButton } from "../AddTask/AddTaskActiveButton";
+import { AddTaskPreviewButton } from "../AddTask/AddTaskPreviewButton";
 import { TaskContextMenuWrapper } from "../ContextMenu/TaskContextMenuWrapper";
-import { PlusIcon } from "../Icons/PlusIcon";
-import { ShortcutTip } from "../Shortcuts/ShortcutTip";
 import { Tasks } from "../Tasks/Tasks";
 import { useTaskListInputFocus } from "../Tasks/useTaskListInputFocus";
 
@@ -45,6 +44,14 @@ export function TaskList() {
     }
   };
 
+  const handleAddTaskBlur = () => {
+    // Only exit adding mode if the field is empty
+    // If there's text, let the user press Enter to add the task
+    if (!newTaskTitle.trim()) {
+      setIsAddingTask(false);
+    }
+  };
+
   return (
     <section
       aria-label="daily-tasks"
@@ -66,58 +73,21 @@ export function TaskList() {
         </TaskContextMenuWrapper>
 
         {isAddingTask ? (
-          <div className="flex items-start gap-3 rounded border border-blue-200/30 bg-blue-200/5 p-2">
-            <button
-              type="button"
-              onClick={handleAddTask}
-              aria-label="Add task"
-              className="mt-1"
-            >
-              <PlusIcon className="h-4 w-4 text-blue-200" />
-            </button>
-            <div className="flex-1">
-              <input
-                ref={addTaskInputRef}
-                type="text"
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-                onKeyDown={handleAddTaskKeyDown}
-                onBlur={() => {
-                  // Only exit adding mode if the field is empty
-                  // If there's text, let the user press Enter to add the task
-                  if (!newTaskTitle.trim()) {
-                    setIsAddingTask(false);
-                  }
-                }}
-                placeholder="Enter task title..."
-                aria-label="Task title"
-                className="text-white-100 w-full bg-transparent text-sm placeholder-gray-200 outline-none"
-              />
-            </div>
-          </div>
+          <AddTaskActiveButton
+            newTaskTitle={newTaskTitle}
+            setNewTaskTitle={setNewTaskTitle}
+            addTaskInputRef={addTaskInputRef}
+            onAddTask={handleAddTask}
+            onAddTaskKeyDown={handleAddTaskKeyDown}
+            onBlur={handleAddTaskBlur}
+          />
         ) : (
-          <button
-            id={ID_ADD_TASK_BUTTON}
-            type="button"
-            className="group flex w-full cursor-pointer items-start gap-3 rounded border border-gray-400/30 bg-gray-400/5 p-2 text-left transition-colors hover:border-blue-200/30 hover:bg-blue-200/5 focus:border-blue-200/50 focus:bg-blue-200/10 focus:ring-2 focus:ring-blue-200/30 focus:outline-none"
-            onClick={beginAddingTask}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                beginAddingTask();
-              }
-            }}
+          <AddTaskPreviewButton
+            onBeginAddingTask={beginAddingTask}
+            isHoveringAddBlock={isHoveringAddBlock}
             onMouseEnter={() => setIsHoveringAddBlock(true)}
             onMouseLeave={() => setIsHoveringAddBlock(false)}
-          >
-            <PlusIcon className="h-4 w-4 text-gray-200 transition-colors group-hover:text-blue-200 group-focus:text-blue-200" />
-            <div className="flex flex-1 items-center justify-between">
-              <span className="group-hover:text-white-100 group-focus:text-white-100 text-sm text-gray-200 transition-colors">
-                Add task
-              </span>
-              {isHoveringAddBlock && <ShortcutTip shortcut="T" />}
-            </div>
-          </button>
+          />
         )}
       </div>
     </section>

@@ -6,20 +6,13 @@ import { Task } from "../task.types";
 
 interface TaskContextValue {
   tasks: Task[];
-  addTask: (title: string) => Task;
-  updateTaskTitle: (taskId: string, title: string) => void;
-  toggleTaskStatus: (taskId: string) => void;
-  deleteTask: (taskId: string) => void;
   editingTitle: string;
-  selectedTaskIndex: number;
-  setSelectedTaskIndex: (index: number) => void;
-  setEditingTitle: (title: string) => void;
   editingTaskId: string | null;
-  setEditingTaskId: (taskId: string | null) => void;
   isAddingTask: boolean;
-  setIsAddingTask: (isAdding: boolean) => void;
   isCancellingEdit: boolean;
-  setIsCancellingEdit: (isCancelling: boolean) => void;
+  selectedTaskIndex: number;
+  addTask: (title: string) => Task;
+  deleteTask: (taskId: string) => void;
   focusOnCheckbox: (index: number) => void;
   onCheckboxKeyDown: (
     e: React.KeyboardEvent,
@@ -35,6 +28,13 @@ interface TaskContextValue {
   ) => void;
   onTitleChange: (title: string) => void;
   onStatusToggle: (id: string) => void;
+  setSelectedTaskIndex: (index: number) => void;
+  setEditingTitle: (title: string) => void;
+  setEditingTaskId: (taskId: string | null) => void;
+  setIsAddingTask: (isAdding: boolean) => void;
+  setIsCancellingEdit: (isCancelling: boolean) => void;
+  toggleTaskStatus: (taskId: string) => void;
+  updateTaskTitle: (taskId: string, title: string) => void;
 }
 const TaskContext = createContext<TaskContextValue | undefined>(undefined);
 
@@ -67,19 +67,17 @@ export function TaskProvider({
 
   const value: TaskContextValue = {
     tasks: state.tasks,
-    addTask: actions.addTask,
-    updateTaskTitle: actions.updateTaskTitle,
-    toggleTaskStatus: actions.toggleTaskStatus,
-    deleteTask: actions.deleteTask,
     editingTitle: state.editingTitle,
-    setEditingTitle: state.setEditingTitle,
     editingTaskId: state.editingTaskId,
-    setEditingTaskId: state.setEditingTaskId,
     selectedTaskIndex: state.selectedTaskIndex,
-    setSelectedTaskIndex: state.setSelectedTaskIndex,
     isAddingTask: state.isAddingTask,
-    setIsAddingTask: state.setIsAddingTask,
     isCancellingEdit: state.isCancellingEdit,
+    addTask: actions.addTask,
+    deleteTask: actions.deleteTask,
+    setEditingTitle: state.setEditingTitle,
+    setEditingTaskId: state.setEditingTaskId,
+    setSelectedTaskIndex: state.setSelectedTaskIndex,
+    setIsAddingTask: state.setIsAddingTask,
     setIsCancellingEdit: state.setIsCancellingEdit,
     focusOnCheckbox: actions.focusOnCheckbox,
     onCheckboxKeyDown: actions.onCheckboxKeyDown,
@@ -88,6 +86,8 @@ export function TaskProvider({
     onInputKeyDown: actions.onInputKeyDown,
     onTitleChange: state.setEditingTitle,
     onStatusToggle: actions.toggleTaskStatus,
+    toggleTaskStatus: actions.toggleTaskStatus,
+    updateTaskTitle: actions.updateTaskTitle,
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
