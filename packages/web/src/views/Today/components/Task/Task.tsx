@@ -6,11 +6,10 @@ interface TaskProps {
   task: TaskType;
   index: number;
   title: string;
-  editingTaskId: string | null;
+  isEditing: boolean;
   onCheckboxKeyDown: (
     e: React.KeyboardEvent,
     taskId: string,
-    index: number,
     title: string,
   ) => void;
   onInputBlur: (taskId: string) => void;
@@ -30,7 +29,7 @@ export const Task = ({
   task,
   index,
   title,
-  editingTaskId,
+  isEditing,
   onInputKeyDown,
   onInputClick,
   onInputBlur,
@@ -54,7 +53,7 @@ export const Task = ({
           onFocus?.(index);
         }}
         onBlur={() => {}}
-        onKeyDown={(e) => onCheckboxKeyDown(e, task.id, index, task.title)}
+        onKeyDown={(e) => onCheckboxKeyDown(e, task.id, task.title)}
         onClick={() => onStatusToggle(task.id)}
         className="mt-1 rounded-full focus:ring-2 focus:ring-blue-200 focus:outline-none"
       >
@@ -65,9 +64,7 @@ export const Task = ({
           tabIndex={-1}
           aria-label={`Edit ${task.title}`}
           className={`text-white-100 w-full bg-transparent text-sm outline-none ${
-            editingTaskId === task.id
-              ? "white-100/20 border-b"
-              : "border-b border-transparent"
+            isEditing ? "white-100/20 border-b" : "border-b border-transparent"
           }`}
           type="text"
           value={title}

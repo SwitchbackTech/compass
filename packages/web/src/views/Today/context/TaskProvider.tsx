@@ -28,6 +28,8 @@ interface TaskContextValue {
   setEditingTaskId: (taskId: string | null) => void;
   isAddingTask: boolean;
   setIsAddingTask: (isAdding: boolean) => void;
+  isCancellingEdit: boolean;
+  setIsCancellingEdit: (isCancelling: boolean) => void;
 }
 const TaskContext = createContext<TaskContextValue | undefined>(undefined);
 
@@ -45,6 +47,7 @@ export function TaskProvider({
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [selectedTaskIndex, setSelectedTaskIndex] = useState(0);
   const [isAddingTask, setIsAddingTask] = useState(false);
+  const [isCancellingEdit, setIsCancellingEdit] = useState(false);
 
   const lastLoadedKeyRef = useRef<string | null>(null);
   const dateKey = getDateKey(currentDate);
@@ -115,6 +118,8 @@ export function TaskProvider({
     setSelectedTaskIndex,
     isAddingTask,
     setIsAddingTask,
+    isCancellingEdit,
+    setIsCancellingEdit,
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
