@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { useTasks } from "../../context/TaskProvider";
 import { Task } from "../Task/Task";
 
@@ -16,6 +16,8 @@ export const Tasks = () => {
     isCancellingEdit,
     setIsCancellingEdit,
   } = useTasks();
+
+  const isEscPressedRef = useRef(false);
 
   const focusOnCheckbox = (index: number) => {
     const checkbox = document.querySelector(
@@ -57,6 +59,13 @@ export const Tasks = () => {
   const onInputBlur = (taskId: string) => {
     // Small delay to allow ESC handler to set the flag first
     setTimeout(() => {
+      if (isEscPressedRef.current) {
+        // Don't update the task title if ESC was pressed
+        isEscPressedRef.current = false;
+        setIsCancellingEdit(false);
+        return;
+      }
+
       if (isCancellingEdit) {
         // Don't update the task title if we're canceling the edit
         setIsCancellingEdit(false);
@@ -97,7 +106,10 @@ export const Tasks = () => {
       focusOnCheckbox(index);
     } else if (e.key === "Escape") {
       e.preventDefault();
+      // Set the ref flag to prevent onInputBlur from updating the task
+      isEscPressedRef.current = true;
       setIsCancellingEdit(true);
+      // Clear editing state to revert to original task title
       setEditingTaskId(null);
       setEditingTitle("");
       focusOnCheckbox(index);
