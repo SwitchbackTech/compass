@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useState } from "react";
 import { useTasks } from "../../context/TaskProvider";
 import { Task } from "../Task/Task";
 
@@ -6,7 +6,6 @@ export const Tasks = () => {
   const {
     tasks,
     toggleTaskStatus,
-    editInputRef,
     editingTaskId,
     editingTitle,
     setEditingTaskId,
@@ -16,14 +15,7 @@ export const Tasks = () => {
     deleteTask,
   } = useTasks();
 
-  const taskButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const taskInputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const escPressedRef = useRef(false);
-
-  const focusOnNextInput = (index: number) => {
-    console.log("focusing next input", index + 1);
-    taskInputRefs.current[index + 1]?.focus();
-  };
+  const [shouldCancelEdit, setShouldCancelEdit] = useState(false);
 
   const onCheckboxKeyDown = (
     e: React.KeyboardEvent,
@@ -34,35 +26,47 @@ export const Tasks = () => {
     if (e.key === " " || e.key === "Enter") {
       e.preventDefault();
       toggleTaskStatus(taskId);
-    } else if (e.key === "e" || e.key === "E") {
+    } else if (e.key.toLocaleLowerCase() === "e") {
+      console.log("editing task", taskId);
       e.preventDefault();
       e.stopPropagation();
       setEditingTaskId(taskId);
       setEditingTitle(title);
-      // Focus the input after entering edit mode
+
+      // Focus the input field after state updates
       setTimeout(() => {
-        taskInputRefs.current[index]?.focus();
+        const inputElement = document.querySelector(
+          `input[aria-label="Edit ${title}"]`,
+        ) as HTMLInputElement;
+        if (inputElement) {
+          inputElement.focus();
+          inputElement.select(); // Select all text for easy editing
+        }
       }, 0);
     }
   };
 
   const onInputBlur = (taskId: string) => {
-    if (editingTitle.trim() && !escPressedRef.current) {
-      updateTaskTitle(taskId, editingTitle.trim());
-    }
-    setEditingTaskId(null);
-    setEditingTitle("");
-    // Reset the ESC flag
-    escPressedRef.current = false;
+    // Small delay to allow ESC handler to set the flag first
+    setTimeout(() => {
+      if (shouldCancelEdit) {
+        // Don't update the task title if we're canceling the edit
+        setShouldCancelEdit(false);
+        return;
+      }
+
+      if (editingTitle.trim()) {
+        updateTaskTitle(taskId, editingTitle.trim());
+      }
+      setEditingTaskId(null);
+      setEditingTitle("");
+    }, 0);
   };
 
   const onInputClick = (taskId: string, index: number) => {
     console.log("onInputClick", taskId, index);
     setEditingTaskId(taskId);
     setEditingTitle(tasks.find((task) => task.id === taskId)?.title || "");
-    setTimeout(() => {
-      taskInputRefs.current[index]?.select();
-    }, 0);
   };
 
   const onInputKeyDown = (
@@ -84,20 +88,21 @@ export const Tasks = () => {
       }
       setEditingTaskId(null);
       setEditingTitle("");
-      // Move to next task input or circle
-      if (index < tasks.length - 1) {
-        focusOnNextInput(index + 1);
-      } else {
-        // If last task, focus the next circle
-        taskButtonRefs.current[index + 1]?.focus();
-      }
     } else if (e.key === "Escape") {
       e.preventDefault();
-      escPressedRef.current = true;
+      setShouldCancelEdit(true);
       setEditingTaskId(null);
       setEditingTitle("");
-      // Refocus the button
-      taskButtonRefs.current[index]?.focus();
+
+      // Return focus to the checkbox after ESC
+      setTimeout(() => {
+        const checkbox = document.querySelector(
+          `button[aria-label="Toggle ${tasks[index].title}"]`,
+        ) as HTMLButtonElement;
+        if (checkbox) {
+          checkbox.focus();
+        }
+      }, 0);
     }
   };
 
@@ -108,9 +113,7 @@ export const Tasks = () => {
           key={task.id}
           task={task}
           index={index}
-          editInputRef={editInputRef}
           editingTaskId={editingTaskId}
-          editingTitle={editingTitle}
           onFocus={setSelectedTaskIndex}
           onCheckboxKeyDown={onCheckboxKeyDown}
           onInputBlur={onInputBlur}
@@ -119,8 +122,6 @@ export const Tasks = () => {
           onTitleChange={setEditingTitle}
           onStatusToggle={toggleTaskStatus}
           title={editingTaskId === task.id ? editingTitle : task.title}
-          taskInputRefs={taskInputRefs}
-          taskButtonRefs={taskButtonRefs}
         />
       ))}
     </div>

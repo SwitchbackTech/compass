@@ -5,11 +5,8 @@ import { TaskCircle } from "./TaskCircle";
 interface TaskProps {
   task: TaskType;
   index: number;
-  editInputRef: React.MutableRefObject<HTMLInputElement | null>;
   title: string;
   editingTaskId: string | null;
-  taskButtonRefs: React.MutableRefObject<HTMLButtonElement | null>[];
-  taskInputRefs: React.MutableRefObject<HTMLInputElement | null>[];
   onCheckboxKeyDown: (
     e: React.KeyboardEvent,
     taskId: string,
@@ -25,7 +22,6 @@ interface TaskProps {
     value: HTMLInputElement["value"],
   ) => void;
   onStatusToggle: (id: string) => void;
-  onEdit: (id: string | null) => void;
   onTitleChange: (title: string) => void;
   onFocus: (index: number) => void;
 }
@@ -34,10 +30,7 @@ export const Task = ({
   task,
   index,
   title,
-  editInputRef,
   editingTaskId,
-  taskButtonRefs,
-  taskInputRefs,
   onInputKeyDown,
   onInputClick,
   onInputBlur,
@@ -52,9 +45,6 @@ export const Task = ({
       className={`group flex items-start gap-3 rounded border p-2 transition-colors duration-200 focus-within:border-blue-200/50 focus-within:ring-1 focus-within:ring-blue-200/30 ${task.status === "completed" ? "opacity-50" : ""}`}
     >
       <button
-        ref={(el) => {
-          taskButtonRefs.current[index] = el;
-        }}
         role="checkbox"
         aria-checked={task.status === "completed"}
         aria-label={`Toggle ${task.title}`}
@@ -79,14 +69,6 @@ export const Task = ({
               ? "white-100/20 border-b"
               : "border-b border-transparent"
           }`}
-          ref={(el) => {
-            taskInputRefs.current[index] = el;
-            if (editingTaskId === task.id && editInputRef) {
-              (
-                editInputRef as React.MutableRefObject<HTMLInputElement | null>
-              ).current = el;
-            }
-          }}
           type="text"
           value={title}
           onClick={() => onInputClick(task.id, index)}

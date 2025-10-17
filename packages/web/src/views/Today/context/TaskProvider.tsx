@@ -20,7 +20,6 @@ interface TaskContextValue {
   updateTaskTitle: (taskId: string, title: string) => void;
   toggleTaskStatus: (taskId: string) => void;
   deleteTask: (taskId: string) => void;
-  editInputRef: React.RefObject<HTMLInputElement>;
   editingTitle: string;
   selectedTaskIndex: number;
   setSelectedTaskIndex: (index: number) => void;
@@ -47,7 +46,6 @@ export function TaskProvider({
   const [selectedTaskIndex, setSelectedTaskIndex] = useState(0);
   const [isAddingTask, setIsAddingTask] = useState(false);
 
-  const editInputRef = useRef<HTMLInputElement>(null);
   const lastLoadedKeyRef = useRef<string | null>(null);
   const dateKey = getDateKey(currentDate);
 
@@ -109,7 +107,6 @@ export function TaskProvider({
     updateTaskTitle,
     toggleTaskStatus,
     deleteTask,
-    editInputRef,
     editingTitle,
     setEditingTitle,
     editingTaskId,

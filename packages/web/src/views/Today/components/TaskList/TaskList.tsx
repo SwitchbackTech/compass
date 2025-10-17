@@ -8,13 +8,7 @@ import { Tasks } from "../Tasks/Tasks";
 import { useTaskListInputFocus } from "../Tasks/useTaskListInputFocus";
 
 export function TaskList() {
-  const {
-    addTask,
-    editInputRef,
-    editingTaskId,
-    isAddingTask,
-    setIsAddingTask,
-  } = useTasks();
+  const { addTask, isAddingTask, setIsAddingTask } = useTasks();
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [isHoveringAddBlock, setIsHoveringAddBlock] = useState(false);
 
@@ -24,9 +18,7 @@ export function TaskList() {
 
   useTaskListInputFocus({
     isAddingTask,
-    editingTaskId,
     addTaskInputRef,
-    editInputRef,
   });
 
   const beginAddingTask = () => {
