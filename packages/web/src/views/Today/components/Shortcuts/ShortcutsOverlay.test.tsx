@@ -29,8 +29,8 @@ describe("ShortcutsOverlay", () => {
     expect(screen.getByText("Tasks")).toBeInTheDocument();
     expect(screen.getByText("Focus on tasks")).toBeInTheDocument();
     expect(screen.getByText("Add task")).toBeInTheDocument();
-    expect(screen.getByText("Edit selected task")).toBeInTheDocument();
-    expect(screen.getByText("Complete selected task")).toBeInTheDocument();
+    expect(screen.getByText("Edit task")).toBeInTheDocument();
+    expect(screen.getByText("Delete task")).toBeInTheDocument();
 
     expect(screen.getByText("Calendar")).toBeInTheDocument();
     expect(screen.getByText("Focus on calendar")).toBeInTheDocument();
@@ -50,7 +50,6 @@ describe("ShortcutsOverlay", () => {
     expect(screen.getByText("3")).toBeInTheDocument();
     expect(screen.getByText("u")).toBeInTheDocument();
     expect(screen.getByText("t")).toBeInTheDocument();
-    expect(screen.getByText("Enter")).toBeInTheDocument();
 
     // Check for multiple "e" keys (one in Tasks, one in Calendar)
     const eKeys = screen.getAllByText("e");
