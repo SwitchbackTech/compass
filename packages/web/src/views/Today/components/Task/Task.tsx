@@ -62,7 +62,7 @@ export const Task = ({
           tabIndex={-1}
           aria-label={`Edit ${task.title}`}
           className={`text-white-100 w-full bg-transparent text-sm outline-none ${
-            isEditing ? "white-100/20 border-b" : "border-b border-transparent"
+            isEditing ? "border-b border-white/20" : "border-b border-transparent"
           }`}
           type="text"
           value={title}
