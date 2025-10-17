@@ -1,4 +1,5 @@
 import React from "react";
+import { DATA_TASK_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { Task as TaskType } from "../../task.types";
 import { TaskCircleIcon } from "../Icons/TaskCircleIcon";
 
@@ -41,6 +42,7 @@ export const Task = ({
   return (
     <div
       key={task.id}
+      {...{ [DATA_TASK_ELEMENT_ID]: task.id }}
       className={`group flex items-start gap-3 rounded border p-2 transition-colors duration-200 focus-within:border-blue-200/50 focus-within:ring-1 focus-within:ring-blue-200/30 ${task.status === "completed" ? "opacity-50" : ""}`}
     >
       <button
@@ -62,7 +64,9 @@ export const Task = ({
           tabIndex={-1}
           aria-label={`Edit ${task.title}`}
           className={`text-white-100 w-full bg-transparent text-sm outline-none ${
-            isEditing ? "border-b border-white/20" : "border-b border-transparent"
+            isEditing
+              ? "border-b border-white/20"
+              : "border-b border-transparent"
           }`}
           type="text"
           value={title}

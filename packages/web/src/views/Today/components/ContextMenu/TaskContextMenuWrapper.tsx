@@ -8,6 +8,7 @@ import {
 } from "@floating-ui/react";
 import { useTasks } from "../../context/TaskProvider";
 import { Task } from "../../task.types";
+import { getTaskIdFromElement } from "../../util/task.locate";
 import { TaskContextMenu } from "./TaskContextMenu";
 
 interface TaskItemsWrapperProps {
@@ -39,23 +40,14 @@ export const TaskContextMenuWrapper = ({ children }: TaskItemsWrapperProps) => {
       return;
     }
 
-    // Find the task element by looking for the group class (task container)
-    const taskElement = target.closest(".group");
-    if (!taskElement) {
+    // Get task ID from data attribute
+    const taskId = getTaskIdFromElement(target);
+    if (!taskId) {
       return;
     }
 
-    // Find the task input within the container to get the task title
-    const taskInput = taskElement.querySelector(
-      'input[type="text"]',
-    ) as HTMLInputElement;
-    if (!taskInput) {
-      return;
-    }
-
-    // Find the task by matching the input value to task title
-    const taskTitle = taskInput.value;
-    const task = tasks.find((t) => t.title === taskTitle);
+    // Find the task by ID
+    const task = tasks.find((t) => t.id === taskId);
     if (!task) {
       return;
     }
@@ -76,8 +68,6 @@ export const TaskContextMenuWrapper = ({ children }: TaskItemsWrapperProps) => {
         toJSON: () => ({}),
       }),
     });
-
-    // Task is already found above
 
     setSelectedTask(task);
     setIsOpen(true);
