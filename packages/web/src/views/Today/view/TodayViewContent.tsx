@@ -7,24 +7,34 @@ import { useTodayViewShortcuts } from "../hooks/shortcuts/useTodayViewShortcuts"
 import { focusOnAddTaskInput, focusOnFirstTask } from "../util/shortcut.util";
 
 export const TodayViewContent = () => {
-  const { tasks, selectedTaskIndex, onInputClick } = useTasks();
+  const {
+    tasks,
+    selectedTaskIndex,
+    focusOnInputByIndex,
+    setSelectedTaskIndex,
+    setEditingTaskId,
+    setEditingTitle,
+  } = useTasks();
 
   const hasFocusedTask =
     selectedTaskIndex >= 0 && selectedTaskIndex < tasks.length;
 
-  const inferTaskToEdit = () => {
+  const getTaskIndexToEdit = () => {
     if (hasFocusedTask) {
-      return tasks[selectedTaskIndex];
+      return selectedTaskIndex;
     } else if (tasks.length > 0) {
-      return tasks[0];
+      return 0;
     }
-    return null;
+    return -1;
   };
 
   const handleEditTask = () => {
-    const taskToEdit = inferTaskToEdit();
-    if (taskToEdit) {
-      onInputClick(taskToEdit.id);
+    const taskIndexToEdit = getTaskIndexToEdit();
+    if (taskIndexToEdit >= 0) {
+      setEditingTaskId(tasks[taskIndexToEdit].id);
+      setEditingTitle(tasks[taskIndexToEdit].title);
+      setSelectedTaskIndex(taskIndexToEdit);
+      focusOnInputByIndex(taskIndexToEdit);
     }
   };
 

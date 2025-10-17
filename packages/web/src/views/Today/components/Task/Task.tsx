@@ -51,7 +51,6 @@ export const Task = ({
         onFocus={() => {
           onFocus?.(index);
         }}
-        onBlur={() => {}}
         onKeyDown={(e) => onCheckboxKeyDown(e, task.id, task.title)}
         onClick={() => onStatusToggle(task.id)}
         className="mt-1 rounded-full focus:ring-2 focus:ring-blue-200 focus:outline-none"

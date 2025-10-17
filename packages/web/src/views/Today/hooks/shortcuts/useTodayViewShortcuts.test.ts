@@ -1,140 +1,297 @@
 import { renderHook } from "@testing-library/react";
-import {
-  KeyboardShortcutsConfig,
-  useTodayViewShortcuts,
-} from "./useTodayViewShortcuts";
+import { useTodayViewShortcuts } from "./useTodayViewShortcuts";
 
-describe("useKeyboardShortcuts", () => {
-  let mockConfig: KeyboardShortcutsConfig;
-  let addEventListenerSpy: jest.SpyInstance;
-  let removeEventListenerSpy: jest.SpyInstance;
+// Mock window.addEventListener and removeEventListener
+const mockAddEventListener = jest.fn();
+const mockRemoveEventListener = jest.fn();
 
+Object.defineProperty(window, "addEventListener", {
+  value: mockAddEventListener,
+  writable: true,
+});
+
+Object.defineProperty(window, "removeEventListener", {
+  value: mockRemoveEventListener,
+  writable: true,
+});
+
+describe("useTodayViewShortcuts", () => {
   beforeEach(() => {
-    mockConfig = {
-      onAddTask: jest.fn(),
-      onEditTask: jest.fn(),
-      onCompleteTask: jest.fn(),
-      onFocusTasks: jest.fn(),
-      onPrevTask: jest.fn(),
-      onEscape: jest.fn(),
-      isEditingTask: false,
-      hasFocusedTask: false,
-    };
-
-    addEventListenerSpy = jest.spyOn(window, "addEventListener");
-    removeEventListenerSpy = jest.spyOn(window, "removeEventListener");
+    jest.clearAllMocks();
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    jest.clearAllMocks();
   });
 
-  it("should add keydown event listener on mount", () => {
-    renderHook(() => useTodayViewShortcuts(mockConfig));
-    expect(addEventListenerSpy).toHaveBeenCalledWith(
+  const defaultConfig = {
+    onAddTask: jest.fn(),
+    onEditTask: jest.fn(),
+    onCompleteTask: jest.fn(),
+    onEscape: jest.fn(),
+    onFocusTasks: jest.fn(),
+    isEditingTask: false,
+    hasFocusedTask: false,
+  };
+
+  it("should add and remove event listeners on mount and unmount", () => {
+    const { unmount } = renderHook(() => useTodayViewShortcuts(defaultConfig));
+
+    expect(mockAddEventListener).toHaveBeenCalledWith(
       "keydown",
       expect.any(Function),
     );
-  });
 
-  it("should remove keydown event listener on unmount", () => {
-    const { unmount } = renderHook(() => useTodayViewShortcuts(mockConfig));
     unmount();
-    expect(removeEventListenerSpy).toHaveBeenCalledWith(
+
+    expect(mockRemoveEventListener).toHaveBeenCalledWith(
       "keydown",
       expect.any(Function),
     );
+  });
+
+  it("should call onFocusTasks when 'u' is pressed", () => {
+    const config = { ...defaultConfig };
+    renderHook(() => useTodayViewShortcuts(config));
+
+    const keydownHandler = mockAddEventListener.mock.calls[0][1];
+    const mockEvent = {
+      key: "u",
+      preventDefault: jest.fn(),
+      target: document.createElement("div"),
+    };
+
+    keydownHandler(mockEvent);
+
+    expect(config.onFocusTasks).toHaveBeenCalled();
+    expect(mockEvent.preventDefault).toHaveBeenCalled();
   });
 
   it("should call onAddTask when 't' is pressed", () => {
-    renderHook(() => useTodayViewShortcuts(mockConfig));
+    const config = { ...defaultConfig };
+    renderHook(() => useTodayViewShortcuts(config));
 
-    const event = new KeyboardEvent("keydown", { key: "t" });
-    window.dispatchEvent(event);
+    const keydownHandler = mockAddEventListener.mock.calls[0][1];
+    const mockEvent = {
+      key: "t",
+      preventDefault: jest.fn(),
+      target: document.createElement("div"),
+    };
 
-    expect(mockConfig.onAddTask).toHaveBeenCalled();
+    keydownHandler(mockEvent);
+
+    expect(config.onAddTask).toHaveBeenCalled();
+    expect(mockEvent.preventDefault).toHaveBeenCalled();
   });
 
-  it("should call onCompleteTask when Enter is pressed with focused task", () => {
-    mockConfig.hasFocusedTask = true;
-    renderHook(() => useTodayViewShortcuts(mockConfig));
+  it("should call onEditTask when 'e' is pressed", () => {
+    const config = { ...defaultConfig };
+    renderHook(() => useTodayViewShortcuts(config));
 
-    const event = new KeyboardEvent("keydown", { key: "Enter" });
-    window.dispatchEvent(event);
+    const keydownHandler = mockAddEventListener.mock.calls[0][1];
+    const mockEvent = {
+      key: "e",
+      preventDefault: jest.fn(),
+      target: document.createElement("div"),
+    };
 
-    expect(mockConfig.onCompleteTask).toHaveBeenCalled();
+    keydownHandler(mockEvent);
+
+    expect(config.onEditTask).toHaveBeenCalled();
+    expect(mockEvent.preventDefault).toHaveBeenCalled();
   });
 
-  it("should not call onCompleteTask when editing task", () => {
-    mockConfig.hasFocusedTask = true;
-    mockConfig.isEditingTask = true;
-    renderHook(() => useTodayViewShortcuts(mockConfig));
+  it("should call onEscape when 'Escape' is pressed", () => {
+    const config = { ...defaultConfig };
+    renderHook(() => useTodayViewShortcuts(config));
 
-    const event = new KeyboardEvent("keydown", { key: "Enter" });
-    window.dispatchEvent(event);
-
-    expect(mockConfig.onCompleteTask).not.toHaveBeenCalled();
-  });
-
-  it("should call onEscape when Escape is pressed", () => {
-    renderHook(() => useTodayViewShortcuts(mockConfig));
-
-    const event = new KeyboardEvent("keydown", { key: "Escape" });
-    window.dispatchEvent(event);
-
-    expect(mockConfig.onEscape).toHaveBeenCalled();
-  });
-
-  it("should not intercept shortcuts when in input field", () => {
-    const input = document.createElement("input");
-    document.body.appendChild(input);
-    input.focus();
-
-    renderHook(() => useTodayViewShortcuts(mockConfig));
-
-    const event = new KeyboardEvent("keydown", { key: "t", bubbles: true });
-    input.dispatchEvent(event);
-
-    expect(mockConfig.onAddTask).not.toHaveBeenCalled();
-
-    document.body.removeChild(input);
-  });
-
-  it("should handle Escape even when in input field", () => {
-    const input = document.createElement("input");
-    document.body.appendChild(input);
-    input.focus();
-
-    renderHook(() => useTodayViewShortcuts(mockConfig));
-
-    const event = new KeyboardEvent("keydown", {
+    const keydownHandler = mockAddEventListener.mock.calls[0][1];
+    const mockEvent = {
       key: "Escape",
-      bubbles: true,
-    });
-    input.dispatchEvent(event);
+      preventDefault: jest.fn(),
+      target: document.createElement("div"),
+    };
 
-    expect(mockConfig.onEscape).toHaveBeenCalled();
+    keydownHandler(mockEvent);
 
-    document.body.removeChild(input);
+    expect(config.onEscape).toHaveBeenCalled();
+    expect(mockEvent.preventDefault).toHaveBeenCalled();
   });
 
-  it("should allow 't' shortcut to always work when not in input", () => {
-    // Simulate the scenario: user presses 't' multiple times
-    renderHook(() => useTodayViewShortcuts(mockConfig));
+  it("should call onCompleteTask when Enter is pressed on a focused task", () => {
+    const config = { ...defaultConfig, hasFocusedTask: true };
+    renderHook(() => useTodayViewShortcuts(config));
 
-    // First 't' press - should work
-    let event = new KeyboardEvent("keydown", { key: "t" });
-    window.dispatchEvent(event);
-    expect(mockConfig.onAddTask).toHaveBeenCalledTimes(1);
+    const keydownHandler = mockAddEventListener.mock.calls[0][1];
+    const mockEvent = {
+      key: "Enter",
+      preventDefault: jest.fn(),
+      target: document.createElement("div"),
+    };
 
-    // Second 't' press - should work (no longer blocked by isAddingTask)
-    event = new KeyboardEvent("keydown", { key: "t" });
-    window.dispatchEvent(event);
-    expect(mockConfig.onAddTask).toHaveBeenCalledTimes(2);
+    // Mock document.activeElement to not be a task button
+    Object.defineProperty(document, "activeElement", {
+      value: document.createElement("div"),
+      writable: true,
+    });
 
-    // Third 't' press - should work
-    event = new KeyboardEvent("keydown", { key: "t" });
-    window.dispatchEvent(event);
-    expect(mockConfig.onAddTask).toHaveBeenCalledTimes(3);
+    keydownHandler(mockEvent);
+
+    expect(config.onCompleteTask).toHaveBeenCalled();
+    expect(mockEvent.preventDefault).toHaveBeenCalled();
+  });
+
+  it("should not call onCompleteTask when Enter is pressed on a task button", () => {
+    const config = { ...defaultConfig, hasFocusedTask: true };
+    renderHook(() => useTodayViewShortcuts(config));
+
+    const keydownHandler = mockAddEventListener.mock.calls[0][1];
+    const mockEvent = {
+      key: "Enter",
+      preventDefault: jest.fn(),
+      target: document.createElement("div"),
+    };
+
+    // Mock document.activeElement to be a task button
+    const taskButton = document.createElement("button");
+    taskButton.setAttribute("role", "checkbox");
+    taskButton.setAttribute("data-task-id", "test-task");
+    Object.defineProperty(document, "activeElement", {
+      value: taskButton,
+      writable: true,
+    });
+
+    keydownHandler(mockEvent);
+
+    expect(config.onCompleteTask).not.toHaveBeenCalled();
+    expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+  });
+
+  it("should not call onCompleteTask when Enter is pressed while editing", () => {
+    const config = {
+      ...defaultConfig,
+      hasFocusedTask: true,
+      isEditingTask: true,
+    };
+    renderHook(() => useTodayViewShortcuts(config));
+
+    const keydownHandler = mockAddEventListener.mock.calls[0][1];
+    const mockEvent = {
+      key: "Enter",
+      preventDefault: jest.fn(),
+      target: document.createElement("div"),
+    };
+
+    keydownHandler(mockEvent);
+
+    expect(config.onCompleteTask).not.toHaveBeenCalled();
+    expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+  });
+
+  it("should not call onCompleteTask when Enter is pressed without focused task", () => {
+    const config = { ...defaultConfig, hasFocusedTask: false };
+    renderHook(() => useTodayViewShortcuts(config));
+
+    const keydownHandler = mockAddEventListener.mock.calls[0][1];
+    const mockEvent = {
+      key: "Enter",
+      preventDefault: jest.fn(),
+      target: document.createElement("div"),
+    };
+
+    keydownHandler(mockEvent);
+
+    expect(config.onCompleteTask).not.toHaveBeenCalled();
+    expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+  });
+
+  it("should not handle shortcuts when typing in input elements", () => {
+    const config = { ...defaultConfig };
+    renderHook(() => useTodayViewShortcuts(config));
+
+    const keydownHandler = mockAddEventListener.mock.calls[0][1];
+    const input = document.createElement("input");
+    const mockEvent = {
+      key: "u",
+      preventDefault: jest.fn(),
+      target: input,
+    };
+
+    keydownHandler(mockEvent);
+
+    expect(config.onFocusTasks).not.toHaveBeenCalled();
+    expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+  });
+
+  it("should not handle shortcuts when typing in textarea elements", () => {
+    const config = { ...defaultConfig };
+    renderHook(() => useTodayViewShortcuts(config));
+
+    const keydownHandler = mockAddEventListener.mock.calls[0][1];
+    const textarea = document.createElement("textarea");
+    const mockEvent = {
+      key: "t",
+      preventDefault: jest.fn(),
+      target: textarea,
+    };
+
+    keydownHandler(mockEvent);
+
+    expect(config.onAddTask).not.toHaveBeenCalled();
+    expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+  });
+
+  it("should not handle shortcuts when typing in contenteditable elements", () => {
+    const config = { ...defaultConfig };
+    renderHook(() => useTodayViewShortcuts(config));
+
+    const keydownHandler = mockAddEventListener.mock.calls[0][1];
+    const div = document.createElement("div");
+    div.setAttribute("contenteditable", "true");
+    const mockEvent = {
+      key: "e",
+      preventDefault: jest.fn(),
+      target: div,
+    };
+
+    keydownHandler(mockEvent);
+
+    expect(config.onEditTask).not.toHaveBeenCalled();
+    expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+  });
+
+  it("should still handle Escape when typing in input elements", () => {
+    const config = { ...defaultConfig };
+    renderHook(() => useTodayViewShortcuts(config));
+
+    const keydownHandler = mockAddEventListener.mock.calls[0][1];
+    const input = document.createElement("input");
+    const mockEvent = {
+      key: "Escape",
+      preventDefault: jest.fn(),
+      target: input,
+    };
+
+    keydownHandler(mockEvent);
+
+    expect(config.onEscape).toHaveBeenCalled();
+    expect(mockEvent.preventDefault).toHaveBeenCalled();
+  });
+
+  it("should handle case insensitive key presses", () => {
+    const config = { ...defaultConfig };
+    renderHook(() => useTodayViewShortcuts(config));
+
+    const keydownHandler = mockAddEventListener.mock.calls[0][1];
+    const mockEvent = {
+      key: "U", // uppercase
+      preventDefault: jest.fn(),
+      target: document.createElement("div"),
+    };
+
+    keydownHandler(mockEvent);
+
+    expect(config.onFocusTasks).toHaveBeenCalled();
+    expect(mockEvent.preventDefault).toHaveBeenCalled();
   });
 });

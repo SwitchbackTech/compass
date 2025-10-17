@@ -14,6 +14,7 @@ interface TaskContextValue {
   addTask: (title: string) => Task;
   deleteTask: (taskId: string) => void;
   focusOnCheckbox: (index: number) => void;
+  focusOnInputByIndex: (index: number) => void;
   onCheckboxKeyDown: (
     e: React.KeyboardEvent,
     taskId: string,
@@ -74,18 +75,19 @@ export function TaskProvider({
     isCancellingEdit: state.isCancellingEdit,
     addTask: actions.addTask,
     deleteTask: actions.deleteTask,
-    setEditingTitle: state.setEditingTitle,
-    setEditingTaskId: state.setEditingTaskId,
-    setSelectedTaskIndex: state.setSelectedTaskIndex,
-    setIsAddingTask: state.setIsAddingTask,
-    setIsCancellingEdit: state.setIsCancellingEdit,
     focusOnCheckbox: actions.focusOnCheckbox,
+    focusOnInputByIndex: actions.focusOnInputByIndex,
     onCheckboxKeyDown: actions.onCheckboxKeyDown,
     onInputBlur: actions.onInputBlur,
     onInputClick: actions.onInputClick,
     onInputKeyDown: actions.onInputKeyDown,
     onTitleChange: state.setEditingTitle,
     onStatusToggle: actions.toggleTaskStatus,
+    setEditingTitle: state.setEditingTitle,
+    setEditingTaskId: state.setEditingTaskId,
+    setSelectedTaskIndex: state.setSelectedTaskIndex,
+    setIsAddingTask: state.setIsAddingTask,
+    setIsCancellingEdit: state.setIsCancellingEdit,
     toggleTaskStatus: actions.toggleTaskStatus,
     updateTaskTitle: actions.updateTaskTitle,
   };

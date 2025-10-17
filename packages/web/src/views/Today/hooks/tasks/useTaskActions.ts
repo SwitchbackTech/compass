@@ -12,26 +12,6 @@ interface UseTaskActionsProps {
   setIsCancellingEdit: (isCancelling: boolean) => void;
 }
 
-interface UseTaskActionsReturn {
-  addTask: (title: string) => Task;
-  updateTaskTitle: (taskId: string, title: string) => void;
-  toggleTaskStatus: (taskId: string) => void;
-  deleteTask: (taskId: string) => void;
-  focusOnCheckbox: (index: number) => void;
-  onCheckboxKeyDown: (
-    e: React.KeyboardEvent,
-    taskId: string,
-    title: string,
-  ) => void;
-  onInputBlur: (taskId: string) => void;
-  onInputClick: (taskId: string) => void;
-  onInputKeyDown: (
-    e: React.KeyboardEvent,
-    taskId: string,
-    index: number,
-  ) => void;
-}
-
 export function useTaskActions({
   setTasks,
   tasks,
@@ -40,7 +20,7 @@ export function useTaskActions({
   setEditingTaskId,
   isCancellingEdit,
   setIsCancellingEdit,
-}: UseTaskActionsProps): UseTaskActionsReturn {
+}: UseTaskActionsProps) {
   const addTask = (title: string): Task => {
     const newTask: Task = {
       id: `task-${uuidv4()}`,
@@ -87,6 +67,28 @@ export function useTaskActions({
     }
   };
 
+  const focusOnInput = (title: string) => {
+    const input = document.querySelector(
+      `input[aria-label="Edit ${title}"]`,
+    ) as HTMLInputElement;
+    if (input) {
+      input.focus();
+    }
+  };
+
+  const focusOnInputByIndex = (index: number) => {
+    // Check if index is valid and task exists
+    if (index < 0 || index >= tasks.length || !tasks[index]) {
+      console.warn(
+        `focusOnInputByIndex: Invalid index ${index}, tasks length: ${tasks.length}`,
+      );
+      return;
+    }
+
+    const task = tasks[index];
+    focusOnInput(task.title);
+  };
+
   const onCheckboxKeyDown = (
     e: React.KeyboardEvent,
     taskId: string,
@@ -98,18 +100,12 @@ export function useTaskActions({
     } else if (e.key.toLocaleLowerCase() === "e") {
       e.preventDefault();
       e.stopPropagation();
+
       setEditingTaskId(taskId);
       setEditingTitle(title);
 
-      // Focus the input field after state updates
       setTimeout(() => {
-        const inputElement = document.querySelector(
-          `input[aria-label="Edit ${title}"]`,
-        ) as HTMLInputElement;
-        if (inputElement) {
-          inputElement.focus();
-          inputElement.select(); // Select all text for easy editing
-        }
+        focusOnInput(title);
       }, 0);
     }
   };
@@ -180,6 +176,7 @@ export function useTaskActions({
     toggleTaskStatus,
     deleteTask,
     focusOnCheckbox,
+    focusOnInputByIndex,
     onCheckboxKeyDown,
     onInputBlur,
     onInputClick,
