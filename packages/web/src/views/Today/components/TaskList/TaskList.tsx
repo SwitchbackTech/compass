@@ -3,6 +3,7 @@ import React, { useRef, useState } from "react";
 import { ID_ADD_TASK_BUTTON } from "@web/common/constants/web.constants";
 import { useTasks } from "../../context/TaskProvider";
 import { TaskContextMenuWrapper } from "../ContextMenu/TaskContextMenuWrapper";
+import { PlusIcon } from "../Icons/PlusIcon";
 import { ShortcutTip } from "../Shortcuts/ShortcutTip";
 import { Tasks } from "../Tasks/Tasks";
 import { useTaskListInputFocus } from "../Tasks/useTaskListInputFocus";
@@ -72,19 +73,7 @@ export function TaskList() {
               aria-label="Add task"
               className="mt-1"
             >
-              <svg
-                className="h-4 w-4 text-blue-200"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
+              <PlusIcon className="h-4 w-4 text-blue-200" />
             </button>
             <div className="flex-1">
               <input
@@ -121,19 +110,7 @@ export function TaskList() {
             onMouseEnter={() => setIsHoveringAddBlock(true)}
             onMouseLeave={() => setIsHoveringAddBlock(false)}
           >
-            <svg
-              className="h-4 w-4 text-gray-200 transition-colors group-hover:text-blue-200 group-focus:text-blue-200"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
+            <PlusIcon className="h-4 w-4 text-gray-200 transition-colors group-hover:text-blue-200 group-focus:text-blue-200" />
             <div className="flex flex-1 items-center justify-between">
               <span className="group-hover:text-white-100 group-focus:text-white-100 text-sm text-gray-200 transition-colors">
                 Add task

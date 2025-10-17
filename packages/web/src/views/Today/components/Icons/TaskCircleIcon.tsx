@@ -1,6 +1,10 @@
 import React from "react";
 
-export const TaskCircle = ({ status }: { status: "todo" | "completed" }) => {
+export const TaskCircleIcon = ({
+  status,
+}: {
+  status: "todo" | "completed";
+}) => {
   return (
     <>
       {status === "completed" ? (

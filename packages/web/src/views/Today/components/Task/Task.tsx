@@ -1,6 +1,6 @@
 import React from "react";
 import { Task as TaskType } from "../../task.types";
-import { TaskCircle } from "./TaskCircle";
+import { TaskCircleIcon } from "../Icons/TaskCircleIcon";
 
 interface TaskProps {
   task: TaskType;
@@ -13,7 +13,7 @@ interface TaskProps {
     title: string,
   ) => void;
   onInputBlur: (taskId: string) => void;
-  onInputClick: (taskId: string, index: number) => void;
+  onInputClick: (taskId: string) => void;
   onInputKeyDown: (
     e: React.KeyboardEvent,
     taskId: string,
@@ -49,7 +49,6 @@ export const Task = ({
         aria-label={`Toggle ${task.title}`}
         tabIndex={0}
         onFocus={() => {
-          console.log("focusing on:", index);
           onFocus?.(index);
         }}
         onBlur={() => {}}
@@ -57,7 +56,7 @@ export const Task = ({
         onClick={() => onStatusToggle(task.id)}
         className="mt-1 rounded-full focus:ring-2 focus:ring-blue-200 focus:outline-none"
       >
-        <TaskCircle status={task.status} />
+        <TaskCircleIcon status={task.status} />
       </button>
       <div className="flex-1">
         <input
@@ -68,7 +67,7 @@ export const Task = ({
           }`}
           type="text"
           value={title}
-          onClick={() => onInputClick(task.id, index)}
+          onClick={() => onInputClick(task.id)}
           onBlur={() => onInputBlur(task.id)}
           onKeyDown={(e) =>
             onInputKeyDown(
