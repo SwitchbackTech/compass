@@ -1,8 +1,8 @@
 import React from "react";
 import { act } from "react";
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { screen } from "@testing-library/react";
+import { addTasks, setup } from "../../../__tests__/utils/tasks/task.test.util";
 import { TaskProvider } from "../context/TaskProvider";
 import { TodayViewContent } from "./TodayViewContent";
 
@@ -11,6 +11,11 @@ jest.mock("../components/CalendarAgenda/CalendarAgenda", () => ({
   CalendarAgenda: () => (
     <div className="h-96 bg-gray-100">Calendar Content</div>
   ),
+}));
+
+// Mock the ShortcutsOverlay component
+jest.mock("../components/Shortcuts/ShortcutsOverlay", () => ({
+  ShortcutsOverlay: () => <div data-testid="shortcuts-overlay" />,
 }));
 
 // Mock the keyboard shortcuts hook
@@ -27,12 +32,19 @@ jest.mock("../hooks/shortcuts/useTodayViewShortcuts", () => {
 });
 
 const renderWithProvider = (component: React.ReactElement) => {
-  return render(<TaskProvider>{component}</TaskProvider>);
+  return setup(<TaskProvider>{component}</TaskProvider>);
 };
 
 describe("TodayViewContent", () => {
   beforeEach(() => {
     mockUseTodayViewShortcuts.mockReset();
+    // Set up the mock to call the real implementation
+    mockUseTodayViewShortcuts.mockImplementation((config) => {
+      const actual = jest.requireActual(
+        "../hooks/shortcuts/useTodayViewShortcuts",
+      );
+      return actual.useTodayViewShortcuts(config);
+    });
     localStorage.clear();
   });
 
@@ -41,7 +53,7 @@ describe("TodayViewContent", () => {
 
     // Verify the main components are present
     expect(
-      screen.getByRole("button", { name: /add task/i }),
+      screen.getByRole("button", { name: "Add new task" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Calendar Content")).toBeInTheDocument();
   });
@@ -58,8 +70,8 @@ describe("TodayViewContent", () => {
       }),
     );
 
-    const user = userEvent.setup();
-    renderWithProvider(<TodayViewContent />);
+    // const user = userEvent.setup();
+    const { user } = renderWithProvider(<TodayViewContent />);
 
     await act(async () => {
       await user.keyboard("t");
@@ -85,11 +97,10 @@ describe("TodayViewContent", () => {
   });
 
   it("should allow users to add new tasks", async () => {
-    const user = userEvent.setup();
-    renderWithProvider(<TodayViewContent />);
+    const { user } = renderWithProvider(<TodayViewContent />);
 
     // Click the add task button
-    const addTaskButton = screen.getByRole("button", { name: /add task/i });
+    const addTaskButton = screen.getByRole("button", { name: "Add new task" });
     await act(() => user.click(addTaskButton));
 
     // Verify input field appears
@@ -103,7 +114,7 @@ describe("TodayViewContent", () => {
 
     // The layout should be present and functional
     expect(
-      screen.getByRole("button", { name: /add task/i }),
+      screen.getByRole("button", { name: "Add new task" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Calendar Content")).toBeInTheDocument();
   });
@@ -112,10 +123,58 @@ describe("TodayViewContent", () => {
     renderWithProvider(<TodayViewContent />);
 
     // The tasks section should be present and functional
-    const addTaskButton = screen.getByRole("button", { name: /add task/i });
+    const addTaskButton = screen.getByRole("button", { name: "Add new task" });
     expect(addTaskButton).toBeInTheDocument();
 
     // Users should be able to interact with the tasks section
     expect(addTaskButton).toBeEnabled();
+  });
+
+  it("should delete task when Delete key is pressed on focused checkbox", async () => {
+    const { user } = renderWithProvider(<TodayViewContent />);
+
+    await addTasks(user, ["Test task"]);
+
+    // Find the task checkbox and focus on it
+    const taskCheckbox = screen.getByRole("checkbox", {
+      name: /toggle test task/i,
+    });
+    await act(() => taskCheckbox.focus());
+
+    // Wait for the focus to be processed and state to update
+    await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+
+    // Press Delete key using userEvent which properly simulates keyboard events
+    await act(async () => {
+      await user.keyboard("{Delete}");
+    });
+
+    // Wait for the delete operation to complete
+    await act(() => new Promise((resolve) => setTimeout(resolve, 100)));
+
+    // Assert task is removed from DOM
+    expect(taskCheckbox).not.toBeInTheDocument();
+  });
+
+  it("should NOT delete task when Delete key is pressed on input field", async () => {
+    const { user } = renderWithProvider(<TodayViewContent />);
+
+    // Add a task
+    await addTasks(user, ["Test task"]);
+
+    // Click on the task input to edit it
+    const taskEditInput = screen.getByDisplayValue("Test task");
+    await act(() => user.click(taskEditInput));
+
+    // Press Delete key (should work normally in input)
+    await act(async () => {
+      await user.keyboard("{Delete}");
+    });
+
+    // Assert task still exists in DOM
+    const taskCheckbox = screen.getByRole("checkbox", {
+      name: /toggle test task/i,
+    });
+    expect(taskCheckbox).toBeInTheDocument();
   });
 });

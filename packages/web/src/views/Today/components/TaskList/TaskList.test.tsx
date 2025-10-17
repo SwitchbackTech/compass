@@ -1,12 +1,16 @@
 import React, { act } from "react";
 import "@testing-library/jest-dom";
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { screen, waitFor } from "@testing-library/react";
+import {
+  addTasks,
+  clickAddTaskButton,
+  setup,
+} from "../../../../__tests__/utils/tasks/task.test.util";
 import { TaskProvider } from "../../context/TaskProvider";
 import { TaskList } from "./TaskList";
 
 const renderTaskList = (props = {}) => {
-  return render(
+  return setup(
     <TaskProvider>
       <TaskList {...props} />
     </TaskProvider>,
@@ -14,33 +18,9 @@ const renderTaskList = (props = {}) => {
 };
 
 describe("TaskList", () => {
-  let user: ReturnType<typeof userEvent.setup>;
-
-  beforeAll(() => {
-    user = userEvent.setup();
-  });
-
   beforeEach(() => {
     localStorage.clear();
   });
-
-  // Reusable utility to add multiple tasks
-  const addTasks = async (taskTitles: string[]) => {
-    for (const title of taskTitles) {
-      const addButton = screen.getByText("Add task");
-      await act(async () => {
-        await user.click(addButton);
-      });
-      const input = screen.getByPlaceholderText("Enter task title...");
-      await act(async () => {
-        await user.type(input, `${title}{Enter}`);
-      });
-
-      await waitFor(() => {
-        expect(screen.getByDisplayValue(title)).toBeInTheDocument();
-      });
-    }
-  };
 
   it("should render the today heading with current date", () => {
     renderTaskList();
@@ -58,24 +38,18 @@ describe("TaskList", () => {
   });
 
   it("should show add task input when clicking add button", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
-    const addButton = screen.getByText("Add task");
-    await act(async () => {
-      await user.click(addButton);
-    });
+    await clickAddTaskButton(user);
 
     const input = screen.getByPlaceholderText("Enter task title...");
     expect(input).toBeInTheDocument();
   });
 
   it("should focus add task input on first click and allow typing", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
-    const addButton = screen.getByRole("button", { name: /add task/i });
-    await act(async () => {
-      await user.click(addButton);
-    });
+    await clickAddTaskButton(user);
 
     const input = screen.getByRole("textbox", { name: /task title/i });
     expect(input).toHaveFocus();
@@ -87,13 +61,14 @@ describe("TaskList", () => {
   });
 
   it("should add a task when entering text and pressing Enter", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
-    await addTasks(["New task"]);
+    await addTasks(user, ["New task"]);
+    // TODO finish
   });
 
   it("should not add empty task", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
     const addButton = screen.getByText("Add task");
     await act(async () => {
@@ -115,7 +90,7 @@ describe("TaskList", () => {
   });
 
   it("should cancel adding task on Escape", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
     const addButton = screen.getByText("Add task");
     await act(async () => {
@@ -137,10 +112,10 @@ describe("TaskList", () => {
   });
 
   it("should toggle task completion when clicking checkbox", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
     // Add a task first
-    await addTasks(["Task to complete"]);
+    await addTasks(user, ["Task to complete"]);
 
     // Click the checkbox
     const checkbox = screen.getByRole("checkbox", {
@@ -155,10 +130,10 @@ describe("TaskList", () => {
   });
 
   it("should enter edit mode when clicking task text", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
     // Add a task
-    await addTasks(["Edit me"]);
+    await addTasks(user, ["Edit me"]);
 
     // Click on the task input
     const taskInput = screen.getByDisplayValue("Edit me");
@@ -172,10 +147,10 @@ describe("TaskList", () => {
   });
 
   it("should update task title when editing", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
     // Add a task
-    await addTasks(["Original title"]);
+    await addTasks(user, ["Original title"]);
 
     // Edit the task
     const taskInput = screen.getByDisplayValue("Original title");
@@ -195,10 +170,10 @@ describe("TaskList", () => {
   });
 
   it("should cancel edit on Escape", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
     // Add a task
-    await addTasks(["Original"]);
+    await addTasks(user, ["Original"]);
 
     // Start editing
     const taskInput = screen.getByDisplayValue("Original");
@@ -221,7 +196,7 @@ describe("TaskList", () => {
   });
 
   it("should show keyboard shortcut hint on hover over add button", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
     const addTaskArea = screen.getByText("Add task").parentElement!;
     await act(async () => {
@@ -234,10 +209,10 @@ describe("TaskList", () => {
   });
 
   it("should display completed tasks with reduced opacity", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
     // Add a task
-    await addTasks(["Complete me"]);
+    await addTasks(user, ["Complete me"]);
 
     // Complete the task
     const checkbox = screen.getByRole("checkbox");
@@ -252,10 +227,10 @@ describe("TaskList", () => {
   });
 
   it("should add new tasks above completed tasks", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
     // Add first task
-    await addTasks(["First task"]);
+    await addTasks(user, ["First task"]);
 
     // Complete the first task
     const checkbox = screen.getByRole("checkbox", {
@@ -266,7 +241,7 @@ describe("TaskList", () => {
     });
 
     // Add a second task
-    await addTasks(["Second task"]);
+    await addTasks(user, ["Second task"]);
 
     // Get all checkboxes and verify order
     const checkboxes = screen.getAllByRole("checkbox");
@@ -282,10 +257,10 @@ describe("TaskList", () => {
   });
 
   it("should maintain focus after pressing ESC in edit mode, allowing re-edit with 'e'", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
     // Add a task
-    await addTasks(["Test task"]);
+    await addTasks(user, ["Test task"]);
 
     // Focus the task checkbox
     const checkbox = screen.getByRole("checkbox", {
@@ -333,13 +308,13 @@ describe("TaskList", () => {
   });
 
   it("should activate add task input when pressing Enter on Add task button after tabbing", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
     // First add some existing tasks to create a realistic scenario
-    await addTasks(["First task", "Second task"]);
+    await addTasks(user, ["First task", "Second task"]);
 
     // Now tab to the Add task button
-    const addTaskButton = screen.getByRole("button", { name: /add task/i });
+    const addTaskButton = screen.getByRole("button", { name: /add new task/i });
     await act(async () => {
       addTaskButton.focus();
     });
@@ -377,7 +352,7 @@ describe("TaskList", () => {
       ).toBeInTheDocument();
       // The add button should be visible again (not in edit mode)
       expect(
-        screen.getByRole("button", { name: /add task/i }),
+        screen.getByRole("button", { name: /add new task/i }),
       ).toBeInTheDocument();
     });
 
@@ -387,10 +362,10 @@ describe("TaskList", () => {
   });
 
   it("should delete task when title is cleared and Enter is pressed", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
     // Add a task
-    await addTasks(["Task to delete"]);
+    await addTasks(user, ["Task to delete"]);
 
     // Verify task exists
     expect(screen.getByDisplayValue("Task to delete")).toBeInTheDocument();
