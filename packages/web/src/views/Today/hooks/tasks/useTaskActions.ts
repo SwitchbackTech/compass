@@ -97,7 +97,7 @@ export function useTaskActions({
     if (e.key === " " || e.key === "Enter") {
       e.preventDefault();
       toggleTaskStatus(taskId);
-    } else if (e.key.toLocaleLowerCase() === "e") {
+    } else if (e.key.toLowerCase() === "e") {
       e.preventDefault();
       e.stopPropagation();
 
