@@ -16,6 +16,8 @@ export const TodayViewContent = () => {
     setEditingTitle,
     deleteTask,
     restoreTask,
+    navigateToNextDay,
+    navigateToPreviousDay,
   } = useTasks();
 
   const hasFocusedTask =
@@ -56,6 +58,8 @@ export const TodayViewContent = () => {
     onDeleteTask: handleDeleteTask,
     onRestoreTask: restoreTask,
     onFocusTasks: focusOnFirstTask,
+    onNextDay: navigateToNextDay,
+    onPrevDay: navigateToPreviousDay,
     hasFocusedTask,
   });
 

@@ -1,4 +1,5 @@
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useState } from "react";
+import dayjs from "@core/util/date/dayjs";
 import { useTaskActions } from "../hooks/tasks/useTaskActions";
 import { useTaskEffects } from "../hooks/tasks/useTaskEffects";
 import { useTaskState } from "../hooks/tasks/useTaskState";
@@ -12,9 +13,12 @@ interface TaskContextValue {
   isCancellingEdit: boolean;
   selectedTaskIndex: number;
   deletedTask: Task | null;
+  dateInView: dayjs.Dayjs;
   addTask: (title: string) => Task;
   deleteTask: (taskId: string) => void;
   restoreTask: () => void;
+  navigateToNextDay: () => void;
+  navigateToPreviousDay: () => void;
   focusOnCheckbox: (index: number) => void;
   focusOnInputByIndex: (index: number) => void;
   onCheckboxKeyDown: (
@@ -39,7 +43,9 @@ interface TaskContextValue {
   toggleTaskStatus: (taskId: string) => void;
   updateTaskTitle: (taskId: string, title: string) => void;
 }
-const TaskContext = createContext<TaskContextValue | undefined>(undefined);
+export const TaskContext = createContext<TaskContextValue | undefined>(
+  undefined,
+);
 
 interface TaskProviderProps {
   children: React.ReactNode;
@@ -50,7 +56,9 @@ export function TaskProvider({
   children,
   currentDate = new Date(),
 }: TaskProviderProps) {
-  const state = useTaskState({ currentDate });
+  const [dateInView, setDateInView] = useState(dayjs(currentDate));
+
+  const state = useTaskState({ currentDate: dateInView.toDate() });
   const actions = useTaskActions({
     setTasks: state.setTasks,
     tasks: state.tasks,
@@ -70,6 +78,14 @@ export function TaskProvider({
     setTasks: state.setTasks,
   });
 
+  const navigateToNextDay = () => {
+    setDateInView((prev: dayjs.Dayjs) => prev.add(1, "day"));
+  };
+
+  const navigateToPreviousDay = () => {
+    setDateInView((prev: dayjs.Dayjs) => prev.subtract(1, "day"));
+  };
+
   const value: TaskContextValue = {
     tasks: state.tasks,
     editingTitle: state.editingTitle,
@@ -78,9 +94,12 @@ export function TaskProvider({
     isAddingTask: state.isAddingTask,
     isCancellingEdit: state.isCancellingEdit,
     deletedTask: state.deletedTask,
+    dateInView,
     addTask: actions.addTask,
     deleteTask: actions.deleteTask,
     restoreTask: actions.restoreTask,
+    navigateToNextDay,
+    navigateToPreviousDay,
     focusOnCheckbox: actions.focusOnCheckbox,
     focusOnInputByIndex: actions.focusOnInputByIndex,
     onCheckboxKeyDown: actions.onCheckboxKeyDown,
