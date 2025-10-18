@@ -1,8 +1,10 @@
 import React, { useEffect, useRef } from "react";
 import { useTodayEvents } from "../../hooks/events/useTodayEvents";
+import { useDateInView } from "../../hooks/useDateInView";
 
 export function CalendarAgenda() {
-  const events = useTodayEvents();
+  const dateInView = useDateInView();
+  const events = useTodayEvents(dateInView.toDate());
   const nowMarkerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 

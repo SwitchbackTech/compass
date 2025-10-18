@@ -1,4 +1,7 @@
+import { useCallback } from "react";
+import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
+import { showUndoDeleteToast } from "../../components/UndoToast/UndoDeleteToast";
 import { Task } from "../../task.types";
 import { sortTasksByStatus } from "../../util/sort.task";
 
@@ -10,6 +13,10 @@ interface UseTaskActionsProps {
   setEditingTaskId: (taskId: string | null) => void;
   isCancellingEdit: boolean;
   setIsCancellingEdit: (isCancelling: boolean) => void;
+  deletedTask: Task | null;
+  setDeletedTask: (task: Task | null) => void;
+  undoToastId: string | number | null;
+  setUndoToastId: (toastId: string | number | null) => void;
 }
 
 export function useTaskActions({
@@ -20,6 +27,10 @@ export function useTaskActions({
   setEditingTaskId,
   isCancellingEdit,
   setIsCancellingEdit,
+  deletedTask,
+  setDeletedTask,
+  undoToastId,
+  setUndoToastId,
 }: UseTaskActionsProps) {
   const addTask = (title: string): Task => {
     const newTask: Task = {
@@ -54,39 +65,62 @@ export function useTaskActions({
     });
   };
 
+  const restoreTask = useCallback(() => {
+    if (!deletedTask) return;
+
+    // Add the task back to the list
+    setTasks((prev) => sortTasksByStatus([...prev, deletedTask]));
+
+    // Clear the deleted task state
+    setDeletedTask(null);
+
+    // Clear the toast ID
+    setUndoToastId(null);
+  }, [deletedTask, setTasks, setDeletedTask, setUndoToastId]);
+
   const deleteTask = (taskId: string) => {
+    const taskToDelete = tasks.find((task) => task.id === taskId);
+    if (!taskToDelete) return;
+
+    // Dismiss any existing undo toast before showing new one
+    if (undoToastId) {
+      toast.dismiss(undoToastId);
+    }
+
+    // Store the deleted task for potential restoration
+    setDeletedTask(taskToDelete);
+
+    // Remove task from the list
     setTasks((prev) => prev.filter((task) => task.id !== taskId));
+
+    // Show undo toast with a fresh restore function and capture the toast ID
+    const toastId = showUndoDeleteToast(taskToDelete, () => {
+      // Create a fresh restore function that captures the current taskToDelete
+      setTasks((prev) => sortTasksByStatus([...prev, taskToDelete]));
+      setDeletedTask(null);
+      setUndoToastId(null);
+    });
+
+    // Store the toast ID for potential dismissal
+    setUndoToastId(toastId);
   };
 
-  const focusOnCheckbox = (index: number) => {
+  const focusOnCheckbox = (taskId: string) => {
     const checkbox = document.querySelector(
-      `button[aria-label="Toggle ${tasks[index].title}"]`,
+      `button[data-task-id="${taskId}"]`,
     ) as HTMLButtonElement;
     if (checkbox) {
       checkbox.focus();
     }
   };
 
-  const focusOnInput = (title: string) => {
+  const focusOnInput = (taskId: string) => {
     const input = document.querySelector(
-      `input[aria-label="Edit ${title}"]`,
+      `input[data-task-id="${taskId}"]`,
     ) as HTMLInputElement;
     if (input) {
       input.focus();
     }
-  };
-
-  const focusOnInputByIndex = (index: number) => {
-    // Check if index is valid and task exists
-    if (index < 0 || index >= tasks.length || !tasks[index]) {
-      console.warn(
-        `focusOnInputByIndex: Invalid index ${index}, tasks length: ${tasks.length}`,
-      );
-      return;
-    }
-
-    const task = tasks[index];
-    focusOnInput(task.title);
   };
 
   const onCheckboxKeyDown = (
@@ -105,7 +139,7 @@ export function useTaskActions({
       setEditingTitle(title);
 
       setTimeout(() => {
-        focusOnInput(title);
+        focusOnInput(taskId);
       }, 0);
     }
   };
@@ -135,24 +169,20 @@ export function useTaskActions({
     setEditingTitle(tasks.find((task) => task.id === taskId)?.title || "");
   };
 
-  const onInputKeyDown = (
-    e: React.KeyboardEvent,
-    taskId: string,
-    index: number,
-  ) => {
+  const onInputKeyDown = (e: React.KeyboardEvent, taskId: string) => {
     if (e.key === "Enter") {
       e.preventDefault();
       const trimmedTitle = editingTitle.trim();
       if (trimmedTitle === "") {
         // Delete task if title is empty
-        deleteTask(tasks[index].id);
+        deleteTask(taskId);
       } else {
         // Update task with new title
         updateTaskTitle(taskId, trimmedTitle);
       }
       setEditingTaskId(null);
       setEditingTitle("");
-      focusOnCheckbox(index);
+      focusOnCheckbox(taskId);
     } else if (e.key === "Escape") {
       e.preventDefault();
       // Get the original task title and revert to it
@@ -166,7 +196,7 @@ export function useTaskActions({
       // Clear editing state
       setEditingTaskId(null);
       setEditingTitle("");
-      focusOnCheckbox(index);
+      focusOnCheckbox(taskId);
     }
   };
 
@@ -175,8 +205,9 @@ export function useTaskActions({
     updateTaskTitle,
     toggleTaskStatus,
     deleteTask,
+    restoreTask,
     focusOnCheckbox,
-    focusOnInputByIndex,
+    focusOnInput,
     onCheckboxKeyDown,
     onInputBlur,
     onInputClick,

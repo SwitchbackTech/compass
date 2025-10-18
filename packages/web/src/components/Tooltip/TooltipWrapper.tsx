@@ -27,14 +27,7 @@ export const TooltipWrapper: React.FC<Props> = ({
 
   return (
     <Tooltip open={isTooltipOpen} onOpenChange={setIsTooltipOpen}>
-      <TooltipTrigger
-        onClick={() => {
-          setIsTooltipOpen((v) => !v);
-          onClick();
-        }}
-      >
-        {children}
-      </TooltipTrigger>
+      <TooltipTrigger onClick={onClick}>{children}</TooltipTrigger>
 
       <TooltipContent className="Tooltip">
         <Flex alignItems={AlignItems.CENTER}>

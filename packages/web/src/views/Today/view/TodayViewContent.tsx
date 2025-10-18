@@ -10,10 +10,16 @@ export const TodayViewContent = () => {
   const {
     tasks,
     selectedTaskIndex,
-    focusOnInputByIndex,
+    focusOnInput,
     setSelectedTaskIndex,
     setEditingTaskId,
     setEditingTitle,
+    deleteTask,
+    restoreTask,
+    navigateToNextDay,
+    navigateToPreviousDay,
+    navigateToToday,
+    undoToastId,
   } = useTasks();
 
   const hasFocusedTask =
@@ -31,18 +37,35 @@ export const TodayViewContent = () => {
   const handleEditTask = () => {
     const taskIndexToEdit = getTaskIndexToEdit();
     if (taskIndexToEdit >= 0) {
-      setEditingTaskId(tasks[taskIndexToEdit].id);
+      const taskId = tasks[taskIndexToEdit].id;
+      setEditingTaskId(taskId);
       setEditingTitle(tasks[taskIndexToEdit].title);
       setSelectedTaskIndex(taskIndexToEdit);
-      focusOnInputByIndex(taskIndexToEdit);
+      focusOnInput(taskId);
+    }
+  };
+
+  const handleDeleteTask = () => {
+    // Get the task ID directly from the active element
+    const activeElement = document.activeElement as HTMLElement | null;
+    const taskId = activeElement?.dataset?.taskId;
+
+    if (taskId) {
+      deleteTask(taskId);
     }
   };
 
   useTodayViewShortcuts({
     onAddTask: focusOnAddTaskInput,
     onEditTask: handleEditTask,
+    onDeleteTask: handleDeleteTask,
+    onRestoreTask: restoreTask,
     onFocusTasks: focusOnFirstTask,
+    onNextDay: navigateToNextDay,
+    onPrevDay: navigateToPreviousDay,
+    onGoToToday: navigateToToday,
     hasFocusedTask,
+    undoToastId,
   });
 
   return (

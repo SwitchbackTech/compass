@@ -28,6 +28,7 @@ describe("useTodayViewShortcuts", () => {
     onAddTask: jest.fn(),
     onEditTask: jest.fn(),
     onCompleteTask: jest.fn(),
+    onDeleteTask: jest.fn(),
     onEscape: jest.fn(),
     onFocusTasks: jest.fn(),
     isEditingTask: false,
@@ -67,13 +68,13 @@ describe("useTodayViewShortcuts", () => {
     expect(mockEvent.preventDefault).toHaveBeenCalled();
   });
 
-  it("should call onAddTask when 't' is pressed", () => {
+  it("should call onAddTask when 'c' is pressed", () => {
     const config = { ...defaultConfig };
     renderHook(() => useTodayViewShortcuts(config));
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const mockEvent = {
-      key: "t",
+      key: "c",
       preventDefault: jest.fn(),
       target: document.createElement("div"),
     };
@@ -230,7 +231,7 @@ describe("useTodayViewShortcuts", () => {
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const textarea = document.createElement("textarea");
     const mockEvent = {
-      key: "t",
+      key: "c",
       preventDefault: jest.fn(),
       target: textarea,
     };
@@ -293,5 +294,72 @@ describe("useTodayViewShortcuts", () => {
 
     expect(config.onFocusTasks).toHaveBeenCalled();
     expect(mockEvent.preventDefault).toHaveBeenCalled();
+  });
+
+  it("should call onDeleteTask when Delete is pressed on a focused checkbox", () => {
+    const config = { ...defaultConfig, hasFocusedTask: true };
+    renderHook(() => useTodayViewShortcuts(config));
+
+    const keydownHandler = mockAddEventListener.mock.calls[0][1];
+    const mockEvent = {
+      key: "Delete",
+      preventDefault: jest.fn(),
+      target: document.createElement("div"),
+    };
+
+    // Mock document.activeElement to be a task button
+    const taskButton = document.createElement("button");
+    taskButton.setAttribute("role", "checkbox");
+    taskButton.setAttribute("data-task-id", "test-task");
+    Object.defineProperty(document, "activeElement", {
+      value: taskButton,
+      writable: true,
+    });
+
+    keydownHandler(mockEvent);
+
+    expect(config.onDeleteTask).toHaveBeenCalled();
+    expect(mockEvent.preventDefault).toHaveBeenCalled();
+  });
+
+  it("should NOT call onDeleteTask when Delete is pressed on an input field", () => {
+    const config = { ...defaultConfig, hasFocusedTask: true };
+    renderHook(() => useTodayViewShortcuts(config));
+
+    const keydownHandler = mockAddEventListener.mock.calls[0][1];
+    const input = document.createElement("input");
+    const mockEvent = {
+      key: "Delete",
+      preventDefault: jest.fn(),
+      target: input,
+    };
+
+    // Mock document.activeElement to be an input
+    Object.defineProperty(document, "activeElement", {
+      value: input,
+      writable: true,
+    });
+
+    keydownHandler(mockEvent);
+
+    expect(config.onDeleteTask).not.toHaveBeenCalled();
+    expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+  });
+
+  it("should NOT call onDeleteTask when no task is focused", () => {
+    const config = { ...defaultConfig, hasFocusedTask: false };
+    renderHook(() => useTodayViewShortcuts(config));
+
+    const keydownHandler = mockAddEventListener.mock.calls[0][1];
+    const mockEvent = {
+      key: "Delete",
+      preventDefault: jest.fn(),
+      target: document.createElement("div"),
+    };
+
+    keydownHandler(mockEvent);
+
+    expect(config.onDeleteTask).not.toHaveBeenCalled();
+    expect(mockEvent.preventDefault).not.toHaveBeenCalled();
   });
 });

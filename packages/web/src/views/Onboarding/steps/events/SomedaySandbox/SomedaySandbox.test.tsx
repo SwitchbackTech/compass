@@ -39,7 +39,7 @@ describe("SomedaySandbox", () => {
   function setup() {
     render(<SomedaySandboxWithProvider {...defaultProps} />);
     // The first input is for "This Week", the second for "This Month"
-    const inputs = screen.getAllByPlaceholderText("Add new task...");
+    const inputs = screen.getAllByPlaceholderText("Create new task...");
     const weekTaskInput = inputs[0];
     const monthTaskInput = inputs[1];
     return { weekTaskInput, monthTaskInput };
@@ -97,8 +97,8 @@ describe("SomedaySandbox", () => {
     render(<SomedaySandboxWithProvider {...props} />);
 
     // Add enough tasks to make both checkboxes ready
-    const weekInput = screen.getAllByPlaceholderText("Add new task...")[0];
-    const monthInput = screen.getAllByPlaceholderText("Add new task...")[1];
+    const weekInput = screen.getAllByPlaceholderText("Create new task...")[0];
+    const monthInput = screen.getAllByPlaceholderText("Create new task...")[1];
 
     // Add week task
     await userEvent.type(weekInput, "Week task{enter}");
@@ -135,8 +135,8 @@ describe("SomedaySandbox", () => {
     render(<SomedaySandboxWithProvider {...props} />);
 
     // Add enough tasks to make both checkboxes ready
-    const weekInput = screen.getAllByPlaceholderText("Add new task...")[0];
-    const monthInput = screen.getAllByPlaceholderText("Add new task...")[1];
+    const weekInput = screen.getAllByPlaceholderText("Create new task...")[0];
+    const monthInput = screen.getAllByPlaceholderText("Create new task...")[1];
 
     // Add week task
     await userEvent.type(weekInput, "Week task{enter}");
@@ -177,7 +177,7 @@ describe("SomedaySandbox", () => {
     mockOnNext.mockClear();
 
     // Focus on the week input and press Enter
-    const weekInput = screen.getAllByPlaceholderText("Add new task...")[0];
+    const weekInput = screen.getAllByPlaceholderText("Create new task...")[0];
     weekInput.focus();
     await userEvent.type(weekInput, "Test task{enter}");
 
@@ -201,7 +201,7 @@ describe("SomedaySandbox", () => {
     mockOnNext.mockClear();
 
     // Focus on the month input and press Enter
-    const monthInput = screen.getAllByPlaceholderText("Add new task...")[1];
+    const monthInput = screen.getAllByPlaceholderText("Create new task...")[1];
     monthInput.focus();
     await userEvent.type(monthInput, "Test month task{enter}");
 
@@ -221,8 +221,8 @@ describe("SomedaySandbox", () => {
     render(<SomedaySandboxWithProvider {...props} />);
 
     // Add enough tasks to make both checkboxes ready
-    const weekInput = screen.getAllByPlaceholderText("Add new task...")[0];
-    const monthInput = screen.getAllByPlaceholderText("Add new task...")[1];
+    const weekInput = screen.getAllByPlaceholderText("Create new task...")[0];
+    const monthInput = screen.getAllByPlaceholderText("Create new task...")[1];
 
     // Add week task
     await userEvent.type(weekInput, "Week task{enter}");
@@ -288,7 +288,7 @@ describe("SomedaySandbox", () => {
     mockOnNext.mockClear();
 
     // Type in an input but don't submit (unsaved changes)
-    const weekInput = screen.getAllByPlaceholderText("Add new task...")[0];
+    const weekInput = screen.getAllByPlaceholderText("Create new task...")[0];
     await userEvent.type(weekInput, "Unsaved task");
 
     // The button should be disabled due to unsaved changes
@@ -308,8 +308,8 @@ describe("SomedaySandbox", () => {
     render(<SomedaySandboxWithProvider {...props} />);
 
     // Add enough tasks to make both checkboxes ready
-    const weekInput = screen.getAllByPlaceholderText("Add new task...")[0];
-    const monthInput = screen.getAllByPlaceholderText("Add new task...")[1];
+    const weekInput = screen.getAllByPlaceholderText("Create new task...")[0];
+    const monthInput = screen.getAllByPlaceholderText("Create new task...")[1];
 
     await userEvent.type(weekInput, "Week task{enter}");
     await userEvent.type(monthInput, "Month task{enter}");
@@ -350,8 +350,8 @@ describe("SomedaySandbox", () => {
     render(<SomedaySandboxWithProvider {...props} />);
 
     // Add enough tasks to make both checkboxes ready
-    const weekInput = screen.getAllByPlaceholderText("Add new task...")[0];
-    const monthInput = screen.getAllByPlaceholderText("Add new task...")[1];
+    const weekInput = screen.getAllByPlaceholderText("Create new task...")[0];
+    const monthInput = screen.getAllByPlaceholderText("Create new task...")[1];
 
     await userEvent.type(weekInput, "Week task{enter}");
     await userEvent.type(monthInput, "Month task{enter}");
@@ -399,8 +399,8 @@ describe("SomedaySandbox", () => {
     render(<SomedaySandboxWithProvider {...props} />);
 
     // Add enough tasks to make both checkboxes ready
-    const weekInput = screen.getAllByPlaceholderText("Add new task...")[0];
-    const monthInput = screen.getAllByPlaceholderText("Add new task...")[1];
+    const weekInput = screen.getAllByPlaceholderText("Create new task...")[0];
+    const monthInput = screen.getAllByPlaceholderText("Create new task...")[1];
 
     await userEvent.type(weekInput, "Week task{enter}");
     await userEvent.type(monthInput, "Month task{enter}");
@@ -437,8 +437,8 @@ describe("SomedaySandbox", () => {
     render(<SomedaySandboxWithProvider {...props} />);
 
     // Add enough tasks to make both checkboxes ready
-    const weekInput = screen.getAllByPlaceholderText("Add new task...")[0];
-    const monthInput = screen.getAllByPlaceholderText("Add new task...")[1];
+    const weekInput = screen.getAllByPlaceholderText("Create new task...")[0];
+    const monthInput = screen.getAllByPlaceholderText("Create new task...")[1];
 
     await userEvent.type(weekInput, "Week task{enter}");
     await userEvent.type(monthInput, "Month task{enter}");

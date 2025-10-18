@@ -1,8 +1,26 @@
 import { ID_ADD_TASK_BUTTON } from "@web/common/constants/web.constants";
 
+export const isFocusedOnTaskCheckbox = () => {
+  // Check if we're focused on a task checkbox
+  const activeElement = document.activeElement as HTMLElement | null;
+  const isTaskButton =
+    activeElement?.getAttribute("role") === "checkbox" &&
+    activeElement?.dataset?.taskId;
+  return isTaskButton;
+};
+
+export const isEditable = (target: EventTarget | null) => {
+  const isEditableTarget =
+    target instanceof HTMLElement &&
+    (target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
+      target.getAttribute("contenteditable") === "true");
+  return isEditableTarget;
+};
+
 const findAddTaskButton = () => {
   const labelledButton = document.querySelector<HTMLButtonElement>(
-    'button[aria-label="Add task"]',
+    'button[aria-label="Create new task"]',
   );
   if (labelledButton) return labelledButton;
 
@@ -13,7 +31,7 @@ const findAddTaskButton = () => {
   return (
     buttons.find((button) => {
       const text = button.textContent?.trim().toLowerCase();
-      return text === "add task";
+      return text === "create task";
     }) ?? null
   );
 };

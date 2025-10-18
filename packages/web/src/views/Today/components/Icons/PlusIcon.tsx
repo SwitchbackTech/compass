@@ -2,15 +2,20 @@ import React from "react";
 
 interface PlusIconProps {
   className?: string;
+  "aria-hidden"?: boolean;
 }
 
-export function PlusIcon({ className = "h-4 w-4" }: PlusIconProps) {
+export function PlusIcon({
+  className = "h-4 w-4",
+  "aria-hidden": ariaHidden = true,
+}: PlusIconProps) {
   return (
     <svg
       className={className}
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"
+      aria-hidden={ariaHidden}
     >
       <path
         strokeLinecap="round"

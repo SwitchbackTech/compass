@@ -1,12 +1,16 @@
 import React, { act } from "react";
 import "@testing-library/jest-dom";
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { screen, waitFor } from "@testing-library/react";
+import {
+  addTasks,
+  clickCreateTaskButton,
+  setup,
+} from "../../../../__tests__/utils/tasks/task.test.util";
 import { TaskProvider } from "../../context/TaskProvider";
 import { TaskList } from "./TaskList";
 
-const renderTaskList = (props = {}) => {
-  return render(
+export const renderTaskList = (props = {}) => {
+  return setup(
     <TaskProvider>
       <TaskList {...props} />
     </TaskProvider>,
@@ -14,68 +18,30 @@ const renderTaskList = (props = {}) => {
 };
 
 describe("TaskList", () => {
-  let user: ReturnType<typeof userEvent.setup>;
-
-  beforeAll(() => {
-    user = userEvent.setup();
-  });
-
   beforeEach(() => {
     localStorage.clear();
   });
 
-  // Reusable utility to add multiple tasks
-  const addTasks = async (taskTitles: string[]) => {
-    for (const title of taskTitles) {
-      const addButton = screen.getByText("Add task");
-      await act(async () => {
-        await user.click(addButton);
-      });
-      const input = screen.getByPlaceholderText("Enter task title...");
-      await act(async () => {
-        await user.type(input, `${title}{Enter}`);
-      });
-
-      await waitFor(() => {
-        expect(screen.getByDisplayValue(title)).toBeInTheDocument();
-      });
-    }
-  };
-
-  it("should render the today heading with current date", () => {
+  it("should render create task button", () => {
     renderTaskList();
 
-    const heading = screen.getByRole("heading", { level: 2 });
-    expect(heading).toBeInTheDocument();
-    expect(heading.textContent).toMatch(/\w+, \w+ \d+/); // Matches format like "Wednesday, January 15"
-  });
-
-  it("should render add task button", () => {
-    renderTaskList();
-
-    const addButton = screen.getByText("Add task");
+    const addButton = screen.getByText("Create task");
     expect(addButton).toBeInTheDocument();
   });
 
-  it("should show add task input when clicking add button", async () => {
-    renderTaskList();
+  it("should show create task input when clicking create button", async () => {
+    const { user } = renderTaskList();
 
-    const addButton = screen.getByText("Add task");
-    await act(async () => {
-      await user.click(addButton);
-    });
+    await clickCreateTaskButton(user);
 
     const input = screen.getByPlaceholderText("Enter task title...");
     expect(input).toBeInTheDocument();
   });
 
   it("should focus add task input on first click and allow typing", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
-    const addButton = screen.getByRole("button", { name: /add task/i });
-    await act(async () => {
-      await user.click(addButton);
-    });
+    await clickCreateTaskButton(user);
 
     const input = screen.getByRole("textbox", { name: /task title/i });
     expect(input).toHaveFocus();
@@ -87,15 +53,16 @@ describe("TaskList", () => {
   });
 
   it("should add a task when entering text and pressing Enter", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
-    await addTasks(["New task"]);
+    await addTasks(user, ["New task"]);
+    // TODO finish
   });
 
   it("should not add empty task", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
-    const addButton = screen.getByText("Add task");
+    const addButton = screen.getByText("Create task");
     await act(async () => {
       await user.click(addButton);
     });
@@ -115,9 +82,9 @@ describe("TaskList", () => {
   });
 
   it("should cancel adding task on Escape", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
-    const addButton = screen.getByText("Add task");
+    const addButton = screen.getByText("Create task");
     await act(async () => {
       await user.click(addButton);
     });
@@ -132,15 +99,15 @@ describe("TaskList", () => {
 
     // Add button should be visible again
     await waitFor(() => {
-      expect(screen.getByText("Add task")).toBeInTheDocument();
+      expect(screen.getByText("Create task")).toBeInTheDocument();
     });
   });
 
   it("should toggle task completion when clicking checkbox", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
     // Add a task first
-    await addTasks(["Task to complete"]);
+    await addTasks(user, ["Task to complete"]);
 
     // Click the checkbox
     const checkbox = screen.getByRole("checkbox", {
@@ -155,10 +122,10 @@ describe("TaskList", () => {
   });
 
   it("should enter edit mode when clicking task text", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
     // Add a task
-    await addTasks(["Edit me"]);
+    await addTasks(user, ["Edit me"]);
 
     // Click on the task input
     const taskInput = screen.getByDisplayValue("Edit me");
@@ -172,10 +139,10 @@ describe("TaskList", () => {
   });
 
   it("should update task title when editing", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
     // Add a task
-    await addTasks(["Original title"]);
+    await addTasks(user, ["Original title"]);
 
     // Edit the task
     const taskInput = screen.getByDisplayValue("Original title");
@@ -195,10 +162,10 @@ describe("TaskList", () => {
   });
 
   it("should cancel edit on Escape", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
     // Add a task
-    await addTasks(["Original"]);
+    await addTasks(user, ["Original"]);
 
     // Start editing
     const taskInput = screen.getByDisplayValue("Original");
@@ -221,23 +188,23 @@ describe("TaskList", () => {
   });
 
   it("should show keyboard shortcut hint on hover over add button", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
-    const addTaskArea = screen.getByText("Add task").parentElement!;
+    const addTaskArea = screen.getByText("Create task").parentElement!;
     await act(async () => {
       await user.hover(addTaskArea);
     });
 
     await waitFor(() => {
-      expect(screen.getByText("T")).toBeInTheDocument();
+      expect(screen.getByText("C")).toBeInTheDocument();
     });
   });
 
   it("should display completed tasks with reduced opacity", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
     // Add a task
-    await addTasks(["Complete me"]);
+    await addTasks(user, ["Complete me"]);
 
     // Complete the task
     const checkbox = screen.getByRole("checkbox");
@@ -251,11 +218,11 @@ describe("TaskList", () => {
     expect(taskElement).toHaveClass("opacity-50");
   });
 
-  it("should add new tasks above completed tasks", async () => {
-    renderTaskList();
+  it("should create new tasks above completed tasks", async () => {
+    const { user } = renderTaskList();
 
     // Add first task
-    await addTasks(["First task"]);
+    await addTasks(user, ["First task"]);
 
     // Complete the first task
     const checkbox = screen.getByRole("checkbox", {
@@ -266,7 +233,7 @@ describe("TaskList", () => {
     });
 
     // Add a second task
-    await addTasks(["Second task"]);
+    await addTasks(user, ["Second task"]);
 
     // Get all checkboxes and verify order
     const checkboxes = screen.getAllByRole("checkbox");
@@ -282,10 +249,10 @@ describe("TaskList", () => {
   });
 
   it("should maintain focus after pressing ESC in edit mode, allowing re-edit with 'e'", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
     // Add a task
-    await addTasks(["Test task"]);
+    await addTasks(user, ["Test task"]);
 
     // Focus the task checkbox
     const checkbox = screen.getByRole("checkbox", {
@@ -333,13 +300,15 @@ describe("TaskList", () => {
   });
 
   it("should activate add task input when pressing Enter on Add task button after tabbing", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
     // First add some existing tasks to create a realistic scenario
-    await addTasks(["First task", "Second task"]);
+    await addTasks(user, ["First task", "Second task"]);
 
     // Now tab to the Add task button
-    const addTaskButton = screen.getByRole("button", { name: /add task/i });
+    const addTaskButton = screen.getByRole("button", {
+      name: /create new task/i,
+    });
     await act(async () => {
       addTaskButton.focus();
     });
@@ -377,7 +346,7 @@ describe("TaskList", () => {
       ).toBeInTheDocument();
       // The add button should be visible again (not in edit mode)
       expect(
-        screen.getByRole("button", { name: /add task/i }),
+        screen.getByRole("button", { name: /create new task/i }),
       ).toBeInTheDocument();
     });
 
@@ -387,10 +356,10 @@ describe("TaskList", () => {
   });
 
   it("should delete task when title is cleared and Enter is pressed", async () => {
-    renderTaskList();
+    const { user } = renderTaskList();
 
     // Add a task
-    await addTasks(["Task to delete"]);
+    await addTasks(user, ["Task to delete"]);
 
     // Verify task exists
     expect(screen.getByDisplayValue("Task to delete")).toBeInTheDocument();
@@ -421,5 +390,106 @@ describe("TaskList", () => {
     // Verify no tasks remain
     const taskCheckboxes = screen.queryAllByRole("checkbox");
     expect(taskCheckboxes).toHaveLength(0);
+  });
+
+  describe("Duplicate task names", () => {
+    it("should complete the correct task when pressing Space on second duplicate task", async () => {
+      const { user } = renderTaskList();
+
+      // Add first task
+      await addTasks(user, ["Buy milk"]);
+
+      // Add second task with same name
+      await addTasks(user, ["Buy milk"]);
+
+      // Get both checkboxes and identify them by their data-task-id
+      const checkboxes = screen.getAllByRole("checkbox", {
+        name: "Toggle Buy milk",
+      });
+      expect(checkboxes).toHaveLength(2);
+
+      // Get the task IDs from the checkboxes
+      const firstTaskId = checkboxes[0].getAttribute("data-task-id");
+      const secondTaskId = checkboxes[1].getAttribute("data-task-id");
+
+      expect(firstTaskId).toBeTruthy();
+      expect(secondTaskId).toBeTruthy();
+      expect(firstTaskId).not.toBe(secondTaskId);
+
+      // Focus on the second task checkbox
+      const secondCheckbox = checkboxes[1];
+      await act(async () => {
+        secondCheckbox.focus();
+      });
+
+      // Press Space to complete the task
+      await act(async () => {
+        await user.keyboard(" ");
+      });
+
+      // Verify the second task is completed (aria-checked="true")
+      // This test verifies that our fix works - the focused task should be completed
+      expect(secondCheckbox).toHaveAttribute("aria-checked", "true");
+
+      // Verify the first task is still incomplete
+      expect(checkboxes[0]).toHaveAttribute("aria-checked", "false");
+    }, 10000);
+
+    it("should edit the correct task when pressing E on second duplicate task", async () => {
+      const { user } = renderTaskList();
+
+      // Add first task
+      await addTasks(user, ["Buy milk"]);
+
+      // Add second task with same name
+      await addTasks(user, ["Buy milk"]);
+
+      // Get both checkboxes and identify them by their data-task-id
+      const checkboxes = screen.getAllByRole("checkbox", {
+        name: "Toggle Buy milk",
+      });
+      expect(checkboxes).toHaveLength(2);
+
+      // Get the task IDs from the checkboxes
+      const firstTaskId = checkboxes[0].getAttribute("data-task-id");
+      const secondTaskId = checkboxes[1].getAttribute("data-task-id");
+
+      expect(firstTaskId).toBeTruthy();
+      expect(secondTaskId).toBeTruthy();
+      expect(firstTaskId).not.toBe(secondTaskId);
+
+      // Focus on the second task checkbox
+      const secondCheckbox = checkboxes[1];
+      await act(async () => {
+        secondCheckbox.focus();
+      });
+
+      // Press E to edit the task
+      await act(async () => {
+        await user.keyboard("e");
+      });
+
+      // Get both inputs and identify them by their data-task-id
+      const inputs = screen.getAllByDisplayValue("Buy milk");
+      expect(inputs).toHaveLength(2);
+
+      // Find the input that corresponds to the second task (same data-task-id as secondCheckbox)
+      const secondInput = inputs.find(
+        (input) => input.getAttribute("data-task-id") === secondTaskId,
+      );
+      const firstInput = inputs.find(
+        (input) => input.getAttribute("data-task-id") === firstTaskId,
+      );
+
+      expect(secondInput).toBeTruthy();
+      expect(firstInput).toBeTruthy();
+
+      // The second input should be focused and in edit mode
+      expect(secondInput).toHaveFocus();
+      expect(secondInput).toHaveClass("border-white/20"); // edit mode styling
+
+      // The first input should NOT be in edit mode
+      expect(firstInput).toHaveClass("border-transparent");
+    }, 10000);
   });
 });

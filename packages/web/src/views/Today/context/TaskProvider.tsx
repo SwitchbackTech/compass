@@ -1,4 +1,5 @@
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useState } from "react";
+import dayjs from "@core/util/date/dayjs";
 import { useTaskActions } from "../hooks/tasks/useTaskActions";
 import { useTaskEffects } from "../hooks/tasks/useTaskEffects";
 import { useTaskState } from "../hooks/tasks/useTaskState";
@@ -11,10 +12,17 @@ interface TaskContextValue {
   isAddingTask: boolean;
   isCancellingEdit: boolean;
   selectedTaskIndex: number;
+  deletedTask: Task | null;
+  undoToastId: string | number | null;
+  dateInView: dayjs.Dayjs;
   addTask: (title: string) => Task;
   deleteTask: (taskId: string) => void;
-  focusOnCheckbox: (index: number) => void;
-  focusOnInputByIndex: (index: number) => void;
+  restoreTask: () => void;
+  navigateToNextDay: () => void;
+  navigateToPreviousDay: () => void;
+  navigateToToday: () => void;
+  focusOnCheckbox: (taskId: string) => void;
+  focusOnInput: (taskId: string) => void;
   onCheckboxKeyDown: (
     e: React.KeyboardEvent,
     taskId: string,
@@ -22,11 +30,7 @@ interface TaskContextValue {
   ) => void;
   onInputBlur: (taskId: string) => void;
   onInputClick: (taskId: string) => void;
-  onInputKeyDown: (
-    e: React.KeyboardEvent,
-    taskId: string,
-    index: number,
-  ) => void;
+  onInputKeyDown: (e: React.KeyboardEvent, taskId: string) => void;
   onTitleChange: (title: string) => void;
   onStatusToggle: (id: string) => void;
   setSelectedTaskIndex: (index: number) => void;
@@ -37,7 +41,9 @@ interface TaskContextValue {
   toggleTaskStatus: (taskId: string) => void;
   updateTaskTitle: (taskId: string, title: string) => void;
 }
-const TaskContext = createContext<TaskContextValue | undefined>(undefined);
+export const TaskContext = createContext<TaskContextValue | undefined>(
+  undefined,
+);
 
 interface TaskProviderProps {
   children: React.ReactNode;
@@ -48,7 +54,9 @@ export function TaskProvider({
   children,
   currentDate = new Date(),
 }: TaskProviderProps) {
-  const state = useTaskState({ currentDate });
+  const [dateInView, setDateInView] = useState(dayjs(currentDate));
+
+  const state = useTaskState({ currentDate: dateInView.toDate() });
   const actions = useTaskActions({
     setTasks: state.setTasks,
     tasks: state.tasks,
@@ -57,6 +65,10 @@ export function TaskProvider({
     setEditingTaskId: state.setEditingTaskId,
     isCancellingEdit: state.isCancellingEdit,
     setIsCancellingEdit: state.setIsCancellingEdit,
+    deletedTask: state.deletedTask,
+    setDeletedTask: state.setDeletedTask,
+    undoToastId: state.undoToastId,
+    setUndoToastId: state.setUndoToastId,
   });
 
   useTaskEffects({
@@ -66,6 +78,18 @@ export function TaskProvider({
     setTasks: state.setTasks,
   });
 
+  const navigateToNextDay = () => {
+    setDateInView((prev: dayjs.Dayjs) => prev.add(1, "day"));
+  };
+
+  const navigateToPreviousDay = () => {
+    setDateInView((prev: dayjs.Dayjs) => prev.subtract(1, "day"));
+  };
+
+  const navigateToToday = () => {
+    setDateInView(dayjs());
+  };
+
   const value: TaskContextValue = {
     tasks: state.tasks,
     editingTitle: state.editingTitle,
@@ -73,10 +97,17 @@ export function TaskProvider({
     selectedTaskIndex: state.selectedTaskIndex,
     isAddingTask: state.isAddingTask,
     isCancellingEdit: state.isCancellingEdit,
+    deletedTask: state.deletedTask,
+    undoToastId: state.undoToastId,
+    dateInView,
     addTask: actions.addTask,
     deleteTask: actions.deleteTask,
+    restoreTask: actions.restoreTask,
+    navigateToNextDay,
+    navigateToPreviousDay,
+    navigateToToday,
     focusOnCheckbox: actions.focusOnCheckbox,
-    focusOnInputByIndex: actions.focusOnInputByIndex,
+    focusOnInput: actions.focusOnInput,
     onCheckboxKeyDown: actions.onCheckboxKeyDown,
     onInputBlur: actions.onInputBlur,
     onInputClick: actions.onInputClick,
