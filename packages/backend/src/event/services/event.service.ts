@@ -294,10 +294,27 @@ export const _createCompassEvent = async (
   const calendarProvider = isSomeday ? CalendarProvider.COMPASS : provider;
   const providerData = MapEvent.toProviderData(_event, calendarProvider);
 
+  // Get calendarId for non-someday events
+  let calendarId: ObjectId | undefined;
+  if (!isSomeday && provider === CalendarProvider.GOOGLE) {
+    const primaryCalendar = await mongoService.calendar.findOne(
+      {
+        user: new ObjectId(_event.user),
+        "metadata.provider": provider,
+        primary: true,
+      },
+      { session },
+    );
+    if (primaryCalendar) {
+      calendarId = primaryCalendar._id;
+    }
+  }
+
   const event = Object.assign(
     MapEvent.removeProviderData(_event),
     providerData,
     { updatedAt: new Date() },
+    calendarId ? { calendarId } : {},
   );
 
   const instances = rrule?.instances(calendarProvider) ?? [];
@@ -325,7 +342,10 @@ export const _createCompassEvent = async (
           user: event.user,
         })
         .upsert()
-        .replaceOne(event);
+        .replaceOne({
+          ...event,
+          ...(calendarId ? { calendarId } : {}),
+        });
     });
 
     await bulkUpsert.execute({ session });
