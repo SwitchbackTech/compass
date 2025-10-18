@@ -32,8 +32,11 @@ describe("TaskListHeader", () => {
     renderTaskList();
 
     const heading = screen.getByRole("heading", { level: 2 });
+    const subheading = screen.getByRole("heading", { level: 3 });
     expect(heading).toBeInTheDocument();
-    expect(heading.textContent).toMatch(/\w+, \w+ \d+/); // Matches format like "Wednesday, January 15"
+    expect(subheading).toBeInTheDocument();
+    expect(heading.textContent).toMatch(/\w+/); // Matches format like "Wednesday"
+    expect(subheading.textContent).toMatch(/\w+ \d+/); // Matches format like "January 15"
   });
 
   it("should navigate to next day when clicking next day button", async () => {
@@ -158,7 +161,12 @@ describe("TaskListHeader", () => {
     const goToTodayButton = screen.queryByRole("button", {
       name: "Go to today",
     });
-    expect(goToTodayButton).not.toBeInTheDocument();
+    expect(goToTodayButton).toBeInTheDocument();
+
+    // Check that the wrapper div has the invisible class
+    // The invisible class is on the parent div that wraps the TooltipWrapper
+    const wrapperDiv = goToTodayButton?.parentElement?.parentElement;
+    expect(wrapperDiv).toHaveClass("invisible");
   });
 
   it("should navigate to today when clicking go to today button", async () => {

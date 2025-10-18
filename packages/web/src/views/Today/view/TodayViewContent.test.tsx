@@ -90,10 +90,13 @@ describe("TodayViewContent", () => {
     // Check that today's date is displayed
     const todayHeading = new Date().toLocaleDateString("en-US", {
       weekday: "long",
+    });
+    const todaySubheading = new Date().toLocaleDateString("en-US", {
       month: "long",
       day: "numeric",
     });
     expect(screen.getByText(todayHeading)).toBeInTheDocument();
+    expect(screen.getByText(todaySubheading)).toBeInTheDocument();
   });
 
   it("should allow users to add new tasks", async () => {
