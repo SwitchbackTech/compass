@@ -197,7 +197,7 @@ export const EventUpdateSchema = z.object({
 
 export const CompassCoreEventSchema = CoreEventSchema.extend({
   _id: IDSchema,
-  calendarId: IDSchema,
+  calendarId: IDSchema.optional(),
   recurrence: CompassEventRecurrence.extend({
     rule: z.union([z.null(), z.array(z.string())]),
   }).optional(),
