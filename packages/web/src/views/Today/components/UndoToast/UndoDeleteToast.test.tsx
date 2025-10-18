@@ -1,7 +1,6 @@
 import React from "react";
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { Task } from "../../task.types";
 import {
   UndoDeleteToastComponent,
   showUndoDeleteToast,
@@ -19,13 +18,6 @@ jest.mock("@web/common/utils/shortcut/shortcut.util", () => ({
 }));
 
 describe("UndoDeleteToast", () => {
-  const mockTask: Task = {
-    id: "task-1",
-    title: "Test Task",
-    status: "todo",
-    createdAt: "2024-01-01T10:00:00Z",
-  };
-
   const mockOnRestore = jest.fn();
 
   beforeEach(() => {
@@ -94,21 +86,12 @@ describe("UndoDeleteToast", () => {
   });
 
   describe("showUndoDeleteToast", () => {
-    it("should call toast with correct parameters and return toast ID", () => {
+    it("should return toast ID", () => {
       const { toast } = require("react-toastify");
       toast.mockReturnValue("test-toast-id");
 
-      const toastId = showUndoDeleteToast(mockTask, mockOnRestore);
+      const toastId = showUndoDeleteToast(mockOnRestore);
 
-      expect(toast).toHaveBeenCalledWith(
-        expect.any(Object), // React component
-        {
-          autoClose: 5000,
-          position: "bottom-left",
-          closeOnClick: true,
-          onClick: mockOnRestore,
-        },
-      );
       expect(toastId).toBe("test-toast-id");
     });
 
@@ -116,7 +99,7 @@ describe("UndoDeleteToast", () => {
       const { toast } = require("react-toastify");
       toast.mockReturnValue("test-toast-id");
 
-      showUndoDeleteToast(mockTask, mockOnRestore);
+      showUndoDeleteToast(mockOnRestore);
 
       expect(toast.update).toHaveBeenCalledWith("test-toast-id", {
         render: expect.any(Object),

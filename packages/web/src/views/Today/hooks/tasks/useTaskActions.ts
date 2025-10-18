@@ -94,7 +94,7 @@ export function useTaskActions({
     setTasks((prev) => prev.filter((task) => task.id !== taskId));
 
     // Show undo toast with a fresh restore function and capture the toast ID
-    const toastId = showUndoDeleteToast(taskToDelete, () => {
+    const toastId = showUndoDeleteToast(() => {
       // Create a fresh restore function that captures the current taskToDelete
       setTasks((prev) => sortTasksByStatus([...prev, taskToDelete]));
       setDeletedTask(null);

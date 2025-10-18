@@ -1,7 +1,6 @@
 import React from "react";
 import { toast } from "react-toastify";
 import { getMetaKey } from "@web/common/utils/shortcut/shortcut.util";
-import { Task } from "../../task.types";
 
 interface UndoDeleteToastProps {
   onRestore: () => void;
@@ -35,14 +34,13 @@ export const UndoDeleteToastComponent: React.FC<UndoDeleteToastProps> = ({
 };
 
 // Export a function that can be called from .ts files
-export const showUndoDeleteToast = (task: Task, onRestore: () => void) => {
+export const showUndoDeleteToast = (onRestore: () => void) => {
   const toastId = toast(
     <UndoDeleteToastComponent onRestore={onRestore} toastId="" />,
     {
       autoClose: 5000,
       position: "bottom-left",
       closeOnClick: true,
-      onClick: onRestore,
     },
   );
 
