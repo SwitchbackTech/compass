@@ -32,7 +32,7 @@ export const TaskListHeader = () => {
         </h3>
         <div className="flex items-center gap-1">
           <div
-            aria-hidden={isToday ? "true" : "false"}
+            aria-hidden={isToday}
             className={isToday ? "invisible" : "visible"}
           >
             <TooltipWrapper
