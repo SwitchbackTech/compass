@@ -399,63 +399,54 @@ class SyncService {
     user: string,
     params: Pick<Params_WatchEvents, "quotaUser">,
     gcal: gCalendar,
-  ) => {
-    const session = await mongoService.startSession();
-
+  ): Promise<{ acknowledged: boolean; insertedId?: ObjectId }> => {
     try {
-      session.startTransaction();
-
       const alreadyWatching = await isWatchingGoogleResource(
         user,
         Resource_Sync.CALENDAR,
-        session,
       );
 
       if (alreadyWatching) {
-        throw error(
-          WatchError.CalendarWatchExists,
+        logger.error(
           `Skipped Start Watch for ${Resource_Sync.CALENDAR}`,
+          WatchError.CalendarWatchExists,
         );
+
+        return { acknowledged: false };
       }
 
       const expiration = getChannelExpiration();
-
-      const watch = await mongoService.watch.insertOne(
-        WatchSchema.parse({
-          _id: new ObjectId(),
-          user,
-          gCalendarId: Resource_Sync.CALENDAR,
-          resourceId: new ObjectId().toString(), // random resourceId to be updated below
-          expiration,
-          createdAt: new Date(),
-        }),
-        { session },
-      );
+      const _id = new ObjectId();
+      const channelId = _id.toString();
 
       const { watch: gcalWatch } = await gcalService.watchCalendars(gcal, {
         ...params,
-        channelId: watch.insertedId.toString(),
+        channelId,
         expiration,
       });
 
-      await mongoService.watch.updateOne(
-        { _id: watch.insertedId },
-        {
-          $set: {
+      const watch = await mongoService.watch
+        .insertOne(
+          WatchSchema.parse({
+            _id,
+            user,
+            gCalendarId: Resource_Sync.CALENDAR,
             resourceId: gcalWatch.resourceId!,
             expiration: ExpirationDateSchema.parse(gcalWatch.expiration),
-          },
-        },
-        { session },
-      );
+            createdAt: new Date(),
+          }),
+        )
+        .catch(async (error) => {
+          await this.stopWatch(user, channelId, gcalWatch.resourceId!, gcal);
 
-      await session.commitTransaction();
+          throw error;
+        });
 
       return watch;
     } catch (err) {
-      await session.abortTransaction();
+      logger.error(`Error starting calendar watch for user: ${user}`, err);
 
-      throw err;
+      return { acknowledged: false };
     }
   };
 
@@ -463,65 +454,54 @@ class SyncService {
     user: string,
     params: Pick<Params_WatchEvents, "gCalendarId" | "quotaUser">,
     gcal: gCalendar,
-  ) => {
-    const session = await mongoService.startSession();
-
+  ): Promise<{ acknowledged: boolean; insertedId?: ObjectId }> => {
     try {
-      session.startTransaction();
-
       const alreadyWatching = await isWatchingGoogleResource(
         user,
         params.gCalendarId,
-        session,
       );
 
       if (alreadyWatching) {
-        throw error(
+        logger.error(
+          `Skipped Start Watch for ${params.gCalendarId} ${Resource_Sync.EVENTS}`,
           WatchError.EventWatchExists,
-          `Skipped Start Watch for ${params.gCalendarId}`,
         );
+
+        return { acknowledged: false };
       }
 
       const expiration = getChannelExpiration();
-
-      const watch = await mongoService.watch.insertOne(
-        WatchSchema.parse({
-          _id: new ObjectId(),
-          user,
-          gCalendarId: params.gCalendarId,
-          resourceId: new ObjectId().toString(), // random resourceId to be updated below
-          expiration,
-          createdAt: new Date(),
-        }),
-        { session },
-      );
+      const _id = new ObjectId();
+      const channelId = _id.toString();
 
       const { watch: gcalWatch } = await gcalService.watchEvents(gcal, {
         ...params,
-        channelId: watch.insertedId.toString(),
+        channelId,
         expiration,
       });
 
-      await mongoService.watch.updateOne(
-        { _id: watch.insertedId },
-        {
-          $set: {
+      const watch = await mongoService.watch
+        .insertOne(
+          WatchSchema.parse({
+            _id: new ObjectId(),
+            user,
+            gCalendarId: params.gCalendarId,
             resourceId: gcalWatch.resourceId!,
             expiration: ExpirationDateSchema.parse(gcalWatch.expiration),
-          },
-        },
-        { session },
-      );
+            createdAt: new Date(),
+          }),
+        )
+        .catch(async (error) => {
+          await this.stopWatch(user, channelId, gcalWatch.resourceId!, gcal);
 
-      await session.commitTransaction();
+          throw error;
+        });
 
       return watch;
     } catch (err) {
-      logger.error(`Error starting watch for user: ${user}`, err);
+      logger.error(`Error starting events watch for user: ${user}`, err);
 
-      await session.abortTransaction();
-
-      throw err;
+      return { acknowledged: false };
     }
   };
 
@@ -533,24 +513,10 @@ class SyncService {
     return Promise.all(
       watchParams.map(async (params) => {
         switch (params.gCalendarId) {
-          case Resource_Sync.CALENDAR: {
-            return this.startWatchingGcalCalendars(userId, params, gcal).catch(
-              (error) => {
-                logger.error(error.message, error);
-
-                return undefined;
-              },
-            );
-          }
-          default: {
-            return this.startWatchingGcalEvents(userId, params, gcal).catch(
-              (error) => {
-                logger.error(error.message, error);
-
-                return undefined;
-              },
-            );
-          }
+          case Resource_Sync.CALENDAR:
+            return this.startWatchingGcalCalendars(userId, params, gcal);
+          default:
+            return this.startWatchingGcalEvents(userId, params, gcal);
         }
       }),
     ).then((results) => results.filter((r) => r !== undefined));
