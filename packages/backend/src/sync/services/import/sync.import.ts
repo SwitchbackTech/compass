@@ -50,6 +50,26 @@ export class SyncImport {
   }
 
   /**
+   * Get the Compass calendarId from the calendar collection based on Google calendar ID
+   */
+  private async getCompassCalendarId(
+    userId: string,
+    gCalendarId: string,
+    session?: ClientSession,
+  ): Promise<ObjectId | null> {
+    const calendar = await mongoService.calendar.findOne(
+      {
+        user: new ObjectId(userId),
+        "metadata.id": gCalendarId,
+        "metadata.provider": "google",
+      },
+      { session },
+    );
+
+    return calendar?._id ?? null;
+  }
+
+  /**
    * Assembles event imports for multiple calendars
    */
   private async assembleIncrementalEventImports(
@@ -79,11 +99,18 @@ export class SyncImport {
   ): Promise<EventsToModify> {
     const { toUpdate, toDelete } = organizeGcalEventsByType(updatedEvents);
 
+    // Get the Compass calendarId for this Google calendar
+    const calendarId = await this.getCompassCalendarId(userId, gCalendarId);
+
     const regularEvents = MapEvent.toCompass(
       userId,
       toUpdate.nonRecurring,
       Origin.GOOGLE_IMPORT,
-    );
+    ).map((event) => ({
+      ...event,
+      ...(calendarId ? { calendarId: calendarId.toString() } : {}),
+    }));
+
     const recurringEvents = await this.expandRecurringEvents(
       userId,
       gCalendarId,
@@ -91,7 +118,16 @@ export class SyncImport {
       perPage,
     );
 
-    const toUpdateCombined = [...regularEvents, ...recurringEvents];
+    // Add calendarId to recurring events as well
+    const recurringEventsWithCalendarId = recurringEvents.map((event) => ({
+      ...event,
+      ...(calendarId ? { calendarId: calendarId.toString() } : {}),
+    }));
+
+    const toUpdateCombined = [
+      ...regularEvents,
+      ...recurringEventsWithCalendarId,
+    ];
 
     return {
       toUpdate: toUpdateCombined,
@@ -421,6 +457,7 @@ export class SyncImport {
   public async syncEvent(
     userId: string,
     gEvent: gSchema$Event,
+    gCalendarId?: string,
     session?: ClientSession,
   ): Promise<{
     totalProcessed: number;
@@ -439,9 +476,24 @@ export class SyncImport {
       return { totalProcessed: 1, totalInstancesSaved: 0, totalSaved: 0 };
     }
 
+    // Get the Compass calendarId if gCalendarId is provided
+    let calendarId: ObjectId | null = null;
+    if (gCalendarId) {
+      calendarId = await this.getCompassCalendarId(
+        userId,
+        gCalendarId,
+        session,
+      );
+    }
+
+    const eventToUpsert = {
+      ...event,
+      ...(calendarId ? { calendarId } : {}),
+    };
+
     const cEvent = await mongoService.event.findOneAndUpdate(
       { gEventId: event.gEventId, user: userId },
-      { $set: event },
+      { $set: eventToUpsert },
       { upsert: true, session, returnDocument: "after" },
     );
 
@@ -466,11 +518,23 @@ export class SyncImport {
     totalSaved: number;
     totalInstancesSaved: number;
   }> {
-    // assemble base event
-    const baseImport = await this.syncEvent(userId, baseEvent, session);
+    // assemble base event - pass calendarId for lookup
+    const baseImport = await this.syncEvent(
+      userId,
+      baseEvent,
+      calendarId,
+      session,
+    );
     const baseId = baseImport?.upsertedId;
 
     if (!baseId) return baseImport;
+
+    // Get the Compass calendarId
+    const compassCalendarId = await this.getCompassCalendarId(
+      userId,
+      calendarId,
+      session,
+    );
 
     // assemble instances
     const instances = await this.expandRecurringEvent(
@@ -498,6 +562,7 @@ export class SyncImport {
             ...event,
             recurrence: { eventId: baseId.toString() },
             updatedAt: new Date(),
+            ...(compassCalendarId ? { calendarId: compassCalendarId } : {}),
           },
         });
     });
