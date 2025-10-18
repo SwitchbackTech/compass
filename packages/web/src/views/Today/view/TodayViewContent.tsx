@@ -19,6 +19,7 @@ export const TodayViewContent = () => {
     navigateToNextDay,
     navigateToPreviousDay,
     navigateToToday,
+    undoToastId,
   } = useTasks();
 
   const hasFocusedTask =
@@ -64,6 +65,7 @@ export const TodayViewContent = () => {
     onPrevDay: navigateToPreviousDay,
     onGoToToday: navigateToToday,
     hasFocusedTask,
+    undoToastId,
   });
 
   return (

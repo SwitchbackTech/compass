@@ -16,6 +16,7 @@ export function useTaskState({
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [isCancellingEdit, setIsCancellingEdit] = useState(false);
   const [deletedTask, setDeletedTask] = useState<Task | null>(null);
+  const [undoToastId, setUndoToastId] = useState<string | number | null>(null);
 
   const lastLoadedKeyRef = useRef<string | null>(null);
   const dateKey = getDateKey(currentDate);
@@ -35,6 +36,8 @@ export function useTaskState({
     setIsCancellingEdit,
     deletedTask,
     setDeletedTask,
+    undoToastId,
+    setUndoToastId,
     lastLoadedKeyRef,
     dateKey,
   };

@@ -14,6 +14,8 @@ interface UseTaskActionsProps {
   setIsCancellingEdit: (isCancelling: boolean) => void;
   deletedTask: Task | null;
   setDeletedTask: (task: Task | null) => void;
+  undoToastId: string | number | null;
+  setUndoToastId: (toastId: string | number | null) => void;
 }
 
 export function useTaskActions({
@@ -26,6 +28,8 @@ export function useTaskActions({
   setIsCancellingEdit,
   deletedTask,
   setDeletedTask,
+  undoToastId,
+  setUndoToastId,
 }: UseTaskActionsProps) {
   const addTask = (title: string): Task => {
     const newTask: Task = {
@@ -68,7 +72,10 @@ export function useTaskActions({
 
     // Clear the deleted task state
     setDeletedTask(null);
-  }, [deletedTask, setTasks, setDeletedTask]);
+
+    // Clear the toast ID
+    setUndoToastId(null);
+  }, [deletedTask, setTasks, setDeletedTask, setUndoToastId]);
 
   const deleteTask = (taskId: string) => {
     const taskToDelete = tasks.find((task) => task.id === taskId);
@@ -80,12 +87,16 @@ export function useTaskActions({
     // Remove task from the list
     setTasks((prev) => prev.filter((task) => task.id !== taskId));
 
-    // Show undo toast with a fresh restore function
-    showUndoDeleteToast(taskToDelete, () => {
+    // Show undo toast with a fresh restore function and capture the toast ID
+    const toastId = showUndoDeleteToast(taskToDelete, () => {
       // Create a fresh restore function that captures the current taskToDelete
       setTasks((prev) => sortTasksByStatus([...prev, taskToDelete]));
       setDeletedTask(null);
+      setUndoToastId(null);
     });
+
+    // Store the toast ID for potential dismissal
+    setUndoToastId(toastId);
   };
 
   const focusOnCheckbox = (taskId: string) => {

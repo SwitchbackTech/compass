@@ -25,6 +25,7 @@ export interface KeyboardShortcutsConfig {
   // Conditions
   isEditingTask?: boolean;
   hasFocusedTask?: boolean;
+  undoToastId?: string | number | null;
 }
 
 /**
@@ -44,6 +45,7 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
     onGoToToday,
     isEditingTask,
     hasFocusedTask,
+    undoToastId,
   } = config;
 
   const handleKeyDown = useCallback(
@@ -55,7 +57,9 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
       if (e.metaKey && key === "z") {
         e.preventDefault();
         onRestoreTask?.();
-        toast.dismiss();
+        if (undoToastId) {
+          toast.dismiss(undoToastId);
+        }
         return;
       }
 
@@ -148,6 +152,7 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
       onGoToToday,
       isEditingTask,
       hasFocusedTask,
+      undoToastId,
     ],
   );
 

@@ -13,6 +13,7 @@ interface TaskContextValue {
   isCancellingEdit: boolean;
   selectedTaskIndex: number;
   deletedTask: Task | null;
+  undoToastId: string | number | null;
   dateInView: dayjs.Dayjs;
   addTask: (title: string) => Task;
   deleteTask: (taskId: string) => void;
@@ -66,6 +67,8 @@ export function TaskProvider({
     setIsCancellingEdit: state.setIsCancellingEdit,
     deletedTask: state.deletedTask,
     setDeletedTask: state.setDeletedTask,
+    undoToastId: state.undoToastId,
+    setUndoToastId: state.setUndoToastId,
   });
 
   useTaskEffects({
@@ -95,6 +98,7 @@ export function TaskProvider({
     isAddingTask: state.isAddingTask,
     isCancellingEdit: state.isCancellingEdit,
     deletedTask: state.deletedTask,
+    undoToastId: state.undoToastId,
     dateInView,
     addTask: actions.addTask,
     deleteTask: actions.deleteTask,

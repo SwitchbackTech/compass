@@ -5,14 +5,16 @@ import { Task } from "../../task.types";
 
 interface UndoDeleteToastProps {
   onRestore: () => void;
+  toastId: string | number;
 }
 
 export const UndoDeleteToastComponent: React.FC<UndoDeleteToastProps> = ({
   onRestore,
+  toastId,
 }) => {
   const handleRestore = () => {
     onRestore();
-    toast.dismiss();
+    toast.dismiss(toastId);
   };
 
   return (
@@ -34,10 +36,22 @@ export const UndoDeleteToastComponent: React.FC<UndoDeleteToastProps> = ({
 
 // Export a function that can be called from .ts files
 export const showUndoDeleteToast = (task: Task, onRestore: () => void) => {
-  toast(<UndoDeleteToastComponent onRestore={onRestore} />, {
-    autoClose: 5000,
-    position: "bottom-left",
-    closeOnClick: true,
-    onClick: onRestore,
+  const toastId = toast(
+    <UndoDeleteToastComponent onRestore={onRestore} toastId="" />,
+    {
+      autoClose: 5000,
+      position: "bottom-left",
+      closeOnClick: true,
+      onClick: onRestore,
+    },
+  );
+
+  // Update the component with the actual toast ID
+  toast.update(toastId, {
+    render: (
+      <UndoDeleteToastComponent onRestore={onRestore} toastId={toastId} />
+    ),
   });
+
+  return toastId;
 };
