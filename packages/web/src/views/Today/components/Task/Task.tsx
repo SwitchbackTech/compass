@@ -64,6 +64,7 @@ export const Task = ({
         <input
           tabIndex={-1}
           aria-label={`Edit ${task.title}`}
+          data-task-id={task.id}
           className={`text-white-100 w-full bg-transparent text-sm outline-none ${
             isEditing
               ? "border-b border-white/20"

@@ -180,4 +180,56 @@ describe("TodayViewContent", () => {
     });
     expect(taskCheckbox).toBeInTheDocument();
   });
+
+  describe("Duplicate task names with keyboard shortcuts", () => {
+    it("should delete the correct duplicate task when pressing Delete key", async () => {
+      const { user } = renderWithProvider(<TodayViewContent />);
+
+      // Add first task
+      await addTasks(user, ["Buy milk"]);
+
+      // Add second task with same name
+      await addTasks(user, ["Buy milk"]);
+
+      // Get both checkboxes and identify them by their data-task-id
+      const checkboxes = screen.getAllByRole("checkbox", {
+        name: "Toggle Buy milk",
+      });
+      expect(checkboxes).toHaveLength(2);
+
+      // Get the task IDs from the checkboxes
+      const firstTaskId = checkboxes[0].getAttribute("data-task-id");
+      const secondTaskId = checkboxes[1].getAttribute("data-task-id");
+
+      expect(firstTaskId).toBeTruthy();
+      expect(secondTaskId).toBeTruthy();
+      expect(firstTaskId).not.toBe(secondTaskId);
+
+      // Focus on the second task checkbox
+      const secondCheckbox = checkboxes[1];
+      await act(() => secondCheckbox.focus());
+
+      // Wait for the focus to be processed and state to update
+      await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+
+      // Press Delete key
+      await act(async () => {
+        await user.keyboard("{Delete}");
+      });
+
+      // Wait for the delete operation to complete
+      await act(() => new Promise((resolve) => setTimeout(resolve, 100)));
+
+      // Verify only one task remains (the first one)
+      const remainingCheckboxes = screen.getAllByRole("checkbox", {
+        name: "Toggle Buy milk",
+      });
+      expect(remainingCheckboxes).toHaveLength(1);
+
+      // Verify the remaining task is the first one (by checking data-task-id)
+      expect(remainingCheckboxes[0].getAttribute("data-task-id")).toBe(
+        firstTaskId,
+      );
+    }, 10000);
+  });
 });

@@ -29,7 +29,9 @@ export class TaskDriver {
       // Wait for the task to be created and appear in the DOM
       await waitFor(
         () => {
-          expect(screen.getByDisplayValue(title)).toBeInTheDocument();
+          // supports multiple tasks with the same title
+          const elements = screen.getAllByDisplayValue(title);
+          expect(elements.length).toBeGreaterThan(0);
         },
         { timeout: 5000 },
       );
@@ -59,7 +61,8 @@ export const addTasks = async (user: User, taskTitles: string[]) => {
     // Wait for the task to be created and appear in the DOM
     await waitFor(
       () => {
-        expect(screen.getByDisplayValue(title)).toBeInTheDocument();
+        const elements = screen.getAllByDisplayValue(title);
+        expect(elements.length).toBeGreaterThan(0);
       },
       { timeout: 5000 },
     );

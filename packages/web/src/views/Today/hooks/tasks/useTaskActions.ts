@@ -88,35 +88,22 @@ export function useTaskActions({
     });
   };
 
-  const focusOnCheckbox = (index: number) => {
+  const focusOnCheckbox = (taskId: string) => {
     const checkbox = document.querySelector(
-      `button[aria-label="Toggle ${tasks[index].title}"]`,
+      `button[data-task-id="${taskId}"]`,
     ) as HTMLButtonElement;
     if (checkbox) {
       checkbox.focus();
     }
   };
 
-  const focusOnInput = (title: string) => {
+  const focusOnInput = (taskId: string) => {
     const input = document.querySelector(
-      `input[aria-label="Edit ${title}"]`,
+      `input[data-task-id="${taskId}"]`,
     ) as HTMLInputElement;
     if (input) {
       input.focus();
     }
-  };
-
-  const focusOnInputByIndex = (index: number) => {
-    // Check if index is valid and task exists
-    if (index < 0 || index >= tasks.length || !tasks[index]) {
-      console.warn(
-        `focusOnInputByIndex: Invalid index ${index}, tasks length: ${tasks.length}`,
-      );
-      return;
-    }
-
-    const task = tasks[index];
-    focusOnInput(task.title);
   };
 
   const onCheckboxKeyDown = (
@@ -135,7 +122,7 @@ export function useTaskActions({
       setEditingTitle(title);
 
       setTimeout(() => {
-        focusOnInput(title);
+        focusOnInput(taskId);
       }, 0);
     }
   };
@@ -165,24 +152,20 @@ export function useTaskActions({
     setEditingTitle(tasks.find((task) => task.id === taskId)?.title || "");
   };
 
-  const onInputKeyDown = (
-    e: React.KeyboardEvent,
-    taskId: string,
-    index: number,
-  ) => {
+  const onInputKeyDown = (e: React.KeyboardEvent, taskId: string) => {
     if (e.key === "Enter") {
       e.preventDefault();
       const trimmedTitle = editingTitle.trim();
       if (trimmedTitle === "") {
         // Delete task if title is empty
-        deleteTask(tasks[index].id);
+        deleteTask(taskId);
       } else {
         // Update task with new title
         updateTaskTitle(taskId, trimmedTitle);
       }
       setEditingTaskId(null);
       setEditingTitle("");
-      focusOnCheckbox(index);
+      focusOnCheckbox(taskId);
     } else if (e.key === "Escape") {
       e.preventDefault();
       // Get the original task title and revert to it
@@ -196,7 +179,7 @@ export function useTaskActions({
       // Clear editing state
       setEditingTaskId(null);
       setEditingTitle("");
-      focusOnCheckbox(index);
+      focusOnCheckbox(taskId);
     }
   };
 
@@ -207,7 +190,7 @@ export function useTaskActions({
     deleteTask,
     restoreTask,
     focusOnCheckbox,
-    focusOnInputByIndex,
+    focusOnInput,
     onCheckboxKeyDown,
     onInputBlur,
     onInputClick,

@@ -10,7 +10,7 @@ export const TodayViewContent = () => {
   const {
     tasks,
     selectedTaskIndex,
-    focusOnInputByIndex,
+    focusOnInput,
     setSelectedTaskIndex,
     setEditingTaskId,
     setEditingTitle,
@@ -36,10 +36,11 @@ export const TodayViewContent = () => {
   const handleEditTask = () => {
     const taskIndexToEdit = getTaskIndexToEdit();
     if (taskIndexToEdit >= 0) {
-      setEditingTaskId(tasks[taskIndexToEdit].id);
+      const taskId = tasks[taskIndexToEdit].id;
+      setEditingTaskId(taskId);
       setEditingTitle(tasks[taskIndexToEdit].title);
       setSelectedTaskIndex(taskIndexToEdit);
-      focusOnInputByIndex(taskIndexToEdit);
+      focusOnInput(taskId);
     }
   };
 

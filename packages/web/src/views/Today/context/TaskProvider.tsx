@@ -20,8 +20,8 @@ interface TaskContextValue {
   navigateToNextDay: () => void;
   navigateToPreviousDay: () => void;
   navigateToToday: () => void;
-  focusOnCheckbox: (index: number) => void;
-  focusOnInputByIndex: (index: number) => void;
+  focusOnCheckbox: (taskId: string) => void;
+  focusOnInput: (taskId: string) => void;
   onCheckboxKeyDown: (
     e: React.KeyboardEvent,
     taskId: string,
@@ -29,11 +29,7 @@ interface TaskContextValue {
   ) => void;
   onInputBlur: (taskId: string) => void;
   onInputClick: (taskId: string) => void;
-  onInputKeyDown: (
-    e: React.KeyboardEvent,
-    taskId: string,
-    index: number,
-  ) => void;
+  onInputKeyDown: (e: React.KeyboardEvent, taskId: string) => void;
   onTitleChange: (title: string) => void;
   onStatusToggle: (id: string) => void;
   setSelectedTaskIndex: (index: number) => void;
@@ -107,7 +103,7 @@ export function TaskProvider({
     navigateToPreviousDay,
     navigateToToday,
     focusOnCheckbox: actions.focusOnCheckbox,
-    focusOnInputByIndex: actions.focusOnInputByIndex,
+    focusOnInput: actions.focusOnInput,
     onCheckboxKeyDown: actions.onCheckboxKeyDown,
     onInputBlur: actions.onInputBlur,
     onInputClick: actions.onInputClick,

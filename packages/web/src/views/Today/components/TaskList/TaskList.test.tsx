@@ -389,4 +389,105 @@ describe("TaskList", () => {
     const taskCheckboxes = screen.queryAllByRole("checkbox");
     expect(taskCheckboxes).toHaveLength(0);
   });
+
+  describe("Duplicate task names", () => {
+    it("should complete the correct task when pressing Space on second duplicate task", async () => {
+      const { user } = renderTaskList();
+
+      // Add first task
+      await addTasks(user, ["Buy milk"]);
+
+      // Add second task with same name
+      await addTasks(user, ["Buy milk"]);
+
+      // Get both checkboxes and identify them by their data-task-id
+      const checkboxes = screen.getAllByRole("checkbox", {
+        name: "Toggle Buy milk",
+      });
+      expect(checkboxes).toHaveLength(2);
+
+      // Get the task IDs from the checkboxes
+      const firstTaskId = checkboxes[0].getAttribute("data-task-id");
+      const secondTaskId = checkboxes[1].getAttribute("data-task-id");
+
+      expect(firstTaskId).toBeTruthy();
+      expect(secondTaskId).toBeTruthy();
+      expect(firstTaskId).not.toBe(secondTaskId);
+
+      // Focus on the second task checkbox
+      const secondCheckbox = checkboxes[1];
+      await act(async () => {
+        secondCheckbox.focus();
+      });
+
+      // Press Space to complete the task
+      await act(async () => {
+        await user.keyboard(" ");
+      });
+
+      // Verify the second task is completed (aria-checked="true")
+      // This test verifies that our fix works - the focused task should be completed
+      expect(secondCheckbox).toHaveAttribute("aria-checked", "true");
+
+      // Verify the first task is still incomplete
+      expect(checkboxes[0]).toHaveAttribute("aria-checked", "false");
+    }, 10000);
+
+    it("should edit the correct task when pressing E on second duplicate task", async () => {
+      const { user } = renderTaskList();
+
+      // Add first task
+      await addTasks(user, ["Buy milk"]);
+
+      // Add second task with same name
+      await addTasks(user, ["Buy milk"]);
+
+      // Get both checkboxes and identify them by their data-task-id
+      const checkboxes = screen.getAllByRole("checkbox", {
+        name: "Toggle Buy milk",
+      });
+      expect(checkboxes).toHaveLength(2);
+
+      // Get the task IDs from the checkboxes
+      const firstTaskId = checkboxes[0].getAttribute("data-task-id");
+      const secondTaskId = checkboxes[1].getAttribute("data-task-id");
+
+      expect(firstTaskId).toBeTruthy();
+      expect(secondTaskId).toBeTruthy();
+      expect(firstTaskId).not.toBe(secondTaskId);
+
+      // Focus on the second task checkbox
+      const secondCheckbox = checkboxes[1];
+      await act(async () => {
+        secondCheckbox.focus();
+      });
+
+      // Press E to edit the task
+      await act(async () => {
+        await user.keyboard("e");
+      });
+
+      // Get both inputs and identify them by their data-task-id
+      const inputs = screen.getAllByDisplayValue("Buy milk");
+      expect(inputs).toHaveLength(2);
+
+      // Find the input that corresponds to the second task (same data-task-id as secondCheckbox)
+      const secondInput = inputs.find(
+        (input) => input.getAttribute("data-task-id") === secondTaskId,
+      );
+      const firstInput = inputs.find(
+        (input) => input.getAttribute("data-task-id") === firstTaskId,
+      );
+
+      expect(secondInput).toBeTruthy();
+      expect(firstInput).toBeTruthy();
+
+      // The second input should be focused and in edit mode
+      expect(secondInput).toHaveFocus();
+      expect(secondInput).toHaveClass("border-white/20"); // edit mode styling
+
+      // The first input should NOT be in edit mode
+      expect(firstInput).toHaveClass("border-transparent");
+    }, 10000);
+  });
 });
