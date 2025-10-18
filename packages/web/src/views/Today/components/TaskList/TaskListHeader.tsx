@@ -38,7 +38,7 @@ export const TaskListHeader = () => {
               shortcut="T"
             >
               <button
-                className="flex h-6 w-6 items-center justify-center rounded-full text-white transition-colors hover:bg-white/20"
+                className="flex h-6 w-6 items-center justify-center rounded-full text-white transition-colors hover:bg-white/20 focus:bg-white/20 focus:ring-2 focus:ring-white/50 focus:outline-none"
                 aria-label="Go to today"
               >
                 <CircleIcon />
@@ -47,7 +47,7 @@ export const TaskListHeader = () => {
           </div>
           <TooltipWrapper onClick={navigateToPreviousDay} shortcut="J">
             <button
-              className="flex h-6 w-6 items-center justify-center rounded-full text-white transition-colors hover:bg-white/20"
+              className="flex h-6 w-6 items-center justify-center rounded-full text-white transition-colors hover:bg-white/20 focus:bg-white/20 focus:ring-2 focus:ring-white/50 focus:outline-none"
               aria-label="Previous day"
             >
               <ChevronLeftIcon />
@@ -55,7 +55,7 @@ export const TaskListHeader = () => {
           </TooltipWrapper>
           <TooltipWrapper onClick={navigateToNextDay} shortcut="K">
             <button
-              className="flex h-6 w-6 items-center justify-center rounded-full text-white transition-colors hover:bg-white/20"
+              className="flex h-6 w-6 items-center justify-center rounded-full text-white transition-colors hover:bg-white/20 focus:bg-white/20 focus:ring-2 focus:ring-white/50 focus:outline-none"
               aria-label="Next day"
             >
               <ChevronRightIcon />
