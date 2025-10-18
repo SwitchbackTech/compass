@@ -218,7 +218,7 @@ describe("TaskList", () => {
     expect(taskElement).toHaveClass("opacity-50");
   });
 
-  it("should add new tasks above completed tasks", async () => {
+  it("should create new tasks above completed tasks", async () => {
     const { user } = renderTaskList();
 
     // Add first task
@@ -306,7 +306,9 @@ describe("TaskList", () => {
     await addTasks(user, ["First task", "Second task"]);
 
     // Now tab to the Add task button
-    const addTaskButton = screen.getByRole("button", { name: /add new task/i });
+    const addTaskButton = screen.getByRole("button", {
+      name: /create new task/i,
+    });
     await act(async () => {
       addTaskButton.focus();
     });
@@ -344,7 +346,7 @@ describe("TaskList", () => {
       ).toBeInTheDocument();
       // The add button should be visible again (not in edit mode)
       expect(
-        screen.getByRole("button", { name: /add new task/i }),
+        screen.getByRole("button", { name: /create new task/i }),
       ).toBeInTheDocument();
     });
 

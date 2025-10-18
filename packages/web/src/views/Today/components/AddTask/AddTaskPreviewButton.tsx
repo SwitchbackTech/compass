@@ -24,9 +24,7 @@ export function AddTaskPreviewButton({
       onClick={onBeginAddingTask}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      aria-label="Add new task"
-      aria-describedby="add-task-description"
-      aria-expanded="false"
+      aria-label="Create new task"
     >
       <PlusIcon
         className="h-4 w-4 text-gray-200 transition-colors group-hover:text-blue-200 group-focus:text-blue-200"
@@ -37,7 +35,7 @@ export function AddTaskPreviewButton({
           Create task
         </span>
         {isHoveringAddBlock && (
-          <ShortcutTip shortcut="C" aria-label="Press C to add task" />
+          <ShortcutTip shortcut="C" aria-label="Press C to create task" />
         )}
       </div>
     </button>

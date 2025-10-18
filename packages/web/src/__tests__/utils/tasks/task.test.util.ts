@@ -71,7 +71,7 @@ export const addTasks = async (user: User, taskTitles: string[]) => {
 
 export const clickCreateTaskButton = async (user: User) => {
   const addButton = await waitFor(() =>
-    screen.getByRole("button", { name: "Add new task" }),
+    screen.getByRole("button", { name: "Create new task" }),
   );
   await act(async () => {
     await user.click(addButton);

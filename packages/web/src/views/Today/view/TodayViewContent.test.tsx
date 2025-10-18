@@ -53,7 +53,7 @@ describe("TodayViewContent", () => {
 
     // Verify the main components are present
     expect(
-      screen.getByRole("button", { name: "Add new task" }),
+      screen.getByRole("button", { name: "Create new task" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Calendar Content")).toBeInTheDocument();
   });
@@ -99,11 +99,13 @@ describe("TodayViewContent", () => {
     expect(screen.getByText(todaySubheading)).toBeInTheDocument();
   });
 
-  it("should allow users to add new tasks", async () => {
+  it("should allow users to create new tasks", async () => {
     const { user } = renderWithProvider(<TodayViewContent />);
 
     // Click the add task button
-    const addTaskButton = screen.getByRole("button", { name: "Add new task" });
+    const addTaskButton = screen.getByRole("button", {
+      name: "Create new task",
+    });
     await act(() => user.click(addTaskButton));
 
     // Verify input field appears
@@ -117,7 +119,7 @@ describe("TodayViewContent", () => {
 
     // The layout should be present and functional
     expect(
-      screen.getByRole("button", { name: "Add new task" }),
+      screen.getByRole("button", { name: "Create new task" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Calendar Content")).toBeInTheDocument();
   });
@@ -126,7 +128,9 @@ describe("TodayViewContent", () => {
     renderWithProvider(<TodayViewContent />);
 
     // The tasks section should be present and functional
-    const addTaskButton = screen.getByRole("button", { name: "Add new task" });
+    const addTaskButton = screen.getByRole("button", {
+      name: "Create new task",
+    });
     expect(addTaskButton).toBeInTheDocument();
 
     // Users should be able to interact with the tasks section

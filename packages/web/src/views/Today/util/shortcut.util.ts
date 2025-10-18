@@ -20,7 +20,7 @@ export const isEditable = (target: EventTarget | null) => {
 
 const findAddTaskButton = () => {
   const labelledButton = document.querySelector<HTMLButtonElement>(
-    'button[aria-label="Add new task"]',
+    'button[aria-label="Create new task"]',
   );
   if (labelledButton) return labelledButton;
 
