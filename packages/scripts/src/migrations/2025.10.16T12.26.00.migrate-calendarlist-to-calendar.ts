@@ -43,7 +43,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       // Process each calendarlist document
       for await (const calendarListDoc of calendarListDocs) {
         const { user, google } = calendarListDoc;
-        const calendars = google?.items ?? [];
+        const calendars = (google?.items ?? []).flat();
 
         if (!calendars.length) {
           logger.warn(

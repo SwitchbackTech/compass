@@ -483,7 +483,7 @@ class SyncService {
       const watch = await mongoService.watch
         .insertOne(
           WatchSchema.parse({
-            _id: new ObjectId(),
+            _id,
             user,
             gCalendarId: params.gCalendarId,
             resourceId: gcalWatch.resourceId!,
@@ -535,7 +535,7 @@ class SyncService {
       await gcalService.stopWatch(gcal, {
         quotaUser,
         channelId,
-        resourceId: resourceId,
+        resourceId,
       });
 
       await mongoService.watch.deleteOne({
