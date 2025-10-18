@@ -53,7 +53,6 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
       const key = e.key.toLowerCase();
       const target = e.target as EventTarget | null;
 
-      // Handle Meta+Z for undo (works on all platforms)
       if (e.metaKey && key === "z") {
         e.preventDefault();
         onRestoreTask?.();
