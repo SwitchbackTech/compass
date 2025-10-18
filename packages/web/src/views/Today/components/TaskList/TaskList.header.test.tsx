@@ -143,4 +143,44 @@ describe("TaskListHeader", () => {
       expect(heading).toHaveTextContent(nextDate);
     });
   });
+
+  it("should show go to today button when viewing a different day", () => {
+    const testDate = new Date("2025-01-15T12:00:00Z");
+    renderTaskList({}, testDate);
+
+    const goToTodayButton = screen.getByRole("button", { name: "Go to today" });
+    expect(goToTodayButton).toBeInTheDocument();
+  });
+
+  it("should not show go to today button when viewing today", () => {
+    renderTaskList();
+
+    const goToTodayButton = screen.queryByRole("button", {
+      name: "Go to today",
+    });
+    expect(goToTodayButton).not.toBeInTheDocument();
+  });
+
+  it("should navigate to today when clicking go to today button", async () => {
+    const testDate = new Date("2025-01-15T12:00:00Z");
+    const { user } = renderTaskList({}, testDate);
+
+    const heading = screen.getByRole("heading", { level: 2 });
+    const goToTodayButton = screen.getByRole("button", { name: "Go to today" });
+
+    // Verify initial heading shows the test date
+    const expectedInitialDate = format(testDate);
+    expect(heading).toHaveTextContent(expectedInitialDate);
+
+    // Click the go to today button
+    await act(async () => {
+      await user.click(goToTodayButton);
+    });
+
+    // Verify heading updates to today's date
+    const expectedTodayDate = format(dayjs().toDate());
+    await waitFor(() => {
+      expect(heading).toHaveTextContent(expectedTodayDate);
+    });
+  });
 });

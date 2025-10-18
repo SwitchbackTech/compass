@@ -17,6 +17,7 @@ export interface KeyboardShortcutsConfig {
   // Day navigation
   onNextDay?: () => void;
   onPrevDay?: () => void;
+  onGoToToday?: () => void;
 
   // General
   onEscape?: () => void;
@@ -40,6 +41,7 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
     onFocusTasks,
     onNextDay,
     onPrevDay,
+    onGoToToday,
     isEditingTask,
     hasFocusedTask,
   } = config;
@@ -86,6 +88,11 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
         case "k":
           e.preventDefault();
           onNextDay?.();
+          break;
+
+        case "t":
+          e.preventDefault();
+          onGoToToday?.();
           break;
 
         case "enter": {
@@ -138,6 +145,7 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
       onFocusTasks,
       onNextDay,
       onPrevDay,
+      onGoToToday,
       isEditingTask,
       hasFocusedTask,
     ],

@@ -66,6 +66,7 @@ export const ShortcutsOverlay = () => {
       { k: "c", label: "Create task" },
       { k: "e", label: "Edit task" },
       { k: "Delete", label: "Delete task" },
+      { k: "t", label: "Go to today" },
     ];
     todayCalendar = [
       { k: "i", label: "Focus on calendar" },

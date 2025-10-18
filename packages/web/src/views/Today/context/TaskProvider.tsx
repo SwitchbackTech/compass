@@ -19,6 +19,7 @@ interface TaskContextValue {
   restoreTask: () => void;
   navigateToNextDay: () => void;
   navigateToPreviousDay: () => void;
+  navigateToToday: () => void;
   focusOnCheckbox: (index: number) => void;
   focusOnInputByIndex: (index: number) => void;
   onCheckboxKeyDown: (
@@ -86,6 +87,10 @@ export function TaskProvider({
     setDateInView((prev: dayjs.Dayjs) => prev.subtract(1, "day"));
   };
 
+  const navigateToToday = () => {
+    setDateInView(dayjs());
+  };
+
   const value: TaskContextValue = {
     tasks: state.tasks,
     editingTitle: state.editingTitle,
@@ -100,6 +105,7 @@ export function TaskProvider({
     restoreTask: actions.restoreTask,
     navigateToNextDay,
     navigateToPreviousDay,
+    navigateToToday,
     focusOnCheckbox: actions.focusOnCheckbox,
     focusOnInputByIndex: actions.focusOnInputByIndex,
     onCheckboxKeyDown: actions.onCheckboxKeyDown,
