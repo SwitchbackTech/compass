@@ -158,9 +158,7 @@ describe("TaskListHeader", () => {
   it("should not show go to today button when viewing today", () => {
     renderTaskList();
 
-    const goToTodayButton = screen.queryByRole("button", {
-      name: "Go to today",
-    });
+    const goToTodayButton = screen.getByLabelText("Go to today");
     expect(goToTodayButton).toBeInTheDocument();
 
     // Check that the wrapper div has the invisible class

@@ -26,50 +26,46 @@ export const TaskListHeader = () => {
           {header}
         </h2>
       </div>
-      <div className="flex items-center">
+      <div className="flex items-center justify-between">
         <h3 className="text-white-100 text-sm font-medium" aria-live="polite">
           {subheader}
         </h3>
-      </div>
-      <div className="flex items-center gap-0">
-        <TooltipWrapper
-          description="Previous day"
-          onClick={navigateToPreviousDay}
-          shortcut="J"
-        >
-          <button
-            className="flex h-8 w-8 items-center justify-center rounded-full text-white transition-colors hover:bg-white/20"
-            aria-label="Previous day"
-          >
-            <ChevronLeftIcon />
-          </button>
-        </TooltipWrapper>
-        <div className={isToday ? "invisible" : "visible"}>
+        <div className="flex items-center gap-1">
+          <TooltipWrapper onClick={navigateToPreviousDay} shortcut="J">
+            <button
+              className="flex items-center justify-center rounded-full text-white transition-colors hover:bg-white/20"
+              aria-label="Previous day"
+            >
+              <ChevronLeftIcon />
+            </button>
+          </TooltipWrapper>
+          <div className={isToday ? "invisible" : "visible"}>
+            <TooltipWrapper
+              description={dayjs().locale("en").format(HEADING_FORMAT)}
+              onClick={navigateToToday}
+              shortcut="T"
+            >
+              <button
+                className="flex items-center justify-center rounded-full text-white transition-colors hover:bg-white/20"
+                aria-label="Go to today"
+              >
+                <CircleIcon />
+              </button>
+            </TooltipWrapper>
+          </div>
           <TooltipWrapper
-            description={dayjs().locale("en").format(HEADING_FORMAT)}
-            onClick={navigateToToday}
-            shortcut="T"
+            description="Next day"
+            onClick={navigateToNextDay}
+            shortcut="K"
           >
             <button
-              className="flex h-8 w-8 items-center justify-center rounded-full text-white transition-colors hover:bg-white/20"
-              aria-label="Go to today"
+              className="flex items-center justify-center rounded-full text-white transition-colors hover:bg-white/20"
+              aria-label="Next day"
             >
-              <CircleIcon />
+              <ChevronRightIcon />
             </button>
           </TooltipWrapper>
         </div>
-        <TooltipWrapper
-          description="Next day"
-          onClick={navigateToNextDay}
-          shortcut="K"
-        >
-          <button
-            className="flex h-8 w-8 items-center justify-center rounded-full text-white transition-colors hover:bg-white/20"
-            aria-label="Next day"
-          >
-            <ChevronRightIcon />
-          </button>
-        </TooltipWrapper>
       </div>
     </div>
   );
