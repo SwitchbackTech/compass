@@ -74,7 +74,7 @@ describe("TodayViewContent", () => {
     const { user } = renderWithProvider(<TodayViewContent />);
 
     await act(async () => {
-      await user.keyboard("t");
+      await user.keyboard("c");
     });
 
     const addTaskInput = await screen.findByRole("textbox", {

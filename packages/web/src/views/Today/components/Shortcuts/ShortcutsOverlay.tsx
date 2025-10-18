@@ -63,7 +63,7 @@ export const ShortcutsOverlay = () => {
   } else if (isToday) {
     todayTask = [
       { k: "u", label: "Focus on tasks" },
-      { k: "t", label: "Add task" },
+      { k: "c", label: "Create task" },
       { k: "e", label: "Edit task" },
       { k: "Delete", label: "Delete task" },
     ];

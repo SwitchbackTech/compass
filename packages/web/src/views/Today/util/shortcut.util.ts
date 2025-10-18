@@ -31,7 +31,7 @@ const findAddTaskButton = () => {
   return (
     buttons.find((button) => {
       const text = button.textContent?.trim().toLowerCase();
-      return text === "add task";
+      return text === "create task";
     }) ?? null
   );
 };

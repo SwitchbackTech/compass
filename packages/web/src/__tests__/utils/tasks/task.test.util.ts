@@ -15,7 +15,7 @@ export class TaskDriver {
   async addTasks(user: User, tasks: string[]) {
     for (const title of tasks) {
       // Wait for the add button to be available
-      await clickAddTaskButton(user);
+      await clickCreateTaskButton(user);
 
       // Wait for the input to appear
       const input = await waitFor(() =>
@@ -45,7 +45,7 @@ export class TaskDriver {
 export const addTasks = async (user: User, taskTitles: string[]) => {
   for (const title of taskTitles) {
     // Wait for the add button to be available
-    await clickAddTaskButton(user);
+    await clickCreateTaskButton(user);
 
     // Wait for the input to appear
     const input = await waitFor(() =>
@@ -66,7 +66,7 @@ export const addTasks = async (user: User, taskTitles: string[]) => {
   }
 };
 
-export const clickAddTaskButton = async (user: User) => {
+export const clickCreateTaskButton = async (user: User) => {
   const addButton = await waitFor(() =>
     screen.getByRole("button", { name: "Add new task" }),
   );

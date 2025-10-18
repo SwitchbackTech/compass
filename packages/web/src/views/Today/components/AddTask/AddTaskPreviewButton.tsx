@@ -34,10 +34,10 @@ export function AddTaskPreviewButton({
       />
       <div className="flex flex-1 items-center justify-between">
         <span className="group-hover:text-white-100 group-focus:text-white-100 text-sm text-gray-200 transition-colors">
-          Add task
+          Create task
         </span>
         {isHoveringAddBlock && (
-          <ShortcutTip shortcut="T" aria-label="Press T to add task" />
+          <ShortcutTip shortcut="C" aria-label="Press C to add task" />
         )}
       </div>
     </button>

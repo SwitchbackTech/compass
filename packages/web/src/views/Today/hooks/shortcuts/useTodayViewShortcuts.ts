@@ -62,7 +62,7 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
           onFocusTasks?.();
           break;
 
-        case "t":
+        case "c":
           e.preventDefault();
           onAddTask?.();
           break;

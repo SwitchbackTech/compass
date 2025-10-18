@@ -31,7 +31,7 @@ describe("TaskContextMenu", () => {
     renderTaskList();
 
     // Add a task first
-    const addButton = screen.getByText("Add task");
+    const addButton = screen.getByText("Create task");
     await act(async () => {
       await user.click(addButton);
     });
@@ -63,7 +63,7 @@ describe("TaskContextMenu", () => {
     renderTaskList();
 
     // Add a task
-    const addButton = screen.getByText("Add task");
+    const addButton = screen.getByText("Create task");
     await act(async () => {
       await user.click(addButton);
     });
@@ -95,7 +95,7 @@ describe("TaskContextMenu", () => {
     renderTaskList();
 
     // Add a task
-    const addButton = screen.getByText("Add task");
+    const addButton = screen.getByText("Create task");
     await act(async () => {
       await user.click(addButton);
     });
@@ -137,7 +137,7 @@ describe("TaskContextMenu", () => {
     renderTaskList();
 
     // Add a task
-    const addButton = screen.getByText("Add task");
+    const addButton = screen.getByText("Create task");
     await act(async () => {
       await user.click(addButton);
     });
@@ -178,7 +178,7 @@ describe("TaskContextMenu", () => {
     renderTaskList();
 
     // Add a task
-    const addButton = screen.getByText("Add task");
+    const addButton = screen.getByText("Create task");
     await act(async () => {
       await user.click(addButton);
     });
@@ -218,7 +218,7 @@ describe("TaskContextMenu", () => {
     renderTaskList();
 
     // Right-click on the add task button
-    const addButton = screen.getByText("Add task");
+    const addButton = screen.getByText("Create task");
     await act(async () => {
       await user.pointer({ target: addButton, keys: "[MouseRight]" });
     });
@@ -232,7 +232,7 @@ describe("TaskContextMenu", () => {
     renderTaskList();
 
     // Add two tasks
-    const addButton = screen.getByText("Add task");
+    const addButton = screen.getByText("Create task");
     await act(async () => {
       await user.click(addButton);
     });
@@ -245,7 +245,7 @@ describe("TaskContextMenu", () => {
       expect(screen.getByDisplayValue("First task")).toBeInTheDocument();
     });
 
-    const addButton2 = screen.getByText("Add task");
+    const addButton2 = screen.getByText("Create task");
     await act(async () => {
       await user.click(addButton2);
     });

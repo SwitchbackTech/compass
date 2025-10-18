@@ -68,13 +68,13 @@ describe("useTodayViewShortcuts", () => {
     expect(mockEvent.preventDefault).toHaveBeenCalled();
   });
 
-  it("should call onAddTask when 't' is pressed", () => {
+  it("should call onAddTask when 'c' is pressed", () => {
     const config = { ...defaultConfig };
     renderHook(() => useTodayViewShortcuts(config));
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const mockEvent = {
-      key: "t",
+      key: "c",
       preventDefault: jest.fn(),
       target: document.createElement("div"),
     };
@@ -231,7 +231,7 @@ describe("useTodayViewShortcuts", () => {
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const textarea = document.createElement("textarea");
     const mockEvent = {
-      key: "t",
+      key: "c",
       preventDefault: jest.fn(),
       target: textarea,
     };

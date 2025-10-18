@@ -3,13 +3,13 @@ import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import {
   addTasks,
-  clickAddTaskButton,
+  clickCreateTaskButton,
   setup,
 } from "../../../../__tests__/utils/tasks/task.test.util";
 import { TaskProvider } from "../../context/TaskProvider";
 import { TaskList } from "./TaskList";
 
-const renderTaskList = (props = {}) => {
+export const renderTaskList = (props = {}) => {
   return setup(
     <TaskProvider>
       <TaskList {...props} />
@@ -22,25 +22,17 @@ describe("TaskList", () => {
     localStorage.clear();
   });
 
-  it("should render the today heading with current date", () => {
+  it("should render create task button", () => {
     renderTaskList();
 
-    const heading = screen.getByRole("heading", { level: 2 });
-    expect(heading).toBeInTheDocument();
-    expect(heading.textContent).toMatch(/\w+, \w+ \d+/); // Matches format like "Wednesday, January 15"
-  });
-
-  it("should render add task button", () => {
-    renderTaskList();
-
-    const addButton = screen.getByText("Add task");
+    const addButton = screen.getByText("Create task");
     expect(addButton).toBeInTheDocument();
   });
 
-  it("should show add task input when clicking add button", async () => {
+  it("should show create task input when clicking create button", async () => {
     const { user } = renderTaskList();
 
-    await clickAddTaskButton(user);
+    await clickCreateTaskButton(user);
 
     const input = screen.getByPlaceholderText("Enter task title...");
     expect(input).toBeInTheDocument();
@@ -49,7 +41,7 @@ describe("TaskList", () => {
   it("should focus add task input on first click and allow typing", async () => {
     const { user } = renderTaskList();
 
-    await clickAddTaskButton(user);
+    await clickCreateTaskButton(user);
 
     const input = screen.getByRole("textbox", { name: /task title/i });
     expect(input).toHaveFocus();
@@ -70,7 +62,7 @@ describe("TaskList", () => {
   it("should not add empty task", async () => {
     const { user } = renderTaskList();
 
-    const addButton = screen.getByText("Add task");
+    const addButton = screen.getByText("Create task");
     await act(async () => {
       await user.click(addButton);
     });
@@ -92,7 +84,7 @@ describe("TaskList", () => {
   it("should cancel adding task on Escape", async () => {
     const { user } = renderTaskList();
 
-    const addButton = screen.getByText("Add task");
+    const addButton = screen.getByText("Create task");
     await act(async () => {
       await user.click(addButton);
     });
@@ -107,7 +99,7 @@ describe("TaskList", () => {
 
     // Add button should be visible again
     await waitFor(() => {
-      expect(screen.getByText("Add task")).toBeInTheDocument();
+      expect(screen.getByText("Create task")).toBeInTheDocument();
     });
   });
 
@@ -198,13 +190,13 @@ describe("TaskList", () => {
   it("should show keyboard shortcut hint on hover over add button", async () => {
     const { user } = renderTaskList();
 
-    const addTaskArea = screen.getByText("Add task").parentElement!;
+    const addTaskArea = screen.getByText("Create task").parentElement!;
     await act(async () => {
       await user.hover(addTaskArea);
     });
 
     await waitFor(() => {
-      expect(screen.getByText("T")).toBeInTheDocument();
+      expect(screen.getByText("C")).toBeInTheDocument();
     });
   });
 
