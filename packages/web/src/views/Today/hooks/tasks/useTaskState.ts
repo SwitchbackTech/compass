@@ -15,6 +15,7 @@ export function useTaskState({
   const [selectedTaskIndex, setSelectedTaskIndex] = useState(-1);
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [isCancellingEdit, setIsCancellingEdit] = useState(false);
+  const [deletedTask, setDeletedTask] = useState<Task | null>(null);
 
   const lastLoadedKeyRef = useRef<string | null>(null);
   const dateKey = getDateKey(currentDate);
@@ -32,6 +33,8 @@ export function useTaskState({
     setIsAddingTask,
     isCancellingEdit,
     setIsCancellingEdit,
+    deletedTask,
+    setDeletedTask,
     lastLoadedKeyRef,
     dateKey,
   };

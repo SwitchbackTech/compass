@@ -11,8 +11,10 @@ interface TaskContextValue {
   isAddingTask: boolean;
   isCancellingEdit: boolean;
   selectedTaskIndex: number;
+  deletedTask: Task | null;
   addTask: (title: string) => Task;
   deleteTask: (taskId: string) => void;
+  restoreTask: () => void;
   focusOnCheckbox: (index: number) => void;
   focusOnInputByIndex: (index: number) => void;
   onCheckboxKeyDown: (
@@ -57,6 +59,8 @@ export function TaskProvider({
     setEditingTaskId: state.setEditingTaskId,
     isCancellingEdit: state.isCancellingEdit,
     setIsCancellingEdit: state.setIsCancellingEdit,
+    deletedTask: state.deletedTask,
+    setDeletedTask: state.setDeletedTask,
   });
 
   useTaskEffects({
@@ -73,8 +77,10 @@ export function TaskProvider({
     selectedTaskIndex: state.selectedTaskIndex,
     isAddingTask: state.isAddingTask,
     isCancellingEdit: state.isCancellingEdit,
+    deletedTask: state.deletedTask,
     addTask: actions.addTask,
     deleteTask: actions.deleteTask,
+    restoreTask: actions.restoreTask,
     focusOnCheckbox: actions.focusOnCheckbox,
     focusOnInputByIndex: actions.focusOnInputByIndex,
     onCheckboxKeyDown: actions.onCheckboxKeyDown,

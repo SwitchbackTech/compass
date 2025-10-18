@@ -1,5 +1,5 @@
-import React from "react";
-import { act, renderHook } from "@testing-library/react";
+import React, { act } from "react";
+import { renderHook } from "@testing-library/react";
 import { Task } from "../task.types";
 import { TaskProvider, useTasks } from "./TaskProvider";
 
@@ -236,5 +236,54 @@ describe("TaskProvider", () => {
     expect(result.current.tasks[0].title).toBe("Task 1");
     expect(result.current.tasks[1].title).toBe("Task 3");
     expect(result.current.tasks[2].title).toBe("Task 2");
+  });
+
+  it("should restore a deleted task", () => {
+    const { result } = renderHook(() => useTasks(), {
+      wrapper: TaskProvider,
+    });
+
+    let taskId: string;
+    act(() => {
+      const task = result.current.addTask("Test task");
+      taskId = task.id;
+    });
+
+    expect(result.current.tasks).toHaveLength(1);
+
+    // Delete the task
+    act(() => {
+      result.current.deleteTask(taskId);
+    });
+
+    expect(result.current.tasks).toHaveLength(0);
+    expect(result.current.deletedTask).toBeTruthy();
+    expect(result.current.deletedTask?.title).toBe("Test task");
+
+    // Restore the task
+    act(() => {
+      result.current.restoreTask();
+    });
+
+    expect(result.current.tasks).toHaveLength(1);
+    expect(result.current.tasks[0].title).toBe("Test task");
+    expect(result.current.deletedTask).toBeNull();
+  });
+
+  it("should not restore when no task is deleted", () => {
+    const { result } = renderHook(() => useTasks(), {
+      wrapper: TaskProvider,
+    });
+
+    expect(result.current.tasks).toHaveLength(0);
+    expect(result.current.deletedTask).toBeNull();
+
+    // Try to restore when no task is deleted
+    act(() => {
+      result.current.restoreTask();
+    });
+
+    expect(result.current.tasks).toHaveLength(0);
+    expect(result.current.deletedTask).toBeNull();
   });
 });

@@ -7,6 +7,7 @@ export interface KeyboardShortcutsConfig {
   onEditTask?: () => void;
   onCompleteTask?: () => void;
   onDeleteTask?: () => void;
+  onRestoreTask?: () => void;
   onFocusTasks?: () => void;
 
   // Task navigation
@@ -29,6 +30,7 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
     onEditTask,
     onCompleteTask,
     onDeleteTask,
+    onRestoreTask,
     onEscape,
     onFocusTasks,
     isEditingTask,
@@ -39,6 +41,13 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
     (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
       const target = e.target as EventTarget | null;
+
+      // Handle Meta+Z for undo (works on all platforms)
+      if (e.metaKey && key === "z") {
+        e.preventDefault();
+        onRestoreTask?.();
+        return;
+      }
 
       // Don't intercept when typing in inputs (except for Escape)
       if (key !== "escape" && isEditable(target)) {
@@ -106,6 +115,7 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
       onEditTask,
       onCompleteTask,
       onDeleteTask,
+      onRestoreTask,
       onEscape,
       onFocusTasks,
       isEditingTask,

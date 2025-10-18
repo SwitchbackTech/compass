@@ -1,4 +1,6 @@
+import { useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { showUndoDeleteToast } from "../../components/UndoToast/UndoDeleteToast";
 import { Task } from "../../task.types";
 import { sortTasksByStatus } from "../../util/sort.task";
 
@@ -10,6 +12,8 @@ interface UseTaskActionsProps {
   setEditingTaskId: (taskId: string | null) => void;
   isCancellingEdit: boolean;
   setIsCancellingEdit: (isCancelling: boolean) => void;
+  deletedTask: Task | null;
+  setDeletedTask: (task: Task | null) => void;
 }
 
 export function useTaskActions({
@@ -20,6 +24,8 @@ export function useTaskActions({
   setEditingTaskId,
   isCancellingEdit,
   setIsCancellingEdit,
+  deletedTask,
+  setDeletedTask,
 }: UseTaskActionsProps) {
   const addTask = (title: string): Task => {
     const newTask: Task = {
@@ -54,8 +60,32 @@ export function useTaskActions({
     });
   };
 
+  const restoreTask = useCallback(() => {
+    if (!deletedTask) return;
+
+    // Add the task back to the list
+    setTasks((prev) => sortTasksByStatus([...prev, deletedTask]));
+
+    // Clear the deleted task state
+    setDeletedTask(null);
+  }, [deletedTask, setTasks, setDeletedTask]);
+
   const deleteTask = (taskId: string) => {
+    const taskToDelete = tasks.find((task) => task.id === taskId);
+    if (!taskToDelete) return;
+
+    // Store the deleted task for potential restoration
+    setDeletedTask(taskToDelete);
+
+    // Remove task from the list
     setTasks((prev) => prev.filter((task) => task.id !== taskId));
+
+    // Show undo toast with a fresh restore function
+    showUndoDeleteToast(taskToDelete, () => {
+      // Create a fresh restore function that captures the current taskToDelete
+      setTasks((prev) => sortTasksByStatus([...prev, taskToDelete]));
+      setDeletedTask(null);
+    });
   };
 
   const focusOnCheckbox = (index: number) => {
@@ -175,6 +205,7 @@ export function useTaskActions({
     updateTaskTitle,
     toggleTaskStatus,
     deleteTask,
+    restoreTask,
     focusOnCheckbox,
     focusOnInputByIndex,
     onCheckboxKeyDown,

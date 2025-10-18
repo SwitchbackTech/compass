@@ -15,6 +15,7 @@ export const TodayViewContent = () => {
     setEditingTaskId,
     setEditingTitle,
     deleteTask,
+    restoreTask,
   } = useTasks();
 
   const hasFocusedTask =
@@ -53,6 +54,7 @@ export const TodayViewContent = () => {
     onAddTask: focusOnAddTaskInput,
     onEditTask: handleEditTask,
     onDeleteTask: handleDeleteTask,
+    onRestoreTask: restoreTask,
     onFocusTasks: focusOnFirstTask,
     hasFocusedTask,
   });
