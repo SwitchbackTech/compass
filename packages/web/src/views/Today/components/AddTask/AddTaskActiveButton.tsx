@@ -23,7 +23,7 @@ export function AddTaskActiveButton({
       <button
         type="button"
         onClick={onAddTask}
-        aria-label="Add task"
+        aria-label="Create task"
         className="mt-1"
       >
         <PlusIcon className="h-4 w-4 text-blue-200" />

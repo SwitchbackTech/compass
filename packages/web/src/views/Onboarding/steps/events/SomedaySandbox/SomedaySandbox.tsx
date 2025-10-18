@@ -74,7 +74,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
               <TaskInput
                 autoFocus
                 type="text"
-                placeholder="Add new task..."
+                placeholder="Create new task..."
                 value={newWeekTask}
                 onChange={(e) => setNewWeekTask(e.target.value)}
                 onKeyDown={handleNewWeekTaskKeyPress}
@@ -100,7 +100,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
               <TaskInput
                 ref={monthInputRef}
                 type="text"
-                placeholder="Add new task..."
+                placeholder="Create new task..."
                 value={newMonthTask}
                 onChange={(e) => setNewMonthTask(e.target.value)}
                 onKeyDown={handleNewMonthTaskKeyPress}

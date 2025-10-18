@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import React, { useRef, useState } from "react";
 import { useTasks } from "../../context/TaskProvider";
 import { AddTaskActiveButton } from "../AddTask/AddTaskActiveButton";
@@ -6,6 +5,7 @@ import { AddTaskPreviewButton } from "../AddTask/AddTaskPreviewButton";
 import { TaskContextMenuWrapper } from "../ContextMenu/TaskContextMenuWrapper";
 import { Tasks } from "../Tasks/Tasks";
 import { useTaskListInputFocus } from "../Tasks/useTaskListInputFocus";
+import { TaskListHeader } from "./TaskListHeader";
 
 export function TaskList() {
   const { addTask, isAddingTask, setIsAddingTask } = useTasks();
@@ -14,7 +14,6 @@ export function TaskList() {
 
   const addTaskInputRef = useRef<HTMLInputElement>(null);
   const tasksScrollRef = useRef<HTMLDivElement>(null);
-  const todayHeading = dayjs().locale("en").format("dddd, MMMM D");
 
   useTaskListInputFocus({
     isAddingTask,
@@ -57,11 +56,7 @@ export function TaskList() {
       aria-label="daily-tasks"
       className="bg-darkBlue-400 flex h-full min-w-xs flex-col border-r border-gray-400/20 text-white"
     >
-      <div className="border-b border-gray-400/20 p-4">
-        <h2 className="text-white-100 text-xl font-semibold" aria-live="polite">
-          {todayHeading}
-        </h2>
-      </div>
+      <TaskListHeader />
 
       <div
         ref={tasksScrollRef}
