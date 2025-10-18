@@ -8,6 +8,7 @@ interface GcalErrors {
   NoSyncToken: ErrorMetadata;
   PaginationNotSupported: ErrorMetadata;
   Unauthorized: ErrorMetadata;
+  ReSync: ErrorMetadata;
   Unsure: ErrorMetadata;
 }
 
@@ -40,6 +41,11 @@ export const GcalError: GcalErrors = {
   Unauthorized: {
     description: "Not Authorized",
     status: Status.FORBIDDEN,
+    isOperational: true,
+  },
+  ReSync: {
+    description: "GCal Resync Failed For User",
+    status: Status.INTERNAL_SERVER,
     isOperational: true,
   },
   Unsure: {

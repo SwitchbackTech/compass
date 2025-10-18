@@ -1,23 +1,21 @@
 import { SessionRequest } from "supertokens-node/framework/express";
-import { Schema_CalendarList } from "@core/types/calendar.types";
-import { getGcalClient } from "@backend/auth/services/google.auth.service";
+import { z } from "zod/v4";
+import { Schema_Calendar } from "@core/types/calendar.types";
+import { zObjectId } from "@core/types/type.utils";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import gcalService from "@backend/common/services/gcal/gcal.service";
-import { Res_Promise } from "@backend/common/types/express.types";
-import { SReqBody } from "@backend/common/types/express.types";
+import { Res_Promise, SReqBody } from "@backend/common/types/express.types";
 
 class CalendarController {
-  create = async (req: SReqBody<Schema_CalendarList>, res: Res_Promise) => {
+  create = async (req: SReqBody<Schema_Calendar>, res: Res_Promise) => {
     try {
-      const userId = req.session?.getUserId() as string;
-      if (userId !== req.body.user) {
-        res.promise({
-          error: error(AuthError.InadequatePermissions, "Create Failed"),
-        });
-      }
+      zObjectId.parse(req.session?.getUserId(), {
+        error: () => error(AuthError.InadequatePermissions, "Create Failed"),
+      });
+
       const response = await calendarService.create(req.body);
+
       res.promise(response);
     } catch (e) {
       res.promise({ error: e });
@@ -25,11 +23,43 @@ class CalendarController {
   };
 
   list = async (req: SessionRequest, res: Res_Promise) => {
-    const userId = req.session?.getUserId() as string;
-    const gcal = await getGcalClient(userId);
-    const response = await gcalService.getCalendarlist(gcal);
+    try {
+      const userId = zObjectId.parse(req.session?.getUserId(), {
+        error: () => error(AuthError.InadequatePermissions, "List Failed"),
+      });
 
-    res.promise(response);
+      // Get calendars from our database first
+      const userCalendars = await calendarService.getByUser(userId);
+
+      res.promise({ calendars: userCalendars });
+    } catch (e) {
+      res.promise({ error: e });
+    }
+  };
+
+  toggleSelection = async (
+    req: SReqBody<Array<{ id: string; selected: boolean }>>,
+    res: Res_Promise,
+  ) => {
+    try {
+      const userId = zObjectId.parse(req.session?.getUserId(), {
+        error: () => error(AuthError.InadequatePermissions, "Selection Failed"),
+      });
+
+      const calendars = req.body;
+
+      const response = await calendarService.toggleSelection(
+        userId,
+        calendars.map(({ id, selected }) => ({
+          id: zObjectId.parse(id),
+          selected: z.boolean().parse(selected),
+        })),
+      );
+
+      res.promise(response);
+    } catch (e) {
+      res.promise({ error: e });
+    }
   };
 }
 

@@ -1,38 +1,28 @@
-import { MapCalendarList } from "@core/mappers/map.calendarlist";
-import { Schema_CalendarList } from "@core/types/calendar.types";
-import {
-  gCalendar,
-  gSchema$CalendarList,
-  gSchema$CalendarListEntry,
-} from "@core/types/gcal";
-import { error } from "@backend/common/errors/handlers/error.handler";
-import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
+import { gCalendar } from "@core/types/gcal";
+import { StringV4Schema } from "@core/types/type.utils";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 
-export const getCalendarsToSync = async (userId: string, gcal: gCalendar) => {
-  const { items, nextSyncToken: calListNextSyncToken } =
-    await gcalService.getCalendarlist(gcal);
+export const getCalendarsToSync = async (gcal: gCalendar) => {
+  const calendarListResponse = await gcalService.getCalendarlist(gcal);
+  const { items = [], nextPageToken } = calendarListResponse;
 
-  if (!calListNextSyncToken) {
-    throw error(GcalError.NoSyncToken, "Failed to get Calendar(list)s to sync");
-  }
+  const nextSyncToken = StringV4Schema.parse(
+    calendarListResponse.nextSyncToken,
+    { error: () => "Failed to get Calendar(list)s to sync" },
+  );
 
-  const gCalendarList = items as gSchema$CalendarListEntry[];
+  const primaryGcal = items.find(({ primary }) => primary);
 
-  const primaryGcal = gCalendarList.filter((c) => {
-    return c.primary === true;
-  })[0] as gSchema$CalendarList;
+  const calendars = primaryGcal ? [primaryGcal] : [];
 
-  const _ccalList = MapCalendarList.toCompass(primaryGcal);
-  const cCalendarList = { ..._ccalList, user: userId } as Schema_CalendarList;
-
-  const gCalendarIds = cCalendarList.google.items.map(
-    (gcal) => gcal.id,
-  ) as string[];
+  const gCalendarIds = calendars
+    .map(({ id }) => id)
+    .filter((id) => id !== undefined && id !== null);
 
   return {
-    cCalendarList,
+    calendars,
     gCalendarIds,
-    calListNextSyncToken,
+    nextSyncToken,
+    nextPageToken,
   };
 };

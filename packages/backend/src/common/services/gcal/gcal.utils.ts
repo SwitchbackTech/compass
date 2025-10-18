@@ -1,9 +1,8 @@
 import { GaxiosError } from "googleapis-common";
-import { Schema_CalendarList } from "@core/types/calendar.types";
 import { gSchema$Event } from "@core/types/gcal";
 
 const cancelled = (e: gSchema$Event) => {
-  /* 
+  /*
   'cancelled' is the same as deleted according to Gcal API
       - however, there's an exception for 'uncancelled recurring events',
         so this'll need to be updated once Compass supports recurring events
@@ -15,8 +14,7 @@ const cancelled = (e: gSchema$Event) => {
 export const cancelledEventsIds = (events: gSchema$Event[]) => {
   const cancelledIds: string[] = [];
   events.filter(cancelled).forEach((e: gSchema$Event) => {
-    //@ts-ignore
-    cancelledIds.push(e.id);
+    if (e.id) cancelledIds.push(e.id);
   });
   return cancelledIds;
 };
@@ -41,13 +39,6 @@ export const getEmailFromUrl = (url: string) => {
   }
 
   return null;
-};
-
-export const getPrimaryGcalId = (calendarList: Schema_CalendarList) => {
-  const primaryGCal = calendarList.google.items[0];
-  const gCalendarId = primaryGCal!.id as string;
-
-  return gCalendarId;
 };
 
 // occurs when token expired or revoked

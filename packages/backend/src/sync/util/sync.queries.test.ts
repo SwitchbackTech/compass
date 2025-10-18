@@ -206,8 +206,8 @@ describe("sync.queries: ", () => {
         }),
       );
 
-      expect(existingSync?.google.events[0]?.nextSyncToken).toBeUndefined();
-      expect(existingSync?.google.events[0]?.nextPageToken).toBeUndefined();
+      expect(existingSync?.google?.events[0]?.nextSyncToken).toBeUndefined();
+      expect(existingSync?.google?.events[0]?.nextPageToken).toBeUndefined();
 
       await updateSync(Resource_Sync.EVENTS, userId, calendarId, {
         nextSyncToken,

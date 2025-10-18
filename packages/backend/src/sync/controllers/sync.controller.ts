@@ -9,7 +9,6 @@ import {
   Payload_Sync_Notif,
   Resource_Sync,
 } from "@core/types/sync.types";
-import { shouldImportGCal } from "@core/util/event/event.util";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { WatchError } from "@backend/common/errors/sync/watch.errors";
@@ -18,7 +17,6 @@ import {
   isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
-import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import syncService from "@backend/sync/services/sync.service";
 import { getSync } from "@backend/sync/util/sync.queries";
 import userService from "@backend/user/services/user.service";
@@ -148,48 +146,7 @@ export class SyncController {
   static importGCal = async (req: Request, res: Response) => {
     const userId = req.session!.getUserId()!;
 
-    webSocketServer.handleImportGCalStart(userId);
-
-    userService
-      .fetchUserMetadata(userId)
-      .then(shouldImportGCal)
-      .then(async (proceed) => {
-        if (!proceed) {
-          webSocketServer.handleImportGCalEnd(
-            userId,
-            `User ${userId} gcal import is in progress or completed, ignoring this request`,
-          );
-
-          return;
-        }
-
-        await userService.updateUserMetadata({
-          userId,
-          data: { sync: { importGCal: "importing" } },
-        });
-
-        await userService.reSyncGoogleData(userId);
-
-        await userService.updateUserMetadata({
-          userId,
-          data: { sync: { importGCal: "completed" } },
-        });
-
-        webSocketServer.handleImportGCalEnd(userId);
-        webSocketServer.handleBackgroundCalendarChange(userId);
-      })
-      .catch(async (err) => {
-        const message = `Import gCal failed for user: ${userId}`;
-
-        await userService.updateUserMetadata({
-          userId,
-          data: { sync: { importGCal: "errored" } },
-        });
-
-        webSocketServer.handleImportGCalEnd(userId, message);
-
-        logger.error(message, err);
-      });
+    userService.restartGoogleCalendarSync(userId);
 
     res.status(Status.NO_CONTENT).send();
   };

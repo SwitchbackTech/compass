@@ -1,20 +1,10 @@
 import { z } from "zod/v4";
 import { CalendarProvider } from "@core/types/event.types";
-import { gSchema$CalendarListEntry } from "@core/types/gcal";
 import {
-  IDSchemaV4,
   RGBHexSchema,
   TimezoneSchema,
   zObjectId,
 } from "@core/types/type.utils";
-
-// @deprecated - will be replaced by Schema_Calendar
-export interface Schema_CalendarList {
-  user: string;
-  google: {
-    items: gSchema$CalendarListEntry[];
-  };
-}
 
 export const GoogleCalendarMetadataSchema = z.object({
   id: z.string(),
@@ -57,7 +47,7 @@ export const GoogleCalendarMetadataSchema = z.object({
 
 export const CompassCalendarSchema = z.object({
   _id: zObjectId,
-  user: IDSchemaV4,
+  user: zObjectId,
   backgroundColor: RGBHexSchema,
   color: RGBHexSchema,
   selected: z.boolean().default(true),

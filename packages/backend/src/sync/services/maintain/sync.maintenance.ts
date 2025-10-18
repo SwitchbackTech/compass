@@ -134,7 +134,8 @@ export const refreshWatch = async (
           return {
             gcalendarId: syncPayload.gCalendarId,
             success:
-              _refresh?.acknowledged && ObjectId.isValid(_refresh.insertedId),
+              _refresh?.acknowledged &&
+              ObjectId.isValid(_refresh.insertedId ?? ""),
           };
         }),
       );
@@ -150,7 +151,7 @@ export const refreshWatch = async (
         await compassAuthService.revokeSessionsByUser(r.user);
         revokedSession = true;
       } else if (isFullSyncRequired(e as Error)) {
-        await userService.reSyncGoogleData(r.user);
+        userService.restartGoogleCalendarSync(r.user);
         resynced = true;
       } else {
         logger.error(

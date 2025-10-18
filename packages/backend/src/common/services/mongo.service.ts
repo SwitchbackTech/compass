@@ -10,11 +10,9 @@ import {
   ObjectId,
 } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
-import {
-  Schema_CalendarList as Schema_CalList,
-  Schema_Calendar,
-} from "@core/types/calendar.types";
+import { Schema_Calendar } from "@core/types/calendar.types";
 import { Schema_Event } from "@core/types/event.types";
+import { Schema_Priority } from "@core/types/priority.types";
 import { Schema_Sync } from "@core/types/sync.types";
 import { Schema_User } from "@core/types/user.types";
 import { Schema_Waitlist } from "@core/types/waitlist/waitlist.types";
@@ -29,8 +27,8 @@ interface InternalClient {
   db: Db;
   client: MongoClient;
   calendar: Collection<Schema_Calendar>;
-  calendarList: Collection<Schema_CalList>;
   event: Collection<Omit<Schema_Event, "_id">>;
+  priority: Collection<Omit<Schema_Priority, "_id">>;
   sync: Collection<Schema_Sync>;
   user: Collection<Schema_User>;
   waitlist: Collection<Schema_Waitlist>;
@@ -54,21 +52,21 @@ class MongoService {
   }
 
   /**
-   * calendarList
-   *
-   * mongo collection
-   */
-  get calendarList(): InternalClient["calendarList"] {
-    return this.#accessInternalCollectionProps("calendarList");
-  }
-
-  /**
    * event
    *
    * mongo collection
    */
   get event(): InternalClient["event"] {
     return this.#accessInternalCollectionProps("event");
+  }
+
+  /**
+   * priority
+   *
+   * mongo collection
+   */
+  get priority(): InternalClient["priority"] {
+    return this.#accessInternalCollectionProps("priority");
   }
 
   /**
@@ -139,8 +137,10 @@ class MongoService {
       db,
       client,
       calendar: db.collection<Schema_Calendar>(Collections.CALENDAR),
-      calendarList: db.collection<Schema_CalList>(Collections.CALENDARLIST),
       event: db.collection<Omit<Schema_Event, "_id">>(Collections.EVENT),
+      priority: db.collection<Omit<Schema_Priority, "_id">>(
+        Collections.PRIORITY,
+      ),
       sync: db.collection<Schema_Sync>(Collections.SYNC),
       user: db.collection<Schema_User>(Collections.USER),
       waitlist: db.collection<Schema_Waitlist>(Collections.WAITLIST),

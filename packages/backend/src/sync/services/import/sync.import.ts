@@ -401,7 +401,7 @@ export class SyncImport {
   public async importLatestEvents(userId: string, perPage = 1000) {
     const eventSyncPayloads = await this.prepIncrementalImport(userId);
 
-    if (eventSyncPayloads.length === 0) {
+    if (eventSyncPayloads === undefined || eventSyncPayloads.length === 0) {
       logger.info(
         `No calendars configured or ready for incremental sync for user ${userId}.`,
       );
@@ -532,19 +532,16 @@ export class SyncImport {
         }'`,
       );
 
-      return sync.google.events;
+      return sync.google?.events;
     }
 
-    const { gCalendarIds, calListNextSyncToken } = await getCalendarsToSync(
-      userId,
-      this.gcal,
-    );
+    const { gCalendarIds, nextSyncToken } = await getCalendarsToSync(this.gcal);
 
     await updateSync(
       Resource_Sync.CALENDAR,
       userId,
       Resource_Sync.CALENDAR,
-      { nextSyncToken: calListNextSyncToken },
+      { nextSyncToken },
       undefined,
     );
 
@@ -566,7 +563,7 @@ export class SyncImport {
       );
     }
 
-    return updatedSync.google.events;
+    return updatedSync.google?.events;
   }
 
   /**

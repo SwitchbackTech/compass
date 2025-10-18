@@ -1,14 +1,12 @@
 import { ClientSession, UpdateFilter, UpdateResult } from "mongodb";
 import zod from "zod";
 import { Origin } from "@core/constants/core.constants";
-import { Schema_CalendarList } from "@core/types/calendar.types";
 import {
   Resource_Sync,
   Schema_Sync,
   SyncDetails,
 } from "@core/types/sync.types";
 import dayjs from "@core/util/date/dayjs";
-import { getPrimaryGcalId } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 
 /**
@@ -43,37 +41,6 @@ export const getSyncParamsValidationSchema = zod.union([
   syncFilterValidationSchema,
   channelFilterValidationSchema,
 ]);
-
-export const reInitSyncByIntegration = async (
-  integration: "google",
-  userId: string,
-  calendarList: Schema_CalendarList,
-  calListSyncToken: string,
-) => {
-  const gCalendarId = getPrimaryGcalId(calendarList);
-
-  const result = await mongoService.sync.updateOne(
-    {
-      user: userId,
-    },
-    {
-      $set: {
-        [integration]: {
-          calendarlist: [
-            {
-              gCalendarId,
-              nextSyncToken: calListSyncToken,
-              lastSyncedAt: new Date(),
-            },
-          ],
-          events: [],
-        },
-      },
-    },
-  );
-
-  return result;
-};
 
 export const getSync = async (
   params:
@@ -116,7 +83,7 @@ export const getGCalEventsSyncPageToken = async (
     { session },
   );
 
-  return response?.google.events.find((e) => e.gCalendarId === gCalendarId)
+  return response?.google?.events?.find((e) => e.gCalendarId === gCalendarId)
     ?.nextPageToken;
 };
 
@@ -168,7 +135,7 @@ export const updateSync = async (
 ): Promise<UpdateResult<Schema_Sync>> => {
   const sync = await getSync({ userId });
 
-  const data = sync?.google[resource];
+  const data = sync?.google?.[resource];
   const index = data?.findIndex((e) => e.gCalendarId === gCalendarId) ?? -1;
   const operation: UpdateFilter<Schema_Sync> = {};
 
