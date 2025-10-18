@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from "react";
+import { toast } from "react-toastify";
 import { isEditable, isFocusedOnTaskCheckbox } from "../../util/shortcut.util";
 
 export interface KeyboardShortcutsConfig {
@@ -46,6 +47,7 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
       if (e.metaKey && key === "z") {
         e.preventDefault();
         onRestoreTask?.();
+        toast.dismiss();
         return;
       }
 
