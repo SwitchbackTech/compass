@@ -79,6 +79,7 @@ export interface Result_DeleteMany {
 export interface Schema_Event {
   _id?: string;
   allDayOrder?: number;
+  calendarId?: string;
   description?: string | null | undefined;
   endDate?: string;
   isAllDay?: boolean;
@@ -160,6 +161,7 @@ export const eventDateSchema = z.union([
 
 export const CoreEventSchema = z.object({
   _id: IDSchema.optional(),
+  calendarId: IDSchema.optional(),
   description: z.string().nullable().optional(),
   endDate: eventDateSchema,
   isAllDay: z.boolean().optional(),
@@ -195,6 +197,7 @@ export const EventUpdateSchema = z.object({
 
 export const CompassCoreEventSchema = CoreEventSchema.extend({
   _id: IDSchema,
+  calendarId: IDSchema,
   recurrence: CompassEventRecurrence.extend({
     rule: z.union([z.null(), z.array(z.string())]),
   }).optional(),
