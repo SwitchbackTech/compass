@@ -11,39 +11,6 @@ export function setup(jsx: React.ReactElement) {
   };
 }
 
-export class TaskDriver {
-  async addTasks(user: User, tasks: string[]) {
-    for (const title of tasks) {
-      // Wait for the add button to be available
-      await clickCreateTaskButton(user);
-
-      // Wait for the input to appear
-      const input = await waitFor(() =>
-        screen.getByPlaceholderText("Enter task title..."),
-      );
-
-      await act(async () => {
-        await user.type(input, `${title}{Enter}`);
-      });
-
-      // Wait for the task to be created and appear in the DOM
-      await waitFor(
-        () => {
-          // supports multiple tasks with the same title
-          const elements = screen.getAllByDisplayValue(title);
-          expect(elements.length).toBeGreaterThan(0);
-        },
-        { timeout: 5000 },
-      );
-    }
-  }
-
-  deleteTask(user: User, title: string) {
-    const task = screen.getByText(title);
-    user.click(task);
-  }
-}
-
 export const addTasks = async (user: User, taskTitles: string[]) => {
   for (const title of taskTitles) {
     // Wait for the add button to be available
