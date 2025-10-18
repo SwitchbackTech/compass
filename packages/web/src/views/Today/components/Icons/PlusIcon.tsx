@@ -7,7 +7,7 @@ interface PlusIconProps {
 
 export function PlusIcon({
   className = "h-4 w-4",
-  "aria-hidden": ariaHidden = false,
+  "aria-hidden": ariaHidden = true,
 }: PlusIconProps) {
   return (
     <svg

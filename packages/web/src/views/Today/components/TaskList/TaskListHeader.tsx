@@ -31,7 +31,10 @@ export const TaskListHeader = () => {
           {subheader}
         </h3>
         <div className="flex items-center gap-1">
-          <div className={isToday ? "invisible" : "visible"}>
+          <div
+            aria-hidden={isToday ? "true" : "false"}
+            className={isToday ? "invisible" : "visible"}
+          >
             <TooltipWrapper
               description={dayjs().locale("en").format("dddd, MMMM D")}
               onClick={navigateToToday}
