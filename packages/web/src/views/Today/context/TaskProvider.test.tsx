@@ -80,7 +80,9 @@ describe("TaskProvider", () => {
       wrapper: TaskProvider,
     });
 
-    let task1Id: string, task2Id: string, task3Id: string;
+    let task1Id: string = "",
+      task2Id: string = "",
+      task3Id: string = "";
 
     act(() => {
       const t1 = result.current.addTask("Task 1");
@@ -284,6 +286,52 @@ describe("TaskProvider", () => {
     });
 
     expect(result.current.tasks).toHaveLength(0);
+    expect(result.current.deletedTask).toBeNull();
+  });
+
+  it("should only track the most recent deleted task when multiple tasks are deleted quickly", () => {
+    const { result } = renderHook(() => useTasks(), {
+      wrapper: TaskProvider,
+    });
+
+    let firstTaskId = "";
+    let secondTaskId = "";
+
+    // Add two tasks
+    act(() => {
+      const firstTask = result.current.addTask("First task");
+      const secondTask = result.current.addTask("Second task");
+      firstTaskId = firstTask.id;
+      secondTaskId = secondTask.id;
+    });
+
+    expect(result.current.tasks).toHaveLength(2);
+
+    // Delete first task
+    act(() => {
+      result.current.deleteTask(firstTaskId);
+    });
+
+    expect(result.current.tasks).toHaveLength(1);
+    expect(result.current.deletedTask?.title).toBe("First task");
+
+    // Delete second task quickly (should replace the first deleted task)
+    act(() => {
+      result.current.deleteTask(secondTaskId);
+    });
+
+    expect(result.current.tasks).toHaveLength(0);
+    expect(result.current.deletedTask?.title).toBe("Second task");
+    expect(result.current.deletedTask?.id).toBe(secondTaskId);
+
+    // Restore should only restore the most recent task (second task)
+    act(() => {
+      result.current.restoreTask();
+    });
+
+    expect(result.current.tasks).toHaveLength(1);
+    expect(result.current.tasks[0].title).toBe("Second task");
+    expect(result.current.tasks[0].id).toBe(secondTaskId);
     expect(result.current.deletedTask).toBeNull();
   });
 });

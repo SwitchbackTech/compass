@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
 import { showUndoDeleteToast } from "../../components/UndoToast/UndoDeleteToast";
 import { Task } from "../../task.types";
@@ -80,6 +81,11 @@ export function useTaskActions({
   const deleteTask = (taskId: string) => {
     const taskToDelete = tasks.find((task) => task.id === taskId);
     if (!taskToDelete) return;
+
+    // Dismiss any existing undo toast before showing new one
+    if (undoToastId) {
+      toast.dismiss(undoToastId);
+    }
 
     // Store the deleted task for potential restoration
     setDeletedTask(taskToDelete);
