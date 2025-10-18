@@ -12,6 +12,7 @@ import {
 import { ExpirationDateSchema } from "@core/types/type.utils";
 import { Schema_Watch, WatchSchema } from "@core/types/watch.types";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
+import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
 import { Collections } from "@backend/common/constants/collections";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
@@ -171,7 +172,7 @@ class SyncService {
     }
 
     const userId = sync.user;
-    const { events = [], calendarlist = [] } = sync.google;
+    const { events = [], calendarlist = [] } = sync.google ?? {};
     const channels = [...events, ...calendarlist];
     const channel = channels.find((e) => e.gCalendarId === watch.gCalendarId);
     const calendarId = channel?.gCalendarId;
@@ -294,7 +295,7 @@ class SyncService {
   };
 
   runMaintenance = async () => {
-    const cursor = mongoService.user.find().batchSize(1000);
+    const cursor = mongoService.user.find().batchSize(MONGO_BATCH_SIZE);
     const refresh: Array<{ user: string; payload: Schema_Watch[] }> = [];
     const prune: Array<{ user: string; payload: Schema_Watch[] }> = [];
     const ignore: Array<{ user: string; payload: Schema_Watch[] }> = [];

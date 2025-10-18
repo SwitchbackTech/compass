@@ -6,6 +6,7 @@ import { Resource_Sync } from "@core/types/sync.types";
 import { ExpirationDateSchema } from "@core/types/type.utils";
 import { Schema_Watch, WatchSchema } from "@core/types/watch.types";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
+import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import syncService from "@backend/sync/services/sync.service";
@@ -41,7 +42,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
         "google.events": { $exists: true, $ne: [] },
         "google.events.expiration": { $exists: true },
       },
-      { batchSize: 1000 },
+      { batchSize: MONGO_BATCH_SIZE },
     );
 
     let migratedCount = 0;

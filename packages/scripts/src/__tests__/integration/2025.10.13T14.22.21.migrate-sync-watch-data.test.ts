@@ -12,6 +12,7 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
 import mongoService from "@backend/common/services/mongo.service";
 
 describe.each([
@@ -21,7 +22,11 @@ describe.each([
   "2025.10.13T14.22.21.migrate-sync-watch-data - generateExpiredWatches: $generateExpiredWatches",
   ({ generateExpiredWatches }) => {
     const migration = new Migration();
-    const count = faker.number.int({ min: 100, max: 150 });
+
+    const count = faker.number.int({
+      min: MONGO_BATCH_SIZE * 2,
+      max: MONGO_BATCH_SIZE * 3,
+    });
 
     const migrationContext = {
       name: migration.name,
@@ -53,7 +58,12 @@ describe.each([
       const watchDocs = await mongoService.watch.find().toArray();
 
       const watchCount = syncDocs.reduce(
-        (acc, { google: { events, calendarlist } }) => {
+        (
+          acc,
+          {
+            google: { events, calendarlist } = { events: [], calendarlist: [] },
+          },
+        ) => {
           const futureExpiry = events.filter(
             (event) =>
               ExpirationDateSchema.safeParse(
@@ -72,22 +82,23 @@ describe.each([
       // Verify each watch document has correct data
       expect(watchDocs).toEqual(
         expect.arrayContaining(
-          syncDocs.flatMap(({ user, google }, index) =>
-            google.events.map(() => {
-              const watch = watchDocs[index];
+          syncDocs.flatMap(
+            ({ user, google = { events: [], calendarlist: [] } }, index) =>
+              google.events.map(() => {
+                const watch = watchDocs[index];
 
-              expect(
-                ExpirationDateSchema.safeParse(watch?.expiration).success,
-              ).toBe(true);
+                expect(
+                  ExpirationDateSchema.safeParse(watch?.expiration).success,
+                ).toBe(true);
 
-              return expect.objectContaining({
-                _id: expect.any(ObjectId),
-                user,
-                resourceId: expect.any(String),
-                expiration: expect.any(Date),
-                createdAt: expect.any(Date),
-              });
-            }),
+                return expect.objectContaining({
+                  _id: expect.any(ObjectId),
+                  user,
+                  resourceId: expect.any(String),
+                  expiration: expect.any(Date),
+                  createdAt: expect.any(Date),
+                });
+              }),
           ),
         ),
       );
@@ -114,24 +125,26 @@ describe.each([
       // calendarlist will be absent since we do not currently store resourceId
       expect(watchDocs).toEqual(
         expect.arrayContaining(
-          syncDocs.flatMap(({ user, google }) => [
-            expect.objectContaining({
-              _id: expect.any(ObjectId),
-              user,
-              resourceId: Resource_Sync.CALENDAR,
-              expiration: expect.any(Date),
-              createdAt: expect.any(Date),
-            }),
-            ...google.events.map(() =>
+          syncDocs.flatMap(
+            ({ user, google = { events: [], calendarlist: [] } }) => [
               expect.objectContaining({
                 _id: expect.any(ObjectId),
                 user,
-                resourceId: expect.any(String),
+                resourceId: Resource_Sync.CALENDAR,
                 expiration: expect.any(Date),
                 createdAt: expect.any(Date),
               }),
-            ),
-          ]),
+              ...google.events.map(() =>
+                expect.objectContaining({
+                  _id: expect.any(ObjectId),
+                  user,
+                  resourceId: expect.any(String),
+                  expiration: expect.any(Date),
+                  createdAt: expect.any(Date),
+                }),
+              ),
+            ],
+          ),
         ),
       );
 
@@ -155,16 +168,17 @@ describe.each([
 
       expect(watchDocs).toEqual(
         expect.arrayContaining(
-          syncDocs.flatMap(({ user, google }) =>
-            google.events.map(() =>
-              expect.objectContaining({
-                _id: expect.any(ObjectId),
-                user,
-                resourceId: expect.any(String),
-                expiration: expect.any(Date),
-                createdAt: expect.any(Date),
-              }),
-            ),
+          syncDocs.flatMap(
+            ({ user, google = { events: [], calendarlist: [] } }) =>
+              google.events.map(() =>
+                expect.objectContaining({
+                  _id: expect.any(ObjectId),
+                  user,
+                  resourceId: expect.any(String),
+                  expiration: expect.any(Date),
+                  createdAt: expect.any(Date),
+                }),
+              ),
           ),
         ),
       );

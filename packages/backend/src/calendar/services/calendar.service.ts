@@ -1,82 +1,150 @@
-import { ObjectId } from "mongodb";
+import { ClientSession, ObjectId } from "mongodb";
+import { z } from "zod/v4";
+import { MapCalendar } from "@core/mappers/map.calendar";
 import {
   CompassCalendarSchema,
-  GoogleCalendarMetadataSchema,
   Schema_Calendar,
 } from "@core/types/calendar.types";
 import { CalendarProvider } from "@core/types/event.types";
-import { gSchema$CalendarListEntry } from "@core/types/gcal";
+import { gCalendar } from "@core/types/gcal";
+import { Resource_Sync } from "@core/types/sync.types";
+import { zObjectId } from "@core/types/type.utils";
 import mongoService from "@backend/common/services/mongo.service";
+import { getCalendarsToSync } from "@backend/sync/services/init/sync.init";
+import { updateSync } from "@backend/sync/util/sync.queries";
 
 class CalendarService {
+  private static readonly calendarSelectionToggleSchema = z
+    .array(
+      z.object({
+        id: zObjectId,
+        selected: z.boolean(),
+      }),
+    )
+    .nonempty();
   /**
-   * Add Google calendar entries for a user
+   * initializeGoogleCalendars
+   *
+   * re-initializes calendar entries for a user
+   * this method will delete calendars that are no longer present
    */
-  add = async (
-    integration: "google",
-    calendarEntries: gSchema$CalendarListEntry[],
-    userId: string,
-  ) => {
-    if (integration !== "google") {
-      throw new Error("Only Google integration is currently supported");
-    }
+  async initializeGoogleCalendars(
+    userId: ObjectId | string,
+    gcal: gCalendar,
+    session?: ClientSession,
+  ) {
+    const _user = zObjectId.parse(userId);
+    const bulkUpsert = mongoService.calendar.initializeUnorderedBulkOp();
 
-    const calendarDocuments = calendarEntries.map((entry) => {
-      const metadata = GoogleCalendarMetadataSchema.parse({
-        ...entry,
-        provider: CalendarProvider.GOOGLE,
-      });
+    const googleCalendarResult = await getCalendarsToSync(gcal);
+    const { calendars: googleCalendars } = googleCalendarResult;
+    const { nextPageToken, nextSyncToken } = googleCalendarResult;
 
-      return CompassCalendarSchema.parse({
-        _id: new ObjectId(),
-        user: userId,
-        backgroundColor: entry.backgroundColor || "#3f51b5",
-        color: entry.foregroundColor || "#ffffff",
-        selected: entry.selected ?? true,
-        primary: entry.primary ?? false,
-        timezone: entry.timeZone || null,
-        createdAt: new Date(),
-        updatedAt: null,
+    await updateSync(
+      Resource_Sync.CALENDAR,
+      _user.toString(),
+      Resource_Sync.CALENDAR,
+      { nextSyncToken, nextPageToken: nextPageToken! },
+      session,
+    );
+
+    const calendars = googleCalendars.map((calendar) =>
+      MapCalendar.gcalToCompass(_user, calendar),
+    );
+
+    calendars.forEach(
+      ({
+        _id,
+        user,
+        selected,
+        color,
+        backgroundColor,
+        primary,
+        timezone,
+        createdAt,
+        updatedAt,
         metadata,
-      });
-    });
+        ...calendar
+      }) => {
+        bulkUpsert
+          .find({
+            user,
+            "metadata.provider": metadata.provider,
+            "metadata.id": metadata.id,
+          })
+          .upsert()
+          .update({
+            $setOnInsert: {
+              ...calendar,
+              _id,
+              selected,
+              color,
+              backgroundColor,
+              primary,
+              timezone,
+              createdAt,
+            },
+            $set: { ...calendar, updatedAt, metadata },
+          });
+      },
+    );
 
-    const result = await mongoService.calendar.insertMany(calendarDocuments, {
-      ordered: false,
-    });
+    bulkUpsert
+      .find({
+        user: _user,
+        "metadata.provider": CalendarProvider.GOOGLE,
+        "metadata.id": { $nin: googleCalendars.map(({ id }) => id) },
+      })
+      .delete();
 
-    return result;
-  };
+    const result = await bulkUpsert.execute({ session });
+
+    return {
+      googleCalendars,
+      nextPageToken,
+      nextSyncToken,
+      acknowledged: result.isOk(),
+      insertedCount: result.insertedCount,
+      insertedIds: result.insertedIds,
+      modifiedCount: result.modifiedCount,
+      upsertedIds: result.upsertedIds,
+      deletedCount: result.deletedCount,
+    };
+  }
 
   /**
    * Create a single calendar entry
    */
   create = async (calendar: Schema_Calendar) => {
-    return await mongoService.calendar.insertOne(calendar);
+    return await mongoService.calendar.insertOne(
+      CompassCalendarSchema.parse(calendar),
+    );
   };
 
   /**
    * Get calendars for a user
    */
-  getByUser = async (userId: string) => {
-    return await mongoService.calendar.find({ user: userId }).toArray();
+  getByUser = async (userId: ObjectId | string) => {
+    return await mongoService.calendar
+      .find({ user: zObjectId.parse(userId) })
+      .toArray();
   };
 
   /**
    * Get selected calendars for a user
    */
-  getSelectedByUser = async (userId: string) => {
+  getSelectedByUser = async (userId: ObjectId | string) => {
     return await mongoService.calendar
-      .find({ user: userId, selected: true })
+      .find({ user: zObjectId.parse(userId), selected: true })
       .toArray();
   };
 
   /**
    * Get primary calendar for a user
    */
-  getPrimaryByUser = async (userId: string) => {
+  getPrimaryByUser = async (userId: ObjectId | string) => {
     return await mongoService.calendar.findOne({
-      user: userId,
+      user: zObjectId.parse(userId),
       primary: true,
     });
   };
@@ -84,42 +152,35 @@ class CalendarService {
   /**
    * Update calendar selection status
    */
-  updateSelection = async (
-    userId: string,
-    calendarId: string,
-    selected: boolean,
+  toggleSelection = async (
+    userId: ObjectId | string,
+    calendars: Array<{ id: string | ObjectId; selected: boolean }>,
   ) => {
-    return await mongoService.calendar.updateOne(
-      { user: userId, "metadata.id": calendarId },
-      {
-        $set: {
-          selected,
-          updatedAt: new Date(),
-        },
-      },
-    );
+    const bulkUpdate = mongoService.calendar.initializeUnorderedBulkOp();
+
+    CalendarService.calendarSelectionToggleSchema
+      .parse(calendars)
+      .forEach(({ id, selected }) => {
+        bulkUpdate
+          .find({ user: zObjectId.parse(userId), _id: zObjectId.parse(id) })
+          .update({ $set: { selected, updatedAt: new Date() } });
+      });
+
+    const result = await bulkUpdate.execute();
+
+    return result.isOk();
   };
 
   /**
    * Delete all calendars for a user
    */
-  async deleteAllByUser(userId: string) {
-    const filter = { user: userId };
-    const response = await mongoService.calendar.deleteMany(filter);
-    return response;
-  }
-
-  /**
-   * Delete calendars by integration type for a user
-   */
-  deleteByIntegration = async (integration: "google", userId: string) => {
+  async deleteAllByUser(userId: ObjectId | string) {
     const response = await mongoService.calendar.deleteMany({
-      user: userId,
-      "metadata.provider": integration,
+      user: zObjectId.parse(userId),
     });
 
     return response;
-  };
+  }
 }
 
 export default new CalendarService();

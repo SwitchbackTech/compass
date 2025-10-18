@@ -3,10 +3,7 @@ import { faker } from "@faker-js/faker";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
 import Migration from "@scripts/migrations/2025.10.03T01.19.59.calendar-schema";
 import { gcalCalendarList } from "@core/__mocks__/v1/calendarlist/gcal.calendarlist";
-import {
-  CompassCalendarSchema,
-  GoogleCalendarMetadataSchema,
-} from "@core/types/calendar.types";
+import { GoogleCalendarMetadataSchema } from "@core/types/calendar.types";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -27,7 +24,7 @@ describe("2025.10.03T01.19.59.calendar-schema", () => {
   async function validateUpMigration() {
     const indexes = await mongoService.calendar.indexes();
     const collectionInfo = await mongoService.calendar.options();
-    const $jsonSchema = zodToMongoSchema(CompassCalendarSchema);
+    const $jsonSchema = zodToMongoSchema(Migration.CompassCalendarSchema);
 
     expect(collectionInfo["validationLevel"]).toBe("strict");
     expect(collectionInfo["validator"]).toBeDefined();
@@ -121,7 +118,7 @@ describe("2025.10.03T01.19.59.calendar-schema", () => {
       const gCalendarEntry = gcalCalendarList.items![calendarIndex]!;
       const gCalendar = GoogleCalendarMetadataSchema.parse(gCalendarEntry);
 
-      return CompassCalendarSchema.parse({
+      return Migration.CompassCalendarSchema.parse({
         _id: new ObjectId(),
         user: faker.database.mongodbObjectId(),
         backgroundColor: gCalendarEntry.backgroundColor!,
@@ -139,7 +136,9 @@ describe("2025.10.03T01.19.59.calendar-schema", () => {
     it("should accept valid calendar document", async () => {
       const calendar = generateCompassCalendar();
 
-      await expect(mongoService.calendar.insertOne(calendar)).resolves.toEqual(
+      await expect(
+        mongoService.db.collection(Collections.CALENDAR).insertOne(calendar),
+      ).resolves.toEqual(
         expect.objectContaining({
           acknowledged: true,
           insertedId: calendar._id,
@@ -152,9 +151,9 @@ describe("2025.10.03T01.19.59.calendar-schema", () => {
       // @ts-expect-error testing missing user field
       delete calendar.user;
 
-      await expect(mongoService.calendar.insertOne(calendar)).rejects.toThrow(
-        /Document failed validation/,
-      );
+      await expect(
+        mongoService.db.collection(Collections.CALENDAR).insertOne(calendar),
+      ).rejects.toThrow(/Document failed validation/);
     });
 
     it("should reject calendar with missing 'primary' field", async () => {
@@ -162,9 +161,9 @@ describe("2025.10.03T01.19.59.calendar-schema", () => {
       // @ts-expect-error testing missing primary field
       delete calendar.primary;
 
-      await expect(mongoService.calendar.insertOne(calendar)).rejects.toThrow(
-        /Document failed validation/,
-      );
+      await expect(
+        mongoService.db.collection(Collections.CALENDAR).insertOne(calendar),
+      ).rejects.toThrow(/Document failed validation/);
     });
 
     it("should reject calendar with missing 'selected' field", async () => {
@@ -172,9 +171,9 @@ describe("2025.10.03T01.19.59.calendar-schema", () => {
       // @ts-expect-error testing missing selected field
       delete calendar.selected;
 
-      await expect(mongoService.calendar.insertOne(calendar)).rejects.toThrow(
-        /Document failed validation/,
-      );
+      await expect(
+        mongoService.db.collection(Collections.CALENDAR).insertOne(calendar),
+      ).rejects.toThrow(/Document failed validation/);
     });
 
     it("should reject calendar with missing 'color' field", async () => {
@@ -182,9 +181,9 @@ describe("2025.10.03T01.19.59.calendar-schema", () => {
       // @ts-expect-error testing missing color field
       delete calendar.color;
 
-      await expect(mongoService.calendar.insertOne(calendar)).rejects.toThrow(
-        /Document failed validation/,
-      );
+      await expect(
+        mongoService.db.collection(Collections.CALENDAR).insertOne(calendar),
+      ).rejects.toThrow(/Document failed validation/);
     });
 
     it("should reject calendar with missing 'backgroundColor' field", async () => {
@@ -192,9 +191,9 @@ describe("2025.10.03T01.19.59.calendar-schema", () => {
       // @ts-expect-error testing missing backgroundColor field
       delete calendar.backgroundColor;
 
-      await expect(mongoService.calendar.insertOne(calendar)).rejects.toThrow(
-        /Document failed validation/,
-      );
+      await expect(
+        mongoService.db.collection(Collections.CALENDAR).insertOne(calendar),
+      ).rejects.toThrow(/Document failed validation/);
     });
 
     it("should reject calendar with missing 'createdAt' field", async () => {
@@ -202,9 +201,9 @@ describe("2025.10.03T01.19.59.calendar-schema", () => {
       // @ts-expect-error testing missing createdAt field
       delete calendar.createdAt;
 
-      await expect(mongoService.calendar.insertOne(calendar)).rejects.toThrow(
-        /Document failed validation/,
-      );
+      await expect(
+        mongoService.db.collection(Collections.CALENDAR).insertOne(calendar),
+      ).rejects.toThrow(/Document failed validation/);
     });
   });
 });

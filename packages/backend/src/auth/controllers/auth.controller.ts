@@ -158,7 +158,8 @@ class AuthController {
         logger.info(
           `Resyncing google data due to missing sync for user: ${cUserId}`,
         );
-        await userService.reSyncGoogleData(cUserId);
+
+        userService.restartGoogleCalendarSync(cUserId);
       }
     }
 

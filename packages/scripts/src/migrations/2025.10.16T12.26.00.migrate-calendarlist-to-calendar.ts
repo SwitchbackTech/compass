@@ -1,14 +1,11 @@
-import { ObjectId, WithId } from "mongodb";
+import { AnyBulkWriteOperation } from "mongodb";
 import type { MigrationParams, RunnableMigration } from "umzug";
 import { MigrationContext } from "@scripts/common/cli.types";
-import {
-  CompassCalendarSchema,
-  GoogleCalendarMetadataSchema,
-  Schema_Calendar,
-  Schema_CalendarList,
-} from "@core/types/calendar.types";
-import { CalendarProvider } from "@core/types/event.types";
+import { MapCalendar } from "@core/mappers/map.calendar";
+import { Schema_Calendar } from "@core/types/calendar.types";
 import { gSchema$CalendarListEntry } from "@core/types/gcal";
+import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
+import { IS_DEV } from "@backend/common/constants/env.constants";
 import mongoService from "@backend/common/services/mongo.service";
 
 export default class Migration implements RunnableMigration<MigrationContext> {
@@ -17,132 +14,89 @@ export default class Migration implements RunnableMigration<MigrationContext> {
   readonly path: string =
     "2025.10.16T12.26.00.migrate-calendarlist-to-calendar.ts";
 
-  private transformCalendarListEntryToCalendar(
-    entry: gSchema$CalendarListEntry,
-    userId: string,
-  ): WithId<Omit<Schema_Calendar, "_id">> {
-    const metadata = GoogleCalendarMetadataSchema.parse({
-      ...entry,
-      provider: CalendarProvider.GOOGLE,
-    });
-
-    return CompassCalendarSchema.parse({
-      _id: new ObjectId(),
-      user: userId,
-      backgroundColor: entry.backgroundColor || "#3f51b5",
-      color: entry.foregroundColor || "#ffffff",
-      selected: entry.selected ?? true,
-      primary: entry.primary ?? false,
-      timezone: entry.timeZone || null,
-      createdAt: new Date(),
-      updatedAt: null,
-      metadata,
-    });
-  }
-
   async up(params: MigrationParams<MigrationContext>): Promise<void> {
     const { logger } = params.context;
+    const session = await mongoService.startSession();
 
     logger.info(
       "Starting migration of calendarlist entries to calendar collection",
     );
 
-    // Get all calendarlist documents
-    const calendarListDocs = await mongoService.calendarList.find({}).toArray();
+    try {
+      session.startTransaction();
 
-    if (calendarListDocs.length === 0) {
-      logger.info("No calendarlist entries found to migrate");
-      return;
-    }
+      const calendarListCollection = mongoService.db.collection<{
+        user: string;
+        google: {
+          items: gSchema$CalendarListEntry[];
+        };
+      }>(IS_DEV ? "_dev.calendarlist" : "calendarlist");
 
-    logger.info(
-      `Found ${calendarListDocs.length} calendarlist documents to process`,
-    );
+      const bulkInsertOperations: AnyBulkWriteOperation<Schema_Calendar>[] = [];
 
-    let totalEntriesMigrated = 0;
-    let documentsProcessed = 0;
+      // Get all calendarlist documents
+      const calendarListDocs = calendarListCollection.find(
+        {},
+        { session, batchSize: MONGO_BATCH_SIZE },
+      );
 
-    // Process each calendarlist document
-    for (const calendarListDoc of calendarListDocs) {
-      try {
-        const userId = calendarListDoc.user;
-        const googleItems = calendarListDoc.google?.items || [];
+      // Process each calendarlist document
+      for await (const calendarListDoc of calendarListDocs) {
+        const { user, google } = calendarListDoc;
+        const calendars = google?.items ?? [];
 
-        if (!googleItems.length) {
+        if (!calendars.length) {
           logger.warn(
-            `No Google calendar items found for user ${userId}, skipping`,
+            `No Google calendar items found for user ${user}, skipping`,
           );
+
           continue;
         }
 
-        const calendarDocuments: Array<WithId<Omit<Schema_Calendar, "_id">>> =
-          [];
-
         // Transform each calendar entry
-        for (const item of googleItems) {
-          // Skip items that are arrays (nested structure from old mapping)
-          if (Array.isArray(item)) {
-            // Handle nested structure where items might contain arrays
-            for (const nestedItem of item) {
-              if (typeof nestedItem === "object" && nestedItem.id) {
-                calendarDocuments.push(
-                  this.transformCalendarListEntryToCalendar(nestedItem, userId),
-                );
-              }
-            }
-          } else if (typeof item === "object" && item.id) {
-            calendarDocuments.push(
-              this.transformCalendarListEntryToCalendar(item, userId),
-            );
-          }
+        for (const calendar of calendars) {
+          const document = MapCalendar.gcalToCompass(user, calendar);
+
+          bulkInsertOperations.push({ insertOne: { document } });
         }
-
-        if (calendarDocuments.length > 0) {
-          // Check if any calendars already exist for this user to prevent duplicates
-          const existingCount = await mongoService.calendar.countDocuments({
-            user: userId,
-          });
-
-          if (existingCount === 0) {
-            const result = await mongoService.calendar.insertMany(
-              calendarDocuments,
-              { ordered: false },
-            );
-
-            totalEntriesMigrated += result.insertedCount;
-            logger.info(
-              `Migrated ${result.insertedCount} calendar entries for user ${userId}`,
-            );
-          } else {
-            logger.warn(
-              `User ${userId} already has ${existingCount} calendar entries, skipping to prevent duplicates`,
-            );
-          }
-        }
-
-        documentsProcessed++;
-      } catch (error) {
-        logger.error(
-          `Error processing calendarlist document for user ${calendarListDoc.user}:`,
-          error,
-        );
-        // Continue processing other documents
       }
-    }
 
-    logger.info(
-      `Migration completed: ${documentsProcessed} documents processed, ${totalEntriesMigrated} calendar entries migrated`,
-    );
+      if (bulkInsertOperations.length === 0) {
+        logger.info("No calendar entries to migrate, skipping insertion step");
+
+        await session.commitTransaction();
+        return;
+      }
+
+      const { insertedCount } = await mongoService.calendar.bulkWrite(
+        bulkInsertOperations,
+        { ordered: false, session },
+      );
+
+      await session.commitTransaction();
+
+      logger.info(
+        `Migration completed: ${insertedCount} calendar entries migrated`,
+      );
+    } catch (error) {
+      await session.abortTransaction();
+
+      logger.error(
+        "Calendarlist migration failed, transaction aborted:",
+        error,
+      );
+
+      throw error;
+    }
   }
 
   async down(params: MigrationParams<MigrationContext>): Promise<void> {
     const { logger } = params.context;
 
-    logger.info(
-      "Down migration: This migration is non-destructive - no action taken to preserve data integrity",
-    );
-    logger.info(
-      "If you need to remove migrated calendar entries, use the admin interface or manual cleanup",
-    );
+    logger.info("Reverting migration: removing migrated calendar entries");
+
+    await mongoService.calendar.deleteMany({});
+
+    logger.info("Reverted migration: all calendar entries removed");
   }
 }

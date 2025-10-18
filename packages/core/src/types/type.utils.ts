@@ -55,3 +55,5 @@ export const ExpirationDateSchema = zod4
       error: "expiration must be a future date",
     }),
   );
+
+export const StringV4Schema = zod4.string().nonempty();

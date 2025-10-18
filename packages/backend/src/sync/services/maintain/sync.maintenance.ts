@@ -150,7 +150,7 @@ export const refreshWatch = async (
         await compassAuthService.revokeSessionsByUser(r.user);
         revokedSession = true;
       } else if (isFullSyncRequired(e as Error)) {
-        await userService.reSyncGoogleData(r.user);
+        userService.restartGoogleCalendarSync(r.user);
         resynced = true;
       } else {
         logger.error(

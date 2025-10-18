@@ -5,13 +5,11 @@ import { randomUUID } from "node:crypto";
 import { SessionRequest } from "supertokens-node/framework/express";
 import { BaseResponse } from "supertokens-node/lib/build/framework";
 import { SessionContainerInterface } from "supertokens-node/lib/build/recipe/session/types";
+import { createMockCalendarListEntry as mockCalendarListCreate } from "@core/__tests__/helpers/gcal.factory";
 import { gSchema$CalendarListEntry } from "@core/types/gcal";
 import { UserMetadata } from "@core/types/user.types";
 import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
-import {
-  createMockCalendarList as mockCalendarListCreate,
-  mockGcal,
-} from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
+import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 import { ENV } from "@backend/common/constants/env.constants";
 import { SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
 
@@ -187,6 +185,12 @@ function mockHttpLoggingMiddleware() {
   }));
 }
 
+function mockConstants() {
+  mockModule("@backend/common/constants/backend.constants.ts", () => ({
+    MONGO_BATCH_SIZE: 5,
+  }));
+}
+
 export function mockEnv(env: Partial<typeof ENV>) {
   const entries = Object.entries(env) as Array<
     [keyof typeof env, (typeof env)[keyof typeof env]]
@@ -220,6 +224,7 @@ export function mockModule<T>(
 export function mockNodeModules() {
   beforeEach(mockCompassTestState);
   afterEach(() => jest.unmock("compass-test-state"));
+  mockConstants();
   mockWinstonLogger();
   mockHttpLoggingMiddleware();
   mockGoogleapis();

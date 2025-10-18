@@ -2,17 +2,22 @@ import type { RunnableMigration } from "umzug";
 import { MigrationContext } from "@scripts/common/cli.types";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
 import { CompassCalendarSchema } from "@core/types/calendar.types";
+import { IDSchemaV4 } from "@core/types/type.utils";
 import mongoService from "@backend/common/services/mongo.service";
 
 export default class Migration implements RunnableMigration<MigrationContext> {
   readonly name: string = "2025.10.03T01.19.59.calendar-schema";
   readonly path: string = "2025.10.03T01.19.59.calendar-schema.ts";
 
+  static readonly CompassCalendarSchema = CompassCalendarSchema.extend({
+    user: IDSchemaV4,
+  });
+
   async up(): Promise<void> {
     const { collectionName } = mongoService.calendar;
     const exists = await mongoService.collectionExists(collectionName);
 
-    const $jsonSchema = zodToMongoSchema(CompassCalendarSchema);
+    const $jsonSchema = zodToMongoSchema(Migration.CompassCalendarSchema);
 
     if (exists) {
       // do not run in session

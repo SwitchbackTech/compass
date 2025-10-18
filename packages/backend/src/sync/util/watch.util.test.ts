@@ -1,4 +1,4 @@
-import { faker } from "@faker-js/faker/.";
+import { faker } from "@faker-js/faker";
 import { Resource_Sync } from "@core/types/sync.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import {

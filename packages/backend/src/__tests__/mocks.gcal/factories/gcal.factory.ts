@@ -52,21 +52,6 @@ const generatePaginatedGcalItems = <Item = gSchema$Event>(
   };
 };
 
-/**
- * Generates a mock Google Calendar calendar list entry.
- *
- * @param overrides - The overrides for the mock.
- * @returns The mock Google Calendar calendar list entry.
- */
-export const createMockCalendarList = (
-  overrides: Partial<gSchema$CalendarListEntry> = {},
-): gSchema$CalendarListEntry => ({
-  id: "test-calendar",
-  primary: true,
-  summary: "Test Calendar",
-  ...overrides,
-});
-
 interface Config_MockGcal {
   events?: gSchema$Event[];
   pageSize?: number;

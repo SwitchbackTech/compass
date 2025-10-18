@@ -10,18 +10,15 @@ export class CalendarRoutes extends CommonRoutesConfig {
 
   configureRoutes() {
     this.app
-      .route(`/api/calendar`)
+      .route(`/api/calendars`)
       .all(verifySession())
-      //@ts-ignore
       .get(calendarController.list)
-      //@ts-ignore
       .post(calendarController.create);
 
     this.app
-      .route(`/api/calendar/selection`)
+      .route(`/api/calendars/select`)
       .all(verifySession())
-      //@ts-ignore
-      .put(calendarController.updateSelection);
+      .put(calendarController.toggleSelection);
 
     return this.app;
   }

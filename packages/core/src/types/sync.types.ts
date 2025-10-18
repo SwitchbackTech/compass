@@ -80,7 +80,7 @@ export type Result_Watch_Stop = {
 
 export interface Schema_Sync {
   user: string;
-  google: {
+  google?: {
     calendarlist: SyncDetails[];
     events: SyncDetails[];
   };
