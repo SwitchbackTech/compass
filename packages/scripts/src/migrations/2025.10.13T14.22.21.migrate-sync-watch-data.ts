@@ -52,7 +52,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
 
       const watchDocuments: Array<WithId<Omit<Schema_Watch, "_id">>> = [];
 
-      const syncDocs = syncDoc.google.events
+      const syncDocs = (syncDoc.google?.events ?? [])
         .map((doc) => Migration.OldSyncDetailsSchema.safeParse(doc).data)
         .filter((d) => ExpirationDateSchema.safeParse(d?.expiration).success)
         .filter((doc) => doc !== undefined);

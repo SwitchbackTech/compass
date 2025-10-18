@@ -1,5 +1,4 @@
 import { GaxiosError } from "googleapis-common";
-import { Schema_Calendar } from "@core/types/calendar.types";
 import { gSchema$Event } from "@core/types/gcal";
 
 const cancelled = (e: gSchema$Event) => {
@@ -15,8 +14,7 @@ const cancelled = (e: gSchema$Event) => {
 export const cancelledEventsIds = (events: gSchema$Event[]) => {
   const cancelledIds: string[] = [];
   events.filter(cancelled).forEach((e: gSchema$Event) => {
-    //@ts-ignore
-    cancelledIds.push(e.id);
+    if (e.id) cancelledIds.push(e.id);
   });
   return cancelledIds;
 };
@@ -41,13 +39,6 @@ export const getEmailFromUrl = (url: string) => {
   }
 
   return null;
-};
-
-export const getPrimaryGcalId = (calendarList: Schema_Calendar) => {
-  const primaryGCal = calendarList.google.items[0];
-  const gCalendarId = primaryGCal!.id as string;
-
-  return gCalendarId;
 };
 
 // occurs when token expired or revoked

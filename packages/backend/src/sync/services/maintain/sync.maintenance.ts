@@ -134,7 +134,8 @@ export const refreshWatch = async (
           return {
             gcalendarId: syncPayload.gCalendarId,
             success:
-              _refresh?.acknowledged && ObjectId.isValid(_refresh.insertedId),
+              _refresh?.acknowledged &&
+              ObjectId.isValid(_refresh.insertedId ?? ""),
           };
         }),
       );
