@@ -31,35 +31,31 @@ export const TaskListHeader = () => {
           {subheader}
         </h3>
         <div className="flex items-center gap-1">
-          <TooltipWrapper onClick={navigateToPreviousDay} shortcut="J">
-            <button
-              className="flex items-center justify-center rounded-full text-white transition-colors hover:bg-white/20"
-              aria-label="Previous day"
-            >
-              <ChevronLeftIcon />
-            </button>
-          </TooltipWrapper>
           <div className={isToday ? "invisible" : "visible"}>
             <TooltipWrapper
-              description={dayjs().locale("en").format(HEADING_FORMAT)}
+              description={dayjs().locale("en").format("dddd, MMMM D")}
               onClick={navigateToToday}
               shortcut="T"
             >
               <button
-                className="flex items-center justify-center rounded-full text-white transition-colors hover:bg-white/20"
+                className="flex h-6 w-6 items-center justify-center rounded-full text-white transition-colors hover:bg-white/20"
                 aria-label="Go to today"
               >
                 <CircleIcon />
               </button>
             </TooltipWrapper>
           </div>
-          <TooltipWrapper
-            description="Next day"
-            onClick={navigateToNextDay}
-            shortcut="K"
-          >
+          <TooltipWrapper onClick={navigateToPreviousDay} shortcut="J">
             <button
-              className="flex items-center justify-center rounded-full text-white transition-colors hover:bg-white/20"
+              className="flex h-6 w-6 items-center justify-center rounded-full text-white transition-colors hover:bg-white/20"
+              aria-label="Previous day"
+            >
+              <ChevronLeftIcon />
+            </button>
+          </TooltipWrapper>
+          <TooltipWrapper onClick={navigateToNextDay} shortcut="K">
+            <button
+              className="flex h-6 w-6 items-center justify-center rounded-full text-white transition-colors hover:bg-white/20"
               aria-label="Next day"
             >
               <ChevronRightIcon />
