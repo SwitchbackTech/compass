@@ -1,4 +1,4 @@
-import { ObjectId, WithId } from "mongodb";
+import { ObjectId } from "mongodb";
 import type { MigrationParams, RunnableMigration } from "umzug";
 import { z } from "zod/v4";
 import { MigrationContext } from "@scripts/common/cli.types";
@@ -50,7 +50,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
     for await (const syncDoc of cursor) {
       if ((syncDoc?.google?.events?.length ?? 0) < 1) continue;
 
-      const watchDocuments: Array<WithId<Omit<Schema_Watch, "_id">>> = [];
+      const watchDocuments: Array<Schema_Watch> = [];
 
       const syncDocs = (syncDoc.google?.events ?? [])
         .map((doc) => Migration.OldSyncDetailsSchema.safeParse(doc).data)
