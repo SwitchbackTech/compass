@@ -66,7 +66,7 @@ describe("TodayView", () => {
     );
 
     const taskpanel = screen.getByRole("region", { name: "daily-tasks" });
-    expect(within(taskpanel).getByText("Add task")).toBeInTheDocument();
+    expect(within(taskpanel).getByText("Create task")).toBeInTheDocument();
   });
 
   it("should render CalendarAgenda component", () => {
