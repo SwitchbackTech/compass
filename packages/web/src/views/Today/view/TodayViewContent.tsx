@@ -2,9 +2,9 @@ import React from "react";
 import { CalendarAgenda } from "../components/CalendarAgenda/CalendarAgenda";
 import { ShortcutsOverlay } from "../components/Shortcuts/ShortcutsOverlay";
 import { TaskList } from "../components/TaskList/TaskList";
-import { useTasks } from "../context/TaskProvider";
+import { useDateNavigation } from "../hooks/navigation/useDateNavigation";
 import { useTodayViewShortcuts } from "../hooks/shortcuts/useTodayViewShortcuts";
-import { useDateNavigation } from "../hooks/useDateNavigation";
+import { useTasks } from "../hooks/tasks/useTasks";
 import { focusOnAddTaskInput, focusOnFirstTask } from "../util/shortcut.util";
 
 export const TodayViewContent = () => {

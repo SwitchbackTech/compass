@@ -1,8 +1,8 @@
-import React, { createContext, useContext } from "react";
+import React, { createContext } from "react";
+import { useDateNavigation } from "../hooks/navigation/useDateNavigation";
 import { useTaskActions } from "../hooks/tasks/useTaskActions";
 import { useTaskEffects } from "../hooks/tasks/useTaskEffects";
 import { useTaskState } from "../hooks/tasks/useTaskState";
-import { useDateNavigation } from "../hooks/useDateNavigation";
 import { Task } from "../task.types";
 
 interface TaskContextValue {
@@ -99,12 +99,4 @@ export function TaskProvider({ children }: TaskProviderProps) {
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
-}
-
-export function useTasks(): TaskContextValue {
-  const context = useContext(TaskContext);
-  if (!context) {
-    throw new Error("useTasks must be used within a TaskProvider");
-  }
-  return context;
 }

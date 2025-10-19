@@ -1,6 +1,6 @@
 import React from "react";
 import { Trash } from "@phosphor-icons/react";
-import { useTasks } from "../../context/TaskProvider";
+import { useTasks } from "../../hooks/tasks/useTasks";
 import { Task } from "../../task.types";
 
 interface TaskContextMenuItemsProps {

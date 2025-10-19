@@ -1,5 +1,5 @@
 import React from "react";
-import { useTasks } from "../../context/TaskProvider";
+import { useTasks } from "../../hooks/tasks/useTasks";
 import { Task } from "../Task/Task";
 
 export const Tasks = () => {

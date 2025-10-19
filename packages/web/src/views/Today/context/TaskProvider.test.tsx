@@ -1,8 +1,8 @@
 import { act } from "react";
 import { renderHook } from "@testing-library/react";
+import { useTasks } from "../hooks/tasks/useTasks";
 import { Task } from "../task.types";
 import { TaskProviderWrapper } from "../util/day.test-util";
-import { useTasks } from "./TaskProvider";
 
 describe("TaskProvider", () => {
   beforeEach(() => {
