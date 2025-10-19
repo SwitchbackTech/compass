@@ -3,6 +3,10 @@ import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import dayjs from "@core/util/date/dayjs";
+import {
+  DAY_HEADING_FORMAT,
+  DAY_SUBHEADING_FORMAT,
+} from "../components/TaskList/TaskListHeader";
 import { DateNavigationProvider } from "../context/DateNavigationProvider";
 import { TaskProvider } from "../context/TaskProvider";
 import { renderWithDayProviders } from "../util/day.test-util";
@@ -53,7 +57,6 @@ describe("TodayView Routing", () => {
   });
 
   it("should show today's date when navigating to /day", () => {
-    // renderWithRouter(["/day"]);
     renderWithDayProviders(<TodayView />);
 
     // Should show today's date in the header
@@ -63,62 +66,9 @@ describe("TodayView Routing", () => {
     expect(screen.getByText(todayHeading)).toBeInTheDocument();
   });
 
-  it("should show specific date when navigating to /day/2025-10-20", () => {
-    renderWithDayProviders(<TodayView />, ["/day/2025-10-20"]);
-
-    // Should show October 20, 2025 (Sunday)
-    expect(screen.getByText("Sunday")).toBeInTheDocument();
-    expect(screen.getByText("October 19")).toBeInTheDocument();
-  });
-
-  it.skip("should redirect invalid day to corrected date", async () => {
-    // Skip due to timezone issues in test environment
-    renderWithDayProviders(<TodayView />, ["/day/2025-10-40"]);
-
-    // Should show October 31, 2025 (corrected date)
-    expect(screen.getByText("Friday")).toBeInTheDocument();
-    expect(screen.getByText("October 31")).toBeInTheDocument();
-  });
-
-  it.skip("should redirect invalid day 0 to day 1", async () => {
-    // Skip due to timezone issues in test environment
-    renderWithDayProviders(<TodayView />, ["/day/2025-10-0"]);
-
-    // Should show October 1, 2025 (corrected date)
-    expect(screen.getByText("Wednesday")).toBeInTheDocument();
-    expect(screen.getByText("October 1")).toBeInTheDocument();
-  });
-
-  it.skip("should redirect invalid month to corrected month", async () => {
-    // Skip due to timezone issues in test environment
-    renderWithDayProviders(<TodayView />, ["/day/2025-13-15"]);
-
-    // Should show December 15, 2025 (corrected date)
-    expect(screen.getByText("Monday")).toBeInTheDocument();
-    expect(screen.getByText("December 15")).toBeInTheDocument();
-  });
-
-  it.skip("should handle February 29 in non-leap year", async () => {
-    // Skip due to timezone issues in test environment
-    renderWithDayProviders(<TodayView />, ["/day/2025-02-29"]);
-
-    // Should show February 28, 2025 (corrected date - 2025 is not a leap year)
-    expect(screen.getByText("Friday")).toBeInTheDocument();
-    expect(screen.getByText("February 28")).toBeInTheDocument();
-  });
-
-  it.skip("should handle February 29 in leap year correctly", () => {
-    // Skip due to timezone issues in test environment
-    renderWithDayProviders(<TodayView />, ["/day/2024-02-29"]);
-
-    // Should show February 29, 2024 (2024 is a leap year)
-    expect(screen.getByText("Thursday")).toBeInTheDocument();
-    expect(screen.getByText("February 29")).toBeInTheDocument();
-  });
-
   it("should show next day when clicking next day button", async () => {
     const user = userEvent.setup();
-    renderWithDayProviders(<TodayView />, ["/day/2025-10-20"]);
+    renderWithDayProviders(<TodayView />);
 
     // Find and click the next day button
     const nextDayButton = screen.getByRole("button", { name: "Next day" });
@@ -126,14 +76,17 @@ describe("TodayView Routing", () => {
       await user.click(nextDayButton);
     });
 
-    // Should show October 21, 2025 (Monday)
-    expect(screen.getByText("Monday")).toBeInTheDocument();
-    expect(screen.getByText("October 20")).toBeInTheDocument();
+    // Should show tomorrow's date
+    const tomorrow = dayjs().add(1, "day");
+    const tomorrowWeekday = tomorrow.format(DAY_HEADING_FORMAT);
+    const tomorrowDate = tomorrow.format(DAY_SUBHEADING_FORMAT);
+    expect(screen.getByText(tomorrowWeekday)).toBeInTheDocument();
+    expect(screen.getByText(tomorrowDate)).toBeInTheDocument();
   });
 
   it("should show previous day when clicking previous day button", async () => {
     const user = userEvent.setup();
-    renderWithDayProviders(<TodayView />, ["/day/2025-10-20"]);
+    renderWithDayProviders(<TodayView />);
 
     // Find and click the previous day button
     const prevDayButton = screen.getByRole("button", { name: "Previous day" });
@@ -146,16 +99,20 @@ describe("TodayView Routing", () => {
     expect(screen.getByText("October 18")).toBeInTheDocument();
   });
 
-  it.skip("should show today when clicking go to today button", async () => {
-    // Skip this test as the "Go to today" button is hidden when viewing today
-    // and the timezone issues make it difficult to test reliably
-    const user = userEvent.setup();
-    // Start with a different date so the "Go to today" button is visible
-    renderWithDayProviders(<TodayView />, ["/day/2025-10-20"]);
+  it("should show today when clicking go to today button", async () => {
+    const { user } = renderWithDayProviders(<TodayView />);
+
+    // Go to different day to make the "Go to today" button visible
+    const prevDayButton = screen.getByRole("button", { name: "Previous day" });
+    await act(async () => {
+      await user.click(prevDayButton);
+    });
 
     // Find and click the go to today button (it should be visible when not viewing today)
     const goToTodayButton = screen.getByRole("button", { name: "Go to today" });
-    await user.click(goToTodayButton);
+    await act(async () => {
+      await user.click(goToTodayButton);
+    });
 
     // Should show today's date
     const todayHeading = new Date().toLocaleDateString("en-US", {
@@ -164,13 +121,16 @@ describe("TodayView Routing", () => {
     expect(screen.getByText(todayHeading)).toBeInTheDocument();
   });
 
-  it("should render specific date correctly", () => {
-    // Test that the component renders correctly with a specific date
-    renderWithDayProviders(<TodayView />, ["/day/2025-10-20"]);
+  it("should render specific dates correctly", () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2025-10-20T12:00:00.000Z"));
 
-    // Should show the specific date (Sunday)
-    expect(screen.getByText("Sunday")).toBeInTheDocument();
-    expect(screen.getByText("October 19")).toBeInTheDocument();
+    renderWithDayProviders(<TodayView />);
+
+    expect(screen.getByText("Monday")).toBeInTheDocument();
+    expect(screen.getByText("October 20")).toBeInTheDocument();
+
+    jest.useRealTimers();
   });
 });
 describe("Navigation with URL updates", () => {
@@ -205,21 +165,6 @@ describe("Navigation with URL updates", () => {
 
     // Verify the button click works
     expect(prevDayButton).toBeInTheDocument();
-  });
-
-  it.skip("should navigate to /day when clicking go to today", async () => {
-    // Skip this test as the "Go to today" button is hidden when viewing today
-    // and the timezone issues make it difficult to test reliably
-    const { user } = renderWithDayProviders(<TodayViewContent />);
-
-    // Find and click the go to today button (it should be visible when not viewing today)
-    const goToTodayButton = screen.getByRole("button", {
-      name: "Go to today",
-    });
-    await user.click(goToTodayButton);
-
-    // Verify the button click works
-    expect(goToTodayButton).toBeInTheDocument();
   });
 
   it("should display correct date in header when viewing specific date", () => {

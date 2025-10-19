@@ -129,13 +129,3 @@ export const getValidDateFromUrl = (
 export const formatDateForUrl = (date: dayjs.Dayjs): string => {
   return date.format(YEAR_MONTH_DAY_FORMAT);
 };
-
-/**
- * Check if a date string represents today
- * @param dateString - Date string to check
- * @returns True if the date is today
- */
-export const isDateToday = (dateString: string | undefined): boolean => {
-  const date = getValidDateFromUrl(dateString);
-  return date.startOf("day").isSame(dayjs().startOf("day"));
-};

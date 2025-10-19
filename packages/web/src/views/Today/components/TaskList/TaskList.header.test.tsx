@@ -7,7 +7,7 @@ import dayjs from "@core/util/date/dayjs";
 import { DateNavigationProvider } from "../../context/DateNavigationProvider";
 import { TaskProvider } from "../../context/TaskProvider";
 import { TaskList } from "./TaskList";
-import { HEADING_FORMAT } from "./TaskListHeader";
+import { DAY_HEADING_FORMAT } from "./TaskListHeader";
 
 const renderTaskList = (props = {}, currentDate?: Date) => {
   const user = userEvent.setup();
@@ -31,7 +31,7 @@ const renderTaskList = (props = {}, currentDate?: Date) => {
 
 // format dates using the same format as the component
 const format = (date: Date) => {
-  return dayjs(date).locale("en").format(HEADING_FORMAT);
+  return dayjs(date).locale("en").format(DAY_HEADING_FORMAT);
 };
 
 describe("TaskListHeader", () => {

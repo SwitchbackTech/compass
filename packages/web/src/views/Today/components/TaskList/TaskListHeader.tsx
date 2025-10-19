@@ -7,16 +7,16 @@ import { ChevronLeftIcon } from "../Icons/ChevronLeftIcon";
 import { ChevronRightIcon } from "../Icons/ChevronRightIcon";
 import { CircleIcon } from "../Icons/CircleIcon";
 
-export const HEADING_FORMAT = "dddd";
-export const SUBHEADING_FORMAT = "MMMM D";
+export const DAY_HEADING_FORMAT = "dddd";
+export const DAY_SUBHEADING_FORMAT = "MMMM D";
 
 export const TaskListHeader = () => {
   const { navigateToPreviousDay, navigateToNextDay, navigateToToday } =
     useDateNavigation();
 
   const dateInView = useDateInView();
-  const header = dateInView.locale("en").format(HEADING_FORMAT);
-  const subheader = dateInView.locale("en").format(SUBHEADING_FORMAT);
+  const header = dateInView.locale("en").format(DAY_HEADING_FORMAT);
+  const subheader = dateInView.locale("en").format(DAY_SUBHEADING_FORMAT);
   const isToday = dateInView.startOf("day").isSame(dayjs().startOf("day"));
 
   return (

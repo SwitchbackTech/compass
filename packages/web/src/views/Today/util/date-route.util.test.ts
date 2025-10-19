@@ -3,7 +3,6 @@ import {
   correctInvalidDate,
   formatDateForUrl,
   getValidDateFromUrl,
-  isDateToday,
   parseDateFromUrl,
 } from "./date-route.util";
 
@@ -115,35 +114,6 @@ describe("date-route.util", () => {
 
       const date2 = dayjs("2023-12-31");
       expect(formatDateForUrl(date2)).toBe("2023-12-31");
-    });
-  });
-
-  describe("isDateToday", () => {
-    beforeEach(() => {
-      // Mock today's date for consistent testing
-      jest.useFakeTimers();
-      jest.setSystemTime(new Date("2025-10-20T12:00:00Z"));
-    });
-
-    afterEach(() => {
-      jest.useRealTimers();
-    });
-
-    it("should return true for today's date", () => {
-      expect(isDateToday("2025-10-20")).toBe(true);
-    });
-
-    it("should return false for other dates", () => {
-      expect(isDateToday("2025-10-19")).toBe(false);
-      expect(isDateToday("2025-10-21")).toBe(false);
-    });
-
-    it("should return true for undefined input (defaults to today)", () => {
-      expect(isDateToday(undefined)).toBe(true);
-    });
-
-    it("should handle invalid dates by defaulting to today", () => {
-      expect(isDateToday("invalid-date")).toBe(true);
     });
   });
 });
