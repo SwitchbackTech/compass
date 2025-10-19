@@ -25,7 +25,7 @@ const router = createBrowserRouter(
       ),
     },
     {
-      path: ROOT_ROUTES.TODAY,
+      path: `${ROOT_ROUTES.DAY}/:date?`,
       element: (
         <ProtectedRoute>
           <UserProvider>
