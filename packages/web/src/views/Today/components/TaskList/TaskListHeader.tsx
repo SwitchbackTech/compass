@@ -1,8 +1,8 @@
 import React from "react";
 import dayjs from "@core/util/date/dayjs";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { useTasks } from "../../context/TaskProvider";
 import { useDateInView } from "../../hooks/useDateInView";
+import { useDateNavigation } from "../../hooks/useDateNavigation";
 import { ChevronLeftIcon } from "../Icons/ChevronLeftIcon";
 import { ChevronRightIcon } from "../Icons/ChevronRightIcon";
 import { CircleIcon } from "../Icons/CircleIcon";
@@ -12,7 +12,7 @@ export const SUBHEADING_FORMAT = "MMMM D";
 
 export const TaskListHeader = () => {
   const { navigateToPreviousDay, navigateToNextDay, navigateToToday } =
-    useTasks();
+    useDateNavigation();
 
   const dateInView = useDateInView();
   const header = dateInView.locale("en").format(HEADING_FORMAT);

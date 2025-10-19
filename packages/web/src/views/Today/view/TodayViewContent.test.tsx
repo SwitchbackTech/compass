@@ -1,7 +1,10 @@
-import { ReactElement, act } from "react";
+import dayjs from "dayjs";
+import { act } from "react";
+import { MemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import { addTasks, setup } from "../../../__tests__/utils/tasks/task.test.util";
+import { DateNavigationProvider } from "../context/DateNavigationProvider";
 import { TaskProvider } from "../context/TaskProvider";
 import { TodayViewContent } from "./TodayViewContent";
 
@@ -30,8 +33,19 @@ jest.mock("../hooks/shortcuts/useTodayViewShortcuts", () => {
   };
 });
 
-const renderWithProvider = (component: ReactElement) => {
-  return setup(<TaskProvider>{component}</TaskProvider>);
+export const renderWithTaskProvider = (component: React.ReactElement) => {
+  return setup(
+    <MemoryRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
+      <DateNavigationProvider initialDate={dayjs()}>
+        <TaskProvider>{component}</TaskProvider>
+      </DateNavigationProvider>
+    </MemoryRouter>,
+  );
 };
 
 describe("TodayViewContent", () => {
@@ -48,7 +62,7 @@ describe("TodayViewContent", () => {
   });
 
   it("should render the main layout with tasks and calendar sections", () => {
-    renderWithProvider(<TodayViewContent />);
+    renderWithTaskProvider(<TodayViewContent />);
 
     // Verify the main components are present
     expect(
@@ -69,8 +83,7 @@ describe("TodayViewContent", () => {
       }),
     );
 
-    // const user = userEvent.setup();
-    const { user } = renderWithProvider(<TodayViewContent />);
+    const { user } = renderWithTaskProvider(<TodayViewContent />);
 
     await act(async () => {
       await user.keyboard("c");
@@ -84,7 +97,7 @@ describe("TodayViewContent", () => {
   });
 
   it("should display today's date in the tasks section", () => {
-    renderWithProvider(<TodayViewContent />);
+    renderWithTaskProvider(<TodayViewContent />);
 
     // Check that today's date is displayed
     const todayHeading = new Date().toLocaleDateString("en-US", {
@@ -99,7 +112,7 @@ describe("TodayViewContent", () => {
   });
 
   it("should allow users to create new tasks", async () => {
-    const { user } = renderWithProvider(<TodayViewContent />);
+    const { user } = renderWithTaskProvider(<TodayViewContent />);
 
     // Click the add task button
     const addTaskButton = screen.getByRole("button", {
@@ -114,7 +127,7 @@ describe("TodayViewContent", () => {
   });
 
   it("should maintain a fixed height layout that fills the viewport", () => {
-    renderWithProvider(<TodayViewContent />);
+    renderWithTaskProvider(<TodayViewContent />);
 
     // The layout should be present and functional
     expect(
@@ -124,7 +137,7 @@ describe("TodayViewContent", () => {
   });
 
   it("should display add task button", () => {
-    renderWithProvider(<TodayViewContent />);
+    renderWithTaskProvider(<TodayViewContent />);
 
     // The tasks section should be present and functional
     const addTaskButton = screen.getByRole("button", {
@@ -137,7 +150,7 @@ describe("TodayViewContent", () => {
   });
 
   it("should delete task when Delete key is pressed on focused checkbox", async () => {
-    const { user } = renderWithProvider(<TodayViewContent />);
+    const { user } = renderWithTaskProvider(<TodayViewContent />);
 
     await addTasks(user, ["Test task"]);
 
@@ -163,7 +176,7 @@ describe("TodayViewContent", () => {
   });
 
   it("should NOT delete task when Delete key is pressed on input field", async () => {
-    const { user } = renderWithProvider(<TodayViewContent />);
+    const { user } = renderWithTaskProvider(<TodayViewContent />);
 
     // Add a task
     await addTasks(user, ["Test task"]);
@@ -186,7 +199,7 @@ describe("TodayViewContent", () => {
 
   describe("Duplicate task names with keyboard shortcuts", () => {
     it("should delete the correct duplicate task when pressing Delete key", async () => {
-      const { user } = renderWithProvider(<TodayViewContent />);
+      const { user } = renderWithTaskProvider(<TodayViewContent />);
 
       // Add first task
       await addTasks(user, ["Buy milk"]);

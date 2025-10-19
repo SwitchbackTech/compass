@@ -1,19 +1,30 @@
 import { act } from "react";
+import { MemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
-import { screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import dayjs from "@core/util/date/dayjs";
-import { render } from "../../../../__tests__/__mocks__/mock.render";
+import { DateNavigationProvider } from "../../context/DateNavigationProvider";
 import { TaskProvider } from "../../context/TaskProvider";
 import { TaskList } from "./TaskList";
 import { HEADING_FORMAT } from "./TaskListHeader";
 
 const renderTaskList = (props = {}, currentDate?: Date) => {
   const user = userEvent.setup();
+  const initialDate = currentDate ? dayjs(currentDate) : dayjs();
   const result = render(
-    <TaskProvider currentDate={currentDate}>
-      <TaskList {...props} />
-    </TaskProvider>,
+    <MemoryRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
+      <DateNavigationProvider initialDate={initialDate}>
+        <TaskProvider>
+          <TaskList {...props} />
+        </TaskProvider>
+      </DateNavigationProvider>
+    </MemoryRouter>,
   );
   return { ...result, user };
 };

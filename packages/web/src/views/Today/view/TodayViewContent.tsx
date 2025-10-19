@@ -4,6 +4,7 @@ import { ShortcutsOverlay } from "../components/Shortcuts/ShortcutsOverlay";
 import { TaskList } from "../components/TaskList/TaskList";
 import { useTasks } from "../context/TaskProvider";
 import { useTodayViewShortcuts } from "../hooks/shortcuts/useTodayViewShortcuts";
+import { useDateNavigation } from "../hooks/useDateNavigation";
 import { focusOnAddTaskInput, focusOnFirstTask } from "../util/shortcut.util";
 
 export const TodayViewContent = () => {
@@ -16,11 +17,11 @@ export const TodayViewContent = () => {
     setEditingTitle,
     deleteTask,
     restoreTask,
-    navigateToNextDay,
-    navigateToPreviousDay,
-    navigateToToday,
     undoToastId,
   } = useTasks();
+
+  const { navigateToNextDay, navigateToPreviousDay, navigateToToday } =
+    useDateNavigation();
 
   const hasFocusedTask =
     selectedTaskIndex >= 0 && selectedTaskIndex < tasks.length;
