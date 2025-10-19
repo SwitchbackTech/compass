@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import dayjs from "@core/util/date/dayjs";
-import { DateNavigationContext } from "../context/DateNavigationProvider";
+import { DateNavigationContext } from "../../context/DateNavigationProvider";
 
 export function useDateInView(): dayjs.Dayjs {
   const context = useContext(DateNavigationContext);

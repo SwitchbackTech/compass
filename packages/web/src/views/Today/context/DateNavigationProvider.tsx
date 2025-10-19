@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { formatDateForUrl } from "../util/date-route.util";
@@ -56,14 +56,4 @@ export function DateNavigationProvider({
       {children}
     </DateNavigationContext.Provider>
   );
-}
-
-export function useDateNavigation(): DateNavigationContextValue {
-  const context = useContext(DateNavigationContext);
-  if (!context) {
-    throw new Error(
-      "useDateNavigation must be used within DateNavigationProvider",
-    );
-  }
-  return context;
 }

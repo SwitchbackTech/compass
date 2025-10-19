@@ -1,8 +1,8 @@
 import React from "react";
 import dayjs from "@core/util/date/dayjs";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+import { useDateInView } from "../../hooks/navigation/useDateInView";
 import { useDateNavigation } from "../../hooks/navigation/useDateNavigation";
-import { useDateInView } from "../../hooks/useDateInView";
 import { ChevronLeftIcon } from "../Icons/ChevronLeftIcon";
 import { ChevronRightIcon } from "../Icons/ChevronRightIcon";
 import { CircleIcon } from "../Icons/CircleIcon";
