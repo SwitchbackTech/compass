@@ -71,7 +71,8 @@ export const correctInvalidDate = (dateString: string): dayjs.Dayjs | null => {
     correctedDay = 1;
   } else {
     // Get the last day of the corrected month
-    const lastDayOfMonth = dayjs()
+    const lastDayOfMonth = dayjs
+      .utc()
       .year(year)
       .month(correctedMonth - 1)
       .endOf("month")
