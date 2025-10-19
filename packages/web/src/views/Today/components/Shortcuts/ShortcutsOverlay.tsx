@@ -1,4 +1,3 @@
-import React from "react";
 import { ShortcutHint } from "@web/views/Today/components/Shortcuts/ShortcutHint";
 
 type Item = { k: string; label: string };
