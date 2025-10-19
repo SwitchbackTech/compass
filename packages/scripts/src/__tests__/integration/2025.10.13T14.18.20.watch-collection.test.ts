@@ -1,4 +1,4 @@
-import { ObjectId, WithId } from "mongodb";
+import { ObjectId } from "mongodb";
 import { faker } from "@faker-js/faker";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
 import Migration from "@scripts/migrations/2025.10.13T14.18.20.watch-collection";
@@ -12,8 +12,6 @@ import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
 
-type PartialWatch = Partial<WithId<Omit<Schema_Watch, "_id">>>;
-
 describe("2025.10.13T14.18.20.watch-collection", () => {
   const migration = new Migration();
   const collectionName = Collections.WATCH;
@@ -23,7 +21,7 @@ describe("2025.10.13T14.18.20.watch-collection", () => {
   afterEach(() => mongoService.watch.drop());
   afterAll(cleanupTestDb);
 
-  function generateWatch(): WithId<Omit<Schema_Watch, "_id">> {
+  function generateWatch(): Schema_Watch {
     return {
       _id: new ObjectId(),
       user: faker.database.mongodbObjectId(),
@@ -145,9 +143,9 @@ describe("2025.10.13T14.18.20.watch-collection", () => {
     it("rejects documents with missing required fields", async () => {
       const incompleteWatch = generateWatch();
 
-      delete (incompleteWatch as PartialWatch).gCalendarId;
-      delete (incompleteWatch as PartialWatch).resourceId;
-      delete (incompleteWatch as PartialWatch).expiration;
+      delete (incompleteWatch as Partial<Schema_Watch>).gCalendarId;
+      delete (incompleteWatch as Partial<Schema_Watch>).resourceId;
+      delete (incompleteWatch as Partial<Schema_Watch>).expiration;
 
       await expect(
         mongoService.watch.insertOne(incompleteWatch),
@@ -157,7 +155,7 @@ describe("2025.10.13T14.18.20.watch-collection", () => {
     it("rejects documents with missing user", async () => {
       const watchWithoutUserId = generateWatch();
 
-      delete (watchWithoutUserId as PartialWatch).user;
+      delete (watchWithoutUserId as Partial<Schema_Watch>).user;
 
       await expect(
         mongoService.watch.insertOne(watchWithoutUserId),
@@ -167,7 +165,7 @@ describe("2025.10.13T14.18.20.watch-collection", () => {
     it("rejects documents with missing gCalendarId", async () => {
       const watchWithoutUserId = generateWatch();
 
-      delete (watchWithoutUserId as PartialWatch).gCalendarId;
+      delete (watchWithoutUserId as Partial<Schema_Watch>).gCalendarId;
 
       await expect(
         mongoService.watch.insertOne(watchWithoutUserId),
