@@ -1,9 +1,4 @@
-import React from "react";
 import "@testing-library/jest-dom";
-import { screen, waitFor, within } from "@testing-library/react";
-import { render } from "@web/__tests__/__mocks__/mock.render";
-import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
-import { CalendarView } from "@web/views/Calendar";
 
 describe("Sidebar: Display without State", () => {
   it("runs", () => expect(true).toBe(true));

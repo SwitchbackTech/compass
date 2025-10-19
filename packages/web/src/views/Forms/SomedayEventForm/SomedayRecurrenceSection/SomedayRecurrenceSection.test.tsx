@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import { SetStateAction, useCallback, useState } from "react";
 import "@testing-library/jest-dom";
 import { fireEvent, screen } from "@testing-library/react";
 import { Priorities } from "@core/constants/core.constants";
@@ -27,10 +27,10 @@ describe("SomedayRecurrenceSection", () => {
 
   const renderSection = (eventOverride: Schema_Event = baseSomedayEvent) => {
     const Wrapper = () => {
-      const [event, setEvent] = React.useState<Schema_Event>(eventOverride);
+      const [event, setEvent] = useState<Schema_Event>(eventOverride);
 
-      const handleSetEvent = React.useCallback(
-        (update: React.SetStateAction<Schema_Event | null>) => {
+      const handleSetEvent = useCallback(
+        (update: SetStateAction<Schema_Event | null>) => {
           mockSetEvent(update);
           setEvent((prev) => {
             const next =
@@ -208,10 +208,10 @@ describe("SomedayRecurrenceSection", () => {
   it("selects highlighted option on enter without submitting form", async () => {
     const onSubmit = jest.fn();
     const FormWrapper = () => {
-      const [event, setEvent] = React.useState<Schema_Event>(baseSomedayEvent);
+      const [event, setEvent] = useState<Schema_Event>(baseSomedayEvent);
 
-      const handleSetEvent = React.useCallback(
-        (update: React.SetStateAction<Schema_Event | null>) => {
+      const handleSetEvent = useCallback(
+        (update: SetStateAction<Schema_Event | null>) => {
           mockSetEvent(update);
           setEvent((prev) => {
             const next =
@@ -292,7 +292,7 @@ describe("SomedayRecurrenceSection", () => {
       const [event, setEvent] = useState<Schema_Event>(baseSomedayEvent);
 
       const handleSetEvent = useCallback(
-        (update: React.SetStateAction<Schema_Event | null>) => {
+        (update: SetStateAction<Schema_Event | null>) => {
           mockSetEvent(update);
           setEvent((prev) => {
             const next =

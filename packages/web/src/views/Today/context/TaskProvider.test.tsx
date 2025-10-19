@@ -1,4 +1,4 @@
-import React, { act } from "react";
+import { act } from "react";
 import { renderHook } from "@testing-library/react";
 import { Task } from "../task.types";
 import { TaskProvider, useTasks } from "./TaskProvider";

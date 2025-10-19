@@ -1,5 +1,3 @@
-import React from "react";
-
 describe("ReminderIntroOne Post-Authentication Security", () => {
   it("should be configured with prevBtnDisabled=true to prevent button clicks", () => {
     // Import the component
