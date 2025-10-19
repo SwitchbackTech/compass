@@ -20,7 +20,7 @@ export const renderWithDayProviders = (
           v7_relativeSplatPath: true,
         }}
       >
-        <DateNavigationProvider initialDate={dayjs()}>
+        <DateNavigationProvider initialDate={dayjs().utc()}>
           <TaskProvider>{component}</TaskProvider>
         </DateNavigationProvider>
       </MemoryRouter>
@@ -40,7 +40,7 @@ export const TaskProviderWrapper = ({
         v7_relativeSplatPath: true,
       }}
     >
-      <DateNavigationProvider initialDate={dayjs()}>
+      <DateNavigationProvider initialDate={dayjs().utc()}>
         <TaskProvider>{children}</TaskProvider>
       </DateNavigationProvider>
     </MemoryRouter>

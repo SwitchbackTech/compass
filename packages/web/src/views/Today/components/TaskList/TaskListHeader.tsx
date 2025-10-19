@@ -17,7 +17,9 @@ export const TaskListHeader = () => {
   const dateInView = useDateInView();
   const header = dateInView.locale("en").format(DAY_HEADING_FORMAT);
   const subheader = dateInView.locale("en").format(DAY_SUBHEADING_FORMAT);
-  const isToday = dateInView.startOf("day").isSame(dayjs().startOf("day"));
+  const isToday = dateInView
+    .startOf("day")
+    .isSame(dayjs().utc().startOf("day"));
 
   return (
     <div className="border-b border-gray-400/20 p-4">
@@ -36,7 +38,7 @@ export const TaskListHeader = () => {
             className={isToday ? "invisible" : "visible"}
           >
             <TooltipWrapper
-              description={dayjs().locale("en").format("dddd, MMMM D")}
+              description={dayjs().utc().locale("en").format("dddd, MMMM D")}
               onClick={navigateToToday}
               shortcut="T"
             >

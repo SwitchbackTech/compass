@@ -200,4 +200,29 @@ describe("TaskListHeader", () => {
       expect(heading).toHaveTextContent(expectedTodayDate);
     });
   });
+
+  it("should hide go to today button after navigating to today from a different day", async () => {
+    const testDate = new Date("2025-01-15T12:00:00Z");
+    const { user } = renderTaskList({}, testDate);
+
+    // Verify the go to today button is initially visible
+    const goToTodayButton = screen.getByRole("button", { name: "Go to today" });
+    expect(goToTodayButton).toBeInTheDocument();
+
+    // Check that the wrapper div does NOT have the invisible class initially
+    const wrapperDiv = goToTodayButton?.parentElement?.parentElement;
+    expect(wrapperDiv).not.toHaveClass("invisible");
+
+    // Click the go to today button
+    await act(async () => {
+      await user.click(goToTodayButton);
+    });
+
+    // Wait for the navigation to complete and state to update
+    await waitFor(() => {
+      // The button should now be invisible (has invisible class on wrapper div)
+      const updatedWrapperDiv = goToTodayButton?.parentElement?.parentElement;
+      expect(updatedWrapperDiv).toHaveClass("invisible");
+    });
+  });
 });

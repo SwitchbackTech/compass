@@ -1,4 +1,4 @@
-import React, { createContext, useState } from "react";
+import React, { createContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { formatDateForUrl } from "../util/date-route.util";
@@ -25,6 +25,11 @@ export function DateNavigationProvider({
 }: DateNavigationProviderProps) {
   const [dateInView, setDateInView] = useState(initialDate);
   const navigate = useNavigate();
+
+  // Sync state when initialDate prop changes (e.g., when route changes)
+  useEffect(() => {
+    setDateInView(initialDate);
+  }, [initialDate]);
 
   const navigateToNextDay = () => {
     const nextDate = dateInView.add(1, "day");

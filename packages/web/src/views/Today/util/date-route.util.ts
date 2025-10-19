@@ -119,7 +119,7 @@ export const getValidDateFromUrl = (
   }
 
   // Fallback to today's date
-  return dayjs();
+  return dayjs().utc();
 };
 
 /**
