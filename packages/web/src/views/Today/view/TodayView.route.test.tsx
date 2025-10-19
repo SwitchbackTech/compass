@@ -1,14 +1,11 @@
 import React, { act } from "react";
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import dayjs from "@core/util/date/dayjs";
 import {
   DAY_HEADING_FORMAT,
   DAY_SUBHEADING_FORMAT,
 } from "../components/TaskList/TaskListHeader";
-import { DateNavigationProvider } from "../context/DateNavigationProvider";
-import { TaskProvider } from "../context/TaskProvider";
 import { renderWithDayProviders } from "../util/day.test-util";
 import { TodayView } from "./TodayView";
 import { TodayViewContent } from "./TodayViewContent";
@@ -66,9 +63,12 @@ describe("TodayView Routing", () => {
     expect(screen.getByText(todayHeading)).toBeInTheDocument();
   });
 
-  it("should show next day when clicking next day button", async () => {
-    const user = userEvent.setup();
-    renderWithDayProviders(<TodayView />);
+  it("should show next day label when clicking next day button", async () => {
+    // Test with a specific date to avoid timezone issues
+    const testDate = dayjs.utc("2025-10-19"); // Sunday
+    const { user } = renderWithDayProviders(<TodayViewContent />, {
+      initialDate: testDate,
+    });
 
     // Find and click the next day button
     const nextDayButton = screen.getByRole("button", { name: "Next day" });
@@ -76,8 +76,8 @@ describe("TodayView Routing", () => {
       await user.click(nextDayButton);
     });
 
-    // Should show tomorrow's date
-    const tomorrow = dayjs().add(1, "day");
+    // Should show tomorrow's date (Monday, October 20)
+    const tomorrow = testDate.add(1, "day");
     const tomorrowWeekday = tomorrow.format(DAY_HEADING_FORMAT);
     const tomorrowDate = tomorrow.format(DAY_SUBHEADING_FORMAT);
     expect(screen.getByText(tomorrowWeekday)).toBeInTheDocument();
@@ -85,8 +85,11 @@ describe("TodayView Routing", () => {
   });
 
   it("should show previous day when clicking previous day button", async () => {
-    const user = userEvent.setup();
-    renderWithDayProviders(<TodayView />);
+    // Test with a specific date to avoid timezone issues
+    const testDate = dayjs.utc("2025-10-19"); // Sunday
+    const { user } = renderWithDayProviders(<TodayViewContent />, {
+      initialDate: testDate,
+    });
 
     // Find and click the previous day button
     const prevDayButton = screen.getByRole("button", { name: "Previous day" });
@@ -94,13 +97,20 @@ describe("TodayView Routing", () => {
       await user.click(prevDayButton);
     });
 
-    // Should show October 19, 2025 (Saturday)
-    expect(screen.getByText("Saturday")).toBeInTheDocument();
-    expect(screen.getByText("October 18")).toBeInTheDocument();
+    // Should show yesterday's date (Saturday, October 18)
+    const yesterday = testDate.subtract(1, "day");
+    const yesterdayWeekday = yesterday.format(DAY_HEADING_FORMAT);
+    const yesterdayDate = yesterday.format(DAY_SUBHEADING_FORMAT);
+    expect(screen.getByText(yesterdayWeekday)).toBeInTheDocument();
+    expect(screen.getByText(yesterdayDate)).toBeInTheDocument();
   });
 
   it("should show today when clicking go to today button", async () => {
-    const { user } = renderWithDayProviders(<TodayView />);
+    // Test with a specific date to avoid timezone issues
+    const testDate = dayjs.utc("2025-10-19"); // Sunday
+    const { user } = renderWithDayProviders(<TodayViewContent />, {
+      initialDate: testDate,
+    });
 
     // Go to different day to make the "Go to today" button visible
     const prevDayButton = screen.getByRole("button", { name: "Previous day" });
@@ -108,17 +118,22 @@ describe("TodayView Routing", () => {
       await user.click(prevDayButton);
     });
 
+    // Wait for the navigation to complete and verify we're on yesterday
+    const yesterday = testDate.subtract(1, "day");
+    const yesterdayWeekday = yesterday.format(DAY_HEADING_FORMAT);
+    await screen.findByText(yesterdayWeekday);
+
     // Find and click the go to today button (it should be visible when not viewing today)
     const goToTodayButton = screen.getByRole("button", { name: "Go to today" });
     await act(async () => {
       await user.click(goToTodayButton);
     });
 
-    // Should show today's date
-    const todayHeading = new Date().toLocaleDateString("en-US", {
-      weekday: "long",
-    });
-    expect(screen.getByText(todayHeading)).toBeInTheDocument();
+    // Should show today's date (the testDate we started with)
+    const todayWeekday = testDate.format(DAY_HEADING_FORMAT);
+    const todayDate = testDate.format(DAY_SUBHEADING_FORMAT);
+    expect(screen.getByText(todayWeekday)).toBeInTheDocument();
+    expect(screen.getByText(todayDate)).toBeInTheDocument();
   });
 
   it("should render specific dates correctly", () => {
@@ -138,8 +153,10 @@ describe("Navigation with URL updates", () => {
     const { user } = renderWithDayProviders(<TodayViewContent />);
 
     // Mock window.location for testing
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (window as any).location;
-    window.location = { pathname: "/day" } as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).location = { pathname: "/day" };
 
     // Find and click the next day button
     const nextDayButton = screen.getByRole("button", { name: "Next day" });
@@ -170,13 +187,9 @@ describe("Navigation with URL updates", () => {
   it("should display correct date in header when viewing specific date", () => {
     // Test with a specific date - use UTC to avoid timezone issues
     const specificDate = dayjs.utc("2025-10-20");
-    renderWithDayProviders(
-      <DateNavigationProvider initialDate={specificDate}>
-        <TaskProvider>
-          <TodayViewContent />
-        </TaskProvider>
-      </DateNavigationProvider>,
-    );
+    renderWithDayProviders(<TodayViewContent />, {
+      initialDate: specificDate,
+    });
 
     // Should show October 20, 2025 (Monday)
     expect(screen.getByText("Monday")).toBeInTheDocument();
@@ -184,18 +197,16 @@ describe("Navigation with URL updates", () => {
   });
 
   it("should show today indicator when viewing today", () => {
-    // Test with today's date
-    const today = dayjs();
-    renderWithDayProviders(
-      <DateNavigationProvider initialDate={today}>
-        <TodayViewContent />
-      </DateNavigationProvider>,
-    );
+    // Test with today's date (using UTC for consistency)
+    const today = dayjs().utc();
+    renderWithDayProviders(<TodayViewContent />, {
+      initialDate: today,
+    });
 
     // Should show today's date
-    const todayHeading = today.toDate().toLocaleDateString("en-US", {
-      weekday: "long",
-    });
-    expect(screen.getByText(todayHeading)).toBeInTheDocument();
+    const todayWeekday = today.format(DAY_HEADING_FORMAT);
+    const todayDate = today.format(DAY_SUBHEADING_FORMAT);
+    expect(screen.getByText(todayWeekday)).toBeInTheDocument();
+    expect(screen.getByText(todayDate)).toBeInTheDocument();
   });
 });
