@@ -1,4 +1,4 @@
-import React from "react";
+import { createElement } from "react";
 import "@testing-library/jest-dom";
 import { MobileSignIn } from "./MobileSignIn";
 
@@ -84,7 +84,7 @@ describe("MobileSignIn - User Experience Validation", () => {
       ];
 
       configurations.forEach((config) => {
-        const element = React.createElement(MobileSignIn, {
+        const element = createElement(MobileSignIn, {
           ...defaultProps,
           ...config,
         });
@@ -96,7 +96,7 @@ describe("MobileSignIn - User Experience Validation", () => {
 
   describe("Integration Validation", () => {
     it("maintains proper component structure", () => {
-      const element = React.createElement(MobileSignIn, defaultProps);
+      const element = createElement(MobileSignIn, defaultProps);
 
       // Verify the element has the expected structure
       expect(element.type).toBe(MobileSignIn);
@@ -121,7 +121,7 @@ describe("MobileSignIn - User Experience Validation", () => {
         onSkip: jest.fn(),
       };
 
-      const element = React.createElement(MobileSignIn, mobileFlowProps);
+      const element = createElement(MobileSignIn, mobileFlowProps);
       expect(element).toBeDefined();
       expect(element.props.currentStep).toBe(2);
       expect(element.props.totalSteps).toBe(2);
@@ -135,7 +135,7 @@ describe("MobileSignIn - User Experience Validation", () => {
         onSkip: jest.fn(),
       };
 
-      const element = React.createElement(MobileSignIn, {
+      const element = createElement(MobileSignIn, {
         ...defaultProps,
         ...callbacks,
       });
@@ -155,7 +155,7 @@ describe("MobileSignIn - User Experience Validation", () => {
         onNext: jest.fn(), // Touch callback
       };
 
-      const element = React.createElement(MobileSignIn, touchProps);
+      const element = createElement(MobileSignIn, touchProps);
       expect(element.props.onNext).toBe(touchProps.onNext);
     });
   });

@@ -1,5 +1,4 @@
-import React from "react";
-import { act } from "react";
+import { ReactElement, act } from "react";
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import { addTasks, setup } from "../../../__tests__/utils/tasks/task.test.util";
@@ -31,7 +30,7 @@ jest.mock("../hooks/shortcuts/useTodayViewShortcuts", () => {
   };
 });
 
-const renderWithProvider = (component: React.ReactElement) => {
+const renderWithProvider = (component: ReactElement) => {
   return setup(<TaskProvider>{component}</TaskProvider>);
 };
 
