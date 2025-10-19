@@ -27,3 +27,22 @@ export const renderWithDayProviders = (
     </ReduxProvider>,
   );
 };
+
+export const TaskProviderWrapper = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  return (
+    <MemoryRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
+      <DateNavigationProvider initialDate={dayjs()}>
+        <TaskProvider>{children}</TaskProvider>
+      </DateNavigationProvider>
+    </MemoryRouter>
+  );
+};

@@ -1,15 +1,7 @@
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
-import { TaskProvider } from "../../context/TaskProvider";
+import { screen } from "@testing-library/react";
+import { renderWithDayProviders } from "../../util/day.test-util";
 import { Tasks } from "./Tasks";
-
-const renderTasks = () => {
-  return render(
-    <TaskProvider>
-      <Tasks />
-    </TaskProvider>,
-  );
-};
 
 describe("Tasks Tab Navigation", () => {
   beforeEach(() => {
@@ -17,7 +9,7 @@ describe("Tasks Tab Navigation", () => {
   });
 
   it("should render empty state initially", () => {
-    renderTasks();
+    renderWithDayProviders(<Tasks />);
 
     // Initially no tasks should be visible
     const checkboxes = screen.queryAllByRole("checkbox");
@@ -27,7 +19,7 @@ describe("Tasks Tab Navigation", () => {
   });
 
   it("should render the tasks container", () => {
-    renderTasks();
+    renderWithDayProviders(<Tasks />);
 
     // Verify the component renders without errors by checking for the container div
     const container = document.querySelector(".space-y-3");
