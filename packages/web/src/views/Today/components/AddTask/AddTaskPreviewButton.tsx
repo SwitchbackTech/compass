@@ -1,7 +1,6 @@
-import React from "react";
 import { ID_ADD_TASK_BUTTON } from "@web/common/constants/web.constants";
 import { PlusIcon } from "../Icons/PlusIcon";
-import { ShortcutTip } from "../Shortcuts/ShortcutTip";
+import { ShortcutTip } from "../Shortcuts/components/ShortcutTip";
 
 interface AddTaskPreviewButtonProps {
   onBeginAddingTask: () => void;
