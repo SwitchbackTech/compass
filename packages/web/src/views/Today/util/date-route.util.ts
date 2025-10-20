@@ -14,8 +14,9 @@ export const parseDateFromUrl = (
   }
 
   // Use strict parsing to ensure exact format match
-  // Parse in local timezone to maintain user's date context, then convert to UTC for storage/comparison
-  const parsed = dayjs(dateString, YEAR_MONTH_DAY_FORMAT, true).utc();
+  // Parse as UTC to maintain consistency - the URL date represents a calendar date
+  // that should be interpreted the same way regardless of user's timezone
+  const parsed = dayjs.utc(dateString, YEAR_MONTH_DAY_FORMAT, true);
 
   if (!parsed.isValid()) {
     return null;
@@ -34,8 +35,8 @@ export const correctInvalidDate = (dateString: string): dayjs.Dayjs | null => {
     return null;
   }
 
-  // Try to parse the date string in local timezone first, then convert to UTC
-  const parsed = dayjs(dateString, YEAR_MONTH_DAY_FORMAT, true).utc();
+  // Try to parse the date string as UTC
+  const parsed = dayjs.utc(dateString, YEAR_MONTH_DAY_FORMAT, true);
 
   if (parsed.isValid()) {
     return parsed;
@@ -70,24 +71,24 @@ export const correctInvalidDate = (dateString: string): dayjs.Dayjs | null => {
   if (isNaN(day) || day < 1) {
     correctedDay = 1;
   } else {
-    // Get the last day of the corrected month in local timezone, then convert to UTC
-    const lastDayOfMonth = dayjs()
+    // Get the last day of the corrected month in UTC
+    const lastDayOfMonth = dayjs
+      .utc()
       .year(year)
       .month(correctedMonth - 1)
       .endOf("month")
-      .utc()
       .date();
     if (day > lastDayOfMonth) {
       correctedDay = lastDayOfMonth;
     }
   }
 
-  // Create corrected date in local timezone first, then convert to UTC
-  const corrected = dayjs()
+  // Create corrected date as UTC
+  const corrected = dayjs
+    .utc()
     .year(year)
     .month(correctedMonth - 1)
-    .date(correctedDay)
-    .utc();
+    .date(correctedDay);
 
   if (!corrected.isValid()) {
     return null;
@@ -118,8 +119,11 @@ export const getValidDateFromUrl = (
     }
   }
 
-  // Fallback to today's date
-  return dayjs().utc();
+  // Fallback to today's date - get today's date in user's timezone, then create UTC midnight
+  // This ensures we work with the correct calendar date regardless of timezone
+  const todayLocal = dayjs().format("YYYY-MM-DD");
+  const todayUTC = dayjs.utc(todayLocal);
+  return todayUTC;
 };
 
 /**

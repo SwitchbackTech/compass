@@ -14,11 +14,12 @@ export const TaskListHeader = () => {
     useDateNavigation();
 
   const dateInView = useDateInView();
-  // Convert UTC date to local timezone for display
-  const localDate = dateInView.local();
-  const header = localDate.locale("en").format(DAY_HEADING_FORMAT);
-  const subheader = localDate.locale("en").format(DAY_SUBHEADING_FORMAT);
-  const isToday = localDate.startOf("day").isSame(dayjs().startOf("day"));
+  // Display the date components directly from UTC to avoid timezone conversion issues
+  // The UTC date represents the calendar date, so we can format it directly
+  const header = dateInView.locale("en").format(DAY_HEADING_FORMAT);
+  const subheader = dateInView.locale("en").format(DAY_SUBHEADING_FORMAT);
+  const isToday =
+    dateInView.format("YYYY-MM-DD") === dayjs().format("YYYY-MM-DD");
 
   return (
     <div className="border-b border-gray-400/20 p-4">
