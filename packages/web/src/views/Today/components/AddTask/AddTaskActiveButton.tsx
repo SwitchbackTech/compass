@@ -31,6 +31,8 @@ export function AddTaskActiveButton({
       <div className="flex-1">
         <input
           ref={addTaskInputRef}
+          id="add-task-input"
+          name="new-task-title"
           type="text"
           value={newTaskTitle}
           onChange={(e) => setNewTaskTitle(e.target.value)}

@@ -73,6 +73,8 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
             {weekTasks.length < WEEK_LIMIT && (
               <TaskInput
                 autoFocus
+                id="week-task-input"
+                name="week-task"
                 type="text"
                 placeholder="Create new task..."
                 value={newWeekTask}
@@ -99,6 +101,8 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
             {monthTasks.length < MONTH_LIMIT && (
               <TaskInput
                 ref={monthInputRef}
+                id="month-task-input"
+                name="month-task"
                 type="text"
                 placeholder="Create new task..."
                 value={newMonthTask}
