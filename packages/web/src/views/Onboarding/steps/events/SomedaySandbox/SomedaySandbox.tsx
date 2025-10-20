@@ -74,7 +74,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
               <TaskInput
                 autoFocus
                 id="week-task-input"
-                name="week-task"
+                name="week-task-input"
                 type="text"
                 placeholder="Create new task..."
                 value={newWeekTask}
