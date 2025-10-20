@@ -102,7 +102,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
               <TaskInput
                 ref={monthInputRef}
                 id="month-task-input"
-                name="month-task"
+                name="month-task-input"
                 type="text"
                 placeholder="Create new task..."
                 value={newMonthTask}
