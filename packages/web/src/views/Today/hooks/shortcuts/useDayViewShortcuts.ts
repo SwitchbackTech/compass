@@ -36,7 +36,7 @@ interface KeyboardShortcutsConfig {
 /**
  * Hook to handle keyboard shortcuts for the Today view
  */
-export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
+export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   const {
     onAddTask,
     onEditTask,
@@ -137,17 +137,19 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
       "↓": () => {},
     }),
     [
+      onNavigateNow,
+      onNavigateWeek,
+      onPrevDay,
+      onNextDay,
+      onGoToToday,
+      onFocusTasks,
       onAddTask,
       onEditTask,
-      onCompleteTask,
       onDeleteTask,
-      onEscape,
-      onFocusTasks,
-      onNextDay,
-      onPrevDay,
-      onGoToToday,
-      isEditingTask,
       hasFocusedTask,
+      isEditingTask,
+      onCompleteTask,
+      onEscape,
     ],
   );
 

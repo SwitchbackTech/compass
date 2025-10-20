@@ -3,7 +3,7 @@ import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import { addTasks } from "../../../__tests__/utils/tasks/task.test.util";
 import { renderWithDayProviders } from "../util/day.test-util";
-import { TodayViewContent } from "./TodayViewContent";
+import { DayViewContent } from "./DayViewContent";
 
 // Mock the CalendarAgenda component
 jest.mock("../components/CalendarAgenda/CalendarAgenda", () => ({
@@ -20,12 +20,12 @@ jest.mock("../components/Shortcuts/components/ShortcutsOverlay", () => ({
 // Mock the keyboard shortcuts hook
 const mockUseTodayViewShortcuts = jest.fn();
 
-jest.mock("../hooks/shortcuts/useTodayViewShortcuts", () => {
-  const actual = jest.requireActual("../hooks/shortcuts/useTodayViewShortcuts");
+jest.mock("../hooks/shortcuts/useDayViewShortcuts", () => {
+  const actual = jest.requireActual("../hooks/shortcuts/useDayViewShortcuts");
   return {
     ...actual,
-    useTodayViewShortcuts: (
-      ...args: Parameters<typeof actual.useTodayViewShortcuts>
+    useDayViewShortcuts: (
+      ...args: Parameters<typeof actual.useDayViewShortcuts>
     ) => mockUseTodayViewShortcuts(...args),
   };
 });
@@ -36,15 +36,15 @@ describe("TodayViewContent", () => {
     // Set up the mock to call the real implementation
     mockUseTodayViewShortcuts.mockImplementation((config) => {
       const actual = jest.requireActual(
-        "../hooks/shortcuts/useTodayViewShortcuts",
+        "../hooks/shortcuts/useDayViewShortcuts",
       );
-      return actual.useTodayViewShortcuts(config);
+      return actual.useDayViewShortcuts(config);
     });
     localStorage.clear();
   });
 
   it("should render the main layout with tasks and calendar sections", () => {
-    renderWithDayProviders(<TodayViewContent />);
+    renderWithDayProviders(<DayViewContent />);
 
     // Verify the main components are present
     expect(
@@ -55,17 +55,17 @@ describe("TodayViewContent", () => {
 
   it("focuses the add task input when typing the 't' shortcut", async () => {
     const actualShortcuts = jest.requireActual(
-      "../hooks/shortcuts/useTodayViewShortcuts",
+      "../hooks/shortcuts/useDayViewShortcuts",
     );
 
     mockUseTodayViewShortcuts.mockImplementation((config) =>
-      actualShortcuts.useTodayViewShortcuts({
+      actualShortcuts.useDayViewShortcuts({
         ...config,
         onFocusTasks: config.onFocusTasks || jest.fn(),
       }),
     );
 
-    const { user } = renderWithDayProviders(<TodayViewContent />);
+    const { user } = renderWithDayProviders(<DayViewContent />);
 
     await act(async () => {
       await user.keyboard("c");
@@ -79,7 +79,7 @@ describe("TodayViewContent", () => {
   });
 
   it("should display today's date in the tasks section", () => {
-    renderWithDayProviders(<TodayViewContent />);
+    renderWithDayProviders(<DayViewContent />);
 
     // Check that today's date is displayed
     const todayHeading = new Date().toLocaleDateString("en-US", {
@@ -94,7 +94,7 @@ describe("TodayViewContent", () => {
   });
 
   it("should allow users to create new tasks", async () => {
-    const { user } = renderWithDayProviders(<TodayViewContent />);
+    const { user } = renderWithDayProviders(<DayViewContent />);
 
     // Click the add task button
     const addTaskButton = screen.getByRole("button", {
@@ -109,7 +109,7 @@ describe("TodayViewContent", () => {
   });
 
   it("should maintain a fixed height layout that fills the viewport", () => {
-    renderWithDayProviders(<TodayViewContent />);
+    renderWithDayProviders(<DayViewContent />);
 
     // The layout should be present and functional
     expect(
@@ -119,7 +119,7 @@ describe("TodayViewContent", () => {
   });
 
   it("should display add task button", () => {
-    renderWithDayProviders(<TodayViewContent />);
+    renderWithDayProviders(<DayViewContent />);
 
     // The tasks section should be present and functional
     const addTaskButton = screen.getByRole("button", {
@@ -132,7 +132,7 @@ describe("TodayViewContent", () => {
   });
 
   it("should delete task when Delete key is pressed on focused checkbox", async () => {
-    const { user } = renderWithDayProviders(<TodayViewContent />);
+    const { user } = renderWithDayProviders(<DayViewContent />);
 
     await addTasks(user, ["Test task"]);
 
@@ -158,7 +158,7 @@ describe("TodayViewContent", () => {
   });
 
   it("should NOT delete task when Delete key is pressed on input field", async () => {
-    const { user } = renderWithDayProviders(<TodayViewContent />);
+    const { user } = renderWithDayProviders(<DayViewContent />);
 
     // Add a task
     await addTasks(user, ["Test task"]);
@@ -181,7 +181,7 @@ describe("TodayViewContent", () => {
 
   describe("Duplicate task names with keyboard shortcuts", () => {
     it("should delete the correct duplicate task when pressing Delete key", async () => {
-      const { user } = renderWithDayProviders(<TodayViewContent />);
+      const { user } = renderWithDayProviders(<DayViewContent />);
 
       // Add first task
       await addTasks(user, ["Buy milk"]);

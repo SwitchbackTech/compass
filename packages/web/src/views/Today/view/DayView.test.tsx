@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { configureStore } from "@reduxjs/toolkit";
 import "@testing-library/jest-dom";
 import { render, screen, within } from "@testing-library/react";
-import { TodayView } from "./TodayView";
+import { DayView } from "./DayView";
 
 // Mock PostHog
 jest.mock("posthog-js/react", () => ({
@@ -32,7 +32,7 @@ const renderWithRouter = () => {
         }}
         initialEntries={["/day"]}
       >
-        <TodayView />
+        <DayView />
       </MemoryRouter>
     </ReduxProvider>,
   );

@@ -1,4 +1,3 @@
-import React from "react";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { FlexDirections } from "@web/components/Flex/styled";

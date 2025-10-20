@@ -8,7 +8,7 @@ import { NotFoundView } from "@web/views/NotFound";
 import { NowView } from "@web/views/Now/NowView";
 import OnboardingFlow from "@web/views/Onboarding/OnboardingFlow";
 import { RootView } from "@web/views/Root";
-import { TodayView } from "@web/views/Today/view/TodayView";
+import { DayView } from "@web/views/Today/view/DayView";
 
 const router = createBrowserRouter(
   [
@@ -42,7 +42,7 @@ const router = createBrowserRouter(
         <ProtectedRoute>
           <UserProvider>
             <SocketProvider>
-              <TodayView />
+              <DayView />
             </SocketProvider>
           </UserProvider>
         </ProtectedRoute>

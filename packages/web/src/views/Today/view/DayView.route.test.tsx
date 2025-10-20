@@ -7,8 +7,8 @@ import {
   DAY_SUBHEADING_FORMAT,
 } from "../components/TaskList/TaskListHeader";
 import { renderWithDayProviders } from "../util/day.test-util";
-import { TodayView } from "./TodayView";
-import { TodayViewContent } from "./TodayViewContent";
+import { DayView } from "./DayView";
+import { DayViewContent } from "./DayViewContent";
 
 // Mock the CalendarAgenda component
 jest.mock("../components/CalendarAgenda/CalendarAgenda", () => ({
@@ -23,14 +23,14 @@ jest.mock("../components/Shortcuts/components/ShortcutsOverlay", () => ({
 }));
 
 // Mock the keyboard shortcuts hook
-const mockUseTodayViewShortcuts = jest.fn();
-jest.mock("../hooks/shortcuts/useTodayViewShortcuts", () => {
-  const actual = jest.requireActual("../hooks/shortcuts/useTodayViewShortcuts");
+const mockUseDayViewShortcuts = jest.fn();
+jest.mock("../hooks/shortcuts/useDayViewShortcuts", () => {
+  const actual = jest.requireActual("../hooks/shortcuts/useDayViewShortcuts");
   return {
     ...actual,
-    useTodayViewShortcuts: (
-      ...args: Parameters<typeof actual.useTodayViewShortcuts>
-    ) => mockUseTodayViewShortcuts(...args),
+    useDayViewShortcuts: (
+      ...args: Parameters<typeof actual.useDayViewShortcuts>
+    ) => mockUseDayViewShortcuts(...args),
   };
 });
 
@@ -43,18 +43,18 @@ jest.mock("@web/common/hooks/useFeatureFlags", () => ({
 
 describe("TodayView Routing", () => {
   beforeEach(() => {
-    mockUseTodayViewShortcuts.mockReset();
-    mockUseTodayViewShortcuts.mockImplementation((config) => {
+    mockUseDayViewShortcuts.mockReset();
+    mockUseDayViewShortcuts.mockImplementation((config) => {
       const actual = jest.requireActual(
-        "../hooks/shortcuts/useTodayViewShortcuts",
+        "../hooks/shortcuts/useDayViewShortcuts",
       );
-      return actual.useTodayViewShortcuts(config);
+      return actual.useDayViewShortcuts(config);
     });
     localStorage.clear();
   });
 
   it("should show today's date when navigating to /day", () => {
-    renderWithDayProviders(<TodayView />);
+    renderWithDayProviders(<DayView />);
 
     // Should show today's date in the header
     const todayHeading = new Date().toLocaleDateString("en-US", {
@@ -66,7 +66,7 @@ describe("TodayView Routing", () => {
   it("should show next day label when clicking next day button", async () => {
     // Test with a specific date to avoid timezone issues
     const testDate = dayjs.utc("2025-10-19"); // Sunday
-    const { user } = renderWithDayProviders(<TodayViewContent />, {
+    const { user } = renderWithDayProviders(<DayViewContent />, {
       initialDate: testDate,
     });
 
@@ -87,7 +87,7 @@ describe("TodayView Routing", () => {
   it("should show previous day when clicking previous day button", async () => {
     // Test with a specific date to avoid timezone issues
     const testDate = dayjs.utc("2025-10-19"); // Sunday
-    const { user } = renderWithDayProviders(<TodayViewContent />, {
+    const { user } = renderWithDayProviders(<DayViewContent />, {
       initialDate: testDate,
     });
 
@@ -108,7 +108,7 @@ describe("TodayView Routing", () => {
   it("should show today when clicking go to today button", async () => {
     // Test with a specific date to avoid timezone issues
     const testDate = dayjs.utc("2025-10-19"); // Sunday
-    const { user } = renderWithDayProviders(<TodayViewContent />, {
+    const { user } = renderWithDayProviders(<DayViewContent />, {
       initialDate: testDate,
     });
 
@@ -141,7 +141,7 @@ describe("TodayView Routing", () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date("2025-10-20T12:00:00.000Z"));
 
-    renderWithDayProviders(<TodayView />);
+    renderWithDayProviders(<DayView />);
 
     expect(screen.getByText("Monday")).toBeInTheDocument();
     expect(screen.getByText("October 20")).toBeInTheDocument();
@@ -151,7 +151,7 @@ describe("TodayView Routing", () => {
 });
 describe("Navigation with URL updates", () => {
   it("should update URL when navigating to next day", async () => {
-    const { user } = renderWithDayProviders(<TodayViewContent />);
+    const { user } = renderWithDayProviders(<DayViewContent />);
 
     // Mock window.location for testing
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -171,7 +171,7 @@ describe("Navigation with URL updates", () => {
   });
 
   it("should update URL when navigating to previous day", async () => {
-    const { user } = renderWithDayProviders(<TodayViewContent />);
+    const { user } = renderWithDayProviders(<DayViewContent />);
 
     // Find and click the previous day button
     const prevDayButton = screen.getByRole("button", {
@@ -188,7 +188,7 @@ describe("Navigation with URL updates", () => {
   it("should display correct date in header when viewing specific date", () => {
     // Test with a specific date - use UTC to avoid timezone issues
     const specificDate = dayjs.utc("2025-10-20");
-    renderWithDayProviders(<TodayViewContent />, {
+    renderWithDayProviders(<DayViewContent />, {
       initialDate: specificDate,
     });
 
@@ -200,7 +200,7 @@ describe("Navigation with URL updates", () => {
   it("should show today indicator when viewing today", () => {
     // Test with today's date (using UTC for consistency)
     const today = dayjs().utc();
-    renderWithDayProviders(<TodayViewContent />, {
+    renderWithDayProviders(<DayViewContent />, {
       initialDate: today,
     });
 
@@ -218,7 +218,7 @@ describe("Navigation with URL updates", () => {
 
     // Mock timezone to CST
     const testDate = dayjs.utc("2025-10-20T04:00:00.000Z");
-    renderWithDayProviders(<TodayViewContent />, {
+    renderWithDayProviders(<DayViewContent />, {
       initialDate: testDate,
     });
 

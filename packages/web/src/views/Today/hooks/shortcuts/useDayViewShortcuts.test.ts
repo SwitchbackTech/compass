@@ -1,5 +1,5 @@
 import { renderHook } from "@testing-library/react";
-import { useTodayViewShortcuts } from "./useTodayViewShortcuts";
+import { useDayViewShortcuts } from "./useDayViewShortcuts";
 
 // Mock window.addEventListener and removeEventListener
 const mockAddEventListener = jest.fn();
@@ -15,7 +15,7 @@ Object.defineProperty(window, "removeEventListener", {
   writable: true,
 });
 
-describe("useTodayViewShortcuts", () => {
+describe("useDayViewShortcuts", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -36,7 +36,7 @@ describe("useTodayViewShortcuts", () => {
   };
 
   it("should add and remove event listeners on mount and unmount", () => {
-    const { unmount } = renderHook(() => useTodayViewShortcuts(defaultConfig));
+    const { unmount } = renderHook(() => useDayViewShortcuts(defaultConfig));
 
     expect(mockAddEventListener).toHaveBeenCalledWith(
       "keydown",
@@ -53,7 +53,7 @@ describe("useTodayViewShortcuts", () => {
 
   it("should call onFocusTasks when 'u' is pressed", () => {
     const config = { ...defaultConfig };
-    renderHook(() => useTodayViewShortcuts(config));
+    renderHook(() => useDayViewShortcuts(config));
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const mockEvent = {
@@ -70,7 +70,7 @@ describe("useTodayViewShortcuts", () => {
 
   it("should call onAddTask when 'c' is pressed", () => {
     const config = { ...defaultConfig };
-    renderHook(() => useTodayViewShortcuts(config));
+    renderHook(() => useDayViewShortcuts(config));
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const mockEvent = {
@@ -87,7 +87,7 @@ describe("useTodayViewShortcuts", () => {
 
   it("should call onEditTask when 'e' is pressed", () => {
     const config = { ...defaultConfig };
-    renderHook(() => useTodayViewShortcuts(config));
+    renderHook(() => useDayViewShortcuts(config));
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const mockEvent = {
@@ -104,7 +104,7 @@ describe("useTodayViewShortcuts", () => {
 
   it("should call onEscape when 'Escape' is pressed", () => {
     const config = { ...defaultConfig };
-    renderHook(() => useTodayViewShortcuts(config));
+    renderHook(() => useDayViewShortcuts(config));
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const mockEvent = {
@@ -121,7 +121,7 @@ describe("useTodayViewShortcuts", () => {
 
   it("should call onCompleteTask when Enter is pressed on a focused task", () => {
     const config = { ...defaultConfig, hasFocusedTask: true };
-    renderHook(() => useTodayViewShortcuts(config));
+    renderHook(() => useDayViewShortcuts(config));
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const mockEvent = {
@@ -144,7 +144,7 @@ describe("useTodayViewShortcuts", () => {
 
   it("should not call onCompleteTask when Enter is pressed on a task button", () => {
     const config = { ...defaultConfig, hasFocusedTask: true };
-    renderHook(() => useTodayViewShortcuts(config));
+    renderHook(() => useDayViewShortcuts(config));
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const mockEvent = {
@@ -174,7 +174,7 @@ describe("useTodayViewShortcuts", () => {
       hasFocusedTask: true,
       isEditingTask: true,
     };
-    renderHook(() => useTodayViewShortcuts(config));
+    renderHook(() => useDayViewShortcuts(config));
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const mockEvent = {
@@ -191,7 +191,7 @@ describe("useTodayViewShortcuts", () => {
 
   it("should not call onCompleteTask when Enter is pressed without focused task", () => {
     const config = { ...defaultConfig, hasFocusedTask: false };
-    renderHook(() => useTodayViewShortcuts(config));
+    renderHook(() => useDayViewShortcuts(config));
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const mockEvent = {
@@ -208,7 +208,7 @@ describe("useTodayViewShortcuts", () => {
 
   it("should not handle shortcuts when typing in input elements", () => {
     const config = { ...defaultConfig };
-    renderHook(() => useTodayViewShortcuts(config));
+    renderHook(() => useDayViewShortcuts(config));
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const input = document.createElement("input");
@@ -226,7 +226,7 @@ describe("useTodayViewShortcuts", () => {
 
   it("should not handle shortcuts when typing in textarea elements", () => {
     const config = { ...defaultConfig };
-    renderHook(() => useTodayViewShortcuts(config));
+    renderHook(() => useDayViewShortcuts(config));
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const textarea = document.createElement("textarea");
@@ -244,7 +244,7 @@ describe("useTodayViewShortcuts", () => {
 
   it("should not handle shortcuts when typing in contenteditable elements", () => {
     const config = { ...defaultConfig };
-    renderHook(() => useTodayViewShortcuts(config));
+    renderHook(() => useDayViewShortcuts(config));
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const div = document.createElement("div");
@@ -263,7 +263,7 @@ describe("useTodayViewShortcuts", () => {
 
   it("should still handle Escape when typing in input elements", () => {
     const config = { ...defaultConfig };
-    renderHook(() => useTodayViewShortcuts(config));
+    renderHook(() => useDayViewShortcuts(config));
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const input = document.createElement("input");
@@ -281,7 +281,7 @@ describe("useTodayViewShortcuts", () => {
 
   it("should handle case insensitive key presses", () => {
     const config = { ...defaultConfig };
-    renderHook(() => useTodayViewShortcuts(config));
+    renderHook(() => useDayViewShortcuts(config));
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const mockEvent = {
@@ -298,7 +298,7 @@ describe("useTodayViewShortcuts", () => {
 
   it("should call onDeleteTask when Delete is pressed on a focused checkbox", () => {
     const config = { ...defaultConfig, hasFocusedTask: true };
-    renderHook(() => useTodayViewShortcuts(config));
+    renderHook(() => useDayViewShortcuts(config));
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const mockEvent = {
@@ -324,7 +324,7 @@ describe("useTodayViewShortcuts", () => {
 
   it("should NOT call onDeleteTask when Delete is pressed on an input field", () => {
     const config = { ...defaultConfig, hasFocusedTask: true };
-    renderHook(() => useTodayViewShortcuts(config));
+    renderHook(() => useDayViewShortcuts(config));
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const input = document.createElement("input");
@@ -348,7 +348,7 @@ describe("useTodayViewShortcuts", () => {
 
   it("should NOT call onDeleteTask when no task is focused", () => {
     const config = { ...defaultConfig, hasFocusedTask: false };
-    renderHook(() => useTodayViewShortcuts(config));
+    renderHook(() => useDayViewShortcuts(config));
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const mockEvent = {

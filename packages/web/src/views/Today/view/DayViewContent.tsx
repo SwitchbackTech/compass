@@ -4,11 +4,11 @@ import { CalendarAgenda } from "../components/CalendarAgenda/CalendarAgenda";
 import { ShortcutsOverlay } from "../components/Shortcuts/components/ShortcutsOverlay";
 import { TaskList } from "../components/TaskList/TaskList";
 import { useDateNavigation } from "../hooks/navigation/useDateNavigation";
-import { useTodayViewShortcuts } from "../hooks/shortcuts/useTodayViewShortcuts";
+import { useDayViewShortcuts } from "../hooks/shortcuts/useDayViewShortcuts";
 import { useTasks } from "../hooks/tasks/useTasks";
 import { focusOnAddTaskInput, focusOnFirstTask } from "../util/shortcut.util";
 
-export const TodayViewContent = () => {
+export const DayViewContent = () => {
   const {
     tasks,
     selectedTaskIndex,
@@ -71,7 +71,7 @@ export const TodayViewContent = () => {
     navigate(ROOT_ROUTES.ROOT);
   };
 
-  useTodayViewShortcuts({
+  useDayViewShortcuts({
     onAddTask: focusOnAddTaskInput,
     onEditTask: handleEditTask,
     onDeleteTask: handleDeleteTask,
