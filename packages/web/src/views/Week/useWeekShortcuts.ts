@@ -1,10 +1,13 @@
 import { useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { useFeatureFlags } from "@web/common/hooks/useFeatureFlags";
 import { isEditable } from "../Today/util/shortcut.util";
 
 export const useWeekShortcuts = () => {
   const navigate = useNavigate();
+  const { isPlannerEnabled } = useFeatureFlags();
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       const key = e.key;
@@ -13,6 +16,7 @@ export const useWeekShortcuts = () => {
         return;
       }
       if (key === "1") {
+        if (!isPlannerEnabled) return;
         e.preventDefault();
         navigate(ROOT_ROUTES.NOW);
       }
@@ -21,7 +25,7 @@ export const useWeekShortcuts = () => {
         navigate(ROOT_ROUTES.DAY);
       }
     },
-    [navigate],
+    [isPlannerEnabled, navigate],
   );
 
   useEffect(() => {
