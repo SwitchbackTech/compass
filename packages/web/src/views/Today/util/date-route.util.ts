@@ -14,8 +14,8 @@ export const parseDateFromUrl = (
   }
 
   // Use strict parsing to ensure exact format match
-  // Parse as UTC to avoid timezone issues
-  const parsed = dayjs.utc(dateString, YEAR_MONTH_DAY_FORMAT, true);
+  // Parse in local timezone first, then convert to UTC to avoid timezone issues
+  const parsed = dayjs(dateString, YEAR_MONTH_DAY_FORMAT, true).utc();
 
   if (!parsed.isValid()) {
     return null;
@@ -34,8 +34,8 @@ export const correctInvalidDate = (dateString: string): dayjs.Dayjs | null => {
     return null;
   }
 
-  // Try to parse the date string as UTC
-  const parsed = dayjs.utc(dateString, YEAR_MONTH_DAY_FORMAT, true);
+  // Try to parse the date string in local timezone first, then convert to UTC
+  const parsed = dayjs(dateString, YEAR_MONTH_DAY_FORMAT, true).utc();
 
   if (parsed.isValid()) {
     return parsed;
@@ -70,24 +70,24 @@ export const correctInvalidDate = (dateString: string): dayjs.Dayjs | null => {
   if (isNaN(day) || day < 1) {
     correctedDay = 1;
   } else {
-    // Get the last day of the corrected month
-    const lastDayOfMonth = dayjs
-      .utc()
+    // Get the last day of the corrected month in local timezone, then convert to UTC
+    const lastDayOfMonth = dayjs()
       .year(year)
       .month(correctedMonth - 1)
       .endOf("month")
+      .utc()
       .date();
     if (day > lastDayOfMonth) {
       correctedDay = lastDayOfMonth;
     }
   }
 
-  // Create corrected date as UTC
-  const corrected = dayjs
-    .utc()
+  // Create corrected date in local timezone first, then convert to UTC
+  const corrected = dayjs()
     .year(year)
     .month(correctedMonth - 1)
-    .date(correctedDay);
+    .date(correctedDay)
+    .utc();
 
   if (!corrected.isValid()) {
     return null;
