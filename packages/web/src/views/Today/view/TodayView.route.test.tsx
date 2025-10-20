@@ -129,9 +129,10 @@ describe("TodayView Routing", () => {
       await user.click(goToTodayButton);
     });
 
-    // Should show today's date (the testDate we started with)
-    const todayWeekday = testDate.format(DAY_HEADING_FORMAT);
-    const todayDate = testDate.format(DAY_SUBHEADING_FORMAT);
+    // Should show today's date (the actual current date, not the test date)
+    const today = dayjs().utc();
+    const todayWeekday = today.format(DAY_HEADING_FORMAT);
+    const todayDate = today.format(DAY_SUBHEADING_FORMAT);
     expect(screen.getByText(todayWeekday)).toBeInTheDocument();
     expect(screen.getByText(todayDate)).toBeInTheDocument();
   });

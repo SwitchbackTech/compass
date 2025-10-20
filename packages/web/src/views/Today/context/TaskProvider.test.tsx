@@ -1,5 +1,6 @@
 import { act } from "react";
 import { renderHook } from "@testing-library/react";
+import dayjs from "@core/util/date/dayjs";
 import { useTasks } from "../hooks/tasks/useTasks";
 import { Task } from "../task.types";
 import { TaskProviderWrapper } from "../util/day.test-util";
@@ -135,8 +136,8 @@ describe("TaskProvider", () => {
     });
 
     // Check localStorage
-    const today = new Date();
-    const dateKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    const today = dayjs().utc();
+    const dateKey = today.format("YYYY-MM-DD");
     const storageKey = `compass.today.tasks.${dateKey}`;
     const stored = localStorage.getItem(storageKey);
 
@@ -148,8 +149,8 @@ describe("TaskProvider", () => {
 
   it("should load tasks from localStorage on mount", () => {
     // Pre-populate localStorage
-    const today = new Date();
-    const dateKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    const today = dayjs().utc();
+    const dateKey = today.format("YYYY-MM-DD");
     const storageKey = `compass.today.tasks.${dateKey}`;
     const mockTasks: Task[] = [
       {
@@ -171,8 +172,8 @@ describe("TaskProvider", () => {
 
   it("should sort tasks on load when there are mixed statuses", () => {
     // Pre-populate localStorage with mixed statuses
-    const today = new Date();
-    const dateKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    const today = dayjs().utc();
+    const dateKey = today.format("YYYY-MM-DD");
     const storageKey = `compass.today.tasks.${dateKey}`;
     const mockTasks: Task[] = [
       {
