@@ -14,7 +14,8 @@ export const parseDateFromUrl = (
   }
 
   // Use strict parsing to ensure exact format match
-  // Parse as UTC to avoid timezone issues
+  // Parse as UTC to maintain consistency - the URL date represents a calendar date
+  // that should be interpreted the same way regardless of user's timezone
   const parsed = dayjs.utc(dateString, YEAR_MONTH_DAY_FORMAT, true);
 
   if (!parsed.isValid()) {
@@ -70,7 +71,7 @@ export const correctInvalidDate = (dateString: string): dayjs.Dayjs | null => {
   if (isNaN(day) || day < 1) {
     correctedDay = 1;
   } else {
-    // Get the last day of the corrected month
+    // Get the last day of the corrected month in UTC
     const lastDayOfMonth = dayjs
       .utc()
       .year(year)
@@ -118,8 +119,11 @@ export const getValidDateFromUrl = (
     }
   }
 
-  // Fallback to today's date
-  return dayjs().utc();
+  // Fallback to today's date - get today's date in user's timezone, then create UTC midnight
+  // This ensures we work with the correct calendar date regardless of timezone
+  const todayLocal = dayjs().format("YYYY-MM-DD");
+  const todayUTC = dayjs.utc(todayLocal);
+  return todayUTC;
 };
 
 /**

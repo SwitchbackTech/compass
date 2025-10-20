@@ -14,6 +14,21 @@ describe("date-route.util", () => {
       expect(result?.format("YYYY-MM-DD")).toBe("2025-10-20");
     });
 
+    it("should maintain consistency between URL parsing and date generation", () => {
+      // Test that parsing a URL date gives the same result as generating it
+      const testDate = "2025-10-19";
+
+      // Parse from URL
+      const parsedFromUrl = parseDateFromUrl(testDate);
+
+      // Generate from local date string
+      const generatedFromLocal = dayjs.utc(testDate);
+
+      // Both should be identical
+      expect(parsedFromUrl?.format()).toBe(generatedFromLocal.format());
+      expect(parsedFromUrl?.format("dddd, MMMM D")).toBe("Sunday, October 19");
+    });
+
     it("should return null for invalid date strings", () => {
       expect(parseDateFromUrl("invalid-date")).toBeNull();
       expect(parseDateFromUrl("2025-13-15")).toBeNull();
