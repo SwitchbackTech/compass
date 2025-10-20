@@ -1,4 +1,4 @@
-import { SHORTCUT_KEYS } from "../data/today.shortcuts";
+import { SHORTCUT_KEYS } from "../data/shortcuts.data";
 
 export type Shortcut = { k: string; label: string };
 

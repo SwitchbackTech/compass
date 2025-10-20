@@ -1,4 +1,4 @@
-import { getTodayShortcuts } from "../data/today.shortcuts";
+import { getShortcuts } from "../data/shortcuts.data";
 import { ShortcutSection } from "./ShortcutSection";
 
 export const ShortcutsOverlay = () => {
@@ -11,7 +11,7 @@ export const ShortcutsOverlay = () => {
     isHome,
     isToday,
     isNow,
-  } = getTodayShortcuts();
+  } = getShortcuts();
 
   const show =
     global.length ||

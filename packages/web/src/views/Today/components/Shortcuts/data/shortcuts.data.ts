@@ -30,7 +30,7 @@ interface ShortcutsConfig {
   isNow?: boolean;
 }
 
-export const getTodayShortcuts = (config: ShortcutsConfig = {}) => {
+export const getShortcuts = (config: ShortcutsConfig = {}) => {
   const { isHome = false, isToday = true, isNow = false } = config;
 
   const global: Shortcut[] = [

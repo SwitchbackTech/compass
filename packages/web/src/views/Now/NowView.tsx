@@ -1,6 +1,15 @@
 import React, { useMemo } from "react";
+import { ShortcutSection } from "../Today/components/Shortcuts/components/ShortcutSection";
+import { getShortcuts } from "../Today/components/Shortcuts/data/shortcuts.data";
+import { useNowShortcuts } from "./useNowShortcuts";
 
 export const NowView = () => {
+  // Initialize keyboard shortcuts
+  useNowShortcuts();
+
+  // Get shortcuts for the Now view
+  const { global } = getShortcuts({ isNow: true });
+
   // Generate particles with random properties
   const particles = useMemo(() => {
     const particleCount = 120; // Increased from 60 to 120
@@ -170,6 +179,15 @@ export const NowView = () => {
           />
         ))}
       </div>
+
+      {/* Shortcuts Overlay */}
+      <aside
+        aria-label="Shortcut overlay"
+        className="fixed top-24 left-3 z-30 hidden w-[240px] rounded-lg border border-white/10 bg-[#1e1e1e]/90 p-3 shadow-lg backdrop-blur-sm md:block"
+      >
+        <div className="mb-2 text-xs font-medium text-white">Shortcuts</div>
+        <ShortcutSection title="Global" shortcuts={global} />
+      </aside>
 
       {/* Coming Soon Text */}
       <div className="absolute inset-0 z-20 flex items-center justify-center">
