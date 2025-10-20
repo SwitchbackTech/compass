@@ -14,7 +14,7 @@ export const parseDateFromUrl = (
   }
 
   // Use strict parsing to ensure exact format match
-  // Parse in local timezone first, then convert to UTC to avoid timezone issues
+  // Parse in local timezone to maintain user's date context, then convert to UTC for storage/comparison
   const parsed = dayjs(dateString, YEAR_MONTH_DAY_FORMAT, true).utc();
 
   if (!parsed.isValid()) {
