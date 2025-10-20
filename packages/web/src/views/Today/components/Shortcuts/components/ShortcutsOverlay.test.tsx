@@ -17,7 +17,7 @@ describe("ShortcutsOverlay", () => {
 
     expect(screen.getByText("Global")).toBeInTheDocument();
     expect(screen.getByText("Now")).toBeInTheDocument();
-    expect(screen.getByText("Today")).toBeInTheDocument();
+    expect(screen.getByText("Day")).toBeInTheDocument();
     expect(screen.getByText("Week")).toBeInTheDocument();
   });
 
