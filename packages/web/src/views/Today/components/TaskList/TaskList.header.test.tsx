@@ -7,7 +7,7 @@ import dayjs from "@core/util/date/dayjs";
 import { DateNavigationProvider } from "../../context/DateNavigationProvider";
 import { TaskProvider } from "../../context/TaskProvider";
 import { TaskList } from "./TaskList";
-import { DAY_HEADING_FORMAT } from "./TaskListHeader";
+import { DAY_HEADING_FORMAT, DAY_SUBHEADING_FORMAT } from "./TaskListHeader";
 
 const renderTaskList = (props = {}, currentDate?: Date) => {
   const user = userEvent.setup();
@@ -224,5 +224,43 @@ describe("TaskListHeader", () => {
       const updatedWrapperDiv = goToTodayButton?.parentElement?.parentElement;
       expect(updatedWrapperDiv).toHaveClass("invisible");
     });
+  });
+});
+
+describe("TaskListHeader - Timezone Handling", () => {
+  it("should display date in local timezone, not UTC", () => {
+    // Simulate 8pm CST on Oct 19 (which is 1am UTC on Oct 20)
+    const cstDate = new Date("2025-10-20T01:00:00Z"); // UTC time
+    const utcDayjs = dayjs.utc(cstDate);
+
+    renderTaskList({}, cstDate);
+
+    const heading = screen.getByRole("heading", { level: 2 });
+    const subheading = screen.getByRole("heading", { level: 3 });
+
+    // Should show local date (Oct 19), not UTC date (Oct 20)
+    const localDate = utcDayjs.local();
+    expect(heading).toHaveTextContent(localDate.format(DAY_HEADING_FORMAT));
+    expect(subheading).toHaveTextContent(
+      localDate.format(DAY_SUBHEADING_FORMAT),
+    );
+  });
+
+  it("should correctly identify today in local timezone", () => {
+    // Mock current time to be 11pm local (which might be next day in UTC)
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2025-10-19T23:00:00-05:00"));
+
+    const todayLocal = dayjs();
+    const todayUtc = todayLocal.utc();
+
+    renderTaskList({}, todayUtc.toDate());
+
+    // "Go to today" button should be invisible because we're viewing today
+    const goToTodayButton = screen.getByLabelText("Go to today");
+    const wrapperDiv = goToTodayButton?.parentElement?.parentElement;
+    expect(wrapperDiv).toHaveClass("invisible");
+
+    jest.useRealTimers();
   });
 });

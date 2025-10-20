@@ -1,4 +1,3 @@
-import React from "react";
 import dayjs from "@core/util/date/dayjs";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { useDateInView } from "../../hooks/navigation/useDateInView";
@@ -15,11 +14,11 @@ export const TaskListHeader = () => {
     useDateNavigation();
 
   const dateInView = useDateInView();
-  const header = dateInView.locale("en").format(DAY_HEADING_FORMAT);
-  const subheader = dateInView.locale("en").format(DAY_SUBHEADING_FORMAT);
-  const isToday = dateInView
-    .startOf("day")
-    .isSame(dayjs().utc().startOf("day"));
+  // Convert UTC date to local timezone for display
+  const localDate = dateInView.local();
+  const header = localDate.locale("en").format(DAY_HEADING_FORMAT);
+  const subheader = localDate.locale("en").format(DAY_SUBHEADING_FORMAT);
+  const isToday = localDate.startOf("day").isSame(dayjs().startOf("day"));
 
   return (
     <div className="border-b border-gray-400/20 p-4">
@@ -38,7 +37,7 @@ export const TaskListHeader = () => {
             className={isToday ? "invisible" : "visible"}
           >
             <TooltipWrapper
-              description={dayjs().utc().locale("en").format("dddd, MMMM D")}
+              description={dayjs().locale("en").format("dddd, MMMM D")}
               onClick={navigateToToday}
               shortcut="T"
             >

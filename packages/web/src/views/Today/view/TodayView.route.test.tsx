@@ -210,4 +210,27 @@ describe("Navigation with URL updates", () => {
     expect(screen.getByText(todayWeekday)).toBeInTheDocument();
     expect(screen.getByText(todayDate)).toBeInTheDocument();
   });
+
+  it("should display dates in local timezone regardless of UTC offset", () => {
+    jest.useFakeTimers();
+    // Set time to 11pm on Oct 19 in CST (4am Oct 20 UTC)
+    jest.setSystemTime(new Date("2025-10-20T04:00:00.000Z"));
+
+    // Mock timezone to CST
+    const testDate = dayjs.utc("2025-10-20T04:00:00.000Z");
+    renderWithDayProviders(<TodayViewContent />, {
+      initialDate: testDate,
+    });
+
+    // Should show Oct 19 (local), not Oct 20 (UTC)
+    const localDate = testDate.local();
+    expect(
+      screen.getByText(localDate.format(DAY_HEADING_FORMAT)),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(localDate.format(DAY_SUBHEADING_FORMAT)),
+    ).toBeInTheDocument();
+
+    jest.useRealTimers();
+  });
 });
