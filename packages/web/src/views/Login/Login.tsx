@@ -144,6 +144,8 @@ export const LoginView = () => {
                 </InfoText>
                 <EmailFormContainer onSubmit={handleCheckWaitlistSubmit}>
                   <EmailInputField
+                    id="email-input"
+                    name="email"
                     type="email"
                     placeholder="Enter your email"
                     value={emailInput}
