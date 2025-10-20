@@ -1,6 +1,6 @@
 import React from "react";
 import { CalendarAgenda } from "../components/CalendarAgenda/CalendarAgenda";
-import { ShortcutsOverlay } from "../components/Shortcuts/ShortcutsOverlay";
+import { ShortcutsOverlay } from "../components/Shortcuts/components/ShortcutsOverlay";
 import { TaskList } from "../components/TaskList/TaskList";
 import { useDateNavigation } from "../hooks/navigation/useDateNavigation";
 import { useTodayViewShortcuts } from "../hooks/shortcuts/useTodayViewShortcuts";

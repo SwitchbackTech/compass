@@ -1,4 +1,4 @@
-import React, { act } from "react";
+import { act } from "react";
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
@@ -18,7 +18,7 @@ jest.mock("../components/CalendarAgenda/CalendarAgenda", () => ({
 }));
 
 // Mock the ShortcutsOverlay component
-jest.mock("../components/Shortcuts/ShortcutsOverlay", () => ({
+jest.mock("../components/Shortcuts/components/ShortcutsOverlay", () => ({
   ShortcutsOverlay: () => <div data-testid="shortcuts-overlay" />,
 }));
 
