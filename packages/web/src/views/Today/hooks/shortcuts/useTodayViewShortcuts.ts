@@ -1,8 +1,9 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
+import { ShortcutKey } from "../../components/Shortcuts/data/today.shortcuts";
 import { isEditable, isFocusedOnTaskCheckbox } from "../../util/shortcut.util";
 
-export interface KeyboardShortcutsConfig {
+interface KeyboardShortcutsConfig {
   // Task management
   onAddTask?: () => void;
   onEditTask?: () => void;
@@ -48,11 +49,103 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
     undoToastId,
   } = config;
 
+  // Define strongly-typed handler mapping
+  const handlers: Record<ShortcutKey, (e: KeyboardEvent) => void> = useMemo(
+    () => ({
+      // Global shortcuts (not handled in this hook)
+      "0": () => {},
+      "1": () => {},
+      "2": () => {},
+      "3": () => {},
+
+      // Navigation shortcuts
+      j: (e) => {
+        e.preventDefault();
+        onPrevDay?.();
+      },
+      k: (e) => {
+        e.preventDefault();
+        onNextDay?.();
+      },
+      t: (e) => {
+        e.preventDefault();
+        onGoToToday?.();
+      },
+
+      // Task shortcuts
+      u: (e) => {
+        e.preventDefault();
+        onFocusTasks?.();
+      },
+      c: (e) => {
+        e.preventDefault();
+        onAddTask?.();
+      },
+      e: (e) => {
+        e.preventDefault();
+        onEditTask?.();
+      },
+      Delete: (e) => {
+        // Don't handle Delete key if we're in an editable element
+        if (isEditable(e.target)) {
+          return;
+        }
+
+        // Only delete if focused on a task checkbox, not an input
+        if (isFocusedOnTaskCheckbox()) {
+          e.preventDefault();
+          onDeleteTask?.();
+        }
+      },
+      Enter: (e) => {
+        if (hasFocusedTask && !isEditingTask) {
+          const activeElement = document.activeElement as HTMLElement | null;
+          const isTaskButton =
+            activeElement?.getAttribute("role") === "checkbox" &&
+            activeElement?.dataset?.taskId;
+
+          // Let the task button handle Enter if it's focused
+          if (!isTaskButton) {
+            e.preventDefault();
+            onCompleteTask?.();
+          }
+        }
+      },
+      Escape: (e) => {
+        e.preventDefault();
+        onEscape?.();
+      },
+      Esc: (e) => {
+        e.preventDefault();
+        onEscape?.();
+      },
+
+      // Calendar shortcuts (not handled in this hook)
+      i: () => {},
+      "↑": () => {},
+      "↓": () => {},
+    }),
+    [
+      onAddTask,
+      onEditTask,
+      onCompleteTask,
+      onDeleteTask,
+      onEscape,
+      onFocusTasks,
+      onNextDay,
+      onPrevDay,
+      onGoToToday,
+      isEditingTask,
+      hasFocusedTask,
+    ],
+  );
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
       const target = e.target as EventTarget | null;
 
+      // Handle Cmd+Z undo shortcut separately
       if (e.metaKey && key === "z") {
         e.preventDefault();
         onRestoreTask?.();
@@ -67,92 +160,22 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
         return;
       }
 
-      switch (key) {
-        case "u":
-          e.preventDefault();
-          onFocusTasks?.();
-          break;
-
-        case "c":
-          e.preventDefault();
-          onAddTask?.();
-          break;
-
-        case "e":
-          e.preventDefault();
-          onEditTask?.();
-          break;
-
-        case "j":
-          e.preventDefault();
-          onPrevDay?.();
-          break;
-
-        case "k":
-          e.preventDefault();
-          onNextDay?.();
-          break;
-
-        case "t":
-          e.preventDefault();
-          onGoToToday?.();
-          break;
-
-        case "enter": {
-          if (hasFocusedTask && !isEditingTask) {
-            const activeElement = document.activeElement as HTMLElement | null;
-            const isTaskButton =
-              activeElement?.getAttribute("role") === "checkbox" &&
-              activeElement?.dataset?.taskId;
-
-            // Let the task button handle Enter if it's focused
-            if (!isTaskButton) {
-              e.preventDefault();
-              onCompleteTask?.();
-            }
-          }
-          break;
-        }
-
-        case "delete": {
-          // Don't handle Delete key if we're in an editable element
-          if (isEditable(target)) {
-            return;
-          }
-
-          // Only delete if focused on a task checkbox, not an input
-          if (isFocusedOnTaskCheckbox()) {
-            e.preventDefault();
-            onDeleteTask?.();
-          }
-          break;
-        }
-
-        case "escape":
-          e.preventDefault();
-          onEscape?.();
-          break;
-
-        default:
-          // No action for unhandled keys
-          break;
+      // Use the handler mapping instead of switch statement
+      // Handle case insensitive keys by normalizing to lowercase for most keys
+      const normalizedKey =
+        key === "escape"
+          ? "Escape"
+          : key === "enter"
+            ? "Enter"
+            : key === "delete"
+              ? "Delete"
+              : key;
+      const handler = handlers[normalizedKey as ShortcutKey];
+      if (handler) {
+        handler(e);
       }
     },
-    [
-      onAddTask,
-      onEditTask,
-      onCompleteTask,
-      onDeleteTask,
-      onRestoreTask,
-      onEscape,
-      onFocusTasks,
-      onNextDay,
-      onPrevDay,
-      onGoToToday,
-      isEditingTask,
-      hasFocusedTask,
-      undoToastId,
-    ],
+    [handlers, onRestoreTask, undoToastId],
   );
 
   useEffect(() => {
