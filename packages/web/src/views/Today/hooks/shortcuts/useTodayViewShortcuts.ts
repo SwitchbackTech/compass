@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
-import { ShortcutKey } from "../../components/Shortcuts/data/today.shortcuts";
+import { ShortcutKey } from "../../components/Shortcuts/types/shortcut.types";
 import { isEditable, isFocusedOnTaskCheckbox } from "../../util/shortcut.util";
 
 interface KeyboardShortcutsConfig {

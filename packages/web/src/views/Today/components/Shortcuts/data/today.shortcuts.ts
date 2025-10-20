@@ -25,10 +25,7 @@ export const SHORTCUT_KEYS = {
   "↓": "↓",
 } as const;
 
-// Extract the union type of all shortcut keys
-export type ShortcutKey = (typeof SHORTCUT_KEYS)[keyof typeof SHORTCUT_KEYS];
-
-export interface ShortcutsConfig {
+interface ShortcutsConfig {
   isHome?: boolean;
   isToday?: boolean;
   isNow?: boolean;
