@@ -46,6 +46,7 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
     onEscape,
     onFocusTasks,
     onNavigateNow,
+    onNavigateWeek,
     onNextDay,
     onPrevDay,
     onGoToToday,
@@ -63,7 +64,10 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
         onNavigateNow?.();
       },
       "2": () => {},
-      "3": () => {},
+      "3": (e) => {
+        e.preventDefault();
+        onNavigateWeek?.();
+      },
 
       // Navigation shortcuts
       j: (e) => {

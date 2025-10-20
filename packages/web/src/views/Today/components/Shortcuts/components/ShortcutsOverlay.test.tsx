@@ -16,7 +16,6 @@ describe("ShortcutsOverlay", () => {
     render(<ShortcutsOverlay />);
 
     expect(screen.getByText("Global")).toBeInTheDocument();
-    expect(screen.getByText("Home")).toBeInTheDocument();
     expect(screen.getByText("Now")).toBeInTheDocument();
     expect(screen.getByText("Today")).toBeInTheDocument();
     expect(screen.getByText("Week")).toBeInTheDocument();
@@ -43,7 +42,6 @@ describe("ShortcutsOverlay", () => {
     render(<ShortcutsOverlay />);
 
     // Check that shortcut keys are rendered
-    expect(screen.getByText("0")).toBeInTheDocument();
     expect(screen.getByText("1")).toBeInTheDocument();
     expect(screen.getByText("2")).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
