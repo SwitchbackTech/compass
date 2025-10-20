@@ -3,7 +3,6 @@ import { Shortcut } from "../types/shortcut.types";
 // Define all possible shortcut keys as a const object for type safety
 export const SHORTCUT_KEYS = {
   // Global shortcuts
-  "0": "0",
   "1": "1",
   "2": "2",
   "3": "3",
@@ -35,7 +34,6 @@ export const getTodayShortcuts = (config: ShortcutsConfig = {}) => {
   const { isHome = false, isToday = true, isNow = false } = config;
 
   const global: Shortcut[] = [
-    { k: "0", label: "Home" },
     { k: "1", label: "Now" },
     { k: "2", label: "Today" },
     { k: "3", label: "Week" },

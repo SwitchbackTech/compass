@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { CalendarAgenda } from "../components/CalendarAgenda/CalendarAgenda";
 import { ShortcutsOverlay } from "../components/Shortcuts/components/ShortcutsOverlay";
 import { TaskList } from "../components/TaskList/TaskList";
@@ -18,6 +20,8 @@ export const TodayViewContent = () => {
     restoreTask,
     undoToastId,
   } = useTasks();
+
+  const navigate = useNavigate();
 
   const { navigateToNextDay, navigateToPreviousDay, navigateToToday } =
     useDateNavigation();
@@ -55,6 +59,18 @@ export const TodayViewContent = () => {
     }
   };
 
+  const handleNavigateNow = () => {
+    navigate(ROOT_ROUTES.NOW);
+  };
+
+  const handleNavigateDay = () => {
+    navigate(ROOT_ROUTES.DAY);
+  };
+
+  const handleNavigateWeek = () => {
+    navigate(ROOT_ROUTES.ROOT);
+  };
+
   useTodayViewShortcuts({
     onAddTask: focusOnAddTaskInput,
     onEditTask: handleEditTask,
@@ -64,6 +80,9 @@ export const TodayViewContent = () => {
     onNextDay: navigateToNextDay,
     onPrevDay: navigateToPreviousDay,
     onGoToToday: navigateToToday,
+    onNavigateNow: handleNavigateNow,
+    onNavigateDay: handleNavigateDay,
+    onNavigateWeek: handleNavigateWeek,
     hasFocusedTask,
     undoToastId,
   });

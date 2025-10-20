@@ -22,6 +22,10 @@ interface KeyboardShortcutsConfig {
 
   // General
   onEscape?: () => void;
+  onNavigateHome?: () => void;
+  onNavigateNow?: () => void;
+  onNavigateDay?: () => void;
+  onNavigateWeek?: () => void;
 
   // Conditions
   isEditingTask?: boolean;
@@ -41,6 +45,7 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
     onRestoreTask,
     onEscape,
     onFocusTasks,
+    onNavigateNow,
     onNextDay,
     onPrevDay,
     onGoToToday,
@@ -53,8 +58,10 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
   const handlers: Record<ShortcutKey, (e: KeyboardEvent) => void> = useMemo(
     () => ({
       // Global shortcuts (not handled in this hook)
-      "0": () => {},
-      "1": () => {},
+      "1": (e) => {
+        e.preventDefault();
+        onNavigateNow?.();
+      },
       "2": () => {},
       "3": () => {},
 

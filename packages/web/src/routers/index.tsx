@@ -1,4 +1,3 @@
-import React from "react";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { ProtectedRoute } from "@web/auth/ProtectedRoute";
 import { UserProvider } from "@web/auth/UserContext";
@@ -6,12 +5,25 @@ import { ROOT_ROUTES } from "@web/common/constants/routes";
 import SocketProvider from "@web/socket/SocketProvider";
 import { LogoutView } from "@web/views/Logout";
 import { NotFoundView } from "@web/views/NotFound";
+import { NowView } from "@web/views/Now/NowView";
 import OnboardingFlow from "@web/views/Onboarding/OnboardingFlow";
 import { RootView } from "@web/views/Root";
 import { TodayView } from "@web/views/Today/view/TodayView";
 
 const router = createBrowserRouter(
   [
+    {
+      path: ROOT_ROUTES.NOW,
+      element: (
+        <ProtectedRoute>
+          <UserProvider>
+            <SocketProvider>
+              <NowView />
+            </SocketProvider>
+          </UserProvider>
+        </ProtectedRoute>
+      ),
+    },
     {
       path: ROOT_ROUTES.ROOT,
       element: (
