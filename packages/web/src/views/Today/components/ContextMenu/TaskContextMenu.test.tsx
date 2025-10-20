@@ -1,20 +1,12 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { TaskProvider } from "../../context/TaskProvider";
+import { renderWithDayProviders } from "../../util/day.test-util";
 import { TaskList } from "../TaskList/TaskList";
 
 // Mock console.log to test the delete action
 const mockConsoleLog = jest.spyOn(console, "log").mockImplementation(() => {});
-
-const renderTaskList = (props = {}) => {
-  return render(
-    <TaskProvider>
-      <TaskList {...props} />
-    </TaskProvider>,
-  );
-};
 
 describe("TaskContextMenu", () => {
   beforeEach(() => {
@@ -28,7 +20,7 @@ describe("TaskContextMenu", () => {
 
   it("should open context menu on right-click on a task", async () => {
     const user = userEvent.setup();
-    renderTaskList();
+    renderWithDayProviders(<TaskList />);
 
     // Add a task first
     const addButton = screen.getByText("Create task");
@@ -60,7 +52,7 @@ describe("TaskContextMenu", () => {
 
   it("should show Delete Task menu item when menu is open", async () => {
     const user = userEvent.setup();
-    renderTaskList();
+    renderWithDayProviders(<TaskList />);
 
     // Add a task
     const addButton = screen.getByText("Create task");
@@ -91,8 +83,7 @@ describe("TaskContextMenu", () => {
   });
 
   it("should remove task from list when Delete Task is clicked", async () => {
-    const user = userEvent.setup();
-    renderTaskList();
+    const { user } = renderWithDayProviders(<TaskList />);
 
     // Add a task
     const addButton = screen.getByText("Create task");
@@ -133,8 +124,7 @@ describe("TaskContextMenu", () => {
   });
 
   it("should close menu when clicking outside", async () => {
-    const user = userEvent.setup();
-    renderTaskList();
+    const { user } = renderWithDayProviders(<TaskList />);
 
     // Add a task
     const addButton = screen.getByText("Create task");
@@ -174,8 +164,7 @@ describe("TaskContextMenu", () => {
   });
 
   it("should close menu when pressing Escape key", async () => {
-    const user = userEvent.setup();
-    renderTaskList();
+    const { user } = renderWithDayProviders(<TaskList />);
 
     // Add a task
     const addButton = screen.getByText("Create task");
@@ -214,8 +203,7 @@ describe("TaskContextMenu", () => {
   });
 
   it("should not open context menu when right-clicking on add task button", async () => {
-    const user = userEvent.setup();
-    renderTaskList();
+    const { user } = renderWithDayProviders(<TaskList />);
 
     // Right-click on the add task button
     const addButton = screen.getByText("Create task");
@@ -228,8 +216,7 @@ describe("TaskContextMenu", () => {
   });
 
   it("should work with multiple tasks", async () => {
-    const user = userEvent.setup();
-    renderTaskList();
+    const { user } = renderWithDayProviders(<TaskList />);
 
     // Add two tasks
     const addButton = screen.getByText("Create task");

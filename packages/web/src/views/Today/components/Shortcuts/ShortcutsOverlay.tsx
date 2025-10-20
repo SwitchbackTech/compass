@@ -1,4 +1,3 @@
-import React from "react";
 import { ShortcutHint } from "@web/views/Today/components/Shortcuts/ShortcutHint";
 
 type Item = { k: string; label: string };
@@ -40,11 +39,6 @@ export const ShortcutsOverlay = () => {
     { k: "3", label: "Week" },
   ];
 
-  // const pathname = "/today";
-  // const isHome = pathname === "/";
-  // const isToday =
-  //   pathname === "/today" || /^\/\d{4}-\d{2}-\d{2}/.test(pathname || "");
-  // const isNow = pathname === "/now";
   const isToday = true;
   const isHome = false;
   const isNow = false;
@@ -56,8 +50,8 @@ export const ShortcutsOverlay = () => {
 
   if (isHome) {
     homeItems = [
-      { k: "j", label: "Previous slide" },
-      { k: "k", label: "Next slide" },
+      { k: "j", label: "Previous day" },
+      { k: "k", label: "Next day" },
       { k: "Enter", label: "Go to Today" },
     ];
   } else if (isToday) {

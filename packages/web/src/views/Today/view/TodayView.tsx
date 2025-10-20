@@ -1,15 +1,34 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useFeatureFlags } from "@web/common/hooks/useFeatureFlags";
+import { DateNavigationProvider } from "../context/DateNavigationProvider";
 import { TaskProvider } from "../context/TaskProvider";
+import { formatDateForUrl, getValidDateFromUrl } from "../util/date-route.util";
 import { TodayViewContent } from "./TodayViewContent";
 
 export function TodayView() {
   const { isPlannerEnabled } = useFeatureFlags();
+  const { date } = useParams<{ date?: string }>();
+  const navigate = useNavigate();
+
+  // Get the valid date from URL parameter
+  const validDate = getValidDateFromUrl(date);
+
+  // Redirect if the date was corrected (invalid date in URL)
+  useEffect(() => {
+    if (date && validDate.format("YYYY-MM-DD") !== date) {
+      const correctedUrl = `/day/${formatDateForUrl(validDate)}`;
+      navigate(correctedUrl, { replace: true });
+    }
+  }, [date, validDate, navigate]);
+
   if (isPlannerEnabled) {
     return (
-      <TaskProvider>
-        <TodayViewContent />
-      </TaskProvider>
+      <DateNavigationProvider initialDate={validDate}>
+        <TaskProvider>
+          <TodayViewContent />
+        </TaskProvider>
+      </DateNavigationProvider>
     );
   } else {
     return (

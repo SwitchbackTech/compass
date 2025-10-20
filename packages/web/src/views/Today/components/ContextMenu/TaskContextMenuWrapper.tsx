@@ -6,7 +6,7 @@ import {
   shift,
   useFloating,
 } from "@floating-ui/react";
-import { useTasks } from "../../context/TaskProvider";
+import { useTasks } from "../../hooks/tasks/useTasks";
 import { Task } from "../../task.types";
 import { getTaskIdFromElement } from "../../util/task.locate";
 import { TaskContextMenu } from "./TaskContextMenu";

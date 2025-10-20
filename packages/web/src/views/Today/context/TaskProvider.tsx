@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState } from "react";
-import dayjs from "@core/util/date/dayjs";
+import React, { createContext } from "react";
+import { useDateNavigation } from "../hooks/navigation/useDateNavigation";
 import { useTaskActions } from "../hooks/tasks/useTaskActions";
 import { useTaskEffects } from "../hooks/tasks/useTaskEffects";
 import { useTaskState } from "../hooks/tasks/useTaskState";
@@ -14,13 +14,9 @@ interface TaskContextValue {
   selectedTaskIndex: number;
   deletedTask: Task | null;
   undoToastId: string | number | null;
-  dateInView: dayjs.Dayjs;
   addTask: (title: string) => Task;
   deleteTask: (taskId: string) => void;
   restoreTask: () => void;
-  navigateToNextDay: () => void;
-  navigateToPreviousDay: () => void;
-  navigateToToday: () => void;
   focusOnCheckbox: (taskId: string) => void;
   focusOnInput: (taskId: string) => void;
   onCheckboxKeyDown: (
@@ -47,15 +43,10 @@ export const TaskContext = createContext<TaskContextValue | undefined>(
 
 interface TaskProviderProps {
   children: React.ReactNode;
-  currentDate?: Date;
 }
 
-export function TaskProvider({
-  children,
-  currentDate = new Date(),
-}: TaskProviderProps) {
-  const [dateInView, setDateInView] = useState(dayjs(currentDate));
-
+export function TaskProvider({ children }: TaskProviderProps) {
+  const { dateInView } = useDateNavigation();
   const state = useTaskState({ currentDate: dateInView.toDate() });
   const actions = useTaskActions({
     setTasks: state.setTasks,
@@ -78,18 +69,6 @@ export function TaskProvider({
     setTasks: state.setTasks,
   });
 
-  const navigateToNextDay = () => {
-    setDateInView((prev: dayjs.Dayjs) => prev.add(1, "day"));
-  };
-
-  const navigateToPreviousDay = () => {
-    setDateInView((prev: dayjs.Dayjs) => prev.subtract(1, "day"));
-  };
-
-  const navigateToToday = () => {
-    setDateInView(dayjs());
-  };
-
   const value: TaskContextValue = {
     tasks: state.tasks,
     editingTitle: state.editingTitle,
@@ -99,13 +78,9 @@ export function TaskProvider({
     isCancellingEdit: state.isCancellingEdit,
     deletedTask: state.deletedTask,
     undoToastId: state.undoToastId,
-    dateInView,
     addTask: actions.addTask,
     deleteTask: actions.deleteTask,
     restoreTask: actions.restoreTask,
-    navigateToNextDay,
-    navigateToPreviousDay,
-    navigateToToday,
     focusOnCheckbox: actions.focusOnCheckbox,
     focusOnInput: actions.focusOnInput,
     onCheckboxKeyDown: actions.onCheckboxKeyDown,
@@ -124,12 +99,4 @@ export function TaskProvider({
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
-}
-
-export function useTasks(): TaskContextValue {
-  const context = useContext(TaskContext);
-  if (!context) {
-    throw new Error("useTasks must be used within a TaskProvider");
-  }
-  return context;
 }

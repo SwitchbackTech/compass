@@ -1,8 +1,8 @@
-import { ReactElement, act } from "react";
+import { act } from "react";
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
-import { addTasks, setup } from "../../../__tests__/utils/tasks/task.test.util";
-import { TaskProvider } from "../context/TaskProvider";
+import { addTasks } from "../../../__tests__/utils/tasks/task.test.util";
+import { renderWithDayProviders } from "../util/day.test-util";
 import { TodayViewContent } from "./TodayViewContent";
 
 // Mock the CalendarAgenda component
@@ -30,10 +30,6 @@ jest.mock("../hooks/shortcuts/useTodayViewShortcuts", () => {
   };
 });
 
-const renderWithProvider = (component: ReactElement) => {
-  return setup(<TaskProvider>{component}</TaskProvider>);
-};
-
 describe("TodayViewContent", () => {
   beforeEach(() => {
     mockUseTodayViewShortcuts.mockReset();
@@ -48,7 +44,7 @@ describe("TodayViewContent", () => {
   });
 
   it("should render the main layout with tasks and calendar sections", () => {
-    renderWithProvider(<TodayViewContent />);
+    renderWithDayProviders(<TodayViewContent />);
 
     // Verify the main components are present
     expect(
@@ -69,8 +65,7 @@ describe("TodayViewContent", () => {
       }),
     );
 
-    // const user = userEvent.setup();
-    const { user } = renderWithProvider(<TodayViewContent />);
+    const { user } = renderWithDayProviders(<TodayViewContent />);
 
     await act(async () => {
       await user.keyboard("c");
@@ -84,7 +79,7 @@ describe("TodayViewContent", () => {
   });
 
   it("should display today's date in the tasks section", () => {
-    renderWithProvider(<TodayViewContent />);
+    renderWithDayProviders(<TodayViewContent />);
 
     // Check that today's date is displayed
     const todayHeading = new Date().toLocaleDateString("en-US", {
@@ -99,7 +94,7 @@ describe("TodayViewContent", () => {
   });
 
   it("should allow users to create new tasks", async () => {
-    const { user } = renderWithProvider(<TodayViewContent />);
+    const { user } = renderWithDayProviders(<TodayViewContent />);
 
     // Click the add task button
     const addTaskButton = screen.getByRole("button", {
@@ -114,7 +109,7 @@ describe("TodayViewContent", () => {
   });
 
   it("should maintain a fixed height layout that fills the viewport", () => {
-    renderWithProvider(<TodayViewContent />);
+    renderWithDayProviders(<TodayViewContent />);
 
     // The layout should be present and functional
     expect(
@@ -124,7 +119,7 @@ describe("TodayViewContent", () => {
   });
 
   it("should display add task button", () => {
-    renderWithProvider(<TodayViewContent />);
+    renderWithDayProviders(<TodayViewContent />);
 
     // The tasks section should be present and functional
     const addTaskButton = screen.getByRole("button", {
@@ -137,7 +132,7 @@ describe("TodayViewContent", () => {
   });
 
   it("should delete task when Delete key is pressed on focused checkbox", async () => {
-    const { user } = renderWithProvider(<TodayViewContent />);
+    const { user } = renderWithDayProviders(<TodayViewContent />);
 
     await addTasks(user, ["Test task"]);
 
@@ -163,7 +158,7 @@ describe("TodayViewContent", () => {
   });
 
   it("should NOT delete task when Delete key is pressed on input field", async () => {
-    const { user } = renderWithProvider(<TodayViewContent />);
+    const { user } = renderWithDayProviders(<TodayViewContent />);
 
     // Add a task
     await addTasks(user, ["Test task"]);
@@ -186,7 +181,7 @@ describe("TodayViewContent", () => {
 
   describe("Duplicate task names with keyboard shortcuts", () => {
     it("should delete the correct duplicate task when pressing Delete key", async () => {
-      const { user } = renderWithProvider(<TodayViewContent />);
+      const { user } = renderWithDayProviders(<TodayViewContent />);
 
       // Add first task
       await addTasks(user, ["Buy milk"]);

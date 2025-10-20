@@ -1,4 +1,5 @@
-import { Provider } from "react-redux";
+import { Provider as ReduxProvider } from "react-redux";
+import { MemoryRouter } from "react-router-dom";
 import { configureStore } from "@reduxjs/toolkit";
 import "@testing-library/jest-dom";
 import { render, screen, within } from "@testing-library/react";
@@ -21,19 +22,29 @@ const createMockStore = () => {
   });
 };
 
+const renderWithRouter = () => {
+  return render(
+    <ReduxProvider store={createMockStore()}>
+      <MemoryRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+        initialEntries={["/day"]}
+      >
+        <TodayView />
+      </MemoryRouter>
+    </ReduxProvider>,
+  );
+};
+
 describe("TodayView", () => {
   beforeEach(() => {
     localStorage.clear();
   });
 
   it("should show experimental feature warning when flag is disabled", () => {
-    const store = createMockStore();
-
-    render(
-      <Provider store={store}>
-        <TodayView />
-      </Provider>,
-    );
+    renderWithRouter();
 
     expect(screen.getByText(/Experimental Feature/i)).toBeInTheDocument();
     expect(
@@ -45,37 +56,20 @@ describe("TodayView", () => {
     const { useFeatureFlagEnabled } = require("posthog-js/react");
     useFeatureFlagEnabled.mockReturnValue(true);
 
-    const store = createMockStore();
-
-    render(
-      <Provider store={store}>
-        <TodayView />
-      </Provider>,
-    );
+    renderWithRouter();
 
     expect(screen.queryByText(/Experimental Feature/i)).not.toBeInTheDocument();
   });
 
   it("should render TaskList component", () => {
-    const store = createMockStore();
-    render(
-      <Provider store={store}>
-        <TodayView />
-      </Provider>,
-    );
+    renderWithRouter();
 
     const taskpanel = screen.getByRole("region", { name: "daily-tasks" });
     expect(within(taskpanel).getByText("Create task")).toBeInTheDocument();
   });
 
   it("should render CalendarAgenda component", () => {
-    const store = createMockStore();
-
-    render(
-      <Provider store={store}>
-        <TodayView />
-      </Provider>,
-    );
+    renderWithRouter();
 
     expect(screen.getByTestId("calendar-scroll")).toBeInTheDocument();
   });

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { useTodayEvents } from "../../hooks/events/useTodayEvents";
-import { useDateInView } from "../../hooks/useDateInView";
+import { useDateInView } from "../../hooks/navigation/useDateInView";
 
 export function CalendarAgenda() {
   const dateInView = useDateInView();

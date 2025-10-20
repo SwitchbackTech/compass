@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { useTasks } from "../../context/TaskProvider";
+import { useTasks } from "../../hooks/tasks/useTasks";
 import { AddTaskActiveButton } from "../AddTask/AddTaskActiveButton";
 import { AddTaskPreviewButton } from "../AddTask/AddTaskPreviewButton";
 import { TaskContextMenuWrapper } from "../ContextMenu/TaskContextMenuWrapper";
