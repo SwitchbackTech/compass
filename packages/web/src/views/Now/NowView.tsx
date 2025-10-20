@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { CSSProperties, useMemo } from "react";
 import { ShortcutSection } from "../Today/components/Shortcuts/components/ShortcutSection";
 import { getShortcuts } from "../Today/components/Shortcuts/data/shortcuts.data";
 import { useNowShortcuts } from "./useNowShortcuts";
@@ -174,7 +174,7 @@ export const NowView = () => {
                 "--delay": `${particle.animationDelay}s`,
                 "--duration": `${particle.duration}s`,
                 "--drift": `${(Math.random() - 0.5) * 100}px`,
-              } as React.CSSProperties
+              } as CSSProperties
             }
           />
         ))}
