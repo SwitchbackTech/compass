@@ -10,7 +10,7 @@ jest.mock("react-router-dom", () => ({
 }));
 
 // Mock the shortcut utility
-jest.mock("../Today/util/shortcut.util", () => ({
+jest.mock("../Day/util/shortcut.util", () => ({
   isEditable: jest.fn(),
 }));
 
@@ -20,9 +20,7 @@ jest.mock("@web/common/hooks/useFeatureFlags", () => ({
 }));
 
 const mockNavigate = jest.fn();
-const mockIsEditable = jest.requireMock(
-  "../Today/util/shortcut.util",
-).isEditable;
+const mockIsEditable = jest.requireMock("../Day/util/shortcut.util").isEditable;
 const mockUseFeatureFlags = useFeatureFlags as jest.MockedFunction<
   typeof useFeatureFlags
 >;

@@ -1,6 +1,6 @@
 import { CSSProperties, useMemo } from "react";
-import { ShortcutSection } from "../Today/components/Shortcuts/components/ShortcutSection";
-import { getShortcuts } from "../Today/components/Shortcuts/data/shortcuts.data";
+import { ShortcutSection } from "../Day/components/Shortcuts/components/ShortcutSection";
+import { getShortcuts } from "../Day/components/Shortcuts/data/shortcuts.data";
 import { useNowShortcuts } from "./useNowShortcuts";
 
 export const NowView = () => {

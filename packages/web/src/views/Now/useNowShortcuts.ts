@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { isEditable } from "@web/views/Today/util/shortcut.util";
+import { isEditable } from "@web/views/Day/util/shortcut.util";
 
 /**
  * Hook to handle keyboard shortcuts for the Now view
