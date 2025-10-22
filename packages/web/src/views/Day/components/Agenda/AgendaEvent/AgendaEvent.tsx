@@ -5,7 +5,6 @@ import {
 } from "@web/views/Day/util/agenda/agenda.util";
 
 export const AgendaEvent = ({ event }: { event: Schema_Event }) => {
-  if (event.isAllDay) return null; // Skip all-day events for now
   if (!event.startDate || !event.endDate) return null;
 
   const startDate = new Date(event.startDate);

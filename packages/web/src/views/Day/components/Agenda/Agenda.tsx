@@ -1,10 +1,18 @@
 import { useEffect, useRef } from "react";
+import { useDayEvents } from "@web/views/Day/data/day.data";
+import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
+import { AgendaAllDayEvent } from "./AgendaAllDayEvent/AgendaAllDayEvent";
 import { AgendaEvents } from "./AgendaEvents/AgendaEvents";
 import { TimeLabels } from "./TimeLabels/TimeLabels";
 
 export function Agenda() {
   const nowMarkerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const dateInView = useDateInView();
+  const { events } = useDayEvents(dateInView);
+
+  // Separate all-day events from timed events
+  const allDayEvents = events.filter((event) => event.isAllDay);
 
   // Center the calendar around the current time when the view mounts
   useEffect(() => {
@@ -20,6 +28,15 @@ export function Agenda() {
       aria-label="calendar-agenda"
       className="bg-darkBlue-400 flex h-full min-w-xs flex-col"
     >
+      {/* All-day events section - above the scroll container */}
+      {allDayEvents.length > 0 && (
+        <div className="space-y-1 border-b border-gray-200 bg-white px-4 py-2">
+          {allDayEvents.map((event) => (
+            <AgendaAllDayEvent key={event._id} event={event} />
+          ))}
+        </div>
+      )}
+
       <div
         ref={scrollRef}
         className="relative flex flex-1 overflow-x-hidden overflow-y-auto"

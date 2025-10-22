@@ -13,6 +13,10 @@ export const AgendaEvents = () => {
   const currentTime = new Date();
   const currentHour = currentTime.getHours();
   const currentMinute = currentTime.getMinutes();
+
+  // Filter out all-day events since they're handled in the parent Agenda component
+  const timedEvents = events.filter((event) => !event.isAllDay);
+
   return (
     <div className="relative ml-1 flex-1">
       <div
@@ -35,7 +39,9 @@ export const AgendaEvents = () => {
           {isLoading ? (
             <AgendaSkeleton />
           ) : (
-            events.map((event) => <AgendaEvent key={event._id} event={event} />)
+            timedEvents.map((event) => (
+              <AgendaEvent key={event._id} event={event} />
+            ))
           )}
         </div>
       </div>

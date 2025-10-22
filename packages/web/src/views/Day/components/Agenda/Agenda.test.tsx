@@ -58,7 +58,7 @@ describe("CalendarAgenda", () => {
     expect(screen.getByText("Event 1")).toBeInTheDocument();
     expect(screen.getByText("Event 2")).toBeInTheDocument();
   });
-  it("should not render all-day events", () => {
+  it("should render all-day events", () => {
     const mockEvents = [
       {
         _id: "event-all-day",
@@ -77,7 +77,7 @@ describe("CalendarAgenda", () => {
 
     render(<Agenda />);
 
-    expect(screen.queryByText("All Day Event")).not.toBeInTheDocument();
+    expect(screen.getByText("All Day Event")).toBeInTheDocument();
   });
 
   it("should show skeleton during loading", () => {
