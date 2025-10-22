@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import dayjs from "@core/util/date/dayjs";
+import { Schema_Event } from "@core/types/event.types";
 import { useDayEvents } from "../../data/day.data";
 import { useDateInView } from "../../hooks/navigation/useDateInView";
 import { CalendarAgendaSkeleton } from "./CalendarAgendaSkeleton";
@@ -27,9 +27,10 @@ export function CalendarAgenda() {
   }, []);
 
   // Format time for display
-  const formatTime = (date: Date) => {
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
+  const formatTime = (date: Date | string) => {
+    const dateObj = date instanceof Date ? date : new Date(date);
+    const hours = dateObj.getHours();
+    const minutes = dateObj.getMinutes();
     const ampm = hours >= 12 ? "pm" : "am";
     const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
     return `${displayHours}:${minutes.toString().padStart(2, "0")}${ampm}`;
@@ -42,6 +43,9 @@ export function CalendarAgenda() {
     const slot = hours * 4 + Math.floor(minutes / MINUTES_PER_SLOT);
     return slot * 20;
   };
+
+  const title = (event: Schema_Event) =>
+    `${event.title}\n${formatTime(event.startDate as string)} - ${formatTime(event.endDate as string)}`;
 
   return (
     <section
@@ -129,19 +133,17 @@ export function CalendarAgenda() {
               ) : (
                 events.map((event) => {
                   if (event.isAllDay) return null; // Skip all-day events for now
+                  if (!event.startDate || !event.endDate) return null;
 
-                  const startPosition = getTimePosition(
-                    dayjs(event.startDate).toDate(),
-                  );
-                  const endPosition = getTimePosition(
-                    dayjs(event.endDate).toDate(),
-                  );
+                  const startDate = new Date(event.startDate);
+                  const endDate = new Date(event.endDate);
+                  const startPosition = getTimePosition(startDate);
+                  const endPosition = getTimePosition(endDate);
                   const blockHeight = endPosition - startPosition;
                   const GAP_PX = 2;
                   const renderedHeight = Math.max(4, blockHeight - GAP_PX);
 
-                  const now = new Date();
-                  const isPast = dayjs(event.endDate).toDate() < now;
+                  const isPast = endDate < currentTime;
 
                   return (
                     <div
@@ -153,7 +155,7 @@ export function CalendarAgenda() {
                         height: `${renderedHeight}px`,
                         top: `${startPosition}px`,
                       }}
-                      title={`${event.title}\n${formatTime(dayjs(event.startDate).toDate())} - ${formatTime(dayjs(event.endDate).toDate())}`}
+                      title={title(event)}
                     >
                       <span className="flex-1 truncate">
                         {event.title || "Untitled"}
