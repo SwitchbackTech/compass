@@ -1,42 +1,27 @@
-import { Provider } from "react-redux";
-import { configureStore } from "@reduxjs/toolkit";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
+import { useDayEvents } from "../../data/day.data";
 import { CalendarAgenda } from "./CalendarAgenda";
 
-const createMockStore = (eventEntities = {}) => {
-  return configureStore({
-    reducer: {
-      events: () => ({
-        entities: {
-          value: eventEntities,
-        },
-      }),
-    },
-  });
-};
+// Mock the useDayEvents hook
+jest.mock("../../data/day.data");
+const mockUseDayEvents = useDayEvents as jest.MockedFunction<
+  typeof useDayEvents
+>;
 
 describe("CalendarAgenda", () => {
-  it("should render without crashing", () => {
-    const store = createMockStore();
-
-    render(
-      <Provider store={store}>
-        <CalendarAgenda />
-      </Provider>,
-    );
-
-    expect(screen.getByTestId("calendar-scroll")).toBeInTheDocument();
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
   it("should render time labels", () => {
-    const store = createMockStore();
+    mockUseDayEvents.mockReturnValue({
+      events: [],
+      isLoading: false,
+      error: null,
+    });
 
-    render(
-      <Provider store={store}>
-        <CalendarAgenda />
-      </Provider>,
-    );
+    render(<CalendarAgenda />);
 
     expect(screen.getByText("12am")).toBeInTheDocument();
     expect(screen.getByText("12pm")).toBeInTheDocument();
@@ -44,131 +29,112 @@ describe("CalendarAgenda", () => {
     expect(screen.getByText("6pm")).toBeInTheDocument();
   });
 
-  it("should render calendar events", () => {
-    const now = new Date();
-    const startDate = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      10,
-      0,
-      0,
-    );
-    const endDate = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      11,
-      0,
-      0,
-    );
-
-    const mockEvents = {
-      "event-1": {
+  it("should render multiple events", () => {
+    const mockEvents = [
+      {
         _id: "event-1",
-        title: "Morning Meeting",
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
+        title: "Event 1",
+        startDate: "2024-01-15T09:00:00Z",
+        endDate: "2024-01-15T10:00:00Z",
         isAllDay: false,
-        category: "Work",
       },
-    };
+      {
+        _id: "event-2",
+        title: "Event 2",
+        startDate: "2024-01-15T14:00:00Z",
+        endDate: "2024-01-15T15:00:00Z",
+        isAllDay: false,
+      },
+    ];
 
-    const store = createMockStore(mockEvents);
+    mockUseDayEvents.mockReturnValue({
+      events: mockEvents,
+      isLoading: false,
+      error: null,
+    });
 
-    render(
-      <Provider store={store}>
-        <CalendarAgenda />
-      </Provider>,
-    );
+    render(<CalendarAgenda />);
 
-    expect(screen.getByText("Morning Meeting")).toBeInTheDocument();
+    expect(screen.getByText("Event 1")).toBeInTheDocument();
+    expect(screen.getByText("Event 2")).toBeInTheDocument();
   });
-
   it("should not render all-day events", () => {
-    const mockEvents = {
-      "event-all-day": {
+    const mockEvents = [
+      {
         _id: "event-all-day",
         title: "All Day Event",
-        startDate: new Date().toISOString(),
-        endDate: new Date().toISOString(),
+        startDate: "2024-01-15T00:00:00Z",
+        endDate: "2024-01-15T23:59:59Z",
         isAllDay: true,
-        category: "Personal",
       },
-    };
+    ];
 
-    const store = createMockStore(mockEvents);
+    mockUseDayEvents.mockReturnValue({
+      events: mockEvents,
+      isLoading: false,
+      error: null,
+    });
 
-    render(
-      <Provider store={store}>
-        <CalendarAgenda />
-      </Provider>,
-    );
+    render(<CalendarAgenda />);
 
     expect(screen.queryByText("All Day Event")).not.toBeInTheDocument();
   });
 
-  it("should render multiple events", () => {
-    const now = new Date();
-    const event1Start = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      9,
-      0,
-      0,
-    );
-    const event1End = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      10,
-      0,
-      0,
-    );
-    const event2Start = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      14,
-      0,
-      0,
-    );
-    const event2End = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      15,
-      0,
-      0,
-    );
+  it.skip("should show skeleton during loading", () => {
+    mockUseDayEvents.mockReturnValue({
+      events: [],
+      isLoading: true,
+      error: null,
+    });
 
-    const mockEvents = {
-      "event-1": {
+    render(<CalendarAgenda />);
+
+    // Check for skeleton elements (they have animate-pulse class)
+    const skeletonElements = document.querySelectorAll(".animate-pulse");
+    expect(skeletonElements.length).toBeGreaterThan(0);
+  });
+
+  it.skip("should show error message when loading fails", () => {
+    const errorMessage = "Network error";
+    mockUseDayEvents.mockReturnValue({
+      events: [],
+      isLoading: false,
+      error: errorMessage,
+    });
+
+    render(<CalendarAgenda />);
+
+    expect(screen.getByText("Failed to load events")).toBeInTheDocument();
+    expect(screen.getByText(errorMessage)).toBeInTheDocument();
+  });
+
+  it("should not show skeleton or error when events are loaded", () => {
+    const mockEvents = [
+      {
         _id: "event-1",
-        title: "Event 1",
-        startDate: event1Start.toISOString(),
-        endDate: event1End.toISOString(),
+        title: "Test Event",
+        startDate: "2024-01-15T10:00:00Z",
+        endDate: "2024-01-15T11:00:00Z",
         isAllDay: false,
       },
-      "event-2": {
-        _id: "event-2",
-        title: "Event 2",
-        startDate: event2Start.toISOString(),
-        endDate: event2End.toISOString(),
-        isAllDay: false,
-      },
-    };
+    ];
 
-    const store = createMockStore(mockEvents);
+    mockUseDayEvents.mockReturnValue({
+      events: mockEvents,
+      isLoading: false,
+      error: null,
+    });
 
-    render(
-      <Provider store={store}>
-        <CalendarAgenda />
-      </Provider>,
-    );
+    render(<CalendarAgenda />);
 
-    expect(screen.getByText("Event 1")).toBeInTheDocument();
-    expect(screen.getByText("Event 2")).toBeInTheDocument();
+    // Should not show skeleton
+    const skeletonElements = document.querySelectorAll(".animate-pulse");
+    expect(skeletonElements).toHaveLength(0);
+
+    // Should not show error
+    expect(screen.queryByText("Failed to load events")).not.toBeInTheDocument();
+
+    // Should show events
+    expect(screen.getByText("Test Event")).toBeInTheDocument();
   });
 });

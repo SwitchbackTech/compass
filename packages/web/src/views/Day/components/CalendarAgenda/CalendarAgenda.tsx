@@ -1,10 +1,11 @@
-import React, { useEffect, useRef } from "react";
-import { useTodayEvents } from "../../hooks/events/useTodayEvents";
+import { useEffect, useRef } from "react";
+import dayjs from "@core/util/date/dayjs";
+import { useDayEvents } from "../../data/day.data";
 import { useDateInView } from "../../hooks/navigation/useDateInView";
 
 export function CalendarAgenda() {
   const dateInView = useDateInView();
-  const events = useTodayEvents(dateInView.toDate());
+  const { events } = useDayEvents(dateInView);
   const nowMarkerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -119,18 +120,22 @@ export function CalendarAgenda() {
               {events.map((event) => {
                 if (event.isAllDay) return null; // Skip all-day events for now
 
-                const startPosition = getTimePosition(event.startTime);
-                const endPosition = getTimePosition(event.endTime);
+                const startPosition = getTimePosition(
+                  dayjs(event.startDate).toDate(),
+                );
+                const endPosition = getTimePosition(
+                  dayjs(event.endDate).toDate(),
+                );
                 const blockHeight = endPosition - startPosition;
                 const GAP_PX = 2;
                 const renderedHeight = Math.max(4, blockHeight - GAP_PX);
 
                 const now = new Date();
-                const isPast = event.endTime < now;
+                const isPast = dayjs(event.endDate).toDate() < now;
 
                 return (
                   <div
-                    key={event.id}
+                    key={event._id}
                     className={`text-white-100 absolute right-2 left-2 flex items-center rounded bg-blue-200 px-2 text-xs ${
                       isPast ? "opacity-60" : ""
                     }`}
@@ -138,7 +143,7 @@ export function CalendarAgenda() {
                       height: `${renderedHeight}px`,
                       top: `${startPosition}px`,
                     }}
-                    title={`${event.title}\n${formatTime(event.startTime)} - ${formatTime(event.endTime)}`}
+                    title={`${event.title}\n${formatTime(dayjs(event.startDate).toDate())} - ${formatTime(dayjs(event.endDate).toDate())}`}
                   >
                     <span className="flex-1 truncate">
                       {event.title || "Untitled"}
