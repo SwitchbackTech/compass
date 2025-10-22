@@ -1,6 +1,6 @@
 import { Schema_Event } from "@core/types/event.types";
 
-export const AgendaAllDayEvent = ({ event }: { event: Schema_Event }) => {
+export const AllDayAgendaEvent = ({ event }: { event: Schema_Event }) => {
   if (!event.title) return null;
 
   const isPast = event.endDate ? new Date(event.endDate) < new Date() : false;

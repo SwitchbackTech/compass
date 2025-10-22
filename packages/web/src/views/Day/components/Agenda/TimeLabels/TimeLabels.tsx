@@ -31,7 +31,7 @@ export const TimeLabels = ({
             style={{
               top: `${i * SLOT_HEIGHT}px`,
               left: "0px",
-              height: "20px",
+              height: `${SLOT_HEIGHT}px`,
               width: "64px",
             }}
           >

@@ -94,20 +94,6 @@ describe("CalendarAgenda", () => {
     expect(skeletonElements.length).toBeGreaterThan(0);
   });
 
-  it.skip("should show error message when loading fails", () => {
-    const errorMessage = "Network error";
-    mockUseDayEvents.mockReturnValue({
-      events: [],
-      isLoading: false,
-      error: errorMessage,
-    });
-
-    render(<Agenda />);
-
-    expect(screen.getByText("Failed to load events")).toBeInTheDocument();
-    expect(screen.getByText(errorMessage)).toBeInTheDocument();
-  });
-
   it("should not show skeleton or error when events are loaded", () => {
     const mockEvents = [
       {

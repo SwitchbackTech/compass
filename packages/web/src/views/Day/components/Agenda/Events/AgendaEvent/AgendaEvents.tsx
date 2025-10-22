@@ -4,8 +4,8 @@ import {
 } from "@web/views/Day/constants/day.constants";
 import { useDayEvents } from "@web/views/Day/data/day.data";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
-import { AgendaEvent } from "../AgendaEvent/AgendaEvent";
-import { AgendaSkeleton } from "../AgendaSkeleton/CalendarAgendaSkeleton";
+import { AgendaSkeleton } from "../../AgendaSkeleton/AgendaSkeleton";
+import { AgendaEvent } from "./AgendaEvent";
 
 export const AgendaEvents = () => {
   const dateInView = useDateInView();

@@ -19,7 +19,6 @@ export const AgendaEvent = ({ event }: { event: Schema_Event }) => {
 
   return (
     <div
-      key={event._id}
       className={`text-white-100 absolute right-2 left-2 flex items-center rounded bg-blue-200 px-2 text-xs ${
         isPast ? "opacity-60" : ""
       }`}
