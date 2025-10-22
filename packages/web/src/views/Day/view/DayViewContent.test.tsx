@@ -5,11 +5,9 @@ import { addTasks } from "../../../__tests__/utils/tasks/task.test.util";
 import { renderWithDayProviders } from "../util/day.test-util";
 import { DayViewContent } from "./DayViewContent";
 
-// Mock the CalendarAgenda component
-jest.mock("../components/CalendarAgenda/CalendarAgenda", () => ({
-  CalendarAgenda: () => (
-    <div className="h-96 bg-gray-100">Calendar Content</div>
-  ),
+// Mock the Agenda component
+jest.mock("../components/Agenda/Agenda", () => ({
+  Agenda: () => <div className="h-96 bg-gray-100">Calendar Content</div>,
 }));
 
 // Mock the ShortcutsOverlay component
