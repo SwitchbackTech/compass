@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { CalendarAgenda } from "../components/CalendarAgenda/CalendarAgenda";
+import { Agenda } from "../components/Agenda/Agenda";
 import { ShortcutsOverlay } from "../components/Shortcuts/components/ShortcutsOverlay";
 import { TaskList } from "../components/TaskList/TaskList";
 import { useDateNavigation } from "../hooks/navigation/useDateNavigation";
@@ -92,7 +92,7 @@ export const DayViewContent = () => {
       <ShortcutsOverlay />
       <TaskList />
 
-      <CalendarAgenda />
+      <Agenda />
     </div>
   );
 };

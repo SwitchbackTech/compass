@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import { useDayEvents } from "../../data/day.data";
-import { CalendarAgenda } from "./CalendarAgenda";
+import { Agenda } from "./Agenda";
 
 // Mock the useDayEvents hook
 jest.mock("../../data/day.data");
@@ -21,7 +21,7 @@ describe("CalendarAgenda", () => {
       error: null,
     });
 
-    render(<CalendarAgenda />);
+    render(<Agenda />);
 
     expect(screen.getByText("12am")).toBeInTheDocument();
     expect(screen.getByText("12pm")).toBeInTheDocument();
@@ -53,7 +53,7 @@ describe("CalendarAgenda", () => {
       error: null,
     });
 
-    render(<CalendarAgenda />);
+    render(<Agenda />);
 
     expect(screen.getByText("Event 1")).toBeInTheDocument();
     expect(screen.getByText("Event 2")).toBeInTheDocument();
@@ -75,7 +75,7 @@ describe("CalendarAgenda", () => {
       error: null,
     });
 
-    render(<CalendarAgenda />);
+    render(<Agenda />);
 
     expect(screen.queryByText("All Day Event")).not.toBeInTheDocument();
   });
@@ -87,7 +87,7 @@ describe("CalendarAgenda", () => {
       error: null,
     });
 
-    render(<CalendarAgenda />);
+    render(<Agenda />);
 
     // Check for skeleton elements (they have animate-pulse class)
     const skeletonElements = document.querySelectorAll(".animate-pulse");
@@ -102,7 +102,7 @@ describe("CalendarAgenda", () => {
       error: errorMessage,
     });
 
-    render(<CalendarAgenda />);
+    render(<Agenda />);
 
     expect(screen.getByText("Failed to load events")).toBeInTheDocument();
     expect(screen.getByText(errorMessage)).toBeInTheDocument();
@@ -125,7 +125,7 @@ describe("CalendarAgenda", () => {
       error: null,
     });
 
-    render(<CalendarAgenda />);
+    render(<Agenda />);
 
     // Should not show skeleton
     const skeletonElements = document.querySelectorAll(".animate-pulse");

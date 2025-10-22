@@ -1,13 +1,12 @@
 import { useEffect, useRef } from "react";
-import { Schema_Event } from "@core/types/event.types";
+import { MINUTES_PER_SLOT, SLOT_HEIGHT } from "../../constants/day.constants";
 import { useDayEvents } from "../../data/day.data";
 import { useDateInView } from "../../hooks/navigation/useDateInView";
-import { CalendarAgendaSkeleton } from "./CalendarAgendaSkeleton";
+import { getAgendaEventTime } from "../../util/agenda/agenda.util";
+import { AgendaEvent } from "./AgendaEvent/AgendaEvent";
+import { AgendaSkeleton } from "./AgendaSkeleton/CalendarAgendaSkeleton";
 
-export const SLOT_HEIGHT = 20;
-export const MINUTES_PER_SLOT = 15;
-
-export function CalendarAgenda() {
+export function Agenda() {
   const dateInView = useDateInView();
   const { events, isLoading } = useDayEvents(dateInView);
   const nowMarkerRef = useRef<HTMLDivElement>(null);
@@ -25,27 +24,6 @@ export function CalendarAgenda() {
       behavior: "smooth",
     });
   }, []);
-
-  // Format time for display
-  const formatTime = (date: Date | string) => {
-    const dateObj = date instanceof Date ? date : new Date(date);
-    const hours = dateObj.getHours();
-    const minutes = dateObj.getMinutes();
-    const ampm = hours >= 12 ? "pm" : "am";
-    const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
-    return `${displayHours}:${minutes.toString().padStart(2, "0")}${ampm}`;
-  };
-
-  // Get position in pixels for a given time (15-minute slots, 20px each)
-  const getTimePosition = (date: Date) => {
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const slot = hours * 4 + Math.floor(minutes / MINUTES_PER_SLOT);
-    return slot * SLOT_HEIGHT;
-  };
-
-  const title = (event: Schema_Event) =>
-    `${event.title}\n${formatTime(event.startDate as string)} - ${formatTime(event.endDate as string)}`;
 
   return (
     <section
@@ -104,7 +82,7 @@ export function CalendarAgenda() {
           >
             <div className="bg-red absolute -top-1 -left-2 h-2 w-4 rounded-full"></div>
             <div className="text-red bg-darkBlue-400/90 pointer-events-none absolute -top-2 left-0 z-20 w-16 rounded-sm px-1 text-[11px] leading-none font-medium shadow-sm">
-              {formatTime(currentTime)}
+              {getAgendaEventTime(currentTime)}
             </div>
           </div>
         </div>
@@ -129,40 +107,11 @@ export function CalendarAgenda() {
             {/* Event blocks */}
             <div className="relative">
               {isLoading ? (
-                <CalendarAgendaSkeleton />
+                <AgendaSkeleton />
               ) : (
-                events.map((event) => {
-                  if (event.isAllDay) return null; // Skip all-day events for now
-                  if (!event.startDate || !event.endDate) return null;
-
-                  const startDate = new Date(event.startDate);
-                  const endDate = new Date(event.endDate);
-                  const startPosition = getTimePosition(startDate);
-                  const endPosition = getTimePosition(endDate);
-                  const blockHeight = endPosition - startPosition;
-                  const GAP_PX = 2;
-                  const renderedHeight = Math.max(4, blockHeight - GAP_PX);
-
-                  const isPast = endDate < currentTime;
-
-                  return (
-                    <div
-                      key={event._id}
-                      className={`text-white-100 absolute right-2 left-2 flex items-center rounded bg-blue-200 px-2 text-xs ${
-                        isPast ? "opacity-60" : ""
-                      }`}
-                      style={{
-                        height: `${renderedHeight}px`,
-                        top: `${startPosition}px`,
-                      }}
-                      title={title(event)}
-                    >
-                      <span className="flex-1 truncate">
-                        {event.title || "Untitled"}
-                      </span>
-                    </div>
-                  );
-                })
+                events.map((event) => (
+                  <AgendaEvent key={event._id} event={event} />
+                ))
               )}
             </div>
           </div>

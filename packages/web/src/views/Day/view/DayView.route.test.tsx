@@ -10,11 +10,9 @@ import { renderWithDayProviders } from "../util/day.test-util";
 import { DayView } from "./DayView";
 import { DayViewContent } from "./DayViewContent";
 
-// Mock the CalendarAgenda component
-jest.mock("../components/CalendarAgenda/CalendarAgenda", () => ({
-  CalendarAgenda: () => (
-    <div className="h-96 bg-gray-100">Calendar Content</div>
-  ),
+// Mock the Agenda component
+jest.mock("../components/Agenda/Agenda", () => ({
+  Agenda: () => <div className="h-96 bg-gray-100">Calendar Content</div>,
 }));
 
 // Mock the ShortcutsOverlay component
