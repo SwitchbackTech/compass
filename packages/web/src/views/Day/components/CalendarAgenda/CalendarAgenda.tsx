@@ -41,7 +41,7 @@ export function CalendarAgenda() {
     const hours = date.getHours();
     const minutes = date.getMinutes();
     const slot = hours * 4 + Math.floor(minutes / MINUTES_PER_SLOT);
-    return slot * 20;
+    return slot * SLOT_HEIGHT;
   };
 
   const title = (event: Schema_Event) =>
