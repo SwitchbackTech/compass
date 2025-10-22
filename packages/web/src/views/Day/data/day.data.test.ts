@@ -1,5 +1,6 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
+import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { EventApi } from "@web/ducks/events/event.api";
 import { useDayEvents } from "./day.data";
 
@@ -10,6 +11,10 @@ const mockEventApi = EventApi as jest.Mocked<typeof EventApi>;
 // Mock console.log to avoid cluttering test output
 const consoleSpy = jest.spyOn(console, "log").mockImplementation();
 
+const buildExpectedDateRange = (dateString: string) => ({
+  startDate: toUTCOffset(dayjs(dateString).startOf("day")),
+  endDate: toUTCOffset(dayjs(dateString).endOf("day")),
+});
 describe("useDayEvents", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -23,6 +28,7 @@ describe("useDayEvents", () => {
 
   it("should return loading state initially", async () => {
     const testDate = dayjs("2024-01-15");
+    const expectedDateRange = buildExpectedDateRange("2024-01-15");
     const { result } = renderHook(() => useDayEvents(testDate));
 
     expect(result.current.isLoading).toBe(true);
@@ -31,8 +37,7 @@ describe("useDayEvents", () => {
 
     await waitFor(() => {
       expect(mockEventApi.get).toHaveBeenCalledWith({
-        startDate: "2024-01-15",
-        endDate: "2024-01-15",
+        ...expectedDateRange,
         someday: false,
       });
     });
@@ -61,6 +66,7 @@ describe("useDayEvents", () => {
     } as never);
 
     const testDate = dayjs("2024-01-15");
+    const expectedDateRange = buildExpectedDateRange("2024-01-15");
     const { result } = renderHook(() => useDayEvents(testDate));
 
     await waitFor(() => {
@@ -70,8 +76,7 @@ describe("useDayEvents", () => {
     expect(result.current.events).toEqual(mockEvents);
     expect(result.current.error).toBeNull();
     expect(mockEventApi.get).toHaveBeenCalledWith({
-      startDate: "2024-01-15",
-      endDate: "2024-01-15",
+      ...expectedDateRange,
       someday: false,
     });
     expect(consoleSpy).toHaveBeenCalledWith(
@@ -79,7 +84,7 @@ describe("useDayEvents", () => {
       expect.objectContaining({
         events: mockEvents,
         loadingTime: expect.any(Number),
-        dateRange: { startDate: "2024-01-15", endDate: "2024-01-15" },
+        dateRange: expectedDateRange,
         count: 2,
       }),
     );
@@ -90,6 +95,7 @@ describe("useDayEvents", () => {
     mockEventApi.get.mockRejectedValue(new Error(errorMessage));
 
     const testDate = dayjs("2024-01-15");
+    const expectedDateRange = buildExpectedDateRange("2024-01-15");
     const { result } = renderHook(() => useDayEvents(testDate));
 
     await waitFor(() => {
@@ -103,7 +109,7 @@ describe("useDayEvents", () => {
       expect.objectContaining({
         error: errorMessage,
         loadingTime: expect.any(Number),
-        dateRange: { startDate: "2024-01-15", endDate: "2024-01-15" },
+        dateRange: expectedDateRange,
       }),
     );
   });
@@ -117,6 +123,7 @@ describe("useDayEvents", () => {
     );
 
     const testDate = dayjs("2024-01-15");
+    const expectedDateRange = buildExpectedDateRange("2024-01-15");
     const { result } = renderHook(() => useDayEvents(testDate));
 
     // Fast-forward time to trigger timeout
@@ -133,7 +140,7 @@ describe("useDayEvents", () => {
       expect.objectContaining({
         error: "Request timeout",
         loadingTime: expect.any(Number),
-        dateRange: { startDate: "2024-01-15", endDate: "2024-01-15" },
+        dateRange: expectedDateRange,
       }),
     );
 
@@ -150,6 +157,8 @@ describe("useDayEvents", () => {
 
     const testDate1 = dayjs("2024-01-15");
     const testDate2 = dayjs("2024-01-16");
+    const expectedDateRange1 = buildExpectedDateRange("2024-01-15");
+    const expectedDateRange2 = buildExpectedDateRange("2024-01-16");
 
     const { result, rerender } = renderHook(({ date }) => useDayEvents(date), {
       initialProps: { date: testDate1 },
@@ -161,6 +170,10 @@ describe("useDayEvents", () => {
 
     expect(result.current.events).toEqual(mockEvents1);
     expect(mockEventApi.get).toHaveBeenCalledTimes(1);
+    expect(mockEventApi.get).toHaveBeenLastCalledWith({
+      ...expectedDateRange1,
+      someday: false,
+    });
 
     // Change date
     rerender({ date: testDate2 });
@@ -174,8 +187,7 @@ describe("useDayEvents", () => {
     expect(result.current.events).toEqual(mockEvents2);
     expect(mockEventApi.get).toHaveBeenCalledTimes(2);
     expect(mockEventApi.get).toHaveBeenLastCalledWith({
-      startDate: "2024-01-16",
-      endDate: "2024-01-16",
+      ...expectedDateRange2,
       someday: false,
     });
   });
@@ -184,12 +196,12 @@ describe("useDayEvents", () => {
     mockEventApi.get.mockResolvedValue({ data: [] } as never);
 
     const testDate = dayjs("2024-12-25");
+    const expectedDateRange = buildExpectedDateRange("2024-12-25");
     renderHook(() => useDayEvents(testDate));
 
     await waitFor(() => {
       expect(mockEventApi.get).toHaveBeenCalledWith({
-        startDate: "2024-12-25",
-        endDate: "2024-12-25",
+        ...expectedDateRange,
         someday: false,
       });
     });

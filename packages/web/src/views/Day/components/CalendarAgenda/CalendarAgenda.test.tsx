@@ -80,7 +80,7 @@ describe("CalendarAgenda", () => {
     expect(screen.queryByText("All Day Event")).not.toBeInTheDocument();
   });
 
-  it.skip("should show skeleton during loading", () => {
+  it("should show skeleton during loading", () => {
     mockUseDayEvents.mockReturnValue({
       events: [],
       isLoading: true,

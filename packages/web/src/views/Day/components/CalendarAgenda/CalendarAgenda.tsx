@@ -2,10 +2,11 @@ import { useEffect, useRef } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { useDayEvents } from "../../data/day.data";
 import { useDateInView } from "../../hooks/navigation/useDateInView";
+import { CalendarAgendaSkeleton } from "./CalendarAgendaSkeleton";
 
 export function CalendarAgenda() {
   const dateInView = useDateInView();
-  const { events } = useDayEvents(dateInView);
+  const { events, isLoading } = useDayEvents(dateInView);
   const nowMarkerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -117,40 +118,44 @@ export function CalendarAgenda() {
 
             {/* Event blocks */}
             <div className="relative">
-              {events.map((event) => {
-                if (event.isAllDay) return null; // Skip all-day events for now
+              {isLoading ? (
+                <CalendarAgendaSkeleton />
+              ) : (
+                events.map((event) => {
+                  if (event.isAllDay) return null; // Skip all-day events for now
 
-                const startPosition = getTimePosition(
-                  dayjs(event.startDate).toDate(),
-                );
-                const endPosition = getTimePosition(
-                  dayjs(event.endDate).toDate(),
-                );
-                const blockHeight = endPosition - startPosition;
-                const GAP_PX = 2;
-                const renderedHeight = Math.max(4, blockHeight - GAP_PX);
+                  const startPosition = getTimePosition(
+                    dayjs(event.startDate).toDate(),
+                  );
+                  const endPosition = getTimePosition(
+                    dayjs(event.endDate).toDate(),
+                  );
+                  const blockHeight = endPosition - startPosition;
+                  const GAP_PX = 2;
+                  const renderedHeight = Math.max(4, blockHeight - GAP_PX);
 
-                const now = new Date();
-                const isPast = dayjs(event.endDate).toDate() < now;
+                  const now = new Date();
+                  const isPast = dayjs(event.endDate).toDate() < now;
 
-                return (
-                  <div
-                    key={event._id}
-                    className={`text-white-100 absolute right-2 left-2 flex items-center rounded bg-blue-200 px-2 text-xs ${
-                      isPast ? "opacity-60" : ""
-                    }`}
-                    style={{
-                      height: `${renderedHeight}px`,
-                      top: `${startPosition}px`,
-                    }}
-                    title={`${event.title}\n${formatTime(dayjs(event.startDate).toDate())} - ${formatTime(dayjs(event.endDate).toDate())}`}
-                  >
-                    <span className="flex-1 truncate">
-                      {event.title || "Untitled"}
-                    </span>
-                  </div>
-                );
-              })}
+                  return (
+                    <div
+                      key={event._id}
+                      className={`text-white-100 absolute right-2 left-2 flex items-center rounded bg-blue-200 px-2 text-xs ${
+                        isPast ? "opacity-60" : ""
+                      }`}
+                      style={{
+                        height: `${renderedHeight}px`,
+                        top: `${startPosition}px`,
+                      }}
+                      title={`${event.title}\n${formatTime(dayjs(event.startDate).toDate())} - ${formatTime(dayjs(event.endDate).toDate())}`}
+                    >
+                      <span className="flex-1 truncate">
+                        {event.title || "Untitled"}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
