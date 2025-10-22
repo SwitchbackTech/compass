@@ -8,9 +8,6 @@ import { useDayEvents } from "./day.data";
 jest.mock("@web/ducks/events/event.api");
 const mockEventApi = EventApi as jest.Mocked<typeof EventApi>;
 
-// Mock console.log to avoid cluttering test output
-const consoleSpy = jest.spyOn(console, "log").mockImplementation();
-
 const buildExpectedDateRange = (dateString: string) => ({
   startDate: toUTCOffset(dayjs(dateString).startOf("day")),
   endDate: toUTCOffset(dayjs(dateString).endOf("day")),
@@ -18,12 +15,7 @@ const buildExpectedDateRange = (dateString: string) => ({
 describe("useDayEvents", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    consoleSpy.mockClear();
     mockEventApi.get.mockResolvedValue({ data: [] } as never);
-  });
-
-  afterAll(() => {
-    consoleSpy.mockRestore();
   });
 
   it("should return loading state initially", async () => {
@@ -79,15 +71,6 @@ describe("useDayEvents", () => {
       ...expectedDateRange,
       someday: false,
     });
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "Day events:",
-      expect.objectContaining({
-        events: mockEvents,
-        loadingTime: expect.any(Number),
-        dateRange: expectedDateRange,
-        count: 2,
-      }),
-    );
   });
 
   it("should handle API errors", async () => {
@@ -95,7 +78,6 @@ describe("useDayEvents", () => {
     mockEventApi.get.mockRejectedValue(new Error(errorMessage));
 
     const testDate = dayjs("2024-01-15");
-    const expectedDateRange = buildExpectedDateRange("2024-01-15");
     const { result } = renderHook(() => useDayEvents(testDate));
 
     await waitFor(() => {
@@ -104,14 +86,20 @@ describe("useDayEvents", () => {
 
     expect(result.current.events).toEqual([]);
     expect(result.current.error).toBe(errorMessage);
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "Day events error:",
-      expect.objectContaining({
-        error: errorMessage,
-        loadingTime: expect.any(Number),
-        dateRange: expectedDateRange,
-      }),
-    );
+  });
+
+  it("should return a fallback message for unknown errors", async () => {
+    mockEventApi.get.mockRejectedValue("bad request");
+
+    const testDate = dayjs("2024-01-15");
+    const { result } = renderHook(() => useDayEvents(testDate));
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.events).toEqual([]);
+    expect(result.current.error).toBe("Unknown error");
   });
 
   it("should handle timeout errors", async () => {
@@ -123,7 +111,6 @@ describe("useDayEvents", () => {
     );
 
     const testDate = dayjs("2024-01-15");
-    const expectedDateRange = buildExpectedDateRange("2024-01-15");
     const { result } = renderHook(() => useDayEvents(testDate));
 
     // Fast-forward time to trigger timeout
@@ -135,14 +122,6 @@ describe("useDayEvents", () => {
 
     expect(result.current.events).toEqual([]);
     expect(result.current.error).toBe("Request timeout");
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "Day events error:",
-      expect.objectContaining({
-        error: "Request timeout",
-        loadingTime: expect.any(Number),
-        dateRange: expectedDateRange,
-      }),
-    );
 
     jest.useRealTimers();
   });

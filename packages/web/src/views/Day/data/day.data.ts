@@ -30,7 +30,6 @@ export function useDayEvents(date: Dayjs): DayEvents {
   });
 
   const fetchDayEvents = useCallback(async () => {
-    const startTime = Date.now();
     const _startDate = date.startOf("day");
     const startDate = toUTCOffset(_startDate);
     const _endDate = date.endOf("day");
@@ -46,34 +45,13 @@ export function useDayEvents(date: Dayjs): DayEvents {
       ]);
 
       const events = response.data || [];
-      const loadingTime = Date.now() - startTime;
-      const dateRange = { startDate, endDate };
-      const count = events.length;
-
-      console.log("Day events:", {
-        events,
-        loadingTime,
-        dateRange,
-        count,
-      });
 
       setDayEvents({ events, isLoading: false, error: null });
     } catch (error) {
-      const loadingTime = Date.now() - startTime;
-      const dateRange = { startDate, endDate };
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-
-      console.log("Day events error:", {
-        error: errorMessage,
-        loadingTime,
-        dateRange,
-      });
-
       setDayEvents({
         events: [],
         isLoading: false,
-        error: errorMessage,
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }, [date]);
