@@ -1,11 +1,10 @@
+import { MINUTES_PER_SLOT, SLOT_HEIGHT } from "./CalendarAgenda";
+
 /**
  * Skeleton component that mimics event blocks in the calendar agenda
  * Shows animated placeholder bars at various time positions during loading
  */
 export function CalendarAgendaSkeleton() {
-  const SLOT_HEIGHT = 20; // pixels representing a 15-minute slot
-  const MINUTES_PER_SLOT = 15;
-
   const getPositionFromTime = (hour: number, minute: number) => {
     const minutesFromMidnight = hour * 60 + minute;
     return (minutesFromMidnight / MINUTES_PER_SLOT) * SLOT_HEIGHT;

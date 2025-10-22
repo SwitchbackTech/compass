@@ -4,6 +4,9 @@ import { useDayEvents } from "../../data/day.data";
 import { useDateInView } from "../../hooks/navigation/useDateInView";
 import { CalendarAgendaSkeleton } from "./CalendarAgendaSkeleton";
 
+export const SLOT_HEIGHT = 20;
+export const MINUTES_PER_SLOT = 15;
+
 export function CalendarAgenda() {
   const dateInView = useDateInView();
   const { events, isLoading } = useDayEvents(dateInView);
@@ -36,7 +39,7 @@ export function CalendarAgenda() {
   const getTimePosition = (date: Date) => {
     const hours = date.getHours();
     const minutes = date.getMinutes();
-    const slot = hours * 4 + Math.floor(minutes / 15);
+    const slot = hours * 4 + Math.floor(minutes / MINUTES_PER_SLOT);
     return slot * 20;
   };
 
@@ -58,7 +61,7 @@ export function CalendarAgenda() {
         <div className="bg-darkBlue-400 relative w-16 flex-shrink-0">
           {Array.from({ length: 96 }, (_, i) => {
             const hour = Math.floor(i / 4);
-            const minute = (i % 4) * 15;
+            const minute = (i % 4) * MINUTES_PER_SLOT;
             const displayTime =
               minute === 0
                 ? `${hour === 0 ? 12 : hour > 12 ? hour - 12 : hour}${
@@ -71,7 +74,7 @@ export function CalendarAgenda() {
                 key={`time-${i}`}
                 className="pointer-events-none absolute z-20 flex items-center text-xs text-gray-200"
                 style={{
-                  top: `${i * 20}px`,
+                  top: `${i * SLOT_HEIGHT}px`,
                   left: "0px",
                   height: "20px",
                   width: "64px",
@@ -92,7 +95,7 @@ export function CalendarAgenda() {
             data-now-marker="true"
             className="border-red absolute right-0 left-0 z-30 border-t-2"
             style={{
-              top: `${(currentHour * 4 + Math.floor(currentMinute / 15)) * 20}px`,
+              top: `${(currentHour * 4 + Math.floor(currentMinute / MINUTES_PER_SLOT)) * SLOT_HEIGHT}px`,
             }}
           >
             <div className="bg-red absolute -top-1 -left-2 h-2 w-4 rounded-full"></div>
@@ -106,13 +109,16 @@ export function CalendarAgenda() {
         <div className="relative ml-1 flex-1">
           <div
             data-testid="calendar-surface"
-            style={{ height: `${24 * 4 * 20}px`, position: "relative" }}
+            style={{
+              height: `${24 * 4 * SLOT_HEIGHT}px`,
+              position: "relative",
+            }}
           >
             {/* Current time indicator for events column */}
             <div
               className="border-red absolute right-0 left-0 z-30 border-t-2"
               style={{
-                top: `${(currentHour * 4 + Math.floor(currentMinute / 15)) * 20}px`,
+                top: `${(currentHour * 4 + Math.floor(currentMinute / MINUTES_PER_SLOT)) * SLOT_HEIGHT}px`,
               }}
             />
 
