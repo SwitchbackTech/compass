@@ -54,7 +54,7 @@ export const AgendaEventMenuContent = forwardRef<
             {timeDisplay && (
               <time
                 className="text-xs font-medium text-gray-600"
-                dateTime={`${event.startDate}/${event.endDate}`}
+                dateTime={event.startDate}
               >
                 {timeDisplay}
               </time>
