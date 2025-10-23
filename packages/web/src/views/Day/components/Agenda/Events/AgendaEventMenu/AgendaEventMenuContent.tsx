@@ -15,9 +15,15 @@ export const AgendaEventMenuContent = forwardRef<
   const context = useAgendaEventMenuContext();
   const ref = useMergeRefs([context.refs.setFloating, propRef]);
 
-  const startTime = event.startDate ? getAgendaEventTime(event.startDate) : "";
-  const endTime = event.endDate ? getAgendaEventTime(event.endDate) : "";
-  const timeRange = startTime && endTime ? `${startTime} - ${endTime}` : "";
+  let timeDisplay = "";
+  if (!event.isAllDay) {
+    const startTime = event.startDate
+      ? getAgendaEventTime(event.startDate)
+      : "";
+    const endTime = event.endDate ? getAgendaEventTime(event.endDate) : "";
+    timeDisplay = startTime && endTime ? `${startTime} - ${endTime}` : "";
+  }
+  // All-day events: timeDisplay stays empty (no dates shown)
 
   return (
     <FloatingPortal>
@@ -45,12 +51,12 @@ export const AgendaEventMenuContent = forwardRef<
             >
               {event.title || "Untitled Event"}
             </h3>
-            {timeRange && (
+            {timeDisplay && (
               <time
                 className="text-xs font-medium text-gray-600"
                 dateTime={`${event.startDate}/${event.endDate}`}
               >
-                {timeRange}
+                {timeDisplay}
               </time>
             )}
             {event.description && (

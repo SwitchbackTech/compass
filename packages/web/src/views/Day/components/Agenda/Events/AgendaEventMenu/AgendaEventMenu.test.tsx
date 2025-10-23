@@ -229,4 +229,122 @@ describe("AgendaEventMenu", () => {
     // Menu should still be visible
     expect(screen.getByText("Test Event")).toBeInTheDocument();
   });
+
+  describe("All-day events", () => {
+    const singleDayAllDayEvent: Schema_Event = {
+      _id: "test-allday-1",
+      title: "Single Day All Day Event",
+      description: "This is a single day all day event",
+      startDate: "2024-01-15T00:00:00Z",
+      endDate: "2024-01-15T23:59:59Z",
+      isAllDay: true,
+    };
+
+    const multiDayAllDayEvent: Schema_Event = {
+      _id: "test-allday-2",
+      title: "Multi Day All Day Event",
+      description: "This is a multi day all day event",
+      startDate: "2024-01-15T00:00:00Z",
+      endDate: "2024-01-17T23:59:59Z",
+      isAllDay: true,
+    };
+
+    it("should show menu for single-day all-day event without time display", async () => {
+      const user = userEvent.setup();
+      render(<TestComponent event={singleDayAllDayEvent} />);
+
+      const trigger = screen.getByRole("button", {
+        name: "Event Trigger",
+      });
+      await user.hover(trigger);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("Single Day All Day Event"),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByText("This is a single day all day event"),
+        ).toBeInTheDocument();
+      });
+
+      // Should not show any time/date info for all-day events
+      expect(screen.queryByText(/2024-01-15/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/2024-01-17/)).not.toBeInTheDocument();
+    });
+
+    it("should show menu for multi-day all-day event without time display", async () => {
+      const user = userEvent.setup();
+      render(<TestComponent event={multiDayAllDayEvent} />);
+
+      const trigger = screen.getByRole("button", {
+        name: "Event Trigger",
+      });
+      await user.hover(trigger);
+
+      await waitFor(() => {
+        expect(screen.getByText("Multi Day All Day Event")).toBeInTheDocument();
+        expect(
+          screen.getByText("This is a multi day all day event"),
+        ).toBeInTheDocument();
+      });
+
+      // Should not show any time/date info for all-day events
+      expect(screen.queryByText(/2024-01-15/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/2024-01-17/)).not.toBeInTheDocument();
+    });
+
+    it("should show menu on focus for all-day events", async () => {
+      const user = userEvent.setup();
+      render(<TestComponent event={singleDayAllDayEvent} />);
+
+      const trigger = screen.getByRole("button", {
+        name: "Event Trigger",
+      });
+      await act(async () => {
+        await user.tab();
+      });
+
+      expect(document.activeElement).toBe(trigger);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("Single Day All Day Event"),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("should close menu on outside click for all-day events", async () => {
+      const user = userEvent.setup();
+      render(
+        <div>
+          <TestComponent event={multiDayAllDayEvent} />
+          <button>Outside Button</button>
+        </div>,
+      );
+
+      const trigger = screen.getByRole("button", {
+        name: "Event Trigger",
+      });
+      await act(async () => {
+        await user.hover(trigger);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText("Multi Day All Day Event")).toBeInTheDocument();
+      });
+
+      const outsideButton = screen.getByRole("button", {
+        name: "Outside Button",
+      });
+      await act(async () => {
+        await user.click(outsideButton);
+      });
+
+      await waitFor(() => {
+        expect(
+          screen.queryByText("Multi Day All Day Event"),
+        ).not.toBeInTheDocument();
+      });
+    });
+  });
 });
