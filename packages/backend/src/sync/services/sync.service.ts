@@ -1,6 +1,5 @@
 import { GaxiosError } from "gaxios";
 import { ObjectId } from "mongodb";
-import pLimit from "p-limit";
 import { RESULT_NOTIFIED_CLIENT } from "@core/constants/websocket.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { gCalendar } from "@core/types/gcal";
@@ -311,6 +310,7 @@ class SyncService {
       users.push(user._id);
     }
 
+    const { default: pLimit } = await import("p-limit"); // esm module support
     // Limit concurrency to avoid resource exhaustion and API rate limits
     const limit = pLimit(5); // Adjust concurrency as needed
 
