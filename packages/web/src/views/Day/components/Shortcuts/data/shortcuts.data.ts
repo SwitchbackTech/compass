@@ -56,14 +56,14 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
       { k: "c", label: "Create task" },
       { k: "e", label: "Edit task" },
       { k: "Delete", label: "Delete task" },
-      { k: "t", label: "Go to today" },
     ];
     dayAgendaShortcuts = [
       { k: "i", label: "Focus on calendar" },
-      { k: "e", label: "Edit event title" },
-      { k: "Delete", label: "Delete event" },
-      { k: "↑", label: "Move up 15m" },
-      { k: "↓", label: "Move down 15m" },
+      { k: "t", label: "Go to today" },
+      // { k: "e", label: "Edit event title" },
+      // { k: "Delete", label: "Delete event" },
+      // { k: "↑", label: "Move up 15m" },
+      // { k: "↓", label: "Move down 15m" },
     ];
   } else if (isNow) {
     nowShortcuts = [
