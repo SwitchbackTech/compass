@@ -1,15 +1,26 @@
+import { useEffect, useState } from "react";
 import { MINUTES_PER_SLOT } from "@web/views/Day/constants/day.constants";
 import { SLOT_HEIGHT } from "@web/views/Day/constants/day.constants";
 import { getAgendaEventTime } from "@web/views/Day/util/agenda/agenda.util";
+import { setupMinuteSync } from "@web/views/Day/util/time/time.util";
 
 export const NowLine = ({
   nowLineRef,
 }: {
   nowLineRef: React.RefObject<HTMLDivElement>;
 }) => {
-  const currentTime = new Date();
+  const [currentTime, setCurrentTime] = useState(new Date());
   const currentHour = currentTime.getHours();
   const currentMinute = currentTime.getMinutes();
+
+  useEffect(() => {
+    const cleanup = setupMinuteSync(() => {
+      setCurrentTime(new Date());
+    });
+
+    return cleanup;
+  }, []);
+
   return (
     <div
       ref={nowLineRef}
@@ -20,7 +31,7 @@ export const NowLine = ({
       }}
     >
       <div className="bg-red absolute -top-1 -left-2 h-2 w-4 rounded-full"></div>
-      <div className="text-red bg-darkBlue-400/90 pointer-events-none absolute -top-2 left-0 z-20 w-16 rounded-sm px-1 text-[11px] leading-none font-medium shadow-sm">
+      <div className="text-red bg-darkBlue-400/90 pointer-events-none absolute -top-2 left-0 z-30 w-16 rounded-sm px-1 text-[11px] leading-none font-medium shadow-sm">
         {getAgendaEventTime(currentTime)}
       </div>
     </div>
