@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useDayEvents } from "@web/views/Day/data/day.data";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { AgendaEvents } from "./Events/AgendaEvent/AgendaEvents";
@@ -19,25 +19,25 @@ export const Agenda = ({ onScrollToNowLineReady }: AgendaProps) => {
   // Separate all-day events from timed events
   const allDayEvents = events.filter((event) => event.isAllDay);
 
-  const scrollToNowLine = () => {
+  const scrollToNowLine = useCallback(() => {
     nowLineRef.current?.scrollIntoView({
       block: "center",
       inline: "nearest",
       behavior: "smooth",
     });
-  };
+  }, []);
 
   // Provide the scroll function to parent component
   useEffect(() => {
     if (onScrollToNowLineReady) {
       onScrollToNowLineReady(scrollToNowLine);
     }
-  }, [onScrollToNowLineReady]);
+  }, [onScrollToNowLineReady, scrollToNowLine]);
 
   // Center the calendar around the current time when the view mounts
   useEffect(() => {
     scrollToNowLine();
-  }, []);
+  }, [scrollToNowLine]);
 
   return (
     <section
