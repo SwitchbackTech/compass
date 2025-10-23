@@ -169,6 +169,7 @@ describe("CalendarAgenda", () => {
   });
 
   it("should render events in correct TAB navigation order", async () => {
+    const user = userEvent.setup();
     const mockEvents = [
       {
         _id: "all-day-2",
@@ -208,13 +209,20 @@ describe("CalendarAgenda", () => {
 
     render(<Agenda />);
 
-    // Get all focusable events
-    const focusableEvents = screen.getAllByRole("button");
+    // Focus the first element (should be Apple Event - all-day events sorted alphabetically)
+    await user.tab();
+    expect(document.activeElement).toHaveTextContent("Apple Event");
 
-    // Expected order: Apple Event (all-day), Zebra Event (all-day), Breakfast Event (timed), Lunch Event (timed)
-    expect(focusableEvents[0]).toHaveTextContent("Apple Event");
-    expect(focusableEvents[1]).toHaveTextContent("Zebra Event");
-    expect(focusableEvents[2]).toHaveTextContent("Breakfast Event");
-    expect(focusableEvents[3]).toHaveTextContent("Lunch Event");
+    // Tab to second element (should be Zebra Event - all-day events sorted alphabetically)
+    await user.tab();
+    expect(document.activeElement).toHaveTextContent("Zebra Event");
+
+    // Tab to third element (should be Breakfast Event - timed events sorted by start time)
+    await user.tab();
+    expect(document.activeElement).toHaveTextContent("Breakfast Event");
+
+    // Tab to fourth element (should be Lunch Event - timed events sorted by start time)
+    await user.tab();
+    expect(document.activeElement).toHaveTextContent("Lunch Event");
   });
 });
