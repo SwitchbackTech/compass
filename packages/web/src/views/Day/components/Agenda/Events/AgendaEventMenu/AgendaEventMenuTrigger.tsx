@@ -1,6 +1,6 @@
 import React, { forwardRef } from "react";
 import { useMergeRefs } from "@floating-ui/react";
-import { useAgendaEventMenuContext } from "./useAgendaEventMenu";
+import { useAgendaEventMenu } from "./context/useAgendaEventMenu";
 
 export const AgendaEventMenuTrigger = forwardRef<
   HTMLElement,
@@ -9,7 +9,7 @@ export const AgendaEventMenuTrigger = forwardRef<
   { children, asChild = false, ...props },
   propRef,
 ) {
-  const context = useAgendaEventMenuContext();
+  const context = useAgendaEventMenu();
 
   const childrenRef = (
     children as React.ReactElement & { ref?: React.Ref<HTMLElement> }

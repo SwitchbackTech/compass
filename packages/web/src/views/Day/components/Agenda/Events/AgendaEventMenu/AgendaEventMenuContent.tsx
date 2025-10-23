@@ -3,7 +3,7 @@ import { FloatingPortal, useMergeRefs } from "@floating-ui/react";
 import { Schema_Event } from "@core/types/event.types";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { getAgendaEventTime } from "@web/views/Day/util/agenda/agenda.util";
-import { useAgendaEventMenuContext } from "./useAgendaEventMenu";
+import { useAgendaEventMenu } from "./context/useAgendaEventMenu";
 
 export const AgendaEventMenuContent = forwardRef<
   HTMLDivElement,
@@ -12,7 +12,7 @@ export const AgendaEventMenuContent = forwardRef<
     style?: React.CSSProperties;
   }
 >(function AgendaEventMenuContent({ event, ...props }, propRef) {
-  const context = useAgendaEventMenuContext();
+  const context = useAgendaEventMenu();
   const ref = useMergeRefs([context.refs.setFloating, propRef]);
 
   let timeDisplay = "";

@@ -1,8 +1,6 @@
 import React from "react";
-import {
-  AgendaEventMenuContext,
-  useAgendaEventMenu,
-} from "./useAgendaEventMenu";
+import { AgendaEventMenuContext } from "./context/AgendaEventMenuContext";
+import { useAgendaEventMenu } from "./useAgendaEventMenu";
 
 export function AgendaEventMenu({
   children,

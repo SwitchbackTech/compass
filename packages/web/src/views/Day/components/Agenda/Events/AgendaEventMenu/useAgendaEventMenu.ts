@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   autoUpdate,
   flip,
@@ -52,7 +52,7 @@ export function useAgendaEventMenu({
     enabled: true,
   });
   const focus = useFocus(context, {
-    enabled: controlledOpen == null,
+    enabled: controlledOpen === undefined,
   });
   const dismiss = useDismiss(context);
   const role = useRole(context, { role: "tooltip" });
@@ -69,21 +69,3 @@ export function useAgendaEventMenu({
     [open, setOpen, interactions, data],
   );
 }
-
-export const AgendaEventMenuContext =
-  createContext<AgendaEventMenuHookContext>(null);
-export const useAgendaEventMenuContext = () => {
-  const context = useContext(AgendaEventMenuContext);
-
-  if (context == null) {
-    throw new Error(
-      "AgendaEventMenu components must be wrapped in <AgendaEventMenu />",
-    );
-  }
-
-  return context;
-};
-
-export type AgendaEventMenuHookContext = ReturnType<
-  typeof useAgendaEventMenu
-> | null;
