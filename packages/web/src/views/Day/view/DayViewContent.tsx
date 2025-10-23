@@ -29,7 +29,7 @@ export const DayViewContent = () => {
   const navigate = useNavigate();
   const dateInView = useDateInView();
   const { events } = useDayEvents(dateInView);
-  const scrollToNowLineRef = useRef<(() => void) | null>(null);
+  const scrollToNowLineRef = useRef<() => void>();
 
   const { navigateToNextDay, navigateToPreviousDay, navigateToToday } =
     useDateNavigation();
