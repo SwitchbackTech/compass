@@ -1,4 +1,6 @@
+import { useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import dayjs from "@core/util/date/dayjs";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { Agenda } from "../components/Agenda/Agenda";
 import { ShortcutsOverlay } from "../components/Shortcuts/components/ShortcutsOverlay";
@@ -27,6 +29,7 @@ export const DayViewContent = () => {
   const navigate = useNavigate();
   const dateInView = useDateInView();
   const { events } = useDayEvents(dateInView);
+  const scrollToNowLineRef = useRef<(() => void) | null>(null);
 
   const { navigateToNextDay, navigateToPreviousDay, navigateToToday } =
     useDateNavigation();
@@ -80,6 +83,26 @@ export const DayViewContent = () => {
     focusFirstAgendaEvent(events);
   };
 
+  const handleScrollToNowLineReady = useCallback(
+    (scrollToNowLine: () => void) => {
+      scrollToNowLineRef.current = scrollToNowLine;
+    },
+    [],
+  );
+
+  const handleGoToToday = () => {
+    // Compare dates in the same timezone (UTC) to avoid timezone issues
+    const todayLocal = dayjs().format("YYYY-MM-DD");
+    const todayUTC = dayjs.utc(todayLocal);
+    const isViewingToday = dateInView.isSame(todayUTC, "day");
+
+    if (isViewingToday && scrollToNowLineRef.current) {
+      scrollToNowLineRef.current();
+    } else {
+      navigateToToday();
+    }
+  };
+
   useDayViewShortcuts({
     onAddTask: focusOnAddTaskInput,
     onEditTask: handleEditTask,
@@ -89,7 +112,7 @@ export const DayViewContent = () => {
     onFocusAgenda: handleFocusAgenda,
     onNextDay: navigateToNextDay,
     onPrevDay: navigateToPreviousDay,
-    onGoToToday: navigateToToday,
+    onGoToToday: handleGoToToday,
     onNavigateNow: handleNavigateNow,
     onNavigateDay: handleNavigateDay,
     onNavigateWeek: handleNavigateWeek,
@@ -102,7 +125,7 @@ export const DayViewContent = () => {
       <ShortcutsOverlay />
       <TaskList />
 
-      <Agenda />
+      <Agenda onScrollToNowLineReady={handleScrollToNowLineReady} />
     </div>
   );
 };

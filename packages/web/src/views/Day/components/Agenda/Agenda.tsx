@@ -6,7 +6,11 @@ import { AllDayAgendaEvents } from "./Events/AllDayAgendaEvent/AllDayAgendaEvent
 import { NowLine } from "./NowLine/NowLine";
 import { TimeLabels } from "./TimeLabels/TimeLabels";
 
-export function Agenda() {
+interface AgendaProps {
+  onScrollToNowLineReady?: (scrollToNowLine: () => void) => void;
+}
+
+export const Agenda = ({ onScrollToNowLineReady }: AgendaProps) => {
   const nowLineRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const dateInView = useDateInView();
@@ -15,13 +19,24 @@ export function Agenda() {
   // Separate all-day events from timed events
   const allDayEvents = events.filter((event) => event.isAllDay);
 
-  // Center the calendar around the current time when the view mounts
-  useEffect(() => {
+  const scrollToNowLine = () => {
     nowLineRef.current?.scrollIntoView({
       block: "center",
       inline: "nearest",
       behavior: "smooth",
     });
+  };
+
+  // Provide the scroll function to parent component
+  useEffect(() => {
+    if (onScrollToNowLineReady) {
+      onScrollToNowLineReady(scrollToNowLine);
+    }
+  }, [onScrollToNowLineReady]);
+
+  // Center the calendar around the current time when the view mounts
+  useEffect(() => {
+    scrollToNowLine();
   }, []);
 
   return (
@@ -47,4 +62,4 @@ export function Agenda() {
       </div>
     </section>
   );
-}
+};
