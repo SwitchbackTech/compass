@@ -60,10 +60,8 @@ describe("focusFirstAgendaEvent", () => {
 
   it("should focus current timed event when no all-day events", () => {
     // Mock current time to 10:30 AM
-    const mockDate = new Date("2024-01-15T10:30:00Z");
-    const DateSpy = jest
-      .spyOn(global, "Date")
-      .mockImplementation((() => mockDate) as any);
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2024-01-15T10:30:00Z"));
 
     const events: Schema_Event[] = [
       {
@@ -92,7 +90,7 @@ describe("focusFirstAgendaEvent", () => {
     });
 
     // Cleanup
-    DateSpy.mockRestore();
+    jest.useRealTimers();
   });
 
   it("should focus next future event", () => {
@@ -132,10 +130,8 @@ describe("focusFirstAgendaEvent", () => {
 
   it("should focus first timed event as fallback when all are past", () => {
     // Mock current time to 5:00 PM
-    const mockDate = new Date("2024-01-15T17:00:00Z");
-    const DateSpy = jest
-      .spyOn(global, "Date")
-      .mockImplementation((() => mockDate) as any);
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2024-01-15T17:00:00Z"));
 
     const events: Schema_Event[] = [
       {
@@ -164,7 +160,7 @@ describe("focusFirstAgendaEvent", () => {
     });
 
     // Cleanup
-    DateSpy.mockRestore();
+    jest.useRealTimers();
   });
 
   it("should handle missing DOM element gracefully", () => {
