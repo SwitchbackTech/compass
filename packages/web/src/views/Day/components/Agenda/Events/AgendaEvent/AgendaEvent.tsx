@@ -31,7 +31,6 @@ export const AgendaEvent = ({ event }: { event: Schema_Event }) => {
             height: `${renderedHeight}px`,
             top: `${startPosition}px`,
           }}
-          title={getAgendaEventTitle(event)}
           tabIndex={0}
           role="button"
           data-event-id={event._id}
