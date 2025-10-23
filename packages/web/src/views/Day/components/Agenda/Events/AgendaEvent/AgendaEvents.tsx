@@ -14,8 +14,14 @@ export const AgendaEvents = () => {
   const currentHour = currentTime.getHours();
   const currentMinute = currentTime.getMinutes();
 
-  // Filter out all-day events since they're handled in the parent Agenda component
-  const timedEvents = events.filter((event) => !event.isAllDay);
+  // Filter out all-day events and sort timed events by start time for consistent TAB order
+  const timedEvents = events
+    .filter((event) => !event.isAllDay)
+    .sort(
+      (a, b) =>
+        new Date(a.startDate as string).getTime() -
+        new Date(b.startDate as string).getTime(),
+    );
 
   return (
     <div className="relative ml-1 flex-1">

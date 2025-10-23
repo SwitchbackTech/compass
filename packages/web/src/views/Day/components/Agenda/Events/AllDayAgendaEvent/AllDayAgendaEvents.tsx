@@ -6,9 +6,14 @@ export const AllDayAgendaEvents = ({
 }: {
   allDayEvents: Schema_Event[];
 }) => {
+  // Sort all-day events by title for consistent TAB order
+  const sortedAllDayEvents = [...allDayEvents].sort((a, b) =>
+    (a.title || "").localeCompare(b.title || ""),
+  );
+
   return (
     <div className="space-y-1 px-4 py-2">
-      {allDayEvents.map((event) => (
+      {sortedAllDayEvents.map((event) => (
         <AllDayAgendaEvent key={event._id} event={event} />
       ))}
     </div>

@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { useDayEvents } from "../../data/day.data";
 import { Agenda } from "./Agenda";
 
@@ -165,5 +166,55 @@ describe("CalendarAgenda", () => {
     expect(timedEvent).toHaveAttribute("tabIndex", "0");
     expect(timedEvent).toHaveAttribute("role", "button");
     expect(timedEvent).toHaveAttribute("data-event-id", "timed-1");
+  });
+
+  it("should render events in correct TAB navigation order", async () => {
+    const mockEvents = [
+      {
+        _id: "all-day-2",
+        title: "Zebra Event",
+        startDate: "2024-01-15T00:00:00Z",
+        endDate: "2024-01-15T23:59:59Z",
+        isAllDay: true,
+      },
+      {
+        _id: "all-day-1",
+        title: "Apple Event",
+        startDate: "2024-01-15T00:00:00Z",
+        endDate: "2024-01-15T23:59:59Z",
+        isAllDay: true,
+      },
+      {
+        _id: "timed-2",
+        title: "Lunch Event",
+        startDate: "2024-01-15T12:00:00Z",
+        endDate: "2024-01-15T13:00:00Z",
+        isAllDay: false,
+      },
+      {
+        _id: "timed-1",
+        title: "Breakfast Event",
+        startDate: "2024-01-15T08:00:00Z",
+        endDate: "2024-01-15T09:00:00Z",
+        isAllDay: false,
+      },
+    ];
+
+    mockUseDayEvents.mockReturnValue({
+      events: mockEvents,
+      isLoading: false,
+      error: null,
+    });
+
+    render(<Agenda />);
+
+    // Get all focusable events
+    const focusableEvents = screen.getAllByRole("button");
+
+    // Expected order: Apple Event (all-day), Zebra Event (all-day), Breakfast Event (timed), Lunch Event (timed)
+    expect(focusableEvents[0]).toHaveTextContent("Apple Event");
+    expect(focusableEvents[1]).toHaveTextContent("Zebra Event");
+    expect(focusableEvents[2]).toHaveTextContent("Breakfast Event");
+    expect(focusableEvents[3]).toHaveTextContent("Lunch Event");
   });
 });

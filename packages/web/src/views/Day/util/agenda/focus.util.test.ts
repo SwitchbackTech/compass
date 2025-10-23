@@ -20,18 +20,18 @@ describe("focusFirstAgendaEvent", () => {
     expect(mockQuerySelector).not.toHaveBeenCalled();
   });
 
-  it("should focus first all-day event", () => {
+  it("should focus first all-day event (alphabetically sorted)", () => {
     const events: Schema_Event[] = [
       {
-        _id: "all-day-1",
-        title: "All Day Event 1",
+        _id: "all-day-2",
+        title: "Zebra Event",
         startDate: "2024-01-15T00:00:00Z",
         endDate: "2024-01-15T23:59:59Z",
         isAllDay: true,
       },
       {
-        _id: "all-day-2",
-        title: "All Day Event 2",
+        _id: "all-day-1",
+        title: "Apple Event",
         startDate: "2024-01-15T00:00:00Z",
         endDate: "2024-01-15T23:59:59Z",
         isAllDay: true,
@@ -47,6 +47,7 @@ describe("focusFirstAgendaEvent", () => {
 
     focusFirstAgendaEvent(events);
 
+    // Should focus "Apple Event" (first alphabetically)
     expect(mockQuerySelector).toHaveBeenCalledWith(
       '[data-event-id="all-day-1"]',
     );
@@ -223,5 +224,39 @@ describe("focusFirstAgendaEvent", () => {
 
     // Cleanup
     jest.useRealTimers();
+  });
+
+  it("should sort all-day events alphabetically", () => {
+    const events: Schema_Event[] = [
+      {
+        _id: "all-day-3",
+        title: "Zebra Event",
+        startDate: "2024-01-15T00:00:00Z",
+        endDate: "2024-01-15T23:59:59Z",
+        isAllDay: true,
+      },
+      {
+        _id: "all-day-1",
+        title: "Apple Event",
+        startDate: "2024-01-15T00:00:00Z",
+        endDate: "2024-01-15T23:59:59Z",
+        isAllDay: true,
+      },
+      {
+        _id: "all-day-2",
+        title: "Banana Event",
+        startDate: "2024-01-15T00:00:00Z",
+        endDate: "2024-01-15T23:59:59Z",
+        isAllDay: true,
+      },
+    ];
+
+    focusFirstAgendaEvent(events);
+
+    // Should focus "Apple Event" (first alphabetically)
+    expect(mockQuerySelector).toHaveBeenCalledWith(
+      '[data-event-id="all-day-1"]',
+    );
+    expect(mockElement.focus).toHaveBeenCalled();
   });
 });

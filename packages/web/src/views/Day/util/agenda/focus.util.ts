@@ -26,17 +26,20 @@ export function focusFirstAgendaEvent(events: Schema_Event[]): void {
     return;
   }
 
-  // Separate all-day and timed events
-  const allDayEvents = events.filter((event) => event.isAllDay);
+  // Separate all-day and timed events with consistent sorting
+  const allDayEvents = events
+    .filter((event) => event.isAllDay)
+    .sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+
   const timedEvents = events
-    .filter((event) => !event.isAllDay)
+    .filter((event) => !event.isAllDay && event.startDate)
     .sort(
       (a, b) =>
-        new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
+        new Date(a.startDate!).getTime() - new Date(b.startDate!).getTime(),
     );
 
   // Priority 1: All-day events
-  if (allDayEvents.length > 0) {
+  if (allDayEvents.length > 0 && allDayEvents[0]._id) {
     focusEventById(allDayEvents[0]._id);
     return;
   }
@@ -44,29 +47,31 @@ export function focusFirstAgendaEvent(events: Schema_Event[]): void {
   // Priority 2: Current event (happening now)
   const now = new Date();
   const currentEvent = timedEvents.find((event) => {
+    if (!event.startDate || !event.endDate) return false;
     const startDate = new Date(event.startDate);
     const endDate = new Date(event.endDate);
     return startDate <= now && now < endDate;
   });
 
-  if (currentEvent) {
+  if (currentEvent && currentEvent._id) {
     focusEventById(currentEvent._id);
     return;
   }
 
   // Priority 3: Next future event
   const nextEvent = timedEvents.find((event) => {
+    if (!event.startDate) return false;
     const startDate = new Date(event.startDate);
     return startDate > now;
   });
 
-  if (nextEvent) {
+  if (nextEvent && nextEvent._id) {
     focusEventById(nextEvent._id);
     return;
   }
 
   // Priority 4: First timed event (fallback for past events)
-  if (timedEvents.length > 0) {
+  if (timedEvents.length > 0 && timedEvents[0]._id) {
     focusEventById(timedEvents[0]._id);
   }
 }
