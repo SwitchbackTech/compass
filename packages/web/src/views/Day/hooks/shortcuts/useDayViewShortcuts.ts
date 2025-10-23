@@ -27,6 +27,9 @@ interface KeyboardShortcutsConfig {
   onNavigateDay?: () => void;
   onNavigateWeek?: () => void;
 
+  // Agenda navigation
+  onFocusAgenda?: () => void;
+
   // Conditions
   isEditingTask?: boolean;
   hasFocusedTask?: boolean;
@@ -50,6 +53,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     onNextDay,
     onPrevDay,
     onGoToToday,
+    onFocusAgenda,
     isEditingTask,
     hasFocusedTask,
     undoToastId,
@@ -88,6 +92,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
         e.preventDefault();
         onFocusTasks?.();
       },
+
       c: (e) => {
         e.preventDefault();
         onAddTask?.();
@@ -131,25 +136,29 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
         onEscape?.();
       },
 
-      // Calendar shortcuts (not handled in this hook)
-      i: () => {},
+      // Calendar shortcuts
+      i: (e) => {
+        e.preventDefault();
+        onFocusAgenda?.();
+      },
       "↑": () => {},
       "↓": () => {},
     }),
     [
+      hasFocusedTask,
+      isEditingTask,
+      onAddTask,
+      onCompleteTask,
+      onDeleteTask,
+      onEditTask,
+      onEscape,
+      onFocusAgenda,
+      onFocusTasks,
       onNavigateNow,
       onNavigateWeek,
       onPrevDay,
       onNextDay,
       onGoToToday,
-      onFocusTasks,
-      onAddTask,
-      onEditTask,
-      onDeleteTask,
-      hasFocusedTask,
-      isEditingTask,
-      onCompleteTask,
-      onEscape,
     ],
   );
 

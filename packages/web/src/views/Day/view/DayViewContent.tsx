@@ -3,9 +3,12 @@ import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { Agenda } from "../components/Agenda/Agenda";
 import { ShortcutsOverlay } from "../components/Shortcuts/components/ShortcutsOverlay";
 import { TaskList } from "../components/TaskList/TaskList";
+import { useDayEvents } from "../data/day.data";
+import { useDateInView } from "../hooks/navigation/useDateInView";
 import { useDateNavigation } from "../hooks/navigation/useDateNavigation";
 import { useDayViewShortcuts } from "../hooks/shortcuts/useDayViewShortcuts";
 import { useTasks } from "../hooks/tasks/useTasks";
+import { focusFirstAgendaEvent } from "../util/agenda/focus.util";
 import { focusOnAddTaskInput, focusOnFirstTask } from "../util/shortcut.util";
 
 export const DayViewContent = () => {
@@ -22,6 +25,8 @@ export const DayViewContent = () => {
   } = useTasks();
 
   const navigate = useNavigate();
+  const dateInView = useDateInView();
+  const { events } = useDayEvents(dateInView);
 
   const { navigateToNextDay, navigateToPreviousDay, navigateToToday } =
     useDateNavigation();
@@ -71,12 +76,17 @@ export const DayViewContent = () => {
     navigate(ROOT_ROUTES.ROOT);
   };
 
+  const handleFocusAgenda = () => {
+    focusFirstAgendaEvent(events);
+  };
+
   useDayViewShortcuts({
     onAddTask: focusOnAddTaskInput,
     onEditTask: handleEditTask,
     onDeleteTask: handleDeleteTask,
     onRestoreTask: restoreTask,
     onFocusTasks: focusOnFirstTask,
+    onFocusAgenda: handleFocusAgenda,
     onNextDay: navigateToNextDay,
     onPrevDay: navigateToPreviousDay,
     onGoToToday: navigateToToday,

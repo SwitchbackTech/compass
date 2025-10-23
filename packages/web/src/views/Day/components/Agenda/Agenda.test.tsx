@@ -123,4 +123,47 @@ describe("CalendarAgenda", () => {
     // Should show events
     expect(screen.getByText("Test Event")).toBeInTheDocument();
   });
+
+  it("should render events with correct tabIndex and data attributes", () => {
+    const mockEvents = [
+      {
+        _id: "all-day-1",
+        title: "All Day Event 1",
+        startDate: "2024-01-15T00:00:00Z",
+        endDate: "2024-01-15T23:59:59Z",
+        isAllDay: true,
+      },
+      {
+        _id: "timed-1",
+        title: "Timed Event 1",
+        startDate: "2024-01-15T09:00:00Z",
+        endDate: "2024-01-15T10:00:00Z",
+        isAllDay: false,
+      },
+    ];
+
+    mockUseDayEvents.mockReturnValue({
+      events: mockEvents,
+      isLoading: false,
+      error: null,
+    });
+
+    render(<Agenda />);
+
+    // Check that all-day events are rendered with correct attributes
+    const allDayEvent = screen
+      .getByText("All Day Event 1")
+      .closest('[data-event-id="all-day-1"]');
+    expect(allDayEvent).toHaveAttribute("tabIndex", "0");
+    expect(allDayEvent).toHaveAttribute("role", "button");
+    expect(allDayEvent).toHaveAttribute("data-event-id", "all-day-1");
+
+    // Check that timed events are rendered with correct attributes
+    const timedEvent = screen
+      .getByText("Timed Event 1")
+      .closest('[data-event-id="timed-1"]');
+    expect(timedEvent).toHaveAttribute("tabIndex", "0");
+    expect(timedEvent).toHaveAttribute("role", "button");
+    expect(timedEvent).toHaveAttribute("data-event-id", "timed-1");
+  });
 });
