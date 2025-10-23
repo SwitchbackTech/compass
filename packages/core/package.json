@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "bson": "^6.10.4",
+    "p-limit": "^7.2.0",
     "tinycolor2": "^1.6.0",
     "winston": "^3.8.1",
     "zod": "^3.25.76"
