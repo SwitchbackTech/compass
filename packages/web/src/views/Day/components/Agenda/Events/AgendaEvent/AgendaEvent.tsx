@@ -1,8 +1,5 @@
 import { Schema_Event } from "@core/types/event.types";
-import {
-  getAgendaEventPosition,
-  getAgendaEventTitle,
-} from "@web/views/Day/util/agenda/agenda.util";
+import { getAgendaEventPosition } from "@web/views/Day/util/agenda/agenda.util";
 import { AgendaEventMenu } from "../AgendaEventMenu/AgendaEventMenu";
 import { AgendaEventMenuContent } from "../AgendaEventMenu/AgendaEventMenuContent";
 import { AgendaEventMenuTrigger } from "../AgendaEventMenu/AgendaEventMenuTrigger";
