@@ -1,7 +1,9 @@
+import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { getShortcuts } from "../data/shortcuts.data";
 import { ShortcutSection } from "./ShortcutSection";
 
 export const ShortcutsOverlay = () => {
+  const dateInView = useDateInView();
   const {
     global,
     homeShortcuts,
@@ -11,7 +13,7 @@ export const ShortcutsOverlay = () => {
     isHome,
     isToday,
     isNow,
-  } = getShortcuts();
+  } = getShortcuts({ currentDate: dateInView });
 
   const show =
     global.length ||
