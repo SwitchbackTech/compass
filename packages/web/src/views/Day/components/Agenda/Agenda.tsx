@@ -6,7 +6,7 @@ import { AllDayAgendaEvents } from "./Events/AllDayAgendaEvent/AllDayAgendaEvent
 import { TimeLabels } from "./TimeLabels/TimeLabels";
 
 export function Agenda() {
-  const nowMarkerRef = useRef<HTMLDivElement>(null);
+  const nowLineRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const dateInView = useDateInView();
   const { events } = useDayEvents(dateInView);
@@ -16,7 +16,7 @@ export function Agenda() {
 
   // Center the calendar around the current time when the view mounts
   useEffect(() => {
-    nowMarkerRef.current?.scrollIntoView({
+    nowLineRef.current?.scrollIntoView({
       block: "center",
       inline: "nearest",
       behavior: "smooth",
@@ -38,7 +38,7 @@ export function Agenda() {
           scrollbarGutter: "stable both-edges",
         }}
       >
-        <TimeLabels nowMarkerRef={nowMarkerRef} />
+        <TimeLabels nowLineRef={nowLineRef} />
 
         <AgendaEvents />
       </div>
