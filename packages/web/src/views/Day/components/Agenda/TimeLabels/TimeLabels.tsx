@@ -2,13 +2,8 @@ import {
   MINUTES_PER_SLOT,
   SLOT_HEIGHT,
 } from "@web/views/Day/constants/day.constants";
-import { NowLine } from "../NowLine/NowLine";
 
-export const TimeLabels = ({
-  nowLineRef,
-}: {
-  nowLineRef: React.RefObject<HTMLDivElement>;
-}) => {
+export const TimeLabels = () => {
   return (
     <div className="bg-darkBlue-400 relative w-16 flex-shrink-0">
       {Array.from({ length: 96 }, (_, i) => {
@@ -40,8 +35,6 @@ export const TimeLabels = ({
           </div>
         );
       })}
-
-      <NowLine nowLineRef={nowLineRef} />
     </div>
   );
 };

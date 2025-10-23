@@ -3,6 +3,7 @@ import { useDayEvents } from "@web/views/Day/data/day.data";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { AgendaEvents } from "./Events/AgendaEvent/AgendaEvents";
 import { AllDayAgendaEvents } from "./Events/AllDayAgendaEvent/AllDayAgendaEvents";
+import { NowLine } from "./NowLine/NowLine";
 import { TimeLabels } from "./TimeLabels/TimeLabels";
 
 export function Agenda() {
@@ -38,7 +39,9 @@ export function Agenda() {
           scrollbarGutter: "stable both-edges",
         }}
       >
-        <TimeLabels nowLineRef={nowLineRef} />
+        <TimeLabels />
+
+        <NowLine nowLineRef={nowLineRef} />
 
         <AgendaEvents />
       </div>
