@@ -31,7 +31,7 @@ export const NowLine = ({
       }}
     >
       <div className="absolute -top-1 -left-2 h-2 w-4 rounded-full"></div>
-      <div className="text-red pointer-events-none absolute -top-2 left-0 z-50 w-16 rounded-sm bg-[#0c0f17] px-1 text-[11px] leading-none font-medium shadow-sm">
+      <div className="pointer-events-none absolute -top-2 left-0 z-50 w-16 rounded-sm bg-[#0c0f17] px-1 text-[11px] leading-none font-medium shadow-sm">
         {getAgendaEventTime(currentTime)}
       </div>
     </div>
