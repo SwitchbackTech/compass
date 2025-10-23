@@ -1,3 +1,4 @@
+import dayjs from "@core/util/date/dayjs";
 import { Shortcut } from "../types/shortcut.types";
 
 // Define all possible shortcut keys as a const object for type safety
@@ -28,10 +29,11 @@ interface ShortcutsConfig {
   isHome?: boolean;
   isToday?: boolean;
   isNow?: boolean;
+  currentDate?: dayjs.Dayjs;
 }
 
 export const getShortcuts = (config: ShortcutsConfig = {}) => {
-  const { isHome = false, isToday = true, isNow = false } = config;
+  const { isHome = false, isToday = true, isNow = false, currentDate } = config;
 
   const global: Shortcut[] = [
     { k: "1", label: "Now" },
@@ -56,14 +58,25 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
       { k: "c", label: "Create task" },
       { k: "e", label: "Edit task" },
       { k: "Delete", label: "Delete task" },
-      { k: "t", label: "Go to today" },
     ];
     dayAgendaShortcuts = [
       { k: "i", label: "Focus on calendar" },
-      { k: "e", label: "Edit event title" },
-      { k: "Delete", label: "Delete event" },
-      { k: "↑", label: "Move up 15m" },
-      { k: "↓", label: "Move down 15m" },
+      {
+        k: "t",
+        label: (() => {
+          if (!currentDate) return "Go to today";
+          // Compare dates in the same timezone (UTC) to avoid timezone issues
+          const todayLocal = dayjs().format("YYYY-MM-DD");
+          const todayUTC = dayjs.utc(todayLocal);
+          return currentDate.isSame(todayUTC, "day")
+            ? "Scroll to now"
+            : "Go to today";
+        })(),
+      },
+      // { k: "e", label: "Edit event title" },
+      // { k: "Delete", label: "Delete event" },
+      // { k: "↑", label: "Move up 15m" },
+      // { k: "↓", label: "Move down 15m" },
     ];
   } else if (isNow) {
     nowShortcuts = [

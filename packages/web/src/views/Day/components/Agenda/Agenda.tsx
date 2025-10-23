@@ -1,12 +1,17 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useDayEvents } from "@web/views/Day/data/day.data";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { AgendaEvents } from "./Events/AgendaEvent/AgendaEvents";
 import { AllDayAgendaEvents } from "./Events/AllDayAgendaEvent/AllDayAgendaEvents";
+import { NowLine } from "./NowLine/NowLine";
 import { TimeLabels } from "./TimeLabels/TimeLabels";
 
-export function Agenda() {
-  const nowMarkerRef = useRef<HTMLDivElement>(null);
+interface AgendaProps {
+  onScrollToNowLineReady?: (scrollToNowLine: () => void) => void;
+}
+
+export const Agenda = ({ onScrollToNowLineReady }: AgendaProps) => {
+  const nowLineRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const dateInView = useDateInView();
   const { events } = useDayEvents(dateInView);
@@ -14,14 +19,25 @@ export function Agenda() {
   // Separate all-day events from timed events
   const allDayEvents = events.filter((event) => event.isAllDay);
 
-  // Center the calendar around the current time when the view mounts
-  useEffect(() => {
-    nowMarkerRef.current?.scrollIntoView({
+  const scrollToNowLine = useCallback(() => {
+    nowLineRef.current?.scrollIntoView({
       block: "center",
       inline: "nearest",
       behavior: "smooth",
     });
   }, []);
+
+  // Provide the scroll function to parent component
+  useEffect(() => {
+    if (onScrollToNowLineReady) {
+      onScrollToNowLineReady(scrollToNowLine);
+    }
+  }, [onScrollToNowLineReady, scrollToNowLine]);
+
+  // Center the calendar around the current time when the view mounts
+  useEffect(() => {
+    scrollToNowLine();
+  }, [scrollToNowLine]);
 
   return (
     <section
@@ -38,10 +54,12 @@ export function Agenda() {
           scrollbarGutter: "stable both-edges",
         }}
       >
-        <TimeLabels nowMarkerRef={nowMarkerRef} />
+        <TimeLabels />
+
+        <NowLine nowLineRef={nowLineRef} />
 
         <AgendaEvents />
       </div>
     </section>
   );
-}
+};

@@ -1,13 +1,24 @@
+import * as PostHogReact from "posthog-js/react";
 import { Provider as ReduxProvider } from "react-redux";
 import { MemoryRouter } from "react-router-dom";
 import { configureStore } from "@reduxjs/toolkit";
 import "@testing-library/jest-dom";
 import { render, screen, within } from "@testing-library/react";
+import { useDayEvents } from "../data/day.data";
 import { DayView } from "./DayView";
 
 // Mock PostHog
 jest.mock("posthog-js/react", () => ({
   useFeatureFlagEnabled: jest.fn(() => false),
+}));
+
+// Mock useDayEvents hook
+jest.mock("../data/day.data", () => ({
+  useDayEvents: jest.fn(() => ({
+    events: [],
+    isLoading: false,
+    error: null,
+  })),
 }));
 
 const createMockStore = () => {
@@ -38,7 +49,7 @@ const renderWithRouter = () => {
   );
 };
 
-describe("TodayView", () => {
+describe("DayView", () => {
   beforeEach(() => {
     localStorage.clear();
   });
@@ -53,8 +64,10 @@ describe("TodayView", () => {
   });
 
   it("should not show warning when feature flag is enabled", () => {
-    const { useFeatureFlagEnabled } = require("posthog-js/react");
-    useFeatureFlagEnabled.mockReturnValue(true);
+    const mockUseFeatureFlagEnabled = jest.mocked(
+      PostHogReact.useFeatureFlagEnabled,
+    );
+    mockUseFeatureFlagEnabled.mockReturnValue(true);
 
     renderWithRouter();
 
@@ -62,6 +75,10 @@ describe("TodayView", () => {
   });
 
   it("should render TaskList component", () => {
+    const mockUseFeatureFlagEnabled = jest.mocked(
+      PostHogReact.useFeatureFlagEnabled,
+    );
+    mockUseFeatureFlagEnabled.mockReturnValue(true);
     renderWithRouter();
 
     const taskpanel = screen.getByRole("region", { name: "daily-tasks" });
@@ -69,6 +86,18 @@ describe("TodayView", () => {
   });
 
   it("should render CalendarAgenda component", () => {
+    const mockUseFeatureFlagEnabled = jest.mocked(
+      PostHogReact.useFeatureFlagEnabled,
+    );
+    mockUseFeatureFlagEnabled.mockReturnValue(true);
+
+    const mockUseDayEvents = jest.mocked(useDayEvents);
+    mockUseDayEvents.mockReturnValue({
+      events: [],
+      isLoading: false,
+      error: null,
+    });
+
     renderWithRouter();
 
     expect(screen.getByTestId("calendar-scroll")).toBeInTheDocument();

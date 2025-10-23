@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { useDayEvents } from "../../data/day.data";
 import { Agenda } from "./Agenda";
 
@@ -122,5 +123,106 @@ describe("CalendarAgenda", () => {
 
     // Should show events
     expect(screen.getByText("Test Event")).toBeInTheDocument();
+  });
+
+  it("should render events with correct tabIndex and data attributes", () => {
+    const mockEvents = [
+      {
+        _id: "all-day-1",
+        title: "All Day Event 1",
+        startDate: "2024-01-15T00:00:00Z",
+        endDate: "2024-01-15T23:59:59Z",
+        isAllDay: true,
+      },
+      {
+        _id: "timed-1",
+        title: "Timed Event 1",
+        startDate: "2024-01-15T09:00:00Z",
+        endDate: "2024-01-15T10:00:00Z",
+        isAllDay: false,
+      },
+    ];
+
+    mockUseDayEvents.mockReturnValue({
+      events: mockEvents,
+      isLoading: false,
+      error: null,
+    });
+
+    render(<Agenda />);
+
+    // Check that all-day events are rendered with correct attributes
+    const allDayEvent = screen
+      .getByText("All Day Event 1")
+      .closest('[data-event-id="all-day-1"]');
+    expect(allDayEvent).toHaveAttribute("tabIndex", "0");
+    expect(allDayEvent).toHaveAttribute("role", "button");
+    expect(allDayEvent).toHaveAttribute("data-event-id", "all-day-1");
+
+    // Check that timed events are rendered with correct attributes
+    const timedEvent = screen
+      .getByText("Timed Event 1")
+      .closest('[data-event-id="timed-1"]');
+    expect(timedEvent).toHaveAttribute("tabIndex", "0");
+    expect(timedEvent).toHaveAttribute("role", "button");
+    expect(timedEvent).toHaveAttribute("data-event-id", "timed-1");
+  });
+
+  it("should render events in correct TAB navigation order", async () => {
+    const user = userEvent.setup();
+    const mockEvents = [
+      {
+        _id: "all-day-2",
+        title: "Zebra Event",
+        startDate: "2024-01-15T00:00:00Z",
+        endDate: "2024-01-15T23:59:59Z",
+        isAllDay: true,
+      },
+      {
+        _id: "all-day-1",
+        title: "Apple Event",
+        startDate: "2024-01-15T00:00:00Z",
+        endDate: "2024-01-15T23:59:59Z",
+        isAllDay: true,
+      },
+      {
+        _id: "timed-2",
+        title: "Lunch Event",
+        startDate: "2024-01-15T12:00:00Z",
+        endDate: "2024-01-15T13:00:00Z",
+        isAllDay: false,
+      },
+      {
+        _id: "timed-1",
+        title: "Breakfast Event",
+        startDate: "2024-01-15T08:00:00Z",
+        endDate: "2024-01-15T09:00:00Z",
+        isAllDay: false,
+      },
+    ];
+
+    mockUseDayEvents.mockReturnValue({
+      events: mockEvents,
+      isLoading: false,
+      error: null,
+    });
+
+    render(<Agenda />);
+
+    // Focus the first element (should be Apple Event - all-day events sorted alphabetically)
+    await user.tab();
+    expect(document.activeElement).toHaveTextContent("Apple Event");
+
+    // Tab to second element (should be Zebra Event - all-day events sorted alphabetically)
+    await user.tab();
+    expect(document.activeElement).toHaveTextContent("Zebra Event");
+
+    // Tab to third element (should be Breakfast Event - timed events sorted by start time)
+    await user.tab();
+    expect(document.activeElement).toHaveTextContent("Breakfast Event");
+
+    // Tab to fourth element (should be Lunch Event - timed events sorted by start time)
+    await user.tab();
+    expect(document.activeElement).toHaveTextContent("Lunch Event");
   });
 });
