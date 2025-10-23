@@ -296,45 +296,69 @@ class SyncService {
 
   runMaintenance = async () => {
     const cursor = mongoService.user.find().batchSize(MONGO_BATCH_SIZE);
-    const refresh: Array<{ user: string; payload: Schema_Watch[] }> = [];
-    const prune: Array<{ user: string; payload: Schema_Watch[] }> = [];
-    const ignore: Array<{ user: string; payload: Schema_Watch[] }> = [];
-
-    let ignored = 0;
-    let pruned = 0;
-    let revoked = 0;
-    let deleted = 0;
-    let refreshed = 0;
-    let resynced = 0;
+    const users: ObjectId[] = [];
+    const result = {
+      deleted: 0,
+      refreshed: 0,
+      ignored: 0,
+      pruned: 0,
+      revoked: 0,
+      resynced: 0,
+    };
 
     for await (const user of cursor) {
-      const run = await this.runMaintenanceByUser(user._id.toString(), {
-        log: false,
-      });
-
-      ignore.push(...run.ignore);
-      prune.push(...run.prune);
-      refresh.push(...run.refresh);
-
-      deleted += run.deleted;
-      refreshed += run.refreshed;
-      ignored += run.ignored;
-      pruned += run.pruned;
-      revoked += run.revoked;
-      resynced += run.resynced;
+      users.push(user._id);
     }
 
-    logger.debug(`Sync Maintenance Results:
-      IGNORED: ${ignored}
-      PRUNED: ${pruned}
-      REFRESHED: ${refreshed}
+    const { default: pLimit } = await import("p-limit"); // esm module support
+    // Limit concurrency to avoid resource exhaustion and API rate limits
+    const limit = pLimit(5); // Adjust concurrency as needed
 
-      DELETED DURING PRUNE: ${deleted}
-      REVOKED SESSION DURING REFRESH: ${revoked}
-      RESYNCED DURING REFRESH: ${resynced}
+    const run = await Promise.all(
+      users.map((user) =>
+        limit(() =>
+          this.runMaintenanceByUser(user.toString(), {
+            log: false,
+          }).catch((error) => {
+            logger.error(
+              `Error running sync maintenance for user: ${user.toString()}`,
+              error,
+            );
+
+            return {
+              ignore: [{ user: user.toString(), payload: [] }],
+              prune: [{ user: user.toString(), payload: [] }],
+              refresh: [{ user: user.toString(), payload: [] }],
+              ...result,
+            };
+          }),
+        ),
+      ),
+    );
+
+    const results = run.reduce(
+      (acc, res) => ({
+        deleted: acc.deleted + res.deleted,
+        refreshed: acc.refreshed + res.refreshed,
+        ignored: acc.ignored + res.ignored,
+        pruned: acc.pruned + res.pruned,
+        revoked: acc.revoked + res.revoked,
+        resynced: acc.resynced + res.resynced,
+      }),
+      result,
+    );
+
+    logger.debug(`Sync Maintenance Results:
+      IGNORED: ${results.ignored}
+      PRUNED: ${results.pruned}
+      REFRESHED: ${results.refreshed}
+
+      DELETED DURING PRUNE: ${results.deleted}
+      REVOKED SESSION DURING REFRESH: ${results.revoked}
+      RESYNCED DURING REFRESH: ${results.resynced}
     `);
 
-    return { ignored, pruned, refreshed, revoked, deleted, resynced };
+    return results;
   };
 
   runMaintenanceByUser = async (
@@ -373,8 +397,8 @@ class SyncService {
     if (params?.log) {
       logger.debug(`Sync Maintenance Results:
         IGNORED: ${ignore.length}
-        PRUNED: ${pruned.map((p) => p.user).toString()}
-        REFRESHED: ${refreshed.map((r) => r.user).toString()}
+        PRUNED: ${pruned.flatMap((p) => p.results).toString()}
+        REFRESHED: ${refreshed.flatMap((r) => r.results.filter((r) => r.success)).toString()}
 
         DELETED DURING PRUNE: ${deletedDuringPrune.map((r) => r.user).toString()}
         REVOKED SESSION DURING REFRESH: ${revokedSession
@@ -386,9 +410,11 @@ class SyncService {
 
     return {
       ...result,
-      ignored: ignore.length,
-      pruned: pruned.length,
-      refreshed: refreshed.length,
+      ignored: ignore.flatMap(({ payload }) => payload).length,
+      pruned: pruned.flatMap(({ results }) => results).length,
+      refreshed: refreshed.flatMap(({ results }) =>
+        results.filter((r) => r.success),
+      ).length,
       revoked: revokedSession.length,
       deleted: deletedDuringPrune.length,
       resynced: resynced.length,

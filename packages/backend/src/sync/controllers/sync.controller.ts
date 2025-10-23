@@ -135,8 +135,25 @@ export class SyncController {
 
   static maintain = async (_req: Request, res: Response) => {
     try {
+      // To avoid 504 timeouts on this long running endpoint
+      // to support the reliance of the google cloud function
+      // on the result of the syncService.runMaintenance call for notifications
+      // we run the underlying sync logic for each user in parallel
+      // to speed it up. If some of the syncs fail, investigate
+      // Google API quota limits first.
+      // We will also try to send a timeout response after 5 minutes
+      res.setTimeout(5 * 60 * 1000, () => {
+        if (res.headersSent) return;
+
+        res.status(Status.GATEWAY_TIMEOUT).send({
+          error:
+            "Request timed out. Sync is still in progress, result unknown.",
+        });
+      }); // 5 minutes timeout
+
       const result = await syncService.runMaintenance();
-      res.promise(result);
+
+      if (!res.headersSent) res.promise(result);
     } catch (e) {
       logger.error(e);
       res.promise(e);
