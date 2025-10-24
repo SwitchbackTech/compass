@@ -189,11 +189,10 @@ export const NowView = () => {
         <ShortcutSection title="Global" shortcuts={global} />
       </aside>
 
-      {/* Coming Soon Text */}
       <div className="absolute inset-0 z-20 flex items-center justify-center">
         <h1 className="text-center text-7xl font-bold text-white drop-shadow-2xl">
           <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-teal-300 bg-clip-text text-transparent">
-            Coming Soon
+            Now View - Coming Soon
           </span>
         </h1>
       </div>
