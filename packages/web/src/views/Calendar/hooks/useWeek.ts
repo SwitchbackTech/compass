@@ -42,8 +42,8 @@ export const useWeek = (today: Dayjs) => {
   }, [dispatch, end, start]);
 
   const somedayEventsRequestFilter = useMemo(() => {
-    return computeSomedayEventsRequestFilter(start, end);
-  }, [end, start]);
+    return computeSomedayEventsRequestFilter(start, start.endOf("month"));
+  }, [start]);
 
   useEffect(() => {
     dispatch(

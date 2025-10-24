@@ -1,8 +1,10 @@
-import React from "react";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Flex } from "@web/components/Flex";
-import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
-import { FlexDirections } from "@web/components/Flex/styled";
+import {
+  AlignItems,
+  FlexDirections,
+  JustifyContent,
+} from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";
 import { Props_DraftForm } from "@web/views/Calendar/components/Draft/context/DraftContext";
 import { Actions_Sidebar } from "@web/views/Calendar/components/Draft/sidebar/hooks/useSidebarActions";
