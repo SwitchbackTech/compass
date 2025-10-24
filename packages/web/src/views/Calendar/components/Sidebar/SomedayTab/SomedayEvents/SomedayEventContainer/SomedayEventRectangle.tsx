@@ -1,4 +1,3 @@
-import React from "react";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Flex } from "@web/components/Flex";
 import {
@@ -35,9 +34,7 @@ export const SomedayEventRectangle = ({
         direction={FlexDirections.ROW}
         justifyContent={JustifyContent.SPACE_BETWEEN}
       >
-        <Text size="l">
-          {event.title} {event.startDate /** @TODO revert this before merge */}
-        </Text>
+        <Text size="l">{event.title}</Text>
 
         {canMigrate ? (
           <Flex>

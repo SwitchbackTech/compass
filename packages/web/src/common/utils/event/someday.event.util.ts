@@ -47,11 +47,12 @@ export const categorizeSomedayEvents = (
   weekDates: { start: Dayjs; end: Dayjs },
 ): Schema_SomedayEventsColumn => {
   const { start: weekStart, end: weekEnd } = weekDates;
+  const monthStart = weekStart.startOf("month");
   const monthEnd = weekStart.endOf("month");
   const _events = Object.values(events) as Schema_SomedayEvent[];
   const somedayEvents = validateSomedayEvents(_events);
   const _weekEvents = eventsBetweenDates(somedayEvents, weekStart, weekEnd);
-  const _monthEvents = eventsBetweenDates(somedayEvents, weekStart, monthEnd);
+  const _monthEvents = eventsBetweenDates(somedayEvents, monthStart, monthEnd);
   const weekEvents = uniqby(_weekEvents, "recurrence.eventId");
 
   const otherMonthEvents = _monthEvents.filter(
