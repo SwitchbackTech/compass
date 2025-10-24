@@ -81,12 +81,13 @@ export const StyledWeekDay = styled.button<{
   bgColor: string;
   selected: boolean;
 }>`
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 1px solid ${({ theme }) => theme.color.border.primaryDark};
   background-color: ${({ bgColor }) => bgColor};
+  border: 1px solid ${({ theme }) => theme.color.border.primaryDark};
+  border-radius: 50%;
+  font-size: ${({ theme }) => theme.text.size.m};
+  height: 24px;
   transition: ${({ theme }) => theme.transition.default};
+  width: 24px;
 
   cursor: pointer;
   ${({ selected, theme }) =>
@@ -118,6 +119,7 @@ export const StyledIntervalInput = styled.input<{
   border: 1px solid transparent;
   text-align: center;
   border-radius: ${({ theme }) => theme.shape.borderRadius};
+  font-size: ${({ theme }) => theme.text.size.s};
   padding: 0 4px;
   background-color: ${({ bgColor }) => bgColor};
   margin-left: ${({ theme }) => theme.spacing.xs};
