@@ -1,13 +1,23 @@
 import { ObjectId } from "bson";
+import { faker } from "@faker-js/faker";
 import {
   ID_OPTIMISTIC_PREFIX,
   Origin,
   Priorities,
+  RRULE,
+  RRULE_COUNT_WEEKS,
 } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
+import {
+  createMockBaseEvent,
+  createMockInstances,
+} from "@core/util/test/ccal.event.factory";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
-import { Schema_SomedayEvent } from "@web/common/types/web.event.types";
+import {
+  Schema_SomedayEvent,
+  Schema_SomedayEventsColumn,
+} from "@web/common/types/web.event.types";
 import {
   categorizeSomedayEvents,
   setSomedayEventsOrder,
@@ -28,10 +38,8 @@ describe("categorizeSomedayEvents", () => {
     endDate: "2024-03-20",
   };
 
-  const weekDates = {
-    start: dayjs("2024-03-17"),
-    end: dayjs("2024-03-23"),
-  };
+  const startOfWeek = dayjs("2024-03-17").startOf("week");
+  const weekDates = { start: startOfWeek, end: startOfWeek.endOf("week") };
 
   describe("Week vs Month categorization", () => {
     it("should categorize event within current week to week column", () => {
@@ -97,13 +105,13 @@ describe("categorizeSomedayEvents", () => {
           ...baseEvent,
           _id: _idA,
           startDate: "2024-03-17",
-          endDate: "2024-03-23",
+          endDate: "2024-03-17",
         },
         [_idB]: {
           ...baseEvent,
           _id: _idB,
           startDate: "2024-03-01",
-          endDate: "2024-03-31",
+          endDate: "2024-03-01",
         },
       };
 
@@ -470,6 +478,40 @@ describe("computeRelativeEventDateRange", () => {
         { ...events[1], order: 1 },
         { ...events[2], order: 3 },
       ]);
+    });
+
+    // Recurrence deduplication tests
+    it("should not duplicate a recurring event into the month column when a week occurrence exists", () => {
+      const isSomeday = true;
+      const referenceDate = dayjs(faker.date.anytime());
+      const startDate = referenceDate.toRFC3339OffsetString();
+      const week = faker.number.int({ min: 0, max: RRULE_COUNT_WEEKS - 1 });
+      const startOfWeek = referenceDate.startOf("week").add(week, "weeks");
+      const endOfWeek = startOfWeek.endOf("week");
+      const weekDates = { start: startOfWeek, end: endOfWeek };
+      const recurrence = { rule: [RRULE.WEEK] };
+      const base = createMockBaseEvent({ recurrence, startDate, isSomeday });
+      const instances = createMockInstances(base, RRULE_COUNT_WEEKS, {
+        isSomeday,
+        order: 0,
+      });
+
+      const events: Schema_SomedayEventsColumn["events"] = instances.reduce(
+        (acc, instance) => ({
+          ...acc,
+          [instance._id]: {
+            ...instance,
+            recurrence: { ...recurrence, ...instance.recurrence },
+          },
+        }),
+        {},
+      );
+
+      const result = categorizeSomedayEvents(events, weekDates);
+      const weekOccurrenceId = instances[week]._id;
+
+      expect(result.columns[COLUMN_MONTH].eventIds).toHaveLength(0);
+      expect(result.columns[COLUMN_WEEK].eventIds).toContain(weekOccurrenceId);
     });
   });
 });

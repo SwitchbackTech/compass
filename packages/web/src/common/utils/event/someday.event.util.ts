@@ -53,16 +53,22 @@ export const categorizeSomedayEvents = (
   const somedayEvents = validateSomedayEvents(_events);
   const _weekEvents = eventsBetweenDates(somedayEvents, weekStart, weekEnd);
   const _monthEvents = eventsBetweenDates(somedayEvents, monthStart, monthEnd);
-  const weekEvents = uniqby(_weekEvents, "recurrence.eventId");
+  const weekEvents = uniqby(_weekEvents, (e) => e.recurrence?.eventId ?? e._id);
 
   const otherMonthEvents = _monthEvents.filter(
     ({ _id, recurrence }) =>
       !weekEvents.some(
-        (e) => e._id === _id || e.recurrence?.eventId === recurrence?.eventId,
+        (e) =>
+          e._id === _id ||
+          (typeof e.recurrence?.eventId === "string" &&
+            e.recurrence?.eventId === recurrence?.eventId),
       ),
   );
 
-  const monthEvents = uniqby(otherMonthEvents, "recurrence.eventId");
+  const monthEvents = uniqby(
+    otherMonthEvents,
+    (e) => e.recurrence?.eventId ?? e._id,
+  );
 
   const sortedData = {
     columns: {
