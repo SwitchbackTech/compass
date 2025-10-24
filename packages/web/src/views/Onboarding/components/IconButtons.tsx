@@ -23,7 +23,13 @@ const IconButton = styled(OnboardingButton)<{ $shouldPulse?: boolean }>`
   min-width: 0;
   width: 24px;
   height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.2s ease-in-out;
+  svg {
+    display: block;
+  }
 
   ${({ $shouldPulse }) =>
     $shouldPulse &&

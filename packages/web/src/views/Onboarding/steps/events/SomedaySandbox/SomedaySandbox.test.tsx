@@ -1,5 +1,6 @@
+import { act } from "react";
 import "@testing-library/jest-dom";
-import { act, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { withProvider } from "../../../components/OnboardingContext";
@@ -46,20 +47,26 @@ describe("SomedaySandbox", () => {
 
   it("should add a week task when Enter is pressed", async () => {
     const { weekTaskInput } = setup();
-    await userEvent.type(weekTaskInput, "Test week task{enter}");
+    await act(async () => {
+      await userEvent.type(weekTaskInput, "Test week task{enter}");
+    });
     expect(screen.getByText("Test week task")).toBeInTheDocument();
   });
 
   it("should add a month task when Enter is pressed", async () => {
     const { monthTaskInput } = setup();
-    await userEvent.type(monthTaskInput, "Test month task{enter}");
+    await act(async () => {
+      await userEvent.type(monthTaskInput, "Test month task{enter}");
+    });
     expect(screen.getByText("Test month task")).toBeInTheDocument();
   });
 
   it("should focus the month input after adding a week task with Enter", async () => {
     const { weekTaskInput, monthTaskInput } = setup();
     weekTaskInput.focus();
-    await userEvent.type(weekTaskInput, "Focus test{enter}");
+    await act(async () => {
+      await userEvent.type(weekTaskInput, "Focus test{enter}");
+    });
     expect(document.activeElement).toBe(monthTaskInput);
   });
 
@@ -76,15 +83,23 @@ describe("SomedaySandbox", () => {
 
   it("should add week task on blur if input is not empty", async () => {
     const { weekTaskInput } = setup();
-    await userEvent.type(weekTaskInput, "Blur week task");
-    await userEvent.tab(); // move focus away to trigger blur
+    await act(async () => {
+      await userEvent.type(weekTaskInput, "Blur week task");
+    });
+    await act(async () => {
+      await userEvent.tab(); // move focus away to trigger blur
+    });
     expect(screen.getByText("Blur week task")).toBeInTheDocument();
   });
 
   it("should add month task on blur if input is not empty", async () => {
     const { monthTaskInput } = setup();
-    await userEvent.type(monthTaskInput, "Blur month task");
-    await userEvent.tab(); // move focus away to trigger blur
+    await act(async () => {
+      await userEvent.type(monthTaskInput, "Blur month task");
+    });
+    await act(async () => {
+      await userEvent.tab(); // move focus away to trigger blur
+    });
     expect(screen.getByText("Blur month task")).toBeInTheDocument();
   });
 
@@ -138,10 +153,14 @@ describe("SomedaySandbox", () => {
     const monthInput = screen.getAllByPlaceholderText("Create new task...")[1];
 
     // Add week task
-    await userEvent.type(weekInput, "Week task{enter}");
+    await act(async () => {
+      await userEvent.type(weekInput, "Week task{enter}");
+    });
 
     // Add month task
-    await userEvent.type(monthInput, "Month task{enter}");
+    await act(async () => {
+      await userEvent.type(monthInput, "Month task{enter}");
+    });
 
     // Wait for checkboxes to be checked
     await waitFor(() => {
@@ -151,7 +170,9 @@ describe("SomedaySandbox", () => {
 
     // Click the next button to trigger handleNext (the right arrow button)
     const nextButton = screen.getByLabelText("Next");
-    await userEvent.click(nextButton);
+    await act(async () => {
+      await userEvent.click(nextButton);
+    });
 
     // createAndSubmitEvents should be called first
     await waitFor(() => {
@@ -178,7 +199,9 @@ describe("SomedaySandbox", () => {
     // Focus on the week input and press Enter
     const weekInput = screen.getAllByPlaceholderText("Create new task...")[0];
     weekInput.focus();
-    await userEvent.type(weekInput, "Test task{enter}");
+    await act(async () => {
+      await userEvent.type(weekInput, "Test task{enter}");
+    });
 
     // Should not call createAndSubmitEvents or onNext because Enter was pressed while focused on input
     expect(createAndSubmitEvents).not.toHaveBeenCalled();
@@ -202,7 +225,9 @@ describe("SomedaySandbox", () => {
     // Focus on the month input and press Enter
     const monthInput = screen.getAllByPlaceholderText("Create new task...")[1];
     monthInput.focus();
-    await userEvent.type(monthInput, "Test month task{enter}");
+    await act(async () => {
+      await userEvent.type(monthInput, "Test month task{enter}");
+    });
 
     // Should not call createAndSubmitEvents or onNext because Enter was pressed while focused on input
     expect(createAndSubmitEvents).not.toHaveBeenCalled();
@@ -224,10 +249,14 @@ describe("SomedaySandbox", () => {
     const monthInput = screen.getAllByPlaceholderText("Create new task...")[1];
 
     // Add week task
-    await userEvent.type(weekInput, "Week task{enter}");
+    await act(async () => {
+      await userEvent.type(weekInput, "Week task{enter}");
+    });
 
     // Add month task
-    await userEvent.type(monthInput, "Month task{enter}");
+    await act(async () => {
+      await userEvent.type(monthInput, "Month task{enter}");
+    });
 
     // Wait for checkboxes to be checked
     await waitFor(() => {
@@ -241,7 +270,9 @@ describe("SomedaySandbox", () => {
 
     // Click the next button to trigger handleNext (the right arrow button)
     const nextButton = screen.getByLabelText("Next");
-    await userEvent.click(nextButton);
+    await act(async () => {
+      await userEvent.click(nextButton);
+    });
 
     // createAndSubmitEvents should be called first
     await waitFor(() => {
@@ -288,7 +319,9 @@ describe("SomedaySandbox", () => {
 
     // Type in an input but don't submit (unsaved changes)
     const weekInput = screen.getAllByPlaceholderText("Create new task...")[0];
-    await userEvent.type(weekInput, "Unsaved task");
+    await act(async () => {
+      await userEvent.type(weekInput, "Unsaved task");
+    });
 
     // The button should be disabled due to unsaved changes
     const nextButton = screen.getByLabelText("Next");
@@ -310,8 +343,12 @@ describe("SomedaySandbox", () => {
     const weekInput = screen.getAllByPlaceholderText("Create new task...")[0];
     const monthInput = screen.getAllByPlaceholderText("Create new task...")[1];
 
-    await userEvent.type(weekInput, "Week task{enter}");
-    await userEvent.type(monthInput, "Month task{enter}");
+    await act(async () => {
+      await userEvent.type(weekInput, "Week task{enter}");
+    });
+    await act(async () => {
+      await userEvent.type(monthInput, "Month task{enter}");
+    });
 
     // Wait for checkboxes to be checked
     await waitFor(() => {
@@ -352,8 +389,12 @@ describe("SomedaySandbox", () => {
     const weekInput = screen.getAllByPlaceholderText("Create new task...")[0];
     const monthInput = screen.getAllByPlaceholderText("Create new task...")[1];
 
-    await userEvent.type(weekInput, "Week task{enter}");
-    await userEvent.type(monthInput, "Month task{enter}");
+    await act(async () => {
+      await userEvent.type(weekInput, "Week task{enter}");
+    });
+    await act(async () => {
+      await userEvent.type(monthInput, "Month task{enter}");
+    });
 
     // Wait for checkboxes to be checked
     await waitFor(() => {
@@ -439,8 +480,12 @@ describe("SomedaySandbox", () => {
     const weekInput = screen.getAllByPlaceholderText("Create new task...")[0];
     const monthInput = screen.getAllByPlaceholderText("Create new task...")[1];
 
-    await userEvent.type(weekInput, "Week task{enter}");
-    await userEvent.type(monthInput, "Month task{enter}");
+    await act(async () => {
+      await userEvent.type(weekInput, "Week task{enter}");
+    });
+    await act(async () => {
+      await userEvent.type(monthInput, "Month task{enter}");
+    });
 
     // Wait for checkboxes to be checked
     await waitFor(() => {
@@ -455,7 +500,9 @@ describe("SomedaySandbox", () => {
 
     // Click the next button to trigger handleNext (the right arrow button)
     const nextButton = screen.getByLabelText("Next");
-    await userEvent.click(nextButton);
+    await act(async () => {
+      await userEvent.click(nextButton);
+    });
 
     // The button should be disabled while submitting
     expect(nextButton).toBeDisabled();
