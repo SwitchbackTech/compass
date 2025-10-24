@@ -1,37 +1,24 @@
 import { act } from "react";
-import { MemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import dayjs from "@core/util/date/dayjs";
-import { DateNavigationProvider } from "../../context/DateNavigationProvider";
-import { TaskProvider } from "../../context/TaskProvider";
+import { renderWithDayProviders } from "../../util/day.test-util";
 import { TaskList } from "./TaskList";
 import { DAY_HEADING_FORMAT, DAY_SUBHEADING_FORMAT } from "./TaskListHeader";
 
 const renderTaskList = (props = {}, currentDate?: Date) => {
   const user = userEvent.setup();
-  const initialDate = currentDate ? dayjs(currentDate) : dayjs();
-  const result = render(
-    <MemoryRouter
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true,
-      }}
-    >
-      <DateNavigationProvider initialDate={initialDate}>
-        <TaskProvider>
-          <TaskList {...props} />
-        </TaskProvider>
-      </DateNavigationProvider>
-    </MemoryRouter>,
-  );
+  const initialDate = currentDate ? dayjs(currentDate).utc() : dayjs().utc();
+  const result = renderWithDayProviders(<TaskList {...props} />, {
+    initialDate,
+  });
   return { ...result, user };
 };
 
-// format dates using the same format as the component
+// format dates using the same format as the component (UTC to match component behavior)
 const format = (date: Date) => {
-  return dayjs(date).locale("en").format(DAY_HEADING_FORMAT);
+  return dayjs(date).utc().locale("en").format(DAY_HEADING_FORMAT);
 };
 
 describe("TaskListHeader", () => {
@@ -66,7 +53,9 @@ describe("TaskListHeader", () => {
     });
 
     // Verify heading updates to next day
-    const expectedNextDate = format(dayjs(testDate).add(1, "day").toDate());
+    const expectedNextDate = format(
+      dayjs(testDate).utc().add(1, "day").toDate(),
+    );
     await waitFor(() => {
       expect(heading).toHaveTextContent(expectedNextDate);
     });
@@ -89,7 +78,7 @@ describe("TaskListHeader", () => {
 
     // Verify heading updates to previous day
     const expectedPrevDate = format(
-      dayjs(testDate).subtract(1, "day").toDate(),
+      dayjs(testDate).utc().subtract(1, "day").toDate(),
     );
     await waitFor(() => {
       expect(heading).toHaveTextContent(expectedPrevDate);
@@ -109,7 +98,7 @@ describe("TaskListHeader", () => {
       await user.click(nextButton);
     });
     const expectedAfterFirstNext = format(
-      dayjs(testDate).add(1, "day").toDate(),
+      dayjs(testDate).utc().add(1, "day").toDate(),
     );
     await waitFor(() => {
       expect(heading).toHaveTextContent(expectedAfterFirstNext);
@@ -119,7 +108,7 @@ describe("TaskListHeader", () => {
       await user.click(nextButton);
     });
     const expectedAfterSecondNext = format(
-      dayjs(testDate).add(2, "day").toDate(),
+      dayjs(testDate).utc().add(2, "day").toDate(),
     );
     await waitFor(() => {
       expect(heading).toHaveTextContent(expectedAfterSecondNext);
@@ -129,7 +118,9 @@ describe("TaskListHeader", () => {
     await act(async () => {
       await user.click(prevButton);
     });
-    const expectedAfterPrev = format(dayjs(testDate).add(1, "day").toDate());
+    const expectedAfterPrev = format(
+      dayjs(testDate).utc().add(1, "day").toDate(),
+    );
     await waitFor(() => {
       expect(heading).toHaveTextContent(expectedAfterPrev);
     });
@@ -152,7 +143,7 @@ describe("TaskListHeader", () => {
     });
 
     // Verify heading shows February 1st
-    const nextDate = format(dayjs(testDate).add(1, "day").toDate());
+    const nextDate = format(dayjs(testDate).utc().add(1, "day").toDate());
     await waitFor(() => {
       expect(heading).toHaveTextContent(nextDate);
     });
@@ -195,7 +186,7 @@ describe("TaskListHeader", () => {
     });
 
     // Verify heading updates to today's date
-    const expectedTodayDate = format(dayjs().toDate());
+    const expectedTodayDate = format(dayjs().utc().toDate());
     await waitFor(() => {
       expect(heading).toHaveTextContent(expectedTodayDate);
     });
