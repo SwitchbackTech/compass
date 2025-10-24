@@ -58,6 +58,11 @@ export function* convertSomedayToCalendarEvent({
 export function* deleteSomedayEvent({ payload }: Action_DeleteEvent) {
   const event = yield* getEventById(payload._id);
 
+  if (!event) {
+    console.error(`Event with ID ${payload._id} not found for deletion.`);
+    return;
+  }
+
   try {
     yield put(eventsEntitiesSlice.actions.delete(payload));
 
