@@ -38,6 +38,6 @@ describe("NowView", () => {
   it("renders the main content", () => {
     render(<NowView />);
 
-    expect(screen.getByText("Coming Soon")).toBeInTheDocument();
+    expect(screen.getByText("Now View - Coming Soon")).toBeInTheDocument();
   });
 });

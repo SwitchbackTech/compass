@@ -46,6 +46,12 @@ export function DayView() {
           If nothing happens when you click the flask icon, refresh the page and
           retry.
         </p>
+        <button
+          onClick={() => navigate("/")}
+          className="mt-3 rounded-md bg-blue-600 px-4 py-2 text-white transition-colors duration-200 hover:bg-blue-700"
+        >
+          Return to Calendar
+        </button>
       </div>
     );
   }
