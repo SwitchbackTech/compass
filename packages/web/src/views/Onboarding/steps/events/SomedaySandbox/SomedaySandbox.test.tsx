@@ -265,7 +265,7 @@ describe("SomedaySandbox", () => {
     });
 
     // Clear mocks to test fresh
-    // createAndSubmitEvents.mockClear();
+    createAndSubmitEvents.mockClear();
     mockOnNext.mockClear();
 
     // Click the next button to trigger handleNext (the right arrow button)
