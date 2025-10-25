@@ -5,11 +5,12 @@ import { useAuthCheck } from "@web/auth/useAuthCheck";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { WaitlistApi } from "@web/common/apis/waitlist.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { WAITLIST_URL } from "@web/common/constants/web.constants";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { LoginAbsoluteOverflowLoader } from "@web/components/LoginAbsoluteOverflowLoader/LoginAbsoluteOverflowLoader";
 import { GoogleButton } from "@web/components/oauth/google/GoogleButton";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
+import { NotOnTheWaitlist } from "./NotOnTheWaitlist";
+import { OnTheWaitlist } from "./OnTheWaitlist";
 import {
   ActionButton,
   Card,
@@ -17,15 +18,10 @@ import {
   EmailFormContainer,
   EmailInputField,
   InfoText,
-  NavLinkContainer,
-  NavLinkIcon,
-  NavLinkText,
   SignInButtonWrapper,
   StyledLogin,
   StyledLoginContainer,
-  StyledNavLink,
   Subtitle,
-  TertiaryButton,
   Title,
 } from "./styled";
 
@@ -184,49 +180,11 @@ export const LoginView = () => {
             {flowStep === "waitlistStatusKnown" && waitlistStatus && (
               <>
                 {!waitlistStatus.isActive && !waitlistStatus.isOnWaitlist && (
-                  <>
-                    <InfoText>
-                      You are not on the waitlist yet. Sign up to get notified
-                      when a spot opens up!
-                    </InfoText>
-                    <TertiaryButton
-                      href={WAITLIST_URL}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Sign Up for Waitlist
-                    </TertiaryButton>
-                  </>
+                  <NotOnTheWaitlist />
                 )}
 
                 {waitlistStatus.isOnWaitlist && !waitlistStatus.isInvited && (
-                  <>
-                    <InfoText>
-                      You're on the waitlist! We're carefully reviewing
-                      applicants and will notify you once you're invited. In the
-                      meantime, you can engage with us in these ways:
-                    </InfoText>
-                    <NavLinkContainer>
-                      <StyledNavLink
-                        href="https://github.com/SwitchbackTech/compass"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <NavLinkIcon>👨‍💻</NavLinkIcon>
-                        <NavLinkText>
-                          View the code (we're open source!)
-                        </NavLinkText>
-                      </StyledNavLink>
-                      <StyledNavLink
-                        href="https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=ypf5Jg8tZt6Tez36"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <NavLinkIcon>📺</NavLinkIcon>
-                        <NavLinkText>Watch Compass on YouTube</NavLinkText>
-                      </StyledNavLink>
-                    </NavLinkContainer>
-                  </>
+                  <OnTheWaitlist />
                 )}
 
                 {(waitlistStatus.isActive ||
