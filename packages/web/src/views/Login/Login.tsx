@@ -225,14 +225,6 @@ export const LoginView = () => {
                         <NavLinkIcon>📺</NavLinkIcon>
                         <NavLinkText>Watch Compass on YouTube</NavLinkText>
                       </StyledNavLink>
-                      <StyledNavLink
-                        href="https://buymeacoffee.com/tylerdane"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <NavLinkIcon>☕</NavLinkIcon>
-                        <NavLinkText>Support with a donation</NavLinkText>
-                      </StyledNavLink>
                     </NavLinkContainer>
                   </>
                 )}
