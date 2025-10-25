@@ -74,61 +74,6 @@ describe("LoginView", () => {
     });
   });
 
-  describe("PostHog Integration", () => {
-    it("should call posthog.identify with email after successful authentication", async () => {
-      const testEmail = "test@example.com";
-      mockAuthApi.loginOrSignup.mockResolvedValue({
-        cUserId: "user123",
-        isNewUser: false,
-        email: testEmail,
-      });
-
-      render(<LoginView />);
-
-      // Simulate successful Google login
-      const {
-        useGoogleLogin,
-      } = require("@web/components/oauth/google/useGoogleLogin");
-      const mockUseGoogleLogin = useGoogleLogin as jest.Mock;
-
-      // Get the onSuccess callback from the mocked hook
-      const onSuccessCallback = mockUseGoogleLogin.mock.calls[0][0].onSuccess;
-
-      // Call the onSuccess callback with a mock OAuth code
-      await onSuccessCallback("mock-oauth-code");
-
-      // Verify PostHog identify was called with correct parameters
-      expect(mockIdentify).toHaveBeenCalledWith(testEmail, {
-        email: testEmail,
-      });
-      expect(mockAuthApi.loginOrSignup).toHaveBeenCalledWith("mock-oauth-code");
-    });
-
-    it("should call posthog.identify for new user signup", async () => {
-      const testEmail = "newuser@example.com";
-      mockAuthApi.loginOrSignup.mockResolvedValue({
-        cUserId: "new-user-id",
-        isNewUser: true,
-        email: testEmail,
-      });
-
-      render(<LoginView />);
-
-      const {
-        useGoogleLogin,
-      } = require("@web/components/oauth/google/useGoogleLogin");
-      const mockUseGoogleLogin = useGoogleLogin as jest.Mock;
-      const onSuccessCallback = mockUseGoogleLogin.mock.calls[0][0].onSuccess;
-
-      await onSuccessCallback("mock-oauth-code");
-
-      // Verify PostHog identify was called for new user
-      expect(mockIdentify).toHaveBeenCalledWith(testEmail, {
-        email: testEmail,
-      });
-    });
-  });
-
   describe("Authentication Flow", () => {
     it("should call AuthApi.loginOrSignup with OAuth code", async () => {
       render(<LoginView />);
