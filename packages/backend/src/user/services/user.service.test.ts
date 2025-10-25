@@ -96,7 +96,7 @@ describe("UserService", () => {
 
       EmailDriver.mockEmailServiceResponse();
 
-      const userId = await userService.initUserData(
+      const { userId } = await userService.initUserData(
         gUser,
         faker.internet.jwt(),
       );

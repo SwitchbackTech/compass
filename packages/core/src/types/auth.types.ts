@@ -5,6 +5,7 @@ export interface Result_Auth_Compass {
   cUserId?: string;
   error?: BaseError;
   isNewUser?: boolean;
+  email?: string;
 }
 
 export interface Result_VerifyGToken {
