@@ -202,12 +202,10 @@ const _OnboardingFlow: React.FC = () => {
     return 0; // Start from beginning for new users
   };
 
-  // Wait for hasCompletedSignup to load before showing anything
   if (hasCompletedSignup === null) {
     return null;
   }
 
-  // For returning users (hasCompletedSignup = true), skip login steps and go directly to main onboarding
   if (!showOnboarding && !hasCompletedSignup) {
     return (
       <Onboarding
