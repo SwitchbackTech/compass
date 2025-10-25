@@ -1,13 +1,13 @@
 import { ObjectId } from "mongodb";
 import { faker } from "@faker-js/faker";
-import { createMockCalendarListEntry } from "@core/__tests__/helpers/gcal.factory";
 import { MapCalendar } from "@core/mappers/map.calendar";
 import {
+  CalendarProvider,
   CompassCalendarSchema,
   GoogleCalendarMetadataSchema,
 } from "@core/types/calendar.types";
 import { StringV4Schema } from "@core/types/type.utils";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
+import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -15,6 +15,7 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import calendarService from "@backend/calendar/services/calendar.service";
+import { getCalendarsToSync } from "@backend/sync/services/init/sync.init";
 
 describe("CalendarService", () => {
   beforeEach(setupTestDb);
@@ -23,12 +24,11 @@ describe("CalendarService", () => {
 
   describe("initializeGoogleCalendars", () => {
     it("initializes Google calendars to sync for a user", async () => {
-      const { user } = await UtilDriver.setupTestUser();
-      const userId = user._id.toString();
-      const gcal = await getGcalClient(userId);
+      const user = await UserDriver.createGoogleAuthUser();
+      const gcal = await getGcalClient(user._id);
 
       const result = await calendarService.initializeGoogleCalendars(
-        userId,
+        user._id,
         gcal,
       );
 
@@ -57,11 +57,14 @@ describe("CalendarService", () => {
 
   describe("create", () => {
     it("creates a google calendar entry", async () => {
-      const { user } = await UtilDriver.setupTestUser();
-      const userId = user._id.toString();
-      const id = faker.string.ulid();
-      const googleCal = createMockCalendarListEntry({ primary: false, id });
-      const compassCalendar = MapCalendar.gcalToCompass(userId, googleCal);
+      const user = await UserDriver.createGoogleAuthUser();
+      const gcal = await getGcalClient(user._id);
+      const { calendars } = await getCalendarsToSync(gcal);
+
+      const compassCalendar = MapCalendar.gcalToCompass(
+        user._id,
+        calendars[0]!,
+      );
 
       const result = await calendarService.create(compassCalendar);
 
@@ -76,17 +79,13 @@ describe("CalendarService", () => {
 
   describe("getByUser", () => {
     it("returns all calendars for user", async () => {
-      const { user } = await UtilDriver.setupTestUser();
-      const userId = user._id.toString();
+      const user = await UserDriver.createGoogleAuthUser();
+      const userId = user._id;
       const gcal = await getGcalClient(userId);
-      const id = faker.string.ulid();
-      const googleCal = createMockCalendarListEntry({ primary: false, id });
-      const compassCalendar = MapCalendar.gcalToCompass(userId, googleCal);
 
       await calendarService.initializeGoogleCalendars(userId, gcal);
-      await calendarService.create(compassCalendar);
 
-      const calendars = await calendarService.getByUser(userId);
+      const calendars = await calendarService.getAllByUser(userId);
 
       expect(calendars.length).toBeGreaterThan(1);
 
@@ -102,17 +101,13 @@ describe("CalendarService", () => {
 
   describe("getSelectedByUser", () => {
     it("returns only selected calendars", async () => {
-      const { user } = await UtilDriver.setupTestUser();
-      const userId = user._id.toString();
+      const user = await UserDriver.createGoogleAuthUser();
+      const userId = user._id;
       const gcal = await getGcalClient(userId);
-      const id = faker.string.ulid();
-      const googleCal = createMockCalendarListEntry({ primary: false, id });
-      const compassCalendar = MapCalendar.gcalToCompass(userId, googleCal);
 
       await calendarService.initializeGoogleCalendars(userId, gcal);
-      await calendarService.create(compassCalendar);
 
-      const all = await calendarService.getByUser(userId);
+      const all = await calendarService.getAllByUser(userId);
       const numSelected = faker.number.int({ min: 1, max: all.length - 1 });
       const toggledCalendars = faker.helpers.shuffle(all).slice(0, numSelected);
 
@@ -124,8 +119,9 @@ describe("CalendarService", () => {
         })),
       );
 
-      const selected = await calendarService.getSelectedByUser(userId);
-      const userCalendars = await calendarService.getByUser(userId);
+      const selected =
+        await calendarService.getSelectedByUserAndProvider(userId);
+      const userCalendars = await calendarService.getAllByUser(userId);
 
       expect(selected).toHaveLength(all.length - toggledCalendars.length);
 
@@ -146,19 +142,60 @@ describe("CalendarService", () => {
           .every((c) => c.selected === false),
       ).toBe(true);
     });
+
+    it("returns only selected calendars by provider", async () => {
+      const user = await UserDriver.createGoogleAuthUser();
+      const userId = user._id;
+      const gcal = await getGcalClient(userId);
+
+      await calendarService.initializeGoogleCalendars(userId, gcal);
+      // Initialize other provider calendars when applicable
+
+      const all = await calendarService.getAllByUser(userId);
+      const numSelected = faker.number.int({ min: 1, max: all.length - 1 });
+      const toggledCalendars = faker.helpers.shuffle(all).slice(0, numSelected);
+
+      await calendarService.toggleSelection(
+        userId,
+        toggledCalendars.map(({ _id }) => ({
+          id: _id,
+          selected: false,
+        })),
+      );
+
+      const selected =
+        await calendarService.getSelectedByUserAndProvider(userId);
+      const userCalendars = await calendarService.getAllByUser(userId);
+
+      expect(selected).toHaveLength(all.length - toggledCalendars.length);
+
+      selected.forEach((c) => {
+        expect(c.selected).toBe(true);
+        expect(c.metadata.provider).toBe(CalendarProvider.GOOGLE);
+        expect(
+          toggledCalendars.find(({ _id }) => c._id.equals(_id)),
+        ).toBeUndefined();
+      });
+
+      expect(
+        userCalendars
+          .filter((c) =>
+            ObjectId.isValid(
+              toggledCalendars.find(({ _id }) => _id === c._id)?._id ?? "",
+            ),
+          )
+          .every((c) => c.selected === false),
+      ).toBe(true);
+    });
   });
 
   describe("getPrimaryByUser", () => {
     it("returns the primary calendar", async () => {
-      const { user } = await UtilDriver.setupTestUser();
-      const userId = user._id.toString();
+      const user = await UserDriver.createGoogleAuthUser();
+      const userId = user._id;
       const gcal = await getGcalClient(userId);
-      const id = faker.string.ulid();
-      const googleCal = createMockCalendarListEntry({ primary: false, id });
-      const compassCalendar = MapCalendar.gcalToCompass(userId, googleCal);
 
       await calendarService.initializeGoogleCalendars(userId, gcal);
-      await calendarService.create(compassCalendar);
 
       const primaryCalendar = await calendarService.getPrimaryByUser(userId);
 
@@ -169,17 +206,13 @@ describe("CalendarService", () => {
 
   describe("toggleSelection", () => {
     it("updates selection state for given calendars", async () => {
-      const { user } = await UtilDriver.setupTestUser();
-      const userId = user._id.toString();
+      const user = await UserDriver.createGoogleAuthUser();
+      const userId = user._id;
       const gcal = await getGcalClient(userId);
-      const id = faker.string.ulid();
-      const googleCal = createMockCalendarListEntry({ primary: false, id });
-      const compassCalendar = MapCalendar.gcalToCompass(userId, googleCal);
 
       await calendarService.initializeGoogleCalendars(userId, gcal);
-      await calendarService.create(compassCalendar);
 
-      const calendarList = await calendarService.getByUser(userId);
+      const calendarList = await calendarService.getAllByUser(userId);
 
       calendarList.forEach((c) => expect(c.selected).toBe(true));
 
@@ -200,7 +233,7 @@ describe("CalendarService", () => {
         })),
       );
 
-      const updatedCalendarList = await calendarService.getByUser(userId);
+      const updatedCalendarList = await calendarService.getAllByUser(userId);
 
       expect(updatedCalendarList.some(({ selected }) => !selected)).toBe(true);
 
@@ -214,20 +247,18 @@ describe("CalendarService", () => {
 
   describe("deleteAllByUser", () => {
     it("removes all calendars for user", async () => {
-      const { user } = await UtilDriver.setupTestUser();
-      const userId = user._id.toString();
-      const id = faker.string.ulid();
-      const googleCal = createMockCalendarListEntry({ primary: false, id });
-      const compassCalendar = MapCalendar.gcalToCompass(userId, googleCal);
+      const user = await UserDriver.createGoogleAuthUser();
+      const gcal = await getGcalClient(user._id);
+      const { calendars } = await getCalendarsToSync(gcal);
 
-      await calendarService.create(compassCalendar);
+      await calendarService.initializeGoogleCalendars(user._id, gcal);
 
-      const delResult = await calendarService.deleteAllByUser(userId);
+      const delResult = await calendarService.deleteAllByUser(user._id);
 
-      expect(delResult.deletedCount).toEqual(1);
+      expect(delResult.deletedCount).toEqual(calendars.length);
       expect(delResult.acknowledged).toBe(true);
 
-      const remaining = await calendarService.getByUser(userId);
+      const remaining = await calendarService.getAllByUser(user._id);
 
       expect(remaining).toHaveLength(0);
     });

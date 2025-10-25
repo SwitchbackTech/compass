@@ -1,5 +1,5 @@
 import type { GaxiosError } from "gaxios";
-import { ClientSession, Document, Filter, ObjectId, WithId } from "mongodb";
+import { ClientSession, DeleteResult, Filter, ObjectId } from "mongodb";
 import {
   Origin,
   Priorities,
@@ -12,100 +12,110 @@ import {
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { MapEvent } from "@core/mappers/map.event";
+import { MapGCalEvent } from "@core/mappers/map.gcal.event";
 import {
   CalendarProvider,
-  CompassEventStatus,
-  CompassThisEvent,
-  EventUpdatePayload,
-  EventUpdateSchema,
+  CompassCalendarSchema,
+} from "@core/types/calendar.types";
+import {
+  BaseEventSchema,
+  EditableEventFields,
+  EditableEventFieldsSchema,
+  EventSchema,
+  EventStatus,
   Params_DeleteMany,
-  Payload_Order,
-  Query_Event,
   RecurringEventUpdateScope,
   Result_DeleteMany,
+  Schema_Base_Event,
   Schema_Event,
-  Schema_Event_Core,
-  WithCompassId,
+  Schema_Instance_Event,
 } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
-import { IDSchema } from "@core/types/type.utils";
-import { getCurrentRangeDates } from "@core/util/date/date.util";
+import { IDSchema, StringV4Schema } from "@core/types/type.utils";
+import dayjs from "@core/util/date/dayjs";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
-import { isInstance, parseCompassEventDate } from "@core/util/event/event.util";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
-import { Collections } from "@backend/common/constants/collections";
+import calendarService from "@backend/calendar/services/calendar.service";
 import { EventError } from "@backend/common/errors/event/event.errors";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import { reorderEvents } from "@backend/event/queries/event.queries";
 import { getReadAllFilter } from "@backend/event/services/event.service.util";
 import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.processor";
 
 class EventService {
-  createDefaultSomedays = async (userId: string) => {
-    const { week, month } = getCurrentRangeDates();
+  createDefaultSomedays = async (user: ObjectId, calendarId: ObjectId) => {
+    const now = dayjs();
+    const startDate = now.endOf("week");
+    const endDate = startDate.add(1, "hour");
+    const createdAt = now.toDate();
 
-    const defaultWeekly: Schema_Event_Core = {
+    const _calendar = await calendarService.getByUser(user, calendarId);
+
+    const calendar = CompassCalendarSchema.parse(_calendar, {
+      error: () => "Calendar not found",
+    });
+
+    const thisWeek: Schema_Event = {
+      _id: new ObjectId(),
+      calendar: calendar._id,
       title: "⭐ That one thing...",
-      isAllDay: false,
       isSomeday: true,
-      startDate: week.startDate,
-      endDate: week.endDate,
+      startDate: startDate.toDate(),
+      endDate: endDate.toDate(),
       priority: Priorities.UNASSIGNED,
       origin: Origin.COMPASS,
+      order: 0,
+      createdAt,
       description: `... that you wanna do this week, but aren't sure when.\
       \nKeep it here for safekeeping, then drag it over to the calendar once you're ready to commit times.\
       \n\nThese sidebar events are:\
       \n-filtered by the calendar week you're on\
       \n-limited to ${SOMEDAY_WEEKLY_LIMIT} per week`,
-      user: userId,
     };
 
-    const weeklyRepeat: Schema_Event_Core = {
+    const weeklyRepeat: Schema_Base_Event = {
+      _id: new ObjectId(),
+      calendar: calendar._id,
       title: "🪴 Water plants",
-      isAllDay: false,
       isSomeday: true,
-      startDate: week.startDate,
-      endDate: week.endDate,
+      startDate: now.startOf("day").toDate(),
+      endDate: now.endOf("day").toDate(),
       origin: Origin.COMPASS,
       priority: Priorities.SELF,
+      order: 0,
+      createdAt,
       description: `This event happens every week.\
         \n\nRather than repeating forever, however, it'll stop after ${
           RRULE_COUNT_WEEKS / RRULE_COUNT_MONTHS
         } months.\
         \n\nThis encourages frequent re-prioritizing, rather than running on autopilot indefinitely.`,
-      recurrence: {
-        rule: [RRULE.WEEK],
-      },
-      user: userId,
+      recurrence: { rule: [RRULE.WEEK] },
     };
 
-    const monthlyRepeat: Schema_Event_Core = {
-      isAllDay: false,
+    const monthlyRepeat: Schema_Base_Event = {
+      _id: new ObjectId(),
+      calendar: calendar._id,
       isSomeday: true,
       origin: Origin.COMPASS,
       priority: Priorities.RELATIONS,
-      startDate: month.startDate,
-      endDate: month.endDate,
+      startDate: now.startOf("day").toDate(),
+      endDate: now.endOf("day").toDate(),
+      createdAt,
+      order: 0,
       title: "🎲 Schedule game night",
-      recurrence: {
-        rule: [RRULE.MONTH],
-      },
+      recurrence: { rule: [RRULE.MONTH] },
       description: `This one repeats once a month for ${RRULE_COUNT_MONTHS} months`,
-      user: userId,
     };
 
     return CompassSyncProcessor.processEvents(
-      [weeklyRepeat, monthlyRepeat, defaultWeekly].map((e) => {
-        const eventId = new ObjectId().toString();
-
+      [weeklyRepeat, monthlyRepeat, thisWeek].map((payload) => {
         return {
-          eventId,
-          userId,
-          payload: { ...e, _id: eventId } as CompassThisEvent["payload"],
-          status: CompassEventStatus.CONFIRMED,
+          calendar,
+          payload,
+          providerSync: true,
+          status: EventStatus.CONFIRMED,
           applyTo: RecurringEventUpdateScope.THIS_EVENT,
         };
       }),
@@ -113,25 +123,51 @@ class EventService {
   };
 
   /*
-  Deletes all of a user's events
-  REMINDER: this should only delete a user's *Compass* events --
-            don't ever delete their events in gcal or any other 3rd party calendar
-  */
-  deleteAllByUser = async (userId: string) => {
-    const response = await mongoService.db
-      .collection(Collections.EVENT)
-      .deleteMany({ user: userId });
-    return response;
+   * Deletes all of a user's events
+   * REMINDER: this should only delete a user's *Compass* events --
+   * don't ever delete their events in gcal or any other 3rd party calendar
+   */
+  deleteAllByUser = async (
+    user: ObjectId,
+    calendar?: ObjectId,
+    session?: ClientSession,
+  ): Promise<DeleteResult> => {
+    const CalendarSchema = CompassCalendarSchema.array().nonempty({
+      error: () => "No calendars found for user",
+    });
+
+    const userCalendars = calendar
+      ? await calendarService
+          .getByUser(user, calendar)
+          .then((c) => CalendarSchema.parse([c]))
+      : await calendarService
+          .getAllByUser(user)
+          .then((calendars) => CalendarSchema.parse(calendars));
+
+    const response = await Promise.all(
+      userCalendars.map(({ _id: calendar }) =>
+        mongoService.event.deleteMany({ calendar }, { session }),
+      ),
+    );
+
+    return response.reduce(
+      (acc, { acknowledged, deletedCount }) => ({
+        acknowledged: acc.acknowledged && acknowledged,
+        deletedCount: acc.deletedCount + deletedCount,
+      }),
+      { acknowledged: true, deletedCount: 0 },
+    );
   };
 
   deleteMany = async (
-    userId: string,
+    calendar: ObjectId,
     params: Params_DeleteMany,
   ): Promise<Result_DeleteMany> => {
     const errors = [];
-    const response = await mongoService.db
-      .collection(Collections.EVENT)
-      .deleteMany({ user: userId, [params.key]: { $in: params.ids } });
+    const response = await mongoService.event.deleteMany({
+      calendar,
+      [params.key]: { $in: params.ids },
+    });
 
     if (response.deletedCount !== params.ids.length) {
       errors.push(
@@ -142,136 +178,190 @@ class EventService {
     return result;
   };
 
-  deleteByIntegration = async (integration: "google", userId: string) => {
-    if (integration !== "google") {
+  deleteByIntegration = async (
+    integration: CalendarProvider,
+    user: ObjectId,
+  ) => {
+    if (integration !== CalendarProvider.GOOGLE) {
       error(
         GenericError.NotImplemented,
-        `Failed to delete events for integration`,
+        `Failed to delete events for ${integration} integration`,
       );
     }
 
-    const key = "gEventId";
-    const response = await mongoService.db
-      .collection(Collections.EVENT)
-      .deleteMany({
-        user: userId,
-        isSomeday: false,
-        [key]: { $exists: true },
-      });
+    const calendars = await calendarService.getAllByUserAndProvider(
+      user,
+      integration,
+    );
+
+    const response = await mongoService.event.deleteMany({
+      calendar: { $in: calendars.map((cal) => cal._id) },
+      isSomeday: false,
+      metadata: { $exists: true },
+    });
+
     return response;
   };
 
   readAll = async (
-    userId: string,
-    query: Query_Event,
-  ): Promise<Schema_Event_Core[] | BaseError> => {
-    const filter = getReadAllFilter(userId, query) as Filter<Document>;
+    calendar: ObjectId,
+    query: Partial<
+      Pick<Schema_Event, "startDate" | "endDate" | "isSomeday"> & {
+        priorities?: Schema_Event["priority"][];
+      }
+    > = {},
+  ): Promise<Schema_Event[]> => {
+    const filter = getReadAllFilter(calendar, query);
+    const { isSomeday = false } = query;
+    const limit = isSomeday ? SOMEDAY_WEEKLY_LIMIT + SOMEDAY_MONTHLY_LIMIT : -1;
 
-    let events: Array<WithId<Omit<Schema_Event, "_id">>>;
-
-    if (query.someday) {
-      events = await mongoService.event
-        .find(filter)
-        .limit(SOMEDAY_WEEKLY_LIMIT + SOMEDAY_MONTHLY_LIMIT)
-        .sort({ startDate: 1 })
-        .toArray();
-    } else {
-      events = await mongoService.event.find(filter).toArray();
-    }
-
-    const baseEventIds = events
-      .filter(isInstance)
-      .map((e) => new ObjectId(e.recurrence?.eventId));
-
-    const baseEvents = await mongoService.event
-      .find({ user: userId, _id: { $in: baseEventIds } })
+    const events = await mongoService.event
+      .find(filter)
+      .limit(limit)
+      .sort(isSomeday ? { order: 1, startDate: 1 } : { startDate: 1 })
       .toArray();
 
-    return events
-      .map((event) => {
-        if (isInstance(event)) {
-          const baseEvent = baseEvents.find(
-            ({ _id }) => _id.toString() === event.recurrence?.eventId,
-          );
-
-          if (!baseEvent) {
-            console.error(
-              new BaseError(
-                "Skipping instance. Base event not found for instance",
-                `Tried with user: ${userId} and _id: ${event._id.toString()}`,
-                Status.NOT_FOUND,
-                true,
-              ),
-            );
-
-            return undefined;
-          }
-
-          return {
-            ...event,
-            _id: event._id.toString(),
-            recurrence: {
-              eventId: baseEvent._id.toString(),
-              rule: baseEvent.recurrence?.rule,
-            },
-          };
-        }
-
-        return { ...event, _id: event._id.toString() } as Schema_Event_Core;
-      })
-      .filter((e) => e) as Schema_Event_Core[];
+    return events;
   };
 
-  readById = async (userId: string, eventId: string) => {
-    const filter = {
-      _id: mongoService.objectId(eventId),
-      user: userId,
-    };
+  readById = async (calendar: ObjectId, eventId: ObjectId) => {
+    const _event = await mongoService.event.findOne({ _id: eventId, calendar });
 
-    const event = await mongoService.event.findOne(filter);
-
-    if (!event) {
-      throw new BaseError(
-        "Event not found",
-        `Tried with user: ${userId} and _id: ${eventId}`,
-        Status.NOT_FOUND,
-        true,
-      );
-    }
-
-    if (isInstance(event)) {
-      const baseEvent = await mongoService.event.findOne({
-        user: userId,
-        _id: new ObjectId(event.recurrence?.eventId),
-      });
-
-      if (!baseEvent) {
-        throw new BaseError(
-          "Base event not found for instance",
-          `Tried with user: ${userId} and _id: ${eventId}`,
+    const event = EventSchema.parse(_event, {
+      error: () =>
+        new BaseError(
+          "Event not found",
+          `Tried with calendar: ${calendar} and _id: ${eventId}`,
           Status.NOT_FOUND,
           true,
-        );
-      }
+        ),
+    });
 
-      event.recurrence = {
-        eventId: baseEvent._id.toString(),
-        rule: baseEvent?.recurrence?.rule,
-      };
-    }
-
-    return { ...event, _id: event._id.toString() };
+    return event;
   };
 
-  reorder = async (userId: string, order: Payload_Order[]) => {
-    if (order.length <= 0) {
-      throw error(GenericError.BadRequest, "No events to reorder");
-    }
+  reorder = async (
+    calendar: ObjectId,
+    events: Array<Pick<Schema_Event, "_id" | "order">>,
+  ) => {
+    const ordered = EventSchema.pick({ _id: true, calendar: true, order: true })
+      .array()
+      .nonempty()
+      .parse(events, {
+        error: () => error(GenericError.BadRequest, "No events to reorder"),
+      });
 
-    const result = await reorderEvents(userId, order);
+    const result = await mongoService.event.bulkWrite(
+      ordered.map((item) => ({
+        updateOne: {
+          filter: { _id: item._id, calendar },
+          update: { $set: { order: item.order } },
+        },
+      })),
+    );
 
     return result;
   };
+
+  async findBaseEvent(
+    event: Pick<Schema_Instance_Event, "recurrence" | "calendar" | "_id">,
+    session?: ClientSession,
+  ): Promise<Schema_Base_Event> {
+    const base = await mongoService.event.findOne(
+      { _id: event.recurrence.eventId, calendar: event.calendar },
+      { session },
+    );
+
+    return BaseEventSchema.parse(base, {
+      error: () =>
+        error(
+          EventError.NoMatchingEvent,
+          `Base event not found for instance ${event._id}`,
+        ),
+    });
+  }
+
+  async createGcalEvent(
+    userId: ObjectId,
+    gCalendarId: string,
+    event: Schema_Event,
+  ): Promise<gSchema$Event> {
+    try {
+      const _gEvent = MapGCalEvent.fromEvent(event);
+
+      const gcal = await getGcalClient(userId);
+      const gEvent = await gcalService.createEvent(gcal, _gEvent, gCalendarId);
+
+      return gEvent;
+    } catch (e) {
+      const error = e as GaxiosError<gSchema$Event>;
+
+      if (error.code?.toString() === "409") {
+        return this.updateGcalEvent(userId, gCalendarId, event, {
+          status: "confirmed",
+        });
+      }
+
+      throw e;
+    }
+  }
+
+  async updateGcalEvent(
+    userId: ObjectId,
+    gCalendarId: string,
+    event: Schema_Event,
+    extras?: Pick<gSchema$Event, "status">,
+  ): Promise<gSchema$Event> {
+    const { id, ...gEvent } = MapGCalEvent.fromEvent(event, extras);
+    const gcal = await getGcalClient(userId);
+    const gEventId = StringV4Schema.parse(id, {
+      error: () =>
+        error(
+          EventError.MissingProperty,
+          "cannot update gcal event without id",
+        ),
+    });
+
+    const updatedGEvent = await gcalService.updateEvent(
+      gcal,
+      gEventId,
+      gEvent,
+      gCalendarId,
+    );
+
+    return updatedGEvent;
+  }
+
+  async deleteGcalEvent(
+    userId: ObjectId,
+    gCalendarId: string,
+    _gEventId: string,
+  ): Promise<boolean> {
+    try {
+      const gcal = await getGcalClient(userId);
+      const gEventId = StringV4Schema.parse(_gEventId, {
+        error: () =>
+          error(
+            EventError.MissingProperty,
+            "cannot update gcal event without id",
+          ),
+      });
+
+      const response = await gcalService.deleteEvent(
+        gcal,
+        gEventId,
+        gCalendarId,
+      );
+
+      return response.status < 400;
+    } catch (e) {
+      const error = e as GaxiosError<gSchema$Event>;
+
+      if (error.code?.toString() === "410") return true;
+
+      throw e;
+    }
+  }
 }
 
 const eventService = new EventService();
@@ -285,25 +375,20 @@ export default eventService;
  *********/
 
 export const _createCompassEvent = async (
-  _event: WithId<Omit<Schema_Event, "_id">> & { user: string },
-  provider: CalendarProvider,
+  _event: Schema_Event,
   rrule?: CompassEventRRule | null,
   session?: ClientSession,
-): Promise<WithCompassId<Omit<Schema_Event, "_id">>> => {
-  const { isSomeday } = _event;
-  const calendarProvider = isSomeday ? CalendarProvider.COMPASS : provider;
-  const providerData = MapEvent.toProviderData(_event, calendarProvider);
-
+): Promise<Schema_Event> => {
   const event = Object.assign(
-    MapEvent.removeProviderData(_event),
-    providerData,
+    MapEvent.removeProviderMetadata(_event),
+    MapEvent.toProviderMetadata(_event),
     { updatedAt: new Date() },
   );
 
-  const instances = rrule?.instances(calendarProvider) ?? [];
+  const instances = rrule?.instances() ?? [];
 
   const baseEvent = await mongoService.event.findOneAndReplace(
-    { _id: _event._id, user: _event.user },
+    { _id: _event._id, calendar: _event.calendar },
     event,
     { upsert: true, session, returnDocument: "after" },
   );
@@ -321,8 +406,8 @@ export const _createCompassEvent = async (
         .find({
           startDate: event.startDate,
           endDate: event.endDate,
-          recurrence: { eventId: baseEvent._id.toString() },
-          user: event.user,
+          recurrence: { eventId: baseEvent._id },
+          calendar: event.calendar,
         })
         .upsert()
         .replaceOne(event);
@@ -331,20 +416,20 @@ export const _createCompassEvent = async (
     await bulkUpsert.execute({ session });
   }
 
-  return { ...baseEvent, _id: baseEvent._id.toString() };
+  return baseEvent;
 };
 
 export const _updateCompassEvent = async (
-  _event: WithId<Omit<Schema_Event, "_id">> & { user: string },
+  _event: Schema_Event,
   session?: ClientSession,
-): Promise<WithCompassId<Omit<Schema_Event, "_id">>> => {
+): Promise<Schema_Event> => {
   const updatedAt = new Date();
   const event = Object.assign({}, _event, { updatedAt });
 
   if (event.recurrence === null) delete event.recurrence;
 
   const cEvent = await mongoService.event.findOneAndReplace(
-    { _id: event._id, user: event.user },
+    { _id: event._id, calendar: event.calendar },
     event,
     { session, returnDocument: "after" },
   );
@@ -353,45 +438,46 @@ export const _updateCompassEvent = async (
     throw error(GenericError.NotSure, "updated compass event not found");
   }
 
-  return { ...cEvent, _id: cEvent._id.toString() };
+  return cEvent;
 };
 
 export const _updateCompassSeries = async (
-  baseEvent: WithId<Omit<Schema_Event, "_id">> & { user: string },
+  baseEvent: Schema_Base_Event,
   session?: ClientSession,
-): Promise<WithCompassId<Omit<Schema_Event, "_id">>> => {
+): Promise<Schema_Base_Event> => {
   const baseId = baseEvent._id;
-  const user = baseEvent.user;
+  const calendar = baseEvent.calendar;
   const updatedAt = new Date();
-  const changes: EventUpdatePayload = EventUpdateSchema.parse(baseEvent);
-  const update = Object.assign(changes, { updatedAt }) as Schema_Event;
+  const changes: EditableEventFields =
+    EditableEventFieldsSchema.parse(baseEvent);
+  const update = Object.assign(changes, { updatedAt });
 
   delete update.startDate;
   delete update.endDate;
-  delete (update as Schema_Event).recurrence;
+  delete update.recurrence;
 
   await mongoService.event.updateMany(
     {
       $or: [
-        { _id: baseId, user },
-        { "recurrence.eventId": baseId.toString(), user },
+        { _id: baseId, calendar },
+        { "recurrence.eventId": baseId, calendar },
       ],
     },
     { $set: update },
     { session },
   );
 
-  return { ...baseEvent, ...update, _id: baseId.toString() };
+  return { ...baseEvent, ...update };
 };
 
 export const _deleteSingleCompassEvent = async (
-  _event: WithId<Omit<Schema_Event, "_id">> & { user: string },
+  _event: Schema_Event,
   session?: ClientSession,
-): Promise<WithCompassId<Omit<Schema_Event, "_id">>> => {
-  const userId = _event.user;
+): Promise<Schema_Event> => {
+  const calendar = _event.calendar;
 
   const event = await mongoService.event.findOneAndDelete(
-    { _id: _event._id, user: userId },
+    { _id: _event._id, calendar },
     { session },
   );
 
@@ -399,7 +485,7 @@ export const _deleteSingleCompassEvent = async (
     throw error(GenericError.NotSure, "deleted compass event not returned");
   }
 
-  return { ...event, _id: event._id.toString() };
+  return event;
 };
 
 export const _deleteSeries = async (
@@ -411,7 +497,7 @@ export const _deleteSeries = async (
   const userId = IDSchema.parse(_userId);
   const baseId = IDSchema.parse(_baseId);
 
-  const $or: Array<Filter<WithId<Omit<Schema_Event, "_id">>>> = [
+  const $or: Array<Filter<Schema_Event>> = [
     { "recurrence.eventId": baseId, user: userId },
   ];
 
@@ -423,117 +509,19 @@ export const _deleteSeries = async (
 };
 
 export const _deleteInstancesAfterUntil = async (
-  userId: string,
-  baseId: string,
+  event: Schema_Base_Event,
   until: Date,
   session?: ClientSession,
 ) => {
-  if (typeof baseId !== "string") throw new Error("Invalid baseId");
-  if (!(until instanceof Date)) throw new Error("Invalid until date");
-
-  const filter: Filter<Omit<Schema_Event, "_id">> = {
-    user: userId,
-    _id: { $ne: new ObjectId(baseId) },
-    "recurrence.eventId": baseId,
-  };
-
-  const allInstances = await mongoService.event
-    .find(filter, { session, projection: { _id: 1, startDate: 1 } })
-    .toArray();
-
-  const instancesToDelete = allInstances.filter(({ startDate }) => {
-    const date = parseCompassEventDate(startDate!);
-
-    return date.isAfter(until);
-  });
-
   const response = await mongoService.event.deleteMany(
     {
-      ...filter,
-      _id: { $in: instancesToDelete.map(({ _id }) => _id) },
+      calendar: event.calendar,
+      _id: { $ne: event._id },
+      "recurrence.eventId": event._id,
+      startDate: { $gt: until },
     },
     { session },
   );
 
   return response;
-};
-
-export const _getGcal = async (
-  userId: string,
-  eventId: string,
-  calendarId?: string,
-) => {
-  const gcal = await getGcalClient(userId);
-  const gEvent = await gcalService.getEvent(gcal, eventId, calendarId);
-
-  return gEvent;
-};
-
-export const _createGcal = async (userId: string, event: Schema_Event_Core) => {
-  try {
-    const _gEvent = MapEvent.toGcal(event);
-
-    const gcal = await getGcalClient(userId);
-    const gEvent = await gcalService.createEvent(gcal, _gEvent);
-
-    return gEvent;
-  } catch (e) {
-    const error = e as GaxiosError<gSchema$Event>;
-
-    if (error.code?.toString() === "409") {
-      return _updateGcal(userId, event, { status: "confirmed" });
-    }
-
-    throw e;
-  }
-};
-
-export const _updateGcal = async (
-  userId: string,
-  event: Schema_Event_Core,
-  extras?: Pick<gSchema$Event, "status">,
-) => {
-  const gEvent = MapEvent.toGcal(event, extras);
-  const gcal = await getGcalClient(userId);
-
-  if (!event.gEventId) {
-    throw error(
-      EventError.MissingProperty,
-      "cannot update gcal event without id",
-    );
-  }
-
-  const updatedGEvent = await gcalService.updateEvent(
-    gcal,
-    event.gEventId,
-    gEvent,
-  );
-
-  return updatedGEvent;
-};
-
-export const _deleteGcal = async (
-  userId: string,
-  gEventId: string,
-): Promise<boolean> => {
-  try {
-    const gcal = await getGcalClient(userId);
-
-    if (!gEventId) {
-      throw error(
-        GenericError.BadRequest,
-        "cannot delete gcal event without id",
-      );
-    }
-
-    const response = await gcalService.deleteEvent(gcal, gEventId);
-
-    return response.status < 400;
-  } catch (e) {
-    const error = e as GaxiosError<gSchema$Event>;
-
-    if (error.code?.toString() === "410") return true;
-
-    throw e;
-  }
 };

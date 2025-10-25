@@ -1,15 +1,15 @@
 import { faker } from "@faker-js/faker";
 import { Priorities } from "@core/constants/core.constants";
+import { CalendarProvider } from "@core/types/calendar.types";
 import {
-  CalendarProvider,
   Categories_Recurrence,
-  CompassEventStatus,
-  CompassThisEvent,
+  EventStatus,
   RecurringEventUpdateScope,
+  ThisEventUpdate,
 } from "@core/types/event.types";
-import { parseCompassEventDate } from "@core/util/event/event.util";
+import dayjs from "@core/util/date/dayjs";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
+import { EventDriver } from "@backend/__tests__/drivers/event.driver";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -19,12 +19,13 @@ import mongoService from "@backend/common/services/mongo.service";
 import {
   testCompassEventInGcal,
   testCompassEventNotInGcal,
+  testCompassRegularEvent,
   testCompassSeries,
   testCompassSeriesInGcal,
-  testCompassStandaloneEvent,
 } from "@backend/event/classes/compass.event.parser.test.util";
-import eventService, { _getGcal } from "@backend/event/services/event.service";
+import eventService from "@backend/event/services/event.service";
 import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.processor";
+import { UserDriver } from "../../../../../__tests__/drivers/user.driver";
 
 describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
   `CompassSyncProcessor - $calendarProvider calendar: ${RecurringEventUpdateScope.THIS_EVENT} - Regular Event: `,
@@ -37,15 +38,15 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
     describe("Create: ", () => {
       it("should create a someday event", async () => {
-        const { user: _user } = await UtilDriver.setupTestUser();
+        const _user = await UserDriver.createGoogleAuthUser();
         const user = _user._id.toString();
         const payload = createMockStandaloneEvent({ isSomeday: true, user });
 
         const changes = await CompassSyncProcessor.processEvents([
           {
-            payload: payload as CompassThisEvent["payload"],
+            payload: payload as ThisEventUpdate["payload"],
             applyTo: RecurringEventUpdateScope.THIS_EVENT,
-            status: CompassEventStatus.CONFIRMED,
+            status: EventStatus.CONFIRMED,
           },
         ]);
 
@@ -60,25 +61,25 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           ]),
         );
 
-        const { standaloneEvent } = await testCompassStandaloneEvent(payload);
+        const { regularEvent } = await testCompassRegularEvent(payload);
 
         switch (calendarProvider) {
           case CalendarProvider.GOOGLE:
-            await testCompassEventNotInGcal(standaloneEvent);
+            await testCompassEventNotInGcal(regularEvent);
             break;
         }
       });
 
       it("should create a calendar event", async () => {
-        const { user: _user } = await UtilDriver.setupTestUser();
+        const _user = await UserDriver.createGoogleAuthUser();
         const user = _user._id.toString();
         const payload = createMockStandaloneEvent({ user });
 
         const changes = await CompassSyncProcessor.processEvents([
           {
-            payload: payload as CompassThisEvent["payload"],
+            payload: payload as ThisEventUpdate["payload"],
             applyTo: RecurringEventUpdateScope.THIS_EVENT,
-            status: CompassEventStatus.CONFIRMED,
+            status: EventStatus.CONFIRMED,
           },
         ]);
 
@@ -93,11 +94,11 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           ]),
         );
 
-        const { standaloneEvent } = await testCompassStandaloneEvent(payload);
+        const { regularEvent } = await testCompassRegularEvent(payload);
 
         switch (calendarProvider) {
           case CalendarProvider.GOOGLE:
-            await testCompassEventInGcal(standaloneEvent);
+            await testCompassEventInGcal(regularEvent);
             break;
         }
       });
@@ -107,7 +108,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
       describe("Someday: ", () => {
         describe("Basic Edits: ", () => {
           it("should update the title field of an event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await UserDriver.createGoogleAuthUser();
             const user = _user._id.toString();
             const payload = createMockStandaloneEvent({
               isSomeday: true,
@@ -116,9 +117,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -133,20 +134,19 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ]),
             );
 
-            const { standaloneEvent } =
-              await testCompassStandaloneEvent(payload);
+            const { regularEvent } = await testCompassRegularEvent(payload);
 
             const updatedPayload = {
-              ...standaloneEvent,
-              _id: standaloneEvent._id.toString(),
+              ...regularEvent,
+              _id: regularEvent._id.toString(),
               title: faker.lorem.sentence(3),
             };
 
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
-                payload: updatedPayload as CompassThisEvent["payload"],
+                payload: updatedPayload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -164,18 +164,18 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ]),
             );
 
-            const { standaloneEvent: updatedStandaloneEvent } =
-              await testCompassStandaloneEvent(updatedPayload);
+            const { regularEvent: updatedRegularEvent } =
+              await testCompassRegularEvent(updatedPayload);
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE:
-                await testCompassEventNotInGcal(updatedStandaloneEvent);
+                await testCompassEventNotInGcal(updatedRegularEvent);
                 break;
             }
           });
 
           it("should update the description field of an event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await UserDriver.createGoogleAuthUser();
             const user = _user._id.toString();
             const payload = createMockStandaloneEvent({
               isSomeday: true,
@@ -184,9 +184,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -201,20 +201,19 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ]),
             );
 
-            const { standaloneEvent } =
-              await testCompassStandaloneEvent(payload);
+            const { regularEvent } = await testCompassRegularEvent(payload);
 
             const updatedPayload = {
-              ...standaloneEvent,
-              _id: standaloneEvent._id.toString(),
+              ...regularEvent,
+              _id: regularEvent._id.toString(),
               description: faker.lorem.sentence(3),
             };
 
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
-                payload: updatedPayload as CompassThisEvent["payload"],
+                payload: updatedPayload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -232,18 +231,18 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ]),
             );
 
-            const { standaloneEvent: updatedStandaloneEvent } =
-              await testCompassStandaloneEvent(updatedPayload);
+            const { regularEvent: updatedRegularEvent } =
+              await testCompassRegularEvent(updatedPayload);
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE:
-                await testCompassEventNotInGcal(updatedStandaloneEvent);
+                await testCompassEventNotInGcal(updatedRegularEvent);
                 break;
             }
           });
 
           it("should update the priority field of an event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await UserDriver.createGoogleAuthUser();
             const user = _user._id.toString();
             const payload = createMockStandaloneEvent({
               isSomeday: true,
@@ -252,9 +251,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -269,20 +268,19 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ]),
             );
 
-            const { standaloneEvent } =
-              await testCompassStandaloneEvent(payload);
+            const { regularEvent } = await testCompassRegularEvent(payload);
 
             const updatedPayload = {
-              ...standaloneEvent,
-              _id: standaloneEvent._id.toString(),
+              ...regularEvent,
+              _id: regularEvent._id.toString(),
               priority: Priorities.RELATIONS,
             };
 
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
-                payload: updatedPayload as CompassThisEvent["payload"],
+                payload: updatedPayload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -300,18 +298,18 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ]),
             );
 
-            const { standaloneEvent: updatedStandaloneEvent } =
-              await testCompassStandaloneEvent(updatedPayload);
+            const { regularEvent: updatedRegularEvent } =
+              await testCompassRegularEvent(updatedPayload);
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE:
-                await testCompassEventNotInGcal(updatedStandaloneEvent);
+                await testCompassEventNotInGcal(updatedRegularEvent);
                 break;
             }
           });
 
           it("should update the startDate field of an event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await UserDriver.createGoogleAuthUser();
             const user = _user._id.toString();
             const payload = createMockStandaloneEvent({
               isSomeday: true,
@@ -320,9 +318,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -337,22 +335,22 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ]),
             );
 
-            const { standaloneEvent } =
-              await testCompassStandaloneEvent(payload);
+            const { regularEvent } = await testCompassRegularEvent(payload);
 
             const updatedPayload = {
-              ...standaloneEvent,
-              _id: standaloneEvent._id.toString(),
-              startDate: parseCompassEventDate(standaloneEvent.endDate!)
+              ...regularEvent,
+              _id: regularEvent._id.toString(),
+              startDate: dayjs(regularEvent.endDate)
                 .subtract(2, "hours")
                 .toISOString(),
             };
 
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
-                payload: updatedPayload as CompassThisEvent["payload"],
+                user: _user._id,
+                payload: updatedPayload,
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -370,18 +368,18 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ]),
             );
 
-            const { standaloneEvent: updatedStandaloneEvent } =
-              await testCompassStandaloneEvent(updatedPayload);
+            const { regularEvent: updatedRegularEvent } =
+              await testCompassRegularEvent(updatedPayload);
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE:
-                await testCompassEventNotInGcal(updatedStandaloneEvent);
+                await testCompassEventNotInGcal(updatedRegularEvent);
                 break;
             }
           });
 
           it("should update the endDate field of an event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await UserDriver.createGoogleAuthUser();
             const user = _user._id.toString();
             const payload = createMockStandaloneEvent({
               isSomeday: true,
@@ -390,9 +388,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -408,22 +406,19 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             );
 
             // check that event is in db
-            const { standaloneEvent } =
-              await testCompassStandaloneEvent(payload);
+            const { regularEvent } = await testCompassRegularEvent(payload);
 
             const updatedPayload = {
-              ...standaloneEvent,
-              _id: standaloneEvent._id.toString(),
-              endDate: parseCompassEventDate(standaloneEvent.endDate!)
-                .add(2, "hours")
-                .toISOString(),
+              ...regularEvent,
+              _id: regularEvent._id.toString(),
+              endDate: dayjs(regularEvent.endDate).add(2, "hours").toDate(),
             };
 
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
-                payload: updatedPayload as CompassThisEvent["payload"],
+                payload: updatedPayload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -441,12 +436,12 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ]),
             );
 
-            const { standaloneEvent: updatedStandaloneEvent } =
-              await testCompassStandaloneEvent(updatedPayload);
+            const { regularEvent: updatedRegularEvent } =
+              await testCompassRegularEvent(updatedPayload);
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE:
-                await testCompassEventNotInGcal(updatedStandaloneEvent);
+                await testCompassEventNotInGcal(updatedRegularEvent);
                 break;
             }
           });
@@ -454,7 +449,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
         describe("Transition Edits: ", () => {
           it("should update the recurrence field of an event - to base event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await UserDriver.createGoogleAuthUser();
             const user = _user._id.toString();
             const payload = createMockStandaloneEvent({
               isSomeday: true,
@@ -463,9 +458,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -480,26 +475,25 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ]),
             );
 
-            const { standaloneEvent } =
-              await testCompassStandaloneEvent(payload);
+            const { regularEvent } = await testCompassRegularEvent(payload);
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE:
-                await testCompassEventNotInGcal(standaloneEvent);
+                await testCompassEventNotInGcal(regularEvent);
                 break;
             }
 
             const updatedPayload = {
-              ...standaloneEvent,
-              _id: standaloneEvent._id.toString(),
+              ...regularEvent,
+              _id: regularEvent._id.toString(),
               recurrence: { rule: ["RRULE:FREQ=WEEKLY;COUNT=20"] },
             };
 
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
-                payload: updatedPayload as CompassThisEvent["payload"],
+                payload: updatedPayload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -527,7 +521,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           });
 
           it("should update the isSomeday(false) field of an event - to calendar event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await UserDriver.createGoogleAuthUser();
             const user = _user._id.toString();
             const payload = createMockStandaloneEvent({
               isSomeday: true,
@@ -536,9 +530,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -553,26 +547,26 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ]),
             );
 
-            const { standaloneEvent: somedayStandaloneEvent } =
-              await testCompassStandaloneEvent(payload);
+            const { regularEvent: somedayRegularEvent } =
+              await testCompassRegularEvent(payload);
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE:
-                await testCompassEventNotInGcal(somedayStandaloneEvent);
+                await testCompassEventNotInGcal(somedayRegularEvent);
                 break;
             }
 
             const updatedPayload = {
-              ...somedayStandaloneEvent,
-              _id: somedayStandaloneEvent._id.toString(),
+              ...somedayRegularEvent,
+              _id: somedayRegularEvent._id.toString(),
               isSomeday: false,
             };
 
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
-                payload: updatedPayload as CompassThisEvent["payload"],
+                payload: updatedPayload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -587,12 +581,12 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ]),
             );
 
-            const { standaloneEvent } =
-              await testCompassStandaloneEvent(updatedPayload);
+            const { regularEvent } =
+              await testCompassRegularEvent(updatedPayload);
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE:
-                await testCompassEventInGcal(standaloneEvent);
+                await testCompassEventInGcal(regularEvent);
                 break;
             }
           });
@@ -602,7 +596,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
       describe("Calendar: ", () => {
         describe("Basic Edits: ", () => {
           it("should update the title field of an event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await UserDriver.createGoogleAuthUser();
             const user = _user._id.toString();
             const payload = createMockStandaloneEvent({
               isSomeday: false,
@@ -611,9 +605,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -628,12 +622,11 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ]),
             );
 
-            const { standaloneEvent } =
-              await testCompassStandaloneEvent(payload);
+            const { regularEvent } = await testCompassRegularEvent(payload);
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE: {
-                const gcalEvent = await testCompassEventInGcal(standaloneEvent);
+                const gcalEvent = await testCompassEventInGcal(regularEvent);
 
                 expect(gcalEvent).not.toHaveProperty("recurrence");
 
@@ -642,16 +635,16 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             }
 
             const updatedPayload = {
-              ...standaloneEvent,
-              _id: standaloneEvent._id.toString(),
+              ...regularEvent,
+              _id: regularEvent._id.toString(),
               title: faker.lorem.sentence(3),
             };
 
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
-                payload: updatedPayload as CompassThisEvent["payload"],
+                payload: updatedPayload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -666,14 +659,15 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ]),
             );
 
-            const { standaloneEvent: updatedEvent } =
-              await testCompassStandaloneEvent(updatedPayload);
+            const { regularEvent: updatedRegularEvent } =
+              await testCompassRegularEvent(updatedPayload);
 
-            expect(updatedEvent).not.toHaveProperty("recurrence");
+            expect(updatedRegularEvent).not.toHaveProperty("recurrence");
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE: {
-                const gcalEvent = await testCompassEventInGcal(updatedEvent);
+                const gcalEvent =
+                  await testCompassEventInGcal(updatedRegularEvent);
 
                 expect(gcalEvent).not.toHaveProperty("recurrence");
 
@@ -683,7 +677,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           });
 
           it("should update the description field of an event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await UserDriver.createGoogleAuthUser();
             const user = _user._id.toString();
             const payload = createMockStandaloneEvent({
               isSomeday: false,
@@ -692,9 +686,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -709,12 +703,11 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ]),
             );
 
-            const { standaloneEvent } =
-              await testCompassStandaloneEvent(payload);
+            const { regularEvent } = await testCompassRegularEvent(payload);
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE: {
-                const gcalEvent = await testCompassEventInGcal(standaloneEvent);
+                const gcalEvent = await testCompassEventInGcal(regularEvent);
 
                 expect(gcalEvent).not.toHaveProperty("recurrence");
 
@@ -723,16 +716,16 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             }
 
             const updatedPayload = {
-              ...standaloneEvent,
-              _id: standaloneEvent._id.toString(),
+              ...regularEvent,
+              _id: regularEvent._id.toString(),
               description: faker.lorem.sentence(3),
             };
 
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
-                payload: updatedPayload as CompassThisEvent["payload"],
+                payload: updatedPayload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -747,8 +740,8 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ]),
             );
 
-            const { standaloneEvent: updatedEvent } =
-              await testCompassStandaloneEvent(updatedPayload);
+            const { regularEvent: updatedEvent } =
+              await testCompassRegularEvent(updatedPayload);
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE: {
@@ -762,7 +755,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           });
 
           it("should update the priority field of an event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await UserDriver.createGoogleAuthUser();
             const user = _user._id.toString();
             const payload = createMockStandaloneEvent({
               isSomeday: false,
@@ -771,9 +764,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -789,14 +782,13 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             );
 
             // check that event is in db
-            const { standaloneEvent } =
-              await testCompassStandaloneEvent(payload);
+            const { regularEvent } = await testCompassRegularEvent(payload);
 
-            expect(standaloneEvent).not.toHaveProperty("recurrence");
+            expect(regularEvent).not.toHaveProperty("recurrence");
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE: {
-                const gcalEvent = await testCompassEventInGcal(standaloneEvent);
+                const gcalEvent = await testCompassEventInGcal(regularEvent);
 
                 expect(gcalEvent).not.toHaveProperty("recurrence");
 
@@ -805,16 +797,16 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             }
 
             const updatedPayload = {
-              ...standaloneEvent,
-              _id: standaloneEvent._id.toString(),
+              ...regularEvent,
+              _id: regularEvent._id.toString(),
               priority: Priorities.RELATIONS,
             };
 
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
-                payload: updatedPayload as CompassThisEvent["payload"],
+                payload: updatedPayload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -829,8 +821,8 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ]),
             );
 
-            const { standaloneEvent: updatedEvent } =
-              await testCompassStandaloneEvent(updatedPayload);
+            const { regularEvent: updatedEvent } =
+              await testCompassRegularEvent(updatedPayload);
 
             expect(updatedEvent).not.toHaveProperty("recurrence");
 
@@ -846,7 +838,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           });
 
           it("should update the startDate field of an event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await UserDriver.createGoogleAuthUser();
             const user = _user._id.toString();
             const payload = createMockStandaloneEvent({
               isSomeday: false,
@@ -855,9 +847,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -873,14 +865,13 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             );
 
             // check that event is in db
-            const { standaloneEvent } =
-              await testCompassStandaloneEvent(payload);
+            const { regularEvent } = await testCompassRegularEvent(payload);
 
-            expect(standaloneEvent).not.toHaveProperty("recurrence");
+            expect(regularEvent).not.toHaveProperty("recurrence");
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE: {
-                const gcalEvent = await testCompassEventInGcal(standaloneEvent);
+                const gcalEvent = await testCompassEventInGcal(regularEvent);
 
                 expect(gcalEvent).not.toHaveProperty("recurrence");
                 break;
@@ -888,18 +879,18 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             }
 
             const updatedPayload = {
-              ...standaloneEvent,
-              _id: standaloneEvent._id.toString(),
-              startDate: parseCompassEventDate(standaloneEvent.endDate!)
+              ...regularEvent,
+              _id: regularEvent._id.toString(),
+              startDate: dayjs(regularEvent.endDate)
                 .subtract(2, "hours")
-                .toISOString(),
+                .toDate(),
             };
 
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
-                payload: updatedPayload as CompassThisEvent["payload"],
+                payload: updatedPayload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -914,8 +905,8 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ]),
             );
 
-            const { standaloneEvent: updatedEvent } =
-              await testCompassStandaloneEvent(updatedPayload);
+            const { regularEvent: updatedEvent } =
+              await testCompassRegularEvent(updatedPayload);
 
             expect(updatedEvent).not.toHaveProperty("recurrence");
 
@@ -930,7 +921,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           });
 
           it("should update the endDate field of an event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await UserDriver.createGoogleAuthUser();
             const user = _user._id.toString();
             const payload = createMockStandaloneEvent({
               isSomeday: false,
@@ -939,9 +930,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -957,14 +948,13 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             );
 
             // check that event is in db
-            const { standaloneEvent } =
-              await testCompassStandaloneEvent(payload);
+            const { regularEvent } = await testCompassRegularEvent(payload);
 
-            expect(standaloneEvent).not.toHaveProperty("recurrence");
+            expect(regularEvent).not.toHaveProperty("recurrence");
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE: {
-                const gcalEvent = await testCompassEventInGcal(standaloneEvent);
+                const gcalEvent = await testCompassEventInGcal(regularEvent);
 
                 expect(gcalEvent).not.toHaveProperty("recurrence");
 
@@ -973,18 +963,16 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             }
 
             const updatedPayload = {
-              ...standaloneEvent,
-              _id: standaloneEvent._id.toString(),
-              endDate: parseCompassEventDate(standaloneEvent.startDate!)
-                .add(2, "hours")
-                .toISOString(),
+              ...regularEvent,
+              _id: regularEvent._id.toString(),
+              endDate: dayjs(regularEvent.startDate).add(2, "hours").toDate(),
             };
 
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
-                payload: updatedPayload as CompassThisEvent["payload"],
+                payload: updatedPayload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -999,8 +987,8 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ]),
             );
 
-            const { standaloneEvent: updatedEvent } =
-              await testCompassStandaloneEvent(updatedPayload);
+            const { regularEvent: updatedEvent } =
+              await testCompassRegularEvent(updatedPayload);
 
             expect(updatedEvent).not.toHaveProperty("recurrence");
 
@@ -1017,7 +1005,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
         describe("Transition Edits: ", () => {
           it("should update the isSomeday(to true) field of an event - to someday event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await UserDriver.createGoogleAuthUser();
             const user = _user._id.toString();
             const payload = createMockStandaloneEvent({
               isSomeday: false,
@@ -1026,9 +1014,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -1044,14 +1032,13 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             );
 
             // check that event is in db
-            const { standaloneEvent } =
-              await testCompassStandaloneEvent(payload);
+            const { regularEvent } = await testCompassRegularEvent(payload);
 
-            expect(standaloneEvent).not.toHaveProperty("recurrence");
+            expect(regularEvent).not.toHaveProperty("recurrence");
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE: {
-                const gcalEvent = await testCompassEventInGcal(standaloneEvent);
+                const gcalEvent = await testCompassEventInGcal(regularEvent);
 
                 expect(gcalEvent).not.toHaveProperty("recurrence");
                 break;
@@ -1059,16 +1046,16 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             }
 
             const updatedPayload = {
-              ...standaloneEvent,
-              _id: standaloneEvent._id.toString(),
+              ...regularEvent,
+              _id: regularEvent._id.toString(),
               isSomeday: true,
             };
 
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
-                payload: updatedPayload as CompassThisEvent["payload"],
+                payload: updatedPayload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -1089,23 +1076,23 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               title: updatedPayload.title,
             });
 
-            const { standaloneEvent: somedayStandaloneEvent } =
-              await testCompassStandaloneEvent({
+            const { regularEvent: somedayRegularEvent } =
+              await testCompassRegularEvent({
                 ...updatedEvent,
                 _id: updatedEvent!._id.toString(),
               });
 
-            expect(somedayStandaloneEvent).not.toHaveProperty("recurrence");
+            expect(somedayRegularEvent).not.toHaveProperty("recurrence");
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE:
-                await testCompassEventNotInGcal(somedayStandaloneEvent);
+                await testCompassEventNotInGcal(somedayRegularEvent);
                 break;
             }
           });
 
           it("should update the recurrence(add rule) field of an event - to base event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await UserDriver.createGoogleAuthUser();
             const user = _user._id.toString();
             const payload = createMockStandaloneEvent({
               isSomeday: false,
@@ -1114,9 +1101,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -1132,14 +1119,13 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             );
 
             // check that event is in db
-            const { standaloneEvent } =
-              await testCompassStandaloneEvent(payload);
+            const { regularEvent } = await testCompassRegularEvent(payload);
 
-            expect(standaloneEvent).not.toHaveProperty("recurrence");
+            expect(regularEvent).not.toHaveProperty("recurrence");
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE: {
-                const gcalEvent = await testCompassEventInGcal(standaloneEvent);
+                const gcalEvent = await testCompassEventInGcal(regularEvent);
 
                 expect(gcalEvent).not.toHaveProperty("recurrence");
 
@@ -1148,16 +1134,16 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             }
 
             const updatedPayload = {
-              ...standaloneEvent,
-              _id: standaloneEvent._id.toString(),
+              ...regularEvent,
+              _id: regularEvent._id.toString(),
               recurrence: { rule: ["RRULE:FREQ=DAILY;COUNT=5"] },
             };
 
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
-                payload: updatedPayload as CompassThisEvent["payload"],
+                payload: updatedPayload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -1189,15 +1175,15 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
     describe("Delete: ", () => {
       it("should delete a someday event", async () => {
-        const { user: _user } = await UtilDriver.setupTestUser();
+        const _user = await UserDriver.createGoogleAuthUser();
         const user = _user._id.toString();
         const payload = createMockStandaloneEvent({ isSomeday: true, user });
 
         const changes = await CompassSyncProcessor.processEvents([
           {
-            payload: payload as CompassThisEvent["payload"],
+            payload: payload as ThisEventUpdate["payload"],
             applyTo: RecurringEventUpdateScope.THIS_EVENT,
-            status: CompassEventStatus.CONFIRMED,
+            status: EventStatus.CONFIRMED,
           },
         ]);
 
@@ -1212,27 +1198,27 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           ]),
         );
 
-        const { standaloneEvent: somedayStandaloneEvent } =
-          await testCompassStandaloneEvent(payload);
+        const { regularEvent: somedayRegularEvent } =
+          await testCompassRegularEvent(payload);
 
-        expect(somedayStandaloneEvent).not.toHaveProperty("recurrence");
+        expect(somedayRegularEvent).not.toHaveProperty("recurrence");
 
         switch (calendarProvider) {
           case CalendarProvider.GOOGLE:
-            await testCompassEventNotInGcal(somedayStandaloneEvent);
+            await testCompassEventNotInGcal(somedayRegularEvent);
             break;
         }
 
         const deletePayload = {
-          ...somedayStandaloneEvent,
-          _id: somedayStandaloneEvent._id.toString(),
+          ...somedayRegularEvent,
+          _id: somedayRegularEvent._id.toString(),
         };
 
         const deleteChanges = await CompassSyncProcessor.processEvents([
           {
-            payload: deletePayload as CompassThisEvent["payload"],
+            payload: deletePayload as ThisEventUpdate["payload"],
             applyTo: RecurringEventUpdateScope.THIS_EVENT,
-            status: CompassEventStatus.CANCELLED,
+            status: EventStatus.CANCELLED,
           },
         ]);
 
@@ -1257,15 +1243,15 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
       });
 
       it("should delete a calendar event", async () => {
-        const { user: _user } = await UtilDriver.setupTestUser();
+        const _user = await UserDriver.createGoogleAuthUser();
         const user = _user._id.toString();
         const payload = createMockStandaloneEvent({ user });
 
         const changes = await CompassSyncProcessor.processEvents([
           {
-            payload: payload as CompassThisEvent["payload"],
+            payload: payload as ThisEventUpdate["payload"],
             applyTo: RecurringEventUpdateScope.THIS_EVENT,
-            status: CompassEventStatus.CONFIRMED,
+            status: EventStatus.CONFIRMED,
           },
         ]);
 
@@ -1280,26 +1266,26 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           ]),
         );
 
-        const { standaloneEvent } = await testCompassStandaloneEvent(payload);
+        const { regularEvent } = await testCompassRegularEvent(payload);
 
-        expect(standaloneEvent).not.toHaveProperty("recurrence");
+        expect(regularEvent).not.toHaveProperty("recurrence");
 
         switch (calendarProvider) {
           case CalendarProvider.GOOGLE:
-            await testCompassEventInGcal(standaloneEvent);
+            await testCompassEventInGcal(regularEvent);
             break;
         }
 
         const deletePayload = {
-          ...standaloneEvent,
-          _id: standaloneEvent._id.toString(),
+          ...regularEvent,
+          _id: regularEvent._id.toString(),
         };
 
         const deleteChanges = await CompassSyncProcessor.processEvents([
           {
-            payload: deletePayload as CompassThisEvent["payload"],
+            payload: deletePayload as ThisEventUpdate["payload"],
             applyTo: RecurringEventUpdateScope.THIS_EVENT,
-            status: CompassEventStatus.CANCELLED,
+            status: EventStatus.CANCELLED,
           },
         ]);
 
@@ -1322,7 +1308,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
         switch (calendarProvider) {
           case CalendarProvider.GOOGLE:
             await expect(
-              _getGcal(deletePayload.user!, deletePayload._id),
+              EventDriver.getGCalEvent(deletePayload.user!, deletePayload._id),
             ).rejects.toThrow(`Event with id ${deletePayload._id} not found`);
             break;
         }

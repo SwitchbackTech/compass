@@ -1,15 +1,13 @@
-import { ClientSession, ObjectId, WithId } from "mongodb";
+import { ClientSession, ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
+import { CalendarProvider, Schema_Calendar } from "@core/types/calendar.types";
 import {
-  CalendarProvider,
+  BaseEventSchema,
   Categories_Recurrence,
-  CompassEvent,
+  EventStatus,
+  EventUpdate,
   Schema_Event,
-  Schema_Event_Core,
-  Schema_Event_Recur_Base,
   TransitionCategoriesRecurrence,
-  TransitionStatus,
-  WithCompassId,
 } from "@core/types/event.types";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import {
@@ -20,25 +18,26 @@ import {
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
-import {
+import eventService, {
   _createCompassEvent,
-  _createGcal,
-  _deleteGcal,
   _deleteInstancesAfterUntil,
   _deleteSeries,
   _deleteSingleCompassEvent,
   _updateCompassEvent,
   _updateCompassSeries,
-  _updateGcal,
 } from "@backend/event/services/event.service";
 import { Event_Transition, Operation_Sync } from "@backend/sync/sync.types";
+import { StringV4Schema } from "../../../../core/src/types/type.utils";
 
 export class CompassEventParser {
   #logger = Logger("app.event.classes.compass.event.parser");
-  #_event: CompassEvent;
-  #event!: WithId<Omit<Schema_Event, "_id">>;
+  #_event: EventUpdate;
+  #event!: Schema_Event;
+  #calendar!: Schema_Calendar;
+  #provider!: CalendarProvider;
+  #user!: ObjectId;
   #title!: string;
-  #dbEvent!: WithId<Omit<Schema_Event, "_id">> | null;
+  #dbEvent!: Schema_Event | null;
   #isInstance!: boolean;
   #isBase!: boolean;
   #isStandalone!: boolean;
@@ -50,13 +49,14 @@ export class CompassEventParser {
   #transition!: Event_Transition["transition"];
   #summary!: Omit<Event_Transition, "operation">;
 
-  constructor(event: CompassEvent) {
-    this.#_event = event;
+  constructor(event: EventUpdate) {
+    const { COMPASS } = CalendarProvider;
 
-    this.#event = {
-      ...event.payload,
-      _id: new ObjectId(event.payload._id),
-    } as WithId<Omit<Schema_Event, "_id">>;
+    this.#_event = event;
+    this.#event = { ...event.payload, calendar: event.calendar._id };
+    this.#calendar = event.calendar;
+    this.#user = event.calendar.user;
+    this.#provider = event.calendar.metadata.provider ?? COMPASS;
   }
 
   get isInstance(): boolean {
@@ -119,8 +119,8 @@ export class CompassEventParser {
 
     this.#title = this.#event.title ?? this.#event._id.toString() ?? "unknown";
 
-    const status: TransitionStatus = this.#_event.status;
-    const filter = { _id: this.#event._id, user: this.#event.user! };
+    const status: EventStatus = this.#_event.status;
+    const filter = { _id: this.#event._id, calendar: this.#event.calendar };
 
     const event = this.#event;
     const cEvent = await mongoService.event.findOne(filter, { session });
@@ -130,22 +130,18 @@ export class CompassEventParser {
     this.#isInstance = isInstance(event);
     this.#isDbInstance = cEvent ? isInstance(cEvent) : false;
 
-    this.#isBase = isBase(event as Omit<Schema_Event, "_id">);
+    this.#isBase = isBase(event);
     this.#isDbBase = cEvent ? isBase(cEvent) : false;
 
     this.#isStandalone = isRegularEvent(event);
     this.#isDbStandalone = cEvent ? isRegularEvent(cEvent) : false;
 
     this.#rrule = this.#isBase
-      ? new CompassEventRRule(
-          event as WithId<Omit<Schema_Event_Recur_Base, "_id">>,
-        )
+      ? new CompassEventRRule(BaseEventSchema.parse(event))
       : null;
 
     this.#dbRrule = this.#isDbBase
-      ? new CompassEventRRule(
-          this.#dbEvent! as WithId<Omit<Schema_Event_Recur_Base, "_id">>,
-        )
+      ? new CompassEventRRule(BaseEventSchema.parse(this.#dbEvent))
       : null;
 
     this.#transition = [
@@ -167,31 +163,26 @@ export class CompassEventParser {
 
     // create series in calendar providers
     const { isSomeday } = this.#event;
-    const calendarProvider = CalendarProvider.GOOGLE;
-    const provider = isSomeday ? CalendarProvider.COMPASS : calendarProvider;
-    const userId = this.#event.user!;
 
-    const compassEvent = (
-      this.isBase ? this.rrule?.base(provider) : this.#event
-    )!;
-
+    const compassEvent = (this.isBase ? this.rrule?.base() : this.#event)!;
     const operation: Operation_Sync = `${this.#getCategory()}_CREATED`;
     const operationSummary = this.#getOperationSummary(operation);
 
-    const cEvent = (await _createCompassEvent(
-      { ...compassEvent, user: userId },
-      calendarProvider,
-      this.rrule,
-      session,
-    )) as Schema_Event_Core | null;
+    const cEvent = await _createCompassEvent(compassEvent, this.rrule, session);
+
+    if (!this.#_event.providerSync) return [operationSummary];
 
     if (!cEvent) return [];
 
     if (isSomeday) return [operationSummary];
 
-    switch (calendarProvider) {
+    switch (this.#provider) {
       case CalendarProvider.GOOGLE: {
-        const event = await _createGcal(userId, cEvent);
+        const event = await eventService.createGcalEvent(
+          this.#user,
+          this.#calendar.metadata.id,
+          cEvent,
+        );
 
         return event ? [operationSummary] : [];
       }
@@ -205,24 +196,25 @@ export class CompassEventParser {
       `UPDATING ${this.getTransitionString()}: ${this.#event._id.toString()} (Compass)`,
     );
 
-    const calendarProvider = CalendarProvider.GOOGLE;
-    const userId = this.#event.user!;
     const { isSomeday } = this.#event;
     const operation: Operation_Sync = `${this.category}_UPDATED`;
     const operationSummary = this.#getOperationSummary(operation);
 
-    const cEvent = await _updateCompassEvent(
-      { ...this.#event, user: userId },
-      session,
-    );
+    const cEvent = await _updateCompassEvent(this.#event, session);
+
+    if (!this.#_event.providerSync) return [operationSummary];
 
     if (!cEvent) return [];
 
     if (isSomeday) return [operationSummary];
 
-    switch (calendarProvider) {
+    switch (this.#provider) {
       case CalendarProvider.GOOGLE: {
-        const event = await _updateGcal(userId, cEvent as Schema_Event_Core);
+        const event = await eventService.updateGcalEvent(
+          this.#user,
+          this.#calendar.metadata.id,
+          cEvent,
+        );
 
         return event ? [operationSummary] : [];
       }
@@ -237,17 +229,14 @@ export class CompassEventParser {
     );
 
     const { isSomeday } = this.#event;
-    const calendarProvider = CalendarProvider.GOOGLE;
-    const provider = isSomeday ? CalendarProvider.COMPASS : calendarProvider;
-    const compassEvent = this.rrule!.base(provider);
-    const userId = compassEvent.user!;
+    const compassEvent = this.rrule!.base();
     const operation: Operation_Sync = `${this.category}_UPDATED`;
     const operationSummary = this.#getOperationSummary(operation);
 
     const rruleDiff = this.rrule?.diffOptions(this.dbRrule!) ?? [];
     const seriesSplit = rruleDiff.length > 0;
 
-    let cEvent: WithCompassId<Omit<Schema_Event, "_id">> | null = null;
+    let cEvent: Schema_Event | null = null;
 
     if (seriesSplit) {
       /***************************************************************************
@@ -263,7 +252,6 @@ export class CompassEventParser {
        * const instances = this.rrule!.instances();
        * const availableStarts = instances.map((i) => i.startDate);
        * await _deleteSeries(
-       *   userId,
        *   this.#event._id.toString(),
        *   { startDate: { $nin: availableStarts } },
        *   session,
@@ -282,23 +270,24 @@ export class CompassEventParser {
       // until only changed
       if (untilOnlyChanged) {
         await _deleteInstancesAfterUntil(
-          userId,
-          this.#event._id.toString(),
+          this.#event,
           this.rrule!.options.until!,
           session,
         );
 
-        cEvent = await _updateCompassSeries(
-          { ...compassEvent, user: userId },
-          session,
-        );
+        cEvent = await _updateCompassSeries(compassEvent, session);
       } else {
         // recreate instances
-        await _deleteSeries(userId, this.#event._id.toString(), session, true);
+        await _deleteSeries(
+          this.#user,
+          this.#event._id.toString(),
+          session,
+          true,
+        );
 
         cEvent = await _createCompassEvent(
-          { ...compassEvent, user: userId },
-          calendarProvider,
+          { ...compassEvent, user: this.#user },
+          this.#provider,
           this.rrule,
           session,
         );
@@ -310,13 +299,19 @@ export class CompassEventParser {
       );
     }
 
+    if (!this.#_event.providerSync) return [operationSummary];
+
     if (!cEvent) return [];
 
     if (isSomeday) return [operationSummary];
 
-    switch (calendarProvider) {
+    switch (this.#provider) {
       case CalendarProvider.GOOGLE: {
-        const event = await _updateGcal(userId, cEvent as Schema_Event_Core);
+        const event = await eventService.updateGcalEvent(
+          this.#user,
+          this.#calendar.metadata.id,
+          cEvent,
+        );
 
         return event ? [operationSummary] : [];
       }
@@ -330,24 +325,25 @@ export class CompassEventParser {
       `DELETING ${this.getTransitionString()}: ${this.#event._id.toString()} (Compass)`,
     );
 
-    const calendarProvider = CalendarProvider.GOOGLE;
-    const userId = this.#event.user!;
     const { isSomeday } = this.#event;
     const operation: Operation_Sync = `${this.category}_DELETED`;
     const operationSummary = this.#getOperationSummary(operation);
 
-    const cEvent = (await _deleteSingleCompassEvent(
-      { ...this.#event, user: userId },
-      session,
-    )) as Schema_Event_Core | null;
+    const cEvent = await _deleteSingleCompassEvent(this.#event, session);
+
+    if (!this.#_event.providerSync) return [operationSummary];
 
     if (!cEvent) return [];
 
     if (isSomeday) return [operationSummary];
 
-    switch (calendarProvider) {
+    switch (this.#provider) {
       case CalendarProvider.GOOGLE: {
-        const ok = await _deleteGcal(userId, cEvent.gEventId!);
+        const ok = await eventService.deleteGcalEvent(
+          this.#user,
+          this.#calendar.metadata.id,
+          StringV4Schema.parse(cEvent.metadata?.id),
+        );
 
         return ok ? [operationSummary] : [];
       }
@@ -363,23 +359,26 @@ export class CompassEventParser {
       `UPDATING ${this.getTransitionString()}: ${this.#event._id.toString()} (Compass)`,
     );
 
-    const calendarProvider = CalendarProvider.GOOGLE;
-    const user = this.#event.user!;
     const operation: Operation_Sync = `${this.category}_UPDATED`;
     const operationSummary = this.#getOperationSummary(operation);
 
     const cEvent = await _createCompassEvent(
-      { ...this.#event, user, isSomeday: true },
-      calendarProvider,
+      { ...this.#event, isSomeday: true },
       null,
       session,
     );
 
+    if (!this.#_event.providerSync) return [operationSummary];
+
     if (!cEvent) return [];
 
-    switch (calendarProvider) {
+    switch (this.#provider) {
       case CalendarProvider.GOOGLE: {
-        const ok = await _deleteGcal(user, this.#event.gEventId!);
+        const ok = await eventService.deleteGcalEvent(
+          this.#user,
+          this.#calendar.metadata.id,
+          StringV4Schema.parse(cEvent.metadata?.id),
+        );
 
         return ok ? [operationSummary] : [];
       }
@@ -395,30 +394,34 @@ export class CompassEventParser {
       `UPDATING ${this.getTransitionString()}: ${this.#event._id.toString()} (Compass)`,
     );
 
-    const calendarProvider = CalendarProvider.GOOGLE;
-    const user = this.#event.user!;
     const operation: Operation_Sync = `${this.category}_UPDATED`;
     const operationSummary = this.#getOperationSummary(operation);
 
-    await _deleteSeries(user, this.#event._id.toString(), session, true);
+    await _deleteSeries(this.#user, this.#event._id.toString(), session, true);
 
     const cEvent = await _createCompassEvent(
       {
         ...this.#event,
-        user,
+        user: this.#user,
         recurrence: this.#event.recurrence,
         isSomeday: true,
       },
-      calendarProvider,
+      this.#provider,
       this.rrule,
       session,
     );
 
+    if (!this.#_event.providerSync) return [operationSummary];
+
     if (!cEvent) return [];
 
-    switch (calendarProvider) {
+    switch (this.#provider) {
       case CalendarProvider.GOOGLE: {
-        const ok = await _deleteGcal(user, this.#event.gEventId!);
+        const ok = await eventService.deleteGcalEvent(
+          this.#user,
+          this.#calendar.metadata.id,
+          StringV4Schema.parse(cEvent.metadata?.id),
+        );
 
         return ok ? [operationSummary] : [];
       }
@@ -434,28 +437,32 @@ export class CompassEventParser {
       `UPDATING ${this.getTransitionString()}: ${this.#event._id.toString()} (Compass)`,
     );
 
-    const calendarProvider = CalendarProvider.GOOGLE;
-    const userId = this.#event.user!;
     const { isSomeday } = this.#event;
     const operation: Operation_Sync = `${this.category}_UPDATED`;
     const operationSummary = this.#getOperationSummary(operation);
 
-    await _deleteSeries(userId, this.#event._id.toString(), session, true);
+    await _deleteSeries(this.#user, this.#event._id.toString(), session, true);
 
-    const cEvent = (await _updateCompassEvent(
-      { ...this.#event, user: userId },
+    const cEvent = await _updateCompassEvent(
+      { ...this.#event, user: this.#user },
       session,
-    )) as Schema_Event_Core | null;
+    );
+
+    if (!this.#_event.providerSync) return [operationSummary];
 
     if (!cEvent) return [];
 
     if (isSomeday) return [operationSummary];
 
-    switch (calendarProvider) {
+    switch (this.#provider) {
       case CalendarProvider.GOOGLE: {
         Object.assign(cEvent, { recurrence: null });
 
-        const event = await _updateGcal(userId, cEvent);
+        const event = await eventService.updateGcalEvent(
+          this.#user,
+          this.#calendar.metadata.id,
+          cEvent,
+        );
 
         return event ? [operationSummary] : [];
       }
@@ -471,26 +478,30 @@ export class CompassEventParser {
       `UPDATING ${this.getTransitionString()}: ${this.#event._id.toString()} (Compass)`,
     );
 
-    const calendarProvider = CalendarProvider.GOOGLE;
-    const userId = this.#event.user!;
     const { isSomeday } = this.#event;
     const operation: Operation_Sync = `${this.category}_UPDATED`;
     const operationSummary = this.#getOperationSummary(operation);
 
-    const cEvent = (await _createCompassEvent(
-      { ...this.#event, user: userId },
-      calendarProvider,
+    const cEvent = await _createCompassEvent(
+      { ...this.#event, user: this.#user },
+      this.#provider,
       this.rrule,
       session,
-    )) as Schema_Event_Core | null;
+    );
+
+    if (!this.#_event.providerSync) return [operationSummary];
 
     if (!cEvent) return [];
 
     if (isSomeday) return [operationSummary];
 
-    switch (calendarProvider) {
+    switch (this.#provider) {
       case CalendarProvider.GOOGLE: {
-        const event = await _updateGcal(userId, cEvent);
+        const event = await eventService.updateGcalEvent(
+          this.#user,
+          this.#calendar.metadata.id,
+          cEvent,
+        );
 
         return event ? [operationSummary] : [];
       }
@@ -504,19 +515,23 @@ export class CompassEventParser {
       `Cancelling SERIES: ${this.#event._id.toString()} (Gcal)`,
     );
 
-    const calendarProvider = CalendarProvider.GOOGLE;
-    const userId = this.#event.user!;
     const { isSomeday } = this.#event;
     const operation: Operation_Sync = `${this.category}_DELETED`;
     const operationSummary = this.#getOperationSummary(operation);
 
-    await _deleteSeries(userId, this.#event._id.toString(), session);
+    await _deleteSeries(this.#user, this.#event._id.toString(), session);
+
+    if (!this.#_event.providerSync) return [operationSummary];
 
     if (isSomeday) return [operationSummary];
 
-    switch (calendarProvider) {
+    switch (this.#provider) {
       case CalendarProvider.GOOGLE: {
-        const ok = await _deleteGcal(userId, this.#event.gEventId!);
+        const ok = await eventService.deleteGcalEvent(
+          this.#user,
+          this.#calendar.metadata.id,
+          StringV4Schema.parse(this.#event.metadata?.id),
+        );
 
         return ok ? [operationSummary] : [];
       }

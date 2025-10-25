@@ -1,26 +1,8 @@
 import { ObjectId } from "bson";
-import type { Query } from "express-serve-static-core";
-import { z } from "zod";
-import {
-  Origin,
-  Priorities,
-  type Priority,
-} from "@core/constants/core.constants";
-import { IDSchema } from "@core/types/type.utils";
-
-/**
- * Event category, based on its display type
- * - ALLDAY: An all-day event
- * - TIMED: A timed event
- * - SOMEDAY_WEEK: A someday event that is displayed in the sidebarWeek view
- * - SOMEDAY_MONTH: A someday event that is displayed in the sidebarMonth view
- */
-export enum Categories_Event {
-  ALLDAY = "allday",
-  TIMED = "timed",
-  SOMEDAY_WEEK = "sidebarWeek",
-  SOMEDAY_MONTH = "sidebarMonth",
-}
+import { z } from "zod/v4";
+import { Origin, Priorities } from "@core/constants/core.constants";
+import { CompassCalendarSchema } from "@core/types/calendar.types";
+import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 
 /**
  * Event category, based on its recurrence status and isSomeday flag
@@ -40,10 +22,13 @@ export enum Categories_Recurrence {
   RECURRENCE_INSTANCE_SOMEDAY = "RECURRENCE_INSTANCE_SOMEDAY",
 }
 
-export type TransitionStatus = "CONFIRMED" | "CANCELLED";
+export enum EventStatus {
+  CONFIRMED = "CONFIRMED",
+  CANCELLED = "CANCELLED",
+}
 
 export type TransitionCategoriesRecurrence =
-  `${Categories_Recurrence}_${TransitionStatus}`;
+  `${Categories_Recurrence}_${EventStatus}`;
 
 /**
  * Scope of application for changes made to recurring event instances
@@ -54,21 +39,9 @@ export enum RecurringEventUpdateScope {
   ALL_EVENTS = "All Events",
 }
 
-export type Direction_Migrate = "forward" | "back" | "up" | "down";
-
 export interface Params_DeleteMany {
   key: string;
-  ids: string[];
-}
-export interface Params_Events {
-  startDate: string;
-  endDate: string;
-  someday: boolean;
-}
-
-export interface Payload_Order {
-  _id: string;
-  order: number;
+  ids: ObjectId[];
 }
 
 export interface Result_DeleteMany {
@@ -76,193 +49,172 @@ export interface Result_DeleteMany {
   errors: unknown[];
 }
 
-export interface Schema_Event {
-  _id?: string;
-  allDayOrder?: number;
-  description?: string | null | undefined;
-  endDate?: string;
-  isAllDay?: boolean;
-  isSomeday?: boolean;
-  gEventId?: string;
-  gRecurringEventId?: string;
-  order?: number;
-  origin?: Origin;
-  priority?: Priority;
-  recurrence?: {
-    rule?: string[];
-    eventId?: string;
-  };
-  startDate?: string;
-  title?: string;
-  updatedAt?: Date | string;
-  user?: string;
-}
+export type Ids_Event = "_id" | "gEventId" | "gRecurringEventId";
 
-export type Schema_Event_Regular = Omit<
-  Schema_Event,
-  "recurrence" | "gRecurringEventId"
->;
-
-export interface Schema_Event_Recur_Base
-  extends Omit<Schema_Event, "recurrence" | "gRecurringEventId"> {
-  recurrence: {
-    rule: string[]; // No eventId since this is the base recurring event
-  };
-}
-
-export interface Schema_Event_Recur_Instance
-  extends Omit<Schema_Event, "recurrence"> {
-  recurrence: {
-    eventId: string; // No rule since this is an instance of the recurring event
-  };
-}
-export interface Schema_Event_Core extends Schema_Event {
-  startDate: string;
-  endDate: string;
-  origin: Origin;
-  priority: Priority;
-  user: string;
-}
-
-export interface Query_Event extends Query {
-  end?: string;
-  someday?: string;
-  start?: string;
-  priorities?: string; // example: 'p1,p2,p3'
-}
-
-export interface Query_Event_Update extends Query {
-  applyTo?: RecurringEventUpdateScope;
-}
-
-const Recurrence = z.object({
-  rule: z.array(z.string()).optional(),
-  eventId: z.string().optional(),
+export const StandaloneEventMetadataSchema = z.object({
+  id: StringV4Schema,
 });
 
-export type Recurrence = Schema_Event_Recur_Base | Schema_Event_Recur_Instance;
-export type RecurrenceWithId =
-  | WithCompassId<Schema_Event_Recur_Instance>
-  | WithCompassId<Schema_Event_Recur_Base>;
-export type RecurrenceWithoutId =
-  | WithoutCompassId<Schema_Event_Recur_Instance>
-  | WithoutCompassId<Schema_Event_Recur_Base>;
+export const InstanceEventMetadataSchema = z
+  .object({
+    id: StringV4Schema,
+    recurringEventId: StringV4Schema,
+  })
+  .check(({ value, issues }) => {
+    const valid = new RegExp(
+      `^${value.recurringEventId}_\\d+(T\\d+Z?)?$`,
+      "i",
+    ).test(value.id);
 
-export enum CompassEventStatus {
-  CONFIRMED = "CONFIRMED",
-  CANCELLED = "CANCELLED",
-}
+    if (!valid) {
+      issues.push({
+        code: "invalid_value",
+        input: value,
+        message: "Invalid instance id",
+        values: [],
+      });
+    }
+  });
 
-export const eventDateSchema = z.union([
-  z.string().datetime({ offset: true }),
-  z.string().date(),
+// order matters: try to match recurring first
+export const EventMetadataSchema = z.union([
+  InstanceEventMetadataSchema,
+  StandaloneEventMetadataSchema,
 ]);
 
-export const CoreEventSchema = z.object({
-  _id: IDSchema.optional(),
-  description: z.string().nullable().optional(),
-  endDate: eventDateSchema,
-  isAllDay: z.boolean().optional(),
-  isSomeday: z.boolean().optional(),
-  gEventId: z.string().optional(),
-  gRecurringEventId: z.string().optional(),
-  origin: z.nativeEnum(Origin),
-  priority: z.nativeEnum(Priorities),
-  recurrence: Recurrence.optional(),
-  startDate: eventDateSchema,
-  title: z.string().optional(),
-  updatedAt: z.union([z.date(), z.string().datetime()]).optional(),
-  user: z.string(),
+export const RecurrenceRuleSchema = z.array(StringV4Schema).nonempty();
+
+export const RecurrenceBaseSchema = z.object({
+  rule: RecurrenceRuleSchema,
 });
 
-export const CompassEventRecurrence = z.object({
-  rule: z.array(z.string()),
-  eventId: z.string().optional(),
+export const RecurrenceInstanceSchema = z.object({
+  ...RecurrenceBaseSchema.shape,
+  eventId: zObjectId,
 });
 
-export const EventUpdateSchema = z.object({
-  description: z.string().nullable().optional(),
-  priority: z.nativeEnum(Priorities).optional(),
-  recurrence: z.union([
-    CompassEventRecurrence.extend({ rule: z.null() }),
-    CompassEventRecurrence,
-  ]),
-  startDate: eventDateSchema.optional(),
-  endDate: eventDateSchema.optional(),
-  title: z.string().optional(),
-  isSomeday: z.boolean().optional(),
-});
-
-export const CompassCoreEventSchema = CoreEventSchema.extend({
-  _id: IDSchema,
-  recurrence: CompassEventRecurrence.extend({
-    rule: z.union([z.null(), z.array(z.string())]),
-  }).optional(),
-});
-
-const BaseCompassEventSchema = z.object({
-  status: z
-    .nativeEnum(CompassEventStatus)
-    .default(CompassEventStatus.CONFIRMED),
-  applyTo: z
-    .nativeEnum(RecurringEventUpdateScope)
-    .default(RecurringEventUpdateScope.THIS_EVENT)
-    .optional(),
-});
-
-export const CompassThisEventSchema = BaseCompassEventSchema.merge(
-  z.object({
-    applyTo: z.literal(RecurringEventUpdateScope.THIS_EVENT),
-    payload: CompassCoreEventSchema.extend({
-      recurrence: CompassEventRecurrence.optional(),
-    }),
-  }),
-);
-
-export const CompassThisAndFollowingEventSchema = BaseCompassEventSchema.merge(
-  z.object({
-    applyTo: z.literal(RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS),
-    payload: CompassCoreEventSchema.extend({
-      isSomeday: z.literal(false),
-      recurrence: CompassEventRecurrence,
-    }),
-  }),
-);
-
-export const CompassAllEventsSchema = BaseCompassEventSchema.merge(
-  z.object({
-    applyTo: z.literal(RecurringEventUpdateScope.ALL_EVENTS),
-    payload: CompassCoreEventSchema.extend({
-      recurrence: z
-        .union([
-          CompassEventRecurrence.extend({ rule: z.null() }),
-          CompassEventRecurrence,
-        ])
-        .optional(),
-    }),
-  }),
-);
-
-export const CompassEventSchema = z.discriminatedUnion("applyTo", [
-  CompassThisEventSchema,
-  CompassThisAndFollowingEventSchema,
-  CompassAllEventsSchema,
+// order matters: try to match instance first
+export const RecurrenceSchema = z.union([
+  RecurrenceInstanceSchema,
+  RecurrenceBaseSchema,
 ]);
 
-export type Event_Core = z.infer<typeof CoreEventSchema>;
-export type CompassThisEvent = z.infer<typeof CompassThisEventSchema>;
-export type CompassThisAndFollowingEvent = z.infer<
-  typeof CompassThisAndFollowingEventSchema
->;
-export type CompassAllEvents = z.infer<typeof CompassAllEventsSchema>;
-export type CompassEvent = z.infer<typeof CompassEventSchema>;
-export type CompassCoreEvent = z.infer<typeof CompassCoreEventSchema>;
-export type EventUpdatePayload = z.infer<typeof EventUpdateSchema>;
+export const PrioritiesSchema = z
+  .enum(Priorities)
+  .optional()
+  .default(Priorities.UNASSIGNED);
 
-export type WithCompassId<T> = T & { _id: string };
-export type WithMongoId<T> = T & { _id: ObjectId }; // same as WithId from the 'mongodb' package - but for ui use
-export type WithoutCompassId<T> = Omit<T, "_id">;
-export enum CalendarProvider {
-  GOOGLE = "google",
-  COMPASS = "compass",
-}
+export const EventSchema = z.object({
+  _id: zObjectId.optional().default(() => new ObjectId()),
+  calendar: zObjectId,
+  title: z.string().optional().default(""),
+  description: z.string().default(""),
+  isSomeday: z.boolean().optional().default(false),
+  startDate: z.date(),
+  endDate: z.date(),
+  order: z.int().min(0).optional().default(0),
+  origin: z.enum(Origin).optional().default(Origin.COMPASS),
+  priority: PrioritiesSchema,
+  createdAt: z
+    .date()
+    .optional()
+    .default(() => new Date()),
+  updatedAt: z.date().nullable().optional(),
+  recurrence: RecurrenceSchema.nullable().optional(),
+  metadata: EventMetadataSchema.nullable().optional(),
+});
+
+export const EditableEventFieldsSchema = EventSchema.pick({
+  description: true,
+  priority: true,
+  recurrence: true,
+  startDate: true,
+  endDate: true,
+  title: true,
+  isSomeday: true,
+  order: true,
+  updatedAt: true,
+}).partial({
+  description: true,
+  priority: true,
+  startDate: true,
+  endDate: true,
+  title: true,
+  isSomeday: true,
+  order: true,
+  updatedAt: true,
+});
+
+export const ExtendedEventPropertiesSchema = EventSchema.pick({
+  priority: true,
+  origin: true,
+});
+
+export const RegularEventSchema = EventSchema.omit({
+  recurrence: true,
+}).extend({
+  metadata: StandaloneEventMetadataSchema.nullable().optional(),
+});
+
+export const BaseEventSchema = RegularEventSchema.extend({
+  recurrence: RecurrenceBaseSchema,
+});
+
+export const InstanceEventSchema = EventSchema.extend({
+  metadata: InstanceEventMetadataSchema.nullable().optional(),
+  recurrence: RecurrenceInstanceSchema,
+});
+
+export const ThisEventUpdateSchema = z.object({
+  calendar: CompassCalendarSchema,
+  providerSync: z.boolean().optional().default(true),
+  status: z.enum(EventStatus).optional().default(EventStatus.CONFIRMED),
+  applyTo: z.literal(RecurringEventUpdateScope.THIS_EVENT),
+  payload: EventSchema,
+});
+
+export const ThisAndFollowingEventsUpdateSchema = ThisEventUpdateSchema.extend({
+  applyTo: z.literal(RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS),
+  payload: EventSchema.extend({
+    isSomeday: z.literal(false),
+    recurrence: RecurrenceInstanceSchema,
+  }),
+});
+
+export const AllEventsUpdateSchema = ThisEventUpdateSchema.extend({
+  applyTo: z.literal(RecurringEventUpdateScope.ALL_EVENTS),
+  payload: EventSchema.extend({
+    recurrence: z
+      .union([
+        RecurrenceInstanceSchema.extend({ rule: z.null() }),
+        RecurrenceInstanceSchema,
+      ])
+      .optional(),
+  }),
+});
+
+export const EventUpdateSchema = z.discriminatedUnion("applyTo", [
+  ThisEventUpdateSchema,
+  ThisAndFollowingEventsUpdateSchema,
+  AllEventsUpdateSchema,
+]);
+
+export type ExtendedEventProperties = z.infer<
+  typeof ExtendedEventPropertiesSchema
+>;
+export type StandaloneEventMetadata = z.infer<
+  typeof StandaloneEventMetadataSchema
+>;
+export type InstanceEventMetadata = z.infer<typeof InstanceEventMetadataSchema>;
+export type EventMetadata = z.infer<typeof EventMetadataSchema>;
+export type Schema_Event = z.infer<typeof EventSchema>;
+export type Schema_Regular_Event = z.infer<typeof RegularEventSchema>;
+export type Schema_Base_Event = z.infer<typeof BaseEventSchema>;
+export type Schema_Instance_Event = z.infer<typeof InstanceEventSchema>;
+export type EditableEventFields = z.infer<typeof EditableEventFieldsSchema>;
+export type EventUpdate = z.infer<typeof EventUpdateSchema>;
+export type ThisEventUpdate = z.infer<typeof ThisEventUpdateSchema>;
+export type AllEventsUpdate = z.infer<typeof AllEventsUpdateSchema>;
+export type ThisAndFollowingEventsUpdate = z.infer<
+  typeof ThisAndFollowingEventsUpdateSchema
+>;

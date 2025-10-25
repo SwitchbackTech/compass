@@ -4,7 +4,7 @@ import {
   SOMEDAY_EVENT_CHANGED,
 } from "@core/constants/websocket.constants";
 import { Logger } from "@core/logger/winston.logger";
-import { CompassEvent } from "@core/types/event.types";
+import { EventUpdate } from "@core/types/event.types";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
@@ -17,7 +17,7 @@ const logger = Logger("app.compass.sync.processor");
 
 export class CompassSyncProcessor {
   static async processEvents(
-    events: CompassEvent[],
+    events: EventUpdate[],
     _session?: ClientSession,
   ): Promise<Event_Transition[]> {
     const summary: Event_Transition[] = [];
@@ -35,8 +35,10 @@ export class CompassSyncProcessor {
         ),
       ).then((events) => events.flat());
 
-      console.log("LATEST CHANGES (from Compass):");
-      console.log(JSON.stringify(compassEvents, null, 2));
+      if (!events.some((e) => e.providerSync)) {
+        console.log("LATEST CHANGES (from Compass):");
+        console.log(JSON.stringify(compassEvents, null, 2));
+      }
 
       for (const event of compassEvents) {
         const changes = await CompassSyncProcessor.handleCompassChange(
@@ -82,14 +84,16 @@ export class CompassSyncProcessor {
   }
 
   private static notifyClients(
-    events: CompassEvent[],
+    events: EventUpdate[],
     summary: Event_Transition[],
   ): void {
     const notifications = [
       ...new Set(summary.flatMap(CompassSyncProcessor.getNotificationType)),
     ];
 
-    const uniqueUserIds = new Set(events.map((e) => e.payload.user));
+    const uniqueUserIds = new Set(
+      events.map((e) => e.calendar.user.toString()),
+    );
 
     uniqueUserIds.forEach((userId) => {
       notifications.forEach((notification) => {
@@ -110,7 +114,7 @@ export class CompassSyncProcessor {
   }
 
   private static async handleCompassChange(
-    event: CompassEvent,
+    event: EventUpdate,
     session?: ClientSession,
   ): Promise<Event_Transition[]> {
     const eventId = event.payload._id;

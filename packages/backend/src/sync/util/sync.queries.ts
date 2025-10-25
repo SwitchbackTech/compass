@@ -1,4 +1,4 @@
-import { ClientSession, UpdateFilter, UpdateResult } from "mongodb";
+import { ClientSession, ObjectId, UpdateFilter, UpdateResult } from "mongodb";
 import zod from "zod";
 import { Origin } from "@core/constants/core.constants";
 import {
@@ -7,6 +7,7 @@ import {
   SyncDetails,
 } from "@core/types/sync.types";
 import dayjs from "@core/util/date/dayjs";
+import calendarService from "@backend/calendar/services/calendar.service";
 import mongoService from "@backend/common/services/mongo.service";
 
 /**
@@ -88,11 +89,12 @@ export const getGCalEventsSyncPageToken = async (
 };
 
 export const hasUpdatedCompassEventRecently = async (
-  userId: string,
+  user: ObjectId,
   deadline: string,
 ) => {
+  const calendars = await calendarService.getAllByUser(user);
   const recentChanges = await mongoService.event.countDocuments({
-    user: userId,
+    calendar: { $in: calendars.map((cal) => cal._id) },
     origin: Origin.COMPASS,
     updatedAt: { $gt: new Date(deadline) },
   });
@@ -101,12 +103,12 @@ export const hasUpdatedCompassEventRecently = async (
 };
 
 export const isWatchingGoogleResource = async (
-  userId: string,
+  userId: ObjectId,
   gCalendarId: string,
   session?: ClientSession,
 ) => {
   const channel = await mongoService.watch.findOne(
-    { user: userId, gCalendarId },
+    { user: userId.toString(), gCalendarId },
     { session },
   );
 
@@ -116,7 +118,7 @@ export const isWatchingGoogleResource = async (
 
   if (expired) {
     await mongoService.watch.deleteOne(
-      { user: userId, gCalendarId },
+      { user: userId.toString(), gCalendarId },
       { session },
     );
 

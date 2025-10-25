@@ -4,6 +4,7 @@ import { BaseError } from "@core/errors/errors.base";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Res_Promise, SReqBody } from "@backend/common/types/express.types";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
+import { zObjectId } from "../../../../core/src/types/type.utils";
 import syncService from "../services/sync.service";
 import { getSync } from "../util/sync.queries";
 
@@ -83,7 +84,7 @@ class SyncDebugController {
     res: Res_Promise,
   ) => {
     try {
-      const userId = req.session?.getUserId() as string;
+      const userId = zObjectId.parse(req.session?.getUserId());
       const calendarId = req.body.calendarId;
       const gcal = await getGcalClient(userId);
 

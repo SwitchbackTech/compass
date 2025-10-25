@@ -1,6 +1,9 @@
+import { ObjectId } from "mongodb";
 import { Options, RRule } from "rrule";
 import { faker } from "@faker-js/faker";
 import { Origin, Priorities } from "@core/constants/core.constants";
+import { MapGCalEvent } from "@core/mappers/map.gcal.event";
+import { BaseEventSchema } from "@core/types/event.types";
 import {
   WithGcalId,
   gSchema$Event,
@@ -9,7 +12,7 @@ import {
 } from "@core/types/gcal";
 import { formatAs } from "@core/util/date/date.util";
 import dayjs from "@core/util/date/dayjs";
-import { GcalEventRRule } from "@backend/event/classes/gcal.event.rrule";
+import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 
 /**
  * Generates a random base32 hex string according to gcal id's requirement:
@@ -97,7 +100,9 @@ export const mockRecurringGcalBaseEvent = (
 ): gSchema$EventBase => {
   const event = mockRegularGcalEvent(overrides, isAllDay);
   const ruleOptions = { count: 3, ...rruleOptions };
-  const rrule = new GcalEventRRule(event as gSchema$EventBase, ruleOptions);
+  const _cEvent = MapGCalEvent.toEvent(event, { calendar: new ObjectId() });
+  const cEvent = { ..._cEvent, recurrence: { rule: [] } };
+  const rrule = new CompassEventRRule(cEvent, ruleOptions);
 
   return { ...event, recurrence: rrule.toRecurrence() };
 };
@@ -105,9 +110,13 @@ export const mockRecurringGcalBaseEvent = (
 export const mockRecurringGcalInstances = (
   base: gSchema$EventBase,
 ): gSchema$EventInstance[] => {
-  const rrule = new GcalEventRRule(base);
+  const _cEvent = MapGCalEvent.toEvent(base, { calendar: new ObjectId() });
+  const cEvent = BaseEventSchema.parse(_cEvent);
+  const rrule = new CompassEventRRule(cEvent);
 
-  return rrule.instances();
+  return rrule
+    .instances()
+    .map((e) => MapGCalEvent.fromEvent(e, { status: base.status }));
 };
 
 export const mockRegularGcalEvent = (

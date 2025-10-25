@@ -1,10 +1,8 @@
 import { ObjectId } from "bson";
 import { Priorities } from "@core/constants/core.constants";
-import { Schema_Event, WithMongoId } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 
-const allDayEventsThatShouldMatch: Array<
-  WithMongoId<Omit<Schema_Event, "_id">>
-> =
+const allDayEventsThatShouldMatch: Schema_Event[] =
   // ordered by start date
   [
     {
@@ -45,9 +43,7 @@ const allDayEventsThatShouldMatch: Array<
     },
   ];
 
-const allDayEventsThatShouldNotMatch: Array<
-  WithMongoId<Omit<Schema_Event, "_id">>
-> = [
+const allDayEventsThatShouldNotMatch: Schema_Event[] = [
   {
     _id: new ObjectId(),
     user: "user1",
@@ -90,7 +86,7 @@ const allDayEventsThatShouldNotMatch: Array<
   },
 ];
 
-export const mockEventSetMar22: Array<Omit<Schema_Event, "_id">> = [
+export const mockEventSetMar22: Array<Schema_Event> = [
   ...allDayEventsThatShouldMatch,
   ...allDayEventsThatShouldNotMatch,
 ];

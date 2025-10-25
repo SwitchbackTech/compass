@@ -1,6 +1,5 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { darken } from "@core/util/color.utils";
-import { parseCompassEventDate } from "@core/util/event/event.util";
 import { theme } from "@web/common/styles/theme";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { Flex } from "@web/components/Flex";
@@ -11,7 +10,7 @@ import { StyledRepeatRow } from "@web/views/Forms/EventForm/DateControlsSection/
 export interface EndsOnDateProps {
   bgColor: string;
   inputColor: string;
-  minDate?: string;
+  minDate?: Date;
   until?: Date | null;
   setUntil: React.Dispatch<React.SetStateAction<Date | null>>;
 }
@@ -21,10 +20,9 @@ export const EndsOnDate = ({
   bgColor,
   inputColor,
   setUntil,
-  minDate = new Date().toISOString(),
+  minDate = new Date(),
 }: EndsOnDateProps) => {
   const [open, setOpen] = useState(false);
-  const miniDate = useMemo(() => parseCompassEventDate(minDate), [minDate]);
 
   return (
     <StyledRepeatRow>
@@ -48,7 +46,7 @@ export const EndsOnDate = ({
               calendarClassName="recurrenceUntilDatePicker"
               inputColor={inputColor}
               isOpen={open}
-              minDate={miniDate.toDate()}
+              minDate={minDate}
               onCalendarClose={() => setOpen(false)}
               onChange={() => null}
               onSelect={(date) => setUntil(date)}

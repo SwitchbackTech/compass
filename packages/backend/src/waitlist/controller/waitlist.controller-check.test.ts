@@ -42,10 +42,7 @@ describe("GET /api/waitlist", () => {
           .mockResolvedValue({ firstName: "Test", lastName: "User" }),
       },
     }));
-    jest.doMock("../../user/queries/user.queries", () => ({
-      __esModule: true,
-      findCompassUserBy: jest.fn().mockResolvedValue(null), // Simulate user not found, so isActive will be false
-    }));
+
     const { WaitlistController } = await import("./waitlist.controller");
     const express = (await import("express")).default;
     const app = express();
@@ -74,10 +71,7 @@ describe("GET /api/waitlist", () => {
         getWaitlistRecord: jest.fn().mockResolvedValue(null),
       },
     }));
-    jest.doMock("../../user/queries/user.queries", () => ({
-      __esModule: true,
-      findCompassUserBy: jest.fn().mockResolvedValue(null), // Simulate user not found, so isActive will be false
-    }));
+
     const { WaitlistController } = await import("./waitlist.controller");
     const express = (await import("express")).default;
     const app = express();
@@ -112,10 +106,7 @@ describe("GET /api/waitlist", () => {
         getWaitlistRecord: mockGetWaitlistRecord,
       },
     }));
-    jest.doMock("../../user/queries/user.queries", () => ({
-      __esModule: true,
-      findCompassUserBy: jest.fn().mockResolvedValue(null), // Simulate user not found, so isActive will be false
-    }));
+
     const { WaitlistController } = await import("./waitlist.controller");
     const express = (await import("express")).default;
     const app = express();
@@ -170,10 +161,7 @@ describe("GET /api/waitlist", () => {
         getWaitlistRecord: mockGetWaitlistRecord,
       },
     }));
-    jest.doMock("../../user/queries/user.queries", () => ({
-      __esModule: true,
-      findCompassUserBy: jest.fn().mockResolvedValue(null), // Simulate user not found, so isActive will be false
-    }));
+
     const { WaitlistController } = await import("./waitlist.controller");
     const express = (await import("express")).default;
     const app = express();

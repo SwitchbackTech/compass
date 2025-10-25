@@ -1,16 +1,16 @@
 import { faker } from "@faker-js/faker";
 import { Priorities } from "@core/constants/core.constants";
+import { CalendarProvider } from "@core/types/calendar.types";
 import {
-  CalendarProvider,
   Categories_Recurrence,
-  CompassEventStatus,
-  CompassThisEvent,
+  EventStatus,
   RecurringEventUpdateScope,
   Schema_Event,
+  ThisEventUpdate,
 } from "@core/types/event.types";
-import { parseCompassEventDate } from "@core/util/event/event.util";
+import dayjs from "@core/util/date/dayjs";
 import { createMockBaseEvent } from "@core/util/test/ccal.event.factory";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
+import { EventDriver } from "@backend/__tests__/drivers/event.driver";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -24,8 +24,9 @@ import {
   testCompassSeries,
   testCompassSeriesInGcal,
 } from "@backend/event/classes/compass.event.parser.test.util";
-import eventService, { _getGcal } from "@backend/event/services/event.service";
+import eventService from "@backend/event/services/event.service";
 import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.processor";
+import { UserDriver } from "../../../../../__tests__/drivers/user.driver";
 
 describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
   `CompassSyncProcessor - $calendarProvider calendar: ${RecurringEventUpdateScope.THIS_EVENT} - Instance Event: `,
@@ -40,7 +41,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
       describe("Calendar: ", () => {
         describe("Basic Edits: ", () => {
           it("should update the title field of an event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await UserDriver.createGoogleAuthUser();
             const user = _user._id.toString();
             const isSomeday = false;
             const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
@@ -52,9 +53,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -96,9 +97,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
-                payload: updatedPayload as CompassThisEvent["payload"],
+                payload: updatedPayload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -158,7 +159,10 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
                 // check that the base event has not been updated in gcal
                 await expect(
-                  _getGcal(user, instanceEvent!.gRecurringEventId!),
+                  EventDriver.getGCalEvent(
+                    user,
+                    instanceEvent!.gRecurringEventId!,
+                  ),
                 ).resolves.toEqual(
                   expect.objectContaining({
                     id: instanceEvent!.gRecurringEventId,
@@ -169,7 +173,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 // check that other instances were not updated in gcal
                 await Promise.all(
                   otherInstances.map((instance) =>
-                    expect(_getGcal(user, instance.gEventId!)).resolves.toEqual(
+                    expect(
+                      EventDriver.getGCalEvent(user, instance.gEventId!),
+                    ).resolves.toEqual(
                       expect.objectContaining({
                         id: instance.gEventId,
                         summary: payload!.title,
@@ -183,7 +189,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           });
 
           it("should update the description field of an event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await UserDriver.createGoogleAuthUser();
             const user = _user._id.toString();
             const isSomeday = false;
             const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
@@ -195,9 +201,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -228,7 +234,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             // expect event to have instances
             const instances = await mongoService.event
-              .find({ user, "recurrence.eventId": event!._id.toString() })
+              .find({ user, "recurrence.eventId": event._id })
               .toArray();
 
             expect(instances).toHaveLength(10); // recurrence rule count
@@ -259,11 +265,14 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 });
 
                 // check that event exist in gcal
-                const gcalEvent = await _getGcal(user, event.gEventId!);
+                const gcalEvent = await EventDriver.getGCalEvent(
+                  user,
+                  event.gEventId!,
+                );
 
                 const gcalInstances = await Promise.all(
                   instances.map((instance) =>
-                    _getGcal(user, instance.gEventId!),
+                    EventDriver.getGCalEvent(user, instance.gEventId!),
                   ),
                 );
 
@@ -305,9 +314,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
-                payload: updatedPayload as CompassThisEvent["payload"],
+                payload: updatedPayload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -349,7 +358,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             const otherInstances = await mongoService.event
               .find({
                 user,
-                "recurrence.eventId": event!._id.toString(),
+                "recurrence.eventId": event._id,
                 _id: { $ne: instanceUpdate._id },
               })
               .toArray();
@@ -379,7 +388,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 // check that event has gcal attributes
                 expect(event).toHaveProperty("gEventId");
                 // check that event exist in gcal
-                const gcalEvent = await _getGcal(
+                const gcalEvent = await EventDriver.getGCalEvent(
                   user,
                   updatedInstance!.gEventId!,
                 );
@@ -395,7 +404,10 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
                 // check that the base event has not been updated in gcal
                 await expect(
-                  _getGcal(user, updatedInstance!.gRecurringEventId!),
+                  EventDriver.getGCalEvent(
+                    user,
+                    updatedInstance!.gRecurringEventId!,
+                  ),
                 ).resolves.toEqual(
                   expect.objectContaining({
                     id: updatedInstance!.gRecurringEventId,
@@ -406,7 +418,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 // check that other instances were not updated in gcal
                 await Promise.all(
                   otherInstances.map((instance) =>
-                    expect(_getGcal(user, instance.gEventId!)).resolves.toEqual(
+                    expect(
+                      EventDriver.getGCalEvent(user, instance.gEventId!),
+                    ).resolves.toEqual(
                       expect.objectContaining({
                         id: instance.gEventId,
                         description: event!.description,
@@ -420,7 +434,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           });
 
           it("should update the priority field of an event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await UserDriver.createGoogleAuthUser();
             const user = _user._id.toString();
             const isSomeday = false;
             const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
@@ -434,9 +448,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -467,7 +481,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             // expect event to have instances
             const instances = await mongoService.event
-              .find({ user, "recurrence.eventId": event!._id.toString() })
+              .find({ user, "recurrence.eventId": event._id })
               .toArray();
 
             expect(instances).toHaveLength(10); // recurrence rule count
@@ -498,11 +512,14 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 });
 
                 // check that event exist in gcal
-                const gcalEvent = await _getGcal(user, event.gEventId!);
+                const gcalEvent = await EventDriver.getGCalEvent(
+                  user,
+                  event.gEventId!,
+                );
 
                 const gcalInstances = await Promise.all(
                   instances.map((instance) =>
-                    _getGcal(user, instance.gEventId!),
+                    EventDriver.getGCalEvent(user, instance.gEventId!),
                   ),
                 );
 
@@ -544,9 +561,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
-                payload: updatedPayload as CompassThisEvent["payload"],
+                payload: updatedPayload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -588,7 +605,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             const otherInstances = await mongoService.event
               .find({
                 user,
-                "recurrence.eventId": event!._id.toString(),
+                "recurrence.eventId": event._id,
                 _id: { $ne: instanceUpdate._id },
               })
               .toArray();
@@ -618,7 +635,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 // check that event has gcal attributes
                 expect(event).toHaveProperty("gEventId");
                 // check that event exist in gcal
-                const gcalEvent = await _getGcal(
+                const gcalEvent = await EventDriver.getGCalEvent(
                   user,
                   updatedInstance!.gEventId!,
                 );
@@ -638,7 +655,10 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
                 // check that the base event has not been updated in gcal
                 await expect(
-                  _getGcal(user, updatedInstance!.gRecurringEventId!),
+                  EventDriver.getGCalEvent(
+                    user,
+                    updatedInstance!.gRecurringEventId!,
+                  ),
                 ).resolves.toEqual(
                   expect.objectContaining({
                     id: updatedInstance!.gRecurringEventId,
@@ -653,7 +673,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 // check that other instances were not updated in gcal
                 await Promise.all(
                   otherInstances.map((instance) =>
-                    expect(_getGcal(user, instance.gEventId!)).resolves.toEqual(
+                    expect(
+                      EventDriver.getGCalEvent(user, instance.gEventId!),
+                    ).resolves.toEqual(
                       expect.objectContaining({
                         id: instance.gEventId,
                         extendedProperties: expect.objectContaining({
@@ -671,7 +693,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           });
 
           it("should update the startDate field of an event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await UserDriver.createGoogleAuthUser();
             const user = _user._id.toString();
             const isSomeday = false;
             const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
@@ -683,9 +705,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -716,7 +738,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             // expect event to have instances
             const instances = await mongoService.event
-              .find({ user, "recurrence.eventId": event!._id.toString() })
+              .find({ user, "recurrence.eventId": event._id })
               .toArray();
 
             expect(instances).toHaveLength(10); // recurrence rule count
@@ -747,11 +769,14 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 });
 
                 // check that event exist in gcal
-                const gcalEvent = await _getGcal(user, event.gEventId!);
+                const gcalEvent = await EventDriver.getGCalEvent(
+                  user,
+                  event.gEventId!,
+                );
 
                 const gcalInstances = await Promise.all(
                   instances.map((instance) =>
-                    _getGcal(user, instance.gEventId!),
+                    EventDriver.getGCalEvent(user, instance.gEventId!),
                   ),
                 );
 
@@ -788,16 +813,14 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 ...instanceUpdate.recurrence!,
                 rule: event.recurrence!.rule,
               },
-              startDate: parseCompassEventDate(event.endDate!)
-                .subtract(2, "hours")
-                .toISOString(),
+              startDate: dayjs(event.endDate!).subtract(2, "hours").toDate(),
             };
 
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
-                payload: updatedPayload as CompassThisEvent["payload"],
+                payload: updatedPayload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -839,7 +862,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             const otherInstances = await mongoService.event
               .find({
                 user,
-                "recurrence.eventId": event!._id.toString(),
+                "recurrence.eventId": event._id,
                 _id: { $ne: instanceUpdate._id },
               })
               .toArray();
@@ -869,7 +892,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 // check that event has gcal attributes
                 expect(event).toHaveProperty("gEventId");
                 // check that event exist in gcal
-                const gcalEvent = await _getGcal(
+                const gcalEvent = await EventDriver.getGCalEvent(
                   user,
                   updatedInstance!.gEventId!,
                 );
@@ -887,7 +910,10 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
                 // check that the base event has not been updated in gcal
                 await expect(
-                  _getGcal(user, updatedInstance!.gRecurringEventId!),
+                  EventDriver.getGCalEvent(
+                    user,
+                    updatedInstance!.gRecurringEventId!,
+                  ),
                 ).resolves.toEqual(
                   expect.objectContaining({
                     id: updatedInstance!.gRecurringEventId,
@@ -900,7 +926,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 // check that other instances were not updated in gcal
                 await Promise.all(
                   otherInstances.map((instance) =>
-                    expect(_getGcal(user, instance.gEventId!)).resolves.toEqual(
+                    expect(
+                      EventDriver.getGCalEvent(user, instance.gEventId!),
+                    ).resolves.toEqual(
                       expect.objectContaining({
                         id: instance.gEventId,
                         start: expect.not.objectContaining({
@@ -916,7 +944,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           });
 
           it("should update the endDate field of an event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await UserDriver.createGoogleAuthUser();
             const user = _user._id.toString();
             const isSomeday = false;
             const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
@@ -928,9 +956,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -961,7 +989,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             // expect event to have instances
             const instances = await mongoService.event
-              .find({ user, "recurrence.eventId": event!._id.toString() })
+              .find({ user, "recurrence.eventId": event._id })
               .toArray();
 
             expect(instances).toHaveLength(10); // recurrence rule count
@@ -992,11 +1020,14 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 });
 
                 // check that event exist in gcal
-                const gcalEvent = await _getGcal(user, event.gEventId!);
+                const gcalEvent = await EventDriver.getGCalEvent(
+                  user,
+                  event.gEventId!,
+                );
 
                 const gcalInstances = await Promise.all(
                   instances.map((instance) =>
-                    _getGcal(user, instance.gEventId!),
+                    EventDriver.getGCalEvent(user, instance.gEventId!),
                   ),
                 );
 
@@ -1033,16 +1064,14 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 ...instanceUpdate.recurrence!,
                 rule: event.recurrence!.rule,
               },
-              endDate: parseCompassEventDate(event.startDate!)
-                .add(2, "hours")
-                .toISOString(),
+              endDate: dayjs(event.startDate!).add(2, "hours").toDate(),
             };
 
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
-                payload: updatedPayload as CompassThisEvent["payload"],
+                payload: updatedPayload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -1084,7 +1113,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             const otherInstances = await mongoService.event
               .find({
                 user,
-                "recurrence.eventId": event!._id.toString(),
+                "recurrence.eventId": event._id,
                 _id: { $ne: instanceUpdate._id },
               })
               .toArray();
@@ -1114,7 +1143,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 // check that event has gcal attributes
                 expect(event).toHaveProperty("gEventId");
                 // check that event exist in gcal
-                const gcalEvent = await _getGcal(
+                const gcalEvent = await EventDriver.getGCalEvent(
                   user,
                   updatedInstance!.gEventId!,
                 );
@@ -1132,7 +1161,10 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
                 // check that the base event has not been updated in gcal
                 await expect(
-                  _getGcal(user, updatedInstance!.gRecurringEventId!),
+                  EventDriver.getGCalEvent(
+                    user,
+                    updatedInstance!.gRecurringEventId!,
+                  ),
                 ).resolves.toEqual(
                   expect.objectContaining({
                     id: updatedInstance!.gRecurringEventId,
@@ -1145,7 +1177,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 // check that other instances were not updated in gcal
                 await Promise.all(
                   otherInstances.map((instance) =>
-                    expect(_getGcal(user, instance.gEventId!)).resolves.toEqual(
+                    expect(
+                      EventDriver.getGCalEvent(user, instance.gEventId!),
+                    ).resolves.toEqual(
                       expect.objectContaining({
                         id: instance.gEventId,
                         end: expect.not.objectContaining({
@@ -1161,7 +1195,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           });
 
           it("should not update the recurrence field of an instance event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await UserDriver.createGoogleAuthUser();
             const user = _user._id.toString();
             const isSomeday = false;
             const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
@@ -1173,9 +1207,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -1206,7 +1240,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             // expect event to have instances
             const instances = await mongoService.event
-              .find({ user, "recurrence.eventId": event!._id.toString() })
+              .find({ user, "recurrence.eventId": event._id })
               .toArray();
 
             expect(instances).toHaveLength(10); // recurrence rule count
@@ -1237,11 +1271,14 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 });
 
                 // check that event exist in gcal
-                const gcalEvent = await _getGcal(user, event.gEventId!);
+                const gcalEvent = await EventDriver.getGCalEvent(
+                  user,
+                  event.gEventId!,
+                );
 
                 const gcalInstances = await Promise.all(
                   instances.map((instance) =>
-                    _getGcal(user, instance.gEventId!),
+                    EventDriver.getGCalEvent(user, instance.gEventId!),
                   ),
                 );
 
@@ -1282,9 +1319,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
-                payload: updatedPayload as CompassThisEvent["payload"],
+                payload: updatedPayload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -1329,7 +1366,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             const otherInstances = await mongoService.event
               .find({
                 user,
-                "recurrence.eventId": event!._id.toString(),
+                "recurrence.eventId": event._id,
                 _id: { $ne: instanceUpdate._id },
               })
               .toArray();
@@ -1351,7 +1388,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 // check that event has gcal attributes
                 expect(event).toHaveProperty("gEventId");
                 // check that event exist in gcal
-                const gcalEvent = await _getGcal(
+                const gcalEvent = await EventDriver.getGCalEvent(
                   user,
                   updatedInstance!.gEventId!,
                 );
@@ -1360,7 +1397,10 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
                 // check that the base event recurrence has not been updated in gcal
                 await expect(
-                  _getGcal(user, updatedInstance!.gRecurringEventId!),
+                  EventDriver.getGCalEvent(
+                    user,
+                    updatedInstance!.gRecurringEventId!,
+                  ),
                 ).resolves.toEqual(
                   expect.objectContaining({
                     id: updatedInstance!.gRecurringEventId,
@@ -1371,7 +1411,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 // check that other instances still exists in gcal
                 await Promise.all(
                   otherInstances.map((instance) =>
-                    expect(_getGcal(user, instance.gEventId!)).resolves.toEqual(
+                    expect(
+                      EventDriver.getGCalEvent(user, instance.gEventId!),
+                    ).resolves.toEqual(
                       expect.objectContaining({ id: instance.gEventId }),
                     ),
                   ),
@@ -1384,7 +1426,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
         describe("Transition Edits: ", () => {
           it("should not update the isSomeday(to true) field of an event - to instance someday event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await UserDriver.createGoogleAuthUser();
             const user = _user._id.toString();
             const isSomeday = false;
             const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
@@ -1396,9 +1438,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -1429,7 +1471,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             // expect event to have instances
             const instances = await mongoService.event
-              .find({ user, "recurrence.eventId": event!._id.toString() })
+              .find({ user, "recurrence.eventId": event._id })
               .toArray();
 
             expect(instances).toHaveLength(10); // recurrence rule count
@@ -1458,11 +1500,14 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 });
 
                 // check that event exist in gcal
-                const gcalEvent = await _getGcal(user, event.gEventId!);
+                const gcalEvent = await EventDriver.getGCalEvent(
+                  user,
+                  event.gEventId!,
+                );
 
                 const gcalInstances = await Promise.all(
                   instances.map((instance) =>
-                    _getGcal(user, instance.gEventId!),
+                    EventDriver.getGCalEvent(user, instance.gEventId!),
                   ),
                 );
 
@@ -1504,9 +1549,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const updateChanges = CompassSyncProcessor.processEvents([
               {
-                payload: updatedPayload as CompassThisEvent["payload"],
+                payload: updatedPayload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -1520,7 +1565,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
     describe("Delete - Instance Event: ", () => {
       it("should delete a calendar event", async () => {
-        const { user: _user } = await UtilDriver.setupTestUser();
+        const _user = await UserDriver.createGoogleAuthUser();
         const user = _user._id.toString();
         const isSomeday = false;
         const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
@@ -1528,9 +1573,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
         const changes = await CompassSyncProcessor.processEvents([
           {
-            payload: payload as CompassThisEvent["payload"],
+            payload: payload as ThisEventUpdate["payload"],
             applyTo: RecurringEventUpdateScope.THIS_EVENT,
-            status: CompassEventStatus.CONFIRMED,
+            status: EventStatus.CONFIRMED,
           },
         ]);
 
@@ -1561,7 +1606,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
         // expect event to have instances
         const instances = await mongoService.event
-          .find({ user, "recurrence.eventId": event!._id.toString() })
+          .find({ user, "recurrence.eventId": event._id })
           .toArray();
 
         expect(instances).toHaveLength(10); // recurrence rule count
@@ -1592,10 +1637,15 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             });
 
             // check that event exist in gcal
-            const gcalEvent = await _getGcal(user, event.gEventId!);
+            const gcalEvent = await EventDriver.getGCalEvent(
+              user,
+              event.gEventId!,
+            );
 
             const gcalInstances = await Promise.all(
-              instances.map((instance) => _getGcal(user, instance.gEventId!)),
+              instances.map((instance) =>
+                EventDriver.getGCalEvent(user, instance.gEventId!),
+              ),
             );
 
             expect(gcalEvent).toHaveProperty("recurrence");
@@ -1635,9 +1685,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 ...deletedInstance.recurrence,
                 rule: event!.recurrence!.rule!,
               },
-            } as CompassThisEvent["payload"],
+            } as ThisEventUpdate["payload"],
             applyTo: RecurringEventUpdateScope.THIS_EVENT,
-            status: CompassEventStatus.CANCELLED,
+            status: EventStatus.CANCELLED,
           },
         ]);
 
@@ -1662,7 +1712,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
         // check that other instances still exist
         const otherInstances = await mongoService.event
-          .find({ user, "recurrence.eventId": event!._id.toString() })
+          .find({ user, "recurrence.eventId": event._id })
           .toArray();
 
         expect(otherInstances).toHaveLength(9); // 10 - 1 deleted
@@ -1679,14 +1729,17 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           case CalendarProvider.GOOGLE:
             // check that event has been deleted in gcal
             await expect(
-              _getGcal(user, deletedInstance.gEventId!),
+              EventDriver.getGCalEvent(user, deletedInstance.gEventId!),
             ).rejects.toThrow(
               new Error(`Event with id ${deletedInstance.gEventId} not found`),
             );
 
             // check that the base event has not been deleted in gcal
             await expect(
-              _getGcal(user, deletedInstance.gRecurringEventId!),
+              EventDriver.getGCalEvent(
+                user,
+                deletedInstance.gRecurringEventId!,
+              ),
             ).resolves.toEqual(
               expect.objectContaining({
                 id: deletedInstance.gRecurringEventId,
@@ -1696,7 +1749,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             // check that other instances still exist in gcal
             await Promise.all(
               otherInstances.map((instance) =>
-                expect(_getGcal(user, instance.gEventId!)).resolves.toEqual(
+                expect(
+                  EventDriver.getGCalEvent(user, instance.gEventId!),
+                ).resolves.toEqual(
                   expect.objectContaining({
                     id: instance.gEventId,
                   }),

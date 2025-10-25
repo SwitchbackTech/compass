@@ -12,7 +12,6 @@ import {
   SyncDetails,
 } from "@core/types/sync.types";
 import { IDSchemaV4 } from "@core/types/type.utils";
-import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { getBaseURL } from "@backend/servers/ngrok/ngrok.utils";
@@ -33,7 +32,7 @@ class GCalService {
   async getEvent(
     gcal: gCalendar,
     gcalEventId: string,
-    calendarId = GCAL_PRIMARY,
+    calendarId: string,
   ): Promise<gSchema$Event> {
     const response = await gcal.events.get({
       calendarId,
@@ -46,19 +45,20 @@ class GCalService {
   async createEvent(
     gcal: gCalendar,
     event: gSchema$Event,
+    gCalendarId: string,
   ): Promise<gSchema$Event> {
     const response = await gcal.events.insert({
-      calendarId: GCAL_PRIMARY,
+      calendarId: gCalendarId,
       requestBody: event,
     });
 
     return this.validateGCalResponse(response).data;
   }
 
-  async deleteEvent(gcal: gCalendar, gcalEventId: string) {
+  async deleteEvent(gcal: gCalendar, gEventId: string, gCalendarId: string) {
     const response = await gcal.events.delete({
-      calendarId: GCAL_PRIMARY,
-      eventId: gcalEventId,
+      calendarId: gCalendarId,
+      eventId: gEventId,
       sendUpdates: "all",
     });
 
@@ -212,9 +212,14 @@ class GCalService {
     return response.data;
   }
 
-  async updateEvent(gcal: gCalendar, gEventId: string, event: gSchema$Event) {
+  async updateEvent(
+    gcal: gCalendar,
+    gEventId: string,
+    event: gSchema$Event,
+    gCalendarId: string,
+  ) {
     const response = await gcal.events.update({
-      calendarId: GCAL_PRIMARY,
+      calendarId: gCalendarId,
       eventId: gEventId,
       requestBody: event,
     });

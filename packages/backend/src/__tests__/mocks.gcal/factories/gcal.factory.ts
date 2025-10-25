@@ -5,7 +5,9 @@ import type {
   MethodOptions,
   StreamMethodOptions,
 } from "googleapis/build/src/apis/calendar";
+import { faker } from "@faker-js/faker";
 import { Status } from "@core/errors/status.codes";
+import { CalendarProvider } from "@core/types/calendar.types";
 import type {
   WithGcalId,
   gSchema$CalendarList,
@@ -15,15 +17,17 @@ import type {
   gSchema$EventBase,
   gSchema$Events,
 } from "@core/types/gcal";
-import { Resource_Sync } from "@core/types/sync.types";
 import {
   isBaseGCalEvent,
   isInstanceGCalEvent,
   isRegularGCalEvent,
 } from "@core/util/event/gcal.event.util";
-import { compassTestState } from "@backend/__tests__/helpers/mock.setup";
-import { generateGcalId } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
-import { GcalEventRRule } from "@backend/event/classes/gcal.event.rrule";
+import {
+  generateGcalId,
+  mockRecurringGcalInstances,
+} from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
+import { UserDriver } from "../../drivers/user.driver";
+import { UtilDriver } from "../../drivers/util.driver";
 
 /**
  * Generates a paginated items for the Google Calendar API.
@@ -74,14 +78,50 @@ export const mockGcal = ({
 }: Config_MockGcal) => {
   const calendar = googleapis.calendar("v3");
 
+  const watch = jest.fn(
+    async (
+      {
+        auth,
+        requestBody,
+      }:
+        | calendar_v3.Params$Resource$Events$Watch
+        | calendar_v3.Params$Resource$Calendarlist$Watch,
+      options: MethodOptions = {},
+    ): GaxiosPromise<gSchema$Channel> => {
+      if (!requestBody) throw new Error("channel details not specified");
+
+      const { sub } = UserDriver.decodeGoogleRefreshToken(auth);
+      const state = UtilDriver.getUserTestState(CalendarProvider.GOOGLE, sub);
+
+      const { resourceId = faker.string.nanoid() } = requestBody;
+
+      state.channels.push(Object.assign(requestBody, { resourceId }));
+
+      return Promise.resolve({
+        config: options,
+        statusText: "OK",
+        status: 200,
+        data: requestBody,
+        headers: options.headers!,
+        request: { responseURL: requestBody!.address! },
+      });
+    },
+  );
+
   return jest.fn(() => ({
     ...calendar,
     events: {
       ...calendar.events,
       get: jest.fn(async (params: calendar_v3.Params$Resource$Events$Get) => {
-        const { eventId } = params;
-        const testState = compassTestState();
-        const { all: events } = testState.events.gcalEvents;
+        const { eventId, calendarId } = params;
+        const { sub } = UserDriver.decodeGoogleRefreshToken(params.auth);
+        const calendarTestState = UtilDriver.getCalendarTestState(
+          CalendarProvider.GOOGLE,
+          sub,
+          calendarId,
+        );
+
+        const { events } = calendarTestState;
         const event = events.find((e) => e.id === eventId);
 
         if (!event) throw new Error(`Event with id ${eventId} not found`);
@@ -97,13 +137,17 @@ export const mockGcal = ({
           params: calendar_v3.Params$Resource$Events$Insert,
           options: StreamMethodOptions = { responseType: "stream" },
         ): GaxiosPromise<gSchema$Event> => {
-          const testState = compassTestState();
-          const { all: events } = testState.events.gcalEvents;
+          const { sub } = UserDriver.decodeGoogleRefreshToken(params.auth);
+          const calendarTestState = UtilDriver.getCalendarTestState(
+            CalendarProvider.GOOGLE,
+            sub,
+            params.calendarId,
+          );
+          const { events } = calendarTestState;
           const id = params.requestBody?.id ?? generateGcalId();
           const event = { ...params.requestBody, id } as gSchema$EventBase;
           const isBase = isBaseGCalEvent(event);
-          const rrule = isBase ? new GcalEventRRule(event) : null;
-          const instances = rrule?.instances() ?? [];
+          const instances = isBase ? mockRecurringGcalInstances(event) : [];
           const newEvents = [event, ...instances];
 
           events.push(...newEvents);
@@ -123,8 +167,14 @@ export const mockGcal = ({
           params: calendar_v3.Params$Resource$Events$Patch,
           options: MethodOptions = {},
         ): GaxiosPromise<gSchema$Event> => {
-          const testState = compassTestState();
-          const { all: events } = testState.events.gcalEvents;
+          const { sub } = UserDriver.decodeGoogleRefreshToken(params.auth);
+          const calendarTestState = UtilDriver.getCalendarTestState(
+            CalendarProvider.GOOGLE,
+            sub,
+            params.calendarId,
+          );
+
+          const { events } = calendarTestState;
           const { eventId } = params;
           const eventIndex = events.findIndex((e) => e.id === eventId);
 
@@ -172,8 +222,14 @@ export const mockGcal = ({
           params: calendar_v3.Params$Resource$Events$Update,
           options: MethodOptions = {},
         ): GaxiosPromise<gSchema$Event> => {
-          const testState = compassTestState();
-          const { all: events } = testState.events.gcalEvents;
+          const { sub } = UserDriver.decodeGoogleRefreshToken(params.auth);
+          const calendarTestState = UtilDriver.getCalendarTestState(
+            CalendarProvider.GOOGLE,
+            sub,
+            params.calendarId,
+          );
+
+          const { events } = calendarTestState;
           const { eventId } = params;
           const eventIndex = events.findIndex((e) => e.id === eventId);
 
@@ -206,8 +262,9 @@ export const mockGcal = ({
           events.splice(eventIndex, 1, updatedEvent);
 
           const isBase = isBaseGCalEvent(updatedEvent);
-          const rrule = isBase ? new GcalEventRRule(updatedEvent) : null;
-          const instances = rrule?.instances() ?? [];
+          const instances = isBase
+            ? mockRecurringGcalInstances(updatedEvent)
+            : [];
 
           instances.forEach((instance) => {
             const instanceIndex = events.findIndex((e) => e.id === instance.id);
@@ -231,8 +288,14 @@ export const mockGcal = ({
       ),
       delete: jest.fn(
         async (params: calendar_v3.Params$Resource$Events$Delete) => {
-          const testState = compassTestState();
-          const { all: events } = testState.events.gcalEvents;
+          const { sub } = UserDriver.decodeGoogleRefreshToken(params.auth);
+          const calendarTestState = UtilDriver.getCalendarTestState(
+            CalendarProvider.GOOGLE,
+            sub,
+            params.calendarId,
+          );
+
+          const { events } = calendarTestState;
           const { eventId } = params;
           const eventIndex = events.findIndex((e) => e.id === eventId);
 
@@ -265,8 +328,14 @@ export const mockGcal = ({
         },
       ),
       list: jest.fn(async (params: calendar_v3.Params$Resource$Events$List) => {
-        const testState = compassTestState();
-        const { all: events } = testState.events.gcalEvents;
+        const { sub } = UserDriver.decodeGoogleRefreshToken(params.auth);
+        const calendarTestState = UtilDriver.getCalendarTestState(
+          CalendarProvider.GOOGLE,
+          sub,
+          params.calendarId,
+        );
+
+        const { events } = calendarTestState;
 
         // When singleEvents is false, only return base events and regular events - without instance events
         if (!params.singleEvents) {
@@ -308,8 +377,14 @@ export const mockGcal = ({
       }),
       instances: jest.fn(
         async (params: calendar_v3.Params$Resource$Events$Instances) => {
-          const testState = compassTestState();
-          const { all: events } = testState.events.gcalEvents;
+          const { sub } = UserDriver.decodeGoogleRefreshToken(params.auth);
+          const calendarTestState = UtilDriver.getCalendarTestState(
+            CalendarProvider.GOOGLE,
+            sub,
+            params.calendarId,
+          );
+
+          const { events } = calendarTestState;
           const { eventId: id } = params;
 
           const baseEvent = events.find((e) => e.id === id);
@@ -334,23 +409,7 @@ export const mockGcal = ({
           };
         },
       ),
-      watch: jest.fn(
-        async (
-          params: calendar_v3.Params$Resource$Events$Watch,
-          options: MethodOptions = {},
-        ): GaxiosPromise<gSchema$Channel> =>
-          Promise.resolve({
-            config: options,
-            statusText: "OK",
-            status: 200,
-            data: {
-              ...params.requestBody,
-              resourceId: params.calendarId,
-            },
-            headers: options.headers!,
-            request: { responseURL: params.requestBody!.address! },
-          }),
-      ),
+      watch,
     },
     calendarList: {
       ...calendar.calendarList,
@@ -359,7 +418,15 @@ export const mockGcal = ({
           params: calendar_v3.Params$Resource$Events$Watch = {},
           options: MethodOptions = {},
         ): GaxiosPromise<gSchema$CalendarList> => {
-          const { calendarlist } = compassTestState();
+          const { sub } = UserDriver.decodeGoogleRefreshToken(params.auth);
+          const userTestState = UtilDriver.getUserTestState(
+            CalendarProvider.GOOGLE,
+            sub,
+          );
+
+          const calendars = [...userTestState.calendars.values()].map(
+            (user) => user.calendar,
+          );
 
           return Promise.resolve({
             config: options,
@@ -368,7 +435,7 @@ export const mockGcal = ({
             headers: options.headers!,
             request: { responseURL: params.requestBody?.address ?? "" },
             data: generatePaginatedGcalItems(
-              calendarlist,
+              calendars,
               calendarListNextSyncToken,
               params.maxResults ?? pageSize,
               params.pageToken,
@@ -376,23 +443,7 @@ export const mockGcal = ({
           });
         },
       ),
-      watch: jest.fn(
-        async (
-          params: calendar_v3.Params$Resource$Calendarlist$Watch,
-          options: MethodOptions = {},
-        ): GaxiosPromise<gSchema$Channel> =>
-          Promise.resolve({
-            config: options,
-            statusText: "OK",
-            status: 200,
-            data: {
-              ...params.requestBody,
-              resourceId: Resource_Sync.CALENDAR,
-            },
-            headers: options.headers!,
-            request: { responseURL: params.requestBody!.address! },
-          }),
-      ),
+      watch,
     },
     channels: {
       ...calendar.channels,
@@ -400,15 +451,31 @@ export const mockGcal = ({
         async (
           params: calendar_v3.Params$Resource$Channels$Stop,
           options: MethodOptions = {},
-        ): GaxiosPromise<gSchema$Channel> =>
-          Promise.resolve({
+        ): GaxiosPromise<gSchema$Channel> => {
+          const { sub } = UserDriver.decodeGoogleRefreshToken(params.auth);
+          const userTestState = UtilDriver.getUserTestState(
+            CalendarProvider.GOOGLE,
+            sub,
+          );
+
+          const { id, resourceId } = params.requestBody!;
+          const index = userTestState.channels.findIndex(
+            (c) => c.id === id && c.resourceId === resourceId,
+          );
+
+          const channel = userTestState.channels[index];
+
+          if (channel) userTestState.channels.splice(index, 1);
+
+          return Promise.resolve({
             config: options,
-            statusText: "OK",
-            status: Status.NO_CONTENT,
-            data: params.requestBody as gSchema$Channel,
+            statusText: channel ? "OK" : "NOT FOUND",
+            status: channel ? Status.NO_CONTENT : Status.NOT_FOUND,
+            data: channel as gSchema$Channel,
             headers: options.headers!,
             request: { responseURL: params.requestBody!.address! },
-          }),
+          });
+        },
       ),
     },
   }));

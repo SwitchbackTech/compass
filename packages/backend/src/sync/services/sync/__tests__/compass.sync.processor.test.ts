@@ -5,8 +5,8 @@ import {
 } from "@core/constants/websocket.constants";
 import {
   Categories_Recurrence,
-  CompassEvent,
-  CompassEventStatus,
+  EventStatus,
+  EventUpdate,
   RecurringEventUpdateScope,
 } from "@core/types/event.types";
 import {
@@ -87,17 +87,17 @@ describe("CompassSyncProcessor.notifyClients", () => {
     );
 
     const applyTo = RecurringEventUpdateScope.THIS_EVENT;
-    const status = CompassEventStatus.CONFIRMED;
+    const status = EventStatus.CONFIRMED;
     const userA = faker.database.mongodbObjectId();
     const userB = faker.database.mongodbObjectId();
 
-    const events: CompassEvent[] = [
+    const events: EventUpdate[] = [
       {
         applyTo,
         status,
         payload: createMockBaseEvent({
           user: userA,
-        }) as CompassEvent["payload"],
+        }) as EventUpdate["payload"],
       },
       {
         applyTo,
@@ -105,7 +105,7 @@ describe("CompassSyncProcessor.notifyClients", () => {
         payload: createMockStandaloneEvent({
           isSomeday: true,
           user: userB,
-        }) as CompassEvent["payload"],
+        }) as EventUpdate["payload"],
       },
     ];
 

@@ -1,7 +1,6 @@
 import { GoogleCalendarMetadataSchema } from "@core/types/calendar.types";
 import { gCalendar } from "@core/types/gcal";
 import { StringV4Schema } from "@core/types/type.utils";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -10,6 +9,7 @@ import {
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { getCalendarsToSync } from "@backend/sync/services/init/sync.init";
+import { UserDriver } from "../../../__tests__/drivers/user.driver";
 
 describe("getCalendarsToSync", () => {
   beforeEach(setupTestDb);
@@ -17,8 +17,8 @@ describe("getCalendarsToSync", () => {
   afterAll(cleanupTestDb);
 
   it("returns calendars to sync for a user", async () => {
-    const { user } = await UtilDriver.setupTestUser();
-    const gcal = await getGcalClient(user._id.toString());
+    const user = await UserDriver.createGoogleAuthUser();
+    const gcal = await getGcalClient(user._id);
     const result = await getCalendarsToSync(gcal);
 
     expect(result.gCalendarIds).toEqual(
@@ -45,13 +45,13 @@ describe("getCalendarsToSync", () => {
   });
 
   it("throws when nextSyncToken is invalid", async () => {
-    const { user } = await UtilDriver.setupTestUser();
-    const gcal = await getGcalClient(user._id.toString());
+    const user = await UserDriver.createGoogleAuthUser();
+    const gcal = await getGcalClient(user._id);
     const getCalendarlist = gcalService.getCalendarlist.bind(gcalService);
     const getCalendarlistSpy = jest.spyOn(gcalService, "getCalendarlist");
 
     getCalendarlistSpy.mockImplementation(async (gcal: gCalendar) =>
-      getCalendarlist(gcal).then((res) => ({
+      getCalendarlist(gcal, { quotaUser: user._id.toString() }).then((res) => ({
         ...res,
         nextSyncToken: "",
       })),

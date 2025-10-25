@@ -1,12 +1,12 @@
 import { AnyBulkWriteOperation } from "mongodb";
-import { Schema_Event_Core } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
 import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.utils";
 
 export const assembleEventOperations = (
   userId: string,
   eventsToDelete: string[],
-  eventsToUpdate: Schema_Event_Core[],
+  eventsToUpdate: Schema_Event[],
 ) => {
   const bulkOperations: AnyBulkWriteOperation[] = [];
 
@@ -22,7 +22,7 @@ export const assembleEventOperations = (
   }
 
   if (eventsToUpdate.length > 0) {
-    eventsToUpdate.forEach((e: Schema_Event_Core) => {
+    eventsToUpdate.forEach((e: Schema_Event) => {
       bulkOperations.push({
         replaceOne: {
           filter: { gEventId: e.gEventId, user: userId },

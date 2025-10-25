@@ -1,7 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { Result_Waitlist } from "@core/types/waitlist/waitlist.types";
 import { EmailDriver } from "@backend/__tests__/drivers/email.driver";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import { WaitListDriver } from "@backend/__tests__/drivers/waitlist.driver";
 import {
   getEmailsOnWaitlist,
@@ -14,6 +13,7 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { mockEnv } from "@backend/__tests__/helpers/mock.setup";
 import WaitlistService from "@backend/waitlist/service/waitlist.service";
+import { UserDriver } from "../../__tests__/drivers/user.driver";
 
 describe("addToWaitlist", () => {
   beforeAll(setupTestDb);
@@ -47,7 +47,11 @@ describe("addToWaitlist", () => {
 
   it("should ignore if email is already on waitlist", async () => {
     // Arrange
-    const { user } = await UtilDriver.setupTestUser();
+    const user = await UserDriver.createGoogleAuthUser();
+    const waitlist = WaitListDriver.createWaitListRecord(user);
+
+    await WaitListDriver.saveWaitListRecord(waitlist);
+
     const emailSpies = EmailDriver.mockEmailServiceResponse();
 
     const record = WaitListDriver.createWaitListRecord({

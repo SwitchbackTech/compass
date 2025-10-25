@@ -1,5 +1,4 @@
 import { Categories_Recurrence } from "@core/types/event.types";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
   cleanupCollections,
@@ -8,7 +7,8 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 import { mockRegularGcalEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
-import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
+import { GcalEventsSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
+import { UserDriver } from "../../../../__tests__/drivers/user.driver";
 
 describe("GcalSyncProcessor UPSERT: STANDALONE", () => {
   beforeAll(setupTestDb);
@@ -19,7 +19,7 @@ describe("GcalSyncProcessor UPSERT: STANDALONE", () => {
 
   it("should handle CREATING a new STANDALONE event", async () => {
     /* Assemble */
-    const { user } = await UtilDriver.setupTestUser();
+    const user = await UserDriver.createGoogleAuthUser();
 
     await simulateDbAfterGcalImport(user._id.toString());
 
@@ -31,7 +31,7 @@ describe("GcalSyncProcessor UPSERT: STANDALONE", () => {
     const newStandalone = mockRegularGcalEvent({
       summary: "New Standalone Event",
     });
-    const processor = new GcalSyncProcessor(user._id.toString());
+    const processor = new GcalEventsSyncProcessor(user._id.toString());
     const changes = await processor.processEvents([newStandalone]);
 
     /* Assert */
@@ -58,7 +58,7 @@ describe("GcalSyncProcessor UPSERT: STANDALONE", () => {
 
   it("should handle UPDATING an existing STANDALONE event", async () => {
     /* Assemble */
-    const { user } = await UtilDriver.setupTestUser();
+    const user = await UserDriver.createGoogleAuthUser();
 
     const { gcalEvents } = await simulateDbAfterGcalImport(user._id.toString());
 
@@ -72,7 +72,7 @@ describe("GcalSyncProcessor UPSERT: STANDALONE", () => {
     const origEventsCount = (await getEventsInDb({ user: user._id.toString() }))
       .length;
     /* Act */
-    const processor = new GcalSyncProcessor(user._id.toString());
+    const processor = new GcalEventsSyncProcessor(user._id.toString());
     const changes = await processor.processEvents([updatedStandalone]);
 
     /* Assert */

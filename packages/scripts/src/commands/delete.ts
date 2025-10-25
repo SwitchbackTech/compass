@@ -1,24 +1,30 @@
 import pkg from "inquirer";
+import { ObjectId } from "mongodb";
+import { z } from "zod/v4";
 import { log } from "@scripts/common/cli.utils";
 import mongoService from "@backend/common/services/mongo.service";
-import { findCompassUsersBy } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
 import { Summary_Delete } from "@backend/user/types/user.types";
+import { zObjectId } from "../../../core/src/types/type.utils";
 
 const { prompt } = pkg;
 
 export const deleteCompassDataForMatchingUsers = async (user: string) => {
   log.info(`Deleting Compass data for users matching: ${user}`);
 
-  const isEmail = user.includes("@");
-  const idKeyword = isEmail ? "email" : "_id";
+  const input = z
+    .union([z.email(), zObjectId])
+    .parse(user, { error: () => `Invalid user identifier: ${user}` });
 
-  const users = await findCompassUsersBy(idKeyword, user);
+  const isId = ObjectId.isValid(input);
+  const field = isId ? "_id" : "email";
+
+  const users = await mongoService.user.find({ [field]: input }).toArray();
 
   const totalSummary: Summary_Delete[] = [];
   for (const user of users) {
-    const userId = user?._id.toString();
-    const summary = await userService.deleteCompassDataForUser(userId);
+    const summary = await userService.deleteCompassDataForUser(user._id);
+
     totalSummary.push(summary);
   }
 

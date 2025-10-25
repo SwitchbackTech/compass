@@ -4,6 +4,7 @@ import gcalService from "@backend/common/services/gcal/gcal.service";
 
 export const getCalendarsToSync = async (gcal: gCalendar) => {
   const calendarListResponse = await gcalService.getCalendarlist(gcal);
+
   const { items = [], nextPageToken } = calendarListResponse;
 
   const nextSyncToken = StringV4Schema.parse(

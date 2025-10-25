@@ -3,7 +3,6 @@ import {
   filterBaseEvents,
   filterExistingInstances,
 } from "@core/util/event/event.util";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
   cleanupCollections,
@@ -16,6 +15,7 @@ import {
   mockRecurringGcalInstances,
 } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { createSyncImport } from "@backend/sync/services/import/sync.import";
+import { UserDriver } from "../../../__tests__/drivers/user.driver";
 
 describe("SyncImport: Series", () => {
   beforeAll(setupTestDb);
@@ -26,8 +26,8 @@ describe("SyncImport: Series", () => {
 
   it("should import a series when provided a gcal base event", async () => {
     /* Assemble */
-    const { user } = await UtilDriver.setupTestUser();
-    const syncImport = await createSyncImport(user._id.toString());
+    const user = await UserDriver.createGoogleAuthUser();
+    const syncImport = await createSyncImport(user._id);
 
     const baseRecurringGcalEvent = mockRecurringGcalBaseEvent();
     const instances = mockRecurringGcalInstances(baseRecurringGcalEvent);

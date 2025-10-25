@@ -1,7 +1,7 @@
 import type { RunnableMigration } from "umzug";
 import { MigrationContext } from "@scripts/common/cli.types";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
-import { EventSchema, Schema_Event } from "@core/types/event_new.types";
+import { EventSchema, Schema_Event } from "@core/types/event.types";
 import mongoService from "@backend/common/services/mongo.service";
 
 export default class Migration implements RunnableMigration<MigrationContext> {
@@ -45,19 +45,19 @@ export default class Migration implements RunnableMigration<MigrationContext> {
     );
 
     await collection.createIndex(
-      { calendar: 1, "metadata.gRecurringEventId": 1 },
+      { calendar: 1, "metadata.recurringEventId": 1 },
       {
-        name: `${collectionName}_calendar_metadata__gRecurringEventId_index`,
+        name: `${collectionName}_calendar_metadata__recurringEventId_index`,
         sparse: true,
       },
     );
 
     await collection.createIndex(
-      { calendar: 1, "metadata.gEventId": 1 },
+      { calendar: 1, "metadata.id": 1 },
       {
-        name: `${collectionName}_calendar_metadata__gEventId_unique`,
+        name: `${collectionName}_calendar_metadata__id_unique`,
         unique: true,
-        partialFilterExpression: { "metadata.gEventId": { $exists: true } },
+        partialFilterExpression: { "metadata.id": { $exists: true } },
       },
     );
   }

@@ -12,7 +12,6 @@ import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 import { SyncControllerDriver } from "@backend/__tests__/drivers/sync.controller.driver";
 import { SyncDriver } from "@backend/__tests__/drivers/sync.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   getCategorizedEventsInDb,
   getEventsInDb,
@@ -29,6 +28,10 @@ import mongoService from "@backend/common/services/mongo.service";
 import * as syncQueries from "@backend/sync/util/sync.queries";
 import { updateSync } from "@backend/sync/util/sync.queries";
 import userService from "@backend/user/services/user.service";
+import {
+  BaseEventSchema,
+  StandaloneEventMetadataSchema,
+} from "../../../../core/src/types/event.types";
 
 describe("SyncController", () => {
   const baseDriver = new BaseDriver();
@@ -38,7 +41,7 @@ describe("SyncController", () => {
     user: WithId<Schema_User>;
     websocketClient: Socket<DefaultEventsMap, DefaultEventsMap>;
   }> {
-    const { user } = await UtilDriver.setupTestUser();
+    const user = await UserDriver.createGoogleAuthUser();
 
     const websocketClient = baseDriver.createWebsocketClient(
       { userId: user._id.toString(), sessionId: randomUUID() },
@@ -118,7 +121,7 @@ describe("SyncController", () => {
 
     it("should ignore notification when no sync token found", async () => {
       // Setup
-      const { user } = await UtilDriver.setupTestUser();
+      const user = await UserDriver.createGoogleAuthUser();
       const userId = user._id.toString();
 
       const watch = await mongoService.watch.findOne({
@@ -154,7 +157,7 @@ describe("SyncController", () => {
     });
 
     it("should cleanup stale gcal watches for unknown channels if resourceId exists", async () => {
-      const { user } = await UtilDriver.setupTestUser();
+      const user = await UserDriver.createGoogleAuthUser();
       const userId = user._id.toString();
       const calendarId = "test-calendar";
       const resource = Resource_Sync.EVENTS;
@@ -207,16 +210,14 @@ describe("SyncController", () => {
       it("should connect instances to their base events", async () => {
         const { user } = await websocketUserFlow(true);
 
-        const { baseEvents, instanceEvents } = await getCategorizedEventsInDb({
+        const { baseEvents, instances } = await getCategorizedEventsInDb({
           user: user._id.toString(),
         });
 
-        expect(instanceEvents).toHaveLength(3);
+        expect(instances).toHaveLength(3);
 
-        instanceEvents.forEach((instance) => {
-          expect(instance.recurrence?.eventId).toBe(
-            baseEvents[0]?._id?.toString(),
-          );
+        instances.forEach((instance) => {
+          expect(instance.recurrence?.eventId).toBe(baseEvents[0]?._id);
         });
       });
 
@@ -233,17 +234,22 @@ describe("SyncController", () => {
         const baseEvents = currentEventsInDb.filter(isBase);
 
         expect(baseEvents).toHaveLength(1);
-        expect(baseEvents[0]?.title).toBe("Recurrence");
+
+        const baseEvent = BaseEventSchema.parse(baseEvents[0]);
+
+        expect(baseEvent.title).toBe("Recurrence");
 
         // Verify we have the correct instance
         const instanceEvents = currentEventsInDb.filter(isInstance);
 
         expect(instanceEvents).toHaveLength(3);
 
-        const baseGevId = baseEvents[0]?.gEventId as string;
+        const baseGEventId = StandaloneEventMetadataSchema.parse(
+          baseEvent.metadata,
+        ).id;
 
-        expect(instanceEvents.map((e) => e.gEventId)).toEqual(
-          expect.arrayContaining([expect.stringMatching(baseGevId)]),
+        expect(instanceEvents.map((e) => e.metadata?.id)).toEqual(
+          expect.arrayContaining([expect.stringMatching(baseGEventId)]),
         );
 
         // Verify we have the regular event
@@ -252,7 +258,7 @@ describe("SyncController", () => {
         );
 
         expect(regularEvents).toHaveLength(1);
-        expect(regularEvents[0]?.gEventId).toBe("regular-1");
+        expect(regularEvents[0]?.metadata?.id).toBe("regular-1");
       });
 
       it("should not create duplicate events for recurring events", async () => {
@@ -268,11 +274,9 @@ describe("SyncController", () => {
         // For each instance event, verify there are no duplicates
         const eventIds = new Set<string>();
         const duplicateEvents = instances.filter((event) => {
-          if (!event.gEventId) return false; // Skip events without IDs
-          if (eventIds.has(event.gEventId)) {
-            return true;
-          }
-          eventIds.add(event.gEventId);
+          if (!event.metadata?.id) return false; // Skip events without IDs
+          if (eventIds.has(event.metadata.id)) return true;
+          eventIds.add(event.metadata.id);
           return false;
         });
 
@@ -291,7 +295,7 @@ describe("SyncController", () => {
         );
 
         expect(regularEvents).toHaveLength(1);
-        expect(regularEvents[0]?.gEventId).toBe("regular-1");
+        expect(regularEvents[0]?.metadata?.id).toBe("regular-1");
       });
 
       it("should resume import using stored nextPageToken", async () => {
@@ -367,7 +371,7 @@ describe("SyncController", () => {
           .mockResolvedValue("5");
 
         const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
-        const user = await UserDriver.createUser();
+        const user = await UserDriver.createGoogleAuthUser();
         const userId = user._id.toString();
 
         await SyncDriver.createSync(user);
@@ -412,7 +416,7 @@ describe("SyncController", () => {
           .mockResolvedValue("5");
 
         const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
-        const user = await UserDriver.createUser();
+        const user = await UserDriver.createGoogleAuthUser();
         const userId = user._id.toString();
 
         await SyncDriver.createSync(user);
@@ -457,7 +461,7 @@ describe("SyncController", () => {
           .mockResolvedValue("5");
 
         const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
-        const user = await UserDriver.createUser();
+        const user = await UserDriver.createGoogleAuthUser();
         const userId = user._id.toString();
 
         await SyncDriver.createSync(user);
@@ -499,7 +503,7 @@ describe("SyncController", () => {
 
     describe("Frontend Notifications", () => {
       it("should notify the frontend that the import has started", async () => {
-        const user = await UserDriver.createUser();
+        const user = await UserDriver.createGoogleAuthUser();
         const userId = user._id.toString();
 
         await SyncDriver.createSync(user);
@@ -527,7 +531,7 @@ describe("SyncController", () => {
       });
 
       it("should notify the frontend that the import is complete", async () => {
-        const user = await UserDriver.createUser();
+        const user = await UserDriver.createGoogleAuthUser();
         const userId = user._id.toString();
 
         await SyncDriver.createSync(user);
@@ -555,7 +559,7 @@ describe("SyncController", () => {
       });
 
       it("should notify the frontend to refetch the calendar events on completion", async () => {
-        const user = await UserDriver.createUser();
+        const user = await UserDriver.createGoogleAuthUser();
         const userId = user._id.toString();
 
         await SyncDriver.createSync(user);

@@ -2,10 +2,10 @@ import React, { KeyboardEvent, MouseEvent, useCallback, useRef } from "react";
 import "react-toastify/dist/ReactToastify.css";
 import { Key } from "ts-key-enum";
 import { Priorities } from "@core/constants/core.constants";
-import { Categories_Event } from "@core/types/event.types";
 import { darken } from "@core/util/color.utils";
 import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import {

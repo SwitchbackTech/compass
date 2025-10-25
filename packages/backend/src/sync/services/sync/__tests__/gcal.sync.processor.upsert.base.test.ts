@@ -2,7 +2,6 @@ import { Categories_Recurrence } from "@core/types/event.types";
 import { gSchema$EventBase } from "@core/types/gcal";
 import dayjs from "@core/util/date/dayjs";
 import { categorizeEvents } from "@core/util/event/event.util";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
   cleanupCollections,
@@ -22,7 +21,8 @@ import {
   instanceDataMatchCompassBase,
   instanceDataMatchesGcalBase,
 } from "@backend/sync/services/sync/__tests__/gcal.sync.processor.test.util";
-import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
+import { GcalEventsSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
+import { UserDriver } from "../../../../__tests__/drivers/user.driver";
 
 describe("GcalSyncProcessor UPSERT: BASE", () => {
   beforeAll(setupTestDb);
@@ -34,7 +34,7 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
   afterAll(cleanupTestDb);
 
   it("should handle CREATING a TIMED SERIES from a BASE", async () => {
-    const { user } = await UtilDriver.setupTestUser();
+    const user = await UserDriver.createGoogleAuthUser();
 
     await simulateDbAfterGcalImport(user._id.toString());
 
@@ -42,7 +42,7 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
 
     await simulateGoogleCalendarEventCreation(newBase);
 
-    const processor = new GcalSyncProcessor(user._id.toString());
+    const processor = new GcalEventsSyncProcessor(user._id.toString());
     const changes = await processor.processEvents([newBase]);
 
     expect(changes).toHaveLength(1);
@@ -62,7 +62,7 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
   });
 
   it("should handle CREATING an ALLDAY SERIES from a BASE", async () => {
-    const { user } = await UtilDriver.setupTestUser();
+    const user = await UserDriver.createGoogleAuthUser();
 
     await simulateDbAfterGcalImport(user._id.toString());
 
@@ -76,7 +76,7 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
 
     await simulateGoogleCalendarEventCreation(allDayBase);
 
-    const processor = new GcalSyncProcessor(user._id.toString());
+    const processor = new GcalEventsSyncProcessor(user._id.toString());
     const changes = await processor.processEvents([allDayBase]);
 
     expect(changes).toHaveLength(1);
@@ -97,7 +97,7 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
 
   it("should handle UPDATING an ALL-DAY SERIES", async () => {
     /* Assemble */
-    const { user } = await UtilDriver.setupTestUser();
+    const user = await UserDriver.createGoogleAuthUser();
 
     const { gcalEvents } = await simulateDbAfterGcalImport(
       user._id.toString(),
@@ -118,7 +118,7 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
       description: "ALL-DAY Description adjusted in Gcal",
     };
 
-    const processor = new GcalSyncProcessor(user._id.toString());
+    const processor = new GcalEventsSyncProcessor(user._id.toString());
     const changes = await processor.processEvents([updatedGcalAllDayBase]);
 
     /* Assert */
@@ -154,7 +154,7 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
 
   it("should handle UPDATING a TIMED SERIES", async () => {
     /* Assemble */
-    const { user } = await UtilDriver.setupTestUser();
+    const user = await UserDriver.createGoogleAuthUser();
 
     const { gcalEvents } = await simulateDbAfterGcalImport(user._id.toString());
 
@@ -172,7 +172,7 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
       description: "Description adjusted in Gcal",
     };
 
-    const processor = new GcalSyncProcessor(user._id.toString());
+    const processor = new GcalEventsSyncProcessor(user._id.toString());
     const changes = await processor.processEvents([updatedGcalBase]);
 
     /* Assert */

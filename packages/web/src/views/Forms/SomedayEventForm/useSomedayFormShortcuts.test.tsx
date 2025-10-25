@@ -1,6 +1,6 @@
 import { render } from "@testing-library/react";
-import { Categories_Event } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import {
   SOMEDAY_HOTKEY_OPTIONS,
   SomedayFormShortcutsProps,

@@ -1,4 +1,3 @@
-import { SessionRequest } from "supertokens-node/framework/express";
 import { z } from "zod/v4";
 import { Schema_Calendar } from "@core/types/calendar.types";
 import { zObjectId } from "@core/types/type.utils";
@@ -22,14 +21,17 @@ class CalendarController {
     }
   };
 
-  list = async (req: SessionRequest, res: Res_Promise) => {
+  list = async (
+    req: SReqBody<{ calendars: Schema_Calendar[] }>,
+    res: Res_Promise,
+  ) => {
     try {
       const userId = zObjectId.parse(req.session?.getUserId(), {
         error: () => error(AuthError.InadequatePermissions, "List Failed"),
       });
 
       // Get calendars from our database first
-      const userCalendars = await calendarService.getByUser(userId);
+      const userCalendars = await calendarService.getAllByUser(userId);
 
       res.promise({ calendars: userCalendars });
     } catch (e) {

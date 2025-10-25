@@ -1,12 +1,11 @@
 import { RRule } from "rrule";
 import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
+import { CalendarProvider } from "@core/types/calendar.types";
 import {
-  CalendarProvider,
   Categories_Recurrence,
-  CompassEvent,
-  CompassEventStatus,
-  Schema_Event_Recur_Base,
-  WithCompassId,
+  EventStatus,
+  EventUpdate,
+  Schema_Base_Event,
 } from "@core/types/event.types";
 import {
   createMockBaseEvent,
@@ -23,9 +22,9 @@ import { CompassEventParser } from "@backend/event/classes/compass.event.parser"
 import {
   testCompassEventInGcal,
   testCompassEventNotInGcal,
+  testCompassRegularEvent,
   testCompassSeries,
   testCompassSeriesInGcal,
-  testCompassStandaloneEvent,
 } from "@backend/event/classes/compass.event.parser.test.util";
 
 describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
@@ -33,12 +32,12 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
   ({ calendarProvider }) => {
     describe("Before Init", () => {
       it("should be called before accessing these public members", () => {
-        const payload = createMockBaseEvent() as CompassEvent["payload"];
+        const payload = createMockBaseEvent() as EventUpdate["payload"];
 
         const event = {
           payload,
-          status: CompassEventStatus.CONFIRMED,
-        } as CompassEvent;
+          status: EventStatus.CONFIRMED,
+        } as EventUpdate;
 
         const parser = new CompassEventParser(event);
         const developerError = GenericError.DeveloperError.description;
@@ -64,12 +63,12 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
       afterAll(cleanupTestDb);
 
       it("should initialize these members after init", async () => {
-        const payload = createMockBaseEvent() as CompassEvent["payload"];
+        const payload = createMockBaseEvent() as EventUpdate["payload"];
 
         const event = {
           payload,
-          status: CompassEventStatus.CONFIRMED,
-        } as CompassEvent;
+          status: EventStatus.CONFIRMED,
+        } as EventUpdate;
 
         const parser = new CompassEventParser(event);
         const developerError = GenericError.DeveloperError.description;
@@ -128,20 +127,20 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
         it("should create a standalone event", async () => {
           const _user = await UserDriver.createUser();
           const user = _user._id.toString();
-          const status = CompassEventStatus.CONFIRMED;
+          const status = EventStatus.CONFIRMED;
           const payload = createMockStandaloneEvent({ isSomeday: true, user });
-          const event = { payload, status } as CompassEvent;
+          const event = { payload, status } as EventUpdate;
           const parser = new CompassEventParser(event);
 
           await parser.init();
 
           await parser.createEvent();
 
-          const { standaloneEvent } = await testCompassStandaloneEvent(payload);
+          const { regularEvent } = await testCompassRegularEvent(payload);
 
           switch (calendarProvider) {
             case CalendarProvider.GOOGLE:
-              await testCompassEventNotInGcal(standaloneEvent);
+              await testCompassEventNotInGcal(regularEvent);
               break;
           }
         });
@@ -149,9 +148,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
         it("should create a base event", async () => {
           const _user = await UserDriver.createUser();
           const user = _user._id.toString();
-          const status = CompassEventStatus.CONFIRMED;
+          const status = EventStatus.CONFIRMED;
           const payload = createMockBaseEvent({ isSomeday: true, user });
-          const event = { payload, status } as CompassEvent;
+          const event = { payload, status } as EventUpdate;
           const parser = new CompassEventParser(event);
 
           await parser.init();
@@ -175,20 +174,20 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
         it("should create a standalone event", async () => {
           const _user = await UserDriver.createUser();
           const user = _user._id.toString();
-          const status = CompassEventStatus.CONFIRMED;
+          const status = EventStatus.CONFIRMED;
           const payload = createMockStandaloneEvent({ isSomeday: false, user });
-          const event = { payload, status } as CompassEvent;
+          const event = { payload, status } as EventUpdate;
           const parser = new CompassEventParser(event);
 
           await parser.init();
 
           await parser.createEvent();
 
-          const { standaloneEvent } = await testCompassStandaloneEvent(payload);
+          const { regularEvent } = await testCompassRegularEvent(payload);
 
           switch (calendarProvider) {
             case CalendarProvider.GOOGLE:
-              await testCompassEventInGcal(standaloneEvent);
+              await testCompassEventInGcal(regularEvent);
               break;
           }
         });
@@ -196,10 +195,10 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
         it("should create a base event", async () => {
           const _user = await UserDriver.createUser();
           const user = _user._id.toString();
-          const status = CompassEventStatus.CONFIRMED;
+          const status = EventStatus.CONFIRMED;
           const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
           const payload = createMockBaseEvent({ recurrence, user });
-          const event = { payload, status } as CompassEvent;
+          const event = { payload, status } as EventUpdate;
           const parser = new CompassEventParser(event);
 
           await parser.init();
@@ -220,32 +219,32 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
         it("should transition a someday standalone event to a standalone event", async () => {
           const _user = await UserDriver.createUser();
           const user = _user._id.toString();
-          const status = CompassEventStatus.CONFIRMED;
+          const status = EventStatus.CONFIRMED;
           const payload = createMockStandaloneEvent({ isSomeday: true, user });
-          const event = { payload, status } as CompassEvent;
+          const event = { payload, status } as EventUpdate;
           const parser = new CompassEventParser(event);
 
           await parser.init();
 
           await parser.createEvent();
 
-          const { standaloneEvent: somedayStandaloneEvent } =
-            await testCompassStandaloneEvent(payload);
+          const { regularEvent: somedayRegularEvent } =
+            await testCompassRegularEvent(payload);
 
           switch (calendarProvider) {
             case CalendarProvider.GOOGLE:
-              await testCompassEventNotInGcal(somedayStandaloneEvent);
+              await testCompassEventNotInGcal(somedayRegularEvent);
               break;
           }
 
           const transitionEvent = {
             payload: {
               ...payload,
-              _id: somedayStandaloneEvent._id.toString(),
+              _id: somedayRegularEvent._id.toString(),
               isSomeday: false,
             },
             status,
-          } as CompassEvent;
+          } as EventUpdate;
 
           const transitionParser = new CompassEventParser(transitionEvent);
 
@@ -253,13 +252,13 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
           await transitionParser.createEvent();
 
-          const { standaloneEvent } = await testCompassStandaloneEvent(
+          const { regularEvent } = await testCompassRegularEvent(
             transitionEvent.payload,
           );
 
           switch (calendarProvider) {
             case CalendarProvider.GOOGLE:
-              await testCompassEventInGcal(standaloneEvent);
+              await testCompassEventInGcal(regularEvent);
               break;
           }
         });
@@ -267,11 +266,11 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
         it("should transition a someday base event to a base event", async () => {
           const _user = await UserDriver.createUser();
           const user = _user._id.toString();
-          const status = CompassEventStatus.CONFIRMED;
+          const status = EventStatus.CONFIRMED;
           const isSomeday = true;
           const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
           const payload = createMockBaseEvent({ isSomeday, user, recurrence });
-          const event = { payload, status } as CompassEvent;
+          const event = { payload, status } as EventUpdate;
           const parser = new CompassEventParser(event);
 
           await parser.init();
@@ -296,7 +295,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               isSomeday: false,
             },
             status,
-          } as CompassEvent;
+          } as EventUpdate;
 
           const transitionParser = new CompassEventParser(transitionEvent);
 
@@ -305,7 +304,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           await transitionParser.createEvent();
 
           const { baseEvent } = await testCompassSeries(
-            transitionEvent.payload as WithCompassId<Schema_Event_Recur_Base>,
+            transitionEvent.payload as Schema_Base_Event,
             10,
           );
 

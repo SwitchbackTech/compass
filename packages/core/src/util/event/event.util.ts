@@ -1,53 +1,53 @@
 import { RRule } from "rrule";
 import { ParsedOptions } from "rrule/dist/esm/types";
 import {
-  Recurrence,
+  Schema_Base_Event,
   Schema_Event,
-  Schema_Event_Recur_Base,
-  Schema_Event_Recur_Instance,
+  Schema_Instance_Event,
 } from "@core/types/event.types";
 import { UserMetadata } from "@core/types/user.types";
-import dayjs, { Dayjs } from "@core/util/date/dayjs";
-import { Event_API } from "@backend/common/types/backend.event.types";
+import dayjs from "@core/util/date/dayjs";
 
 /** Event utilities for Compass events */
 
-export const categorizeEvents = (events: Array<Schema_Event | Event_API>) => {
-  const baseEvents = events.filter(isBase) as Schema_Event_Recur_Base[];
-  const instances = events.filter(isInstance) as Schema_Event_Recur_Instance[];
-  const standaloneEvents = events.filter(isRegularEvent);
-  return { baseEvents, instances, standaloneEvents };
+export const categorizeEvents = (events: Schema_Event[]) => {
+  const baseEvents = events.filter(isBase) as Schema_Base_Event[];
+  const instances = events.filter(isInstance) as Schema_Instance_Event[];
+  const regularEvents = events.filter(isRegularEvent);
+
+  return { baseEvents, instances, regularEvents };
 };
 
-export const categorizeRecurringEvents = (events: Recurrence[]) => {
-  const baseEvent = events.find(isBase) as Schema_Event_Recur_Base;
+export const categorizeRecurringEvents = (
+  events: Array<Schema_Base_Event | Schema_Instance_Event>,
+) => {
+  const baseEvent = events.find(isBase) as Schema_Base_Event;
   const instances = events.filter(
     (e) => e !== baseEvent,
-  ) as Schema_Event_Recur_Instance[];
+  ) as Schema_Instance_Event[];
   return { baseEvent, instances };
 };
 
-export const isAllDay = (
-  event: Pick<Schema_Event | Event_API, "startDate" | "endDate">,
-) =>
-  event !== undefined &&
-  // 'YYYY-MM-DD' has 10 chars
-  event.startDate?.length === 10 &&
-  event.endDate?.length === 10;
-
 /**
- * Base compass events have no `eventId` and an non-empty `rule` within their `recurrence` field
- * @param event
- * @returns
+ * isAllDay
+ *
+ * determine if an event is an all-day event
+ * this method assumes minute precision for event's time range
  */
-export const isBase = (
-  event: Pick<Schema_Event | Event_API, "recurrence">,
-): boolean => {
-  return (
-    "recurrence" in event &&
-    Array.isArray(event.recurrence?.rule) &&
-    !("eventId" in event.recurrence)
-  );
+export const isAllDay = (
+  event: Pick<Schema_Event, "startDate" | "endDate">,
+) => {
+  const start = dayjs(event.startDate);
+  const end = dayjs(event.endDate);
+  const sameDay = start.isSame(end, "day");
+  const startsAtMidnight = start.hour() === 0 && start.minute() === 0;
+  const endJustBeforeMidnight = end.hour() === 23 && end.minute() === 59;
+
+  return sameDay && startsAtMidnight && endJustBeforeMidnight;
+};
+
+export const hasRRule = (event: Pick<Schema_Event, "recurrence">): boolean => {
+  return "recurrence" in event && Array.isArray(event.recurrence?.rule);
 };
 
 /**
@@ -56,18 +56,27 @@ export const isBase = (
  * @returns
  */
 export const isInstance = (
-  event: Pick<Schema_Event | Event_API, "recurrence" | "gRecurringEventId">,
+  event: Pick<Schema_Event, "recurrence">,
 ): boolean => {
   return (
     "recurrence" in event &&
-    typeof event.recurrence === "object" &&
-    (!("rule" in event.recurrence) || event.recurrence?.rule === null) &&
+    !!event.recurrence &&
+    "eventId" in event.recurrence &&
     typeof event.recurrence?.eventId === "string"
   );
 };
 
+/**
+ * Base compass events have no `eventId` and an non-empty `rule` within their `recurrence` field
+ * @param event
+ * @returns
+ */
+export const isBase = (event: Pick<Schema_Event, "recurrence">): boolean => {
+  return hasRRule(event) && !isInstance(event);
+};
+
 export const isRegularEvent = (
-  event: Pick<Schema_Event | Event_API, "recurrence">,
+  event: Pick<Schema_Event, "recurrence">,
 ): boolean => !isInstance(event) && !isBase(event);
 
 /**
@@ -75,10 +84,8 @@ export const isRegularEvent = (
  * @param e - The events array
  * @returns The base events
  */
-export const filterBaseEvents = (
-  e: Array<Schema_Event | Event_API>,
-): Schema_Event_Recur_Base[] => {
-  return e.filter(isBase) as Schema_Event_Recur_Base[];
+export const filterBaseEvents = (e: Schema_Event[]): Schema_Base_Event[] => {
+  return e.filter(isBase) as Schema_Base_Event[];
 };
 
 /**
@@ -86,8 +93,8 @@ export const filterBaseEvents = (
  * @param e - The events array
  * @returns The recurring events (base or instance)
  */
-export const filterExistingInstances = (e: Array<Schema_Event | Event_API>) =>
-  e.filter(isInstance) as Schema_Event_Recur_Instance[];
+export const filterExistingInstances = (e: Schema_Event[]) =>
+  e.filter(isInstance) as Schema_Instance_Event[];
 
 export const shouldImportGCal = (metadata: UserMetadata): boolean => {
   const sync = metadata.sync;
@@ -101,27 +108,6 @@ export const shouldImportGCal = (metadata: UserMetadata): boolean => {
     default:
       return true;
   }
-};
-
-export const getCompassEventDateFormat = (
-  date: Exclude<Schema_Event["startDate"], undefined>,
-): string => {
-  const allday = isAllDay({ startDate: date, endDate: date });
-  const { YEAR_MONTH_DAY_FORMAT, RFC3339_OFFSET } = dayjs.DateFormat;
-  const format = allday ? YEAR_MONTH_DAY_FORMAT : RFC3339_OFFSET;
-
-  return format;
-};
-
-export const parseCompassEventDate = (
-  date: Exclude<Schema_Event["startDate"], undefined>,
-): Dayjs => {
-  if (!date) throw new Error("`date` or `dateTime` must be defined");
-
-  const format = getCompassEventDateFormat(date);
-  const timezone = dayjs.tz.guess();
-
-  return dayjs(date, format).tz(timezone);
 };
 
 export const diffRRuleOptions = (

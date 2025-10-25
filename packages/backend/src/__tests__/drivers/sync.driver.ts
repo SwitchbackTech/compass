@@ -15,7 +15,7 @@ export class SyncDriver {
     defaultUser = false,
   ): Promise<void> {
     const gCalendarId = defaultUser ? "test-calendar" : faker.string.uuid();
-    const gcal = await getGcalClient(user._id.toString());
+    const gcal = await getGcalClient(user._id);
 
     await Promise.all([
       updateSync(Resource_Sync.CALENDAR, user._id.toString(), gCalendarId, {

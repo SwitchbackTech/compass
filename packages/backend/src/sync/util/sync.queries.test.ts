@@ -1,7 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { Resource_Sync } from "@core/types/sync.types";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -22,7 +21,7 @@ describe("sync.queries: ", () => {
     afterAll(cleanupTestDb);
 
     it("returns undefined when token not found", async () => {
-      const { user } = await UtilDriver.setupTestUser();
+      const user = await UserDriver.createGoogleAuthUser();
 
       await expect(
         getGCalEventsSyncPageToken(user._id.toString(), "missing-cal"),

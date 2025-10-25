@@ -28,8 +28,8 @@ import {
   SReqBody,
 } from "@backend/common/types/express.types";
 import syncService from "@backend/sync/services/sync.service";
-import { updateGoogleRefreshToken } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
+import mongoService from "../../common/services/mongo.service";
 
 const logger = Logger("app:auth.controller");
 
@@ -145,11 +145,14 @@ class AuthController {
     const cUserId = user._id.toString();
 
     if (gRefreshToken !== user.google.gRefreshToken) {
-      await updateGoogleRefreshToken(cUserId, gRefreshToken);
+      await mongoService.user.findOneAndUpdate(
+        { _id: user._id },
+        { $set: { "google.gRefreshToken": gRefreshToken } },
+      );
     }
 
     try {
-      await syncService.importIncremental(cUserId, gcal);
+      await syncService.importIncremental(user._id, gcal);
     } catch (e) {
       if (
         e instanceof Error &&
@@ -159,11 +162,11 @@ class AuthController {
           `Resyncing google data due to missing sync for user: ${cUserId}`,
         );
 
-        userService.restartGoogleCalendarSync(cUserId);
+        userService.restartGoogleCalendarSync(user._id);
       }
     }
 
-    await userService.saveTimeFor("lastLoggedInAt", cUserId);
+    await userService.updateLastLoggedInTime(user._id);
 
     return { cUserId };
   };
@@ -184,10 +187,13 @@ class AuthController {
     res.send(revokeResult);
   };
 
-  signup = async (gUser: TokenPayload, gRefreshToken: string) => {
-    const userId = await userService.initUserData(gUser, gRefreshToken);
+  signup = async (
+    gUser: TokenPayload,
+    gRefreshToken: string,
+  ): Promise<{ cUserId: string }> => {
+    const user = await userService.initUserData(gUser, gRefreshToken);
 
-    return { cUserId: userId };
+    return { cUserId: user._id.toString() };
   };
 }
 

@@ -44,7 +44,9 @@ describe("AuthController", () => {
       (userService.restartGoogleCalendarSync as jest.Mock).mockResolvedValue(
         undefined,
       );
-      (userService.saveTimeFor as jest.Mock).mockResolvedValue(undefined);
+      (userService.updateLastLoggedInTime as jest.Mock).mockResolvedValue(
+        undefined,
+      );
 
       const { cUserId } = await authController.login(
         mockUser,

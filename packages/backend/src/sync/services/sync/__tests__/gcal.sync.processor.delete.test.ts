@@ -2,7 +2,6 @@ import { RRule } from "rrule";
 import { Categories_Recurrence } from "@core/types/event.types";
 import { WithGcalId, gSchema$Event } from "@core/types/gcal";
 import { categorizeEvents } from "@core/util/event/event.util";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   getEventsInDb,
   isEventCollectionEmpty,
@@ -15,7 +14,8 @@ import {
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 import { mockRecurringGcalBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { createCompassSeriesFromGcalBase } from "@backend/sync/services/sync/__tests__/gcal.sync.processor.test.util";
-import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
+import { GcalEventsSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
+import { UserDriver } from "../../../../__tests__/drivers/user.driver";
 
 describe("GcalSyncProcessor: DELETE", () => {
   beforeAll(setupTestDb);
@@ -26,7 +26,7 @@ describe("GcalSyncProcessor: DELETE", () => {
 
   it("should delete a STANDALONE event", async () => {
     /* Assemble */
-    const { user } = await UtilDriver.setupTestUser();
+    const user = await UserDriver.createGoogleAuthUser();
 
     const { gcalEvents } = await simulateDbAfterGcalImport(user._id.toString());
 
@@ -41,7 +41,7 @@ describe("GcalSyncProcessor: DELETE", () => {
       status: "cancelled",
     } as WithGcalId<gSchema$Event>;
 
-    const processor = new GcalSyncProcessor(user._id.toString());
+    const processor = new GcalEventsSyncProcessor(user._id.toString());
     const changes = await processor.processEvents([cancelledGStandalone]);
 
     /* Assert: Should return a DELETED change */
@@ -58,9 +58,9 @@ describe("GcalSyncProcessor: DELETE", () => {
       events.map((event) => ({ ...event, _id: event._id?.toString() })),
     );
 
-    const { standaloneEvents } = categorizeEvents(remainingEvents);
+    const { regularEvents } = categorizeEvents(remainingEvents);
     const eventIsGone =
-      standaloneEvents.find((e) => e.gEventId === gStandalone.id) === undefined;
+      regularEvents.find((e) => e.gEventId === gStandalone.id) === undefined;
     expect(eventIsGone).toBe(true);
 
     // Verify no other events deleted
@@ -69,7 +69,7 @@ describe("GcalSyncProcessor: DELETE", () => {
 
   it("should delete an INSTANCE after cancelling it", async () => {
     /* Assemble */
-    const { user } = await UtilDriver.setupTestUser();
+    const user = await UserDriver.createGoogleAuthUser();
 
     const { gcalEvents, compassEvents } = await simulateDbAfterGcalImport(
       user._id.toString(),
@@ -86,7 +86,7 @@ describe("GcalSyncProcessor: DELETE", () => {
     };
 
     /* Act */
-    const processor = new GcalSyncProcessor(user._id.toString());
+    const processor = new GcalEventsSyncProcessor(user._id.toString());
 
     const changes = await processor.processEvents([
       gcalEvents.recurring,
@@ -136,7 +136,7 @@ describe("GcalSyncProcessor: DELETE", () => {
     // This scenario happens when a user updates a series that includes multiple instance exceptions
 
     /* Assemble */
-    const { user } = await UtilDriver.setupTestUser();
+    const user = await UserDriver.createGoogleAuthUser();
 
     const { gcalEvents } = await simulateDbAfterGcalImport(user._id.toString());
 
@@ -149,7 +149,7 @@ describe("GcalSyncProcessor: DELETE", () => {
     }));
 
     /* Act */
-    const processor = new GcalSyncProcessor(user._id.toString());
+    const processor = new GcalEventsSyncProcessor(user._id.toString());
 
     const changes = await processor.processEvents([
       gcalBaseEvent,
@@ -194,7 +194,7 @@ describe("GcalSyncProcessor: DELETE", () => {
   });
 
   it("should delete BASE and all INSTANCES after cancelling a BASE", async () => {
-    const { user } = await UtilDriver.setupTestUser();
+    const user = await UserDriver.createGoogleAuthUser();
 
     const gcalBaseEvent = mockRecurringGcalBaseEvent({}, false, {
       freq: RRule.DAILY,
@@ -208,7 +208,7 @@ describe("GcalSyncProcessor: DELETE", () => {
       status: "cancelled",
     };
 
-    const processor = new GcalSyncProcessor(user._id.toString());
+    const processor = new GcalEventsSyncProcessor(user._id.toString());
     const changes = await processor.processEvents([cancelledBase]);
 
     expect(changes).toHaveLength(1);

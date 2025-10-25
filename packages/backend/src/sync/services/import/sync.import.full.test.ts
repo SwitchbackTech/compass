@@ -1,5 +1,4 @@
 import { isBase, isInstance } from "@core/util/event/event.util";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   getCategorizedEventsInDb,
   getEventsInDb,
@@ -10,6 +9,7 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { createSyncImport } from "@backend/sync/services/import/sync.import";
+import { UserDriver } from "../../../__tests__/drivers/user.driver";
 
 describe("SyncImport: Full", () => {
   beforeAll(setupTestDb);
@@ -19,11 +19,11 @@ describe("SyncImport: Full", () => {
   afterAll(cleanupTestDb);
 
   it("should import the first instance of a recurring event (and the base)", async () => {
-    const { user } = await UtilDriver.setupTestUser();
-    const syncImport = await createSyncImport(user._id.toString());
+    const user = await UserDriver.createGoogleAuthUser();
+    const syncImport = await createSyncImport(user._id);
     // Importing both the bae and first instance helps us find the series recurrence rule.
     // To prevent duplicates in the UI, the GET API will not return the base event
-    await syncImport.importAllEvents(user._id.toString(), "test-calendar", 1);
+    await syncImport.importAllEvents(user._id, "test-calendar", 1);
 
     const currentEventsInDb = await getEventsInDb({
       user: user._id.toString(),
@@ -41,7 +41,7 @@ describe("SyncImport: Full", () => {
   });
 
   it("should connect instances to their base events", async () => {
-    const { user } = await UtilDriver.setupTestUser();
+    const user = await UserDriver.createGoogleAuthUser();
     const syncImport = await createSyncImport(user._id.toString());
 
     await syncImport.importAllEvents(user._id.toString(), "test-calendar", 1);
@@ -57,7 +57,7 @@ describe("SyncImport: Full", () => {
   });
 
   it("should include regular and recurring events and skip cancelled events", async () => {
-    const { user } = await UtilDriver.setupTestUser();
+    const user = await UserDriver.createGoogleAuthUser();
     const syncImport = await createSyncImport(user._id.toString());
 
     const { totalProcessed, totalChanged, nextSyncToken } =
@@ -100,7 +100,7 @@ describe("SyncImport: Full", () => {
   });
 
   it("should not create duplicate events for recurring events", async () => {
-    const { user } = await UtilDriver.setupTestUser();
+    const user = await UserDriver.createGoogleAuthUser();
     const syncImport = await createSyncImport(user._id.toString());
 
     await syncImport.importAllEvents(user._id.toString(), "test-calendar", 1);
@@ -127,7 +127,7 @@ describe("SyncImport: Full", () => {
   });
 
   it("should not create duplicate events for regular events", async () => {
-    const { user } = await UtilDriver.setupTestUser();
+    const user = await UserDriver.createGoogleAuthUser();
     const syncImport = await createSyncImport(user._id.toString());
 
     await syncImport.importAllEvents(user._id.toString(), "test-calendar", 1);

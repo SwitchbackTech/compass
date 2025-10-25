@@ -3,8 +3,8 @@ import { faker } from "@faker-js/faker";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
 import Migration from "@scripts/migrations/2025.10.18T19.43.00.new-events-collection";
 import { Origin, Priorities } from "@core/constants/core.constants";
-import { CalendarProvider } from "@core/types/event.types";
-import { EventSchema, Schema_Event } from "@core/types/event_new.types";
+import { CalendarProvider } from "@core/types/calendar.types";
+import { EventSchema, Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import {
   cleanupCollections,
@@ -69,14 +69,15 @@ describe("2025.10.18T19.43.00.new-events-collection", () => {
           key: { calendar: 1, isSomeday: 1 },
         }),
         expect.objectContaining({
-          name: `${collectionName}_calendar_metadata__gRecurringEventId_index`,
-          key: { calendar: 1, "metadata.gRecurringEventId": 1 },
+          name: `${collectionName}_calendar_metadata__recurringEventId_index`,
+          sparse: true,
+          key: { calendar: 1, "metadata.recurringEventId": 1 },
         }),
         expect.objectContaining({
-          name: `${collectionName}_calendar_metadata__gEventId_unique`,
-          key: { calendar: 1, "metadata.gEventId": 1 },
+          name: `${collectionName}_calendar_metadata__id_unique`,
+          key: { calendar: 1, "metadata.id": 1 },
           unique: true,
-          partialFilterExpression: { "metadata.gEventId": { $exists: true } },
+          partialFilterExpression: { "metadata.id": { $exists: true } },
         }),
       ]),
     );

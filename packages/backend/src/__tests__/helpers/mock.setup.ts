@@ -1,30 +1,51 @@
 import { Handler, Response } from "express";
-import { GoogleApis } from "googleapis";
+import * as GoogleAuthLibrary from "google-auth-library";
+import GoogleApis from "googleapis";
 import mergeWith, { default as mockMergeWith } from "lodash.mergewith";
 import { randomUUID } from "node:crypto";
 import { SessionRequest } from "supertokens-node/framework/express";
 import { BaseResponse } from "supertokens-node/lib/build/framework";
 import { SessionContainerInterface } from "supertokens-node/lib/build/recipe/session/types";
-import { createMockCalendarListEntry as mockCalendarListCreate } from "@core/__tests__/helpers/gcal.factory";
-import { gSchema$CalendarListEntry } from "@core/types/gcal";
+import {
+  CalendarProvider as MockCalendarProvider,
+  Schema_Calendar,
+} from "@core/types/calendar.types";
+import {
+  gSchema$CalendarListEntry,
+  gSchema$Channel,
+  gSchema$Event,
+} from "@core/types/gcal";
 import { UserMetadata } from "@core/types/user.types";
-import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
+import { MockOAuth2Client } from "@backend/__tests__/helpers/mock.google-oauth2";
 import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 import { ENV } from "@backend/common/constants/env.constants";
 import { SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
 
-export interface CompassTestState {
-  events: ReturnType<typeof mockAndCategorizeGcalEvents>;
-  calendarlist: gSchema$CalendarListEntry[];
+export interface CompassGCalCalendarTestState {
+  events: gSchema$Event[];
+  calendar: gSchema$CalendarListEntry;
 }
+
+export interface CompassGCalUserTestState {
+  calendars: Map<
+    Schema_Calendar["metadata"]["id"],
+    CompassGCalCalendarTestState
+  >;
+  channels: gSchema$Channel[];
+}
+
+export type CompassTestState = Map<
+  MockCalendarProvider,
+  Map<
+    string, // google user sub = user.googleId
+    CompassGCalUserTestState
+  >
+>;
 
 function mockCompassTestState() {
   jest.mock(
     "compass-test-state",
-    (): CompassTestState => ({
-      events: { ...mockAndCategorizeGcalEvents() },
-      calendarlist: [mockCalendarListCreate()],
-    }),
+    (): CompassTestState => new Map([[MockCalendarProvider.GOOGLE, new Map()]]),
     { virtual: true },
   );
 }
@@ -34,7 +55,8 @@ export function compassTestState(): CompassTestState {
 }
 
 function mockGoogleapis() {
-  mockModule("googleapis", (googleapis: { google: GoogleApis }) => {
+  mockModule("googleapis", (googleapis: typeof GoogleApis) => {
+    console.log("Mocking googleapis google.calendar");
     return {
       google: {
         ...googleapis.google,
@@ -44,6 +66,12 @@ function mockGoogleapis() {
       },
     };
   });
+}
+
+function mockGoogleOAuthLibrary() {
+  jest
+    .spyOn(GoogleAuthLibrary, "OAuth2Client", "get")
+    .mockReturnValue(MockOAuth2Client);
 }
 
 function mockSuperToken() {
@@ -228,5 +256,6 @@ export function mockNodeModules() {
   mockWinstonLogger();
   mockHttpLoggingMiddleware();
   mockGoogleapis();
+  mockGoogleOAuthLibrary();
   mockSuperToken();
 }

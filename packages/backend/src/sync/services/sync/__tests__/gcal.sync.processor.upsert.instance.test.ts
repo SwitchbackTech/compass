@@ -1,5 +1,4 @@
 import { Categories_Recurrence } from "@core/types/event.types";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -7,7 +6,8 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 import mongoService from "@backend/common/services/mongo.service";
-import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
+import { GcalEventsSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
+import { UserDriver } from "../../../../__tests__/drivers/user.driver";
 
 describe("GcalSyncProcessor UPSERT: INSTANCE", () => {
   beforeAll(setupTestDb);
@@ -18,7 +18,7 @@ describe("GcalSyncProcessor UPSERT: INSTANCE", () => {
 
   it("should handle UPDATING a TIMED INSTANCE", async () => {
     /* Assemble */
-    const { user } = await UtilDriver.setupTestUser();
+    const user = await UserDriver.createGoogleAuthUser();
 
     const { gcalEvents } = await simulateDbAfterGcalImport(user._id.toString());
 
@@ -33,7 +33,7 @@ describe("GcalSyncProcessor UPSERT: INSTANCE", () => {
 
     const instanceTitle = instance.summary;
 
-    const processor = new GcalSyncProcessor(user._id.toString());
+    const processor = new GcalEventsSyncProcessor(user._id.toString());
     const changes = await processor.processEvents([instance]);
 
     // Verify the correct change was detected
@@ -61,7 +61,7 @@ describe("GcalSyncProcessor UPSERT: INSTANCE", () => {
   });
 
   it("should handle UPDATING a REGULAR, BASE and TIMED INSTANCE", async () => {
-    const { user } = await UtilDriver.setupTestUser();
+    const user = await UserDriver.createGoogleAuthUser();
 
     const { gcalEvents } = await simulateDbAfterGcalImport(user._id.toString());
 
@@ -76,7 +76,7 @@ describe("GcalSyncProcessor UPSERT: INSTANCE", () => {
 
     const updatedGcalEvents = [regular, base, instance];
 
-    const processor = new GcalSyncProcessor(user._id.toString());
+    const processor = new GcalEventsSyncProcessor(user._id.toString());
     const changes = await processor.processEvents(updatedGcalEvents);
 
     expect(changes).toHaveLength(4);

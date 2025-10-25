@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import { CalendarProvider } from "@core/types/event.types";
+import { CalendarProvider } from "@core/types/calendar.types";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import {
   createMockBaseEvent,

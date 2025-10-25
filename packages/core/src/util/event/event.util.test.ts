@@ -19,12 +19,11 @@ describe("categorizeEvents", () => {
     const instance = createMockInstance(base._id, gEventId);
     const events = [base, instance, standalone];
 
-    const { baseEvents, instances, standaloneEvents } =
-      categorizeEvents(events);
+    const { baseEvents, instances, regularEvents } = categorizeEvents(events);
 
     expect(baseEvents).toEqual([base]);
     expect(instances).toEqual([instance]);
-    expect(standaloneEvents).toEqual([standalone]);
+    expect(regularEvents).toEqual([standalone]);
   });
 });
 

@@ -1,56 +1,77 @@
+import { Request } from "express";
 import { ObjectId } from "mongodb";
 import { SessionRequest } from "supertokens-node/framework/express";
-import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import {
-  CompassCoreEventSchema,
-  CompassEvent,
-  CompassEventStatus,
-  CompassThisEvent,
+  EventSchema,
+  EventStatus,
+  EventUpdate,
+  EventUpdateSchema,
   Params_DeleteMany,
-  Payload_Order,
+  PrioritiesSchema,
   RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
+import { zObjectId } from "@core/types/type.utils";
 import { Res_Promise, SReqBody } from "@backend/common/types/express.types";
 import eventService from "@backend/event/services/event.service";
 import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.processor";
+import { Schema_Calendar } from "../../../../core/src/types/calendar.types";
+import { GenericError } from "../../common/errors/generic/generic.errors";
+import { error } from "../../common/errors/handlers/error.handler";
 
 const logger = Logger("app.event.controllers.event.controller");
 
 class EventController {
-  private async processEvents(_events: CompassEvent[]) {
-    const events = _events.map((e) => ({
-      ...e,
-      payload: CompassCoreEventSchema.parse({
-        ...e.payload,
-        _id:
-          e.payload._id?.replace(`${ID_OPTIMISTIC_PREFIX}-`, "") ??
-          new ObjectId().toString(),
+  private static ReadAllQuerySchema = EventSchema.pick({
+    startDate: true,
+    endDate: true,
+    isSomeday: true,
+  })
+    .extend({ priorities: PrioritiesSchema.array().optional() })
+    .partial();
+
+  private async processEvents(_events: EventUpdate[]) {
+    const events = _events.map((e) =>
+      EventUpdateSchema.parse({
+        ...e,
+        payload: { ...e.payload, _id: e.payload._id ?? new ObjectId() },
       }),
-    })) as CompassEvent[];
+    );
 
     await CompassSyncProcessor.processEvents(events);
   }
 
   create = async (
-    req: SReqBody<CompassEvent["payload"] | CompassEvent["payload"][]>,
+    req: SReqBody<EventUpdate["payload"] | EventUpdate["payload"][]>,
     res: Res_Promise,
   ) => {
     try {
-      const { body } = req;
-      const user = req.session?.getUserId() as string;
+      const { body, calendar } = req as SReqBody<
+        EventUpdate["payload"] | EventUpdate["payload"][]
+      > & { calendar: Schema_Calendar };
 
       // Handle both single object and array cases
       const events = Array.isArray(body) ? body : [body];
 
       await this.processEvents(
-        events.map((e) => ({
-          payload: { ...e, user },
-          status: CompassEventStatus.CONFIRMED,
-          applyTo: RecurringEventUpdateScope.THIS_EVENT,
-        })) as CompassEvent[],
+        events.map((event) => {
+          const payload = EventSchema.parse(event);
+          const allowed = calendar._id.equals(payload.calendar);
+
+          if (!allowed) {
+            throw error(GenericError.BadRequest, "unknown calendar in payload");
+          }
+
+          return {
+            calendar,
+            payload,
+            providerSync: true,
+            status: EventStatus.CONFIRMED,
+            applyTo: RecurringEventUpdateScope.THIS_EVENT,
+          };
+        }),
       );
 
       res.status(Status.NO_CONTENT).send();
@@ -61,19 +82,32 @@ class EventController {
     }
   };
 
-  delete = async (req: SessionRequest, res: Res_Promise) => {
+  delete = async (
+    req: Request<
+      { calendar: string; id: string },
+      unknown,
+      unknown,
+      { applyTo?: RecurringEventUpdateScope }
+    >,
+    res: Res_Promise,
+  ) => {
     try {
-      const { query } = req;
-      const user = req.session?.getUserId() as string;
-      const _id = req.params["id"] as string;
-      const event = await eventService.readById(user, _id);
+      const { query, calendar } = req as unknown as {
+        query: { applyTo?: RecurringEventUpdateScope.THIS_EVENT };
+        calendar: Schema_Calendar;
+      };
+
+      const eventId = zObjectId.parse(req.params["id"]);
+      const payload = await eventService.readById(calendar._id, eventId);
       const applyTo = query["applyTo"] ?? RecurringEventUpdateScope.THIS_EVENT;
 
       await this.processEvents([
         {
-          payload: event as CompassThisEvent["payload"],
-          status: CompassEventStatus.CANCELLED,
-          applyTo: applyTo as RecurringEventUpdateScope.THIS_EVENT,
+          calendar,
+          payload,
+          providerSync: true,
+          status: EventStatus.CANCELLED,
+          applyTo: applyTo,
         },
       ]);
 
@@ -85,10 +119,17 @@ class EventController {
     }
   };
 
-  deleteAllByUser = async (req: SessionRequest, res: Res_Promise) => {
-    const userToRemove = req.params["userId"] as string;
+  deleteAllByUser = async (
+    req: Request<{ user: string; calendar: string }>,
+    res: Res_Promise,
+  ) => {
+    const userToRemove = zObjectId.parse(req.params.user);
     try {
-      const deleteAllRes = await eventService.deleteAllByUser(userToRemove);
+      const deleteAllRes = await eventService.deleteAllByUser(
+        userToRemove,
+        (req as unknown as { calendar: Schema_Calendar }).calendar._id,
+      );
+
       res.promise(deleteAllRes);
     } catch (e) {
       res.promise(Promise.reject(e));
@@ -96,9 +137,13 @@ class EventController {
   };
 
   deleteMany = async (req: SReqBody<Params_DeleteMany>, res: Res_Promise) => {
-    const userId = req.session?.getUserId() as string;
     try {
-      const deleteResponse = await eventService.deleteMany(userId, req.body);
+      const { calendar } = req as unknown as { calendar: Schema_Calendar };
+      const deleteResponse = await eventService.deleteMany(
+        calendar._id,
+        req.body,
+      );
+
       res.promise(deleteResponse);
     } catch (e) {
       res.promise(Promise.reject(e));
@@ -106,31 +151,48 @@ class EventController {
   };
 
   readById = async (req: SessionRequest, res: Res_Promise) => {
-    const userId = req.session?.getUserId() as string;
-    const eventId = req.params["id"] as string;
     try {
-      const response = await eventService.readById(userId, eventId);
+      const { calendar } = req as unknown as { calendar: Schema_Calendar };
+      const eventId = zObjectId.parse(req.params["id"]);
+      const response = await eventService.readById(calendar._id, eventId);
+
       res.promise(response);
     } catch (e) {
       res.promise(Promise.reject(e));
     }
   };
 
-  readAll = async (req: SessionRequest, res: Res_Promise) => {
-    const userId = req.session?.getUserId() as string;
+  readAll = async (
+    req: Request<
+      never,
+      Schema_Event[],
+      never,
+      Pick<Schema_Event, "startDate" | "endDate" | "isSomeday"> & {
+        priorities?: Schema_Event["priority"][];
+      }
+    >,
+    res: Res_Promise,
+  ) => {
     try {
-      const usersEvents = await eventService.readAll(userId, req.query);
+      const { calendar } = req as unknown as { calendar: Schema_Calendar };
+      const query = EventController.ReadAllQuerySchema.parse(req.query);
+      const usersEvents = await eventService.readAll(calendar._id, query);
+
       res.promise(usersEvents);
     } catch (e) {
       res.promise(Promise.reject(e));
     }
   };
 
-  reorder = async (req: SReqBody<Payload_Order[]>, res: Res_Promise) => {
+  reorder = async (
+    req: SReqBody<Array<Pick<Schema_Event, "_id" | "order">>>,
+    res: Res_Promise,
+  ) => {
     try {
-      const userId = req.session?.getUserId() as string;
+      const { calendar } = req as unknown as { calendar: Schema_Calendar };
       const newOrder = req.body;
-      const result = await eventService.reorder(userId, newOrder);
+      const result = await eventService.reorder(calendar._id, newOrder);
+
       res.promise(result);
     } catch (e) {
       res.promise(Promise.reject(e));
@@ -139,17 +201,22 @@ class EventController {
 
   update = async (req: SReqBody<Schema_Event>, res: Res_Promise) => {
     try {
-      const { body, query, params, session } = req;
-      const user = session?.getUserId() as string;
-      const _id = params["id"] as string;
-      const payload = { ...body, user, _id } as CompassThisEvent["payload"];
-      const applyTo = query["applyTo"] as RecurringEventUpdateScope.THIS_EVENT;
+      const { calendar, query } = req as unknown as {
+        query: { applyTo?: RecurringEventUpdateScope.THIS_EVENT };
+        calendar: Schema_Calendar;
+      };
+
+      const _id = zObjectId.parse(req.params["id"]);
+      const payload = { ...req.body, _id };
+      const applyTo = query["applyTo"] ?? RecurringEventUpdateScope.THIS_EVENT;
 
       await this.processEvents([
         {
+          calendar,
           payload,
-          status: CompassEventStatus.CONFIRMED,
-          applyTo: applyTo ?? RecurringEventUpdateScope.THIS_EVENT,
+          providerSync: true,
+          status: EventStatus.CONFIRMED,
+          applyTo,
         },
       ]);
 
