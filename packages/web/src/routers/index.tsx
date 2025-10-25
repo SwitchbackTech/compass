@@ -1,6 +1,6 @@
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { ProtectedRoute } from "@web/auth/ProtectedRoute";
-import { UserProvider } from "@web/auth/UserContext";
+import { UserProvider } from "@web/auth/UserProvider";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import SocketProvider from "@web/socket/SocketProvider";
 import { DayView } from "@web/views/Day/view/DayView";

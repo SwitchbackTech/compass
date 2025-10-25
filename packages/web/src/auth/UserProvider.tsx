@@ -2,7 +2,6 @@ import { usePostHog } from "posthog-js/react";
 import {
   ReactNode,
   createContext,
-  useContext,
   useEffect,
   useLayoutEffect,
   useState,
@@ -38,8 +37,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   // Identify user in PostHog when userId and email are available
+  // Only runs if PostHog is enabled (POSTHOG_HOST and POSTHOG_KEY are set)
   useEffect(() => {
-    if (userId && email && posthog) {
+    if (userId && email && posthog && typeof posthog.identify === "function") {
       posthog.identify(email, { email, userId });
     }
   }, [userId, email, posthog]);
@@ -53,14 +53,4 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </UserContext.Provider>
   );
-};
-
-export const useUser = () => {
-  const context = useContext(UserContext);
-
-  if (context === undefined) {
-    throw new Error("useUser must be used within a UserProvider");
-  }
-
-  return context;
 };
