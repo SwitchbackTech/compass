@@ -1,7 +1,7 @@
-import { usePostHog } from "posthog-js/react";
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthCheck } from "@web/auth/useAuthCheck";
+import { useHasCompletedSignup } from "@web/auth/useHasCompletedSignup";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { WaitlistApi } from "@web/common/apis/waitlist.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
@@ -30,7 +30,6 @@ type FlowStep = "initial" | "checkingWaitlist" | "waitlistStatusKnown";
 export const LoginView = () => {
   const emailInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-  const posthog = usePostHog();
 
   // New state for the waitlist check flow
   const [emailInput, setEmailInput] = useState("");
@@ -44,9 +43,17 @@ export const LoginView = () => {
   const [apiError, setApiError] = useState<string | null>(null);
 
   const { isAuthenticated: isAlreadyAuthenticated } = useAuthCheck();
+  const { hasCompletedSignup, markSignupCompleted } = useHasCompletedSignup();
 
   useEffect(() => {
-    if (window.location.hostname === "localhost") {
+    if (hasCompletedSignup === true) {
+      setWaitlistStatus({
+        isOnWaitlist: true,
+        isInvited: true,
+        isActive: true,
+      });
+      setFlowStep("waitlistStatusKnown");
+    } else if (window.location.hostname === "localhost") {
       setWaitlistStatus({
         isOnWaitlist: true,
         isInvited: true,
@@ -54,7 +61,7 @@ export const LoginView = () => {
       });
       setFlowStep("waitlistStatusKnown");
     }
-  }, []);
+  }, [hasCompletedSignup]);
 
   const {
     login: startLoginFlow,
@@ -62,12 +69,10 @@ export const LoginView = () => {
     loading: isGoogleLoginLoading,
   } = useGoogleLogin({
     onSuccess: async (code) => {
-      const response = await AuthApi.loginOrSignup(code);
+      await AuthApi.loginOrSignup(code);
 
-      // Identify user in PostHog with email as distinct ID
-      if (response.email && posthog) {
-        posthog.identify(response.email, { email: response.email });
-      }
+      // Set flag to track that user has completed signup
+      markSignupCompleted();
     },
     onError: (error) => {
       console.error(error);
