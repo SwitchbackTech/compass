@@ -1,10 +1,5 @@
-import React, { ReactNode } from "react";
-import {
-  OnboardingContent,
-  ProgressDot,
-  ProgressIndicator,
-  useOnboarding,
-} from ".";
+import React from "react";
+import { ProgressDot, ProgressIndicator, useOnboarding } from ".";
 
 interface Props {
   currentStep: number;
