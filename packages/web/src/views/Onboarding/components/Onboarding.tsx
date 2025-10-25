@@ -116,10 +116,15 @@ export interface OnboardingStep {
 interface Props {
   steps: OnboardingStep[];
   onComplete: (reason: "skip" | "complete") => void;
+  initialStepIndex?: number;
 }
 
-export const Onboarding: React.FC<Props> = ({ steps, onComplete }) => {
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+export const Onboarding: React.FC<Props> = ({
+  steps,
+  onComplete,
+  initialStepIndex = 0,
+}) => {
+  const [currentStepIndex, setCurrentStepIndex] = useState(initialStepIndex);
   const [isNavPrevented, setIsNavPrevented] = useState(false);
 
   const handleNext = (data?: Record<string, unknown>) => {

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useHasCompletedSignup } from "@web/auth/useHasCompletedSignup";
 import { IS_DEV } from "@web/common/constants/env.constants";
 import { useIsMobile } from "@web/common/hooks/useIsMobile";
 import {
@@ -35,6 +36,7 @@ const _OnboardingFlow: React.FC = () => {
   const navigate = useNavigate();
   const { setHideSteps } = useOnboarding();
   const isMobile = useIsMobile();
+  const { hasCompletedSignup } = useHasCompletedSignup();
 
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -195,10 +197,24 @@ const _OnboardingFlow: React.FC = () => {
     );
   }
 
+  // Determine initial step based on signup status
+  // If user has completed signup before, skip welcome screens and start at sign-in-with-google
+  const getInitialStepIndex = () => {
+    if (hasCompletedSignup) {
+      // Find the index of "sign-in-with-google" step
+      const signInStepIndex = onboardingSteps.findIndex(
+        (step) => step.id === "sign-in-with-google",
+      );
+      return signInStepIndex !== -1 ? signInStepIndex : 0;
+    }
+    return 0; // Start from beginning for new users
+  };
+
   return (
     <Onboarding
       key="main-onboarding"
       steps={onboardingSteps}
+      initialStepIndex={getInitialStepIndex()}
       onComplete={() => {
         navigate("/");
       }}
