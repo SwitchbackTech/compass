@@ -5,7 +5,7 @@ import { IS_DEV } from "@web/common/constants/env.constants";
 import { useIsMobile } from "@web/common/hooks/useIsMobile";
 import {
   useOnboarding,
-  withProvider,
+  withOnboardingProvider,
 } from "@web/views/Onboarding/components/OnboardingContext";
 import { Onboarding, OnboardingStepProps, OnboardingStepType } from "./index";
 import {
@@ -222,5 +222,5 @@ const _OnboardingFlow: React.FC = () => {
   );
 };
 
-export const OnboardingFlow = withProvider(_OnboardingFlow);
+export const OnboardingFlow = withOnboardingProvider(_OnboardingFlow);
 export default OnboardingFlow;
