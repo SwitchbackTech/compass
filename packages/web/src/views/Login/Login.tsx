@@ -5,6 +5,7 @@ import { useAuthCheck } from "@web/auth/useAuthCheck";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { WaitlistApi } from "@web/common/apis/waitlist.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { LoginAbsoluteOverflowLoader } from "@web/components/LoginAbsoluteOverflowLoader/LoginAbsoluteOverflowLoader";
 import { GoogleButton } from "@web/components/oauth/google/GoogleButton";
@@ -46,7 +47,17 @@ export const LoginView = () => {
   const { isAuthenticated: isAlreadyAuthenticated } = useAuthCheck();
 
   useEffect(() => {
-    if (window.location.hostname === "localhost") {
+    const hasCompletedSignup = localStorage.getItem(
+      STORAGE_KEYS.HAS_COMPLETED_SIGNUP,
+    );
+    if (hasCompletedSignup === "true") {
+      setWaitlistStatus({
+        isOnWaitlist: true,
+        isInvited: true,
+        isActive: true,
+      });
+      setFlowStep("waitlistStatusKnown");
+    } else if (window.location.hostname === "localhost") {
       setWaitlistStatus({
         isOnWaitlist: true,
         isInvited: true,
@@ -63,6 +74,9 @@ export const LoginView = () => {
   } = useGoogleLogin({
     onSuccess: async (code) => {
       const response = await AuthApi.loginOrSignup(code);
+
+      // Set flag to track that user has completed signup
+      localStorage.setItem(STORAGE_KEYS.HAS_COMPLETED_SIGNUP, "true");
 
       // Identify user in PostHog with email as distinct ID
       if (response.email && posthog) {

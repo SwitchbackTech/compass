@@ -50,6 +50,7 @@ describe("LoginView", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    localStorage.clear();
 
     // Default mock implementations
     mockUsePostHog.mockReturnValue({
@@ -200,7 +201,7 @@ describe("LoginView", () => {
       });
 
       // Restore original location
-      window.location = originalLocation;
+      (window as any).location = originalLocation;
     });
   });
 });
