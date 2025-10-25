@@ -24,7 +24,7 @@ export const OnTheWaitlist = () => {
           <NavLinkText>View the code (we're open source!)</NavLinkText>
         </StyledNavLink>
         <StyledNavLink
-          href="https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=ypf5Jg8tZt6Tez36"
+          href="https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ"
           target="_blank"
           rel="noreferrer"
         >
