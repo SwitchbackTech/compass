@@ -1,12 +1,14 @@
-import React, {
+import { usePostHog } from "posthog-js/react";
+import {
   ReactNode,
   createContext,
   useContext,
+  useEffect,
   useLayoutEffect,
   useState,
 } from "react";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
-import { getUserId } from "./auth.util";
+import { getUserEmail, getUserId } from "./auth.util";
 
 const UserContext = createContext<
   { isLoadingUser: boolean; userId: string } | undefined
@@ -14,13 +16,17 @@ const UserContext = createContext<
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [userId, setUserId] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(false);
+  const posthog = usePostHog();
 
   useLayoutEffect(() => {
-    const fetchUserId = async () => {
+    const fetchUserData = async () => {
       try {
         const uid = await getUserId();
+        const userEmail = await getUserEmail();
         setUserId(uid);
+        setEmail(userEmail);
       } catch (e) {
         console.error("Failed to get user because:", e);
       } finally {
@@ -28,8 +34,15 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    void fetchUserId();
+    void fetchUserData();
   }, []);
+
+  // Identify user in PostHog when userId and email are available
+  useEffect(() => {
+    if (userId && email && posthog) {
+      posthog.identify(email, { email, userId });
+    }
+  }, [userId, email, posthog]);
 
   if (isLoadingUser || userId === null) {
     return <AbsoluteOverflowLoader />;

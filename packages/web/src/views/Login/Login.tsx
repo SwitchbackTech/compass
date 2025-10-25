@@ -1,4 +1,3 @@
-import { usePostHog } from "posthog-js/react";
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthCheck } from "@web/auth/useAuthCheck";
@@ -31,7 +30,6 @@ type FlowStep = "initial" | "checkingWaitlist" | "waitlistStatusKnown";
 export const LoginView = () => {
   const emailInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-  const posthog = usePostHog();
 
   // New state for the waitlist check flow
   const [emailInput, setEmailInput] = useState("");
@@ -71,15 +69,10 @@ export const LoginView = () => {
     loading: isGoogleLoginLoading,
   } = useGoogleLogin({
     onSuccess: async (code) => {
-      const response = await AuthApi.loginOrSignup(code);
+      await AuthApi.loginOrSignup(code);
 
       // Set flag to track that user has completed signup
       markSignupCompleted();
-
-      // Identify user in PostHog with email as distinct ID
-      if (response.email && posthog) {
-        posthog.identify(response.email, { email: response.email });
-      }
     },
     onError: (error) => {
       console.error(error);

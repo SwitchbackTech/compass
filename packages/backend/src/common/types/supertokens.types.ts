@@ -9,4 +9,5 @@ export interface SupertokensAccessTokenPayload {
   parentRefreshTokenHash1: string | null;
   antiCsrfToken: string | null;
   iss: string;
+  email?: string;
 }

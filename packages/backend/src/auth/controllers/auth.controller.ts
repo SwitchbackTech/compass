@@ -116,7 +116,9 @@ class AuthController {
           : await this.signup(gUser, gRefreshToken);
 
       const sUserId = supertokens.convertToRecipeUserId(cUserId);
-      await Session.createNewSession(req, res, "public", sUserId);
+      await Session.createNewSession(req, res, "public", sUserId, {
+        email,
+      });
 
       const result: Result_Auth_Compass = {
         cUserId,
