@@ -117,7 +117,7 @@ class UserService {
 
   initUserData = async (gUser: TokenPayload, gRefreshToken: string) => {
     const cUser = await this.createUser(gUser, gRefreshToken);
-    const { userId } = cUser;
+    const { userId, email } = cUser;
 
     if (isMissingUserTagId()) {
       logger.warn(
@@ -135,7 +135,7 @@ class UserService {
 
     await eventService.createDefaultSomedays(userId);
 
-    return userId;
+    return { userId, email };
   };
 
   saveTimeFor = async (label: "lastLoggedInAt", userId: string) => {

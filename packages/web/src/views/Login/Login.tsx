@@ -1,14 +1,16 @@
+import { usePostHog } from "posthog-js/react";
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthCheck } from "@web/auth/useAuthCheck";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { WaitlistApi } from "@web/common/apis/waitlist.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { WAITLIST_URL } from "@web/common/constants/web.constants";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { LoginAbsoluteOverflowLoader } from "@web/components/LoginAbsoluteOverflowLoader/LoginAbsoluteOverflowLoader";
 import { GoogleButton } from "@web/components/oauth/google/GoogleButton";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
+import { NotOnTheWaitlist } from "./NotOnTheWaitlist";
+import { OnTheWaitlist } from "./OnTheWaitlist";
 import {
   ActionButton,
   Card,
@@ -16,15 +18,10 @@ import {
   EmailFormContainer,
   EmailInputField,
   InfoText,
-  NavLinkContainer,
-  NavLinkIcon,
-  NavLinkText,
   SignInButtonWrapper,
   StyledLogin,
   StyledLoginContainer,
-  StyledNavLink,
   Subtitle,
-  TertiaryButton,
   Title,
 } from "./styled";
 
@@ -33,6 +30,7 @@ type FlowStep = "initial" | "checkingWaitlist" | "waitlistStatusKnown";
 export const LoginView = () => {
   const emailInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const posthog = usePostHog();
 
   // New state for the waitlist check flow
   const [emailInput, setEmailInput] = useState("");
@@ -58,6 +56,27 @@ export const LoginView = () => {
     }
   }, []);
 
+  const {
+    login: startLoginFlow,
+    data: googleLoginData,
+    loading: isGoogleLoginLoading,
+  } = useGoogleLogin({
+    onSuccess: async (code) => {
+      const response = await AuthApi.loginOrSignup(code);
+
+      // Identify user in PostHog with email as distinct ID
+      if (response.email && posthog) {
+        posthog.identify(response.email, { email: response.email });
+      }
+    },
+    onError: (error) => {
+      console.error(error);
+    },
+  });
+
+  const isAuthenticating = isGoogleLoginLoading;
+  const isAuthenticated = !!googleLoginData?.code;
+
   useEffect(() => {
     if (flowStep === "initial" && emailInputRef.current) {
       emailInputRef.current.focus();
@@ -69,19 +88,6 @@ export const LoginView = () => {
       navigate(ROOT_ROUTES.ROOT);
     }
   }, [isAuthenticated, navigate]);
-
-  const {
-    login: startLoginFlow,
-    data: googleLoginData,
-    loading: isGoogleLoginLoading,
-  } = useGoogleLogin({
-    onSuccess: async (code) => {
-      await AuthApi.loginOrSignup(code);
-    },
-    onError: (error) => {
-      console.error(error);
-    },
-  });
 
   const handleCheckWaitlistSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,9 +123,6 @@ export const LoginView = () => {
     // Proceed directly to the main login flow.
     startLoginFlow();
   };
-
-  const isAuthenticating = isGoogleLoginLoading;
-  const isAuthenticated = !!googleLoginData?.code;
 
   return (
     <>
@@ -177,57 +180,11 @@ export const LoginView = () => {
             {flowStep === "waitlistStatusKnown" && waitlistStatus && (
               <>
                 {!waitlistStatus.isActive && !waitlistStatus.isOnWaitlist && (
-                  <>
-                    <InfoText>
-                      You are not on the waitlist yet. Sign up to get notified
-                      when a spot opens up!
-                    </InfoText>
-                    <TertiaryButton
-                      href={WAITLIST_URL}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Sign Up for Waitlist
-                    </TertiaryButton>
-                  </>
+                  <NotOnTheWaitlist />
                 )}
 
                 {waitlistStatus.isOnWaitlist && !waitlistStatus.isInvited && (
-                  <>
-                    <InfoText>
-                      You're on the waitlist! We're carefully reviewing
-                      applicants and will notify you once you're invited. In the
-                      meantime, you can engage with us in these ways:
-                    </InfoText>
-                    <NavLinkContainer>
-                      <StyledNavLink
-                        href="https://github.com/SwitchbackTech/compass"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <NavLinkIcon>👨‍💻</NavLinkIcon>
-                        <NavLinkText>
-                          View the code (we're open source!)
-                        </NavLinkText>
-                      </StyledNavLink>
-                      <StyledNavLink
-                        href="https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=ypf5Jg8tZt6Tez36"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <NavLinkIcon>📺</NavLinkIcon>
-                        <NavLinkText>Watch Compass on YouTube</NavLinkText>
-                      </StyledNavLink>
-                      <StyledNavLink
-                        href="https://buymeacoffee.com/tylerdane"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <NavLinkIcon>☕</NavLinkIcon>
-                        <NavLinkText>Support with a donation</NavLinkText>
-                      </StyledNavLink>
-                    </NavLinkContainer>
-                  </>
+                  <OnTheWaitlist />
                 )}
 
                 {(waitlistStatus.isActive ||
