@@ -1,8 +1,8 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useHasCompletedSignup } from "@web/auth/useHasCompletedSignup";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { SyncApi } from "@web/common/apis/sync.api";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { GoogleButton } from "@web/components/oauth/google/GoogleButton";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
@@ -17,13 +17,14 @@ export const MobileSignIn: React.FC<OnboardingStepProps> = ({
   onSkip,
 }) => {
   const navigate = useNavigate();
+  const { markSignupCompleted } = useHasCompletedSignup();
 
   const { login, loading } = useGoogleLogin({
     onSuccess: async (code) => {
       const result = await AuthApi.loginOrSignup(code);
 
       // Set flag to track that user has completed signup
-      localStorage.setItem(STORAGE_KEYS.HAS_COMPLETED_SIGNUP, "true");
+      markSignupCompleted();
 
       if (result.isNewUser) {
         // Start Google Calendar import in the background
