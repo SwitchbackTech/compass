@@ -167,9 +167,14 @@ const _OnboardingFlow: React.FC = () => {
   ];
 
   // Initially hide the steps until the user logs in
+  // For returning users, show the steps immediately
   useEffect(() => {
-    setHideSteps(true);
-  }, [setHideSteps]);
+    if (hasCompletedSignup) {
+      setHideSteps(false);
+    } else {
+      setHideSteps(true);
+    }
+  }, [setHideSteps, hasCompletedSignup]);
 
   // Show mobile flow if on mobile device
   if (isMobile) {
@@ -179,19 +184,6 @@ const _OnboardingFlow: React.FC = () => {
         steps={mobileLoginSteps}
         onComplete={() => {
           navigate("/");
-        }}
-      />
-    );
-  }
-
-  if (!showOnboarding) {
-    return (
-      <Onboarding
-        key="login-onboarding"
-        steps={loginSteps}
-        onComplete={() => {
-          setShowOnboarding(true);
-          setHideSteps(false);
         }}
       />
     );
@@ -209,6 +201,25 @@ const _OnboardingFlow: React.FC = () => {
     }
     return 0; // Start from beginning for new users
   };
+
+  // Wait for hasCompletedSignup to load before showing anything
+  if (hasCompletedSignup === null) {
+    return null;
+  }
+
+  // For returning users (hasCompletedSignup = true), skip login steps and go directly to main onboarding
+  if (!showOnboarding && !hasCompletedSignup) {
+    return (
+      <Onboarding
+        key="login-onboarding"
+        steps={loginSteps}
+        onComplete={() => {
+          setShowOnboarding(true);
+          setHideSteps(false);
+        }}
+      />
+    );
+  }
 
   return (
     <Onboarding

@@ -64,7 +64,7 @@ describe("OnboardingFlow", () => {
   });
 
   describe("Returning User Flow", () => {
-    it("shows login flow first even for returning users", () => {
+    it("skips login flow and goes directly to sign-in-with-google for returning users", () => {
       mockUseHasCompletedSignup.mockReturnValue({
         hasCompletedSignup: true,
         markSignupCompleted: jest.fn(),
@@ -72,9 +72,11 @@ describe("OnboardingFlow", () => {
 
       render(<OnboardingFlow />);
 
-      // First step should still be login/waitlist
+      // Should skip login steps and go directly to main onboarding
       expect(screen.getByTestId("onboarding")).toBeInTheDocument();
-      expect(screen.getByTestId("first-step-id")).toHaveTextContent("welcome");
+      expect(screen.getByTestId("first-step-id")).toHaveTextContent(
+        "sign-in-with-google",
+      );
     });
 
     it("calls useHasCompletedSignup to check signup status", () => {
@@ -87,6 +89,18 @@ describe("OnboardingFlow", () => {
 
       // Hook should be called to determine which step to start at
       expect(mockUseHasCompletedSignup).toHaveBeenCalled();
+    });
+
+    it("waits for hasCompletedSignup to load before rendering", () => {
+      mockUseHasCompletedSignup.mockReturnValue({
+        hasCompletedSignup: null,
+        markSignupCompleted: jest.fn(),
+      });
+
+      const { container } = render(<OnboardingFlow />);
+
+      // Should render nothing while loading
+      expect(container.firstChild).toBeNull();
     });
   });
 
