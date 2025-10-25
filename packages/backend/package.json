@@ -28,6 +28,9 @@
   "devDependencies": {
     "@faker-js/faker": "^9.6.0",
     "@ngrok/ngrok": "^1.5.1",
+    "@pollyjs/adapter-node-http": "^6.0.6",
+    "@pollyjs/core": "^6.0.6",
+    "@pollyjs/persister-fs": "^6.0.6",
     "@shelf/jest-mongodb": "^4.1.4",
     "@types/cors": "^2.8.12",
     "@types/debug": "^4.1.7",

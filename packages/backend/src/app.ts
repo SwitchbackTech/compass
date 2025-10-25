@@ -8,10 +8,12 @@ import { initNgrokServer } from "@backend/servers/ngrok/ngrok.server";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import { type Listener } from "@ngrok/ngrok";
 import { createServer, type Server } from "node:http";
+import { initPollyJsServer } from "./servers/pollyjs/pollyjs.server";
 
 const app = initExpressServer();
 const httpServer: Server = createServer(app);
 const ngrokServer = initNgrokServer(httpServer);
+const pollyJsServer = initPollyJsServer();
 
 function onClose() {
   logger.info(`Http server terminated`);
@@ -78,6 +80,7 @@ async function gracefulShutdown(): Promise<void> {
     await closeHttpServer();
     await mongoService.stop();
     await closeNGrokServer();
+    await pollyJsServer?.stop();
   } catch (error) {
     logger.error("Problems encountered while shutting down", error);
   }
