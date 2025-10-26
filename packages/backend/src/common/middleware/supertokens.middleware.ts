@@ -11,9 +11,13 @@ import {
   PORT_DEFAULT_BACKEND,
   PORT_DEFAULT_WEB,
 } from "@core/constants/core.constants";
+import { Status } from "@core/errors/status.codes";
+import { Logger } from "@core/logger/winston.logger";
 import { ENV } from "@backend/common/constants/env.constants";
 import { SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
+
+const logger = Logger("app:supertokens.middleware");
 
 export const initSupertokens = () => {
   SuperTokens.init({
@@ -32,6 +36,18 @@ export const initSupertokens = () => {
     recipeList: [
       Dashboard.init(),
       Session.init({
+        errorHandlers: {
+          onTryRefreshToken: async (message, _request, response) => {
+            logger.warn(
+              `Session expired: ${message}. User tried to refresh the session.`,
+            );
+
+            response.setStatusCode(Status.UNAUTHORIZED);
+            response.sendJSONResponse({
+              error: "Session expired. Please log in again.",
+            });
+          },
+        },
         override: {
           apis(originalImplementation) {
             return {
