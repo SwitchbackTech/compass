@@ -76,6 +76,10 @@ export const initSupertokens = () => {
 
                     webSocketServer.handleUserRefreshToken(socketId!);
 
+                    logger.debug(
+                      `Session refreshed for user ${data.sub} client.`,
+                    );
+
                     return session;
                   },
                 );
