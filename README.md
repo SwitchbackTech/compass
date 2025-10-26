@@ -31,6 +31,7 @@ The unique stuff:
 - ✍️ Display custom note-to-self
 - ☑️ Organize tasks in a Someday / Maybe list
 - ⏩ Move an event forward/back with one click
+- ☀️ Day view: see your tasks and events side-by-side
 
 Integrations:
 
@@ -52,12 +53,12 @@ Features we don't support yet:
 
 ## Next Steps
 
-✍️ [Join waitlist](https://www.compasscalendar.com/waitlist): Access to the [**hosted** version of Compass](https://app.compasscalendar.com) is currently limited to emails that have been invited from our waitlist.
+✍️ [Join waitlist](https://www.compasscalendar.com/waitlist?utm_source=github&utm_medium=referral&utm_campaign=readme): Access to the [**hosted** version of Compass](https://app.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme) is currently limited to emails that have been invited from our waitlist.
 
-📃 [Read the technical docs](https://docs.compasscalendar.com): All the info you'd need to get started, including guides on how to install, test, build, deploy, and contribute.
+📃 [Read the technical docs](https://docs.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme): All the info you'd need to get started, including guides on how to install, test, build, deploy, and contribute.
 
 🧭 Use the app. Contributors can use the full functionality of the app when running it **locally** without having to wait for a waitlist invite. See docs for setup details.
 
-📘 [Read the handbook](https://compasscalendar.notion.site/): Why Compass exists and how it fits into our loooooong-term vision.
+📘 [Read the handbook](https://compasscalendar.notion.site/?utm_source=github&utm_medium=referral&utm_campaign=readme): Why Compass exists and how it fits into our loooooong-term vision.
 
 👀 Stay in touch: [Discord](https://www.discord.gg/H3DVMnKmUd),[X (Twitter)](https://x.com/CompassCalendar), [YouTube](https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=jssXj_g9kln8Iz_w), [LinkedIn](https://www.linkedin.com/company/compass-calendar)
