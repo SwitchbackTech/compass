@@ -61,4 +61,4 @@ Features we don't support yet:
 
 📘 [Read the handbook](https://compasscalendar.notion.site/?utm_source=github&utm_medium=referral&utm_campaign=readme): Why Compass exists and how it fits into our loooooong-term vision.
 
-👀 Stay in touch: [Discord](https://www.discord.gg/H3DVMnKmUd),[X (Twitter)](https://x.com/CompassCalendar), [YouTube](https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=jssXj_g9kln8Iz_w), [LinkedIn](https://www.linkedin.com/company/compass-calendar)
+👀 Stay in touch: [Discord](https://www.discord.gg/H3DVMnKmUd), [X (Twitter)](https://x.com/CompassCalendar), [YouTube](https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=jssXj_g9kln8Iz_w), [LinkedIn](https://www.linkedin.com/company/compass-calendar)
