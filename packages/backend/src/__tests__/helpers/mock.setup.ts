@@ -110,7 +110,6 @@ function mockSuperToken() {
         }
 
         if (input?.verifySessionOptions?.sessionRequired) {
-          console.log("Invalid session detected in mock");
           throw new Error("invalid superToken session");
         }
       } catch (error) {
