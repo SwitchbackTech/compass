@@ -225,7 +225,7 @@ class WebSocketServer {
       const userContext = makeDefaultUserContextFromAPI(request);
       const sessionRecipe = SessionRecipe.getInstanceOrThrowError();
       const session = await sessionRecipe.verifySession(
-        { sessionRequired: false },
+        { sessionRequired: true },
         request,
         response,
         userContext,
@@ -237,11 +237,13 @@ class WebSocketServer {
     } catch (err) {
       const error = err as SessionError;
 
+      logger.error(error.message, error);
+
       res.writeHead(Status.UNAUTHORIZED, {
         "Content-Type": "application/json",
       });
 
-      res.end(JSON.stringify({ type: error.type, message: error.message }));
+      res.end(JSON.stringify({ type: error.type, message: "Invalid Session" }));
     }
   }
 
