@@ -12,6 +12,10 @@ interface KeyboardShortcutsConfig {
   onRestoreTask?: () => void;
   onFocusTasks?: () => void;
 
+  // Task migration
+  onMigrateForward?: () => void;
+  onMigrateBackward?: () => void;
+
   // Task navigation
   onPrevTask?: () => void;
 
@@ -46,6 +50,8 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     onCompleteTask,
     onDeleteTask,
     onRestoreTask,
+    onMigrateForward,
+    onMigrateBackward,
     onEscape,
     onFocusTasks,
     onNavigateNow,
@@ -167,6 +173,20 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
       const key = e.key.toLowerCase();
       const target = e.target as EventTarget | null;
 
+      // Handle migration shortcuts (Ctrl+Meta+Arrow) - these work even in input fields
+      if (e.ctrlKey && e.metaKey) {
+        if (key === "arrowright") {
+          e.preventDefault();
+          onMigrateForward?.();
+          return;
+        }
+        if (key === "arrowleft") {
+          e.preventDefault();
+          onMigrateBackward?.();
+          return;
+        }
+      }
+
       // Handle Cmd+Z undo shortcut separately
       if (e.metaKey && key === "z") {
         e.preventDefault();
@@ -197,7 +217,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
         handler(e);
       }
     },
-    [handlers, onRestoreTask, undoToastId],
+    [handlers, onRestoreTask, onMigrateForward, onMigrateBackward, undoToastId],
   );
 
   useEffect(() => {

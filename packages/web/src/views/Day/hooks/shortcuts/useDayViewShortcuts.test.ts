@@ -362,4 +362,130 @@ describe("useDayViewShortcuts", () => {
     expect(config.onDeleteTask).not.toHaveBeenCalled();
     expect(mockEvent.preventDefault).not.toHaveBeenCalled();
   });
+
+  describe("migration shortcuts", () => {
+    it("should call onMigrateForward when Ctrl+Meta+ArrowRight is pressed", () => {
+      const onMigrateForward = jest.fn();
+      const onMigrateBackward = jest.fn();
+      const config = {
+        ...defaultConfig,
+        onMigrateForward,
+        onMigrateBackward,
+      };
+      renderHook(() => useDayViewShortcuts(config));
+
+      const keydownHandler = mockAddEventListener.mock.calls[0][1];
+      const mockEvent = {
+        key: "ArrowRight",
+        ctrlKey: true,
+        metaKey: true,
+        preventDefault: jest.fn(),
+        target: document.createElement("div"),
+      };
+
+      keydownHandler(mockEvent);
+
+      expect(onMigrateForward).toHaveBeenCalled();
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+    });
+
+    it("should call onMigrateBackward when Ctrl+Meta+ArrowLeft is pressed", () => {
+      const onMigrateForward = jest.fn();
+      const onMigrateBackward = jest.fn();
+      const config = {
+        ...defaultConfig,
+        onMigrateForward,
+        onMigrateBackward,
+      };
+      renderHook(() => useDayViewShortcuts(config));
+
+      const keydownHandler = mockAddEventListener.mock.calls[0][1];
+      const mockEvent = {
+        key: "ArrowLeft",
+        ctrlKey: true,
+        metaKey: true,
+        preventDefault: jest.fn(),
+        target: document.createElement("div"),
+      };
+
+      keydownHandler(mockEvent);
+
+      expect(onMigrateBackward).toHaveBeenCalled();
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+    });
+
+    it("should not trigger migration when only Ctrl is pressed", () => {
+      const onMigrateForward = jest.fn();
+      const onMigrateBackward = jest.fn();
+      const config = {
+        ...defaultConfig,
+        onMigrateForward,
+        onMigrateBackward,
+      };
+      renderHook(() => useDayViewShortcuts(config));
+
+      const keydownHandler = mockAddEventListener.mock.calls[0][1];
+      const mockEvent = {
+        key: "ArrowRight",
+        ctrlKey: true,
+        metaKey: false,
+        preventDefault: jest.fn(),
+        target: document.createElement("div"),
+      };
+
+      keydownHandler(mockEvent);
+
+      expect(onMigrateForward).not.toHaveBeenCalled();
+      expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+    });
+
+    it("should not trigger migration when only Meta is pressed", () => {
+      const onMigrateForward = jest.fn();
+      const onMigrateBackward = jest.fn();
+      const config = {
+        ...defaultConfig,
+        onMigrateForward,
+        onMigrateBackward,
+      };
+      renderHook(() => useDayViewShortcuts(config));
+
+      const keydownHandler = mockAddEventListener.mock.calls[0][1];
+      const mockEvent = {
+        key: "ArrowLeft",
+        ctrlKey: false,
+        metaKey: true,
+        preventDefault: jest.fn(),
+        target: document.createElement("div"),
+      };
+
+      keydownHandler(mockEvent);
+
+      expect(onMigrateBackward).not.toHaveBeenCalled();
+      expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+    });
+
+    it("should trigger migration even when typing in input (special case)", () => {
+      const onMigrateForward = jest.fn();
+      const config = {
+        ...defaultConfig,
+        onMigrateForward,
+      };
+      renderHook(() => useDayViewShortcuts(config));
+
+      const keydownHandler = mockAddEventListener.mock.calls[0][1];
+      const input = document.createElement("input");
+      const mockEvent = {
+        key: "ArrowRight",
+        ctrlKey: true,
+        metaKey: true,
+        preventDefault: jest.fn(),
+        target: input,
+      };
+
+      keydownHandler(mockEvent);
+
+      expect(onMigrateForward).toHaveBeenCalled();
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+    });
+  });
 });
