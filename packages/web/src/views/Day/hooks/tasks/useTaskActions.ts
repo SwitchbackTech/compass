@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 import { useCallback } from "react";
 import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
-import { showMigrationToast } from "../../components/MigrationToast";
+import { showMigrationToast } from "../../components/MigrationToast/MigrationToast";
 import { showUndoDeleteToast } from "../../components/UndoToast/UndoDeleteToast";
 import { Task } from "../../task.types";
 import { sortTasksByStatus } from "../../util/sort.task";

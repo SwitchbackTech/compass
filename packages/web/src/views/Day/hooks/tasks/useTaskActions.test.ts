@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import { act, renderHook } from "@testing-library/react";
-import { showMigrationToast } from "../../components/MigrationToast";
+import { showMigrationToast } from "../../components/MigrationToast/MigrationToast";
+import { Task } from "../../task.types";
 import * as storageUtil from "../../util/storage.util";
 import { useTaskActions } from "./useTaskActions";
 
@@ -11,7 +12,7 @@ jest.mock("../../util/storage.util", () => ({
   moveTaskToDate: jest.fn(),
 }));
 
-jest.mock("../../components/MigrationToast", () => ({
+jest.mock("../../components/MigrationToast/MigrationToast", () => ({
   showMigrationToast: jest.fn(),
 }));
 
@@ -21,7 +22,7 @@ describe("useTaskActions - migration", () => {
   const mockNavigateToNextDay = jest.fn();
   const mockNavigateToPreviousDay = jest.fn();
 
-  const mockTask = {
+  const mockTask: Task = {
     id: "task-1",
     title: "Test Task",
     status: "todo",
