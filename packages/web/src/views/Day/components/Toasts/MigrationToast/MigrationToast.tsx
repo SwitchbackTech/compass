@@ -9,7 +9,7 @@ interface MigrationToastProps {
   toastId: string | number;
 }
 
-const MigrationToastComponent: React.FC<MigrationToastProps> = ({
+const MigrationToast: React.FC<MigrationToastProps> = ({
   direction,
   onNavigate,
   onUndo,
@@ -53,7 +53,7 @@ export const showMigrationToast = (
   onUndo: () => void,
 ) => {
   const toastId = toast(
-    <MigrationToastComponent
+    <MigrationToast
       direction={direction}
       onNavigate={onNavigate}
       onUndo={onUndo}
@@ -69,7 +69,7 @@ export const showMigrationToast = (
   // Update the component with the actual toast ID
   toast.update(toastId, {
     render: (
-      <MigrationToastComponent
+      <MigrationToast
         direction={direction}
         onNavigate={onNavigate}
         onUndo={onUndo}

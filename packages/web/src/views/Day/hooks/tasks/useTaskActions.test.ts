@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import { act, renderHook } from "@testing-library/react";
-import { showMigrationToast } from "../../components/MigrationToast/MigrationToast";
-import { Task, UndoOperation } from "../../task.types";
+import { showMigrationToast } from "../../components/Toasts/MigrationToast/MigrationToast";
+import { Task } from "../../task.types";
 import * as storageUtil from "../../util/storage.util";
 import { useTaskActions } from "./useTaskActions";
 
@@ -12,7 +12,7 @@ jest.mock("../../util/storage.util", () => ({
   moveTaskToDate: jest.fn(),
 }));
 
-jest.mock("../../components/MigrationToast/MigrationToast", () => ({
+jest.mock("../../components/Toasts/MigrationToast/MigrationToast", () => ({
   showMigrationToast: jest.fn(),
 }));
 
