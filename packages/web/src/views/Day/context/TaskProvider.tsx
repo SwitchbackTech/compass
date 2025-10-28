@@ -14,6 +14,7 @@ interface TaskContextValue {
   selectedTaskIndex: number;
   deletedTask: Task | null;
   undoToastId: string | number | null;
+  migrationToastId: string | number | null;
   addTask: (title: string) => Task;
   deleteTask: (taskId: string) => void;
   restoreTask: () => void;
@@ -62,6 +63,14 @@ export function TaskProvider({ children }: TaskProviderProps) {
     setDeletedTask: state.setDeletedTask,
     undoToastId: state.undoToastId,
     setUndoToastId: state.setUndoToastId,
+    migratedTask: state.migratedTask,
+    setMigratedTask: state.setMigratedTask,
+    migratedTaskDate: state.migratedTaskDate,
+    setMigratedTaskDate: state.setMigratedTaskDate,
+    migratedTaskDirection: state.migratedTaskDirection,
+    setMigratedTaskDirection: state.setMigratedTaskDirection,
+    migrationToastId: state.migrationToastId,
+    setMigrationToastId: state.setMigrationToastId,
     dateInView,
     navigateToNextDay,
     navigateToPreviousDay,
@@ -83,6 +92,7 @@ export function TaskProvider({ children }: TaskProviderProps) {
     isCancellingEdit: state.isCancellingEdit,
     deletedTask: state.deletedTask,
     undoToastId: state.undoToastId,
+    migrationToastId: state.migrationToastId,
     addTask: actions.addTask,
     deleteTask: actions.deleteTask,
     restoreTask: actions.restoreTask,

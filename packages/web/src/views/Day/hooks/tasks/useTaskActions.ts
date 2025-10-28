@@ -20,6 +20,14 @@ interface UseTaskActionsProps {
   setDeletedTask?: (task: Task | null) => void;
   undoToastId?: string | number | null;
   setUndoToastId?: (toastId: string | number | null) => void;
+  migratedTask?: Task | null;
+  setMigratedTask?: (task: Task | null) => void;
+  migratedTaskDate?: string | null;
+  setMigratedTaskDate?: (date: string | null) => void;
+  migratedTaskDirection?: "forward" | "backward" | null;
+  setMigratedTaskDirection?: (direction: "forward" | "backward" | null) => void;
+  migrationToastId?: string | number | null;
+  setMigrationToastId?: (toastId: string | number | null) => void;
   dateInView?: dayjs.Dayjs;
   navigateToNextDay?: () => void;
   navigateToPreviousDay?: () => void;
@@ -37,6 +45,14 @@ export function useTaskActions({
   setDeletedTask,
   undoToastId,
   setUndoToastId,
+  migratedTask,
+  setMigratedTask,
+  migratedTaskDate,
+  setMigratedTaskDate,
+  migratedTaskDirection,
+  setMigratedTaskDirection,
+  migrationToastId,
+  setMigrationToastId,
   dateInView,
   navigateToNextDay,
   navigateToPreviousDay,
@@ -74,18 +90,91 @@ export function useTaskActions({
     });
   };
 
+  const restoreMigratedTask = useCallback(() => {
+    if (
+      !migratedTask ||
+      !migratedTaskDate ||
+      !migratedTaskDirection ||
+      !dateInView
+    )
+      return;
+
+    const currentDateKey = getDateKey(dateInView.toDate());
+
+    // Only restore if we're still on the same date where the migration happened
+    if (currentDateKey === migratedTaskDate) {
+      // Add the task back to the list
+      setTasks((prev) => sortTasksByStatus([...prev, migratedTask]));
+
+      // Calculate the target date (where the task was migrated to)
+      const targetDate = dateInView.add(
+        migratedTaskDirection === "forward" ? 1 : -1,
+        "day",
+      );
+      const targetDateKey = getDateKey(targetDate.toDate());
+
+      // Remove the task from the target date in storage
+      const targetDateTasks = JSON.parse(
+        localStorage.getItem(targetDateKey) || "[]",
+      );
+      const updatedTargetTasks = targetDateTasks.filter(
+        (t: Task) => t.id !== migratedTask.id,
+      );
+      localStorage.setItem(targetDateKey, JSON.stringify(updatedTargetTasks));
+
+      // Restore the task to the original date in storage
+      const originalDateTasks = JSON.parse(
+        localStorage.getItem(migratedTaskDate) || "[]",
+      );
+      localStorage.setItem(
+        migratedTaskDate,
+        JSON.stringify([...originalDateTasks, migratedTask]),
+      );
+    }
+
+    // Clear the migrated task state
+    setMigratedTask?.(null);
+    setMigratedTaskDate?.(null);
+    setMigratedTaskDirection?.(null);
+    setMigrationToastId?.(null);
+  }, [
+    migratedTask,
+    migratedTaskDate,
+    migratedTaskDirection,
+    dateInView,
+    setTasks,
+    setMigratedTask,
+    setMigratedTaskDate,
+    setMigratedTaskDirection,
+    setMigrationToastId,
+  ]);
+
   const restoreTask = useCallback(() => {
-    if (!deletedTask) return;
+    // Try to restore deleted task first
+    if (deletedTask) {
+      // Add the task back to the list
+      setTasks((prev) => sortTasksByStatus([...prev, deletedTask]));
 
-    // Add the task back to the list
-    setTasks((prev) => sortTasksByStatus([...prev, deletedTask]));
+      // Clear the deleted task state
+      setDeletedTask?.(null);
 
-    // Clear the deleted task state
-    setDeletedTask?.(null);
+      // Clear the toast ID
+      setUndoToastId?.(null);
+      return;
+    }
 
-    // Clear the toast ID
-    setUndoToastId?.(null);
-  }, [deletedTask, setTasks, setDeletedTask, setUndoToastId]);
+    // Otherwise, try to restore migrated task
+    if (migratedTask) {
+      restoreMigratedTask();
+    }
+  }, [
+    deletedTask,
+    migratedTask,
+    setTasks,
+    setDeletedTask,
+    setUndoToastId,
+    restoreMigratedTask,
+  ]);
 
   const deleteTask = (taskId: string) => {
     const taskToDelete = tasks.find((task) => task.id === taskId);
@@ -210,6 +299,11 @@ export function useTaskActions({
       const taskToMigrate = tasks.find((task) => task.id === taskId);
       if (!taskToMigrate) return;
 
+      // Dismiss any existing migration toast before showing new one
+      if (migrationToastId) {
+        toast.dismiss(migrationToastId);
+      }
+
       // Calculate target date
       const currentDateKey = getDateKey(dateInView.toDate());
       const targetDate =
@@ -218,20 +312,42 @@ export function useTaskActions({
           : dateInView.subtract(1, "day");
       const targetDateKey = getDateKey(targetDate.toDate());
 
+      // Store the migrated task info for potential restoration
+      setMigratedTask?.(taskToMigrate);
+      setMigratedTaskDate?.(currentDateKey);
+      setMigratedTaskDirection?.(direction);
+
       // Move task in storage
       moveTaskToDate(taskToMigrate, currentDateKey, targetDateKey);
 
       // Remove from current view
       setTasks((prev) => prev.filter((task) => task.id !== taskId));
 
-      // Show toast with navigation option
+      // Show toast with navigation and undo options
       const onNavigate =
         direction === "forward" ? navigateToNextDay : navigateToPreviousDay;
       if (onNavigate) {
-        showMigrationToast(direction, onNavigate);
+        const toastId = showMigrationToast(
+          direction,
+          onNavigate,
+          restoreMigratedTask,
+        );
+        setMigrationToastId?.(toastId);
       }
     },
-    [tasks, dateInView, setTasks, navigateToNextDay, navigateToPreviousDay],
+    [
+      tasks,
+      dateInView,
+      setTasks,
+      navigateToNextDay,
+      navigateToPreviousDay,
+      migrationToastId,
+      setMigratedTask,
+      setMigratedTaskDate,
+      setMigratedTaskDirection,
+      setMigrationToastId,
+      restoreMigratedTask,
+    ],
   );
 
   return {

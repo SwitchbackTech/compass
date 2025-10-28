@@ -38,6 +38,7 @@ interface KeyboardShortcutsConfig {
   isEditingTask?: boolean;
   hasFocusedTask?: boolean;
   undoToastId?: string | number | null;
+  migrationToastId?: string | number | null;
 }
 
 /**
@@ -63,6 +64,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     isEditingTask,
     hasFocusedTask,
     undoToastId,
+    migrationToastId,
   } = config;
 
   // Define strongly-typed handler mapping
@@ -194,6 +196,9 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
         if (undoToastId) {
           toast.dismiss(undoToastId);
         }
+        if (migrationToastId) {
+          toast.dismiss(migrationToastId);
+        }
         return;
       }
 
@@ -217,7 +222,14 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
         handler(e);
       }
     },
-    [handlers, onRestoreTask, onMigrateForward, onMigrateBackward, undoToastId],
+    [
+      handlers,
+      onRestoreTask,
+      onMigrateForward,
+      onMigrateBackward,
+      undoToastId,
+      migrationToastId,
+    ],
   );
 
   useEffect(() => {

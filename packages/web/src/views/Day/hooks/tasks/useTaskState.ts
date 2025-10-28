@@ -17,6 +17,14 @@ export function useTaskState({
   const [isCancellingEdit, setIsCancellingEdit] = useState(false);
   const [deletedTask, setDeletedTask] = useState<Task | null>(null);
   const [undoToastId, setUndoToastId] = useState<string | number | null>(null);
+  const [migratedTask, setMigratedTask] = useState<Task | null>(null);
+  const [migratedTaskDate, setMigratedTaskDate] = useState<string | null>(null);
+  const [migratedTaskDirection, setMigratedTaskDirection] = useState<
+    "forward" | "backward" | null
+  >(null);
+  const [migrationToastId, setMigrationToastId] = useState<
+    string | number | null
+  >(null);
 
   const lastLoadedKeyRef = useRef<string | null>(null);
   const dateKey = getDateKey(currentDate);
@@ -38,6 +46,14 @@ export function useTaskState({
     setDeletedTask,
     undoToastId,
     setUndoToastId,
+    migratedTask,
+    setMigratedTask,
+    migratedTaskDate,
+    setMigratedTaskDate,
+    migratedTaskDirection,
+    setMigratedTaskDirection,
+    migrationToastId,
+    setMigrationToastId,
     lastLoadedKeyRef,
     dateKey,
   };
