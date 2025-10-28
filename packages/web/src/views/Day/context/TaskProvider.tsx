@@ -36,6 +36,7 @@ interface TaskContextValue {
   setIsCancellingEdit: (isCancelling: boolean) => void;
   toggleTaskStatus: (taskId: string) => void;
   updateTaskTitle: (taskId: string, title: string) => void;
+  migrateTask: (id: string, direction: "forward" | "backward") => void;
 }
 export const TaskContext = createContext<TaskContextValue | undefined>(
   undefined,
@@ -46,7 +47,8 @@ interface TaskProviderProps {
 }
 
 export function TaskProvider({ children }: TaskProviderProps) {
-  const { dateInView } = useDateNavigation();
+  const { dateInView, navigateToNextDay, navigateToPreviousDay } =
+    useDateNavigation();
   const state = useTaskState({ currentDate: dateInView.toDate() });
   const actions = useTaskActions({
     setTasks: state.setTasks,
@@ -60,6 +62,9 @@ export function TaskProvider({ children }: TaskProviderProps) {
     setDeletedTask: state.setDeletedTask,
     undoToastId: state.undoToastId,
     setUndoToastId: state.setUndoToastId,
+    dateInView,
+    navigateToNextDay,
+    navigateToPreviousDay,
   });
 
   useTaskEffects({
@@ -96,6 +101,7 @@ export function TaskProvider({ children }: TaskProviderProps) {
     setIsCancellingEdit: state.setIsCancellingEdit,
     toggleTaskStatus: actions.toggleTaskStatus,
     updateTaskTitle: actions.updateTaskTitle,
+    migrateTask: actions.migrateTask,
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;

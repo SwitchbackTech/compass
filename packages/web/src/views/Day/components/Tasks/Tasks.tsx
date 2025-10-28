@@ -14,6 +14,7 @@ export const Tasks = () => {
     onInputKeyDown,
     onTitleChange,
     onStatusToggle,
+    migrateTask,
   } = useTasks();
 
   return (
@@ -31,6 +32,7 @@ export const Tasks = () => {
           onInputClick={onInputClick}
           onTitleChange={onTitleChange}
           onStatusToggle={onStatusToggle}
+          onMigrate={migrateTask}
           title={editingTaskId === task.id ? editingTitle : task.title}
         />
       ))}
