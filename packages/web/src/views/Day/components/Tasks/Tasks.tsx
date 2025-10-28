@@ -1,4 +1,3 @@
-import React from "react";
 import { useTasks } from "../../hooks/tasks/useTasks";
 import { Task } from "../Task/Task";
 
