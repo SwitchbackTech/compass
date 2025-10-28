@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Task } from "../../task.types";
+import { Task, UndoOperation } from "../../task.types";
 import { getDateKey } from "../../util/storage.util";
 
 interface UseTaskStateProps {
@@ -15,16 +15,8 @@ export function useTaskState({
   const [selectedTaskIndex, setSelectedTaskIndex] = useState(-1);
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [isCancellingEdit, setIsCancellingEdit] = useState(false);
-  const [deletedTask, setDeletedTask] = useState<Task | null>(null);
+  const [undoState, setUndoState] = useState<UndoOperation | null>(null);
   const [undoToastId, setUndoToastId] = useState<string | number | null>(null);
-  const [migratedTask, setMigratedTask] = useState<Task | null>(null);
-  const [migratedTaskDate, setMigratedTaskDate] = useState<string | null>(null);
-  const [migratedTaskDirection, setMigratedTaskDirection] = useState<
-    "forward" | "backward" | null
-  >(null);
-  const [migrationToastId, setMigrationToastId] = useState<
-    string | number | null
-  >(null);
 
   const lastLoadedKeyRef = useRef<string | null>(null);
   const dateKey = getDateKey(currentDate);
@@ -42,18 +34,10 @@ export function useTaskState({
     setIsAddingTask,
     isCancellingEdit,
     setIsCancellingEdit,
-    deletedTask,
-    setDeletedTask,
+    undoState,
+    setUndoState,
     undoToastId,
     setUndoToastId,
-    migratedTask,
-    setMigratedTask,
-    migratedTaskDate,
-    setMigratedTaskDate,
-    migratedTaskDirection,
-    setMigratedTaskDirection,
-    migrationToastId,
-    setMigrationToastId,
     lastLoadedKeyRef,
     dateKey,
   };
