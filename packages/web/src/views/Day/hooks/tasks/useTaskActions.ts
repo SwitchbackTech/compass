@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
 import { showMigrationToast } from "../../components/MigrationToast/MigrationToast";
 import { showUndoDeleteToast } from "../../components/UndoToast/UndoDeleteToast";
-import { Task, UndoOperation } from "../../task.types";
+import { Task } from "../../task.types";
 import { sortTasksByStatus } from "../../util/sort.task";
 import { getDateKey, moveTaskToDate } from "../../util/storage.util";
 
@@ -16,10 +16,18 @@ interface UseTaskActionsProps {
   setEditingTaskId?: (taskId: string | null) => void;
   isCancellingEdit?: boolean;
   setIsCancellingEdit?: (isCancelling: boolean) => void;
-  undoState?: UndoOperation | null;
-  setUndoState?: (state: UndoOperation | null) => void;
+  deletedTask?: Task | null;
+  setDeletedTask?: (task: Task | null) => void;
   undoToastId?: string | number | null;
   setUndoToastId?: (toastId: string | number | null) => void;
+  migratedTask?: Task | null;
+  setMigratedTask?: (task: Task | null) => void;
+  migratedTaskDate?: string | null;
+  setMigratedTaskDate?: (date: string | null) => void;
+  migratedTaskDirection?: "forward" | "backward" | null;
+  setMigratedTaskDirection?: (direction: "forward" | "backward" | null) => void;
+  migrationToastId?: string | number | null;
+  setMigrationToastId?: (toastId: string | number | null) => void;
   dateInView?: dayjs.Dayjs;
   navigateToNextDay?: () => void;
   navigateToPreviousDay?: () => void;
@@ -33,10 +41,18 @@ export function useTaskActions({
   setEditingTaskId,
   isCancellingEdit,
   setIsCancellingEdit,
-  undoState,
-  setUndoState,
+  deletedTask,
+  setDeletedTask,
   undoToastId,
   setUndoToastId,
+  migratedTask,
+  setMigratedTask,
+  migratedTaskDate,
+  setMigratedTaskDate,
+  migratedTaskDirection,
+  setMigratedTaskDirection,
+  migrationToastId,
+  setMigrationToastId,
   dateInView,
   navigateToNextDay,
   navigateToPreviousDay,
@@ -169,18 +185,15 @@ export function useTaskActions({
       toast.dismiss(undoToastId);
     }
 
-    // Store the deleted task operation
-    setUndoState?.({
-      type: "delete",
-      task: taskToDelete,
-    });
+    // Store the deleted task for potential restoration
+    setDeletedTask?.(taskToDelete);
 
     // Remove task from the list
     setTasks((prev) => prev.filter((task) => task.id !== taskId));
 
     const toastId = showUndoDeleteToast(restoreTask);
 
-    // Store the toast ID
+    // Store the toast ID for potential dismissal
     setUndoToastId?.(toastId);
   };
 
