@@ -1,6 +1,10 @@
 import React from "react";
 import { DATA_TASK_ELEMENT_ID } from "@web/common/constants/web.constants";
+import { getMetaKey } from "@web/common/utils/shortcut/shortcut.util";
+import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { Task as TaskType } from "../../task.types";
+import { ChevronLeftIcon } from "../Icons/ChevronLeftIcon";
+import { ChevronRightIcon } from "../Icons/ChevronRightIcon";
 import { TaskCircleIcon } from "../Icons/TaskCircleIcon";
 
 interface TaskProps {
@@ -24,6 +28,7 @@ interface TaskProps {
   onStatusToggle: (id: string) => void;
   onTitleChange: (title: string) => void;
   onFocus: (index: number) => void;
+  onMigrate: (id: string, direction: "forward" | "backward") => void;
 }
 
 export const Task = ({
@@ -38,6 +43,7 @@ export const Task = ({
   onFocus,
   onCheckboxKeyDown,
   onTitleChange,
+  onMigrate,
 }: TaskProps) => {
   return (
     <div
@@ -81,6 +87,32 @@ export const Task = ({
           }
           onChange={(e) => onTitleChange(e.target.value)}
         />
+      </div>
+      {/* Migration buttons */}
+      <div className="ml-auto flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        <TooltipWrapper
+          onClick={() => onMigrate(task.id, "backward")}
+          shortcut={<>Ctrl + {getMetaKey()} + ←</>}
+        >
+          <button
+            aria-label="Move task to previous day"
+            className="flex h-6 w-6 items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white focus:ring-2 focus:ring-white/50 focus:outline-none"
+          >
+            <ChevronLeftIcon />
+          </button>
+        </TooltipWrapper>
+
+        <TooltipWrapper
+          onClick={() => onMigrate(task.id, "forward")}
+          shortcut={<>Ctrl + {getMetaKey()} + →</>}
+        >
+          <button
+            aria-label="Move task to next day"
+            className="flex h-6 w-6 items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white focus:ring-2 focus:ring-white/50 focus:outline-none"
+          >
+            <ChevronRightIcon />
+          </button>
+        </TooltipWrapper>
       </div>
     </div>
   );
