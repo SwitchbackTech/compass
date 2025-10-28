@@ -24,7 +24,6 @@ export const DayViewContent = () => {
     deleteTask,
     restoreTask,
     undoToastId,
-    migrationToastId,
   } = useTasks();
 
   const navigate = useNavigate();
@@ -119,7 +118,6 @@ export const DayViewContent = () => {
     onNavigateWeek: handleNavigateWeek,
     hasFocusedTask,
     undoToastId,
-    migrationToastId,
   });
 
   return (

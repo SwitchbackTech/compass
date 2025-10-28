@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import { act, renderHook } from "@testing-library/react";
 import { showMigrationToast } from "../../components/MigrationToast/MigrationToast";
-import { Task } from "../../task.types";
+import { Task, UndoOperation } from "../../task.types";
 import * as storageUtil from "../../util/storage.util";
 import { useTaskActions } from "./useTaskActions";
 
@@ -18,10 +18,8 @@ jest.mock("../../components/MigrationToast/MigrationToast", () => ({
 
 describe("useTaskActions - migration", () => {
   const mockSetTasks = jest.fn();
-  const mockSetMigratedTask = jest.fn();
-  const mockSetMigratedTaskDate = jest.fn();
-  const mockSetMigratedTaskDirection = jest.fn();
-  const mockSetMigrationToastId = jest.fn();
+  const mockSetUndoState = jest.fn();
+  const mockSetUndoToastId = jest.fn();
   const mockDateInView = dayjs("2025-10-27");
   const mockNavigateToNextDay = jest.fn();
   const mockNavigateToPreviousDay = jest.fn();
@@ -50,10 +48,8 @@ describe("useTaskActions - migration", () => {
         dateInView: mockDateInView,
         navigateToNextDay: mockNavigateToNextDay,
         navigateToPreviousDay: mockNavigateToPreviousDay,
-        setMigratedTask: mockSetMigratedTask,
-        setMigratedTaskDate: mockSetMigratedTaskDate,
-        setMigratedTaskDirection: mockSetMigratedTaskDirection,
-        setMigrationToastId: mockSetMigrationToastId,
+        setUndoState: mockSetUndoState,
+        setUndoToastId: mockSetUndoToastId,
       }),
     );
 
@@ -61,10 +57,13 @@ describe("useTaskActions - migration", () => {
       result.current.migrateTask(mockTask.id, "forward");
     });
 
-    // Should store migration info
-    expect(mockSetMigratedTask).toHaveBeenCalledWith(mockTask);
-    expect(mockSetMigratedTaskDate).toHaveBeenCalledWith("2025-10-27");
-    expect(mockSetMigratedTaskDirection).toHaveBeenCalledWith("forward");
+    // Should store migration operation
+    expect(mockSetUndoState).toHaveBeenCalledWith({
+      type: "migrate",
+      task: mockTask,
+      fromDate: "2025-10-27",
+      direction: "forward",
+    });
 
     // Should remove task from current day
     expect(mockSetTasks).toHaveBeenCalledWith(expect.any(Function));
@@ -89,7 +88,7 @@ describe("useTaskActions - migration", () => {
     );
 
     // Should store toast ID
-    expect(mockSetMigrationToastId).toHaveBeenCalledWith("toast-id-123");
+    expect(mockSetUndoToastId).toHaveBeenCalledWith("toast-id-123");
   });
 
   it("migrates task backward one day", () => {
@@ -100,10 +99,8 @@ describe("useTaskActions - migration", () => {
         dateInView: mockDateInView,
         navigateToNextDay: mockNavigateToNextDay,
         navigateToPreviousDay: mockNavigateToPreviousDay,
-        setMigratedTask: mockSetMigratedTask,
-        setMigratedTaskDate: mockSetMigratedTaskDate,
-        setMigratedTaskDirection: mockSetMigratedTaskDirection,
-        setMigrationToastId: mockSetMigrationToastId,
+        setUndoState: mockSetUndoState,
+        setUndoToastId: mockSetUndoToastId,
       }),
     );
 
@@ -111,10 +108,13 @@ describe("useTaskActions - migration", () => {
       result.current.migrateTask(mockTask.id, "backward");
     });
 
-    // Should store migration info
-    expect(mockSetMigratedTask).toHaveBeenCalledWith(mockTask);
-    expect(mockSetMigratedTaskDate).toHaveBeenCalledWith("2025-10-27");
-    expect(mockSetMigratedTaskDirection).toHaveBeenCalledWith("backward");
+    // Should store migration operation
+    expect(mockSetUndoState).toHaveBeenCalledWith({
+      type: "migrate",
+      task: mockTask,
+      fromDate: "2025-10-27",
+      direction: "backward",
+    });
 
     // Should remove task from current day
     expect(mockSetTasks).toHaveBeenCalledWith(expect.any(Function));
@@ -139,11 +139,18 @@ describe("useTaskActions - migration", () => {
     );
 
     // Should store toast ID
-    expect(mockSetMigrationToastId).toHaveBeenCalledWith("toast-id-123");
+    expect(mockSetUndoToastId).toHaveBeenCalledWith("toast-id-123");
   });
 
   describe("undo migration", () => {
     it("restores migrated task when on the same date", () => {
+      const undoState = {
+        type: "migrate" as const,
+        task: mockTask,
+        fromDate: "2025-10-27",
+        direction: "forward" as const,
+      };
+
       const { result } = renderHook(() =>
         useTaskActions({
           setTasks: mockSetTasks,
@@ -151,13 +158,9 @@ describe("useTaskActions - migration", () => {
           dateInView: mockDateInView,
           navigateToNextDay: mockNavigateToNextDay,
           navigateToPreviousDay: mockNavigateToPreviousDay,
-          migratedTask: mockTask,
-          migratedTaskDate: "2025-10-27",
-          migratedTaskDirection: "forward",
-          setMigratedTask: mockSetMigratedTask,
-          setMigratedTaskDate: mockSetMigratedTaskDate,
-          setMigratedTaskDirection: mockSetMigratedTaskDirection,
-          setMigrationToastId: mockSetMigrationToastId,
+          undoState,
+          setUndoState: mockSetUndoState,
+          setUndoToastId: mockSetUndoToastId,
         }),
       );
 
@@ -190,14 +193,19 @@ describe("useTaskActions - migration", () => {
         JSON.stringify([mockTask]),
       );
 
-      // Should clear migration state
-      expect(mockSetMigratedTask).toHaveBeenCalledWith(null);
-      expect(mockSetMigratedTaskDate).toHaveBeenCalledWith(null);
-      expect(mockSetMigratedTaskDirection).toHaveBeenCalledWith(null);
-      expect(mockSetMigrationToastId).toHaveBeenCalledWith(null);
+      // Should clear undo state
+      expect(mockSetUndoState).toHaveBeenCalledWith(null);
+      expect(mockSetUndoToastId).toHaveBeenCalledWith(null);
     });
 
     it("restores backward migrated task correctly", () => {
+      const undoState = {
+        type: "migrate" as const,
+        task: mockTask,
+        fromDate: "2025-10-27",
+        direction: "backward" as const,
+      };
+
       const { result } = renderHook(() =>
         useTaskActions({
           setTasks: mockSetTasks,
@@ -205,13 +213,9 @@ describe("useTaskActions - migration", () => {
           dateInView: mockDateInView,
           navigateToNextDay: mockNavigateToNextDay,
           navigateToPreviousDay: mockNavigateToPreviousDay,
-          migratedTask: mockTask,
-          migratedTaskDate: "2025-10-27",
-          migratedTaskDirection: "backward",
-          setMigratedTask: mockSetMigratedTask,
-          setMigratedTaskDate: mockSetMigratedTaskDate,
-          setMigratedTaskDirection: mockSetMigratedTaskDirection,
-          setMigrationToastId: mockSetMigrationToastId,
+          undoState,
+          setUndoState: mockSetUndoState,
+          setUndoToastId: mockSetUndoToastId,
         }),
       );
 
@@ -240,6 +244,13 @@ describe("useTaskActions - migration", () => {
     });
 
     it("does not restore if dateInView has changed", () => {
+      const undoState = {
+        type: "migrate" as const,
+        task: mockTask,
+        fromDate: "2025-10-27",
+        direction: "forward" as const,
+      };
+
       const { result } = renderHook(() =>
         useTaskActions({
           setTasks: mockSetTasks,
@@ -247,13 +258,9 @@ describe("useTaskActions - migration", () => {
           dateInView: dayjs("2025-10-28"), // Different date
           navigateToNextDay: mockNavigateToNextDay,
           navigateToPreviousDay: mockNavigateToPreviousDay,
-          migratedTask: mockTask,
-          migratedTaskDate: "2025-10-27", // Original date
-          migratedTaskDirection: "forward",
-          setMigratedTask: mockSetMigratedTask,
-          setMigratedTaskDate: mockSetMigratedTaskDate,
-          setMigratedTaskDirection: mockSetMigratedTaskDirection,
-          setMigrationToastId: mockSetMigrationToastId,
+          undoState,
+          setUndoState: mockSetUndoState,
+          setUndoToastId: mockSetUndoToastId,
         }),
       );
 
@@ -264,21 +271,20 @@ describe("useTaskActions - migration", () => {
       // Should not add task back (different date)
       expect(mockSetTasks).not.toHaveBeenCalled();
 
-      // Should still clear migration state
-      expect(mockSetMigratedTask).toHaveBeenCalledWith(null);
-      expect(mockSetMigratedTaskDate).toHaveBeenCalledWith(null);
-      expect(mockSetMigratedTaskDirection).toHaveBeenCalledWith(null);
-      expect(mockSetMigrationToastId).toHaveBeenCalledWith(null);
+      // Should still clear undo state
+      expect(mockSetUndoState).toHaveBeenCalledWith(null);
+      expect(mockSetUndoToastId).toHaveBeenCalledWith(null);
     });
 
     it("prioritizes deleted task over migrated task in restoreTask", () => {
-      const mockSetDeletedTask = jest.fn();
-      const mockSetUndoToastId = jest.fn();
-      const deletedTask: Task = {
-        id: "deleted-task",
-        title: "Deleted Task",
-        status: "todo",
-        createdAt: "2025-10-27T10:00:00Z",
+      const deletedUndoState = {
+        type: "delete" as const,
+        task: {
+          id: "deleted-task",
+          title: "Deleted Task",
+          status: "todo" as const,
+          createdAt: "2025-10-27T10:00:00Z",
+        },
       };
 
       const { result } = renderHook(() =>
@@ -288,16 +294,9 @@ describe("useTaskActions - migration", () => {
           dateInView: mockDateInView,
           navigateToNextDay: mockNavigateToNextDay,
           navigateToPreviousDay: mockNavigateToPreviousDay,
-          deletedTask,
-          setDeletedTask: mockSetDeletedTask,
+          undoState: deletedUndoState,
+          setUndoState: mockSetUndoState,
           setUndoToastId: mockSetUndoToastId,
-          migratedTask: mockTask,
-          migratedTaskDate: "2025-10-27",
-          migratedTaskDirection: "forward",
-          setMigratedTask: mockSetMigratedTask,
-          setMigratedTaskDate: mockSetMigratedTaskDate,
-          setMigratedTaskDirection: mockSetMigratedTaskDirection,
-          setMigrationToastId: mockSetMigrationToastId,
         }),
       );
 
@@ -305,18 +304,15 @@ describe("useTaskActions - migration", () => {
         result.current.restoreTask();
       });
 
-      // Should restore deleted task, not migrated task
+      // Should restore deleted task
       expect(mockSetTasks).toHaveBeenCalledWith(expect.any(Function));
       const setTasksCall = mockSetTasks.mock.calls[0][0];
       const updatedTasks = setTasksCall([]);
-      expect(updatedTasks).toEqual([deletedTask]);
+      expect(updatedTasks).toEqual([deletedUndoState.task]);
 
-      // Should clear deleted task state
-      expect(mockSetDeletedTask).toHaveBeenCalledWith(null);
+      // Should clear undo state
+      expect(mockSetUndoState).toHaveBeenCalledWith(null);
       expect(mockSetUndoToastId).toHaveBeenCalledWith(null);
-
-      // Should NOT clear migration state (since deleted task was prioritized)
-      expect(mockSetMigratedTask).not.toHaveBeenCalled();
     });
   });
 });

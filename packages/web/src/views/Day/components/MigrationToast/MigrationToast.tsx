@@ -2,20 +2,20 @@ import React from "react";
 import { toast } from "react-toastify";
 import { getMetaKey } from "@web/common/utils/shortcut/shortcut.util";
 
-interface MigrationToastComponentProps {
+interface MigrationToastProps {
   direction: "forward" | "backward";
   onNavigate: () => void;
   onUndo: () => void;
   toastId: string | number;
 }
 
-const MigrationToastComponent: React.FC<MigrationToastComponentProps> = ({
+const MigrationToastComponent: React.FC<MigrationToastProps> = ({
   direction,
   onNavigate,
   onUndo,
   toastId,
 }) => {
-  const message = `Migrated ${direction} 1 day.`;
+  const message = `Migrated ${direction}.`;
 
   const handleUndo = () => {
     onUndo();

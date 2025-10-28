@@ -34,7 +34,7 @@ describe("MigrationToast", () => {
       const toastCall = (toast as unknown as jest.Mock).mock.calls[0][0];
       render(toastCall);
 
-      expect(screen.getByText("Migrated forward 1 day.")).toBeInTheDocument();
+      expect(screen.getByText("Migrated forward.")).toBeInTheDocument();
     });
 
     it("renders backward migration message", () => {
@@ -45,7 +45,7 @@ describe("MigrationToast", () => {
       const toastCall = (toast as unknown as jest.Mock).mock.calls[0][0];
       render(toastCall);
 
-      expect(screen.getByText("Migrated backward 1 day.")).toBeInTheDocument();
+      expect(screen.getByText("Migrated backward.")).toBeInTheDocument();
     });
 
     it("displays undo hint with keyboard shortcut", () => {
@@ -81,7 +81,7 @@ describe("MigrationToast", () => {
       render(toastCall);
 
       const undoButton = screen
-        .getByText("Migrated forward 1 day.")
+        .getByText("Migrated forward.")
         .closest("button");
       fireEvent.click(undoButton!);
 
@@ -101,7 +101,7 @@ describe("MigrationToast", () => {
       render(updatedComponent);
 
       const undoButton = screen
-        .getByText("Migrated forward 1 day.")
+        .getByText("Migrated forward.")
         .closest("button");
       fireEvent.click(undoButton!);
 

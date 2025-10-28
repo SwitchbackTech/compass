@@ -552,57 +552,6 @@ describe("useDayViewShortcuts", () => {
       expect(mockToastDismiss).toHaveBeenCalledWith(undoToastId);
     });
 
-    it("should dismiss migration toast when Meta+Z is pressed with migrationToastId", () => {
-      const onRestoreTask = jest.fn();
-      const migrationToastId = "migration-toast-456";
-      const config = {
-        ...defaultConfig,
-        onRestoreTask,
-        migrationToastId,
-      };
-      renderHook(() => useDayViewShortcuts(config));
-
-      const keydownHandler = mockAddEventListener.mock.calls[0][1];
-      const mockEvent = {
-        key: "z",
-        metaKey: true,
-        preventDefault: jest.fn(),
-        target: document.createElement("div"),
-      };
-
-      keydownHandler(mockEvent);
-
-      expect(onRestoreTask).toHaveBeenCalled();
-      expect(mockToastDismiss).toHaveBeenCalledWith(migrationToastId);
-    });
-
-    it("should dismiss both toasts when Meta+Z is pressed with both toast IDs", () => {
-      const onRestoreTask = jest.fn();
-      const undoToastId = "undo-toast-123";
-      const migrationToastId = "migration-toast-456";
-      const config = {
-        ...defaultConfig,
-        onRestoreTask,
-        undoToastId,
-        migrationToastId,
-      };
-      renderHook(() => useDayViewShortcuts(config));
-
-      const keydownHandler = mockAddEventListener.mock.calls[0][1];
-      const mockEvent = {
-        key: "z",
-        metaKey: true,
-        preventDefault: jest.fn(),
-        target: document.createElement("div"),
-      };
-
-      keydownHandler(mockEvent);
-
-      expect(onRestoreTask).toHaveBeenCalled();
-      expect(mockToastDismiss).toHaveBeenCalledWith(undoToastId);
-      expect(mockToastDismiss).toHaveBeenCalledWith(migrationToastId);
-    });
-
     it("should work with uppercase Z", () => {
       const onRestoreTask = jest.fn();
       const config = {
