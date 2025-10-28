@@ -1,13 +1,11 @@
 import React from "react";
 import { DATA_TASK_ELEMENT_ID } from "@web/common/constants/web.constants";
-import { getMetaKey } from "@web/common/utils/shortcut/shortcut.util";
 import { Task as TaskType } from "../../task.types";
 import { ChevronLeftIcon } from "../Icons/ChevronLeftIcon";
 import { ChevronRightIcon } from "../Icons/ChevronRightIcon";
 import { TaskCircleIcon } from "../Icons/TaskCircleIcon";
-import { ShortcutTip } from "../Shortcuts/components/ShortcutTip";
 
-interface TaskProps {
+export interface TaskProps {
   task: TaskType;
   index: number;
   title: string;
@@ -45,8 +43,6 @@ export const Task = ({
   onTitleChange,
   onMigrate,
 }: TaskProps) => {
-  const metaKey = getMetaKey();
-
   return (
     <div
       key={task.id}
@@ -91,22 +87,22 @@ export const Task = ({
         />
       </div>
       {/* Migration buttons */}
-      <div className="ml-auto flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="ml-auto flex gap-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
         <button
           aria-label="Move task to previous day"
-          className="flex h-6 w-6 items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white focus:ring-2 focus:ring-white/50 focus:outline-none"
+          className="flex h-6 w-6 items-center justify-center rounded-full text-white transition-colors hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white focus:ring-2 focus:ring-white/50 focus:outline-none"
+          onClick={() => onMigrate(task.id, "backward")}
         >
           <ChevronLeftIcon />
         </button>
 
-        <ShortcutTip shortcut={["CTRL", "Meta", "→"]}>
-          <button
-            aria-label="Move task to next day"
-            className="flex h-6 w-6 items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white focus:ring-2 focus:ring-white/50 focus:outline-none"
-          >
-            <ChevronRightIcon />
-          </button>
-        </ShortcutTip>
+        <button
+          aria-label="Move task to next day"
+          className="flex h-6 w-6 items-center justify-center rounded-full text-white transition-colors hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white focus:ring-2 focus:ring-white/50 focus:outline-none"
+          onClick={() => onMigrate(task.id, "forward")}
+        >
+          <ChevronRightIcon />
+        </button>
       </div>
     </div>
   );

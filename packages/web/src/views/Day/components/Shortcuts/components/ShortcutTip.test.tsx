@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { ShortcutTip } from "./ShortcutTip";
 
 describe("ShortcutTip", () => {
@@ -40,37 +41,68 @@ describe("ShortcutTip", () => {
     expect(shortcutElement).toBeInTheDocument();
   });
 
-  it("wraps child components with shortcut", () => {
+  it("wraps child components and shows shortcut on hover", async () => {
+    const user = userEvent.setup();
     render(
       <ShortcutTip shortcut="C">
         <button>Some Button</button>
       </ShortcutTip>,
     );
+
     const button = screen.getByText("Some Button");
     expect(button).toBeInTheDocument();
-    const shortcutElement = screen.getByText("C");
-    expect(shortcutElement).toBeInTheDocument();
+
+    // Shortcut should not be visible initially
+    expect(screen.queryByText("C")).not.toBeInTheDocument();
+
+    // Hover over button to show shortcut
+    await user.hover(button);
+    await waitFor(() => {
+      expect(screen.getByText("C")).toBeInTheDocument();
+    });
   });
 
-  it("renders wrapped component with array shortcut", () => {
+  it("renders wrapped component with array shortcut on hover", async () => {
+    const user = userEvent.setup();
     render(
       <ShortcutTip shortcut={["Cmd", "K"]}>
         <button>Quick Action</button>
       </ShortcutTip>,
     );
+
     const button = screen.getByText("Quick Action");
     expect(button).toBeInTheDocument();
-    const shortcutElement = screen.getByText("Cmd + K");
-    expect(shortcutElement).toBeInTheDocument();
+
+    // Shortcut should not be visible initially
+    expect(screen.queryByText("Cmd + K")).not.toBeInTheDocument();
+
+    // Hover over button to show shortcut
+    await user.hover(button);
+    await waitFor(() => {
+      expect(screen.getByText("Cmd + K")).toBeInTheDocument();
+    });
   });
 
-  it("applies flex layout when wrapping children", () => {
+  it("hides shortcut when mouse leaves", async () => {
+    const user = userEvent.setup();
     render(
       <ShortcutTip shortcut="C">
         <button>Test Button</button>
       </ShortcutTip>,
     );
-    const wrapper = screen.getByText("Test Button").parentElement;
-    expect(wrapper).toHaveClass("flex", "items-center", "gap-2");
+
+    const button = screen.getByText("Test Button");
+
+    // Hover to show shortcut
+    await user.hover(button);
+    await waitFor(() => {
+      expect(screen.getByText("C")).toBeInTheDocument();
+    });
+
+    // Move mouse away to hide shortcut
+    await user.unhover(button);
+    await waitFor(() => {
+      expect(screen.queryByText("C")).not.toBeInTheDocument();
+    });
   });
 });
