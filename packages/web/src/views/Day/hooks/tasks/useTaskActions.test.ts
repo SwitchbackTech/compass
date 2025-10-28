@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import { act, renderHook } from "@testing-library/react";
+import { showMigrationToast } from "../../components/MigrationToast";
 import * as storageUtil from "../../util/storage.util";
 import { useTaskActions } from "./useTaskActions";
 
@@ -23,7 +24,7 @@ describe("useTaskActions - migration", () => {
   const mockTask = {
     id: "task-1",
     title: "Test Task",
-    status: "todo" as const,
+    status: "todo",
     createdAt: "2025-10-27T10:00:00Z",
   };
 
@@ -50,11 +51,22 @@ describe("useTaskActions - migration", () => {
     // Should remove task from current day
     expect(mockSetTasks).toHaveBeenCalledWith(expect.any(Function));
 
+    // Verify task is removed from the array
+    const setTasksCall = mockSetTasks.mock.calls[0][0];
+    const updatedTasks = setTasksCall([mockTask]);
+    expect(updatedTasks).toEqual([]);
+
     // Should move task from current date to next date
     expect(storageUtil.moveTaskToDate).toHaveBeenCalledWith(
       mockTask,
       "2025-10-27",
       "2025-10-28",
+    );
+
+    // Should show migration toast with correct parameters
+    expect(showMigrationToast).toHaveBeenCalledWith(
+      "forward",
+      mockNavigateToNextDay,
     );
   });
 
@@ -73,11 +85,25 @@ describe("useTaskActions - migration", () => {
       result.current.migrateTask(mockTask.id, "backward");
     });
 
+    // Should remove task from current day
+    expect(mockSetTasks).toHaveBeenCalledWith(expect.any(Function));
+
+    // Verify task is removed from the array
+    const setTasksCall = mockSetTasks.mock.calls[0][0];
+    const updatedTasks = setTasksCall([mockTask]);
+    expect(updatedTasks).toEqual([]);
+
     // Should move task from current date to previous date
     expect(storageUtil.moveTaskToDate).toHaveBeenCalledWith(
       mockTask,
       "2025-10-27",
       "2025-10-26",
+    );
+
+    // Should show migration toast with correct parameters
+    expect(showMigrationToast).toHaveBeenCalledWith(
+      "backward",
+      mockNavigateToPreviousDay,
     );
   });
 });
