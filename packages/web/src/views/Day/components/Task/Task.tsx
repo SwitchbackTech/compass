@@ -1,8 +1,7 @@
 import React from "react";
 import { DATA_TASK_ELEMENT_ID } from "@web/common/constants/web.constants";
+import { ArrowButton } from "@web/components/Button/ArrowButton";
 import { Task as TaskType } from "../../task.types";
-import { ChevronLeftIcon } from "../Icons/ChevronLeftIcon";
-import { ChevronRightIcon } from "../Icons/ChevronRightIcon";
 import { TaskCircleIcon } from "../Icons/TaskCircleIcon";
 
 export interface TaskProps {
@@ -86,23 +85,17 @@ export const Task = ({
           onChange={(e) => onTitleChange(e.target.value)}
         />
       </div>
-      {/* Migration buttons */}
       <div className="ml-auto flex gap-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
-        <button
-          aria-label="Move task to previous day"
-          className="flex h-6 w-6 items-center justify-center rounded-full text-white transition-colors hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white focus:ring-2 focus:ring-white/50 focus:outline-none"
+        <ArrowButton
+          direction="left"
+          label="Move task to previous day"
           onClick={() => onMigrate(task.id, "backward")}
-        >
-          <ChevronLeftIcon />
-        </button>
-
-        <button
-          aria-label="Move task to next day"
-          className="flex h-6 w-6 items-center justify-center rounded-full text-white transition-colors hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white focus:ring-2 focus:ring-white/50 focus:outline-none"
+        />
+        <ArrowButton
+          direction="right"
+          label="Move task to next day"
           onClick={() => onMigrate(task.id, "forward")}
-        >
-          <ChevronRightIcon />
-        </button>
+        />
       </div>
     </div>
   );
