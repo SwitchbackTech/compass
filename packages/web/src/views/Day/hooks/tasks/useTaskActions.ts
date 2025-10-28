@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
 import { showMigrationToast } from "../../components/MigrationToast/MigrationToast";
 import { showUndoDeleteToast } from "../../components/UndoToast/UndoDeleteToast";
-import { Task } from "../../task.types";
+import { Task, UndoOperation } from "../../task.types";
 import { sortTasksByStatus } from "../../util/sort.task";
 import { getDateKey, moveTaskToDate } from "../../util/storage.util";
 
@@ -16,10 +16,15 @@ interface UseTaskActionsProps {
   setEditingTaskId?: (taskId: string | null) => void;
   isCancellingEdit?: boolean;
   setIsCancellingEdit?: (isCancelling: boolean) => void;
+  // Unified undo state (new approach)
+  undoState?: UndoOperation | null;
+  setUndoState?: (state: UndoOperation | null) => void;
+  // Legacy delete state (kept temporarily for restoreTask - will be removed in Task 5)
   deletedTask?: Task | null;
   setDeletedTask?: (task: Task | null) => void;
   undoToastId?: string | number | null;
   setUndoToastId?: (toastId: string | number | null) => void;
+  // Legacy migration state (kept temporarily for migrateTask/restoreMigratedTask - will be removed in Task 4)
   migratedTask?: Task | null;
   setMigratedTask?: (task: Task | null) => void;
   migratedTaskDate?: string | null;
@@ -41,6 +46,8 @@ export function useTaskActions({
   setEditingTaskId,
   isCancellingEdit,
   setIsCancellingEdit,
+  undoState,
+  setUndoState,
   deletedTask,
   setDeletedTask,
   undoToastId,
@@ -185,8 +192,8 @@ export function useTaskActions({
       toast.dismiss(undoToastId);
     }
 
-    // Store the deleted task for potential restoration
-    setDeletedTask?.(taskToDelete);
+    // Store the deleted task in unified undo state
+    setUndoState?.({ type: "delete", task: taskToDelete });
 
     // Remove task from the list
     setTasks((prev) => prev.filter((task) => task.id !== taskId));
