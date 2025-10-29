@@ -2,12 +2,12 @@ import React from "react";
 import { toast } from "react-toastify";
 import { getMetaKey } from "@web/common/utils/shortcut/shortcut.util";
 
-interface UndoDeleteToastProps {
+interface UndoProps {
   onRestore: () => void;
   toastId: string | number;
 }
 
-export const UndoDeleteToastComponent: React.FC<UndoDeleteToastProps> = ({
+export const UndoDeleteToast: React.FC<UndoProps> = ({
   onRestore,
   toastId,
 }) => {
@@ -35,20 +35,15 @@ export const UndoDeleteToastComponent: React.FC<UndoDeleteToastProps> = ({
 
 // Export a function that can be called from .ts files
 export const showUndoDeleteToast = (onRestore: () => void) => {
-  const toastId = toast(
-    <UndoDeleteToastComponent onRestore={onRestore} toastId="" />,
-    {
-      autoClose: 5000,
-      position: "bottom-left",
-      closeOnClick: true,
-    },
-  );
+  const toastId = toast(<UndoDeleteToast onRestore={onRestore} toastId="" />, {
+    autoClose: 5000,
+    position: "bottom-left",
+    closeOnClick: true,
+  });
 
   // Update the component with the actual toast ID
   toast.update(toastId, {
-    render: (
-      <UndoDeleteToastComponent onRestore={onRestore} toastId={toastId} />
-    ),
+    render: <UndoDeleteToast onRestore={onRestore} toastId={toastId} />,
   });
 
   return toastId;

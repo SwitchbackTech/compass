@@ -1,9 +1,6 @@
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
-import {
-  UndoDeleteToastComponent,
-  showUndoDeleteToast,
-} from "./UndoDeleteToast";
+import { UndoDeleteToast, showUndoDeleteToast } from "./UndoDeleteToast";
 
 jest.mock("react-toastify", () => ({
   toast: jest.fn(),
@@ -30,10 +27,7 @@ describe("UndoDeleteToast", () => {
   describe("UndoDeleteToastComponent", () => {
     it("should render with correct text", () => {
       render(
-        <UndoDeleteToastComponent
-          onRestore={mockOnRestore}
-          toastId="test-toast-id"
-        />,
+        <UndoDeleteToast onRestore={mockOnRestore} toastId="test-toast-id" />,
       );
 
       expect(screen.getByText("Deleted")).toBeInTheDocument();
@@ -42,10 +36,7 @@ describe("UndoDeleteToast", () => {
 
     it("should display keyboard shortcut hint", () => {
       render(
-        <UndoDeleteToastComponent
-          onRestore={mockOnRestore}
-          toastId="test-toast-id"
-        />,
+        <UndoDeleteToast onRestore={mockOnRestore} toastId="test-toast-id" />,
       );
 
       expect(screen.getByText("+ Z")).toBeInTheDocument();
@@ -54,10 +45,7 @@ describe("UndoDeleteToast", () => {
 
     it("should call onRestore when clicked", () => {
       render(
-        <UndoDeleteToastComponent
-          onRestore={mockOnRestore}
-          toastId="test-toast-id"
-        />,
+        <UndoDeleteToast onRestore={mockOnRestore} toastId="test-toast-id" />,
       );
 
       const toastButton = screen.getByText("Deleted").closest("button");
@@ -71,10 +59,7 @@ describe("UndoDeleteToast", () => {
       const testToastId = "test-toast-id";
 
       render(
-        <UndoDeleteToastComponent
-          onRestore={mockOnRestore}
-          toastId={testToastId}
-        />,
+        <UndoDeleteToast onRestore={mockOnRestore} toastId={testToastId} />,
       );
 
       const toastButton = screen.getByText("Deleted").closest("button");
