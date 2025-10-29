@@ -26,6 +26,7 @@ packages/**/yarn.lock
 
 build/
 buildcache/
+docs/
 logs/
 node_modules/
 playwright-report/

@@ -3,7 +3,7 @@ import { useDateNavigation } from "../hooks/navigation/useDateNavigation";
 import { useTaskActions } from "../hooks/tasks/useTaskActions";
 import { useTaskEffects } from "../hooks/tasks/useTaskEffects";
 import { useTaskState } from "../hooks/tasks/useTaskState";
-import { Task } from "../task.types";
+import { Task, UndoOperation } from "../task.types";
 
 interface TaskContextValue {
   tasks: Task[];
@@ -12,7 +12,7 @@ interface TaskContextValue {
   isAddingTask: boolean;
   isCancellingEdit: boolean;
   selectedTaskIndex: number;
-  deletedTask: Task | null;
+  undoState: UndoOperation | null;
   undoToastId: string | number | null;
   addTask: (title: string) => Task;
   deleteTask: (taskId: string) => void;
@@ -36,6 +36,7 @@ interface TaskContextValue {
   setIsCancellingEdit: (isCancelling: boolean) => void;
   toggleTaskStatus: (taskId: string) => void;
   updateTaskTitle: (taskId: string, title: string) => void;
+  migrateTask: (id: string, direction: "forward" | "backward") => void;
 }
 export const TaskContext = createContext<TaskContextValue | undefined>(
   undefined,
@@ -46,7 +47,8 @@ interface TaskProviderProps {
 }
 
 export function TaskProvider({ children }: TaskProviderProps) {
-  const { dateInView } = useDateNavigation();
+  const { dateInView, navigateToNextDay, navigateToPreviousDay } =
+    useDateNavigation();
   const state = useTaskState({ currentDate: dateInView.toDate() });
   const actions = useTaskActions({
     setTasks: state.setTasks,
@@ -56,10 +58,13 @@ export function TaskProvider({ children }: TaskProviderProps) {
     setEditingTaskId: state.setEditingTaskId,
     isCancellingEdit: state.isCancellingEdit,
     setIsCancellingEdit: state.setIsCancellingEdit,
-    deletedTask: state.deletedTask,
-    setDeletedTask: state.setDeletedTask,
+    undoState: state.undoState,
+    setUndoState: state.setUndoState,
     undoToastId: state.undoToastId,
     setUndoToastId: state.setUndoToastId,
+    dateInView,
+    navigateToNextDay,
+    navigateToPreviousDay,
   });
 
   useTaskEffects({
@@ -76,7 +81,7 @@ export function TaskProvider({ children }: TaskProviderProps) {
     selectedTaskIndex: state.selectedTaskIndex,
     isAddingTask: state.isAddingTask,
     isCancellingEdit: state.isCancellingEdit,
-    deletedTask: state.deletedTask,
+    undoState: state.undoState,
     undoToastId: state.undoToastId,
     addTask: actions.addTask,
     deleteTask: actions.deleteTask,
@@ -96,6 +101,7 @@ export function TaskProvider({ children }: TaskProviderProps) {
     setIsCancellingEdit: state.setIsCancellingEdit,
     toggleTaskStatus: actions.toggleTaskStatus,
     updateTaskTitle: actions.updateTaskTitle,
+    migrateTask: actions.migrateTask,
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;

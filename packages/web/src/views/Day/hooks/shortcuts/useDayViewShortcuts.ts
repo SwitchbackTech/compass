@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
 import { ShortcutKey } from "../../components/Shortcuts/types/shortcut.types";
-import { isEditable, isFocusedOnTaskCheckbox } from "../../util/shortcut.util";
+import {
+  getFocusedTaskId,
+  isEditable,
+  isFocusedOnTaskCheckbox,
+  isFocusedWithinTask,
+} from "../../util/shortcut.util";
 
 interface KeyboardShortcutsConfig {
   // Task management
@@ -11,6 +16,9 @@ interface KeyboardShortcutsConfig {
   onDeleteTask?: () => void;
   onRestoreTask?: () => void;
   onFocusTasks?: () => void;
+
+  // Task migration
+  onMigrateTask?: (taskId: string, direction: "forward" | "backward") => void;
 
   // Task navigation
   onPrevTask?: () => void;
@@ -46,6 +54,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     onCompleteTask,
     onDeleteTask,
     onRestoreTask,
+    onMigrateTask,
     onEscape,
     onFocusTasks,
     onNavigateNow,
@@ -167,6 +176,32 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
       const key = e.key.toLowerCase();
       const target = e.target as EventTarget | null;
 
+      // Handle migration shortcuts (Ctrl+Meta+Arrow) - these work even in input fields
+      if (e.ctrlKey && e.metaKey) {
+        if (key === "arrowright") {
+          e.preventDefault();
+          // Check if focused within a task and migrate that specific task
+          if (isFocusedWithinTask()) {
+            const taskId = getFocusedTaskId();
+            if (taskId && onMigrateTask) {
+              onMigrateTask(taskId, "forward");
+              return;
+            }
+          }
+        }
+        if (key === "arrowleft") {
+          e.preventDefault();
+          // Check if focused within a task and migrate that specific task
+          if (isFocusedWithinTask()) {
+            const taskId = getFocusedTaskId();
+            if (taskId && onMigrateTask) {
+              onMigrateTask(taskId, "backward");
+              return;
+            }
+          }
+        }
+      }
+
       // Handle Cmd+Z undo shortcut separately
       if (e.metaKey && key === "z") {
         e.preventDefault();
@@ -197,7 +232,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
         handler(e);
       }
     },
-    [handlers, onRestoreTask, undoToastId],
+    [handlers, onRestoreTask, onMigrateTask, undoToastId],
   );
 
   useEffect(() => {
