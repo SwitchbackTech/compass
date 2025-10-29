@@ -6,7 +6,12 @@ import { showMigrationToast } from "../../components/Toasts/MigrationToast/Migra
 import { showUndoDeleteToast } from "../../components/Toasts/UndoToast/UndoDeleteToast";
 import { Task, UndoOperation } from "../../task.types";
 import { sortTasksByStatus } from "../../util/sort.task";
-import { getDateKey, moveTaskToDate } from "../../util/storage.util";
+import {
+  getDateKey,
+  loadTasksFromStorage,
+  moveTaskToDate,
+  saveTasksToStorage,
+} from "../../util/storage.util";
 
 interface UseTaskActionsProps {
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
@@ -101,22 +106,18 @@ export function useTaskActions({
         const targetDateKey = getDateKey(targetDate.toDate());
 
         // Remove the task from the target date in storage
-        const targetDateTasks = JSON.parse(
-          localStorage.getItem(targetDateKey) || "[]",
-        );
+        const targetDateTasks = loadTasksFromStorage(targetDateKey);
         const updatedTargetTasks = targetDateTasks.filter(
           (t: Task) => t.id !== undoState.task.id,
         );
-        localStorage.setItem(targetDateKey, JSON.stringify(updatedTargetTasks));
+        saveTasksToStorage(targetDateKey, updatedTargetTasks);
 
         // Restore the task to the original date in storage
-        const originalDateTasks = JSON.parse(
-          localStorage.getItem(undoState.fromDate) || "[]",
-        );
-        localStorage.setItem(
-          undoState.fromDate,
-          JSON.stringify([...originalDateTasks, undoState.task]),
-        );
+        const originalDateTasks = loadTasksFromStorage(undoState.fromDate);
+        saveTasksToStorage(undoState.fromDate, [
+          ...originalDateTasks,
+          undoState.task,
+        ]);
       }
     }
 

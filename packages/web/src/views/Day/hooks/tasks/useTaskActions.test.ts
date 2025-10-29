@@ -181,16 +181,16 @@ describe("useTaskActions - migration", () => {
       const updatedTasks = setTasksCall([]);
       expect(updatedTasks).toEqual([mockTask]);
 
-      // Should remove from target date in localStorage
-      expect(Storage.prototype.setItem).toHaveBeenCalledWith(
+      // Should remove from target date in storage
+      expect(storageUtil.saveTasksToStorage).toHaveBeenCalledWith(
         "2025-10-28",
-        JSON.stringify([]),
+        [],
       );
 
-      // Should restore to original date in localStorage
-      expect(Storage.prototype.setItem).toHaveBeenCalledWith(
+      // Should restore to original date in storage
+      expect(storageUtil.saveTasksToStorage).toHaveBeenCalledWith(
         "2025-10-27",
-        JSON.stringify([mockTask]),
+        [mockTask],
       );
 
       // Should clear undo state
@@ -230,16 +230,16 @@ describe("useTaskActions - migration", () => {
         result.current.restoreTask();
       });
 
-      // Should remove from target date (previous day) in localStorage
-      expect(Storage.prototype.setItem).toHaveBeenCalledWith(
+      // Should remove from target date (previous day) in storage
+      expect(storageUtil.saveTasksToStorage).toHaveBeenCalledWith(
         "2025-10-26",
-        JSON.stringify([]),
+        [],
       );
 
-      // Should restore to original date in localStorage
-      expect(Storage.prototype.setItem).toHaveBeenCalledWith(
+      // Should restore to original date in storage
+      expect(storageUtil.saveTasksToStorage).toHaveBeenCalledWith(
         "2025-10-27",
-        JSON.stringify([mockTask]),
+        [mockTask],
       );
     });
 
