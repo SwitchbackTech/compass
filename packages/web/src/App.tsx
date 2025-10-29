@@ -54,6 +54,7 @@ export const App = () => {
                 draggable
                 pauseOnHover
                 theme="dark"
+                limit={1}
               />
             </ThemeProvider>
           </SuperTokensWrapper>
