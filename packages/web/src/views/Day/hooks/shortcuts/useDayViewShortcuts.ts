@@ -18,8 +18,6 @@ interface KeyboardShortcutsConfig {
   onFocusTasks?: () => void;
 
   // Task migration
-  onMigrateForward?: () => void;
-  onMigrateBackward?: () => void;
   onMigrateTask?: (taskId: string, direction: "forward" | "backward") => void;
 
   // Task navigation
@@ -56,8 +54,6 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     onCompleteTask,
     onDeleteTask,
     onRestoreTask,
-    onMigrateForward,
-    onMigrateBackward,
     onMigrateTask,
     onEscape,
     onFocusTasks,
@@ -192,9 +188,6 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
               return;
             }
           }
-          // Fallback to general migration
-          onMigrateForward?.();
-          return;
         }
         if (key === "arrowleft") {
           e.preventDefault();
@@ -206,9 +199,6 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
               return;
             }
           }
-          // Fallback to general migration
-          onMigrateBackward?.();
-          return;
         }
       }
 
@@ -242,14 +232,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
         handler(e);
       }
     },
-    [
-      handlers,
-      onRestoreTask,
-      onMigrateForward,
-      onMigrateBackward,
-      onMigrateTask,
-      undoToastId,
-    ],
+    [handlers, onRestoreTask, onMigrateTask, undoToastId],
   );
 
   useEffect(() => {

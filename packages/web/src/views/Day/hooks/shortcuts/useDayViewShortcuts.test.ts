@@ -22,9 +22,32 @@ jest.mock("react-toastify", () => ({
   },
 }));
 
+// Mock shortcut utility functions
+jest.mock("../../util/shortcut.util", () => ({
+  isEditable: jest.fn(),
+  isFocusedOnTaskCheckbox: jest.fn(),
+  isFocusedWithinTask: jest.fn(),
+  getFocusedTaskId: jest.fn(),
+}));
+
 describe("useDayViewShortcuts", () => {
+  let mockIsEditable: jest.Mock;
+  let mockIsFocusedOnTaskCheckbox: jest.Mock;
+
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Get mock functions from the module
+    const {
+      isEditable,
+      isFocusedOnTaskCheckbox,
+    } = require("../../util/shortcut.util");
+    mockIsEditable = isEditable as jest.Mock;
+    mockIsFocusedOnTaskCheckbox = isFocusedOnTaskCheckbox as jest.Mock;
+
+    // Set default mock implementations
+    mockIsEditable.mockReturnValue(false);
+    mockIsFocusedOnTaskCheckbox.mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -217,6 +240,8 @@ describe("useDayViewShortcuts", () => {
     const config = { ...defaultConfig };
     renderHook(() => useDayViewShortcuts(config));
 
+    mockIsEditable.mockReturnValue(true);
+
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const input = document.createElement("input");
     const mockEvent = {
@@ -235,6 +260,8 @@ describe("useDayViewShortcuts", () => {
     const config = { ...defaultConfig };
     renderHook(() => useDayViewShortcuts(config));
 
+    mockIsEditable.mockReturnValue(true);
+
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const textarea = document.createElement("textarea");
     const mockEvent = {
@@ -252,6 +279,8 @@ describe("useDayViewShortcuts", () => {
   it("should not handle shortcuts when typing in contenteditable elements", () => {
     const config = { ...defaultConfig };
     renderHook(() => useDayViewShortcuts(config));
+
+    mockIsEditable.mockReturnValue(true);
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const div = document.createElement("div");
@@ -306,6 +335,8 @@ describe("useDayViewShortcuts", () => {
   it("should call onDeleteTask when Delete is pressed on a focused checkbox", () => {
     const config = { ...defaultConfig, hasFocusedTask: true };
     renderHook(() => useDayViewShortcuts(config));
+
+    mockIsFocusedOnTaskCheckbox.mockReturnValue(true);
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
     const mockEvent = {
@@ -371,15 +402,29 @@ describe("useDayViewShortcuts", () => {
   });
 
   describe("migration shortcuts", () => {
-    it("should call onMigrateForward when Ctrl+Meta+ArrowRight is pressed", () => {
-      const onMigrateForward = jest.fn();
-      const onMigrateBackward = jest.fn();
+    let mockIsFocusedWithinTask: jest.Mock;
+    let mockGetFocusedTaskId: jest.Mock;
+
+    beforeEach(() => {
+      const {
+        isFocusedWithinTask,
+        getFocusedTaskId,
+      } = require("../../util/shortcut.util");
+      mockIsFocusedWithinTask = isFocusedWithinTask as jest.Mock;
+      mockGetFocusedTaskId = getFocusedTaskId as jest.Mock;
+    });
+
+    it("should call onMigrateTask when Ctrl+Meta+ArrowRight is pressed within a task", () => {
+      const onMigrateTask = jest.fn();
       const config = {
         ...defaultConfig,
-        onMigrateForward,
-        onMigrateBackward,
+        onMigrateTask,
       };
       renderHook(() => useDayViewShortcuts(config));
+
+      // Mock utility functions to return task-focused state
+      mockIsFocusedWithinTask.mockReturnValue(true);
+      mockGetFocusedTaskId.mockReturnValue("task-123");
 
       const keydownHandler = mockAddEventListener.mock.calls[0][1];
       const mockEvent = {
@@ -392,19 +437,21 @@ describe("useDayViewShortcuts", () => {
 
       keydownHandler(mockEvent);
 
-      expect(onMigrateForward).toHaveBeenCalled();
+      expect(onMigrateTask).toHaveBeenCalledWith("task-123", "forward");
       expect(mockEvent.preventDefault).toHaveBeenCalled();
     });
 
-    it("should call onMigrateBackward when Ctrl+Meta+ArrowLeft is pressed", () => {
-      const onMigrateForward = jest.fn();
-      const onMigrateBackward = jest.fn();
+    it("should call onMigrateTask when Ctrl+Meta+ArrowLeft is pressed within a task", () => {
+      const onMigrateTask = jest.fn();
       const config = {
         ...defaultConfig,
-        onMigrateForward,
-        onMigrateBackward,
+        onMigrateTask,
       };
       renderHook(() => useDayViewShortcuts(config));
+
+      // Mock utility functions to return task-focused state
+      mockIsFocusedWithinTask.mockReturnValue(true);
+      mockGetFocusedTaskId.mockReturnValue("task-456");
 
       const keydownHandler = mockAddEventListener.mock.calls[0][1];
       const mockEvent = {
@@ -417,17 +464,15 @@ describe("useDayViewShortcuts", () => {
 
       keydownHandler(mockEvent);
 
-      expect(onMigrateBackward).toHaveBeenCalled();
+      expect(onMigrateTask).toHaveBeenCalledWith("task-456", "backward");
       expect(mockEvent.preventDefault).toHaveBeenCalled();
     });
 
     it("should not trigger migration when only Ctrl is pressed", () => {
-      const onMigrateForward = jest.fn();
-      const onMigrateBackward = jest.fn();
+      const onMigrateTask = jest.fn();
       const config = {
         ...defaultConfig,
-        onMigrateForward,
-        onMigrateBackward,
+        onMigrateTask,
       };
       renderHook(() => useDayViewShortcuts(config));
 
@@ -442,17 +487,15 @@ describe("useDayViewShortcuts", () => {
 
       keydownHandler(mockEvent);
 
-      expect(onMigrateForward).not.toHaveBeenCalled();
+      expect(onMigrateTask).not.toHaveBeenCalled();
       expect(mockEvent.preventDefault).not.toHaveBeenCalled();
     });
 
     it("should not trigger migration when only Meta is pressed", () => {
-      const onMigrateForward = jest.fn();
-      const onMigrateBackward = jest.fn();
+      const onMigrateTask = jest.fn();
       const config = {
         ...defaultConfig,
-        onMigrateForward,
-        onMigrateBackward,
+        onMigrateTask,
       };
       renderHook(() => useDayViewShortcuts(config));
 
@@ -467,17 +510,21 @@ describe("useDayViewShortcuts", () => {
 
       keydownHandler(mockEvent);
 
-      expect(onMigrateBackward).not.toHaveBeenCalled();
+      expect(onMigrateTask).not.toHaveBeenCalled();
       expect(mockEvent.preventDefault).not.toHaveBeenCalled();
     });
 
     it("should trigger migration even when typing in input (special case)", () => {
-      const onMigrateForward = jest.fn();
+      const onMigrateTask = jest.fn();
       const config = {
         ...defaultConfig,
-        onMigrateForward,
+        onMigrateTask,
       };
       renderHook(() => useDayViewShortcuts(config));
+
+      // Mock utility functions to return task-focused state
+      mockIsFocusedWithinTask.mockReturnValue(true);
+      mockGetFocusedTaskId.mockReturnValue("task-789");
 
       const keydownHandler = mockAddEventListener.mock.calls[0][1];
       const input = document.createElement("input");
@@ -491,7 +538,7 @@ describe("useDayViewShortcuts", () => {
 
       keydownHandler(mockEvent);
 
-      expect(onMigrateForward).toHaveBeenCalled();
+      expect(onMigrateTask).toHaveBeenCalledWith("task-789", "forward");
       expect(mockEvent.preventDefault).toHaveBeenCalled();
     });
   });
