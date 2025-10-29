@@ -42,27 +42,11 @@ export const Task = ({
   onTitleChange,
   onMigrate,
 }: TaskProps) => {
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    // Check for Ctrl+Cmd (Mac) or Ctrl+Windows (Windows/Linux) + Arrow keys
-    if (
-      e.ctrlKey &&
-      e.metaKey &&
-      (e.key === "ArrowLeft" || e.key === "ArrowRight")
-    ) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const direction = e.key === "ArrowLeft" ? "backward" : "forward";
-      onMigrate(task.id, direction);
-    }
-  };
-
   return (
     <div
       key={task.id}
       {...{ [DATA_TASK_ELEMENT_ID]: task.id }}
       className={`group flex items-start gap-3 rounded border p-2 transition-colors duration-200 focus-within:border-blue-200/50 focus-within:ring-1 focus-within:ring-blue-200/30 ${task.status === "completed" ? "opacity-50" : ""}`}
-      onKeyDown={handleKeyDown}
     >
       <button
         role="checkbox"

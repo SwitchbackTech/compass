@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
 import { ShortcutKey } from "../../components/Shortcuts/types/shortcut.types";
-import { isEditable, isFocusedOnTaskCheckbox } from "../../util/shortcut.util";
+import {
+  getFocusedTaskId,
+  isEditable,
+  isFocusedOnTaskCheckbox,
+  isFocusedWithinTask,
+} from "../../util/shortcut.util";
 
 interface KeyboardShortcutsConfig {
   // Task management
@@ -15,6 +20,7 @@ interface KeyboardShortcutsConfig {
   // Task migration
   onMigrateForward?: () => void;
   onMigrateBackward?: () => void;
+  onMigrateTask?: (taskId: string, direction: "forward" | "backward") => void;
 
   // Task navigation
   onPrevTask?: () => void;
@@ -52,6 +58,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     onRestoreTask,
     onMigrateForward,
     onMigrateBackward,
+    onMigrateTask,
     onEscape,
     onFocusTasks,
     onNavigateNow,
@@ -177,11 +184,29 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
       if (e.ctrlKey && e.metaKey) {
         if (key === "arrowright") {
           e.preventDefault();
+          // Check if focused within a task and migrate that specific task
+          if (isFocusedWithinTask()) {
+            const taskId = getFocusedTaskId();
+            if (taskId && onMigrateTask) {
+              onMigrateTask(taskId, "forward");
+              return;
+            }
+          }
+          // Fallback to general migration
           onMigrateForward?.();
           return;
         }
         if (key === "arrowleft") {
           e.preventDefault();
+          // Check if focused within a task and migrate that specific task
+          if (isFocusedWithinTask()) {
+            const taskId = getFocusedTaskId();
+            if (taskId && onMigrateTask) {
+              onMigrateTask(taskId, "backward");
+              return;
+            }
+          }
+          // Fallback to general migration
           onMigrateBackward?.();
           return;
         }
@@ -217,7 +242,14 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
         handler(e);
       }
     },
-    [handlers, onRestoreTask, onMigrateForward, onMigrateBackward, undoToastId],
+    [
+      handlers,
+      onRestoreTask,
+      onMigrateForward,
+      onMigrateBackward,
+      onMigrateTask,
+      undoToastId,
+    ],
   );
 
   useEffect(() => {
