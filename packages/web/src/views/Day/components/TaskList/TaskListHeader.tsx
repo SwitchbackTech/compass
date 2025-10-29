@@ -1,9 +1,8 @@
 import dayjs from "@core/util/date/dayjs";
+import { ArrowButton } from "@web/components/Button/ArrowButton";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { useDateInView } from "../../hooks/navigation/useDateInView";
 import { useDateNavigation } from "../../hooks/navigation/useDateNavigation";
-import { ChevronLeftIcon } from "../Icons/ChevronLeftIcon";
-import { ChevronRightIcon } from "../Icons/ChevronRightIcon";
 import { CircleIcon } from "../Icons/CircleIcon";
 
 export const DAY_HEADING_FORMAT = "dddd";
@@ -14,8 +13,6 @@ export const TaskListHeader = () => {
     useDateNavigation();
 
   const dateInView = useDateInView();
-  // Display the date components directly from UTC to avoid timezone conversion issues
-  // The UTC date represents the calendar date, so we can format it directly
   const header = dateInView.locale("en").format(DAY_HEADING_FORMAT);
   const subheader = dateInView.locale("en").format(DAY_SUBHEADING_FORMAT);
   const isToday =
@@ -51,20 +48,18 @@ export const TaskListHeader = () => {
             </TooltipWrapper>
           </div>
           <TooltipWrapper onClick={navigateToPreviousDay} shortcut="J">
-            <button
-              className="flex h-6 w-6 items-center justify-center rounded-full text-white transition-colors hover:bg-white/20 focus:bg-white/20 focus:ring-2 focus:ring-white/50 focus:outline-none"
-              aria-label="Previous day"
-            >
-              <ChevronLeftIcon />
-            </button>
+            <ArrowButton
+              direction="left"
+              label="Previous day"
+              onClick={navigateToPreviousDay}
+            />
           </TooltipWrapper>
           <TooltipWrapper onClick={navigateToNextDay} shortcut="K">
-            <button
-              className="flex h-6 w-6 items-center justify-center rounded-full text-white transition-colors hover:bg-white/20 focus:bg-white/20 focus:ring-2 focus:ring-white/50 focus:outline-none"
-              aria-label="Next day"
-            >
-              <ChevronRightIcon />
-            </button>
+            <ArrowButton
+              direction="right"
+              label="Next day"
+              onClick={navigateToNextDay}
+            />
           </TooltipWrapper>
         </div>
       </div>

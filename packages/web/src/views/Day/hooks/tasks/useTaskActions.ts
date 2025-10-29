@@ -1,22 +1,33 @@
+import dayjs from "dayjs";
 import { useCallback } from "react";
 import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
-import { showUndoDeleteToast } from "../../components/UndoToast/UndoDeleteToast";
-import { Task } from "../../task.types";
+import { showMigrationToast } from "../../components/Toasts/MigrationToast/MigrationToast";
+import { showUndoDeleteToast } from "../../components/Toasts/UndoToast/UndoDeleteToast";
+import { Task, UndoOperation } from "../../task.types";
 import { sortTasksByStatus } from "../../util/sort.task";
+import {
+  getDateKey,
+  loadTasksFromStorage,
+  moveTaskToDate,
+  saveTasksToStorage,
+} from "../../util/storage.util";
 
 interface UseTaskActionsProps {
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   tasks: Task[];
-  editingTitle: string;
-  setEditingTitle: (title: string) => void;
-  setEditingTaskId: (taskId: string | null) => void;
-  isCancellingEdit: boolean;
-  setIsCancellingEdit: (isCancelling: boolean) => void;
-  deletedTask: Task | null;
-  setDeletedTask: (task: Task | null) => void;
-  undoToastId: string | number | null;
-  setUndoToastId: (toastId: string | number | null) => void;
+  editingTitle?: string;
+  setEditingTitle?: (title: string) => void;
+  setEditingTaskId?: (taskId: string | null) => void;
+  isCancellingEdit?: boolean;
+  setIsCancellingEdit?: (isCancelling: boolean) => void;
+  undoState?: UndoOperation | null;
+  setUndoState?: (state: UndoOperation | null) => void;
+  undoToastId?: string | number | null;
+  setUndoToastId?: (toastId: string | number | null) => void;
+  dateInView?: dayjs.Dayjs;
+  navigateToNextDay?: () => void;
+  navigateToPreviousDay?: () => void;
 }
 
 export function useTaskActions({
@@ -27,10 +38,13 @@ export function useTaskActions({
   setEditingTaskId,
   isCancellingEdit,
   setIsCancellingEdit,
-  deletedTask,
-  setDeletedTask,
+  undoState,
+  setUndoState,
   undoToastId,
   setUndoToastId,
+  dateInView,
+  navigateToNextDay,
+  navigateToPreviousDay,
 }: UseTaskActionsProps) {
   const addTask = (title: string): Task => {
     const newTask: Task = {
@@ -66,17 +80,51 @@ export function useTaskActions({
   };
 
   const restoreTask = useCallback(() => {
-    if (!deletedTask) return;
+    if (!undoState) return;
 
-    // Add the task back to the list
-    setTasks((prev) => sortTasksByStatus([...prev, deletedTask]));
+    if (undoState.type === "delete") {
+      // Restore deleted task
+      setTasks((prev) => sortTasksByStatus([...prev, undoState.task]));
+    } else if (
+      undoState.type === "migrate" &&
+      undoState.fromDate &&
+      undoState.direction &&
+      dateInView
+    ) {
+      const currentDateKey = getDateKey(dateInView.toDate());
 
-    // Clear the deleted task state
-    setDeletedTask(null);
+      // Only restore if we're still on the same date where the migration happened
+      if (currentDateKey === undoState.fromDate) {
+        // Add the task back to the list
+        setTasks((prev) => sortTasksByStatus([...prev, undoState.task]));
 
-    // Clear the toast ID
-    setUndoToastId(null);
-  }, [deletedTask, setTasks, setDeletedTask, setUndoToastId]);
+        // Calculate the target date (where the task was migrated to)
+        const targetDate = dateInView.add(
+          undoState.direction === "forward" ? 1 : -1,
+          "day",
+        );
+        const targetDateKey = getDateKey(targetDate.toDate());
+
+        // Remove the task from the target date in storage
+        const targetDateTasks = loadTasksFromStorage(targetDateKey);
+        const updatedTargetTasks = targetDateTasks.filter(
+          (t: Task) => t.id !== undoState.task.id,
+        );
+        saveTasksToStorage(targetDateKey, updatedTargetTasks);
+
+        // Restore the task to the original date in storage
+        const originalDateTasks = loadTasksFromStorage(undoState.fromDate);
+        saveTasksToStorage(undoState.fromDate, [
+          ...originalDateTasks,
+          undoState.task,
+        ]);
+      }
+    }
+
+    // Clear the undo state
+    setUndoState?.(null);
+    setUndoToastId?.(null);
+  }, [undoState, dateInView, setTasks, setUndoState, setUndoToastId]);
 
   const deleteTask = (taskId: string) => {
     const taskToDelete = tasks.find((task) => task.id === taskId);
@@ -87,8 +135,8 @@ export function useTaskActions({
       toast.dismiss(undoToastId);
     }
 
-    // Store the deleted task for potential restoration
-    setDeletedTask(taskToDelete);
+    // Store the deleted task in unified undo state
+    setUndoState?.({ type: "delete", task: taskToDelete });
 
     // Remove task from the list
     setTasks((prev) => prev.filter((task) => task.id !== taskId));
@@ -96,7 +144,7 @@ export function useTaskActions({
     const toastId = showUndoDeleteToast(restoreTask);
 
     // Store the toast ID for potential dismissal
-    setUndoToastId(toastId);
+    setUndoToastId?.(toastId);
   };
 
   const focusOnCheckbox = (taskId: string) => {
@@ -129,8 +177,8 @@ export function useTaskActions({
       e.preventDefault();
       e.stopPropagation();
 
-      setEditingTaskId(taskId);
-      setEditingTitle(title);
+      setEditingTaskId?.(taskId);
+      setEditingTitle?.(title);
 
       setTimeout(() => {
         focusOnInput(taskId);
@@ -141,32 +189,32 @@ export function useTaskActions({
   const onInputBlur = (taskId: string) => {
     if (isCancellingEdit) {
       // Don't update the task title if we're canceling the edit
-      setIsCancellingEdit(false);
+      setIsCancellingEdit?.(false);
       return;
     }
 
     // Find the current task to check if it has been reverted
     const currentTask = tasks.find((task) => task.id === taskId);
-    const title = editingTitle.trim();
+    const title = editingTitle?.trim() || "";
     const shouldUpdateTitle =
       currentTask && title && title !== currentTask.title;
 
     if (shouldUpdateTitle) {
       updateTaskTitle(taskId, title);
     }
-    setEditingTaskId(null);
-    setEditingTitle("");
+    setEditingTaskId?.(null);
+    setEditingTitle?.("");
   };
 
   const onInputClick = (taskId: string) => {
-    setEditingTaskId(taskId);
-    setEditingTitle(tasks.find((task) => task.id === taskId)?.title || "");
+    setEditingTaskId?.(taskId);
+    setEditingTitle?.(tasks.find((task) => task.id === taskId)?.title || "");
   };
 
   const onInputKeyDown = (e: React.KeyboardEvent, taskId: string) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      const trimmedTitle = editingTitle.trim();
+      const trimmedTitle = editingTitle?.trim() || "";
       if (trimmedTitle === "") {
         // Delete task if title is empty
         deleteTask(taskId);
@@ -174,8 +222,8 @@ export function useTaskActions({
         // Update task with new title
         updateTaskTitle(taskId, trimmedTitle);
       }
-      setEditingTaskId(null);
-      setEditingTitle("");
+      setEditingTaskId?.(null);
+      setEditingTitle?.("");
       focusOnCheckbox(taskId);
     } else if (e.key === "Escape") {
       e.preventDefault();
@@ -188,11 +236,66 @@ export function useTaskActions({
         }, 0);
       }
       // Clear editing state
-      setEditingTaskId(null);
-      setEditingTitle("");
+      setEditingTaskId?.(null);
+      setEditingTitle?.("");
       focusOnCheckbox(taskId);
     }
   };
+
+  const migrateTask = useCallback(
+    (taskId: string, direction: "forward" | "backward") => {
+      if (!dateInView) return;
+
+      const taskToMigrate = tasks.find((task) => task.id === taskId);
+      if (!taskToMigrate) return;
+
+      // Dismiss any existing undo toast before showing new one
+      if (undoToastId) {
+        toast.dismiss(undoToastId);
+      }
+
+      // Calculate target date
+      const currentDateKey = getDateKey(dateInView.toDate());
+      const targetDate =
+        direction === "forward"
+          ? dateInView.add(1, "day")
+          : dateInView.subtract(1, "day");
+      const targetDateKey = getDateKey(targetDate.toDate());
+
+      // Store the migrated task operation
+      setUndoState?.({
+        type: "migrate",
+        task: taskToMigrate,
+        fromDate: currentDateKey,
+        direction,
+      });
+
+      // Move task in storage
+      moveTaskToDate(taskToMigrate, currentDateKey, targetDateKey);
+
+      // Remove from current view
+      setTasks((prev) => prev.filter((task) => task.id !== taskId));
+
+      // Show toast with navigation and undo options
+      const onNavigate =
+        direction === "forward" ? navigateToNextDay : navigateToPreviousDay;
+      if (onNavigate) {
+        const toastId = showMigrationToast(direction, onNavigate, restoreTask);
+        setUndoToastId?.(toastId);
+      }
+    },
+    [
+      tasks,
+      dateInView,
+      setTasks,
+      navigateToNextDay,
+      navigateToPreviousDay,
+      undoToastId,
+      setUndoState,
+      setUndoToastId,
+      restoreTask,
+    ],
+  );
 
   return {
     addTask,
@@ -206,5 +309,6 @@ export function useTaskActions({
     onInputBlur,
     onInputClick,
     onInputKeyDown,
+    migrateTask,
   };
 }

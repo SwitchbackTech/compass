@@ -23,6 +23,7 @@ export const DayViewContent = () => {
     setEditingTitle,
     deleteTask,
     restoreTask,
+    migrateTask,
     undoToastId,
   } = useTasks();
 
@@ -108,6 +109,7 @@ export const DayViewContent = () => {
     onEditTask: handleEditTask,
     onDeleteTask: handleDeleteTask,
     onRestoreTask: restoreTask,
+    onMigrateTask: migrateTask,
     onFocusTasks: focusOnFirstTask,
     onFocusAgenda: handleFocusAgenda,
     onNextDay: navigateToNextDay,

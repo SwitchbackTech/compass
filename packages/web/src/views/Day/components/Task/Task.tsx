@@ -1,9 +1,10 @@
 import React from "react";
 import { DATA_TASK_ELEMENT_ID } from "@web/common/constants/web.constants";
+import { ArrowButton } from "@web/components/Button/ArrowButton";
 import { Task as TaskType } from "../../task.types";
 import { TaskCircleIcon } from "../Icons/TaskCircleIcon";
 
-interface TaskProps {
+export interface TaskProps {
   task: TaskType;
   index: number;
   title: string;
@@ -24,6 +25,7 @@ interface TaskProps {
   onStatusToggle: (id: string) => void;
   onTitleChange: (title: string) => void;
   onFocus: (index: number) => void;
+  onMigrate: (id: string, direction: "forward" | "backward") => void;
 }
 
 export const Task = ({
@@ -38,6 +40,7 @@ export const Task = ({
   onFocus,
   onCheckboxKeyDown,
   onTitleChange,
+  onMigrate,
 }: TaskProps) => {
   return (
     <div
@@ -80,6 +83,18 @@ export const Task = ({
             onInputKeyDown(e, task.id, index, e.currentTarget.value)
           }
           onChange={(e) => onTitleChange(e.target.value)}
+        />
+      </div>
+      <div className="ml-auto flex gap-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
+        <ArrowButton
+          direction="left"
+          label="Move task to previous day"
+          onClick={() => onMigrate(task.id, "backward")}
+        />
+        <ArrowButton
+          direction="right"
+          label="Move task to next day"
+          onClick={() => onMigrate(task.id, "forward")}
         />
       </div>
     </div>

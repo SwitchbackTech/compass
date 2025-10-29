@@ -45,3 +45,19 @@ export function saveTasksToStorage(dateKey: string, tasks: Task[]): void {
     console.error("Error saving tasks to localStorage:", error);
   }
 }
+
+export function moveTaskToDate(
+  task: Task,
+  fromDateKey: string,
+  toDateKey: string,
+): void {
+  // Remove from source date
+  const sourceTasks = loadTasksFromStorage(fromDateKey);
+  const updatedSourceTasks = sourceTasks.filter((t) => t.id !== task.id);
+  saveTasksToStorage(fromDateKey, updatedSourceTasks);
+
+  // Add to target date
+  const targetTasks = loadTasksFromStorage(toDateKey);
+  const updatedTargetTasks = [...targetTasks, task];
+  saveTasksToStorage(toDateKey, updatedTargetTasks);
+}
