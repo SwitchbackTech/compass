@@ -88,16 +88,6 @@ export const SignInButtonWrapper = styled.div`
   padding: 2.625rem 1rem;
 `;
 
-export const WaitlistBtn = styled(Btn)`
-  background: ${({ theme }) => theme.color.status.info};
-  color: ${({ theme }) => theme.color.text.dark};
-  padding: 0.5rem 1rem;
-  margin-top: 1rem;
-  &:hover {
-    filter: brightness(120%);
-  }
-`;
-
 export const NavLinkContainer = styled.div`
   display: flex;
   flex-direction: column;
