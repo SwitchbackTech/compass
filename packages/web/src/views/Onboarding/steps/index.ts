@@ -1,4 +1,3 @@
-export * from "./waitlist/WaitlistCheck";
 export * from "./welcome/Welcome";
 export * from "./welcome/WelcomeScreen";
 export * from "./welcome/WelcomeNoteOne";
@@ -14,4 +13,3 @@ export * from "./outro/OutroTwo";
 export * from "./outro/OutroQuote";
 export * from "./mobile/MobileWarning";
 export * from "./mobile/MobileSignIn";
-export * from "./mobile/MobileWaitlistCheck/MobileWaitlistCheck";

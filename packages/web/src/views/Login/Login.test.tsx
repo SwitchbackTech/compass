@@ -1,7 +1,7 @@
 import { usePostHog } from "posthog-js/react";
 import { act } from "react";
 import "@testing-library/jest-dom";
-import { screen, waitFor } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { AuthApi } from "@web/common/apis/auth.api";
@@ -35,13 +35,6 @@ const mockNavigate = jest.fn();
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
   useNavigate: () => mockNavigate,
-}));
-
-// Mock WaitlistApi
-jest.mock("@web/common/apis/waitlist.api", () => ({
-  WaitlistApi: {
-    getWaitlistStatus: jest.fn(),
-  },
 }));
 
 describe("LoginView", () => {
@@ -110,43 +103,12 @@ describe("LoginView", () => {
     });
   });
 
-  describe("Waitlist Flow", () => {
-    it("should handle waitlist status check", async () => {
-      // Mock window.location to not be localhost
-      const originalLocation = window.location;
-      delete (window as any).location;
-      window.location = {
-        ...originalLocation,
-        hostname: "example.com",
-      } as any;
-
-      const { WaitlistApi } = require("@web/common/apis/waitlist.api");
-      WaitlistApi.getWaitlistStatus.mockResolvedValue({
-        isOnWaitlist: true,
-        isInvited: true,
-        isActive: true,
-      });
-
-      render(<LoginView />);
-
-      const emailInput = screen.getByPlaceholderText("Enter your email");
-      const submitButton = screen.getByText("Check Waitlist Status");
-
-      await act(async () => {
-        await userEvent.type(emailInput, "test@example.com");
-      });
-      await act(async () => {
-        await userEvent.click(submitButton);
-      });
-
-      await waitFor(() => {
-        expect(WaitlistApi.getWaitlistStatus).toHaveBeenCalledWith(
-          "test@example.com",
-        );
-      });
-
-      // Restore original location
-      (window as any).location = originalLocation;
+  it("renders Google sign-in and triggers login on click", async () => {
+    render(<LoginView />);
+    const btn = screen.getByRole("button");
+    await act(async () => {
+      await userEvent.click(btn);
     });
+    expect(mockLogin).toHaveBeenCalled();
   });
 });
