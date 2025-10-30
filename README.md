@@ -53,11 +53,9 @@ Features we don't support yet:
 
 ## Next Steps
 
-✍️ [Join waitlist](https://www.compasscalendar.com/waitlist?utm_source=github&utm_medium=referral&utm_campaign=readme): Access to the [**hosted** version of Compass](https://app.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme) is currently limited to emails that have been invited from our waitlist.
+🧭 [Use the app](https://app.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme): If you want to try it out for yourself before setting it up locally.
 
 📃 [Read the technical docs](https://docs.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme): All the info you'd need to get started, including guides on how to install, test, build, deploy, and contribute.
-
-🧭 Use the app. Contributors can use the full functionality of the app when running it **locally** without having to wait for a waitlist invite. See docs for setup details.
 
 📘 [Read the handbook](https://compasscalendar.notion.site/?utm_source=github&utm_medium=referral&utm_campaign=readme): Why Compass exists and how it fits into our loooooong-term vision.
 
