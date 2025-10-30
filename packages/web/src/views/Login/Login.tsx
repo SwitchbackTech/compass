@@ -56,7 +56,6 @@ export const LoginView = () => {
       navigate(ROOT_ROUTES.ROOT);
       return;
     }
-    // Proceed directly to the main login flow.
     startLoginFlow();
   };
 
