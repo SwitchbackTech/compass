@@ -1,5 +1,5 @@
 import { MouseEvent, useCallback } from "react";
-import { Categories_Event } from "@core/types/event.types";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import { getElemById } from "@web/common/utils/grid/grid.util";
 import { selectDraftStatus } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";

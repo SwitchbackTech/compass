@@ -1,4 +1,5 @@
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import { Flex } from "@web/components/Flex";
 import {
   AlignItems,

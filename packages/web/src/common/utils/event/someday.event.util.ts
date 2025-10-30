@@ -1,5 +1,5 @@
 import uniqby from "lodash.uniqby";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import {
   COLUMN_MONTH,
@@ -7,6 +7,7 @@ import {
   ID_SOMEDAY_EVENT_ACTION_MENU,
 } from "@web/common/constants/web.constants";
 import {
+  Categories_Event,
   Schema_SomedayEvent,
   Schema_SomedayEventsColumn,
 } from "@web/common/types/web.event.types";

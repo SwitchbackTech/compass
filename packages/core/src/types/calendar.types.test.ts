@@ -1,10 +1,10 @@
 import { ObjectId } from "bson";
 import { faker } from "@faker-js/faker";
 import {
+  CalendarProvider,
   CompassCalendarSchema,
   GoogleCalendarMetadataSchema,
 } from "@core/types/calendar.types";
-import { CalendarProvider } from "@core/types/event.types";
 import { gSchema$CalendarListEntry } from "@core/types/gcal";
 
 describe("Calendar Types", () => {

@@ -1,6 +1,6 @@
 import React, { FC } from "react";
 import { createPortal } from "react-dom";
-import { Categories_Event } from "@core/types/event.types";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import { getDraftContainer } from "@web/common/utils/draft/draft.util";
 import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";

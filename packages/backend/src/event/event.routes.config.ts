@@ -2,7 +2,8 @@ import express from "express";
 import { verifySession } from "supertokens-node/recipe/session/framework/express";
 import authMiddleware from "@backend/auth/middleware/auth.middleware";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
-import eventController from "./controllers/event.controller";
+import eventController from "@backend/event/controllers/event.controller";
+import { EventMiddleware } from "@backend/event/middleware/event.middleware";
 
 export class EventRoutes extends CommonRoutesConfig {
   constructor(app: express.Application) {
@@ -10,34 +11,27 @@ export class EventRoutes extends CommonRoutesConfig {
   }
 
   configureRoutes(): express.Application {
-    this.app
-      .route(`/api/event`)
-      .all(verifySession())
-      .get(eventController.readAll)
-      //@ts-ignore
-      .post(eventController.create);
+    const routePrefix = "/api/calendars/:calendar/events";
+    const router = express.Router();
 
-    this.app
-      .route(`/api/event/deleteMany`)
-      .all(verifySession())
-      .delete(eventController.deleteMany);
+    router.use(verifySession(), EventMiddleware.verifyUserCalendar);
 
-    this.app
-      .route(`/api/event/reorder`)
-      .all(verifySession())
-      .put(eventController.reorder);
+    router.route("/").get(eventController.readAll).post(eventController.create);
 
-    this.app
-      .route(`/api/event/delete-all/:userId`)
-      .all([verifySession(), authMiddleware.verifyIsDev])
-      .delete(eventController.deleteAllByUser);
+    router.delete("/delete-many", eventController.deleteMany);
+    router.put("/reorder", eventController.reorder);
 
-    this.app
-      .route(`/api/event/:id`)
-      .all(verifySession())
+    router
+      .use(authMiddleware.verifyIsDev)
+      .delete("/:user", eventController.deleteAllByUser);
+
+    router
+      .route("/:id")
       .get(eventController.readById)
       .put(eventController.update)
       .delete(eventController.delete);
+
+    this.app.use(`${routePrefix}/events`, router);
 
     return this.app;
   }

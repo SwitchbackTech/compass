@@ -1,6 +1,8 @@
+import { ObjectId } from "bson";
 import SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
 
 export interface Schema_User {
+  _id: ObjectId;
   email: string;
   firstName: string;
   lastName: string;

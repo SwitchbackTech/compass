@@ -1,8 +1,9 @@
 import { google } from "googleapis";
-import { Categories_Recurrence, Schema_Event } from "@core/types/event.types";
+import { Categories_Recurrence } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
 import { isInstance } from "@core/util/event/event.util";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
+import { AuthDriver } from "@backend/__tests__/drivers/auth.driver";
+import { CalendarDriver } from "@backend/__tests__/drivers/calendar.driver";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
   cleanupCollections,
@@ -15,7 +16,7 @@ import {
   noInstancesAfterSplitDate,
   updateBasePayloadToExpireOneDayAfterFirstInstance,
 } from "@backend/sync/services/sync/__tests__/gcal.sync.processor.test.util";
-import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
+import { GcalEventsSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
 
 describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
   beforeAll(setupTestDb);
@@ -28,9 +29,10 @@ describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
 
   it("should handle new UNTIL in BASE by updating BASE rule and recreating the instances", async () => {
     /* Assemble */
-    const { user } = await UtilDriver.setupTestUser();
+    const user = await AuthDriver.googleSignup();
+    const calendar = await CalendarDriver.getRandomUserCalendar(user._id);
 
-    const { gcalEvents } = await simulateDbAfterGcalImport(user._id.toString());
+    const { gcalEvents } = await simulateDbAfterGcalImport(calendar);
 
     const { gBaseWithUntil, untilDateStr } =
       updateBasePayloadToExpireOneDayAfterFirstInstance(gcalEvents);
@@ -42,8 +44,8 @@ describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
     });
 
     /* Act */
-    const origEvents = await getEventsInDb({ user: user._id.toString() });
-    const processor = new GcalSyncProcessor(user._id.toString());
+    const origEvents = await getEventsInDb({ calendar: calendar._id });
+    const processor = new GcalEventsSyncProcessor(calendar);
     const changes = await processor.processEvents([gBaseWithUntil]);
 
     /* Assert */
@@ -80,15 +82,12 @@ describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
 
     // Verify DB changed
     const remainingEvents = await getEventsInDb({
-      user: user._id.toString(),
+      calendar: calendar._id,
       $or: [
-        { gEventId: gBaseWithUntil.id },
-        { gRecurringEventId: gBaseWithUntil.id },
+        { "metadata.id": gBaseWithUntil.id },
+        { "metadata.recurringEventId": gBaseWithUntil.id },
       ],
-    }).then((events) =>
-      events.map((event) => ({ ...event, _id: event._id?.toString() })),
-    );
-
+    });
     expect(remainingEvents).not.toHaveLength(origEvents.length);
 
     // Verify base has new recurrence rule
@@ -98,20 +97,19 @@ describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
     await noInstancesAfterSplitDate(remainingEvents, untilDateStr);
 
     // Verify the instance before the UNTIL date still exists
-    const instances = remainingEvents.filter((e) =>
-      isInstance(e as unknown as Schema_Event),
-    );
+    const instances = remainingEvents.filter(isInstance);
 
     expect(instances.length).toBeGreaterThan(0);
   });
 
   it("should handle cancelled instance at split point by deleting it", async () => {
     /* Assemble */
-    const { user } = await UtilDriver.setupTestUser();
+    const user = await AuthDriver.googleSignup();
+    const calendar = await CalendarDriver.getRandomUserCalendar(user._id);
 
-    const { gcalEvents } = await simulateDbAfterGcalImport(user._id.toString());
+    const { gcalEvents } = await simulateDbAfterGcalImport(calendar);
 
-    const origEvents = await getEventsInDb({ user: user._id.toString() });
+    const origEvents = await getEventsInDb({ calendar: calendar._id });
 
     /* Act */
     // Simulate a gcal notification payload after an instance was cancelled
@@ -120,7 +118,7 @@ describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
       status: "cancelled",
     };
 
-    const processor = new GcalSyncProcessor(user._id.toString());
+    const processor = new GcalEventsSyncProcessor(calendar);
     const changes = await processor.processEvents([cancelledInstance]);
 
     /* Assert */
@@ -139,7 +137,7 @@ describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
 
     // Verify the cancelled instance was removed
     const cancelledInstanceExists = remainingEvents.some(
-      (e) => e["gEventId"] === gcalEvents.cancelled.id,
+      (e) => e.metadata?.id === gcalEvents.cancelled.id,
     );
     expect(cancelledInstanceExists).toBe(false);
   });

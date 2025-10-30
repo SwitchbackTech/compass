@@ -1,4 +1,4 @@
-import { ClientSession, UpdateFilter, UpdateResult } from "mongodb";
+import { ClientSession, ObjectId, UpdateFilter, UpdateResult } from "mongodb";
 import zod from "zod";
 import { Origin } from "@core/constants/core.constants";
 import {
@@ -7,6 +7,7 @@ import {
   SyncDetails,
 } from "@core/types/sync.types";
 import dayjs from "@core/util/date/dayjs";
+import calendarService from "@backend/calendar/services/calendar.service";
 import mongoService from "@backend/common/services/mongo.service";
 
 /**
@@ -50,20 +51,27 @@ export const getSync = async (
         gCalendarId: string;
         resource?: Exclude<Resource_Sync, Resource_Sync.SETTINGS>;
       },
+  session?: ClientSession,
 ) => {
   const filter = getSyncParamsValidationSchema.parse(params);
-  const sync = await mongoService.sync.findOne(filter);
+  const sync = await mongoService.sync.findOne(filter, { session });
 
   return sync;
 };
 
-export const getSyncByToken = async (syncToken: string) => {
+export const getSyncByToken = async (
+  syncToken: string,
+  session?: ClientSession,
+) => {
   const resources = [Resource_Sync.CALENDAR, Resource_Sync.EVENTS];
 
   for (const r of resources) {
-    const match = await mongoService.sync.findOne({
-      [`google.${r}.nextSyncToken`]: syncToken,
-    });
+    const match = await mongoService.sync.findOne(
+      {
+        [`google.${r}.nextSyncToken`]: syncToken,
+      },
+      { session },
+    );
 
     if (match) {
       return match;
@@ -73,40 +81,54 @@ export const getSyncByToken = async (syncToken: string) => {
   return null;
 };
 
-export const getGCalEventsSyncPageToken = async (
+export const getGCalEventsSync = async (
   userId: string,
   gCalendarId: string,
   session?: ClientSession,
-): Promise<string | undefined | null> => {
+): Promise<SyncDetails | undefined> => {
   const response = await mongoService.sync.findOne(
     { user: userId, "google.events.gCalendarId": gCalendarId },
     { session },
   );
 
-  return response?.google?.events?.find((e) => e.gCalendarId === gCalendarId)
-    ?.nextPageToken;
+  return response?.google?.events?.find((e) => e.gCalendarId === gCalendarId);
+};
+
+export const getGCalEventsSyncPageToken = async (
+  userId: string,
+  gCalendarId: string,
+  session?: ClientSession,
+): Promise<string | undefined | null> => {
+  const response = await getGCalEventsSync(userId, gCalendarId, session);
+
+  return response?.nextPageToken;
 };
 
 export const hasUpdatedCompassEventRecently = async (
-  userId: string,
+  user: ObjectId,
   deadline: string,
+  session?: ClientSession,
 ) => {
-  const recentChanges = await mongoService.event.countDocuments({
-    user: userId,
-    origin: Origin.COMPASS,
-    updatedAt: { $gt: new Date(deadline) },
-  });
+  const calendars = await calendarService.getAllByUser(user);
+  const recentChanges = await mongoService.event.countDocuments(
+    {
+      calendar: { $in: calendars.map((cal) => cal._id) },
+      origin: Origin.COMPASS,
+      updatedAt: { $gt: new Date(deadline) },
+    },
+    { session },
+  );
 
   return recentChanges > 0;
 };
 
 export const isWatchingGoogleResource = async (
-  userId: string,
+  userId: ObjectId,
   gCalendarId: string,
   session?: ClientSession,
 ) => {
   const channel = await mongoService.watch.findOne(
-    { user: userId, gCalendarId },
+    { user: userId.toString(), gCalendarId },
     { session },
   );
 
@@ -116,7 +138,7 @@ export const isWatchingGoogleResource = async (
 
   if (expired) {
     await mongoService.watch.deleteOne(
-      { user: userId, gCalendarId },
+      { user: userId.toString(), gCalendarId },
       { session },
     );
 
@@ -133,7 +155,7 @@ export const updateSync = async (
   update: Partial<Omit<SyncDetails, "gCalendarId" | "lastSyncedAt">> = {},
   session?: ClientSession,
 ): Promise<UpdateResult<Schema_Sync>> => {
-  const sync = await getSync({ userId });
+  const sync = await getSync({ userId }, session);
 
   const data = sync?.google?.[resource];
   const index = data?.findIndex((e) => e.gCalendarId === gCalendarId) ?? -1;

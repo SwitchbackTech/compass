@@ -3,6 +3,8 @@ import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
 import type {
   gCalendar,
   gParamsEventsList,
+  gSchema$CalendarList,
+  gSchema$CalendarListEntry,
   gSchema$Event,
   gSchema$Events,
 } from "@core/types/gcal";
@@ -12,7 +14,6 @@ import {
   SyncDetails,
 } from "@core/types/sync.types";
 import { IDSchemaV4 } from "@core/types/type.utils";
-import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { getBaseURL } from "@backend/servers/ngrok/ngrok.utils";
@@ -33,7 +34,7 @@ class GCalService {
   async getEvent(
     gcal: gCalendar,
     gcalEventId: string,
-    calendarId = GCAL_PRIMARY,
+    calendarId: string,
   ): Promise<gSchema$Event> {
     const response = await gcal.events.get({
       calendarId,
@@ -46,26 +47,39 @@ class GCalService {
   async createEvent(
     gcal: gCalendar,
     event: gSchema$Event,
+    gCalendarId: string,
   ): Promise<gSchema$Event> {
     const response = await gcal.events.insert({
-      calendarId: GCAL_PRIMARY,
+      calendarId: gCalendarId,
       requestBody: event,
     });
 
     return this.validateGCalResponse(response).data;
   }
 
-  async deleteEvent(gcal: gCalendar, gcalEventId: string) {
+  async deleteEvent(gcal: gCalendar, gEventId: string, gCalendarId: string) {
     const response = await gcal.events.delete({
-      calendarId: GCAL_PRIMARY,
-      eventId: gcalEventId,
+      calendarId: gCalendarId,
+      eventId: gEventId,
       sendUpdates: "all",
     });
 
     return response;
   }
 
-  private async getEventInstances(
+  /**
+   * getBaseEventInstances
+   *
+   * @param gcal
+   * @param calendarId Google Calendar identifier.
+   * @param eventId Google Event identifier.
+   * @param timeMin
+   * @param timeMax
+   * @param pageToken
+   * @param maxResults
+   * @returns gSchema$Events
+   */
+  private async getBaseEventInstances(
     gcal: gCalendar,
     calendarId: string,
     eventId: string,
@@ -92,18 +106,18 @@ class GCalService {
     return this.validateGCalResponse(response);
   }
 
-  async *getBaseRecurringEventInstances({
+  async *getAllBaseEventInstances({
     gCal,
-    calendarId,
-    eventId,
+    gCalendarId: calendarId,
+    gRecurringEventId: eventId,
     maxResults = 1000,
     timeMin,
     timeMax,
     pageToken,
   }: {
     gCal: gCalendar;
-    calendarId: string;
-    eventId: string;
+    gCalendarId: string;
+    gRecurringEventId: string;
     maxResults?: number;
     timeMin?: string;
     timeMax?: string;
@@ -114,7 +128,7 @@ class GCalService {
     let hasNextPage = false;
 
     do {
-      const { data = {} } = await this.getEventInstances(
+      const { data = {} } = await this.getBaseEventInstances(
         gCal,
         calendarId,
         eventId,
@@ -143,6 +157,7 @@ class GCalService {
   /**
    * getAllEvents
    * generator function to list all google calendar events
+   * calendarId is the google calendar id
    */
   async *getAllEvents({
     gCal,
@@ -153,7 +168,7 @@ class GCalService {
     syncToken,
   }: {
     gCal: gCalendar;
-    calendarId: string;
+    calendarId: string; // google calendar id
     maxResults?: number;
     singleEvents?: boolean;
     pageToken?: string;
@@ -196,25 +211,52 @@ class GCalService {
       nextSyncToken: syncToken,
       nextPageToken: pageToken,
     }: Partial<Pick<SyncDetails, "nextSyncToken" | "nextPageToken">> = {},
-  ) {
-    const response = await gcal.calendarList.list({ syncToken, pageToken });
+  ): Promise<gSchema$CalendarList> {
+    const calendars: gSchema$CalendarListEntry[] = [];
 
-    if (!response.data.nextSyncToken) {
-      throw error(
-        GcalError.PaginationNotSupported,
-        "Calendarlist sync token not saved",
-      );
-    }
+    let hasNextPage = false;
+    let isLastPage = true;
+    let etag: string | undefined = undefined;
+    let kind: string | undefined = undefined;
 
-    if (!response.data.items) {
+    do {
+      const { data = { items: [] } } = await gcal.calendarList
+        .list({ syncToken, pageToken })
+        .then((res) =>
+          this.validateGCalResponse(res, `Failed to fetch gcal events`),
+        );
+
+      const { nextPageToken, nextSyncToken, items = [] } = data;
+
+      pageToken = nextPageToken === null ? undefined : nextPageToken;
+      syncToken = nextSyncToken === null ? undefined : nextSyncToken;
+      etag = data.etag ?? etag;
+      kind = data.kind ?? kind;
+
+      hasNextPage =
+        typeof nextPageToken === "string" && nextPageToken.length > 0;
+
+      isLastPage =
+        typeof nextSyncToken === "string" && nextSyncToken.length > 0;
+
+      calendars.push(...items);
+    } while (hasNextPage || !isLastPage);
+
+    if (calendars.length === 0) {
       throw error(GcalError.CalendarlistMissing, "gCalendarlist not found");
     }
-    return response.data;
+
+    return { items: calendars, etag, kind, nextSyncToken: syncToken };
   }
 
-  async updateEvent(gcal: gCalendar, gEventId: string, event: gSchema$Event) {
+  async updateEvent(
+    gcal: gCalendar,
+    gEventId: string,
+    event: gSchema$Event,
+    gCalendarId: string,
+  ) {
     const response = await gcal.events.update({
-      calendarId: GCAL_PRIMARY,
+      calendarId: gCalendarId,
       eventId: gEventId,
       requestBody: event,
     });

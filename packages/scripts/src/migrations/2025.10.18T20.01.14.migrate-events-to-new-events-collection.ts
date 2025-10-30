@@ -2,44 +2,51 @@ import { ObjectId } from "bson";
 import type { MigrationParams, RunnableMigration } from "umzug";
 import { z } from "zod/v4";
 import { MigrationContext } from "@scripts/common/cli.types";
-import { Origin, Priorities } from "@core/constants/core.constants";
-import { CalendarProvider } from "@core/types/event.types";
 import {
-  EventSchema,
-  GoogleEventMetadataSchema,
+  DBEventSchema,
+  EventMetadataSchema,
   Schema_Event,
-} from "@core/types/event_new.types";
-import { zObjectId } from "@core/types/type.utils";
-import { parseCompassEventDate } from "@core/util/event/event.util";
+  V0EventSchema,
+} from "@core/types/event.types";
+import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
 import mongoService from "@backend/common/services/mongo.service";
+
+type Old_Schema_Event = z.infer<typeof V0EventSchema>;
 
 export default class Migration implements RunnableMigration<MigrationContext> {
   readonly name: string =
     "2025.10.18T20.01.14.migrate-events-to-new-events-collection";
   readonly path: string =
     "2025.10.18T20.01.14.migrate-events-to-new-events-collection.ts";
-  static readonly OldEventSchema = z.object({
-    _id: zObjectId.optional(),
-    description: z.string().nullable().optional(),
-    isAllDay: z.boolean().optional(),
-    isSomeday: z.boolean().optional(),
-    gEventId: z.string().optional(),
-    gRecurringEventId: z.string().optional(),
-    origin: z.enum(Origin),
-    priority: z.enum(Priorities),
-    recurrence: z
-      .object({
-        rule: z.array(z.string()).nonempty().optional(),
-        eventId: z.string().optional(),
-      })
-      .optional(),
-    startDate: z.string().nonempty().min(10),
-    endDate: z.string().nonempty().min(10),
-    title: z.string().optional(),
-    updatedAt: z.union([z.date(), z.string().nonempty().min(10)]).optional(),
-    user: z.string(),
-  });
+
+  private static isAllDay(
+    event: Pick<Old_Schema_Event, "startDate" | "endDate">,
+  ) {
+    return (
+      event !== undefined &&
+      // 'YYYY-MM-DD' has 10 chars
+      event.startDate?.length === 10 &&
+      event.endDate?.length === 10
+    );
+  }
+
+  private static getCompassEventDateFormat(date: string): string {
+    const allday = Migration.isAllDay({ startDate: date, endDate: date });
+    const { YEAR_MONTH_DAY_FORMAT, RFC3339_OFFSET } = dayjs.DateFormat;
+    const format = allday ? YEAR_MONTH_DAY_FORMAT : RFC3339_OFFSET;
+
+    return format;
+  }
+
+  private static parseCompassEventDate = (date: string): Dayjs => {
+    if (!date) throw new Error("`date` or `dateTime` must be defined");
+
+    const format = Migration.getCompassEventDateFormat(date);
+    const timezone = dayjs.tz.guess();
+
+    return dayjs(date, format).tz(timezone);
+  };
 
   async up(params: MigrationParams<MigrationContext>): Promise<void> {
     const { logger } = params.context;
@@ -54,7 +61,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
     const rrules = new Map<string, string[]>();
 
     for await (const _event of cursor) {
-      const parsed = Migration.OldEventSchema.safeParse(_event);
+      const parsed = V0EventSchema.safeParse(_event);
       const { success, data, error } = parsed;
 
       if (!success) {
@@ -70,8 +77,10 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       const { startDate: _start, endDate: _end, ...details } = _details;
       const { isAllDay, recurrence, ...eventDetails } = details;
       const user = new ObjectId(_user);
-      const start = parseCompassEventDate(_start);
-      const end = isAllDay ? start.endOf("day") : parseCompassEventDate(_end);
+      const start = Migration.parseCompassEventDate(_start);
+      const end = isAllDay
+        ? start.add(1, "day")
+        : Migration.parseCompassEventDate(_end);
       const startDate = start.toDate();
       const endDate = end.toDate();
 
@@ -94,19 +103,13 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       }
 
       if (gEventId) {
-        const provider = CalendarProvider.GOOGLE;
-
-        const metadata = GoogleEventMetadataSchema.parse(
+        const metadata = EventMetadataSchema.parse(
           gRecurringEventId
-            ? { provider, gEventId, gRecurringEventId }
-            : { provider, gEventId },
+            ? { id: gEventId, recurringEventId: gRecurringEventId }
+            : { id: gEventId },
         );
 
-        Object.assign(eventDetails, { metadata: [metadata] });
-      } else {
-        Object.assign(eventDetails, {
-          metadata: [{ provider: CalendarProvider.COMPASS }],
-        });
+        Object.assign(eventDetails, { metadata });
       }
 
       if (recurrence) {
@@ -138,7 +141,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
         }
       }
 
-      const event = EventSchema.parse({
+      const event = DBEventSchema.parse({
         ...eventDetails,
         startDate,
         endDate,

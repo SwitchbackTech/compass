@@ -22,13 +22,13 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
+import mongoService from "@backend/common/services/mongo.service";
 import {
   ReqBody,
   Res_Promise,
   SReqBody,
 } from "@backend/common/types/express.types";
 import syncService from "@backend/sync/services/sync.service";
-import { updateGoogleRefreshToken } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
 
 const logger = Logger("app:auth.controller");
@@ -148,11 +148,14 @@ class AuthController {
     const cUserId = user._id.toString();
 
     if (gRefreshToken !== user.google.gRefreshToken) {
-      await updateGoogleRefreshToken(cUserId, gRefreshToken);
+      await mongoService.user.findOneAndUpdate(
+        { _id: user._id },
+        { $set: { "google.gRefreshToken": gRefreshToken } },
+      );
     }
 
     try {
-      await syncService.importIncremental(cUserId, gcal);
+      await syncService.importIncremental(user._id, gcal);
     } catch (e) {
       if (
         e instanceof Error &&
@@ -162,11 +165,12 @@ class AuthController {
           `Resyncing google data due to missing sync for user: ${cUserId}`,
         );
 
-        userService.restartGoogleCalendarSync(cUserId);
+        // do not wait for long running resync to finish
+        userService.restartGoogleCalendarSync(user._id);
       }
     }
 
-    await userService.saveTimeFor("lastLoggedInAt", cUserId);
+    await userService.updateLastLoggedInTime(user._id);
 
     return { cUserId, email: user.email };
   };
@@ -187,10 +191,13 @@ class AuthController {
     res.send(revokeResult);
   };
 
-  signup = async (gUser: TokenPayload, gRefreshToken: string) => {
+  signup = async (
+    gUser: TokenPayload,
+    gRefreshToken: string,
+  ): Promise<{ cUserId: string; email: string }> => {
     const user = await userService.initUserData(gUser, gRefreshToken);
 
-    return { cUserId: user.userId, email: user.email };
+    return { cUserId: user._id.toString(), email: user.email };
   };
 }
 

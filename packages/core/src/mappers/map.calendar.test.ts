@@ -1,12 +1,12 @@
 import { ObjectId } from "bson";
-import { createMockCalendarListEntry } from "@core/__tests__/helpers/gcal.factory";
 import { MapCalendar } from "@core/mappers/map.calendar";
-import { CalendarProvider } from "@core/types/event.types";
+import { CalendarProvider } from "@core/types/calendar.types";
 import { gSchema$CalendarListEntry } from "@core/types/gcal";
+import { CalendarDriver } from "@backend/__tests__/drivers/calendar.driver";
 
 describe("MapCalendar.gcalToCompass", () => {
   const baseGoogleCalendar: gSchema$CalendarListEntry =
-    createMockCalendarListEntry();
+    CalendarDriver.createGCalCalendarListEntry(new ObjectId());
 
   it("maps provided google calendar fields correctly", () => {
     const userId = new ObjectId();

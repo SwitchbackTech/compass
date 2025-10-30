@@ -10,8 +10,8 @@ import {
   SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
-import { Categories_Event } from "@core/types/event.types";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import {
   createAlldayDraft,
   createTimedDraft,

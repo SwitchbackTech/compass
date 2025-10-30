@@ -5,27 +5,34 @@ import {
 } from "@core/constants/websocket.constants";
 import {
   Categories_Recurrence,
-  CompassEvent,
-  CompassEventStatus,
+  EventStatus,
+  EventUpdate,
   RecurringEventUpdateScope,
 } from "@core/types/event.types";
 import {
   createMockBaseEvent,
-  createMockStandaloneEvent,
+  createMockRegularEvent,
 } from "@core/util/test/ccal.event.factory";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.processor";
 import { Event_Transition } from "@backend/sync/sync.types";
+import { AuthDriver } from "../../../../__tests__/drivers/auth.driver";
+import { CalendarDriver } from "../../../../__tests__/drivers/calendar.driver";
+import {
+  cleanupCollections,
+  cleanupTestDb,
+  setupTestDb,
+} from "../../../../__tests__/helpers/mock.db.setup";
 
 // Import the enum
 
 describe("CompassSyncProcessor.getNotificationType", () => {
   it("returns EVENT_CHANGED for non-SOMEDAY transitions", () => {
     const transition: Event_Transition = {
-      transition: [Categories_Recurrence.STANDALONE, "STANDALONE_CONFIRMED"],
+      transition: [Categories_Recurrence.REGULAR, "REGULAR_CONFIRMED"],
       title: faker.lorem.sentence(),
-      operation: "STANDALONE_UPDATED",
-      category: Categories_Recurrence.STANDALONE,
+      operation: "REGULAR_UPDATED",
+      category: Categories_Recurrence.REGULAR,
     };
 
     expect(CompassSyncProcessor["getNotificationType"](transition)).toEqual([
@@ -37,12 +44,12 @@ describe("CompassSyncProcessor.getNotificationType", () => {
   it("returns SOMEDAY_EVENT_CHANGED for SOMEDAY transitions", () => {
     const transition: Event_Transition = {
       transition: [
-        Categories_Recurrence.STANDALONE_SOMEDAY,
-        "STANDALONE_SOMEDAY_CONFIRMED",
+        Categories_Recurrence.REGULAR_SOMEDAY,
+        "REGULAR_SOMEDAY_CONFIRMED",
       ],
       title: faker.lorem.sentence(),
-      operation: "STANDALONE_SOMEDAY_UPDATED",
-      category: Categories_Recurrence.STANDALONE_SOMEDAY,
+      operation: "REGULAR_SOMEDAY_UPDATED",
+      category: Categories_Recurrence.REGULAR_SOMEDAY,
     };
 
     expect(CompassSyncProcessor["getNotificationType"](transition)).toEqual([
@@ -53,13 +60,10 @@ describe("CompassSyncProcessor.getNotificationType", () => {
 
   it("returns mixed notifications for mixed transitions", () => {
     const transition: Event_Transition = {
-      transition: [
-        Categories_Recurrence.STANDALONE_SOMEDAY,
-        "STANDALONE_CONFIRMED",
-      ],
+      transition: [Categories_Recurrence.REGULAR_SOMEDAY, "REGULAR_CONFIRMED"],
       title: faker.lorem.sentence(),
-      operation: "STANDALONE_CREATED",
-      category: Categories_Recurrence.STANDALONE_SOMEDAY,
+      operation: "REGULAR_CREATED",
+      category: Categories_Recurrence.REGULAR_SOMEDAY,
     };
 
     expect(CompassSyncProcessor["getNotificationType"](transition)).toEqual([
@@ -70,12 +74,23 @@ describe("CompassSyncProcessor.getNotificationType", () => {
 });
 
 describe("CompassSyncProcessor.notifyClients", () => {
+  beforeEach(setupTestDb);
+  beforeEach(cleanupCollections);
+  afterAll(cleanupTestDb);
+
   beforeEach(() => {
     jest.spyOn(webSocketServer, "handleBackgroundCalendarChange").mockClear();
     jest.spyOn(webSocketServer, "handleBackgroundSomedayChange").mockClear();
   });
 
-  it("notifies correct users and events", () => {
+  it("notifies correct users and events", async () => {
+    const newUserA = await AuthDriver.googleSignup();
+    const userA = await AuthDriver.googleLogin(newUserA._id);
+    const calendarA = await CalendarDriver.getRandomUserCalendar(userA._id);
+    const newUserB = await AuthDriver.googleSignup();
+    const userB = await AuthDriver.googleLogin(newUserB._id);
+    const calendarB = await CalendarDriver.getRandomUserCalendar(userB._id);
+
     const calendarSpy = jest.spyOn(
       webSocketServer,
       "handleBackgroundCalendarChange",
@@ -87,25 +102,27 @@ describe("CompassSyncProcessor.notifyClients", () => {
     );
 
     const applyTo = RecurringEventUpdateScope.THIS_EVENT;
-    const status = CompassEventStatus.CONFIRMED;
-    const userA = faker.database.mongodbObjectId();
-    const userB = faker.database.mongodbObjectId();
+    const status = EventStatus.CONFIRMED;
 
-    const events: CompassEvent[] = [
+    const events: EventUpdate[] = [
       {
+        calendar: calendarA,
         applyTo,
+        providerSync: true,
         status,
         payload: createMockBaseEvent({
-          user: userA,
-        }) as CompassEvent["payload"],
+          calendar: calendarA._id,
+        }),
       },
       {
+        calendar: calendarB,
         applyTo,
+        providerSync: true,
         status,
-        payload: createMockStandaloneEvent({
+        payload: createMockRegularEvent({
           isSomeday: true,
-          user: userB,
-        }) as CompassEvent["payload"],
+          calendar: calendarB._id,
+        }),
       },
     ];
 
@@ -118,15 +135,15 @@ describe("CompassSyncProcessor.notifyClients", () => {
       },
       {
         title: events[1]!.payload.title!,
-        transition: [null, "STANDALONE_SOMEDAY_CONFIRMED"],
-        operation: "STANDALONE_SOMEDAY_CREATED",
-        category: Categories_Recurrence.STANDALONE_SOMEDAY,
+        transition: [null, "REGULAR_SOMEDAY_CONFIRMED"],
+        operation: "REGULAR_SOMEDAY_CREATED",
+        category: Categories_Recurrence.REGULAR_SOMEDAY,
       },
     ];
 
     CompassSyncProcessor["notifyClients"](events, summary);
 
-    expect(calendarSpy).toHaveBeenCalledWith(userA);
-    expect(somedaySpy).toHaveBeenCalledWith(userB);
+    expect(calendarSpy).toHaveBeenCalledWith(calendarA.user);
+    expect(somedaySpy).toHaveBeenCalledWith(calendarB.user);
   });
 });

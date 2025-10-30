@@ -1,20 +1,19 @@
-import { WithId } from "mongodb";
 import { faker } from "@faker-js/faker";
 import { Priorities } from "@core/constants/core.constants";
+import { CalendarProvider } from "@core/types/calendar.types";
 import {
-  CalendarProvider,
+  BaseEventSchema,
   Categories_Recurrence,
-  CompassEventStatus,
-  CompassThisAndFollowingEvent,
-  CompassThisEvent,
+  EventStatus,
   RecurringEventUpdateScope,
   Schema_Event,
-  Schema_Event_Recur_Base,
+  ThisAndFollowingEventsUpdate,
+  ThisEventUpdate,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { parseCompassEventDate } from "@core/util/event/event.util";
 import { createMockBaseEvent } from "@core/util/test/ccal.event.factory";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
+import { AuthDriver } from "@backend/__tests__/drivers/auth.driver";
+import { EventDriver } from "@backend/__tests__/drivers/event.driver";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -26,7 +25,7 @@ import {
   testCompassEventNotInGcal,
   testCompassSeries,
 } from "@backend/event/classes/compass.event.parser.test.util";
-import eventService, { _getGcal } from "@backend/event/services/event.service";
+import eventService from "@backend/event/services/event.service";
 import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.processor";
 
 describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
@@ -42,7 +41,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
       describe("Calendar: ", () => {
         describe("Basic Edits: ", () => {
           it("should update the title field of an event and those of the following instances in its base recurrence", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await AuthDriver.googleSignup();
             const user = _user._id.toString();
             const isSomeday = false;
             const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
@@ -53,9 +52,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -96,7 +95,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ...splitInstance,
               recurrence: {
                 rule: baseEvent.recurrence?.rule,
-                eventId: baseEvent._id.toString(),
+                eventId: baseEvent._id,
               },
               _id: splitInstanceId,
               title: faker.lorem.sentence(3),
@@ -105,9 +104,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
                 payload:
-                  updatedPayload as CompassThisAndFollowingEvent["payload"],
+                  updatedPayload as ThisAndFollowingEventsUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -165,17 +164,17 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               const untilDay = dayjs(until!, dayjs.DateFormat.RFC5545);
 
               oldInstances.forEach(({ startDate }) =>
-                expect(
-                  parseCompassEventDate(startDate!).isSameOrBefore(untilDay),
-                ).toBe(true),
+                expect(dayjs(startDate).isSameOrBefore(untilDay)).toBe(true),
               );
 
-              const newSeriesBase = (await mongoService.event.findOne({
-                user,
-                startDate: splitInstance.startDate,
-                endDate: splitInstance.endDate,
-                title: updatedPayload.title,
-              })) as WithId<Omit<Schema_Event_Recur_Base, "_id">>;
+              const newSeriesBase = BaseEventSchema.parse(
+                await mongoService.event.findOne({
+                  calendar,
+                  startDate: splitInstance.startDate,
+                  endDate: splitInstance.endDate,
+                  title: updatedPayload.title,
+                }),
+              );
 
               expect(newSeriesBase).toBeDefined();
 
@@ -198,9 +197,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               const newUntilDay = dayjs(newUntil!, dayjs.DateFormat.RFC5545);
 
               newInstances.forEach(({ startDate, title }) => {
-                expect(
-                  parseCompassEventDate(startDate!).isSameOrBefore(newUntilDay),
-                ).toBe(true);
+                expect(dayjs(startDate).isSameOrBefore(newUntilDay)).toBe(true);
 
                 expect(title).toBe(updatedPayload.title);
               });
@@ -268,7 +265,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           });
 
           it("should update the description field of an event and those of the following instances in its base recurrence", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await AuthDriver.googleSignup();
             const user = _user._id.toString();
             const isSomeday = false;
             const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
@@ -279,9 +276,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -322,7 +319,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ...splitInstance,
               recurrence: {
                 rule: baseEvent.recurrence?.rule,
-                eventId: baseEvent._id.toString(),
+                eventId: baseEvent._id,
               },
               _id: splitInstanceId,
               description: faker.lorem.sentence(3),
@@ -331,9 +328,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
                 payload:
-                  updatedPayload as CompassThisAndFollowingEvent["payload"],
+                  updatedPayload as ThisAndFollowingEventsUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -391,17 +388,17 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               const untilDay = dayjs(until!, dayjs.DateFormat.RFC5545);
 
               oldInstances.forEach(({ startDate }) =>
-                expect(
-                  parseCompassEventDate(startDate!).isSameOrBefore(untilDay),
-                ).toBe(true),
+                expect(dayjs(startDate).isSameOrBefore(untilDay)).toBe(true),
               );
 
-              const newSeriesBase = (await mongoService.event.findOne({
-                user,
-                startDate: splitInstance.startDate,
-                endDate: splitInstance.endDate,
-                description: updatedPayload.description,
-              })) as WithId<Omit<Schema_Event_Recur_Base, "_id">>;
+              const newSeriesBase = BaseEventSchema.parse(
+                await mongoService.event.findOne({
+                  calendar,
+                  startDate: splitInstance.startDate,
+                  endDate: splitInstance.endDate,
+                  description: updatedPayload.description,
+                }),
+              );
 
               expect(newSeriesBase).toBeDefined();
 
@@ -424,9 +421,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               const newUntilDay = dayjs(newUntil!, dayjs.DateFormat.RFC5545);
 
               newInstances.forEach(({ startDate, description }) => {
-                expect(
-                  parseCompassEventDate(startDate!).isSameOrBefore(newUntilDay),
-                ).toBe(true);
+                expect(dayjs(startDate!).isSameOrBefore(newUntilDay)).toBe(
+                  true,
+                );
 
                 expect(description).toBe(updatedPayload.description);
               });
@@ -494,7 +491,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           });
 
           it("should update the priority field of an event and those of the following instances in its base recurrence", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
+            const _user = await AuthDriver.googleSignup();
             const user = _user._id.toString();
             const isSomeday = false;
             const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
@@ -507,9 +504,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             const changes = await CompassSyncProcessor.processEvents([
               {
-                payload: payload as CompassThisEvent["payload"],
+                payload: payload as ThisEventUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -550,7 +547,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ...splitInstance,
               recurrence: {
                 rule: baseEvent.recurrence?.rule,
-                eventId: baseEvent._id.toString(),
+                eventId: baseEvent._id,
               },
               _id: splitInstanceId,
               priority: Priorities.RELATIONS,
@@ -559,9 +556,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             const updateChanges = await CompassSyncProcessor.processEvents([
               {
                 payload:
-                  updatedPayload as CompassThisAndFollowingEvent["payload"],
+                  updatedPayload as ThisAndFollowingEventsUpdate["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS,
-                status: CompassEventStatus.CONFIRMED,
+                status: EventStatus.CONFIRMED,
               },
             ]);
 
@@ -619,17 +616,17 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               const untilDay = dayjs(until!, dayjs.DateFormat.RFC5545);
 
               oldInstances.forEach(({ startDate }) =>
-                expect(
-                  parseCompassEventDate(startDate!).isSameOrBefore(untilDay),
-                ).toBe(true),
+                expect(dayjs(startDate).isSameOrBefore(untilDay)).toBe(true),
               );
 
-              const newSeriesBase = (await mongoService.event.findOne({
-                user,
-                startDate: splitInstance.startDate,
-                endDate: splitInstance.endDate,
-                priority: updatedPayload.priority,
-              })) as WithId<Omit<Schema_Event_Recur_Base, "_id">>;
+              const newSeriesBase = BaseEventSchema.parse(
+                await mongoService.event.findOne({
+                  calendar,
+                  startDate: splitInstance.startDate,
+                  endDate: splitInstance.endDate,
+                  priority: updatedPayload.priority,
+                }),
+              );
 
               expect(newSeriesBase).toBeDefined();
 
@@ -652,9 +649,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               const newUntilDay = dayjs(newUntil!, dayjs.DateFormat.RFC5545);
 
               newInstances.forEach(({ startDate, priority }) => {
-                expect(
-                  parseCompassEventDate(startDate!).isSameOrBefore(newUntilDay),
-                ).toBe(true);
+                expect(dayjs(startDate).isSameOrBefore(newUntilDay)).toBe(true);
 
                 expect(priority).toBe(updatedPayload.priority);
               });
@@ -731,7 +726,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
     describe("Delete - Instance Event: ", () => {
       it("should delete this event and the following instances in its base recurrence", async () => {
         // create series
-        const { user: _user } = await UtilDriver.setupTestUser();
+        const _user = await AuthDriver.googleSignup();
         const user = _user._id.toString();
         const isSomeday = false;
         const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
@@ -742,9 +737,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
         const changes = await CompassSyncProcessor.processEvents([
           {
-            payload: payload as CompassThisEvent["payload"],
+            payload: payload as ThisEventUpdate["payload"],
             applyTo: RecurringEventUpdateScope.THIS_EVENT,
-            status: CompassEventStatus.CONFIRMED,
+            status: EventStatus.CONFIRMED,
           },
         ]);
 
@@ -779,16 +774,16 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           ...splitInstance,
           recurrence: {
             rule: baseEvent.recurrence?.rule,
-            eventId: baseEvent._id.toString(),
+            eventId: baseEvent._id,
           },
           _id: splitInstanceId,
         };
 
         const updateChanges = await CompassSyncProcessor.processEvents([
           {
-            payload: updatedPayload as CompassThisAndFollowingEvent["payload"],
+            payload: updatedPayload as ThisAndFollowingEventsUpdate["payload"],
             applyTo: RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS,
-            status: CompassEventStatus.CANCELLED,
+            status: EventStatus.CANCELLED,
           },
         ]);
 
@@ -837,9 +832,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           const untilDay = dayjs(until!, dayjs.DateFormat.RFC5545);
 
           oldInstances.forEach(({ startDate }) =>
-            expect(
-              parseCompassEventDate(startDate!).isSameOrBefore(untilDay),
-            ).toBe(true),
+            expect(dayjs(startDate).isSameOrBefore(untilDay)).toBe(true),
           );
 
           switch (calendarProvider) {
@@ -884,14 +877,14 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           switch (calendarProvider) {
             case CalendarProvider.GOOGLE:
               await expect(
-                _getGcal(user, baseEvent._id.toString()!),
+                EventDriver.getGCalEvent(user, baseEvent._id.toString()!),
               ).rejects.toThrow(
                 `Event with id ${baseEvent._id.toString()} not found`,
               );
 
               instances.forEach(async (instance) => {
                 await expect(
-                  _getGcal(user, instance._id.toString()!),
+                  EventDriver.getGCalEvent(user, instance._id.toString()!),
                 ).rejects.toThrow(
                   `Event with id ${instance._id.toString()} not found`,
                 );

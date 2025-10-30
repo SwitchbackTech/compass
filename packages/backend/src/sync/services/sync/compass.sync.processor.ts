@@ -4,7 +4,7 @@ import {
   SOMEDAY_EVENT_CHANGED,
 } from "@core/constants/websocket.constants";
 import { Logger } from "@core/logger/winston.logger";
-import { CompassEvent } from "@core/types/event.types";
+import { EventUpdate } from "@core/types/event.types";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
@@ -17,7 +17,7 @@ const logger = Logger("app.compass.sync.processor");
 
 export class CompassSyncProcessor {
   static async processEvents(
-    events: CompassEvent[],
+    events: EventUpdate[],
     _session?: ClientSession,
   ): Promise<Event_Transition[]> {
     const summary: Event_Transition[] = [];
@@ -35,8 +35,10 @@ export class CompassSyncProcessor {
         ),
       ).then((events) => events.flat());
 
-      console.log("LATEST CHANGES (from Compass):");
-      console.log(JSON.stringify(compassEvents, null, 2));
+      if (!events.some((e) => e.providerSync)) {
+        console.log("LATEST CHANGES (from Compass):");
+        console.log(JSON.stringify(compassEvents, null, 2));
+      }
 
       for (const event of compassEvents) {
         const changes = await CompassSyncProcessor.handleCompassChange(
@@ -82,14 +84,16 @@ export class CompassSyncProcessor {
   }
 
   private static notifyClients(
-    events: CompassEvent[],
+    events: EventUpdate[],
     summary: Event_Transition[],
   ): void {
     const notifications = [
       ...new Set(summary.flatMap(CompassSyncProcessor.getNotificationType)),
     ];
 
-    const uniqueUserIds = new Set(events.map((e) => e.payload.user));
+    const uniqueUserIds = new Set(
+      events.map((e) => e.calendar.user.toString()),
+    );
 
     uniqueUserIds.forEach((userId) => {
       notifications.forEach((notification) => {
@@ -110,7 +114,7 @@ export class CompassSyncProcessor {
   }
 
   private static async handleCompassChange(
-    event: CompassEvent,
+    event: EventUpdate,
     session?: ClientSession,
   ): Promise<Event_Transition[]> {
     const eventId = event.payload._id;
@@ -123,37 +127,37 @@ export class CompassSyncProcessor {
     logger.info(`Handle Compass event(${eventId}): ${transition}`);
 
     switch (transition) {
-      case "NIL->>STANDALONE_SOMEDAY_CONFIRMED":
+      case "NIL->>REGULAR_SOMEDAY_CONFIRMED":
       case "NIL->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":
-      case "NIL->>STANDALONE_CONFIRMED":
+      case "NIL->>REGULAR_CONFIRMED":
       case "NIL->>RECURRENCE_BASE_CONFIRMED":
-      case "STANDALONE_SOMEDAY->>STANDALONE_CONFIRMED":
+      case "REGULAR_SOMEDAY->>REGULAR_CONFIRMED":
       case "RECURRENCE_BASE_SOMEDAY->>RECURRENCE_BASE_CONFIRMED":
-      case "RECURRENCE_INSTANCE_SOMEDAY->>STANDALONE_CONFIRMED":
+      case "RECURRENCE_INSTANCE_SOMEDAY->>REGULAR_CONFIRMED":
         return parser.createEvent(session);
-      case "STANDALONE_SOMEDAY->>STANDALONE_SOMEDAY_CONFIRMED":
-      case "STANDALONE->>STANDALONE_CONFIRMED":
+      case "REGULAR_SOMEDAY->>REGULAR_SOMEDAY_CONFIRMED":
+      case "REGULAR->>REGULAR_CONFIRMED":
       case "RECURRENCE_INSTANCE_SOMEDAY->>RECURRENCE_INSTANCE_SOMEDAY_CONFIRMED":
       case "RECURRENCE_INSTANCE->>RECURRENCE_INSTANCE_CONFIRMED":
         return parser.updateEvent(session);
-      case "NIL->>STANDALONE_SOMEDAY_CANCELLED":
-      case "NIL->>STANDALONE_CANCELLED":
+      case "NIL->>REGULAR_SOMEDAY_CANCELLED":
+      case "NIL->>REGULAR_CANCELLED":
       case "NIL->>RECURRENCE_INSTANCE_CANCELLED":
       case "NIL->>RECURRENCE_INSTANCE_SOMEDAY_CANCELLED":
-      case "STANDALONE_SOMEDAY->>STANDALONE_SOMEDAY_CANCELLED":
-      case "STANDALONE->>STANDALONE_CANCELLED":
+      case "REGULAR_SOMEDAY->>REGULAR_SOMEDAY_CANCELLED":
+      case "REGULAR->>REGULAR_CANCELLED":
       case "RECURRENCE_INSTANCE->>RECURRENCE_INSTANCE_CANCELLED":
       case "RECURRENCE_INSTANCE_SOMEDAY->>RECURRENCE_INSTANCE_SOMEDAY_CANCELLED":
         return parser.deleteEvent(session);
-      case "STANDALONE->>STANDALONE_SOMEDAY_CONFIRMED":
+      case "REGULAR->>REGULAR_SOMEDAY_CONFIRMED":
         return parser.standaloneToSomeday(session);
       case "RECURRENCE_BASE->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":
         return parser.seriesToSomedaySeries(session);
-      case "RECURRENCE_BASE_SOMEDAY->>STANDALONE_SOMEDAY_CONFIRMED":
-      case "RECURRENCE_BASE->>STANDALONE_CONFIRMED":
+      case "RECURRENCE_BASE_SOMEDAY->>REGULAR_SOMEDAY_CONFIRMED":
+      case "RECURRENCE_BASE->>REGULAR_CONFIRMED":
         return parser.seriesToStandalone(session);
-      case "STANDALONE_SOMEDAY->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":
-      case "STANDALONE->>RECURRENCE_BASE_CONFIRMED":
+      case "REGULAR_SOMEDAY->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":
+      case "REGULAR->>RECURRENCE_BASE_CONFIRMED":
         return parser.standaloneToSeries(session);
       case "RECURRENCE_BASE->>RECURRENCE_BASE_CONFIRMED":
       case "RECURRENCE_BASE_SOMEDAY->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":

@@ -7,18 +7,14 @@ import {
 } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@core/constants/date.constants";
 import { Status } from "@core/errors/status.codes";
-import {
-  Categories_Event,
-  Schema_Event,
-  Schema_Event_Recur_Base,
-} from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/auth.util";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { PartialMouseEvent } from "@web/common/types/util.types";
 import {
+  Categories_Event,
   Schema_GridEvent,
-  Schema_OptimisticEvent,
   Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 
@@ -75,8 +71,7 @@ export const assembleDefaultEvent = async (
         origin: baseEvent.origin ?? Origin.COMPASS,
         priority: baseEvent.priority ?? Priorities.UNASSIGNED,
         user: baseEvent.user!,
-        recurrence:
-          baseEvent.recurrence as Schema_Event_Recur_Base["recurrence"],
+        recurrence: baseEvent.recurrence,
       };
       return defaultTimed;
     }
@@ -206,7 +201,7 @@ export const prepEvtAfterDraftDrop = (
 
 export const replaceIdWithOptimisticId = (
   event: Schema_GridEvent,
-): Schema_OptimisticEvent => {
+): Schema_GridEvent => {
   const _event = {
     ...event,
     _id: `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`,

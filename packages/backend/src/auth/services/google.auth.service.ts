@@ -1,18 +1,19 @@
 import { OAuth2Client, TokenPayload } from "google-auth-library";
 import { google } from "googleapis";
-import { WithId } from "mongodb";
+import { ObjectId, WithId } from "mongodb";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { UserInfo_Google } from "@core/types/auth.types";
 import { gCalendar } from "@core/types/gcal";
+import { zObjectId } from "@core/types/type.utils";
 import { Schema_User } from "@core/types/user.types";
+import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { ENV } from "@backend/common/constants/env.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import compassAuthService from "./compass.auth.service";
+import mongoService from "@backend/common/services/mongo.service";
 
 const logger = Logger("app:google.auth.service");
 
@@ -28,14 +29,13 @@ export const getGAuthClientForUser = async (
   }
 
   if (!gRefreshToken) {
-    const userId = "_id" in user ? (user._id as string) : undefined;
+    const userId = zObjectId.parse(user._id, {
+      error: () => error(UserError.InvalidValue, "User not found"),
+    });
 
-    if (!userId) {
-      logger.error(`Expected to either get a user or a userId.`);
-      throw error(UserError.InvalidValue, "User not found");
-    }
-
-    const _user = await findCompassUserBy("_id", userId);
+    const _user = await mongoService.user.findOne({
+      _id: userId,
+    });
 
     if (!_user) {
       logger.error(`Couldn't find user with this id: ${userId}`);
@@ -52,11 +52,11 @@ export const getGAuthClientForUser = async (
   return gAuthClient;
 };
 
-export const getGcalClient = async (userId: string): Promise<gCalendar> => {
-  const user = await findCompassUserBy("_id", userId);
+export const getGcalClient = async (userId: ObjectId): Promise<gCalendar> => {
+  const user = await mongoService.user.findOne({ _id: userId });
   if (!user) {
     logger.error(`Couldn't find user with this id: ${userId}`);
-    await compassAuthService.revokeSessionsByUser(userId);
+    await compassAuthService.revokeSessionsByUser(userId.toString());
     throw error(
       UserError.UserNotFound,
       "Revoked session & gave up on gcal auth",

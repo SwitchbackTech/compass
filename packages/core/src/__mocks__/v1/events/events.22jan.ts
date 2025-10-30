@@ -1,201 +1,300 @@
 import { ObjectId } from "bson";
+import { Schema_Event, Schema_Regular_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
+import { createMockRegularEvent } from "@core/util/test/ccal.event.factory";
 
-export const mockEventSetJan22 = [
-  // ordered by start date
-  {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Jan 1 2021",
-    startDate: "2021-01",
-    isSomeday: true,
-  },
-  {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Jan 1 2021",
-    isAllDay: true,
-    isSomeday: false,
-    startDate: "2021-01-01",
-    endDate: "2021-01-02",
-  },
-  {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Jan 1 2021 (times)",
-    isAllDay: false,
-    isSomeday: false,
-    startDate: "2021-01-01T12:12:12-12:00",
-    endDate: "2021-01-02T02:02:02-02:30",
-  },
-  {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Dec 31",
-    isAllDay: true,
-    isSomeday: false,
-    startDate: "2021-12-31",
-    endDate: "2022-01-01",
-  },
-  {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Dec 31 - Feb 2",
-    isAllDay: true,
-    isSomeday: false,
-    startDate: "2021-12-31",
-    endDate: "2022-02-03",
-  },
-  {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Dec 31 - Jan 1",
-    isAllDay: true,
-    isSomeday: false,
-    startDate: "2021-12-31",
-    endDate: "2022-01-02",
-  },
-  {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Jan 1",
-    isAllDay: true,
-    isSomeday: false,
-    startDate: "2022-01-01",
-    endDate: "2022-01-02",
-  },
-  {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Jan 1 (times)",
-    isAllDay: false,
-    isSomeday: false,
-    startDate: "2022-01-01T00:00:00+03:00",
-    endDate: "2022-01-020T11:11:11+03:00",
-  },
-  {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Jan 1 (UTC times)",
-    isAllDay: false,
-    isSomeday: false,
-    startDate: "2022-01-01T00:11:00Z",
-    endDate: "2022-01-02T00:12:00Z",
-  },
-  {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Jan 1 - Jan 3",
-    isAllDay: true,
-    isSomeday: false,
-    startDate: "2022-01-01",
-    endDate: "2022-01-04",
-  },
-  {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Jan 1 - Jan 3 (times)",
-    isAllDay: false,
-    isSomeday: false,
-    startDate: "2022-01-01T11:11:11+11:00",
-    endDate: "2022-01-04T11:11:11+11:00",
-  },
-  {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Jan 1 - Jan 21",
-    isAllDay: true,
-    isSomeday: false,
-    startDate: "2022-01-01",
-    endDate: "2022-01-22",
-  },
-  {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Jan 1 - Jan 21 (times)",
-    isAllDay: false,
-    isSomeday: false,
-    startDate: "2022-01-01T00:00:00+06:00",
-    endDate: "2022-01-21T12:30:00+06:00",
-  },
-  {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Jan 1 - Apr 20",
-    isAllDay: true,
-    isSomeday: false,
-    startDate: "2022-01-01",
-    endDate: "2022-04-21",
-  },
-  {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Jan 1 - Apr 20 (times)",
-    isAllDay: false,
-    isSomeday: false,
-    startDate: "2022-01-01T04:30:00-02:00",
-    endDate: "2022-04-21T04:40:00-02:00",
-  },
-  {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Jan 1 2022 - Jan 1 2023",
-    isAllDay: true,
-    isSomeday: false,
-    startDate: "2022-01-01",
-    endDate: "2023-01-02",
-  },
-  {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Jan 1 2022 - Jan 1 2023 (times)",
-    isAllDay: false,
-    isSomeday: false,
-    startDate: "2022-01-01T04:30:00-02:00",
-    endDate: "2023-01-01T04:40:00-02:00",
-  },
-  {
-    _id: new ObjectId().toString(),
-    title: "Jan 2",
-    user: "user1",
-    isAllDay: true,
-    isSomeday: false,
-    startDate: "2022-01-02",
-    endDate: "2022-01-03",
-  },
-  {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    isAllDay: true,
-    isSomeday: false,
-    title: "Jan 3",
-    startDate: "2022-01-03",
-    endDate: "2022-01-04",
-  },
-  {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    isAllDay: true,
-    isSomeday: false,
-    title: "Jan 3 - Feb 3",
-    startDate: "2022-01-03",
-    endDate: "2022-02-04",
-  },
-  {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Jan 4",
-    isAllDay: true,
-    isSomeday: false,
-    startDate: "2022-01-04",
-    endDate: "2022-01-05",
-  },
-  {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Jan 1 2023",
-    isAllDay: true,
-    isSomeday: false,
-    startDate: "2023-01-01",
-    endDate: "2023-01-02",
-  },
+const calendar = new ObjectId();
+
+// Single-day someday (keeping original intent; corrected date format)
+const somedayEvents: Schema_Regular_Event[] = [
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Jan 1 2021",
+      isSomeday: true,
+      startDate: dayjs(
+        "2021-01-01",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+    },
+    true,
+  ),
+];
+
+// All-day and timed events (2021/2022/2023)
+const regularEvents: Schema_Regular_Event[] = [
+  // Jan 1 2021 all-day
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Jan 1 2021",
+      isSomeday: false,
+      startDate: dayjs(
+        "2021-01-01",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+    },
+    true,
+  ),
+  // Jan 1 2021 (times)
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Jan 1 2021 (times)",
+      isSomeday: false,
+      startDate: dayjs("2021-01-01T12:12:12-12:00").toDate(),
+    },
+    false,
+  ),
+  // Dec 31
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Dec 30",
+      isSomeday: false,
+      startDate: dayjs(
+        "2021-12-31",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+    },
+    false,
+  ),
+  // Dec 31 - Feb 2
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Dec 31 - Feb 2",
+      isSomeday: false,
+      startDate: dayjs(
+        "2021-12-31",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+    },
+    false,
+    { unit: "day", value: 33 },
+  ),
+  // Dec 31 - Jan 1
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Dec 31 - Jan 1",
+      isSomeday: false,
+      startDate: dayjs(
+        "2021-12-31",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+    },
+    false,
+    { unit: "day", value: 2 },
+  ),
+  // Jan 1
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Jan 1",
+      isSomeday: false,
+      startDate: dayjs(
+        "2022-01-01",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+    },
+    true,
+  ),
+  // Jan 1 (times)
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Jan 1 (times)",
+      isSomeday: false,
+      startDate: dayjs("2022-01-01T00:00:00+03:00").toDate(),
+    },
+    true,
+  ),
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Jan 1 (UTC times)",
+      isSomeday: false,
+      startDate: dayjs("2022-01-01T00:11:00Z").toDate(),
+    },
+    true,
+  ),
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Jan 1 - Jan 3",
+      isSomeday: false,
+      startDate: dayjs(
+        "2022-01-01",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+    },
+    false,
+    { unit: "day", value: 3 },
+  ),
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Jan 1 - Jan 3 (times)",
+      isSomeday: false,
+      startDate: dayjs(
+        "2022-01-01T11:11:11+11:00",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+    },
+    false,
+    { unit: "day", value: 3 },
+  ),
+  // Jan 1 - Jan 21
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Jan 1 - Jan 21",
+      isSomeday: false,
+      startDate: dayjs(
+        "2022-01-01",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+    },
+    false,
+    { unit: "day", value: 21 },
+  ),
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Jan 1 - Jan 21 (times)",
+      isSomeday: false,
+      startDate: dayjs(
+        "2022-01-01T00:00:00+06:00",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+    },
+    false,
+    { unit: "day", value: 21 },
+  ),
+  // Jan 1 - Apr 20
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Jan 1 - Apr 20",
+      isSomeday: false,
+      startDate: dayjs(
+        "2022-01-01",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+    },
+    false,
+    { unit: "day", value: 110 },
+  ),
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Jan 1 - Apr 20 (times)",
+      isSomeday: false,
+      startDate: dayjs(
+        "2022-01-01T04:30:00-02:00",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+    },
+    false,
+    { unit: "day", value: 110 },
+  ),
+  // Jan 1 2022 - Jan 1 2023
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Jan 1 2022 - Jan 1 2023",
+      isSomeday: false,
+      startDate: dayjs(
+        "2022-01-01",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+    },
+    false,
+    { unit: "year", value: 1 },
+  ),
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Jan 1 2022 - Jan 1 2023 (times)",
+      isSomeday: false,
+      startDate: dayjs(
+        "2022-01-01T04:30:00-02:00",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+    },
+    false,
+    { unit: "year", value: 1 },
+  ),
+  // Jan 2
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Jan 2",
+      isSomeday: false,
+      startDate: dayjs(
+        "2022-01-02",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+    },
+    true,
+  ),
+  // Jan 3
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Jan 3",
+      isSomeday: false,
+      startDate: dayjs(
+        "2022-01-03",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+    },
+    true,
+  ),
+  // Jan 3 - Feb 3
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Jan 3 - Feb 3",
+      isSomeday: false,
+      startDate: dayjs(
+        "2022-01-03",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+    },
+    false,
+    { unit: "month", value: 1 },
+  ),
+  // Jan 4
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Jan 4",
+      isSomeday: false,
+      startDate: dayjs(
+        "2022-01-04",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+    },
+    true,
+  ),
+  // Jan 1 2023
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Jan 1 2023",
+      isSomeday: false,
+      startDate: dayjs(
+        "2023-01-01",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+    },
+    true,
+  ),
+];
+
+export const mockEventSetJan22: Schema_Event[] = [
+  ...somedayEvents,
+  ...regularEvents,
 ];
