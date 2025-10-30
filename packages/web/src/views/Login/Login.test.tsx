@@ -37,13 +37,6 @@ jest.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
 }));
 
-// Mock WaitlistApi
-jest.mock("@web/common/apis/waitlist.api", () => ({
-  WaitlistApi: {
-    getWaitlistStatus: jest.fn(),
-  },
-}));
-
 describe("LoginView", () => {
   const mockIdentify = jest.fn();
   const mockLogin = jest.fn();
@@ -75,6 +68,14 @@ describe("LoginView", () => {
   });
 
   describe("Authentication Flow", () => {
+    it("should display Google sign-in button", () => {
+      render(<LoginView />);
+
+      expect(
+        screen.getByText("Sign in with Google to get started with Compass."),
+      ).toBeInTheDocument();
+    });
+
     it("should call AuthApi.loginOrSignup with OAuth code", async () => {
       render(<LoginView />);
 
@@ -107,46 +108,6 @@ describe("LoginView", () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith(expect.any(Error));
 
       consoleErrorSpy.mockRestore();
-    });
-  });
-
-  describe("Waitlist Flow", () => {
-    it("should handle waitlist status check", async () => {
-      // Mock window.location to not be localhost
-      const originalLocation = window.location;
-      delete (window as any).location;
-      window.location = {
-        ...originalLocation,
-        hostname: "example.com",
-      } as any;
-
-      const { WaitlistApi } = require("@web/common/apis/waitlist.api");
-      WaitlistApi.getWaitlistStatus.mockResolvedValue({
-        isOnWaitlist: true,
-        isInvited: true,
-        isActive: true,
-      });
-
-      render(<LoginView />);
-
-      const emailInput = screen.getByPlaceholderText("Enter your email");
-      const submitButton = screen.getByText("Check Waitlist Status");
-
-      await act(async () => {
-        await userEvent.type(emailInput, "test@example.com");
-      });
-      await act(async () => {
-        await userEvent.click(submitButton);
-      });
-
-      await waitFor(() => {
-        expect(WaitlistApi.getWaitlistStatus).toHaveBeenCalledWith(
-          "test@example.com",
-        );
-      });
-
-      // Restore original location
-      (window as any).location = originalLocation;
     });
   });
 });

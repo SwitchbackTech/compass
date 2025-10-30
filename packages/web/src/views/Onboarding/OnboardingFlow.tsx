@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useHasCompletedSignup } from "@web/auth/useHasCompletedSignup";
-import { IS_DEV } from "@web/common/constants/env.constants";
 import { useIsMobile } from "@web/common/hooks/useIsMobile";
 import {
   useOnboarding,
@@ -17,7 +16,6 @@ import {
   SignInWithGooglePrelude,
   SomedayIntroOne,
   SomedayIntroTwo,
-  WaitlistCheck,
   WelcomeNoteOne,
   WelcomeNoteTwo,
   WelcomeScreen,
@@ -27,7 +25,6 @@ import { MigrationIntro } from "./steps/events/MigrationIntro/MigrationIntro";
 import { MigrationSandbox } from "./steps/events/MigrationSandbox/MigrationSandbox";
 import { SomedaySandbox } from "./steps/events/SomedaySandbox/SomedaySandbox";
 import { MobileSignIn } from "./steps/mobile/MobileSignIn";
-import { MobileWaitlistCheck } from "./steps/mobile/MobileWaitlistCheck/MobileWaitlistCheck";
 import { MobileWarning } from "./steps/mobile/MobileWarning";
 import { ReminderIntroOne } from "./steps/reminder/ReminderIntroOne";
 import { ReminderIntroTwo } from "./steps/reminder/ReminderIntroTwo";
@@ -47,25 +44,8 @@ const _OnboardingFlow: React.FC = () => {
     },
   ];
 
-  if (!IS_DEV) {
-    // only show email step in prod in order
-    // to allow contributors on localhost through
-    loginSteps.push({
-      id: "email",
-      component: WaitlistCheck,
-      handlesKeyboardEvents: true, // prevents nav via keyboard
-    });
-  }
-
   // Mobile-specific login steps
   const mobileLoginSteps: OnboardingStepType[] = [
-    {
-      id: "mobile-waitlist-check",
-      component: (props: OnboardingStepProps) => (
-        <MobileWaitlistCheck {...props} />
-      ),
-      handlesKeyboardEvents: true,
-    },
     {
       id: "mobile-warning",
       component: (props: OnboardingStepProps) => <MobileWarning {...props} />,
