@@ -23,9 +23,7 @@ export const LoginView = () => {
   const navigate = useNavigate();
 
   const { isAuthenticated: isAlreadyAuthenticated } = useAuthCheck();
-  const { hasCompletedSignup, markSignupCompleted } = useHasCompletedSignup();
-
-  useEffect(() => {}, [hasCompletedSignup]);
+  const { markSignupCompleted } = useHasCompletedSignup();
 
   const {
     login: startLoginFlow,
