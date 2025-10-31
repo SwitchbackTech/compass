@@ -49,37 +49,41 @@ describe("SelectView", () => {
     it("renders button with current view label for Week view", () => {
       renderWithRouter(<SelectView />, ROOT_ROUTES.ROOT);
 
-      const button = screen.getByRole("button", { name: /week/i });
+      const button = screen.getByRole("combobox");
       expect(button).toBeInTheDocument();
+      expect(button).toHaveTextContent("Week");
       expect(button).toHaveAttribute("aria-expanded", "false");
     });
 
     it("renders button with current view label for Now view", () => {
       renderWithRouter(<SelectView />, ROOT_ROUTES.NOW);
 
-      const button = screen.getByRole("button", { name: /now/i });
+      const button = screen.getByRole("combobox");
       expect(button).toBeInTheDocument();
+      expect(button).toHaveTextContent("Now");
     });
 
     it("renders button with current view label for Day view", () => {
       renderWithRouter(<SelectView />, ROOT_ROUTES.DAY);
 
-      const button = screen.getByRole("button", { name: /day/i });
+      const button = screen.getByRole("combobox");
       expect(button).toBeInTheDocument();
+      expect(button).toHaveTextContent("Day");
     });
 
     it("renders button with current view label for Day view with date param", () => {
       renderWithRouter(<SelectView />, `${ROOT_ROUTES.DAY}/2024-01-15`);
 
-      const button = screen.getByRole("button", { name: /day/i });
+      const button = screen.getByRole("combobox");
       expect(button).toBeInTheDocument();
+      expect(button).toHaveTextContent("Day");
     });
 
     it("renders all three options with shortcut hints when dropdown is open", async () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("button");
+      const button = screen.getByRole("combobox");
       await act(async () => {
         user.click(button);
       });
@@ -112,35 +116,35 @@ describe("SelectView", () => {
     it("detects Now view when on /now route", () => {
       renderWithRouter(<SelectView />, ROOT_ROUTES.NOW);
 
-      const button = screen.getByRole("button");
+      const button = screen.getByRole("combobox");
       expect(button).toHaveTextContent("Now");
     });
 
     it("detects Day view when on /day route", () => {
       renderWithRouter(<SelectView />, ROOT_ROUTES.DAY);
 
-      const button = screen.getByRole("button");
+      const button = screen.getByRole("combobox");
       expect(button).toHaveTextContent("Day");
     });
 
     it("detects Day view when on /day/:date route", () => {
       renderWithRouter(<SelectView />, `${ROOT_ROUTES.DAY}/2024-01-15`);
 
-      const button = screen.getByRole("button");
+      const button = screen.getByRole("combobox");
       expect(button).toHaveTextContent("Day");
     });
 
     it("detects Week view when on / route", () => {
       renderWithRouter(<SelectView />, ROOT_ROUTES.ROOT);
 
-      const button = screen.getByRole("button");
+      const button = screen.getByRole("combobox");
       expect(button).toHaveTextContent("Week");
     });
 
     it("defaults to Week view for unknown routes", () => {
       renderWithRouter(<SelectView />, "/unknown-route");
 
-      const button = screen.getByRole("button");
+      const button = screen.getByRole("combobox");
       expect(button).toHaveTextContent("Week");
     });
   });
@@ -150,7 +154,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("button");
+      const button = screen.getByRole("combobox");
       expect(button).toHaveAttribute("aria-expanded", "false");
 
       await act(async () => {
@@ -167,7 +171,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("button");
+      const button = screen.getByRole("combobox");
       await act(async () => {
         await user.click(button);
       });
@@ -191,7 +195,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("button");
+      const button = screen.getByRole("combobox");
       await act(async () => {
         await user.click(button);
       });
@@ -218,7 +222,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />, ROOT_ROUTES.NOW);
 
-      const button = screen.getByRole("button");
+      const button = screen.getByRole("combobox");
       await act(async () => {
         user.click(button);
       });
@@ -235,6 +239,25 @@ describe("SelectView", () => {
         expect(weekOption).toHaveAttribute("aria-selected", "false");
       });
     });
+
+    it("uses div elements for options instead of buttons", async () => {
+      const user = userEvent.setup();
+      renderWithRouter(<SelectView />);
+
+      const button = screen.getByRole("combobox");
+      await act(async () => {
+        user.click(button);
+      });
+
+      await waitFor(() => {
+        const dropdown = screen.getByTestId("view-select-dropdown");
+        expect(dropdown).toBeInTheDocument();
+      });
+
+      const nowOption = screen.getByRole("option", { name: /now/i });
+      expect(nowOption.tagName).toBe("DIV");
+      expect(nowOption.tagName).not.toBe("BUTTON");
+    });
   });
 
   describe("User Interactions", () => {
@@ -242,7 +265,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("button");
+      const button = screen.getByRole("combobox");
       await act(async () => {
         user.click(button);
       });
@@ -267,7 +290,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("button");
+      const button = screen.getByRole("combobox");
       await act(async () => {
         user.click(button);
       });
@@ -292,7 +315,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("button");
+      const button = screen.getByRole("combobox");
       await act(async () => {
         user.click(button);
       });
@@ -317,7 +340,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("button");
+      const button = screen.getByRole("combobox");
       await act(async () => {
         user.click(button);
       });
@@ -343,7 +366,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("button");
+      const button = screen.getByRole("combobox");
       await act(async () => {
         user.click(button);
       });
@@ -361,7 +384,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("button");
+      const button = screen.getByRole("combobox");
       await act(async () => {
         user.click(button);
       });
@@ -379,7 +402,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("button");
+      const button = screen.getByRole("combobox");
       await act(async () => {
         user.click(button);
       });
@@ -390,6 +413,233 @@ describe("SelectView", () => {
           '[data-testid="shortcut-hint"]',
         );
         expect(shortcutHint).toHaveTextContent("3");
+      });
+    });
+  });
+
+  describe("Keyboard Navigation", () => {
+    it("navigates to next option with ArrowDown", async () => {
+      const user = userEvent.setup();
+      renderWithRouter(<SelectView />, ROOT_ROUTES.ROOT);
+
+      const button = screen.getByRole("combobox");
+      await act(async () => {
+        await user.click(button);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("view-select-dropdown")).toBeInTheDocument();
+      });
+
+      // Focus the active item (Week, which is selected)
+      const weekOption = screen.getByRole("option", { name: /week/i });
+      weekOption.focus();
+
+      // Press ArrowDown - should wrap to Now (index 0)
+      await act(async () => {
+        await user.keyboard("{ArrowDown}");
+      });
+
+      await waitFor(() => {
+        const nowOption = screen.getByRole("option", { name: /now/i });
+        // Should have active highlighting (ring class)
+        expect(nowOption.className).toContain("ring-1");
+      });
+    });
+
+    it("navigates to previous option with ArrowUp", async () => {
+      const user = userEvent.setup();
+      renderWithRouter(<SelectView />, ROOT_ROUTES.NOW);
+
+      const button = screen.getByRole("combobox");
+      await act(async () => {
+        await user.click(button);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("view-select-dropdown")).toBeInTheDocument();
+      });
+
+      // Focus the active item (Now, which is selected)
+      const nowOption = screen.getByRole("option", { name: /now/i });
+      nowOption.focus();
+
+      // Press ArrowUp - should wrap to Week (index 2)
+      await act(async () => {
+        await user.keyboard("{ArrowUp}");
+      });
+
+      await waitFor(() => {
+        const weekOption = screen.getByRole("option", { name: /week/i });
+        // Should have active highlighting (ring class)
+        expect(weekOption.className).toContain("ring-1");
+      });
+    });
+
+    it("selects highlighted option with Enter key", async () => {
+      const user = userEvent.setup();
+      renderWithRouter(<SelectView />, ROOT_ROUTES.ROOT);
+
+      const button = screen.getByRole("combobox");
+      await act(async () => {
+        await user.click(button);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("view-select-dropdown")).toBeInTheDocument();
+      });
+
+      // Focus the active item (Week, which is selected)
+      const weekOption = screen.getByRole("option", { name: /week/i });
+      weekOption.focus();
+
+      // Navigate to Day option (Week -> Now -> Day)
+      await act(async () => {
+        await user.keyboard("{ArrowDown}");
+      });
+
+      await waitFor(() => {
+        const nowOption = screen.getByRole("option", { name: /now/i });
+        expect(nowOption.className).toContain("ring-1");
+      });
+
+      await act(async () => {
+        await user.keyboard("{ArrowDown}");
+      });
+
+      await waitFor(() => {
+        const dayOption = screen.getByRole("option", { name: /day/i });
+        expect(dayOption.className).toContain("ring-1");
+      });
+
+      // Press Enter to select Day
+      await act(async () => {
+        await user.keyboard("{Enter}");
+      });
+
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
+      });
+    });
+
+    it("selects highlighted option with Space key", async () => {
+      const user = userEvent.setup();
+      renderWithRouter(<SelectView />, ROOT_ROUTES.ROOT);
+
+      const button = screen.getByRole("combobox");
+      await act(async () => {
+        await user.click(button);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("view-select-dropdown")).toBeInTheDocument();
+      });
+
+      // Focus the active item (Week, which is selected)
+      const weekOption = screen.getByRole("option", { name: /week/i });
+      weekOption.focus();
+
+      // Navigate to Now option
+      await act(async () => {
+        await user.keyboard("{ArrowDown}");
+      });
+
+      // Press Space to select Now
+      await act(async () => {
+        await user.keyboard(" ");
+      });
+
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.NOW);
+      });
+    });
+
+    it("initializes highlight to current view when dropdown opens", async () => {
+      const user = userEvent.setup();
+      renderWithRouter(<SelectView />, ROOT_ROUTES.DAY);
+
+      const button = screen.getByRole("combobox");
+      await act(async () => {
+        await user.click(button);
+      });
+
+      await waitFor(() => {
+        const dropdown = screen.getByTestId("view-select-dropdown");
+        expect(dropdown).toBeInTheDocument();
+      });
+
+      // Focus the active item (Day, which is selected)
+      const dayOption = screen.getByRole("option", { name: /day/i });
+      dayOption.focus();
+
+      // Day option should be both selected and initially highlighted
+      expect(dayOption).toHaveAttribute("aria-selected", "true");
+      expect(dayOption).toHaveClass("bg-white/20");
+
+      // Pressing ArrowDown from Day should move to Week
+      await act(async () => {
+        await user.keyboard("{ArrowDown}");
+      });
+
+      await waitFor(() => {
+        const weekOption = screen.getByRole("option", { name: /week/i });
+        expect(weekOption.className).toContain("ring-1");
+      });
+    });
+
+    it("wraps navigation from last to first option", async () => {
+      const user = userEvent.setup();
+      renderWithRouter(<SelectView />, ROOT_ROUTES.ROOT);
+
+      const button = screen.getByRole("combobox");
+      await act(async () => {
+        await user.click(button);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("view-select-dropdown")).toBeInTheDocument();
+      });
+
+      // Focus the active item (Week, which is selected)
+      const weekOption = screen.getByRole("option", { name: /week/i });
+      weekOption.focus();
+
+      // Start at Week (index 2), press ArrowDown to wrap to Now (index 0)
+      await act(async () => {
+        await user.keyboard("{ArrowDown}");
+      });
+
+      await waitFor(() => {
+        const nowOption = screen.getByRole("option", { name: /now/i });
+        expect(nowOption.className).toContain("ring-1");
+      });
+    });
+
+    it("wraps navigation from first to last option", async () => {
+      const user = userEvent.setup();
+      renderWithRouter(<SelectView />, ROOT_ROUTES.NOW);
+
+      const button = screen.getByRole("combobox");
+      await act(async () => {
+        await user.click(button);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("view-select-dropdown")).toBeInTheDocument();
+      });
+
+      // Focus the active item (Now, which is selected)
+      const nowOption = screen.getByRole("option", { name: /now/i });
+      nowOption.focus();
+
+      // Start at Now (index 0), press ArrowUp to wrap to Week (index 2)
+      await act(async () => {
+        await user.keyboard("{ArrowUp}");
+      });
+
+      await waitFor(() => {
+        const weekOption = screen.getByRole("option", { name: /week/i });
+        expect(weekOption.className).toContain("ring-1");
       });
     });
   });
