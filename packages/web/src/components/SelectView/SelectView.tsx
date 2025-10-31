@@ -13,12 +13,16 @@ interface SelectViewProps {
   onSelectNow: () => void;
   onSelectDay: () => void;
   onSelectWeek: () => void;
+  displayLabel?: string;
+  buttonClassName?: string;
 }
 
 export const SelectView = ({
   onSelectNow,
   onSelectDay,
   onSelectWeek,
+  displayLabel,
+  buttonClassName,
 }: SelectViewProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
@@ -43,6 +47,7 @@ export const SelectView = ({
   };
 
   const currentView = getCurrentView();
+  const buttonLabel = displayLabel ?? currentView ?? "";
 
   const { refs, context } = useFloating({
     open: isOpen,
@@ -67,13 +72,16 @@ export const SelectView = ({
       <button
         ref={refs.setReference}
         {...getReferenceProps()}
-        className="flex items-center gap-2 rounded px-3 py-1.5 text-sm text-white/90 transition-colors hover:bg-white/10"
+        className={
+          buttonClassName ??
+          "flex items-center gap-2 rounded px-3 py-1.5 text-sm text-white/90 transition-colors hover:bg-white/10"
+        }
         aria-expanded={isOpen}
         aria-haspopup="listbox"
       >
-        <span>{currentView}</span>
+        <span>{buttonLabel}</span>
         <svg
-          className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          className="h-4 w-4"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
