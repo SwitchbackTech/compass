@@ -40,7 +40,6 @@ export const SelectView = ({
     if (pathname === ROOT_ROUTES.ROOT) {
       return "Week";
     }
-    return "Week";
   };
 
   const currentView = getCurrentView();
