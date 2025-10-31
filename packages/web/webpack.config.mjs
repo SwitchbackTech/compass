@@ -1,14 +1,15 @@
-const path = require("path");
-const { DefinePlugin } = require("webpack");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-const BundleAnalyzerPlugin =
-  require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
+import HtmlWebpackPlugin from "html-webpack-plugin";
+import MiniCssExtractPlugin from "mini-css-extract-plugin";
+import { resolve as _resolve, dirname, join } from "path";
+import { fileURLToPath } from "url";
+import webpack from "webpack";
+import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
 
-const _dirname = path.resolve();
-const resolvePath = (p) => path.resolve(_dirname, p);
+const __filename = fileURLToPath(import.meta.url);
+const _dirname = dirname(__filename);
+const resolvePath = (p) => _resolve(_dirname, p);
 
-module.exports = (env, argv) => {
+export default (env, argv) => {
   const GLOBAL_SCSS = resolvePath("src/common/styles/index.scss");
 
   const ANALYZE_BUNDLE = env.analyze;
@@ -40,7 +41,7 @@ module.exports = (env, argv) => {
   const styleLoader = IS_DEV ? "style-loader" : MiniCssExtractPlugin.loader;
 
   const _plugins = [
-    new DefinePlugin({
+    new webpack.DefinePlugin({
       "process.env.API_BASEURL": JSON.stringify(API_BASEURL),
       "process.env.GOOGLE_CLIENT_ID": JSON.stringify(GOOGLE_CLIENT_ID),
       "process.env.POSTHOG_KEY": JSON.stringify(POSTHOG_KEY),
@@ -90,7 +91,7 @@ module.exports = (env, argv) => {
               loader: "postcss-loader",
               options: {
                 postcssOptions: {
-                  config: path.resolve(__dirname, "postcss.config.js"),
+                  config: _resolve(_dirname, "postcss.config.js"),
                 },
               },
             },
@@ -136,7 +137,7 @@ module.exports = (env, argv) => {
 
     resolve: {
       extensions: [".tsx", ".ts", ".js"],
-      modules: [path.resolve("./src"), "node_modules"],
+      modules: [_resolve("./src"), "node_modules"],
       alias: {
         "@core": resolvePath("../core/src"),
         "@web/assets": resolvePath("./src/assets"),
@@ -157,12 +158,12 @@ module.exports = (env, argv) => {
     output: {
       clean: true,
       filename: "[name].[contenthash].js",
-      path: `${path.resolve(_dirname, "../../build/web")}`,
+      path: `${_resolve(_dirname, "../../build/web")}`,
     },
 
     devServer: {
       static: {
-        directory: path.join(_dirname, "public"),
+        directory: join(_dirname, "public"),
       },
       watchFiles: {
         paths: ["src/**/*"],
