@@ -6,6 +6,13 @@ import userEvent from "@testing-library/user-event";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { SelectView } from "./SelectView";
 
+// Mock useNavigate
+const mockNavigate = jest.fn();
+jest.mock("react-router-dom", () => ({
+  ...jest.requireActual("react-router-dom"),
+  useNavigate: () => mockNavigate,
+}));
+
 // Mock ShortcutHint component
 jest.mock(
   "@web/views/Day/components/Shortcuts/components/ShortcutHint",
@@ -17,16 +24,6 @@ jest.mock(
 );
 
 describe("SelectView", () => {
-  const mockOnSelectNow = jest.fn();
-  const mockOnSelectDay = jest.fn();
-  const mockOnSelectWeek = jest.fn();
-
-  const defaultProps = {
-    onSelectNow: mockOnSelectNow,
-    onSelectDay: mockOnSelectDay,
-    onSelectWeek: mockOnSelectWeek,
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -50,7 +47,7 @@ describe("SelectView", () => {
 
   describe("Component Rendering", () => {
     it("renders button with current view label for Week view", () => {
-      renderWithRouter(<SelectView {...defaultProps} />, ROOT_ROUTES.ROOT);
+      renderWithRouter(<SelectView />, ROOT_ROUTES.ROOT);
 
       const button = screen.getByRole("button", { name: /week/i });
       expect(button).toBeInTheDocument();
@@ -58,24 +55,21 @@ describe("SelectView", () => {
     });
 
     it("renders button with current view label for Now view", () => {
-      renderWithRouter(<SelectView {...defaultProps} />, ROOT_ROUTES.NOW);
+      renderWithRouter(<SelectView />, ROOT_ROUTES.NOW);
 
       const button = screen.getByRole("button", { name: /now/i });
       expect(button).toBeInTheDocument();
     });
 
     it("renders button with current view label for Day view", () => {
-      renderWithRouter(<SelectView {...defaultProps} />, ROOT_ROUTES.DAY);
+      renderWithRouter(<SelectView />, ROOT_ROUTES.DAY);
 
       const button = screen.getByRole("button", { name: /day/i });
       expect(button).toBeInTheDocument();
     });
 
     it("renders button with current view label for Day view with date param", () => {
-      renderWithRouter(
-        <SelectView {...defaultProps} />,
-        `${ROOT_ROUTES.DAY}/2024-01-15`,
-      );
+      renderWithRouter(<SelectView />, `${ROOT_ROUTES.DAY}/2024-01-15`);
 
       const button = screen.getByRole("button", { name: /day/i });
       expect(button).toBeInTheDocument();
@@ -83,7 +77,7 @@ describe("SelectView", () => {
 
     it("renders all three options with shortcut hints when dropdown is open", async () => {
       const user = userEvent.setup();
-      renderWithRouter(<SelectView {...defaultProps} />);
+      renderWithRouter(<SelectView />);
 
       const button = screen.getByRole("button");
       await act(async () => {
@@ -116,38 +110,35 @@ describe("SelectView", () => {
 
   describe("Route Detection", () => {
     it("detects Now view when on /now route", () => {
-      renderWithRouter(<SelectView {...defaultProps} />, ROOT_ROUTES.NOW);
+      renderWithRouter(<SelectView />, ROOT_ROUTES.NOW);
 
       const button = screen.getByRole("button");
       expect(button).toHaveTextContent("Now");
     });
 
     it("detects Day view when on /day route", () => {
-      renderWithRouter(<SelectView {...defaultProps} />, ROOT_ROUTES.DAY);
+      renderWithRouter(<SelectView />, ROOT_ROUTES.DAY);
 
       const button = screen.getByRole("button");
       expect(button).toHaveTextContent("Day");
     });
 
     it("detects Day view when on /day/:date route", () => {
-      renderWithRouter(
-        <SelectView {...defaultProps} />,
-        `${ROOT_ROUTES.DAY}/2024-01-15`,
-      );
+      renderWithRouter(<SelectView />, `${ROOT_ROUTES.DAY}/2024-01-15`);
 
       const button = screen.getByRole("button");
       expect(button).toHaveTextContent("Day");
     });
 
     it("detects Week view when on / route", () => {
-      renderWithRouter(<SelectView {...defaultProps} />, ROOT_ROUTES.ROOT);
+      renderWithRouter(<SelectView />, ROOT_ROUTES.ROOT);
 
       const button = screen.getByRole("button");
       expect(button).toHaveTextContent("Week");
     });
 
     it("defaults to Week view for unknown routes", () => {
-      renderWithRouter(<SelectView {...defaultProps} />, "/unknown-route");
+      renderWithRouter(<SelectView />, "/unknown-route");
 
       const button = screen.getByRole("button");
       expect(button).toHaveTextContent("Week");
@@ -157,7 +148,7 @@ describe("SelectView", () => {
   describe("Dropdown Behavior", () => {
     it("opens dropdown when button is clicked", async () => {
       const user = userEvent.setup();
-      renderWithRouter(<SelectView {...defaultProps} />);
+      renderWithRouter(<SelectView />);
 
       const button = screen.getByRole("button");
       expect(button).toHaveAttribute("aria-expanded", "false");
@@ -174,7 +165,7 @@ describe("SelectView", () => {
 
     it("closes dropdown when clicking outside", async () => {
       const user = userEvent.setup();
-      renderWithRouter(<SelectView {...defaultProps} />);
+      renderWithRouter(<SelectView />);
 
       const button = screen.getByRole("button");
       await act(async () => {
@@ -198,7 +189,7 @@ describe("SelectView", () => {
 
     it("closes dropdown when ESC key is pressed", async () => {
       const user = userEvent.setup();
-      renderWithRouter(<SelectView {...defaultProps} />);
+      renderWithRouter(<SelectView />);
 
       const button = screen.getByRole("button");
       await act(async () => {
@@ -225,7 +216,7 @@ describe("SelectView", () => {
 
     it("highlights active view option in dropdown", async () => {
       const user = userEvent.setup();
-      renderWithRouter(<SelectView {...defaultProps} />, ROOT_ROUTES.NOW);
+      renderWithRouter(<SelectView />, ROOT_ROUTES.NOW);
 
       const button = screen.getByRole("button");
       await act(async () => {
@@ -247,9 +238,9 @@ describe("SelectView", () => {
   });
 
   describe("User Interactions", () => {
-    it("calls onSelectNow when Now option is clicked", async () => {
+    it("navigates to Now route when Now option is clicked", async () => {
       const user = userEvent.setup();
-      renderWithRouter(<SelectView {...defaultProps} />);
+      renderWithRouter(<SelectView />);
 
       const button = screen.getByRole("button");
       await act(async () => {
@@ -268,14 +259,13 @@ describe("SelectView", () => {
         await user.click(nowOption);
       });
 
-      expect(mockOnSelectNow).toHaveBeenCalledTimes(1);
-      expect(mockOnSelectDay).not.toHaveBeenCalled();
-      expect(mockOnSelectWeek).not.toHaveBeenCalled();
+      expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.NOW);
+      expect(mockNavigate).toHaveBeenCalledTimes(1);
     });
 
-    it("calls onSelectDay when Day option is clicked", async () => {
+    it("navigates to Day route when Day option is clicked", async () => {
       const user = userEvent.setup();
-      renderWithRouter(<SelectView {...defaultProps} />);
+      renderWithRouter(<SelectView />);
 
       const button = screen.getByRole("button");
       await act(async () => {
@@ -294,14 +284,13 @@ describe("SelectView", () => {
         await user.click(dayOption);
       });
 
-      expect(mockOnSelectDay).toHaveBeenCalledTimes(1);
-      expect(mockOnSelectNow).not.toHaveBeenCalled();
-      expect(mockOnSelectWeek).not.toHaveBeenCalled();
+      expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
+      expect(mockNavigate).toHaveBeenCalledTimes(1);
     });
 
-    it("calls onSelectWeek when Week option is clicked", async () => {
+    it("navigates to Week route when Week option is clicked", async () => {
       const user = userEvent.setup();
-      renderWithRouter(<SelectView {...defaultProps} />);
+      renderWithRouter(<SelectView />);
 
       const button = screen.getByRole("button");
       await act(async () => {
@@ -320,14 +309,13 @@ describe("SelectView", () => {
         await user.click(weekOption);
       });
 
-      expect(mockOnSelectWeek).toHaveBeenCalledTimes(1);
-      expect(mockOnSelectNow).not.toHaveBeenCalled();
-      expect(mockOnSelectDay).not.toHaveBeenCalled();
+      expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.ROOT);
+      expect(mockNavigate).toHaveBeenCalledTimes(1);
     });
 
     it("closes dropdown after option selection", async () => {
       const user = userEvent.setup();
-      renderWithRouter(<SelectView {...defaultProps} />);
+      renderWithRouter(<SelectView />);
 
       const button = screen.getByRole("button");
       await act(async () => {
@@ -353,7 +341,7 @@ describe("SelectView", () => {
   describe("Shortcut Hints", () => {
     it("displays 1 shortcut hint for Now option", async () => {
       const user = userEvent.setup();
-      renderWithRouter(<SelectView {...defaultProps} />);
+      renderWithRouter(<SelectView />);
 
       const button = screen.getByRole("button");
       await act(async () => {
@@ -371,7 +359,7 @@ describe("SelectView", () => {
 
     it("displays 2 shortcut hint for Day option", async () => {
       const user = userEvent.setup();
-      renderWithRouter(<SelectView {...defaultProps} />);
+      renderWithRouter(<SelectView />);
 
       const button = screen.getByRole("button");
       await act(async () => {
@@ -389,7 +377,7 @@ describe("SelectView", () => {
 
     it("displays 3 shortcut hint for Week option", async () => {
       const user = userEvent.setup();
-      renderWithRouter(<SelectView {...defaultProps} />);
+      renderWithRouter(<SelectView />);
 
       const button = screen.getByRole("button");
       await act(async () => {

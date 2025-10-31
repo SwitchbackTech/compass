@@ -1,7 +1,5 @@
 import { FC, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { theme } from "@web/common/styles/theme";
 import { getCalendarHeadingLabel } from "@web/common/utils/datetime/web.date.util";
 import { AlignItems } from "@web/components/Flex/styled";
@@ -40,7 +38,6 @@ export const Header: FC<Props> = ({ scrollUtil, today, weekProps }) => {
 
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
   const headerLabel = getCalendarHeadingLabel(
     weekProps.component.startOfView,
     weekProps.component.endOfView,
@@ -81,11 +78,7 @@ export const Header: FC<Props> = ({ scrollUtil, today, weekProps }) => {
         </StyledLeftGroup>
         <Reminder ref={reminderRef} />
         <StyledRightGroup>
-          <SelectView
-            onSelectNow={() => navigate(ROOT_ROUTES.NOW)}
-            onSelectDay={() => navigate(ROOT_ROUTES.DAY)}
-            onSelectWeek={() => navigate(ROOT_ROUTES.ROOT)}
-          />
+          <SelectView />
           <div>
             <StyledNavigationGroup>
               <TodayButton
