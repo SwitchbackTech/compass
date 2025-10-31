@@ -102,6 +102,7 @@ export const SelectView = ({
           {...getFloatingProps()}
           data-testid="view-select-dropdown"
           className="absolute top-full right-0 z-50 mt-1 min-w-[140px] rounded border border-gray-600 bg-gray-800 py-1 shadow-lg"
+          role="listbox"
         >
           <button
             onClick={() => handleOptionClick(onSelectNow)}
