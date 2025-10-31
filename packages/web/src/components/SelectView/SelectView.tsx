@@ -48,7 +48,7 @@ export const SelectView = ({
   };
 
   const currentView = getCurrentView();
-  const buttonLabel = displayLabel ?? currentView ?? "";
+  const buttonLabel = displayLabel ?? currentView;
 
   const { refs, context } = useFloating({
     open: isOpen,
