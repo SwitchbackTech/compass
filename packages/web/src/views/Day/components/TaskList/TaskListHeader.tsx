@@ -1,9 +1,9 @@
 import dayjs from "@core/util/date/dayjs";
 import { ArrowButton } from "@web/components/Button/ArrowButton";
+import { CircleIcon } from "@web/components/Icons/CircleIcon";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { useDateInView } from "../../hooks/navigation/useDateInView";
 import { useDateNavigation } from "../../hooks/navigation/useDateNavigation";
-import { CircleIcon } from "../Icons/CircleIcon";
 
 export const DAY_HEADING_FORMAT = "dddd";
 export const DAY_SUBHEADING_FORMAT = "MMMM D";
