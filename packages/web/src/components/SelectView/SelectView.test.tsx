@@ -1,4 +1,4 @@
-import React, { act } from "react";
+import { act } from "react";
 import { MemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
 import {
