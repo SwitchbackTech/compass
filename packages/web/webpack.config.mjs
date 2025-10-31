@@ -16,16 +16,29 @@ const loadEnvFile = (envName) => {
     local: ".env.local",
     staging: ".env.staging",
     production: ".env.production",
+    test: null, // test environment doesn't require env file
   };
 
   const file = map[envName] || ".env.local";
+
+  // Skip file loading for test environment or if file is explicitly null
+  if (envName === "test" || file === null) {
+    console.log(
+      `Skipping env file load for ${envName} environment (using process.env)`,
+    );
+    return;
+  }
+
   const fullPath = _resolve(_dirname, "..", "..", "packages", "backend", file);
 
   if (fs.existsSync(fullPath)) {
     console.log(`Creating a ${envName} build using ${file} ...`);
     dotenv.config({ path: fullPath });
   } else {
-    process.exit(1, `Env file not found: ${fullPath}`);
+    // Only warn, don't exit - allow environment variables to be provided via process.env (e.g., in CI)
+    console.warn(
+      `Warning: Env file not found: ${fullPath}. Using environment variables from process.env`,
+    );
   }
 };
 
