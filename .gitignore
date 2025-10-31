@@ -49,4 +49,4 @@ packages/backend/.env
 packages/backend/.prod.env
 
 
-!.env.example
+!.env.local.example
