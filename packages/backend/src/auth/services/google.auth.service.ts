@@ -78,8 +78,8 @@ class GoogleAuthService {
 
   constructor() {
     this.oauthClient = new OAuth2Client(
-      ENV.CLIENT_ID,
-      ENV.CLIENT_SECRET,
+      ENV.GOOGLE_CLIENT_ID,
+      ENV.GOOGLE_CLIENT_SECRET,
       "postmessage",
     );
   }

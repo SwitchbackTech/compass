@@ -21,7 +21,7 @@ export const getApiBaseUrl = async (environment: Environment_Cli) => {
 
 export const getClientId = async (environment: Environment_Cli) => {
   if (environment === "staging") {
-    return process.env["CLIENT_ID"] as string;
+    return process.env["GOOGLE_CLIENT_ID"] as string;
   }
 
   if (environment === "production") {
