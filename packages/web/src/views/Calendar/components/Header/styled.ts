@@ -18,7 +18,7 @@ export const StyledHeaderRow = styled(Flex)`
   height: ${HEADER_HEIGHT}px;
   width: 100%;
   position: relative;
-  align-items: center; /* Center align all items in the header */
+  align-items: center;
 `;
 
 export const StyledLeftGroup = styled(Flex)`
