@@ -200,6 +200,33 @@ describe("SelectView", () => {
       });
     });
 
+    it("closes dropdown when ESC key is pressed", async () => {
+      const user = userEvent.setup();
+      renderWithRouter(<SelectView {...defaultProps} />);
+
+      const button = screen.getByRole("button");
+      await act(async () => {
+        await user.click(button);
+      });
+
+      await waitFor(() => {
+        const dropdown = screen.getByTestId("view-select-dropdown");
+        expect(dropdown).toBeInTheDocument();
+        expect(button).toHaveAttribute("aria-expanded", "true");
+      });
+
+      await act(async () => {
+        await user.keyboard("{Escape}");
+      });
+
+      await waitFor(() => {
+        expect(
+          screen.queryByTestId("view-select-dropdown"),
+        ).not.toBeInTheDocument();
+        expect(button).toHaveAttribute("aria-expanded", "false");
+      });
+    });
+
     it("highlights active view option in dropdown", async () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView {...defaultProps} />, ROOT_ROUTES.NOW);

@@ -1,5 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useLocation } from "react-router-dom";
+import {
+  useClick,
+  useDismiss,
+  useFloating,
+  useInteractions,
+} from "@floating-ui/react";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { ShortcutHint } from "@web/views/Day/components/Shortcuts/components/ShortcutHint";
 
@@ -15,7 +21,6 @@ export const SelectView = ({
   onSelectWeek,
 }: SelectViewProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
 
   const getCurrentView = () => {
@@ -40,24 +45,18 @@ export const SelectView = ({
 
   const currentView = getCurrentView();
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
+  const { refs, context } = useFloating({
+    open: isOpen,
+    onOpenChange: setIsOpen,
+  });
 
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
+  const click = useClick(context);
+  const dismiss = useDismiss(context);
 
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen]);
+  const { getReferenceProps, getFloatingProps } = useInteractions([
+    click,
+    dismiss,
+  ]);
 
   const handleOptionClick = (callback: () => void) => {
     callback();
@@ -65,9 +64,10 @@ export const SelectView = ({
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative">
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        ref={refs.setReference}
+        {...getReferenceProps()}
         className="flex items-center gap-2 rounded px-3 py-1.5 text-sm text-white/90 transition-colors hover:bg-white/10"
         aria-expanded={isOpen}
         aria-haspopup="listbox"
@@ -90,6 +90,8 @@ export const SelectView = ({
 
       {isOpen && (
         <div
+          ref={refs.setFloating}
+          {...getFloatingProps()}
           data-testid="view-select-dropdown"
           className="absolute top-full right-0 z-50 mt-1 min-w-[140px] rounded border border-gray-600 bg-gray-800 py-1 shadow-lg"
         >
