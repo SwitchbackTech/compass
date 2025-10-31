@@ -57,26 +57,26 @@ export const Header: FC<Props> = ({ scrollUtil, today, weekProps }) => {
   return (
     <>
       <StyledHeaderRow alignItems={AlignItems.BASELINE}>
+        <TooltipWrapper
+          description={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+          onClick={() => dispatch(viewSlice.actions.toggleSidebar())}
+          shortcut="["
+        >
+          <SidebarIcon
+            color={
+              isSidebarOpen
+                ? theme.color.text.light
+                : theme.color.text.lightInactive
+            }
+          />
+        </TooltipWrapper>
         <StyledLeftGroup>
-          <TooltipWrapper
-            description={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
-            onClick={() => dispatch(viewSlice.actions.toggleSidebar())}
-            shortcut="["
-          >
-            <SidebarIcon
-              color={
-                isSidebarOpen
-                  ? theme.color.text.light
-                  : theme.color.text.lightInactive
-              }
-            />
-          </TooltipWrapper>
-        </StyledLeftGroup>
-        <Reminder ref={reminderRef} />
-        <StyledRightGroup>
           <StyledHeaderLabel aria-level={1} role="heading">
             <Text size="xl">{headerLabel}</Text>
           </StyledHeaderLabel>
+        </StyledLeftGroup>
+        <Reminder ref={reminderRef} />
+        <StyledRightGroup>
           <div>
             <StyledNavigationGroup>
               <TodayButton
