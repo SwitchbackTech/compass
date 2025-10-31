@@ -14,7 +14,11 @@ import { _confirm, fileExists, log } from "@scripts/common/cli.utils";
 
 export const copyNodeConfigsToBuild = async (options: Options_Cli) => {
   const envName =
-    options.environment === "production" ? ".env.prod" : ".env.local";
+    options.environment === "production"
+      ? ".env.production"
+      : options.environment === "staging"
+        ? ".env.staging"
+        : ".env.local";
 
   const envPath = `${COMPASS_ROOT_DEV}/packages/backend/${envName}`;
 

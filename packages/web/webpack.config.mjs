@@ -38,12 +38,11 @@ export default (env, argv) => {
   const GLOBAL_SCSS = resolvePath("src/common/styles/index.scss");
 
   const ANALYZE_BUNDLE = env.analyze;
-  // Read from process.env after dotenv has loaded the .env file
   const API_BASEURL =
     process.env.API_BASEURL || `http://localhost:${process.env.PORT || 3000}`;
-  const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || env.GOOGLE_CLIENT_ID;
-  const POSTHOG_KEY = process.env.POSTHOG_KEY || env.POSTHOG_KEY;
-  const POSTHOG_HOST = process.env.POSTHOG_HOST || env.POSTHOG_HOST;
+  const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+  const POSTHOG_KEY = process.env.POSTHOG_KEY;
+  const POSTHOG_HOST = process.env.POSTHOG_HOST;
   const NODE_ENV = process.env.NODE_ENV || ENVIRONMENT || "development";
   const PORT = process.env.PORT || "3000";
 
@@ -64,9 +63,7 @@ export default (env, argv) => {
 
   const styleLoader = IS_DEV ? "style-loader" : MiniCssExtractPlugin.loader;
 
-  // Build process.env as an object literal code string for DefinePlugin
-  // This allows bracket notation access like process.env["API_BASEURL"] to work
-  const envObjectCode = `{
+  const envObject = `{
     API_BASEURL: ${JSON.stringify(API_BASEURL)},
     GOOGLE_CLIENT_ID: ${JSON.stringify(GOOGLE_CLIENT_ID)},
     POSTHOG_KEY: ${JSON.stringify(POSTHOG_KEY || "undefined")},
@@ -79,7 +76,7 @@ export default (env, argv) => {
     new webpack.DefinePlugin({
       // Define process.env as an object literal (not a JSON string)
       // This allows both process.env.KEY and process.env["KEY"] bracket notation to work
-      "process.env": envObjectCode,
+      "process.env": envObject,
     }),
     new HtmlWebpackPlugin({
       filename: "index.html",
