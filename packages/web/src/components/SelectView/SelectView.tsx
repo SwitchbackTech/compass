@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   useClick,
   useDismiss,
@@ -10,22 +10,17 @@ import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { ShortcutHint } from "@web/views/Day/components/Shortcuts/components/ShortcutHint";
 
 interface SelectViewProps {
-  onSelectNow: () => void;
-  onSelectDay: () => void;
-  onSelectWeek: () => void;
   displayLabel?: string;
   buttonClassName?: string;
 }
 
 export const SelectView = ({
-  onSelectNow,
-  onSelectDay,
-  onSelectWeek,
   displayLabel,
   buttonClassName,
 }: SelectViewProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const getCurrentView = () => {
     const pathname = location.pathname;
@@ -63,8 +58,8 @@ export const SelectView = ({
     dismiss,
   ]);
 
-  const handleOptionClick = (callback: () => void) => {
-    callback();
+  const handleOptionClick = (route: string) => {
+    navigate(route);
     setIsOpen(false);
   };
 
@@ -105,7 +100,7 @@ export const SelectView = ({
           role="listbox"
         >
           <button
-            onClick={() => handleOptionClick(onSelectNow)}
+            onClick={() => handleOptionClick(ROOT_ROUTES.NOW)}
             className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors ${
               currentView === "Now"
                 ? "bg-white/20 text-white"
@@ -118,7 +113,7 @@ export const SelectView = ({
             <ShortcutHint>1</ShortcutHint>
           </button>
           <button
-            onClick={() => handleOptionClick(onSelectDay)}
+            onClick={() => handleOptionClick(ROOT_ROUTES.DAY)}
             className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors ${
               currentView === "Day"
                 ? "bg-white/20 text-white"
@@ -131,7 +126,7 @@ export const SelectView = ({
             <ShortcutHint>2</ShortcutHint>
           </button>
           <button
-            onClick={() => handleOptionClick(onSelectWeek)}
+            onClick={() => handleOptionClick(ROOT_ROUTES.ROOT)}
             className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors ${
               currentView === "Week"
                 ? "bg-white/20 text-white"

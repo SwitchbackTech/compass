@@ -1,6 +1,4 @@
-import { useNavigate } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { ArrowButton } from "@web/components/Button/ArrowButton";
 import { SelectView } from "@web/components/SelectView/SelectView";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
@@ -14,7 +12,6 @@ export const DAY_SUBHEADING_FORMAT = "MMMM D";
 export const TaskListHeader = () => {
   const { navigateToPreviousDay, navigateToNextDay, navigateToToday } =
     useDateNavigation();
-  const navigate = useNavigate();
 
   const dateInView = useDateInView();
   const header = dateInView.locale("en").format(DAY_HEADING_FORMAT);
@@ -26,9 +23,6 @@ export const TaskListHeader = () => {
     <div className="border-b border-gray-400/20 p-4">
       <div className="flex items-center justify-between">
         <SelectView
-          onSelectNow={() => navigate(ROOT_ROUTES.NOW)}
-          onSelectDay={() => navigate(ROOT_ROUTES.DAY)}
-          onSelectWeek={() => navigate(ROOT_ROUTES.ROOT)}
           displayLabel={header}
           buttonClassName="flex items-center gap-2 rounded px-0 py-0 text-xl font-semibold text-white-100 transition-colors hover:bg-white/10"
         />
