@@ -152,15 +152,7 @@ describe("TaskContextMenu", () => {
     });
 
     // Click outside the menu (on the heading button)
-    const headingButton = screen.getByRole("button", {
-      name: (content, element) => {
-        // Match the button with aria-haspopup="listbox" which is the SelectView button
-        return (
-          element?.getAttribute("aria-haspopup") === "listbox" &&
-          element?.textContent?.match(/\w+/) !== null
-        );
-      },
-    });
+    const headingButton = screen.getByRole("combobox");
     await act(async () => {
       await user.click(headingButton);
     });
