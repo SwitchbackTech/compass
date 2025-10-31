@@ -1,13 +1,7 @@
 import { act } from "react";
 import { MemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
-import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { SelectView } from "./SelectView";
@@ -184,7 +178,7 @@ describe("SelectView", () => {
 
       const button = screen.getByRole("button");
       await act(async () => {
-        user.click(button);
+        await user.click(button);
       });
 
       await waitFor(() => {
@@ -192,7 +186,9 @@ describe("SelectView", () => {
       });
 
       // Click outside the dropdown
-      fireEvent.mouseDown(document.body);
+      await act(async () => {
+        await user.click(document.body);
+      });
 
       await waitFor(() => {
         expect(screen.queryByText("Now")).not.toBeInTheDocument();
