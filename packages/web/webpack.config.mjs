@@ -1,33 +1,70 @@
-const path = require("path");
-const { DefinePlugin } = require("webpack");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-const BundleAnalyzerPlugin =
-  require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
+import dotenv from "dotenv";
+import fs from "fs";
+import HtmlWebpackPlugin from "html-webpack-plugin";
+import MiniCssExtractPlugin from "mini-css-extract-plugin";
+import { resolve as _resolve, dirname, join } from "path";
+import { fileURLToPath } from "url";
+import webpack from "webpack";
+import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
 
-const _dirname = path.resolve();
-const resolvePath = (p) => path.resolve(_dirname, p);
+const __filename = fileURLToPath(import.meta.url);
+const _dirname = dirname(__filename);
+const resolvePath = (p) => _resolve(_dirname, p);
 
-module.exports = (env, argv) => {
+const loadEnvFile = (envName) => {
+  const map = {
+    local: ".env.local",
+    staging: ".env.staging",
+    production: ".env.production",
+    test: null, // test environment doesn't require env file
+  };
+
+  const file = map[envName] || ".env.local";
+
+  // Skip file loading for test environment or if file is explicitly null
+  if (envName === "test" || file === null) {
+    console.log(
+      `Skipping env file load for ${envName} environment (using process.env)`,
+    );
+    return;
+  }
+
+  const fullPath = _resolve(_dirname, "..", "..", "packages", "backend", file);
+
+  if (fs.existsSync(fullPath)) {
+    console.log(`Creating a ${envName} build using ${file} ...`);
+    dotenv.config({ path: fullPath });
+  } else {
+    // Only warn, don't exit - allow environment variables to be provided via process.env (e.g., in CI)
+    console.warn(
+      `Warning: Env file not found: ${fullPath}. Using environment variables from process.env`,
+    );
+  }
+};
+
+export default (env, argv) => {
+  const IS_DEV = argv.mode === "development";
+
+  const ENVIRONMENT = argv.nodeEnv || "local";
+  loadEnvFile(ENVIRONMENT);
+
   const GLOBAL_SCSS = resolvePath("src/common/styles/index.scss");
 
   const ANALYZE_BUNDLE = env.analyze;
   const API_BASEURL =
-    env.API_BASEURL === "undefined"
-      ? `http://localhost:${env.API_PORT}}`
-      : env.API_BASEURL;
+    process.env.API_BASEURL || `http://localhost:${process.env.PORT || 3000}`;
+  const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+  const POSTHOG_KEY = process.env.POSTHOG_KEY;
+  const POSTHOG_HOST = process.env.POSTHOG_HOST;
+  const NODE_ENV = process.env.NODE_ENV || ENVIRONMENT || "development";
+  const PORT = process.env.PORT || "3000";
 
-  const IS_DEV = argv.mode === "development";
-  const GOOGLE_CLIENT_ID = env.GOOGLE_CLIENT_ID;
-  const POSTHOG_KEY = env.POSTHOG_KEY;
-  const POSTHOG_HOST = env.POSTHOG_HOST;
-
-  if (GOOGLE_CLIENT_ID === "undefined") {
+  if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === "undefined") {
     console.error(`Oopsies, you're missing the GOOGLE_CLIENT_ID variable.
       Make sure you include all required environment variables in the .env file.
       Reference: https://docs.compasscalendar.com/docs/get-started/setup
     `);
-    return;
+    process.exit(1);
   }
 
   const sassLoader = {
@@ -39,12 +76,20 @@ module.exports = (env, argv) => {
 
   const styleLoader = IS_DEV ? "style-loader" : MiniCssExtractPlugin.loader;
 
+  const envObject = `{
+    API_BASEURL: ${JSON.stringify(API_BASEURL)},
+    GOOGLE_CLIENT_ID: ${JSON.stringify(GOOGLE_CLIENT_ID)},
+    POSTHOG_KEY: ${JSON.stringify(POSTHOG_KEY || "undefined")},
+    POSTHOG_HOST: ${JSON.stringify(POSTHOG_HOST || "undefined")},
+    NODE_ENV: ${JSON.stringify(NODE_ENV)},
+    PORT: ${JSON.stringify(PORT)}
+  }`;
+
   const _plugins = [
-    new DefinePlugin({
-      "process.env.API_BASEURL": JSON.stringify(API_BASEURL),
-      "process.env.GOOGLE_CLIENT_ID": JSON.stringify(GOOGLE_CLIENT_ID),
-      "process.env.POSTHOG_KEY": JSON.stringify(POSTHOG_KEY),
-      "process.env.POSTHOG_HOST": JSON.stringify(POSTHOG_HOST),
+    new webpack.DefinePlugin({
+      // Define process.env as an object literal (not a JSON string)
+      // This allows both process.env.KEY and process.env["KEY"] bracket notation to work
+      "process.env": envObject,
     }),
     new HtmlWebpackPlugin({
       filename: "index.html",
@@ -90,7 +135,7 @@ module.exports = (env, argv) => {
               loader: "postcss-loader",
               options: {
                 postcssOptions: {
-                  config: path.resolve(__dirname, "postcss.config.js"),
+                  config: _resolve(_dirname, "postcss.config.js"),
                 },
               },
             },
@@ -136,7 +181,7 @@ module.exports = (env, argv) => {
 
     resolve: {
       extensions: [".tsx", ".ts", ".js"],
-      modules: [path.resolve("./src"), "node_modules"],
+      modules: [_resolve("./src"), "node_modules"],
       alias: {
         "@core": resolvePath("../core/src"),
         "@web/assets": resolvePath("./src/assets"),
@@ -157,12 +202,12 @@ module.exports = (env, argv) => {
     output: {
       clean: true,
       filename: "[name].[contenthash].js",
-      path: `${path.resolve(_dirname, "../../build/web")}`,
+      path: `${_resolve(_dirname, "../../build/web")}`,
     },
 
     devServer: {
       static: {
-        directory: path.join(_dirname, "public"),
+        directory: join(_dirname, "public"),
       },
       watchFiles: {
         paths: ["src/**/*"],

@@ -9,7 +9,8 @@ export const PCKG = {
   WEB: "web",
 };
 
-export const CATEGORY_VM = {
+export const ENVIRONMENT = {
+  LOCAL: "local",
   STAG: "staging",
   PROD: "production",
 };

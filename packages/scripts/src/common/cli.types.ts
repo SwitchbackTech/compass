@@ -7,7 +7,7 @@ export const Schema_Options_Cli_Root = z.object({
 
 export const Schema_Options_Cli_Build = z.object({
   clientId: z.string().optional(),
-  environment: z.enum(["staging", "production"]).optional(),
+  environment: z.enum(["local", "staging", "production"]).optional(),
   packages: z.array(z.string()).optional(),
 });
 

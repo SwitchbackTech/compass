@@ -6,7 +6,7 @@ import { runBuild } from "@scripts/commands/build";
 import { startDeleteFlow } from "@scripts/commands/delete";
 import { inviteWaitlist } from "@scripts/commands/invite";
 import { runMigrator } from "@scripts/commands/migrate";
-import { ALL_PACKAGES, CATEGORY_VM } from "@scripts/common/cli.constants";
+import { ALL_PACKAGES, ENVIRONMENT } from "@scripts/common/cli.constants";
 import { MigratorType } from "@scripts/common/cli.types";
 import { Command } from "commander";
 
@@ -72,7 +72,7 @@ export default class CompassCLI {
         "google client id to inject into build",
       )
       .option(
-        `-e, --environment [${CATEGORY_VM.STAG} | ${CATEGORY_VM.PROD}]`,
+        `-e, --environment [local | ${ENVIRONMENT.STAG} | ${ENVIRONMENT.PROD}]`,
         "specify environment",
       );
 
