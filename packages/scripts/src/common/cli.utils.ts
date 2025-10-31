@@ -77,6 +77,7 @@ const getDomainAnswer = async (env: string) => {
 
 export const getEnvironmentAnswer = async (): Promise<Environment_Cli> => {
   const environment = (await getListAnswer("Select environment to use:", [
+    "local",
     "staging",
     "production",
   ])) as Environment_Cli;
