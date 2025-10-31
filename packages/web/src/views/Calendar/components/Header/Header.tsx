@@ -1,4 +1,4 @@
-import React, { FC, useRef } from "react";
+import { FC, useRef } from "react";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import { getCalendarHeadingLabel } from "@web/common/utils/datetime/web.date.util";
@@ -13,7 +13,7 @@ import { RootProps } from "../../calendarView.types";
 import { Util_Scroll } from "../../hooks/grid/useScroll";
 import { useReminderHotkey } from "../../hooks/shortcuts/useFocusHotkey";
 import { WeekProps } from "../../hooks/useWeek";
-import { TodayButton } from "../TodayButton";
+import { TodayButton } from "../TodayButton/TodayButton";
 import { DayLabels } from "./DayLabels";
 import { Reminder } from "./Reminder/Reminder";
 import {
@@ -79,13 +79,10 @@ export const Header: FC<Props> = ({ scrollUtil, today, weekProps }) => {
           </StyledHeaderLabel>
           <div>
             <StyledNavigationGroup>
-              <TooltipWrapper
-                description={today.format("dddd, MMMM D")}
-                onClick={onTodayClick}
-                shortcut="T"
-              >
-                <TodayButton />
-              </TooltipWrapper>
+              <TodayButton
+                navigateToToday={onTodayClick}
+                isToday={weekProps.component.isCurrentWeek}
+              />
               <StyledNavigationArrows>
                 <TooltipWrapper
                   onClick={() => weekProps.util.decrementWeek()}
