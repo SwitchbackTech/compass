@@ -85,7 +85,7 @@ export const SelectView = ({
     [click, dismiss, role, listNavigation],
   );
 
-  const handleOptionClick = (route: string, index: number) => {
+  const handleOptionClick = (route: string) => {
     navigate(route);
     setIsOpen(false);
   };
@@ -136,7 +136,7 @@ export const SelectView = ({
                 e.preventDefault();
                 const option = options[activeIndex];
                 if (option) {
-                  handleOptionClick(option.route, activeIndex);
+                  handleOptionClick(option.route);
                 }
               }
             },
@@ -157,7 +157,7 @@ export const SelectView = ({
                   listRef.current[index] = node;
                 }}
                 {...getItemProps({
-                  onClick: () => handleOptionClick(option.route, index),
+                  onClick: () => handleOptionClick(option.route),
                   active: isActive,
                 })}
                 role="option"
