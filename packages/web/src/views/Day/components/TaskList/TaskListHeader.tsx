@@ -22,10 +22,12 @@ export const TaskListHeader = () => {
   return (
     <div className="border-b border-gray-400/20 p-4">
       <div className="flex items-center justify-between">
-        <SelectView
-          displayLabel={header}
-          buttonClassName="flex items-center gap-2 rounded px-0 py-0 text-xl font-semibold text-white-100 transition-colors hover:bg-white/10"
-        />
+        <h2 aria-live="polite">
+          <SelectView
+            displayLabel={header}
+            buttonClassName="flex items-center gap-2 rounded px-0 py-0 text-xl font-semibold text-white-100 transition-colors hover:bg-white/10"
+          />
+        </h2>
       </div>
       <div className="flex items-center justify-between">
         <h3 className="text-white-100 text-sm font-medium" aria-live="polite">
