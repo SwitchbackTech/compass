@@ -28,6 +28,7 @@ export const StyledLeftGroup = styled(Flex)`
 `;
 
 export const StyledRightGroup = styled(Flex)`
+  align-items: center;
   flex-direction: column;
   justify-content: space-between;
   height: 100%;
