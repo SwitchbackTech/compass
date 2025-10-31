@@ -1,0 +1,139 @@
+import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { ShortcutHint } from "@web/views/Day/components/Shortcuts/components/ShortcutHint";
+
+interface SelectViewProps {
+  onSelectNow: () => void;
+  onSelectDay: () => void;
+  onSelectWeek: () => void;
+}
+
+export const SelectView = ({
+  onSelectNow,
+  onSelectDay,
+  onSelectWeek,
+}: SelectViewProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+
+  const getCurrentView = () => {
+    const pathname = location.pathname;
+    if (
+      pathname === ROOT_ROUTES.NOW ||
+      pathname.startsWith(`${ROOT_ROUTES.NOW}/`)
+    ) {
+      return "Now";
+    }
+    if (
+      pathname === ROOT_ROUTES.DAY ||
+      pathname.startsWith(`${ROOT_ROUTES.DAY}/`)
+    ) {
+      return "Day";
+    }
+    if (pathname === ROOT_ROUTES.ROOT) {
+      return "Week";
+    }
+    return "Week";
+  };
+
+  const currentView = getCurrentView();
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
+
+  const handleOptionClick = (callback: () => void) => {
+    callback();
+    setIsOpen(false);
+  };
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 rounded px-3 py-1.5 text-sm text-white/90 transition-colors hover:bg-white/10"
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+      >
+        <span>{currentView}</span>
+        <svg
+          className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div
+          data-testid="view-select-dropdown"
+          className="absolute top-full right-0 z-50 mt-1 min-w-[140px] rounded border border-gray-600 bg-gray-800 py-1 shadow-lg"
+        >
+          <button
+            onClick={() => handleOptionClick(onSelectNow)}
+            className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors ${
+              currentView === "Now"
+                ? "bg-white/20 text-white"
+                : "text-white/90 hover:bg-white/10"
+            }`}
+            role="option"
+            aria-selected={currentView === "Now"}
+          >
+            <span>Now</span>
+            <ShortcutHint>1</ShortcutHint>
+          </button>
+          <button
+            onClick={() => handleOptionClick(onSelectDay)}
+            className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors ${
+              currentView === "Day"
+                ? "bg-white/20 text-white"
+                : "text-white/90 hover:bg-white/10"
+            }`}
+            role="option"
+            aria-selected={currentView === "Day"}
+          >
+            <span>Day</span>
+            <ShortcutHint>2</ShortcutHint>
+          </button>
+          <button
+            onClick={() => handleOptionClick(onSelectWeek)}
+            className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors ${
+              currentView === "Week"
+                ? "bg-white/20 text-white"
+                : "text-white/90 hover:bg-white/10"
+            }`}
+            role="option"
+            aria-selected={currentView === "Week"}
+          >
+            <span>Week</span>
+            <ShortcutHint>3</ShortcutHint>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
