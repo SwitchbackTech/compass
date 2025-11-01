@@ -21,6 +21,13 @@ const loadEnvFile = (envName) => {
 
   const envFile = map[envName];
 
+  // Handle unmapped environment names explicitly
+  if (typeof envFile === "undefined") {
+    console.error(
+      `Error: Unrecognized environment name '${envName}'. Valid options are: ${Object.keys(map).join(", ")}.`
+    );
+    return;
+  }
   // Skip file loading for test environment or if file is explicitly null
   if (envName === "test" || envFile === null) {
     console.log(
