@@ -59,7 +59,7 @@ const loadEnvFile = (envName) => {
 export default (env, argv) => {
   const IS_DEV = argv.mode === "development";
 
-  const ENVIRONMENT = argv.nodeEnv || 'local';
+  const ENVIRONMENT = argv.nodeEnv || "local";
   loadEnvFile(ENVIRONMENT);
 
   const GLOBAL_SCSS = resolvePath("src/common/styles/index.scss");
