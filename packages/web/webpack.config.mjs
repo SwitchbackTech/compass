@@ -19,21 +19,35 @@ const loadEnvFile = (envName) => {
     test: null, // test environment doesn't require env file
   };
 
-  const file = map[envName] || ".env.local";
+  const envFile = map[envName];
 
+  // Handle unmapped environment names explicitly
+  if (typeof envFile === "undefined") {
+    console.error(
+      `Error: Unrecognized environment name '${envName}'. Valid options are: ${Object.keys(map).join(", ")}.`
+    );
+    return;
+  }
   // Skip file loading for test environment or if file is explicitly null
-  if (envName === "test" || file === null) {
+  if (envName === "test" || envFile === null) {
     console.log(
       `Skipping env file load for ${envName} environment (using process.env)`,
     );
     return;
   }
 
-  const fullPath = _resolve(_dirname, "..", "..", "packages", "backend", file);
+  const fullPath = _resolve(
+    _dirname,
+    "..",
+    "..",
+    "packages",
+    "backend",
+    envFile,
+  );
 
   if (fs.existsSync(fullPath)) {
-    console.log(`Creating a ${envName} build using ${file} ...`);
-    dotenv.config({ path: fullPath });
+    console.log(`Creating a ${envName} build using ${envFile} ...`);
+    dotenv.config({ path: fullPath, override: true });
   } else {
     // Only warn, don't exit - allow environment variables to be provided via process.env (e.g., in CI)
     console.warn(
