@@ -3,24 +3,16 @@ import { RRule } from "rrule";
 import { faker } from "@faker-js/faker";
 import { recurring } from "@core/__mocks__/v1/events/gcal/gcal.recurring";
 import { GCAL_MAX_RECURRENCES, Origin } from "@core/constants/core.constants";
-import { gEventToCompassEvent } from "@core/mappers/map.event";
-import {
-  CalendarProvider,
-  type Schema_Event_Recur_Base,
-  WithMongoId,
-} from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
-import {
-  isBase,
-  isInstance,
-  parseCompassEventDate,
-} from "@core/util/event/event.util";
+import { isBase, isInstance } from "@core/util/event/event.util";
 import { isInstanceGCalEvent } from "@core/util/event/gcal.event.util";
 import {
   createMockBaseEvent,
   generateCompassEventDates,
 } from "@core/util/test/ccal.event.factory";
+import { MapGCalEvent } from "../../mappers/map.gcal.event";
+import { BaseEventSchema, RecurrenceRuleSchema } from "../../types/event.types";
 
 describe("CompassEventRRule: ", () => {
   it(`should return the correct number of events based on rrule count`, () => {
@@ -48,7 +40,7 @@ describe("CompassEventRRule: ", () => {
       ...baseEvent,
       _id: new ObjectId(baseEvent._id),
     });
-    const startDate = parseCompassEventDate(baseEvent.startDate!);
+    const startDate = dayjs(baseEvent.startDate);
     const events = rrule.all();
 
     expect(rrule.options.dtstart.toISOString()).toEqual(
@@ -80,7 +72,7 @@ describe("CompassEventRRule: ", () => {
   it("should include start dates outside the recurrence rule", () => {
     // Add an extra date outside the recurrence (e.g., a Friday)
     const startDateOnMonday = dayjs().startOf("week").add(1, "day");
-    const startDate = startDateOnMonday.toISOString();
+    const startDate = startDateOnMonday.toDate();
     const rule = [`RRULE:FREQ=WEEKLY;COUNT=0;BYDAY=${RRule.FR}`];
     const baseEvent = createMockBaseEvent({ startDate, recurrence: { rule } });
     const _id = new ObjectId(baseEvent._id);
@@ -109,58 +101,6 @@ describe("CompassEventRRule: ", () => {
     // Options should merge both rules
     expect(rrule.options.freq).toBeDefined();
     expect(rrule.options.count).toBeDefined();
-  });
-
-  describe("diffOptions", () => {
-    it("should return the differences between two rrule options", () => {
-      const until = dayjs();
-      const untilRule = `UNTIL=${until.toRRuleDTSTARTString()}`;
-      const rule = [`RRULE:FREQ=DAILY;COUNT=10;BYDAY=MO,WE,FR;${untilRule}`];
-      const _baseEvent = createMockBaseEvent({ recurrence: { rule } });
-      const _id = new ObjectId(_baseEvent._id);
-      const baseEvent = { ..._baseEvent, _id };
-      const rrule = new CompassEventRRule({ ...baseEvent, _id });
-      const untilFormat = dayjs.DateFormat.RFC5545;
-      const nextUntil = dayjs(until.toRRuleDTSTARTString(), untilFormat);
-
-      const rruleA = new CompassEventRRule(
-        { ...baseEvent, recurrence: { rule: [] } },
-        {
-          freq: RRule.DAILY, // DAILY
-          count: 10,
-          byweekday: [RRule.MO.weekday, RRule.WE.weekday, RRule.FR.weekday], // MO, WE, FR
-          interval: 1,
-          until: nextUntil.toDate(), // new until date
-        },
-      );
-
-      const rruleB = new CompassEventRRule(
-        { ...baseEvent, recurrence: { rule: [] } },
-        {
-          freq: RRule.DAILY, // DAILY
-          count: 10,
-          byweekday: [RRule.MO.weekday, RRule.WE.weekday, RRule.FR.weekday], // MO, WE, FR
-          interval: 2,
-          until: nextUntil.add(10, "minutes").toDate(), // new until date
-        },
-      );
-
-      const diffsA = rrule.diffOptions(rruleA);
-      const diffsB = rrule.diffOptions(rruleB);
-
-      expect(diffsA).toBeInstanceOf(Array);
-      expect(diffsA).toHaveLength(0);
-
-      expect(diffsB).toBeInstanceOf(Array);
-      expect(diffsB).toHaveLength(2);
-
-      expect(diffsB).toEqual(
-        expect.arrayContaining([
-          ["interval", 2],
-          ["until", expect.any(Date)],
-        ]),
-      );
-    });
   });
 
   describe("toString", () => {
@@ -254,12 +194,12 @@ describe("CompassEventRRule: ", () => {
 
       const base = rrule.base();
 
-      expect(base.gEventId).not.toBeDefined();
-      expect(base.gEventId).not.toBeNull();
+      expect(base.metadata?.id).not.toBeDefined();
+      expect(base.metadata?.id).not.toBeNull();
 
-      const providerBase = rrule.base(CalendarProvider.GOOGLE);
+      const providerBase = rrule.base();
 
-      expect(providerBase.gEventId).toEqual(baseEvent._id.toString());
+      expect(providerBase.metadata?.id).toEqual(baseEvent._id.toString());
     });
   });
 
@@ -314,21 +254,18 @@ describe("CompassEventRRule: ", () => {
         _id: new ObjectId(baseEvent._id),
       });
       const instances = rrule.instances();
-      const startDate = parseCompassEventDate(baseEvent.startDate!);
-      const endDate = parseCompassEventDate(baseEvent.endDate!);
-      const dateFormat = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
+      const startDate = dayjs(baseEvent.startDate);
+      const endDate = dayjs(baseEvent.endDate);
 
       instances.forEach((instance, index) => {
         expect(instance.startDate).toBeDefined();
         expect(instance.endDate).toBeDefined();
 
         expect(instance.startDate).toEqual(
-          startDate.add(index, "day").format(dateFormat),
+          startDate.add(index, "day").toDate(),
         );
 
-        expect(instance.endDate).toEqual(
-          endDate.add(index, "day").format(dateFormat),
-        );
+        expect(instance.endDate).toEqual(endDate.add(index, "day").toDate());
       });
     });
 
@@ -342,21 +279,18 @@ describe("CompassEventRRule: ", () => {
         _id: new ObjectId(baseEvent._id),
       });
       const instances = rrule.instances();
-      const startDate = parseCompassEventDate(baseEvent.startDate!);
-      const endDate = parseCompassEventDate(baseEvent.endDate!);
-      const dateFormat = dayjs.DateFormat.RFC3339_OFFSET;
+      const startDate = dayjs(baseEvent.startDate);
+      const endDate = dayjs(baseEvent.endDate);
 
       instances.forEach((instance, index) => {
         expect(instance.startDate).toBeDefined();
         expect(instance.endDate).toBeDefined();
 
         expect(instance.startDate).toEqual(
-          startDate.add(index, "day").format(dateFormat),
+          startDate.add(index, "day").toDate(),
         );
 
-        expect(instance.endDate).toEqual(
-          endDate.add(index, "day").format(dateFormat),
-        );
+        expect(instance.endDate).toEqual(endDate.add(index, "day").toDate());
       });
     });
 
@@ -372,20 +306,20 @@ describe("CompassEventRRule: ", () => {
       });
 
       const instances = rrule.instances();
-      const providerInstances = rrule.instances(CalendarProvider.GOOGLE);
+      const providerInstances = rrule.instances();
 
       instances.forEach((instance) => {
         expect(instance._id).toBeDefined();
-        expect(instance.gEventId).not.toBeDefined();
-        expect(instance.gEventId).not.toBeNull();
-        expect(instance.gRecurringEventId).not.toBeDefined();
-        expect(instance.gRecurringEventId).not.toBeNull();
+        expect(instance.metadata?.id).not.toBeDefined();
+        expect(instance.metadata?.id).not.toBeNull();
+        expect(instance.metadata?.recurringEventId).not.toBeDefined();
+        expect(instance.metadata?.recurringEventId).not.toBeNull();
       });
 
       providerInstances.forEach((instance) => {
         expect(instance._id).toBeDefined();
-        expect(instance.gEventId).toBeDefined();
-        expect(instance.gRecurringEventId).toBeDefined();
+        expect(instance.metadata?.id).toBeDefined();
+        expect(instance.metadata?.recurringEventId).toBeDefined();
       });
     });
 
@@ -396,28 +330,30 @@ describe("CompassEventRRule: ", () => {
         const isInstance = isInstanceGCalEvent(gEvent);
         const _id = isInstance ? new ObjectId() : baseCompassId;
 
-        const event = {
-          ...gEventToCompassEvent(gEvent, "test-user", Origin.GOOGLE_IMPORT),
+        const event = MapGCalEvent.toEvent(gEvent, {
+          origin: Origin.GOOGLE_IMPORT,
+          calendar: new ObjectId(),
           _id,
-        };
+        });
 
         if (isInstance) {
-          event.recurrence = { eventId: baseCompassId.toString() };
+          event.recurrence = {
+            eventId: baseCompassId,
+            rule: RecurrenceRuleSchema.parse(gEvent.recurrence),
+          };
         }
 
         return event;
       });
 
-      const baseEvent = compassEvents.find(isBase) as WithMongoId<
-        Omit<Schema_Event_Recur_Base, "_id">
-      >;
+      const baseEvent = compassEvents.find(isBase);
 
       expect(baseEvent).toBeDefined();
       expect(baseEvent).not.toBeNull();
 
-      const rrule = new CompassEventRRule(baseEvent);
+      const rrule = new CompassEventRRule(BaseEventSchema.parse(baseEvent));
       const compassInstances = compassEvents.filter(isInstance);
-      const instances = rrule.instances(CalendarProvider.GOOGLE);
+      const instances = rrule.instances();
 
       instances.forEach((instance, index) => {
         const compassInstance = compassInstances[index];
@@ -430,10 +366,10 @@ describe("CompassEventRRule: ", () => {
         expect(instance.endDate).toBeDefined();
         expect(instance.endDate).not.toBeNull();
 
-        const startDate = parseCompassEventDate(instance.startDate!);
-        const endDate = parseCompassEventDate(instance.endDate!);
-        const cStartDate = parseCompassEventDate(compassInstance!.startDate!);
-        const cEndDate = parseCompassEventDate(compassInstance!.endDate!);
+        const startDate = dayjs(instance.startDate!);
+        const endDate = dayjs(instance.endDate!);
+        const cStartDate = dayjs(compassInstance!.startDate!);
+        const cEndDate = dayjs(compassInstance!.endDate!);
 
         expect(startDate.isSame(cStartDate)).toBe(true);
         expect(endDate.isSame(cEndDate)).toBe(true);

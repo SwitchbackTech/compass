@@ -1,13 +1,12 @@
 import axios from "axios";
 import pkg from "inquirer";
-import { ObjectId } from "mongodb";
 import { getApiBaseUrl, log } from "@scripts/common/cli.utils";
 import { Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
+import { createMockRegularEvent } from "@core/util/test/ccal.event.factory";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import mongoService from "@backend/common/services/mongo.service";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import { zObjectId } from "../../../core/src/types/type.utils";
 
 const { prompt } = pkg;
 
@@ -23,19 +22,16 @@ async function createEvent(
 
 async function seedEvents(userInput: string) {
   try {
-    // Validate userInput as ObjectId
-    if (!ObjectId.isValid(userInput)) {
-      log.error(
+    const _id = zObjectId.parse(userInput, {
+      error: () =>
         `Provided user id is not a valid ObjectId: ${userInput}.
-        Please provide your Compass user's _id value.`,
-      );
-      process.exit(1);
-    }
+          Please provide your Compass user's _id value.`,
+    });
 
     // Connect to MongoDB
     await mongoService.start();
 
-    const user = await findCompassUserBy("_id", userInput);
+    const user = await mongoService.user.findOne({ _id });
 
     if (!user) {
       log.error(`User not found with Compass ID: ${userInput}`);
@@ -58,7 +54,7 @@ async function seedEvents(userInput: string) {
       startDate: dayjs().hour(10).minute(0).second(0).toISOString(),
       endDate: dayjs().hour(11).minute(0).second(0).toISOString(),
     };
-    const event = createMockStandaloneEvent(eventOverrides);
+    const event = createMockRegularEvent(eventOverrides);
     const events: Schema_Event[] = [event];
 
     await createEvent(events, baseUrl, accessToken);
@@ -71,6 +67,7 @@ async function seedEvents(userInput: string) {
   } catch (error) {
     log.error("Failed to seed events:");
     console.error(error);
+    process.exit(1);
   }
 
   process.exit(0);

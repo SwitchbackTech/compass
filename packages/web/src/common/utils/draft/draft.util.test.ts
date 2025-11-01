@@ -1,4 +1,4 @@
-import { Categories_Event } from "@core/types/event.types";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import { assembleDefaultEvent } from "../event/event.util";
 
 jest.mock("@web/auth/auth.util", () => ({

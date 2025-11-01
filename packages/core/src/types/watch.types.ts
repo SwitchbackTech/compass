@@ -1,3 +1,4 @@
+import { ObjectId } from "bson";
 import { z } from "zod/v4";
 import { Resource_Sync } from "@core/types/sync.types";
 import {
@@ -14,7 +15,7 @@ import {
  * expiration, deletion) separately from sync data.
  */
 export const WatchSchema = z.object({
-  _id: zObjectId, // channel_id - unique identifier for the notification channel
+  _id: zObjectId.optional().default(() => new ObjectId()), // channel_id - unique identifier for the notification channel
   user: IDSchemaV4, // user who owns this watch channel
   resourceId: z.string().nonempty(), // Google Calendar resource identifier
   expiration: ExpirationDateSchema,

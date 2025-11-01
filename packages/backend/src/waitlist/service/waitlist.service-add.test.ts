@@ -1,7 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { Result_Waitlist } from "@core/types/waitlist/waitlist.types";
-import { EmailDriver } from "@backend/__tests__/drivers/email.driver";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
+import { AuthDriver } from "@backend/__tests__/drivers/auth.driver";
 import { WaitListDriver } from "@backend/__tests__/drivers/waitlist.driver";
 import {
   getEmailsOnWaitlist,
@@ -13,6 +12,7 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { mockEnv } from "@backend/__tests__/helpers/mock.setup";
+import EmailService from "@backend/email/email.service";
 import WaitlistService from "@backend/waitlist/service/waitlist.service";
 
 describe("addToWaitlist", () => {
@@ -24,8 +24,6 @@ describe("addToWaitlist", () => {
 
   it("should add to waitlist", async () => {
     // Act
-    const emailSpies = EmailDriver.mockEmailServiceResponse();
-
     const record = WaitListDriver.createWaitListRecord({
       email: faker.internet.email(),
       firstName: faker.person.firstName(),
@@ -40,15 +38,14 @@ describe("addToWaitlist", () => {
     };
     expect(result).toEqual(expected);
     expect(await isEmailOnWaitlist(record.email)).toBe(true);
-
-    emailSpies.addTagToSubscriber.mockClear();
-    emailSpies.upsertSubscriber.mockClear();
   });
 
   it("should ignore if email is already on waitlist", async () => {
     // Arrange
-    const { user } = await UtilDriver.setupTestUser();
-    const emailSpies = EmailDriver.mockEmailServiceResponse();
+    const user = await AuthDriver.googleSignup();
+    const waitlist = WaitListDriver.createWaitListRecord(user);
+
+    await WaitListDriver.saveWaitListRecord(waitlist);
 
     const record = WaitListDriver.createWaitListRecord({
       email: user.email,
@@ -72,14 +69,14 @@ describe("addToWaitlist", () => {
       emailsOnList.filter((email) => email === user.email).length === 1;
 
     expect(noDuplicate).toBe(true);
-
-    emailSpies.addTagToSubscriber.mockClear();
-    emailSpies.upsertSubscriber.mockClear();
   });
 
   it("should skip emailer steps if missing EMAILER_ variables", async () => {
     // Arrange
-    const emailSpies = EmailDriver.mockEmailServiceResponse();
+    const addTagToSubscriberSpy = jest.spyOn(
+      EmailService,
+      "addTagToSubscriber",
+    );
 
     const envSpies = mockEnv({
       EMAILER_SECRET: undefined,
@@ -97,9 +94,8 @@ describe("addToWaitlist", () => {
     await WaitlistService.addToWaitlist(record.email, record);
 
     // Assert
-    expect(emailSpies.addTagToSubscriber).not.toHaveBeenCalled();
+    expect(addTagToSubscriberSpy).not.toHaveBeenCalled();
 
-    Object.values(emailSpies).forEach((mock) => mock.mockClear());
     Object.values(envSpies).forEach((mock) => mock.restore());
   });
 });

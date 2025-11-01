@@ -1,7 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { Resource_Sync } from "@core/types/sync.types";
-import { UserDriver } from "@backend/__tests__/drivers/user.driver";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
+import { AuthDriver } from "@backend/__tests__/drivers/auth.driver";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -22,7 +21,7 @@ describe("sync.queries: ", () => {
     afterAll(cleanupTestDb);
 
     it("returns undefined when token not found", async () => {
-      const { user } = await UtilDriver.setupTestUser();
+      const user = await AuthDriver.googleSignup();
 
       await expect(
         getGCalEventsSyncPageToken(user._id.toString(), "missing-cal"),
@@ -38,7 +37,7 @@ describe("sync.queries: ", () => {
     afterAll(cleanupTestDb);
 
     it("should get sync data by userId", async () => {
-      const user = await UserDriver.createUser();
+      const user = await AuthDriver.googleSignup();
       const userId = user._id.toString();
       const calendarId = faker.string.uuid();
       const nextPageToken = faker.string.uuid();
@@ -77,7 +76,7 @@ describe("sync.queries: ", () => {
     });
 
     it("should get sync data by userId and gCalendarId - calendarlist", async () => {
-      const user = await UserDriver.createUser();
+      const user = await AuthDriver.googleSignup();
       const userId = user._id.toString();
       const calendarId = faker.string.uuid();
       const nextPageToken = faker.string.uuid();
@@ -128,7 +127,7 @@ describe("sync.queries: ", () => {
     afterAll(cleanupTestDb);
 
     it("should upsert sync data if not populated - calendarlist", async () => {
-      const user = await UserDriver.createUser();
+      const user = await AuthDriver.googleSignup();
       const userId = user._id.toString();
       const calendarId = faker.string.uuid();
       const existingSync = await getSync({ userId });
@@ -155,7 +154,7 @@ describe("sync.queries: ", () => {
     });
 
     it("should upsert sync data if not populated - events", async () => {
-      const user = await UserDriver.createUser();
+      const user = await AuthDriver.googleSignup();
       const userId = user._id.toString();
       const calendarId = faker.string.uuid();
       const existingSync = await getSync({ userId });
@@ -182,7 +181,7 @@ describe("sync.queries: ", () => {
     });
 
     it("should update sync data - events", async () => {
-      const user = await UserDriver.createUser();
+      const user = await AuthDriver.googleSignup();
       const userId = user._id.toString();
       const calendarId = faker.string.uuid();
       const nextSyncToken = faker.string.uuid();

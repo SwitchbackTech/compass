@@ -2,7 +2,6 @@ import { normalize, schema } from "normalizr";
 import { SelectEffect, call, put, select } from "redux-saga/effects";
 import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
 import {
-  Params_Events,
   RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
@@ -132,8 +131,10 @@ export const EventDateUtils = {
   /**
    * Adjusts start and end dates for event queries
    */
-  adjustStartEndDate: (payload: Params_Events) => {
-    if (payload.someday) return payload;
+  adjustStartEndDate: (
+    payload: Pick<Schema_WebEvent, "startDate" | "endDate" | "isSomeday">,
+  ) => {
+    if (payload.isSomeday) return payload;
 
     // Make start date 1 day before the start date
     const startDate = dayjs(payload.startDate).subtract(1, "day").format();

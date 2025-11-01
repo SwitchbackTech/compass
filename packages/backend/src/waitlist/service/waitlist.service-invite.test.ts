@@ -1,5 +1,4 @@
 import { faker } from "@faker-js/faker";
-import { EmailDriver } from "@backend/__tests__/drivers/email.driver";
 import { WaitListDriver } from "@backend/__tests__/drivers/waitlist.driver";
 import {
   cleanupCollections,
@@ -7,6 +6,7 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { mockEnv } from "@backend/__tests__/helpers/mock.setup";
+import emailService from "@backend/email/email.service";
 import WaitlistService from "@backend/waitlist/service/waitlist.service";
 
 describe("isInvited", () => {
@@ -24,8 +24,6 @@ describe("isInvited", () => {
 
   it("should return true if email is invited", async () => {
     // Arrange
-    const emailSpies = EmailDriver.mockEmailServiceResponse();
-
     const record = WaitListDriver.createWaitListRecord({
       email: faker.internet.email(),
       firstName: faker.person.firstName(),
@@ -40,9 +38,6 @@ describe("isInvited", () => {
 
     // Assert
     expect(result).toBe(true);
-
-    emailSpies.addTagToSubscriber.mockClear();
-    emailSpies.upsertSubscriber.mockClear();
   });
 });
 
@@ -55,8 +50,6 @@ describe("invite", () => {
 
   it("should invite email to waitlist", async () => {
     // Arrange
-    const emailSpies = EmailDriver.mockEmailServiceResponse();
-
     const record = WaitListDriver.createWaitListRecord({
       email: faker.internet.email(),
       firstName: faker.person.firstName(),
@@ -70,9 +63,6 @@ describe("invite", () => {
 
     // Assert
     expect(result.status).toBe("invited");
-
-    emailSpies.addTagToSubscriber.mockClear();
-    emailSpies.upsertSubscriber.mockClear();
   });
 
   it("should ignore if email is not on waitlist", async () => {
@@ -84,8 +74,6 @@ describe("invite", () => {
   });
 
   it("should add tag to subscriber when inviting", async () => {
-    const emailSpies = EmailDriver.mockEmailServiceResponse();
-
     const record = WaitListDriver.createWaitListRecord({
       email: faker.internet.email(),
       firstName: faker.person.firstName(),
@@ -96,15 +84,14 @@ describe("invite", () => {
 
     const result = await WaitlistService.invite(record.email);
 
-    expect(emailSpies.addTagToSubscriber).toHaveBeenCalled();
     expect(result.tagResponse).toBeDefined();
-
-    emailSpies.addTagToSubscriber.mockClear();
-    emailSpies.upsertSubscriber.mockClear();
   });
 
   it("should skip tagging if EMAILER env vars missing", async () => {
-    const emailSpies = EmailDriver.mockEmailServiceResponse();
+    const addTagToSubscriberSpy = jest.spyOn(
+      emailService,
+      "addTagToSubscriber",
+    );
 
     const envSpies = mockEnv({
       EMAILER_SECRET: undefined,
@@ -122,10 +109,9 @@ describe("invite", () => {
 
     const result = await WaitlistService.invite(record.email);
 
-    expect(emailSpies.addTagToSubscriber).not.toHaveBeenCalled();
+    expect(addTagToSubscriberSpy).not.toHaveBeenCalled();
     expect(result.tagResponse).toBeUndefined();
 
-    Object.values(emailSpies).forEach((mock) => mock.mockClear());
     Object.values(envSpies).forEach((mock) => mock.restore());
   });
 });

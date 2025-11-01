@@ -1,8 +1,9 @@
 import React from "react";
 import { DraggableProvided, DraggableStateSnapshot } from "@hello-pangea/dnd";
 import { Priorities } from "@core/constants/core.constants";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import { Props_DraftForm } from "@web/views/Calendar/components/Draft/hooks/state/useDraftForm";
 import { Actions_Sidebar } from "@web/views/Calendar/components/Draft/sidebar/hooks/useSidebarActions";
 import { SomedayEventRectangle } from "../SomedayEventContainer/SomedayEventRectangle";

@@ -1,7 +1,7 @@
 import { normalize } from "normalizr";
 import { call, put } from "redux-saga/effects";
 import { Schema_Event } from "@core/types/event.types";
-import { Schema_OptimisticEvent } from "@web/common/types/web.event.types";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { handleError } from "@web/common/utils/event/event.util";
 import { setSomedayEventsOrder } from "@web/common/utils/event/someday.event.util";
 import { EventApi } from "@web/ducks/events/event.api";
@@ -29,7 +29,7 @@ import { Action_Someday_Reorder } from "@web/ducks/events/slices/someday.slice.t
 export function* convertSomedayToCalendarEvent({
   payload,
 }: Action_ConvertEvent) {
-  let optimisticEvent: Schema_OptimisticEvent | null = null;
+  let optimisticEvent: Schema_GridEvent | null = null;
 
   try {
     const gridEvent = yield* _assembleGridEvent(payload.event);

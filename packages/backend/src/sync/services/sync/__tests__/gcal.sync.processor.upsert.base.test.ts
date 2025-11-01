@@ -1,19 +1,20 @@
 import { Categories_Recurrence } from "@core/types/event.types";
 import { gSchema$EventBase } from "@core/types/gcal";
-import dayjs from "@core/util/date/dayjs";
 import { categorizeEvents } from "@core/util/event/event.util";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
+import { AuthDriver } from "@backend/__tests__/drivers/auth.driver";
+import { CalendarDriver } from "@backend/__tests__/drivers/calendar.driver";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
   cleanupCollections,
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { simulateGoogleCalendarEventCreation } from "@backend/__tests__/helpers/mock.events.init";
 import {
-  simulateDbAfterGcalImport,
-  simulateGoogleCalendarEventCreation,
-} from "@backend/__tests__/helpers/mock.events.init";
-import { mockRecurringGcalBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
+  mockRecurringGcalBaseEvent,
+  mockRecurringGcalInstances,
+} from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
+import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import {
   datesAreInUtcOffset,
   eventsMatchSchema,
@@ -22,7 +23,7 @@ import {
   instanceDataMatchCompassBase,
   instanceDataMatchesGcalBase,
 } from "@backend/sync/services/sync/__tests__/gcal.sync.processor.test.util";
-import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
+import { GcalEventsSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
 
 describe("GcalSyncProcessor UPSERT: BASE", () => {
   beforeAll(setupTestDb);
@@ -34,23 +35,37 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
   afterAll(cleanupTestDb);
 
   it("should handle CREATING a TIMED SERIES from a BASE", async () => {
-    const { user } = await UtilDriver.setupTestUser();
+    const newUser = await AuthDriver.googleSignup();
+    const user = await AuthDriver.googleLogin(newUser._id);
+    const gcal = await getGcalClient(user._id);
+    const calendar = await CalendarDriver.getRandomUserCalendar(user._id);
+    const gCalendarId = calendar.metadata.id;
 
-    await simulateDbAfterGcalImport(user._id.toString());
+    const baseRecurringGcalEvent = mockRecurringGcalBaseEvent();
+    const instances = mockRecurringGcalInstances(baseRecurringGcalEvent);
 
-    const newBase = mockRecurringGcalBaseEvent();
+    //simulate event creation in Google Calendar
+    await simulateGoogleCalendarEventCreation(
+      gCalendarId,
+      baseRecurringGcalEvent,
+      gcal,
+    );
 
-    await simulateGoogleCalendarEventCreation(newBase);
+    await Promise.all(
+      instances.map((instance) =>
+        simulateGoogleCalendarEventCreation(gCalendarId, instance, gcal),
+      ),
+    );
 
-    const processor = new GcalSyncProcessor(user._id.toString());
-    const changes = await processor.processEvents([newBase]);
+    const processor = new GcalEventsSyncProcessor(calendar);
+    const changes = await processor.processEvents([baseRecurringGcalEvent]);
 
     expect(changes).toHaveLength(1);
 
     expect(changes).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          title: newBase.summary,
+          title: baseRecurringGcalEvent.summary,
           category: Categories_Recurrence.RECURRENCE_BASE,
           operation: "SERIES_CREATED",
         }),
@@ -62,21 +77,25 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
   });
 
   it("should handle CREATING an ALLDAY SERIES from a BASE", async () => {
-    const { user } = await UtilDriver.setupTestUser();
+    const newUser = await AuthDriver.googleSignup();
+    const user = await AuthDriver.googleLogin(newUser._id);
+    const gcal = await getGcalClient(user._id);
+    const calendar = await CalendarDriver.getRandomUserCalendar(user._id);
+    const gCalendarId = calendar.metadata.id;
 
-    await simulateDbAfterGcalImport(user._id.toString());
+    const allDayBase: gSchema$EventBase = mockRecurringGcalBaseEvent({}, true);
+    const instances = mockRecurringGcalInstances(allDayBase);
 
-    const newBase: gSchema$EventBase = mockRecurringGcalBaseEvent();
+    //simulate event creation in Google Calendar
+    await simulateGoogleCalendarEventCreation(gCalendarId, allDayBase, gcal);
 
-    const allDayBase: gSchema$EventBase = {
-      ...newBase,
-      start: { date: dayjs(newBase.start?.dateTime).toYearMonthDayString() },
-      end: { date: dayjs(newBase.end?.dateTime).toYearMonthDayString() },
-    };
+    await Promise.all(
+      instances.map((instance) =>
+        simulateGoogleCalendarEventCreation(gCalendarId, instance, gcal),
+      ),
+    );
 
-    await simulateGoogleCalendarEventCreation(allDayBase);
-
-    const processor = new GcalSyncProcessor(user._id.toString());
+    const processor = new GcalEventsSyncProcessor(calendar);
     const changes = await processor.processEvents([allDayBase]);
 
     expect(changes).toHaveLength(1);
@@ -84,7 +103,7 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
     expect(changes).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          title: newBase.summary,
+          title: allDayBase.summary,
           category: Categories_Recurrence.RECURRENCE_BASE,
           operation: "SERIES_CREATED",
         }),
@@ -92,39 +111,68 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
     );
 
     const updatedEvents = await getEventsInDb({ user: user._id.toString() });
+
     eventsMatchSchema(updatedEvents);
   });
 
   it("should handle UPDATING an ALL-DAY SERIES", async () => {
     /* Assemble */
-    const { user } = await UtilDriver.setupTestUser();
+    const newUser = await AuthDriver.googleSignup();
+    const user = await AuthDriver.googleLogin(newUser._id);
+    const gcal = await getGcalClient(user._id);
+    const calendar = await CalendarDriver.getRandomUserCalendar(user._id);
+    const gCalendarId = calendar.metadata.id;
 
-    const { gcalEvents } = await simulateDbAfterGcalImport(
-      user._id.toString(),
-      true,
+    const allDayBase: gSchema$EventBase = mockRecurringGcalBaseEvent({}, true);
+    const instances = mockRecurringGcalInstances(allDayBase);
+
+    //simulate event creation in Google Calendar
+    await simulateGoogleCalendarEventCreation(gCalendarId, allDayBase, gcal);
+
+    await Promise.all(
+      instances.map((instance) =>
+        simulateGoogleCalendarEventCreation(gCalendarId, instance, gcal),
+      ),
     );
 
-    const origEvents = await getEventsInDb({ user: user._id.toString() }).then(
-      (events) =>
-        events.map((event) => ({ ...event, _id: event._id?.toString() })),
+    const processor = new GcalEventsSyncProcessor(calendar);
+    const changes = await processor.processEvents([allDayBase]);
+
+    expect(changes).toHaveLength(1);
+
+    expect(changes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          title: allDayBase.summary,
+          category: Categories_Recurrence.RECURRENCE_BASE,
+          operation: "SERIES_CREATED",
+        }),
+      ]),
     );
+
+    const updatedEvents = await getEventsInDb({ user: user._id.toString() });
+
+    eventsMatchSchema(updatedEvents);
+
+    const origEvents = await getEventsInDb({ user: user._id.toString() });
 
     const { instances: origInstances } = categorizeEvents(origEvents);
 
     /* Act */
     const updatedGcalAllDayBase = {
-      ...gcalEvents.recurring,
-      summary: `${gcalEvents.recurring.summary} - UPDATED IN GCAL`,
+      ...allDayBase,
+      summary: `${allDayBase.summary} - UPDATED IN GCAL`,
       description: "ALL-DAY Description adjusted in Gcal",
     };
 
-    const processor = new GcalSyncProcessor(user._id.toString());
-    const changes = await processor.processEvents([updatedGcalAllDayBase]);
+    const updateChanges = await processor.processEvents([
+      updatedGcalAllDayBase,
+    ]);
 
     /* Assert */
     // Validate the correct change was detected
-    expect(changes).toHaveLength(2);
-    expect(changes).toEqual(
+    expect(updateChanges).toHaveLength(2);
+    expect(updateChanges).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           title: updatedGcalAllDayBase.summary,
@@ -140,39 +188,53 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
     );
 
     // Validate that all events in the series (base and instances) were updated
-    const { base, instances } = await getLatestEventsFromDb({
+    const { base, instances: updatedInstances } = await getLatestEventsFromDb({
       user: user._id.toString(),
     });
 
-    expect(instances.length).toBeGreaterThan(0);
-    for (const i of instances) {
+    expect(base).toBeDefined();
+    expect(base).not.toBeNull();
+    expect(updatedInstances.length).toBeGreaterThan(0);
+
+    for (const i of updatedInstances) {
       instanceDataMatchesGcalBase(i, updatedGcalAllDayBase);
-      instanceDataMatchCompassBase(i, base);
+      instanceDataMatchCompassBase(i, base!);
       hasNewUpdatedAtTimestamp(i, origInstances);
     }
   });
 
   it("should handle UPDATING a TIMED SERIES", async () => {
     /* Assemble */
-    const { user } = await UtilDriver.setupTestUser();
+    const newUser = await AuthDriver.googleSignup();
+    const user = await AuthDriver.googleLogin(newUser._id);
+    const gcal = await getGcalClient(user._id);
+    const calendar = await CalendarDriver.getRandomUserCalendar(user._id);
+    const gCalendarId = calendar.metadata.id;
 
-    const { gcalEvents } = await simulateDbAfterGcalImport(user._id.toString());
+    const timedBase: gSchema$EventBase = mockRecurringGcalBaseEvent();
+    const instances = mockRecurringGcalInstances(timedBase);
 
-    const origEvents = await getEventsInDb({ user: user._id.toString() }).then(
-      (events) =>
-        events.map((event) => ({ ...event, _id: event._id?.toString() })),
+    //simulate event creation in Google Calendar
+    await simulateGoogleCalendarEventCreation(gCalendarId, timedBase, gcal);
+
+    await Promise.all(
+      instances.map((instance) =>
+        simulateGoogleCalendarEventCreation(gCalendarId, instance, gcal),
+      ),
     );
+
+    const origEvents = await getEventsInDb({ user: user._id.toString() });
 
     const { instances: origInstances } = categorizeEvents(origEvents);
 
     /* Act */
     const updatedGcalBase = {
-      ...gcalEvents.recurring,
-      summary: gcalEvents.recurring.summary + " - UPDATED IN GCAL",
+      ...timedBase,
+      summary: timedBase.summary + " - UPDATED IN GCAL",
       description: "Description adjusted in Gcal",
     };
 
-    const processor = new GcalSyncProcessor(user._id.toString());
+    const processor = new GcalEventsSyncProcessor(calendar);
     const changes = await processor.processEvents([updatedGcalBase]);
 
     /* Assert */
@@ -194,14 +256,15 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
     );
 
     // Validate that all events in the series (base and instances) were updated
-    const { base, instances } = await getLatestEventsFromDb({
+    const { base, instances: updatedInstances } = await getLatestEventsFromDb({
       user: user._id.toString(),
     });
 
-    expect(instances.length).toBeGreaterThan(0);
-    for (const i of instances) {
+    expect(updatedInstances.length).toBeGreaterThan(0);
+
+    for (const i of updatedInstances) {
       instanceDataMatchesGcalBase(i, updatedGcalBase);
-      instanceDataMatchCompassBase(i, base);
+      instanceDataMatchCompassBase(i, base!);
       hasNewUpdatedAtTimestamp(i, origInstances);
       datesAreInUtcOffset(i);
     }

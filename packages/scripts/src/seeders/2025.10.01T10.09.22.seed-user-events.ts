@@ -4,24 +4,25 @@ import { confirm, input } from "@inquirer/prompts";
 import { MigrationContext } from "@scripts/common/cli.types";
 import { NodeEnv } from "@core/constants/core.constants";
 import {
-  CompassEventStatus,
-  CompassThisEvent,
+  EventStatus,
   RecurringEventUpdateScope,
+  ThisEventUpdate,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
+import { createMockRegularEvent } from "@core/util/test/ccal.event.factory";
 import { ENV } from "@backend/common/constants/env.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.processor";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import mongoService from "../../../backend/src/common/services/mongo.service";
+import { zObjectId } from "../../../core/src/types/type.utils";
 
 export default class Seeder implements RunnableMigration<MigrationContext> {
   readonly name: string = "2025.10.01T10.09.22.seed-user-events";
   readonly path: string = "2025.10.01T10.09.22.seed-user-events.ts";
 
-  #generateEvents(userId: string): Array<CompassThisEvent["payload"]> {
-    const standalone = createMockStandaloneEvent({
+  #generateEvents(userId: string): Array<ThisEventUpdate["payload"]> {
+    const standalone = createMockRegularEvent({
       user: userId,
       isAllDay: false,
       isSomeday: false,
@@ -116,7 +117,7 @@ export default class Seeder implements RunnableMigration<MigrationContext> {
   }
 
   async #findUserOrThrow(userId: string) {
-    const user = await findCompassUserBy("_id", userId);
+    const user = await mongoService.user.findOne({ _id: userId });
 
     if (!user) {
       throw error(
@@ -130,17 +131,18 @@ export default class Seeder implements RunnableMigration<MigrationContext> {
 
   async up(params: MigrationParams<MigrationContext>): Promise<void> {
     const { user, proceed } = await this.#prompt(params, "up");
+    const _id = zObjectId.parse(user);
 
     if (!proceed) return Promise.resolve();
 
-    const userId = (await this.#findUserOrThrow(user!))._id.toString();
+    const dbUser = await mongoService.user.findOne({ _id });
     const events = this.#generateEvents(userId);
 
     await CompassSyncProcessor.processEvents(
       events.map((payload) => ({
         payload,
         applyTo: RecurringEventUpdateScope.THIS_EVENT,
-        status: CompassEventStatus.CONFIRMED,
+        status: EventStatus.CONFIRMED,
       })),
     );
   }
@@ -157,7 +159,7 @@ export default class Seeder implements RunnableMigration<MigrationContext> {
       events.map((payload) => ({
         payload,
         applyTo: RecurringEventUpdateScope.THIS_EVENT,
-        status: CompassEventStatus.CANCELLED,
+        status: EventStatus.CANCELLED,
       })),
     );
   }

@@ -19,7 +19,7 @@ import { CompassError, Info_Error } from "@backend/common/types/error.types";
 import { SessionResponse } from "@backend/common/types/express.types";
 import { SyncController } from "@backend/sync/controllers/sync.controller";
 import { getSyncByToken } from "@backend/sync/util/sync.queries";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import mongoService from "../../services/mongo.service";
 
 const logger = Logger("app:express.handler");
 
@@ -54,7 +54,8 @@ const parseUserId = async (res: SessionResponse, e: Error) => {
       if (e.config.url) {
         const email = getEmailFromUrl(e.config.url);
         if (email) {
-          const user = await findCompassUserBy("email", email);
+          const user = await mongoService.user.findOne({ email });
+
           if (user) {
             return user._id.toString();
           }

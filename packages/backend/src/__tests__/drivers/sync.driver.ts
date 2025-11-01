@@ -1,42 +1,16 @@
 import { ObjectId, WithId } from "mongodb";
 import { faker } from "@faker-js/faker";
-import { Resource_Sync, Schema_Sync } from "@core/types/sync.types";
-import { Schema_User } from "@core/types/user.types";
+import { Schema_Sync } from "@core/types/sync.types";
 import dayjs from "@core/util/date/dayjs";
-import { UserDriver } from "@backend/__tests__/drivers/user.driver";
-import { getGcalClient } from "@backend/auth/services/google.auth.service";
+import { AuthDriver } from "@backend/__tests__/drivers/auth.driver";
 import mongoService from "@backend/common/services/mongo.service";
-import syncService from "@backend/sync/services/sync.service";
-import { updateSync } from "@backend/sync/util/sync.queries";
 
 export class SyncDriver {
-  static async createSync(
-    user: Pick<WithId<Schema_User>, "_id">,
-    defaultUser = false,
-  ): Promise<void> {
-    const gCalendarId = defaultUser ? "test-calendar" : faker.string.uuid();
-    const gcal = await getGcalClient(user._id.toString());
-
-    await Promise.all([
-      updateSync(Resource_Sync.CALENDAR, user._id.toString(), gCalendarId, {
-        nextSyncToken: faker.string.ulid(),
-      }),
-      updateSync(Resource_Sync.EVENTS, user._id.toString(), gCalendarId, {
-        nextSyncToken: faker.string.ulid(),
-      }),
-      syncService.startWatchingGcalResources(
-        user._id.toString(),
-        [{ gCalendarId }, { gCalendarId: Resource_Sync.CALENDAR }], // Watch all selected calendars and calendar list
-        gcal,
-      ),
-    ]);
-  }
-
   static async generateV0Data(
     numUsers = 3,
     generateExpiredWatches = false,
   ): Promise<Array<WithId<Omit<Schema_Sync, "_id">>>> {
-    const users = await UserDriver.createUsers(numUsers);
+    const users = await AuthDriver.signUpGoogleUsers(numUsers);
     const minProbability = generateExpiredWatches ? 0 : 1;
     const probability = faker.number.float({ min: minProbability, max: 1 });
     const futureOrPastProbability = parseFloat(probability.toFixed(2));

@@ -1,6 +1,7 @@
 import { Action } from "redux";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 import {
+  Categories_Event,
   Schema_GridEvent,
   Schema_WebEvent,
 } from "@web/common/types/web.event.types";

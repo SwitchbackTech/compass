@@ -1,14 +1,12 @@
 import { ObjectId } from "bson";
 import { Origin, Priorities } from "@core/constants/core.constants";
-import {
-  Categories_Event,
-  CompassCoreEvent,
-  WithCompassId,
-} from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/auth.util";
 import { colorByPriority } from "@web/common/styles/theme.util";
-import { Schema_WebEvent } from "@web/common/types/web.event.types";
+import {
+  Categories_Event,
+  Schema_WebEvent,
+} from "@web/common/types/web.event.types";
 import { getDatesByCategory } from "@web/common/utils/datetime/web.date.util";
 import { EventApi } from "@web/ducks/events/event.api";
 
@@ -26,7 +24,7 @@ export const createAndSubmitEvents = async (
   monthTasks: { text: string; color: string }[],
 ): Promise<void> => {
   // Create events from week tasks
-  const weekEvents: CompassCoreEvent[] = [];
+  const weekEvents: Schema_WebEvent[] = [];
   for (let i = 0; i < weekTasks.length; i++) {
     const event = await createEventFromTask(
       weekTasks[i],
@@ -37,7 +35,7 @@ export const createAndSubmitEvents = async (
   }
 
   // Create events from month tasks
-  const monthEvents: CompassCoreEvent[] = [];
+  const monthEvents: Schema_WebEvent[] = [];
   for (let i = 0; i < monthTasks.length; i++) {
     const event = await createEventFromTask(
       monthTasks[i],
@@ -58,7 +56,7 @@ const createEventFromTask = async function (
   task: { text: string; color: string },
   category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
   order: number,
-): Promise<WithCompassId<Omit<Schema_WebEvent, "_id">>> {
+): Promise<Schema_WebEvent> {
   const userId = await getUserId();
   const now = dayjs();
 

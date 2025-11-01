@@ -7,19 +7,14 @@ import {
 } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { MapEvent } from "@core/mappers/map.event";
-import {
-  Categories_Event,
-  Recurrence,
-  RecurringEventUpdateScope,
-  Schema_Event,
-  WithCompassId,
-} from "@core/types/event.types";
+import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { devAlert } from "@core/util/app.util";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { DirtyParser } from "@web/common/parsers/dirty.parser";
 import { EventInViewParser } from "@web/common/parsers/view.parser";
 import { PartialMouseEvent } from "@web/common/types/util.types";
 import {
+  Categories_Event,
   Schema_GridEvent,
   Schema_WebEvent,
 } from "@web/common/types/web.event.types";
@@ -194,7 +189,7 @@ export const useDraftActions = (
         return;
       }
 
-      const event: WithCompassId<Omit<Schema_WebEvent, "_id">> = {
+      const event: Schema_WebEvent = {
         ...draft,
         _id: draft!._id!,
         user: draft!.user!,
@@ -310,12 +305,7 @@ export const useDraftActions = (
           return;
         case "CREATE": {
           const event = new OnSubmitParser(draft).parse();
-          dispatch(
-            createEventSlice.actions.request({
-              ...event,
-              recurrence: event.recurrence as Recurrence["recurrence"],
-            }),
-          );
+          dispatch(createEventSlice.actions.request(event));
           return;
         }
         case "UPDATE": {
@@ -357,9 +347,7 @@ export const useDraftActions = (
   );
 
   const duplicateEvent = useCallback(() => {
-    const draft = MapEvent.removeProviderData({
-      ...(reduxDraft as Schema_Event),
-    }) as Schema_GridEvent;
+    const draft = MapEvent.removeProviderMetadata(reduxDraft);
 
     submit(replaceIdWithOptimisticId(draft));
     discard();

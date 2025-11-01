@@ -1,29 +1,23 @@
 import { Filter } from "mongodb";
-import { Event_Core, Schema_Event } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 import { Schema_Waitlist } from "@core/types/waitlist/waitlist.types";
+import { categorizeEvents } from "@core/util/event/event.util";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
-import { Event_API } from "@backend/common/types/backend.event.types";
 import { getNormalizedEmail } from "@backend/waitlist/service/waitlist.service.util";
 
 export const getCategorizedEventsInDb = async (
-  filter?: Filter<Omit<Schema_Event, "_id">>,
+  filter?: Filter<Schema_Event>,
 ) => {
-  const allEvents = (await getEventsInDb(filter)) as unknown as Event_Core[];
-  const baseEvents = allEvents.filter((e) => e.recurrence?.rule !== undefined);
-  const instanceEvents = allEvents.filter(
-    (e) => e.recurrence?.eventId !== undefined,
-  );
-  const regularEvents = allEvents.filter((e) => e.recurrence === undefined);
-  return { baseEvents, instanceEvents, regularEvents };
+  const allEvents = await getEventsInDb(filter);
+
+  return categorizeEvents(allEvents);
 };
 
 export const getEventsInDb = async (
-  filter: Filter<Omit<Schema_Event, "_id">> = {},
-) => {
-  return (await mongoService.event
-    .find(filter)
-    .toArray()) as unknown as Event_API[];
+  filter: Filter<Schema_Event> = {},
+): Promise<Schema_Event[]> => {
+  return await mongoService.event.find(filter).toArray();
 };
 
 export const getEmailsOnWaitlist = async () => {
@@ -42,7 +36,7 @@ export const isEmailOnWaitlist = async (email: string) => {
 };
 
 export const isEventCollectionEmpty = async (
-  filter: Filter<Omit<Schema_Event, "_id">> = {},
+  filter: Filter<Schema_Event> = {},
 ) => {
   return (await mongoService.event.find(filter).toArray()).length === 0;
 };
