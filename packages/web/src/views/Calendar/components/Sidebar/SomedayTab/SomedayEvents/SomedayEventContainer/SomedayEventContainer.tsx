@@ -147,9 +147,16 @@ export const SomedayEventContainer = ({
                   actions.closeForm();
                   actions.close();
                 }}
-                onDelete={() =>
-                  deleteEvent(RecurringEventUpdateScope.THIS_EVENT)
-                }
+                onDelete={() => {
+                  // For recurring someday events, delete the entire series
+                  const isRecurring =
+                    Array.isArray(event.recurrence?.rule) ||
+                    typeof event.recurrence?.eventId === "string";
+                  const deleteScope = isRecurring
+                    ? RecurringEventUpdateScope.ALL_EVENTS
+                    : RecurringEventUpdateScope.THIS_EVENT;
+                  deleteEvent(deleteScope);
+                }}
                 onDuplicate={duplicateEvent}
                 onMigrate={actions.onMigrate}
                 onSubmit={onSubmit}

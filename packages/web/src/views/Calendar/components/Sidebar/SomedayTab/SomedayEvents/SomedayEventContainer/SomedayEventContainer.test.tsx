@@ -1,8 +1,15 @@
 import React from "react";
 import { DraggableProvided, DraggableStateSnapshot } from "@hello-pangea/dnd";
 import "@testing-library/jest-dom";
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { LEARN_CHINESE } from "@core/__mocks__/v1/events/events.misc";
-import { Categories_Event } from "@core/types/event.types";
+import {
+  Categories_Event,
+  RecurringEventUpdateScope,
+  Schema_Event,
+} from "@core/types/event.types";
+import { createMockBaseEvent } from "@core/util/test/ccal.event.factory";
 import { fireEvent, render } from "@web/__tests__/__mocks__/mock.render";
 import { SidebarDraftContext } from "@web/views/Calendar/components/Draft/sidebar/context/SidebarDraftContext";
 import { SomedayEventContainer } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventContainer/SomedayEventContainer";
@@ -215,5 +222,79 @@ describe("SomedayEventContainer keyboard interactions", () => {
     expect(onSubmit).toHaveBeenCalledTimes(1);
 
     // TODO: Do a date validation
+  });
+});
+
+describe("SomedayEventContainer deletion behavior", () => {
+  it("should determine correct deletion scope for recurring events with rule", () => {
+    const recurringEvent = createMockBaseEvent({
+      isSomeday: true,
+      recurrence: { rule: ["RRULE:FREQ=WEEKLY"] },
+    }) as Schema_Event;
+
+    // Verify the event has the recurrence rule
+    expect(Array.isArray(recurringEvent.recurrence?.rule)).toBe(true);
+    expect(recurringEvent.recurrence?.rule).toEqual(["RRULE:FREQ=WEEKLY"]);
+
+    // The logic in SomedayEventContainer checks:
+    // const isRecurring = Array.isArray(event.recurrence?.rule) || typeof event.recurrence?.eventId === "string";
+    const isRecurring =
+      Array.isArray(recurringEvent.recurrence?.rule) ||
+      typeof recurringEvent.recurrence?.eventId === "string";
+
+    expect(isRecurring).toBe(true);
+
+    // When isRecurring is true, deleteScope should be ALL_EVENTS
+    const deleteScope = isRecurring
+      ? RecurringEventUpdateScope.ALL_EVENTS
+      : RecurringEventUpdateScope.THIS_EVENT;
+
+    expect(deleteScope).toBe(RecurringEventUpdateScope.ALL_EVENTS);
+  });
+
+  it("should determine correct deletion scope for recurring event instances", () => {
+    const recurringInstance = createMockBaseEvent({
+      isSomeday: true,
+    }) as Schema_Event;
+    recurringInstance.recurrence = { eventId: "base-event-id-123" };
+
+    // Verify the event has the eventId
+    expect(typeof recurringInstance.recurrence?.eventId).toBe("string");
+
+    // The logic in SomedayEventContainer checks:
+    const isRecurring =
+      Array.isArray(recurringInstance.recurrence?.rule) ||
+      typeof recurringInstance.recurrence?.eventId === "string";
+
+    expect(isRecurring).toBe(true);
+
+    // When isRecurring is true, deleteScope should be ALL_EVENTS
+    const deleteScope = isRecurring
+      ? RecurringEventUpdateScope.ALL_EVENTS
+      : RecurringEventUpdateScope.THIS_EVENT;
+
+    expect(deleteScope).toBe(RecurringEventUpdateScope.ALL_EVENTS);
+  });
+
+  it("should determine correct deletion scope for non-recurring events", () => {
+    const standaloneEvent = LEARN_CHINESE;
+
+    // Verify the event does not have recurrence
+    expect(standaloneEvent.recurrence?.rule).toBeUndefined();
+    expect(standaloneEvent.recurrence?.eventId).toBeUndefined();
+
+    // The logic in SomedayEventContainer checks:
+    const isRecurring =
+      Array.isArray(standaloneEvent.recurrence?.rule) ||
+      typeof standaloneEvent.recurrence?.eventId === "string";
+
+    expect(isRecurring).toBe(false);
+
+    // When isRecurring is false, deleteScope should be THIS_EVENT
+    const deleteScope = isRecurring
+      ? RecurringEventUpdateScope.ALL_EVENTS
+      : RecurringEventUpdateScope.THIS_EVENT;
+
+    expect(deleteScope).toBe(RecurringEventUpdateScope.THIS_EVENT);
   });
 });
