@@ -24,7 +24,7 @@ const loadEnvFile = (envName) => {
   // Handle unmapped environment names explicitly
   if (typeof envFile === "undefined") {
     console.error(
-      `Error: Unrecognized environment name '${envName}'. Valid options are: ${Object.keys(map).join(", ")}.`
+      `Error: Unrecognized environment name '${envName}'. Valid options are: ${Object.keys(map).join(", ")}.`,
     );
     return;
   }
@@ -65,8 +65,7 @@ export default (env, argv) => {
   const GLOBAL_SCSS = resolvePath("src/common/styles/index.scss");
 
   const ANALYZE_BUNDLE = env.analyze;
-  const API_BASEURL =
-    process.env.API_BASEURL || `http://localhost:${process.env.PORT || 3000}`;
+  const API_BASEURL = process.env.BASEURL;
   const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
   const POSTHOG_KEY = process.env.POSTHOG_KEY;
   const POSTHOG_HOST = process.env.POSTHOG_HOST;
