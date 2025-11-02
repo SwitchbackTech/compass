@@ -18,8 +18,7 @@ export const StyledHeaderRow = styled(Flex)`
   height: ${HEADER_HEIGHT}px;
   width: 100%;
   position: relative;
-  padding: 0 20px;
-  align-items: center; /* Center align all items in the header */
+  align-items: center;
 `;
 
 export const StyledLeftGroup = styled(Flex)`
@@ -29,6 +28,7 @@ export const StyledLeftGroup = styled(Flex)`
 `;
 
 export const StyledRightGroup = styled(Flex)`
+  align-items: center;
   flex-direction: column;
   justify-content: space-between;
   height: 100%;
@@ -36,6 +36,7 @@ export const StyledRightGroup = styled(Flex)`
 `;
 
 export const StyledHeaderLabel = styled(Flex)`
+  padding-left: 20px;
   color: ${c.gray100};
 `;
 

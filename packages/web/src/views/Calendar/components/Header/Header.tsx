@@ -1,9 +1,10 @@
-import React, { FC, useRef } from "react";
+import { FC, useRef } from "react";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import { getCalendarHeadingLabel } from "@web/common/utils/datetime/web.date.util";
 import { AlignItems } from "@web/components/Flex/styled";
 import { SidebarIcon } from "@web/components/Icons/Sidebar";
+import { SelectView } from "@web/components/SelectView/SelectView";
 import { Text } from "@web/components/Text";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
@@ -13,7 +14,7 @@ import { RootProps } from "../../calendarView.types";
 import { Util_Scroll } from "../../hooks/grid/useScroll";
 import { useReminderHotkey } from "../../hooks/shortcuts/useFocusHotkey";
 import { WeekProps } from "../../hooks/useWeek";
-import { TodayButton } from "../TodayButton";
+import { TodayButton } from "../TodayButton/TodayButton";
 import { DayLabels } from "./DayLabels";
 import { Reminder } from "./Reminder/Reminder";
 import {
@@ -57,35 +58,33 @@ export const Header: FC<Props> = ({ scrollUtil, today, weekProps }) => {
   return (
     <>
       <StyledHeaderRow alignItems={AlignItems.BASELINE}>
+        <TooltipWrapper
+          description={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+          onClick={() => dispatch(viewSlice.actions.toggleSidebar())}
+          shortcut="["
+        >
+          <SidebarIcon
+            color={
+              isSidebarOpen
+                ? theme.color.text.light
+                : theme.color.text.lightInactive
+            }
+          />
+        </TooltipWrapper>
         <StyledLeftGroup>
-          <TooltipWrapper
-            description={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
-            onClick={() => dispatch(viewSlice.actions.toggleSidebar())}
-            shortcut="["
-          >
-            <SidebarIcon
-              color={
-                isSidebarOpen
-                  ? theme.color.text.light
-                  : theme.color.text.lightInactive
-              }
-            />
-          </TooltipWrapper>
-        </StyledLeftGroup>
-        <Reminder ref={reminderRef} />
-        <StyledRightGroup>
           <StyledHeaderLabel aria-level={1} role="heading">
             <Text size="xl">{headerLabel}</Text>
           </StyledHeaderLabel>
+        </StyledLeftGroup>
+        <Reminder ref={reminderRef} />
+        <StyledRightGroup>
+          <SelectView />
           <div>
             <StyledNavigationGroup>
-              <TooltipWrapper
-                description={today.format("dddd, MMMM D")}
-                onClick={onTodayClick}
-                shortcut="T"
-              >
-                <TodayButton />
-              </TooltipWrapper>
+              <TodayButton
+                navigateToToday={onTodayClick}
+                isToday={weekProps.component.isCurrentWeek}
+              />
               <StyledNavigationArrows>
                 <TooltipWrapper
                   onClick={() => weekProps.util.decrementWeek()}
