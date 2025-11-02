@@ -8,7 +8,7 @@ import {
   Answers_v2,
 } from "@core/types/waitlist/waitlist.answer.types";
 import { isMissingWaitlistTagId } from "@backend/common/constants/env.util";
-import { findCompassUserBy } from "../../user/queries/user.queries";
+import mongoService from "../../common/services/mongo.service";
 import WaitlistService from "../service/waitlist.service";
 import { EmailSchema } from "../types/waitlist.types";
 
@@ -85,7 +85,7 @@ export class WaitlistController {
       await Promise.all([
         WaitlistService.isOnWaitlist(email),
         WaitlistService.isInvited(email),
-        findCompassUserBy("email", email),
+        mongoService.user.findOne({ email }),
         WaitlistService.getWaitlistRecord(email),
       ]);
 

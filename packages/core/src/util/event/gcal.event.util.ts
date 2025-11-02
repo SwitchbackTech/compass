@@ -1,13 +1,23 @@
 import { calendar_v3 } from "googleapis";
+import mergeWith from "lodash.mergewith";
+import { Origin, Priorities } from "@core/constants/core.constants";
+import {
+  EventStatus,
+  ExtendedEventProperties,
+  ExtendedEventPropertiesSchema,
+  Schema_Event,
+} from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
+import { isAllDay } from "@core/util/event/event.util";
 
 /** Google Calendar event utilities */
-export const isCancelledGCalEvent = (e: gSchema$Event): boolean => {
-  return e.status ? e.status === "cancelled" : false;
-};
+export const isCancelledGCalEvent = (e: gSchema$Event): boolean =>
+  e?.status === EventStatus.CANCELLED;
 
-export const isGcalInstanceId = (e: gSchema$Event): boolean =>
+export const isGcalInstanceId = (
+  e: Pick<gSchema$Event, "id" | "recurringEventId">,
+): boolean =>
   typeof e.id === "string" &&
   new RegExp(`^${e.recurringEventId}_\\d+(T\\d+Z?)?$`, "i").test(e.id);
 
@@ -34,6 +44,7 @@ export const isBaseGCalEvent = ({
  * https://developers.google.com/workspace/calendar/api/v3/reference/events#resource
  */
 export const isInstanceGCalEvent = (e: gSchema$Event): boolean =>
+  typeof e.id === "string" &&
   !Array.isArray(e.recurrence) &&
   typeof e.recurringEventId === "string" &&
   isGcalInstanceId(e);
@@ -59,7 +70,7 @@ export const getGcalEventDateFormat = (
 };
 
 /**
- * parseGCalEventDate
+ * gCalDateToDayjsDate
  *
  * parses gcal event date or dateTime into a Dayjs object
  *
@@ -67,7 +78,7 @@ export const getGcalEventDateFormat = (
  *
  * you can convert it to system timezone by calling `.local()`
  */
-export const parseGCalEventDate = (
+export const gCalDateToDayjsDate = (
   eventDateTime: calendar_v3.Schema$EventDateTime = {},
 ): Dayjs => {
   const { date, dateTime, timeZone } = eventDateTime;
@@ -80,4 +91,57 @@ export const parseGCalEventDate = (
   const timezone = timeZone ?? dayjs.tz.guess();
 
   return dayjs(date ?? dateTime, format).tz(timezone);
+};
+
+export const eventDatesToGcalDates = (
+  event: Pick<Schema_Event, "startDate" | "endDate" | "originalStartDate">,
+  allDay = false,
+): Pick<gSchema$Event, "start" | "end" | "originalStartTime"> => {
+  const isAllDayEvent = allDay || isAllDay(event);
+  const dateKey = isAllDayEvent ? "date" : "dateTime";
+  const format = getGcalEventDateFormat({ [dateKey]: "" });
+  const timeZone = dayjs.tz.guess();
+  const startDate = dayjs(event.startDate).format(format);
+  const endDate = dayjs(event.endDate).format(format);
+  const start = { [dateKey]: startDate, timeZone };
+  const end = { [dateKey]: endDate, timeZone };
+  const dates = { start, end };
+
+  if (event.originalStartDate) {
+    const originalStartDate = dayjs(event.originalStartDate).format(format);
+    const originalStartTime = { [dateKey]: originalStartDate, timeZone };
+
+    Object.assign(dates, { originalStartTime });
+  }
+
+  return dates;
+};
+
+export const parseExtendedProperties = (
+  gEvent: gSchema$Event,
+  overrides: Partial<ExtendedEventProperties> = {},
+): ExtendedEventProperties => {
+  const defaultProps: ExtendedEventProperties = {
+    origin: Origin.GOOGLE,
+    priority: Priorities.UNASSIGNED,
+  };
+
+  const { data } = ExtendedEventPropertiesSchema.safeParse(
+    gEvent.extendedProperties?.private,
+  );
+
+  return mergeWith(defaultProps, data, overrides);
+};
+
+export const gEventDefaults: Partial<gSchema$Event> = {
+  summary: "untitled",
+  description: "",
+  start: {
+    dateTime: "1990-01-01T00:00:00-10:00",
+    timeZone: dayjs.tz.guess(),
+  },
+  end: {
+    dateTime: "1990-01-01T00:00:00-10:00",
+    timeZone: dayjs.tz.guess(),
+  },
 };

@@ -4,6 +4,7 @@ import { BaseError } from "@core/errors/errors.base";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Res_Promise, SReqBody } from "@backend/common/types/express.types";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
+import { zObjectId } from "../../../../core/src/types/type.utils";
 import syncService from "../services/sync.service";
 import { getSync } from "../util/sync.queries";
 
@@ -27,11 +28,10 @@ class SyncDebugController {
   };
 
   importIncremental = async (req: SessionRequest, res: Res_Promise) => {
-    const userId = req.params["userId"];
-    if (!userId) {
-      res.promise(Promise.reject({ error: "no userId param" }));
-      return;
-    }
+    const userId = zObjectId.parse(req.params["userId"], {
+      error: () => "no userId param",
+    });
+
     const result = await syncService.importIncremental(userId);
 
     res.promise(result);
@@ -39,11 +39,9 @@ class SyncDebugController {
 
   maintainByUser = async (req: Request, res: Res_Promise) => {
     try {
-      const userId = req.params["userId"];
-      if (!userId) {
-        res.promise(Promise.reject({ error: "no userId param" }));
-        return;
-      }
+      const userId = zObjectId.parse(req.params["userId"], {
+        error: () => "no userId param",
+      });
 
       const dry = req.query["dry"] === "true";
       if (dry === undefined) {
@@ -68,7 +66,7 @@ class SyncDebugController {
       return;
     }
 
-    const sync = await getSync({ userId });
+    const sync = await getSync({ user: userId });
 
     if (!sync) {
       res.promise({ error: `No sync for user: ${userId}` });
@@ -83,7 +81,7 @@ class SyncDebugController {
     res: Res_Promise,
   ) => {
     try {
-      const userId = req.session?.getUserId() as string;
+      const userId = zObjectId.parse(req.session?.getUserId());
       const calendarId = req.body.calendarId;
       const gcal = await getGcalClient(userId);
 
@@ -103,12 +101,10 @@ class SyncDebugController {
 
   stopAllChannelWatches = async (req: SessionRequest, res: Res_Promise) => {
     try {
-      let userId: string;
-      if (req.params["userId"]) {
-        userId = req.params["userId"];
-      } else {
-        userId = req.session?.getUserId() as string;
-      }
+      const userId = zObjectId.parse(
+        req.params["userId"] ?? req.session?.getUserId(),
+        { error: () => "no userId param" },
+      );
 
       const stopResult = await syncService.stopWatches(userId);
       res.promise(stopResult);
@@ -123,7 +119,7 @@ class SyncDebugController {
     res: Res_Promise,
   ) => {
     try {
-      const userId = req.session?.getUserId() as string;
+      const userId = zObjectId.parse(req.session?.getUserId());
       const channelId = req.body.channelId;
       const resourceId = req.body.resourceId;
 

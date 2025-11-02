@@ -1,52 +1,98 @@
-import { ObjectId } from "bson";
+import { Schema_SomedayEvent } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
+import { createMockRegularEvent } from "@core/util/test/ccal.event.factory";
+import { mockEventSetJan22 } from "./events.22jan";
 
-export const mockEventSetSomeday1 = [
+const calendar = mockEventSetJan22[0]?.calendar;
+
+export const mockEventSetSomeday1: Schema_SomedayEvent[] = [
   {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Multi-Month 1",
-    startDate: "2023-05-28",
-    endDate: "2023-06-03",
+    ...createMockRegularEvent(
+      {
+        calendar,
+        title: "Multi-Month 1",
+        startDate: dayjs(
+          "2023-05-28",
+          dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+        ).toDate(),
+      },
+      false,
+      { unit: "day", value: 6 },
+    ),
     isSomeday: true,
   },
   {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Multi-Month 2",
-    startDate: "2023-01-28",
-    endDate: "2023-05-28",
+    ...createMockRegularEvent(
+      {
+        calendar,
+        title: "Multi-Month 2",
+        startDate: dayjs(
+          "2023-01-28",
+          dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+        ).toDate(),
+      },
+      false,
+      { unit: "month", value: 4 },
+    ),
     isSomeday: true,
   },
   {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "First Sunday of New Month",
-    startDate: "2023-06-04",
-    endDate: "2023-06-04",
+    ...createMockRegularEvent(
+      {
+        calendar,
+        title: "First Sunday of New Month",
+        startDate: dayjs(
+          "2023-06-04",
+          dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+        ).toDate(),
+      },
+      true,
+    ),
     isSomeday: true,
   },
   {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Distant Future",
-    startDate: "2025-01-01",
-    endDate: "2023-01-06",
+    ...createMockRegularEvent(
+      {
+        calendar,
+        title: "Distant Future",
+        startDate: dayjs(
+          "2023-01-06",
+          dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+        ).toDate(),
+      },
+      false,
+      { unit: "days", value: 726 },
+    ),
     isSomeday: true,
   },
   {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Distant Past",
-    startDate: "1999-01-01",
-    endDate: "1999-01-06",
+    ...createMockRegularEvent(
+      {
+        calendar,
+        title: "Distant Past",
+        startDate: dayjs(
+          "1999-01-01",
+          dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+        ).toDate(),
+      },
+      false,
+      { unit: "days", value: 5 },
+    ),
     isSomeday: true,
   },
   {
-    _id: new ObjectId().toString(),
-    user: "user1",
-    title: "Beginning of Month",
-    startDate: "2023-10-01",
-    endDate: "2023-10-07",
+    ...createMockRegularEvent(
+      {
+        calendar,
+        title: "Beginning of Month",
+        startDate: dayjs(
+          "2023-10-01",
+          dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+        ).toDate(),
+      },
+      false,
+      { unit: "day", value: 6 },
+    ),
     isSomeday: true,
   },
 ];

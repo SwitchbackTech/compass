@@ -1,5 +1,5 @@
+import axios, { AxiosHeaders, AxiosRequestConfig, AxiosResponse } from "axios";
 import { Handler, NextFunction, Response } from "express";
-import { GoogleApis } from "googleapis";
 import mergeWith, { default as mockMergeWith } from "lodash.mergewith";
 import { randomUUID } from "node:crypto";
 import { SessionRequest } from "supertokens-node/framework/express";
@@ -13,26 +13,53 @@ import {
   VerifySessionOptions,
 } from "supertokens-node/lib/build/recipe/session/types";
 import { UserContext } from "supertokens-node/lib/build/types";
-import { createMockCalendarListEntry as mockCalendarListCreate } from "@core/__tests__/helpers/gcal.factory";
-import { gSchema$CalendarListEntry } from "@core/types/gcal";
+import { faker } from "@faker-js/faker";
+import {
+  CalendarProvider as MockCalendarProvider,
+  Schema_Calendar,
+} from "@core/types/calendar.types";
+import {
+  gCalendar,
+  gSchema$CalendarListEntry,
+  gSchema$Channel,
+  gSchema$Event,
+} from "@core/types/gcal";
 import { UserMetadata } from "@core/types/user.types";
-import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
+import { MockOAuth2Client } from "@backend/__tests__/helpers/mock.google-oauth2";
 import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 import { ENV } from "@backend/common/constants/env.constants";
 import { SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
+import EmailService from "@backend/email/email.service";
+import {
+  Response_TagSubscriber,
+  Response_UpsertSubscriber,
+} from "@backend/email/email.types";
 
-export interface CompassTestState {
-  events: ReturnType<typeof mockAndCategorizeGcalEvents>;
-  calendarlist: gSchema$CalendarListEntry[];
+export interface CompassGCalCalendarTestState {
+  events: gSchema$Event[];
+  calendar: gSchema$CalendarListEntry;
 }
+
+export interface CompassGCalUserTestState {
+  calendars: Map<
+    Schema_Calendar["metadata"]["id"],
+    CompassGCalCalendarTestState
+  >;
+  channels: gSchema$Channel[];
+}
+
+export type CompassTestState = Map<
+  MockCalendarProvider,
+  Map<
+    string, // google user sub = user.googleId
+    CompassGCalUserTestState
+  >
+>;
 
 function mockCompassTestState() {
   jest.mock(
     "compass-test-state",
-    (): CompassTestState => ({
-      events: { ...mockAndCategorizeGcalEvents() },
-      calendarlist: [mockCalendarListCreate()],
-    }),
+    (): CompassTestState => new Map([[MockCalendarProvider.GOOGLE, new Map()]]),
     { virtual: true },
   );
 }
@@ -42,15 +69,91 @@ export function compassTestState(): CompassTestState {
 }
 
 function mockGoogleapis() {
-  mockModule("googleapis", (googleapis: { google: GoogleApis }) => {
+  mockModule("googleapis", (googleapis: typeof import("googleapis")) => ({
+    google: {
+      ...googleapis.google,
+      auth: { ...googleapis.google.auth, OAuth2: MockOAuth2Client },
+      calendar: mockGcal(googleapis.google),
+    },
+  }));
+
+  beforeAll(() => import("googleapis")); // force mock to take effect always
+}
+
+function mockAxios() {
+  const upsertSubscriberURL = `${EmailService.baseUrl}/subscribers`;
+  const tagSubscriberURL = `${EmailService.baseUrl}/tags`;
+  const mockURLs: string[] = [upsertSubscriberURL, tagSubscriberURL];
+
+  const post = axios.post;
+
+  function mockTagSubscriberResponse(
+    config: AxiosRequestConfig<unknown>,
+  ): AxiosResponse<Response_TagSubscriber> {
     return {
-      google: {
-        ...googleapis.google,
-        calendar: mockGcal({
-          googleapis: googleapis.google,
-        }),
+      data: {
+        subscriber: {
+          id: faker.number.int({ min: 1 }),
+          email_address: faker.internet.email(),
+          first_name: faker.person.firstName(),
+          created_at: new Date().toISOString(),
+          tagged_at: new Date().toISOString(),
+          state: "active",
+          fields: { url: config.url, data: config.data },
+        },
       },
+      status: axios.HttpStatusCode.Ok,
+      statusText: "OK",
+      headers: config.headers as AxiosHeaders,
+      config: { ...config, headers: config.headers as AxiosHeaders },
     };
+  }
+
+  function mockUpsertSubscriberResponse(
+    config: AxiosRequestConfig<unknown>,
+  ): AxiosResponse<Response_UpsertSubscriber> {
+    return {
+      data: {
+        subscriber: mergeWith(
+          {
+            id: faker.number.int({ min: 1 }),
+            email_address: faker.internet.email(),
+            first_name: faker.person.firstName(),
+            created_at: new Date().toISOString(),
+            state: "active",
+            fields: { url: config.url, data: config.data },
+          },
+          config.data,
+        ),
+      },
+      status: axios.HttpStatusCode.Ok,
+      statusText: "OK",
+      headers: config.headers as AxiosHeaders,
+      config: { ...config, headers: config.headers as AxiosHeaders },
+    };
+  }
+
+  jest.spyOn(axios, "post").mockImplementation(async (url, data, config) => {
+    const mockURL = mockURLs.some((value) => url.includes(value));
+
+    if (!mockURL) return post(url, data, config);
+
+    const mockTagSubscriber = url?.includes(tagSubscriberURL);
+    const mockUpsertSubscriber = url?.includes(upsertSubscriberURL);
+
+    if (mockTagSubscriber) {
+      return mockTagSubscriberResponse({ ...config, url, data });
+    } else if (mockUpsertSubscriber) {
+      return mockUpsertSubscriberResponse({ ...config, url, data });
+    }
+
+    return Promise.resolve({
+      data: {},
+      status: axios.HttpStatusCode.Ok,
+      statusText: "OK",
+      headers: config?.headers,
+      config,
+    });
   });
 }
 
@@ -161,6 +264,28 @@ function mockSuperToken() {
   );
 
   mockModule(
+    "supertokens-node/recipe/session",
+    (session: typeof import("supertokens-node/recipe/session")) => {
+      const sessionModule = mergeWith(session, {
+        revokeAllSessionsForUser: jest.fn(
+          async (
+            userId: string,
+            _revokeSessionsForLinkedAccounts?: boolean,
+            tenantId?: string,
+            userContext?: UserContext,
+          ): Promise<string[]> => {
+            return [userId, tenantId!, JSON.stringify(userContext)];
+          },
+        ),
+      });
+
+      return mergeWith(sessionModule, {
+        default: sessionModule,
+      });
+    },
+  );
+
+  mockModule(
     "supertokens-node/recipe/usermetadata",
     (
       recipeUserMetadata: typeof import("supertokens-node/recipe/usermetadata"),
@@ -212,6 +337,11 @@ function mockSuperToken() {
       return sessionModule;
     },
   );
+
+  beforeAll(() => import("supertokens-node/recipe/session/framework/express"));
+  beforeAll(() => import("supertokens-node/recipe/usermetadata"));
+  beforeAll(() => import("supertokens-node/lib/build/recipe/session/recipe"));
+  beforeAll(() => import("supertokens-node/recipe/session"));
 }
 
 function mockWinstonLogger() {
@@ -224,6 +354,8 @@ function mockWinstonLogger() {
       verbose: jest.fn(),
     })),
   }));
+
+  beforeAll(() => import("@core/logger/winston.logger")); // force mock to take effect always
 }
 
 function mockHttpLoggingMiddleware() {
@@ -232,12 +364,17 @@ function mockHttpLoggingMiddleware() {
       args[2](),
     ),
   }));
+
+  beforeAll(() => import("@backend/common/middleware/http.logger.middleware")); // force mock to take effect always
 }
 
 function mockConstants() {
-  mockModule("@backend/common/constants/backend.constants.ts", () => ({
+  mockModule("@backend/common/constants/backend.constants", () => ({
     MONGO_BATCH_SIZE: 5,
+    GCAL_LIST_PAGE_SIZE: 3,
   }));
+
+  beforeAll(() => import("@backend/common/constants/backend.constants")); // force mock to take effect always
 }
 
 export function mockEnv(env: Partial<typeof ENV>) {
@@ -252,6 +389,29 @@ export function mockEnv(env: Partial<typeof ENV>) {
     }),
     {} as Record<keyof typeof env, jest.ReplaceProperty<keyof typeof env>>,
   );
+}
+
+// @TODO: remove after sync is enabled for all sub-calendars by default
+export function mockSyncService() {
+  mockModule(
+    "@backend/sync/services/sync.service",
+    (
+      syncService: typeof import("@backend/sync/services/sync.service"),
+    ): Partial<typeof import("@backend/sync/services/sync.service")> => {
+      const { getCalendarsToSync } = syncService.default;
+
+      return {
+        default: mergeWith(syncService.default, {
+          getCalendarsToSync: jest.fn(
+            async (gcal: gCalendar, primaryOnly = false) =>
+              getCalendarsToSync(gcal, primaryOnly),
+          ),
+        }),
+      };
+    },
+  );
+
+  beforeAll(() => import("@backend/sync/services/sync.service")); // force mock to take effect always
 }
 
 export function mockModule<T>(
@@ -271,11 +431,16 @@ export function mockModule<T>(
 }
 
 export function mockNodeModules() {
-  beforeEach(mockCompassTestState);
-  afterEach(() => jest.unmock("compass-test-state"));
   mockConstants();
   mockWinstonLogger();
   mockHttpLoggingMiddleware();
+  mockAxios();
   mockGoogleapis();
   mockSuperToken();
+  mockSyncService();
+
+  beforeEach(() => jest.clearAllMocks());
+  beforeEach(mockCompassTestState);
+  afterEach(() => jest.unmock("compass-test-state"));
+  afterAll(() => jest.restoreAllMocks());
 }

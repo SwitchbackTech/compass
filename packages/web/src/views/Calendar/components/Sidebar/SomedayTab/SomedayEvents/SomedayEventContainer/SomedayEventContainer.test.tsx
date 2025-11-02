@@ -2,8 +2,8 @@ import React from "react";
 import { DraggableProvided, DraggableStateSnapshot } from "@hello-pangea/dnd";
 import "@testing-library/jest-dom";
 import { LEARN_CHINESE } from "@core/__mocks__/v1/events/events.misc";
-import { Categories_Event } from "@core/types/event.types";
 import { fireEvent, render } from "@web/__tests__/__mocks__/mock.render";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import { SidebarDraftContext } from "@web/views/Calendar/components/Draft/sidebar/context/SidebarDraftContext";
 import { SomedayEventContainer } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventContainer/SomedayEventContainer";
 

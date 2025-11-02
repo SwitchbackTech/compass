@@ -1,8 +1,10 @@
 import React from "react";
-import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { PartialMouseEvent } from "@web/common/types/util.types";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  Categories_Event,
+  Schema_GridEvent,
+} from "@web/common/types/web.event.types";
 import { getEventDragOffset } from "@web/common/utils/event/event.util";
 import { adjustOverlappingEvents } from "@web/common/utils/overlap/overlap";
 import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";

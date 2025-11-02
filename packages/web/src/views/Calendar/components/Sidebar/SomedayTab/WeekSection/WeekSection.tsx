@@ -1,5 +1,5 @@
 import React, { FC } from "react";
-import { Categories_Event } from "@core/types/event.types";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";

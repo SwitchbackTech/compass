@@ -1,16 +1,16 @@
 import { ObjectId } from "bson";
 import {
+  CalendarProvider,
   CompassCalendarSchema,
   GoogleCalendarMetadataSchema,
 } from "@core/types/calendar.types";
-import { CalendarProvider } from "@core/types/event.types";
 import { gSchema$CalendarListEntry } from "@core/types/gcal";
 import { generateCalendarColorScheme } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
 
 export class MapCalendar {
   static gcalToCompass(
-    user: ObjectId | string,
+    user: ObjectId,
     googleCalendar: gSchema$CalendarListEntry,
   ) {
     // generate fallback colors

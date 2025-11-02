@@ -1,5 +1,4 @@
 import { faker } from "@faker-js/faker";
-import { EmailDriver } from "@backend/__tests__/drivers/email.driver";
 import { WaitListDriver } from "@backend/__tests__/drivers/waitlist.driver";
 import {
   cleanupCollections,
@@ -16,8 +15,6 @@ describe("getAllWaitlisted", () => {
   afterAll(cleanupTestDb);
 
   it("should return all waitlisted records", async () => {
-    const emailSpies = EmailDriver.mockEmailServiceResponse();
-
     const record = WaitListDriver.createWaitListRecord({
       email: faker.internet.email(),
       firstName: faker.person.firstName(),
@@ -31,8 +28,5 @@ describe("getAllWaitlisted", () => {
     expect(records.length).toBeGreaterThanOrEqual(1);
     const allWaitlisted = records.every((r) => r.status === "waitlisted");
     expect(allWaitlisted).toBe(true);
-
-    emailSpies.addTagToSubscriber.mockClear();
-    emailSpies.upsertSubscriber.mockClear();
   });
 });

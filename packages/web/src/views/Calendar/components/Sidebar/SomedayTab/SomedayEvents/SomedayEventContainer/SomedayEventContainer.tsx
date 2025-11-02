@@ -5,10 +5,10 @@ import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
 import { DraggableProvided, DraggableStateSnapshot } from "@hello-pangea/dnd";
 import { Priorities } from "@core/constants/core.constants";
 import {
-  Categories_Event,
   RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import { computeCurrentEventDateRange } from "@web/common/utils/datetime/web.date.util";
 import { useDraftForm } from "@web/views/Calendar/components/Draft/hooks/state/useDraftForm";
 import { SidebarDraftContextValue } from "@web/views/Calendar/components/Draft/sidebar/context/SidebarDraftContext";

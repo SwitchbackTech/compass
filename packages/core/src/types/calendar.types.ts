@@ -1,21 +1,29 @@
+import { ObjectId } from "bson";
 import { z } from "zod/v4";
-import { CalendarProvider } from "@core/types/event.types";
 import {
   RGBHexSchema,
   TimezoneSchema,
   zObjectId,
 } from "@core/types/type.utils";
 
+export enum CalendarProvider {
+  GOOGLE = "google",
+  COMPASS = "compass",
+}
+
 export const GoogleCalendarMetadataSchema = z.object({
   id: z.string(),
-  provider: z.literal(CalendarProvider.GOOGLE).default(CalendarProvider.GOOGLE),
+  provider: z
+    .literal(CalendarProvider.GOOGLE)
+    .optional()
+    .default(CalendarProvider.GOOGLE),
   etag: z.string(),
   summary: z.string(),
   summaryOverride: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   location: z.string().nullable().optional(),
   accessRole: z.enum(["freeBusyReader", "reader", "writer", "owner"]),
-  primary: z.boolean().default(false).optional(),
+  primary: z.boolean().optional().default(false),
   conferenceProperties: z.object({
     allowedConferenceSolutionTypes: z.array(
       z.enum(["hangoutsMeet", "eventHangout", "eventNamedHangout"]),
@@ -46,14 +54,17 @@ export const GoogleCalendarMetadataSchema = z.object({
 });
 
 export const CompassCalendarSchema = z.object({
-  _id: zObjectId,
+  _id: zObjectId.optional().default(() => new ObjectId()),
   user: zObjectId,
   backgroundColor: RGBHexSchema,
   color: RGBHexSchema,
-  selected: z.boolean().default(true),
-  primary: z.boolean().default(false),
+  selected: z.boolean().optional().default(true),
+  primary: z.boolean().optional().default(false),
   timezone: TimezoneSchema.nullable().optional(),
-  createdAt: z.date().default(() => new Date()),
+  createdAt: z
+    .date()
+    .optional()
+    .default(() => new Date()),
   updatedAt: z.date().nullable().optional(),
   metadata: GoogleCalendarMetadataSchema, // use union when other providers present
 });

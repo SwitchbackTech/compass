@@ -1,5 +1,5 @@
 import { OpenChangeReason } from "@floating-ui/react";
-import { Categories_Event } from "@core/types/event.types";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import { isSomedayEventActionMenuOpen } from "@web/common/utils/event/someday.event.util";
 import { isContextMenuOpen } from "@web/common/utils/form/form.util";
 import { useEventForm } from "@web/views/Forms/hooks/useEventForm";

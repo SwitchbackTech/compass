@@ -17,8 +17,12 @@ export const mockBSON = () => {
         return this.#value;
       }
 
-      static isValid(value?: string) {
-        return /^[a-fA-F0-9]{24}$/.test(value ?? "");
+      equals(value?: unknown): boolean {
+        return this.toString() === value?.toString();
+      }
+
+      static isValid(value?: unknown): boolean {
+        return /^[a-fA-F0-9]{24}$/.test(value?.toString() ?? "");
       }
     },
   }));

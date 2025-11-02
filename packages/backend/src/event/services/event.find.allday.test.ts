@@ -1,6 +1,7 @@
 import { Filter } from "mongodb";
 import { mockEventSetMar22 } from "@core/__mocks__/v1/events/events.22mar";
-import { Schema_Event } from "@core/types/event.types";
+import { RegularEventSchema, Schema_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import {
   cleanupTestDb,
   setupTestDb,
@@ -9,18 +10,20 @@ import mongoService from "@backend/common/services/mongo.service";
 import { getReadAllFilter } from "@backend/event/services/event.service.util";
 
 describe("Mar 6 - 12, 2022: All-Day Events", () => {
-  let filter: Filter<Omit<Schema_Event, "_id">>;
+  let filter: Filter<Schema_Event>;
   let titles: string[];
 
   beforeAll(async () => {
     await setupTestDb();
 
     await mongoService.event.insertMany(mockEventSetMar22);
+    const { calendar } = RegularEventSchema.parse(mockEventSetMar22[0]);
 
-    filter = getReadAllFilter("user1", {
-      start: "2022-03-06T00:00:00-07:00",
-      end: "2022-03-12T23:59:59-07:00",
+    filter = getReadAllFilter(calendar, {
+      startDate: dayjs("2022-03-06T00:00:00-07:00").toDate(),
+      endDate: dayjs("2022-03-12T23:59:59-00:00").toDate(),
     });
+
     const result = await mongoService.event.find(filter).toArray();
     titles = result.map((e) => e.title!);
   });

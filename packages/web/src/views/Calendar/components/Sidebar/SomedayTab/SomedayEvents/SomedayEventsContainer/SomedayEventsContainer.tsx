@@ -1,11 +1,11 @@
 import React, { FC } from "react";
 import { Droppable } from "@hello-pangea/dnd";
-import { Categories_Event } from "@core/types/event.types";
 import {
   COLUMN_MONTH,
   COLUMN_WEEK,
   ID_SOMEDAY_DRAFT,
 } from "@web/common/constants/web.constants";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";

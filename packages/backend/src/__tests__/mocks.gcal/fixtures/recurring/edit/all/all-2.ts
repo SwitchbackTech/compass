@@ -1,3 +1,4 @@
+import { EventStatus } from "@core/types/event.types";
 import { gSchema$Events } from "@core/types/gcal";
 
 export const allPayload2: gSchema$Events = {
@@ -20,7 +21,7 @@ export const allPayload2: gSchema$Events = {
       kind: "calendar#event",
       etag: '"3485462229718558"',
       id: "68k0p6ackplecqs9fuvbs1fju0",
-      status: "confirmed",
+      status: EventStatus.CONFIRMED,
       htmlLink:
         "https://www.google.com/calendar/event?eid=NjhrMHA2YWNrcGxlY3FzOWZ1dmJzMWZqdTBfMjAyNTAzMjRUMTIzMDAwWiBsYW5jZS5lc3NlcnRAbQ",
       created: "2025-03-23T10:41:35.000Z",
@@ -56,7 +57,7 @@ export const allPayload2: gSchema$Events = {
       kind: "calendar#event",
       etag: '"3485462229718558"',
       id: "68k0p6ackplecqs9fuvbs1fju0_20250324T123000Z",
-      status: "confirmed",
+      status: EventStatus.CONFIRMED,
       htmlLink:
         "https://www.google.com/calendar/event?eid=NjhrMHA2YWNrcGxlY3FzOWZ1dmJzMWZqdTBfMjAyNTAzMjRUMTIzMDAwWiBsYW5jZS5lc3NlcnRAbQ",
       created: "2025-03-23T10:41:35.000Z",
@@ -96,7 +97,7 @@ export const allPayload2: gSchema$Events = {
       kind: "calendar#event",
       etag: '"3485462229718558"',
       id: "68k0p6ackplecqs9fuvbs1fju0_R20250326T123000",
-      status: "confirmed",
+      status: EventStatus.CONFIRMED,
       htmlLink:
         "https://www.google.com/calendar/event?eid=NjhrMHA2YWNrcGxlY3FzOWZ1dmJzMWZqdTBfMjAyNTAzMjZUMTIzMDAwWiBsYW5jZS5lc3NlcnRAbQ",
       created: "2025-03-23T10:41:35.000Z",

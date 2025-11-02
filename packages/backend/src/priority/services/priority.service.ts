@@ -1,3 +1,4 @@
+import { ObjectId } from "bson";
 import { Priorities } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
@@ -84,8 +85,8 @@ class PriorityService {
     ]);
   }
 
-  async deleteAllByUser(userId: string) {
-    const filter = { user: { $eq: userId } };
+  async deleteAllByUser(user: ObjectId) {
+    const filter = { user: { $eq: user.toString() } };
 
     const response = await mongoService.priority.deleteMany(filter);
     return response;

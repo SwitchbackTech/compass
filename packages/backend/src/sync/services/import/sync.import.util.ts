@@ -1,40 +1,5 @@
-import { AnyBulkWriteOperation } from "mongodb";
-import { Schema_Event_Core } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
 import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.utils";
-
-export const assembleEventOperations = (
-  userId: string,
-  eventsToDelete: string[],
-  eventsToUpdate: Schema_Event_Core[],
-) => {
-  const bulkOperations: AnyBulkWriteOperation[] = [];
-
-  if (eventsToDelete.length > 0) {
-    bulkOperations.push({
-      deleteMany: {
-        filter: {
-          user: userId,
-          gEventId: { $in: eventsToDelete },
-        },
-      },
-    });
-  }
-
-  if (eventsToUpdate.length > 0) {
-    eventsToUpdate.forEach((e: Schema_Event_Core) => {
-      bulkOperations.push({
-        replaceOne: {
-          filter: { gEventId: e.gEventId, user: userId },
-          replacement: e,
-          upsert: true,
-        },
-      });
-    });
-  }
-
-  return bulkOperations;
-};
 
 /**
  * Organizes gcal events by type and returns the events to delete and the events to update

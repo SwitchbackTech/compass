@@ -1,4 +1,5 @@
 import { gSchema$Events } from "@core/types/gcal";
+import { EventStatus } from "../../../../../../../../core/src/types/event.types";
 
 export const deleteAllPayload2: gSchema$Events = {
   kind: "calendar#events",
@@ -20,7 +21,7 @@ export const deleteAllPayload2: gSchema$Events = {
       kind: "calendar#event",
       etag: '"3485816204423902"',
       id: "0oije1knkkthb56vr149dub9qa",
-      status: "cancelled",
+      status: EventStatus.CANCELLED,
     },
   ],
 };

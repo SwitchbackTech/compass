@@ -10,9 +10,10 @@ import {
 } from "./email.types";
 
 const logger = Logger("app:email.service");
+
 class EmailService {
   private static headers: { headers: Record<string, string> };
-  private static readonly baseUrl = "https://api.kit.com/v4";
+  static readonly baseUrl = "https://api.kit.com/v4";
 
   private static initialize() {
     if (!EmailService.headers) {

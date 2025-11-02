@@ -1,10 +1,6 @@
-import {
-  CoreEventSchema,
-  Event_Core,
-  Schema_Event,
-} from "@core/types/event.types";
+import { EventSchema, Schema_Event } from "@core/types/event.types";
 
-export const validateEvent = (event: Schema_Event): Event_Core => {
-  const result = CoreEventSchema.parse(event);
+export const validateEvent = (event: Schema_Event): Schema_Event => {
+  const result = EventSchema.parse(event);
   return result;
 };

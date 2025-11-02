@@ -3,6 +3,7 @@ import {
   mockRecurringGcalBaseEvent,
   mockRecurringGcalInstances,
 } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
+import { gCalDateToDayjsDate } from "../../../../../core/src/util/event/gcal.event.util";
 
 describe("mockRecurringInstances", () => {
   it("should not include 'recurrence'", () => {
@@ -32,8 +33,16 @@ describe("mockRecurringInstances", () => {
     const instances = mockRecurringGcalInstances(base);
     const firstInstance = instances[0] as gSchema$EventInstance;
 
-    expect(firstInstance.start?.dateTime).toBe(base.start?.dateTime);
-    expect(firstInstance.end?.dateTime).toBe(base.end?.dateTime);
+    expect(
+      gCalDateToDayjsDate(firstInstance.start).isSame(
+        gCalDateToDayjsDate(base.start),
+      ),
+    ).toBe(true);
+    expect(
+      gCalDateToDayjsDate(firstInstance.end).isSame(
+        gCalDateToDayjsDate(base.end),
+      ),
+    ).toBe(true);
   });
 
   it("should make instances start and end in the future from the base time (except for the first one)", () => {

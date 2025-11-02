@@ -1,19 +1,17 @@
 import type { GaxiosPromise } from "gaxios";
-import { calendar_v3, google } from "googleapis";
-import { ObjectId, WithoutId } from "mongodb";
+import { calendar_v3 } from "googleapis";
+import { ObjectId } from "mongodb";
 import { Options } from "rrule";
 import { Origin } from "@core/constants/core.constants";
-import { MapEvent } from "@core/mappers/map.event";
-import { Schema_Event, WithCompassId } from "@core/types/event.types";
+import { MapGCalEvent } from "@core/mappers/map.gcal.event";
+import { Schema_Event } from "@core/types/event.types";
 import {
+  gCalendar,
   gSchema$Event,
   gSchema$EventBase,
   gSchema$EventInstance,
 } from "@core/types/gcal";
-import { isBase } from "@core/util/event/event.util";
 import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
-import { Collections } from "@backend/common/constants/collections";
-import mongoService from "@backend/common/services/mongo.service";
 
 export interface State_AfterGcalImport {
   gcalEvents: {
@@ -23,7 +21,7 @@ export interface State_AfterGcalImport {
     recurring: gSchema$EventBase;
     instances: gSchema$EventInstance[];
   };
-  compassEvents: WithCompassId<Schema_Event>[];
+  compassEvents: Schema_Event[];
 }
 /**
  * simulateGoogleCalendarEventCreation
@@ -33,45 +31,11 @@ export interface State_AfterGcalImport {
  * and should be called when a gcal event mock is created.
  */
 export const simulateGoogleCalendarEventCreation = async (
+  gCalendarId: string,
   event: gSchema$Event,
+  gcal: gCalendar,
 ): GaxiosPromise<calendar_v3.Schema$Event> => {
-  return google.calendar("v3").events.insert({ requestBody: event });
-};
-
-/**
- * Simulates the events in the database after gcal import
- * @param {Db} db - The database
- * @param {string} userId - The user id
- * @returns {Object} - The gcal and compass events
- */
-export const simulateDbAfterGcalImport = async (
-  userId: string,
-  isAllDayBase = false,
-  recurrenceOptions: Partial<Options> = {},
-): Promise<State_AfterGcalImport> => {
-  const { gcalEvents, compassEvents } = mockGcalAndCompassEvents(
-    userId,
-    isAllDayBase,
-    recurrenceOptions,
-  );
-
-  const { instances, recurring, regular } = gcalEvents;
-
-  await Promise.all(
-    [regular, recurring, ...instances].map(simulateGoogleCalendarEventCreation),
-  );
-
-  await mongoService.db
-    .collection(Collections.EVENT)
-    .insertMany(compassEvents as unknown as WithoutId<Schema_Event>[]);
-
-  const compassEventsInDb = (await mongoService.event
-    .find({})
-    .toArray()) as unknown as WithCompassId<Schema_Event>[];
-  return {
-    gcalEvents,
-    compassEvents: compassEventsInDb,
-  };
+  return gcal.events.insert({ requestBody: event, calendarId: gCalendarId });
 };
 
 /**
@@ -79,30 +43,17 @@ export const simulateDbAfterGcalImport = async (
  * @returns {Object} - The gcal and compass events
  */
 export const mockGcalAndCompassEvents = (
-  userId?: string,
+  calendar: ObjectId,
   isAllDayBase = false,
   recurrenceOptions?: Partial<Options>,
 ) => {
   const { gcalEvents } = mockGcalEvents(isAllDayBase, recurrenceOptions);
-  const compassEvents = MapEvent.toCompass(
-    userId || "some-user-id",
+
+  const compassEvents = MapGCalEvent.toEvents(
+    calendar,
     gcalEvents.all,
     Origin.GOOGLE_IMPORT,
   );
-  const compassBase = compassEvents.find((e) => isBase(e));
-  if (!compassBase) {
-    throw new Error("No base event found");
-  }
 
-  // Link instances to their base
-  const baseId = new ObjectId();
-  // @ts-expect-error pre-assigning the id as ObjectId is OK if you insert it afterwards
-  compassBase._id = baseId;
-  const compassEventsWithPointersToBase = compassEvents.map((e) => {
-    const isInstance = e.gRecurringEventId !== undefined;
-    if (isInstance) return { ...e, recurrence: { eventId: baseId.toString() } };
-
-    return e;
-  });
-  return { gcalEvents, compassEvents: compassEventsWithPointersToBase };
+  return { gcalEvents, compassEvents };
 };

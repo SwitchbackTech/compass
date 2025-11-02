@@ -1,5 +1,5 @@
 import React from "react";
-import { Categories_Event } from "@core/types/event.types";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import {
   DateTimeSection,
   Props as DateTimeSectionProps,

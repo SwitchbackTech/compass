@@ -1,10 +1,10 @@
 import { useHotkeys } from "react-hotkeys-hook";
 import { OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
+import { Schema_Event } from "@core/types/event.types";
 import {
   Categories_Event,
   Direction_Migrate,
-  Schema_Event,
-} from "@core/types/event.types";
+} from "@web/common/types/web.event.types";
 import { isComboboxInteraction } from "@web/common/utils/form/form.util";
 
 export const SOMEDAY_HOTKEY_OPTIONS: OptionsOrDependencyArray = {

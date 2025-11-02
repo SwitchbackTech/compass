@@ -1,4 +1,4 @@
-import { AnyBulkWriteOperation } from "mongodb";
+import { AnyBulkWriteOperation, ObjectId } from "mongodb";
 import type { MigrationParams, RunnableMigration } from "umzug";
 import { MigrationContext } from "@scripts/common/cli.types";
 import { MapCalendar } from "@core/mappers/map.calendar";
@@ -22,72 +22,73 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       "Starting migration of calendarlist entries to calendar collection",
     );
 
-    try {
-      session.startTransaction();
+    await session.withTransaction(async () => {
+      try {
+        const calendarListCollection = mongoService.db.collection<{
+          user: string;
+          google: {
+            items: gSchema$CalendarListEntry[];
+          };
+        }>(IS_DEV ? "_dev.calendarlist" : "calendarlist");
 
-      const calendarListCollection = mongoService.db.collection<{
-        user: string;
-        google: {
-          items: gSchema$CalendarListEntry[];
-        };
-      }>(IS_DEV ? "_dev.calendarlist" : "calendarlist");
+        const bulkInsertOperations: AnyBulkWriteOperation<Schema_Calendar>[] =
+          [];
 
-      const bulkInsertOperations: AnyBulkWriteOperation<Schema_Calendar>[] = [];
+        // Get all calendarlist documents
+        const calendarListDocs = calendarListCollection.find(
+          {},
+          { session, batchSize: MONGO_BATCH_SIZE },
+        );
 
-      // Get all calendarlist documents
-      const calendarListDocs = calendarListCollection.find(
-        {},
-        { session, batchSize: MONGO_BATCH_SIZE },
-      );
+        // Process each calendarlist document
+        for await (const calendarListDoc of calendarListDocs) {
+          const { user, google } = calendarListDoc;
+          const calendars = (google?.items ?? []).flat();
 
-      // Process each calendarlist document
-      for await (const calendarListDoc of calendarListDocs) {
-        const { user, google } = calendarListDoc;
-        const calendars = (google?.items ?? []).flat();
+          if (!calendars.length) {
+            logger.warn(
+              `No Google calendar items found for user ${user}, skipping`,
+            );
 
-        if (!calendars.length) {
-          logger.warn(
-            `No Google calendar items found for user ${user}, skipping`,
+            continue;
+          }
+
+          // Transform each calendar entry
+          for (const calendar of calendars) {
+            const document = MapCalendar.gcalToCompass(
+              new ObjectId(user),
+              calendar,
+            );
+
+            bulkInsertOperations.push({ insertOne: { document } });
+          }
+        }
+
+        if (bulkInsertOperations.length === 0) {
+          logger.info(
+            "No calendar entries to migrate, skipping insertion step",
           );
 
-          continue;
+          return;
         }
 
-        // Transform each calendar entry
-        for (const calendar of calendars) {
-          const document = MapCalendar.gcalToCompass(user, calendar);
+        const { insertedCount } = await mongoService.calendar.bulkWrite(
+          bulkInsertOperations,
+          { ordered: false, session },
+        );
 
-          bulkInsertOperations.push({ insertOne: { document } });
-        }
+        logger.info(
+          `Migration completed: ${insertedCount} calendar entries migrated`,
+        );
+      } catch (error) {
+        logger.error(
+          "Calendarlist migration failed, transaction aborted:",
+          error,
+        );
+
+        throw error;
       }
-
-      if (bulkInsertOperations.length === 0) {
-        logger.info("No calendar entries to migrate, skipping insertion step");
-
-        await session.commitTransaction();
-        return;
-      }
-
-      const { insertedCount } = await mongoService.calendar.bulkWrite(
-        bulkInsertOperations,
-        { ordered: false, session },
-      );
-
-      await session.commitTransaction();
-
-      logger.info(
-        `Migration completed: ${insertedCount} calendar entries migrated`,
-      );
-    } catch (error) {
-      await session.abortTransaction();
-
-      logger.error(
-        "Calendarlist migration failed, transaction aborted:",
-        error,
-      );
-
-      throw error;
-    }
+    });
   }
 
   async down(params: MigrationParams<MigrationContext>): Promise<void> {

@@ -1,10 +1,10 @@
 import { Dispatch, SetStateAction } from "react";
 import { Priority } from "@core/constants/core.constants";
+import { Schema_Event } from "@core/types/event.types";
 import {
   Categories_Event,
   Direction_Migrate,
-  Schema_Event,
-} from "@core/types/event.types";
+} from "@web/common/types/web.event.types";
 
 export interface FormProps {
   event: Schema_Event;

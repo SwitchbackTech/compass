@@ -3,7 +3,6 @@ import { call, put, select } from "@redux-saga/core/effects";
 import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import {
-  Params_Events,
   RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
@@ -12,7 +11,7 @@ import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import {
   Schema_GridEvent,
-  Schema_OptimisticEvent,
+  Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import { handleError } from "@web/common/utils/event/event.util";
 import { EventApi } from "@web/ducks/events/event.api";
@@ -49,7 +48,7 @@ import { RootState } from "@web/store";
 export function* convertCalendarToSomedayEvent({
   payload,
 }: Action_ConvertEvent) {
-  let optimisticEvent: Schema_OptimisticEvent | null = null;
+  let optimisticEvent: Schema_GridEvent | null = null;
 
   try {
     const gridEvent = yield* _assembleGridEvent(payload.event);
@@ -149,7 +148,8 @@ export function* getCurrentMonthEvents({ payload }: Action_GetPaginatedEvents) {
 }
 
 function* getEvents(
-  payload: Params_Events & Response_HttpPaginatedSuccess<Entities_Event>,
+  payload: Pick<Schema_WebEvent, "startDate" | "endDate" | "isSomeday"> &
+    Response_HttpPaginatedSuccess<Entities_Event>,
 ) {
   try {
     if (!payload.startDate && !payload.endDate && "data" in payload) {
@@ -166,8 +166,8 @@ function* getEvents(
 
     const events = EventDateUtils.filterEventsByStartEndDate(
       res.data,
-      payload.startDate as string,
-      payload.endDate as string,
+      payload.startDate,
+      payload.endDate,
     );
 
     const normalizedEvents = normalize<Schema_Event>(events, [

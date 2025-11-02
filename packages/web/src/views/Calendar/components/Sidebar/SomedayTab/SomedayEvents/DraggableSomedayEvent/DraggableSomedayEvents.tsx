@@ -1,6 +1,7 @@
 import React, { FC, memo } from "react";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import { DraggableSomedayEvent } from "./DraggableSomedayEvent";
 
 const _DraggableSomedayEvents: FC<{

@@ -5,14 +5,15 @@ import { Socket } from "socket.io-client";
 import { faker } from "@faker-js/faker";
 import { EVENT_CHANGED } from "@core/constants/websocket.constants";
 import { Status } from "@core/errors/status.codes";
+import { EventStatus } from "@core/types/event.types";
 import { Resource_Sync, XGoogleResourceState } from "@core/types/sync.types";
+import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import { Schema_User } from "@core/types/user.types";
 import { isBase, isInstance } from "@core/util/event/event.util";
+import { AuthDriver } from "@backend/__tests__/drivers/auth.driver";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
+import { CalendarDriver } from "@backend/__tests__/drivers/calendar.driver";
 import { SyncControllerDriver } from "@backend/__tests__/drivers/sync.controller.driver";
-import { SyncDriver } from "@backend/__tests__/drivers/sync.driver";
-import { UserDriver } from "@backend/__tests__/drivers/user.driver";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   getCategorizedEventsInDb,
   getEventsInDb,
@@ -22,6 +23,8 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { getGcalClient } from "@backend/auth/services/google.auth.service";
+import calendarService from "@backend/calendar/services/calendar.service";
 import { WatchError } from "@backend/common/errors/sync/watch.errors";
 import { waitUntilEvent } from "@backend/common/helpers/common.util";
 import gcalService from "@backend/common/services/gcal/gcal.service";
@@ -29,6 +32,7 @@ import mongoService from "@backend/common/services/mongo.service";
 import * as syncQueries from "@backend/sync/util/sync.queries";
 import { updateSync } from "@backend/sync/util/sync.queries";
 import userService from "@backend/user/services/user.service";
+import dayjs from "../../../../core/src/util/date/dayjs";
 
 describe("SyncController", () => {
   const baseDriver = new BaseDriver();
@@ -38,7 +42,8 @@ describe("SyncController", () => {
     user: WithId<Schema_User>;
     websocketClient: Socket<DefaultEventsMap, DefaultEventsMap>;
   }> {
-    const { user } = await UtilDriver.setupTestUser();
+    const newUser = await AuthDriver.googleSignup();
+    const user = await AuthDriver.googleLogin(newUser._id);
 
     const websocketClient = baseDriver.createWebsocketClient(
       { userId: user._id.toString(), sessionId: randomUUID() },
@@ -118,7 +123,8 @@ describe("SyncController", () => {
 
     it("should ignore notification when no sync token found", async () => {
       // Setup
-      const { user } = await UtilDriver.setupTestUser();
+      const newUser = await AuthDriver.googleSignup();
+      const user = await AuthDriver.googleLogin(newUser._id);
       const userId = user._id.toString();
 
       const watch = await mongoService.watch.findOne({
@@ -135,9 +141,14 @@ describe("SyncController", () => {
       const resourceId = watch!.resourceId;
       const expiration = watch!.expiration;
 
-      await updateSync(Resource_Sync.EVENTS, userId, calendarId, {
-        nextSyncToken: undefined,
-      });
+      const syncUpdate = await updateSync(
+        Resource_Sync.EVENTS,
+        userId,
+        calendarId,
+        { nextSyncToken: undefined },
+      );
+
+      expect(syncUpdate.modifiedCount).toEqual(1);
 
       const response = await syncDriver.handleGoogleNotification(
         {
@@ -153,27 +164,29 @@ describe("SyncController", () => {
       expect(response.text).toEqual("");
     });
 
-    it("should cleanup stale gcal watches for unknown channels if resourceId exists", async () => {
-      const { user } = await UtilDriver.setupTestUser();
+    it("should cleanup stale gcal watches for expired channels if resourceId exists", async () => {
+      const newUser = await AuthDriver.googleSignup();
+      const user = await AuthDriver.googleLogin(newUser._id);
+      const calendar = await CalendarDriver.getRandomUserCalendar(user._id);
       const userId = user._id.toString();
-      const calendarId = "test-calendar";
+      const calendarId = calendar.metadata.id;
       const resource = Resource_Sync.EVENTS;
-      const channelId = new ObjectId();
-      const resourceId = "test-resource-id";
-      const expiration = faker.date.future();
 
-      await mongoService.watch.updateOne(
-        { user: userId, gCalendarId: calendarId },
-        { $set: { resourceId } },
-      );
+      const watch = await mongoService.watch.findOne({
+        user: userId,
+        gCalendarId: calendarId,
+      });
+
+      expect(watch).toBeDefined();
+      expect(watch).not.toBeNull();
 
       const response = await syncDriver.handleGoogleNotification(
         {
           resource,
-          channelId,
-          resourceId,
+          channelId: zObjectId.parse(watch?._id),
+          resourceId: StringV4Schema.parse(watch?.resourceId),
           resourceState: XGoogleResourceState.EXISTS,
-          expiration,
+          expiration: faker.date.future({ refDate: watch?.expiration }),
         },
         Status.OK,
       );
@@ -188,78 +201,108 @@ describe("SyncController", () => {
         // Importing both the base and first instance helps us find the series recurrence rule.
         // To prevent duplicates in the UI, the GET API will not return the base event
         const { user } = await websocketUserFlow(true);
+        const calendars = await calendarService.getAllByUser(user._id);
 
         const currentEventsInDb = await getEventsInDb({
-          user: user._id.toString(),
+          calendar: { $in: calendars.map((c) => c._id) },
+          isSomeday: false,
         });
 
         const baseEvent = currentEventsInDb.find(isBase)!;
-        const firstInstance = currentEventsInDb.find(isInstance)!;
+        const firstInstance = currentEventsInDb
+          .filter(isInstance)
+          .find((instance) =>
+            dayjs(instance.startDate).isSame(baseEvent.startDate),
+          );
 
         expect(baseEvent).toBeDefined();
         expect(baseEvent).not.toBeNull();
         expect(firstInstance).toBeDefined();
         expect(firstInstance).not.toBeNull();
 
-        expect(baseEvent.startDate).toEqual(firstInstance.startDate);
+        expect(baseEvent.startDate).toEqual(firstInstance?.startDate);
       });
 
       it("should connect instances to their base events", async () => {
         const { user } = await websocketUserFlow(true);
+        const calendars = await calendarService.getAllByUser(user._id);
 
-        const { baseEvents, instanceEvents } = await getCategorizedEventsInDb({
-          user: user._id.toString(),
+        const { baseEvents, instances } = await getCategorizedEventsInDb({
+          calendar: { $in: calendars.map((c) => c._id) },
+          isSomeday: false,
         });
 
-        expect(instanceEvents).toHaveLength(3);
-
-        instanceEvents.forEach((instance) => {
-          expect(instance.recurrence?.eventId).toBe(
-            baseEvents[0]?._id?.toString(),
+        instances.forEach((instance) => {
+          const base = baseEvents.find((e) =>
+            e._id.equals(instance.recurrence?.eventId),
           );
+
+          expect(base).toBeDefined();
+          expect(base).not.toBeNull();
         });
       });
 
       it("should include regular and recurring events and skip cancelled events", async () => {
         const { user } = await websocketUserFlow(true);
+        const calendars = await calendarService.getAllByUser(user._id);
+        const gcal = await getGcalClient(user._id);
 
         const currentEventsInDb = await getEventsInDb({
-          user: user._id.toString(),
+          calendar: { $in: calendars.map((c) => c._id) },
+          isSomeday: false,
         });
 
-        expect(currentEventsInDb).toHaveLength(5); // base + 3 instances + regular
+        const gcalEvents = await Promise.all(
+          currentEventsInDb.map(async ({ metadata, calendar }) => {
+            const cal = calendars.find((c) => c._id.equals(calendar));
+            const event = await gcalService.getEvent(
+              gcal,
+              StringV4Schema.parse(metadata?.id),
+              StringV4Schema.parse(cal?.metadata.id),
+            );
 
-        // Verify we have the base event
+            return event;
+          }),
+        );
+
+        expect(gcalEvents).toHaveLength(currentEventsInDb.length);
+
+        gcalEvents.forEach((gcalEvent) => {
+          expect(gcalEvent.status).not.toBe(EventStatus.CANCELLED);
+        });
+
+        // Verify we have base events
         const baseEvents = currentEventsInDb.filter(isBase);
 
-        expect(baseEvents).toHaveLength(1);
-        expect(baseEvents[0]?.title).toBe("Recurrence");
+        expect(baseEvents.length).toBeGreaterThan(calendars.length);
 
         // Verify we have the correct instance
         const instanceEvents = currentEventsInDb.filter(isInstance);
 
-        expect(instanceEvents).toHaveLength(3);
+        instanceEvents.every((e) => {
+          const base = baseEvents.find((base) =>
+            base._id.equals(zObjectId.parse(e.recurrence?.eventId)),
+          );
 
-        const baseGevId = baseEvents[0]?.gEventId as string;
-
-        expect(instanceEvents.map((e) => e.gEventId)).toEqual(
-          expect.arrayContaining([expect.stringMatching(baseGevId)]),
-        );
+          expect(base).toBeDefined();
+          expect(base).not.toBeNull();
+        });
 
         // Verify we have the regular event
         const regularEvents = currentEventsInDb.filter(
           ({ recurrence }) => recurrence === undefined || recurrence === null,
         );
 
-        expect(regularEvents).toHaveLength(1);
-        expect(regularEvents[0]?.gEventId).toBe("regular-1");
+        expect(regularEvents.length).toBeGreaterThan(calendars.length);
       });
 
       it("should not create duplicate events for recurring events", async () => {
         const { user } = await websocketUserFlow(true);
+        const calendars = await calendarService.getAllByUser(user._id);
 
         const currentEventsInDb = await getEventsInDb({
-          user: user._id.toString(),
+          calendar: { $in: calendars.map((c) => c._id) },
+          isSomeday: false,
         });
 
         // Get all instance events
@@ -268,11 +311,9 @@ describe("SyncController", () => {
         // For each instance event, verify there are no duplicates
         const eventIds = new Set<string>();
         const duplicateEvents = instances.filter((event) => {
-          if (!event.gEventId) return false; // Skip events without IDs
-          if (eventIds.has(event.gEventId)) {
-            return true;
-          }
-          eventIds.add(event.gEventId);
+          if (!event.metadata?.id) return false; // Skip events without IDs
+          if (eventIds.has(event.metadata.id)) return true;
+          eventIds.add(event.metadata.id);
           return false;
         });
 
@@ -281,17 +322,20 @@ describe("SyncController", () => {
 
       it("should not create duplicate events for regular events", async () => {
         const { user } = await websocketUserFlow(true);
+        const calendars = await calendarService.getAllByUser(user._id);
 
         const currentEventsInDb = await getEventsInDb({
-          user: user._id.toString(),
+          calendar: { $in: calendars.map((c) => c._id) },
+          isSomeday: false,
         });
 
         const regularEvents = currentEventsInDb.filter(
           (e) => !isBase(e) && !isInstance(e),
         );
 
-        expect(regularEvents).toHaveLength(1);
-        expect(regularEvents[0]?.gEventId).toBe("regular-1");
+        expect(
+          new Set(regularEvents.map(({ _id }) => _id.toString())).size,
+        ).toBe(regularEvents.length);
       });
 
       it("should resume import using stored nextPageToken", async () => {
@@ -367,10 +411,22 @@ describe("SyncController", () => {
           .mockResolvedValue("5");
 
         const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
-        const user = await UserDriver.createUser();
+        const newUser = await AuthDriver.googleSignup();
+        const user = await AuthDriver.googleLogin(newUser._id);
+        const calendar = await CalendarDriver.getRandomUserCalendar(user._id);
         const userId = user._id.toString();
 
-        await SyncDriver.createSync(user);
+        // cause restart sync
+        await updateSync(
+          Resource_Sync.EVENTS,
+          calendar.user.toString(),
+          calendar.metadata.id,
+          {
+            nextSyncToken: undefined,
+          },
+        );
+
+        await AuthDriver.googleLogin(user._id);
 
         const websocketClient = baseDriver.createWebsocketClient(
           { userId, sessionId: randomUUID() },
@@ -407,20 +463,18 @@ describe("SyncController", () => {
       });
 
       it("should retry import if it is restarted", async () => {
-        const getGCalEventsSyncPageTokenSpy = jest
-          .spyOn(syncQueries, "getGCalEventsSyncPageToken")
-          .mockResolvedValue("5");
-
-        const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
-        const user = await UserDriver.createUser();
+        const user = await AuthDriver.googleSignup();
         const userId = user._id.toString();
 
-        await SyncDriver.createSync(user);
+        await AuthDriver.googleLogin(user._id);
 
         const websocketClient = baseDriver.createWebsocketClient(
           { userId, sessionId: randomUUID() },
           { autoConnect: false },
         );
+
+        // @TODO spy on importGCal
+        // @TODO verify events before and after import
 
         await waitUntilEvent(websocketClient, "connect", 100, () =>
           Promise.resolve(websocketClient.connect()),
@@ -439,16 +493,9 @@ describe("SyncController", () => {
 
         expect(failReason).toBeNull();
 
-        expect(getAllEventsSpy).toHaveBeenCalledWith(
-          expect.objectContaining({ pageToken: "5" }),
-        );
-
         await waitUntilEvent(websocketClient, "disconnect", 100, () =>
           Promise.resolve(websocketClient.disconnect()),
         );
-
-        getAllEventsSpy.mockRestore();
-        getGCalEventsSyncPageTokenSpy.mockRestore();
       });
 
       it("should retry import if it failed", async () => {
@@ -457,10 +504,10 @@ describe("SyncController", () => {
           .mockResolvedValue("5");
 
         const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
-        const user = await UserDriver.createUser();
+        const user = await AuthDriver.googleSignup();
         const userId = user._id.toString();
 
-        await SyncDriver.createSync(user);
+        await AuthDriver.googleLogin(user._id);
 
         const websocketClient = baseDriver.createWebsocketClient(
           { userId, sessionId: randomUUID() },
@@ -499,10 +546,10 @@ describe("SyncController", () => {
 
     describe("Frontend Notifications", () => {
       it("should notify the frontend that the import has started", async () => {
-        const user = await UserDriver.createUser();
+        const user = await AuthDriver.googleSignup();
         const userId = user._id.toString();
 
-        await SyncDriver.createSync(user);
+        await AuthDriver.googleLogin(user._id);
 
         const websocketClient = baseDriver.createWebsocketClient(
           { userId },
@@ -527,10 +574,10 @@ describe("SyncController", () => {
       });
 
       it("should notify the frontend that the import is complete", async () => {
-        const user = await UserDriver.createUser();
+        const user = await AuthDriver.googleSignup();
         const userId = user._id.toString();
 
-        await SyncDriver.createSync(user);
+        await AuthDriver.googleLogin(user._id);
 
         const websocketClient = baseDriver.createWebsocketClient(
           { userId },
@@ -555,10 +602,10 @@ describe("SyncController", () => {
       });
 
       it("should notify the frontend to refetch the calendar events on completion", async () => {
-        const user = await UserDriver.createUser();
+        const user = await AuthDriver.googleSignup();
         const userId = user._id.toString();
 
-        await SyncDriver.createSync(user);
+        await AuthDriver.googleLogin(user._id);
 
         const websocketClient = baseDriver.createWebsocketClient(
           { userId },

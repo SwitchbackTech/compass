@@ -1,96 +1,123 @@
 import { ObjectId } from "bson";
 import { Priorities } from "@core/constants/core.constants";
-import { Schema_Event, WithMongoId } from "@core/types/event.types";
+import { Schema_Event, Schema_Regular_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
+import { createMockRegularEvent } from "@core/util/test/ccal.event.factory";
 
-const allDayEventsThatShouldMatch: Array<
-  WithMongoId<Omit<Schema_Event, "_id">>
-> =
-  // ordered by start date
-  [
+const calendar = new ObjectId();
+
+const allDayEventsThatShouldMatch: Schema_Regular_Event[] = [
+  createMockRegularEvent(
     {
-      _id: new ObjectId(),
-      user: "user1",
+      calendar,
       title: "Feb 22",
-      isAllDay: false,
       isSomeday: false,
-      startDate: "2022-02",
+      startDate: dayjs(
+        "2022-02-22",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
     },
+    false,
+  ),
+  createMockRegularEvent(
     {
-      _id: new ObjectId(),
-      user: "user1",
+      calendar,
       title: "Feb 14 - Mar 8",
-      isAllDay: true,
       isSomeday: false,
-      startDate: "2022-02-14",
-      endDate: "2022-03-08",
+      startDate: dayjs(
+        "2022-02-14",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
     },
+    false,
+    { unit: "day", value: 22 },
+  ),
+  createMockRegularEvent(
     {
-      _id: new ObjectId(),
-      user: "user1",
+      calendar,
       title: "Mar 8",
-      isAllDay: true,
       isSomeday: false,
-      startDate: "2022-03-08",
-      endDate: "2022-03-09",
+      startDate: dayjs(
+        "2022-03-08",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
     },
+    true,
+  ),
+  createMockRegularEvent(
     {
-      _id: new ObjectId(),
-      user: "user1",
+      calendar,
       title: "Mar 10 - 12",
-      isAllDay: true,
       isSomeday: false,
-      startDate: "2022-03-10",
-      endDate: "2022-03-13",
+      startDate: dayjs(
+        "2022-03-10",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
       priority: Priorities.WORK,
     },
-  ];
-
-const allDayEventsThatShouldNotMatch: Array<
-  WithMongoId<Omit<Schema_Event, "_id">>
-> = [
-  {
-    _id: new ObjectId(),
-    user: "user1",
-    title: "Feb 28 - Mar 5",
-    isAllDay: true,
-    isSomeday: false,
-    startDate: "2022-02-28",
-    endDate: "2022-03-05",
-    priority: Priorities.WORK,
-  },
-  {
-    _id: new ObjectId(),
-    user: "user1",
-    title: "Mar 5",
-    isAllDay: true,
-    isSomeday: false,
-    startDate: "2022-03-05",
-    endDate: "2022-03-06",
-    priority: Priorities.WORK,
-  },
-  {
-    _id: new ObjectId(),
-    user: "user1",
-    title: "Mar 13",
-    isAllDay: true,
-    isSomeday: false,
-    startDate: "2022-03-13",
-    endDate: "2022-03-14",
-    priority: Priorities.WORK,
-  },
-  {
-    _id: new ObjectId(),
-    user: "user1",
-    title: "Mar 13 - 16",
-    isAllDay: true,
-    isSomeday: false,
-    startDate: "2022-03-13",
-    endDate: "2022-03-17",
-    priority: Priorities.WORK,
-  },
+    false,
+    { unit: "day", value: 3 },
+  ), // exclusive (covers 10,11,12)
 ];
 
-export const mockEventSetMar22: Array<Omit<Schema_Event, "_id">> = [
+const allDayEventsThatShouldNotMatch: Schema_Event[] = [
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Feb 28 - Mar 5",
+      isSomeday: false,
+      startDate: dayjs(
+        "2022-02-28",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+      priority: Priorities.WORK,
+    },
+    false,
+    { unit: "day", value: 5 },
+  ),
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Mar 5",
+      isSomeday: false,
+      startDate: dayjs(
+        "2022-03-05",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+      priority: Priorities.WORK,
+    },
+    false,
+  ),
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Mar 13",
+      isSomeday: false,
+      startDate: dayjs(
+        "2022-03-13",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+      priority: Priorities.WORK,
+    },
+    true,
+  ),
+  createMockRegularEvent(
+    {
+      calendar,
+      title: "Mar 13 - 16",
+      isSomeday: false,
+      startDate: dayjs(
+        "2022-03-13",
+        dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      ).toDate(),
+      priority: Priorities.WORK,
+    },
+    false,
+    { unit: "day", value: 4 },
+  ), // exclusive
+];
+
+export const mockEventSetMar22: Schema_Event[] = [
   ...allDayEventsThatShouldMatch,
   ...allDayEventsThatShouldNotMatch,
 ];

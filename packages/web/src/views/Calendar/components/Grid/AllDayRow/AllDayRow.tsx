@@ -1,12 +1,12 @@
 import React, { FC, MouseEvent, useEffect } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { Categories_Event } from "@core/types/event.types";
 import {
   ID_ALLDAY_COLUMNS,
   ID_GRID_ALLDAY_ROW,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { Ref_Callback } from "@web/common/types/util.types";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
 import { getX } from "@web/common/utils/grid/grid.util";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";

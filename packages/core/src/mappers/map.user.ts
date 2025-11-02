@@ -1,3 +1,4 @@
+import { ObjectId } from "bson";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { UserInfo_Google } from "@core/types/auth.types";
@@ -21,6 +22,7 @@ export const mapUserToCompass = (
   }
 
   return {
+    _id: new ObjectId(),
     email: gUser.email,
     name: gUser.name || "Mystery Person",
     firstName: gUser.given_name || "Mystery",

@@ -1,26 +1,34 @@
 import { ObjectId } from "mongodb";
 import { z } from "zod/v4";
-import Migration from "@scripts/migrations/2025.10.18T20.01.14.migrate-events-to-new-events-collection";
+import { faker } from "@faker-js/faker";
 import { Origin, Priorities } from "@core/constants/core.constants";
-import { UserDriver } from "@backend/__tests__/drivers/user.driver";
+import {
+  Schema_Base_Event,
+  Schema_Instance_Event,
+  V0EventSchema,
+} from "@core/types/event.types";
+import { gSchema$Event } from "@core/types/gcal";
+import { createRecurrenceSeries } from "@core/util/test/ccal.event.factory";
+import { AuthDriver } from "@backend/__tests__/drivers/auth.driver";
 import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import calendarService from "@backend/calendar/services/calendar.service";
+import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 
 export class EventDriver {
   static async generateV0Data(count = 3) {
-    const users = await UserDriver.createUsers(count);
+    const users = await AuthDriver.signUpGoogleUsers(count);
 
     const collection = mongoService.db.collection<
-      z.infer<typeof Migration.OldEventSchema>
+      z.infer<typeof V0EventSchema>
     >(mongoService.event.collectionName);
 
     await Promise.all(
       users.map(async (user) =>
         calendarService.initializeGoogleCalendars(
           user._id,
-          await getGcalClient(user._id.toString()),
+          await getGcalClient(user._id),
         ),
       ),
     );
@@ -29,11 +37,12 @@ export class EventDriver {
       const gcalAllDayEvents = mockGcalEvents(true, { count });
       const gcalTimedEvents = mockGcalEvents(false, { count });
 
-      const somedayEvent = Migration.OldEventSchema.parse({
+      const somedayEvent = V0EventSchema.parse({
         user: user._id.toString(),
         title: "Someday Event",
         startDate: new Date().toISOString(),
         endDate: new Date().toISOString(),
+        order: faker.number.int({ min: 0, max: 10 }),
         isSomeday: true,
         isAllDay: false,
         origin: Origin.COMPASS,
@@ -64,6 +73,7 @@ export class EventDriver {
             title: gcalEvent.summary || "No Title",
             startDate: gcalEvent.start?.dateTime ?? gcalEvent.start!.date!,
             endDate: gcalEvent.end?.dateTime ?? gcalEvent.end!.date!,
+            order: faker.number.int({ min: 0, max: 10 }),
             isAllDay: !!gcalEvent.start?.date,
             isSomeday: false,
             origin: Origin.GOOGLE,
@@ -91,7 +101,7 @@ export class EventDriver {
             });
           }
 
-          return Migration.OldEventSchema.parse(event);
+          return V0EventSchema.parse(event);
         }),
       ];
     });
@@ -99,5 +109,35 @@ export class EventDriver {
     const events = await collection.insertMany(data).then(() => data);
 
     return events;
+  }
+
+  static async getGCalEvent(
+    user: ObjectId,
+    gEventId: string,
+    gCalendarId: string,
+  ): Promise<gSchema$Event> {
+    const gcal = await getGcalClient(user);
+    const gEvent = await gcalService.getEvent(gcal, gEventId, gCalendarId);
+
+    return gEvent;
+  }
+
+  static async createSeries(
+    baseOverrides: Partial<Schema_Base_Event>,
+    instanceOverrides?: Partial<Schema_Instance_Event>,
+    instanceCount?: number,
+  ) {
+    const { base, instances } = createRecurrenceSeries(
+      baseOverrides,
+      instanceOverrides,
+      instanceCount,
+    );
+
+    const meta = await mongoService.event.insertMany([base, ...instances]);
+
+    return {
+      state: { baseEvent: base, instances },
+      meta,
+    };
   }
 }

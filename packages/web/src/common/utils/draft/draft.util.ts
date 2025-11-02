@@ -1,12 +1,14 @@
 import { MouseEvent } from "react";
 import { Dispatch } from "redux";
-import { Categories_Event } from "@core/types/event.types";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import {
   ID_GRID_EVENTS_ALLDAY,
   ID_GRID_EVENTS_TIMED,
 } from "@web/common/constants/web.constants";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  Categories_Event,
+  Schema_GridEvent,
+} from "@web/common/types/web.event.types";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
 import { getElemById, getX } from "@web/common/utils/grid/grid.util";
 import { roundToNext } from "@web/common/utils/round/round.util";

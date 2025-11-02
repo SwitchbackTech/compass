@@ -2,8 +2,10 @@ import {
   Answers_v1,
   Answers_v2,
 } from "@core/types/waitlist/waitlist.answer.types";
-import { mapWaitlistAnswerToSubscriber } from "./waitlist.service.util";
-import { getNormalizedEmail } from "./waitlist.service.util";
+import {
+  getNormalizedEmail,
+  mapWaitlistAnswerToSubscriber,
+} from "./waitlist.service.util";
 
 describe("getNormalizedEmail", () => {
   describe("valid email normalization", () => {
@@ -137,17 +139,17 @@ describe("getNormalizedEmail", () => {
     });
 
     it("should throw error for null", () => {
-      const invalidEmail = null as any;
+      const invalidEmail = null as unknown as string;
       expect(() => getNormalizedEmail(invalidEmail)).toThrow();
     });
 
     it("should throw error for undefined", () => {
-      const invalidEmail = undefined as any;
+      const invalidEmail = undefined as unknown as string;
       expect(() => getNormalizedEmail(invalidEmail)).toThrow();
     });
 
     it("should throw error for non-string types", () => {
-      const invalidEmail = 123 as any;
+      const invalidEmail = 123 as unknown as string;
       expect(() => getNormalizedEmail(invalidEmail)).toThrow();
     });
   });

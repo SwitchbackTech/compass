@@ -10,7 +10,6 @@ import {
 } from "react";
 import { Frequency, Options, RRule, Weekday } from "rrule";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
-import { parseCompassEventDate } from "@core/util/event/event.util";
 import {
   Schema_GridEvent,
   Schema_WebEvent,
@@ -74,10 +73,9 @@ export const useRecurrence = (
     >;
   },
 ) => {
-  const { recurrence, endDate: _endDate, isSomeday } = event ?? {};
-  const startDate = event?.startDate ?? dayjs().toRFC3339OffsetString();
-  const endDate = _endDate ?? dayjs().add(1, "hour").toRFC3339OffsetString();
-  const _startDate = parseCompassEventDate(startDate);
+  const { recurrence, isSomeday } = event ?? {};
+  const startDate = event?.startDate ?? dayjs().toDate();
+  const endDate = event?.endDate ?? dayjs().add(1, "hour").toDate();
   const hasRecurrence = (event?.recurrence?.rule?.length ?? 0) > 0;
 
   const { options } = useMemo(() => {

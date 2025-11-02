@@ -7,8 +7,6 @@ import {
 } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import {
-  Categories_Event,
-  Direction_Migrate,
   RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
@@ -21,7 +19,11 @@ import {
 } from "@web/common/constants/web.constants";
 import { DirtyParser } from "@web/common/parsers/dirty.parser";
 import { Coordinates } from "@web/common/types/util.types";
-import { Schema_WebEvent } from "@web/common/types/web.event.types";
+import {
+  Categories_Event,
+  Direction_Migrate,
+  Schema_WebEvent,
+} from "@web/common/types/web.event.types";
 import {
   computeCurrentEventDateRange,
   computeRelativeEventDateRange,

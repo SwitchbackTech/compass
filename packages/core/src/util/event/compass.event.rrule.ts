@@ -1,53 +1,35 @@
 import { ObjectId } from "bson";
 import type { Options, RRuleStrOptions } from "rrule";
 import { RRule, rrulestr } from "rrule";
-import type { ParsedOptions } from "rrule/dist/esm/types";
 import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
-import type {
-  CalendarProvider,
-  Schema_Event_Recur_Base,
-  Schema_Event_Recur_Instance,
-  WithMongoId,
+import {
+  type Schema_Base_Event,
+  Schema_Event,
+  type Schema_Instance_Event,
 } from "@core/types/event.types";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
-import {
-  diffRRuleOptions,
-  getCompassEventDateFormat,
-  parseCompassEventDate,
-} from "@core/util/event/event.util";
 
 export class CompassEventRRule extends RRule {
-  #event: WithMongoId<Omit<Schema_Event_Recur_Base, "_id">>;
-  #dateFormat: string;
+  #event: Schema_Event;
   #durationMs!: number;
   #startDate!: Dayjs;
   #endDate!: Dayjs;
-  #timezone!: string;
 
-  constructor(
-    event: Pick<
-      WithMongoId<Omit<Schema_Event_Recur_Base, "_id">>,
-      "startDate" | "endDate" | "_id" | "recurrence"
-    >,
-    options: Partial<Options> = {},
-  ) {
+  constructor(event: Schema_Event, options: Partial<Options> = {}) {
     super(CompassEventRRule.#initOptions(event, options));
 
     this.#event = event;
-    this.#dateFormat = getCompassEventDateFormat(this.#event.startDate!);
-    this.#startDate = parseCompassEventDate(this.#event.startDate!);
-    this.#endDate = parseCompassEventDate(this.#event.endDate!);
+    this.#startDate = dayjs(this.#event.startDate);
+    this.#endDate = dayjs(this.#event.endDate);
     this.#durationMs = this.#endDate.diff(this.#startDate, "milliseconds");
-    this.#timezone = dayjs.tz.guess();
   }
 
   static #initOptions(
-    event: WithMongoId<Omit<Schema_Event_Recur_Base, "_id">>,
+    event: Schema_Event,
     _options: Partial<Options> = {},
   ): Partial<Options> {
-    const startDate = parseCompassEventDate(event.startDate!);
-    const dtstart = startDate.local().toDate();
+    const dtstart = event.startDate;
     const tzid = dayjs.tz.guess();
     const opts: Partial<RRuleStrOptions> = { dtstart, tzid };
     const recurrence = event.recurrence?.rule?.join("\n").trim();
@@ -84,10 +66,6 @@ export class CompassEventRRule extends RRule {
     });
   }
 
-  diffOptions(rrule: CompassEventRRule): Array<[keyof ParsedOptions, unknown]> {
-    return diffRRuleOptions(rrule, this);
-  }
-
   toOriginalString(): string {
     return super.toString();
   }
@@ -115,49 +93,59 @@ export class CompassEventRRule extends RRule {
   ): Date[] {
     const dates = super.all(iterator);
     const firstInstance = dates[0];
-    const firstInstanceStartDate = dayjs(firstInstance).tz(this.#timezone);
+    const firstInstanceStartDate = dayjs(firstInstance);
     const includesDtStart = this.#startDate.isSame(firstInstanceStartDate);
     const rDates = includesDtStart ? [] : [this.#startDate.toDate()];
 
     return rDates.concat(dates);
   }
 
-  base(
-    provider?: CalendarProvider,
-  ): WithMongoId<Omit<Schema_Event_Recur_Base, "_id">> {
-    const _id = this.#event._id ?? new ObjectId();
-    const recurrence = { rule: this.toRecurrence() };
-    const event = { ...this.#event, _id, recurrence };
-    const providerData = MapEvent.toProviderData(event, provider);
-
-    return { ...event, ...providerData };
+  base(): Schema_Base_Event {
+    const recurrence = { rule: this.toRecurrence(), eventId: this.#event._id };
+    return { ...this.#event, recurrence };
   }
 
   /**
    * instances
    *
-   * @memberof GcalEventRRule
+   * @memberof CompassEventRRule
    * @description Returns all instances of the event based on the recurrence rule.
-   * @note **This is a test-only method for now, it is not to be used in production.**
    */
-  instances(
-    provider?: CalendarProvider,
-  ): WithMongoId<Omit<Schema_Event_Recur_Instance, "_id">>[] {
+  instances(): Schema_Instance_Event[] {
     const base = this.base();
-    const baseData = MapEvent.removeIdentifyingData(base);
-    const baseEventId = base._id.toString();
+    const { metadata } = base;
+    const appendProviderData = metadata && "id" in metadata;
 
     return this.all().map((date) => {
       const _id = new ObjectId();
-      const _startDate = dayjs(date).tz(this.#timezone);
+      const _startDate = dayjs(date);
       const _endDate = _startDate.add(this.#durationMs, "milliseconds");
-      const startDate = _startDate.format(this.#dateFormat);
-      const endDate = _endDate.format(this.#dateFormat);
-      const recurrence = { eventId: baseEventId };
-      const instance = { ...baseData, _id, startDate, endDate, recurrence };
-      const providerData = MapEvent.toProviderData(instance, provider!, base);
+      const startDate = _startDate.toDate();
+      const endDate = _endDate.toDate();
+      const order = 0;
+      const recurrence = { rule: this.toRecurrence(), eventId: base._id };
+      const instance: Schema_Instance_Event = {
+        _id,
+        startDate,
+        endDate,
+        originalStartDate: startDate,
+        order,
+        recurrence,
+        calendar: base.calendar,
+        title: base.title,
+        description: base.description,
+        isSomeday: base.isSomeday,
+        origin: base.origin,
+        priority: base.priority,
+        createdAt: base.createdAt,
+        updatedAt: base.updatedAt,
+      };
 
-      return { ...instance, ...providerData };
+      if (appendProviderData) {
+        instance.metadata = MapEvent.toProviderMetadata(instance, metadata.id);
+      }
+
+      return instance;
     });
   }
 }
