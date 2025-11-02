@@ -9,7 +9,7 @@ import { EventStatus } from "@core/types/event.types";
 import { Resource_Sync, XGoogleResourceState } from "@core/types/sync.types";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import { Schema_User } from "@core/types/user.types";
-import { isBase, isInstance } from "@core/util/event/event.util";
+import { isAllDay, isBase, isInstance } from "@core/util/event/event.util";
 import { AuthDriver } from "@backend/__tests__/drivers/auth.driver";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 import { CalendarDriver } from "@backend/__tests__/drivers/calendar.driver";
@@ -309,15 +309,19 @@ describe("SyncController", () => {
         const instances = currentEventsInDb.filter(isInstance);
 
         // For each instance event, verify there are no duplicates
-        const eventIds = new Set<string>();
-        const duplicateEvents = instances.filter((event) => {
-          if (!event.metadata?.id) return false; // Skip events without IDs
-          if (eventIds.has(event.metadata.id)) return true;
-          eventIds.add(event.metadata.id);
-          return false;
-        });
+        const providerIds = new Set<string>(
+          instances.map((e) => StringV4Schema.parse(e.metadata?.id)),
+        );
 
-        expect(duplicateEvents).toHaveLength(0);
+        const ids = new Set<string>(
+          instances.map(
+            (e) =>
+              `${e.recurrence?.eventId.toString()}_${dayjs(e.startDate).toRRuleDTSTARTString(isAllDay(e))}`,
+          ),
+        );
+
+        expect(providerIds.size).toBe(instances.length);
+        expect(ids.size).toBe(instances.length);
       });
 
       it("should not create duplicate events for regular events", async () => {

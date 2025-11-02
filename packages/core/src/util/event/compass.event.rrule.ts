@@ -102,6 +102,7 @@ export class CompassEventRRule extends RRule {
 
   base(): Schema_Base_Event {
     const recurrence = { rule: this.toRecurrence(), eventId: this.#event._id };
+
     return { ...this.#event, recurrence };
   }
 

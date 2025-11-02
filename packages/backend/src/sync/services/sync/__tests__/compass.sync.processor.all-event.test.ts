@@ -1,7 +1,10 @@
 import { ObjectId } from "mongodb";
 import { faker } from "@faker-js/faker";
 import { Priorities } from "@core/constants/core.constants";
-import { CalendarProvider } from "@core/types/calendar.types";
+import {
+  CalendarProvider,
+  CompassCalendarSchema,
+} from "@core/types/calendar.types";
 import {
   BaseEventSchema,
   Categories_Recurrence,
@@ -46,6 +49,7 @@ import {
   isInstance,
 } from "../../../../../../core/src/util/event/event.util";
 import { getEventsInDb } from "../../../../__tests__/helpers/mock.db.queries";
+import calendarService from "../../../../calendar/services/calendar.service";
 import userService from "../../../../user/services/user.service";
 
 describe(`CompassSyncProcessor - ${RecurringEventUpdateScope.ALL_EVENTS}`, () => {
@@ -544,20 +548,29 @@ describe(`CompassSyncProcessor - ${RecurringEventUpdateScope.ALL_EVENTS}`, () =>
 
         it("should update the endDate field of all events in the recurrence", async () => {
           const user = await AuthDriver.googleSignup();
-          const calendar = await CalendarDriver.getRandomUserCalendar(user._id);
+          const calendars = await calendarService.getAllByUser(user._id);
 
           await userService.restartGoogleCalendarSync(user._id);
 
           const events = await getEventsInDb({
-            calendar: calendar._id,
+            calendar: { $in: calendars.map((c) => c._id) },
             isSomeday: false,
           });
 
           const baseEvents = events.filter((e) => !isAllDay(e)).filter(isBase);
           const baseEvent = faker.helpers.arrayElement(baseEvents);
+
+          const _calendar = await calendarService.getByUser(
+            user._id,
+            baseEvent.calendar,
+          );
+
+          const calendar = CompassCalendarSchema.parse(_calendar);
+
           const instances = events
             .filter(isInstance)
             .filter((e) => e.recurrence?.eventId.equals(baseEvent._id));
+
           const instanceUpdate = faker.helpers.arrayElement(instances);
 
           const updatedPayload = {

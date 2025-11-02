@@ -311,7 +311,7 @@ describe("getMongoUpdateDiff", () => {
 
       expect(diff.$set).toEqual(
         expect.objectContaining({
-          "recurrence.rule.0": updated.recurrence?.rule?.[0],
+          recurrence: updated.recurrence,
         }),
       );
       expect(Object.keys(diff.$set!)).toHaveLength(1);

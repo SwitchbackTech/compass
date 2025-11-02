@@ -57,11 +57,7 @@ export class MapGCalEvent {
     if (isBase) Object.assign(event, { recurrence: { rule, eventId: _id } });
     if (isInstanceEvent) {
       Object.assign(event, {
-        recurrence: RecurrenceSchema.parse({
-          // rule: ["RRULE:FREQ=DAILY"],
-          // eventId: new ObjectId(),
-          ...overrides.recurrence,
-        }),
+        recurrence: RecurrenceSchema.parse(overrides.recurrence),
         originalStartDate: gCalDateToDayjsDate(originalStartTime).toDate(),
       });
     }

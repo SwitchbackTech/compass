@@ -1,4 +1,3 @@
-import { ObjectId } from "bson";
 import { z } from "zod/v4";
 import {
   EventSchema,
@@ -58,6 +57,6 @@ export class MapEvent {
       });
     }
 
-    return { id: metadata?.id ?? new ObjectId().toString() };
+    return { id: metadata?.id ?? event._id.toString() };
   }
 }

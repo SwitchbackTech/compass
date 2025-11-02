@@ -10,6 +10,7 @@ import {
   Schema_Event,
 } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
+import { isBase } from "../util/event/event.util";
 
 describe("toEvents", () => {
   const calendar = new ObjectId();
@@ -131,7 +132,9 @@ describe("toEvents", () => {
         throw new Error("Failed to map event");
       }
 
-      expect(InstanceEventMetadataSchema.parse(cEvent.metadata)).toThrow();
+      expect(() =>
+        InstanceEventMetadataSchema.parse(cEvent.metadata),
+      ).toThrow();
     });
     it("includes recurrence when rule is present", () => {
       const gEvent = recurring[0] as gSchema$Event | undefined;
@@ -154,9 +157,9 @@ describe("toEvents", () => {
       expect(cEvent.recurrence?.rule).toEqual([
         "RRULE:FREQ=DAILY;UNTIL=20250916T225959Z",
       ]);
-      expect(cEvent.recurrence?.eventId).toBeUndefined();
+      expect(cEvent.recurrence?.eventId).toBeDefined();
     });
-    it("does not include both recurrence rule and id simultaneously", () => {
+    it("includes both recurrence rule and id for base event", () => {
       const gEvent = {
         kind: "calendar#event",
         etag: '"3487376669522302"',
@@ -202,26 +205,29 @@ describe("toEvents", () => {
       }
 
       expect(cEvent.recurrence).toBeDefined();
-      expect(cEvent.recurrence?.eventId).toBeUndefined();
+      expect(cEvent.recurrence?.eventId).toBeDefined();
+      expect(isBase(cEvent)).toBe(true);
     });
+
     it("stores the recurringEventId (gcal) in metadata.recurringEventId (Compass)", () => {
       const gEventInstance = recurring[1] as gSchema$Event;
+
       if (!gEventInstance) {
         throw new Error("Test event not found in mock data");
       }
 
       const cEvent = MapGCalEvent.toEvents(
         calendar,
-        [gEventInstance],
+        [recurring[0], gEventInstance],
         Origin.GOOGLE_IMPORT,
-      )[0];
+      )[1];
 
       if (!cEvent) {
         throw new Error("Failed to map event");
       }
 
-      expect(cEvent.recurrence).toBeUndefined();
-      expect(cEvent.recurrence?.rule).toBeUndefined();
+      expect(cEvent.recurrence).toBeDefined();
+      expect(cEvent.recurrence?.rule).toBeDefined();
       expect(cEvent.recurrence?.eventId).not.toBe(
         gEventInstance.recurringEventId,
       );
@@ -229,6 +235,16 @@ describe("toEvents", () => {
         "recurringEventId",
         gEventInstance.recurringEventId,
       );
+    });
+
+    it("stores throws an error if the base gcal event is not found", () => {
+      expect(() =>
+        MapGCalEvent.toEvents(
+          calendar,
+          recurring.slice(1),
+          Origin.GOOGLE_IMPORT,
+        ),
+      ).toThrow("Base event not found for instance");
     });
   });
 });
