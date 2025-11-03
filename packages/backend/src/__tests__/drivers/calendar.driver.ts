@@ -73,6 +73,8 @@ export class CalendarDriver {
   static async generateV0Data(numUsers = 3) {
     const users = await AuthDriver.signUpGoogleUsers(numUsers);
 
+    await mongoService.calendar.deleteMany();
+
     const data = await Promise.all(
       users.map(async (user) => {
         const calendars = await calendarService.getAllByUser(user._id);

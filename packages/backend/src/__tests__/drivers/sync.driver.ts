@@ -15,6 +15,8 @@ export class SyncDriver {
     const probability = faker.number.float({ min: minProbability, max: 1 });
     const futureOrPastProbability = parseFloat(probability.toFixed(2));
 
+    await mongoService.sync.deleteMany();
+
     const data = users.map((user) => ({
       _id: new ObjectId(),
       user: user._id.toString(),

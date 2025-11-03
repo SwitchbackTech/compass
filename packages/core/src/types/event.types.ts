@@ -3,13 +3,7 @@ import { z } from "zod/v4";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { CompassCalendarSchema } from "@core/types/calendar.types";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
-import {
-  baseRecurrenceSchemaCheck,
-  dateSchemaCheck,
-  instanceMetadataSchemaCheck,
-  instanceRecurrenceSchemaCheck,
-  noRecurrenceSchemaCheck,
-} from "@core/util/event/event.util";
+import dayjs from "@core/util/date/dayjs";
 
 // @deprecated: use EventSchema instead
 export const V0EventSchema = z.object({
@@ -34,6 +28,92 @@ export const V0EventSchema = z.object({
     })
     .optional(),
 });
+
+const dateSchemaCheck: z.core.CheckFn<Schema_Event> = ({ value, issues }) => {
+  const valid = dayjs(value.endDate).isAfter(dayjs(value.startDate));
+
+  if (!valid) {
+    issues.push({
+      code: "invalid_value",
+      input: value,
+      message: "invalid event date range. startDate must be before endDate",
+      values: [],
+    });
+  }
+};
+
+const noRecurrenceSchemaCheck: z.core.CheckFn<Schema_Regular_Event> = ({
+  value,
+  issues,
+}) => {
+  const valid =
+    !("recurrence" in value) ||
+    value.recurrence === undefined ||
+    value.recurrence === null;
+
+  if (!valid) {
+    issues.push({
+      code: "invalid_value",
+      input: value,
+      message: "invalid regular event",
+      values: [],
+    });
+  }
+};
+
+const baseRecurrenceSchemaCheck: z.core.CheckFn<Schema_Base_Event> = ({
+  value,
+  issues,
+}) => {
+  // review check to have eventId equal to _id
+  const valid = value.recurrence?.eventId?.equals(value._id);
+
+  if (!valid) {
+    issues.push({
+      code: "invalid_value",
+      input: value,
+      message: "base recurrence event id mismatch",
+      values: [],
+    });
+  }
+};
+
+const instanceRecurrenceSchemaCheck: z.core.CheckFn<Schema_Instance_Event> = ({
+  value,
+  issues,
+}) => {
+  // review check to have eventId not equal to _id
+  const valid = !value.recurrence?.eventId?.equals(value._id);
+
+  if (!valid) {
+    issues.push({
+      code: "invalid_value",
+      input: value,
+      message: "invalid recurrence event id",
+      values: [],
+    });
+  }
+};
+
+const instanceMetadataSchemaCheck: z.core.CheckFn<InstanceEventMetadata> = ({
+  value,
+  issues,
+}) => {
+  // review check to be provider neutral in multi-provider scenario
+  const valid = new RegExp(
+    `^${value.recurringEventId}_\\d+(T\\d+Z?)?$`,
+    "i",
+  ).test(value.id);
+
+  if (!valid) {
+    issues.push({
+      code: "invalid_value",
+      input: value,
+      message: "Invalid instance id",
+      values: [],
+    });
+  }
+};
 
 /**
  * Event category, based on its recurrence status and isSomeday flag
@@ -195,10 +275,11 @@ export const CalendarEventSchema = EventSchema.extend({
   isSomeday: z.literal(false),
 });
 
+// order matters: try to match recurring first
 export const DBEventSchema = z.union([
-  RegularEventSchema,
-  BaseEventSchema,
   InstanceEventSchema,
+  BaseEventSchema,
+  RegularEventSchema,
 ]);
 
 export const ThisEventUpdateSchema = z.object({

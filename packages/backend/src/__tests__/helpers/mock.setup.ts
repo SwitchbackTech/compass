@@ -1,36 +1,37 @@
-import axios, { AxiosHeaders, AxiosRequestConfig, AxiosResponse } from "axios";
-import { Handler, NextFunction, Response } from "express";
+import type { AxiosHeaders, AxiosRequestConfig, AxiosResponse } from "axios";
+import axios from "axios";
+import type { NextFunction, Response } from "express";
 import mergeWith, { default as mockMergeWith } from "lodash.mergewith";
 import { randomUUID } from "node:crypto";
-import { SessionRequest } from "supertokens-node/framework/express";
-import {
+import type { SessionRequest } from "supertokens-node/framework/express";
+import type {
   ExpressRequest,
   ExpressResponse,
 } from "supertokens-node/lib/build/framework/express/framework";
-import {
+import type {
   APIOptions,
   SessionContainerInterface,
   VerifySessionOptions,
 } from "supertokens-node/lib/build/recipe/session/types";
-import { UserContext } from "supertokens-node/lib/build/types";
+import type { UserContext } from "supertokens-node/lib/build/types";
 import { faker } from "@faker-js/faker";
 import {
   CalendarProvider as MockCalendarProvider,
-  Schema_Calendar,
+  type Schema_Calendar,
 } from "@core/types/calendar.types";
-import {
+import type {
   gCalendar,
   gSchema$CalendarListEntry,
   gSchema$Channel,
   gSchema$Event,
 } from "@core/types/gcal";
-import { UserMetadata } from "@core/types/user.types";
+import type { UserMetadata } from "@core/types/user.types";
 import { MockOAuth2Client } from "@backend/__tests__/helpers/mock.google-oauth2";
 import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 import { ENV } from "@backend/common/constants/env.constants";
-import { SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
+import type { SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
 import EmailService from "@backend/email/email.service";
-import {
+import type {
   Response_TagSubscriber,
   Response_UpsertSubscriber,
 } from "@backend/email/email.types";
@@ -76,8 +77,6 @@ function mockGoogleapis() {
       calendar: mockGcal(googleapis.google),
     },
   }));
-
-  beforeAll(() => import("googleapis")); // force mock to take effect always
 }
 
 function mockAxios() {
@@ -337,35 +336,6 @@ function mockSuperToken() {
       return sessionModule;
     },
   );
-
-  beforeAll(() => import("supertokens-node/recipe/session/framework/express"));
-  beforeAll(() => import("supertokens-node/recipe/usermetadata"));
-  beforeAll(() => import("supertokens-node/lib/build/recipe/session/recipe"));
-  beforeAll(() => import("supertokens-node/recipe/session"));
-}
-
-function mockWinstonLogger() {
-  mockModule("@core/logger/winston.logger", () => ({
-    Logger: jest.fn().mockImplementation(() => ({
-      debug: jest.fn(),
-      info: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn(),
-      verbose: jest.fn(),
-    })),
-  }));
-
-  beforeAll(() => import("@core/logger/winston.logger")); // force mock to take effect always
-}
-
-function mockHttpLoggingMiddleware() {
-  mockModule("@backend/common/middleware/http.logger.middleware", () => ({
-    httpLoggingMiddleware: jest.fn<void, Parameters<Handler>>((...args) =>
-      args[2](),
-    ),
-  }));
-
-  beforeAll(() => import("@backend/common/middleware/http.logger.middleware")); // force mock to take effect always
 }
 
 function mockConstants() {
@@ -373,8 +343,6 @@ function mockConstants() {
     MONGO_BATCH_SIZE: 5,
     GCAL_LIST_PAGE_SIZE: 3,
   }));
-
-  beforeAll(() => import("@backend/common/constants/backend.constants")); // force mock to take effect always
 }
 
 export function mockEnv(env: Partial<typeof ENV>) {
@@ -410,8 +378,6 @@ export function mockSyncService() {
       };
     },
   );
-
-  beforeAll(() => import("@backend/sync/services/sync.service")); // force mock to take effect always
 }
 
 export function mockModule<T>(
@@ -432,15 +398,21 @@ export function mockModule<T>(
 
 export function mockNodeModules() {
   mockConstants();
-  mockWinstonLogger();
-  mockHttpLoggingMiddleware();
   mockAxios();
   mockGoogleapis();
   mockSuperToken();
   mockSyncService();
+  mockCompassTestState();
 
   beforeEach(() => jest.clearAllMocks());
-  beforeEach(mockCompassTestState);
-  afterEach(() => jest.unmock("compass-test-state"));
   afterAll(() => jest.restoreAllMocks());
+
+  // force mock to take effect always
+  beforeAll(() => import("googleapis"));
+  beforeAll(() => import("supertokens-node/recipe/session/framework/express"));
+  beforeAll(() => import("supertokens-node/recipe/usermetadata"));
+  beforeAll(() => import("supertokens-node/lib/build/recipe/session/recipe"));
+  beforeAll(() => import("supertokens-node/recipe/session"));
+  beforeAll(() => import("@backend/common/constants/backend.constants"));
+  beforeAll(() => import("@backend/sync/services/sync.service"));
 }

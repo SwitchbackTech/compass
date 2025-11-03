@@ -57,13 +57,15 @@ export default class Migration implements RunnableMigration<MigrationContext> {
         .filter((d) => ExpirationDateSchema.safeParse(d?.expiration).success)
         .filter((doc) => doc !== undefined);
 
-      const gcal = await getGcalClient(syncDoc.user).catch((err) => {
-        logger.error(
-          `Failed to get gcal client for user ${syncDoc.user}: ${err}`,
-        );
+      const gcal = await getGcalClient(new ObjectId(syncDoc.user)).catch(
+        (err) => {
+          logger.error(
+            `Failed to get gcal client for user ${syncDoc.user}: ${err}`,
+          );
 
-        return null;
-      });
+          return null;
+        },
+      );
 
       if (!gcal) continue;
 
@@ -73,7 +75,13 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       await Promise.allSettled([
         ...syncDocs.map(async (s) => {
           await syncService
-            .stopWatch(syncDoc.user, s.channelId, s.resourceId, gcal, quotaUser)
+            .stopWatch(
+              new ObjectId(syncDoc.user),
+              s.channelId,
+              s.resourceId,
+              gcal,
+              quotaUser,
+            )
             .catch(logger.error);
 
           const { watch } = await gcalService.watchEvents(gcal, {

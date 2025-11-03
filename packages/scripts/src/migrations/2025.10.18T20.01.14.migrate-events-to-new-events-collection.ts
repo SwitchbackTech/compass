@@ -135,9 +135,12 @@ export default class Migration implements RunnableMigration<MigrationContext> {
 
           Object.assign(eventDetails, {
             recurrence: { rule, eventId: new ObjectId(eventId) },
+            originalStartDate: startDate,
           });
         } else {
-          Object.assign(eventDetails, { recurrence });
+          Object.assign(eventDetails, {
+            recurrence: { ...recurrence, eventId: eventDetails._id },
+          });
         }
       }
 

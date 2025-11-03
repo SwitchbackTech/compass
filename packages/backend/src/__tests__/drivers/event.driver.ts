@@ -33,6 +33,8 @@ export class EventDriver {
       ),
     );
 
+    await mongoService.event.deleteMany();
+
     const data = users.flatMap((user) => {
       const gcalAllDayEvents = mockGcalEvents(true, { count });
       const gcalTimedEvents = mockGcalEvents(false, { count });

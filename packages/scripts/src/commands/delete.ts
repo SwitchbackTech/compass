@@ -2,10 +2,10 @@ import pkg from "inquirer";
 import { ObjectId } from "mongodb";
 import { z } from "zod/v4";
 import { log } from "@scripts/common/cli.utils";
+import { zObjectId } from "@core/types/type.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import userService from "@backend/user/services/user.service";
 import { Summary_Delete } from "@backend/user/types/user.types";
-import { zObjectId } from "../../../core/src/types/type.utils";
 
 const { prompt } = pkg;
 

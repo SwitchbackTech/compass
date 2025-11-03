@@ -1,6 +1,6 @@
 import type { Dayjs, PluginFunc } from "dayjs";
 import dayjs from "dayjs";
-import winston from "winston";
+import type { Logger } from "winston";
 
 enum DateFormatEnum {
   RFC5545 = "YYYYMMDD[T]HHmmss[Z]",
@@ -53,7 +53,7 @@ declare module "dayjs" {
   }
 
   let defaultTimezone: string | undefined;
-  let logger: winston.Logger;
+  let logger: Logger;
 
   function monthFromZeroIndex(this: typeof dayjs, index: number): number;
   function monthStrFromZeroIndex(this: typeof dayjs, index: number): string;

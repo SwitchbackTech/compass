@@ -48,7 +48,9 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       { calendar: 1, "metadata.recurringEventId": 1 },
       {
         name: `${collectionName}_calendar_metadata__recurringEventId_index`,
-        sparse: true,
+        partialFilterExpression: {
+          "metadata.recurringEventId": { $exists: true },
+        },
       },
     );
 
@@ -57,7 +59,9 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       {
         name: `${collectionName}_calendar_metadata__id_unique`,
         unique: true,
-        sparse: true,
+        partialFilterExpression: {
+          "metadata.id": { $exists: true },
+        },
       },
     );
 
@@ -66,7 +70,10 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       {
         name: `${collectionName}_calendar_recurrence__eventId_originalStartDate_unique`,
         unique: true,
-        sparse: true,
+        partialFilterExpression: {
+          "recurrence.eventId": { $exists: true },
+          originalStartDate: { $exists: true },
+        },
       },
     );
   }

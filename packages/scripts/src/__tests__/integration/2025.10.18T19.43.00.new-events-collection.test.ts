@@ -74,19 +74,26 @@ describe("2025.10.18T19.43.00.new-events-collection", () => {
         expect.objectContaining({
           name: `${collectionName}_calendar_metadata__recurringEventId_index`,
           key: { calendar: 1, "metadata.recurringEventId": 1 },
-          sparse: true,
+          partialFilterExpression: {
+            "metadata.recurringEventId": { $exists: true },
+          },
         }),
         expect.objectContaining({
           name: `${collectionName}_calendar_metadata__id_unique`,
           key: { calendar: 1, "metadata.id": 1 },
           unique: true,
-          sparse: true,
+          partialFilterExpression: {
+            "metadata.id": { $exists: true },
+          },
         }),
         expect.objectContaining({
           name: `${collectionName}_calendar_recurrence__eventId_originalStartDate_unique`,
           key: { calendar: 1, "recurrence.eventId": 1, originalStartDate: 1 },
           unique: true,
-          sparse: true,
+          partialFilterExpression: {
+            "recurrence.eventId": { $exists: true },
+            originalStartDate: { $exists: true },
+          },
         }),
       ]),
     );
@@ -137,7 +144,10 @@ describe("2025.10.18T19.43.00.new-events-collection", () => {
         newEventCollection().insertMany(instances),
       ).resolves.toMatchObject({
         acknowledged: true,
-        insertedIds: instances.map((e) => e._id),
+        insertedIds: instances.reduce(
+          (ids, instance, index) => ({ ...ids, [index]: instance._id }),
+          {},
+        ),
       });
     });
 
@@ -239,7 +249,9 @@ describe("2025.10.18T19.43.00.new-events-collection", () => {
     describe("Calendar Providers", () => {
       describe("Google", () => {
         it("enforces unique constraint on 'calendar' and metadata field 'id'", async () => {
-          const event = createMockBaseEvent();
+          const event = createMockBaseEvent({
+            metadata: { id: generateGcalId() },
+          });
 
           const duplicateGoogleEvent = { ...event, _id: new ObjectId() };
 
@@ -248,7 +260,7 @@ describe("2025.10.18T19.43.00.new-events-collection", () => {
           await expect(
             newEventCollection().insertOne(duplicateGoogleEvent),
           ).rejects.toThrow(
-            /E11000 duplicate .+: .+ index: .+_calendar_metadata__gEventId_unique/,
+            /E11000 duplicate .+: .+ index: .+_calendar_metadata__id_unique/,
           );
         });
 
@@ -256,28 +268,29 @@ describe("2025.10.18T19.43.00.new-events-collection", () => {
           const metadata = {
             provider: CalendarProvider.GOOGLE,
             gRecurringEventId: "invalid-id",
-          } as unknown as Schema_Event["metadata"];
+          };
 
-          const eventWithInvalidMetadata = createMockRegularEvent({ metadata });
+          const event = createMockRegularEvent();
 
-          await expect(
-            newEventCollection().insertOne(eventWithInvalidMetadata),
-          ).rejects.toThrow(/Document failed validation/);
+          Reflect.set(event, "metadata", metadata);
+
+          await expect(newEventCollection().insertOne(event)).rejects.toThrow(
+            /Document failed validation/,
+          );
         });
 
         it("rejects events with invalid metadata recurringEventId field", async () => {
           const id = generateGcalId();
 
-          const metadata = {
-            id,
-            recurringEventId: null,
-          } as Schema_Event["metadata"];
+          const metadata = { id, recurringEventId: null };
 
-          const eventWithInvalidMetadata = createMockRegularEvent({ metadata });
+          const event = createMockRegularEvent();
 
-          await expect(
-            newEventCollection().insertOne(eventWithInvalidMetadata),
-          ).rejects.toThrow(/Document failed validation/);
+          Reflect.set(event, "metadata", metadata);
+
+          await expect(newEventCollection().insertOne(event)).rejects.toThrow(
+            /Document failed validation/,
+          );
         });
       });
     });

@@ -5,18 +5,16 @@ import type {
   Schema_Base_Event,
   Schema_Event,
   Schema_Instance_Event,
-  Schema_Regular_Event,
 } from "@core/types/event.types";
 import {
   BaseEventSchema,
-  InstanceEventMetadata,
   InstanceEventSchema,
   RecurrenceRuleSchema,
   RegularEventSchema,
 } from "@core/types/event.types";
+import { StringV4Schema } from "@core/types/type.utils";
 import { UserMetadata } from "@core/types/user.types";
 import dayjs from "@core/util/date/dayjs";
-import { StringV4Schema } from "../../types/type.utils";
 
 // as type only as package does not exist in core
 
@@ -219,90 +217,3 @@ export function mergeTimeFromDate(original: Date, update?: Date) {
 
   return original;
 }
-
-export const dateSchemaCheck: z.core.CheckFn<Schema_Event> = ({
-  value,
-  issues,
-}) => {
-  const valid = dayjs(value.endDate).isAfter(dayjs(value.startDate));
-
-  if (!valid) {
-    issues.push({
-      code: "invalid_value",
-      input: value,
-      message: "invalid event date range. startDate must be before endDate",
-      values: [],
-    });
-  }
-};
-
-export const noRecurrenceSchemaCheck: z.core.CheckFn<Schema_Regular_Event> = ({
-  value,
-  issues,
-}) => {
-  const valid =
-    !("recurrence" in value) ||
-    value.recurrence === undefined ||
-    value.recurrence === null;
-
-  if (!valid) {
-    issues.push({
-      code: "invalid_value",
-      input: value,
-      message: "invalid regular event",
-      values: [],
-    });
-  }
-};
-
-export const baseRecurrenceSchemaCheck: z.core.CheckFn<Schema_Base_Event> = ({
-  value,
-  issues,
-}) => {
-  // review check to have eventId equal to _id
-  const valid = value.recurrence?.eventId?.equals(value._id);
-
-  if (!valid) {
-    issues.push({
-      code: "invalid_value",
-      input: value,
-      message: "base recurrence event id mismatch",
-      values: [],
-    });
-  }
-};
-
-export const instanceRecurrenceSchemaCheck: z.core.CheckFn<
-  Schema_Instance_Event
-> = ({ value, issues }) => {
-  // review check to have eventId not equal to _id
-  const valid = !value.recurrence?.eventId?.equals(value._id);
-
-  if (!valid) {
-    issues.push({
-      code: "invalid_value",
-      input: value,
-      message: "invalid recurrence event id",
-      values: [],
-    });
-  }
-};
-
-export const instanceMetadataSchemaCheck: z.core.CheckFn<
-  InstanceEventMetadata
-> = ({ value, issues }) => {
-  // review check to be provider neutral in multi-provider scenario
-  const valid = new RegExp(
-    `^${value.recurringEventId}_\\d+(T\\d+Z?)?$`,
-    "i",
-  ).test(value.id);
-
-  if (!valid) {
-    issues.push({
-      code: "invalid_value",
-      input: value,
-      message: "Invalid instance id",
-      values: [],
-    });
-  }
-};
