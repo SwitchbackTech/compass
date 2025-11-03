@@ -1,9 +1,11 @@
+import { EventStatus } from "@core/types/event.types";
+
 export const allday = [
   {
     kind: "calendar#event",
     etag: '"3291861297900000"',
     id: "1evdi8c1s5knlt5ofhncl654u9",
-    status: "confirmed",
+    status: EventStatus.CONFIRMED,
     htmlLink:
       "https://www.google.com/calendar/event?eid=MWV2ZGk4YzFzNWtubHQ1b2ZobmNsNjU0dTkgdHlAc3dpdGNoYmFjay50ZWNo",
     created: "2022-02-27T02:57:28.000Z",

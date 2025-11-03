@@ -14,6 +14,7 @@
   "dependencies": {
     "bson": "^6.10.4",
     "lodash.uniqby": "^4.7.0",
+    "microdiff": "^1.5.0",
     "tinycolor2": "^1.6.0",
     "winston": "^3.8.1",
     "zod": "^3.25.76"

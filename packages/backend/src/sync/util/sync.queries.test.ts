@@ -1,17 +1,19 @@
 import { faker } from "@faker-js/faker";
 import { Resource_Sync } from "@core/types/sync.types";
-import { UserDriver } from "@backend/__tests__/drivers/user.driver";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
+import { AuthDriver } from "@backend/__tests__/drivers/auth.driver";
 import {
   cleanupCollections,
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import calendarService from "@backend/calendar/services/calendar.service";
 import {
   getGCalEventsSyncPageToken,
   getSync,
   updateSync,
 } from "@backend/sync/util/sync.queries";
+import userService from "@backend/user/services/user.service";
+import mongoService from "../../common/services/mongo.service";
 
 describe("sync.queries: ", () => {
   describe("nextPageToken", () => {
@@ -22,7 +24,7 @@ describe("sync.queries: ", () => {
     afterAll(cleanupTestDb);
 
     it("returns undefined when token not found", async () => {
-      const { user } = await UtilDriver.setupTestUser();
+      const user = await AuthDriver.googleSignup();
 
       await expect(
         getGCalEventsSyncPageToken(user._id.toString(), "missing-cal"),
@@ -38,61 +40,51 @@ describe("sync.queries: ", () => {
     afterAll(cleanupTestDb);
 
     it("should get sync data by userId", async () => {
-      const user = await UserDriver.createUser();
+      const user = await AuthDriver.googleSignup();
       const userId = user._id.toString();
-      const calendarId = faker.string.uuid();
-      const nextPageToken = faker.string.uuid();
-      const nextSyncToken = faker.string.uuid();
+      const calendars = await calendarService.getAllByUser(user._id);
 
-      await updateSync(Resource_Sync.CALENDAR, userId, calendarId);
+      await userService.restartGoogleCalendarSync(user._id);
 
-      await updateSync(Resource_Sync.EVENTS, userId, calendarId, {
-        nextSyncToken,
-        nextPageToken,
-      });
-
-      const sync = await getSync({ userId });
+      const sync = await getSync({ user: userId });
 
       expect(sync).toEqual(
         expect.objectContaining({
           user: userId,
           google: {
-            calendarlist: [
-              {
-                gCalendarId: calendarId,
+            calendarlist: expect.arrayContaining([
+              expect.objectContaining({
+                gCalendarId: Resource_Sync.CALENDAR,
                 lastSyncedAt: expect.any(Date),
-              },
-            ],
-            events: [
-              {
-                gCalendarId: calendarId,
-                lastSyncedAt: expect.any(Date),
-                nextSyncToken,
-                nextPageToken,
-              },
-            ],
+                nextPageToken: null,
+                nextSyncToken: expect.any(String),
+              }),
+            ]),
+            events: expect.arrayContaining(
+              calendars.map((cal) =>
+                expect.objectContaining({
+                  gCalendarId: cal.metadata.id,
+                  lastSyncedAt: expect.any(Date),
+                  nextPageToken: null,
+                  nextSyncToken: expect.any(String),
+                }),
+              ),
+            ),
           },
         }),
       );
     });
 
-    it("should get sync data by userId and gCalendarId - calendarlist", async () => {
-      const user = await UserDriver.createUser();
+    it("should get sync data by userId and gCalendarId and watch resource - calendarlist", async () => {
+      const user = await AuthDriver.googleSignup();
       const userId = user._id.toString();
-      const calendarId = faker.string.uuid();
-      const nextPageToken = faker.string.uuid();
-      const nextSyncToken = faker.string.uuid();
+      const calendars = await calendarService.getAllByUser(user._id);
 
-      await updateSync(Resource_Sync.CALENDAR, userId, calendarId, {
-        nextPageToken,
-        nextSyncToken,
-      });
-
-      await updateSync(Resource_Sync.EVENTS, userId, calendarId);
+      await userService.restartGoogleCalendarSync(user._id);
 
       const sync = await getSync({
-        userId,
-        gCalendarId: calendarId,
+        user: userId,
+        gCalendarId: Resource_Sync.CALENDAR,
         resource: Resource_Sync.CALENDAR,
       });
 
@@ -100,20 +92,24 @@ describe("sync.queries: ", () => {
         expect.objectContaining({
           user: userId,
           google: {
-            calendarlist: [
-              {
-                gCalendarId: calendarId,
+            calendarlist: expect.arrayContaining([
+              expect.objectContaining({
+                gCalendarId: Resource_Sync.CALENDAR,
                 lastSyncedAt: expect.any(Date),
-                nextSyncToken,
-                nextPageToken,
-              },
-            ],
-            events: [
-              {
-                gCalendarId: calendarId,
-                lastSyncedAt: expect.any(Date),
-              },
-            ],
+                nextPageToken: null,
+                nextSyncToken: expect.any(String),
+              }),
+            ]),
+            events: expect.arrayContaining(
+              calendars.map((cal) =>
+                expect.objectContaining({
+                  gCalendarId: cal.metadata.id,
+                  lastSyncedAt: expect.any(Date),
+                  nextPageToken: null,
+                  nextSyncToken: expect.any(String),
+                }),
+              ),
+            ),
           },
         }),
       );
@@ -128,16 +124,18 @@ describe("sync.queries: ", () => {
     afterAll(cleanupTestDb);
 
     it("should upsert sync data if not populated - calendarlist", async () => {
-      const user = await UserDriver.createUser();
+      const user = await AuthDriver.googleSignup();
       const userId = user._id.toString();
-      const calendarId = faker.string.uuid();
-      const existingSync = await getSync({ userId });
+
+      await mongoService.sync.deleteOne({ user: userId });
+
+      const existingSync = await getSync({ user: userId });
 
       expect(existingSync).toBeNull();
 
-      await updateSync(Resource_Sync.CALENDAR, userId, calendarId);
+      await updateSync(Resource_Sync.CALENDAR, userId, Resource_Sync.CALENDAR);
 
-      const sync = await getSync({ userId });
+      const sync = await getSync({ user: userId });
 
       expect(sync).toEqual(
         expect.objectContaining({
@@ -145,7 +143,7 @@ describe("sync.queries: ", () => {
           google: {
             calendarlist: [
               {
-                gCalendarId: calendarId,
+                gCalendarId: Resource_Sync.CALENDAR,
                 lastSyncedAt: expect.any(Date),
               },
             ],
@@ -155,16 +153,20 @@ describe("sync.queries: ", () => {
     });
 
     it("should upsert sync data if not populated - events", async () => {
-      const user = await UserDriver.createUser();
+      const user = await AuthDriver.googleSignup();
+      const calendars = await calendarService.getAllByUser(user._id);
       const userId = user._id.toString();
-      const calendarId = faker.string.uuid();
-      const existingSync = await getSync({ userId });
+      const calendar = faker.helpers.arrayElement(calendars);
+
+      await mongoService.sync.deleteOne({ user: userId });
+
+      const existingSync = await getSync({ user: userId });
 
       expect(existingSync).toBeNull();
 
-      await updateSync(Resource_Sync.EVENTS, userId, calendarId);
+      await updateSync(Resource_Sync.EVENTS, userId, calendar.metadata.id);
 
-      const sync = await getSync({ userId });
+      const sync = await getSync({ user: userId });
 
       expect(sync).toEqual(
         expect.objectContaining({
@@ -172,7 +174,7 @@ describe("sync.queries: ", () => {
           google: {
             events: [
               {
-                gCalendarId: calendarId,
+                gCalendarId: calendar.metadata.id,
                 lastSyncedAt: expect.any(Date),
               },
             ],
@@ -182,15 +184,18 @@ describe("sync.queries: ", () => {
     });
 
     it("should update sync data - events", async () => {
-      const user = await UserDriver.createUser();
+      const user = await AuthDriver.googleSignup();
+      const calendars = await calendarService.getAllByUser(user._id);
       const userId = user._id.toString();
-      const calendarId = faker.string.uuid();
+      const calendar = faker.helpers.arrayElement(calendars);
       const nextSyncToken = faker.string.uuid();
       const nextPageToken = faker.string.uuid();
 
-      await updateSync(Resource_Sync.EVENTS, userId, calendarId);
+      await mongoService.sync.deleteOne({ user: userId });
 
-      const existingSync = await getSync({ userId });
+      await updateSync(Resource_Sync.EVENTS, userId, calendar.metadata.id);
+
+      const existingSync = await getSync({ user: userId });
 
       expect(existingSync).toEqual(
         expect.objectContaining({
@@ -198,7 +203,7 @@ describe("sync.queries: ", () => {
           google: {
             events: [
               {
-                gCalendarId: calendarId,
+                gCalendarId: calendar.metadata.id,
                 lastSyncedAt: expect.any(Date),
               },
             ],
@@ -209,12 +214,12 @@ describe("sync.queries: ", () => {
       expect(existingSync?.google?.events[0]?.nextSyncToken).toBeUndefined();
       expect(existingSync?.google?.events[0]?.nextPageToken).toBeUndefined();
 
-      await updateSync(Resource_Sync.EVENTS, userId, calendarId, {
+      await updateSync(Resource_Sync.EVENTS, userId, calendar.metadata.id, {
         nextSyncToken,
         nextPageToken,
       });
 
-      const sync = await getSync({ userId });
+      const sync = await getSync({ user: userId });
 
       expect(sync).toEqual(
         expect.objectContaining({
@@ -222,7 +227,7 @@ describe("sync.queries: ", () => {
           google: {
             events: [
               {
-                gCalendarId: calendarId,
+                gCalendarId: calendar.metadata.id,
                 lastSyncedAt: expect.any(Date),
                 nextSyncToken,
                 nextPageToken,

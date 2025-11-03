@@ -1,140 +1,75 @@
-import { Filter, ObjectId, WithId } from "mongodb";
-import {
-  Query_Event,
-  Schema_Event,
-  Schema_Event_Core,
-} from "@core/types/event.types";
-import { isSameMonth } from "@core/util/date/date.util";
-import { GenericError } from "@backend/common/errors/generic/generic.errors";
-import { error } from "@backend/common/errors/handlers/error.handler";
+import { Filter, ObjectId } from "mongodb";
+import { Schema_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 
-export const getDeleteByIdFilter = (
-  event: Schema_Event_Core,
-): Filter<WithId<Omit<Schema_Event, "_id">>> => {
-  if (!event._id) {
-    throw error(
-      GenericError.BadRequest,
-      "Failed to get Delete Filter (missing id)",
-    );
-  }
-  const _id = new ObjectId(event._id);
-  const filter = { user: event.user };
-  const isRecurring = event.recurrence?.rule;
-
-  if (!isRecurring) {
-    return { ...filter, _id };
-  }
-
-  if (!event.recurrence || !event.recurrence.eventId) {
-    throw error(
-      GenericError.DeveloperError,
-      "Failed to get Delete Filter (missing recurrence id)",
-    );
-  }
-
-  const baseOrFutureInstance = {
-    ...filter,
-    $or: [
-      { _id },
-      {
-        "recurrence.eventId": event.recurrence.eventId,
-        startDate: { $gt: event.startDate },
-        endDate: { $gt: event.endDate },
-      },
-    ],
-  };
-
-  return baseOrFutureInstance;
+export const baseEventExclusionFilterExpr = {
+  $ne: ["$_id", "$recurrence.eventId"],
 };
 
 export const getReadAllFilter = (
-  userId: string,
-  query: Query_Event,
-): Filter<Omit<Schema_Event, "_id">> => {
-  const { end, someday, start, priorities } = query;
-  const isSomeday = someday === "true";
+  calendar: ObjectId,
+  query: Partial<
+    Pick<Schema_Event, "startDate" | "endDate" | "isSomeday"> & {
+      priorities?: Schema_Event["priority"][];
+    }
+  >,
+): Filter<Schema_Event> => {
+  const { isSomeday = false, priorities } = query;
+  const { startDate: start, endDate: end } = query;
 
-  // Start with basic user filter
-  const filter: Filter<Omit<Schema_Event, "_id">> = { user: userId };
+  // Start with basic calendar filter
+  const filter: Filter<Schema_Event> = { calendar };
 
   // Add isSomeday condition
   filter["isSomeday"] = isSomeday;
 
   // Add priorities if specified
-  if (priorities) {
-    filter["priorities"] = { $in: priorities.split(",") };
-  }
+  if (priorities) filter["priorities"] = { $in: priorities };
 
   // Add date filters if specified
+  if (start && !end) filter["startDate"] = { $gte: start };
+  if (end && !start) filter["endDate"] = { $lte: end };
+
+  // account for weekly overlap
   if (start && end) {
-    const dateFilters = _getDateFilters(isSomeday, start, end);
-    Object.assign(filter, dateFilters);
+    const startDate = dayjs(start).startOf("week").toDate();
+    const endDate = dayjs(end).endOf("week").toDate();
+
+    const inBetweenStart = {
+      $and: [
+        { startDate: { $gte: startDate } },
+        { startDate: { $lte: endDate } },
+      ],
+    };
+
+    const inBetweenEnd = {
+      $and: [{ endDate: { $gte: startDate } }, { endDate: { $lte: endDate } }],
+    };
+
+    filter["$or"] = [inBetweenStart, inBetweenEnd];
   }
 
-  filter["recurrence.rule"] = { $exists: false };
+  // Exclude base events
+  filter["$expr"] = baseEventExclusionFilterExpr;
 
   return filter;
 };
 
-const _getDateFilters = (isSomeday: boolean, start: string, end: string) => {
-  const { inBetweenStart, inBetweenEnd, overlapping } = _getDateFilterOptions(
-    start,
-    end,
-  );
-
-  const _isSameMonth = isSameMonth(start, end);
-  const overLapOrBetween =
-    isSomeday && _isSameMonth
-      ? [inBetweenStart, overlapping]
-      : [inBetweenStart, inBetweenEnd, overlapping];
-
-  const dateFilters = {
-    $or: overLapOrBetween,
-  };
-
-  return dateFilters;
-};
-
-const _getDateFilterOptions = (start: string, end: string) => {
-  // includes overlaps (starts before AND ends after dates)
-  const overlapping = {
-    startDate: {
-      $lte: start,
+/**
+ * instanceDateMongoAggregation
+ * Helps with updating instance dates using MongoDB aggregation pipeline
+ * to maintain year/day/month while updating the time
+ */
+export const instanceDateMongoAggregation = (date: Date, field: string) => ({
+  [field]: {
+    $dateFromParts: {
+      year: { $year: `$${field}` },
+      month: { $month: `$${field}` },
+      day: { $dayOfMonth: `$${field}` },
+      hour: { $hour: date },
+      minute: { $minute: date },
+      second: { $second: date },
+      millisecond: { $millisecond: date },
     },
-    endDate: {
-      $gte: end,
-    },
-  };
-
-  const inBetweenStart = {
-    $and: [
-      {
-        startDate: {
-          $gte: start,
-        },
-      },
-      {
-        startDate: {
-          $lte: end,
-        },
-      },
-    ],
-  };
-
-  const inBetweenEnd = {
-    $and: [
-      {
-        endDate: {
-          $gte: start,
-        },
-      },
-      {
-        endDate: {
-          $lte: end,
-        },
-      },
-    ],
-  };
-
-  return { overlapping, inBetweenStart, inBetweenEnd };
-};
+  },
+});

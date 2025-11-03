@@ -2,8 +2,9 @@ import { act } from "react";
 import "@testing-library/jest-dom/extend-expect";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 import { render } from "@web/__tests__/__mocks__/mock.render";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import { EventForm } from "./EventForm";
 
 test("start date picker opens and then closes when clicking the end input", async () => {

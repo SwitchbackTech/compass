@@ -1,6 +1,7 @@
 import { TokenPayload } from "google-auth-library";
+import { google } from "googleapis";
 import mergeWith from "lodash.mergewith";
-import { ObjectId } from "mongodb";
+import { ClientSession, ObjectId } from "mongodb";
 import SupertokensUserMetadata, {
   JSONObject,
 } from "supertokens-node/recipe/usermetadata";
@@ -9,12 +10,15 @@ import { Logger } from "@core/logger/winston.logger";
 import { mapUserToCompass } from "@core/mappers/map.user";
 import { mapCompassUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
 import { UserInfo_Google } from "@core/types/auth.types";
+import { CalendarProvider } from "@core/types/calendar.types";
 import { Resource_Sync } from "@core/types/sync.types";
-import { zObjectId } from "@core/types/type.utils";
+import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import { Schema_User, UserMetadata } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
-import { getGcalClient } from "@backend/auth/services/google.auth.service";
+import GoogleAuthService, {
+  getGcalClient,
+} from "@backend/auth/services/google.auth.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { ENV } from "@backend/common/constants/env.constants";
 import { isMissingUserTagId } from "@backend/common/constants/env.util";
@@ -28,13 +32,12 @@ import priorityService from "@backend/priority/services/priority.service";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import syncService from "@backend/sync/services/sync.service";
 import { isUsingHttps } from "@backend/sync/util/sync.util";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import { Summary_Delete } from "@backend/user/types/user.types";
 
 const logger = Logger("app:user.service");
 
 class UserService {
-  createUser = async (
+  createGoogleUser = async (
     gUser: UserInfo_Google["gUser"],
     gRefreshToken: string,
   ): Promise<Schema_User & { userId: string }> => {
@@ -51,28 +54,32 @@ class UserService {
     return {
       ...compassUser,
       userId,
+      _id: createUserRes.insertedId,
     };
   };
 
-  deleteCompassDataForUser = async (userId: string, gcalAccess = true) => {
+  deleteCompassDataForUser = async (userId: ObjectId, gcalAccess = true) => {
     const summary: Summary_Delete = {};
 
     try {
       const priorities = await priorityService.deleteAllByUser(userId);
+
       summary.priorities = priorities.deletedCount;
+
+      // delete events before calendars
+      const events = await eventService.deleteAllByUser(userId);
+      summary.events = events.deletedCount;
 
       const calendars = await calendarService.deleteAllByUser(userId);
       summary.calendars = calendars.deletedCount;
-
-      const events = await eventService.deleteAllByUser(userId);
-      summary.events = events.deletedCount;
 
       if (gcalAccess) {
         const watches = await syncService.stopWatches(userId);
         summary.eventWatches = watches.length;
       }
 
-      const user = await findCompassUserBy("_id", userId);
+      const user = await mongoService.user.findOne({ _id: userId });
+
       if (!user) {
         throw error(AuthError.NoUserId, "Failed to find user");
       }
@@ -87,8 +94,11 @@ class UserService {
       summary.syncs += staleSyncs.deletedCount;
 
       initSupertokens();
-      const { sessionsRevoked } =
-        await compassAuthService.revokeSessionsByUser(userId);
+
+      const { sessionsRevoked } = await compassAuthService.revokeSessionsByUser(
+        userId.toString(),
+      );
+
       summary.sessions = sessionsRevoked;
 
       const _user = await this.deleteUser(userId);
@@ -105,19 +115,21 @@ class UserService {
     }
   };
 
-  deleteUser = async (userId: string) => {
-    logger.info(`Deleting all data for user: ${userId}`);
+  deleteUser = async (_id: ObjectId) => {
+    logger.info(`Deleting all data for user: ${_id}`);
 
-    const response = await mongoService.user.deleteOne({
-      _id: mongoService.objectId(userId),
-    });
+    const response = await mongoService.user.deleteOne({ _id });
 
     return response;
   };
 
-  initUserData = async (gUser: TokenPayload, gRefreshToken: string) => {
-    const cUser = await this.createUser(gUser, gRefreshToken);
-    const { userId, email } = cUser;
+  initUserData = async (
+    gUser: TokenPayload,
+    gRefreshToken: string,
+  ): Promise<Schema_User> => {
+    const cUser = await this.createGoogleUser(gUser, gRefreshToken);
+    const { userId } = cUser;
+    const user = zObjectId.parse(userId);
 
     if (isMissingUserTagId()) {
       logger.warn(
@@ -133,39 +145,93 @@ class UserService {
 
     await priorityService.createDefaultPriorities(userId);
 
-    await eventService.createDefaultSomedays(userId);
+    // initialize google calendars
+    const gAuthClient = new GoogleAuthService();
 
-    return { userId, email };
+    gAuthClient.oauthClient.setCredentials({
+      refresh_token: gRefreshToken,
+    });
+
+    const gcal = google.calendar({
+      version: "v3",
+      auth: gAuthClient.oauthClient,
+    });
+
+    const { googleCalendars } = await calendarService.initializeGoogleCalendars(
+      user,
+      gcal,
+    );
+
+    const primaryGCalendar = googleCalendars.find((cal) => cal.primary);
+
+    const primaryGCalendarId = StringV4Schema.parse(primaryGCalendar?.id, {
+      error: () => "Primary Google Calendar not found",
+    });
+
+    const primaryCalendar = await calendarService.getByUserAndProvider(
+      user,
+      primaryGCalendarId,
+      CalendarProvider.GOOGLE,
+    );
+
+    const primaryCalendarId = zObjectId.parse(primaryCalendar?._id, {
+      error: () => "Primary Compass Calendar not found",
+    });
+
+    await eventService.createDefaultSomedays(user, primaryCalendarId);
+
+    return cUser;
   };
 
-  saveTimeFor = async (label: "lastLoggedInAt", userId: string) => {
+  updateLastLoggedInTime = async (userId: ObjectId) => {
     const res = await mongoService.user.findOneAndUpdate(
-      { _id: mongoService.objectId(userId) },
-      { $set: { [label]: new Date() } },
+      { _id: userId },
+      { $set: { lastLoggedInAt: new Date() } },
+      { returnDocument: "after" },
     );
 
     return res;
   };
 
-  stopGoogleCalendarSync = async (user: string | ObjectId): Promise<void> => {
-    const userId = zObjectId.parse(user).toString();
-
-    await eventService.deleteByIntegration("google", userId);
-    await syncService.stopWatches(userId);
-    await syncService.deleteByIntegration("google", userId);
-  };
-
-  startGoogleCalendarSync = async (user: string): Promise<void> => {
-    const gcal = await getGcalClient(user);
-
-    const calendarInit = await calendarService.initializeGoogleCalendars(
+  stopGoogleCalendarSync = async (
+    user: ObjectId,
+    session?: ClientSession,
+  ): Promise<void> => {
+    await eventService.deleteByIntegration(
+      CalendarProvider.GOOGLE,
       user,
-      gcal,
+      session,
     );
 
-    const gCalendarIds = calendarInit.googleCalendars
-      .map(({ id }) => id)
-      .filter((id) => id !== undefined && id !== null);
+    await syncService.stopWatches(
+      user,
+      undefined,
+      new ObjectId().toString(),
+      session,
+    );
+
+    await syncService.deleteByIntegration(
+      CalendarProvider.GOOGLE,
+      user.toString(),
+      session,
+    );
+  };
+
+  startGoogleCalendarSync = async (
+    user: ObjectId,
+    session?: ClientSession,
+  ): Promise<void> => {
+    const gcal = await getGcalClient(user);
+
+    await calendarService.initializeGoogleCalendars(user, gcal, session);
+
+    const calendars = await calendarService.getSelectedByUserAndProvider(
+      user,
+      CalendarProvider.GOOGLE,
+      session,
+    );
+
+    const gCalendarIds = calendars.map(({ metadata }) => metadata.id);
 
     await Promise.resolve(isUsingHttps()).then((yes) =>
       yes
@@ -176,25 +242,29 @@ class UserService {
               ...gCalendarIds.map((gCalendarId) => ({ gCalendarId })),
             ],
             gcal,
+            session,
           )
         : [],
     );
 
-    await syncService.importFull(gcal, gCalendarIds, user);
+    await syncService.importFull(gcal, calendars, session);
   };
 
-  restartGoogleCalendarSync = async (userId: string) => {
+  restartGoogleCalendarSync = async (
+    userId: ObjectId,
+    session?: ClientSession,
+  ) => {
     logger.warn(`Restarting Google Calendar sync for user: ${userId}`);
 
     try {
-      webSocketServer.handleImportGCalStart(userId);
+      webSocketServer.handleImportGCalStart(userId.toString());
 
-      const userMeta = await this.fetchUserMetadata(userId);
+      const userMeta = await this.fetchUserMetadata(userId.toString());
       const proceed = shouldImportGCal(userMeta);
 
       if (!proceed) {
         webSocketServer.handleImportGCalEnd(
-          userId,
+          userId.toString(),
           `User ${userId} gcal import is in progress or completed, ignoring this request`,
         );
 
@@ -202,30 +272,30 @@ class UserService {
       }
 
       await this.updateUserMetadata({
-        userId,
+        userId: userId.toString(),
         data: { sync: { importGCal: "importing" } },
       });
 
-      await this.stopGoogleCalendarSync(userId);
-      await this.startGoogleCalendarSync(userId);
+      await this.stopGoogleCalendarSync(userId, session);
+      await this.startGoogleCalendarSync(userId, session);
 
       await this.updateUserMetadata({
-        userId,
+        userId: userId.toString(),
         data: { sync: { importGCal: "completed" } },
       });
 
-      webSocketServer.handleImportGCalEnd(userId);
-      webSocketServer.handleBackgroundCalendarChange(userId);
+      webSocketServer.handleImportGCalEnd(userId.toString());
+      webSocketServer.handleBackgroundCalendarChange(userId.toString());
     } catch (err) {
       await this.updateUserMetadata({
-        userId,
+        userId: userId.toString(),
         data: { sync: { importGCal: "errored" } },
       });
 
       logger.error(`Re-sync failed for user: ${userId}`, err);
 
       webSocketServer.handleImportGCalEnd(
-        userId,
+        userId.toString(),
         `Import gCal failed for user: ${userId}`,
       );
     }

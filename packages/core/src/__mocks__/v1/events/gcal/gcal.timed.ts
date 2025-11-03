@@ -1,9 +1,11 @@
+import { EventStatus } from "@core/types/event.types";
+
 export const timed = [
   {
     kind: "calendar#event",
     etag: '"2702446420000000"',
     id: "kjatossbl8ctt7ub64363pibek",
-    status: "confirmed",
+    status: EventStatus.CONFIRMED,
     htmlLink:
       "https://www.google.com/calendar/event?eid=a2phdG9zc2JsOGN0dDd1YjY0MzYzcGliZWsgdHlsZXIuaGl0emVtYW5AbQ",
     created: "2012-10-26T03:46:50.000Z",
@@ -47,7 +49,7 @@ export const timed = [
     kind: "calendar#event",
     etag: '"2702446460000000"',
     id: "m24m3crstgci7o468k9hqrr2gk",
-    status: "confirmed",
+    status: EventStatus.CONFIRMED,
     htmlLink:
       "https://www.google.com/calendar/event?eid=bTI0bTNjcnN0Z2NpN280NjhrOWhxcnIyZ2sgdHlsZXIuaGl0emVtYW5AbQ",
     created: "2012-10-26T03:46:09.000Z",
@@ -85,7 +87,7 @@ export const timed = [
     kind: "calendar#event",
     etag: '"2736310124082000"',
     id: "rj00agj04t43hrfmdr1a3udq18",
-    status: "confirmed",
+    status: EventStatus.CONFIRMED,
     htmlLink:
       "https://www.google.com/calendar/event?eid=cmowMGFnajA0dDQzaHJmbWRyMWEzdWRxMTggdHlsZXIuaGl0emVtYW5AbQ",
     created: "2013-05-10T03:04:13.000Z",

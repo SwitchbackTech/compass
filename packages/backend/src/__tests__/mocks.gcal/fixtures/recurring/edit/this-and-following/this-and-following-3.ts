@@ -1,3 +1,4 @@
+import { EventStatus } from "@core/types/event.types";
 import { gSchema$Events } from "@core/types/gcal";
 
 export const thisAndFollowing3Payload: gSchema$Events = {
@@ -20,7 +21,7 @@ export const thisAndFollowing3Payload: gSchema$Events = {
       kind: "calendar#event",
       etag: '"3485631575200894"',
       id: "0214krqh7jr2n0bobv19djs5aj",
-      status: "confirmed",
+      status: EventStatus.CONFIRMED,
       htmlLink:
         "https://www.google.com/calendar/event?eid=MDIxNGtycWg3anIybjBib2J2MTlkanM1YWpfMjAyNTAzMTJUMTQxNTAwWiBsYW5jZS5lc3NlcnRAbQ",
       created: "2025-03-12T11:50:21.000Z",
@@ -54,7 +55,7 @@ export const thisAndFollowing3Payload: gSchema$Events = {
       kind: "calendar#event",
       etag: '"3485631575200894"',
       id: "0214krqh7jr2n0bobv19djs5aj_R20250326T141500",
-      status: "confirmed",
+      status: EventStatus.CONFIRMED,
       htmlLink:
         "https://www.google.com/calendar/event?eid=MDIxNGtycWg3anIybjBib2J2MTlkanM1YWpfMjAyNTAzMjZUMTQxNTAwWiBsYW5jZS5lc3NlcnRAbQ",
       created: "2025-03-12T11:50:21.000Z",

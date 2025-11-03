@@ -1,19 +1,17 @@
 import {
+  Schema_Event,
   Schema_SomedayEvent,
-  Schema_WebEvent,
   SomedayEventSchema,
-} from "../types/web.event.types";
-
-export const validateSomedayEvent = (
-  event: Schema_WebEvent,
-): Schema_SomedayEvent => {
-  const result = SomedayEventSchema.parse(event);
-  return result;
-};
+} from "@core/types/event.types";
 
 export const validateSomedayEvents = (
-  events: Schema_WebEvent[],
+  events: Schema_Event[],
 ): Schema_SomedayEvent[] => {
-  const results = events.map((event) => validateSomedayEvent(event));
-  return results;
+  return SomedayEventSchema.array().parse(events);
+};
+
+export const validateSomedayEvent = (
+  event: Schema_Event,
+): Schema_SomedayEvent => {
+  return validateSomedayEvents([event]).pop()!;
 };

@@ -1,4 +1,4 @@
-import { Schema_WebEvent } from "@web/common/types/web.event.types";
+import { Schema_Event } from "@core/types/event.types";
 
 /**
  * Parser for determining if an event has been modified (is dirty)
@@ -8,8 +8,8 @@ export class DirtyParser {
    * Private Static method to check if the recurrence rules have changed
    */
   private static isRuleDifferent(
-    curr: Schema_WebEvent,
-    orig: Schema_WebEvent,
+    curr: Schema_Event,
+    orig: Schema_Event,
   ): boolean {
     const oldRecurrence = orig?.recurrence?.rule ?? [];
     const newRecurrence = curr?.recurrence?.rule ?? [];
@@ -31,8 +31,8 @@ export class DirtyParser {
    * Private Static method to check if start or end dates have changed
    */
   private static isDateDifferent(
-    curr: Schema_WebEvent,
-    orig: Schema_WebEvent,
+    curr: Schema_Event,
+    orig: Schema_Event,
   ): boolean {
     const oldStartDate = orig?.startDate;
     const newStartDate = curr?.startDate;
@@ -46,8 +46,8 @@ export class DirtyParser {
    * Public Static method to check if recurrence has changed
    */
   public static recurrenceChanged(
-    curr: Schema_WebEvent,
-    orig: Schema_WebEvent,
+    curr: Schema_Event,
+    orig: Schema_Event,
   ): boolean {
     return (
       DirtyParser.isDateDifferent(curr, orig) ||
@@ -58,7 +58,7 @@ export class DirtyParser {
   /**
    * Static method to check if the curr event has been modified
    */
-  static isEventDirty(curr: Schema_WebEvent, orig: Schema_WebEvent): boolean {
+  static isEventDirty(curr: Schema_Event, orig: Schema_Event): boolean {
     // Compare relevant fields that can change in the form
     const fieldsToCompare = [
       "title",

@@ -5,7 +5,6 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import WaitlistService from "@backend/waitlist/service/waitlist.service";
-import { EmailDriver } from "../../__tests__/drivers/email.driver";
 import { WaitListDriver } from "../../__tests__/drivers/waitlist.driver";
 
 describe("isOnWaitlist", () => {
@@ -21,8 +20,6 @@ describe("isOnWaitlist", () => {
   });
 
   it("should return true if email is waitlisted", async () => {
-    const emailSpies = EmailDriver.mockEmailServiceResponse();
-
     const record = WaitListDriver.createWaitListRecord({
       email: faker.internet.email(),
       firstName: faker.person.firstName(),
@@ -34,8 +31,5 @@ describe("isOnWaitlist", () => {
     const result = await WaitlistService.isOnWaitlist(record.email);
 
     expect(result).toBe(true);
-
-    emailSpies.addTagToSubscriber.mockClear();
-    emailSpies.upsertSubscriber.mockClear();
   });
 });

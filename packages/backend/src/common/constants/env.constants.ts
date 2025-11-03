@@ -1,9 +1,6 @@
 import { z } from "zod";
 import { NodeEnv, PORT_DEFAULT_BACKEND } from "@core/constants/core.constants";
-import { Logger } from "@core/logger/winston.logger";
 import { isDev } from "@core/util/env.util";
-
-const logger = Logger("app:constants");
 
 const _nodeEnv = process.env["NODE_ENV"] as NodeEnv;
 
@@ -76,7 +73,7 @@ const processEnv = {
 const { success, error, data } = EnvSchema.safeParse(processEnv);
 
 if (!success) {
-  logger.error(`Exiting because a critical env value is missing or invalid:`);
+  console.error(`Exiting because a critical env value is missing or invalid:`);
   console.error(error.issues);
   process.exit(1);
 }

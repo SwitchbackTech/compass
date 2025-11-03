@@ -38,7 +38,10 @@ describe.each([
     };
 
     beforeAll(setupTestDb);
-    beforeEach(() => SyncDriver.generateV0Data(count, generateExpiredWatches));
+    beforeEach(
+      () => SyncDriver.generateV0Data(count, generateExpiredWatches),
+      10000,
+    );
     beforeEach(WatchMigration.prototype.up);
     afterEach(cleanupCollections);
     afterEach(() => mongoService.sync.deleteMany());
@@ -122,7 +125,6 @@ describe.each([
       const watchDocs = await mongoService.watch.find().toArray();
 
       // Verify each watch document has correct data
-      // calendarlist will be absent since we do not currently store resourceId
       expect(watchDocs).toEqual(
         expect.arrayContaining(
           syncDocs.flatMap(
@@ -130,7 +132,8 @@ describe.each([
               expect.objectContaining({
                 _id: expect.any(ObjectId),
                 user,
-                resourceId: Resource_Sync.CALENDAR,
+                resourceId: expect.any(String),
+                gCalendarId: Resource_Sync.CALENDAR,
                 expiration: expect.any(Date),
                 createdAt: expect.any(Date),
               }),

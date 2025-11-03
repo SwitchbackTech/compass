@@ -1,27 +1,32 @@
-import { ObjectId } from "bson";
+import { faker } from "@faker-js/faker";
 import { MapEvent } from "@core/mappers/map.event";
-import { Schema_Event } from "@core/types/event.types";
 import {
   createMockBaseEvent,
-  createMockInstance,
+  createMockInstances,
+  createMockRegularEvent,
 } from "@core/util/test/ccal.event.factory";
 
 describe("MapEvent.removeProviderData", () => {
-  it("removes gEventId from a base event", () => {
-    const _id = new ObjectId().toString();
-    const event = createMockBaseEvent({ _id, gEventId: _id });
-    const result = MapEvent.removeProviderData(event);
+  it("removes provider metadata from a regular event", () => {
+    const event = createMockRegularEvent();
+    const result = MapEvent.removeProviderMetadata(event);
 
-    expect((result as Schema_Event).gEventId).toBeUndefined();
+    expect(result).not.toHaveProperty("metadata");
   });
 
-  it("removes gEventId, gRecurringEventId and recurrence eventId from an instance event", () => {
-    const _id = new ObjectId().toString();
-    const event = createMockInstance(_id, _id);
-    const result = MapEvent.removeProviderData(event);
+  it("removes provider metadata from a base event", () => {
+    const event = createMockBaseEvent();
+    const result = MapEvent.removeProviderMetadata(event);
 
-    expect((result as Schema_Event).gEventId).toBeUndefined();
-    expect((result as Schema_Event).gRecurringEventId).toBeUndefined();
-    expect((result as Schema_Event).recurrence?.eventId).toBeUndefined();
+    expect(result).not.toHaveProperty("metadata");
+  });
+
+  it("removes provider metadata from an instance event", () => {
+    const base = createMockBaseEvent();
+    const instances = createMockInstances(base, 3);
+    const event = faker.helpers.arrayElement(instances);
+    const result = MapEvent.removeProviderMetadata(event);
+
+    expect(result).not.toHaveProperty("metadata");
   });
 });

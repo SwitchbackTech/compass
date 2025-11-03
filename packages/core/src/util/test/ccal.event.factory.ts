@@ -2,45 +2,44 @@ import { ObjectId } from "bson";
 import { faker } from "@faker-js/faker";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import {
+  BaseEventSchema,
+  RegularEventSchema,
+  Schema_Base_Event,
   Schema_Event,
-  Schema_Event_Recur_Base,
-  Schema_Event_Recur_Instance,
-  Schema_Event_Regular,
-  WithCompassId,
+  Schema_Instance_Event,
+  Schema_Regular_Event,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { isAllDay, parseCompassEventDate } from "@core/util/event/event.util";
-import { CompassEventRRule } from "../event/compass.event.rrule";
+import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 
-export const createMockStandaloneEvent = (
+export const createMockRegularEvent = (
   overrides: Partial<Omit<Schema_Event, "endDate">> = {},
-  allDayEvent = false,
+  allDay = false,
   dateDiff: Omit<
     Partial<
       Exclude<Parameters<typeof generateCompassEventDates>[0], undefined>
     >,
     "date" | "allDay"
   > = {},
-): WithCompassId<Schema_Event_Regular> => {
+): Schema_Regular_Event => {
   const { startDate } = overrides;
   const now = new Date();
-  const allDay = allDayEvent || isAllDay(overrides) || overrides.isAllDay;
-  const date = startDate ? parseCompassEventDate(startDate) : undefined;
+  const date = dayjs(startDate);
   const dates = generateCompassEventDates({ ...dateDiff, date, allDay });
 
-  return {
-    _id: new ObjectId().toString(),
+  return RegularEventSchema.parse({
+    _id: new ObjectId(),
+    calendar: new ObjectId(),
     title: faker.lorem.sentence(),
     description: faker.lorem.paragraph(),
     priority: faker.helpers.arrayElement(Object.values(Priorities)),
-    user: new ObjectId().toString(),
     origin: Origin.COMPASS,
+    order: 0,
     isSomeday: false,
     updatedAt: now,
     ...overrides,
-    isAllDay: allDay ?? false,
     ...dates,
-  };
+  });
 };
 
 /**
@@ -49,61 +48,27 @@ export const createMockStandaloneEvent = (
  * @returns A base recurring event.
  */
 export const createMockBaseEvent = (
-  overrides: Partial<Omit<Schema_Event_Recur_Base, "endDate">> = {},
+  {
+    recurrence,
+    ...overrides
+  }: Partial<
+    Omit<Schema_Base_Event, "endDate" | "recurrence"> & {
+      recurrence: Pick<Schema_Base_Event["recurrence"], "rule">;
+    }
+  > = {},
   allDayEvent = false,
-  dateDiff: Parameters<typeof createMockStandaloneEvent>[2] = {},
-): WithCompassId<Schema_Event_Recur_Base> => {
-  const regularEvent = createMockStandaloneEvent(
-    overrides,
-    allDayEvent,
-    dateDiff,
-  );
+  dateDiff: Parameters<typeof createMockRegularEvent>[2] = {},
+): Schema_Base_Event => {
+  const regularEvent = createMockRegularEvent(overrides, allDayEvent, dateDiff);
 
-  return {
+  return BaseEventSchema.parse({
     ...regularEvent,
-    recurrence: overrides.recurrence ?? { rule: ["RRULE:FREQ=WEEKLY"] },
-  };
-};
-
-/**
- * Creates a recurring event instance with default values that can be overridden.
- * @param baseEventId - The ID of the base event this instance belongs to.
- * @param overrides - The overrides for the mock instance.
- * @returns A recurring event instance.
- */
-export const createMockInstance = (
-  baseEventId: string,
-  gBaseId: string,
-  overrides: Partial<Schema_Event_Recur_Instance> = {},
-): WithCompassId<Schema_Event_Recur_Instance> => {
-  const now = new Date();
-  const tz = faker.location.timeZone();
-  // Generate times dynamically but in the right tz
-  const start = dayjs.tz(faker.date.future(), tz);
-  const startIso = start.toISOString();
-  const end = start.add(1, "hour");
-
-  const gEventId = `${gBaseId}_${start.toRRuleDTSTARTString()}`;
-
-  const instance = {
-    _id: new ObjectId().toString(),
-    title: "Weekly Team Sync",
-    startDate: startIso,
-    endDate: end.toISOString(),
     recurrence: {
-      eventId: baseEventId,
+      rule: ["RRULE:FREQ=WEEKLY"],
+      eventId: regularEvent._id,
+      ...recurrence,
     },
-    user: "test-user-id",
-    origin: Origin.GOOGLE,
-    priority: Priorities.WORK,
-    isAllDay: false,
-    isSomeday: false,
-    updatedAt: now,
-    gEventId,
-    gRecurringEventId: gBaseId,
-    ...overrides,
-  };
-  return instance;
+  });
 };
 
 /**
@@ -114,16 +79,14 @@ export const createMockInstance = (
  * @returns An array of event instances.
  */
 export const createMockInstances = (
-  baseEvent: Schema_Event_Recur_Base,
-  count: number,
-  overrides: Partial<Schema_Event_Recur_Instance> = {},
-): WithCompassId<Schema_Event_Recur_Instance>[] => {
+  baseEvent: Schema_Base_Event,
+  count?: number,
+  overrides: Partial<Omit<Schema_Instance_Event, "recurrence">> = {},
+): Schema_Instance_Event[] => {
   const _id = new ObjectId(baseEvent._id);
   const rrule = new CompassEventRRule({ ...baseEvent, _id }, { count });
 
-  return rrule
-    .instances()
-    .map((i) => ({ ...i, ...overrides, _id: i._id.toString() }));
+  return rrule.instances().map((i) => ({ ...i, ...overrides }));
 };
 
 export const generateCompassEventDates = ({
@@ -137,12 +100,26 @@ export const generateCompassEventDates = ({
   unit?: dayjs.ManipulateType;
   allDay?: boolean;
   timezone?: string;
-} = {}): Pick<Schema_Event, "startDate" | "endDate"> => {
+} = {}): Pick<Schema_Event, "startDate" | "endDate" | "originalStartDate"> => {
   const timeZone = dayjs.tz.guess();
-  const start = dayjs.tz(date ?? faker.date.future(), timeZone);
-  const end = start.add(value, unit);
-  const { YEAR_MONTH_DAY_FORMAT, RFC3339_OFFSET } = dayjs.DateFormat;
-  const format = allDay ? YEAR_MONTH_DAY_FORMAT : RFC3339_OFFSET;
+  const _start = dayjs.tz(date ?? faker.date.future(), timeZone);
+  const start = allDay ? _start.startOf("day") : _start;
+  const end = allDay ? start.add(1, "day") : start.add(value, unit);
 
-  return { startDate: start.format(format), endDate: end.format(format) };
+  return {
+    startDate: start.toDate(),
+    endDate: end.toDate(),
+    originalStartDate: start.toDate(),
+  };
+};
+
+export const createRecurrenceSeries = (
+  baseOverrides: Partial<Schema_Base_Event>,
+  instanceOverrides?: Partial<Schema_Instance_Event>,
+  instanceCount?: number,
+) => {
+  const base = createMockBaseEvent(baseOverrides);
+  const instances = createMockInstances(base, instanceCount, instanceOverrides);
+
+  return { base, instances };
 };

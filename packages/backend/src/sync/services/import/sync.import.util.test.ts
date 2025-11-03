@@ -1,5 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { gcalEvents } from "@core/__mocks__/v1/events/gcal/gcal.event";
+import { EventStatus } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
 import dayjs from "@core/util/date/dayjs";
 import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.utils";
@@ -23,7 +24,7 @@ describe("categorizeGcalEvents", () => {
       gcalEvents.items.forEach((e) => {
         const event = e as gSchema$Event;
 
-        if (event.status === "cancelled") {
+        if (event.status === EventStatus.CANCELLED) {
           cancelledIds.push(event.id!);
         }
       });

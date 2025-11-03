@@ -1,16 +1,37 @@
 import { ObjectId } from "bson";
-import { createMockCalendarListEntry } from "@core/__tests__/helpers/gcal.factory";
+import { faker } from "@faker-js/faker";
 import { MapCalendar } from "@core/mappers/map.calendar";
-import { CalendarProvider } from "@core/types/event.types";
-import { gSchema$CalendarListEntry } from "@core/types/gcal";
+import { CalendarProvider } from "@core/types/calendar.types";
+import { generateCalendarColorScheme } from "../util/color.utils";
 
 describe("MapCalendar.gcalToCompass", () => {
-  const baseGoogleCalendar: gSchema$CalendarListEntry =
-    createMockCalendarListEntry();
+  const { backgroundColor, color } = generateCalendarColorScheme();
+
+  const calendar = {
+    kind: "calendar#calendarListEntry",
+    id: faker.string.ulid(),
+    primary: false,
+    etag: faker.number.hex({ min: 16, max: 16 }).toString(),
+    summary: faker.book.title(),
+    description: faker.lorem.paragraph({ min: 1, max: 3 }),
+    timeZone: faker.location.timeZone(),
+    colorId: faker.number.int({ min: 1, max: 24 }).toString(),
+    backgroundColor,
+    foregroundColor: color,
+    selected: true,
+    accessRole: faker.helpers.arrayElement(["reader", "writer", "owner"]),
+    defaultReminders: [],
+    conferenceProperties: {
+      allowedConferenceSolutionTypes: faker.helpers.arrayElements(
+        ["hangoutsMeet", "eventHangout", "eventNamedHangout"],
+        { min: 1, max: 3 },
+      ),
+    },
+  };
 
   it("maps provided google calendar fields correctly", () => {
     const userId = new ObjectId();
-    const result = MapCalendar.gcalToCompass(userId, baseGoogleCalendar);
+    const result = MapCalendar.gcalToCompass(userId, calendar);
 
     expect(result).toEqual(
       expect.objectContaining({
@@ -25,8 +46,8 @@ describe("MapCalendar.gcalToCompass", () => {
         updatedAt: expect.any(Date),
         metadata: expect.objectContaining({
           provider: CalendarProvider.GOOGLE,
-          id: baseGoogleCalendar.id,
-          summary: baseGoogleCalendar.summary,
+          id: calendar.id,
+          summary: calendar.summary,
         }),
       }),
     );

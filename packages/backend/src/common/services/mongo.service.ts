@@ -27,7 +27,7 @@ interface InternalClient {
   db: Db;
   client: MongoClient;
   calendar: Collection<Schema_Calendar>;
-  event: Collection<Omit<Schema_Event, "_id">>;
+  event: Collection<Schema_Event>;
   priority: Collection<Omit<Schema_Priority, "_id">>;
   sync: Collection<Schema_Sync>;
   user: Collection<Schema_User>;
@@ -137,7 +137,7 @@ class MongoService {
       db,
       client,
       calendar: db.collection<Schema_Calendar>(Collections.CALENDAR),
-      event: db.collection<Omit<Schema_Event, "_id">>(Collections.EVENT),
+      event: db.collection<Schema_Event>(Collections.EVENT),
       priority: db.collection<Omit<Schema_Priority, "_id">>(
         Collections.PRIORITY,
       ),

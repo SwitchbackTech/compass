@@ -9,6 +9,7 @@ import {
   Payload_Sync_Notif,
   Resource_Sync,
 } from "@core/types/sync.types";
+import { zObjectId } from "@core/types/type.utils";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { WatchError } from "@backend/common/errors/sync/watch.errors";
@@ -74,7 +75,8 @@ export class SyncController {
         }
 
         const sync = await getSync({
-          userId: watch.user,
+          user: watch.user,
+          resource,
           gCalendarId: watch.gCalendarId,
         });
 
@@ -84,7 +86,10 @@ export class SyncController {
           console.warn(
             `Cleaning data after this user revoked access: ${userId}`,
           );
-          await userService.deleteCompassDataForUser(userId, false);
+          await userService.deleteCompassDataForUser(
+            new ObjectId(userId),
+            false,
+          );
         }
 
         res.status(Status.GONE).send("User revoked access, deleted all data");
@@ -161,7 +166,7 @@ export class SyncController {
   };
 
   static importGCal = async (req: Request, res: Response) => {
-    const userId = req.session!.getUserId()!;
+    const userId = zObjectId.parse(req.session!.getUserId())!;
 
     userService.restartGoogleCalendarSync(userId);
 

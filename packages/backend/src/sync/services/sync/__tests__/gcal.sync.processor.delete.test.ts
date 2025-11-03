@@ -1,21 +1,32 @@
-import { RRule } from "rrule";
-import { Categories_Recurrence } from "@core/types/event.types";
-import { WithGcalId, gSchema$Event } from "@core/types/gcal";
-import { categorizeEvents } from "@core/util/event/event.util";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
+import { faker } from "@faker-js/faker";
+import { CompassCalendarSchema } from "@core/types/calendar.types";
 import {
-  getEventsInDb,
-  isEventCollectionEmpty,
-} from "@backend/__tests__/helpers/mock.db.queries";
+  Categories_Recurrence,
+  EventStatus,
+  RegularEventSchema,
+} from "@core/types/event.types";
+import { gSchema$Event } from "@core/types/gcal";
+import { StringV4Schema } from "@core/types/type.utils";
+import {
+  categorizeEvents,
+  isAllDay,
+  isBase,
+  isInstance,
+  isRegular,
+} from "@core/util/event/event.util";
+import { AuthDriver } from "@backend/__tests__/drivers/auth.driver";
+import { CalendarDriver } from "@backend/__tests__/drivers/calendar.driver";
+import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
   cleanupCollections,
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
-import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
-import { mockRecurringGcalBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
-import { createCompassSeriesFromGcalBase } from "@backend/sync/services/sync/__tests__/gcal.sync.processor.test.util";
-import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
+import { getGcalClient } from "@backend/auth/services/google.auth.service";
+import calendarService from "@backend/calendar/services/calendar.service";
+import gcalService from "@backend/common/services/gcal/gcal.service";
+import { GcalEventsSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
+import userService from "@backend/user/services/user.service";
 
 describe("GcalSyncProcessor: DELETE", () => {
   beforeAll(setupTestDb);
@@ -26,42 +37,61 @@ describe("GcalSyncProcessor: DELETE", () => {
 
   it("should delete a STANDALONE event", async () => {
     /* Assemble */
-    const { user } = await UtilDriver.setupTestUser();
+    const newUser = await AuthDriver.googleSignup();
+    const user = await AuthDriver.googleLogin(newUser._id);
+    const calendar = await CalendarDriver.getRandomUserCalendar(user._id);
+    const gcal = await getGcalClient(user._id);
 
-    const { gcalEvents } = await simulateDbAfterGcalImport(user._id.toString());
+    await userService.restartGoogleCalendarSync(user._id);
 
-    const origEvents = await getEventsInDb({ user: user._id.toString() });
+    const origEvents = await getEventsInDb({
+      calendar: calendar._id,
+      isSomeday: false,
+    });
 
-    /* Act: Simulate a cancelled event from Gcal */
-    const gStandalone = gcalEvents.regular;
+    const regularEvent = RegularEventSchema.parse(origEvents.find(isRegular));
+
+    const gcalRegularEvent = await gcalService.getEvent(
+      gcal,
+      StringV4Schema.parse(regularEvent?.metadata?.id),
+      calendar.metadata.id,
+    );
+
+    expect(gcalRegularEvent).toBeDefined();
+
+    /* A;ct: Simulate a cancelled event from Gcal */
     const cancelledGStandalone = {
-      kind: gStandalone.kind,
-      etag: gStandalone.etag,
-      id: gStandalone.id,
-      status: "cancelled",
-    } as WithGcalId<gSchema$Event>;
+      ...gcalRegularEvent,
+      status: EventStatus.CANCELLED,
+    };
 
-    const processor = new GcalSyncProcessor(user._id.toString());
-    const changes = await processor.processEvents([cancelledGStandalone]);
+    const changes = await GcalEventsSyncProcessor.processEvents([
+      { calendar, payload: cancelledGStandalone },
+    ]);
 
     /* Assert: Should return a DELETED change */
     expect(changes).toHaveLength(1);
     expect(changes[0]).toMatchObject({
-      title: cancelledGStandalone.id,
-      operation: "STANDALONE_DELETED",
+      calendar: calendar._id,
+      user: user._id,
+      id: regularEvent._id,
+      title: cancelledGStandalone.summary,
+      operation: "REGULAR_DELETED",
     });
 
     // Verify the event is deleted from the DB
     const remainingEvents = await getEventsInDb({
-      user: user._id.toString(),
-    }).then((events) =>
-      events.map((event) => ({ ...event, _id: event._id?.toString() })),
+      calendar: calendar._id,
+      isSomeday: false,
+    });
+
+    const { regularEvents } = categorizeEvents(remainingEvents);
+
+    const eventIsGone = regularEvents.find(
+      (e) => e.metadata?.id === gcalRegularEvent.id,
     );
 
-    const { standaloneEvents } = categorizeEvents(remainingEvents);
-    const eventIsGone =
-      standaloneEvents.find((e) => e.gEventId === gStandalone.id) === undefined;
-    expect(eventIsGone).toBe(true);
+    expect(eventIsGone).toBeUndefined();
 
     // Verify no other events deleted
     expect(remainingEvents).toHaveLength(origEvents.length - 1);
@@ -69,65 +99,67 @@ describe("GcalSyncProcessor: DELETE", () => {
 
   it("should delete an INSTANCE after cancelling it", async () => {
     /* Assemble */
-    const { user } = await UtilDriver.setupTestUser();
+    const newUser = await AuthDriver.googleSignup();
+    const user = await AuthDriver.googleLogin(newUser._id);
+    const calendar = await CalendarDriver.getRandomUserCalendar(user._id);
+    const gcal = await getGcalClient(user._id);
 
-    const { gcalEvents, compassEvents } = await simulateDbAfterGcalImport(
-      user._id.toString(),
+    await userService.restartGoogleCalendarSync(user._id);
+
+    const events = await getEventsInDb({
+      calendar: calendar._id,
+      isSomeday: false,
+    });
+
+    const dbEvent = faker.helpers.arrayElement(events.filter(isInstance));
+
+    expect(dbEvent).toBeDefined();
+
+    const gcalEvent = await gcalService.getEvent(
+      gcal,
+      StringV4Schema.parse(dbEvent?.metadata?.id),
+      calendar.metadata.id,
     );
 
-    const compassInstance = compassEvents[0]!;
-    const isAllDay = compassInstance.isAllDay;
-    const dateKey = isAllDay ? "date" : "dateTime";
-
     const cancelledGcalInstance = {
-      ...gcalEvents.instances[1],
-      status: "cancelled",
-      originalStartTime: { [dateKey]: compassInstance?.startDate },
+      ...gcalEvent,
+      status: EventStatus.CANCELLED,
     };
 
     /* Act */
-    const processor = new GcalSyncProcessor(user._id.toString());
-
-    const changes = await processor.processEvents([
-      gcalEvents.recurring,
-      cancelledGcalInstance,
+    const changes = await GcalEventsSyncProcessor.processEvents([
+      { calendar, payload: cancelledGcalInstance },
     ]);
 
     /* Assert */
-    expect(changes).toHaveLength(3);
+    expect(changes).toHaveLength(1);
 
     expect(changes).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          title: gcalEvents.recurring.summary,
-          category: Categories_Recurrence.RECURRENCE_BASE,
-          operation: "RECURRENCE_BASE_UPDATED",
-        }),
-        expect.objectContaining({
-          title: gcalEvents.recurring.summary,
-          category: Categories_Recurrence.RECURRENCE_BASE,
-          operation: "TIMED_INSTANCES_UPDATED",
-        }),
-        expect.objectContaining({
-          title: cancelledGcalInstance.summary as string,
+          calendar: calendar._id,
+          user: user._id,
+          id: dbEvent._id,
+          title: cancelledGcalInstance.summary,
           category: Categories_Recurrence.RECURRENCE_INSTANCE,
           operation: "RECURRENCE_INSTANCE_DELETED",
         }),
       ]),
     );
 
-    const remainingEvents = await getEventsInDb({ user: user._id.toString() });
+    const remainingEvents = await getEventsInDb({
+      calendar: calendar._id,
+      isSomeday: false,
+    });
 
     // Verify only the instance was deleted
-    expect(remainingEvents).toHaveLength(compassEvents.length - 1);
-    expect(remainingEvents[0]?._id?.toString()).toBe(
-      compassEvents[0]?._id.toString(),
-    );
+    expect(remainingEvents).toHaveLength(events.length - 1);
 
     expect(
       remainingEvents.find(
-        ({ gRecurringEventId }) =>
-          gRecurringEventId === cancelledGcalInstance.id,
+        ({ recurrence, metadata }) =>
+          recurrence?.eventId.equals(dbEvent.recurrence?.eventId) &&
+          metadata?.id === gcalEvent.id,
       ),
     ).toBeUndefined();
   });
@@ -136,37 +168,115 @@ describe("GcalSyncProcessor: DELETE", () => {
     // This scenario happens when a user updates a series that includes multiple instance exceptions
 
     /* Assemble */
-    const { user } = await UtilDriver.setupTestUser();
+    const newUser = await AuthDriver.googleSignup();
+    const user = await AuthDriver.googleLogin(newUser._id);
+    const calendars = await calendarService.getAllByUser(user._id);
+    const gcal = await getGcalClient(user._id);
 
-    const { gcalEvents } = await simulateDbAfterGcalImport(user._id.toString());
+    await userService.restartGoogleCalendarSync(user._id);
 
-    const gcalBaseEvent = gcalEvents.recurring;
+    const events = await getEventsInDb({
+      calendar: { $in: calendars.map((c) => c._id) },
+      isSomeday: false,
+    });
 
-    // Create cancellation payloads for each instance
-    const cancellations: gSchema$Event[] = gcalEvents.instances.map((i) => ({
+    const instances = events.filter(isInstance);
+
+    const allDayDbInstances = faker.helpers.arrayElements(
+      instances.filter(isAllDay),
+      { min: 2, max: 4 },
+    );
+
+    const timedDbBase = faker.helpers.arrayElement(
+      events.filter((e) => !isAllDay(e)).filter(isBase),
+    );
+
+    const timedDbInstances = instances.filter((e) =>
+      e.recurrence?.eventId.equals(timedDbBase._id),
+    );
+
+    const updatedTimedDbInstances = faker.helpers.arrayElements(
+      timedDbInstances,
+      { min: 1, max: 2 },
+    );
+
+    const dbBaseCalendar = calendars.find((c) =>
+      c._id.equals(timedDbBase.calendar),
+    );
+
+    expect(dbBaseCalendar).toBeDefined();
+
+    const baseGcalEvent = await gcalService.getEvent(
+      gcal,
+      StringV4Schema.parse(timedDbBase?.metadata?.id),
+      CompassCalendarSchema.parse(dbBaseCalendar).metadata.id,
+    );
+
+    const timedGcalEvents = await Promise.all(
+      updatedTimedDbInstances.map((i) => {
+        const calendar = calendars.find((c) => c._id.equals(i.calendar));
+
+        return gcalService.getEvent(
+          gcal,
+          StringV4Schema.parse(i.metadata?.id),
+          CompassCalendarSchema.parse(calendar).metadata.id,
+        );
+      }),
+    );
+
+    const allDayGcalEvents = await Promise.all(
+      allDayDbInstances.map((i) => {
+        const calendar = calendars.find((c) => c._id.equals(i.calendar));
+
+        return gcalService.getEvent(
+          gcal,
+          StringV4Schema.parse(i.metadata?.id),
+          CompassCalendarSchema.parse(calendar).metadata.id,
+        );
+      }),
+    );
+
+    // Create update payloads for each  timed instance
+    const baseGcalUpdate = {
+      ...baseGcalEvent,
+      summary: `${baseGcalEvent.summary} UPDATED`,
+    };
+
+    // Create update payloads for each updatedTimedDbInstances
+    const updates: gSchema$Event[] = timedGcalEvents.map((i) => ({
       ...i,
-      status: "cancelled",
+      summary: `${i.summary} SOME TIMED INSTANCE UPDATED`,
+    }));
+
+    // Create cancellation payloads for each allDay instance
+    const cancellations: gSchema$Event[] = allDayGcalEvents.map((i) => ({
+      ...i,
+      status: EventStatus.CANCELLED,
     }));
 
     /* Act */
-    const processor = new GcalSyncProcessor(user._id.toString());
+    const changes = await GcalEventsSyncProcessor.processEvents(
+      [baseGcalUpdate, ...updates, ...cancellations].map((payload) => {
+        const dbEvent = events.find((e) => e.metadata?.id === payload.id);
+        const calendar = CompassCalendarSchema.parse(
+          calendars.find((c) => c._id.equals(dbEvent?.calendar)),
+        );
 
-    const changes = await processor.processEvents([
-      gcalBaseEvent,
-      ...cancellations,
-    ]);
+        return { calendar, payload };
+      }),
+    );
 
     /* Assert */
     // Validate all changes detected
-    expect(changes).toHaveLength(5);
+    expect(changes).toHaveLength(updates.length + cancellations.length + 1);
 
     // Validate change types
     const baseUpdate = changes.filter((c) =>
-      c.operation?.includes("RECURRENCE_BASE_UPDATED"),
+      c.operation?.includes("SERIES_UPDATED"),
     );
 
     const timedInstancesUpdate = changes.filter((c) =>
-      c.operation?.includes("TIMED_INSTANCES_UPDATED"),
+      c.operation?.includes("RECURRENCE_INSTANCE_UPDATED"),
     );
 
     const instanceDeletes = changes.filter((c) =>
@@ -174,49 +284,95 @@ describe("GcalSyncProcessor: DELETE", () => {
     );
 
     expect(baseUpdate).toHaveLength(1);
-    expect(timedInstancesUpdate).toHaveLength(1); // cascading updates from base to instances
+    expect(timedInstancesUpdate).toHaveLength(updates.length);
     expect(instanceDeletes).toHaveLength(cancellations.length);
 
     // Validate DB state
     const remainingEvents = await getEventsInDb({
-      user: user._id.toString(),
-    }).then((events) =>
-      events.map((event) => ({ ...event, _id: event._id?.toString() })),
+      calendar: { $in: calendars.map((c) => c._id) },
+      isSomeday: false,
+    });
+
+    const { baseEvents, instances: updatedInstances } =
+      categorizeEvents(remainingEvents);
+
+    const updatedTimedBaseEvent = baseEvents.find((e) =>
+      e._id.equals(timedDbBase._id),
+    );
+    // Validate base exists
+    expect(updatedTimedBaseEvent).toBeDefined();
+    expect(updatedTimedBaseEvent?.title).toBe(baseGcalUpdate.summary);
+
+    const updatedTimedBaseInstances = updatedInstances.filter((i) =>
+      i.recurrence?.eventId.equals(timedDbBase._id),
     );
 
-    const { baseEvents, instances } = categorizeEvents(remainingEvents);
-    // Validate base exists
-    expect(baseEvents).toHaveLength(1);
-    // Validate instances point to new base
+    const timedBaseInstancedWithCascadingUpdates =
+      updatedTimedBaseInstances.filter(
+        (i) => i.title === baseGcalUpdate.summary,
+      );
+
+    expect(timedBaseInstancedWithCascadingUpdates).toHaveLength(
+      timedDbInstances.length - updates.length,
+    );
+
+    const timedBaseInstancedWithIndividualUpdates =
+      updatedTimedBaseInstances.filter((i) =>
+        i.title.endsWith("SOME TIMED INSTANCE UPDATED"),
+      );
+
+    expect(timedBaseInstancedWithIndividualUpdates).toHaveLength(
+      updates.length,
+    );
+
+    // Validate instances were cancelled and deleted
     expect(
-      instances.find((i) => cancellations.some((c) => c.id === i.gEventId)),
+      updatedInstances.find((i) =>
+        cancellations.some((c) => c.id === i.metadata?.id),
+      ),
     ).toBeUndefined();
   });
 
-  it("should delete BASE and all INSTANCES after cancelling a BASE", async () => {
-    const { user } = await UtilDriver.setupTestUser();
+  it("should delete all INSTANCES and BASE after cancelling a BASE", async () => {
+    const newUser = await AuthDriver.googleSignup();
+    const user = await AuthDriver.googleLogin(newUser._id);
+    const calendar = await CalendarDriver.getRandomUserCalendar(user._id);
+    const gcal = await getGcalClient(user._id);
 
-    const gcalBaseEvent = mockRecurringGcalBaseEvent({}, false, {
-      freq: RRule.DAILY,
+    await userService.restartGoogleCalendarSync(user._id);
+
+    const events = await getEventsInDb({
+      calendar: calendar._id,
+      isSomeday: false,
     });
 
-    await createCompassSeriesFromGcalBase(user, gcalBaseEvent);
+    const dbBase = faker.helpers.arrayElement(events.filter(isBase));
+
+    const baseGcalEvent = await gcalService.getEvent(
+      gcal,
+      StringV4Schema.parse(dbBase?.metadata?.id),
+      calendar.metadata.id,
+    );
 
     // Cancel the entire series
     const cancelledBase = {
-      ...gcalBaseEvent,
-      status: "cancelled",
+      ...baseGcalEvent,
+      status: EventStatus.CANCELLED,
     };
 
-    const processor = new GcalSyncProcessor(user._id.toString());
-    const changes = await processor.processEvents([cancelledBase]);
+    const changes = await GcalEventsSyncProcessor.processEvents([
+      { calendar, payload: cancelledBase },
+    ]);
 
     expect(changes).toHaveLength(1);
 
     expect(changes).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          title: cancelledBase.summary as string,
+          calendar: calendar._id,
+          user: user._id,
+          id: dbBase._id,
+          title: cancelledBase.summary,
           category: Categories_Recurrence.RECURRENCE_BASE,
           operation: "SERIES_DELETED",
         }),
@@ -224,7 +380,12 @@ describe("GcalSyncProcessor: DELETE", () => {
     );
 
     // Verify all Compass events that match the gcal base were deleted
-    const isEmpty = await isEventCollectionEmpty();
-    expect(isEmpty).toBe(true);
+    const updatedEvents = await getEventsInDb({
+      calendar: calendar._id,
+      isSomeday: false,
+      "recurrence.eventId": dbBase._id,
+    });
+
+    expect(updatedEvents).toHaveLength(0);
   });
 });

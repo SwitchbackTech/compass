@@ -135,9 +135,6 @@ const config = {
       testEnvironment: "node",
       testMatch: ["<rootDir>/packages/core/**/?(*.)+(spec|test).[tj]s?(x)"],
       setupFiles: ["<rootDir>/packages/core/src/__tests__/core.test.init.ts"],
-      setupFilesAfterEnv: [
-        "<rootDir>/packages/core/src/__tests__/core.test.start.ts",
-      ],
     },
     {
       displayName: "web",
@@ -165,10 +162,10 @@ const config = {
       },
       setupFiles: [
         "<rootDir>/packages/core/src/__tests__/core.test.init.ts",
-        "<rootDir>/packages/web/src/__tests__/web.test.init.js",
+        "<rootDir>/packages/web/src/__tests__/web.test.init.ts",
       ],
       setupFilesAfterEnv: [
-        "<rootDir>/packages/web/src/__tests__/web.test.start.js",
+        "<rootDir>/packages/web/src/__tests__/web.test.start.ts",
       ],
       testEnvironment: "jsdom",
       testMatch: ["<rootDir>/packages/web/**/?(*.)+(spec|test).[tj]s?(x)"],

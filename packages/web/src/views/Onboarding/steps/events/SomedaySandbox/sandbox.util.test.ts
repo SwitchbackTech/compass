@@ -1,5 +1,7 @@
 import dayjs from "@core/util/date/dayjs";
 import { createAndSubmitEvents } from "@web/views/Onboarding/steps/events/SomedaySandbox/sandbox.util";
+import { getDatesByCategory } from "../../../../../common/utils/datetime/web.date.util";
+import { EventApi } from "../../../../../ducks/events/event.api";
 
 // Mock dependencies
 jest.mock("@core/constants/core.constants", () => ({
@@ -61,11 +63,6 @@ describe("sandbox.util", () => {
 
   describe("createAndSubmitEvents", () => {
     it("should create and submit events for week and month tasks", async () => {
-      const { EventApi } = await import("@web/ducks/events/event.api");
-      const { getDatesByCategory } = await import(
-        "@web/common/utils/datetime/web.date.util"
-      );
-
       const weekTasks = [
         { text: "Week task 1", color: "#ff6b6b" },
         { text: "Week task 2", color: "#4ecdc4" },
@@ -87,12 +84,6 @@ describe("sandbox.util", () => {
     });
 
     it("should create events with correct structure for week tasks", async () => {
-      const { EventApi } = await import("@web/ducks/events/event.api");
-      const { getUserId } = await import("@web/auth/auth.util");
-      const { getDatesByCategory } = await import(
-        "@web/common/utils/datetime/web.date.util"
-      );
-
       const weekTasks = [{ text: "Test week task", color: "#ff6b6b" }];
       const monthTasks = [];
 
@@ -116,8 +107,6 @@ describe("sandbox.util", () => {
     });
 
     it("should create events with correct structure for month tasks", async () => {
-      const { EventApi } = await import("@web/ducks/events/event.api");
-
       const weekTasks = [];
       const monthTasks = [{ text: "Test month task", color: "#4ecdc4" }];
 
@@ -138,8 +127,6 @@ describe("sandbox.util", () => {
     });
 
     it("should map colors to correct priorities", async () => {
-      const { EventApi } = await import("@web/ducks/events/event.api");
-
       const weekTasks = [
         { text: "Work task", color: "#ff6b6b" }, // work
         { text: "Self task", color: "#4ecdc4" }, // self
@@ -159,16 +146,12 @@ describe("sandbox.util", () => {
     });
 
     it("should handle empty task arrays", async () => {
-      const { EventApi } = await import("@web/ducks/events/event.api");
-
       await createAndSubmitEvents([], []);
 
       expect(EventApi.create).toHaveBeenCalledWith([]);
     });
 
     it("should handle mixed week and month tasks", async () => {
-      const { EventApi } = await import("@web/ducks/events/event.api");
-
       const weekTasks = [{ text: "Week task", color: "#ff6b6b" }];
       const monthTasks = [{ text: "Month task", color: "#4ecdc4" }];
 
@@ -182,10 +165,6 @@ describe("sandbox.util", () => {
     });
 
     it("should call getDatesByCategory with correct parameters", async () => {
-      const { getDatesByCategory } = await import(
-        "@web/common/utils/datetime/web.date.util"
-      );
-
       const weekTasks = [{ text: "Week task", color: "#ff6b6b" }];
       const monthTasks = [{ text: "Month task", color: "#4ecdc4" }];
 
@@ -205,7 +184,6 @@ describe("sandbox.util", () => {
     });
 
     it("should propagate errors from EventApi.create", async () => {
-      const { EventApi } = await import("@web/ducks/events/event.api");
       const error = new Error("API Error");
       EventApi.create.mockRejectedValueOnce(error);
 
@@ -218,7 +196,6 @@ describe("sandbox.util", () => {
     });
 
     it("should propagate errors from getUserId", async () => {
-      const { getUserId } = await import("@web/auth/auth.util");
       const error = new Error("Auth Error");
       getUserId.mockRejectedValueOnce(error);
 

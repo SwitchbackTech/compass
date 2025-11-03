@@ -1,13 +1,17 @@
-import { ObjectId, WithId } from "mongodb";
+import { TokenPayload } from "google-auth-library";
+import { decode } from "jsonwebtoken";
+import { ObjectId } from "mongodb";
+import { z } from "zod/v4";
 import { faker } from "@faker-js/faker";
-import { UserInfo_Google } from "@core/types/auth.types";
-import { Schema_User } from "@core/types/user.types";
-import userService from "../../user/services/user.service";
+import { CalendarProvider } from "@core/types/calendar.types";
+import { StringV4Schema } from "@core/types/type.utils";
+import { CalendarDriver } from "@backend/__tests__/drivers/calendar.driver";
+import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 
 export class UserDriver {
   static generateGoogleUser(
-    overrides: Partial<UserInfo_Google["gUser"]> = {},
-  ): UserInfo_Google["gUser"] {
+    overrides: Partial<TokenPayload> = {},
+  ): TokenPayload {
     const firstName = faker.person.firstName();
     const lastName = faker.person.lastName();
 
@@ -15,7 +19,7 @@ export class UserDriver {
       iss: "https://accounts.google.com",
       azp: faker.string.uuid(),
       aud: faker.string.uuid(),
-      sub: faker.string.uuid(),
+      sub: new ObjectId().toString(),
       email: faker.internet.email(),
       email_verified: true,
       at_hash: faker.string.alphanumeric(10),
@@ -30,19 +34,45 @@ export class UserDriver {
     };
   }
 
-  static async createUser(): Promise<WithId<Schema_User>> {
-    const gUser = UserDriver.generateGoogleUser();
-    const gRefreshToken = faker.internet.jwt();
-
-    const { userId, ...user } = await userService.createUser(
-      gUser,
-      gRefreshToken,
-    );
-
-    return { ...user, _id: new ObjectId(userId) };
+  static generateGoogleRefreshToken(
+    gUser: Pick<TokenPayload, "sub" | "email">,
+  ): string {
+    return faker.internet.jwt({
+      payload: { sub: gUser.sub, email: gUser.email, iss: "google" },
+    });
   }
 
-  static async createUsers(count: number): Promise<Array<WithId<Schema_User>>> {
-    return Promise.all(Array.from({ length: count }, UserDriver.createUser));
+  static decodeGoogleRefreshToken(gRefreshToken?: string | null): {
+    sub: string;
+    email: string;
+    iss: "google";
+  } {
+    const token = StringV4Schema.parse(gRefreshToken, {
+      error: () => "invalid or no google refresh token supplied",
+    });
+
+    const decoded = decode(token) as Record<string, unknown>;
+
+    return {
+      email: z.email().parse(decoded["email"]),
+      sub: StringV4Schema.parse(decoded["sub"]),
+      iss: z.literal("google").parse(decoded["iss"]),
+    };
+  }
+
+  static createGoogleAuthUser(): {
+    gUser: TokenPayload;
+    gRefreshToken: string;
+  } {
+    const testState = UtilDriver.getProviderTestState(CalendarProvider.GOOGLE);
+    const gUser = UserDriver.generateGoogleUser();
+    const gRefreshToken = UserDriver.generateGoogleRefreshToken(gUser);
+
+    testState.set(gUser.sub, {
+      calendars: new Map(CalendarDriver.createCalendarTestState()),
+      channels: [],
+    });
+
+    return { gUser, gRefreshToken };
   }
 }

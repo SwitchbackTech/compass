@@ -1,6 +1,9 @@
+import { ObjectId } from "mongodb";
 import { Options, RRule } from "rrule";
 import { faker } from "@faker-js/faker";
 import { Origin, Priorities } from "@core/constants/core.constants";
+import { MapGCalEvent } from "@core/mappers/map.gcal.event";
+import { BaseEventSchema, EventStatus } from "@core/types/event.types";
 import {
   WithGcalId,
   gSchema$Event,
@@ -9,7 +12,7 @@ import {
 } from "@core/types/gcal";
 import { formatAs } from "@core/util/date/date.util";
 import dayjs from "@core/util/date/dayjs";
-import { GcalEventRRule } from "@backend/event/classes/gcal.event.rrule";
+import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 
 /**
  * Generates a random base32 hex string according to gcal id's requirement:
@@ -17,13 +20,8 @@ import { GcalEventRRule } from "@backend/event/classes/gcal.event.rrule";
  * @param length - The length of the string to generate
  * @returns A random base32 hex string
  */
-export const generateGcalId = (length: number = 16) => {
-  const allowed = "abcdefghijklmnopqrstuvwxyz".slice(0, 22) + "0123456789"; // a-v and 0-9
-  let id = "";
-  for (let i = 0; i < length; i++) {
-    id += allowed.charAt(Math.floor(Math.random() * allowed.length));
-  }
-  return id;
+export const generateGcalId = (refDate?: Date) => {
+  return faker.string.ulid({ refDate }).toLowerCase();
 };
 
 const mockGcalCoreEvent = (): WithGcalId<
@@ -42,12 +40,12 @@ const mockGcalCoreEvent = (): WithGcalId<
     | "eventType"
   >
 > => {
-  const id = generateGcalId();
+  const id = generateGcalId().toLowerCase();
 
   return {
     id,
     summary: faker.lorem.sentence(),
-    status: "confirmed",
+    status: EventStatus.CONFIRMED,
     htmlLink: `https://www.google.com/calendar/event?eid=${id}`,
     created: faker.date.past().toISOString(),
     updated: faker.date.recent().toISOString(),
@@ -65,13 +63,6 @@ const mockGcalCoreEvent = (): WithGcalId<
     eventType: "default",
   };
 };
-
-export const mockTimedEvent = (): gSchema$Event => ({
-  id: faker.string.nanoid(),
-  summary: faker.lorem.sentence(),
-  status: "confirmed",
-  ...generateGcalEventDate(),
-});
 
 /**
  * Returns a base event and its instances
@@ -92,12 +83,14 @@ export const mockRecurringGcalEvents = (
 
 export const mockRecurringGcalBaseEvent = (
   overrides: Partial<Omit<gSchema$EventBase, "recurrence">> = {},
-  isAllDay = false,
+  allDay = false,
   rruleOptions: Partial<Options> = {},
 ): gSchema$EventBase => {
-  const event = mockRegularGcalEvent(overrides, isAllDay);
+  const event = mockRegularGcalEvent(overrides, allDay);
   const ruleOptions = { count: 3, ...rruleOptions };
-  const rrule = new GcalEventRRule(event as gSchema$EventBase, ruleOptions);
+  const _cEvent = MapGCalEvent.toEvent(event, { calendar: new ObjectId() });
+  const cEvent = { ..._cEvent, recurrence: { rule: [], eventId: _cEvent._id } };
+  const rrule = new CompassEventRRule(cEvent, ruleOptions);
 
   return { ...event, recurrence: rrule.toRecurrence() };
 };
@@ -105,9 +98,13 @@ export const mockRecurringGcalBaseEvent = (
 export const mockRecurringGcalInstances = (
   base: gSchema$EventBase,
 ): gSchema$EventInstance[] => {
-  const rrule = new GcalEventRRule(base);
+  const _cEvent = MapGCalEvent.toEvent(base, { calendar: new ObjectId() });
+  const cEvent = BaseEventSchema.parse(_cEvent);
+  const rrule = new CompassEventRRule(cEvent);
 
-  return rrule.instances();
+  return rrule
+    .instances()
+    .map((e) => MapGCalEvent.fromEvent<gSchema$EventInstance>(e, base));
 };
 
 export const mockRegularGcalEvent = (
@@ -117,7 +114,7 @@ export const mockRegularGcalEvent = (
   const tz = faker.location.timeZone();
   // Dynamically generate timezone-aware times
   const start = dayjs.tz(faker.date.future(), tz);
-  const end = start.add(1, "hour");
+  const end = start.add(1, isAllDay ? "day" : "hour");
   const core = mockGcalCoreEvent();
   const dateKey = isAllDay ? "date" : "dateTime";
   const { YEAR_MONTH_DAY_FORMAT, RFC3339_OFFSET } = dayjs.DateFormat;
@@ -161,7 +158,7 @@ export const mockCancelledInstance = (
   return {
     id: `${baseEvent.id}_${instanceStartRfc5545}`,
     kind: "calendar#event",
-    status: "cancelled",
+    status: EventStatus.CANCELLED,
     summary: `Cancelled Instance - ${baseEvent.summary}`,
     recurringEventId: baseEvent.id,
     originalStartTime: {
@@ -218,31 +215,5 @@ export const mockGcalEvents = (
       cancelled: 1,
       recurring: 1 + timedInstances.length,
     },
-  };
-};
-
-export const generateGcalEventDate = ({
-  date,
-  allDay = false,
-  value = 1,
-  unit = "hours",
-  timezone = faker.location.timeZone(),
-}: {
-  date?: dayjs.ConfigType;
-  value?: number;
-  unit?: dayjs.ManipulateType;
-  allDay?: boolean;
-  timezone?: string;
-} = {}): Pick<gSchema$Event, "start" | "end"> => {
-  const timeZone = timezone ?? faker.location.timeZone();
-  const start = dayjs.tz(date ?? faker.date.future(), timeZone);
-  const end = start.add(value, unit);
-  const dateKey = allDay ? "date" : "dateTime";
-  const { YEAR_MONTH_DAY_FORMAT, RFC3339_OFFSET } = dayjs.DateFormat;
-  const format = allDay ? YEAR_MONTH_DAY_FORMAT : RFC3339_OFFSET;
-
-  return {
-    start: { [dateKey]: start.format(format), timeZone },
-    end: { [dateKey]: end.format(format), timeZone },
   };
 };

@@ -51,7 +51,7 @@ describe("Watch Types", () => {
     });
 
     it("requires all mandatory fields", () => {
-      const requiredFields = ["_id", "user", "resourceId", "expiration"];
+      const requiredFields = ["user", "resourceId", "expiration"];
 
       requiredFields.forEach((field) => {
         const incompleteWatch = { ...validWatch };

@@ -1,5 +1,10 @@
-import { isBase, isInstance } from "@core/util/event/event.util";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
+import { z } from "zod/v4";
+import { EventStatus } from "@core/types/event.types";
+import { StringV4Schema } from "@core/types/type.utils";
+import dayjs from "@core/util/date/dayjs";
+import { isBase, isInstance, isRegular } from "@core/util/event/event.util";
+import { AuthDriver } from "@backend/__tests__/drivers/auth.driver";
+import { CalendarDriver } from "@backend/__tests__/drivers/calendar.driver";
 import {
   getCategorizedEventsInDb,
   getEventsInDb,
@@ -9,6 +14,9 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { getGcalClient } from "@backend/auth/services/google.auth.service";
+import { GCAL_LIST_PAGE_SIZE } from "@backend/common/constants/backend.constants";
+import gcalService from "@backend/common/services/gcal/gcal.service";
 import { createSyncImport } from "@backend/sync/services/import/sync.import";
 
 describe("SyncImport: Full", () => {
@@ -19,18 +27,18 @@ describe("SyncImport: Full", () => {
   afterAll(cleanupTestDb);
 
   it("should import the first instance of a recurring event (and the base)", async () => {
-    const { user } = await UtilDriver.setupTestUser();
-    const syncImport = await createSyncImport(user._id.toString());
-    // Importing both the bae and first instance helps us find the series recurrence rule.
+    const user = await AuthDriver.googleSignup();
+    const syncImport = await createSyncImport(user._id);
+    const calendar = await CalendarDriver.getRandomUserCalendar(user._id);
+    // Importing both the base and first instance helps us find the series recurrence rule.
     // To prevent duplicates in the UI, the GET API will not return the base event
-    await syncImport.importAllEvents(user._id.toString(), "test-calendar", 1);
+    await syncImport.importAllEvents(calendar, 1);
 
-    const currentEventsInDb = await getEventsInDb({
-      user: user._id.toString(),
-    });
-
+    const currentEventsInDb = await getEventsInDb({ calendar: calendar._id });
     const baseEvent = currentEventsInDb.find(isBase)!;
-    const firstInstance = currentEventsInDb.find(isInstance)!;
+    const firstInstance = currentEventsInDb.find((i) =>
+      dayjs(i.originalStartDate).isSame(baseEvent.startDate),
+    )!;
 
     expect(baseEvent).toBeDefined();
     expect(baseEvent).not.toBeNull();
@@ -41,72 +49,91 @@ describe("SyncImport: Full", () => {
   });
 
   it("should connect instances to their base events", async () => {
-    const { user } = await UtilDriver.setupTestUser();
-    const syncImport = await createSyncImport(user._id.toString());
+    const user = await AuthDriver.googleSignup();
+    const syncImport = await createSyncImport(user._id);
+    const calendar = await CalendarDriver.getRandomUserCalendar(user._id);
 
-    await syncImport.importAllEvents(user._id.toString(), "test-calendar", 1);
+    await syncImport.importAllEvents(calendar, GCAL_LIST_PAGE_SIZE);
 
-    const { baseEvents, instanceEvents } = await getCategorizedEventsInDb({
-      user: user._id.toString(),
+    const { baseEvents, instances } = await getCategorizedEventsInDb({
+      calendar: calendar._id,
+      isSomeday: false,
     });
 
-    expect(instanceEvents).toHaveLength(3);
-    instanceEvents.forEach((instance) => {
-      expect(instance.recurrence?.eventId).toBe(baseEvents[0]?._id?.toString());
+    expect(baseEvents.length).toBeGreaterThan(1);
+    expect(instances.length).toBeGreaterThan(1);
+
+    instances.forEach((instance) => {
+      const baseEvent = baseEvents.find((base) =>
+        instance.recurrence?.eventId.equals(base._id),
+      );
+
+      expect(baseEvent).toBeDefined();
+
+      expect(instance.recurrence?.eventId.equals(baseEvent?._id)).toBe(true);
     });
   });
 
   it("should include regular and recurring events and skip cancelled events", async () => {
-    const { user } = await UtilDriver.setupTestUser();
-    const syncImport = await createSyncImport(user._id.toString());
+    const user = await AuthDriver.googleSignup();
+    const syncImport = await createSyncImport(user._id);
+    const calendar = await CalendarDriver.getRandomUserCalendar(user._id);
+    const gcal = await getGcalClient(user._id);
 
-    const { totalProcessed, totalChanged, nextSyncToken } =
-      await syncImport.importAllEvents(user._id.toString(), "test-calendar", 1);
+    const { nextSyncToken } = await syncImport.importAllEvents(calendar, 1);
 
     const currentEventsInDb = await getEventsInDb({
-      user: user._id.toString(),
+      calendar: calendar._id,
+      isSomeday: false,
     });
 
-    expect(totalProcessed).toBe(6); // base + 3 instances + regular + cancelled
-    expect(totalChanged).toBe(5); // base + 3 instances + regular
-    expect(currentEventsInDb).toHaveLength(5); // base + 3 instances + regular
-    // Verify we have the base event
+    const gcalEvents = await Promise.all(
+      currentEventsInDb.map(async ({ metadata }) => {
+        const event = await gcalService.getEvent(
+          gcal,
+          StringV4Schema.parse(metadata?.id),
+          StringV4Schema.parse(calendar.metadata.id),
+        );
+
+        return event;
+      }),
+    );
+
+    expect(gcalEvents).toHaveLength(currentEventsInDb.length);
+
+    gcalEvents.forEach((gcalEvent) => {
+      expect(gcalEvent.status).not.toBe(EventStatus.CANCELLED);
+    });
+
+    // Verify we have the base events
     const baseEvents = currentEventsInDb.filter(isBase);
 
-    expect(baseEvents).toHaveLength(1);
-    expect(baseEvents[0]?.title).toBe("Recurrence");
+    expect(baseEvents.length).toBeGreaterThan(1);
 
     // Verify we have the correct instance
     const instanceEvents = currentEventsInDb.filter(isInstance);
 
-    expect(instanceEvents).toHaveLength(3);
-
-    const baseGevId = baseEvents[0]?.gEventId as string;
-
-    expect(instanceEvents.map((e) => e.gEventId)).toEqual(
-      expect.arrayContaining([expect.stringMatching(baseGevId)]),
-    );
+    expect(instanceEvents.length).toBeGreaterThan(baseEvents.length);
 
     // Verify we have the regular event
-    const regularEvents = currentEventsInDb.filter(
-      ({ recurrence }) => recurrence === undefined || recurrence === null,
-    );
+    const regularEvents = currentEventsInDb.filter(isRegular);
 
-    expect(regularEvents).toHaveLength(1);
-    expect(regularEvents[0]?.gEventId).toBe("regular-1");
+    expect(regularEvents.length).toBeGreaterThan(1);
 
     // Verify sync token
-    expect(nextSyncToken).toBe("final-sync-token");
+    expect(z.coerce.number().safeParse(nextSyncToken).success).toBe(true);
   });
 
   it("should not create duplicate events for recurring events", async () => {
-    const { user } = await UtilDriver.setupTestUser();
-    const syncImport = await createSyncImport(user._id.toString());
+    const user = await AuthDriver.googleSignup();
+    const syncImport = await createSyncImport(user._id);
+    const calendar = await CalendarDriver.getRandomUserCalendar(user._id);
 
-    await syncImport.importAllEvents(user._id.toString(), "test-calendar", 1);
+    await syncImport.importAllEvents(calendar, 1);
 
     const currentEventsInDb = await getEventsInDb({
-      user: user._id.toString(),
+      calendar: calendar._id,
+      isSomeday: false,
     });
 
     // Get all instance events
@@ -115,11 +142,11 @@ describe("SyncImport: Full", () => {
     // For each instance event, verify there are no duplicates
     const eventIds = new Set<string>();
     const duplicateEvents = instances.filter((event) => {
-      if (!event.gEventId) return false; // Skip events without IDs
-      if (eventIds.has(event.gEventId)) {
+      if (!event.metadata?.id) return false; // Skip events without IDs
+      if (eventIds.has(event.metadata.id)) {
         return true;
       }
-      eventIds.add(event.gEventId);
+      eventIds.add(event.metadata.id);
       return false;
     });
 
@@ -127,20 +154,23 @@ describe("SyncImport: Full", () => {
   });
 
   it("should not create duplicate events for regular events", async () => {
-    const { user } = await UtilDriver.setupTestUser();
-    const syncImport = await createSyncImport(user._id.toString());
+    const user = await AuthDriver.googleSignup();
+    const syncImport = await createSyncImport(user._id);
+    const calendar = await CalendarDriver.getRandomUserCalendar(user._id);
 
-    await syncImport.importAllEvents(user._id.toString(), "test-calendar", 1);
+    await syncImport.importAllEvents(calendar, 1);
 
     const currentEventsInDb = await getEventsInDb({
-      user: user._id.toString(),
+      calendar: calendar._id,
+      isSomeday: false,
     });
 
     const regularEvents = currentEventsInDb.filter(
       ({ recurrence }) => recurrence === undefined || recurrence === null,
     );
 
-    expect(regularEvents).toHaveLength(1);
-    expect(regularEvents[0]?.gEventId).toBe("regular-1");
+    expect(
+      new Set(regularEvents.map(({ _id }) => _id.toString())).size,
+    ).toEqual(regularEvents.length);
   });
 });

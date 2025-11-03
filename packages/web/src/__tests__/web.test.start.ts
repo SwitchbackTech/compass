@@ -5,7 +5,7 @@ import {
   mockScroll,
 } from "@web/__tests__/utils/web.test.util";
 
-beforeAll(() => {
+beforeAll(async () => {
   mockScroll();
   mockResizeObserver();
 

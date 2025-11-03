@@ -2,8 +2,8 @@ import CompassCLI from "@scripts/cli";
 import { runBuild } from "@scripts/commands/build";
 import { startDeleteFlow } from "@scripts/commands/delete";
 import { inviteWaitlist } from "@scripts/commands/invite";
-import { NodeEnv } from "../../core/src/constants/core.constants";
-import { MigratorType } from "./common/cli.types";
+import { MigratorType } from "@scripts/common/cli.types";
+import { NodeEnv } from "@core/constants/core.constants";
 
 const mockGetCliOptions = jest.fn();
 const mockValidateBuild = jest.fn();

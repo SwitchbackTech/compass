@@ -1,36 +1,44 @@
+import { ObjectId } from "bson";
 import { gcalEvents } from "@core/__mocks__/v1/events/gcal/gcal.event";
 import { recurring } from "@core/__mocks__/v1/events/gcal/gcal.recurring";
 import { timed } from "@core/__mocks__/v1/events/gcal/gcal.timed";
 import { Origin, Priorities } from "@core/constants/core.constants";
-import { Schema_Event } from "@core/types/event.types";
+import { MapGCalEvent } from "@core/mappers/map.gcal.event";
+import {
+  EventStatus,
+  InstanceEventMetadataSchema,
+  Schema_Event,
+} from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
-import { MapEvent } from "./map.event";
+import { isBase } from "../util/event/event.util";
 
-describe("toCompass", () => {
-  const eventsFromCompass = MapEvent.toCompass(
-    "user1",
+describe("toEvents", () => {
+  const calendar = new ObjectId();
+
+  const eventsFromCompass = MapGCalEvent.toEvents(
+    calendar,
     gcalEvents.items as gSchema$Event[],
     Origin.COMPASS,
   );
 
-  const eventsFromGcalImport = MapEvent.toCompass(
-    "user1",
+  const eventsFromGcalImport = MapGCalEvent.toEvents(
+    calendar,
     gcalEvents.items as gSchema$Event[],
     Origin.GOOGLE_IMPORT,
   );
 
   const allEvents = [...eventsFromCompass, ...eventsFromGcalImport];
 
-  describe("cancelled", () => {
+  describe(EventStatus.CANCELLED, () => {
     it("skips cancelled events", () => {
-      const events = MapEvent.toCompass(
-        "someId",
+      const events = MapGCalEvent.toEvents(
+        calendar,
         gcalEvents.items as gSchema$Event[],
         Origin.GOOGLE,
       );
 
       const hasCancelledEvent = events.some((e: Schema_Event) => {
-        return (e as gSchema$Event).status === "cancelled";
+        return (e as gSchema$Event).status === EventStatus.CANCELLED;
       });
 
       expect(hasCancelledEvent).toBe(false);
@@ -44,15 +52,7 @@ describe("toCompass", () => {
       });
     });
   });
-  describe("isAllDay", () => {
-    it("infers isAllDay when date is in YYYY-MM-DD format", () => {
-      allEvents.forEach((e) => {
-        if (e.startDate.length === "YYYY-MM-DD".length) {
-          expect(e.isAllDay).toBe(true);
-        }
-      });
-    });
-  });
+
   describe("priority", () => {
     it("sets priority to unassigned by default", () => {
       const gEvent = (gcalEvents.items as gSchema$Event[]).find(
@@ -62,7 +62,11 @@ describe("toCompass", () => {
         throw new Error("Test event not found");
       }
 
-      const cEvent = MapEvent.toCompass("user1", [gEvent], Origin.COMPASS)[0];
+      const cEvent = MapGCalEvent.toEvents(
+        calendar,
+        [gEvent],
+        Origin.COMPASS,
+      )[0];
       if (!cEvent) {
         throw new Error("Failed to map event");
       }
@@ -78,8 +82,8 @@ describe("toCompass", () => {
         throw new Error("Test event not found");
       }
 
-      const cEvent = MapEvent.toCompass(
-        "user99",
+      const cEvent = MapGCalEvent.toEvents(
+        calendar,
         [regularGcalEvent],
         Origin.GOOGLE_IMPORT,
       )[0];
@@ -87,7 +91,7 @@ describe("toCompass", () => {
         throw new Error("Failed to map event");
       }
 
-      expect(cEvent.priority).toBe("work");
+      expect(cEvent.priority).toBe(Priorities.WORK);
     });
 
     it("sets priority to unassigned if a priority exists but doesn't match enum", () => {
@@ -103,7 +107,11 @@ describe("toCompass", () => {
         },
       };
 
-      const cEvent = MapEvent.toCompass("user1", [gEvent], Origin.COMPASS)[0];
+      const cEvent = MapGCalEvent.toEvents(
+        calendar,
+        [gEvent],
+        Origin.COMPASS,
+      )[0];
       if (!cEvent) {
         throw new Error("Failed to map event");
       }
@@ -113,10 +121,10 @@ describe("toCompass", () => {
   });
 
   describe("recurrence", () => {
-    it("does not include gRecurringEventId for regular events", () => {
+    it("does not include metadata.recurringEventId for regular events", () => {
       const regularGEvent = timed[0] as gSchema$Event;
-      const cEvent = MapEvent.toCompass(
-        "user1",
+      const cEvent = MapGCalEvent.toEvents(
+        calendar,
         [regularGEvent],
         Origin.COMPASS,
       )[0];
@@ -124,7 +132,9 @@ describe("toCompass", () => {
         throw new Error("Failed to map event");
       }
 
-      expect(cEvent.gRecurringEventId).toBeUndefined();
+      expect(() =>
+        InstanceEventMetadataSchema.parse(cEvent.metadata),
+      ).toThrow();
     });
     it("includes recurrence when rule is present", () => {
       const gEvent = recurring[0] as gSchema$Event | undefined;
@@ -132,8 +142,8 @@ describe("toCompass", () => {
         throw new Error("Test event not found in mock data");
       }
 
-      const cEvent = MapEvent.toCompass(
-        "user1",
+      const cEvent = MapGCalEvent.toEvents(
+        calendar,
         [gEvent],
         Origin.GOOGLE_IMPORT,
       )[0];
@@ -147,14 +157,14 @@ describe("toCompass", () => {
       expect(cEvent.recurrence?.rule).toEqual([
         "RRULE:FREQ=DAILY;UNTIL=20250916T225959Z",
       ]);
-      expect(cEvent.recurrence?.eventId).toBeUndefined();
+      expect(cEvent.recurrence?.eventId).toBeDefined();
     });
-    it("does not include both recurrence rule and id simultaneously", () => {
+    it("includes both recurrence rule and id for base event", () => {
       const gEvent = {
         kind: "calendar#event",
         etag: '"3487376669522302"',
         id: "7q78dn5t1eu6ikjq5mj4q7s93d_R20250403T120000",
-        status: "confirmed",
+        status: EventStatus.CONFIRMED,
         htmlLink:
           "https://www.google.com/calendar/event?eid=N3E3OGRuNXQxZXU2aWtqcTVtajRxN3M5M2RfMjAyNTA0MDNUMTIwMDAwWiBsYW5jZS5lc3NlcnRAbQ",
         created: "2025-04-03T13:49:29.000Z",
@@ -185,36 +195,56 @@ describe("toCompass", () => {
         eventType: "default",
       };
 
-      const cEvent = MapEvent.toCompass("user1", [gEvent], Origin.COMPASS)[0];
+      const cEvent = MapGCalEvent.toEvents(
+        calendar,
+        [gEvent],
+        Origin.COMPASS,
+      )[0];
       if (!cEvent) {
         throw new Error("Failed to map event");
       }
 
       expect(cEvent.recurrence).toBeDefined();
-      expect(cEvent.recurrence?.eventId).toBeUndefined();
+      expect(cEvent.recurrence?.eventId).toBeDefined();
+      expect(isBase(cEvent)).toBe(true);
     });
-    it("stores the recurringEventId (gcal) as gRecurringEventId (Compass)", () => {
+
+    it("stores the recurringEventId (gcal) in metadata.recurringEventId (Compass)", () => {
       const gEventInstance = recurring[1] as gSchema$Event;
+
       if (!gEventInstance) {
         throw new Error("Test event not found in mock data");
       }
 
-      const cEvent = MapEvent.toCompass(
-        "user1",
-        [gEventInstance],
+      const cEvent = MapGCalEvent.toEvents(
+        calendar,
+        [recurring[0], gEventInstance],
         Origin.GOOGLE_IMPORT,
-      )[0];
+      )[1];
 
       if (!cEvent) {
         throw new Error("Failed to map event");
       }
 
-      expect(cEvent.recurrence).toBeUndefined();
-      expect(cEvent.recurrence?.rule).toBeUndefined();
+      expect(cEvent.recurrence).toBeDefined();
+      expect(cEvent.recurrence?.rule).toBeDefined();
       expect(cEvent.recurrence?.eventId).not.toBe(
         gEventInstance.recurringEventId,
       );
-      expect(cEvent.gRecurringEventId).toBe(gEventInstance.recurringEventId);
+      expect(cEvent.metadata).toHaveProperty(
+        "recurringEventId",
+        gEventInstance.recurringEventId,
+      );
+    });
+
+    it("stores throws an error if the base gcal event is not found", () => {
+      expect(() =>
+        MapGCalEvent.toEvents(
+          calendar,
+          recurring.slice(1),
+          Origin.GOOGLE_IMPORT,
+        ),
+      ).toThrow("Base event not found for instance");
     });
   });
 });

@@ -10,10 +10,10 @@ import {
 } from "@core/types/waitlist/waitlist.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import { isMissingWaitlistInviteTagId } from "@backend/common/constants/env.util";
+import EmailService from "@backend/email/email.service";
 import { Response_TagSubscriber } from "@backend/email/email.types";
-import EmailService from "../../email/email.service";
-import { WaitlistRepository } from "../repo/waitlist.repo";
-import { mapWaitlistAnswerToSubscriber } from "./waitlist.service.util";
+import { WaitlistRepository } from "@backend/waitlist/repo/waitlist.repo";
+import { mapWaitlistAnswerToSubscriber } from "@backend/waitlist/service/waitlist.service.util";
 
 const logger = Logger("app:waitlist.service");
 

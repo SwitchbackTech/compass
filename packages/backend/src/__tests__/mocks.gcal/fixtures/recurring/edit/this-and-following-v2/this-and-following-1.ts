@@ -1,3 +1,5 @@
+import { EventStatus } from "@core/types/event.types";
+
 /**
  * Scenario: After editing a recurrence that was previously edited
  */
@@ -21,7 +23,7 @@ export const thisAndFollowing1Payload = {
       kind: "calendar#event",
       etag: '"3485642971791358"',
       id: "e5srrkr361upjc2be22u6ti4pe",
-      status: "confirmed",
+      status: EventStatus.CONFIRMED,
       htmlLink:
         "https://www.google.com/calendar/event?eid=ZTVzcnJrcjM2MXVwamMyYmUyMnU2dGk0cGVfMjAyNTA0MDFUMTIwMDAwWiBsYW5jZS5lc3NlcnRAbQ",
       created: "2025-03-24T12:58:18.000Z",
@@ -57,7 +59,7 @@ export const thisAndFollowing1Payload = {
       kind: "calendar#event",
       etag: '"3485642971791358"',
       id: "e5srrkr361upjc2be22u6ti4pe_R20250409T120000",
-      status: "confirmed",
+      status: EventStatus.CONFIRMED,
       htmlLink:
         "https://www.google.com/calendar/event?eid=ZTVzcnJrcjM2MXVwamMyYmUyMnU2dGk0cGVfMjAyNTA0MDlUMTIwMDAwWiBsYW5jZS5lc3NlcnRAbQ",
       created: "2025-03-24T12:58:18.000Z",

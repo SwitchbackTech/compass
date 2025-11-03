@@ -1,3 +1,4 @@
+import { EventStatus } from "@core/types/event.types";
 import { gSchema$Events } from "@core/types/gcal";
 
 export const deleteThisAndFollowingPayload2: gSchema$Events = {
@@ -20,7 +21,7 @@ export const deleteThisAndFollowingPayload2: gSchema$Events = {
       kind: "calendar#event",
       etag: '"3485822854521118"',
       id: "72o12msae3t6au1lim41i8tu6j",
-      status: "confirmed",
+      status: EventStatus.CONFIRMED,
       htmlLink:
         "https://www.google.com/calendar/event?eid=NzJvMTJtc2FlM3Q2YXUxbGltNDFpOHR1NmpfMjAyNTAzMjRUMTUwMDAwWiBsYW5jZS5lc3NlcnRAbQ",
       created: "2025-03-25T14:02:10.000Z",
@@ -54,7 +55,7 @@ export const deleteThisAndFollowingPayload2: gSchema$Events = {
       kind: "calendar#event",
       etag: '"3485822854521118"',
       id: "72o12msae3t6au1lim41i8tu6j_20250328T150000Z",
-      status: "cancelled",
+      status: EventStatus.CANCELLED,
     },
   ],
 };

@@ -1,16 +1,16 @@
-import { ClientSession, ObjectId } from "mongodb";
+import { ClientSession, Filter, ObjectId } from "mongodb";
 import { z } from "zod/v4";
 import { MapCalendar } from "@core/mappers/map.calendar";
 import {
+  CalendarProvider,
   CompassCalendarSchema,
   Schema_Calendar,
 } from "@core/types/calendar.types";
-import { CalendarProvider } from "@core/types/event.types";
 import { gCalendar } from "@core/types/gcal";
 import { Resource_Sync } from "@core/types/sync.types";
 import { zObjectId } from "@core/types/type.utils";
 import mongoService from "@backend/common/services/mongo.service";
-import { getCalendarsToSync } from "@backend/sync/services/init/sync.init";
+import syncService from "@backend/sync/services/sync.service";
 import { updateSync } from "@backend/sync/util/sync.queries";
 
 class CalendarService {
@@ -29,27 +29,25 @@ class CalendarService {
    * this method will delete calendars that are no longer present
    */
   async initializeGoogleCalendars(
-    userId: ObjectId | string,
+    user: ObjectId,
     gcal: gCalendar,
     session?: ClientSession,
   ) {
-    const _user = zObjectId.parse(userId);
     const bulkUpsert = mongoService.calendar.initializeUnorderedBulkOp();
-
-    const googleCalendarResult = await getCalendarsToSync(gcal);
+    const googleCalendarResult = await syncService.getCalendarsToSync(gcal);
     const { calendars: googleCalendars } = googleCalendarResult;
     const { nextPageToken, nextSyncToken } = googleCalendarResult;
 
     await updateSync(
       Resource_Sync.CALENDAR,
-      _user.toString(),
+      user.toString(),
       Resource_Sync.CALENDAR,
       { nextSyncToken, nextPageToken: nextPageToken! },
       session,
     );
 
     const calendars = googleCalendars.map((calendar) =>
-      MapCalendar.gcalToCompass(_user, calendar),
+      MapCalendar.gcalToCompass(user, calendar),
     );
 
     calendars.forEach(
@@ -91,7 +89,7 @@ class CalendarService {
 
     bulkUpsert
       .find({
-        user: _user,
+        user,
         "metadata.provider": CalendarProvider.GOOGLE,
         "metadata.id": { $nin: googleCalendars.map(({ id }) => id) },
       })
@@ -121,40 +119,95 @@ class CalendarService {
     );
   };
 
+  async getByUser(user: ObjectId, _id: ObjectId, session?: ClientSession) {
+    const calendar = await mongoService.calendar.findOne(
+      { user, _id },
+      { session },
+    );
+
+    return calendar;
+  }
+
+  async getByUserAndProvider(
+    user: ObjectId,
+    id: string,
+    provider: CalendarProvider,
+  ) {
+    const calendar = await mongoService.calendar.findOne({
+      user,
+      "metadata.id": id,
+      "metadata.provider": provider,
+    });
+
+    return calendar;
+  }
+
   /**
    * Get calendars for a user
    */
-  getByUser = async (userId: ObjectId | string) => {
-    return await mongoService.calendar
-      .find({ user: zObjectId.parse(userId) })
-      .toArray();
+  getAllByUser = async (
+    user: ObjectId,
+    provider?: CalendarProvider,
+    session?: ClientSession,
+  ) => {
+    const filter: Filter<Schema_Calendar> = { user };
+
+    if (provider) Object.assign(filter, { "metadata.provider": provider });
+
+    return await mongoService.calendar.find(filter, { session }).toArray();
   };
 
   /**
    * Get selected calendars for a user
+   *
+   * Including the provider arg will filter by provider also
    */
-  getSelectedByUser = async (userId: ObjectId | string) => {
-    return await mongoService.calendar
-      .find({ user: zObjectId.parse(userId), selected: true })
-      .toArray();
+  getSelectedByUserAndProvider = async (
+    user: ObjectId,
+    provider?: CalendarProvider,
+    session?: ClientSession,
+  ) => {
+    const filter: Filter<Schema_Calendar> = { user, selected: true };
+
+    if (provider) Object.assign(filter, { "metadata.provider": provider });
+
+    return await mongoService.calendar.find(filter, { session }).toArray();
   };
 
   /**
    * Get primary calendar for a user
    */
-  getPrimaryByUser = async (userId: ObjectId | string) => {
-    return await mongoService.calendar.findOne({
-      user: zObjectId.parse(userId),
-      primary: true,
-    });
+  getPrimaryByUser = async (user: ObjectId) => {
+    return await mongoService.calendar.findOne({ user, primary: true });
   };
+
+  /**
+   * Delete all calendars for a user
+   *
+   * **Alert** ==> Never delete user's external calendar data
+   */
+  async deleteAllByUser(
+    user: ObjectId,
+    provider?: CalendarProvider,
+    session?: ClientSession,
+  ) {
+    const filter: Filter<Schema_Calendar> = { user };
+
+    if (provider) Object.assign(filter, { "metadata.provider": provider });
+
+    const response = await mongoService.calendar.deleteMany(filter, {
+      session,
+    });
+
+    return response;
+  }
 
   /**
    * Update calendar selection status
    */
   toggleSelection = async (
-    userId: ObjectId | string,
-    calendars: Array<{ id: string | ObjectId; selected: boolean }>,
+    user: ObjectId,
+    calendars: Array<{ id: ObjectId; selected: boolean }>,
   ) => {
     const bulkUpdate = mongoService.calendar.initializeUnorderedBulkOp();
 
@@ -162,7 +215,7 @@ class CalendarService {
       .parse(calendars)
       .forEach(({ id, selected }) => {
         bulkUpdate
-          .find({ user: zObjectId.parse(userId), _id: zObjectId.parse(id) })
+          .find({ user, _id: id })
           .update({ $set: { selected, updatedAt: new Date() } });
       });
 
@@ -170,17 +223,6 @@ class CalendarService {
 
     return result.isOk();
   };
-
-  /**
-   * Delete all calendars for a user
-   */
-  async deleteAllByUser(userId: ObjectId | string) {
-    const response = await mongoService.calendar.deleteMany({
-      user: zObjectId.parse(userId),
-    });
-
-    return response;
-  }
 }
 
 export default new CalendarService();

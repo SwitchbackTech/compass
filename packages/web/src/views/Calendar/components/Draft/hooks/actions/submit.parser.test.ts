@@ -1,8 +1,6 @@
 import { Origin, Priorities } from "@core/constants/core.constants";
-import {
-  Schema_GridEvent,
-  Schema_SomedayEvent,
-} from "@web/common/types/web.event.types";
+import { Schema_SomedayEvent } from "@core/types/event.types";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   OnSubmitParser,
   parseSomedayEventBeforeSubmit,
@@ -11,11 +9,11 @@ import {
 
 // Mock the validators
 jest.mock("@web/common/validators/grid.event.validator", () => ({
-  validateGridEvent: jest.fn((event) => event as Schema_GridEvent),
+  validateGridEvent: jest.fn((event) => event),
 }));
 
 jest.mock("@web/common/validators/someday.event.validator", () => ({
-  validateSomedayEvent: jest.fn((event) => event as Schema_SomedayEvent),
+  validateSomedayEvent: jest.fn((event) => event),
 }));
 
 // Mock the event utility

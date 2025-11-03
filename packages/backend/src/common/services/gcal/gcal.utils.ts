@@ -1,4 +1,5 @@
 import { GaxiosError } from "googleapis-common";
+import { EventStatus } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
 
 const cancelled = (e: gSchema$Event) => {
@@ -8,7 +9,7 @@ const cancelled = (e: gSchema$Event) => {
         so this'll need to be updated once Compass supports recurring events
       - see 'status' section of: https://developers.google.com/calendar/api/v3/reference/events#resource
   */
-  return e.status && e.status === "cancelled";
+  return e.status && e.status === EventStatus.CANCELLED;
 };
 
 export const cancelledEventsIds = (events: gSchema$Event[]) => {
@@ -26,7 +27,7 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
   const instances = events.filter((event) => event.recurringEventId);
 
   const cancelledEvents = events.filter(
-    (event) => event.status === "cancelled",
+    (event) => event.status === EventStatus.CANCELLED,
   );
   return { baseEvent, instances, cancelledEvents };
 };

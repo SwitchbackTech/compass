@@ -1,3 +1,5 @@
+import { EventStatus } from "@core/types/event.types";
+
 export const thisAndFollowing0Payload = {
   kind: "calendar#events",
   etag: '"p32vujd53seh8o0o"',
@@ -18,7 +20,7 @@ export const thisAndFollowing0Payload = {
       kind: "calendar#event",
       etag: '"3485642597755262"',
       id: "5hni4sj3ql1669otmjg7sn1mok",
-      status: "confirmed",
+      status: EventStatus.CONFIRMED,
       htmlLink:
         "https://www.google.com/calendar/event?eid=NWhuaTRzajNxbDE2NjlvdG1qZzdzbjFtb2tfMjAyNTAyMDlUMTQwMDAwWiBsYW5jZS5lc3NlcnRAbQ",
       created: "2025-03-24T12:58:18.000Z",
@@ -52,7 +54,7 @@ export const thisAndFollowing0Payload = {
       kind: "calendar#event",
       etag: '"3485642597755262"',
       id: "e5srrkr361upjc2be22u6ti4pe",
-      status: "confirmed",
+      status: EventStatus.CONFIRMED,
       htmlLink:
         "https://www.google.com/calendar/event?eid=ZTVzcnJrcjM2MXVwamMyYmUyMnU2dGk0cGVfMjAyNTA0MDFUMTIwMDAwWiBsYW5jZS5lc3NlcnRAbQ",
       created: "2025-03-24T12:58:18.000Z",

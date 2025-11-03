@@ -4,29 +4,49 @@ import {
   SOMEDAY_EVENT_CHANGED,
 } from "@core/constants/websocket.constants";
 import { Logger } from "@core/logger/winston.logger";
-import { CompassEvent } from "@core/types/event.types";
+import {
+  EventUpdate,
+  TransitionCategoriesRecurrence,
+} from "@core/types/event.types";
+import { Event_Transition } from "@core/types/sync.types";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
 import { CompassEventFactory } from "@backend/event/classes/compass.event.generator";
 import { CompassEventParser } from "@backend/event/classes/compass.event.parser";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
-import { Event_Transition } from "@backend/sync/sync.types";
 
 const logger = Logger("app.compass.sync.processor");
 
 export class CompassSyncProcessor {
   static async processEvents(
-    events: CompassEvent[],
+    events: EventUpdate[],
     _session?: ClientSession,
   ): Promise<Event_Transition[]> {
-    const summary: Event_Transition[] = [];
-
+    // why session.withTransaction
+    // see: https://github.com/Automattic/mongoose/issues/7502
     logger.debug(`Processing ${events.length} event(s)...`);
 
-    const session = _session ?? (await mongoService.startSession());
+    const session =
+      _session ??
+      (await mongoService.startSession({ causalConsistency: true }));
 
-    if (!_session) session.startTransaction();
+    const summaries: Event_Transition[] = await (_session
+      ? CompassSyncProcessor.#processEvents(events, session)
+      : session.withTransaction(async () =>
+          CompassSyncProcessor.#processEvents(events, session),
+        ));
+
+    return summaries;
+  }
+
+  static async #processEvents(
+    events: EventUpdate[],
+    session?: ClientSession,
+  ): Promise<Event_Transition[]> {
+    const summaries: Event_Transition[] = [];
+
+    logger.debug(`Processing ${events.length} event(s)...`);
 
     try {
       const compassEvents = await Promise.all(
@@ -35,8 +55,10 @@ export class CompassSyncProcessor {
         ),
       ).then((events) => events.flat());
 
-      console.log("LATEST CHANGES (from Compass):");
-      console.log(JSON.stringify(compassEvents, null, 2));
+      if (!events.some((e) => e.providerSync)) {
+        console.log("LATEST CHANGES (from Compass):");
+        console.log(JSON.stringify(compassEvents, null, 2));
+      }
 
       for (const event of compassEvents) {
         const changes = await CompassSyncProcessor.handleCompassChange(
@@ -44,19 +66,13 @@ export class CompassSyncProcessor {
           session,
         );
 
-        summary.push(...changes);
+        summaries.push(...changes);
       }
-
-      if (!_session) await session.commitTransaction();
-    } catch (error) {
-      if (!_session) await session.abortTransaction();
-
-      throw error;
+    } finally {
+      CompassSyncProcessor.notifyClients(summaries);
     }
 
-    if (!_session) CompassSyncProcessor.notifyClients(events, summary);
-
-    return summary;
+    return summaries;
   }
 
   private static getNotificationType({
@@ -81,36 +97,36 @@ export class CompassSyncProcessor {
     return notifications;
   }
 
-  private static notifyClients(
-    events: CompassEvent[],
-    summary: Event_Transition[],
-  ): void {
-    const notifications = [
-      ...new Set(summary.flatMap(CompassSyncProcessor.getNotificationType)),
-    ];
+  private static notifyClients(summaries: Event_Transition[]): void {
+    const notices = summaries.flatMap((summary) => {
+      const userId = summary.user.toString();
+      const notification = CompassSyncProcessor.getNotificationType(summary);
 
-    const uniqueUserIds = new Set(events.map((e) => e.payload.user));
+      return notification.map((note) => `${userId}:${note}`);
+    });
 
-    uniqueUserIds.forEach((userId) => {
-      notifications.forEach((notification) => {
-        switch (notification) {
-          case EVENT_CHANGED:
-            webSocketServer.handleBackgroundCalendarChange(userId);
-            break;
-          case SOMEDAY_EVENT_CHANGED:
-            webSocketServer.handleBackgroundSomedayChange(userId);
-            break;
-          default:
-            logger.error(
-              `Unknown notification type: ${notification} for user: ${userId}`,
-            );
-        }
-      });
+    const uniqueNotices = Array.from(new Set(notices));
+
+    uniqueNotices.forEach((notice) => {
+      const [userId, notification] = notice.split(":");
+
+      switch (notification) {
+        case EVENT_CHANGED:
+          webSocketServer.handleBackgroundCalendarChange(userId!);
+          break;
+        case SOMEDAY_EVENT_CHANGED:
+          webSocketServer.handleBackgroundSomedayChange(userId!);
+          break;
+        default:
+          logger.error(
+            `Unknown notification type: ${notification} for user: ${userId}`,
+          );
+      }
     });
   }
 
   private static async handleCompassChange(
-    event: CompassEvent,
+    event: EventUpdate,
     session?: ClientSession,
   ): Promise<Event_Transition[]> {
     const eventId = event.payload._id;
@@ -123,45 +139,45 @@ export class CompassSyncProcessor {
     logger.info(`Handle Compass event(${eventId}): ${transition}`);
 
     switch (transition) {
-      case "NIL->>STANDALONE_SOMEDAY_CONFIRMED":
-      case "NIL->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":
-      case "NIL->>STANDALONE_CONFIRMED":
-      case "NIL->>RECURRENCE_BASE_CONFIRMED":
-      case "STANDALONE_SOMEDAY->>STANDALONE_CONFIRMED":
-      case "RECURRENCE_BASE_SOMEDAY->>RECURRENCE_BASE_CONFIRMED":
-      case "RECURRENCE_INSTANCE_SOMEDAY->>STANDALONE_CONFIRMED":
+      case `NIL->>${TransitionCategoriesRecurrence.REGULAR_SOMEDAY_CONFIRMED}`:
+      case `NIL->>${TransitionCategoriesRecurrence.RECURRENCE_BASE_SOMEDAY_CONFIRMED}`:
+      case `NIL->>${TransitionCategoriesRecurrence.REGULAR_CONFIRMED}`:
+      case `NIL->>${TransitionCategoriesRecurrence.RECURRENCE_BASE_CONFIRMED}`:
+      case `REGULAR_SOMEDAY->>${TransitionCategoriesRecurrence.REGULAR_CONFIRMED}`:
+      case `RECURRENCE_BASE_SOMEDAY->>${TransitionCategoriesRecurrence.RECURRENCE_BASE_CONFIRMED}`:
+      case `RECURRENCE_INSTANCE_SOMEDAY->>${TransitionCategoriesRecurrence.REGULAR_CONFIRMED}`:
         return parser.createEvent(session);
-      case "STANDALONE_SOMEDAY->>STANDALONE_SOMEDAY_CONFIRMED":
-      case "STANDALONE->>STANDALONE_CONFIRMED":
-      case "RECURRENCE_INSTANCE_SOMEDAY->>RECURRENCE_INSTANCE_SOMEDAY_CONFIRMED":
-      case "RECURRENCE_INSTANCE->>RECURRENCE_INSTANCE_CONFIRMED":
+      case `REGULAR_SOMEDAY->>${TransitionCategoriesRecurrence.REGULAR_SOMEDAY_CONFIRMED}`:
+      case `REGULAR->>${TransitionCategoriesRecurrence.REGULAR_CONFIRMED}`:
+      case `RECURRENCE_INSTANCE_SOMEDAY->>${TransitionCategoriesRecurrence.RECURRENCE_INSTANCE_SOMEDAY_CONFIRMED}`:
+      case `RECURRENCE_INSTANCE->>${TransitionCategoriesRecurrence.RECURRENCE_INSTANCE_CONFIRMED}`:
         return parser.updateEvent(session);
-      case "NIL->>STANDALONE_SOMEDAY_CANCELLED":
-      case "NIL->>STANDALONE_CANCELLED":
-      case "NIL->>RECURRENCE_INSTANCE_CANCELLED":
-      case "NIL->>RECURRENCE_INSTANCE_SOMEDAY_CANCELLED":
-      case "STANDALONE_SOMEDAY->>STANDALONE_SOMEDAY_CANCELLED":
-      case "STANDALONE->>STANDALONE_CANCELLED":
-      case "RECURRENCE_INSTANCE->>RECURRENCE_INSTANCE_CANCELLED":
-      case "RECURRENCE_INSTANCE_SOMEDAY->>RECURRENCE_INSTANCE_SOMEDAY_CANCELLED":
+      case `NIL->>${TransitionCategoriesRecurrence.REGULAR_SOMEDAY_CANCELLED}`:
+      case `NIL->>${TransitionCategoriesRecurrence.REGULAR_CANCELLED}`:
+      case `NIL->>${TransitionCategoriesRecurrence.RECURRENCE_INSTANCE_CANCELLED}`:
+      case `NIL->>${TransitionCategoriesRecurrence.RECURRENCE_INSTANCE_SOMEDAY_CANCELLED}`:
+      case `REGULAR_SOMEDAY->>${TransitionCategoriesRecurrence.REGULAR_SOMEDAY_CANCELLED}`:
+      case `REGULAR->>${TransitionCategoriesRecurrence.REGULAR_CANCELLED}`:
+      case `RECURRENCE_INSTANCE->>${TransitionCategoriesRecurrence.RECURRENCE_INSTANCE_CANCELLED}`:
+      case `RECURRENCE_INSTANCE_SOMEDAY->>${TransitionCategoriesRecurrence.RECURRENCE_INSTANCE_SOMEDAY_CANCELLED}`:
         return parser.deleteEvent(session);
-      case "STANDALONE->>STANDALONE_SOMEDAY_CONFIRMED":
-        return parser.standaloneToSomeday(session);
-      case "RECURRENCE_BASE->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":
+      case `REGULAR->>${TransitionCategoriesRecurrence.REGULAR_SOMEDAY_CONFIRMED}`:
+        return parser.regularToSomeday(session);
+      case `RECURRENCE_BASE->>${TransitionCategoriesRecurrence.RECURRENCE_BASE_SOMEDAY_CONFIRMED}`:
         return parser.seriesToSomedaySeries(session);
-      case "RECURRENCE_BASE_SOMEDAY->>STANDALONE_SOMEDAY_CONFIRMED":
-      case "RECURRENCE_BASE->>STANDALONE_CONFIRMED":
-        return parser.seriesToStandalone(session);
-      case "STANDALONE_SOMEDAY->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":
-      case "STANDALONE->>RECURRENCE_BASE_CONFIRMED":
-        return parser.standaloneToSeries(session);
-      case "RECURRENCE_BASE->>RECURRENCE_BASE_CONFIRMED":
-      case "RECURRENCE_BASE_SOMEDAY->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":
+      case `RECURRENCE_BASE_SOMEDAY->>${TransitionCategoriesRecurrence.REGULAR_SOMEDAY_CONFIRMED}`:
+      case `RECURRENCE_BASE->>${TransitionCategoriesRecurrence.REGULAR_CONFIRMED}`:
+        return parser.seriesToRegular(session);
+      case `REGULAR_SOMEDAY->>${TransitionCategoriesRecurrence.RECURRENCE_BASE_SOMEDAY_CONFIRMED}`:
+      case `REGULAR->>${TransitionCategoriesRecurrence.RECURRENCE_BASE_CONFIRMED}`:
+        return parser.regularToSeries(session);
+      case `RECURRENCE_BASE->>${TransitionCategoriesRecurrence.RECURRENCE_BASE_CONFIRMED}`:
+      case `RECURRENCE_BASE_SOMEDAY->>${TransitionCategoriesRecurrence.RECURRENCE_BASE_SOMEDAY_CONFIRMED}`:
         return parser.updateSeries(session);
-      case "NIL->>RECURRENCE_BASE_SOMEDAY_CANCELLED":
-      case "NIL->>RECURRENCE_BASE_CANCELLED":
-      case "RECURRENCE_BASE_SOMEDAY->>RECURRENCE_BASE_SOMEDAY_CANCELLED":
-      case "RECURRENCE_BASE->>RECURRENCE_BASE_CANCELLED":
+      case `NIL->>${TransitionCategoriesRecurrence.RECURRENCE_BASE_SOMEDAY_CANCELLED}`:
+      case `NIL->>${TransitionCategoriesRecurrence.RECURRENCE_BASE_CANCELLED}`:
+      case `RECURRENCE_BASE_SOMEDAY->>${TransitionCategoriesRecurrence.RECURRENCE_BASE_SOMEDAY_CANCELLED}`:
+      case `RECURRENCE_BASE->>${TransitionCategoriesRecurrence.RECURRENCE_BASE_CANCELLED}`:
         return parser.cancelSeries(session);
       default:
         throw error(

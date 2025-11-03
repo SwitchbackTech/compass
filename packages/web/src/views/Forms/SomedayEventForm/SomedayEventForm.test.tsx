@@ -5,15 +5,14 @@ import "@testing-library/jest-dom/extend-expect";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
-  Categories_Event,
   RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
+import { createMockRegularEvent } from "@core/util/test/ccal.event.factory";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { setupDraftState } from "@web/__tests__/utils/state/draft.state.util";
-import { Schema_WebEvent } from "@web/common/types/web.event.types";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import { EventApi } from "@web/ducks/events/event.api";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
 import { DraftProvider } from "@web/views/Calendar/components/Draft/context/DraftProvider";
@@ -41,7 +40,7 @@ describe("SomedayEventForm Hotkeys", () => {
       Promise.resolve({ status: 200 } as unknown as AxiosResponse<void>),
     );
 
-  const sampleSomedayEvent = createMockStandaloneEvent({
+  const sampleSomedayEvent = createMockRegularEvent({
     isSomeday: true,
   }) as Schema_Event;
 
@@ -51,7 +50,7 @@ describe("SomedayEventForm Hotkeys", () => {
   const defaultCategory = Categories_Event.SOMEDAY_WEEK;
 
   test("should call onSubmit when enter keyboard shortcut is used", async () => {
-    const state = setupDraftState(sampleSomedayEvent as Schema_WebEvent);
+    const state = setupDraftState(sampleSomedayEvent as Schema_Event);
     const { weekProps, dateCalcs, deleteEvent } = state;
 
     render(
@@ -92,7 +91,7 @@ describe("SomedayEventForm Hotkeys", () => {
     const deleteSpy = jest.spyOn(deleteEventSlice.actions, "request");
 
     const { weekProps, dateCalcs, deleteEvent } = setupDraftState(
-      sampleSomedayEvent as Schema_WebEvent,
+      sampleSomedayEvent as Schema_Event,
     );
 
     render(
@@ -135,7 +134,7 @@ describe("SomedayEventForm Hotkeys", () => {
     mockConfirm.mockReturnValue(false);
 
     const { weekProps, dateCalcs, deleteEvent } = setupDraftState(
-      sampleSomedayEvent as Schema_WebEvent,
+      sampleSomedayEvent as Schema_Event,
     );
 
     render(
@@ -171,7 +170,7 @@ describe("SomedayEventForm Hotkeys", () => {
     const user = userEvent.setup();
 
     const { weekProps, dateCalcs, deleteEvent } = setupDraftState(
-      sampleSomedayEvent as Schema_WebEvent,
+      sampleSomedayEvent as Schema_Event,
     );
 
     render(

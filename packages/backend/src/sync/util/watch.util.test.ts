@@ -6,11 +6,6 @@ import {
   encodeChannelToken,
 } from "@backend/sync/util/watch.util";
 
-// Mock ENV
-jest.mock("@backend/common/constants/env.constants", () => ({
-  ENV: { TOKEN_GCAL_NOTIFICATION: "test-notification-token" },
-}));
-
 describe("watch.util", () => {
   const notificationToken = ENV.TOKEN_GCAL_NOTIFICATION;
 
