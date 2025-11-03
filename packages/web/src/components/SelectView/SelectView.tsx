@@ -142,9 +142,8 @@ export const SelectView = ({
             },
           })}
           data-testid="view-select-dropdown"
-          className="absolute top-full right-0 z-50 mt-1 min-w-[140px] rounded border border-gray-600 bg-gray-800 py-1 shadow-lg"
+          className="inset-inline-end-0 absolute top-full z-50 mt-1 min-w-[140px] rounded border border-gray-600 bg-gray-800 py-1 shadow-lg"
           role="listbox"
-          tabIndex={0}
         >
           {options.map((option, index) => {
             const isSelected = currentView === option.view;
