@@ -1,18 +1,34 @@
 import React, { act } from "react";
 import "@testing-library/jest-dom";
-import { screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CLIMB, EUROPE_TRIP } from "@core/__mocks__/v1/events/events.misc";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
+import { viewSlice } from "@web/ducks/events/slices/view.slice";
+import { store } from "@web/store";
 import { CalendarView } from "@web/views/Calendar";
 import {
   findAndUpdateEventInPreloadedState,
   freshenEventStartEndDate,
 } from "@web/views/Calendar/calendar.render.test.utils";
 
+// Mock IntersectionObserver for jsdom
+global.IntersectionObserver = class {
+  constructor(callback: any, options?: any) {}
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
 jest.mock("@web/views/Calendar/hooks/mouse/useEventListener", () => ({
   useEventListener: jest.fn(),
+}));
+
+jest.mock("@web/common/utils/event/event-target-visibility.util", () => ({
+  onEventTargetVisibility: (callback: () => void) => () => {
+    callback();
+  },
 }));
 
 describe("Event Form", () => {
@@ -99,26 +115,26 @@ describe("Event Form", () => {
       expect(reminderInput).toHaveFocus();
     });
 
-    it.skip("it should be focused when the 'edit reminder' btn is clicked in the command palette", async () => {
-      const { container } = render(<CalendarView />, { state: preloadedState });
+    it("it should be focused when the 'edit reminder' btn is clicked in the command palette", async () => {
+      const user = userEvent.setup();
+      render(<CalendarView />);
 
-      const reminderPlaceholder = screen.getByText(
-        "Click to add your reminder",
-      );
+      expect(
+        screen.getByText("Click to add your reminder"),
+      ).toBeInTheDocument();
 
-      expect(reminderPlaceholder).toBeInTheDocument();
+      await user.keyboard("{Control>}k{/Control}");
 
-      await act(async () => userEvent.keyboard("{Meta>}k{/Meta}"));
+      const cmdPaletteEditBtn = await screen.findByRole("button", {
+        name: /edit reminder/i,
+      });
+      await user.click(cmdPaletteEditBtn);
 
-      const cmdPaletteEditBtn = screen.getByText("Edit Reminder [r]");
-
-      expect(cmdPaletteEditBtn).toBeInTheDocument();
-
-      await act(async () => userEvent.click(cmdPaletteEditBtn!));
-
-      const reminderInput = container.querySelector('[id="reminderInput"]');
-
-      expect(reminderInput).toHaveFocus();
+      await waitFor(() => {
+        const input = document.querySelector("#reminderInput");
+        expect(input).toBeInTheDocument();
+        expect(input).toHaveFocus();
+      });
     });
   });
 });
