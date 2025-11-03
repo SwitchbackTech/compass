@@ -41,7 +41,9 @@ describe("AuthController", () => {
       );
 
       // Mock userService methods
-      (userService.reSyncGoogleData as jest.Mock).mockResolvedValue(undefined);
+      (userService.restartGoogleCalendarSync as jest.Mock).mockResolvedValue(
+        undefined,
+      );
       (userService.saveTimeFor as jest.Mock).mockResolvedValue(undefined);
 
       const { cUserId } = await authController.login(
@@ -51,7 +53,7 @@ describe("AuthController", () => {
       );
 
       // Verify reSyncGoogleData was called
-      expect(userService.reSyncGoogleData).toHaveBeenCalledWith(
+      expect(userService.restartGoogleCalendarSync).toHaveBeenCalledWith(
         mockUser._id.toString(),
       );
 

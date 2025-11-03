@@ -11,6 +11,7 @@ const logger = Logger("app:gcal.notification.handler");
 export class GCalNotificationHandler {
   constructor(
     private gcal: gCalendar,
+    private resource: Resource_Sync,
     private userId: string,
     private calendarId: string,
     private nextSyncToken: string,
@@ -20,6 +21,11 @@ export class GCalNotificationHandler {
    * Handle a Google Calendar notification
    */
   async handleNotification(): Promise<Summary_Sync> {
+    if (this.resource !== Resource_Sync.EVENTS) {
+      logger.info(`${this.resource.toUpperCase()} CHANGES - NOT IMPLEMENTED`);
+      return { summary: "IGNORED", changes: [] };
+    }
+
     const { hasChanges, changes } = await this.getLatestChanges();
 
     if (hasChanges) {

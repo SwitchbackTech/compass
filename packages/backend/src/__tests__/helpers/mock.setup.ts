@@ -1,17 +1,23 @@
-import { Handler, Response } from "express";
+import { Handler, NextFunction, Response } from "express";
 import { GoogleApis } from "googleapis";
 import mergeWith, { default as mockMergeWith } from "lodash.mergewith";
 import { randomUUID } from "node:crypto";
 import { SessionRequest } from "supertokens-node/framework/express";
-import { BaseResponse } from "supertokens-node/lib/build/framework";
-import { SessionContainerInterface } from "supertokens-node/lib/build/recipe/session/types";
+import {
+  ExpressRequest,
+  ExpressResponse,
+} from "supertokens-node/lib/build/framework/express/framework";
+import {
+  APIOptions,
+  SessionContainerInterface,
+  VerifySessionOptions,
+} from "supertokens-node/lib/build/recipe/session/types";
+import { UserContext } from "supertokens-node/lib/build/types";
+import { createMockCalendarListEntry as mockCalendarListCreate } from "@core/__tests__/helpers/gcal.factory";
 import { gSchema$CalendarListEntry } from "@core/types/gcal";
 import { UserMetadata } from "@core/types/user.types";
 import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
-import {
-  createMockCalendarList as mockCalendarListCreate,
-  mockGcal,
-} from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
+import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 import { ENV } from "@backend/common/constants/env.constants";
 import { SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
 
@@ -51,12 +57,12 @@ function mockGoogleapis() {
 function mockSuperToken() {
   const userMetadata = new Map<string, UserMetadata>();
 
-  function verifySession() {
-    return (
-      req: SessionRequest,
-      _res: Response & BaseResponse,
-      next?: (err?: unknown) => void,
-    ) => {
+  function verifySession(input: {
+    verifySessionOptions?: VerifySessionOptions;
+    options: APIOptions;
+    userContext: UserContext;
+  }) {
+    return (req: SessionRequest, _res: Response, next?: NextFunction) => {
       try {
         const cookies = (req.headers.cookie?.split(";") ?? [])?.reduce(
           (items, item) => {
@@ -100,10 +106,12 @@ function mockSuperToken() {
             },
           } as SessionContainerInterface;
 
-          return next ? next() : undefined;
+          return next?.();
         }
 
-        throw new Error("invalid superToken session");
+        if (input?.verifySessionOptions?.sessionRequired) {
+          throw new Error("invalid superToken session");
+        }
       } catch (error) {
         if (next) {
           next(error);
@@ -165,6 +173,45 @@ function mockSuperToken() {
       return mergeWith(userMetadataModule, { default: userMetadataModule });
     },
   );
+
+  mockModule(
+    "supertokens-node/lib/build/recipe/session/recipe",
+    (
+      session: typeof import("supertokens-node/lib/build/recipe/session/recipe"),
+    ) => {
+      const getInstanceOrThrowError =
+        session.default.getInstanceOrThrowError.bind(session.default);
+
+      const sessionModule = mergeWith(session, {
+        default: mergeWith(session.default, {
+          getInstanceOrThrowError: jest.fn(() => {
+            const instance = getInstanceOrThrowError();
+
+            return mergeWith(instance, {
+              apiImpl: mergeWith(instance.apiImpl, {
+                verifySession: jest.fn(
+                  async (input: {
+                    verifySessionOptions: VerifySessionOptions | undefined;
+                    options: APIOptions;
+                    userContext: UserContext;
+                  }) => {
+                    const req = input.options.req as ExpressRequest;
+                    const res = input.options.res as ExpressResponse;
+
+                    verifySession(input)(req.original, res.original);
+
+                    return Promise.resolve(req.original.session);
+                  },
+                ),
+              }),
+            });
+          }),
+        }),
+      });
+
+      return sessionModule;
+    },
+  );
 }
 
 function mockWinstonLogger() {
@@ -184,6 +231,12 @@ function mockHttpLoggingMiddleware() {
     httpLoggingMiddleware: jest.fn<void, Parameters<Handler>>((...args) =>
       args[2](),
     ),
+  }));
+}
+
+function mockConstants() {
+  mockModule("@backend/common/constants/backend.constants.ts", () => ({
+    MONGO_BATCH_SIZE: 5,
   }));
 }
 
@@ -220,6 +273,7 @@ export function mockModule<T>(
 export function mockNodeModules() {
   beforeEach(mockCompassTestState);
   afterEach(() => jest.unmock("compass-test-state"));
+  mockConstants();
   mockWinstonLogger();
   mockHttpLoggingMiddleware();
   mockGoogleapis();

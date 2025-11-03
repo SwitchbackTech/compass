@@ -1,4 +1,3 @@
-import React from "react";
 import { Command, WindowsLogo } from "@phosphor-icons/react";
 import { DesktopOS, getDesktopOS } from "@web/common/utils/device/device.util";
 

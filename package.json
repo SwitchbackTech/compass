@@ -7,7 +7,7 @@
   "browserslist": "last 2 Chrome versions",
   "main": "",
   "engines": {
-    "node": ">=18.18.0"
+    "node": ">=24.0.0"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"
@@ -25,9 +25,10 @@
     "dev:backend -verbose": "export DEBUG=* && yarn dev:backend",
     "dev:backend-start": "cd packages/backend && cross-env-shell TZ=Etc/UTC ts-node-dev --respawn --pretty --exit-child --debounce --transpile-only -r tsconfig-paths/register src/app.ts",
     "dev:update": "git checkout main && git pull && yarn",
-    "dev:web": "node packages/scripts/src/commands/devWeb.js",
+    "dev:web": "cd packages/web && yarn webpack serve --mode=development --node-env=local",
     "postinstall": "husky install | chmod ug+x .husky/*",
     "test": "cross-env-shell TZ=Etc/UTC yarn jest",
+    "test:e2e": "playwright test",
     "test:backend": "yarn test backend",
     "test:core": "yarn test core",
     "test:web": "yarn test web",
@@ -51,6 +52,7 @@
     "@eslint/compat": "^1.2.6",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.20.0",
+    "@playwright/test": "^1.56.0",
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@types/uuid": "^9.0.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",

@@ -1,4 +1,4 @@
-import { RRULE } from "@core/constants/core.constants";
+import uniqby from "lodash.uniqby";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import {
@@ -32,63 +32,63 @@ export const getSomedayEventCategory = (
   return Categories_Event.SOMEDAY_WEEK;
 };
 
+export function eventsBetweenDates(
+  events: Schema_SomedayEvent[],
+  start: Dayjs,
+  end: Dayjs,
+): Schema_SomedayEvent[] {
+  return events.filter((event) => {
+    return dayjs(event.startDate).isBetween(start, end, null, "[]");
+  });
+}
+
 export const categorizeSomedayEvents = (
-  somedayEvents: Schema_SomedayEventsColumn["events"],
+  events: Schema_SomedayEventsColumn["events"],
   weekDates: { start: Dayjs; end: Dayjs },
 ): Schema_SomedayEventsColumn => {
   const { start: weekStart, end: weekEnd } = weekDates;
+  const monthStart = weekStart.startOf("month");
+  const monthEnd = weekStart.endOf("month");
+  const _events = Object.values(events) as Schema_SomedayEvent[];
+  const somedayEvents = validateSomedayEvents(_events);
+  const _weekEvents = eventsBetweenDates(somedayEvents, weekStart, weekEnd);
+  const _monthEvents = eventsBetweenDates(somedayEvents, monthStart, monthEnd);
+  const weekEvents = uniqby(_weekEvents, (e) => e.recurrence?.eventId ?? e._id);
 
-  let events = Object.values(somedayEvents) as Schema_SomedayEvent[];
+  const otherMonthEvents = _monthEvents.filter(
+    ({ _id, recurrence }) =>
+      !weekEvents.some(
+        (e) =>
+          e._id === _id ||
+          (typeof e.recurrence?.eventId === "string" &&
+            e.recurrence?.eventId === recurrence?.eventId),
+      ),
+  );
 
-  events = validateSomedayEvents(events);
-
-  const sortedEvents = events.sort((a, b) => a.order - b.order);
-
-  const weekIds: string[] = [];
-  const monthIds: string[] = [];
-
-  sortedEvents.forEach((e) => {
-    const eventStart = dayjs(e.startDate);
-    const eventEnd = dayjs(e.endDate);
-    const isWeek =
-      eventStart.isSameOrAfter(weekStart) && eventEnd.isSameOrBefore(weekEnd);
-
-    if (isWeek) {
-      const isMonthRepeat = e?.recurrence?.rule?.includes(RRULE.MONTH);
-      if (!isMonthRepeat) {
-        weekIds.push(e._id!);
-        return;
-      }
-    }
-
-    const isFutureWeekThisMonth = e?.recurrence?.rule?.includes(RRULE.WEEK);
-    if (isFutureWeekThisMonth) {
-      return;
-    }
-
-    const monthStart = weekStart.startOf("month");
-    const monthEnd = weekStart.endOf("month");
-    const isMonth = eventStart.isBetween(monthStart, monthEnd, null, "[]");
-
-    if (isMonth) {
-      monthIds.push(e._id!);
-    }
-  });
+  const monthEvents = uniqby(
+    otherMonthEvents,
+    (e) => e.recurrence?.eventId ?? e._id,
+  );
 
   const sortedData = {
     columns: {
       [COLUMN_WEEK]: {
         id: `${COLUMN_WEEK}`,
-        eventIds: weekIds,
+        eventIds: weekEvents
+          .sort((a, b) => a.order - b.order)
+          .map((e) => e._id!),
       },
       [COLUMN_MONTH]: {
         id: `${COLUMN_MONTH}`,
-        eventIds: monthIds,
+        eventIds: monthEvents
+          .sort((a, b) => a.order - b.order)
+          .map((e) => e._id!),
       },
     },
     columnOrder: [COLUMN_WEEK, COLUMN_MONTH],
-    events: somedayEvents,
+    events,
   };
+
   return sortedData;
 };
 

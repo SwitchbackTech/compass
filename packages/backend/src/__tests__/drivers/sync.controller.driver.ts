@@ -5,8 +5,9 @@ import {
   IMPORT_GCAL_START,
 } from "@core/constants/websocket.constants";
 import { Status } from "@core/errors/status.codes";
+import { Payload_Sync_Notif } from "@core/types/sync.types";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
-import { ENV } from "@backend/common/constants/env.constants";
+import { encodeChannelToken } from "@backend/sync/util/watch.util";
 
 export class SyncControllerDriver {
   constructor(private readonly baseDriver: BaseDriver) {}
@@ -40,29 +41,24 @@ export class SyncControllerDriver {
 
   async handleGoogleNotification(
     {
-      channelToken = ENV.TOKEN_GCAL_NOTIFICATION,
+      token,
+      resource,
       channelId,
       resourceId,
       resourceState,
       expiration,
-    }: {
-      channelToken?: string;
-      channelId: string;
-      resourceId: string;
-      resourceState: string;
-      expiration: string;
-    },
+    }: Payload_Sync_Notif & { token?: string },
     status: Status = Status.OK,
   ): Promise<
     Omit<request.Response, "body"> & { body: { id: string; status: string } }
   > {
     return request(this.baseDriver.getServerUri())
       .post(`/api${GCAL_NOTIFICATION_ENDPOINT}`)
-      .set("x-goog-channel-token", channelToken)
-      .set("x-goog-channel-id", channelId)
+      .set("x-goog-channel-token", encodeChannelToken({ token, resource }))
+      .set("x-goog-channel-id", channelId.toString())
       .set("x-goog-resource-id", resourceId)
       .set("x-goog-resource-state", resourceState)
-      .set("x-goog-channel-expiration", expiration)
+      .set("x-goog-channel-expiration", expiration.toISOString())
       .expect(status);
   }
 

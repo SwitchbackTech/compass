@@ -115,7 +115,6 @@ export const useSomedaySandbox = ({
   const handleNext = useCallback(async () => {
     // Prevent multiple submissions using ref for immediate check
     if (isSubmittingRef.current) {
-      console.log("preventing multiple submissions");
       return;
     }
 

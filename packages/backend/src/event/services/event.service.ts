@@ -31,10 +31,7 @@ import { gSchema$Event } from "@core/types/gcal";
 import { IDSchema } from "@core/types/type.utils";
 import { getCurrentRangeDates } from "@core/util/date/date.util";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
-import {
-  isExistingInstance,
-  parseCompassEventDate,
-} from "@core/util/event/event.util";
+import { isInstance, parseCompassEventDate } from "@core/util/event/event.util";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
 import { EventError } from "@backend/common/errors/event/event.errors";
@@ -183,7 +180,7 @@ class EventService {
     }
 
     const baseEventIds = events
-      .filter(isExistingInstance)
+      .filter(isInstance)
       .map((e) => new ObjectId(e.recurrence?.eventId));
 
     const baseEvents = await mongoService.event
@@ -192,7 +189,7 @@ class EventService {
 
     return events
       .map((event) => {
-        if (isExistingInstance(event)) {
+        if (isInstance(event)) {
           const baseEvent = baseEvents.find(
             ({ _id }) => _id.toString() === event.recurrence?.eventId,
           );
@@ -242,9 +239,7 @@ class EventService {
       );
     }
 
-    const isInstance = isExistingInstance(event);
-
-    if (isInstance) {
+    if (isInstance(event)) {
       const baseEvent = await mongoService.event.findOne({
         user: userId,
         _id: new ObjectId(event.recurrence?.eventId),
@@ -296,15 +291,16 @@ export const _createCompassEvent = async (
   session?: ClientSession,
 ): Promise<WithCompassId<Omit<Schema_Event, "_id">>> => {
   const { isSomeday } = _event;
-  const providerData = MapEvent.toProviderData(_event, provider);
+  const calendarProvider = isSomeday ? CalendarProvider.COMPASS : provider;
+  const providerData = MapEvent.toProviderData(_event, calendarProvider);
 
   const event = Object.assign(
     MapEvent.removeProviderData(_event),
-    isSomeday ? {} : providerData,
+    providerData,
     { updatedAt: new Date() },
   );
 
-  const instances = isSomeday ? [] : (rrule?.instances(provider) ?? []);
+  const instances = rrule?.instances(calendarProvider) ?? [];
 
   const baseEvent = await mongoService.event.findOneAndReplace(
     { _id: _event._id, user: _event.user },
@@ -319,10 +315,17 @@ export const _createCompassEvent = async (
   if (instances.length > 0) {
     const bulkUpsert = mongoService.event.initializeUnorderedBulkOp();
 
-    instances.forEach((event) => {
-      bulkUpsert.find({ _id: event._id, user: event.user }).upsert().update({
-        $set: event,
-      });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    instances.forEach(({ _id, ...event }) => {
+      bulkUpsert
+        .find({
+          startDate: event.startDate,
+          endDate: event.endDate,
+          recurrence: { eventId: baseEvent._id.toString() },
+          user: event.user,
+        })
+        .upsert()
+        .replaceOne(event);
     });
 
     await bulkUpsert.execute({ session });
@@ -525,7 +528,7 @@ export const _deleteGcal = async (
 
     const response = await gcalService.deleteEvent(gcal, gEventId);
 
-    return response.status < 300;
+    return response.status < 400;
   } catch (e) {
     const error = e as GaxiosError<gSchema$Event>;
 

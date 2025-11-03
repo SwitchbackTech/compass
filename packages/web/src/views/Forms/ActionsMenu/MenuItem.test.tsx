@@ -1,4 +1,4 @@
-import React from "react";
+import { KeyboardEvent } from "react";
 import "@testing-library/jest-dom";
 import { fireEvent, screen } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
@@ -29,7 +29,7 @@ describe("MenuItem", () => {
   it("invokes click handler and stops propagation when activated with Enter", () => {
     const onClick = jest.fn();
     let capturedHandlers: {
-      onKeyDown?: (event: React.KeyboardEvent<HTMLButtonElement>) => void;
+      onKeyDown?: (event: KeyboardEvent<HTMLButtonElement>) => void;
     } | null = null;
 
     const getItemProps = jest.fn((props) => {
@@ -55,7 +55,7 @@ describe("MenuItem", () => {
       key: "Enter",
       preventDefault,
       stopPropagation,
-    } as unknown as React.KeyboardEvent<HTMLButtonElement>;
+    } as unknown as KeyboardEvent<HTMLButtonElement>;
 
     capturedHandlers?.onKeyDown?.(keyboardEvent);
 

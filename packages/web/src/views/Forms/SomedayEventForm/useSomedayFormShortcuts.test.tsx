@@ -1,4 +1,3 @@
-import React from "react";
 import { render } from "@testing-library/react";
 import { Categories_Event } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";

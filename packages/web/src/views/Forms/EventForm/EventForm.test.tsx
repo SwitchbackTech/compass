@@ -1,4 +1,4 @@
-import React, { act } from "react";
+import { act } from "react";
 import "@testing-library/jest-dom/extend-expect";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

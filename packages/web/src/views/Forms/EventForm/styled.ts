@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { darken } from "@core/util/color.utils";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
 import { PriorityButton } from "@web/components/Button/styled";
@@ -31,9 +32,35 @@ export const StyledDescription = styled(Textarea)`
   max-height: 180px;
   position: relative;
   width: calc(100% - 20px) !important;
+  transition: ${({ theme }) => theme.transition.default};
 
   &:hover {
     filter: brightness(90%);
+    background-color: ${({ theme }) => theme.color.border.primary};
+  }
+
+  &::-webkit-scrollbar {
+    cursor: default;
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    cursor: default;
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    cursor: default;
+    background: ${({ theme }) => theme.color.border.primaryDark};
+    border-radius: 999px;
+  }
+
+  @-moz-document url-prefix() {
+    & {
+      scrollbar-width: thin;
+      scrollbar-color: ${({ theme }) => theme.color.border.primaryDark}
+        transparent;
+    }
   }
 `;
 
@@ -60,7 +87,9 @@ export const StyledTitle = styled(Input)`
   background: transparent;
   font-size: ${({ theme }) => theme.text.size["5xl"]};
   font-weight: 600;
+  transition: ${({ theme }) => theme.transition.default};
+
   &:hover {
-    filter: brightness(90%);
+    background-color: ${({ theme }) => theme.color.border.primary};
   }
 `;

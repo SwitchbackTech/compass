@@ -1,4 +1,3 @@
-import React from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import { GROCERIES } from "@core/__mocks__/v1/events/events.misc";

@@ -1,28 +1,48 @@
-import { WithId } from "mongodb";
+import { ObjectId, WithId } from "mongodb";
 import { faker } from "@faker-js/faker";
+import { UserInfo_Google } from "@core/types/auth.types";
 import { Schema_User } from "@core/types/user.types";
-import mongoService from "@backend/common/services/mongo.service";
+import userService from "../../user/services/user.service";
 
 export class UserDriver {
-  static async createUser(): Promise<WithId<Schema_User>> {
+  static generateGoogleUser(
+    overrides: Partial<UserInfo_Google["gUser"]> = {},
+  ): UserInfo_Google["gUser"] {
     const firstName = faker.person.firstName();
     const lastName = faker.person.lastName();
 
-    const user: Schema_User = {
+    return {
+      iss: "https://accounts.google.com",
+      azp: faker.string.uuid(),
+      aud: faker.string.uuid(),
+      sub: faker.string.uuid(),
       email: faker.internet.email(),
-      firstName,
-      lastName,
+      email_verified: true,
+      at_hash: faker.string.alphanumeric(10),
       name: `${firstName} ${lastName}`,
-      locale: faker.location.language().alpha2,
-      google: {
-        googleId: faker.string.uuid(),
-        picture: faker.internet.url({ protocol: "https" }),
-        gRefreshToken: faker.internet.jwt(),
-      },
+      given_name: firstName,
+      family_name: lastName,
+      picture: faker.image.urlPicsumPhotos(),
+      locale: "en",
+      iat: faker.number.int({ min: 1, max: 1000 }),
+      exp: faker.number.int({ min: 1001, max: 2000 }),
+      ...overrides,
     };
+  }
 
-    const created = await mongoService.user.insertOne(user);
+  static async createUser(): Promise<WithId<Schema_User>> {
+    const gUser = UserDriver.generateGoogleUser();
+    const gRefreshToken = faker.internet.jwt();
 
-    return { _id: created.insertedId, ...user };
+    const { userId, ...user } = await userService.createUser(
+      gUser,
+      gRefreshToken,
+    );
+
+    return { ...user, _id: new ObjectId(userId) };
+  }
+
+  static async createUsers(count: number): Promise<Array<WithId<Schema_User>>> {
+    return Promise.all(Array.from({ length: count }, UserDriver.createUser));
   }
 }

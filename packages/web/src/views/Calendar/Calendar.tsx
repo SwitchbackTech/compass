@@ -1,27 +1,26 @@
-import React from "react";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { FlexDirections } from "@web/components/Flex/styled";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
+import { RootProps } from "@web/views/Calendar/calendarView.types";
+import { Dedication } from "@web/views/Calendar/components/Dedication";
+import { Draft } from "@web/views/Calendar/components/Draft/Draft";
+import { DraftProvider } from "@web/views/Calendar/components/Draft/context/DraftProvider";
+import { SidebarDraftProvider } from "@web/views/Calendar/components/Draft/sidebar/context/SidebarDraftProvider";
+import { Grid } from "@web/views/Calendar/components/Grid/";
+import { Header } from "@web/views/Calendar/components/Header/Header";
+import { Shortcuts } from "@web/views/Calendar/components/Shortcuts";
+import { Sidebar } from "@web/views/Calendar/components/Sidebar/Sidebar";
+import { useDateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { useGridLayout } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import { useScroll } from "@web/views/Calendar/hooks/grid/useScroll";
+import { useRefresh } from "@web/views/Calendar/hooks/useRefresh";
+import { useToday } from "@web/views/Calendar/hooks/useToday";
+import { useWeek } from "@web/views/Calendar/hooks/useWeek";
+import { Styled, StyledCalendar } from "@web/views/Calendar/styled";
+import { CmdPalette } from "@web/views/CmdPalette";
 import { RecurringEventUpdateScopeDialog } from "@web/views/Forms/EventForm/RecurringEventUpdateScopeDialog";
-import { CmdPalette } from "../CmdPalette";
-import { RootProps } from "./calendarView.types";
-import { Dedication } from "./components/Dedication";
-import { Draft } from "./components/Draft/Draft";
-import { DraftProvider } from "./components/Draft/context/DraftProvider";
-import { SidebarDraftProvider } from "./components/Draft/sidebar/context/SidebarDraftProvider";
-import { Grid } from "./components/Grid/";
-import { Header } from "./components/Header/Header";
-import { Shortcuts } from "./components/Shortcuts";
-import { Sidebar } from "./components/Sidebar/Sidebar";
-import { useDateCalcs } from "./hooks/grid/useDateCalcs";
-import { useGridLayout } from "./hooks/grid/useGridLayout";
-import { useScroll } from "./hooks/grid/useScroll";
-import { useRefresh } from "./hooks/useRefresh";
-import { useToday } from "./hooks/useToday";
-import { useWeek } from "./hooks/useWeek";
-import { Styled, StyledCalendar } from "./styled";
 
 export const CalendarView = () => {
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
@@ -104,9 +103,9 @@ export const CalendarView = () => {
               </ContextMenuWrapper>
             </StyledCalendar>
           </Shortcuts>
-        </SidebarDraftProvider>
 
-        <RecurringEventUpdateScopeDialog />
+          <RecurringEventUpdateScopeDialog />
+        </SidebarDraftProvider>
       </DraftProvider>
     </Styled>
   );

@@ -41,9 +41,10 @@ export const useRefresh = () => {
           break;
         }
         case Sync_AsyncStateContextReason.SOCKET_SOMEDAY_EVENT_CHANGED: {
+          const dateStart = dayjs(start);
           const { startDate, endDate } = computeSomedayEventsRequestFilter(
-            dayjs(start),
-            dayjs(end),
+            dateStart,
+            dateStart.endOf("month"),
           );
 
           dispatch(

@@ -1,6 +1,8 @@
+import { ObjectId } from "bson";
+
 export const mockEventSetSomeday1 = [
   {
-    _id: "id1a",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Multi-Month 1",
     startDate: "2023-05-28",
@@ -8,7 +10,7 @@ export const mockEventSetSomeday1 = [
     isSomeday: true,
   },
   {
-    _id: "id1b",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Multi-Month 2",
     startDate: "2023-01-28",
@@ -16,7 +18,7 @@ export const mockEventSetSomeday1 = [
     isSomeday: true,
   },
   {
-    _id: "id2",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "First Sunday of New Month",
     startDate: "2023-06-04",
@@ -24,7 +26,7 @@ export const mockEventSetSomeday1 = [
     isSomeday: true,
   },
   {
-    _id: "id3",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Distant Future",
     startDate: "2025-01-01",
@@ -32,7 +34,7 @@ export const mockEventSetSomeday1 = [
     isSomeday: true,
   },
   {
-    _id: "id4",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Distant Past",
     startDate: "1999-01-01",
@@ -40,7 +42,7 @@ export const mockEventSetSomeday1 = [
     isSomeday: true,
   },
   {
-    _id: "id5",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Beginning of Month",
     startDate: "2023-10-01",

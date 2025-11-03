@@ -3,4 +3,6 @@ export const ROOT_ROUTES = {
   LOGIN: "/login",
   LOGOUT: "/logout",
   ROOT: "/",
+  DAY: "/day",
+  NOW: "/now",
 };

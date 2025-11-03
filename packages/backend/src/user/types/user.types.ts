@@ -1,5 +1,5 @@
 export interface Summary_Delete {
-  calendarlist?: number;
+  calendars?: number;
   events?: number;
   eventWatches?: number;
   priorities?: number;

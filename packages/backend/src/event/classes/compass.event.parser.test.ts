@@ -1,4 +1,5 @@
 import { RRule } from "rrule";
+import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
 import {
   CalendarProvider,
   Categories_Recurrence,
@@ -25,7 +26,7 @@ import {
   testCompassSeries,
   testCompassSeriesInGcal,
   testCompassStandaloneEvent,
-} from "./compass.event.parser.test.util";
+} from "@backend/event/classes/compass.event.parser.test.util";
 
 describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
   "CompassEventParser - $calendarProvider calendar",
@@ -157,7 +158,10 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
           await parser.createEvent();
 
-          const { baseEvent } = await testCompassSeries(payload);
+          const { baseEvent } = await testCompassSeries(
+            payload,
+            GCAL_MAX_RECURRENCES,
+          );
 
           switch (calendarProvider) {
             case CalendarProvider.GOOGLE:
@@ -274,8 +278,10 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
           await parser.createEvent();
 
-          const { baseEvent: somedayBaseEvent } =
-            await testCompassSeries(payload);
+          const { baseEvent: somedayBaseEvent } = await testCompassSeries(
+            payload,
+            10,
+          );
 
           switch (calendarProvider) {
             case CalendarProvider.GOOGLE:

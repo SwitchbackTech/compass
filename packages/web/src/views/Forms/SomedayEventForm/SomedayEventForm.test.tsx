@@ -1,5 +1,5 @@
 import { AxiosResponse } from "axios";
-import React, { act } from "react";
+import { act } from "react";
 import { toast } from "react-toastify";
 import "@testing-library/jest-dom/extend-expect";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";

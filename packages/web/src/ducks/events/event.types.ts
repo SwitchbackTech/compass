@@ -4,6 +4,7 @@ import { Priorities } from "@core/constants/core.constants";
 import {
   RecurringEventUpdateScope,
   Schema_Event,
+  WithCompassId,
 } from "@core/types/event.types";
 import { SliceStateContext } from "@web/common/store/helpers";
 import {
@@ -68,7 +69,7 @@ export interface Entities_Event {
 }
 
 export interface Payload_ConvertEvent {
-  event: Schema_WebEvent;
+  event: WithCompassId<Omit<Schema_WebEvent, "_id">>;
 }
 
 interface Payload_DeleteEvent {

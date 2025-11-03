@@ -1,4 +1,5 @@
-import { useCallback } from "react";
+import { ObjectId } from "bson";
+import { useCallback, useMemo } from "react";
 import { DropResult } from "@hello-pangea/dnd";
 import {
   SOMEDAY_MONTH_LIMIT_MSG,
@@ -18,7 +19,9 @@ import {
   COLUMN_WEEK,
   ID_SOMEDAY_DRAFT,
 } from "@web/common/constants/web.constants";
+import { DirtyParser } from "@web/common/parsers/dirty.parser";
 import { Coordinates } from "@web/common/types/util.types";
+import { Schema_WebEvent } from "@web/common/types/web.event.types";
 import {
   computeCurrentEventDateRange,
   computeRelativeEventDateRange,
@@ -81,6 +84,10 @@ export const useSidebarActions = (
   const reduxDraft = useAppSelector(selectDraft);
   const draftType = useAppSelector(selectDraftCategory);
   const activity = useAppSelector(selectDraftActivity);
+
+  const isInstance = useMemo((): boolean => {
+    return ObjectId.isValid(reduxDraft?.recurrence?.eventId ?? "");
+  }, [reduxDraft?.recurrence?.eventId]);
 
   const viewStart = dayjs(start);
   const viewEnd = dayjs(end);
@@ -385,11 +392,21 @@ export const useSidebarActions = (
 
     const isExisting = _event._id;
     if (isExisting) {
+      const recurrenceChanged = DirtyParser.recurrenceChanged(
+        _event as Schema_WebEvent,
+        reduxDraft!,
+      );
+
+      const applyTo =
+        isInstance && recurrenceChanged
+          ? RecurringEventUpdateScope.ALL_EVENTS
+          : RecurringEventUpdateScope.THIS_EVENT;
+
       dispatch(
         editEventSlice.actions.request({
           _id: _event._id,
           event: _event,
-          applyTo: RecurringEventUpdateScope.THIS_EVENT,
+          applyTo,
         }),
       );
     } else {

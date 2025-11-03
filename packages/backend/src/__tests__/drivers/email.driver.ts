@@ -1,4 +1,4 @@
-import { faker } from "@faker-js/faker/.";
+import { faker } from "@faker-js/faker";
 import { Subscriber } from "@core/types/email/email.types";
 import dayjs from "@core/util/date/dayjs";
 import EmailService from "@backend/email/email.service";

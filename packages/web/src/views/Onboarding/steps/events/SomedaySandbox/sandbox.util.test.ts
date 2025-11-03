@@ -23,6 +23,7 @@ jest.mock("@core/types/event.types", () => ({
 
 jest.mock("@web/auth/auth.util", () => ({
   getUserId: jest.fn().mockResolvedValue("test-user-id"),
+  getUserEmail: jest.fn().mockResolvedValue("test@example.com"),
 }));
 
 jest.mock("@web/common/styles/theme.util", () => ({

@@ -27,10 +27,19 @@ Always reference these instructions first and fallback to search or bash command
 
 ### Testing
 
+### Writing Tests in `@compass/web`
+
+- Write tests the way a user would use the application by using the DOM and user interactions with `@testing-library/user-event` rather than internal implementation details of React components.
+- Do NOT use `data-` attributes or CSS selectors to locate elements. Use semantic locators and roles instead.
+
+#### Running Tests
+
 - **Core tests**: `yarn test:core` - Takes ~2 seconds. NEVER CANCEL. Always tests pass.
 - **Web tests**: `yarn test:web` - Takes ~15 seconds. NEVER CANCEL. All tests pass
 - **Full test suite**: `yarn test` - Takes ~18 seconds but FAILS in restricted environments due to MongoDB binary download from fastdl.mongodb.org
   - Use individual package tests instead: `yarn test:core` and `yarn test:web`
+- **DO NOT** attempt to test login functionality without proper backend setup
+- **ALWAYS** run `yarn test:core` and `yarn test:web` and `yarn test:backend` after making changes
 
 ### Building
 
@@ -48,19 +57,6 @@ Always reference these instructions first and fallback to search or bash command
 - Use zod for all validation
 - Define return types with zod schemas
 - Export types generated from schemas
-
-### Manual Testing Requirements
-
-- **ALWAYS** test the web application by starting `yarn dev:web` and navigating to http://localhost:9080/
-- **ALWAYS** verify the login page loads correctly (shows "The gangway lowers only for the chosen" message)
-- **DO NOT** attempt to test login functionality without proper backend setup
-- **ALWAYS** run `yarn test:core` and `yarn test:web` and `yarn test:backend` after making changes
-
-### Screenshots and UI Validation
-
-- Web application successfully loads and displays professional login interface
-- Login page URL: http://localhost:9080/
-- Expected: Dark themed login form with email input and "OK" button
 
 ## Project Structure
 
@@ -101,7 +97,7 @@ packages/core/src/
 
 ### Required for Full Development
 
-- Node.js >=18.18.0 (specified in package.json engines)
+- Node.js (version specified in package.json engines)
 - Yarn package manager (lockfile format)
 - Google Cloud Project with OAuth 2.0 credentials
 - Supertokens account for user session management
@@ -117,8 +113,8 @@ packages/core/src/
 ```bash
 # Required for backend to start
 BASEURL=http://localhost:3000/api
-CLIENT_ID=YOUR_GOOGLE_OAUTH_CLIENT_ID
-CLIENT_SECRET=YOUR_GOOGLE_OAUTH_SECRET
+GOOGLE_CLIENT_ID=YOUR_GOOGLE_OAUTH_CLIENT_ID
+GOOGLE_CLIENT_SECRET=YOUR_GOOGLE_OAUTH_SECRET
 SUPERTOKENS_URI=YOUR_SUPERTOKENS_INSTANCE_URL
 SUPERTOKENS_KEY=YOUR_SUPERTOKENS_API_KEY
 MONGO_URI=YOUR_MONGODB_CONNECTION_STRING
@@ -149,7 +145,7 @@ TZ=Etc/UTC
 
 ### CI/CD Integration
 
-- GitHub Actions runs `yarn install` and `yarn test` on Node.js 20
+- GitHub Actions runs `yarn install` and `yarn test`
 - Tests fail in CI due to MongoDB network restrictions (known limitation)
 - Linting and build validation happens in CI pipeline
 
@@ -170,7 +166,6 @@ TZ=Etc/UTC
 
 ### Workarounds
 
-- Develop frontend-only using `yarn dev:web` for most coding tasks
 - Use individual test commands instead of full test suite
 - Mock external services for backend development when credentials unavailable
 
@@ -179,17 +174,18 @@ TZ=Etc/UTC
 ### Root Level Commands
 
 - `yarn cli [command]` - Access CLI tools for build, seed, delete operations
-- `yarn dev:web` - Start webpack dev server (recommended)
+- `yarn dev:web` - Start webpack dev server
 - `yarn dev:backend` - Start backend server (requires full environment)
 - `yarn test` - Run all tests (fails in restricted environments)
-- `yarn test:core` - Run core package tests only (reliable)
-- `yarn test:web` - Run web package tests only (mostly reliable)
+- `yarn test:core` - Run core package tests only
+- `yarn test:web` - Run web package tests only
 
 Always prioritize frontend development with `yarn dev:web` when backend services are unavailable.
 
 ## Naming Conventions
 
 - Use `is` prefix for boolean variables. For example, `isLoading`, `isError`, `isSuccess`
+- Do not use barrel (`index.ts`) files. Use named exports instead.
 
 ## Branch Naming & Commit Message Conventions
 
@@ -202,9 +198,8 @@ Always prioritize frontend development with `yarn dev:web` when backend services
 **Branch Type Prefixes:**
 
 - `feature/` - New features or enhancements
-- `bug/` or `bugfix/` - Bug fixes
+- `bug/` - Bug fixes
 - `hotfix/` - Critical production fixes
-- `copilot/` - GitHub Copilot agent changes
 - `refactor/` - Code refactoring without functional changes
 - `docs/` - Documentation updates
 
@@ -220,7 +215,6 @@ Always prioritize frontend development with `yarn dev:web` when backend services
 
 - `feature/add-form` - Adding a form
 - `bug/fix-auth` - Fixing authentication issue
-- `copilot/fix-web-ui` - Copilot agent addressing web UI issue
 
 ### Semantic Commit Messages
 

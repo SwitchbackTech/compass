@@ -15,6 +15,7 @@ import {
   _assembleGridEvent,
   _createOptimisticGridEvent,
   _editEvent,
+  getEventById,
   normalizedEventsSchema,
   replaceOptimisticId,
 } from "@web/ducks/events/sagas/saga.util";
@@ -32,6 +33,8 @@ export function* convertSomedayToCalendarEvent({
 
   try {
     const gridEvent = yield* _assembleGridEvent(payload.event);
+
+    delete gridEvent.recurrence;
 
     optimisticEvent = yield* _createOptimisticGridEvent(gridEvent);
 
@@ -53,14 +56,29 @@ export function* convertSomedayToCalendarEvent({
 }
 
 export function* deleteSomedayEvent({ payload }: Action_DeleteEvent) {
+  const event = yield* getEventById(payload._id);
+
+  if (!event) {
+    console.error(`Event with ID ${payload._id} not found for deletion.`);
+    return;
+  }
+
   try {
     yield put(eventsEntitiesSlice.actions.delete(payload));
 
     yield call(EventApi.delete, payload._id, payload.applyTo);
   } catch (error) {
-    yield put(getSomedayEventsSlice.actions.error());
+    yield put(
+      getSomedayEventsSlice.actions.error({
+        __context: { reason: (error as Error).message },
+      }),
+    );
     handleError(error as Error);
-    yield put(getSomedayEventsSlice.actions.request());
+    yield put(
+      eventsEntitiesSlice.actions.insert({
+        [payload._id]: event as Schema_Event,
+      }),
+    );
   }
 }
 
@@ -90,9 +108,12 @@ export function* getSomedayEvents({ payload }: Action_GetEvents) {
         offset: res.offset,
       }),
     );
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
-    yield put(getSomedayEventsSlice.actions.error());
+    yield put(
+      getSomedayEventsSlice.actions.error({
+        __context: { reason: (error as Error).message },
+      }),
+    );
   }
 }
 
@@ -100,7 +121,11 @@ export function* reorderSomedayEvents({ payload }: Action_Someday_Reorder) {
   try {
     yield call(EventApi.reorder, payload);
   } catch (error) {
-    yield put(getSomedayEventsSlice.actions.error());
+    yield put(
+      getSomedayEventsSlice.actions.error({
+        __context: { reason: (error as Error).message },
+      }),
+    );
     handleError(error as Error);
   }
 }

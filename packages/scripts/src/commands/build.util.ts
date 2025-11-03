@@ -1,5 +1,3 @@
-import dotenv from "dotenv";
-import path from "path";
 import shell from "shelljs";
 import {
   COMPASS_BUILD_DEV,
@@ -8,21 +6,19 @@ import {
   PCKG,
 } from "@scripts/common/cli.constants";
 import { Options_Cli } from "@scripts/common/cli.types";
-import {
-  _confirm,
-  fileExists,
-  getApiBaseUrl,
-  getClientId,
-  getEnvironmentAnswer,
-  log,
-} from "@scripts/common/cli.utils";
+import { _confirm, fileExists, log } from "@scripts/common/cli.utils";
 
 /**
  * Utilities for building a project
  */
 
 export const copyNodeConfigsToBuild = async (options: Options_Cli) => {
-  const envName = options.environment === "production" ? ".prod.env" : ".env";
+  const envName =
+    options.environment === "production"
+      ? ".env.production"
+      : options.environment === "staging"
+        ? ".env.staging"
+        : ".env.local";
 
   const envPath = `${COMPASS_ROOT_DEV}/packages/backend/${envName}`;
 
@@ -86,34 +82,6 @@ export const installDependencies = () => {
       process.exit(0);
     },
   );
-};
-
-/**
- * Infers build options from cli options
- * @param options
- * @returns
- */
-export const getBuildOptions = async (options: Options_Cli) => {
-  const environment =
-    options.environment !== undefined
-      ? options.environment
-      : await getEnvironmentAnswer();
-
-  const envFile = environment === "staging" ? ".env" : ".env.prod";
-  const baseUrl = await getApiBaseUrl(environment);
-  const gClientId = options.clientId
-    ? options.clientId
-    : await getClientId(environment);
-
-  // Load env file
-  const envPath = path.join(__dirname, "..", "..", "..", "backend", envFile);
-  dotenv.config({ path: envPath });
-
-  // Read values from env file
-  const posthogKey = process.env["POSTHOG_KEY"];
-  const posthogHost = process.env["POSTHOG_HOST"];
-
-  return { baseUrl, gClientId, posthogKey, posthogHost };
 };
 
 export const removeOldBuildFor = (pckg: string) => {

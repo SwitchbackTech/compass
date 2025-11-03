@@ -118,45 +118,49 @@ export class CompassSyncProcessor {
 
     await parser.init(session);
 
-    const transition = `Compass event(${eventId}): ${parser.getTransitionString()}`;
+    const transition = parser.getTransitionString();
 
-    logger.info(`Handle ${transition}`);
+    logger.info(`Handle Compass event(${eventId}): ${transition}`);
 
-    switch (parser.getTransitionString()) {
+    switch (transition) {
       case "NIL->>STANDALONE_SOMEDAY_CONFIRMED":
       case "NIL->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":
       case "NIL->>STANDALONE_CONFIRMED":
       case "NIL->>RECURRENCE_BASE_CONFIRMED":
       case "STANDALONE_SOMEDAY->>STANDALONE_CONFIRMED":
       case "RECURRENCE_BASE_SOMEDAY->>RECURRENCE_BASE_CONFIRMED":
+      case "RECURRENCE_INSTANCE_SOMEDAY->>STANDALONE_CONFIRMED":
         return parser.createEvent(session);
       case "STANDALONE_SOMEDAY->>STANDALONE_SOMEDAY_CONFIRMED":
-      case "STANDALONE_SOMEDAY->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":
-      case "RECURRENCE_BASE_SOMEDAY->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":
-      case "RECURRENCE_BASE_SOMEDAY->>STANDALONE_SOMEDAY_CONFIRMED":
       case "STANDALONE->>STANDALONE_CONFIRMED":
+      case "RECURRENCE_INSTANCE_SOMEDAY->>RECURRENCE_INSTANCE_SOMEDAY_CONFIRMED":
       case "RECURRENCE_INSTANCE->>RECURRENCE_INSTANCE_CONFIRMED":
         return parser.updateEvent(session);
       case "NIL->>STANDALONE_SOMEDAY_CANCELLED":
-      case "NIL->>RECURRENCE_BASE_SOMEDAY_CANCELLED":
       case "NIL->>STANDALONE_CANCELLED":
       case "NIL->>RECURRENCE_INSTANCE_CANCELLED":
+      case "NIL->>RECURRENCE_INSTANCE_SOMEDAY_CANCELLED":
       case "STANDALONE_SOMEDAY->>STANDALONE_SOMEDAY_CANCELLED":
-      case "RECURRENCE_BASE_SOMEDAY->>RECURRENCE_BASE_SOMEDAY_CANCELLED":
       case "STANDALONE->>STANDALONE_CANCELLED":
       case "RECURRENCE_INSTANCE->>RECURRENCE_INSTANCE_CANCELLED":
+      case "RECURRENCE_INSTANCE_SOMEDAY->>RECURRENCE_INSTANCE_SOMEDAY_CANCELLED":
         return parser.deleteEvent(session);
       case "STANDALONE->>STANDALONE_SOMEDAY_CONFIRMED":
         return parser.standaloneToSomeday(session);
       case "RECURRENCE_BASE->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":
-        return parser.seriesToSomeday(session);
+        return parser.seriesToSomedaySeries(session);
+      case "RECURRENCE_BASE_SOMEDAY->>STANDALONE_SOMEDAY_CONFIRMED":
       case "RECURRENCE_BASE->>STANDALONE_CONFIRMED":
         return parser.seriesToStandalone(session);
+      case "STANDALONE_SOMEDAY->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":
       case "STANDALONE->>RECURRENCE_BASE_CONFIRMED":
         return parser.standaloneToSeries(session);
       case "RECURRENCE_BASE->>RECURRENCE_BASE_CONFIRMED":
+      case "RECURRENCE_BASE_SOMEDAY->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":
         return parser.updateSeries(session);
+      case "NIL->>RECURRENCE_BASE_SOMEDAY_CANCELLED":
       case "NIL->>RECURRENCE_BASE_CANCELLED":
+      case "RECURRENCE_BASE_SOMEDAY->>RECURRENCE_BASE_SOMEDAY_CANCELLED":
       case "RECURRENCE_BASE->>RECURRENCE_BASE_CANCELLED":
         return parser.cancelSeries(session);
       default:

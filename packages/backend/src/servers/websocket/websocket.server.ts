@@ -1,7 +1,14 @@
-import { Request } from "express";
+import { NextFunction, Request, Response } from "express";
 import { Server as HttpServer } from "node:http";
 import { ExtendedError, Server as SocketIOServer } from "socket.io";
-import { verifySession } from "supertokens-node/recipe/session/framework/express";
+import { SessionRequest } from "supertokens-node/framework/express";
+import {
+  ExpressRequest,
+  ExpressResponse,
+} from "supertokens-node/lib/build/framework/express/framework";
+import SessionError from "supertokens-node/lib/build/recipe/session/error";
+import SessionRecipe from "supertokens-node/lib/build/recipe/session/recipe";
+import { makeDefaultUserContextFromAPI } from "supertokens-node/lib/build/utils";
 import {
   EVENT_CHANGED,
   EVENT_CHANGE_PROCESSED,
@@ -16,6 +23,7 @@ import {
   USER_REFRESH_TOKEN,
   USER_SIGN_OUT,
 } from "@core/constants/websocket.constants";
+import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { UserMetadata } from "@core/types/user.types";
 import {
@@ -197,6 +205,48 @@ class WebSocketServer {
     return this.notifyClient(socketId!, event, ...payload);
   }
 
+  /**
+   * verifySession
+   *
+   * We are manually verifying the session here
+   * to prevent the default supertokens behavior
+   * of attempting to refresh the session if it is expired internally
+   * since the socket's session might be stale.
+   * We offload the refresh mechanism to the client.
+   */
+  private async verifySession(
+    req: SessionRequest,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const request = new ExpressRequest(req);
+      const response = new ExpressResponse(res);
+      const userContext = makeDefaultUserContextFromAPI(request);
+      const sessionRecipe = SessionRecipe.getInstanceOrThrowError();
+      const session = await sessionRecipe.verifySession(
+        { sessionRequired: true },
+        request,
+        response,
+        userContext,
+      );
+
+      Object.assign(req, { session });
+
+      next();
+    } catch (err) {
+      const error = err as SessionError;
+
+      logger.error(error.message, error);
+
+      res.writeHead(Status.UNAUTHORIZED, {
+        "Content-Type": "application/json",
+      });
+
+      res.end(JSON.stringify({ type: error.type, message: "Invalid Session" }));
+    }
+  }
+
   init(server: HttpServer) {
     this.wsServer = new SocketIOServer<
       ClientToServerEvents,
@@ -205,7 +255,7 @@ class WebSocketServer {
       SocketData
     >(server, { cors: { origin: ENV.ORIGINS_ALLOWED, credentials: true } });
 
-    this.wsServer.engine.use(verifySession());
+    this.wsServer.engine.use(this.verifySession.bind(this));
 
     this.wsServer.engine.generateId = this.generateId.bind(this);
 
@@ -214,7 +264,7 @@ class WebSocketServer {
     this.wsServer.on("connection", handleWsError(this.onConnection.bind(this)));
 
     this.wsServer.engine.on("connection_error", (err: Error) => {
-      logger.error(`Connection error: ${err.message}`);
+      logger.debug(`Connection error: ${err.message}`);
     });
 
     return this.wsServer;

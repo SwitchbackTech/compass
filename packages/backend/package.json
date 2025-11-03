@@ -19,10 +19,11 @@
     "lodash.mergewith": "^4.6.2",
     "mongodb": "6.3",
     "morgan": "^1.10.0",
+    "p-limit": "^7.2.0",
     "rrule": "^2.7.2",
     "saslprep": "^1.0.3",
     "socket.io": "^4.7.5",
-    "supertokens-node": "^20.0.5",
+    "supertokens-node": "^23.0.1",
     "tslib": "^2.4.0"
   },
   "devDependencies": {

@@ -14,10 +14,7 @@ class PriorityService {
   async list(userId: string) {
     const filter = { user: userId };
 
-    const allPriorities = await mongoService.db
-      .collection(Collections.PRIORITY)
-      .find(filter)
-      .toArray();
+    const allPriorities = await mongoService.priority.find(filter).toArray();
 
     return allPriorities;
   }
@@ -90,9 +87,7 @@ class PriorityService {
   async deleteAllByUser(userId: string) {
     const filter = { user: { $eq: userId } };
 
-    const response = await mongoService.db
-      .collection(Collections.PRIORITY)
-      .deleteMany(filter);
+    const response = await mongoService.priority.deleteMany(filter);
     return response;
   }
 
@@ -102,9 +97,7 @@ class PriorityService {
       user: { $eq: userId },
     };
 
-    const response = await mongoService.db
-      .collection(Collections.PRIORITY)
-      .deleteOne(filter);
+    const response = await mongoService.priority.deleteOne(filter);
     return response;
   }
 
@@ -117,9 +110,7 @@ class PriorityService {
       user: userId,
     };
 
-    const priority = await mongoService.db
-      .collection(Collections.PRIORITY)
-      .findOne(filter);
+    const priority = await mongoService.priority.findOne(filter);
 
     if (priority === null) {
       return {};
@@ -129,13 +120,11 @@ class PriorityService {
   }
 
   async updateById(id: string, priority: PriorityReq, userId: string) {
-    const response = await mongoService.db
-      .collection(Collections.PRIORITY)
-      .findOneAndUpdate(
-        { _id: { $eq: mongoService.objectId(id) }, user: { $eq: userId } },
-        { $set: priority },
-        { returnDocument: "after" },
-      );
+    const response = await mongoService.priority.findOneAndUpdate(
+      { _id: { $eq: mongoService.objectId(id) }, user: { $eq: userId } },
+      { $set: priority },
+      { returnDocument: "after" },
+    );
 
     if (!response) {
       return new BaseError("Update Failed", "Ensure id is correct", 400, true);

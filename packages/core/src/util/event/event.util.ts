@@ -14,9 +14,7 @@ import { Event_API } from "@backend/common/types/backend.event.types";
 
 export const categorizeEvents = (events: Array<Schema_Event | Event_API>) => {
   const baseEvents = events.filter(isBase) as Schema_Event_Recur_Base[];
-  const instances = events.filter(
-    isExistingInstance,
-  ) as Schema_Event_Recur_Instance[];
+  const instances = events.filter(isInstance) as Schema_Event_Recur_Instance[];
   const standaloneEvents = events.filter(isRegularEvent);
   return { baseEvents, instances, standaloneEvents };
 };
@@ -46,9 +44,9 @@ export const isBase = (
   event: Pick<Schema_Event | Event_API, "recurrence">,
 ): boolean => {
   return (
-    Array.isArray((event as Schema_Event_Recur_Base)?.recurrence?.rule) &&
-    typeof (event as Schema_Event_Recur_Instance)?.recurrence?.eventId !==
-      "string"
+    "recurrence" in event &&
+    Array.isArray(event.recurrence?.rule) &&
+    !("eventId" in event.recurrence)
   );
 };
 
@@ -61,48 +59,16 @@ export const isInstance = (
   event: Pick<Schema_Event | Event_API, "recurrence" | "gRecurringEventId">,
 ): boolean => {
   return (
-    !Array.isArray((event as Schema_Event_Recur_Base)?.recurrence?.rule) &&
-    typeof (event as Schema_Event_Recur_Instance)?.recurrence?.eventId ===
-      "string"
-  );
-};
-
-/**
- * Instance compass events have an `eventId` and an empty `rule` within their `recurrence` field
- * @param event
- * @returns
- */
-export const isInstanceWithoutId = (
-  event: Pick<Schema_Event | Event_API, "recurrence" | "gRecurringEventId">,
-): boolean => {
-  return (
-    !Array.isArray((event as Schema_Event_Recur_Base)?.recurrence?.rule) &&
-    typeof (event as Schema_Event_Recur_Instance)?.recurrence?.eventId !==
-      "string" &&
-    typeof event?.gRecurringEventId === "string"
-  );
-};
-
-/**
- * Instances with mongo Ids have an `eventId` and an empty `rule` within their `recurrence` field
- * @param event
- * @returns
- */
-export const isExistingInstance = (
-  event: Pick<Schema_Event | Event_API, "recurrence" | "gRecurringEventId">,
-): boolean => {
-  return (
-    !Array.isArray((event as Schema_Event_Recur_Base)?.recurrence?.rule) &&
-    typeof (event as Schema_Event_Recur_Instance)?.recurrence?.eventId ===
-      "string" &&
-    typeof event?.gRecurringEventId === "string"
+    "recurrence" in event &&
+    typeof event.recurrence === "object" &&
+    (!("rule" in event.recurrence) || event.recurrence?.rule === null) &&
+    typeof event.recurrence?.eventId === "string"
   );
 };
 
 export const isRegularEvent = (
   event: Pick<Schema_Event | Event_API, "recurrence">,
-): boolean =>
-  !isExistingInstance(event) && !isInstanceWithoutId(event) && !isBase(event);
+): boolean => !isInstance(event) && !isBase(event);
 
 /**
  * Filters the base events
@@ -121,7 +87,7 @@ export const filterBaseEvents = (
  * @returns The recurring events (base or instance)
  */
 export const filterExistingInstances = (e: Array<Schema_Event | Event_API>) =>
-  e.filter(isExistingInstance) as Schema_Event_Recur_Instance[];
+  e.filter(isInstance) as Schema_Event_Recur_Instance[];
 
 export const shouldImportGCal = (metadata: UserMetadata): boolean => {
   const sync = metadata.sync;

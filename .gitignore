@@ -26,8 +26,12 @@ packages/**/yarn.lock
 
 build/
 buildcache/
+docs/
 logs/
 node_modules/
+playwright-report/
+test-results/
+blob-report/
 
 #core
 packages/core/build/
@@ -45,4 +49,4 @@ packages/backend/.env
 packages/backend/.prod.env
 
 
-!.env.example
+!.env.local.example

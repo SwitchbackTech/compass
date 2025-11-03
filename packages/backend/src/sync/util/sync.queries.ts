@@ -1,13 +1,12 @@
 import { ClientSession, UpdateFilter, UpdateResult } from "mongodb";
 import zod from "zod";
 import { Origin } from "@core/constants/core.constants";
-import { Schema_CalendarList } from "@core/types/calendar.types";
 import {
-  Payload_Sync_Events,
   Resource_Sync,
   Schema_Sync,
+  SyncDetails,
 } from "@core/types/sync.types";
-import { getPrimaryGcalId } from "@backend/common/services/gcal/gcal.utils";
+import dayjs from "@core/util/date/dayjs";
 import mongoService from "@backend/common/services/mongo.service";
 
 /**
@@ -32,13 +31,9 @@ export const syncFilterValidationSchema = zod
 export const channelFilterValidationSchema = zod
   .object({
     resource: resourceValidationSchema,
-    channelId: zod.string(),
-    resourceId: zod.string().optional(),
     gCalendarId: zod.string().optional(),
   })
-  .transform(({ resource, channelId, resourceId, gCalendarId }) => ({
-    [`google.${resource}.channelId`]: channelId,
-    ...(resourceId ? { [`google.${resource}.resourceId`]: resourceId } : {}),
+  .transform(({ resource, gCalendarId }) => ({
     ...(gCalendarId ? { [`google.${resource}.gCalendarId`]: gCalendarId } : {}),
   }));
 
@@ -47,77 +42,13 @@ export const getSyncParamsValidationSchema = zod.union([
   channelFilterValidationSchema,
 ]);
 
-export const reInitSyncByIntegration = async (
-  integration: "google",
-  userId: string,
-  calendarList: Schema_CalendarList,
-  calListSyncToken: string,
-) => {
-  const gCalendarId = getPrimaryGcalId(calendarList);
-
-  const result = await mongoService.sync.updateOne(
-    {
-      user: userId,
-    },
-    {
-      $set: {
-        [integration]: {
-          calendarlist: [
-            {
-              gCalendarId,
-              nextSyncToken: calListSyncToken,
-              lastSyncedAt: new Date(),
-            },
-          ],
-          events: [],
-        },
-      },
-    },
-  );
-
-  return result;
-};
-
-export const deleteAllSyncData = async (userId: string) => {
-  await mongoService.sync.deleteOne({ user: userId });
-};
-
-export const deleteWatchData = async (
-  params:
-    | Record<Resource_Sync.CALENDAR, { userId: string; gCalendarId: string }>
-    | Record<
-        Resource_Sync.EVENTS,
-        { channelId: string; resourceId?: string; gCalendarId?: string }
-      >,
-) => {
-  const [resource, filter] = Object.entries(params)[0]!;
-
-  const watchFilter = getSyncParamsValidationSchema.parse({
-    resource,
-    ...filter,
-  });
-
-  return await mongoService.sync.updateOne(watchFilter, {
-    $unset: {
-      [`google.${resource}.$.channelId`]: "",
-      [`google.${resource}.$.expiration`]: "",
-    },
-  });
-};
-
 export const getSync = async (
   params:
     | { userId: string }
     | {
         userId: string;
         gCalendarId: string;
-        resource?: Exclude<Resource_Sync, "settings">;
-      }
-    | {
-        channelId: string;
-        resourceId?: string;
-        gCalendarId?: string;
-        resource?: Exclude<Resource_Sync, "settings">;
+        resource?: Exclude<Resource_Sync, Resource_Sync.SETTINGS>;
       },
 ) => {
   const filter = getSyncParamsValidationSchema.parse(params);
@@ -152,7 +83,7 @@ export const getGCalEventsSyncPageToken = async (
     { session },
   );
 
-  return response?.google.events.find((e) => e.gCalendarId === gCalendarId)
+  return response?.google?.events?.find((e) => e.gCalendarId === gCalendarId)
     ?.nextPageToken;
 };
 
@@ -169,34 +100,42 @@ export const hasUpdatedCompassEventRecently = async (
   return recentChanges > 0;
 };
 
-export const isWatchingEventsByGcalId = async (
+export const isWatchingGoogleResource = async (
   userId: string,
   gCalendarId: string,
+  session?: ClientSession,
 ) => {
-  const sync = await mongoService.sync.countDocuments({
-    user: userId,
-    "google.events.gCalendarId": gCalendarId,
-    "google.events.$.channelId": { $exists: true },
-    "google.events.$.expiration": { $exists: true },
-  });
+  const channel = await mongoService.watch.findOne(
+    { user: userId, gCalendarId },
+    { session },
+  );
 
-  const hasSyncFields = sync === 1;
+  if (!channel) return false;
 
-  return hasSyncFields;
+  const expired = dayjs(channel.expiration).isSameOrBefore(dayjs());
+
+  if (expired) {
+    await mongoService.watch.deleteOne(
+      { user: userId, gCalendarId },
+      { session },
+    );
+
+    return false;
+  }
+
+  return true;
 };
 
 export const updateSync = async (
   resource: Exclude<Resource_Sync, "settings">,
   userId: string,
   gCalendarId: string,
-  update: Partial<
-    Omit<Payload_Sync_Events, "gCalendarId" | "lastSyncedAt">
-  > = {},
+  update: Partial<Omit<SyncDetails, "gCalendarId" | "lastSyncedAt">> = {},
   session?: ClientSession,
 ): Promise<UpdateResult<Schema_Sync>> => {
   const sync = await getSync({ userId });
 
-  const data = sync?.google[resource];
+  const data = sync?.google?.[resource];
   const index = data?.findIndex((e) => e.gCalendarId === gCalendarId) ?? -1;
   const operation: UpdateFilter<Schema_Sync> = {};
 

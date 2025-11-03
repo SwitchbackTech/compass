@@ -10,6 +10,7 @@ import {
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { isAllDay, parseCompassEventDate } from "@core/util/event/event.util";
+import { CompassEventRRule } from "../event/compass.event.rrule";
 
 export const createMockStandaloneEvent = (
   overrides: Partial<Omit<Schema_Event, "endDate">> = {},
@@ -117,23 +118,12 @@ export const createMockInstances = (
   count: number,
   overrides: Partial<Schema_Event_Recur_Instance> = {},
 ): WithCompassId<Schema_Event_Recur_Instance>[] => {
-  const instances: WithCompassId<Schema_Event_Recur_Instance>[] = [];
-  const baseDate = new Date(baseEvent.startDate || "2024-03-20T10:00:00Z");
+  const _id = new ObjectId(baseEvent._id);
+  const rrule = new CompassEventRRule({ ...baseEvent, _id }, { count });
 
-  for (let i = 0; i < count; i++) {
-    const instanceDate = new Date(baseDate);
-    instanceDate.setDate(instanceDate.getDate() + (i + 1) * 7); // Weekly recurrence
-
-    instances.push(
-      createMockInstance(baseEvent._id || "", baseEvent.gEventId as string, {
-        startDate: instanceDate.toISOString(),
-        endDate: new Date(instanceDate.getTime() + 3600000).toISOString(), // 1 hour later
-        ...overrides,
-      }),
-    );
-  }
-
-  return instances;
+  return rrule
+    .instances()
+    .map((i) => ({ ...i, ...overrides, _id: i._id.toString() }));
 };
 
 export const generateCompassEventDates = ({

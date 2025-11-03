@@ -10,14 +10,13 @@ import {
   ObjectId,
 } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
-import {
-  CompassCalendar,
-  Schema_CalendarList as Schema_Calendar,
-} from "@core/types/calendar.types";
+import { Schema_Calendar } from "@core/types/calendar.types";
 import { Schema_Event } from "@core/types/event.types";
+import { Schema_Priority } from "@core/types/priority.types";
 import { Schema_Sync } from "@core/types/sync.types";
 import { Schema_User } from "@core/types/user.types";
 import { Schema_Waitlist } from "@core/types/waitlist/waitlist.types";
+import { Schema_Watch } from "@core/types/watch.types";
 import { Collections } from "@backend/common/constants/collections";
 import { ENV } from "@backend/common/constants/env.constants";
 import { waitUntilEvent } from "@backend/common/helpers/common.util";
@@ -27,12 +26,13 @@ const logger = Logger("app:mongo.service");
 interface InternalClient {
   db: Db;
   client: MongoClient;
-  calendar: Collection<CompassCalendar>;
-  calendarList: Collection<Schema_Calendar>;
+  calendar: Collection<Schema_Calendar>;
   event: Collection<Omit<Schema_Event, "_id">>;
+  priority: Collection<Omit<Schema_Priority, "_id">>;
   sync: Collection<Schema_Sync>;
   user: Collection<Schema_User>;
   waitlist: Collection<Schema_Waitlist>;
+  watch: Collection<Schema_Watch>;
 }
 
 class MongoService {
@@ -52,21 +52,21 @@ class MongoService {
   }
 
   /**
-   * calendarList
-   *
-   * mongo collection
-   */
-  get calendarList(): InternalClient["calendarList"] {
-    return this.#accessInternalCollectionProps("calendarList");
-  }
-
-  /**
    * event
    *
    * mongo collection
    */
   get event(): InternalClient["event"] {
     return this.#accessInternalCollectionProps("event");
+  }
+
+  /**
+   * priority
+   *
+   * mongo collection
+   */
+  get priority(): InternalClient["priority"] {
+    return this.#accessInternalCollectionProps("priority");
   }
 
   /**
@@ -94,6 +94,15 @@ class MongoService {
    */
   get waitlist(): InternalClient["waitlist"] {
     return this.#accessInternalCollectionProps("waitlist");
+  }
+
+  /**
+   * watch
+   *
+   * mongo collection
+   */
+  get watch(): InternalClient["watch"] {
+    return this.#accessInternalCollectionProps("watch");
   }
 
   private onConnect(client: MongoClient, useDynamicDb = false) {
@@ -127,12 +136,15 @@ class MongoService {
     return {
       db,
       client,
-      calendar: db.collection<CompassCalendar>(Collections.CALENDAR),
-      calendarList: db.collection<Schema_Calendar>(Collections.CALENDARLIST),
+      calendar: db.collection<Schema_Calendar>(Collections.CALENDAR),
       event: db.collection<Omit<Schema_Event, "_id">>(Collections.EVENT),
+      priority: db.collection<Omit<Schema_Priority, "_id">>(
+        Collections.PRIORITY,
+      ),
       sync: db.collection<Schema_Sync>(Collections.SYNC),
       user: db.collection<Schema_User>(Collections.USER),
       waitlist: db.collection<Schema_Waitlist>(Collections.WAITLIST),
+      watch: db.collection<Schema_Watch>(Collections.WATCH),
     };
   }
 
@@ -212,7 +224,7 @@ class MongoService {
     return this.#internalClient!.client.startSession(options);
   }
 
-  objectId(id: string): ObjectId {
+  objectId(id?: string): ObjectId {
     return new ObjectId(id);
   }
 
