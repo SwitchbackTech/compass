@@ -32,6 +32,7 @@ export const CLIMB: Schema_Event = {
   startDate: "2022-03-01T17:00:00-06:00",
   endDate: "2022-03-01T19:00:00-06:00",
 };
+const today = new Date().toISOString().split("T")[0];
 export const EUROPE_TRIP: Schema_Event = {
   _id: new ObjectId().toString(),
   user: USER,
@@ -40,8 +41,8 @@ export const EUROPE_TRIP: Schema_Event = {
   description: "Italy, Germany",
   isSomeday: true,
   priority: Priorities.SELF,
-  startDate: "2025-12-01",
-  endDate: "2025-12-31",
+  startDate: today,
+  endDate: today,
   order: 2,
 };
 export const LEARN_CHINESE: Schema_Event = {
