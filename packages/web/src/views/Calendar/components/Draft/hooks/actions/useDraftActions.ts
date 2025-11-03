@@ -7,7 +7,10 @@ import {
 } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { MapEvent } from "@core/mappers/map.event";
-import { RecurringEventUpdateScope } from "@core/types/event.types";
+import {
+  RecurringEventUpdateScope,
+  Schema_Event,
+} from "@core/types/event.types";
 import { devAlert } from "@core/util/app.util";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { DirtyParser } from "@web/common/parsers/dirty.parser";
@@ -16,7 +19,6 @@ import { PartialMouseEvent } from "@web/common/types/util.types";
 import {
   Categories_Event,
   Schema_GridEvent,
-  Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import {
   assembleDefaultEvent,
@@ -189,7 +191,7 @@ export const useDraftActions = (
         return;
       }
 
-      const event: Schema_WebEvent = {
+      const event: Schema_Event = {
         ...draft,
         _id: draft!._id!,
         user: draft!.user!,
@@ -227,7 +229,7 @@ export const useDraftActions = (
   }, [setIsFormOpen]);
 
   const determineSubmitAction = useCallback(
-    (draft: Schema_WebEvent) => {
+    (draft: Schema_Event) => {
       const isExisting =
         draft._id && !draft._id?.startsWith(ID_OPTIMISTIC_PREFIX);
       if (!isExisting) return "CREATE";
@@ -251,7 +253,7 @@ export const useDraftActions = (
 
   const getEditSlicePayload = useCallback(
     (
-      event: Schema_WebEvent,
+      event: Schema_Event,
       applyTo: RecurringEventUpdateScope,
     ): Payload_EditEvent => {
       const viewParser = new EventInViewParser(
@@ -268,7 +270,7 @@ export const useDraftActions = (
   );
 
   const shouldAddToView = useCallback(
-    (event: Schema_WebEvent) => {
+    (event: Schema_Event) => {
       const viewParser = new EventInViewParser(
         event,
         weekProps.component.startOfView,

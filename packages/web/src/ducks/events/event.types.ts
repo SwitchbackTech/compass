@@ -11,10 +11,7 @@ import {
   Response_HttpPaginatedSuccess,
 } from "@web/common/types/api.types";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
-import {
-  Schema_GridEvent,
-  Schema_WebEvent,
-} from "@web/common/types/web.event.types";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 export type Action_ConvertEvent = PayloadAction<Payload_ConvertEvent>;
 
@@ -68,7 +65,7 @@ export interface Entities_Event {
 }
 
 export interface Payload_ConvertEvent {
-  event: Schema_WebEvent;
+  event: Schema_Event;
 }
 
 interface Payload_DeleteEvent {
@@ -78,7 +75,7 @@ interface Payload_DeleteEvent {
 
 export interface Payload_EditEvent {
   _id: string;
-  event: Schema_WebEvent;
+  event: Schema_Event;
   applyTo?: RecurringEventUpdateScope;
   shouldRemove?: boolean;
 }

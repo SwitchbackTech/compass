@@ -15,7 +15,6 @@ import { PartialMouseEvent } from "@web/common/types/util.types";
 import {
   Categories_Event,
   Schema_GridEvent,
-  Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 
 export const gridEventDefaultPosition = {
@@ -80,7 +79,7 @@ export const assembleDefaultEvent = async (
   }
 };
 
-export const assembleGridEvent = (event: Schema_WebEvent): Schema_GridEvent => {
+export const assembleGridEvent = (event: Schema_Event): Schema_GridEvent => {
   const gridEvent: Schema_GridEvent = {
     ...event,
     position: gridEventDefaultPosition,

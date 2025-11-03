@@ -1,16 +1,16 @@
+import { Schema_Event } from "@core/types/event.types";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
-import { Schema_WebEvent } from "@web/common/types/web.event.types";
 import { WeekNavigationSource } from "@web/views/Calendar/hooks/useWeek";
 
 export class EventInViewParser {
-  private readonly event: Schema_WebEvent;
+  private readonly event: Schema_Event;
   private readonly startOfView: Dayjs;
   private readonly endOfView: Dayjs;
   private readonly isStartInView: boolean;
   private readonly isEndInView: boolean;
   private readonly isSpanningView: boolean;
 
-  constructor(event: Schema_WebEvent, startOfView: Dayjs, endOfView: Dayjs) {
+  constructor(event: Schema_Event, startOfView: Dayjs, endOfView: Dayjs) {
     this.event = event;
     this.startOfView = startOfView;
     this.endOfView = endOfView;

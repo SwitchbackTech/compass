@@ -2,10 +2,7 @@ import { act } from "react";
 import { useDispatch } from "react-redux";
 import { Schema_Event } from "@core/types/event.types";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
-import {
-  Categories_Event,
-  Schema_WebEvent,
-} from "@web/common/types/web.event.types";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useDraftActions } from "@web/views/Calendar/components/Draft/hooks/actions/useDraftActions";
@@ -15,7 +12,7 @@ import { useGridLayout } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { useToday } from "@web/views/Calendar/hooks/useToday";
 import { useWeek } from "@web/views/Calendar/hooks/useWeek";
 
-export function setupDraftState(event: Schema_WebEvent) {
+export function setupDraftState(event: Schema_Event) {
   const isSidebarOpen = true;
   const draft = assembleGridEvent(event);
 

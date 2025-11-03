@@ -4,7 +4,6 @@ import {
   Schema_Event,
 } from "@core/types/event.types";
 import { CompassApi } from "@web/common/apis/compass.api";
-import { Schema_WebEvent } from "@web/common/types/web.event.types";
 
 const EventApi = {
   create: (event: Schema_Event | Schema_Event[]) => {
@@ -27,9 +26,7 @@ const EventApi = {
 
     return CompassApi.put<void>(`/event/${_id}`, event);
   },
-  get: (
-    params: Pick<Schema_WebEvent, "startDate" | "endDate" | "isSomeday">,
-  ) => {
+  get: (params: Pick<Schema_Event, "startDate" | "endDate" | "isSomeday">) => {
     if (params.isSomeday) {
       return CompassApi.get<Schema_Event[]>(
         `/event?someday=true&start=${params.startDate}&end=${params.endDate}`,
@@ -40,7 +37,7 @@ const EventApi = {
       );
     }
   },
-  reorder: (order: Array<Pick<Schema_WebEvent, "_id" | "order">>) => {
+  reorder: (order: Array<Pick<Schema_Event, "_id" | "order">>) => {
     return CompassApi.put(`/event/reorder`, order);
   },
 };

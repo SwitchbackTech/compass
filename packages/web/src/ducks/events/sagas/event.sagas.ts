@@ -9,10 +9,7 @@ import {
 import dayjs from "@core/util/date/dayjs";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
-import {
-  Schema_GridEvent,
-  Schema_WebEvent,
-} from "@web/common/types/web.event.types";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { handleError } from "@web/common/utils/event/event.util";
 import { EventApi } from "@web/ducks/events/event.api";
 import {
@@ -148,7 +145,7 @@ export function* getCurrentMonthEvents({ payload }: Action_GetPaginatedEvents) {
 }
 
 function* getEvents(
-  payload: Pick<Schema_WebEvent, "startDate" | "endDate" | "isSomeday"> &
+  payload: Pick<Schema_Event, "startDate" | "endDate" | "isSomeday"> &
     Response_HttpPaginatedSuccess<Entities_Event>,
 ) {
   try {

@@ -6,10 +6,7 @@ import {
   Schema_Event,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import {
-  Schema_GridEvent,
-  Schema_WebEvent,
-} from "@web/common/types/web.event.types";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   assembleGridEvent,
   replaceIdWithOptimisticId,
@@ -27,8 +24,8 @@ export function* getEventById(
   _id: string,
 ): Generator<
   ReturnType<typeof select>,
-  Schema_GridEvent | Schema_WebEvent,
-  Schema_GridEvent | Schema_WebEvent
+  Schema_GridEvent | Schema_Event,
+  Schema_GridEvent | Schema_Event
 > {
   const currEvent = yield select((state: RootState) =>
     selectEventById(state, _id),
@@ -66,7 +63,7 @@ export function* _assembleGridEvent({
 }: Payload_ConvertEvent["event"]): Generator<
   SelectEffect,
   Schema_GridEvent,
-  Schema_WebEvent
+  Schema_Event
 > {
   const currEvent = yield* getEventById(_id!);
 
@@ -132,7 +129,7 @@ export const EventDateUtils = {
    * Adjusts start and end dates for event queries
    */
   adjustStartEndDate: (
-    payload: Pick<Schema_WebEvent, "startDate" | "endDate" | "isSomeday">,
+    payload: Pick<Schema_Event, "startDate" | "endDate" | "isSomeday">,
   ) => {
     if (payload.isSomeday) return payload;
 

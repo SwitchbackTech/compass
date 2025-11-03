@@ -22,7 +22,6 @@ import { Coordinates } from "@web/common/types/util.types";
 import {
   Categories_Event,
   Direction_Migrate,
-  Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import {
   computeCurrentEventDateRange,
@@ -395,7 +394,7 @@ export const useSidebarActions = (
     const isExisting = _event._id;
     if (isExisting) {
       const recurrenceChanged = DirtyParser.recurrenceChanged(
-        _event as Schema_WebEvent,
+        _event as Schema_Event,
         reduxDraft!,
       );
 

@@ -1,9 +1,6 @@
 import { Origin, Priorities } from "@core/constants/core.constants";
-import {
-  Schema_GridEvent,
-  Schema_SomedayEvent,
-  Schema_WebEvent,
-} from "@web/common/types/web.event.types";
+import { Schema_SomedayEvent } from "@core/types/event.types";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { validateGridEvent } from "@web/common/validators/grid.event.validator";
 import { validateSomedayEvent } from "@web/common/validators/someday.event.validator";
@@ -50,7 +47,7 @@ export const parseSomedayEventBeforeSubmit = (
 export const prepEventBeforeSubmit = (
   draft: Schema_GridEvent,
   userId: string,
-): Schema_WebEvent => {
+): Schema_Event => {
   const _event = {
     ...draft,
     origin: draft.origin ?? Origin.COMPASS,

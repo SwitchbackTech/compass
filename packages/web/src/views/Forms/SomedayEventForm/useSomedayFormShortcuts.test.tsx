@@ -1,5 +1,5 @@
 import { render } from "@testing-library/react";
-import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
+import { createMockRegularEvent } from "@core/util/test/ccal.event.factory";
 import { Categories_Event } from "@web/common/types/web.event.types";
 import {
   SOMEDAY_HOTKEY_OPTIONS,
@@ -21,7 +21,7 @@ const TestComponent = (props: SomedayFormShortcutsProps) => {
 };
 
 describe("SomedayEventForm shortcuts hook", () => {
-  const baseEvent = createMockStandaloneEvent({
+  const baseEvent = createMockRegularEvent({
     isSomeday: true,
   });
 

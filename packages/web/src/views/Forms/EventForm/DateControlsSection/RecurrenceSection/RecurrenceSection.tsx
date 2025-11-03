@@ -1,10 +1,8 @@
-import React, { Dispatch, SetStateAction } from "react";
+import { Dispatch, SetStateAction } from "react";
 import { Priorities } from "@core/constants/core.constants";
+import { Schema_Event } from "@core/types/event.types";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
-import {
-  Schema_GridEvent,
-  Schema_WebEvent,
-} from "@web/common/types/web.event.types";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { ConditionalRender } from "@web/components/ConditionalRender/ConditionalRender";
 import { FlexDirections } from "@web/components/Flex/styled";
 import { EndsOnDate } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/components/EndsOnDate";
@@ -16,8 +14,8 @@ import { useRecurrence } from "@web/views/Forms/EventForm/DateControlsSection/Re
 
 export interface RecurrenceSectionProps {
   bgColor: string;
-  event: Schema_WebEvent | Schema_GridEvent;
-  setEvent: Dispatch<SetStateAction<Schema_WebEvent | Schema_GridEvent | null>>;
+  event: Schema_Event | Schema_GridEvent;
+  setEvent: Dispatch<SetStateAction<Schema_Event | Schema_GridEvent | null>>;
 }
 
 export const RecurrenceSection = ({

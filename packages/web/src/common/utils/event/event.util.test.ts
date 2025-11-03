@@ -1,8 +1,5 @@
-import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
-import {
-  Schema_GridEvent,
-  Schema_WebEvent,
-} from "@web/common/types/web.event.types";
+import { createMockRegularEvent } from "@core/util/test/ccal.event.factory";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { isEventInRange } from "@web/common/utils/event/event.util";
 import { _assembleGridEvent } from "@web/ducks/events/sagas/saga.util";
 
@@ -29,9 +26,9 @@ describe("isEventInRange", () => {
 describe("_assembleGridEvent", () => {
   it("should successfully convert Someday event to Grid event by adding position field", () => {
     // Create a mock Someday event (without position field)
-    const somedayEvent = createMockStandaloneEvent({
+    const somedayEvent = createMockRegularEvent({
       isSomeday: true,
-    }) as Schema_WebEvent;
+    });
 
     const generator = _assembleGridEvent(somedayEvent);
 

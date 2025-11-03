@@ -288,8 +288,8 @@ export const computeCurrentEventDateRange = (
 
   return {
     ...event,
-    startDate: start.format(),
-    endDate: end.format(),
+    startDate: start.toDate(),
+    endDate: end.toDate(),
   };
 };
 
@@ -334,8 +334,8 @@ export const computeRelativeEventDateRange = (
 
   return {
     ...event,
-    startDate: start.format(),
-    endDate: end.format(),
+    startDate: start.toDate(),
+    endDate: end.toDate(),
   };
 };
 

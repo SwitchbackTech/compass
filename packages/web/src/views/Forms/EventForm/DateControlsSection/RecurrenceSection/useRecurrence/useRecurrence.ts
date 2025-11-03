@@ -10,16 +10,14 @@ import {
 } from "react";
 import { Frequency, Options, RRule, Weekday } from "rrule";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
-import {
-  Schema_GridEvent,
-  Schema_WebEvent,
-} from "@web/common/types/web.event.types";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   FrequencyValues,
   WEEKDAYS,
   WEEKDAY_RRULE_MAP,
 } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";
 import { toWeekDays } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/util/recurrence.util";
+import { Schema_Event } from "../../../../../../../../core/src/types/event.types";
 
 const WEEKDAY_LABELS_MAP: Record<keyof typeof WEEKDAY_RRULE_MAP, string> = {
   sunday: RRule.SU.toString(),
@@ -61,16 +59,14 @@ const WEEKDAY_MAP: Record<
 export const useRecurrence = (
   event: Partial<
     Pick<
-      Schema_GridEvent | Schema_WebEvent,
+      Schema_GridEvent | Schema_Event,
       "startDate" | "endDate" | "recurrence" | "isSomeday"
     >
   > | null,
   {
     setEvent,
   }: {
-    setEvent: Dispatch<
-      SetStateAction<Schema_GridEvent | Schema_WebEvent | null>
-    >;
+    setEvent: Dispatch<SetStateAction<Schema_GridEvent | Schema_Event | null>>;
   },
 ) => {
   const { recurrence, isSomeday } = event ?? {};
@@ -153,7 +149,7 @@ export const useRecurrence = (
   const rule = useMemo(() => JSON.stringify(rrule.toRecurrence()), [rrule]);
 
   const toggleRecurrence = useCallback(() => {
-    setEvent((gridEvent): Schema_GridEvent | Schema_WebEvent | null => {
+    setEvent((gridEvent): Schema_GridEvent | Schema_Event | null => {
       if (!gridEvent) return gridEvent;
 
       const { recurrence, ...event } = gridEvent;
@@ -179,7 +175,7 @@ export const useRecurrence = (
   useEffect(() => {
     if (!hasRecurrence) return;
 
-    setEvent((gridEvent): Schema_GridEvent | Schema_WebEvent | null => {
+    setEvent((gridEvent): Schema_GridEvent | Schema_Event | null => {
       if (!gridEvent) return gridEvent;
 
       return {

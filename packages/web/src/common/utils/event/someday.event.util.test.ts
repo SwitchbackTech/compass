@@ -7,17 +7,14 @@ import {
   RRULE,
   RRULE_COUNT_WEEKS,
 } from "@core/constants/core.constants";
-import { Schema_Event } from "@core/types/event.types";
+import { Schema_Event, Schema_SomedayEvent } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import {
   createMockBaseEvent,
   createMockInstances,
 } from "@core/util/test/ccal.event.factory";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
-import {
-  Schema_SomedayEvent,
-  Schema_SomedayEventsColumn,
-} from "@web/common/types/web.event.types";
+import { Schema_SomedayEventsColumn } from "@web/common/types/web.event.types";
 import {
   categorizeSomedayEvents,
   setSomedayEventsOrder,
