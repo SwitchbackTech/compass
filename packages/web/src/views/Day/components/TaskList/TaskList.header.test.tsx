@@ -37,11 +37,11 @@ describe("TaskListHeader", () => {
   it("should render the today heading with current date", () => {
     renderTaskList();
 
-    const heading = screen.getByRole("heading", { level: 2 });
+    const headingButton = screen.getByRole("button", { name: /select view/i });
     const subheading = screen.getByRole("heading", { level: 3 });
-    expect(heading).toBeInTheDocument();
+    expect(headingButton).toBeInTheDocument();
     expect(subheading).toBeInTheDocument();
-    expect(heading.textContent).toMatch(/\w+/); // Matches format like "Wednesday"
+    expect(headingButton.textContent).toMatch(/\w+/); // Matches format like "Wednesday"
     expect(subheading.textContent).toMatch(/\w+ \d+/); // Matches format like "January 15"
   });
 
@@ -50,9 +50,9 @@ describe("TaskListHeader", () => {
     const { user } = renderTaskList({}, testDate);
 
     // Verify initial heading shows correct date
-    const heading = screen.getByRole("heading", { level: 2 });
     const expectedInitialDate = format(testDate);
-    expect(heading).toHaveTextContent(expectedInitialDate);
+    const headingButton = screen.getByRole("button", { name: /select view/i });
+    expect(headingButton).toHaveTextContent(expectedInitialDate);
 
     // Click the next day button
     const nextButton = screen.getByRole("button", { name: "Next day" });
@@ -63,7 +63,7 @@ describe("TaskListHeader", () => {
     // Verify heading updates to next day
     const expectedNextDate = format(createUtcDate(testDate, 1));
     await waitFor(() => {
-      expect(heading).toHaveTextContent(expectedNextDate);
+      expect(headingButton).toHaveTextContent(expectedNextDate);
     });
   });
 
@@ -72,9 +72,9 @@ describe("TaskListHeader", () => {
     const { user } = renderTaskList({}, testDate);
 
     // Verify initial heading shows correct date
-    const heading = screen.getByRole("heading", { level: 2 });
     const expectedInitialDate = format(testDate);
-    expect(heading).toHaveTextContent(expectedInitialDate);
+    const headingButton = screen.getByRole("button", { name: /select view/i });
+    expect(headingButton).toHaveTextContent(expectedInitialDate);
 
     // Click the previous day button
     const prevButton = screen.getByRole("button", { name: "Previous day" });
@@ -85,7 +85,7 @@ describe("TaskListHeader", () => {
     // Verify heading updates to previous day
     const expectedPrevDate = format(createUtcDate(testDate, -1));
     await waitFor(() => {
-      expect(heading).toHaveTextContent(expectedPrevDate);
+      expect(headingButton).toHaveTextContent(expectedPrevDate);
     });
   });
 
@@ -93,7 +93,7 @@ describe("TaskListHeader", () => {
     const testDate = createUtcDate("2025-01-15T12:00:00Z");
     const { user } = renderTaskList({}, testDate);
 
-    const heading = screen.getByRole("heading", { level: 2 });
+    const headingButton = screen.getByRole("button", { name: /select view/i });
     const nextButton = screen.getByRole("button", { name: "Next day" });
     const prevButton = screen.getByRole("button", { name: "Previous day" });
 
@@ -103,7 +103,7 @@ describe("TaskListHeader", () => {
     });
     const expectedAfterFirstNext = format(createUtcDate(testDate, 1));
     await waitFor(() => {
-      expect(heading).toHaveTextContent(expectedAfterFirstNext);
+      expect(headingButton).toHaveTextContent(expectedAfterFirstNext);
     });
 
     await act(async () => {
@@ -111,7 +111,7 @@ describe("TaskListHeader", () => {
     });
     const expectedAfterSecondNext = format(createUtcDate(testDate, 2));
     await waitFor(() => {
-      expect(heading).toHaveTextContent(expectedAfterSecondNext);
+      expect(headingButton).toHaveTextContent(expectedAfterSecondNext);
     });
 
     // Click previous day once
@@ -120,7 +120,7 @@ describe("TaskListHeader", () => {
     });
     const expectedAfterPrev = format(createUtcDate(testDate, 1));
     await waitFor(() => {
-      expect(heading).toHaveTextContent(expectedAfterPrev);
+      expect(headingButton).toHaveTextContent(expectedAfterPrev);
     });
   });
 
@@ -128,12 +128,12 @@ describe("TaskListHeader", () => {
     const testDate = createUtcDate("2025-01-31T12:00:00Z");
     const { user } = renderTaskList({}, testDate);
 
-    const heading = screen.getByRole("heading", { level: 2 });
+    const initialDate = format(testDate);
+    const headingButton = screen.getByRole("button", { name: /select view/i });
     const nextButton = screen.getByRole("button", { name: "Next day" });
 
     // Verify initial date is end of January
-    const initialDate = format(testDate);
-    expect(heading).toHaveTextContent(initialDate);
+    expect(headingButton).toHaveTextContent(initialDate);
 
     // Click next day to go to February
     await act(async () => {
@@ -143,7 +143,7 @@ describe("TaskListHeader", () => {
     // Verify heading shows February 1st
     const nextDate = format(createUtcDate(testDate, 1));
     await waitFor(() => {
-      expect(heading).toHaveTextContent(nextDate);
+      expect(headingButton).toHaveTextContent(nextDate);
     });
   });
 
@@ -171,12 +171,12 @@ describe("TaskListHeader", () => {
     const testDate = createUtcDate("2025-01-15T12:00:00Z");
     const { user } = renderTaskList({}, testDate);
 
-    const heading = screen.getByRole("heading", { level: 2 });
+    const expectedInitialDate = format(testDate);
+    const headingButton = screen.getByRole("button", { name: /select view/i });
     const goToTodayButton = screen.getByRole("button", { name: "Go to today" });
 
     // Verify initial heading shows the test date
-    const expectedInitialDate = format(testDate);
-    expect(heading).toHaveTextContent(expectedInitialDate);
+    expect(headingButton).toHaveTextContent(expectedInitialDate);
 
     // Click the go to today button
     await act(async () => {
@@ -186,7 +186,7 @@ describe("TaskListHeader", () => {
     // Verify heading updates to today's date
     const expectedTodayDate = format(createUtcDate(new Date()));
     await waitFor(() => {
-      expect(heading).toHaveTextContent(expectedTodayDate);
+      expect(headingButton).toHaveTextContent(expectedTodayDate);
     });
   });
 
@@ -224,12 +224,13 @@ describe("TaskListHeader - Timezone Handling", () => {
 
     renderTaskList({}, cstDate);
 
-    const heading = screen.getByRole("heading", { level: 2 });
-    const subheading = screen.getByRole("heading", { level: 3 });
-
     // Should show local date (Oct 19), not UTC date (Oct 20)
     const localDate = utcDayjs.local();
-    expect(heading).toHaveTextContent(localDate.format(DAY_HEADING_FORMAT));
+    const expectedHeading = localDate.format(DAY_HEADING_FORMAT);
+    const headingButton = screen.getByRole("button", { name: /select view/i });
+    const subheading = screen.getByRole("heading", { level: 3 });
+
+    expect(headingButton).toHaveTextContent(expectedHeading);
     expect(subheading).toHaveTextContent(
       localDate.format(DAY_SUBHEADING_FORMAT),
     );
