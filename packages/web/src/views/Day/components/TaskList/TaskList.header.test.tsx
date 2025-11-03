@@ -37,7 +37,7 @@ describe("TaskListHeader", () => {
   it("should render the today heading with current date", () => {
     renderTaskList();
 
-    const headingButton = screen.getByRole("combobox");
+    const headingButton = screen.getByRole("button", { name: /select view/i });
     const subheading = screen.getByRole("heading", { level: 3 });
     expect(headingButton).toBeInTheDocument();
     expect(subheading).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe("TaskListHeader", () => {
 
     // Verify initial heading shows correct date
     const expectedInitialDate = format(testDate);
-    const headingButton = screen.getByRole("combobox");
+    const headingButton = screen.getByRole("button", { name: /select view/i });
     expect(headingButton).toHaveTextContent(expectedInitialDate);
 
     // Click the next day button
@@ -73,7 +73,7 @@ describe("TaskListHeader", () => {
 
     // Verify initial heading shows correct date
     const expectedInitialDate = format(testDate);
-    const headingButton = screen.getByRole("combobox");
+    const headingButton = screen.getByRole("button", { name: /select view/i });
     expect(headingButton).toHaveTextContent(expectedInitialDate);
 
     // Click the previous day button
@@ -93,7 +93,7 @@ describe("TaskListHeader", () => {
     const testDate = createUtcDate("2025-01-15T12:00:00Z");
     const { user } = renderTaskList({}, testDate);
 
-    const headingButton = screen.getByRole("combobox");
+    const headingButton = screen.getByRole("button", { name: /select view/i });
     const nextButton = screen.getByRole("button", { name: "Next day" });
     const prevButton = screen.getByRole("button", { name: "Previous day" });
 
@@ -129,7 +129,7 @@ describe("TaskListHeader", () => {
     const { user } = renderTaskList({}, testDate);
 
     const initialDate = format(testDate);
-    const headingButton = screen.getByRole("combobox");
+    const headingButton = screen.getByRole("button", { name: /select view/i });
     const nextButton = screen.getByRole("button", { name: "Next day" });
 
     // Verify initial date is end of January
@@ -172,7 +172,7 @@ describe("TaskListHeader", () => {
     const { user } = renderTaskList({}, testDate);
 
     const expectedInitialDate = format(testDate);
-    const headingButton = screen.getByRole("combobox");
+    const headingButton = screen.getByRole("button", { name: /select view/i });
     const goToTodayButton = screen.getByRole("button", { name: "Go to today" });
 
     // Verify initial heading shows the test date
@@ -227,7 +227,7 @@ describe("TaskListHeader - Timezone Handling", () => {
     // Should show local date (Oct 19), not UTC date (Oct 20)
     const localDate = utcDayjs.local();
     const expectedHeading = localDate.format(DAY_HEADING_FORMAT);
-    const headingButton = screen.getByRole("combobox");
+    const headingButton = screen.getByRole("button", { name: /select view/i });
     const subheading = screen.getByRole("heading", { level: 3 });
 
     expect(headingButton).toHaveTextContent(expectedHeading);

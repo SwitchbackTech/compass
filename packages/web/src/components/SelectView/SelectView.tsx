@@ -96,6 +96,8 @@ export const SelectView = ({
     { route: ROOT_ROUTES.ROOT, label: "Week", view: "Week" as const },
   ];
 
+  const dropdownId = "view-select-dropdown";
+
   return (
     <div className="relative">
       <button
@@ -107,6 +109,8 @@ export const SelectView = ({
         }
         aria-expanded={isOpen}
         aria-haspopup="listbox"
+        aria-controls={isOpen ? dropdownId : undefined}
+        aria-label={`Select view, currently ${currentView}`}
       >
         <span>{buttonLabel}</span>
         <svg
@@ -141,6 +145,7 @@ export const SelectView = ({
               }
             },
           })}
+          id={dropdownId}
           data-testid="view-select-dropdown"
           className="inset-inline-end-0 absolute top-full z-50 mt-1 min-w-[140px] rounded border border-gray-600 bg-gray-800 py-1 shadow-lg"
           role="listbox"

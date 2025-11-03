@@ -152,7 +152,7 @@ describe("TaskContextMenu", () => {
     });
 
     // Click outside the menu (on the heading button)
-    const headingButton = screen.getByRole("combobox");
+    const headingButton = screen.getByRole("button", { name: /select view/i });
     await act(async () => {
       await user.click(headingButton);
     });
