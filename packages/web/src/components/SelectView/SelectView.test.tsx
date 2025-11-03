@@ -49,7 +49,7 @@ describe("SelectView", () => {
     it("renders button with current view label for Week view", () => {
       renderWithRouter(<SelectView />, ROOT_ROUTES.ROOT);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       expect(button).toBeInTheDocument();
       expect(button).toHaveTextContent("Week");
       expect(button).toHaveAttribute("aria-expanded", "false");
@@ -58,7 +58,7 @@ describe("SelectView", () => {
     it("renders button with current view label for Now view", () => {
       renderWithRouter(<SelectView />, ROOT_ROUTES.NOW);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       expect(button).toBeInTheDocument();
       expect(button).toHaveTextContent("Now");
     });
@@ -66,7 +66,7 @@ describe("SelectView", () => {
     it("renders button with current view label for Day view", () => {
       renderWithRouter(<SelectView />, ROOT_ROUTES.DAY);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       expect(button).toBeInTheDocument();
       expect(button).toHaveTextContent("Day");
     });
@@ -74,7 +74,7 @@ describe("SelectView", () => {
     it("renders button with current view label for Day view with date param", () => {
       renderWithRouter(<SelectView />, `${ROOT_ROUTES.DAY}/2024-01-15`);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       expect(button).toBeInTheDocument();
       expect(button).toHaveTextContent("Day");
     });
@@ -83,7 +83,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       await act(async () => {
         user.click(button);
       });
@@ -116,35 +116,35 @@ describe("SelectView", () => {
     it("detects Now view when on /now route", () => {
       renderWithRouter(<SelectView />, ROOT_ROUTES.NOW);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       expect(button).toHaveTextContent("Now");
     });
 
     it("detects Day view when on /day route", () => {
       renderWithRouter(<SelectView />, ROOT_ROUTES.DAY);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       expect(button).toHaveTextContent("Day");
     });
 
     it("detects Day view when on /day/:date route", () => {
       renderWithRouter(<SelectView />, `${ROOT_ROUTES.DAY}/2024-01-15`);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       expect(button).toHaveTextContent("Day");
     });
 
     it("detects Week view when on / route", () => {
       renderWithRouter(<SelectView />, ROOT_ROUTES.ROOT);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       expect(button).toHaveTextContent("Week");
     });
 
     it("defaults to Week view for unknown routes", () => {
       renderWithRouter(<SelectView />, "/unknown-route");
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       expect(button).toHaveTextContent("Week");
     });
   });
@@ -154,7 +154,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       expect(button).toHaveAttribute("aria-expanded", "false");
 
       await act(async () => {
@@ -171,7 +171,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       await act(async () => {
         await user.click(button);
       });
@@ -195,7 +195,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       await act(async () => {
         await user.click(button);
       });
@@ -222,7 +222,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />, ROOT_ROUTES.NOW);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       await act(async () => {
         user.click(button);
       });
@@ -244,7 +244,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       await act(async () => {
         user.click(button);
       });
@@ -265,7 +265,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       await act(async () => {
         user.click(button);
       });
@@ -290,7 +290,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       await act(async () => {
         user.click(button);
       });
@@ -315,7 +315,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       await act(async () => {
         user.click(button);
       });
@@ -340,7 +340,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       await act(async () => {
         user.click(button);
       });
@@ -366,7 +366,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       await act(async () => {
         user.click(button);
       });
@@ -384,7 +384,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       await act(async () => {
         user.click(button);
       });
@@ -402,7 +402,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       await act(async () => {
         user.click(button);
       });
@@ -422,7 +422,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />, ROOT_ROUTES.ROOT);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       await act(async () => {
         await user.click(button);
       });
@@ -451,7 +451,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />, ROOT_ROUTES.NOW);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       await act(async () => {
         await user.click(button);
       });
@@ -480,7 +480,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />, ROOT_ROUTES.ROOT);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       await act(async () => {
         await user.click(button);
       });
@@ -526,7 +526,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />, ROOT_ROUTES.ROOT);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       await act(async () => {
         await user.click(button);
       });
@@ -558,7 +558,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />, ROOT_ROUTES.DAY);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       await act(async () => {
         await user.click(button);
       });
@@ -591,7 +591,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />, ROOT_ROUTES.ROOT);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       await act(async () => {
         await user.click(button);
       });
@@ -619,7 +619,7 @@ describe("SelectView", () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />, ROOT_ROUTES.NOW);
 
-      const button = screen.getByRole("combobox");
+      const button = screen.getByRole("button");
       await act(async () => {
         await user.click(button);
       });

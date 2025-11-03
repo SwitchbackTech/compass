@@ -72,7 +72,7 @@ export const SelectView = ({
 
   const click = useClick(context);
   const dismiss = useDismiss(context);
-  const role = useRole(context, { role: "listbox" });
+  const role = useRole(context, { role: "menu" });
 
   const listNavigation = useListNavigation(context, {
     listRef,
