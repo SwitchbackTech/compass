@@ -9,6 +9,10 @@ import { findAndUpdateEventInPreloadedState } from "@web/views/Calendar/calendar
 import { freshenEventStartEndDate } from "@web/views/Calendar/calendar.render.test.utils";
 import { render } from "../../__tests__/__mocks__/mock.render";
 
+beforeAll(() => {
+  window.HTMLElement.prototype.scroll = jest.fn();
+});
+
 describe("Scroll", () => {
   // separate from other tests to preserve
   // '.toHaveBeenCalledTimes' reliability
