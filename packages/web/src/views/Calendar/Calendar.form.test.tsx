@@ -29,7 +29,12 @@ jest.mock("@web/common/utils/event/event-target-visibility.util", () => ({
   },
 }));
 
+const mockConfirm = jest.spyOn(window, "confirm");
+
 describe("Event Form", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
   it("closes after clicking outside", async () => {
     render(<CalendarView />, { state: preloadedState });
     const user = userEvent.setup();
@@ -72,7 +77,9 @@ describe("Event Form", () => {
     await waitFor(() => {
       expect(screen.getByText("Delete")).toBeInTheDocument();
     });
-    await user.click(screen.getByText("Delete"));
+    await act(async () => {
+      await user.click(screen.getByText("Delete"));
+    });
 
     await waitFor(() => {
       expect(screen.queryByRole("form")).not.toBeInTheDocument();
@@ -121,12 +128,16 @@ describe("Event Form", () => {
         screen.getByText("Click to add your reminder"),
       ).toBeInTheDocument();
 
-      await user.keyboard("{Control>}k{/Control}");
+      await act(async () => {
+        await user.keyboard("{Control>}k{/Control}");
+      });
 
       const cmdPaletteEditBtn = await screen.findByRole("button", {
         name: /edit reminder/i,
       });
-      await user.click(cmdPaletteEditBtn);
+      await act(async () => {
+        await user.click(cmdPaletteEditBtn);
+      });
 
       await waitFor(() => {
         const input = document.querySelector("#reminderInput");

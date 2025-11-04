@@ -1,5 +1,5 @@
 import { rest } from "msw";
-import React from "react";
+import { act } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -22,11 +22,15 @@ describe("Sidebar: Interactions", () => {
     const existing = await screen.findByRole("button", {
       name: /europe trip/i,
     });
-    await user.click(existing);
+    await act(async () => {
+      await user.click(existing);
+    });
 
     expect(await screen.findByRole("form")).toBeInTheDocument();
 
-    await user.keyboard("{Escape}");
+    await act(async () => {
+      await user.keyboard("{Escape}");
+    });
 
     await waitFor(() => {
       expect(screen.queryByRole("form")).not.toBeInTheDocument();
@@ -42,12 +46,18 @@ describe("Sidebar: Interactions", () => {
     const user = userEvent.setup();
     render(<CalendarView />, { state: preloadedState });
 
-    await user.click(screen.getAllByText("+")[0]);
+    await act(async () => {
+      await user.click(screen.getAllByText("+")[0]);
+    });
 
     const formTitle = await screen.findByRole("input");
-    await user.type(formTitle, LEARN_CHINESE.title);
+    await act(async () => {
+      await user.type(formTitle, LEARN_CHINESE.title);
+    });
 
-    await user.click(screen.getByText(/save/i));
+    await act(async () => {
+      await user.click(screen.getByText(/save/i));
+    });
 
     await waitFor(() => {
       expect(
