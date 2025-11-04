@@ -3,7 +3,7 @@ import { fireEvent, screen } from "@testing-library/react";
 import { within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
-import { withProvider } from "../../../components/OnboardingContext";
+import { withOnboardingProvider } from "../../../components/OnboardingContext";
 import { MigrationSandbox } from "./MigrationSandbox";
 
 // Mock the useOnboardingShortcuts hook
@@ -16,7 +16,7 @@ const mockUseOnboardingShortcuts =
   require("../../../hooks/useOnboardingShortcuts").useOnboardingShortcuts;
 
 // Wrap the component with OnboardingProvider
-const SomedayMigrationWithProvider = withProvider(MigrationSandbox);
+const SomedayMigrationWithProvider = withOnboardingProvider(MigrationSandbox);
 
 // Mock required props for SomedayMigration
 const defaultProps = {

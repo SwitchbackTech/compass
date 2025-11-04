@@ -9,7 +9,7 @@ import { AuthApi } from "@web/common/apis/auth.api";
 import { SyncApi } from "@web/common/apis/sync.api";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
-import { withProvider } from "../../components/OnboardingContext";
+import { withOnboardingProvider } from "../../components/OnboardingContext";
 import { SignInWithGoogle } from "./SignInWithGoogle";
 
 // Mock the APIs
@@ -46,7 +46,7 @@ const mockUseGoogleLogin = useGoogleLogin as jest.MockedFunction<
 >;
 
 // Wrap the component with OnboardingProvider
-const SignInWithGoogleWithProvider = withProvider(SignInWithGoogle);
+const SignInWithGoogleWithProvider = withOnboardingProvider(SignInWithGoogle);
 
 describe("SignInWithGoogle", () => {
   const mockOnNext = jest.fn();

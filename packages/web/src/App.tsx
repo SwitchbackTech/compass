@@ -36,7 +36,7 @@ export const App = () => {
   const renderRequiredProviders = () => (
     <DndProvider backend={HTML5Backend}>
       <Provider store={store}>
-        <GoogleOAuthProvider clientId={ENV_WEB.CLIENT_ID || ""}>
+        <GoogleOAuthProvider clientId={ENV_WEB.GOOGLE_CLIENT_ID || ""}>
           <SuperTokensWrapper>
             <GlobalStyle />
             <ThemeProvider theme={theme}>
@@ -54,6 +54,7 @@ export const App = () => {
                 draggable
                 pauseOnHover
                 theme="dark"
+                limit={1}
               />
             </ThemeProvider>
           </SuperTokensWrapper>

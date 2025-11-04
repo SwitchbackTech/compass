@@ -113,8 +113,8 @@ packages/core/src/
 ```bash
 # Required for backend to start
 BASEURL=http://localhost:3000/api
-CLIENT_ID=YOUR_GOOGLE_OAUTH_CLIENT_ID
-CLIENT_SECRET=YOUR_GOOGLE_OAUTH_SECRET
+GOOGLE_CLIENT_ID=YOUR_GOOGLE_OAUTH_CLIENT_ID
+GOOGLE_CLIENT_SECRET=YOUR_GOOGLE_OAUTH_SECRET
 SUPERTOKENS_URI=YOUR_SUPERTOKENS_INSTANCE_URL
 SUPERTOKENS_KEY=YOUR_SUPERTOKENS_API_KEY
 MONGO_URI=YOUR_MONGODB_CONNECTION_STRING
@@ -185,6 +185,7 @@ Always prioritize frontend development with `yarn dev:web` when backend services
 ## Naming Conventions
 
 - Use `is` prefix for boolean variables. For example, `isLoading`, `isError`, `isSuccess`
+- Do not use barrel (`index.ts`) files. Use named exports instead.
 
 ## Branch Naming & Commit Message Conventions
 

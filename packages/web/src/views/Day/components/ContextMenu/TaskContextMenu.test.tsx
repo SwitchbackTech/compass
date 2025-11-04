@@ -151,10 +151,10 @@ describe("TaskContextMenu", () => {
       expect(screen.getByText("Delete Task")).toBeInTheDocument();
     });
 
-    // Click outside the menu (on the heading)
-    const heading = screen.getByRole("heading", { level: 2 });
+    // Click outside the menu (on the heading button)
+    const headingButton = screen.getByRole("button", { name: /select view/i });
     await act(async () => {
-      await user.click(heading);
+      await user.click(headingButton);
     });
 
     // Check that menu is closed

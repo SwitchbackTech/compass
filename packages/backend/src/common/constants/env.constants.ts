@@ -17,8 +17,8 @@ const EnvSchema = z
   .object({
     BASEURL: z.string().nonempty(),
     CHANNEL_EXPIRATION_MIN: z.string().nonempty().default("10"),
-    CLIENT_ID: z.string().nonempty(),
-    CLIENT_SECRET: z.string().nonempty(),
+    GOOGLE_CLIENT_ID: z.string().nonempty(),
+    GOOGLE_CLIENT_SECRET: z.string().nonempty(),
     DB: z.string().nonempty(),
     EMAILER_SECRET: z.string().nonempty().optional(),
     EMAILER_WAITLIST_TAG_ID: z.string().nonempty().optional(),
@@ -53,8 +53,8 @@ const EnvSchema = z
 const processEnv = {
   BASEURL: process.env["BASEURL"],
   CHANNEL_EXPIRATION_MIN: process.env["CHANNEL_EXPIRATION_MIN"],
-  CLIENT_ID: process.env["CLIENT_ID"],
-  CLIENT_SECRET: process.env["CLIENT_SECRET"],
+  GOOGLE_CLIENT_ID: process.env["GOOGLE_CLIENT_ID"],
+  GOOGLE_CLIENT_SECRET: process.env["GOOGLE_CLIENT_SECRET"],
   DB: IS_DEV ? "dev_calendar" : "prod_calendar",
   EMAILER_SECRET: process.env["EMAILER_API_SECRET"],
   EMAILER_WAITLIST_TAG_ID: process.env["EMAILER_WAITLIST_TAG_ID"],

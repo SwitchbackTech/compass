@@ -106,7 +106,7 @@ class AuthController {
       const { authMethod, user } = await compassAuthService.determineAuthMethod(
         gUser.sub,
       );
-      const { cUserId } =
+      const { cUserId, email } =
         authMethod === "login"
           ? await this.login(
               user as WithId<Schema_User>,
@@ -116,11 +116,14 @@ class AuthController {
           : await this.signup(gUser, gRefreshToken);
 
       const sUserId = supertokens.convertToRecipeUserId(cUserId);
-      await Session.createNewSession(req, res, "public", sUserId);
+      await Session.createNewSession(req, res, "public", sUserId, {
+        email,
+      });
 
       const result: Result_Auth_Compass = {
         cUserId,
         isNewUser: authMethod === "signup",
+        email,
       };
 
       res.promise(result);
@@ -165,7 +168,7 @@ class AuthController {
 
     await userService.saveTimeFor("lastLoggedInAt", cUserId);
 
-    return { cUserId };
+    return { cUserId, email: user.email };
   };
 
   revokeSessionsByUser = async (
@@ -185,9 +188,9 @@ class AuthController {
   };
 
   signup = async (gUser: TokenPayload, gRefreshToken: string) => {
-    const userId = await userService.initUserData(gUser, gRefreshToken);
+    const user = await userService.initUserData(gUser, gRefreshToken);
 
-    return { cUserId: userId };
+    return { cUserId: user.userId, email: user.email };
   };
 }
 

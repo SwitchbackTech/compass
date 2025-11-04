@@ -3,7 +3,7 @@ import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
-import { withProvider } from "../../../components/OnboardingContext";
+import { withOnboardingProvider } from "../../../components/OnboardingContext";
 import { SomedaySandbox } from "./SomedaySandbox";
 
 // Mock the createAndSubmitEvents function
@@ -16,7 +16,7 @@ jest.mock("./sandbox.util", () => ({
 }));
 
 // Wrap the component with OnboardingProvider
-const SomedaySandboxWithProvider = withProvider(SomedaySandbox);
+const SomedaySandboxWithProvider = withOnboardingProvider(SomedaySandbox);
 
 // Mock required props for SomedaySandbox
 const defaultProps = {

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import { useOnboardingShortcuts } from "../hooks/useOnboardingShortcuts";
 
@@ -116,10 +116,15 @@ export interface OnboardingStep {
 interface Props {
   steps: OnboardingStep[];
   onComplete: (reason: "skip" | "complete") => void;
+  initialStepIndex?: number;
 }
 
-export const Onboarding: React.FC<Props> = ({ steps, onComplete }) => {
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+export const Onboarding: React.FC<Props> = ({
+  steps,
+  onComplete,
+  initialStepIndex = 0,
+}) => {
+  const [currentStepIndex, setCurrentStepIndex] = useState(initialStepIndex);
   const [isNavPrevented, setIsNavPrevented] = useState(false);
 
   const handleNext = (data?: Record<string, unknown>) => {
@@ -153,19 +158,13 @@ export const Onboarding: React.FC<Props> = ({ steps, onComplete }) => {
   };
 
   const currentStep = steps[currentStepIndex];
-  const StepComponent = currentStep?.component;
-
-  if (!StepComponent) {
-    return null;
-  }
-
   // Get navigation control from step configuration
   const preventNavigation = currentStep.preventNavigation || false;
   const isNextBtnDisabled = currentStep.nextButtonDisabled || false;
   const canNavigateNext = currentStep.canNavigateNext !== false; // Default to true
   const handlesKeyboardEvents = currentStep.handlesKeyboardEvents || false;
+  const StepComponent = currentStep?.component;
 
-  // Use the keyboard shortcuts hook
   useOnboardingShortcuts({
     onNext: handleNext,
     onPrevious: handlePrevious,
@@ -174,6 +173,10 @@ export const Onboarding: React.FC<Props> = ({ steps, onComplete }) => {
     handlesKeyboardEvents,
     disablePrevious: currentStep.disablePrevious || false,
   });
+
+  if (!StepComponent) {
+    return null;
+  }
 
   // Handle navigation control changes from steps
   const handleNavigationControlChange = (shouldPrevent: boolean) => {
