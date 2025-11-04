@@ -40,7 +40,7 @@ describe("Sidebar: Display with State", () => {
     await waitFor(() => {
       render(<CalendarView />, { state: preloadedState });
     });
-    screen.debug();
+    
     await waitFor(() => {
       expect(
         within(screen.getByRole("complementary")).getByRole("button", {
