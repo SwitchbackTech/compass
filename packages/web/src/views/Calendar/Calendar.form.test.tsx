@@ -12,12 +12,24 @@ import {
 } from "@web/views/Calendar/calendar.render.test.utils";
 
 // Mock IntersectionObserver for jsdom
-global.IntersectionObserver = class {
-  constructor(callback: any, options?: any) {}
+global.IntersectionObserver = class IntersectionObserver {
+  root: Element | null = null;
+  rootMargin: string = "";
+  thresholds: ReadonlyArray<number> = [];
+  constructor(
+    callback: IntersectionObserverCallback,
+    options?: IntersectionObserverInit,
+  ) {
+    void callback;
+    void options;
+  }
   observe() {}
   unobserve() {}
   disconnect() {}
-};
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+} as typeof IntersectionObserver;
 
 jest.mock("@web/views/Calendar/hooks/mouse/useEventListener", () => ({
   useEventListener: jest.fn(),
