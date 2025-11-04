@@ -1,6 +1,6 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CLIMB, EUROPE_TRIP } from "@core/__mocks__/v1/events/events.misc";
 import { render } from "@web/__tests__/__mocks__/mock.render";
