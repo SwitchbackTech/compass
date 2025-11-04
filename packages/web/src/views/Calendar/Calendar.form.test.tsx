@@ -53,6 +53,7 @@ describe("Event Form", () => {
     expect(screen.queryByRole("form")).not.toBeInTheDocument();
   });
   it("closes after clicking trash icon", async () => {
+    mockConfirm.mockReturnValue(true);
     const user = userEvent.setup();
     render(<CalendarView />, {
       state: findAndUpdateEventInPreloadedState(
