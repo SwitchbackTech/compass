@@ -78,7 +78,6 @@ export const useDraftConfirmation = ({
 
       return setRecurrenceUpdateScopeDialogOpen(true);
     } else if (isRecurringEvent && isSomeday) {
-      console.log("Deleting non-recurring or someday event");
       deleteEvent(RecurringEventUpdateScope.ALL_EVENTS);
 
       return discard();
