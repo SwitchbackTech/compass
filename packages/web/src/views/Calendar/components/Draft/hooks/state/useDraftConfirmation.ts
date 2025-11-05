@@ -77,6 +77,10 @@ export const useDraftConfirmation = ({
       setFinalDraft(null);
 
       return setRecurrenceUpdateScopeDialogOpen(true);
+    } else if (isRecurringEvent && isSomeday) {
+      deleteEvent(RecurringEventUpdateScope.ALL_EVENTS);
+
+      return discard();
     }
 
     deleteEvent(RecurringEventUpdateScope.THIS_EVENT);

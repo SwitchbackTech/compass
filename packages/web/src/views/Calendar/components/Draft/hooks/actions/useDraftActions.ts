@@ -56,6 +56,7 @@ import {
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
+import { StringV4Schema } from "@core/types/type.utils";
 
 export const useDraftActions = (
   draftState: State_Draft_Local,
@@ -170,9 +171,12 @@ export const useDraftActions = (
     (
       applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
     ) => {
-      const confirmed = window.confirm(
-        `Delete ${reduxDraft?.title || "this event"}?`,
-      );
+      const { data: _title } = StringV4Schema.safeParse(reduxDraft?.title);
+      const title = _title ?? "this event";
+      const usePrefix = applyTo === RecurringEventUpdateScope.ALL_EVENTS;
+      const prefix = usePrefix ? "all instances of - " : "";
+
+      const confirmed = window.confirm(`Delete ${prefix}${title}?`);
 
       if (confirmed && reduxDraft?._id) {
         dispatch(
