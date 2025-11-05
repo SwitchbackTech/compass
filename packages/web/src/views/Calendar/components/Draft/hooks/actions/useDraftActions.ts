@@ -56,7 +56,7 @@ import {
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
-import { StringV4Schema } from "../../../../../../../../core/src/types/type.utils";
+import { StringV4Schema } from "@core/types/type.utils";
 
 export const useDraftActions = (
   draftState: State_Draft_Local,
