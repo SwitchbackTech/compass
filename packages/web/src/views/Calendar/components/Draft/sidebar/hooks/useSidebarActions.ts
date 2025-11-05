@@ -397,8 +397,9 @@ export const useSidebarActions = (
         reduxDraft!,
       );
 
+      // For someday events, always use THIS_EVENT scope to allow individual customization
       const applyTo =
-        isInstance && recurrenceChanged
+        isInstance && recurrenceChanged && !_event.isSomeday
           ? RecurringEventUpdateScope.ALL_EVENTS
           : RecurringEventUpdateScope.THIS_EVENT;
 

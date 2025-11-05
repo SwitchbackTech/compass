@@ -1707,5 +1707,121 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
         }
       });
     });
+
+    describe("Someday: ", () => {
+      describe("Basic Edits: ", () => {
+        it("should update only the targeted instance of a someday recurring event", async () => {
+          const { user: _user } = await UtilDriver.setupTestUser();
+          const user = _user._id.toString();
+          const isSomeday = true;
+          const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=5"] };
+          const payload = createMockBaseEvent({
+            isSomeday,
+            user,
+            recurrence,
+          });
+
+          // Create the base recurring someday event
+          const changes = await CompassSyncProcessor.processEvents([
+            {
+              payload: payload as CompassThisEvent["payload"],
+              applyTo: RecurringEventUpdateScope.THIS_EVENT,
+              status: CompassEventStatus.CONFIRMED,
+            },
+          ]);
+
+          expect(changes).toEqual(
+            expect.arrayContaining([
+              {
+                title: payload.title,
+                transition: [null, "RECURRENCE_BASE_SOMEDAY_CONFIRMED"],
+                category: Categories_Recurrence.RECURRENCE_BASE_SOMEDAY,
+                operation: "RECURRENCE_BASE_SOMEDAY_CREATED",
+              },
+            ]),
+          );
+
+          const { baseEvent, instances } = await testCompassSeries(payload, 5);
+
+          expect(instances).toHaveLength(5);
+
+          // Update the first instance with new title and description
+          const instanceToUpdate = instances[0]!;
+          const newTitle = "Updated Someday Instance Title";
+          const newDescription = "Updated description for this instance only";
+
+          const updatedPayload = {
+            ...instanceToUpdate,
+            _id: instanceToUpdate._id.toString(),
+            recurrence: {
+              ...instanceToUpdate.recurrence!,
+              rule: baseEvent.recurrence!.rule,
+            },
+            title: newTitle,
+            description: newDescription,
+          };
+
+          const updateChanges = await CompassSyncProcessor.processEvents([
+            {
+              payload: updatedPayload as CompassThisEvent["payload"],
+              applyTo: RecurringEventUpdateScope.THIS_EVENT,
+              status: CompassEventStatus.CONFIRMED,
+            },
+          ]);
+
+          expect(updateChanges).toEqual(
+            expect.arrayContaining([
+              {
+                title: updatedPayload.title,
+                transition: [
+                  "RECURRENCE_INSTANCE_SOMEDAY",
+                  "RECURRENCE_INSTANCE_SOMEDAY_CONFIRMED",
+                ],
+                category: Categories_Recurrence.RECURRENCE_INSTANCE_SOMEDAY,
+                operation: "RECURRENCE_INSTANCE_SOMEDAY_UPDATED",
+              },
+            ]),
+          );
+
+          delete (updatedPayload as Schema_Event).recurrence;
+
+          // Verify the updated instance has the new values
+          const { instanceEvent } =
+            await testCompassInstanceEvent(updatedPayload);
+
+          expect(instanceEvent.title).toBe(newTitle);
+          expect(instanceEvent.description).toBe(newDescription);
+
+          // Verify other instances were NOT updated
+          const otherInstances = await mongoService.event
+            .find({
+              user,
+              "recurrence.eventId": baseEvent!._id.toString(),
+              _id: { $ne: instanceEvent._id },
+            })
+            .toArray();
+
+          expect(otherInstances).toHaveLength(4);
+
+          otherInstances.forEach((instance) => {
+            expect(instance.title).toBe(payload.title);
+            expect(instance.description).toBe(payload.description);
+          });
+
+          // Verify the base event was NOT updated
+          const _baseEvent = await eventService.readById(
+            user,
+            baseEvent!._id.toString(),
+          );
+
+          expect(_baseEvent).toEqual(
+            expect.objectContaining({
+              title: payload!.title,
+              description: payload.description,
+            }),
+          );
+        });
+      });
+    });
   },
 );
