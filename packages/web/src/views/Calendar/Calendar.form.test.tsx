@@ -1,4 +1,4 @@
-import { act } from "react";
+import { SyntheticEvent, act } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -36,9 +36,13 @@ jest.mock("@web/views/Calendar/hooks/mouse/useEventListener", () => ({
 }));
 
 jest.mock("@web/common/utils/event/event-target-visibility.util", () => ({
-  onEventTargetVisibility: (callback: () => void) => () => {
-    callback();
-  },
+  onEventTargetVisibility:
+    (callback: () => void, visible = false) =>
+    (event: SyntheticEvent<Element, Event>) => {
+      void visible;
+      void event;
+      callback();
+    },
 }));
 
 const mockConfirm = jest.spyOn(window, "confirm");
