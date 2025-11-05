@@ -1,8 +1,6 @@
 import React from "react";
 import { DraggableProvided, DraggableStateSnapshot } from "@hello-pangea/dnd";
 import "@testing-library/jest-dom";
-import { screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { LEARN_CHINESE } from "@core/__mocks__/v1/events/events.misc";
 import {
   Categories_Event,
