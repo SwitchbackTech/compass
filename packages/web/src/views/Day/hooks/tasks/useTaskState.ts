@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Task } from "../../task.types";
+import { Task, UndoOperation } from "../../task.types";
 import { getDateKey } from "../../util/storage.util";
 
 interface UseTaskStateProps {
@@ -15,7 +15,7 @@ export function useTaskState({
   const [selectedTaskIndex, setSelectedTaskIndex] = useState(-1);
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [isCancellingEdit, setIsCancellingEdit] = useState(false);
-  const [deletedTask, setDeletedTask] = useState<Task | null>(null);
+  const [undoState, setUndoState] = useState<UndoOperation | null>(null);
   const [undoToastId, setUndoToastId] = useState<string | number | null>(null);
 
   const lastLoadedKeyRef = useRef<string | null>(null);
@@ -34,8 +34,8 @@ export function useTaskState({
     setIsAddingTask,
     isCancellingEdit,
     setIsCancellingEdit,
-    deletedTask,
-    setDeletedTask,
+    undoState,
+    setUndoState,
     undoToastId,
     setUndoToastId,
     lastLoadedKeyRef,

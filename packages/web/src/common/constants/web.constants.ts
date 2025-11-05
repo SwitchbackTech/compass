@@ -23,8 +23,6 @@ export const DATA_TASK_ELEMENT_ID = "data-task-id";
 export const ID_CONTEXT_MENU_ITEMS = "context-menu-items";
 export const ID_ADD_TASK_BUTTON = "add-task-button";
 
-export const WAITLIST_URL = "https://www.compasscalendar.com/waitlist";
-
 export enum ZIndex {
   LAYER_1 = 1,
   LAYER_2 = 2,

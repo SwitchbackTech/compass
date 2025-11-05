@@ -1,4 +1,3 @@
-import React from "react";
 import { useTasks } from "../../hooks/tasks/useTasks";
 import { Task } from "../Task/Task";
 
@@ -14,6 +13,7 @@ export const Tasks = () => {
     onInputKeyDown,
     onTitleChange,
     onStatusToggle,
+    migrateTask,
   } = useTasks();
 
   return (
@@ -31,6 +31,7 @@ export const Tasks = () => {
           onInputClick={onInputClick}
           onTitleChange={onTitleChange}
           onStatusToggle={onStatusToggle}
+          onMigrate={migrateTask}
           title={editingTaskId === task.id ? editingTitle : task.title}
         />
       ))}

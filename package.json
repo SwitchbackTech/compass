@@ -25,7 +25,7 @@
     "dev:backend -verbose": "export DEBUG=* && yarn dev:backend",
     "dev:backend-start": "cd packages/backend && cross-env-shell TZ=Etc/UTC ts-node-dev --respawn --pretty --exit-child --debounce --transpile-only -r tsconfig-paths/register src/app.ts",
     "dev:update": "git checkout main && git pull && yarn",
-    "dev:web": "node packages/scripts/src/commands/devWeb.js",
+    "dev:web": "cd packages/web && yarn webpack serve --mode=development --node-env=local",
     "postinstall": "husky install | chmod ug+x .husky/*",
     "test": "cross-env-shell TZ=Etc/UTC yarn jest",
     "test:e2e": "playwright test",

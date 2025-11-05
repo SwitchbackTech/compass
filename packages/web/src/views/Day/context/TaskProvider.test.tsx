@@ -261,8 +261,9 @@ describe("TaskProvider", () => {
     });
 
     expect(result.current.tasks).toHaveLength(0);
-    expect(result.current.deletedTask).toBeTruthy();
-    expect(result.current.deletedTask?.title).toBe("Test task");
+    expect(result.current.undoState).toBeTruthy();
+    expect(result.current.undoState?.type).toBe("delete");
+    expect(result.current.undoState?.task.title).toBe("Test task");
 
     // Restore the task
     act(() => {
@@ -271,7 +272,7 @@ describe("TaskProvider", () => {
 
     expect(result.current.tasks).toHaveLength(1);
     expect(result.current.tasks[0].title).toBe("Test task");
-    expect(result.current.deletedTask).toBeNull();
+    expect(result.current.undoState).toBeNull();
   });
 
   it("should not restore when no task is deleted", () => {
@@ -280,7 +281,7 @@ describe("TaskProvider", () => {
     });
 
     expect(result.current.tasks).toHaveLength(0);
-    expect(result.current.deletedTask).toBeNull();
+    expect(result.current.undoState).toBeNull();
 
     // Try to restore when no task is deleted
     act(() => {
@@ -288,7 +289,7 @@ describe("TaskProvider", () => {
     });
 
     expect(result.current.tasks).toHaveLength(0);
-    expect(result.current.deletedTask).toBeNull();
+    expect(result.current.undoState).toBeNull();
   });
 
   it("should only track the most recent deleted task when multiple tasks are deleted quickly", () => {
@@ -315,7 +316,8 @@ describe("TaskProvider", () => {
     });
 
     expect(result.current.tasks).toHaveLength(1);
-    expect(result.current.deletedTask?.title).toBe("First task");
+    expect(result.current.undoState?.type).toBe("delete");
+    expect(result.current.undoState?.task.title).toBe("First task");
 
     // Delete second task quickly (should replace the first deleted task)
     act(() => {
@@ -323,8 +325,8 @@ describe("TaskProvider", () => {
     });
 
     expect(result.current.tasks).toHaveLength(0);
-    expect(result.current.deletedTask?.title).toBe("Second task");
-    expect(result.current.deletedTask?.id).toBe(secondTaskId);
+    expect(result.current.undoState?.type).toBe("delete");
+    expect(result.current.undoState?.task.title).toBe("Second task");
 
     // Restore should only restore the most recent task (second task)
     act(() => {
@@ -334,6 +336,6 @@ describe("TaskProvider", () => {
     expect(result.current.tasks).toHaveLength(1);
     expect(result.current.tasks[0].title).toBe("Second task");
     expect(result.current.tasks[0].id).toBe(secondTaskId);
-    expect(result.current.deletedTask).toBeNull();
+    expect(result.current.undoState).toBeNull();
   });
 });

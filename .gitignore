@@ -26,6 +26,7 @@ packages/**/yarn.lock
 
 build/
 buildcache/
+docs/
 logs/
 node_modules/
 playwright-report/
@@ -48,4 +49,4 @@ packages/backend/.env
 packages/backend/.prod.env
 
 
-!.env.example
+!.env.local.example

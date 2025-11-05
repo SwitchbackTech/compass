@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { IS_DEV } from "@web/common/constants/env.constants";
+import { useHasCompletedSignup } from "@web/auth/useHasCompletedSignup";
 import { useIsMobile } from "@web/common/hooks/useIsMobile";
 import {
   useOnboarding,
-  withProvider,
+  withOnboardingProvider,
 } from "@web/views/Onboarding/components/OnboardingContext";
 import { Onboarding, OnboardingStepProps, OnboardingStepType } from "./index";
 import {
@@ -16,7 +16,6 @@ import {
   SignInWithGooglePrelude,
   SomedayIntroOne,
   SomedayIntroTwo,
-  WaitlistCheck,
   WelcomeNoteOne,
   WelcomeNoteTwo,
   WelcomeScreen,
@@ -26,7 +25,6 @@ import { MigrationIntro } from "./steps/events/MigrationIntro/MigrationIntro";
 import { MigrationSandbox } from "./steps/events/MigrationSandbox/MigrationSandbox";
 import { SomedaySandbox } from "./steps/events/SomedaySandbox/SomedaySandbox";
 import { MobileSignIn } from "./steps/mobile/MobileSignIn";
-import { MobileWaitlistCheck } from "./steps/mobile/MobileWaitlistCheck/MobileWaitlistCheck";
 import { MobileWarning } from "./steps/mobile/MobileWarning";
 import { ReminderIntroOne } from "./steps/reminder/ReminderIntroOne";
 import { ReminderIntroTwo } from "./steps/reminder/ReminderIntroTwo";
@@ -35,6 +33,7 @@ const _OnboardingFlow: React.FC = () => {
   const navigate = useNavigate();
   const { setHideSteps } = useOnboarding();
   const isMobile = useIsMobile();
+  const { hasCompletedSignup } = useHasCompletedSignup();
 
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -45,25 +44,8 @@ const _OnboardingFlow: React.FC = () => {
     },
   ];
 
-  if (!IS_DEV) {
-    // only show email step in prod in order
-    // to allow contributors on localhost through
-    loginSteps.push({
-      id: "email",
-      component: WaitlistCheck,
-      handlesKeyboardEvents: true, // prevents nav via keyboard
-    });
-  }
-
   // Mobile-specific login steps
   const mobileLoginSteps: OnboardingStepType[] = [
-    {
-      id: "mobile-waitlist-check",
-      component: (props: OnboardingStepProps) => (
-        <MobileWaitlistCheck {...props} />
-      ),
-      handlesKeyboardEvents: true,
-    },
     {
       id: "mobile-warning",
       component: (props: OnboardingStepProps) => <MobileWarning {...props} />,
@@ -165,9 +147,14 @@ const _OnboardingFlow: React.FC = () => {
   ];
 
   // Initially hide the steps until the user logs in
+  // For returning users, show the steps immediately
   useEffect(() => {
-    setHideSteps(true);
-  }, [setHideSteps]);
+    if (hasCompletedSignup) {
+      setHideSteps(false);
+    } else {
+      setHideSteps(true);
+    }
+  }, [setHideSteps, hasCompletedSignup]);
 
   // Show mobile flow if on mobile device
   if (isMobile) {
@@ -182,7 +169,24 @@ const _OnboardingFlow: React.FC = () => {
     );
   }
 
-  if (!showOnboarding) {
+  // Determine initial step based on signup status
+  // If user has completed signup before, skip welcome screens and start at sign-in-with-google
+  const getInitialStepIndex = () => {
+    if (hasCompletedSignup) {
+      // Find the index of "sign-in-with-google" step
+      const signInStepIndex = onboardingSteps.findIndex(
+        (step) => step.id === "sign-in-with-google",
+      );
+      return signInStepIndex !== -1 ? signInStepIndex : 0;
+    }
+    return 0; // Start from beginning for new users
+  };
+
+  if (hasCompletedSignup === null) {
+    return null;
+  }
+
+  if (!showOnboarding && !hasCompletedSignup) {
     return (
       <Onboarding
         key="login-onboarding"
@@ -199,6 +203,7 @@ const _OnboardingFlow: React.FC = () => {
     <Onboarding
       key="main-onboarding"
       steps={onboardingSteps}
+      initialStepIndex={getInitialStepIndex()}
       onComplete={() => {
         navigate("/");
       }}
@@ -206,5 +211,5 @@ const _OnboardingFlow: React.FC = () => {
   );
 };
 
-export const OnboardingFlow = withProvider(_OnboardingFlow);
+export const OnboardingFlow = withOnboardingProvider(_OnboardingFlow);
 export default OnboardingFlow;

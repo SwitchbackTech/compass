@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useHasCompletedSignup } from "@web/auth/useHasCompletedSignup";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { SyncApi } from "@web/common/apis/sync.api";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
@@ -16,10 +17,15 @@ export const MobileSignIn: React.FC<OnboardingStepProps> = ({
   onSkip,
 }) => {
   const navigate = useNavigate();
+  const { markSignupCompleted } = useHasCompletedSignup();
 
   const { login, loading } = useGoogleLogin({
     onSuccess: async (code) => {
       const result = await AuthApi.loginOrSignup(code);
+
+      // Set flag to track that user has completed signup
+      markSignupCompleted();
+
       if (result.isNewUser) {
         // Start Google Calendar import in the background
         // This allows the import to begin while the user continues through onboarding
