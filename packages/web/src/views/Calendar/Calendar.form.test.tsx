@@ -1,4 +1,4 @@
-import { act } from "react";
+import { SyntheticEvent, act } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -11,11 +11,46 @@ import {
   freshenEventStartEndDate,
 } from "@web/views/Calendar/calendar.render.test.utils";
 
+// Mock IntersectionObserver for jsdom
+global.IntersectionObserver = class IntersectionObserver {
+  root: Element | null = null;
+  rootMargin: string = "";
+  thresholds: ReadonlyArray<number> = [];
+  constructor(
+    callback: IntersectionObserverCallback,
+    options?: IntersectionObserverInit,
+  ) {
+    void callback;
+    void options;
+  }
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+} as typeof IntersectionObserver;
+
 jest.mock("@web/views/Calendar/hooks/mouse/useEventListener", () => ({
   useEventListener: jest.fn(),
 }));
 
+jest.mock("@web/common/utils/event/event-target-visibility.util", () => ({
+  onEventTargetVisibility:
+    (callback: () => void, visible = false) =>
+    (event: SyntheticEvent<Element, Event>) => {
+      void visible;
+      void event;
+      callback();
+    },
+}));
+
+const mockConfirm = jest.spyOn(window, "confirm");
+
 describe("Event Form", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
   it("closes after clicking outside", async () => {
     render(<CalendarView />, { state: preloadedState });
     const user = userEvent.setup();
@@ -34,6 +69,7 @@ describe("Event Form", () => {
     expect(screen.queryByRole("form")).not.toBeInTheDocument();
   });
   it("closes after clicking trash icon", async () => {
+    mockConfirm.mockReturnValue(true);
     const user = userEvent.setup();
     render(<CalendarView />, {
       state: findAndUpdateEventInPreloadedState(
@@ -58,7 +94,9 @@ describe("Event Form", () => {
     await waitFor(() => {
       expect(screen.getByText("Delete")).toBeInTheDocument();
     });
-    await user.click(screen.getByText("Delete"));
+    await act(async () => {
+      await user.click(screen.getByText("Delete"));
+    });
 
     await waitFor(() => {
       expect(screen.queryByRole("form")).not.toBeInTheDocument();
@@ -99,26 +137,30 @@ describe("Event Form", () => {
       expect(reminderInput).toHaveFocus();
     });
 
-    it.skip("it should be focused when the 'edit reminder' btn is clicked in the command palette", async () => {
-      const { container } = render(<CalendarView />, { state: preloadedState });
+    it("it should be focused when the 'edit reminder' btn is clicked in the command palette", async () => {
+      const user = userEvent.setup();
+      render(<CalendarView />);
 
-      const reminderPlaceholder = screen.getByText(
-        "Click to add your reminder",
-      );
+      expect(
+        screen.getByText("Click to add your reminder"),
+      ).toBeInTheDocument();
 
-      expect(reminderPlaceholder).toBeInTheDocument();
+      await act(async () => {
+        await user.keyboard("{Control>}k{/Control}");
+      });
 
-      await act(async () => userEvent.keyboard("{Meta>}k{/Meta}"));
+      const cmdPaletteEditBtn = await screen.findByRole("button", {
+        name: /edit reminder/i,
+      });
+      await act(async () => {
+        await user.click(cmdPaletteEditBtn);
+      });
 
-      const cmdPaletteEditBtn = screen.getByText("Edit Reminder [r]");
-
-      expect(cmdPaletteEditBtn).toBeInTheDocument();
-
-      await act(async () => userEvent.click(cmdPaletteEditBtn!));
-
-      const reminderInput = container.querySelector('[id="reminderInput"]');
-
-      expect(reminderInput).toHaveFocus();
+      await waitFor(() => {
+        const input = document.querySelector("#reminderInput");
+        expect(input).toBeInTheDocument();
+        expect(input).toHaveFocus();
+      });
     });
   });
 });

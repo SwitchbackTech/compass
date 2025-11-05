@@ -171,7 +171,7 @@ const config = {
         "<rootDir>/packages/web/src/__tests__/web.test.start.js",
       ],
       testEnvironment: "jsdom",
-      testMatch: ["<rootDir>/packages/web/**/?(*.)+(spec|test).[tj]s?(x)"],
+      testMatch: ["<rootDir>/packages/web/**/*.(test|spec).[jt]s?(x)"],
       transformIgnorePatterns: [
         //https://github.com/react-dnd/react-dnd/issues/3443
         "/node_modules/(?!react-dnd|dnd-core|@react-dnd)",
