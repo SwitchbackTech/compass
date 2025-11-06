@@ -45,12 +45,14 @@ export const GlobalStyle = createGlobalStyle`
   /* Toast styling - override react-toastify defaults to use theme colors */
   .Toastify__toast-container {
     .Toastify__toast {
-      background-color: hsl(219 8 46 / 20%);
+      background-color: ${theme.color.bg.primary};
       color: ${theme.color.text.lighter};
+      /* Drop shadow using the same color as drag-to-edge navigation */
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 20px rgba(59, 130, 246, 0.3);
     }
 
     .Toastify__toast--dark {
-      background-color: hsl(219 8 46 / 20%);
+      background-color: ${theme.color.bg.primary};
       color: ${theme.color.text.lighter};
     }
 
