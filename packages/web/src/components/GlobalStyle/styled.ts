@@ -41,4 +41,43 @@ export const GlobalStyle = createGlobalStyle`
       background-color: ${theme.color.panel.scrollbarActive};
     }
   }
+
+  /* Toast styling - override react-toastify defaults to use theme colors */
+  .Toastify__toast-container {
+    .Toastify__toast {
+      background-color: hsl(219 8 46 / 20%);
+      color: ${theme.color.text.lighter};
+    }
+
+    .Toastify__toast--dark {
+      background-color: hsl(219 8 46 / 20%);
+      color: ${theme.color.text.lighter};
+    }
+
+    .Toastify__progress-bar {
+      background-color: ${theme.color.tag.three};
+    }
+
+    .Toastify__progress-bar--dark {
+      background-color: ${theme.color.tag.three};
+    }
+
+    .Toastify__close-button {
+      color: ${theme.color.text.lighter};
+      opacity: 0.7;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+
+    .Toastify__close-button--dark {
+      color: ${theme.color.text.lighter};
+      opacity: 0.7;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
   `;

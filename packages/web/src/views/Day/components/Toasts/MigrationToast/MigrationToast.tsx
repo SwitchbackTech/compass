@@ -39,7 +39,7 @@ const MigrationToast: React.FC<MigrationToastProps> = ({
       </button>
       <button
         onClick={onNavigate}
-        className="rounded bg-blue-500 px-3 py-1 text-xs whitespace-nowrap text-white transition-colors hover:bg-blue-600"
+        className="rounded bg-blue-300 px-3 py-1 text-xs whitespace-nowrap text-white transition-colors hover:bg-blue-200"
       >
         Go to day
       </button>
