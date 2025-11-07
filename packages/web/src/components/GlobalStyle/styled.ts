@@ -1,5 +1,6 @@
 import { createGlobalStyle } from "styled-components";
 import { ZIndex } from "@web/common/constants/web.constants";
+import { c } from "@web/common/styles/colors";
 import { theme } from "@web/common/styles/theme";
 
 export const GlobalStyle = createGlobalStyle`
@@ -47,8 +48,7 @@ export const GlobalStyle = createGlobalStyle`
     .Toastify__toast {
       background-color: ${theme.color.bg.primary};
       color: ${theme.color.text.lighter};
-      /* Drop shadow using the same color as drag-to-edge navigation */
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 20px rgba(59, 130, 246, 0.3);
+      box-shadow: 0 4px 2px ${c.gray900}, 0 0 10px ${c.blue400};
     }
 
     .Toastify__toast--dark {

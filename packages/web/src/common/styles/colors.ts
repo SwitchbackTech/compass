@@ -1,6 +1,7 @@
 export const c = {
   black: "hsla(0 0 0 / 25%)",
   black100: "hsla(0 0 0 / 100%)",
+  blue400: "hsl(214, 85%, 62%)",
   blue300: "hsl(195 78 56)",
   blue200: "hsl(196 60 59)",
   blue100: "hsl(202 100 67)",
