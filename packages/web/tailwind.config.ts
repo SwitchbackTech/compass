@@ -88,13 +88,6 @@ const config: Config = {
         "4xl": "1.7rem",
         "5xl": "2rem",
       },
-      fontWeight: {
-        light: 300,
-        regular: 400,
-        medium: 500,
-        bold: 700,
-        "extra-bold": 900,
-      },
       borderRadius: {
         DEFAULT: "4px",
       },
