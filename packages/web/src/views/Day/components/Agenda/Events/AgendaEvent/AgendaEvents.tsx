@@ -2,6 +2,7 @@ import { SLOT_HEIGHT } from "@web/views/Day/constants/day.constants";
 import { useDayEvents } from "@web/views/Day/data/day.data";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { getNowLinePosition } from "@web/views/Day/util/agenda/agenda.util";
+import { EventContextMenuWrapper } from "../../../ContextMenu/EventContextMenuWrapper";
 import { AgendaSkeleton } from "../../AgendaSkeleton/AgendaSkeleton";
 import { AgendaEvent } from "./AgendaEvent";
 
@@ -37,15 +38,17 @@ export const AgendaEvents = () => {
         />
 
         {/* Event blocks */}
-        <div className="relative">
-          {isLoading ? (
-            <AgendaSkeleton />
-          ) : (
-            timedEvents.map((event) => (
-              <AgendaEvent key={event._id} event={event} />
-            ))
-          )}
-        </div>
+        <EventContextMenuWrapper>
+          <div className="relative">
+            {isLoading ? (
+              <AgendaSkeleton />
+            ) : (
+              timedEvents.map((event) => (
+                <AgendaEvent key={event._id} event={event} />
+              ))
+            )}
+          </div>
+        </EventContextMenuWrapper>
       </div>
     </div>
   );
