@@ -57,11 +57,11 @@ export const GlobalStyle = createGlobalStyle`
     }
 
     .Toastify__progress-bar {
-      background-color: ${theme.color.tag.three};
+      background: linear-gradient(to right, ${c.blue100}, ${c.blueGray100});
     }
 
     .Toastify__progress-bar--dark {
-      background-color: ${theme.color.tag.three};
+      background: linear-gradient(to right, ${c.blue100}, ${c.blueGray100});
     }
 
     .Toastify__close-button {
