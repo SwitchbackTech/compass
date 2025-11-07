@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { createContext, useContext, useState } from "react";
 import {
   autoUpdate,
   flip,
@@ -7,20 +7,36 @@ import {
   useFloating,
 } from "@floating-ui/react";
 import { Schema_Event } from "@core/types/event.types";
-import { useDayEvents } from "../../data/day.data";
-import { useDateInView } from "../../hooks/navigation/useDateInView";
-import { getEventIdFromElement } from "../../util/event.locate";
 import { EventContextMenu } from "./EventContextMenu";
 
-interface EventContextMenuWrapperProps {
+interface EventContextMenuContextValue {
+  openContextMenu: (
+    event: Schema_Event,
+    position: { x: number; y: number },
+  ) => void;
+}
+
+const EventContextMenuContext = createContext<
+  EventContextMenuContextValue | undefined
+>(undefined);
+
+export const useEventContextMenu = () => {
+  const context = useContext(EventContextMenuContext);
+  if (!context) {
+    throw new Error(
+      "useEventContextMenu must be used within EventContextMenuProvider",
+    );
+  }
+  return context;
+};
+
+interface EventContextMenuProviderProps {
   children: React.ReactNode;
 }
 
-export const EventContextMenuWrapper = ({
+export const EventContextMenuProvider = ({
   children,
-}: EventContextMenuWrapperProps) => {
-  const dateInView = useDateInView();
-  const { events } = useDayEvents(dateInView);
+}: EventContextMenuProviderProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Schema_Event | null>(null);
 
@@ -37,36 +53,19 @@ export const EventContextMenuWrapper = ({
     whileElementsMounted: autoUpdate,
   });
 
-  const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
-    const target = e.target;
-    if (!(target instanceof HTMLElement)) {
-      console.error("target is not a HTMLElement");
-      return;
-    }
-
-    // Get event ID from data attribute
-    const eventId = getEventIdFromElement(target);
-    if (!eventId) {
-      return;
-    }
-
-    // Find the event by ID
-    const event = events.find((ev) => ev._id === eventId);
-    if (!event) {
-      return;
-    }
-
-    e.preventDefault();
-
+  const openContextMenu = (
+    event: Schema_Event,
+    position: { x: number; y: number },
+  ) => {
     // Create a virtual element where the user clicked
     refs.setReference({
       getBoundingClientRect: () => ({
-        x: e.clientX,
-        y: e.clientY,
-        top: e.clientY,
-        left: e.clientX,
-        bottom: e.clientY,
-        right: e.clientX,
+        x: position.x,
+        y: position.y,
+        top: position.y,
+        left: position.x,
+        bottom: position.y,
+        right: position.x,
         width: 0,
         height: 0,
         toJSON: () => ({}),
@@ -83,7 +82,7 @@ export const EventContextMenuWrapper = ({
   };
 
   return (
-    <div style={{ display: "contents" }} onContextMenu={handleContextMenu}>
+    <EventContextMenuContext.Provider value={{ openContextMenu }}>
       {children}
       {isOpen && selectedEvent && (
         <EventContextMenu
@@ -99,6 +98,6 @@ export const EventContextMenuWrapper = ({
           onOutsideClick={handleClose}
         />
       )}
-    </div>
+    </EventContextMenuContext.Provider>
   );
 };
