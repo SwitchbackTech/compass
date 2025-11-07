@@ -22,7 +22,6 @@ export const AgendaEventMenuContent = forwardRef<
   const priorityColor = colorByPriority[priority];
   const darkenedColor = darken(priorityColor);
   const isBackgroundDark = isDark(darkenedColor);
-  console.log(event.title, isBackgroundDark, "AgendaEventMenuContent");
 
   let timeDisplay = "";
   if (!event.isAllDay) {
