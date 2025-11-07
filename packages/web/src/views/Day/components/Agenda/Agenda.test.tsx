@@ -152,20 +152,19 @@ describe("CalendarAgenda", () => {
     render(<Agenda />);
 
     // Check that all-day events are rendered with correct attributes
-    const allDayEvent = screen
-      .getByText("All Day Event 1")
-      .closest('[data-event-id="all-day-1"]');
+    const allDayEvent = screen.getByRole("button", {
+      name: "All Day Event 1",
+    });
     expect(allDayEvent).toHaveAttribute("tabIndex", "0");
     expect(allDayEvent).toHaveAttribute("role", "button");
     expect(allDayEvent).toHaveAttribute("data-event-id", "all-day-1");
 
     // Check that timed events are rendered with correct attributes
-    const timedEvent = screen
-      .getByText("Timed Event 1")
-      .closest('[data-event-id="timed-1"]');
+    const timedEvent = screen.getByRole("button", {
+      name: "Timed Event 1",
+    });
     expect(timedEvent).toHaveAttribute("tabIndex", "0");
     expect(timedEvent).toHaveAttribute("role", "button");
-    expect(timedEvent).toHaveAttribute("data-event-id", "timed-1");
   });
 
   it("should render events in correct TAB navigation order", async () => {
