@@ -76,19 +76,13 @@ describe("EventContextMenu", () => {
 
     renderWithDayProviders(<AgendaEvents />);
 
-    // Wait for event to render
-    await waitFor(() => {
-      expect(screen.getByText("Test Event")).toBeInTheDocument();
+    // Wait for event to render and right-click on it
+    const eventButton = await screen.findByRole("button", {
+      name: "Test Event",
     });
 
-    // Right-click on the event
-    const eventElement = screen
-      .getByText("Test Event")
-      .closest("[data-event-id]");
-    expect(eventElement).toBeInTheDocument();
-
     await act(async () => {
-      await user.pointer({ target: eventElement!, keys: "[MouseRight]" });
+      await user.pointer({ target: eventButton, keys: "[MouseRight]" });
     });
 
     // Check that context menu appears
@@ -109,16 +103,12 @@ describe("EventContextMenu", () => {
 
     renderWithDayProviders(<AgendaEvents />);
 
-    await waitFor(() => {
-      expect(screen.getByText("Test Event")).toBeInTheDocument();
-    });
-
     // Right-click on the event
-    const eventElement = screen
-      .getByText("Test Event")
-      .closest("[data-event-id]");
+    const eventButton = await screen.findByRole("button", {
+      name: "Test Event",
+    });
     await act(async () => {
-      await user.pointer({ target: eventElement!, keys: "[MouseRight]" });
+      await user.pointer({ target: eventButton, keys: "[MouseRight]" });
     });
 
     // Check that Delete Event menu item is visible
@@ -141,16 +131,12 @@ describe("EventContextMenu", () => {
 
     renderWithDayProviders(<AgendaEvents />);
 
-    await waitFor(() => {
-      expect(screen.getByText("Test Event")).toBeInTheDocument();
-    });
-
     // Right-click on the event
-    const eventElement = screen
-      .getByText("Test Event")
-      .closest("[data-event-id]");
+    const eventButton = await screen.findByRole("button", {
+      name: "Test Event",
+    });
     await act(async () => {
-      await user.pointer({ target: eventElement!, keys: "[MouseRight]" });
+      await user.pointer({ target: eventButton, keys: "[MouseRight]" });
     });
 
     // Check that menu is open
@@ -182,16 +168,12 @@ describe("EventContextMenu", () => {
 
     renderWithDayProviders(<AgendaEvents />);
 
-    await waitFor(() => {
-      expect(screen.getByText("Test Event")).toBeInTheDocument();
-    });
-
     // Right-click on the event
-    const eventElement = screen
-      .getByText("Test Event")
-      .closest("[data-event-id]");
+    const eventButton = await screen.findByRole("button", {
+      name: "Test Event",
+    });
     await act(async () => {
-      await user.pointer({ target: eventElement!, keys: "[MouseRight]" });
+      await user.pointer({ target: eventButton, keys: "[MouseRight]" });
     });
 
     // Check that menu is open
@@ -222,9 +204,8 @@ describe("EventContextMenu", () => {
 
     renderWithDayProviders(<AgendaEvents />);
 
-    await waitFor(() => {
-      expect(screen.getByText("Test Event")).toBeInTheDocument();
-    });
+    // Wait for event to render
+    await screen.findByRole("button", { name: "Test Event" });
 
     // Right-click on the calendar surface (not on an event)
     const calendarSurface = screen.getByTestId("calendar-surface");
@@ -251,17 +232,16 @@ describe("EventContextMenu", () => {
 
     renderWithDayProviders(<AgendaEvents />);
 
-    await waitFor(() => {
-      expect(screen.getByText("First Event")).toBeInTheDocument();
-      expect(screen.getByText("Second Event")).toBeInTheDocument();
-    });
+    // Wait for events to render
+    await screen.findByRole("button", { name: "First Event" });
+    await screen.findByRole("button", { name: "Second Event" });
 
     // Right-click on the first event
-    const firstEventElement = screen
-      .getByText("First Event")
-      .closest("[data-event-id]");
+    const firstEventButton = screen.getByRole("button", {
+      name: "First Event",
+    });
     await act(async () => {
-      await user.pointer({ target: firstEventElement!, keys: "[MouseRight]" });
+      await user.pointer({ target: firstEventButton, keys: "[MouseRight]" });
     });
 
     // Check that menu appears

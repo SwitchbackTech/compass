@@ -37,6 +37,7 @@ export const AgendaEvent = ({ event }: { event: Schema_Event }) => {
           }}
           tabIndex={0}
           role="button"
+          aria-label={event.title || "Untitled event"}
           data-event-id={event._id}
         >
           <span className="flex-1 truncate">{event.title || "Untitled"}</span>
