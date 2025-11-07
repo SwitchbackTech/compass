@@ -4,6 +4,7 @@
   "license": "MIT",
   "version": "1.0.0",
   "main": "src/App.ts",
+  "type": "module",
   "typings": "declaration.d.ts",
   "dependencies": {
     "@atlaskit/css-reset": "^6.3.20",
