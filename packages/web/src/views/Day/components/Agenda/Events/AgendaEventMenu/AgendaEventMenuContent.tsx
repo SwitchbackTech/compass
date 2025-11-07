@@ -1,7 +1,10 @@
 import { forwardRef } from "react";
 import { FloatingPortal, useMergeRefs } from "@floating-ui/react";
+import { Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
+import { darken } from "@core/util/color.utils";
 import { ZIndex } from "@web/common/constants/web.constants";
+import { colorByPriority } from "@web/common/styles/theme.util";
 import { getAgendaEventTime } from "@web/views/Day/util/agenda/agenda.util";
 import { useAgendaEventMenu } from "./context/useAgendaEventMenu";
 
@@ -14,6 +17,10 @@ export const AgendaEventMenuContent = forwardRef<
 >(function AgendaEventMenuContent({ event, ...props }, propRef) {
   const context = useAgendaEventMenu();
   const ref = useMergeRefs([context.refs.setFloating, propRef]);
+
+  const priority = event.priority || Priorities.UNASSIGNED;
+  const priorityColor = colorByPriority[priority];
+  const darkenedColor = darken(priorityColor);
 
   let timeDisplay = "";
   if (!event.isAllDay) {
@@ -33,8 +40,9 @@ export const AgendaEventMenuContent = forwardRef<
           role="dialog"
           aria-labelledby="event-title"
           aria-describedby={event.description ? "event-description" : undefined}
-          className="z-50 max-w-80 min-w-64 rounded-lg border border-gray-200 bg-white p-4 shadow-lg"
+          className="z-50 max-w-80 min-w-64 rounded-lg border border-gray-200 p-4 shadow-lg"
           style={{
+            backgroundColor: darkenedColor,
             left: context.x ?? 0,
             position: context.strategy,
             top: context.y ?? 0,
