@@ -1,3 +1,4 @@
+import { act } from "react";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -209,19 +210,27 @@ describe("CalendarAgenda", () => {
     render(<Agenda />);
 
     // Focus the first element (should be Apple Event - all-day events sorted alphabetically)
-    await user.tab();
+    await act(async () => {
+      await user.tab();
+    });
     expect(document.activeElement).toHaveTextContent("Apple Event");
 
     // Tab to second element (should be Zebra Event - all-day events sorted alphabetically)
-    await user.tab();
+    await act(async () => {
+      await user.tab();
+    });
     expect(document.activeElement).toHaveTextContent("Zebra Event");
 
     // Tab to third element (should be Breakfast Event - timed events sorted by start time)
-    await user.tab();
+    await act(async () => {
+      await user.tab();
+    });
     expect(document.activeElement).toHaveTextContent("Breakfast Event");
 
     // Tab to fourth element (should be Lunch Event - timed events sorted by start time)
-    await user.tab();
+    await act(async () => {
+      await user.tab();
+    });
     expect(document.activeElement).toHaveTextContent("Lunch Event");
   });
 });
