@@ -12,7 +12,6 @@ import { Priorities } from "@core/constants/core.constants";
 import { darken } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
-import { theme } from "@web/common/styles/theme";
 import {
   colorByPriority,
   hoverColorByPriority,
