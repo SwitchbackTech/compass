@@ -1,10 +1,58 @@
 import type { Config } from "tailwindcss";
+import { c } from "@web/common/styles/colors.js";
 
 const config: Config = {
   content: ["./src/**/*.{js,jsx,ts,tsx}", "./src/index.html"],
   theme: {
     extend: {
       colors: {
+        // Semantic colors
+        "bg-primary": c.darkBlue400,
+        "bg-secondary": c.darkBlue200,
+        "border-primary": c.gray800,
+        "border-primary-dark": c.gray900,
+        "border-secondary": c.gray100,
+        "fg-primary": c.gray100,
+        "fg-primary-dark": c.gray200,
+        "gradient-accent-light-start": c.blue100,
+        "gradient-accent-light-end": c.blueGray100,
+        "grid-line-primary": c.gray800,
+        "menu-bg": c.white200,
+        "panel-bg": c.gray600,
+        "panel-scrollbar": c.gray500,
+        "panel-scrollbar-active": c.gray400,
+        "panel-shadow": c.gray400,
+        "panel-text": c.white200,
+        "shadow-default": c.black,
+        "status-success": c.green,
+        "status-error": c.red,
+        "status-warning": c.orange,
+        "status-info": c.blue100,
+        "tag-one": c.blue100,
+        "tag-two": c.green,
+        "tag-three": c.purple,
+        "text-accent": c.blue100,
+        "text-light": c.gray100,
+        "text-lighter": c.white100,
+        "text-light-inactive": c.gray200,
+        "text-dark": c.darkBlue400,
+        "text-dark-placeholder": c.gray300,
+        "text-size-xs": "0.563rem",
+        "text-size-s": "0.688rem",
+        "text-size-m": "0.8125rem",
+        "text-size-l": "1rem",
+        "text-size-xl": "1.125rem",
+        "text-size-xxl": "1.3rem",
+        "text-size-xxxl": "1.6rem",
+        "text-size-4xl": "1.7rem",
+        "text-size-5xl": "2rem",
+        "text-weight-light": 300,
+        "text-weight-regular": 400,
+        "text-weight-medium": 500,
+        "text-weight-bold": 700,
+        "text-weight-extra-bold": 900,
+        "shape-border-radius": "4px",
+        // Raw colors
         blue: {
           300: "hsl(195 78 56)",
           200: "hsl(196 60 59)",
