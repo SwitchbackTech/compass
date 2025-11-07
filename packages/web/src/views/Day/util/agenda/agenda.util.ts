@@ -20,3 +20,10 @@ export const getAgendaEventPosition = (date: Date) => {
   const slot = hours * 4 + Math.floor(minutes / MINUTES_PER_SLOT);
   return slot * SLOT_HEIGHT;
 };
+
+// Get exact position in pixels for the now line (accounts for fractional minutes)
+export const getNowLinePosition = (date: Date) => {
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  return (hours * 4 + minutes / MINUTES_PER_SLOT) * SLOT_HEIGHT;
+};

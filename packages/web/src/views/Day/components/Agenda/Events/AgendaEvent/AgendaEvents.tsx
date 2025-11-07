@@ -1,9 +1,7 @@
-import {
-  MINUTES_PER_SLOT,
-  SLOT_HEIGHT,
-} from "@web/views/Day/constants/day.constants";
+import { SLOT_HEIGHT } from "@web/views/Day/constants/day.constants";
 import { useDayEvents } from "@web/views/Day/data/day.data";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
+import { getNowLinePosition } from "@web/views/Day/util/agenda/agenda.util";
 import { AgendaSkeleton } from "../../AgendaSkeleton/AgendaSkeleton";
 import { AgendaEvent } from "./AgendaEvent";
 
@@ -11,8 +9,6 @@ export const AgendaEvents = () => {
   const dateInView = useDateInView();
   const { events, isLoading } = useDayEvents(dateInView);
   const currentTime = new Date();
-  const currentHour = currentTime.getHours();
-  const currentMinute = currentTime.getMinutes();
 
   // Filter out all-day events and sort timed events by start time for consistent TAB order
   const timedEvents = events
@@ -36,7 +32,7 @@ export const AgendaEvents = () => {
         <div
           className="border-red absolute right-0 left-0 z-30 border-t-2"
           style={{
-            top: `${(currentHour * 4 + Math.floor(currentMinute / MINUTES_PER_SLOT)) * SLOT_HEIGHT}px`,
+            top: `${getNowLinePosition(currentTime)}px`,
           }}
         />
 
