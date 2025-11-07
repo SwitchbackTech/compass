@@ -1,5 +1,6 @@
 import { Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
+import { isDark } from "@core/util/color.utils";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { getAgendaEventPosition } from "@web/views/Day/util/agenda/agenda.util";
 import { AgendaEventMenu } from "../AgendaEventMenu/AgendaEventMenu";
@@ -20,14 +21,15 @@ export const AgendaEvent = ({ event }: { event: Schema_Event }) => {
   const isPast = endDate < new Date();
   const priority = event.priority || Priorities.UNASSIGNED;
   const backgroundColor = colorByPriority[priority];
+  const isBackgroundDark = isDark(backgroundColor);
 
   return (
     <AgendaEventMenu>
       <AgendaEventMenuTrigger asChild>
         <div
-          className={`text-white-100 absolute right-2 left-2 flex items-center rounded px-2 text-xs focus:ring-2 focus:ring-yellow-200 focus:outline-none ${
-            isPast ? "opacity-60" : ""
-          }`}
+          className={`absolute right-2 left-2 flex items-center rounded px-2 text-xs focus:ring-2 focus:ring-yellow-200 focus:outline-none ${
+            isBackgroundDark ? "text-white" : "text-gray-900"
+          } ${isPast ? "opacity-60" : ""}`}
           style={{
             height: `${renderedHeight}px`,
             top: `${startPosition}px`,
