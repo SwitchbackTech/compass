@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { mar13To19 } from "@core/__mocks__/v1/events/events.allday.3";
 import { Schema_Event } from "@core/types/event.types";
-import { assignEventsToRow } from "@web/common/utils/grid/grid.util";
+import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
 
 const assignsRowNumberToEachEvent = (events: Schema_Event[]) => {
   let res = true;
