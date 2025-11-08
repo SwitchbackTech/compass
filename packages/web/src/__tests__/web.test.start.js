@@ -1,5 +1,4 @@
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
-import { clearLocalStorageMock } from "./__mocks__/mock.localstorage";
 import { mockResizeObserver } from "./__mocks__/mock.resize-observer";
 import { mockScroll } from "./__mocks__/mock.scroll";
 
@@ -17,6 +16,4 @@ afterEach(() => server.resetHandlers());
 // Clean up after the tests are finished.
 afterAll(() => {
   server.close();
-
-  clearLocalStorageMock();
 });
