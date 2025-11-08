@@ -233,4 +233,53 @@ describe("CalendarAgenda", () => {
     });
     expect(document.activeElement).toHaveTextContent("Lunch Event");
   });
+
+  it("should filter out deleted events immediately", () => {
+    const mockEvents = [
+      {
+        _id: "event-1",
+        title: "Event 1",
+        startDate: "2024-01-15T09:00:00Z",
+        endDate: "2024-01-15T10:00:00Z",
+        isAllDay: false,
+      },
+      {
+        _id: "event-2",
+        title: "Event 2",
+        startDate: "2024-01-15T14:00:00Z",
+        endDate: "2024-01-15T15:00:00Z",
+        isAllDay: false,
+      },
+    ];
+
+    // Initial render with both events
+    mockUseDayEvents.mockReturnValue({
+      events: mockEvents,
+      isLoading: false,
+      error: null,
+    });
+
+    const { rerender } = render(<Agenda />);
+
+    expect(screen.getByText("Event 1")).toBeInTheDocument();
+    expect(screen.getByText("Event 2")).toBeInTheDocument();
+
+    // Simulate event-2 being deleted (removed from Redux)
+    // The useDayEvents hook will filter it out via useAppSelector
+    // This test verifies that filtered events don't appear in the UI
+
+    // Update hook to return filtered events
+    mockUseDayEvents.mockReturnValue({
+      events: [mockEvents[0]], // Only event-1 remains
+      isLoading: false,
+      error: null,
+    });
+
+    rerender(<Agenda />);
+
+    // Event 1 should still be visible
+    expect(screen.getByText("Event 1")).toBeInTheDocument();
+    // Event 2 should be removed
+    expect(screen.queryByText("Event 2")).not.toBeInTheDocument();
+  });
 });

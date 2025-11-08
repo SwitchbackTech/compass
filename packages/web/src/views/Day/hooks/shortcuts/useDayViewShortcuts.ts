@@ -38,10 +38,14 @@ interface KeyboardShortcutsConfig {
   // Agenda navigation
   onFocusAgenda?: () => void;
 
+  // Event undo
+  onRestoreEvent?: () => void;
+
   // Conditions
   isEditingTask?: boolean;
   hasFocusedTask?: boolean;
   undoToastId?: string | number | null;
+  eventUndoToastId?: string | number | null;
 }
 
 /**
@@ -54,6 +58,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     onCompleteTask,
     onDeleteTask,
     onRestoreTask,
+    onRestoreEvent,
     onMigrateTask,
     onEscape,
     onFocusTasks,
@@ -66,6 +71,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     isEditingTask,
     hasFocusedTask,
     undoToastId,
+    eventUndoToastId,
   } = config;
 
   // Define strongly-typed handler mapping
@@ -202,11 +208,15 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
         }
       }
 
-      // Handle Cmd+Z undo shortcut separately
-      if (e.metaKey && key === "z") {
+      // Handle Cmd+Z / Ctrl+Z undo shortcut separately
+      // Prioritize event undo over task undo
+      if ((e.metaKey || e.ctrlKey) && key === "z") {
         e.preventDefault();
-        onRestoreTask?.();
-        if (undoToastId) {
+        if (eventUndoToastId && onRestoreEvent) {
+          onRestoreEvent();
+          toast.dismiss(eventUndoToastId);
+        } else if (undoToastId && onRestoreTask) {
+          onRestoreTask();
           toast.dismiss(undoToastId);
         }
         return;
@@ -232,7 +242,14 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
         handler(e);
       }
     },
-    [handlers, onRestoreTask, onMigrateTask, undoToastId],
+    [
+      handlers,
+      onRestoreTask,
+      onRestoreEvent,
+      onMigrateTask,
+      undoToastId,
+      eventUndoToastId,
+    ],
   );
 
   useEffect(() => {

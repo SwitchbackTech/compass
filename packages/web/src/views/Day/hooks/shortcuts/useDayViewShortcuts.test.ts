@@ -555,9 +555,12 @@ describe("useDayViewShortcuts", () => {
 
     it("should call onRestoreTask when Meta+Z is pressed", () => {
       const onRestoreTask = jest.fn();
+      const undoToastId = "task-toast-123";
       const config = {
         ...defaultConfig,
         onRestoreTask,
+        undoToastId,
+        // No eventUndoToastId to test task undo
       };
       renderHook(() => useDayViewShortcuts(config));
 
@@ -601,9 +604,12 @@ describe("useDayViewShortcuts", () => {
 
     it("should work with uppercase Z", () => {
       const onRestoreTask = jest.fn();
+      const undoToastId = "task-toast-123";
       const config = {
         ...defaultConfig,
         onRestoreTask,
+        undoToastId,
+        // No eventUndoToastId to test task undo
       };
       renderHook(() => useDayViewShortcuts(config));
 
@@ -641,6 +647,92 @@ describe("useDayViewShortcuts", () => {
 
       expect(onRestoreTask).not.toHaveBeenCalled();
       expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+    });
+
+    it("should prioritize event undo over task undo when both exist", () => {
+      const onRestoreTask = jest.fn();
+      const onRestoreEvent = jest.fn();
+      const undoToastId = "task-toast-123";
+      const eventUndoToastId = "event-toast-456";
+      const config = {
+        ...defaultConfig,
+        onRestoreTask,
+        onRestoreEvent,
+        undoToastId,
+        eventUndoToastId,
+      };
+      renderHook(() => useDayViewShortcuts(config));
+
+      const keydownHandler = mockAddEventListener.mock.calls[0][1];
+      const mockEvent = {
+        key: "z",
+        metaKey: true,
+        preventDefault: jest.fn(),
+        target: document.createElement("div"),
+      };
+
+      keydownHandler(mockEvent);
+
+      // Should call event restore, not task restore
+      expect(onRestoreEvent).toHaveBeenCalled();
+      expect(onRestoreTask).not.toHaveBeenCalled();
+      expect(mockToastDismiss).toHaveBeenCalledWith(eventUndoToastId);
+      expect(mockToastDismiss).not.toHaveBeenCalledWith(undoToastId);
+    });
+
+    it("should call event restore with Ctrl+Z on Windows", () => {
+      const onRestoreEvent = jest.fn();
+      const eventUndoToastId = "event-toast-789";
+      const config = {
+        ...defaultConfig,
+        onRestoreEvent,
+        eventUndoToastId,
+      };
+      renderHook(() => useDayViewShortcuts(config));
+
+      const keydownHandler = mockAddEventListener.mock.calls[0][1];
+      const mockEvent = {
+        key: "z",
+        ctrlKey: true,
+        metaKey: false,
+        preventDefault: jest.fn(),
+        target: document.createElement("div"),
+      };
+
+      keydownHandler(mockEvent);
+
+      expect(onRestoreEvent).toHaveBeenCalled();
+      expect(mockToastDismiss).toHaveBeenCalledWith(eventUndoToastId);
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+    });
+
+    it("should fall back to task undo if no event undo exists", () => {
+      const onRestoreTask = jest.fn();
+      const onRestoreEvent = jest.fn();
+      const undoToastId = "task-toast-123";
+      const config = {
+        ...defaultConfig,
+        onRestoreTask,
+        onRestoreEvent,
+        undoToastId,
+        // No eventUndoToastId
+      };
+      renderHook(() => useDayViewShortcuts(config));
+
+      const keydownHandler = mockAddEventListener.mock.calls[0][1];
+      const mockEvent = {
+        key: "z",
+        metaKey: true,
+        preventDefault: jest.fn(),
+        target: document.createElement("div"),
+      };
+
+      keydownHandler(mockEvent);
+
+      // Should call task restore since no event undo exists
+      expect(onRestoreTask).toHaveBeenCalled();
+      expect(onRestoreEvent).not.toHaveBeenCalled();
+      expect(mockToastDismiss).toHaveBeenCalledWith(undoToastId);
     });
   });
 });

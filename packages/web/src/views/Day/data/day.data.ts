@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Schema_Event } from "@core/types/event.types";
 import { Dayjs } from "@core/util/date/dayjs";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { EventApi } from "@web/ducks/events/event.api";
+import { selectEventEntities } from "@web/ducks/events/selectors/event.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
 
 const FETCH_TIMEOUT_MS = 10000;
 
@@ -21,6 +23,7 @@ interface DayEvents {
 /**
  * Hook to fetch events for a specific day
  * Handles loading states, timeouts, and error cases independently from Redux
+ * Filters out events that have been deleted from Redux state
  */
 export function useDayEvents(date: Dayjs): DayEvents {
   const [dayEvents, setDayEvents] = useState<DayEvents>({
@@ -28,6 +31,9 @@ export function useDayEvents(date: Dayjs): DayEvents {
     isLoading: true,
     error: null,
   });
+
+  // Subscribe to Redux event entities to filter out deleted events
+  const eventEntities = useAppSelector(selectEventEntities);
 
   const fetchDayEvents = useCallback(async () => {
     const _startDate = date.startOf("day");
@@ -60,5 +66,15 @@ export function useDayEvents(date: Dayjs): DayEvents {
     fetchDayEvents();
   }, [fetchDayEvents]);
 
-  return dayEvents;
+  // Filter out events that have been deleted from Redux state
+  const filteredEvents = useMemo(() => {
+    return dayEvents.events.filter(
+      (event) => event._id && eventEntities[event._id],
+    );
+  }, [dayEvents.events, eventEntities]);
+
+  return {
+    ...dayEvents,
+    events: filteredEvents,
+  };
 }

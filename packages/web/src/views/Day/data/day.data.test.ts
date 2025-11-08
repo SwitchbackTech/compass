@@ -8,6 +8,19 @@ import { useDayEvents } from "./day.data";
 jest.mock("@web/ducks/events/event.api");
 const mockEventApi = EventApi as jest.Mocked<typeof EventApi>;
 
+// Mock Redux store
+const mockUseAppSelector = jest.fn();
+jest.mock("@web/store/store.hooks", () => ({
+  useAppSelector: (selector: unknown) => mockUseAppSelector(selector),
+}));
+
+// Mock selectEventEntities
+jest.mock("@web/ducks/events/selectors/event.selectors", () => ({
+  selectEventEntities: jest.fn((state: unknown) => state),
+}));
+
+let mockEventEntities: Record<string, unknown> = {};
+
 const buildExpectedDateRange = (dateString: string) => ({
   startDate: toUTCOffset(dayjs(dateString).startOf("day")),
   endDate: toUTCOffset(dayjs(dateString).endOf("day")),
@@ -16,6 +29,8 @@ describe("useDayEvents", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockEventApi.get.mockResolvedValue({ data: [] } as never);
+    mockEventEntities = {};
+    mockUseAppSelector.mockReturnValue(mockEventEntities);
   });
 
   it("should return loading state initially", async () => {
@@ -56,6 +71,13 @@ describe("useDayEvents", () => {
     mockEventApi.get.mockResolvedValue({
       data: mockEvents,
     } as never);
+
+    // Mock Redux state to include both events
+    mockEventEntities = {
+      "event-1": mockEvents[0],
+      "event-2": mockEvents[1],
+    };
+    mockUseAppSelector.mockReturnValue(mockEventEntities);
 
     const testDate = dayjs("2024-01-15");
     const expectedDateRange = buildExpectedDateRange("2024-01-15");
@@ -134,6 +156,12 @@ describe("useDayEvents", () => {
       .mockResolvedValueOnce({ data: mockEvents1 } as never)
       .mockResolvedValueOnce({ data: mockEvents2 } as never);
 
+    // Mock Redux state for first date
+    mockEventEntities = {
+      "event-1": mockEvents1[0],
+    };
+    mockUseAppSelector.mockReturnValue(mockEventEntities);
+
     const testDate1 = dayjs("2024-01-15");
     const testDate2 = dayjs("2024-01-16");
     const expectedDateRange1 = buildExpectedDateRange("2024-01-15");
@@ -153,6 +181,12 @@ describe("useDayEvents", () => {
       ...expectedDateRange1,
       someday: false,
     });
+
+    // Mock Redux state for second date
+    mockEventEntities = {
+      "event-2": mockEvents2[0],
+    };
+    mockUseAppSelector.mockReturnValue(mockEventEntities);
 
     // Change date
     rerender({ date: testDate2 });
@@ -184,5 +218,60 @@ describe("useDayEvents", () => {
         someday: false,
       });
     });
+  });
+
+  it("should filter out deleted events from Redux state", async () => {
+    const mockEvents = [
+      {
+        _id: "event-1",
+        title: "Event 1",
+        startDate: "2024-01-15T09:00:00Z",
+        endDate: "2024-01-15T10:00:00Z",
+        isAllDay: false,
+      },
+      {
+        _id: "event-2",
+        title: "Event 2",
+        startDate: "2024-01-15T14:00:00Z",
+        endDate: "2024-01-15T15:00:00Z",
+        isAllDay: false,
+      },
+      {
+        _id: "event-3",
+        title: "Event 3",
+        startDate: "2024-01-15T16:00:00Z",
+        endDate: "2024-01-15T17:00:00Z",
+        isAllDay: false,
+      },
+    ];
+
+    mockEventApi.get.mockResolvedValue({
+      data: mockEvents,
+    } as never);
+
+    // Mock Redux state: event-2 has been deleted
+    mockEventEntities = {
+      "event-1": mockEvents[0],
+      "event-3": mockEvents[2],
+      // event-2 is missing (deleted)
+    };
+    mockUseAppSelector.mockReturnValue(mockEventEntities);
+
+    const testDate = dayjs("2024-01-15");
+    const { result } = renderHook(() => useDayEvents(testDate));
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    // Should only return events that exist in Redux (event-1 and event-3)
+    expect(result.current.events).toHaveLength(2);
+    expect(result.current.events.map((e) => e._id)).toEqual([
+      "event-1",
+      "event-3",
+    ]);
+    expect(
+      result.current.events.find((e) => e._id === "event-2"),
+    ).toBeUndefined();
   });
 });

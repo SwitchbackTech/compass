@@ -4,6 +4,7 @@ import { Trash } from "@phosphor-icons/react";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { Schema_Event } from "@core/types/event.types";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
+import { useEventContextMenu } from "./EventContextMenuContext";
 
 interface EventContextMenuItemsProps {
   event: Schema_Event;
@@ -15,10 +16,17 @@ export function EventContextMenuItems({
   close,
 }: EventContextMenuItemsProps) {
   const dispatch = useDispatch();
+  const { onDelete } = useEventContextMenu();
 
   const handleDelete = () => {
     if (!event._id) return;
 
+    // If onDelete callback is provided (for undo support), use it
+    if (onDelete) {
+      onDelete(event);
+    }
+
+    // Dispatch delete action
     dispatch(
       deleteEventSlice.actions.request({
         _id: event._id,
