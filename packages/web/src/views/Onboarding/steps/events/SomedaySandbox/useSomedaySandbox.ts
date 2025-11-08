@@ -17,7 +17,6 @@ export interface UseSomedaySandboxReturn {
   // State
   isWeekTaskReady: boolean;
   isMonthTaskReady: boolean;
-  isHeaderAnimating: boolean;
   isSubmitting: boolean;
   weekTasks: Task[];
   monthTasks: Task[];
@@ -57,7 +56,6 @@ export const useSomedaySandbox = ({
   // State
   const [isWeekTaskReady, setIsWeekTaskReady] = useState(false);
   const [isMonthTaskReady, setIsMonthTaskReady] = useState(false);
-  const [isHeaderAnimating, setIsHeaderAnimating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isSubmittingRef = useRef(false);
 
@@ -80,13 +78,6 @@ export const useSomedaySandbox = ({
   const getRandomColor = useCallback(() => {
     const randomIndex = Math.floor(Math.random() * colors.length);
     return colors[randomIndex];
-  }, []);
-
-  // Header animation effect
-  useEffect(() => {
-    setIsHeaderAnimating(true);
-    const timeout = setTimeout(() => setIsHeaderAnimating(false), 2500);
-    return () => clearTimeout(timeout);
   }, []);
 
   // Navigation prevention effect
@@ -202,7 +193,6 @@ export const useSomedaySandbox = ({
     // State
     isWeekTaskReady,
     isMonthTaskReady,
-    isHeaderAnimating,
     isSubmitting,
     weekTasks,
     monthTasks,

@@ -1,4 +1,5 @@
-import { act, renderHook } from "@testing-library/react";
+import { act } from "react";
+import { renderHook } from "@testing-library/react";
 import { useSomedaySandbox } from "./useSomedaySandbox";
 
 // Mock the createAndSubmitEvents function
@@ -39,25 +40,12 @@ describe("useSomedaySandbox", () => {
 
     expect(result.current.isWeekTaskReady).toBe(false);
     expect(result.current.isMonthTaskReady).toBe(false);
-    expect(result.current.isHeaderAnimating).toBe(true);
     expect(result.current.isSubmitting).toBe(false);
     expect(result.current.weekTasks).toHaveLength(2);
     expect(result.current.monthTasks).toHaveLength(3);
     expect(result.current.newWeekTask).toBe("");
     expect(result.current.newMonthTask).toBe("");
     expect(result.current.monthInputRef.current).toBeNull();
-  });
-
-  it("should set header animation to false after 2.5 seconds", () => {
-    const { result } = renderHook(() => useSomedaySandbox(defaultProps));
-
-    expect(result.current.isHeaderAnimating).toBe(true);
-
-    act(() => {
-      jest.advanceTimersByTime(2500);
-    });
-
-    expect(result.current.isHeaderAnimating).toBe(false);
   });
 
   it("should call onNavigationControlChange with correct values", () => {
