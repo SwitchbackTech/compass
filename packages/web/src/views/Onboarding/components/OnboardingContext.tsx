@@ -52,7 +52,7 @@ export const useOnboarding = (): OnboardingContextType => {
 export const withOnboardingProvider = (
   Component: React.ComponentType<unknown>,
 ) => {
-  // eslint-disable-next-line react/display-name
+  // eslint-disable-next-line react/display-name, @typescript-eslint/no-explicit-any
   return (props: any) => {
     return (
       <OnboardingProvider>
