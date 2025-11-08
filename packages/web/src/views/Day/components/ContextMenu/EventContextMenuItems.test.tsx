@@ -1,7 +1,7 @@
-import React from "react";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
-import { render, screen } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Schema_Event } from "@core/types/event.types";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
@@ -121,14 +121,17 @@ describe("EventContextMenuItems", () => {
 
     const deleteButton = screen.getByText("Delete Event");
     deleteButton.focus();
-    await user.keyboard("{Enter}");
 
-    expect(dispatchSpy).toHaveBeenCalled();
+    // Use fireEvent for keyboard events as user.keyboard might not work with onKeyDown
+    fireEvent.keyDown(deleteButton, { key: "Enter", code: "Enter" });
+
+    await waitFor(() => {
+      expect(dispatchSpy).toHaveBeenCalled();
+    });
     expect(mockClose).toHaveBeenCalled();
   });
 
   it("should handle keyboard Space key", async () => {
-    const user = userEvent.setup();
     const store = createMockStore();
     const dispatchSpy = jest.spyOn(store, "dispatch");
 
@@ -142,7 +145,8 @@ describe("EventContextMenuItems", () => {
 
     const deleteButton = screen.getByText("Delete Event");
     deleteButton.focus();
-    await user.keyboard(" ");
+
+    fireEvent.keyDown(deleteButton, { key: " ", code: "Space" });
 
     expect(dispatchSpy).toHaveBeenCalled();
     expect(mockClose).toHaveBeenCalled();
