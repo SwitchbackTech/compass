@@ -185,10 +185,6 @@ export class Timer extends EventEmitter2 {
     this.start();
   }
 
-  public stop(): void {
-    this.internalStop();
-  }
-
   private calculateDuration(milliseconds: number): Duration {
     const totalSeconds = Math.floor(milliseconds / 1000);
     const hours = Math.floor(totalSeconds / 3600);
