@@ -1,9 +1,7 @@
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
-import {
-  mockResizeObserver,
-  mockScroll,
-} from "@web/__tests__/utils/web.test.util";
 import { clearLocalStorageMock } from "./__mocks__/mock.localstorage";
+import { mockResizeObserver } from "./__mocks__/mock.resize-observer";
+import { mockScroll } from "./__mocks__/mock.scroll";
 
 beforeAll(() => {
   mockScroll();
