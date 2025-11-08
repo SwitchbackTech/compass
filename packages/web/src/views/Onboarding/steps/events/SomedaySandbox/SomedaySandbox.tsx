@@ -17,6 +17,7 @@ import {
   TaskInput,
   TaskItem,
 } from "./styled";
+import { useHeaderAnimation } from "./useHeaderAnimation";
 import { useSomedaySandbox } from "./useSomedaySandbox";
 import { useSomedaySandboxKeyboard } from "./useSomedaySandboxShortcuts";
 
@@ -36,7 +37,6 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
   const {
     isWeekTaskReady,
     isMonthTaskReady,
-    isHeaderAnimating,
     isSubmitting,
     weekTasks,
     monthTasks,
@@ -63,6 +63,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
     handleNext,
     onPrevious,
   });
+  const { isHeaderAnimating } = useHeaderAnimation();
 
   const content = (
     <BottomContent>

@@ -58,9 +58,6 @@ export const useMigrationSandbox = (
   // Handle event click - logs to console as requested
   const handleEventClick = useCallback(
     (eventText: string, eventIndex: number, direction: "back" | "forward") => {
-      const actionText = direction === "back" ? "previous" : "next";
-      const currentWeek = currentWeekIndex === 0 ? "this week" : "next week";
-
       // Actually move the event between lists
       if (direction === "forward" && currentWeekIndex === 0) {
         // Moving from This Week to Next Week

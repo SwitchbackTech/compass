@@ -54,7 +54,7 @@ describe("ReminderIntroOne Post-Authentication Security", () => {
     ];
 
     // All security requirements are implemented
-    expect(securityRequirements.length).toBe(5);
+    expect(securityRequirements).toHaveLength(5);
   });
 
   it("ensures forward navigation and skip still work after authentication", () => {
@@ -71,6 +71,6 @@ describe("ReminderIntroOne Post-Authentication Security", () => {
     ];
 
     // All forward actions remain available
-    expect(allowedActions.length).toBe(5);
+    expect(allowedActions).toHaveLength(5);
   });
 });

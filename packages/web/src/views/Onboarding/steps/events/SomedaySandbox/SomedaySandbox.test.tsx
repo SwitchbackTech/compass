@@ -115,10 +115,14 @@ describe("SomedaySandbox", () => {
     const monthInput = screen.getAllByPlaceholderText("Create new task...")[1];
 
     // Add week task
-    await userEvent.type(weekInput, "Week task{enter}");
+    await act(async () => {
+      await userEvent.type(weekInput, "Week task{enter}");
+    });
 
     // Add month task
-    await userEvent.type(monthInput, "Month task{enter}");
+    await act(async () => {
+      await userEvent.type(monthInput, "Month task{enter}");
+    });
 
     // Wait for checkboxes to be checked
     await waitFor(() => {
@@ -128,7 +132,10 @@ describe("SomedaySandbox", () => {
 
     // Click the next button to trigger handleNext (the right arrow button)
     const nextButton = screen.getByLabelText("Next");
-    await userEvent.click(nextButton);
+
+    await act(async () => {
+      await userEvent.click(nextButton);
+    });
 
     // createAndSubmitEvents should be called first
     await waitFor(() => {

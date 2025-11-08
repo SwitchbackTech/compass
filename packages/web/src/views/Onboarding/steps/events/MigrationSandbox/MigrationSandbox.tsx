@@ -63,7 +63,6 @@ export const MigrationSandbox: React.FC<OnboardingStepProps> = ({
     },
   );
   const {
-    weekDays,
     weeks,
     nextMonthWeeks,
     isCurrentWeekVisible,

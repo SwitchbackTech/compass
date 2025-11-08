@@ -4,7 +4,6 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
-// Import the mocked modules
 import { AuthApi } from "@web/common/apis/auth.api";
 import { SyncApi } from "@web/common/apis/sync.api";
 import { ENV_WEB } from "@web/common/constants/env.constants";
@@ -64,7 +63,7 @@ describe("SignInWithGoogle", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseGoogleLogin.mockImplementation(({ onSuccess, onError }) => ({
+    mockUseGoogleLogin.mockImplementation(() => ({
       login: mockLogin,
       loading: false,
       data: null,
@@ -88,7 +87,7 @@ describe("SignInWithGoogle", () => {
     });
 
     it("shows loading state when Google login is in progress", () => {
-      mockUseGoogleLogin.mockImplementation(({ onSuccess, onError }) => ({
+      mockUseGoogleLogin.mockImplementation(() => ({
         login: mockLogin,
         loading: true,
         data: null,
@@ -104,14 +103,14 @@ describe("SignInWithGoogle", () => {
 
   describe("Google OAuth Success Flow", () => {
     it("calls onNext after successful authentication", async () => {
-      const user = userEvent.setup();
+      userEvent.setup();
       let onSuccessCallback: ((code: string) => void) | undefined;
 
       mockAuthApi.loginOrSignup.mockResolvedValue({
         isNewUser: false,
       });
 
-      mockUseGoogleLogin.mockImplementation(({ onSuccess, onError }) => {
+      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
         onSuccessCallback = onSuccess;
         return {
           login: mockLogin,
@@ -134,14 +133,13 @@ describe("SignInWithGoogle", () => {
     });
 
     it("navigates to home for existing users", async () => {
-      const user = userEvent.setup();
       let onSuccessCallback: ((code: string) => void) | undefined;
 
       mockAuthApi.loginOrSignup.mockResolvedValue({
         isNewUser: false,
       });
 
-      mockUseGoogleLogin.mockImplementation(({ onSuccess, onError }) => {
+      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
         onSuccessCallback = onSuccess;
         return {
           login: mockLogin,
@@ -166,15 +164,14 @@ describe("SignInWithGoogle", () => {
 
   describe("New User Import Flow", () => {
     it("triggers background import for new users", async () => {
-      const user = userEvent.setup();
       let onSuccessCallback: ((code: string) => void) | undefined;
 
       mockAuthApi.loginOrSignup.mockResolvedValue({
         isNewUser: true,
       });
-      mockSyncApi.importGCal.mockResolvedValue({} as any);
+      mockSyncApi.importGCal.mockResolvedValue(undefined);
 
-      mockUseGoogleLogin.mockImplementation(({ onSuccess, onError }) => {
+      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
         onSuccessCallback = onSuccess;
         return {
           login: mockLogin,
@@ -197,7 +194,6 @@ describe("SignInWithGoogle", () => {
     });
 
     it("continues onboarding even if import API call fails", async () => {
-      const user = userEvent.setup();
       const consoleSpy = jest.spyOn(console, "error").mockImplementation();
       let onSuccessCallback: ((code: string) => void) | undefined;
 
@@ -206,7 +202,7 @@ describe("SignInWithGoogle", () => {
       });
       mockSyncApi.importGCal.mockRejectedValue(new Error("Import failed"));
 
-      mockUseGoogleLogin.mockImplementation(({ onSuccess, onError }) => {
+      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
         onSuccessCallback = onSuccess;
         return {
           login: mockLogin,
@@ -235,7 +231,6 @@ describe("SignInWithGoogle", () => {
     });
 
     it("handles sync API call throwing synchronously", async () => {
-      const user = userEvent.setup();
       const consoleSpy = jest.spyOn(console, "error").mockImplementation();
       let onSuccessCallback: ((code: string) => void) | undefined;
 
@@ -246,7 +241,7 @@ describe("SignInWithGoogle", () => {
         new Error("Sync API threw synchronously"),
       );
 
-      mockUseGoogleLogin.mockImplementation(({ onSuccess, onError }) => {
+      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
         onSuccessCallback = onSuccess;
         return {
           login: mockLogin,
@@ -274,14 +269,13 @@ describe("SignInWithGoogle", () => {
     });
 
     it("does not trigger import for existing users", async () => {
-      const user = userEvent.setup();
       let onSuccessCallback: ((code: string) => void) | undefined;
 
       mockAuthApi.loginOrSignup.mockResolvedValue({
         isNewUser: false,
       });
 
-      mockUseGoogleLogin.mockImplementation(({ onSuccess, onError }) => {
+      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
         onSuccessCallback = onSuccess;
         return {
           login: mockLogin,
@@ -307,7 +301,6 @@ describe("SignInWithGoogle", () => {
 
   describe("Error Handling", () => {
     it("handles Google login errors", async () => {
-      const user = userEvent.setup();
       const consoleSpy = jest.spyOn(console, "error").mockImplementation();
 
       const error = new Error("Google login failed");
@@ -340,7 +333,6 @@ describe("SignInWithGoogle", () => {
 
   describe("Background Import Behavior", () => {
     it("import call is non-blocking and asynchronous", async () => {
-      const user = userEvent.setup();
       let importResolved = false;
       let onSuccessCallback: ((code: string) => void) | undefined;
 
@@ -359,7 +351,7 @@ describe("SignInWithGoogle", () => {
           }),
       );
 
-      mockUseGoogleLogin.mockImplementation(({ onSuccess, onError }) => {
+      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
         onSuccessCallback = onSuccess;
         return {
           login: mockLogin,
@@ -390,15 +382,14 @@ describe("SignInWithGoogle", () => {
     });
 
     it("handles multiple rapid clicks without duplicate imports", async () => {
-      const user = userEvent.setup();
       let onSuccessCallback: ((code: string) => void) | undefined;
 
       mockAuthApi.loginOrSignup.mockResolvedValue({
         isNewUser: true,
       });
-      mockSyncApi.importGCal.mockResolvedValue({} as any);
+      mockSyncApi.importGCal.mockResolvedValue(undefined);
 
-      mockUseGoogleLogin.mockImplementation(({ onSuccess, onError }) => {
+      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
         onSuccessCallback = onSuccess;
         return {
           login: mockLogin,
@@ -428,7 +419,6 @@ describe("SignInWithGoogle", () => {
 
   describe("Integration with MSW", () => {
     it("works with mocked API responses", async () => {
-      const user = userEvent.setup();
       let onSuccessCallback: ((code: string) => void) | undefined;
 
       // Mock the auth endpoint
@@ -448,7 +438,7 @@ describe("SignInWithGoogle", () => {
       jest.unmock("@web/common/apis/auth.api");
       jest.unmock("@web/common/apis/sync.api");
 
-      mockUseGoogleLogin.mockImplementation(({ onSuccess, onError }) => {
+      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
         onSuccessCallback = onSuccess;
         return {
           login: mockLogin,

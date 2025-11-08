@@ -52,12 +52,14 @@ export const useOnboarding = (): OnboardingContextType => {
 export const withOnboardingProvider = (
   Component: React.ComponentType<unknown>,
 ) => {
-  // eslint-disable-next-line react/display-name
-  return (props: any) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const WrappedWithOnboardingProvider = (props: any) => {
     return (
       <OnboardingProvider>
         <Component {...props} />
       </OnboardingProvider>
     );
   };
+  WrappedWithOnboardingProvider.displayName = `WithOnboardingProvider(${Component.displayName || Component.name || "Component"})`;
+  return WrappedWithOnboardingProvider;
 };
