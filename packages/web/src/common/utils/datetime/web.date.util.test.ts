@@ -242,7 +242,7 @@ describe("computeCurrentEventDateRange", () => {
   });
 });
 
-const getColorTotals = (colors) => {
+const getColorTotals = (colors: string[]) => {
   const uniqueColors = Array.from(new Set(colors));
 
   const color1 = colors.filter((c) => c === uniqueColors[0]);
@@ -286,8 +286,8 @@ describe("getColorsByHour", () => {
   it("returns same order for minute 0 to 59", () => {
     const day1 = dayjs("2022-04-04T00:00:00.000Z");
     const day2 = dayjs("2022-04-04T00:59:00.000Z");
-    const day1Colors = getColorsByHour(day1);
-    const day2Colors = getColorsByHour(day2);
+    const day1Colors = getColorsByHour(day1.hour());
+    const day2Colors = getColorsByHour(day2.hour());
 
     const sameOrder = arraysAreEqual(day1Colors, day2Colors);
     expect(sameOrder).toBe(true);
@@ -305,7 +305,7 @@ describe("getColorsByHour", () => {
 });
 
 describe("toUTCOffset", () => {
-  const validateResult = (result) => {
+  const validateResult = (result: string) => {
     const offsetChar = result.slice(-6, -5);
     const hasOffsetChar = offsetChar === "+" || offsetChar === "-";
     expect(hasOffsetChar).toBe(true);
