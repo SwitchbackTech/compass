@@ -1,5 +1,4 @@
 import { ObjectId } from "bson";
-import dayjs from "dayjs";
 import {
   Dispatch,
   SetStateAction,
@@ -9,6 +8,7 @@ import {
   useState,
 } from "react";
 import { Frequency, Options, RRule, Weekday } from "rrule";
+import dayjs from "@core/util/date/dayjs";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { parseCompassEventDate } from "@core/util/event/event.util";
 import {
