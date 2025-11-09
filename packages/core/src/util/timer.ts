@@ -54,12 +54,12 @@ export class Timer {
     this._id = zObjectId.parse(_id);
     this.startDate = this.#validateStartDate(startDate, endDate);
     this.endDate = this.#validateEndDate(endDate, startDate);
-
     this.#interval = z.number().min(100).default(1000).parse(interval);
 
     const $manualStart = this.#manualStart.pipe(
       switchMap((date) => timer(date, this.#interval)),
     );
+
     this.#start = race(
       timer(this.startDate, this.#interval),
       $manualStart,
