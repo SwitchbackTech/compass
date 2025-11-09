@@ -8,6 +8,7 @@ import { Status } from "@core/errors/status.codes";
 import { Resource_Sync, XGoogleResourceState } from "@core/types/sync.types";
 import { Schema_User } from "@core/types/user.types";
 import { isBase, isInstance } from "@core/util/event/event.util";
+import { waitUntilEvent } from "@core/util/wait-until-event.util";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 import { SyncControllerDriver } from "@backend/__tests__/drivers/sync.controller.driver";
 import { SyncDriver } from "@backend/__tests__/drivers/sync.driver";
@@ -23,7 +24,6 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { WatchError } from "@backend/common/errors/sync/watch.errors";
-import { waitUntilEvent } from "@backend/common/helpers/common.util";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import * as syncQueries from "@backend/sync/util/sync.queries";

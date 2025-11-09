@@ -5,7 +5,7 @@ import type {
   CompassSocket,
   CompassSocketServer,
 } from "@core/types/websocket.types";
-import { waitUntilEvent } from "@backend/common/helpers/common.util";
+import { waitUntilEvent } from "@core/util/wait-until-event.util";
 import { initExpressServer } from "@backend/servers/express/express.server";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import { getServerUri } from "@backend/servers/websocket/websocket.util";

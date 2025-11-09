@@ -16,8 +16,6 @@ import {
 } from "@core/constants/websocket.constants";
 import { UserMetadata } from "@core/types/user.types";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
-import { GenericError } from "@backend/common/errors/generic/generic.errors";
-import { error } from "@backend/common/errors/handlers/error.handler";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 
 describe("WebSocket Server", () => {
@@ -151,16 +149,14 @@ describe("WebSocket Server", () => {
           }),
           expect.objectContaining({
             status: "rejected",
-            reason: error(
-              GenericError.OperationTimeout,
-              `wait for ${USER_METADATA} timed out`,
+            reason: new Error(
+              `Operation timed out. Wait for ${USER_METADATA} timed out`,
             ),
           }),
           expect.objectContaining({
             status: "rejected",
-            reason: error(
-              GenericError.OperationTimeout,
-              `wait for ${USER_REFRESH_TOKEN} timed out`,
+            reason: new Error(
+              `Operation timed out. Wait for ${USER_REFRESH_TOKEN} timed out`,
             ),
           }),
           expect.objectContaining({ status: "fulfilled", value: [] }),
@@ -216,9 +212,8 @@ describe("WebSocket Server", () => {
           expect.objectContaining({ status: "fulfilled", value: [] }),
           expect.objectContaining({
             status: "rejected",
-            reason: error(
-              GenericError.OperationTimeout,
-              `wait for ${EVENT_CHANGED} timed out`,
+            reason: new Error(
+              `Operation timed out. Wait for ${EVENT_CHANGED} timed out`,
             ),
           }),
         ]);

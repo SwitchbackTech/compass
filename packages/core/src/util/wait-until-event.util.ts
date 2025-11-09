@@ -1,13 +1,13 @@
+import type { EventEmitter2 } from "eventemitter2";
 import type EventEmitter from "node:events";
 import type { Server } from "node:http";
 import type { Socket } from "socket.io";
 import type { Socket as Client } from "socket.io-client";
-import {
+import type {
   CompassSocket,
   CompassSocketServer,
 } from "@core/types/websocket.types";
-import { GenericError } from "@backend/common/errors/generic/generic.errors";
-import { error } from "@backend/common/errors/handlers/error.handler";
+import type { Timer } from "@core/util/timer";
 
 export async function waitUntilEvent<
   Payload extends unknown[],
@@ -19,7 +19,9 @@ export async function waitUntilEvent<
     | Client
     | Server
     | CompassSocketServer
-    | EventEmitter,
+    | EventEmitter
+    | EventEmitter2
+    | Timer,
     "once"
   >,
   event: Parameters<(typeof emitter)["once"]>["0"],
@@ -34,13 +36,10 @@ export async function waitUntilEvent<
     const timeout = setTimeout(() => {
       clearTimeout(timeout);
 
-      eventEmitter.removeListener(event, listener);
+      eventEmitter.removeListener?.(event as string, listener);
 
       reject(
-        error(
-          GenericError.OperationTimeout,
-          `wait for ${String(event)} timed out`,
-        ),
+        new Error(`Operation timed out. Wait for ${String(event)} timed out`),
       );
     }, timeoutMs);
 
@@ -49,10 +48,10 @@ export async function waitUntilEvent<
       clearTimeout(timeout);
     };
 
-    eventEmitter.once(event, listener);
+    eventEmitter.once(event as string, listener);
 
-    beforeEvent().catch((error) => {
-      eventEmitter.removeListener(event, listener);
+    beforeEvent?.().catch((error) => {
+      eventEmitter.removeListener(event as string, listener);
       reject(error);
     });
   });
