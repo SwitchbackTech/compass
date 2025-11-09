@@ -1,6 +1,5 @@
 import EventEmitter from "node:events";
-import { GenericError } from "@backend/common/errors/generic/generic.errors";
-import { waitUntilEvent } from "@backend/common/helpers/common.util";
+import { waitUntilEvent } from "@core/util/wait-until-event.util";
 
 describe("waitUntilEvent", () => {
   it("waits for event to complete before resolving", async () => {
@@ -29,7 +28,7 @@ describe("waitUntilEvent", () => {
             }, 2);
           }),
       ),
-    ).rejects.toThrow(GenericError.OperationTimeout.description);
+    ).rejects.toThrow("Operation timed out. Wait for test-event timed out");
   });
 
   it("it transforms the result using the `afterEvent` callback", async () => {

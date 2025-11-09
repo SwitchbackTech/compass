@@ -17,9 +17,9 @@ import { Schema_Sync } from "@core/types/sync.types";
 import { Schema_User } from "@core/types/user.types";
 import { Schema_Waitlist } from "@core/types/waitlist/waitlist.types";
 import { Schema_Watch } from "@core/types/watch.types";
+import { waitUntilEvent } from "@core/util/wait-until-event.util";
 import { Collections } from "@backend/common/constants/collections";
 import { ENV } from "@backend/common/constants/env.constants";
-import { waitUntilEvent } from "@backend/common/helpers/common.util";
 
 const logger = Logger("app:mongo.service");
 
