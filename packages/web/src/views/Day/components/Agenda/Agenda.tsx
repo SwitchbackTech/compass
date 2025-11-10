@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef } from "react";
-import { Schema_Event } from "@core/types/event.types";
 import { useDayEvents } from "@web/views/Day/data/day.data";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { AgendaEvents } from "./Events/AgendaEvent/AgendaEvents";
@@ -9,13 +8,9 @@ import { TimeLabels } from "./TimeLabels/TimeLabels";
 
 interface AgendaProps {
   onScrollToNowLineReady?: (scrollToNowLine: () => void) => void;
-  onDeleteEvent?: (event: Schema_Event) => void;
 }
 
-export const Agenda = ({
-  onScrollToNowLineReady,
-  onDeleteEvent,
-}: AgendaProps) => {
+export const Agenda = ({ onScrollToNowLineReady }: AgendaProps) => {
   const nowLineRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const dateInView = useDateInView();
@@ -63,7 +58,7 @@ export const Agenda = ({
 
         <NowLine nowLineRef={nowLineRef} />
 
-        <AgendaEvents onDeleteEvent={onDeleteEvent} />
+        <AgendaEvents />
       </div>
     </section>
   );

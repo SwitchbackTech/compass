@@ -31,15 +31,11 @@ export const useEventContextMenu = () => {
   return context;
 };
 
-interface EventContextMenuProviderProps {
-  children: React.ReactNode;
-  onDelete?: (event: Schema_Event) => void;
-}
-
 export const EventContextMenuProvider = ({
   children,
-  onDelete,
-}: EventContextMenuProviderProps) => {
+}: {
+  children: React.ReactNode;
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Schema_Event | null>(null);
 
@@ -85,7 +81,7 @@ export const EventContextMenuProvider = ({
   };
 
   return (
-    <EventContextMenuContext.Provider value={{ openContextMenu, onDelete }}>
+    <EventContextMenuContext.Provider value={{ openContextMenu }}>
       {children}
       {isOpen && selectedEvent && (
         <EventContextMenu

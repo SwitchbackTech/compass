@@ -1,4 +1,3 @@
-import { Schema_Event } from "@core/types/event.types";
 import { SLOT_HEIGHT } from "@web/views/Day/constants/day.constants";
 import { useDayEvents } from "@web/views/Day/data/day.data";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
@@ -7,11 +6,7 @@ import { EventContextMenuProvider } from "../../../ContextMenu/EventContextMenuC
 import { AgendaSkeleton } from "../../AgendaSkeleton/AgendaSkeleton";
 import { AgendaEvent } from "./AgendaEvent";
 
-interface AgendaEventsProps {
-  onDeleteEvent?: (event: Schema_Event) => void;
-}
-
-export const AgendaEvents = ({ onDeleteEvent }: AgendaEventsProps) => {
+export const AgendaEvents = () => {
   const dateInView = useDateInView();
   const { events, isLoading } = useDayEvents(dateInView);
   const currentTime = new Date();
@@ -43,7 +38,7 @@ export const AgendaEvents = ({ onDeleteEvent }: AgendaEventsProps) => {
         />
 
         {/* Event blocks */}
-        <EventContextMenuProvider onDelete={onDeleteEvent}>
+        <EventContextMenuProvider>
           <div className="relative">
             {isLoading ? (
               <AgendaSkeleton />

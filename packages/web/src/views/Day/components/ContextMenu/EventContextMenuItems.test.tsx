@@ -15,11 +15,6 @@ jest.mock("react-toastify", () => ({
   },
 }));
 
-// Mock showUndoDeleteToast
-jest.mock("@web/views/Day/components/Toasts/UndoToast/UndoDeleteToast", () => ({
-  showUndoDeleteToast: jest.fn(() => "mock-toast-id"),
-}));
-
 const mockEvent: Schema_Event = {
   _id: "event-1",
   title: "Test Event",
@@ -45,20 +40,16 @@ const createMockStore = () => {
 
 describe("EventContextMenuItems", () => {
   const mockClose = jest.fn();
-  const mockOnDelete = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  const renderWithProvider = (
-    event: Schema_Event,
-    onDelete?: (event: Schema_Event) => void,
-  ) => {
+  const renderWithProvider = (event: Schema_Event) => {
     const store = createMockStore();
     return render(
       <Provider store={store}>
-        <EventContextMenuProvider onDelete={onDelete}>
+        <EventContextMenuProvider>
           <EventContextMenuItems event={event} close={mockClose} />
         </EventContextMenuProvider>
       </Provider>,
@@ -96,18 +87,7 @@ describe("EventContextMenuItems", () => {
     expect(mockClose).toHaveBeenCalled();
   });
 
-  it("should call onDelete callback when provided", async () => {
-    const user = userEvent.setup();
-    renderWithProvider(mockEvent, mockOnDelete);
-
-    const deleteButton = screen.getByText("Delete Event");
-    await user.click(deleteButton);
-
-    expect(mockOnDelete).toHaveBeenCalledWith(mockEvent);
-  });
-
   it("should handle keyboard Enter key", async () => {
-    const user = userEvent.setup();
     const store = createMockStore();
     const dispatchSpy = jest.spyOn(store, "dispatch");
 

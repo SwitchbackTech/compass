@@ -6,7 +6,6 @@ import { Agenda } from "../components/Agenda/Agenda";
 import { ShortcutsOverlay } from "../components/Shortcuts/components/ShortcutsOverlay";
 import { TaskList } from "../components/TaskList/TaskList";
 import { useDayEvents } from "../data/day.data";
-import { useEventUndo } from "../hooks/events/useEventUndo";
 import { useDateInView } from "../hooks/navigation/useDateInView";
 import { useDateNavigation } from "../hooks/navigation/useDateNavigation";
 import { useDayViewShortcuts } from "../hooks/shortcuts/useDayViewShortcuts";
@@ -27,12 +26,6 @@ export const DayViewContent = () => {
     migrateTask,
     undoToastId,
   } = useTasks();
-
-  const {
-    deleteEvent,
-    restoreEvent,
-    undoToastId: eventUndoToastId,
-  } = useEventUndo();
 
   const navigate = useNavigate();
   const dateInView = useDateInView();
@@ -116,7 +109,6 @@ export const DayViewContent = () => {
     onEditTask: handleEditTask,
     onDeleteTask: handleDeleteTask,
     onRestoreTask: restoreTask,
-    onRestoreEvent: restoreEvent,
     onMigrateTask: migrateTask,
     onFocusTasks: focusOnFirstTask,
     onFocusAgenda: handleFocusAgenda,
@@ -128,7 +120,6 @@ export const DayViewContent = () => {
     onNavigateWeek: handleNavigateWeek,
     hasFocusedTask,
     undoToastId,
-    eventUndoToastId,
   });
 
   return (
@@ -136,10 +127,7 @@ export const DayViewContent = () => {
       <ShortcutsOverlay />
       <TaskList />
 
-      <Agenda
-        onScrollToNowLineReady={handleScrollToNowLineReady}
-        onDeleteEvent={deleteEvent}
-      />
+      <Agenda onScrollToNowLineReady={handleScrollToNowLineReady} />
     </div>
   );
 };
