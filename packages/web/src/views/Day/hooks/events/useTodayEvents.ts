@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
@@ -23,6 +23,7 @@ export interface TodayEvent {
 export function useTodayEvents(currentDate: Date = new Date()): TodayEvent[] {
   const dispatch = useAppDispatch();
   const eventEntities = useAppSelector(selectEventEntities);
+  const hasFetchedRef = useRef(false);
 
   const todayEvents = useMemo(() => {
     // Get start and end of day
@@ -58,7 +59,8 @@ export function useTodayEvents(currentDate: Date = new Date()): TodayEvent[] {
   }, [eventEntities, currentDate]);
 
   useEffect(() => {
-    if (todayEvents.length === 0) {
+    if (!hasFetchedRef.current && todayEvents.length === 0) {
+      hasFetchedRef.current = true;
       dispatch(
         getWeekEventsSlice.actions.request({
           startDate: toUTCOffset(dayjs().startOf("day")),

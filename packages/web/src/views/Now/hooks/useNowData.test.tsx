@@ -137,6 +137,10 @@ describe("useNowData", () => {
       result.current.setFocusedEvent(shortEvent);
     });
 
+    act(() => {
+      result.current.start?.();
+    });
+
     await waitFor(() => {
       expect(result.current.countdown).toBeDefined();
       result.current.end?.();
