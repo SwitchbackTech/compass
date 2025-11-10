@@ -1,7 +1,11 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Schema_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
+import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
+import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
 import { selectEventEntities } from "@web/ducks/events/selectors/event.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
+import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
 export interface TodayEvent {
   id: string;
@@ -17,7 +21,9 @@ export interface TodayEvent {
  * Returns events sorted by start time
  */
 export function useTodayEvents(currentDate: Date = new Date()): TodayEvent[] {
+  const dispatch = useAppDispatch();
   const eventEntities = useAppSelector(selectEventEntities);
+  const hasFetchedRef = useRef(false);
 
   const todayEvents = useMemo(() => {
     // Get start and end of day
@@ -30,7 +36,9 @@ export function useTodayEvents(currentDate: Date = new Date()): TodayEvent[] {
     // Filter and format events for today
     const events: TodayEvent[] = Object.values(eventEntities)
       .filter((event: Schema_Event) => {
-        if (!event || !event.startDate || !event.endDate) return false;
+        if (!event || !event.startDate || !event.endDate || event.isSomeday) {
+          return false;
+        }
 
         const eventStart = new Date(event.startDate);
         const eventEnd = new Date(event.endDate);
@@ -49,6 +57,21 @@ export function useTodayEvents(currentDate: Date = new Date()): TodayEvent[] {
 
     return events;
   }, [eventEntities, currentDate]);
+
+  useEffect(() => {
+    if (!hasFetchedRef.current && todayEvents.length === 0) {
+      hasFetchedRef.current = true;
+      dispatch(
+        getWeekEventsSlice.actions.request({
+          startDate: toUTCOffset(dayjs().startOf("day")),
+          endDate: toUTCOffset(dayjs().endOf("day")),
+          __context: {
+            reason: Week_AsyncStateContextReason.WEEK_VIEW_CHANGE,
+          },
+        }),
+      );
+    }
+  }, [dispatch, todayEvents.length]);
 
   return todayEvents;
 }
