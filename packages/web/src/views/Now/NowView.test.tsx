@@ -7,6 +7,21 @@ jest.mock("./useNowShortcuts", () => ({
   useNowShortcuts: jest.fn(),
 }));
 
+// Mock the useNowData hook
+jest.mock("./hooks/useNowData", () => ({
+  useNowData: jest.fn(() => ({
+    focusedEvent: null,
+    countdown: undefined,
+    start: jest.fn(),
+    end: jest.fn(),
+    timeLeft: undefined,
+    now: new Date(),
+    nextEvent: undefined,
+    nextEventStarts: undefined,
+    setFocusedEvent: jest.fn(),
+  })),
+}));
+
 describe("NowView", () => {
   it("renders the shortcuts overlay", () => {
     render(<NowView />);
@@ -33,11 +48,5 @@ describe("NowView", () => {
     expect(screen.getByText("1")).toBeInTheDocument();
     expect(screen.getByText("2")).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
-  });
-
-  it("renders the main content", () => {
-    render(<NowView />);
-
-    expect(screen.getByText("Now View - Coming Soon")).toBeInTheDocument();
   });
 });

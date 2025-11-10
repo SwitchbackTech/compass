@@ -1,11 +1,16 @@
 import { CSSProperties, useMemo } from "react";
 import { ShortcutSection } from "../Day/components/Shortcuts/components/ShortcutSection";
 import { getShortcuts } from "../Day/components/Shortcuts/data/shortcuts.data";
+import { FocusedEvent } from "./components/FocusedEvent";
+import { useNowData } from "./hooks/useNowData";
 import { useNowShortcuts } from "./useNowShortcuts";
 
 export const NowView = () => {
   // Initialize keyboard shortcuts
   useNowShortcuts();
+
+  // Get data for the focused event
+  const { focusedEvent, countdown, start, end, timeLeft } = useNowData();
 
   // Get shortcuts for the Now view
   const { global } = getShortcuts({ isNow: true });
@@ -189,13 +194,14 @@ export const NowView = () => {
         <ShortcutSection title="Global" shortcuts={global} />
       </aside>
 
-      <div className="absolute inset-0 z-20 flex items-center justify-center">
-        <h1 className="text-center text-7xl font-bold text-white drop-shadow-2xl">
-          <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-teal-300 bg-clip-text text-transparent">
-            Now View - Coming Soon
-          </span>
-        </h1>
-      </div>
+      {/* FocusedEvent Component */}
+      <FocusedEvent
+        event={focusedEvent}
+        countdown={countdown}
+        start={start}
+        end={end}
+        timeLeft={timeLeft}
+      />
     </div>
   );
 };
