@@ -52,17 +52,17 @@ export const FocusedEvent: React.FC<FocusedEventProps> = ({
 
   return (
     <div
-      className="fixed top-24 right-6 z-30 w-full max-w-md rounded-lg border border-white/20 bg-slate-900/95 p-6 shadow-2xl backdrop-blur-sm"
+      className="fixed top-24 right-3 z-30 mx-3 w-full max-w-md rounded-lg border border-white/20 bg-slate-900/95 p-4 shadow-2xl backdrop-blur-sm sm:right-6 sm:mx-0 sm:p-6 md:max-w-lg"
       role="article"
       aria-label="Focused event"
     >
       {/* Event Title */}
-      <h2 className="mb-3 text-2xl font-bold text-white">
+      <h2 className="mb-3 text-xl font-bold text-white sm:text-2xl">
         {event.title || "Untitled Event"}
       </h2>
 
       {/* Event Times */}
-      <div className="mb-4 flex flex-col gap-1 text-sm text-gray-300">
+      <div className="mb-4 flex flex-col gap-1 text-xs text-gray-300 sm:text-sm">
         <div className="flex items-center gap-2">
           <span className="font-medium text-gray-400">Start:</span>
           <span>{formatDate(event.startDate)}</span>
@@ -76,7 +76,9 @@ export const FocusedEvent: React.FC<FocusedEventProps> = ({
       {/* Event Description */}
       {event.description && (
         <div className="mb-4 rounded-md bg-slate-800/50 p-3">
-          <p className="text-sm text-gray-300">{event.description}</p>
+          <p className="text-xs text-gray-300 sm:text-sm">
+            {event.description}
+          </p>
         </div>
       )}
 
@@ -86,7 +88,9 @@ export const FocusedEvent: React.FC<FocusedEventProps> = ({
         {isRunning && countdown && (
           <div className="flex flex-col items-center">
             <span className="text-xs font-medium text-gray-400">Elapsed</span>
-            <span className={`text-3xl font-bold ${getCountdownColor()}`}>
+            <span
+              className={`text-2xl font-bold sm:text-3xl ${getCountdownColor()}`}
+            >
               {countdown}
             </span>
           </div>
@@ -96,7 +100,7 @@ export const FocusedEvent: React.FC<FocusedEventProps> = ({
         {isRunning && timeLeft && (
           <div className="flex flex-col items-center">
             <span className="text-xs font-medium text-gray-400">Remaining</span>
-            <span className="text-lg font-semibold text-cyan-400">
+            <span className="text-base font-semibold text-cyan-400 sm:text-lg">
               {timeLeft}
             </span>
           </div>
@@ -106,7 +110,7 @@ export const FocusedEvent: React.FC<FocusedEventProps> = ({
       {/* Start/Stop Button */}
       <button
         onClick={handleButtonClick}
-        className={`flex w-full items-center justify-center gap-2 rounded-md px-6 py-3 font-semibold text-white transition-all duration-200 ${
+        className={`flex w-full items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 sm:px-6 sm:py-3 sm:text-base ${
           isRunning
             ? "bg-red-600 hover:bg-red-700 active:bg-red-800"
             : "bg-green-600 hover:bg-green-700 active:bg-green-800"
