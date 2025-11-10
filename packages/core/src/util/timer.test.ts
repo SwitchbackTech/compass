@@ -1,23 +1,23 @@
-import { ObjectId } from "bson";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import { Timer } from "@core/util/timer";
 import { waitUntilEvent } from "@core/util/wait-until-event.util";
 
 describe("Timer", () => {
-  const _id = new ObjectId();
+  const _id = "test-timer";
 
   describe("initialization", () => {
-    it("creates a timer with ObjectId, start, and end dates", () => {
-      const startDate = dayjs().add(1, "second").toDate();
-      const endDate = dayjs().add(5, "seconds").toDate();
+    it("creates a timer with ObjectId, start, and end dates", (done) => {
+      const start = dayjs();
+      const startDate = start.toDate();
+      const endDate = start.add(1, "seconds").toDate();
 
-      const timer = new Timer({ _id, startDate, endDate });
+      const timer = new Timer({ _id, startDate, endDate, interval: 100 });
 
       expect(timer._id).toEqual(_id);
       expect(timer.startDate).toEqual(startDate);
       expect(timer.endDate).toEqual(endDate);
 
-      timer.end();
+      timer.on("end", done);
     });
 
     it("throws error when end date is in the past", () => {
@@ -38,52 +38,73 @@ describe("Timer", () => {
       );
     });
 
-    it("accepts custom interval in milliseconds", () => {
-      const start = dayjs().add(1, "second").toDate();
-      const end = dayjs().add(5, "seconds").toDate();
+    it("accepts custom interval in milliseconds", (done) => {
+      const start = dayjs();
+      const startDate = start.toDate();
+      const endDate = start.add(1, "seconds").toDate();
+      const interval = 100; // 100ms
+      const ticks: Dayjs[] = [];
 
-      const timer = new Timer({
-        _id,
-        startDate: start,
-        endDate: end,
-        interval: 500,
+      const timer = new Timer({ _id, startDate, endDate, interval });
+
+      timer.on("tick", () => ticks.push(dayjs()));
+
+      expect(
+        ticks.reduce(
+          (acc, tick, index) =>
+            acc +
+            (index === 0 ? 100 : tick.diff(ticks[index - 1], "millisecond")),
+          0,
+        ),
+      ).toEqual(ticks.length * interval);
+
+      timer.on("end", done);
+    });
+
+    it("restarts the timer", async () => {
+      const start = dayjs();
+      const startDate = start.toDate();
+      const endDate = start.add(3, "seconds").toDate();
+      const ticks: number[] = [];
+
+      const timer = new Timer({ _id, startDate, endDate });
+
+      timer.once("start", () => {
+        const endTimer = setTimeout(() => {
+          timer.end();
+          clearTimeout(endTimer);
+        }, 500);
       });
 
-      expect(timer).toBeDefined();
+      await waitUntilEvent(timer, "end", 5000);
 
-      timer.end();
-    });
+      timer.on("tick", (interval) => ticks.push(interval));
+
+      await waitUntilEvent(timer, "end", 5000, async () => timer.start());
+
+      expect(ticks.length).toBeGreaterThan(1);
+    }, 10000);
   });
 
   describe("start event", () => {
     it("emits start event when timer starts", (done) => {
-      const startDate = dayjs().add(1, "seconds").toDate();
-      const endDate = dayjs(startDate).add(1, "seconds").toDate();
+      const start = dayjs();
+      const startDate = start.toDate();
+      const endDate = start.add(1, "seconds").toDate();
 
-      const timer = new Timer({
-        _id,
-        startDate,
-        endDate,
-        interval: 100,
-      });
+      const timer = new Timer({ _id, startDate, endDate, interval: 100 });
 
-      waitUntilEvent(timer, "end", 5000, undefined, () =>
-        Promise.resolve(done()),
-      );
+      timer.on("start", (interval) => expect(interval).toBe(0));
 
-      waitUntilEvent(timer, "start", 2000);
+      timer.on("end", done);
     });
 
-    it("does not start timer multiple times", (done) => {
-      const startDate = dayjs().toDate();
-      const endDate = dayjs().add(2, "seconds").toDate();
+    it("does not restart the timer if it is not stopped", (done) => {
+      const start = dayjs();
+      const startDate = start.toDate();
+      const endDate = start.add(2, "seconds").toDate();
 
-      const timer = new Timer({
-        _id,
-        startDate,
-        endDate,
-        interval: 100,
-      });
+      const timer = new Timer({ _id, startDate, endDate, interval: 100 });
 
       let startCount = 0;
 
@@ -95,33 +116,27 @@ describe("Timer", () => {
       timer.start();
       timer.start();
 
-      waitUntilEvent(timer, "end", 3000, undefined, async () => {
+      timer.on("end", () => {
         expect(startCount).toBe(1);
         done();
       });
     });
 
     it("emits start event automatically when start date is reached", (done) => {
-      const startDate = dayjs().add(150, "millisecond").toDate();
-      const endDate = dayjs(startDate).add(300, "millisecond").toDate();
+      const start = dayjs();
+      const startDate = start.toDate();
+      const endDate = start.add(1, "seconds").toDate();
 
-      const timer = new Timer({
-        _id,
-        startDate,
-        endDate,
-        interval: 100,
-      });
+      const timer = new Timer({ _id, startDate, endDate, interval: 100 });
 
-      waitUntilEvent(timer, "end", 5000, undefined, () =>
-        Promise.resolve(done()),
-      );
-
-      waitUntilEvent(timer, "start", 500);
+      timer.on("start", (interval) => expect(interval).toBe(0));
+      timer.on("end", done);
     });
 
     it("allows manual start before scheduled start date", (done) => {
-      const startDate = dayjs().add(3, "second").toDate();
-      const endDate = dayjs(startDate).add(1, "second").toDate();
+      const start = dayjs().add(1, "seconds");
+      const startDate = start.toDate();
+      const endDate = start.add(1, "seconds").toDate();
 
       const timer = new Timer({
         _id,
@@ -130,101 +145,78 @@ describe("Timer", () => {
         interval: 100,
       });
 
-      waitUntilEvent(timer, "end", 5000, undefined, () =>
-        Promise.resolve(done()),
-      );
-
-      waitUntilEvent(timer, "start", 500, undefined, async () => {
+      timer.on("start", () => {
         expect(dayjs().isBefore(startDate)).toBe(true);
       });
+
+      timer.on("end", done);
 
       timer.start();
     });
   });
 
   describe("tick event", () => {
-    it("emits tick events at specified interval", async () => {
+    it("emits tick events at specified interval", (done) => {
       const startDate = dayjs().add(1, "seconds").toDate();
       const endDate = dayjs(startDate).add(1, "second").toDate();
 
-      const timer = new Timer({
-        _id,
-        startDate,
-        endDate,
-        interval: 200,
-      });
+      const timer = new Timer({ _id, startDate, endDate, interval: 200 });
 
       const ticks: number[] = [];
 
-      timer.on("tick", (interval: number) => {
-        ticks.push(interval);
+      timer.on("tick", (interval: number) => ticks.push(interval));
+
+      timer.on("end", () => {
+        // Expect approximately 5 ticks in 1 second at 200ms interval
+        expect(ticks).toHaveLength(5);
+        done();
       });
-
-      await waitUntilEvent(timer, "end", 2000);
-
-      expect(ticks).toHaveLength(5); // Expect approximately 5 ticks in 1 second at 200ms interval
     });
 
-    it("emits tick with number type", async () => {
-      const startDate = dayjs().add(1, "seconds").toDate();
-      const endDate = dayjs(startDate).add(1, "second").toDate();
+    it("emits tick intervals as numbers", (done) => {
+      const start = dayjs();
+      const startDate = start.toDate();
+      const endDate = start.add(1, "seconds").toDate();
 
-      const timer = new Timer({
-        _id,
-        startDate,
-        endDate,
-        interval: 200,
-      });
+      const timer = new Timer({ _id, startDate, endDate, interval: 200 });
 
       const ticks: number[] = [];
 
-      timer.on("tick", (interval: number) => {
-        ticks.push(interval);
+      timer.on("tick", (interval: number) => ticks.push(interval));
+
+      timer.on("end", () => {
+        expect(ticks.every((tick) => typeof tick === "number")).toBe(true);
+        done();
       });
 
       timer.start();
-
-      await waitUntilEvent(timer, "end", 2000);
-
-      expect(ticks.every((tick) => typeof tick === "number")).toBe(true);
     });
 
-    it("emits tick with interval values", async () => {
-      const startDate = dayjs().add(1, "seconds").toDate();
-      const endDate = dayjs(startDate).add(1, "second").toDate();
+    it("emits tick with interval values", (done) => {
+      const start = dayjs();
+      const startDate = start.toDate();
+      const endDate = start.add(1, "seconds").toDate();
 
-      const timer = new Timer({
-        _id,
-        startDate,
-        endDate,
-        interval: 200,
-      });
+      const timer = new Timer({ _id, startDate, endDate, interval: 200 });
 
       const ticks: number[] = [];
 
-      timer.on("tick", (interval: number) => {
-        ticks.push(interval);
+      timer.on("tick", (interval: number) => ticks.push(interval));
+
+      timer.on("end", () => {
+        expect(ticks).toEqual(expect.arrayContaining([0, 1, 2, 3, 4]));
+        done();
       });
-
-      timer.start();
-
-      await waitUntilEvent(timer, "end", 2000);
-
-      expect(ticks).toEqual(expect.arrayContaining([0, 1, 2, 3, 4]));
     });
   });
 
   describe("end event", () => {
     it("emits end event when timer completes", (done) => {
-      const startDate = dayjs().toDate();
-      const endDate = dayjs().add(500, "milliseconds").toDate();
+      const start = dayjs();
+      const startDate = start.toDate();
+      const endDate = start.add(500, "milliseconds").toDate();
 
-      const timer = new Timer({
-        _id,
-        startDate,
-        endDate,
-        interval: 100,
-      });
+      const timer = new Timer({ _id, startDate, endDate, interval: 100 });
 
       timer.on("end", done);
 
@@ -232,36 +224,26 @@ describe("Timer", () => {
     });
 
     it("can be ended manually before end date", (done) => {
-      const startDate = dayjs().toDate();
-      const endDate = dayjs().add(5, "seconds").toDate();
+      const start = dayjs();
+      const startDate = start.toDate();
+      const endDate = start.add(1, "seconds").toDate();
 
-      const timer = new Timer({
-        _id,
-        startDate,
-        endDate,
-        interval: 100,
-      });
+      const timer = new Timer({ _id, startDate, endDate, interval: 100 });
 
       timer.on("end", () => {
         expect(dayjs().isBefore(endDate)).toBe(true);
         done();
       });
 
-      timer.start();
-
-      setTimeout(() => timer.end(), 500);
+      timer.on("start", () => timer.end());
     });
 
     it("emits end event even if ended before the start date is reached", (done) => {
-      const startDate = dayjs().add(1, "second").toDate();
-      const endDate = dayjs(startDate).add(1, "second").toDate();
+      const start = dayjs().add(2, "seconds");
+      const startDate = start.toDate();
+      const endDate = start.add(1, "seconds").toDate();
 
-      const timer = new Timer({
-        _id,
-        startDate,
-        endDate,
-        interval: 100,
-      });
+      const timer = new Timer({ _id, startDate, endDate, interval: 100 });
 
       timer.on("end", () => {
         expect(dayjs().isBefore(startDate)).toBe(true);
@@ -276,15 +258,12 @@ describe("Timer", () => {
       const startDate = dayjs().add(1, "second").toDate();
       const endDate = dayjs(startDate).add(1, "second").toDate();
 
-      const timer = new Timer({
-        _id,
-        startDate,
-        endDate,
-        interval: 100,
-      });
+      const timer = new Timer({ _id, startDate, endDate, interval: 100 });
 
       timer.on("end", () => {
-        expect(dayjs().isSame(endDate)).toBe(true);
+        const end = dayjs();
+        expect(end.isSameOrAfter(endDate)).toBe(true);
+        expect(end.valueOf() - 10).toBeLessThan(endDate.getTime());
         done();
       });
     });

@@ -51,7 +51,7 @@ export async function waitUntilEvent<
     eventEmitter.once(event as string, listener);
 
     beforeEvent?.().catch((error) => {
-      eventEmitter.removeListener(event as string, listener);
+      eventEmitter.removeListener?.(event as string, listener);
       reject(error);
     });
   });
