@@ -35,6 +35,10 @@ const EnvSchema = z
     TOKEN_COMPASS_SYNC: z.string().nonempty(),
     NGROK_AUTHTOKEN: z.string().nonempty().optional(),
     NGROK_DOMAIN: z.string().nonempty().optional(),
+    // Frontegg POC configuration (optional)
+    FRONTEGG_CLIENT_ID: z.string().nonempty().optional(),
+    FRONTEGG_API_KEY: z.string().nonempty().optional(),
+    FRONTEGG_BASE_URL: z.string().url().optional(),
   })
   .strict()
   .superRefine(({ NGROK_AUTHTOKEN, NGROK_DOMAIN }, context) => {
@@ -71,6 +75,10 @@ const processEnv = {
   TOKEN_COMPASS_SYNC: process.env["TOKEN_COMPASS_SYNC"],
   NGROK_AUTHTOKEN: process.env["NGROK_AUTHTOKEN"],
   NGROK_DOMAIN: process.env["NGROK_DOMAIN"],
+  // Frontegg POC configuration (optional)
+  FRONTEGG_CLIENT_ID: process.env["FRONTEGG_CLIENT_ID"],
+  FRONTEGG_API_KEY: process.env["FRONTEGG_API_KEY"],
+  FRONTEGG_BASE_URL: process.env["FRONTEGG_BASE_URL"],
 };
 
 const { success, error, data } = EnvSchema.safeParse(processEnv);
