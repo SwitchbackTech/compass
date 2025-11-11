@@ -157,8 +157,9 @@ describe("Timer", () => {
 
   describe("tick event", () => {
     it("emits tick events at specified interval", (done) => {
-      const startDate = dayjs().add(1, "seconds").toDate();
-      const endDate = dayjs(startDate).add(1, "second").toDate();
+      const start = dayjs().add(1, "seconds");
+      const startDate = start.toDate();
+      const endDate = start.add(1, "second").toDate();
 
       const timer = new Timer({ _id, startDate, endDate, interval: 200 });
 
@@ -255,8 +256,9 @@ describe("Timer", () => {
     });
 
     it("ends timer on end date", (done) => {
-      const startDate = dayjs().add(1, "second").toDate();
-      const endDate = dayjs(startDate).add(1, "second").toDate();
+      const start = dayjs().add(2, "seconds");
+      const startDate = start.toDate();
+      const endDate = start.add(1, "second").toDate();
 
       const timer = new Timer({ _id, startDate, endDate, interval: 100 });
 
