@@ -5,19 +5,13 @@ import { ObjectId, WithId } from "mongodb";
 import supertokens from "supertokens-node";
 import { SessionRequest } from "supertokens-node/framework/express";
 import Session from "supertokens-node/recipe/session";
-import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
-import {
-  Result_Auth_Compass,
-  Result_VerifyGToken,
-} from "@core/types/auth.types";
+import { Result_Auth_Compass } from "@core/types/auth.types";
 import { gCalendar } from "@core/types/gcal";
 import { Schema_User } from "@core/types/user.types";
 import { initGoogleClient } from "@backend/auth/services/auth.utils";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
-import GoogleAuthService, {
-  getGAuthClientForUser,
-} from "@backend/auth/services/google.auth.service";
+import GoogleAuthService from "@backend/auth/services/google.auth.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
@@ -63,31 +57,6 @@ class AuthController {
     const userId = req.session?.getUserId();
 
     res.promise({ userId });
-  };
-
-  verifyGToken = async (req: SessionRequest, res: Res_Promise) => {
-    try {
-      const userId = req.session?.getUserId();
-
-      if (!userId) {
-        res.promise({ isValid: false, error: "No session found" });
-        return;
-      }
-
-      const gAuthClient = await getGAuthClientForUser({ _id: userId });
-
-      // Upon receiving an access token, we know the session is valid
-      await gAuthClient.getAccessToken();
-
-      const result: Result_VerifyGToken = { isValid: true };
-      res.promise(result);
-    } catch (error) {
-      const result: Result_VerifyGToken = {
-        isValid: false,
-        error: error as Error | BaseError,
-      };
-      res.promise(result);
-    }
   };
 
   loginOrSignup = async (req: SReqBody<{ code: string }>, res: Res_Promise) => {

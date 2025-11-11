@@ -25,12 +25,10 @@ export const socket = io(ENV_WEB.BACKEND_BASEURL, {
   autoConnect: false,
 });
 
-const reconnect = (_message: string) => {
+export const reconnect = (_message: string) => {
   socket.disconnect();
   socket.connect();
 };
-
-const onConnect = () => {};
 
 export const onceConnected = () => {
   socket.emit(FETCH_USER_METADATA);
@@ -62,7 +60,7 @@ const effectHandler =
     };
   };
 
-socket.on("connect", onConnect);
+socket.once("connect", onceConnected);
 socket.on("connect_error", onConnectError);
 socket.on("disconnect", onDisconnect);
 socket.on(USER_REFRESH_TOKEN, onUserRefreshToken);
@@ -121,6 +119,14 @@ const SocketProvider = ({ children }: { children: ReactNode }) => {
   useEffect(effectHandler(IMPORT_GCAL_START, onImportStart), [onImportStart]);
 
   useEffect(effectHandler(IMPORT_GCAL_END, onImportEnd), [onImportEnd]);
+
+  useEffect(() => {
+    socket.connect();
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   return children;
 };

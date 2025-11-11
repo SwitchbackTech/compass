@@ -11,9 +11,13 @@ import {
   PORT_DEFAULT_BACKEND,
   PORT_DEFAULT_WEB,
 } from "@core/constants/core.constants";
+import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
+import { StringV4Schema, zObjectId } from "@core/types/type.utils";
+import { getGAuthClientForUser } from "@backend/auth/services/google.auth.service";
 import { ENV } from "@backend/common/constants/env.constants";
+import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 
@@ -52,6 +56,44 @@ export const initSupertokens = () => {
           apis(originalImplementation) {
             return {
               ...originalImplementation,
+              async verifySession(input) {
+                const session =
+                  await originalImplementation.verifySession(input);
+
+                const userId = zObjectId.safeParse(session?.getUserId(), {
+                  error: () => "Invalid user ID in session",
+                });
+
+                if (!userId.success) {
+                  throw new BaseError(
+                    userId.error.message,
+                    userId.error.message,
+                    Status.UNAUTHORIZED,
+                    true,
+                  );
+                }
+
+                const gAuthClient = await getGAuthClientForUser({
+                  _id: userId.data.toString(),
+                });
+
+                const gAccessToken = await gAuthClient.getAccessToken();
+
+                const gToken = StringV4Schema.safeParse(gAccessToken, {
+                  error: () => AuthError.NoGAuthAccessToken.description,
+                });
+
+                if (!gToken.success) {
+                  throw new BaseError(
+                    AuthError.NoGAuthAccessToken.description,
+                    gToken.error.message,
+                    Status.UNAUTHORIZED,
+                    true,
+                  );
+                }
+
+                return session;
+              },
               async signOutPOST(input) {
                 const data: SupertokensAccessTokenPayload =
                   input.session.getAccessTokenPayload();

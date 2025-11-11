@@ -12,12 +12,12 @@ import { APP_NAME, PORT_DEFAULT_WEB } from "@core/constants/core.constants";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { sagaMiddleware } from "@web/common/store/middlewares";
+import { theme } from "@web/common/styles/theme";
 import { GlobalStyle } from "@web/components/GlobalStyle";
+import { IconProvider } from "@web/components/IconProvider/IconProvider";
+import { RootRouter } from "@web/routers";
+import { store } from "@web/store";
 import { sagas } from "@web/store/sagas";
-import { theme } from "./common/styles/theme";
-import { IconProvider } from "./components/IconProvider/IconProvider";
-import { RootRouter } from "./routers";
-import { store } from "./store";
 
 SuperTokens.init({
   appInfo: {
@@ -27,7 +27,35 @@ SuperTokens.init({
     websiteBasePath: ROOT_ROUTES.LOGIN,
     websiteDomain: `http://localhost:${PORT_DEFAULT_WEB}`,
   },
-  recipeList: [Session.init()],
+  recipeList: [
+    Session.init({
+      maxRetryAttemptsForSessionRefresh: 1,
+      override: {
+        functions(originalImplementation) {
+          return {
+            ...originalImplementation,
+            shouldDoInterceptionBasedOnUrl(
+              toCheckUrl,
+              apiDomain,
+              sessionTokenBackendDomain,
+            ) {
+              const dontCheckUrls = ["/socket.io", "/auth/google"];
+
+              if (dontCheckUrls.some((url) => toCheckUrl.includes(url))) {
+                return false;
+              }
+
+              return originalImplementation.shouldDoInterceptionBasedOnUrl(
+                toCheckUrl,
+                apiDomain,
+                sessionTokenBackendDomain,
+              );
+            },
+          };
+        },
+      },
+    }),
+  ],
 });
 
 sagaMiddleware.run(sagas);
