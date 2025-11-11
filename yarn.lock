@@ -2357,6 +2357,16 @@
     debug "4.3.4"
     mongodb-memory-server "9.2.0"
 
+"@simplewebauthn/browser@^13.0.0":
+  version "13.2.2"
+  resolved "https://registry.yarnpkg.com/@simplewebauthn/browser/-/browser-13.2.2.tgz#4cde38c4c6969a039c23c2a3d931ecb69f937910"
+  integrity sha512-FNW1oLQpTJyqG5kkDg5ZsotvWgmBaC6jCHR7Ej0qUNep36Wl9tj2eZu7J5rP+uhXgHaLk+QQ3lqcw2vS5MX1IA==
+
+"@simplewebauthn/types@^12.0.0":
+  version "12.0.0"
+  resolved "https://registry.yarnpkg.com/@simplewebauthn/types/-/types-12.0.0.tgz#9b2ba09dfd951747f81dde0f77c6e34b7ac7f8a6"
+  integrity sha512-q6y8MkoV8V8jB4zzp18Uyj2I7oFp2/ONL8c3j8uT06AOWu3cIChc1au71QYHrP2b+xDapkGTiv+9lX7xkTlAsA==
+
 "@sinclair/typebox@^0.27.8":
   version "0.27.8"
   resolved "https://registry.yarnpkg.com/@sinclair/typebox/-/typebox-0.27.8.tgz#6667fac16c436b5434a387a34dedb013198f6e6e"
@@ -11380,11 +11390,12 @@ supertest@^7.1.0:
     methods "^1.1.2"
     superagent "^10.2.3"
 
-supertokens-auth-react@^0.46.0:
-  version "0.46.0"
-  resolved "https://registry.yarnpkg.com/supertokens-auth-react/-/supertokens-auth-react-0.46.0.tgz#e3c97d1a9780184bb4bcd398221a1dfc8384faf4"
-  integrity sha512-2dF8DqAtqRlQMFJlOp9KI8qqUCg98PJxA3P4Sh2CIAt50bx/+UpcfMj3Wd3SLcbEfj5CUYk58IVC+3sWOKA+eg==
+supertokens-auth-react@^0.51.0:
+  version "0.51.0"
+  resolved "https://registry.yarnpkg.com/supertokens-auth-react/-/supertokens-auth-react-0.51.0.tgz#fc65646c6e11af4c6c6178d914c27eca112aa356"
+  integrity sha512-gfh5yGU73q60yQN+PcUqPGPR24jmdX3VkYycqR8mLXmWcrawV3jsV0UyIImS0mviLRZEJsw80+uGDrIlmOvQkg==
   dependencies:
+    "@simplewebauthn/types" "^12.0.0"
     intl-tel-input "^17.0.19"
     prop-types "^15.7.2"
     react-qr-code "^2.0.12"
@@ -11416,15 +11427,16 @@ supertokens-node@^23.0.1:
     tldts "^6.1.48"
     twilio "^4.19.3"
 
-supertokens-web-js@^0.13.0:
-  version "0.13.1"
-  resolved "https://registry.yarnpkg.com/supertokens-web-js/-/supertokens-web-js-0.13.1.tgz#e2b1a96245f7feca667a80a8b10429999208003a"
-  integrity sha512-8ZWlC+01SuyrEerF/Wjkwlikw9SiLPdDIY3CrtVtri6zoJ2enziyg5dbkFrWbxgOagziyl2yjnD0/EEmXxl5tw==
+supertokens-web-js@^0.16.0:
+  version "0.16.0"
+  resolved "https://registry.yarnpkg.com/supertokens-web-js/-/supertokens-web-js-0.16.0.tgz#2dedb7e49d84da2ffa8692f37416bb104d492345"
+  integrity sha512-wuIdlVJtOsx4ZX0kCyl8lxmmAodXLlMAniZEHyVhsH2fhersh7bMrHpvgN9WoC470HYNC22qpHdlJngvyh/cSA==
   dependencies:
+    "@simplewebauthn/browser" "^13.0.0"
     supertokens-js-override "0.0.4"
-    supertokens-website "^20.0.1"
+    supertokens-website "^20.1.5"
 
-supertokens-website@^20.0.1:
+supertokens-website@^20.1.5:
   version "20.1.6"
   resolved "https://registry.yarnpkg.com/supertokens-website/-/supertokens-website-20.1.6.tgz#8241545d23ee1339ec6997423107b82a3eb4c5f3"
   integrity sha512-WSehco2PsrFp4WY7h6tDutYyi2nPgJS8lahUadcL/cpBqgEuZ3pjnvN1NDASSNSTfXeO1smm3HrvvLZG5C7qHA==

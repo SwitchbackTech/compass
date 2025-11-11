@@ -20,6 +20,10 @@ import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/facto
 import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 import { ENV } from "@backend/common/constants/env.constants";
 import { SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
+import {
+  StringV4Schema,
+  zObjectId,
+} from "../../../../core/src/types/type.utils";
 
 export interface CompassTestState {
   events: ReturnType<typeof mockAndCategorizeGcalEvents>;
@@ -85,29 +89,36 @@ function mockSuperToken() {
             ? JSON.parse(sessionString)
             : undefined;
 
-        if (typeof session?.userId === "string") {
-          req.session = {
-            getUserId() {
-              return session.userId;
-            },
-            getAccessTokenPayload(): SupertokensAccessTokenPayload {
-              return {
-                iat: now.getMilliseconds(),
-                exp: now.getMilliseconds() + 5000,
-                iss: req.headers.origin ?? "http://localhost",
-                sub: session.userId,
-                rsub: session.userId,
-                tId,
-                sessionHandle: session.sessionId ?? sessionHandle,
-                refreshTokenHash1: null,
-                parentRefreshTokenHash1: null,
-                antiCsrfToken: null,
-              };
-            },
-          } as SessionContainerInterface;
+        const userId = zObjectId.parse(session?.userId, {
+          error: () => "invalid superToken session",
+        });
 
-          return next?.();
-        }
+        const sessionId = StringV4Schema.parse(
+          session?.sessionId ?? sessionHandle,
+          { error: () => "invalid superToken session" },
+        );
+
+        req.session = {
+          getUserId() {
+            return userId.toString();
+          },
+          getAccessTokenPayload(): SupertokensAccessTokenPayload {
+            return {
+              iat: now.getMilliseconds(),
+              exp: now.getMilliseconds() + 5000,
+              iss: req.headers.origin ?? "http://localhost",
+              sub: userId.toString(),
+              rsub: userId.toString(),
+              tId,
+              sessionHandle: sessionId,
+              refreshTokenHash1: null,
+              parentRefreshTokenHash1: null,
+              antiCsrfToken: null,
+            };
+          },
+        } as SessionContainerInterface;
+
+        return next?.();
 
         if (input?.verifySessionOptions?.sessionRequired) {
           throw new Error("invalid superToken session");

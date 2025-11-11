@@ -15,13 +15,6 @@ export class AuthRoutes extends CommonRoutesConfig {
   }
 
   configureRoutes(): express.Application {
-    /**
-     * Checks whether user's google access token is still valid
-     */
-    this.app
-      .route(`/api/auth/google`)
-      .get([verifySession(), authController.verifyGToken]);
-
     this.app
       .route(`/api/auth/session`)
       .all(authMiddleware.verifyIsDev)
