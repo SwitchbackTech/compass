@@ -5,14 +5,15 @@ import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { Day_AsyncStateContextReason } from "@web/ducks/events/context/day.context";
 import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
 import { RootState } from "@web/store";
-import { useDayEvents } from "./day.data";
+import { useDayEvents } from "./useDayEvents";
 
 const mockDispatch = jest.fn();
 const mockUseAppSelector = jest.fn();
 
 jest.mock("@web/store/store.hooks", () => ({
   useAppDispatch: () => mockDispatch,
-  useAppSelector: (selector: unknown) => mockUseAppSelector(selector),
+  useAppSelector: (selector: (state: RootState) => unknown) =>
+    mockUseAppSelector(selector),
 }));
 
 const createState = ({
@@ -23,7 +24,7 @@ const createState = ({
   events?: Record<string, Schema_Event>;
   isProcessing?: boolean;
   error?: unknown;
-}): RootState =>
+} = {}) =>
   ({
     events: {
       getDayEvents: {
@@ -42,17 +43,17 @@ const createState = ({
 describe("useDayEvents", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseAppSelector.mockImplementation((selector) =>
+      selector(createState()),
+    );
   });
 
-  it("dispatches a request for the selected date", () => {
-    const testDate = dayjs("2024-05-10");
-    const state = createState({});
-    mockUseAppSelector.mockImplementation((selector) => selector(state));
+  it("dispatches a request for the provided date", () => {
+    const date = dayjs("2024-02-10");
+    renderHook(() => useDayEvents(date));
 
-    renderHook(() => useDayEvents(testDate));
-
-    const expectedStart = toUTCOffset(testDate.startOf("day"));
-    const expectedEnd = toUTCOffset(testDate.endOf("day"));
+    const expectedStart = toUTCOffset(date.startOf("day"));
+    const expectedEnd = toUTCOffset(date.endOf("day"));
 
     expect(mockDispatch).toHaveBeenCalledWith(
       getDayEventsSlice.actions.request({
@@ -63,8 +64,8 @@ describe("useDayEvents", () => {
     );
   });
 
-  it("returns events that overlap the selected day and excludes someday events", () => {
-    const dayStart = dayjs("2024-05-10T00:00:00.000Z");
+  it("filters events by date and excludes someday events", () => {
+    const dayStart = dayjs("2024-02-10T00:00:00.000Z");
     const events: Record<string, Schema_Event> = {
       "event-1": {
         _id: "event-1",
@@ -99,20 +100,21 @@ describe("useDayEvents", () => {
         isSomeday: false,
       } as Schema_Event,
     };
+
     const state = createState({ events });
     mockUseAppSelector.mockImplementation((selector) => selector(state));
 
     const { result } = renderHook(() => useDayEvents(dayStart));
 
     expect(result.current.events).toHaveLength(2);
-    expect(result.current.events.map((e) => e._id)).toEqual([
+    expect(result.current.events.map((event) => event._id)).toEqual([
       "event-2",
       "event-1",
     ]);
   });
 
-  it("reflects loading state from the slice", () => {
-    const state = createState({ events: {}, isProcessing: true });
+  it("exposes loading state from slice", () => {
+    const state = createState({ isProcessing: true });
     mockUseAppSelector.mockImplementation((selector) => selector(state));
 
     const { result } = renderHook(() => useDayEvents(dayjs()));
@@ -120,8 +122,8 @@ describe("useDayEvents", () => {
     expect(result.current.isLoading).toBe(true);
   });
 
-  it("exposes string errors from the slice", () => {
-    const state = createState({ events: {}, error: "Boom" });
+  it("exposes string errors from slice", () => {
+    const state = createState({ error: "Boom" });
     mockUseAppSelector.mockImplementation((selector) => selector(state));
 
     const { result } = renderHook(() => useDayEvents(dayjs()));
@@ -130,14 +132,13 @@ describe("useDayEvents", () => {
   });
 
   it("dispatches again when the date changes", () => {
-    const firstDate = dayjs("2024-05-10");
-    const secondDate = dayjs("2024-05-12");
-    const state = createState({});
-    mockUseAppSelector.mockImplementation((selector) => selector(state));
-
+    const firstDate = dayjs("2024-02-10");
+    const secondDate = dayjs("2024-02-11");
     const { rerender } = renderHook(
       ({ currentDate }) => useDayEvents(currentDate),
-      { initialProps: { currentDate: firstDate } },
+      {
+        initialProps: { currentDate: firstDate },
+      },
     );
 
     rerender({ currentDate: secondDate });

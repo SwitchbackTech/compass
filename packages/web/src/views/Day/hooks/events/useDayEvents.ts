@@ -7,15 +7,16 @@ import { selectEventEntities } from "@web/ducks/events/selectors/event.selectors
 import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
-interface DayEvents {
+export interface DayEventsResult {
   events: Schema_Event[];
   isLoading: boolean;
   error: string | null;
 }
 
-const getDateRange = (date: Dayjs) => {
+const buildDateRange = (date: Dayjs) => {
   const start = date.startOf("day");
   const end = date.endOf("day");
+
   return {
     start,
     end,
@@ -24,7 +25,7 @@ const getDateRange = (date: Dayjs) => {
   };
 };
 
-const isEventWithinRange = (
+const isEventInRange = (
   event: Schema_Event,
   rangeStart: Dayjs,
   rangeEnd: Dayjs,
@@ -45,17 +46,13 @@ const isEventWithinRange = (
   );
 };
 
-/**
- * Hook to fetch events for a specific day via Redux
- * Uses the shared event entities store to display events
- */
-export function useDayEvents(date: Dayjs): DayEvents {
+export const useDayEvents = (date: Dayjs): DayEventsResult => {
   const dispatch = useAppDispatch();
   const dayEventsState = useAppSelector((state) => state.events.getDayEvents);
   const eventEntities = useAppSelector(selectEventEntities);
 
   const { start, end, startDate, endDate } = useMemo(
-    () => getDateRange(date),
+    () => buildDateRange(date),
     [date],
   );
 
@@ -73,23 +70,24 @@ export function useDayEvents(date: Dayjs): DayEvents {
     return Object.values(eventEntities)
       .filter((event): event is Schema_Event => Boolean(event?._id))
       .filter((event) => !event.isSomeday)
-      .filter((event) => isEventWithinRange(event, start, end))
+      .filter((event) => isEventInRange(event, start, end))
       .sort((a, b) =>
-        dayjs(a.startDate).diff(dayjs(b.startDate), "millisecond"),
+        dayjs(a.startDate as string).diff(dayjs(b.startDate as string)),
       );
   }, [eventEntities, start, end]);
 
-  const isLoading = Boolean(dayEventsState.isProcessing);
-  const error =
-    typeof dayEventsState.error === "string"
-      ? dayEventsState.error
-      : dayEventsState.error
-        ? "Unknown error"
-        : null;
+  const isLoading = Boolean(dayEventsState?.isProcessing);
+  let error: string | null = null;
+
+  if (typeof dayEventsState?.error === "string") {
+    error = dayEventsState.error;
+  } else if (dayEventsState?.error) {
+    error = "Unknown error";
+  }
 
   return {
     events,
     isLoading,
     error,
   };
-}
+};

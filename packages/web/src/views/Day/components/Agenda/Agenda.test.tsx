@@ -2,11 +2,11 @@ import { act } from "react";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useDayEvents } from "../../data/day.data";
+import { useDayEvents } from "../../hooks/events/useDayEvents";
 import { Agenda } from "./Agenda";
 
 // Mock the useDayEvents hook
-jest.mock("../../data/day.data");
+jest.mock("../../hooks/events/useDayEvents");
 const mockUseDayEvents = useDayEvents as jest.MockedFunction<
   typeof useDayEvents
 >;

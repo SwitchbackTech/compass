@@ -6,12 +6,12 @@ import userEvent from "@testing-library/user-event";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { store } from "@web/store";
-import { useDayEvents } from "../../data/day.data";
+import { useDayEvents } from "../../hooks/events/useDayEvents";
 import { renderWithDayProviders } from "../../util/day.test-util";
 import { AgendaEvents } from "../Agenda/Events/AgendaEvent/AgendaEvents";
 
 // Mock the useDayEvents hook
-jest.mock("../../data/day.data");
+jest.mock("../../hooks/events/useDayEvents");
 const mockUseDayEvents = useDayEvents as jest.MockedFunction<
   typeof useDayEvents
 >;

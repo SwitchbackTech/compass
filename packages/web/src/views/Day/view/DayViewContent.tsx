@@ -5,7 +5,7 @@ import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { Agenda } from "../components/Agenda/Agenda";
 import { ShortcutsOverlay } from "../components/Shortcuts/components/ShortcutsOverlay";
 import { TaskList } from "../components/TaskList/TaskList";
-import { useDayEvents } from "../data/day.data";
+import { useDayEvents } from "../hooks/events/useDayEvents";
 import { useDateInView } from "../hooks/navigation/useDateInView";
 import { useDateNavigation } from "../hooks/navigation/useDateNavigation";
 import { useDayViewShortcuts } from "../hooks/shortcuts/useDayViewShortcuts";

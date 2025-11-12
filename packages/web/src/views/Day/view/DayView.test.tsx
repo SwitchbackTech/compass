@@ -4,7 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import { configureStore } from "@reduxjs/toolkit";
 import "@testing-library/jest-dom";
 import { render, screen, within } from "@testing-library/react";
-import { useDayEvents } from "../data/day.data";
+import { useDayEvents } from "../hooks/events/useDayEvents";
 import { DayView } from "./DayView";
 
 // Mock PostHog
@@ -13,7 +13,7 @@ jest.mock("posthog-js/react", () => ({
 }));
 
 // Mock useDayEvents hook
-jest.mock("../data/day.data", () => ({
+jest.mock("../hooks/events/useDayEvents", () => ({
   useDayEvents: jest.fn(() => ({
     events: [],
     isLoading: false,

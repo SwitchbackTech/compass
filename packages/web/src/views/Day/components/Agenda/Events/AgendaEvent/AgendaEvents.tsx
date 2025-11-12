@@ -1,5 +1,5 @@
 import { SLOT_HEIGHT } from "@web/views/Day/constants/day.constants";
-import { useDayEvents } from "@web/views/Day/data/day.data";
+import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { getNowLinePosition } from "@web/views/Day/util/agenda/agenda.util";
 import { EventContextMenuProvider } from "../../../ContextMenu/EventContextMenuContext";

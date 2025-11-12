@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { useDayEvents } from "@web/views/Day/data/day.data";
+import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { AgendaEvents } from "./Events/AgendaEvent/AgendaEvents";
 import { AllDayAgendaEvents } from "./Events/AllDayAgendaEvent/AllDayAgendaEvents";
