@@ -22,31 +22,19 @@ export function useRealtimeFocusData(): {
   const dayEvents = useAppSelector(selectDayEvents);
   const [nextEvent, setNextEvent] = useState<Schema_WebEvent | undefined>();
 
-  // Transform Redux events to the format expected by the rest of the hook
-  const events = useMemo(() => {
-    return dayEvents.map((event) => ({
-      id: event._id ?? "",
-      title: event.title ?? "",
-      startTime: new Date(event.startDate as string),
-      endTime: new Date(event.endDate as string),
-      isAllDay: event.isAllDay ?? false,
-    }));
-  }, [dayEvents]);
-
   const updateNow = useCallback(() => setNow(new Date()), []);
 
-  const getNextEvent = useCallback(() => {
-    const event = events.find(({ endTime }) => dayjs(now).isBefore(endTime));
+  const getNextEvent = useCallback((): Schema_WebEvent | undefined => {
+    const event = dayEvents.find(
+      ({ endDate }) => endDate && dayjs(now).isBefore(endDate),
+    );
 
-    if (!event) return;
+    if (!event?._id || !event?.startDate || !event?.endDate) {
+      return undefined;
+    }
 
-    return {
-      ...event,
-      _id: event?.id,
-      startDate: event?.startTime.toISOString(),
-      endDate: event?.endTime.toISOString(),
-    } as unknown as Schema_WebEvent;
-  }, [events, now]);
+    return event as Schema_WebEvent;
+  }, [dayEvents, now]);
 
   const updateNextEvent = useCallback(
     () => setNextEvent(getNextEvent()),
