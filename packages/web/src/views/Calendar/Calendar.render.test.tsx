@@ -2,9 +2,9 @@ import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import { GROCERIES } from "@core/__mocks__/v1/events/events.misc";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
+import { findAndUpdateEventInPreloadedState } from "@web/__tests__/utils/state/store.test.util";
 import { getWeekDayLabel } from "@web/common/utils/event/event.util";
 import { CalendarView } from "@web/views/Calendar";
-import { findAndUpdateEventInPreloadedState } from "@web/views/Calendar/calendar.render.test.utils";
 import { freshenEventStartEndDate } from "@web/views/Calendar/calendar.render.test.utils";
 import { render } from "../../__tests__/__mocks__/mock.render";
 

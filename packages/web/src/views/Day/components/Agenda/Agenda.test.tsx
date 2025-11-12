@@ -1,55 +1,10 @@
 import { act } from "react";
-import { PreloadedState, configureStore } from "@reduxjs/toolkit";
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { Schema_Event } from "@core/types/event.types";
-import { RootState } from "@web/store";
-import { reducers } from "@web/store/reducers";
-import { createInitialState } from "@web/views/Calendar/calendar.render.test.utils";
+import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import { renderWithDayProviders } from "../../util/day.test-util";
 import { Agenda } from "./Agenda";
-
-const createStoreWithEvents = (
-  events: Schema_Event[] = [],
-  options: { isProcessing?: boolean } = {},
-) => {
-  const preloadedState = createInitialState();
-  const entities = events.reduce<Record<string, Schema_Event>>((acc, event) => {
-    if (event._id) {
-      acc[event._id] = event;
-    }
-    return acc;
-  }, {});
-
-  preloadedState.events.entities.value = entities;
-  preloadedState.events.getDayEvents = {
-    value: {
-      data: events
-        .filter((event) => Boolean(event._id))
-        .map((event) => event._id as string),
-      count: events.length,
-      pageSize: events.length || 1,
-      page: 1,
-      offset: 0,
-    },
-    isProcessing: options.isProcessing ?? false,
-    isSuccess: !options.isProcessing,
-    error: null,
-    reason: null,
-  };
-
-  return configureStore({
-    reducer: reducers,
-    preloadedState: preloadedState as PreloadedState<RootState>,
-    middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({
-        thunk: false,
-        serializableCheck: false,
-        immutableCheck: false,
-      }),
-  });
-};
 
 const renderAgenda = (
   events: Schema_Event[] = [],
