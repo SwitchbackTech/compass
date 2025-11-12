@@ -10,8 +10,9 @@ import { NotFoundView } from "@web/views/NotFound";
 import { NowView } from "@web/views/Now/NowView";
 import OnboardingFlow from "@web/views/Onboarding/OnboardingFlow";
 import { RootView } from "@web/views/Root";
+import { AbsoluteOverflowLoader } from "../components/AbsoluteOverflowLoader";
 
-const router = createBrowserRouter(
+export const router = createBrowserRouter(
   [
     {
       path: "/onboarding",
@@ -23,6 +24,18 @@ const router = createBrowserRouter(
           <UserProvider>
             <SocketProvider>
               <AuthenticatedLayout />
+            </SocketProvider>
+          </UserProvider>
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: `${ROOT_ROUTES.DAY}/:date?`,
+      element: (
+        <ProtectedRoute>
+          <UserProvider>
+            <SocketProvider>
+              <DayView />
             </SocketProvider>
           </UserProvider>
         </ProtectedRoute>
@@ -43,10 +56,33 @@ const router = createBrowserRouter(
       ],
     },
     {
+      path: ROOT_ROUTES.LOGOUT,
+      element: (
+        <ProtectedRoute>
+          <UserProvider>
+            <SocketProvider>
+              <LogoutView />
+            </SocketProvider>
+          </UserProvider>
+        </ProtectedRoute>
+      ),
+    },
+    {
       path: ROOT_ROUTES.LOGIN,
       element: <OnboardingFlow />,
     },
-    { path: ROOT_ROUTES.LOGOUT, element: <LogoutView /> },
+    {
+      path: ROOT_ROUTES.ROOT,
+      element: (
+        <ProtectedRoute>
+          <UserProvider>
+            <SocketProvider>
+              <RootView />
+            </SocketProvider>
+          </UserProvider>
+        </ProtectedRoute>
+      ),
+    },
     { path: "*", element: <NotFoundView /> },
   ],
   {
@@ -57,5 +93,10 @@ const router = createBrowserRouter(
 );
 
 export const RootRouter = () => {
-  return <RouterProvider router={router} />;
+  return (
+    <RouterProvider
+      router={router}
+      fallbackElement={<AbsoluteOverflowLoader />}
+    />
+  );
 };

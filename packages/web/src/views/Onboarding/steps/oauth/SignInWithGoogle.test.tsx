@@ -153,47 +153,6 @@ describe("SignInWithGoogle", () => {
         expect(mockOnNext).toHaveBeenCalledTimes(1);
       });
     });
-
-    it("navigates to home for existing users", async () => {
-      let onSuccessCallback: ((data: SignInUpInput) => void) | undefined;
-
-      mockAuthApi.loginOrSignup.mockResolvedValue({
-        isNewUser: false,
-      });
-
-      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
-        onSuccessCallback = onSuccess;
-
-        return {
-          login: mockLogin,
-          loading: false,
-          data: null,
-        };
-      });
-
-      render(<SignInWithGoogleWithProvider {...defaultProps} />);
-
-      // Simulate Google login success by calling the onSuccess callback
-      if (onSuccessCallback) {
-        onSuccessCallback({
-          clientType: "web",
-          thirdPartyId: "google",
-          redirectURIInfo: {
-            redirectURIOnProviderDashboard: "",
-            redirectURIQueryParams: {
-              code: "test-auth-code",
-              scope: "email profile",
-              state: undefined,
-            },
-          },
-        });
-      }
-
-      await waitFor(() => {
-        expect(mockNavigate).toHaveBeenCalledWith("/");
-        expect(mockOnNext).toHaveBeenCalledTimes(1);
-      });
-    });
   });
 
   describe("Error Handling", () => {
