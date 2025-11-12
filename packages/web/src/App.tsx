@@ -10,6 +10,7 @@ import Session from "supertokens-web-js/recipe/session";
 import ThirdParty from "supertokens-web-js/recipe/thirdparty";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { APP_NAME } from "@core/constants/core.constants";
+import { SessionProvider, sessionInit } from "@web/auth/SessionProvider";
 import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
@@ -30,70 +31,49 @@ SuperTokens.init({
   recipeList: [
     ThirdParty.init(),
     Session.init({
-      maxRetryAttemptsForSessionRefresh: 1,
       postAPIHook: async (context) => {
         session.emit(context.action, context);
       },
       onHandleEvent: (event) => {
         session.emit(event.action, event);
       },
-      override: {
-        functions(originalImplementation) {
-          return {
-            ...originalImplementation,
-            shouldDoInterceptionBasedOnUrl(
-              toCheckUrl,
-              apiDomain,
-              sessionTokenBackendDomain,
-            ) {
-              const dontCheckUrls = ["/socket.io"];
-
-              if (dontCheckUrls.some((url) => toCheckUrl.includes(url))) {
-                return false;
-              }
-
-              return originalImplementation.shouldDoInterceptionBasedOnUrl(
-                toCheckUrl,
-                apiDomain,
-                sessionTokenBackendDomain,
-              );
-            },
-          };
-        },
-      },
     }),
   ],
 });
+
+sessionInit();
 
 sagaMiddleware.run(sagas);
 
 export const App = () => {
   const renderRequiredProviders = () => (
-    <DndProvider backend={HTML5Backend}>
-      <Provider store={store}>
-        <GoogleOAuthProvider clientId={ENV_WEB.GOOGLE_CLIENT_ID || ""}>
-          <GlobalStyle />
-          <ThemeProvider theme={theme}>
-            <IconProvider>
-              <RootRouter />
-            </IconProvider>
-            <ToastContainer
-              position="bottom-left"
-              autoClose={5000}
-              hideProgressBar={false}
-              newestOnTop={false}
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              theme="dark"
-              limit={1}
-            />
-          </ThemeProvider>
-        </GoogleOAuthProvider>
-      </Provider>
-    </DndProvider>
+    <SessionProvider>
+      <DndProvider backend={HTML5Backend}>
+        <Provider store={store}>
+          <GoogleOAuthProvider clientId={ENV_WEB.GOOGLE_CLIENT_ID || ""}>
+            <GlobalStyle />
+            <ThemeProvider theme={theme}>
+              <IconProvider>
+                <RootRouter />
+              </IconProvider>
+              <ToastContainer
+                position="bottom-left"
+                autoClose={5000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="dark"
+                limit={1}
+              />
+            </ThemeProvider>
+          </GoogleOAuthProvider>
+        </Provider>
+      </DndProvider>
+    </SessionProvider>
   );
 
   const renderOptionalProviders = (children: React.ReactNode) => {

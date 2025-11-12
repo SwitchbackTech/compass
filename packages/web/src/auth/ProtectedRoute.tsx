@@ -5,11 +5,11 @@ import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 
 export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { state } = useNavigation();
-  const session = useSession();
+  const { authenticated } = useSession();
 
-  if (state === "loading" || session.loading) return <AbsoluteOverflowLoader />;
+  if (!authenticated) return null;
 
-  if (!session.authenticated) return null;
+  if (state === "loading") return <AbsoluteOverflowLoader />;
 
   return <>{children}</>;
 };
