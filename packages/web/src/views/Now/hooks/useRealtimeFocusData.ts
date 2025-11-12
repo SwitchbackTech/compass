@@ -3,7 +3,9 @@ import dayjs from "@core/util/date/dayjs";
 import { parseCompassEventDate } from "@core/util/event/event.util";
 import { Timer } from "@core/util/timer";
 import { Schema_WebEvent } from "@web/common/types/web.event.types";
-import { useTodayEvents } from "@web/views/Day/hooks/events/useTodayEvents";
+import { selectTimedDayEvents } from "@web/ducks/events/selectors/event.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
+import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
 
 const _id = "FOCUS_TIMER";
 const startDate = new Date();
@@ -16,23 +18,23 @@ export function useRealtimeFocusData(): {
   nextEventStarts?: string;
 } {
   const [now, setNow] = useState(timer.startDate);
-  const events = useTodayEvents();
+  useDayEvents(dayjs());
+  const timedDayEvents = useAppSelector(selectTimedDayEvents);
   const [nextEvent, setNextEvent] = useState<Schema_WebEvent | undefined>();
 
   const updateNow = useCallback(() => setNow(new Date()), []);
 
-  const getNextEvent = useCallback(() => {
-    const event = events.find(({ endTime }) => dayjs(now).isBefore(endTime));
+  const getNextEvent = useCallback((): Schema_WebEvent | undefined => {
+    const event = timedDayEvents.find(
+      ({ endDate }) => endDate && dayjs(now).isBefore(endDate),
+    );
 
-    if (!event) return;
+    if (!event?._id || !event?.startDate || !event?.endDate) {
+      return undefined;
+    }
 
-    return {
-      ...event,
-      _id: event?.id,
-      startDate: event?.startTime.toISOString(),
-      endDate: event?.endTime.toISOString(),
-    } as unknown as Schema_WebEvent;
-  }, [events, now]);
+    return event as Schema_WebEvent;
+  }, [timedDayEvents, now]);
 
   const updateNextEvent = useCallback(
     () => setNextEvent(getNextEvent()),
