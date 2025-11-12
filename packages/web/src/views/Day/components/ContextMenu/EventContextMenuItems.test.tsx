@@ -3,7 +3,10 @@ import { configureStore } from "@reduxjs/toolkit";
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Schema_Event } from "@core/types/event.types";
+import {
+  RecurringEventUpdateScope,
+  Schema_Event,
+} from "@core/types/event.types";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
 import { EventContextMenuProvider } from "./EventContextMenuContext";
 import { EventContextMenuItems } from "./EventContextMenuItems";
@@ -27,13 +30,6 @@ const createMockStore = () => {
   return configureStore({
     reducer: {
       deleteEvent: deleteEventSlice.reducer,
-    },
-    preloadedState: {
-      deleteEvent: {
-        value: null,
-        isLoading: false,
-        error: null,
-      },
     },
   });
 };
@@ -80,8 +76,8 @@ describe("EventContextMenuItems", () => {
 
     expect(dispatchSpy).toHaveBeenCalledWith(
       deleteEventSlice.actions.request({
-        _id: mockEvent._id,
-        applyTo: expect.any(String),
+        _id: mockEvent._id as string,
+        applyTo: RecurringEventUpdateScope.THIS_EVENT,
       }),
     );
     expect(mockClose).toHaveBeenCalled();

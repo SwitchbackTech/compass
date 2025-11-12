@@ -31,7 +31,7 @@ export function EventContextMenuItems({
       deleteEventSlice.actions.request({
         _id: event._id,
         applyTo: RecurringEventUpdateScope.THIS_EVENT,
-      } as unknown as void),
+      }),
     );
     close();
   };

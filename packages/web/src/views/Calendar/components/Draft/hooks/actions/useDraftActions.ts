@@ -183,7 +183,7 @@ export const useDraftActions = (
           deleteEventSlice.actions.request({
             _id: reduxDraft._id,
             applyTo,
-          } as unknown as void),
+          }),
         );
       }
       discard();
