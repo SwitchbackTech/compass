@@ -1,7 +1,6 @@
-import { useMemo } from "react";
 import {
-  selectDayEvents,
   selectIsDayEventsProcessing,
+  selectTimedDayEvents,
 } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { SLOT_HEIGHT } from "@web/views/Day/constants/day.constants";
@@ -11,22 +10,9 @@ import { AgendaSkeleton } from "../../AgendaSkeleton/AgendaSkeleton";
 import { AgendaEvent } from "./AgendaEvent";
 
 export const AgendaEvents = () => {
-  const events = useAppSelector(selectDayEvents);
+  const events = useAppSelector(selectTimedDayEvents);
   const isLoading = useAppSelector(selectIsDayEventsProcessing);
   const currentTime = new Date();
-
-  // Filter out all-day events and sort timed events by start time for consistent TAB order
-  const timedEvents = useMemo(
-    () =>
-      events
-        .filter((event) => !event.isAllDay)
-        .sort(
-          (a, b) =>
-            new Date(a.startDate as string).getTime() -
-            new Date(b.startDate as string).getTime(),
-        ),
-    [events],
-  );
 
   return (
     <div className="relative ml-1 flex-1">
@@ -51,7 +37,7 @@ export const AgendaEvents = () => {
             {isLoading ? (
               <AgendaSkeleton />
             ) : (
-              timedEvents.map((event) => (
+              events.map((event) => (
                 <AgendaEvent key={event._id} event={event} />
               ))
             )}

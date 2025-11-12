@@ -1,42 +1,67 @@
 import { act } from "react";
+import { PreloadedState, configureStore } from "@reduxjs/toolkit";
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Schema_Event } from "@core/types/event.types";
-import {
-  selectDayEvents,
-  selectIsDayEventsProcessing,
-} from "@web/ducks/events/selectors/event.selectors";
+import { RootState } from "@web/store";
+import { reducers } from "@web/store/reducers";
+import { createInitialState } from "@web/views/Calendar/calendar.render.test.utils";
+import { renderWithDayProviders } from "../../util/day.test-util";
 import { Agenda } from "./Agenda";
 
-const mockUseAppSelector = jest.fn();
+const createStoreWithEvents = (
+  events: Schema_Event[] = [],
+  options: { isProcessing?: boolean } = {},
+) => {
+  const preloadedState = createInitialState();
+  const entities = events.reduce<Record<string, Schema_Event>>((acc, event) => {
+    if (event._id) {
+      acc[event._id] = event;
+    }
+    return acc;
+  }, {});
 
-jest.mock("@web/store/store.hooks", () => ({
-  useAppSelector: (selector: unknown) => mockUseAppSelector(selector),
-}));
+  preloadedState.events.entities.value = entities;
+  preloadedState.events.getDayEvents = {
+    value: {
+      data: events
+        .filter((event) => Boolean(event._id))
+        .map((event) => event._id as string),
+      count: events.length,
+      pageSize: events.length || 1,
+      page: 1,
+      offset: 0,
+    },
+    isProcessing: options.isProcessing ?? false,
+    isSuccess: !options.isProcessing,
+    error: null,
+    reason: null,
+  };
+
+  return configureStore({
+    reducer: reducers,
+    preloadedState: preloadedState as PreloadedState<RootState>,
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({
+        thunk: false,
+        serializableCheck: false,
+        immutableCheck: false,
+      }),
+  });
+};
+
+const renderAgenda = (
+  events: Schema_Event[] = [],
+  options?: { isProcessing?: boolean },
+) => {
+  const store = createStoreWithEvents(events, options);
+  return renderWithDayProviders(<Agenda />, { store });
+};
 
 describe("CalendarAgenda", () => {
-  let selectorEvents: Schema_Event[];
-  let selectorIsLoading: boolean;
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    selectorEvents = [];
-    selectorIsLoading = false;
-    mockUseAppSelector.mockImplementation((selector) => {
-      if (selector === selectDayEvents) {
-        return selectorEvents;
-      }
-      if (selector === selectIsDayEventsProcessing) {
-        return selectorIsLoading;
-      }
-
-      return undefined;
-    });
-  });
-
   it("should render time labels", () => {
-    render(<Agenda />);
+    renderAgenda();
 
     expect(screen.getByText("12am")).toBeInTheDocument();
     expect(screen.getByText("12pm")).toBeInTheDocument();
@@ -45,7 +70,7 @@ describe("CalendarAgenda", () => {
   });
 
   it("should render multiple events", () => {
-    const mockEvents = [
+    const mockEvents: Schema_Event[] = [
       {
         _id: "event-1",
         title: "Event 1",
@@ -60,17 +85,16 @@ describe("CalendarAgenda", () => {
         endDate: "2024-01-15T15:00:00Z",
         isAllDay: false,
       },
-    ] as unknown as Schema_Event[];
+    ];
 
-    selectorEvents = mockEvents;
-
-    render(<Agenda />);
+    renderAgenda(mockEvents);
 
     expect(screen.getByText("Event 1")).toBeInTheDocument();
     expect(screen.getByText("Event 2")).toBeInTheDocument();
   });
+
   it("should render all-day events", () => {
-    const mockEvents = [
+    const mockEvents: Schema_Event[] = [
       {
         _id: "event-all-day",
         title: "All Day Event",
@@ -78,27 +102,22 @@ describe("CalendarAgenda", () => {
         endDate: "2024-01-15T23:59:59Z",
         isAllDay: true,
       },
-    ] as unknown as Schema_Event[];
+    ];
 
-    selectorEvents = mockEvents;
-
-    render(<Agenda />);
+    renderAgenda(mockEvents);
 
     expect(screen.getByText("All Day Event")).toBeInTheDocument();
   });
 
   it("should show skeleton during loading", () => {
-    selectorIsLoading = true;
+    renderAgenda([], { isProcessing: true });
 
-    render(<Agenda />);
-
-    // Check for skeleton elements (they have animate-pulse class)
     const skeletonElements = document.querySelectorAll(".animate-pulse");
     expect(skeletonElements.length).toBeGreaterThan(0);
   });
 
   it("should not show skeleton or error when events are loaded", () => {
-    const mockEvents = [
+    const mockEvents: Schema_Event[] = [
       {
         _id: "event-1",
         title: "Test Event",
@@ -106,25 +125,18 @@ describe("CalendarAgenda", () => {
         endDate: "2024-01-15T11:00:00Z",
         isAllDay: false,
       },
-    ] as unknown as Schema_Event[];
+    ];
 
-    selectorEvents = mockEvents;
+    renderAgenda(mockEvents);
 
-    render(<Agenda />);
-
-    // Should not show skeleton
     const skeletonElements = document.querySelectorAll(".animate-pulse");
     expect(skeletonElements).toHaveLength(0);
-
-    // Should not show error
     expect(screen.queryByText("Failed to load events")).not.toBeInTheDocument();
-
-    // Should show events
     expect(screen.getByText("Test Event")).toBeInTheDocument();
   });
 
   it("should render events with correct tabIndex and data attributes", () => {
-    const mockEvents = [
+    const mockEvents: Schema_Event[] = [
       {
         _id: "all-day-1",
         title: "All Day Event 1",
@@ -139,13 +151,10 @@ describe("CalendarAgenda", () => {
         endDate: "2024-01-15T10:00:00Z",
         isAllDay: false,
       },
-    ] as unknown as Schema_Event[];
+    ];
 
-    selectorEvents = mockEvents;
+    renderAgenda(mockEvents);
 
-    render(<Agenda />);
-
-    // Check that all-day events are rendered with correct attributes
     const allDayEvent = screen.getByRole("button", {
       name: "All Day Event 1",
     });
@@ -153,7 +162,6 @@ describe("CalendarAgenda", () => {
     expect(allDayEvent).toHaveAttribute("role", "button");
     expect(allDayEvent).toHaveAttribute("data-event-id", "all-day-1");
 
-    // Check that timed events are rendered with correct attributes
     const timedEvent = screen.getByRole("button", {
       name: "Timed Event 1",
     });
@@ -162,8 +170,7 @@ describe("CalendarAgenda", () => {
   });
 
   it("should render events in correct TAB navigation order", async () => {
-    const user = userEvent.setup();
-    const mockEvents = [
+    const mockEvents: Schema_Event[] = [
       {
         _id: "all-day-2",
         title: "Zebra Event",
@@ -192,31 +199,25 @@ describe("CalendarAgenda", () => {
         endDate: "2024-01-15T09:00:00Z",
         isAllDay: false,
       },
-    ] as unknown as Schema_Event[];
+    ];
 
-    selectorEvents = mockEvents;
+    const { user } = renderAgenda(mockEvents);
 
-    render(<Agenda />);
-
-    // Focus the first element (should be Apple Event - all-day events sorted alphabetically)
     await act(async () => {
       await user.tab();
     });
     expect(document.activeElement).toHaveTextContent("Apple Event");
 
-    // Tab to second element (should be Zebra Event - all-day events sorted alphabetically)
     await act(async () => {
       await user.tab();
     });
     expect(document.activeElement).toHaveTextContent("Zebra Event");
 
-    // Tab to third element (should be Breakfast Event - timed events sorted by start time)
     await act(async () => {
       await user.tab();
     });
     expect(document.activeElement).toHaveTextContent("Breakfast Event");
 
-    // Tab to fourth element (should be Lunch Event - timed events sorted by start time)
     await act(async () => {
       await user.tab();
     });
@@ -224,7 +225,7 @@ describe("CalendarAgenda", () => {
   });
 
   it("should filter out deleted events immediately", () => {
-    const mockEvents = [
+    const mockEvents: Schema_Event[] = [
       {
         _id: "event-1",
         title: "Event 1",
@@ -239,28 +240,18 @@ describe("CalendarAgenda", () => {
         endDate: "2024-01-15T15:00:00Z",
         isAllDay: false,
       },
-    ] as unknown as Schema_Event[];
+    ];
 
-    // Initial render with both events
-    selectorEvents = mockEvents;
-
-    const { rerender } = render(<Agenda />);
+    const firstRender = renderAgenda(mockEvents);
 
     expect(screen.getByText("Event 1")).toBeInTheDocument();
     expect(screen.getByText("Event 2")).toBeInTheDocument();
 
-    // Simulate event-2 being deleted (removed from Redux)
-    // The selector will filter it out via useAppSelector
-    // This test verifies that filtered events don't appear in the UI
+    firstRender.unmount();
 
-    // Update hook to return filtered events
-    selectorEvents = [mockEvents[0]];
+    renderAgenda([mockEvents[0]]);
 
-    rerender(<Agenda />);
-
-    // Event 1 should still be visible
     expect(screen.getByText("Event 1")).toBeInTheDocument();
-    // Event 2 should be removed
     expect(screen.queryByText("Event 2")).not.toBeInTheDocument();
   });
 });

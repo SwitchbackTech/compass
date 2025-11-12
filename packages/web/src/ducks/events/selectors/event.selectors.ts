@@ -1,5 +1,6 @@
 import { createSelector } from "@reduxjs/toolkit";
 import { Schema_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import { isProcessing } from "@web/common/store/helpers";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
@@ -76,3 +77,11 @@ export const selectDayEvents = createSelector(
 
 export const selectIsDayEventsProcessing = (state: RootState) =>
   isProcessing(state.events.getDayEvents);
+
+export const selectTimedDayEvents = createSelector(selectDayEvents, (events) =>
+  events
+    .filter((event) => !event.isAllDay)
+    .sort((a, b) =>
+      dayjs(a.startDate as string).diff(dayjs(b.startDate as string)),
+    ),
+);
