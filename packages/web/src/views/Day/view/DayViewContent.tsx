@@ -1,15 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
-import { Day_AsyncStateContextReason } from "@web/ducks/events/context/day.context";
 import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
-import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { useAppSelector } from "@web/store/store.hooks";
 import { Agenda } from "../components/Agenda/Agenda";
 import { ShortcutsOverlay } from "../components/Shortcuts/components/ShortcutsOverlay";
 import { TaskList } from "../components/TaskList/TaskList";
+import { useDayEvents } from "../hooks/events/useDayEvents";
 import { useDateInView } from "../hooks/navigation/useDateInView";
 import { useDateNavigation } from "../hooks/navigation/useDateNavigation";
 import { useDayViewShortcuts } from "../hooks/shortcuts/useDayViewShortcuts";
@@ -31,30 +29,14 @@ export const DayViewContent = () => {
     undoToastId,
   } = useTasks();
 
-  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const dateInView = useDateInView();
   const events = useAppSelector(selectDayEvents);
   const scrollToNowLineRef = useRef<() => void>();
+  useDayEvents(dateInView);
 
   const { navigateToNextDay, navigateToPreviousDay, navigateToToday } =
     useDateNavigation();
-  const { startDateUtc, endDateUtc } = useMemo(() => {
-    return {
-      startDateUtc: toUTCOffset(dateInView.startOf("day")),
-      endDateUtc: toUTCOffset(dateInView.endOf("day")),
-    };
-  }, [dateInView]);
-
-  useEffect(() => {
-    dispatch(
-      getDayEventsSlice.actions.request({
-        startDate: startDateUtc,
-        endDate: endDateUtc,
-        __context: { reason: Day_AsyncStateContextReason.DAY_VIEW_CHANGE },
-      }),
-    );
-  }, [dispatch, startDateUtc, endDateUtc]);
 
   const hasFocusedTask =
     selectedTaskIndex >= 0 && selectedTaskIndex < tasks.length;
