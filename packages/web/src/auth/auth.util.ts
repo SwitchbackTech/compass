@@ -1,4 +1,4 @@
-import Session from "supertokens-auth-react/recipe/session";
+import { session } from "@web/common/classes/Session";
 
 interface AccessTokenPayload {
   sub: string;
@@ -7,7 +7,7 @@ interface AccessTokenPayload {
 
 export const getUserId = async () => {
   const accessTokenPayload =
-    (await Session.getAccessTokenPayloadSecurely()) as AccessTokenPayload;
+    (await session.getAccessTokenPayloadSecurely()) as AccessTokenPayload;
   const userId = accessTokenPayload["sub"];
   return userId;
 };
@@ -18,7 +18,7 @@ export const getUserId = async () => {
 export const getUserEmail = async (): Promise<string | null> => {
   try {
     const accessTokenPayload =
-      (await Session.getAccessTokenPayloadSecurely()) as AccessTokenPayload;
+      (await session.getAccessTokenPayloadSecurely()) as AccessTokenPayload;
     return accessTokenPayload.email || null;
   } catch (error) {
     console.error("Failed to get user email:", error);

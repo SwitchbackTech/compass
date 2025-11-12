@@ -5,10 +5,12 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { Provider } from "react-redux";
 import { ToastContainer } from "react-toastify";
 import { ThemeProvider } from "styled-components";
-import SuperTokens, { SuperTokensWrapper } from "supertokens-auth-react";
-import Session from "supertokens-auth-react/recipe/session";
+import SuperTokens from "supertokens-web-js";
+import Session from "supertokens-web-js/recipe/session";
+import ThirdParty from "supertokens-web-js/recipe/thirdparty";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { APP_NAME, PORT_DEFAULT_WEB } from "@core/constants/core.constants";
+import { APP_NAME } from "@core/constants/core.constants";
+import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { sagaMiddleware } from "@web/common/store/middlewares";
@@ -24,12 +26,17 @@ SuperTokens.init({
     appName: APP_NAME,
     apiDomain: ENV_WEB.API_BASEURL,
     apiBasePath: ROOT_ROUTES.API,
-    websiteBasePath: ROOT_ROUTES.LOGIN,
-    websiteDomain: `http://localhost:${PORT_DEFAULT_WEB}`,
   },
   recipeList: [
+    ThirdParty.init(),
     Session.init({
       maxRetryAttemptsForSessionRefresh: 1,
+      postAPIHook: async (context) => {
+        session.emit(context.action, context);
+      },
+      onHandleEvent: (event) => {
+        session.emit(event.action, event);
+      },
       override: {
         functions(originalImplementation) {
           return {
@@ -39,7 +46,7 @@ SuperTokens.init({
               apiDomain,
               sessionTokenBackendDomain,
             ) {
-              const dontCheckUrls = ["/socket.io", "/auth/google"];
+              const dontCheckUrls = ["/socket.io"];
 
               if (dontCheckUrls.some((url) => toCheckUrl.includes(url))) {
                 return false;
@@ -65,27 +72,25 @@ export const App = () => {
     <DndProvider backend={HTML5Backend}>
       <Provider store={store}>
         <GoogleOAuthProvider clientId={ENV_WEB.GOOGLE_CLIENT_ID || ""}>
-          <SuperTokensWrapper>
-            <GlobalStyle />
-            <ThemeProvider theme={theme}>
-              <IconProvider>
-                <RootRouter />
-              </IconProvider>
-              <ToastContainer
-                position="bottom-left"
-                autoClose={5000}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-                theme="dark"
-                limit={1}
-              />
-            </ThemeProvider>
-          </SuperTokensWrapper>
+          <GlobalStyle />
+          <ThemeProvider theme={theme}>
+            <IconProvider>
+              <RootRouter />
+            </IconProvider>
+            <ToastContainer
+              position="bottom-left"
+              autoClose={5000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="dark"
+              limit={1}
+            />
+          </ThemeProvider>
         </GoogleOAuthProvider>
       </Provider>
     </DndProvider>

@@ -1,10 +1,9 @@
 import cors from "cors";
-import SuperTokens from "supertokens-node";
+import { TokenPayload } from "google-auth-library";
+import { default as SuperTokens } from "supertokens-node";
 import Dashboard from "supertokens-node/recipe/dashboard";
-import {
-  default as Session,
-  SessionContainer,
-} from "supertokens-node/recipe/session";
+import { default as Session } from "supertokens-node/recipe/session";
+import ThirdParty from "supertokens-node/recipe/thirdparty";
 import UserMetadata from "supertokens-node/recipe/usermetadata";
 import {
   APP_NAME,
@@ -13,15 +12,11 @@ import {
 } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
-import { Logger } from "@core/logger/winston.logger";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
+import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { getGAuthClientForUser } from "@backend/auth/services/google.auth.service";
 import { ENV } from "@backend/common/constants/env.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
-import { SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
-import { webSocketServer } from "@backend/servers/websocket/websocket.server";
-
-const logger = Logger("app:supertokens.middleware");
 
 export const initSupertokens = () => {
   SuperTokens.init({
@@ -38,20 +33,76 @@ export const initSupertokens = () => {
     },
     framework: "express",
     recipeList: [
-      Dashboard.init(),
-      Session.init({
-        errorHandlers: {
-          onTryRefreshToken: async (message, _request, response) => {
-            logger.warn(
-              `Session expired: ${message}. User tried to refresh the session.`,
-            );
+      // see added endpoints
+      // https://app.swaggerhub.com/apis/supertokens/FDI/3.0.0
+      // https://supertokens.com/docs/references/fdi/introduction
+      ThirdParty.init({
+        signInAndUpFeature: {
+          providers: [
+            {
+              config: {
+                thirdPartyId: "google",
+                clients: [
+                  {
+                    clientType: "web",
+                    clientId: ENV.GOOGLE_CLIENT_ID,
+                    clientSecret: ENV.GOOGLE_CLIENT_SECRET,
+                    scope: [
+                      "https://www.googleapis.com/auth/userinfo.email",
+                      "https://www.googleapis.com/auth/calendar.readonly",
+                      "https://www.googleapis.com/auth/calendar.events",
+                    ],
+                  },
+                ],
+              },
+            },
+          ],
+        },
+        override: {
+          functions(originalImplementation) {
+            return {
+              ...originalImplementation,
+              async signInUp(
+                input: Parameters<typeof originalImplementation.signInUp>[0],
+              ) {
+                const response = await originalImplementation.signInUp(input);
 
-            response.setStatusCode(Status.UNAUTHORIZED);
-            response.sendJSONResponse({
-              error: "Session expired. Please log in again.",
-            });
+                if (response.status === "OK") {
+                  const providerUser = response.rawUserInfoFromProvider
+                    .fromIdTokenPayload as TokenPayload;
+
+                  const refreshToken = response.oAuthTokens["refresh_token"];
+
+                  if (input.session === undefined) {
+                    if (
+                      response.createdNewRecipeUser &&
+                      response.user.loginMethods.length === 1
+                    ) {
+                      // sign up logic
+                      await compassAuthService.signInWithSuperTokens(
+                        providerUser,
+                        refreshToken,
+                        response.user.id,
+                      );
+                    } else {
+                      // sign in logic
+                      await compassAuthService.loginWithSuperTokens(
+                        providerUser,
+                        response.oAuthTokens,
+                        response.user.id,
+                      );
+                    }
+                  }
+                }
+
+                return response;
+              },
+            };
           },
         },
+      }),
+      Dashboard.init(),
+      Session.init({
         override: {
           apis(originalImplementation) {
             return {
@@ -93,38 +144,6 @@ export const initSupertokens = () => {
                 }
 
                 return session;
-              },
-              async signOutPOST(input) {
-                const data: SupertokensAccessTokenPayload =
-                  input.session.getAccessTokenPayload();
-
-                const socketId = data.sessionHandle;
-
-                return originalImplementation.signOutPOST!(input).then(
-                  (res) => {
-                    webSocketServer.handleUserSignOut(socketId!);
-
-                    return res;
-                  },
-                );
-              },
-              async refreshPOST(input) {
-                return originalImplementation.refreshPOST!(input).then(
-                  async (session: SessionContainer) => {
-                    const data: SupertokensAccessTokenPayload =
-                      session.getAccessTokenPayload();
-
-                    const socketId = data.sessionHandle;
-
-                    webSocketServer.handleUserRefreshToken(socketId!);
-
-                    logger.debug(
-                      `Session refreshed for user ${data.sub} client.`,
-                    );
-
-                    return session;
-                  },
-                );
               },
             };
           },

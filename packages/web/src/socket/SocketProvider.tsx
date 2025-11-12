@@ -8,8 +8,6 @@ import {
   IMPORT_GCAL_START,
   SOMEDAY_EVENT_CHANGED,
   USER_METADATA,
-  USER_REFRESH_TOKEN,
-  USER_SIGN_OUT,
 } from "@core/constants/websocket.constants";
 import { UserMetadata } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
@@ -23,6 +21,7 @@ import {
 export const socket = io(ENV_WEB.BACKEND_BASEURL, {
   withCredentials: true,
   autoConnect: false,
+  transports: ["websocket"],
 });
 
 export const reconnect = (_message: string) => {
@@ -34,18 +33,11 @@ export const onceConnected = () => {
   socket.emit(FETCH_USER_METADATA);
 };
 
-const onConnectError = (err: Error) => {
-  console.error("connect_error:", err);
-};
-
 const onDisconnect = (_reason: string) => {};
 
-const onUserSignOut = () => {
+export const onUserSignOut = () => {
   socket.disconnect();
 };
-
-const onUserRefreshToken = () =>
-  reconnect("token refreshed, socket reconnecting");
 
 const effectHandler =
   <T extends unknown[] = unknown[]>(
@@ -61,10 +53,7 @@ const effectHandler =
   };
 
 socket.once("connect", onceConnected);
-socket.on("connect_error", onConnectError);
 socket.on("disconnect", onDisconnect);
-socket.on(USER_REFRESH_TOKEN, onUserRefreshToken);
-socket.on(USER_SIGN_OUT, onUserSignOut);
 
 const SocketProvider = ({ children }: { children: ReactNode }) => {
   const dispatch = useDispatch();

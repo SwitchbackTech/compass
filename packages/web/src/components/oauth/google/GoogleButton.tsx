@@ -7,7 +7,7 @@ export const GoogleButton = ({
   label = "Sign in with Google",
   style,
 }: {
-  onClick: () => void;
+  onClick?: () => void;
   disabled?: boolean;
   label?: string;
   style?: React.CSSProperties;

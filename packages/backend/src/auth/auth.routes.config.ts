@@ -27,16 +27,6 @@ export class AuthRoutes extends CommonRoutesConfig {
       .all(authMiddleware.verifyIsDev)
       .post([verifySession(), authController.revokeSessionsByUser]);
 
-    /**
-     * Google calls this route after successful oauth
-     */
-    this.app
-      .route(`/api/oauth/google`)
-      .post([
-        authMiddleware.verifyGoogleOauthCode,
-        authController.loginOrSignup,
-      ]);
-
     return this.app;
   }
 }

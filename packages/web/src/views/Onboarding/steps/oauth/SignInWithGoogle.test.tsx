@@ -5,9 +5,9 @@ import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { AuthApi } from "@web/common/apis/auth.api";
-import { SyncApi } from "@web/common/apis/sync.api";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
+import { SignInUpInput } from "../../../../components/oauth/ouath.types";
 import { withOnboardingProvider } from "../../components/OnboardingContext";
 import { SignInWithGoogle } from "./SignInWithGoogle";
 
@@ -38,8 +38,19 @@ jest.mock("@web/components/oauth/google/useGoogleLogin", () => ({
   useGoogleLogin: jest.fn(),
 }));
 
+jest.mock("@web/common/classes/Session", () => {
+  return {
+    session: {
+      doesSessionExist: jest.fn().mockResolvedValue(true),
+      events: {
+        subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() }),
+        pipe: jest.fn().mockReturnThis(),
+      },
+    },
+  };
+});
+
 const mockAuthApi = AuthApi as jest.Mocked<typeof AuthApi>;
-const mockSyncApi = SyncApi as jest.Mocked<typeof SyncApi>;
 const mockUseGoogleLogin = useGoogleLogin as jest.MockedFunction<
   typeof useGoogleLogin
 >;
@@ -104,7 +115,7 @@ describe("SignInWithGoogle", () => {
   describe("Google OAuth Success Flow", () => {
     it("calls onNext after successful authentication", async () => {
       userEvent.setup();
-      let onSuccessCallback: ((code: string) => void) | undefined;
+      let onSuccessCallback: ((data: SignInUpInput) => void) | undefined;
 
       mockAuthApi.loginOrSignup.mockResolvedValue({
         isNewUser: false,
@@ -123,7 +134,18 @@ describe("SignInWithGoogle", () => {
 
       // Simulate Google login success by calling the onSuccess callback
       if (onSuccessCallback) {
-        onSuccessCallback("test-auth-code");
+        onSuccessCallback({
+          clientType: "web",
+          thirdPartyId: "google",
+          redirectURIInfo: {
+            redirectURIOnProviderDashboard: "",
+            redirectURIQueryParams: {
+              code: "test-auth-code",
+              scope: "email profile",
+              state: undefined,
+            },
+          },
+        });
       }
 
       // Wait for the async operations to complete
@@ -133,7 +155,7 @@ describe("SignInWithGoogle", () => {
     });
 
     it("navigates to home for existing users", async () => {
-      let onSuccessCallback: ((code: string) => void) | undefined;
+      let onSuccessCallback: ((data: SignInUpInput) => void) | undefined;
 
       mockAuthApi.loginOrSignup.mockResolvedValue({
         isNewUser: false,
@@ -141,6 +163,7 @@ describe("SignInWithGoogle", () => {
 
       mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
         onSuccessCallback = onSuccess;
+
         return {
           login: mockLogin,
           loading: false,
@@ -152,147 +175,21 @@ describe("SignInWithGoogle", () => {
 
       // Simulate Google login success by calling the onSuccess callback
       if (onSuccessCallback) {
-        onSuccessCallback("test-auth-code");
+        onSuccessCallback({
+          clientType: "web",
+          thirdPartyId: "google",
+          redirectURIInfo: {
+            redirectURIOnProviderDashboard: "",
+            redirectURIQueryParams: {
+              code: "test-auth-code",
+              scope: "email profile",
+              state: undefined,
+            },
+          },
+        });
       }
 
       await waitFor(() => {
-        expect(mockNavigate).toHaveBeenCalledWith("/");
-        expect(mockOnNext).toHaveBeenCalledTimes(1);
-      });
-    });
-  });
-
-  describe("New User Import Flow", () => {
-    it("triggers background import for new users", async () => {
-      let onSuccessCallback: ((code: string) => void) | undefined;
-
-      mockAuthApi.loginOrSignup.mockResolvedValue({
-        isNewUser: true,
-      });
-      mockSyncApi.importGCal.mockResolvedValue(undefined);
-
-      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
-        onSuccessCallback = onSuccess;
-        return {
-          login: mockLogin,
-          loading: false,
-          data: null,
-        };
-      });
-
-      render(<SignInWithGoogleWithProvider {...defaultProps} />);
-
-      // Simulate Google login success by calling the onSuccess callback
-      if (onSuccessCallback) {
-        onSuccessCallback("test-auth-code");
-      }
-
-      await waitFor(() => {
-        expect(mockSyncApi.importGCal).toHaveBeenCalledTimes(1);
-        expect(mockOnNext).toHaveBeenCalledTimes(1);
-      });
-    });
-
-    it("continues onboarding even if import API call fails", async () => {
-      const consoleSpy = jest.spyOn(console, "error").mockImplementation();
-      let onSuccessCallback: ((code: string) => void) | undefined;
-
-      mockAuthApi.loginOrSignup.mockResolvedValue({
-        isNewUser: true,
-      });
-      mockSyncApi.importGCal.mockRejectedValue(new Error("Import failed"));
-
-      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
-        onSuccessCallback = onSuccess;
-        return {
-          login: mockLogin,
-          loading: false,
-          data: null,
-        };
-      });
-
-      render(<SignInWithGoogleWithProvider {...defaultProps} />);
-
-      // Simulate Google login success by calling the onSuccess callback
-      if (onSuccessCallback) {
-        onSuccessCallback("test-auth-code");
-      }
-
-      await waitFor(() => {
-        expect(mockSyncApi.importGCal).toHaveBeenCalledTimes(1);
-        expect(consoleSpy).toHaveBeenCalledWith(
-          "Background Google Calendar import failed:",
-          expect.any(Error),
-        );
-        expect(mockOnNext).toHaveBeenCalledTimes(1);
-      });
-
-      consoleSpy.mockRestore();
-    });
-
-    it("handles sync API call throwing synchronously", async () => {
-      const consoleSpy = jest.spyOn(console, "error").mockImplementation();
-      let onSuccessCallback: ((code: string) => void) | undefined;
-
-      mockAuthApi.loginOrSignup.mockResolvedValue({
-        isNewUser: true,
-      });
-      mockSyncApi.importGCal.mockRejectedValue(
-        new Error("Sync API threw synchronously"),
-      );
-
-      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
-        onSuccessCallback = onSuccess;
-        return {
-          login: mockLogin,
-          loading: false,
-          data: null,
-        };
-      });
-
-      render(<SignInWithGoogleWithProvider {...defaultProps} />);
-
-      // Simulate Google login success by calling the onSuccess callback
-      if (onSuccessCallback) {
-        onSuccessCallback("test-auth-code");
-      }
-
-      await waitFor(() => {
-        expect(consoleSpy).toHaveBeenCalledWith(
-          "Background Google Calendar import failed:",
-          expect.any(Error),
-        );
-        expect(mockOnNext).toHaveBeenCalledTimes(1);
-      });
-
-      consoleSpy.mockRestore();
-    });
-
-    it("does not trigger import for existing users", async () => {
-      let onSuccessCallback: ((code: string) => void) | undefined;
-
-      mockAuthApi.loginOrSignup.mockResolvedValue({
-        isNewUser: false,
-      });
-
-      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
-        onSuccessCallback = onSuccess;
-        return {
-          login: mockLogin,
-          loading: false,
-          data: null,
-        };
-      });
-
-      render(<SignInWithGoogleWithProvider {...defaultProps} />);
-
-      // Simulate Google login success by calling the onSuccess callback
-      if (onSuccessCallback) {
-        onSuccessCallback("test-auth-code");
-      }
-
-      await waitFor(() => {
-        expect(mockSyncApi.importGCal).not.toHaveBeenCalled();
         expect(mockNavigate).toHaveBeenCalledWith("/");
         expect(mockOnNext).toHaveBeenCalledTimes(1);
       });
@@ -331,112 +228,19 @@ describe("SignInWithGoogle", () => {
     });
   });
 
-  describe("Background Import Behavior", () => {
-    it("import call is non-blocking and asynchronous", async () => {
-      let importResolved = false;
-      let onSuccessCallback: ((code: string) => void) | undefined;
-
-      mockAuthApi.loginOrSignup.mockResolvedValue({
-        isNewUser: true,
-      });
-
-      // Make importGCal take some time to resolve
-      mockSyncApi.importGCal.mockImplementation(
-        () =>
-          new Promise((resolve) => {
-            setTimeout(() => {
-              importResolved = true;
-              resolve({} as any);
-            }, 100);
-          }),
-      );
-
-      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
-        onSuccessCallback = onSuccess;
-        return {
-          login: mockLogin,
-          loading: false,
-          data: null,
-        };
-      });
-
-      render(<SignInWithGoogleWithProvider {...defaultProps} />);
-
-      // Simulate Google login success by calling the onSuccess callback
-      if (onSuccessCallback) {
-        onSuccessCallback("test-auth-code");
-      }
-
-      // onNext should be called immediately, not waiting for import
-      await waitFor(() => {
-        expect(mockOnNext).toHaveBeenCalledTimes(1);
-      });
-
-      // Import should still be in progress
-      expect(importResolved).toBe(false);
-
-      // Wait for import to complete
-      await waitFor(() => {
-        expect(importResolved).toBe(true);
-      });
-    });
-
-    it("handles multiple rapid clicks without duplicate imports", async () => {
-      let onSuccessCallback: ((code: string) => void) | undefined;
-
-      mockAuthApi.loginOrSignup.mockResolvedValue({
-        isNewUser: true,
-      });
-      mockSyncApi.importGCal.mockResolvedValue(undefined);
-
-      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
-        onSuccessCallback = onSuccess;
-        return {
-          login: mockLogin,
-          loading: false,
-          data: null,
-        };
-      });
-
-      render(<SignInWithGoogleWithProvider {...defaultProps} />);
-
-      // Simulate multiple rapid Google login successes
-      if (onSuccessCallback) {
-        onSuccessCallback("test-auth-code");
-        onSuccessCallback("test-auth-code");
-        onSuccessCallback("test-auth-code");
-      }
-
-      await waitFor(() => {
-        // The component will call import multiple times because each onSuccess call
-        // triggers the full flow. This is expected behavior since the component
-        // doesn't have built-in deduplication for rapid successive calls.
-        expect(mockSyncApi.importGCal).toHaveBeenCalledTimes(3);
-        expect(mockOnNext).toHaveBeenCalledTimes(3); // onNext called each time
-      });
-    });
-  });
-
   describe("Integration with MSW", () => {
     it("works with mocked API responses", async () => {
-      let onSuccessCallback: ((code: string) => void) | undefined;
+      let onSuccessCallback: ((data: SignInUpInput) => void) | undefined;
 
       // Mock the auth endpoint
       server.use(
-        rest.post(`${ENV_WEB.API_BASEURL}/oauth/google`, (req, res, ctx) => {
+        rest.post(`${ENV_WEB.API_BASEURL}/signinup`, (_req, res, ctx) => {
           return res(ctx.json({ isNewUser: true }));
         }),
-        rest.post(
-          `${ENV_WEB.API_BASEURL}/sync/import-gcal`,
-          (req, res, ctx) => {
-            return res(ctx.status(204));
-          },
-        ),
       );
 
       // Use real API calls instead of mocks
       jest.unmock("@web/common/apis/auth.api");
-      jest.unmock("@web/common/apis/sync.api");
 
       mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
         onSuccessCallback = onSuccess;
@@ -451,7 +255,18 @@ describe("SignInWithGoogle", () => {
 
       // Simulate Google login success by calling the onSuccess callback
       if (onSuccessCallback) {
-        onSuccessCallback("test-auth-code");
+        onSuccessCallback({
+          clientType: "web",
+          thirdPartyId: "google",
+          redirectURIInfo: {
+            redirectURIOnProviderDashboard: "",
+            redirectURIQueryParams: {
+              code: "test-auth-code",
+              scope: "email profile",
+              state: undefined,
+            },
+          },
+        });
       }
 
       await waitFor(() => {
