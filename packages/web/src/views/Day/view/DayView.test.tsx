@@ -1,10 +1,9 @@
 import * as PostHogReact from "posthog-js/react";
 import { Provider as ReduxProvider } from "react-redux";
 import { MemoryRouter } from "react-router-dom";
-import { configureStore } from "@reduxjs/toolkit";
 import "@testing-library/jest-dom";
 import { render, screen, within } from "@testing-library/react";
-import { useDayEvents } from "../hooks/events/useDayEvents";
+import { store } from "@web/store";
 import { DayView } from "./DayView";
 
 // Mock PostHog
@@ -12,30 +11,9 @@ jest.mock("posthog-js/react", () => ({
   useFeatureFlagEnabled: jest.fn(() => false),
 }));
 
-// Mock useDayEvents hook
-jest.mock("../hooks/events/useDayEvents", () => ({
-  useDayEvents: jest.fn(() => ({
-    events: [],
-    isLoading: false,
-    error: null,
-  })),
-}));
-
-const createMockStore = () => {
-  return configureStore({
-    reducer: {
-      events: () => ({
-        entities: {
-          value: {},
-        },
-      }),
-    },
-  });
-};
-
 const renderWithRouter = () => {
   return render(
-    <ReduxProvider store={createMockStore()}>
+    <ReduxProvider store={store}>
       <MemoryRouter
         future={{
           v7_startTransition: true,
@@ -90,13 +68,6 @@ describe("DayView", () => {
       PostHogReact.useFeatureFlagEnabled,
     );
     mockUseFeatureFlagEnabled.mockReturnValue(true);
-
-    const mockUseDayEvents = jest.mocked(useDayEvents);
-    mockUseDayEvents.mockReturnValue({
-      events: [],
-      isLoading: false,
-      error: null,
-    });
 
     renderWithRouter();
 

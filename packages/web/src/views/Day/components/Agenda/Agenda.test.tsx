@@ -2,27 +2,40 @@ import { act } from "react";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useDayEvents } from "../../hooks/events/useDayEvents";
+import { Schema_Event } from "@core/types/event.types";
+import {
+  selectDayEvents,
+  selectIsDayEventsProcessing,
+} from "@web/ducks/events/selectors/event.selectors";
 import { Agenda } from "./Agenda";
 
-// Mock the useDayEvents hook
-jest.mock("../../hooks/events/useDayEvents");
-const mockUseDayEvents = useDayEvents as jest.MockedFunction<
-  typeof useDayEvents
->;
+const mockUseAppSelector = jest.fn();
+
+jest.mock("@web/store/store.hooks", () => ({
+  useAppSelector: (selector: unknown) => mockUseAppSelector(selector),
+}));
 
 describe("CalendarAgenda", () => {
+  let selectorEvents: Schema_Event[];
+  let selectorIsLoading: boolean;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    selectorEvents = [];
+    selectorIsLoading = false;
+    mockUseAppSelector.mockImplementation((selector) => {
+      if (selector === selectDayEvents) {
+        return selectorEvents;
+      }
+      if (selector === selectIsDayEventsProcessing) {
+        return selectorIsLoading;
+      }
+
+      return undefined;
+    });
   });
 
   it("should render time labels", () => {
-    mockUseDayEvents.mockReturnValue({
-      events: [],
-      isLoading: false,
-      error: null,
-    });
-
     render(<Agenda />);
 
     expect(screen.getByText("12am")).toBeInTheDocument();
@@ -47,13 +60,9 @@ describe("CalendarAgenda", () => {
         endDate: "2024-01-15T15:00:00Z",
         isAllDay: false,
       },
-    ];
+    ] as unknown as Schema_Event[];
 
-    mockUseDayEvents.mockReturnValue({
-      events: mockEvents,
-      isLoading: false,
-      error: null,
-    });
+    selectorEvents = mockEvents;
 
     render(<Agenda />);
 
@@ -69,13 +78,9 @@ describe("CalendarAgenda", () => {
         endDate: "2024-01-15T23:59:59Z",
         isAllDay: true,
       },
-    ];
+    ] as unknown as Schema_Event[];
 
-    mockUseDayEvents.mockReturnValue({
-      events: mockEvents,
-      isLoading: false,
-      error: null,
-    });
+    selectorEvents = mockEvents;
 
     render(<Agenda />);
 
@@ -83,11 +88,7 @@ describe("CalendarAgenda", () => {
   });
 
   it("should show skeleton during loading", () => {
-    mockUseDayEvents.mockReturnValue({
-      events: [],
-      isLoading: true,
-      error: null,
-    });
+    selectorIsLoading = true;
 
     render(<Agenda />);
 
@@ -105,13 +106,9 @@ describe("CalendarAgenda", () => {
         endDate: "2024-01-15T11:00:00Z",
         isAllDay: false,
       },
-    ];
+    ] as unknown as Schema_Event[];
 
-    mockUseDayEvents.mockReturnValue({
-      events: mockEvents,
-      isLoading: false,
-      error: null,
-    });
+    selectorEvents = mockEvents;
 
     render(<Agenda />);
 
@@ -142,13 +139,9 @@ describe("CalendarAgenda", () => {
         endDate: "2024-01-15T10:00:00Z",
         isAllDay: false,
       },
-    ];
+    ] as unknown as Schema_Event[];
 
-    mockUseDayEvents.mockReturnValue({
-      events: mockEvents,
-      isLoading: false,
-      error: null,
-    });
+    selectorEvents = mockEvents;
 
     render(<Agenda />);
 
@@ -199,13 +192,9 @@ describe("CalendarAgenda", () => {
         endDate: "2024-01-15T09:00:00Z",
         isAllDay: false,
       },
-    ];
+    ] as unknown as Schema_Event[];
 
-    mockUseDayEvents.mockReturnValue({
-      events: mockEvents,
-      isLoading: false,
-      error: null,
-    });
+    selectorEvents = mockEvents;
 
     render(<Agenda />);
 
@@ -250,14 +239,10 @@ describe("CalendarAgenda", () => {
         endDate: "2024-01-15T15:00:00Z",
         isAllDay: false,
       },
-    ];
+    ] as unknown as Schema_Event[];
 
     // Initial render with both events
-    mockUseDayEvents.mockReturnValue({
-      events: mockEvents,
-      isLoading: false,
-      error: null,
-    });
+    selectorEvents = mockEvents;
 
     const { rerender } = render(<Agenda />);
 
@@ -265,15 +250,11 @@ describe("CalendarAgenda", () => {
     expect(screen.getByText("Event 2")).toBeInTheDocument();
 
     // Simulate event-2 being deleted (removed from Redux)
-    // The useDayEvents hook will filter it out via useAppSelector
+    // The selector will filter it out via useAppSelector
     // This test verifies that filtered events don't appear in the UI
 
     // Update hook to return filtered events
-    mockUseDayEvents.mockReturnValue({
-      events: [mockEvents[0]], // Only event-1 remains
-      isLoading: false,
-      error: null,
-    });
+    selectorEvents = [mockEvents[0]];
 
     rerender(<Agenda />);
 

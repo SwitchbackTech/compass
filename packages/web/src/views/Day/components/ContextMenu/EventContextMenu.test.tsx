@@ -6,15 +6,22 @@ import userEvent from "@testing-library/user-event";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { store } from "@web/store";
-import { useDayEvents } from "../../hooks/events/useDayEvents";
 import { renderWithDayProviders } from "../../util/day.test-util";
 import { AgendaEvents } from "../Agenda/Events/AgendaEvent/AgendaEvents";
 
-// Mock the useDayEvents hook
-jest.mock("../../hooks/events/useDayEvents");
-const mockUseDayEvents = useDayEvents as jest.MockedFunction<
-  typeof useDayEvents
->;
+const mockSelectDayEvents = jest.fn();
+const mockSelectIsDayEventsProcessing = jest.fn();
+
+jest.mock("@web/ducks/events/selectors/event.selectors", () => {
+  const actual = jest.requireActual(
+    "@web/ducks/events/selectors/event.selectors",
+  );
+  return {
+    ...actual,
+    selectDayEvents: () => mockSelectDayEvents(),
+    selectIsDayEventsProcessing: () => mockSelectIsDayEventsProcessing(),
+  };
+});
 
 // Mock the AgendaEventMenu components to simplify testing
 jest.mock("../Agenda/Events/AgendaEventMenu/AgendaEventMenu", () => ({
@@ -53,11 +60,8 @@ describe("EventContextMenu", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     dispatchSpy = jest.spyOn(store, "dispatch");
-    mockUseDayEvents.mockReturnValue({
-      events: [],
-      isLoading: false,
-      error: null,
-    });
+    mockSelectDayEvents.mockReturnValue([]);
+    mockSelectIsDayEventsProcessing.mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -68,11 +72,7 @@ describe("EventContextMenu", () => {
     const user = userEvent.setup();
     const mockEvents = [baseEvent];
 
-    mockUseDayEvents.mockReturnValue({
-      events: mockEvents,
-      isLoading: false,
-      error: null,
-    });
+    mockSelectDayEvents.mockReturnValue(mockEvents);
 
     renderWithDayProviders(<AgendaEvents />);
 
@@ -95,11 +95,7 @@ describe("EventContextMenu", () => {
     const user = userEvent.setup();
     const mockEvents = [baseEvent];
 
-    mockUseDayEvents.mockReturnValue({
-      events: mockEvents,
-      isLoading: false,
-      error: null,
-    });
+    mockSelectDayEvents.mockReturnValue(mockEvents);
 
     renderWithDayProviders(<AgendaEvents />);
 
@@ -123,11 +119,7 @@ describe("EventContextMenu", () => {
     const user = userEvent.setup();
     const mockEvents = [baseEvent];
 
-    mockUseDayEvents.mockReturnValue({
-      events: mockEvents,
-      isLoading: false,
-      error: null,
-    });
+    mockSelectDayEvents.mockReturnValue(mockEvents);
 
     renderWithDayProviders(<AgendaEvents />);
 
@@ -160,11 +152,7 @@ describe("EventContextMenu", () => {
     const user = userEvent.setup();
     const mockEvents = [baseEvent];
 
-    mockUseDayEvents.mockReturnValue({
-      events: mockEvents,
-      isLoading: false,
-      error: null,
-    });
+    mockSelectDayEvents.mockReturnValue(mockEvents);
 
     renderWithDayProviders(<AgendaEvents />);
 
@@ -196,11 +184,7 @@ describe("EventContextMenu", () => {
     const user = userEvent.setup();
     const mockEvents = [baseEvent];
 
-    mockUseDayEvents.mockReturnValue({
-      events: mockEvents,
-      isLoading: false,
-      error: null,
-    });
+    mockSelectDayEvents.mockReturnValue(mockEvents);
 
     renderWithDayProviders(<AgendaEvents />);
 
@@ -224,11 +208,7 @@ describe("EventContextMenu", () => {
       { ...baseEvent, _id: "event-2", title: "Second Event" },
     ];
 
-    mockUseDayEvents.mockReturnValue({
-      events: mockEvents,
-      isLoading: false,
-      error: null,
-    });
+    mockSelectDayEvents.mockReturnValue(mockEvents);
 
     renderWithDayProviders(<AgendaEvents />);
 
