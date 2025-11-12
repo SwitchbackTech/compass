@@ -3,11 +3,14 @@ import { Schema_Event } from "@core/types/event.types";
 import { isDark } from "@core/util/color.utils";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { getAgendaEventPosition } from "@web/views/Day/util/agenda/agenda.util";
+import { useEventContextMenu } from "../../../ContextMenu/EventContextMenuContext";
 import { AgendaEventMenu } from "../AgendaEventMenu/AgendaEventMenu";
 import { AgendaEventMenuContent } from "../AgendaEventMenu/AgendaEventMenuContent";
 import { AgendaEventMenuTrigger } from "../AgendaEventMenu/AgendaEventMenuTrigger";
 
 export const AgendaEvent = ({ event }: { event: Schema_Event }) => {
+  const { openContextMenu } = useEventContextMenu();
+
   if (!event.startDate || !event.endDate) return null;
 
   const startDate = new Date(event.startDate);
@@ -22,6 +25,11 @@ export const AgendaEvent = ({ event }: { event: Schema_Event }) => {
   const priority = event.priority || Priorities.UNASSIGNED;
   const backgroundColor = colorByPriority[priority];
   const isBackgroundDark = isDark(backgroundColor);
+
+  const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    openContextMenu(event, { x: e.clientX, y: e.clientY });
+  };
 
   return (
     <AgendaEventMenu>
@@ -38,6 +46,8 @@ export const AgendaEvent = ({ event }: { event: Schema_Event }) => {
           tabIndex={0}
           role="button"
           data-event-id={event._id}
+          aria-label={event.title || "Untitled event"}
+          onContextMenu={handleContextMenu}
         >
           <span className="flex-1 truncate">{event.title || "Untitled"}</span>
         </div>

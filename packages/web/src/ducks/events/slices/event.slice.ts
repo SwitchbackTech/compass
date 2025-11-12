@@ -12,6 +12,7 @@ import {
   Action_ReplaceEvent,
   Action_TimezoneChange,
   Entities_Event,
+  Payload_DeleteEvent,
   Payload_EditEvent,
   Payload_GetPaginatedEvents,
 } from "@web/ducks/events/event.types";
@@ -27,7 +28,7 @@ export const createEventSlice = createAsyncSlice<Schema_Event>({
   name: "createEvent",
 });
 
-export const deleteEventSlice = createAsyncSlice<{ _id: string }>({
+export const deleteEventSlice = createAsyncSlice<Payload_DeleteEvent>({
   name: "deleteEvent",
 });
 

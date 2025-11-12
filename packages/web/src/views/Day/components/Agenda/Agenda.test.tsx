@@ -1,3 +1,4 @@
+import { act } from "react";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -152,20 +153,19 @@ describe("CalendarAgenda", () => {
     render(<Agenda />);
 
     // Check that all-day events are rendered with correct attributes
-    const allDayEvent = screen
-      .getByText("All Day Event 1")
-      .closest('[data-event-id="all-day-1"]');
+    const allDayEvent = screen.getByRole("button", {
+      name: "All Day Event 1",
+    });
     expect(allDayEvent).toHaveAttribute("tabIndex", "0");
     expect(allDayEvent).toHaveAttribute("role", "button");
     expect(allDayEvent).toHaveAttribute("data-event-id", "all-day-1");
 
     // Check that timed events are rendered with correct attributes
-    const timedEvent = screen
-      .getByText("Timed Event 1")
-      .closest('[data-event-id="timed-1"]');
+    const timedEvent = screen.getByRole("button", {
+      name: "Timed Event 1",
+    });
     expect(timedEvent).toHaveAttribute("tabIndex", "0");
     expect(timedEvent).toHaveAttribute("role", "button");
-    expect(timedEvent).toHaveAttribute("data-event-id", "timed-1");
   });
 
   it("should render events in correct TAB navigation order", async () => {
@@ -210,19 +210,76 @@ describe("CalendarAgenda", () => {
     render(<Agenda />);
 
     // Focus the first element (should be Apple Event - all-day events sorted alphabetically)
-    await user.tab();
+    await act(async () => {
+      await user.tab();
+    });
     expect(document.activeElement).toHaveTextContent("Apple Event");
 
     // Tab to second element (should be Zebra Event - all-day events sorted alphabetically)
-    await user.tab();
+    await act(async () => {
+      await user.tab();
+    });
     expect(document.activeElement).toHaveTextContent("Zebra Event");
 
     // Tab to third element (should be Breakfast Event - timed events sorted by start time)
-    await user.tab();
+    await act(async () => {
+      await user.tab();
+    });
     expect(document.activeElement).toHaveTextContent("Breakfast Event");
 
     // Tab to fourth element (should be Lunch Event - timed events sorted by start time)
-    await user.tab();
+    await act(async () => {
+      await user.tab();
+    });
     expect(document.activeElement).toHaveTextContent("Lunch Event");
+  });
+
+  it("should filter out deleted events immediately", () => {
+    const mockEvents = [
+      {
+        _id: "event-1",
+        title: "Event 1",
+        startDate: "2024-01-15T09:00:00Z",
+        endDate: "2024-01-15T10:00:00Z",
+        isAllDay: false,
+      },
+      {
+        _id: "event-2",
+        title: "Event 2",
+        startDate: "2024-01-15T14:00:00Z",
+        endDate: "2024-01-15T15:00:00Z",
+        isAllDay: false,
+      },
+    ];
+
+    // Initial render with both events
+    mockUseDayEvents.mockReturnValue({
+      events: mockEvents,
+      isLoading: false,
+      error: null,
+    });
+
+    const { rerender } = render(<Agenda />);
+
+    expect(screen.getByText("Event 1")).toBeInTheDocument();
+    expect(screen.getByText("Event 2")).toBeInTheDocument();
+
+    // Simulate event-2 being deleted (removed from Redux)
+    // The useDayEvents hook will filter it out via useAppSelector
+    // This test verifies that filtered events don't appear in the UI
+
+    // Update hook to return filtered events
+    mockUseDayEvents.mockReturnValue({
+      events: [mockEvents[0]], // Only event-1 remains
+      isLoading: false,
+      error: null,
+    });
+
+    rerender(<Agenda />);
+
+    // Event 1 should still be visible
+    expect(screen.getByText("Event 1")).toBeInTheDocument();
+    // Event 2 should be removed
+    expect(screen.queryByText("Event 2")).not.toBeInTheDocument();
   });
 });

@@ -22,6 +22,7 @@ packages/**/yarn.lock
 .claude/
 .cursor/
 .idea/
+.mcp.json
 .vscode/
 
 build/

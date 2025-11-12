@@ -1,21 +1,21 @@
 import React from "react";
 import { FloatingContext } from "@floating-ui/react";
-import { Task } from "../../task.types";
+import { Schema_Event } from "@core/types/event.types";
 import { BaseContextMenu } from "./BaseContextMenu";
-import { TaskContextMenuItems } from "./TaskContextMenuItems";
+import { EventContextMenuItems } from "./EventContextMenuItems";
 
-interface TaskContextMenuProps {
-  task: Task;
+interface EventContextMenuProps {
+  event: Schema_Event;
   onOutsideClick: () => void;
   close: () => void;
   style: React.CSSProperties;
   context: FloatingContext;
 }
 
-export const TaskContextMenu = React.forwardRef<
+export const EventContextMenu = React.forwardRef<
   HTMLUListElement,
-  TaskContextMenuProps
->(({ task, onOutsideClick, close, style, context }, ref) => {
+  EventContextMenuProps
+>(({ event, onOutsideClick, close, style, context }, ref) => {
   return (
     <BaseContextMenu
       ref={ref}
@@ -23,9 +23,9 @@ export const TaskContextMenu = React.forwardRef<
       style={style}
       context={context}
     >
-      <TaskContextMenuItems task={task} close={close} />
+      <EventContextMenuItems event={event} close={close} />
     </BaseContextMenu>
   );
 });
 
-TaskContextMenu.displayName = "TaskContextMenu";
+EventContextMenu.displayName = "EventContextMenu";

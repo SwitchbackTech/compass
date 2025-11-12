@@ -72,7 +72,7 @@ export interface Payload_ConvertEvent {
   event: WithCompassId<Omit<Schema_WebEvent, "_id">>;
 }
 
-interface Payload_DeleteEvent {
+export interface Payload_DeleteEvent {
   _id: string;
   applyTo?: RecurringEventUpdateScope;
 }

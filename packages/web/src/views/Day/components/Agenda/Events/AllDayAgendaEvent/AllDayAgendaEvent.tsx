@@ -18,6 +18,7 @@ export const AllDayAgendaEvent = ({ event }: { event: Schema_Event }) => {
           title={event.title}
           tabIndex={0}
           role="button"
+          aria-label={event.title || "Untitled event"}
           data-event-id={event._id}
         >
           <span className="flex-1 truncate">{event.title}</span>

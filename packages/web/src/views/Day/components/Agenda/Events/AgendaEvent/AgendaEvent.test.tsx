@@ -4,6 +4,7 @@ import { render, screen } from "@testing-library/react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { colorByPriority } from "@web/common/styles/theme.util";
+import { EventContextMenuProvider } from "../../../ContextMenu/EventContextMenuContext";
 import { AgendaEvent } from "./AgendaEvent";
 
 // Mock the AgendaEventMenu components to simplify testing
@@ -23,6 +24,10 @@ jest.mock("../AgendaEventMenu/AgendaEventMenuTrigger", () => ({
   ),
 }));
 
+function renderWithMenuProvider(ui: React.ReactElement) {
+  return render(<EventContextMenuProvider>{ui}</EventContextMenuProvider>);
+}
+
 describe("AgendaEvent", () => {
   const baseEvent: Schema_Event = {
     _id: new ObjectId().toString(),
@@ -40,7 +45,7 @@ describe("AgendaEvent", () => {
       priority: Priorities.UNASSIGNED,
     };
 
-    render(<AgendaEvent event={event} />);
+    renderWithMenuProvider(<AgendaEvent event={event} />);
 
     const eventElement = screen.getByRole("button");
     expect(eventElement).toHaveStyle({
@@ -54,7 +59,7 @@ describe("AgendaEvent", () => {
       priority: Priorities.WORK,
     };
 
-    render(<AgendaEvent event={event} />);
+    renderWithMenuProvider(<AgendaEvent event={event} />);
 
     const eventElement = screen.getByRole("button");
     expect(eventElement).toHaveStyle({
@@ -68,7 +73,7 @@ describe("AgendaEvent", () => {
       priority: Priorities.RELATIONS,
     };
 
-    render(<AgendaEvent event={event} />);
+    renderWithMenuProvider(<AgendaEvent event={event} />);
 
     const eventElement = screen.getByRole("button");
     expect(eventElement).toHaveStyle({
@@ -82,7 +87,7 @@ describe("AgendaEvent", () => {
       priority: Priorities.SELF,
     };
 
-    render(<AgendaEvent event={event} />);
+    renderWithMenuProvider(<AgendaEvent event={event} />);
 
     const eventElement = screen.getByRole("button");
     expect(eventElement).toHaveStyle({
@@ -96,7 +101,7 @@ describe("AgendaEvent", () => {
       priority: undefined,
     };
 
-    render(<AgendaEvent event={event as Schema_Event} />);
+    renderWithMenuProvider(<AgendaEvent event={event as Schema_Event} />);
 
     const eventElement = screen.getByRole("button");
     expect(eventElement).toHaveStyle({
@@ -110,7 +115,9 @@ describe("AgendaEvent", () => {
       startDate: undefined,
     };
 
-    const { container } = render(<AgendaEvent event={event as Schema_Event} />);
+    const { container } = renderWithMenuProvider(
+      <AgendaEvent event={event as Schema_Event} />,
+    );
     expect(container.firstChild).toBeNull();
   });
 
@@ -120,7 +127,9 @@ describe("AgendaEvent", () => {
       endDate: undefined,
     };
 
-    const { container } = render(<AgendaEvent event={event as Schema_Event} />);
+    const { container } = renderWithMenuProvider(
+      <AgendaEvent event={event as Schema_Event} />,
+    );
     expect(container.firstChild).toBeNull();
   });
 });
