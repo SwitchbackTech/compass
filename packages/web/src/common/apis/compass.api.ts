@@ -1,9 +1,9 @@
 import axios, { AxiosError } from "axios";
-import { signOut } from "supertokens-auth-react/recipe/session";
 import { Status } from "@core/errors/status.codes";
+import { session } from "@web/common/classes/Session";
 import { AUTH_FAILURE_REASONS } from "@web/common/constants/auth.constants";
 import { ENV_WEB } from "@web/common/constants/env.constants";
-import { ROOT_ROUTES } from "../constants/routes";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
 
 export const CompassApi = axios.create({
   baseURL: ENV_WEB.API_BASEURL,
@@ -19,7 +19,7 @@ const _signOut = async (status: SignoutStatus) => {
     alert("Login required, cuz security 😇");
   }
 
-  await signOut();
+  await session.signOut();
 
   if (window.location.pathname === ROOT_ROUTES.LOGIN) {
     return;

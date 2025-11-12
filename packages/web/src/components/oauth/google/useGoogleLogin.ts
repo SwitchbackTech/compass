@@ -1,9 +1,10 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useGoogleLogin as useGoogleLoginBase } from "@react-oauth/google";
+import { SignInUpInput } from "@web/components/oauth/ouath.types";
 
 const SCOPES_REQUIRED = [
-  "email",
+  "https://www.googleapis.com/auth/userinfo.email",
   "https://www.googleapis.com/auth/calendar.readonly",
   "https://www.googleapis.com/auth/calendar.events",
 ];
@@ -19,7 +20,7 @@ export const useGoogleLogin = ({
   onError,
 }: {
   onStart?: () => void;
-  onSuccess?: (code: string) => void;
+  onSuccess?: (res: SignInUpInput) => Promise<void>;
   onError?: (error: unknown) => void;
 }) => {
   const [data, setData] = useState<{
@@ -47,17 +48,23 @@ export const useGoogleLogin = ({
         return;
       }
 
-      setData({ code, scope, state });
-      setLoading(true);
-
-      onStart?.();
-
       try {
-        onSuccess?.(code);
+        await onSuccess?.({
+          thirdPartyId: "google",
+          clientType: "web",
+          redirectURIInfo: {
+            redirectURIOnProviderDashboard: window.location.origin,
+            redirectURIQueryParams: { code, state, scope },
+          },
+        });
+
+        setData({ code, scope, state });
       } catch (e) {
         console.error(e);
         alert("Login failed. Please try again.");
         onError?.(e);
+      } finally {
+        setLoading(false);
       }
     },
     onError: (error) => {
@@ -67,5 +74,15 @@ export const useGoogleLogin = ({
     },
   });
 
-  return { login, data, loading };
+  return {
+    login: useCallback(async () => {
+      onStart?.();
+      setData(null);
+      setLoading(true);
+
+      return login();
+    }, [login, onStart, setData, setLoading]),
+    data,
+    loading,
+  };
 };

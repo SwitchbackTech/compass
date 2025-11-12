@@ -49,8 +49,8 @@ export const useOnboarding = (): OnboardingContextType => {
   return context;
 };
 
-export const withOnboardingProvider = (
-  Component: React.ComponentType<unknown>,
+export const withOnboardingProvider = <T = unknown,>(
+  Component: React.ComponentType<T>,
 ) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const WrappedWithOnboardingProvider = (props: any) => {

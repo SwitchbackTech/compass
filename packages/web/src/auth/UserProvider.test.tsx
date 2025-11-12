@@ -1,16 +1,12 @@
 import { usePostHog } from "posthog-js/react";
-import Session from "supertokens-auth-react/recipe/session";
 import "@testing-library/jest-dom";
 import { render, waitFor } from "@testing-library/react";
+import { session } from "../common/classes/Session";
 import { UserProvider } from "./UserProvider";
 
 // Mock PostHog
 jest.mock("posthog-js/react");
 const mockUsePostHog = usePostHog as jest.MockedFunction<typeof usePostHog>;
-
-// Mock SuperTokens Session
-jest.mock("supertokens-auth-react/recipe/session");
-const mockSession = Session as jest.Mocked<typeof Session>;
 
 // Mock AbsoluteOverflowLoader
 jest.mock("@web/components/AbsoluteOverflowLoader", () => ({
@@ -19,14 +15,13 @@ jest.mock("@web/components/AbsoluteOverflowLoader", () => ({
 
 describe("UserProvider", () => {
   const mockIdentify = jest.fn();
-  const mockGetAccessTokenPayloadSecurely = jest.fn();
+
+  const mockGetAccessTokenPayloadSecurely = jest
+    .spyOn(session, "getAccessTokenPayloadSecurely")
+    .mockImplementation(jest.fn());
 
   beforeEach(() => {
     jest.clearAllMocks();
-
-    // Default mock implementation
-    mockSession.getAccessTokenPayloadSecurely =
-      mockGetAccessTokenPayloadSecurely;
   });
 
   describe("PostHog Integration", () => {

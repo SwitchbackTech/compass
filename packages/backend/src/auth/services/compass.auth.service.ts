@@ -1,3 +1,4 @@
+import { Credentials, TokenPayload } from "google-auth-library";
 import supertokens from "supertokens-node";
 import Session from "supertokens-node/recipe/session";
 import { Logger } from "@core/logger/winston.logger";
@@ -5,7 +6,17 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { getSync } from "@backend/sync/util/sync.queries";
 import { canDoIncrementalSync } from "@backend/sync/util/sync.util";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import {
+  findCompassUserBy,
+  updateGoogleRefreshToken,
+} from "@backend/user/queries/user.queries";
+import {
+  StringV4Schema,
+  zObjectId,
+} from "../../../../core/src/types/type.utils";
+import syncService from "../../sync/services/sync.service";
+import userService from "../../user/services/user.service";
+import GoogleAuthService from "./google.auth.service";
 
 const logger = Logger("app:auth.service");
 
@@ -59,6 +70,81 @@ class CompassAuthService {
     const sessionsRevoked = await Session.revokeAllSessionsForUser(userId);
     return { sessionsRevoked: sessionsRevoked.length };
   };
+
+  async signInWithSuperTokens(
+    providerUser: TokenPayload,
+    refreshToken: string,
+    superTokensUserId: string,
+  ) {
+    const { userId } = await userService.initUserData(
+      providerUser,
+      refreshToken,
+    );
+
+    await supertokens.createUserIdMapping({
+      superTokensUserId,
+      externalUserId: userId,
+      externalUserIdInfo: "Compass User ID",
+    });
+
+    return { cUserId: userId };
+  }
+
+  async loginWithSuperTokens(
+    providerUser: TokenPayload,
+    oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">,
+    superTokensUserId: string,
+  ) {
+    const user = await findCompassUserBy(
+      "google.googleId",
+      StringV4Schema.parse(providerUser.sub),
+    );
+
+    const userId = zObjectId.parse(user?._id).toString();
+
+    const gAuthClient = new GoogleAuthService();
+
+    gAuthClient.oauthClient.setCredentials(oAuthTokens);
+
+    const gcal = gAuthClient.getGcalClient();
+
+    const refreshToken = StringV4Schema.parse(oAuthTokens.refresh_token);
+
+    if (refreshToken !== user?.google.gRefreshToken) {
+      await updateGoogleRefreshToken(userId, refreshToken);
+    }
+
+    try {
+      await syncService.importIncremental(userId, gcal);
+    } catch (e) {
+      if (
+        e instanceof Error &&
+        e.message === SyncError.NoSyncToken.description
+      ) {
+        logger.info(
+          `Resyncing google data due to missing sync for user: ${userId}`,
+        );
+
+        userService.restartGoogleCalendarSync(userId);
+      }
+    }
+
+    await userService.saveTimeFor("lastLoggedInAt", userId);
+
+    const id = await supertokens.getUserIdMapping({ userId });
+
+    // for existing users without mapping
+    if (id.status === "UNKNOWN_MAPPING_ERROR") {
+      await supertokens.createUserIdMapping({
+        superTokensUserId,
+        externalUserId: userId,
+        externalUserIdInfo: "Compass User ID",
+        force: true,
+      });
+    }
+
+    return { cUserId: userId };
+  }
 }
 
 export default new CompassAuthService();

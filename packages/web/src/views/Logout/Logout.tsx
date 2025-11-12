@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Session, { signOut } from "supertokens-auth-react/recipe/session";
 import { SyncApi } from "@web/common/apis/sync.api";
+import { session } from "@web/common/classes/Session";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
@@ -15,7 +15,7 @@ export const LogoutView = () => {
 
   useEffect(() => {
     const checkSession = async () => {
-      const isLoggedIn = await Session.doesSessionExist();
+      const isLoggedIn = await session.doesSessionExist();
       if (!isLoggedIn) {
         alert("You're not logged in");
         navigate(ROOT_ROUTES.LOGIN);
@@ -32,7 +32,7 @@ export const LogoutView = () => {
     setIsLoggingOut(true);
 
     await SyncApi.stopWatches();
-    await signOut();
+    await session.signOut();
 
     setIsLoggingOut(false);
 
