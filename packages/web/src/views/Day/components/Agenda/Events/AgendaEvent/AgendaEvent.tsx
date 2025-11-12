@@ -45,6 +45,7 @@ export const AgendaEvent = ({ event }: { event: Schema_Event }) => {
           }}
           tabIndex={0}
           role="button"
+          data-event-id={event._id}
           aria-label={event.title || "Untitled event"}
           onContextMenu={handleContextMenu}
         >
