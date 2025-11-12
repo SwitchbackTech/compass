@@ -3,7 +3,9 @@ import dayjs from "@core/util/date/dayjs";
 import { parseCompassEventDate } from "@core/util/event/event.util";
 import { Timer } from "@core/util/timer";
 import { Schema_WebEvent } from "@web/common/types/web.event.types";
-import { useTodayEvents } from "@web/views/Day/hooks/events/useTodayEvents";
+import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
+import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
 
 const _id = "FOCUS_TIMER";
 const startDate = new Date();
@@ -16,8 +18,20 @@ export function useRealtimeFocusData(): {
   nextEventStarts?: string;
 } {
   const [now, setNow] = useState(timer.startDate);
-  const events = useTodayEvents();
+  useDayEvents(dayjs());
+  const dayEvents = useAppSelector(selectDayEvents);
   const [nextEvent, setNextEvent] = useState<Schema_WebEvent | undefined>();
+
+  // Transform Redux events to the format expected by the rest of the hook
+  const events = useMemo(() => {
+    return dayEvents.map((event) => ({
+      id: event._id ?? "",
+      title: event.title ?? "",
+      startTime: new Date(event.startDate as string),
+      endTime: new Date(event.endDate as string),
+      isAllDay: event.isAllDay ?? false,
+    }));
+  }, [dayEvents]);
 
   const updateNow = useCallback(() => setNow(new Date()), []);
 

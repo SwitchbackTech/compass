@@ -2,14 +2,27 @@ import dayjs from "dayjs";
 import { faker } from "@faker-js/faker";
 import { renderHook, waitFor } from "@testing-library/react";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
-import * as useTodayEventsHook from "@web/views/Day/hooks/events/useTodayEvents";
+import { useAppSelector } from "@web/store/store.hooks";
+import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
 import { useRealtimeFocusData } from "./useRealtimeFocusData";
 
-describe("useRealtimeFocusData", () => {
-  it("updates the current time from timer ticks", async () => {
-    const useTodayEventsSpy = jest.spyOn(useTodayEventsHook, "useTodayEvents");
+jest.mock("@web/store/store.hooks", () => ({
+  useAppSelector: jest.fn(),
+  useAppDispatch: jest.fn(() => jest.fn()),
+}));
 
-    useTodayEventsSpy.mockImplementation(() => []);
+jest.mock("@web/views/Day/hooks/events/useDayEvents", () => ({
+  useDayEvents: jest.fn(),
+}));
+
+describe("useRealtimeFocusData", () => {
+  beforeEach(() => {
+    (useDayEvents as jest.Mock).mockImplementation(() => {});
+    (useAppSelector as jest.Mock).mockReturnValue([]);
+  });
+
+  it("updates the current time from timer ticks", async () => {
+    (useAppSelector as jest.Mock).mockReturnValue([]);
 
     const { result, unmount } = renderHook(() => useRealtimeFocusData());
 
@@ -37,20 +50,9 @@ describe("useRealtimeFocusData", () => {
       startDate: futureStartDate.toISOString(),
     });
 
-    const events: useTodayEventsHook.TodayEvent[] = [
-      pastEvent,
-      futureEvent,
-    ].map((e) => ({
-      id: e._id,
-      title: e.title ?? "",
-      startTime: new Date(e.startDate!),
-      endTime: new Date(e.endDate!),
-      isAllDay: e.isAllDay ?? false,
-    }));
+    const reduxEvents = [pastEvent, futureEvent];
 
-    const useTodayEventsSpy = jest.spyOn(useTodayEventsHook, "useTodayEvents");
-
-    useTodayEventsSpy.mockImplementation(() => events);
+    (useAppSelector as jest.Mock).mockReturnValue(reduxEvents);
 
     const { result, unmount } = renderHook(() => useRealtimeFocusData());
 
@@ -66,7 +68,6 @@ describe("useRealtimeFocusData", () => {
       });
     } finally {
       unmount();
-      useTodayEventsSpy.mockRestore();
     }
   });
 
@@ -80,17 +81,9 @@ describe("useRealtimeFocusData", () => {
       startDate: pastStartDate.toISOString(),
     });
 
-    const events: useTodayEventsHook.TodayEvent[] = [pastEvent].map((e) => ({
-      id: e._id,
-      title: e.title ?? "",
-      startTime: new Date(e.startDate!),
-      endTime: new Date(e.endDate!),
-      isAllDay: e.isAllDay ?? false,
-    }));
+    const reduxEvents = [pastEvent];
 
-    const useTodayEventsSpy = jest.spyOn(useTodayEventsHook, "useTodayEvents");
-
-    useTodayEventsSpy.mockImplementation(() => events);
+    (useAppSelector as jest.Mock).mockReturnValue(reduxEvents);
 
     const { result, unmount } = renderHook(() => useRealtimeFocusData());
 
@@ -101,7 +94,6 @@ describe("useRealtimeFocusData", () => {
       });
     } finally {
       unmount();
-      useTodayEventsSpy.mockRestore();
     }
   });
 });
