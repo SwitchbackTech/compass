@@ -12,7 +12,7 @@ export function useTaskState({
   const [tasks, setTasks] = useState<Task[]>([]);
   const [editingTitle, setEditingTitle] = useState("");
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-  const [selectedTaskIndex, setSelectedTaskIndex] = useState(-1);
+  const [selectedTask, selectTask] = useState<string | undefined>();
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [isCancellingEdit, setIsCancellingEdit] = useState(false);
   const [undoState, setUndoState] = useState<UndoOperation | null>(null);
@@ -28,8 +28,8 @@ export function useTaskState({
     setEditingTitle,
     editingTaskId,
     setEditingTaskId,
-    selectedTaskIndex,
-    setSelectedTaskIndex,
+    selectedTask,
+    selectTask,
     isAddingTask,
     setIsAddingTask,
     isCancellingEdit,

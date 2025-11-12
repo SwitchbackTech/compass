@@ -3,26 +3,9 @@ import { faker } from "@faker-js/faker";
 import { renderHook, waitFor } from "@testing-library/react";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import * as useTodayEventsHook from "@web/views/Day/hooks/events/useTodayEvents";
-import { useRealtimeFocusData } from "./useRealtimeFocusData";
+import { useUpcomingEvent } from "./useUpcomingEvent";
 
-describe("useRealtimeFocusData", () => {
-  it("updates the current time from timer ticks", async () => {
-    const useTodayEventsSpy = jest.spyOn(useTodayEventsHook, "useTodayEvents");
-
-    useTodayEventsSpy.mockImplementation(() => []);
-
-    const { result, unmount } = renderHook(() => useRealtimeFocusData());
-
-    try {
-      const initial = result.current.now.getTime();
-      await waitFor(() =>
-        expect(result.current.now.getTime()).toBeGreaterThan(initial),
-      );
-    } finally {
-      unmount();
-    }
-  });
-
+describe("useUpcomingEvent", () => {
   it("identifies the next upcoming event and relative start time", async () => {
     const pastStartDate = faker.date.past({ refDate: new Date() });
     const futureStartDate = faker.date.future({ refDate: new Date() });
@@ -52,17 +35,15 @@ describe("useRealtimeFocusData", () => {
 
     useTodayEventsSpy.mockImplementation(() => events);
 
-    const { result, unmount } = renderHook(() => useRealtimeFocusData());
+    const { result, unmount } = renderHook(() => useUpcomingEvent());
 
     try {
       await waitFor(() =>
-        expect(result.current.nextEvent?._id).toBe(futureEvent._id),
+        expect(result.current.event?._id).toBe(futureEvent._id),
       );
       await waitFor(() => {
-        expect(result.current.nextEventStarts).toBeDefined();
-        expect(result.current.nextEventStarts?.toLowerCase()).toContain(
-          "from now",
-        );
+        expect(result.current.starts).toBeDefined();
+        expect(result.current.starts?.toLowerCase()).toContain("from now");
       });
     } finally {
       unmount();
@@ -92,12 +73,12 @@ describe("useRealtimeFocusData", () => {
 
     useTodayEventsSpy.mockImplementation(() => events);
 
-    const { result, unmount } = renderHook(() => useRealtimeFocusData());
+    const { result, unmount } = renderHook(() => useUpcomingEvent());
 
     try {
       await waitFor(() => {
-        expect(result.current.nextEvent).toBeUndefined();
-        expect(result.current.nextEventStarts).toBeUndefined();
+        expect(result.current.event).toBeUndefined();
+        expect(result.current.starts).toBeUndefined();
       });
     } finally {
       unmount();

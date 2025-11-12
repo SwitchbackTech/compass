@@ -11,7 +11,7 @@ interface TaskContextValue {
   editingTaskId: string | null;
   isAddingTask: boolean;
   isCancellingEdit: boolean;
-  selectedTaskIndex: number;
+  selectedTask?: string;
   undoState: UndoOperation | null;
   undoToastId: string | number | null;
   addTask: (title: string) => Task;
@@ -29,7 +29,7 @@ interface TaskContextValue {
   onInputKeyDown: (e: React.KeyboardEvent, taskId: string) => void;
   onTitleChange: (title: string) => void;
   onStatusToggle: (id: string) => void;
-  setSelectedTaskIndex: (index: number) => void;
+  selectTask: (id?: string) => void;
   setEditingTitle: (title: string) => void;
   setEditingTaskId: (taskId: string | null) => void;
   setIsAddingTask: (isAdding: boolean) => void;
@@ -78,7 +78,7 @@ export function TaskProvider({ children }: TaskProviderProps) {
     tasks: state.tasks,
     editingTitle: state.editingTitle,
     editingTaskId: state.editingTaskId,
-    selectedTaskIndex: state.selectedTaskIndex,
+    selectedTask: state.selectedTask,
     isAddingTask: state.isAddingTask,
     isCancellingEdit: state.isCancellingEdit,
     undoState: state.undoState,
@@ -96,7 +96,7 @@ export function TaskProvider({ children }: TaskProviderProps) {
     onStatusToggle: actions.toggleTaskStatus,
     setEditingTitle: state.setEditingTitle,
     setEditingTaskId: state.setEditingTaskId,
-    setSelectedTaskIndex: state.setSelectedTaskIndex,
+    selectTask: state.selectTask,
     setIsAddingTask: state.setIsAddingTask,
     setIsCancellingEdit: state.setIsCancellingEdit,
     toggleTaskStatus: actions.toggleTaskStatus,

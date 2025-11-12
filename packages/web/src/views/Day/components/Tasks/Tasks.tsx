@@ -6,7 +6,7 @@ export const Tasks = () => {
     tasks,
     editingTaskId,
     editingTitle,
-    setSelectedTaskIndex,
+    selectTask,
     onCheckboxKeyDown,
     onInputBlur,
     onInputClick,
@@ -24,7 +24,7 @@ export const Tasks = () => {
           task={task}
           index={index}
           isEditing={editingTaskId === task.id}
-          onFocus={setSelectedTaskIndex}
+          onFocus={selectTask}
           onCheckboxKeyDown={onCheckboxKeyDown}
           onInputBlur={onInputBlur}
           onInputKeyDown={onInputKeyDown}

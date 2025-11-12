@@ -24,7 +24,7 @@ export interface TaskProps {
   ) => void;
   onStatusToggle: (id: string) => void;
   onTitleChange: (title: string) => void;
-  onFocus: (index: number) => void;
+  onFocus: (id: string) => void;
   onMigrate: (id: string, direction: "forward" | "backward") => void;
 }
 
@@ -55,7 +55,7 @@ export const Task = ({
         tabIndex={0}
         data-task-id={task.id}
         onFocus={() => {
-          onFocus?.(index);
+          onFocus?.(task.id);
         }}
         onKeyDown={(e) => onCheckboxKeyDown(e, task.id, task.title)}
         onClick={() => onStatusToggle(task.id)}

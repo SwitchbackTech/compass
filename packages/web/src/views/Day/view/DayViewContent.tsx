@@ -16,9 +16,9 @@ import { focusOnAddTaskInput, focusOnFirstTask } from "../util/shortcut.util";
 export const DayViewContent = () => {
   const {
     tasks,
-    selectedTaskIndex,
+    selectedTask,
     focusOnInput,
-    setSelectedTaskIndex,
+    selectTask,
     setEditingTaskId,
     setEditingTitle,
     deleteTask,
@@ -35,26 +35,14 @@ export const DayViewContent = () => {
   const { navigateToNextDay, navigateToPreviousDay, navigateToToday } =
     useDateNavigation();
 
-  const hasFocusedTask =
-    selectedTaskIndex >= 0 && selectedTaskIndex < tasks.length;
-
-  const getTaskIndexToEdit = () => {
-    if (hasFocusedTask) {
-      return selectedTaskIndex;
-    } else if (tasks.length > 0) {
-      return 0;
-    }
-    return -1;
-  };
-
   const handleEditTask = () => {
-    const taskIndexToEdit = getTaskIndexToEdit();
-    if (taskIndexToEdit >= 0) {
-      const taskId = tasks[taskIndexToEdit].id;
-      setEditingTaskId(taskId);
-      setEditingTitle(tasks[taskIndexToEdit].title);
-      setSelectedTaskIndex(taskIndexToEdit);
-      focusOnInput(taskId);
+    const task = tasks.find((t) => t.id === selectedTask) ?? tasks[0];
+
+    if (task) {
+      setEditingTaskId(task.id);
+      setEditingTitle(task.title);
+      selectTask(task.id);
+      focusOnInput(task.id);
     }
   };
 
@@ -118,7 +106,7 @@ export const DayViewContent = () => {
     onNavigateNow: handleNavigateNow,
     onNavigateDay: handleNavigateDay,
     onNavigateWeek: handleNavigateWeek,
-    hasFocusedTask,
+    hasFocusedTask: !!selectedTask,
     undoToastId,
   });
 

@@ -14,6 +14,14 @@ import { z } from "zod/v4";
 import { StringV4Schema } from "@core/types/type.utils";
 import dayjs from "@core/util/date/dayjs";
 
+export interface TimerOptions {
+  _id: string;
+  startDate: Date;
+  endDate: Date;
+  interval?: number; // in milliseconds
+  autoStart?: boolean;
+}
+
 export class Timer {
   public readonly _id: string;
   public readonly startDate: Date;
@@ -49,13 +57,7 @@ export class Timer {
     endDate,
     interval,
     autoStart = true,
-  }: {
-    _id: string;
-    startDate: Date;
-    endDate: Date;
-    interval?: number; // in milliseconds
-    autoStart?: boolean;
-  }) {
+  }: TimerOptions) {
     this._id = StringV4Schema.parse(_id);
     this.startDate = this.#validateStartDate(startDate, endDate);
     this.endDate = this.#validateEndDate(endDate, startDate);

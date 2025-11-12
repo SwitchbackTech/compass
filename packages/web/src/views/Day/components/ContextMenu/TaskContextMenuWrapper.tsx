@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   autoUpdate,
   flip,
@@ -7,7 +7,6 @@ import {
   useFloating,
 } from "@floating-ui/react";
 import { useTasks } from "../../hooks/tasks/useTasks";
-import { Task } from "../../task.types";
 import { getTaskIdFromElement } from "../../util/task.locate";
 import { TaskContextMenu } from "./TaskContextMenu";
 
@@ -16,9 +15,12 @@ interface TaskItemsWrapperProps {
 }
 
 export const TaskContextMenuWrapper = ({ children }: TaskItemsWrapperProps) => {
-  const { tasks } = useTasks();
+  const { tasks, selectTask, selectedTask: selectedTaskId } = useTasks();
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const selectedTask = useMemo(
+    () => tasks.find((t) => t.id === selectedTaskId),
+    [selectedTaskId, tasks],
+  );
 
   const { refs, x, y, context } = useFloating({
     placement: "right-start",
@@ -69,13 +71,13 @@ export const TaskContextMenuWrapper = ({ children }: TaskItemsWrapperProps) => {
       }),
     });
 
-    setSelectedTask(task);
+    selectTask(task.id);
     setIsOpen(true);
   };
 
   const handleClose = () => {
     setIsOpen(false);
-    setSelectedTask(null);
+    selectTask(undefined);
   };
 
   return (
