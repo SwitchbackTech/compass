@@ -14,7 +14,6 @@ interface EventContextMenuContextValue {
     event: Schema_Event,
     position: { x: number; y: number },
   ) => void;
-  onDelete?: (event: Schema_Event) => void;
 }
 
 const EventContextMenuContext = createContext<
