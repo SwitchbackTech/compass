@@ -15,7 +15,6 @@ import { Sidebar } from "@web/views/Calendar/components/Sidebar/Sidebar";
 import { useDateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { useGridLayout } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { useScroll } from "@web/views/Calendar/hooks/grid/useScroll";
-import { useRefetch } from "@web/views/Calendar/hooks/useRefetch";
 import { useToday } from "@web/views/Calendar/hooks/useToday";
 import { useWeek } from "@web/views/Calendar/hooks/useWeek";
 import { Styled, StyledCalendar } from "@web/views/Calendar/styled";
@@ -27,7 +26,6 @@ export const CalendarView = () => {
 
   const { today } = useToday();
 
-  useRefetch();
   const weekProps = useWeek(today);
 
   const { gridRefs, measurements } = useGridLayout(
