@@ -5,6 +5,7 @@ import {
   deleteEvent,
   editEvent,
   getCurrentMonthEvents,
+  getDayEvents,
   getWeekEvents,
 } from "@web/ducks/events/sagas/event.sagas";
 import {
@@ -14,6 +15,7 @@ import {
   reorderSomedayEvents,
 } from "@web/ducks/events/sagas/someday.sagas";
 import { importGCal } from "@web/ducks/events/sagas/sync.sagas";
+import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
 import {
   createEventSlice,
   deleteEventSlice,
@@ -29,6 +31,7 @@ export function* sagas() {
 }
 
 function* eventSagas() {
+  yield takeLatest(getDayEventsSlice.actions.request, getDayEvents);
   yield takeLatest(getWeekEventsSlice.actions.request, getWeekEvents);
   yield takeLatest(
     getWeekEventsSlice.actions.convert,

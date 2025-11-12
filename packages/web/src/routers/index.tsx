@@ -2,6 +2,7 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { ProtectedRoute } from "@web/auth/ProtectedRoute";
 import { UserProvider } from "@web/auth/UserProvider";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { AuthenticatedLayout } from "@web/components/AuthenticatedLayout/AuthenticatedLayout";
 import SocketProvider from "@web/socket/SocketProvider";
 import { DayView } from "@web/views/Day/view/DayView";
 import { LogoutView } from "@web/views/Logout";
@@ -13,40 +14,29 @@ import { RootView } from "@web/views/Root";
 const router = createBrowserRouter(
   [
     {
-      path: ROOT_ROUTES.NOW,
       element: (
         <ProtectedRoute>
           <UserProvider>
             <SocketProvider>
-              <NowView />
+              <AuthenticatedLayout />
             </SocketProvider>
           </UserProvider>
         </ProtectedRoute>
       ),
-    },
-    {
-      path: ROOT_ROUTES.ROOT,
-      element: (
-        <ProtectedRoute>
-          <UserProvider>
-            <SocketProvider>
-              <RootView />
-            </SocketProvider>
-          </UserProvider>
-        </ProtectedRoute>
-      ),
-    },
-    {
-      path: `${ROOT_ROUTES.DAY}/:date?`,
-      element: (
-        <ProtectedRoute>
-          <UserProvider>
-            <SocketProvider>
-              <DayView />
-            </SocketProvider>
-          </UserProvider>
-        </ProtectedRoute>
-      ),
+      children: [
+        {
+          path: ROOT_ROUTES.NOW,
+          element: <NowView />,
+        },
+        {
+          path: ROOT_ROUTES.ROOT,
+          element: <RootView />,
+        },
+        {
+          path: `${ROOT_ROUTES.DAY}/:date?`,
+          element: <DayView />,
+        },
+      ],
     },
     {
       path: ROOT_ROUTES.LOGIN,

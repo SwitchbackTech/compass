@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
-import { useDayEvents } from "@web/views/Day/data/day.data";
-import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
+import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
 import { AgendaEvents } from "./Events/AgendaEvent/AgendaEvents";
 import { AllDayAgendaEvents } from "./Events/AllDayAgendaEvent/AllDayAgendaEvents";
 import { NowLine } from "./NowLine/NowLine";
@@ -13,8 +13,7 @@ interface AgendaProps {
 export const Agenda = ({ onScrollToNowLineReady }: AgendaProps) => {
   const nowLineRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const dateInView = useDateInView();
-  const { events } = useDayEvents(dateInView);
+  const events = useAppSelector(selectDayEvents);
 
   // Separate all-day events from timed events
   const allDayEvents = events.filter((event) => event.isAllDay);

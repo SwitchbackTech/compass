@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef } from "react";
 import { Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
-import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
+import { Day_AsyncStateContextReason } from "@web/ducks/events/context/day.context";
 import { selectEventEntities } from "@web/ducks/events/selectors/event.selectors";
-import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
+import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
 export interface TodayEvent {
@@ -62,11 +62,11 @@ export function useTodayEvents(currentDate: Date = new Date()): TodayEvent[] {
     if (!hasFetchedRef.current && todayEvents.length === 0) {
       hasFetchedRef.current = true;
       dispatch(
-        getWeekEventsSlice.actions.request({
+        getDayEventsSlice.actions.request({
           startDate: toUTCOffset(dayjs().startOf("day")),
           endDate: toUTCOffset(dayjs().endOf("day")),
           __context: {
-            reason: Week_AsyncStateContextReason.WEEK_VIEW_CHANGE,
+            reason: Day_AsyncStateContextReason.DAY_VIEW_CHANGE,
           },
         }),
       );

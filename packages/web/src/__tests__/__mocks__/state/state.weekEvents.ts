@@ -40,6 +40,13 @@ export const preloadedState: InitialReduxState = {
       error: undefined,
       reason: null,
     },
+    getDayEvents: {
+      value: null,
+      isProcessing: false,
+      isSuccess: false,
+      error: undefined,
+      reason: null,
+    },
     entities: {
       value: {
         [CLIMB._id as string]: CLIMB,

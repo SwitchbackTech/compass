@@ -1,6 +1,7 @@
 import axios, { AxiosError } from "axios";
 import { signOut } from "supertokens-auth-react/recipe/session";
 import { Status } from "@core/errors/status.codes";
+import { AUTH_FAILURE_REASONS } from "@web/common/constants/auth.constants";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "../constants/routes";
 
@@ -8,7 +9,8 @@ export const CompassApi = axios.create({
   baseURL: ENV_WEB.API_BASEURL,
 });
 
-const _signOut = async (status: number) => {
+type SignoutStatus = Status.UNAUTHORIZED | Status.NOT_FOUND | Status.GONE;
+const _signOut = async (status: SignoutStatus) => {
   // since there are currently duplicate event fetches,
   // this prevents triggering a separate alert for each fetch
   // this can be removed once we have logic to cancel subsequent requests
@@ -19,9 +21,18 @@ const _signOut = async (status: number) => {
 
   await signOut();
 
-  if (window.location.pathname !== ROOT_ROUTES.LOGIN) {
-    window.location.reload();
+  if (window.location.pathname === ROOT_ROUTES.LOGIN) {
+    return;
   }
+
+  const searchParams = new URLSearchParams({
+    reason:
+      status === Status.NOT_FOUND || status === Status.GONE
+        ? AUTH_FAILURE_REASONS.GAUTH_SESSION_EXPIRED
+        : AUTH_FAILURE_REASONS.USER_SESSION_EXPIRED,
+  });
+
+  window.location.assign(`${ROOT_ROUTES.LOGIN}?${searchParams.toString()}`);
 };
 
 CompassApi.interceptors.response.use(

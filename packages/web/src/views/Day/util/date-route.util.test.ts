@@ -106,13 +106,17 @@ describe("date-route.util", () => {
     it("should return today's date for undefined input", () => {
       const result = getValidDateFromUrl(undefined);
       const today = dayjs();
-      expect(result.startOf("day").isSame(today.startOf("day"))).toBe(true);
+      expect(result.local().startOf("day").isSame(today.startOf("day"))).toBe(
+        true,
+      );
     });
 
     it("should return today's date for completely invalid input", () => {
       const result = getValidDateFromUrl("completely-invalid");
       const today = dayjs();
-      expect(result.startOf("day").isSame(today.startOf("day"))).toBe(true);
+      expect(result.local().startOf("day").isSame(today.startOf("day"))).toBe(
+        true,
+      );
     });
   });
 

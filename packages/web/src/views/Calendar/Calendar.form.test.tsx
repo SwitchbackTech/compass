@@ -5,11 +5,9 @@ import userEvent from "@testing-library/user-event";
 import { CLIMB, EUROPE_TRIP } from "@core/__mocks__/v1/events/events.misc";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
+import { findAndUpdateEventInPreloadedState } from "@web/__tests__/utils/state/store.test.util";
 import { CalendarView } from "@web/views/Calendar";
-import {
-  findAndUpdateEventInPreloadedState,
-  freshenEventStartEndDate,
-} from "@web/views/Calendar/calendar.render.test.utils";
+import { freshenEventStartEndDate } from "./calendar.render.test.utils";
 
 // Mock IntersectionObserver for jsdom
 global.IntersectionObserver = class IntersectionObserver {

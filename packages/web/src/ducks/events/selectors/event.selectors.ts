@@ -1,5 +1,7 @@
 import { createSelector } from "@reduxjs/toolkit";
 import { Schema_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
+import { isProcessing } from "@web/common/store/helpers";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
@@ -52,4 +54,34 @@ export const selectRowCount = createSelector(
     const rowsCount = (_rowVals ?? []).length === 0 ? 1 : Math.max(..._rowVals);
     return rowsCount;
   },
+);
+
+const selectDayEventIds = (state: RootState) => {
+  const value = state.events.getDayEvents.value;
+
+  if (!value || !("data" in value)) {
+    return [];
+  }
+
+  return value.data ?? [];
+};
+
+export const selectDayEvents = createSelector(
+  (state: RootState) => state.events.entities.value || {},
+  selectDayEventIds,
+  (entities, ids) =>
+    ids
+      .map((id: string) => entities[id])
+      .filter((event): event is Schema_Event => Boolean(event)),
+);
+
+export const selectIsDayEventsProcessing = (state: RootState) =>
+  isProcessing(state.events.getDayEvents);
+
+export const selectTimedDayEvents = createSelector(selectDayEvents, (events) =>
+  events
+    .filter((event) => !event.isAllDay)
+    .sort((a, b) =>
+      dayjs(a.startDate as string).diff(dayjs(b.startDate as string)),
+    ),
 );

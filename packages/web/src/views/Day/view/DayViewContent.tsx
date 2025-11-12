@@ -2,10 +2,12 @@ import { useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
 import { Agenda } from "../components/Agenda/Agenda";
 import { ShortcutsOverlay } from "../components/Shortcuts/components/ShortcutsOverlay";
 import { TaskList } from "../components/TaskList/TaskList";
-import { useDayEvents } from "../data/day.data";
+import { useDayEvents } from "../hooks/events/useDayEvents";
 import { useDateInView } from "../hooks/navigation/useDateInView";
 import { useDateNavigation } from "../hooks/navigation/useDateNavigation";
 import { useDayViewShortcuts } from "../hooks/shortcuts/useDayViewShortcuts";
@@ -29,8 +31,9 @@ export const DayViewContent = () => {
 
   const navigate = useNavigate();
   const dateInView = useDateInView();
-  const { events } = useDayEvents(dateInView);
+  const events = useAppSelector(selectDayEvents);
   const scrollToNowLineRef = useRef<() => void>();
+  useDayEvents(dateInView);
 
   const { navigateToNextDay, navigateToPreviousDay, navigateToToday } =
     useDateNavigation();

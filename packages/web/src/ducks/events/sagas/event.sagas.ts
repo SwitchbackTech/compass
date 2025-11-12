@@ -36,6 +36,7 @@ import {
   replaceOptimisticId,
 } from "@web/ducks/events/sagas/saga.util";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
+import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
 import {
   createEventSlice,
   deleteEventSlice,
@@ -191,6 +192,16 @@ export function* getWeekEvents({ payload }: Action_GetEvents) {
     yield put(getWeekEventsSlice.actions.success(data));
   } catch (error) {
     yield put(getWeekEventsSlice.actions.error({}));
+    handleError(error as Error);
+  }
+}
+
+export function* getDayEvents({ payload }: Action_GetEvents) {
+  try {
+    const data = (yield call(getEvents, payload)) as Response_GetEventsSaga;
+    yield put(getDayEventsSlice.actions.success(data));
+  } catch (error) {
+    yield put(getDayEventsSlice.actions.error({}));
     handleError(error as Error);
   }
 }

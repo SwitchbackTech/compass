@@ -3,7 +3,7 @@ import { Provider as ReduxProvider } from "react-redux";
 import { MemoryRouter } from "react-router-dom";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { setup } from "@web/__tests__/utils/tasks/task.test.util";
-import { store } from "@web/store";
+import { store as defaultStore } from "@web/store";
 import { DateNavigationProvider } from "../context/DateNavigationProvider";
 import { TaskProvider } from "../context/TaskProvider";
 
@@ -12,8 +12,11 @@ export const renderWithDayProviders = (
   opts?: {
     initialEntries?: string[];
     initialDate?: Dayjs;
+    store?: typeof defaultStore;
   },
 ) => {
+  const store = opts?.store ?? defaultStore;
+
   return setup(
     <ReduxProvider store={store}>
       <MemoryRouter
