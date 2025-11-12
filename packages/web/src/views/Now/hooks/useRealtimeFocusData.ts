@@ -3,7 +3,7 @@ import dayjs from "@core/util/date/dayjs";
 import { parseCompassEventDate } from "@core/util/event/event.util";
 import { Timer } from "@core/util/timer";
 import { Schema_WebEvent } from "@web/common/types/web.event.types";
-import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
+import { selectTimedDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
 
@@ -19,13 +19,13 @@ export function useRealtimeFocusData(): {
 } {
   const [now, setNow] = useState(timer.startDate);
   useDayEvents(dayjs());
-  const dayEvents = useAppSelector(selectDayEvents);
+  const timedDayEvents = useAppSelector(selectTimedDayEvents);
   const [nextEvent, setNextEvent] = useState<Schema_WebEvent | undefined>();
 
   const updateNow = useCallback(() => setNow(new Date()), []);
 
   const getNextEvent = useCallback((): Schema_WebEvent | undefined => {
-    const event = dayEvents.find(
+    const event = timedDayEvents.find(
       ({ endDate }) => endDate && dayjs(now).isBefore(endDate),
     );
 
@@ -34,7 +34,7 @@ export function useRealtimeFocusData(): {
     }
 
     return event as Schema_WebEvent;
-  }, [dayEvents, now]);
+  }, [timedDayEvents, now]);
 
   const updateNextEvent = useCallback(
     () => setNextEvent(getNextEvent()),
