@@ -191,15 +191,6 @@ export const findAndUpdateEventInPreloadedState = (
   eventId: string,
   callback: (event: Schema_Event) => Schema_Event,
 ): TestState => {
-  if (!eventId) {
-    throw new Error("Event ID is required");
-  }
-
-  // Early return for invalid event ID
-  if (!eventId) {
-    throw new Error("Event ID is required");
-  }
-
   // Safely access the events with proper null checks
   const events = preloadedState?.events?.entities?.value;
   if (!events) {
