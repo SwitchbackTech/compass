@@ -1,4 +1,5 @@
 import { combineReducers } from "redux";
+import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import {
   createEventSlice,
@@ -25,6 +26,7 @@ const eventsReducer = combineReducers({
   getCurrentMonthEvents: getCurrentMonthEventsSlice.reducer,
   getSomedayEvents: getSomedayEventsSlice.reducer,
   getWeekEvents: getWeekEventsSlice.reducer,
+  getDayEvents: getDayEventsSlice.reducer,
 });
 
 const syncReducer = combineReducers({

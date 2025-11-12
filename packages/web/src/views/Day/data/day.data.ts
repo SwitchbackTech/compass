@@ -1,18 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { Schema_Event } from "@core/types/event.types";
-import { Dayjs } from "@core/util/date/dayjs";
+import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
-import { EventApi } from "@web/ducks/events/event.api";
+import { Day_AsyncStateContextReason } from "@web/ducks/events/context/day.context";
 import { selectEventEntities } from "@web/ducks/events/selectors/event.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
-
-const FETCH_TIMEOUT_MS = 10000;
-
-const createTimeoutPromise = (ms: number): Promise<never> => {
-  return new Promise((_, reject) => {
-    setTimeout(() => reject(new Error("Request timeout")), ms);
-  });
-};
+import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
 interface DayEvents {
   events: Schema_Event[];
@@ -20,61 +13,83 @@ interface DayEvents {
   error: string | null;
 }
 
+const getDateRange = (date: Dayjs) => {
+  const start = date.startOf("day");
+  const end = date.endOf("day");
+  return {
+    start,
+    end,
+    startDate: toUTCOffset(start),
+    endDate: toUTCOffset(end),
+  };
+};
+
+const isEventWithinRange = (
+  event: Schema_Event,
+  rangeStart: Dayjs,
+  rangeEnd: Dayjs,
+) => {
+  if (!event.startDate || !event.endDate) {
+    return false;
+  }
+
+  const eventStart = dayjs(event.startDate);
+  const eventEnd = dayjs(event.endDate);
+
+  if (event.isAllDay) {
+    return eventStart.isBefore(rangeEnd) && eventEnd.isAfter(rangeStart);
+  }
+
+  return (
+    eventStart.isSameOrAfter(rangeStart) && eventEnd.isSameOrBefore(rangeEnd)
+  );
+};
+
 /**
- * Hook to fetch events for a specific day
- * Handles loading states, timeouts, and error cases independently from Redux
- * Filters out events that have been deleted from Redux state
+ * Hook to fetch events for a specific day via Redux
+ * Uses the shared event entities store to display events
  */
 export function useDayEvents(date: Dayjs): DayEvents {
-  const [dayEvents, setDayEvents] = useState<DayEvents>({
-    events: [],
-    isLoading: true,
-    error: null,
-  });
-
-  // Subscribe to Redux event entities to filter out deleted events
+  const dispatch = useAppDispatch();
+  const dayEventsState = useAppSelector((state) => state.events.getDayEvents);
   const eventEntities = useAppSelector(selectEventEntities);
 
-  const fetchDayEvents = useCallback(async () => {
-    const _startDate = date.startOf("day");
-    const startDate = toUTCOffset(_startDate);
-    const _endDate = date.endOf("day");
-    const endDate = toUTCOffset(_endDate);
-
-    setDayEvents({ events: [], isLoading: true, error: null });
-
-    try {
-      // Race between API call and timeout
-      const response = await Promise.race([
-        EventApi.get({ startDate, endDate, someday: false }),
-        createTimeoutPromise(FETCH_TIMEOUT_MS),
-      ]);
-
-      const events = response.data || [];
-
-      setDayEvents({ events, isLoading: false, error: null });
-    } catch (error) {
-      setDayEvents({
-        events: [],
-        isLoading: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
-  }, [date]);
+  const { start, end, startDate, endDate } = useMemo(
+    () => getDateRange(date),
+    [date],
+  );
 
   useEffect(() => {
-    fetchDayEvents();
-  }, [fetchDayEvents]);
-
-  // Filter out events that have been deleted from Redux state
-  const filteredEvents = useMemo(() => {
-    return dayEvents.events.filter(
-      (event) => event._id && eventEntities[event._id],
+    dispatch(
+      getDayEventsSlice.actions.request({
+        startDate,
+        endDate,
+        __context: { reason: Day_AsyncStateContextReason.DAY_VIEW_CHANGE },
+      }),
     );
-  }, [dayEvents.events, eventEntities]);
+  }, [dispatch, startDate, endDate]);
+
+  const events = useMemo(() => {
+    return Object.values(eventEntities)
+      .filter((event): event is Schema_Event => Boolean(event?._id))
+      .filter((event) => !event.isSomeday)
+      .filter((event) => isEventWithinRange(event, start, end))
+      .sort((a, b) =>
+        dayjs(a.startDate).diff(dayjs(b.startDate), "millisecond"),
+      );
+  }, [eventEntities, start, end]);
+
+  const isLoading = Boolean(dayEventsState.isProcessing);
+  const error =
+    typeof dayEventsState.error === "string"
+      ? dayEventsState.error
+      : dayEventsState.error
+        ? "Unknown error"
+        : null;
 
   return {
-    ...dayEvents,
-    events: filteredEvents,
+    events,
+    isLoading,
+    error,
   };
 }

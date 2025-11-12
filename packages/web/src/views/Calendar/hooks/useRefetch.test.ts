@@ -6,6 +6,7 @@ import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.con
 import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
 import { selectImportLatestState } from "@web/ducks/events/selectors/sync.selector";
 import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
+import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
 import { resetIsFetchNeeded } from "@web/ducks/events/slices/sync.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { useRefetch } from "./useRefetch";
@@ -186,7 +187,7 @@ describe("useRefetch", () => {
       const expectedEnd = toUTCOffset(expectedDate.endOf("day").format());
 
       expect(mockDispatch).toHaveBeenCalledWith(
-        getWeekEventsSlice.actions.request({
+        getDayEventsSlice.actions.request({
           startDate: expectedStart,
           endDate: expectedEnd,
           __context: {
@@ -226,7 +227,7 @@ describe("useRefetch", () => {
       const expectedEnd = toUTCOffset(expectedDate.endOf("day").format());
 
       expect(mockDispatch).toHaveBeenCalledWith(
-        getWeekEventsSlice.actions.request({
+        getDayEventsSlice.actions.request({
           startDate: expectedStart,
           endDate: expectedEnd,
           __context: {
@@ -264,7 +265,7 @@ describe("useRefetch", () => {
       const expectedEnd = toUTCOffset(expectedDate.endOf("day").format());
 
       expect(mockDispatch).toHaveBeenCalledWith(
-        getWeekEventsSlice.actions.request({
+        getDayEventsSlice.actions.request({
           startDate: expectedStart,
           endDate: expectedEnd,
           __context: {
@@ -373,7 +374,7 @@ describe("useRefetch", () => {
       const expectedEnd = toUTCOffset(expectedDate.endOf("day").format());
 
       expect(mockDispatch).toHaveBeenCalledWith(
-        getWeekEventsSlice.actions.request({
+        getDayEventsSlice.actions.request({
           startDate: expectedStart,
           endDate: expectedEnd,
           __context: {
@@ -412,7 +413,7 @@ describe("useRefetch", () => {
       const expectedEnd = toUTCOffset(expectedDate.endOf("day").format());
 
       expect(mockDispatch).toHaveBeenCalledWith(
-        getWeekEventsSlice.actions.request({
+        getDayEventsSlice.actions.request({
           startDate: expectedStart,
           endDate: expectedEnd,
           __context: {

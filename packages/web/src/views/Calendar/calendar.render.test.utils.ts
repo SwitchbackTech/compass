@@ -37,6 +37,13 @@ type TestState = {
       error: unknown;
       reason: string | null;
     };
+    getDayEvents?: {
+      value: null;
+      isProcessing: boolean;
+      isSuccess: boolean;
+      error: unknown;
+      reason: string | null;
+    };
     entities?: {
       value: Record<string, unknown>;
     };
@@ -62,6 +69,13 @@ export const createInitialState = (
         reason: null,
       },
       getSomedayEvents: {
+        value: null,
+        isProcessing: false,
+        error: null,
+        isSuccess: false,
+        reason: null,
+      },
+      getDayEvents: {
         value: null,
         isProcessing: false,
         error: null,

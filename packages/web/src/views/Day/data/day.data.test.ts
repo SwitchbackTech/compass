@@ -1,277 +1,168 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { renderHook } from "@testing-library/react";
+import { Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
-import { EventApi } from "@web/ducks/events/event.api";
+import { Day_AsyncStateContextReason } from "@web/ducks/events/context/day.context";
+import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
+import { RootState } from "@web/store";
 import { useDayEvents } from "./day.data";
 
-// Mock EventApi
-jest.mock("@web/ducks/events/event.api");
-const mockEventApi = EventApi as jest.Mocked<typeof EventApi>;
-
-// Mock Redux store
+const mockDispatch = jest.fn();
 const mockUseAppSelector = jest.fn();
+
 jest.mock("@web/store/store.hooks", () => ({
+  useAppDispatch: () => mockDispatch,
   useAppSelector: (selector: unknown) => mockUseAppSelector(selector),
 }));
 
-// Mock selectEventEntities
-jest.mock("@web/ducks/events/selectors/event.selectors", () => ({
-  selectEventEntities: jest.fn((state: unknown) => state),
-}));
+const createState = ({
+  events = {},
+  isProcessing = false,
+  error = null,
+}: {
+  events?: Record<string, Schema_Event>;
+  isProcessing?: boolean;
+  error?: unknown;
+}): RootState =>
+  ({
+    events: {
+      getDayEvents: {
+        isProcessing,
+        isSuccess: !isProcessing,
+        error,
+        value: null,
+        reason: null,
+      },
+      entities: {
+        value: events,
+      },
+    },
+  }) as RootState;
 
-let mockEventEntities: Record<string, unknown> = {};
-
-const buildExpectedDateRange = (dateString: string) => ({
-  startDate: toUTCOffset(dayjs(dateString).startOf("day")),
-  endDate: toUTCOffset(dayjs(dateString).endOf("day")),
-});
 describe("useDayEvents", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockEventApi.get.mockResolvedValue({ data: [] } as never);
-    mockEventEntities = {};
-    mockUseAppSelector.mockReturnValue(mockEventEntities);
   });
 
-  it("should return loading state initially", async () => {
-    const testDate = dayjs("2024-01-15");
-    const expectedDateRange = buildExpectedDateRange("2024-01-15");
-    const { result } = renderHook(() => useDayEvents(testDate));
+  it("dispatches a request for the selected date", () => {
+    const testDate = dayjs("2024-05-10");
+    const state = createState({});
+    mockUseAppSelector.mockImplementation((selector) => selector(state));
 
-    expect(result.current.isLoading).toBe(true);
-    expect(result.current.events).toEqual([]);
-    expect(result.current.error).toBeNull();
-
-    await waitFor(() => {
-      expect(mockEventApi.get).toHaveBeenCalledWith({
-        ...expectedDateRange,
-        someday: false,
-      });
-    });
-  });
-
-  it("should fetch events successfully", async () => {
-    const mockEvents = [
-      {
-        _id: "event-1",
-        title: "Morning Meeting",
-        startDate: "2024-01-15T09:00:00Z",
-        endDate: "2024-01-15T10:00:00Z",
-        isAllDay: false,
-      },
-      {
-        _id: "event-2",
-        title: "Afternoon Call",
-        startDate: "2024-01-15T14:00:00Z",
-        endDate: "2024-01-15T15:00:00Z",
-        isAllDay: false,
-      },
-    ];
-
-    mockEventApi.get.mockResolvedValue({
-      data: mockEvents,
-    } as never);
-
-    // Mock Redux state to include both events
-    mockEventEntities = {
-      "event-1": mockEvents[0],
-      "event-2": mockEvents[1],
-    };
-    mockUseAppSelector.mockReturnValue(mockEventEntities);
-
-    const testDate = dayjs("2024-01-15");
-    const expectedDateRange = buildExpectedDateRange("2024-01-15");
-    const { result } = renderHook(() => useDayEvents(testDate));
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    expect(result.current.events).toEqual(mockEvents);
-    expect(result.current.error).toBeNull();
-    expect(mockEventApi.get).toHaveBeenCalledWith({
-      ...expectedDateRange,
-      someday: false,
-    });
-  });
-
-  it("should handle API errors", async () => {
-    const errorMessage = "Network error";
-    mockEventApi.get.mockRejectedValue(new Error(errorMessage));
-
-    const testDate = dayjs("2024-01-15");
-    const { result } = renderHook(() => useDayEvents(testDate));
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    expect(result.current.events).toEqual([]);
-    expect(result.current.error).toBe(errorMessage);
-  });
-
-  it("should return a fallback message for unknown errors", async () => {
-    mockEventApi.get.mockRejectedValue("bad request");
-
-    const testDate = dayjs("2024-01-15");
-    const { result } = renderHook(() => useDayEvents(testDate));
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    expect(result.current.events).toEqual([]);
-    expect(result.current.error).toBe("Unknown error");
-  });
-
-  it("should handle timeout errors", async () => {
-    jest.useFakeTimers();
-
-    // Mock a promise that never resolves
-    mockEventApi.get.mockImplementation(
-      () => new Promise(() => {}), // Never resolves
-    );
-
-    const testDate = dayjs("2024-01-15");
-    const { result } = renderHook(() => useDayEvents(testDate));
-
-    // Fast-forward time to trigger timeout
-    jest.advanceTimersByTime(10000);
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    expect(result.current.events).toEqual([]);
-    expect(result.current.error).toBe("Request timeout");
-
-    jest.useRealTimers();
-  });
-
-  it("should refetch when date changes", async () => {
-    const mockEvents1 = [{ _id: "event-1", title: "Event 1" }];
-    const mockEvents2 = [{ _id: "event-2", title: "Event 2" }];
-
-    mockEventApi.get
-      .mockResolvedValueOnce({ data: mockEvents1 } as never)
-      .mockResolvedValueOnce({ data: mockEvents2 } as never);
-
-    // Mock Redux state for first date
-    mockEventEntities = {
-      "event-1": mockEvents1[0],
-    };
-    mockUseAppSelector.mockReturnValue(mockEventEntities);
-
-    const testDate1 = dayjs("2024-01-15");
-    const testDate2 = dayjs("2024-01-16");
-    const expectedDateRange1 = buildExpectedDateRange("2024-01-15");
-    const expectedDateRange2 = buildExpectedDateRange("2024-01-16");
-
-    const { result, rerender } = renderHook(({ date }) => useDayEvents(date), {
-      initialProps: { date: testDate1 },
-    });
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    expect(result.current.events).toEqual(mockEvents1);
-    expect(mockEventApi.get).toHaveBeenCalledTimes(1);
-    expect(mockEventApi.get).toHaveBeenLastCalledWith({
-      ...expectedDateRange1,
-      someday: false,
-    });
-
-    // Mock Redux state for second date
-    mockEventEntities = {
-      "event-2": mockEvents2[0],
-    };
-    mockUseAppSelector.mockReturnValue(mockEventEntities);
-
-    // Change date
-    rerender({ date: testDate2 });
-
-    expect(result.current.isLoading).toBe(true);
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    expect(result.current.events).toEqual(mockEvents2);
-    expect(mockEventApi.get).toHaveBeenCalledTimes(2);
-    expect(mockEventApi.get).toHaveBeenLastCalledWith({
-      ...expectedDateRange2,
-      someday: false,
-    });
-  });
-
-  it("should format dates correctly using YEAR_MONTH_DAY_FORMAT", async () => {
-    mockEventApi.get.mockResolvedValue({ data: [] } as never);
-
-    const testDate = dayjs("2024-12-25");
-    const expectedDateRange = buildExpectedDateRange("2024-12-25");
     renderHook(() => useDayEvents(testDate));
 
-    await waitFor(() => {
-      expect(mockEventApi.get).toHaveBeenCalledWith({
-        ...expectedDateRange,
-        someday: false,
-      });
-    });
+    const expectedStart = toUTCOffset(testDate.startOf("day"));
+    const expectedEnd = toUTCOffset(testDate.endOf("day"));
+
+    expect(mockDispatch).toHaveBeenCalledWith(
+      getDayEventsSlice.actions.request({
+        startDate: expectedStart,
+        endDate: expectedEnd,
+        __context: { reason: Day_AsyncStateContextReason.DAY_VIEW_CHANGE },
+      }),
+    );
   });
 
-  it("should filter out deleted events from Redux state", async () => {
-    const mockEvents = [
-      {
+  it("returns events that overlap the selected day and excludes someday events", () => {
+    const dayStart = dayjs("2024-05-10T00:00:00.000Z");
+    const events: Record<string, Schema_Event> = {
+      "event-1": {
         _id: "event-1",
-        title: "Event 1",
-        startDate: "2024-01-15T09:00:00Z",
-        endDate: "2024-01-15T10:00:00Z",
+        title: "Morning Meeting",
+        startDate: dayStart.add(2, "hour").toISOString(),
+        endDate: dayStart.add(3, "hour").toISOString(),
         isAllDay: false,
-      },
-      {
+        isSomeday: false,
+      } as Schema_Event,
+      "event-2": {
         _id: "event-2",
-        title: "Event 2",
-        startDate: "2024-01-15T14:00:00Z",
-        endDate: "2024-01-15T15:00:00Z",
-        isAllDay: false,
-      },
-      {
+        title: "All Day",
+        startDate: dayStart.toISOString(),
+        endDate: dayStart.add(1, "day").toISOString(),
+        isAllDay: true,
+        isSomeday: false,
+      } as Schema_Event,
+      "event-3": {
         _id: "event-3",
-        title: "Event 3",
-        startDate: "2024-01-15T16:00:00Z",
-        endDate: "2024-01-15T17:00:00Z",
+        title: "Someday",
+        startDate: dayStart.toISOString(),
+        endDate: dayStart.add(1, "hour").toISOString(),
         isAllDay: false,
-      },
-    ];
-
-    mockEventApi.get.mockResolvedValue({
-      data: mockEvents,
-    } as never);
-
-    // Mock Redux state: event-2 has been deleted
-    mockEventEntities = {
-      "event-1": mockEvents[0],
-      "event-3": mockEvents[2],
-      // event-2 is missing (deleted)
+        isSomeday: true,
+      } as Schema_Event,
+      "event-4": {
+        _id: "event-4",
+        title: "Other Day",
+        startDate: dayStart.add(1, "day").toISOString(),
+        endDate: dayStart.add(1, "day").add(1, "hour").toISOString(),
+        isAllDay: false,
+        isSomeday: false,
+      } as Schema_Event,
     };
-    mockUseAppSelector.mockReturnValue(mockEventEntities);
+    const state = createState({ events });
+    mockUseAppSelector.mockImplementation((selector) => selector(state));
 
-    const testDate = dayjs("2024-01-15");
-    const { result } = renderHook(() => useDayEvents(testDate));
+    const { result } = renderHook(() => useDayEvents(dayStart));
 
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    // Should only return events that exist in Redux (event-1 and event-3)
     expect(result.current.events).toHaveLength(2);
     expect(result.current.events.map((e) => e._id)).toEqual([
+      "event-2",
       "event-1",
-      "event-3",
     ]);
-    expect(
-      result.current.events.find((e) => e._id === "event-2"),
-    ).toBeUndefined();
+  });
+
+  it("reflects loading state from the slice", () => {
+    const state = createState({ events: {}, isProcessing: true });
+    mockUseAppSelector.mockImplementation((selector) => selector(state));
+
+    const { result } = renderHook(() => useDayEvents(dayjs()));
+
+    expect(result.current.isLoading).toBe(true);
+  });
+
+  it("exposes string errors from the slice", () => {
+    const state = createState({ events: {}, error: "Boom" });
+    mockUseAppSelector.mockImplementation((selector) => selector(state));
+
+    const { result } = renderHook(() => useDayEvents(dayjs()));
+
+    expect(result.current.error).toBe("Boom");
+  });
+
+  it("dispatches again when the date changes", () => {
+    const firstDate = dayjs("2024-05-10");
+    const secondDate = dayjs("2024-05-12");
+    const state = createState({});
+    mockUseAppSelector.mockImplementation((selector) => selector(state));
+
+    const { rerender } = renderHook(
+      ({ currentDate }) => useDayEvents(currentDate),
+      { initialProps: { currentDate: firstDate } },
+    );
+
+    rerender({ currentDate: secondDate });
+
+    const firstStart = toUTCOffset(firstDate.startOf("day"));
+    const firstEnd = toUTCOffset(firstDate.endOf("day"));
+    const secondStart = toUTCOffset(secondDate.startOf("day"));
+    const secondEnd = toUTCOffset(secondDate.endOf("day"));
+
+    expect(mockDispatch).toHaveBeenNthCalledWith(
+      1,
+      getDayEventsSlice.actions.request({
+        startDate: firstStart,
+        endDate: firstEnd,
+        __context: { reason: Day_AsyncStateContextReason.DAY_VIEW_CHANGE },
+      }),
+    );
+
+    expect(mockDispatch).toHaveBeenNthCalledWith(
+      2,
+      getDayEventsSlice.actions.request({
+        startDate: secondStart,
+        endDate: secondEnd,
+        __context: { reason: Day_AsyncStateContextReason.DAY_VIEW_CHANGE },
+      }),
+    );
   });
 });
