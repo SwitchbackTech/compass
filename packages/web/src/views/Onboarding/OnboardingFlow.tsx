@@ -162,7 +162,7 @@ const _OnboardingFlow: React.FC = () => {
       return signInStepIndex !== -1 ? signInStepIndex : 0;
     }
     return 0; // Start from beginning for new users
-  }, [hasCompletedSignup, onboardingSteps]);
+  }, [hasCompletedSignup]);
 
   // Initially hide the steps until the user logs in
   // For returning users, show the steps immediately

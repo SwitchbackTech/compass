@@ -16,7 +16,7 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
     navigate(
       `${ROOT_ROUTES.LOGIN}?reason=${AUTH_FAILURE_REASONS.USER_SESSION_EXPIRED}`,
     );
-  }, [authenticated]);
+  }, [authenticated, loading, navigate]);
 
   if (!authenticated) return null;
 
