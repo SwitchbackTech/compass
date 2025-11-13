@@ -1,4 +1,5 @@
 import { rest } from "msw";
+import { faker } from "@faker-js/faker";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -57,6 +58,16 @@ const mockUseGoogleLogin = useGoogleLogin as jest.MockedFunction<
 
 // Wrap the component with OnboardingProvider
 const SignInWithGoogleWithProvider = withOnboardingProvider(SignInWithGoogle);
+
+// Shared MSW handlers for /user/metadata endpoints
+const userMetadataHandlers = [
+  rest.get(`${ENV_WEB.API_BASEURL}/user/metadata`, (_req, res, ctx) => {
+    return res(ctx.json({ skipOnboarding: true }));
+  }),
+  rest.post(`${ENV_WEB.API_BASEURL}/user/metadata`, (_req, res, ctx) => {
+    return res(ctx.json({ skipOnboarding: true }));
+  }),
+];
 
 describe("SignInWithGoogle", () => {
   const mockOnNext = jest.fn();
@@ -117,8 +128,29 @@ describe("SignInWithGoogle", () => {
       userEvent.setup();
       let onSuccessCallback: ((data: SignInUpInput) => void) | undefined;
 
+      // Mock the auth endpoint
+      server.use(
+        rest.post(`${ENV_WEB.API_BASEURL}/signinup`, (_req, res, ctx) => {
+          return res(ctx.json({ isNewUser: true }));
+        }),
+        ...userMetadataHandlers,
+      );
+
       mockAuthApi.loginOrSignup.mockResolvedValue({
-        isNewUser: false,
+        createdNewRecipeUser: true,
+        status: "OK",
+        user: {
+          id: "user-id",
+          isPrimaryUser: false,
+          emails: [faker.internet.email()],
+          tenantIds: ["public"],
+          phoneNumbers: [],
+          thirdParty: [{ id: "google", userId: "google-user-id" }],
+          webauthn: { credentialIds: [] },
+          loginMethods: [],
+          timeJoined: Date.now(),
+          toJson: jest.fn(),
+        },
       });
 
       mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
@@ -195,6 +227,12 @@ describe("SignInWithGoogle", () => {
       server.use(
         rest.post(`${ENV_WEB.API_BASEURL}/signinup`, (_req, res, ctx) => {
           return res(ctx.json({ isNewUser: true }));
+        }),
+        rest.get(`${ENV_WEB.API_BASEURL}/user/metadata`, (_req, res, ctx) => {
+          return res(ctx.json({ skipOnboarding: true }));
+        }),
+        rest.post(`${ENV_WEB.API_BASEURL}/user/metadata`, (_req, res, ctx) => {
+          return res(ctx.json({ skipOnboarding: true }));
         }),
       );
 
