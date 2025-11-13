@@ -205,6 +205,10 @@ class SyncService {
       ? "PROCESSED AND NOTIFIED CLIENT"
       : "PROCESSED IN BACKGROUND";
 
+    logger.info(
+      `GCal Notification for user: ${userId}, calendarId: ${calendarId} ${result}`,
+    );
+
     return result;
   };
 
