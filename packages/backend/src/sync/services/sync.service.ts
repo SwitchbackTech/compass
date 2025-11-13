@@ -390,8 +390,7 @@ class SyncService {
     const pruned = pruneResult.filter((p) => !p.deletedUserData);
     const deletedDuringPrune = pruneResult.filter((p) => p.deletedUserData);
     const refreshResult = await refreshWatch(refresh);
-    const refreshed = refreshResult.filter((r) => !r.revokedSession);
-    const revokedSession = refreshResult.filter((r) => r.revokedSession);
+    const refreshed = refreshResult;
     const resynced = refreshResult.filter((r) => r.resynced);
 
     if (params?.log) {
@@ -401,9 +400,6 @@ class SyncService {
         REFRESHED: ${refreshed.flatMap((r) => r.results.filter((r) => r.success)).toString()}
 
         DELETED DURING PRUNE: ${deletedDuringPrune.map((r) => r.user).toString()}
-        REVOKED SESSION DURING REFRESH: ${revokedSession
-          .map((r) => r.user)
-          .toString()}
         RESYNCED DURING REFRESH: ${resynced.map((r) => r.user).toString()}
       `);
     }
@@ -415,7 +411,6 @@ class SyncService {
       refreshed: refreshed.flatMap(({ results }) =>
         results.filter((r) => r.success),
       ).length,
-      revoked: revokedSession.length,
       deleted: deletedDuringPrune.length,
       resynced: resynced.length,
     };
