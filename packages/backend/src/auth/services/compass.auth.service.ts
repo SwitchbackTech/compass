@@ -13,7 +13,7 @@ import {
 import {
   StringV4Schema,
   zObjectId,
-} from "../../../../core/src/types/type.utils";
+} from "@core/types/type.utils";
 import syncService from "../../sync/services/sync.service";
 import userService from "../../user/services/user.service";
 import GoogleAuthService from "./google.auth.service";
@@ -136,7 +136,7 @@ class CompassAuthService {
     const id = await supertokens.getUserIdMapping({ userId });
 
     // for existing users without mapping
-    // @TODO: run this in a migration script later - create issue
+    // TODO: #5678 - run this in a migration script later
     if (id.status === "UNKNOWN_MAPPING_ERROR") {
       await supertokens.createUserIdMapping({
         superTokensUserId,
