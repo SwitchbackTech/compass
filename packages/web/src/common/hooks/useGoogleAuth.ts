@@ -8,8 +8,6 @@ import { useSession } from "@web/common/hooks/useSession";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
 import { OnboardingStepProps } from "@web/views/Onboarding";
 
-// import {}
-
 export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
   const navigate = useNavigate();
   const { setAuthenticated } = useSession();

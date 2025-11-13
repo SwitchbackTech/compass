@@ -70,7 +70,11 @@ export function SessionProvider({ children }: PropsWithChildren<{}>) {
 
   return (
     <SessionContext.Provider
-      value={{ authenticated, loading, setAuthenticated }}
+      value={{
+        authenticated,
+        loading,
+        setAuthenticated: (value: boolean) => authenticated$.next(value),
+      }}
     >
       {children}
     </SessionContext.Provider>

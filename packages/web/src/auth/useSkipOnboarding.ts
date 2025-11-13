@@ -17,11 +17,11 @@ export const useSkipOnboarding = () => {
   const updateOnboardingStatus = useCallback(
     (skip: boolean) => {
       localStorage.setItem(
-        STORAGE_KEYS.HAS_COMPLETED_SIGNUP,
+        STORAGE_KEYS.SKIP_ONBOARDING,
         skip ? "true" : "false",
       );
 
-      setSkipOnboarding(true);
+      setSkipOnboarding(skip);
     },
     [setSkipOnboarding],
   );
