@@ -5,6 +5,7 @@ import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { setup } from "@web/__tests__/utils/tasks/task.test.util";
 import { store as defaultStore } from "@web/store";
 import { DateNavigationProvider } from "../context/DateNavigationProvider";
+import { StorageInfoModalProvider } from "../context/StorageInfoModalContext";
 import { TaskProvider } from "../context/TaskProvider";
 
 export const renderWithDayProviders = (
@@ -26,11 +27,13 @@ export const renderWithDayProviders = (
           v7_relativeSplatPath: true,
         }}
       >
-        <DateNavigationProvider
-          initialDate={opts?.initialDate ?? dayjs().utc()}
-        >
-          <TaskProvider>{component}</TaskProvider>
-        </DateNavigationProvider>
+        <StorageInfoModalProvider>
+          <DateNavigationProvider
+            initialDate={opts?.initialDate ?? dayjs().utc()}
+          >
+            <TaskProvider>{component}</TaskProvider>
+          </DateNavigationProvider>
+        </StorageInfoModalProvider>
       </MemoryRouter>
     </ReduxProvider>,
   );
@@ -48,9 +51,11 @@ export const TaskProviderWrapper = ({
         v7_relativeSplatPath: true,
       }}
     >
-      <DateNavigationProvider initialDate={dayjs().utc()}>
-        <TaskProvider>{children}</TaskProvider>
-      </DateNavigationProvider>
+      <StorageInfoModalProvider>
+        <DateNavigationProvider initialDate={dayjs().utc()}>
+          <TaskProvider>{children}</TaskProvider>
+        </DateNavigationProvider>
+      </StorageInfoModalProvider>
     </MemoryRouter>
   );
 };

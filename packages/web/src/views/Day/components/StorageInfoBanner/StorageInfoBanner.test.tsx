@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { StorageInfoBanner } from "./StorageInfoBanner";
 
 const STORAGE_DISMISS_KEY = "compass.day.storage-info-dismissed";
@@ -38,13 +39,14 @@ describe("StorageInfoBanner", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("should dismiss when Got it button is clicked", () => {
+  it("should dismiss when Got it button is clicked", async () => {
+    const user = userEvent.setup();
     render(<StorageInfoBanner />);
 
     const dismissButton = screen.getByRole("button", {
       name: /dismiss storage information/i,
     });
-    dismissButton.click();
+    await user.click(dismissButton);
 
     expect(
       screen.queryByText(/Your day tasks are saved/i),
@@ -52,13 +54,14 @@ describe("StorageInfoBanner", () => {
     expect(localStorage.getItem(STORAGE_DISMISS_KEY)).toBe("true");
   });
 
-  it("should remember dismissal state after re-render", () => {
+  it("should remember dismissal state after re-render", async () => {
+    const user = userEvent.setup();
     const { rerender } = render(<StorageInfoBanner />);
 
     const dismissButton = screen.getByRole("button", {
       name: /dismiss storage information/i,
     });
-    dismissButton.click();
+    await user.click(dismissButton);
 
     rerender(<StorageInfoBanner />);
 
