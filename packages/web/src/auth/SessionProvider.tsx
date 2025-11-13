@@ -26,8 +26,8 @@ const loading$ = new BehaviorSubject(false);
 const $authenticated = authenticated$.pipe(skip(1), distinctUntilChanged());
 const $loading = loading$.pipe(distinctUntilChanged());
 
-28a: // Guard to prevent concurrent checkAuth executions
-28b: let checkAuthInProgress = false;
+// Guard to prevent concurrent checkAuth executions
+let checkAuthInProgress = false;
 
 function checkAuth() {
   if (checkAuthInProgress) {
