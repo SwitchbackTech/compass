@@ -6,8 +6,9 @@ import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { Agenda } from "../components/Agenda/Agenda";
 import { ShortcutsOverlay } from "../components/Shortcuts/components/ShortcutsOverlay";
-import { StorageInfoBanner } from "../components/StorageInfoBanner/StorageInfoBanner";
+import { StorageInfoModal } from "../components/StorageInfoModal/StorageInfoModal";
 import { TaskList } from "../components/TaskList/TaskList";
+import { useStorageInfoModal } from "../context/StorageInfoModalContext";
 import { useDayEvents } from "../hooks/events/useDayEvents";
 import { useDateInView } from "../hooks/navigation/useDateInView";
 import { useDateNavigation } from "../hooks/navigation/useDateNavigation";
@@ -29,6 +30,7 @@ export const DayViewContent = () => {
     migrateTask,
     undoToastId,
   } = useTasks();
+  const { isOpen: isModalOpen, closeModal } = useStorageInfoModal();
 
   const navigate = useNavigate();
   const dateInView = useDateInView();
@@ -126,12 +128,14 @@ export const DayViewContent = () => {
   });
 
   return (
-    <div className="relative flex h-screen w-full items-center justify-center gap-8 overflow-hidden px-6 py-8">
-      <StorageInfoBanner />
-      <ShortcutsOverlay />
-      <TaskList />
+    <>
+      <div className="relative flex h-screen w-full items-center justify-center gap-8 overflow-hidden px-6 py-8">
+        <ShortcutsOverlay />
+        <TaskList />
 
-      <Agenda onScrollToNowLineReady={handleScrollToNowLineReady} />
-    </div>
+        <Agenda onScrollToNowLineReady={handleScrollToNowLineReady} />
+      </div>
+      <StorageInfoModal isOpen={isModalOpen} onClose={closeModal} />
+    </>
   );
 };

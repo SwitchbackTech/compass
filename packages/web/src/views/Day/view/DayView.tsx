@@ -1,5 +1,6 @@
 import dayjs from "@core/util/date/dayjs";
 import { DateNavigationProvider } from "../context/DateNavigationProvider";
+import { StorageInfoModalProvider } from "../context/StorageInfoModalContext";
 import { TaskProvider } from "../context/TaskProvider";
 import { DayViewContent } from "./DayViewContent";
 
@@ -9,9 +10,11 @@ export function DayView() {
 
   return (
     <DateNavigationProvider initialDate={todayUTC}>
-      <TaskProvider>
-        <DayViewContent />
-      </TaskProvider>
+      <StorageInfoModalProvider>
+        <TaskProvider>
+          <DayViewContent />
+        </TaskProvider>
+      </StorageInfoModalProvider>
     </DateNavigationProvider>
   );
 }

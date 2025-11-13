@@ -2,6 +2,7 @@ import dayjs from "dayjs";
 import { useCallback } from "react";
 import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
+import { hasSeenStorageInfo } from "../../components/StorageInfoModal/StorageInfoModal";
 import { showMigrationToast } from "../../components/Toasts/MigrationToast/MigrationToast";
 import { showUndoDeleteToast } from "../../components/Toasts/UndoToast/UndoDeleteToast";
 import { Task, UndoOperation } from "../../task.types";
@@ -28,6 +29,7 @@ interface UseTaskActionsProps {
   dateInView?: dayjs.Dayjs;
   navigateToNextDay?: () => void;
   navigateToPreviousDay?: () => void;
+  onFirstTaskCreated?: () => void;
 }
 
 export function useTaskActions({
@@ -45,6 +47,7 @@ export function useTaskActions({
   dateInView,
   navigateToNextDay,
   navigateToPreviousDay,
+  onFirstTaskCreated,
 }: UseTaskActionsProps) {
   const addTask = (title: string): Task => {
     const newTask: Task = {
@@ -53,6 +56,17 @@ export function useTaskActions({
       status: "todo",
       createdAt: new Date().toISOString(),
     };
+
+    // Check if this is the first task ever created
+    // Only show modal if user hasn't seen it and this appears to be their first task
+    const isFirstTask =
+      tasks.length === 0 && !hasSeenStorageInfo() && onFirstTaskCreated;
+    if (isFirstTask) {
+      // Use setTimeout to ensure the task is added first, then show modal
+      setTimeout(() => {
+        onFirstTaskCreated();
+      }, 0);
+    }
 
     setTasks((prev) => sortTasksByStatus([...prev, newTask]));
     return newTask;
