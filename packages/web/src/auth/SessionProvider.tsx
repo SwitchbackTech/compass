@@ -26,31 +26,35 @@ const loading$ = new BehaviorSubject(false);
 const $authenticated = authenticated$.pipe(skip(1), distinctUntilChanged());
 const $loading = loading$.pipe(distinctUntilChanged());
 
-// Guard to prevent concurrent checkAuth executions
-let checkAuthInProgress = false;
+async function checkIfSessionExists(): Promise<boolean> {
+  try {
+    if (loading$.value) return false;
 
-function checkAuth() {
-  if (checkAuthInProgress) {
-    return;
+    loading$.next(true);
+
+    const exists = await session.doesSessionExist();
+
+    authenticated$.next(exists);
+    loading$.next(false);
+
+    return exists;
+  } catch (error) {
+    console.error("Error checking auth status:", error);
+    authenticated$.next(false);
+    loading$.next(false);
+
+    return false;
   }
-  checkAuthInProgress = true;
-  loading$.next(true);
-
-  session
-    .doesSessionExist()
-    .then((exists) => authenticated$.next(exists))
-    .finally(() => {
-      loading$.next(false);
-      checkAuthInProgress = false;
-    });
 }
 
 export function sessionInit() {
-  checkAuth();
+  checkIfSessionExists().then((exists) => {
+    if (exists) socket.reconnect("Initial connection");
+  });
 
   // No need to unsubscribe as this runs for the lifetime of the app
   session.events.pipe(distinctUntilKeyChanged("action")).subscribe((e) => {
-    checkAuth();
+    checkIfSessionExists();
 
     switch (e.action) {
       case "REFRESH_SESSION":

@@ -21,6 +21,9 @@ import {
 export const socket = io(ENV_WEB.BACKEND_BASEURL, {
   withCredentials: true,
   autoConnect: false,
+  reconnectionDelay: 3000,
+  reconnectionDelayMax: 5000,
+  closeOnBeforeunload: true,
   transports: ["websocket", "polling"],
 });
 
@@ -35,6 +38,10 @@ export const reconnect = (_message: string) => {
     socket.connect();
     clearTimeout(timeout);
   }, 1000);
+};
+
+const onError = (error: unknown) => {
+  console.error("Socket error:", error);
 };
 
 export const onceConnected = () => {
@@ -55,6 +62,7 @@ const effectHandler =
   };
 
 socket.once("connect", onceConnected);
+socket.on("error", onError);
 
 const SocketProvider = ({ children }: { children: ReactNode }) => {
   const dispatch = useDispatch();
