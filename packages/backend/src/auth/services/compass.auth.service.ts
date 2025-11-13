@@ -2,6 +2,7 @@ import { Credentials, TokenPayload } from "google-auth-library";
 import supertokens from "supertokens-node";
 import Session from "supertokens-node/recipe/session";
 import { Logger } from "@core/logger/winston.logger";
+import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { getSync } from "@backend/sync/util/sync.queries";
@@ -10,10 +11,6 @@ import {
   findCompassUserBy,
   updateGoogleRefreshToken,
 } from "@backend/user/queries/user.queries";
-import {
-  StringV4Schema,
-  zObjectId,
-} from "@core/types/type.utils";
 import syncService from "../../sync/services/sync.service";
 import userService from "../../user/services/user.service";
 import GoogleAuthService from "./google.auth.service";
