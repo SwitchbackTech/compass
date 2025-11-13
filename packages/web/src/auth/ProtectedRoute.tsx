@@ -18,7 +18,8 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
     );
   }, [authenticated, loading, navigate]);
 
-  if (!authenticated) return null;
+  if (loading) return <AbsoluteOverflowLoader />;
+  if (!authenticated && !loading) return null;
 
   if (state === "loading") return <AbsoluteOverflowLoader />;
 
