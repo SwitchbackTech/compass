@@ -6,7 +6,6 @@ import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
 import { GcalEventParser } from "@backend/event/classes/gcal.event.parser";
-import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import { Event_Transition } from "@backend/sync/sync.types";
 
 const logger = Logger("app.gcal.sync.processor");
@@ -37,8 +36,6 @@ export class GcalSyncProcessor {
 
       throw error;
     }
-
-    webSocketServer.handleBackgroundCalendarChange(this.userId);
 
     return summary;
   }
