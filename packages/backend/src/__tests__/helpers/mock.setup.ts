@@ -15,15 +15,12 @@ import {
 import { UserContext } from "supertokens-node/lib/build/types";
 import { createMockCalendarListEntry as mockCalendarListCreate } from "@core/__tests__/helpers/gcal.factory";
 import { gSchema$CalendarListEntry } from "@core/types/gcal";
+import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import { UserMetadata } from "@core/types/user.types";
 import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
 import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 import { ENV } from "@backend/common/constants/env.constants";
 import { SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
-import {
-  StringV4Schema,
-  zObjectId,
-} from "../../../../core/src/types/type.utils";
 
 export interface CompassTestState {
   events: ReturnType<typeof mockAndCategorizeGcalEvents>;
