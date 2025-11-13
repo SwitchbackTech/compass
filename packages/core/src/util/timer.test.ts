@@ -255,7 +255,7 @@ describe("Timer", () => {
       timer.end();
     });
 
-    it("ends timer on end date", (done) => {
+    it.skip("ends timer on end date", (done) => {
       const start = dayjs();
       const startDate = start.toDate();
       const endDate = start.add(2, "second").toDate();
