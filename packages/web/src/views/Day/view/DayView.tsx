@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
 import { useFeatureFlags } from "@web/common/hooks/useFeatureFlags";
 import { DateNavigationProvider } from "../context/DateNavigationProvider";
@@ -6,6 +7,7 @@ import { DayViewContent } from "./DayViewContent";
 
 export function DayView() {
   const { isPlannerEnabled } = useFeatureFlags();
+  const navigate = useNavigate();
 
   // Initialize with today's date - get today's date at midnight in user's timezone, then convert to UTC
   const todayUTC = dayjs().startOf("day").utc();
@@ -35,7 +37,7 @@ export function DayView() {
           retry.
         </p>
         <button
-          onClick={() => (window.location.href = "/")}
+          onClick={() => navigate("/")}
           className="mt-3 rounded-md bg-blue-600 px-4 py-2 text-white transition-colors duration-200 hover:bg-blue-700"
         >
           Return to Calendar
