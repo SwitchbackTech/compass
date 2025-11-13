@@ -21,8 +21,7 @@ import {
 export const socket = io(ENV_WEB.BACKEND_BASEURL, {
   withCredentials: true,
   autoConnect: false,
-  reconnectionDelay: 3000,
-  reconnectionDelayMax: 5000,
+  reconnection: false,
   closeOnBeforeunload: true,
   transports: ["websocket", "polling"],
 });

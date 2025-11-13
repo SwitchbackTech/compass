@@ -33,9 +33,12 @@ async function checkIfSessionExists(): Promise<boolean> {
     loading$.next(true);
 
     const exists = await session.doesSessionExist();
+    const socketConnected = socket.socket.connected;
 
     authenticated$.next(exists);
     loading$.next(false);
+
+    if (exists && !socketConnected) socket.socket.connect();
 
     return exists;
   } catch (error) {
@@ -48,9 +51,7 @@ async function checkIfSessionExists(): Promise<boolean> {
 }
 
 export function sessionInit() {
-  checkIfSessionExists().then((exists) => {
-    if (exists) socket.reconnect("Initial connection");
-  });
+  checkIfSessionExists();
 
   // No need to unsubscribe as this runs for the lifetime of the app
   session.events.pipe(distinctUntilKeyChanged("action")).subscribe((e) => {
