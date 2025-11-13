@@ -26,13 +26,23 @@ const loading$ = new BehaviorSubject(false);
 const $authenticated = authenticated$.pipe(skip(1), distinctUntilChanged());
 const $loading = loading$.pipe(distinctUntilChanged());
 
+28a: // Guard to prevent concurrent checkAuth executions
+28b: let checkAuthInProgress = false;
+
 function checkAuth() {
+  if (checkAuthInProgress) {
+    return;
+  }
+  checkAuthInProgress = true;
   loading$.next(true);
 
   session
     .doesSessionExist()
     .then((exists) => authenticated$.next(exists))
-    .finally(() => loading$.next(false));
+    .finally(() => {
+      loading$.next(false);
+      checkAuthInProgress = false;
+    });
 }
 
 export function sessionInit() {
