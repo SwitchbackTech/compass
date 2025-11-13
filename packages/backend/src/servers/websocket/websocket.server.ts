@@ -15,6 +15,7 @@ import {
   USER_METADATA,
 } from "@core/constants/websocket.constants";
 import { Logger } from "@core/logger/winston.logger";
+import { StringV4Schema } from "@core/types/type.utils";
 import { UserMetadata } from "@core/types/user.types";
 import {
   ClientToServerEvents,
@@ -41,8 +42,9 @@ class WebSocketServer {
   private onConnection(socket: CompassSocket) {
     const userId = socket.data.session.getUserId();
 
-    const sessionSocketId =
-      socket.data.session.getAccessTokenPayload().sessionHandle;
+    const sessionSocketId = StringV4Schema.parse(
+      socket.data.session.getHandle(),
+    );
 
     const userConnections = this.#userConnections.get(userId!) ?? [];
 
@@ -50,8 +52,6 @@ class WebSocketServer {
     this.#userConnections.set(userId!, userConnections?.concat(socket.id));
 
     logger.debug(`Connection made to: ${socket.id}`);
-
-    console.log(this.#sessionConnections);
 
     socket.on(
       "disconnect",
@@ -106,8 +106,6 @@ class WebSocketServer {
         userId!,
         userConnections.filter((id) => id !== socket.id),
       );
-
-      console.log(this.#sessionConnections);
     };
   }
 
@@ -132,7 +130,7 @@ class WebSocketServer {
   }
 
   private generateId(req: Request): string {
-    return req.session?.getAccessTokenPayload()?.sessionHandle;
+    return req.session?.getHandle() ?? "";
   }
 
   private notifyClient(
