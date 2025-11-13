@@ -136,7 +136,7 @@ class CompassAuthService {
     const id = await supertokens.getUserIdMapping({ userId });
 
     // for existing users without mapping
-    // @TODO: run this in a migration script later - create issue
+    // TODO: #5678 - run this in a migration script later
     if (id.status === "UNKNOWN_MAPPING_ERROR") {
       await supertokens.createUserIdMapping({
         superTokensUserId,
