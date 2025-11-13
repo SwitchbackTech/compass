@@ -17,6 +17,7 @@ import {
 import { EventRoutes } from "@backend/event/event.routes.config";
 import { PriorityRoutes } from "@backend/priority/priority.routes.config";
 import { SyncRoutes } from "@backend/sync/sync.routes.config";
+import { UserRoutes } from "@backend/user/user.routes.config";
 import { WaitlistRoutes } from "@backend/waitlist/waitlist.routes.config";
 
 export const initExpressServer = () => {
@@ -37,6 +38,7 @@ export const initExpressServer = () => {
 
   const routes: Array<CommonRoutesConfig> = [];
   routes.push(new AuthRoutes(app));
+  routes.push(new UserRoutes(app));
   routes.push(new PriorityRoutes(app));
   routes.push(new EventRoutes(app));
   routes.push(new SyncRoutes(app));

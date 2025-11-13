@@ -2,7 +2,7 @@ import cors from "cors";
 import { TokenPayload } from "google-auth-library";
 import { default as SuperTokens } from "supertokens-node";
 import Dashboard from "supertokens-node/recipe/dashboard";
-import { default as Session } from "supertokens-node/recipe/session";
+import Session from "supertokens-node/recipe/session";
 import ThirdParty from "supertokens-node/recipe/thirdparty";
 import UserMetadata from "supertokens-node/recipe/usermetadata";
 import {
@@ -12,11 +12,11 @@ import {
 } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
-import { StringV4Schema, zObjectId } from "@core/types/type.utils";
+import { zObjectId } from "@core/types/type.utils";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { getGAuthClientForUser } from "@backend/auth/services/google.auth.service";
 import { ENV } from "@backend/common/constants/env.constants";
-import { AuthError } from "@backend/common/errors/auth/auth.errors";
+import syncService from "@backend/sync/services/sync.service";
 
 export const initSupertokens = () => {
   SuperTokens.init({
@@ -79,14 +79,14 @@ export const initSupertokens = () => {
                       response.user.loginMethods.length === 1
                     ) {
                       // sign up logic
-                      await compassAuthService.signInWithSuperTokens(
+                      await compassAuthService.googleSignup(
                         providerUser,
                         refreshToken,
                         response.user.id,
                       );
                     } else {
                       // sign in logic
-                      await compassAuthService.loginWithSuperTokens(
+                      await compassAuthService.googleSignin(
                         providerUser,
                         response.oAuthTokens,
                         response.user.id,
@@ -107,9 +107,35 @@ export const initSupertokens = () => {
           apis(originalImplementation) {
             return {
               ...originalImplementation,
-              async verifySession(input) {
-                const session =
-                  await originalImplementation.verifySession(input);
+              async signOutPOST(input) {
+                if (!originalImplementation.signOutPOST) {
+                  throw new BaseError(
+                    "signOutPOST not implemented",
+                    "signOutPOST not implemented",
+                    Status.BAD_REQUEST,
+                    true,
+                  );
+                }
+
+                const userId = zObjectId.parse(input.session.getUserId());
+
+                const res = await originalImplementation.signOutPOST(input);
+
+                await syncService.stopWatches(userId.toString());
+
+                return res;
+              },
+              async refreshPOST(input) {
+                if (!originalImplementation.refreshPOST) {
+                  throw new BaseError(
+                    "refreshPOST not implemented",
+                    "refreshPOST not implemented",
+                    Status.BAD_REQUEST,
+                    true,
+                  );
+                }
+
+                const session = await originalImplementation.refreshPOST(input);
 
                 const userId = zObjectId.safeParse(session?.getUserId(), {
                   error: () => "Invalid user ID in session",
@@ -124,24 +150,15 @@ export const initSupertokens = () => {
                   );
                 }
 
+                // provider specific implementation
+                // Not currently used
+                // We refresh the provider access token as standard practice
+                // to keep testing the refresh token for liveness
                 const gAuthClient = await getGAuthClientForUser({
                   _id: userId.data.toString(),
                 });
 
-                const gAccessToken = await gAuthClient.getAccessToken();
-
-                const gToken = StringV4Schema.safeParse(gAccessToken, {
-                  error: () => AuthError.NoGAuthAccessToken.description,
-                });
-
-                if (!gToken.success) {
-                  throw new BaseError(
-                    AuthError.NoGAuthAccessToken.description,
-                    gToken.error.message,
-                    Status.UNAUTHORIZED,
-                    true,
-                  );
-                }
+                await gAuthClient.refreshAccessToken();
 
                 return session;
               },

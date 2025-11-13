@@ -30,8 +30,6 @@ export interface InterServerEvents {
 export interface ServerToClientEvents {
   EVENT_CHANGED: () => void;
   SOMEDAY_EVENT_CHANGED: () => void;
-  USER_SIGN_OUT: () => void;
-  USER_REFRESH_TOKEN: () => void;
   USER_METADATA: (data: UserMetadata) => void;
   IMPORT_GCAL_START: () => void;
   IMPORT_GCAL_END: (reason?: string) => void;

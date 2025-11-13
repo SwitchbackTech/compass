@@ -13,8 +13,6 @@ import {
   SOMEDAY_EVENT_CHANGED,
   SOMEDAY_EVENT_CHANGE_PROCESSED,
   USER_METADATA,
-  USER_REFRESH_TOKEN,
-  USER_SIGN_OUT,
 } from "@core/constants/websocket.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { UserMetadata } from "@core/types/user.types";
@@ -203,7 +201,10 @@ class WebSocketServer {
       ServerToClientEvents,
       InterServerEvents,
       SocketData
-    >(server, { cors: { origin: ENV.ORIGINS_ALLOWED, credentials: true } });
+    >(server, {
+      cors: { origin: ENV.ORIGINS_ALLOWED, credentials: true },
+      transports: ["websocket", "polling"],
+    });
 
     this.wsServer.engine.use(verifySession({ antiCsrfCheck: true }));
 
@@ -218,14 +219,6 @@ class WebSocketServer {
     });
 
     return this.wsServer;
-  }
-
-  handleUserSignOut(sessionSocketId: string) {
-    return this.notifySession(sessionSocketId, USER_SIGN_OUT);
-  }
-
-  handleUserRefreshToken(sessionSocketId: string) {
-    return this.notifySession(sessionSocketId, USER_REFRESH_TOKEN);
   }
 
   handleUserMetadata(sessionSocketId: string, payload: UserMetadata) {

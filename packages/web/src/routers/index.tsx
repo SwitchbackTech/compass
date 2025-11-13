@@ -96,6 +96,7 @@ export const RootRouter = () => {
   return (
     <RouterProvider
       router={router}
+      future={{ v7_startTransition: true }}
       fallbackElement={<AbsoluteOverflowLoader />}
     />
   );

@@ -21,22 +21,24 @@ import {
 export const socket = io(ENV_WEB.BACKEND_BASEURL, {
   withCredentials: true,
   autoConnect: false,
-  transports: ["websocket"],
+  transports: ["websocket", "polling"],
 });
 
-export const reconnect = (_message: string) => {
+export const disconnect = () => {
   socket.disconnect();
-  socket.connect();
+};
+
+export const reconnect = (_message: string) => {
+  disconnect();
+
+  const timeout = setTimeout(() => {
+    socket.connect();
+    clearTimeout(timeout);
+  }, 1000);
 };
 
 export const onceConnected = () => {
   socket.emit(FETCH_USER_METADATA);
-};
-
-const onDisconnect = (_reason: string) => {};
-
-export const onUserSignOut = () => {
-  socket.disconnect();
 };
 
 const effectHandler =
@@ -53,7 +55,6 @@ const effectHandler =
   };
 
 socket.once("connect", onceConnected);
-socket.on("disconnect", onDisconnect);
 
 const SocketProvider = ({ children }: { children: ReactNode }) => {
   const dispatch = useDispatch();
@@ -108,14 +109,6 @@ const SocketProvider = ({ children }: { children: ReactNode }) => {
   useEffect(effectHandler(IMPORT_GCAL_START, onImportStart), [onImportStart]);
 
   useEffect(effectHandler(IMPORT_GCAL_END, onImportEnd), [onImportEnd]);
-
-  useEffect(() => {
-    socket.connect();
-
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
 
   return children;
 };

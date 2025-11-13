@@ -13,7 +13,6 @@ import {
   SOMEDAY_EVENT_CHANGED,
   SOMEDAY_EVENT_CHANGE_PROCESSED,
   USER_METADATA,
-  USER_REFRESH_TOKEN,
 } from "@core/constants/websocket.constants";
 import { UserMetadata } from "@core/types/user.types";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
@@ -129,7 +128,9 @@ describe("WebSocket Server", () => {
         });
 
         clientTwo.once("connect", () =>
-          webSocketServer.handleUserRefreshToken(sessionIdTwo),
+          webSocketServer.handleUserMetadata(sessionIdTwo, {
+            skipOnboarding: false,
+          }),
         );
 
         await expect(
@@ -140,8 +141,6 @@ describe("WebSocket Server", () => {
             baseDriver.waitUntilWebsocketEvent(clientTwo, USER_METADATA, () =>
               Promise.resolve(clientTwo.connect()),
             ),
-            baseDriver.waitUntilWebsocketEvent(clientOne, USER_REFRESH_TOKEN),
-            baseDriver.waitUntilWebsocketEvent(clientTwo, USER_REFRESH_TOKEN),
           ]),
         ).resolves.toEqual([
           expect.objectContaining({
@@ -149,18 +148,9 @@ describe("WebSocket Server", () => {
             value: [userMetadata],
           }),
           expect.objectContaining({
-            status: "rejected",
-            reason: new Error(
-              `Operation timed out. Wait for ${USER_METADATA} timed out`,
-            ),
+            status: "fulfilled",
+            value: [{ skipOnboarding: false }],
           }),
-          expect.objectContaining({
-            status: "rejected",
-            reason: new Error(
-              `Operation timed out. Wait for ${USER_REFRESH_TOKEN} timed out`,
-            ),
-          }),
-          expect.objectContaining({ status: "fulfilled", value: [] }),
         ]);
       });
     });
@@ -237,12 +227,6 @@ describe("WebSocket Server", () => {
         expect(
           webSocketServer.handleUserMetadata(sessionId, userMetadata),
         ).toEqual("IGNORED");
-
-        expect(webSocketServer.handleUserRefreshToken(sessionId)).toEqual(
-          "IGNORED",
-        );
-
-        expect(webSocketServer.handleUserSignOut(sessionId)).toEqual("IGNORED");
       });
     });
   });
