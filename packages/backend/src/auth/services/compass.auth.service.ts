@@ -13,7 +13,7 @@ import {
 import {
   StringV4Schema,
   zObjectId,
-} from "../../../../core/src/types/type.utils";
+} from "@core/types/type.utils";
 import syncService from "../../sync/services/sync.service";
 import userService from "../../user/services/user.service";
 import GoogleAuthService from "./google.auth.service";
