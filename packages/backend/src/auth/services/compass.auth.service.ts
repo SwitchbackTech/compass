@@ -96,7 +96,13 @@ class CompassAuthService {
   ) {
     const user = await findCompassUserBy(
       "google.googleId",
-      StringV4Schema.parse(gUser.sub),
+      (() => {
+        const result = StringV4Schema.safeParse(gUser.sub);
+        if (!result.success) {
+          throw new Error("Invalid Google user ID");
+        }
+        return result.data;
+      })(),
     );
 
     const userId = zObjectId.parse(user?._id).toString();
