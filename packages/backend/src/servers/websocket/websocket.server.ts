@@ -206,7 +206,7 @@ class WebSocketServer {
       transports: ["websocket", "polling"],
     });
 
-    this.wsServer.engine.use(verifySession({ antiCsrfCheck: true }));
+    this.wsServer.engine.use(verifySession());
 
     this.wsServer.engine.generateId = this.generateId.bind(this);
 
