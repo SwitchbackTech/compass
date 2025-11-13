@@ -11,8 +11,8 @@ import {
   findCompassUserBy,
   updateGoogleRefreshToken,
 } from "@backend/user/queries/user.queries";
-import syncService from "../../sync/services/sync.service";
-import userService from "../../user/services/user.service";
+import syncService from "@backend/sync/services/sync.service";
+import userService from "@backend/user/services/user.service";
 import GoogleAuthService from "./google.auth.service";
 
 const logger = Logger("app:auth.service");
