@@ -3,6 +3,7 @@ import supertokens from "supertokens-node";
 import Session from "supertokens-node/recipe/session";
 import { Logger } from "@core/logger/winston.logger";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
+import GoogleAuthService from "@backend/auth/services/google.auth.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import syncService from "@backend/sync/services/sync.service";
@@ -13,7 +14,6 @@ import {
   updateGoogleRefreshToken,
 } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
-import GoogleAuthService from "./google.auth.service";
 
 const logger = Logger("app:auth.service");
 
@@ -94,16 +94,15 @@ class CompassAuthService {
     oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">,
     superTokensUserId: string,
   ) {
-    const user = await findCompassUserBy(
-      "google.googleId",
-      (() => {
-        const result = StringV4Schema.safeParse(gUser.sub);
-        if (!result.success) {
-          throw new Error("Invalid Google user ID");
-        }
-        return result.data;
-      })(),
-    );
+    const gUserId = StringV4Schema.parse(gUser.sub, {
+      error: () => "Invalid Google user ID",
+    });
+
+    const refreshToken = StringV4Schema.parse(oAuthTokens.refresh_token, {
+      error: () => "Invalid or missing Google refresh token",
+    });
+
+    const user = await findCompassUserBy("google.googleId", gUserId);
 
     const userId = zObjectId.parse(user?._id).toString();
 
@@ -112,12 +111,6 @@ class CompassAuthService {
     gAuthClient.oauthClient.setCredentials(oAuthTokens);
 
     const gcal = gAuthClient.getGcalClient();
-
-    const refreshTokenResult = StringV4Schema.safeParse(oAuthTokens.refresh_token);
-    if (!refreshTokenResult.success) {
-      throw new Error("Invalid or missing Google refresh token");
-    }
-    const refreshToken = refreshTokenResult.data;
 
     if (refreshToken !== user?.google.gRefreshToken) {
       await updateGoogleRefreshToken(userId, refreshToken);
