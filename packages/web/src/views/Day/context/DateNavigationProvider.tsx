@@ -1,7 +1,7 @@
 import React, { createContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
-import { formatDateForUrl } from "../util/date-route.util";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
 
 interface DateNavigationContextValue {
   dateInView: Dayjs;
@@ -34,13 +34,15 @@ export function DateNavigationProvider({
   const navigateToNextDay = () => {
     const nextDate = dateInView.add(1, "day");
     setDateInView(nextDate);
-    navigate(`/day/${formatDateForUrl(nextDate)}`);
+    // Keep URL as /day - date is tracked internally
+    navigate(ROOT_ROUTES.DAY, { replace: true });
   };
 
   const navigateToPreviousDay = () => {
     const prevDate = dateInView.subtract(1, "day");
     setDateInView(prevDate);
-    navigate(`/day/${formatDateForUrl(prevDate)}`);
+    // Keep URL as /day - date is tracked internally
+    navigate(ROOT_ROUTES.DAY, { replace: true });
   };
 
   const navigateToToday = () => {
@@ -48,7 +50,7 @@ export function DateNavigationProvider({
     const todayLocal = dayjs().format("YYYY-MM-DD");
     const today = dayjs.utc(todayLocal);
     setDateInView(today);
-    navigate("/day");
+    navigate(ROOT_ROUTES.DAY, { replace: true });
   };
 
   const value: DateNavigationContextValue = {

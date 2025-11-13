@@ -1,30 +1,19 @@
-import { useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import dayjs from "@core/util/date/dayjs";
 import { useFeatureFlags } from "@web/common/hooks/useFeatureFlags";
 import { DateNavigationProvider } from "../context/DateNavigationProvider";
 import { TaskProvider } from "../context/TaskProvider";
-import { formatDateForUrl, getValidDateFromUrl } from "../util/date-route.util";
 import { DayViewContent } from "./DayViewContent";
 
 export function DayView() {
   const { isPlannerEnabled } = useFeatureFlags();
-  const { date } = useParams<{ date?: string }>();
-  const navigate = useNavigate();
 
-  // Get the valid date from URL parameter
-  const validDate = getValidDateFromUrl(date);
-
-  // Redirect if the date was corrected (invalid date in URL)
-  useEffect(() => {
-    if (date && validDate.format("YYYY-MM-DD") !== date) {
-      const correctedUrl = `/day/${formatDateForUrl(validDate)}`;
-      navigate(correctedUrl, { replace: true });
-    }
-  }, [date, validDate, navigate]);
+  // Initialize with today's date - get today's date in user's timezone, then create UTC midnight
+  const todayLocal = dayjs().format("YYYY-MM-DD");
+  const todayUTC = dayjs.utc(todayLocal);
 
   if (isPlannerEnabled) {
     return (
-      <DateNavigationProvider initialDate={validDate}>
+      <DateNavigationProvider initialDate={todayUTC}>
         <TaskProvider>
           <DayViewContent />
         </TaskProvider>
@@ -47,7 +36,7 @@ export function DayView() {
           retry.
         </p>
         <button
-          onClick={() => navigate("/")}
+          onClick={() => (window.location.href = "/")}
           className="mt-3 rounded-md bg-blue-600 px-4 py-2 text-white transition-colors duration-200 hover:bg-blue-700"
         >
           Return to Calendar
