@@ -1,9 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { theme } from "@web/common/styles/theme";
 import { InfoIcon } from "@web/components/Icons/Info";
 import { StyledXIcon } from "@web/components/Icons/X";
-
-const STORAGE_INFO_SEEN_KEY = "compass.day.storage-info-seen";
+import { markStorageInfoAsSeen } from "../../util/storage.util";
 
 interface StorageInfoModalProps {
   isOpen: boolean;
@@ -14,12 +13,77 @@ export const StorageInfoModal = ({
   isOpen,
   onClose,
 }: StorageInfoModalProps) => {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousActiveElementRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     if (isOpen) {
       // Mark as seen when modal is opened
-      localStorage.setItem(STORAGE_INFO_SEEN_KEY, "true");
+      markStorageInfoAsSeen();
+
+      // Store the currently focused element before opening modal
+      previousActiveElementRef.current =
+        document.activeElement as HTMLElement | null;
+
+      // Focus the modal container
+      if (modalRef.current) {
+        const firstFocusableElement = modalRef.current.querySelector(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ) as HTMLElement | null;
+        firstFocusableElement?.focus();
+      }
+    } else {
+      // Restore focus to the previously focused element when modal closes
+      if (previousActiveElementRef.current) {
+        previousActiveElementRef.current.focus();
+        previousActiveElementRef.current = null;
+      }
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+
+      // Trap focus within modal using Tab key
+      if (e.key === "Tab" && modalRef.current) {
+        const focusableElements = modalRef.current.querySelectorAll(
+          'button:not([tabindex="-1"]), [href]:not([tabindex="-1"]), input:not([tabindex="-1"]), select:not([tabindex="-1"]), textarea:not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])',
+        );
+
+        const firstFocusableElement = focusableElements[0] as HTMLElement;
+        const lastFocusableElement = focusableElements[
+          focusableElements.length - 1
+        ] as HTMLElement;
+
+        if (e.shiftKey) {
+          // Shift + Tab
+          if (document.activeElement === firstFocusableElement) {
+            e.preventDefault();
+            lastFocusableElement?.focus();
+          }
+        } else {
+          // Tab
+          if (document.activeElement === lastFocusableElement) {
+            e.preventDefault();
+            firstFocusableElement?.focus();
+          }
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) {
     return null;
@@ -27,12 +91,6 @@ export const StorageInfoModal = ({
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
       onClose();
     }
   };
@@ -47,11 +105,13 @@ export const StorageInfoModal = ({
       <button
         className="fixed inset-0 z-0 bg-black"
         onClick={handleBackdropClick}
-        onKeyDown={handleKeyDown}
         aria-label="Close modal"
         tabIndex={-1}
       />
-      <div className="bg-darkBlue-400 relative z-10 mx-4 w-full max-w-lg rounded-lg border border-gray-400/20 p-6 text-white shadow-lg">
+      <div
+        ref={modalRef}
+        className="bg-darkBlue-400 relative z-10 mx-4 w-full max-w-lg rounded-lg border border-gray-400/20 p-6 text-white shadow-lg"
+      >
         <button
           onClick={onClose}
           className="absolute top-4 right-4 rounded p-1 transition-colors hover:bg-white/10"
@@ -96,11 +156,4 @@ export const StorageInfoModal = ({
       </div>
     </div>
   );
-};
-
-export const hasSeenStorageInfo = (): boolean => {
-  if (typeof window === "undefined") {
-    return true;
-  }
-  return localStorage.getItem(STORAGE_INFO_SEEN_KEY) === "true";
 };

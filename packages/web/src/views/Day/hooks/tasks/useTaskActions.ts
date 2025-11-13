@@ -2,13 +2,13 @@ import dayjs from "dayjs";
 import { useCallback } from "react";
 import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
-import { hasSeenStorageInfo } from "../../components/StorageInfoModal/StorageInfoModal";
 import { showMigrationToast } from "../../components/Toasts/MigrationToast/MigrationToast";
 import { showUndoDeleteToast } from "../../components/Toasts/UndoToast/UndoDeleteToast";
 import { Task, UndoOperation } from "../../task.types";
 import { sortTasksByStatus } from "../../util/sort.task";
 import {
   getDateKey,
+  hasSeenStorageInfo,
   loadTasksFromStorage,
   moveTaskToDate,
   saveTasksToStorage,
@@ -59,9 +59,7 @@ export function useTaskActions({
 
     // Check if this is the first task ever created
     // Only show modal if user hasn't seen it and this appears to be their first task
-    const isFirstTask =
-      tasks.length === 0 && !hasSeenStorageInfo() && onFirstTaskCreated;
-    if (isFirstTask) {
+    if (tasks.length === 0 && !hasSeenStorageInfo() && onFirstTaskCreated) {
       // Defer modal opening to next tick to avoid blocking UI update from task creation
       setTimeout(() => {
         onFirstTaskCreated();

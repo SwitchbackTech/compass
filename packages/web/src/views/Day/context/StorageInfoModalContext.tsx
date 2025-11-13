@@ -1,5 +1,4 @@
 import { createContext, useCallback, useContext, useState } from "react";
-import { hasSeenStorageInfo } from "../components/StorageInfoModal/StorageInfoModal";
 
 interface StorageInfoModalContextValue {
   isOpen: boolean;
