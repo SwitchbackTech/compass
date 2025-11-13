@@ -107,7 +107,11 @@ class CompassAuthService {
 
     const gcal = gAuthClient.getGcalClient();
 
-    const refreshToken = StringV4Schema.parse(oAuthTokens.refresh_token);
+    const refreshTokenResult = StringV4Schema.safeParse(oAuthTokens.refresh_token);
+    if (!refreshTokenResult.success) {
+      throw new Error("Invalid or missing Google refresh token");
+    }
+    const refreshToken = refreshTokenResult.data;
 
     if (refreshToken !== user?.google.gRefreshToken) {
       await updateGoogleRefreshToken(userId, refreshToken);
