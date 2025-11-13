@@ -150,10 +150,9 @@ export const initSupertokens = () => {
                   );
                 }
 
-                // provider specific implementation
-                // Not currently used
+                // Provider-specific implementation:
                 // We refresh the provider access token as standard practice
-                // to keep testing the refresh token for liveness
+                // to ensure the refresh token remains valid and to test its liveness.
                 const gAuthClient = await getGAuthClientForUser({
                   _id: userId.data.toString(),
                 });
