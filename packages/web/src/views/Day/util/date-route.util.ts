@@ -119,10 +119,9 @@ export const getValidDateFromUrl = (
     }
   }
 
-  // Fallback to today's date - get today's date in user's timezone, then create UTC midnight
+  // Fallback to today's date - get today's date at midnight in user's timezone, then convert to UTC
   // This ensures we work with the correct calendar date regardless of timezone
-  const todayLocal = dayjs().format("YYYY-MM-DD");
-  const todayUTC = dayjs.utc(todayLocal);
+  const todayUTC = dayjs().startOf("day").utc();
   return todayUTC;
 };
 

@@ -33,7 +33,7 @@ const router = createBrowserRouter(
           element: <RootView />,
         },
         {
-          path: `${ROOT_ROUTES.DAY}/:date?`,
+          path: ROOT_ROUTES.DAY,
           element: <DayView />,
         },
       ],

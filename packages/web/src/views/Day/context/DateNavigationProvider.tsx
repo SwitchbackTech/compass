@@ -1,7 +1,8 @@
-import React, { createContext, useEffect, useState } from "react";
+import React, { createContext } from "react";
 import { useNavigate } from "react-router-dom";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
-import { formatDateForUrl } from "../util/date-route.util";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { useSyncDate } from "../hooks/navigation/useSyncDate";
 
 interface DateNavigationContextValue {
   dateInView: Dayjs;
@@ -23,32 +24,28 @@ export function DateNavigationProvider({
   children,
   initialDate,
 }: DateNavigationProviderProps) {
-  const [dateInView, setDateInView] = useState(initialDate);
+  const [dateInView, setDateInView] = useSyncDate(initialDate);
   const navigate = useNavigate();
-
-  // Sync state when initialDate prop changes (e.g., when route changes)
-  useEffect(() => {
-    setDateInView(initialDate);
-  }, [initialDate]);
 
   const navigateToNextDay = () => {
     const nextDate = dateInView.add(1, "day");
     setDateInView(nextDate);
-    navigate(`/day/${formatDateForUrl(nextDate)}`);
+    // Keep URL as /day - date is tracked internally
+    navigate(ROOT_ROUTES.DAY, { replace: true });
   };
 
   const navigateToPreviousDay = () => {
     const prevDate = dateInView.subtract(1, "day");
     setDateInView(prevDate);
-    navigate(`/day/${formatDateForUrl(prevDate)}`);
+    // Keep URL as /day - date is tracked internally
+    navigate(ROOT_ROUTES.DAY, { replace: true });
   };
 
   const navigateToToday = () => {
-    // Get today's date in user's timezone, then create UTC midnight
-    const todayLocal = dayjs().format("YYYY-MM-DD");
-    const today = dayjs.utc(todayLocal);
+    // Get today's date at midnight in user's timezone, then convert to UTC
+    const today = dayjs().startOf("day").utc();
     setDateInView(today);
-    navigate("/day");
+    navigate(ROOT_ROUTES.DAY, { replace: true });
   };
 
   const value: DateNavigationContextValue = {
