@@ -46,9 +46,8 @@ export function DateNavigationProvider({
   };
 
   const navigateToToday = () => {
-    // Get today's date in user's timezone, then create UTC midnight
-    const todayLocal = dayjs().format("YYYY-MM-DD");
-    const today = dayjs.utc(todayLocal);
+    // Get today's date at midnight in user's timezone, then convert to UTC
+    const today = dayjs().startOf("day").utc();
     setDateInView(today);
     navigate(ROOT_ROUTES.DAY, { replace: true });
   };

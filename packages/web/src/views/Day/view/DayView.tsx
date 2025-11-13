@@ -7,9 +7,8 @@ import { DayViewContent } from "./DayViewContent";
 export function DayView() {
   const { isPlannerEnabled } = useFeatureFlags();
 
-  // Initialize with today's date - get today's date in user's timezone, then create UTC midnight
-  const todayLocal = dayjs().format("YYYY-MM-DD");
-  const todayUTC = dayjs.utc(todayLocal);
+  // Initialize with today's date - get today's date at midnight in user's timezone, then convert to UTC
+  const todayUTC = dayjs().startOf("day").utc();
 
   if (isPlannerEnabled) {
     return (

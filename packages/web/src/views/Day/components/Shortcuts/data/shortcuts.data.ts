@@ -66,8 +66,7 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
         label: (() => {
           if (!currentDate) return "Go to today";
           // Compare dates in the same timezone (UTC) to avoid timezone issues
-          const todayLocal = dayjs().format("YYYY-MM-DD");
-          const todayUTC = dayjs.utc(todayLocal);
+          const todayUTC = dayjs().startOf("day").utc();
           return currentDate.isSame(todayUTC, "day")
             ? "Scroll to now"
             : "Go to today";
