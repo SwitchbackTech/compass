@@ -6,6 +6,7 @@ import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { UserInfo_Google } from "@core/types/auth.types";
 import { gCalendar } from "@core/types/gcal";
+import { StringV4Schema } from "@core/types/type.utils";
 import { Schema_User } from "@core/types/user.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
@@ -118,10 +119,10 @@ class GoogleAuthService {
     return payload;
   }
 
-  async getAccessToken() {
+  async refreshAccessToken() {
     const { token } = await this.oauthClient.getAccessToken();
 
-    if (!token) {
+    if (!StringV4Schema.safeParse(token).success) {
       throw error(
         AuthError.NoGAuthAccessToken,
         "Google auth access token not returned",

@@ -32,7 +32,7 @@ export const AuthError: AuthErrors = {
   },
   NoGAuthAccessToken: {
     description: "No gauth access token",
-    status: Status.BAD_REQUEST,
+    status: Status.UNAUTHORIZED,
     isOperational: true,
   },
 };

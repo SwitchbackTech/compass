@@ -71,15 +71,12 @@ class CompassAuthService {
     return { sessionsRevoked: sessionsRevoked.length };
   };
 
-  async signInWithSuperTokens(
-    providerUser: TokenPayload,
+  async googleSignup(
+    gUser: TokenPayload,
     refreshToken: string,
     superTokensUserId: string,
   ) {
-    const { userId } = await userService.initUserData(
-      providerUser,
-      refreshToken,
-    );
+    const { userId } = await userService.initUserData(gUser, refreshToken);
 
     await supertokens.createUserIdMapping({
       superTokensUserId,
@@ -87,17 +84,22 @@ class CompassAuthService {
       externalUserIdInfo: "Compass User ID",
     });
 
+    await userService.updateUserMetadata({
+      userId,
+      data: { skipOnboarding: false },
+    });
+
     return { cUserId: userId };
   }
 
-  async loginWithSuperTokens(
-    providerUser: TokenPayload,
+  async googleSignin(
+    gUser: TokenPayload,
     oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">,
     superTokensUserId: string,
   ) {
     const user = await findCompassUserBy(
       "google.googleId",
-      StringV4Schema.parse(providerUser.sub),
+      StringV4Schema.parse(gUser.sub),
     );
 
     const userId = zObjectId.parse(user?._id).toString();
@@ -134,6 +136,7 @@ class CompassAuthService {
     const id = await supertokens.getUserIdMapping({ userId });
 
     // for existing users without mapping
+    // @TODO: run this in a migration script later - create issue
     if (id.status === "UNKNOWN_MAPPING_ERROR") {
       await supertokens.createUserIdMapping({
         superTokensUserId,

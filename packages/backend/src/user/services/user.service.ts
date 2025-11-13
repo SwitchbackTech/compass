@@ -8,7 +8,6 @@ import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 import { mapUserToCompass } from "@core/mappers/map.user";
 import { mapCompassUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
-import { UserInfo_Google } from "@core/types/auth.types";
 import { Resource_Sync } from "@core/types/sync.types";
 import { zObjectId } from "@core/types/type.utils";
 import { Schema_User, UserMetadata } from "@core/types/user.types";
@@ -35,7 +34,7 @@ const logger = Logger("app:user.service");
 
 class UserService {
   createUser = async (
-    gUser: UserInfo_Google["gUser"],
+    gUser: TokenPayload,
     gRefreshToken: string,
   ): Promise<Schema_User & { userId: string }> => {
     const _compassUser = mapUserToCompass(gUser, gRefreshToken);

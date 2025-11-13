@@ -36,6 +36,10 @@ export const useGoogleLogin = ({
     flow: "auth-code",
     scope: SCOPES_REQUIRED.join(" "),
     state: antiCsrfToken,
+    onNonOAuthError(nonOAuthError) {
+      setLoading(false);
+      console.error(nonOAuthError);
+    },
     onSuccess: async ({ code, scope, state }) => {
       const isFromHacker = state !== antiCsrfToken;
       if (isFromHacker) {
@@ -68,6 +72,7 @@ export const useGoogleLogin = ({
       }
     },
     onError: (error) => {
+      setLoading(false);
       alert(`Login failed because: ${error.error}`);
       console.error(error);
       onError?.(error);

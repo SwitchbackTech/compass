@@ -1,13 +1,13 @@
+import { TokenPayload } from "google-auth-library";
 import { ObjectId, WithId } from "mongodb";
 import { faker } from "@faker-js/faker";
-import { UserInfo_Google } from "@core/types/auth.types";
 import { Schema_User } from "@core/types/user.types";
 import userService from "../../user/services/user.service";
 
 export class UserDriver {
   static generateGoogleUser(
-    overrides: Partial<UserInfo_Google["gUser"]> = {},
-  ): UserInfo_Google["gUser"] {
+    overrides: Partial<TokenPayload> = {},
+  ): TokenPayload {
     const firstName = faker.person.firstName();
     const lastName = faker.person.lastName();
 

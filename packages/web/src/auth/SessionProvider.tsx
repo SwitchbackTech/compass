@@ -1,4 +1,4 @@
-import { PropsWithChildren, createContext } from "react";
+import { PropsWithChildren, createContext, useEffect, useState } from "react";
 import { BehaviorSubject } from "rxjs";
 import {
   distinctUntilChanged,
@@ -7,8 +7,6 @@ import {
 } from "rxjs/operators";
 import { session } from "@web/common/classes/Session";
 import * as socket from "@web/socket/SocketProvider";
-import { ROOT_ROUTES } from "../common/constants/routes";
-import { router } from "../routers";
 
 interface SessionContext {
   loading: boolean;
@@ -24,6 +22,9 @@ export const SessionContext = createContext<SessionContext>({
 
 const authenticated$ = new BehaviorSubject(false);
 const loading$ = new BehaviorSubject(false);
+
+const $authenticated = authenticated$.pipe(skip(1), distinctUntilChanged());
+const $loading = loading$.pipe(distinctUntilChanged());
 
 function checkAuth() {
   loading$.next(true);
@@ -47,28 +48,29 @@ export function sessionInit() {
         socket.reconnect(e.action);
         break;
       case "SIGN_OUT":
-        socket.onUserSignOut();
+        socket.disconnect();
         break;
     }
   });
-
-  authenticated$
-    .pipe(skip(1), distinctUntilChanged())
-    .subscribe((authenticated) => {
-      router.navigate(authenticated ? ROOT_ROUTES.ROOT : ROOT_ROUTES.LOGIN, {
-        replace: true,
-      });
-    });
 }
 
 export function SessionProvider({ children }: PropsWithChildren<{}>) {
+  const [authenticated, setAuthenticated] = useState(authenticated$.value);
+  const [loading, setLoading] = useState(loading$.value);
+
+  useEffect(() => {
+    const authSub = $authenticated.subscribe(setAuthenticated);
+    const loadSub = $loading.subscribe(setLoading);
+
+    return () => {
+      authSub.unsubscribe();
+      loadSub.unsubscribe();
+    };
+  }, []);
+
   return (
     <SessionContext.Provider
-      value={{
-        authenticated: authenticated$.value,
-        loading: loading$.value,
-        setAuthenticated: authenticated$.next.bind(authenticated$),
-      }}
+      value={{ authenticated, loading, setAuthenticated }}
     >
       {children}
     </SessionContext.Provider>

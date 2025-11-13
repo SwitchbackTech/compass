@@ -16,6 +16,7 @@ export interface Schema_User {
 }
 
 export interface UserMetadata extends SupertokensUserMetadata.JSONObject {
+  skipOnboarding?: boolean;
   sync?: {
     importGCal?: "importing" | "errored" | "completed" | "restart" | null;
   };

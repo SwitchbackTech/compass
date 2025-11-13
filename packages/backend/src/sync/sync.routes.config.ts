@@ -33,10 +33,6 @@ export class SyncRoutes extends CommonRoutesConfig {
       .route(`/api/sync/import-gcal`)
       .post(verifySession(), SyncController.importGCal);
 
-    this.app
-      .route(`/api/sync/stop-all`)
-      .post([verifySession(), syncDebugController.stopAllChannelWatches]);
-
     /***************
      * DEBUG ROUTES
      ***************/
