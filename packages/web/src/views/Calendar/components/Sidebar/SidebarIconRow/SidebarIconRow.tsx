@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { PH_ID_BETA_BUTTON } from "@web/common/constants/posthog.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { useFeatureFlags } from "@web/common/hooks/useFeatureFlags";
 import { theme } from "@web/common/styles/theme";
 import { getMetaKey } from "@web/common/utils/shortcut/shortcut.util";
 import { CalendarIcon } from "@web/components/Icons/Calendar";
@@ -26,10 +25,7 @@ export const SidebarIconRow = () => {
   const tab = useAppSelector(selectSidebarTab);
   const gCalImport = useAppSelector(selectImportGCalState);
   const isCmdPaletteOpen = useAppSelector(selectIsCmdPaletteOpen);
-  const { isPlannerEnabled } = useFeatureFlags();
-  const flaskColor = isPlannerEnabled
-    ? theme.color.text.light
-    : theme.color.text.darkPlaceholder;
+  const flaskColor = theme.color.text.light;
 
   const toggleCmdPalette = () => {
     if (isCmdPaletteOpen) {
@@ -94,15 +90,13 @@ export const SidebarIconRow = () => {
         <TooltipWrapper description="Early Access">
           <FlaskIcon id={PH_ID_BETA_BUTTON} color={flaskColor} />
         </TooltipWrapper>
-        {isPlannerEnabled && (
-          <TooltipWrapper
-            description="Go to Day"
-            shortcut="2"
-            onClick={() => navigate(ROOT_ROUTES.DAY)}
-          >
-            <CircleTwoIcon color={flaskColor} />
-          </TooltipWrapper>
-        )}
+        <TooltipWrapper
+          description="Go to Day"
+          shortcut="2"
+          onClick={() => navigate(ROOT_ROUTES.DAY)}
+        >
+          <CircleTwoIcon color={flaskColor} />
+        </TooltipWrapper>
         {gCalImport.importing ? (
           <TooltipWrapper description="Importing your calendar events in the background">
             <SpinnerIcon disabled />

@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { renderHook } from "@testing-library/react";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { useFeatureFlags } from "@web/common/hooks/useFeatureFlags";
 import { useWeekShortcuts } from "./useWeekShortcuts";
 
 // Mock react-router-dom
@@ -14,16 +13,8 @@ jest.mock("../Day/util/shortcut.util", () => ({
   isEditable: jest.fn(),
 }));
 
-// Mock the feature flags hook
-jest.mock("@web/common/hooks/useFeatureFlags", () => ({
-  useFeatureFlags: jest.fn(),
-}));
-
 const mockNavigate = jest.fn();
 const mockIsEditable = jest.requireMock("../Day/util/shortcut.util").isEditable;
-const mockUseFeatureFlags = useFeatureFlags as jest.MockedFunction<
-  typeof useFeatureFlags
->;
 
 // Mock addEventListener and removeEventListener
 const mockAddEventListener = jest.fn();
@@ -44,7 +35,6 @@ describe("useWeekShortcuts", () => {
     jest.clearAllMocks();
     (useNavigate as jest.Mock).mockReturnValue(mockNavigate);
     mockIsEditable.mockReturnValue(false);
-    mockUseFeatureFlags.mockReturnValue({ isPlannerEnabled: true });
   });
 
   afterEach(() => {
@@ -180,22 +170,5 @@ describe("useWeekShortcuts", () => {
     keydownHandler(mockEvent);
 
     expect(mockIsEditable).toHaveBeenCalledWith(mockTarget);
-  });
-
-  it("should not navigate to NOW route when '1' key is pressed and isPlannerEnabled is false", () => {
-    mockUseFeatureFlags.mockReturnValue({ isPlannerEnabled: false });
-    renderHook(() => useWeekShortcuts());
-
-    const keydownHandler = mockAddEventListener.mock.calls[0][1];
-    const mockEvent = {
-      key: "1",
-      preventDefault: jest.fn(),
-      target: document.createElement("div"),
-    };
-
-    keydownHandler(mockEvent);
-
-    expect(mockEvent.preventDefault).not.toHaveBeenCalled();
-    expect(mockNavigate).not.toHaveBeenCalled();
   });
 });

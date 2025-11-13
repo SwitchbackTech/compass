@@ -6,6 +6,7 @@ import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { Agenda } from "../components/Agenda/Agenda";
 import { ShortcutsOverlay } from "../components/Shortcuts/components/ShortcutsOverlay";
+import { StorageInfoBanner } from "../components/StorageInfoBanner/StorageInfoBanner";
 import { TaskList } from "../components/TaskList/TaskList";
 import { useDayEvents } from "../hooks/events/useDayEvents";
 import { useDateInView } from "../hooks/navigation/useDateInView";
@@ -125,7 +126,8 @@ export const DayViewContent = () => {
   });
 
   return (
-    <div className="flex h-screen w-full items-center justify-center gap-8 overflow-hidden px-6 py-8">
+    <div className="relative flex h-screen w-full items-center justify-center gap-8 overflow-hidden px-6 py-8">
+      <StorageInfoBanner />
       <ShortcutsOverlay />
       <TaskList />
 

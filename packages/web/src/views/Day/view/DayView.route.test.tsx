@@ -32,13 +32,6 @@ jest.mock("../hooks/shortcuts/useDayViewShortcuts", () => {
   };
 });
 
-// Mock feature flags
-jest.mock("@web/common/hooks/useFeatureFlags", () => ({
-  useFeatureFlags: () => ({
-    isPlannerEnabled: true,
-  }),
-}));
-
 describe("TodayView Routing", () => {
   beforeEach(() => {
     mockUseDayViewShortcuts.mockReset();
