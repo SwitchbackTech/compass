@@ -24,18 +24,6 @@ export const router = createBrowserRouter(
           </UserProvider>
         </ProtectedRoute>
       ),
-    },
-    {
-      path: `${ROOT_ROUTES.DAY}/:date?`,
-      element: (
-        <ProtectedRoute>
-          <UserProvider>
-            <SocketProvider>
-              <DayView />
-            </SocketProvider>
-          </UserProvider>
-        </ProtectedRoute>
-      ),
       children: [
         {
           path: ROOT_ROUTES.NOW,
@@ -49,35 +37,12 @@ export const router = createBrowserRouter(
           path: ROOT_ROUTES.DAY,
           element: <DayView />,
         },
+        { path: ROOT_ROUTES.LOGOUT, element: <LogoutView /> },
       ],
-    },
-    {
-      path: ROOT_ROUTES.LOGOUT,
-      element: (
-        <ProtectedRoute>
-          <UserProvider>
-            <SocketProvider>
-              <LogoutView />
-            </SocketProvider>
-          </UserProvider>
-        </ProtectedRoute>
-      ),
     },
     {
       path: ROOT_ROUTES.LOGIN,
       element: <OnboardingFlow />,
-    },
-    {
-      path: ROOT_ROUTES.ROOT,
-      element: (
-        <ProtectedRoute>
-          <UserProvider>
-            <SocketProvider>
-              <RootView />
-            </SocketProvider>
-          </UserProvider>
-        </ProtectedRoute>
-      ),
     },
     { path: "*", element: <NotFoundView /> },
   ],
