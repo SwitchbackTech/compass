@@ -62,7 +62,7 @@ export function useTaskActions({
     const isFirstTask =
       tasks.length === 0 && !hasSeenStorageInfo() && onFirstTaskCreated;
     if (isFirstTask) {
-      // Use setTimeout to ensure the task is added first, then show modal
+      // Defer modal opening to next tick to avoid blocking UI update from task creation
       setTimeout(() => {
         onFirstTaskCreated();
       }, 0);
