@@ -26,7 +26,7 @@ describe("useNowData", () => {
     user: "test-user",
     priority: Priorities.RELATIONS,
     startDate: start.toISOString(),
-    endDate: start.add(3, "seconds").toISOString(),
+    endDate: start.add(5, "seconds").toISOString(),
   };
 
   const pastEvent: Schema_WebEvent = {
