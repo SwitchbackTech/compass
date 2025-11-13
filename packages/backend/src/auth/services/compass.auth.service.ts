@@ -5,13 +5,13 @@ import { Logger } from "@core/logger/winston.logger";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
+import syncService from "@backend/sync/services/sync.service";
 import { getSync } from "@backend/sync/util/sync.queries";
 import { canDoIncrementalSync } from "@backend/sync/util/sync.util";
 import {
   findCompassUserBy,
   updateGoogleRefreshToken,
 } from "@backend/user/queries/user.queries";
-import syncService from "@backend/sync/services/sync.service";
 import userService from "@backend/user/services/user.service";
 import GoogleAuthService from "./google.auth.service";
 
