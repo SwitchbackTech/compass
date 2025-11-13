@@ -25,21 +25,33 @@ export const StorageInfoModal = ({
     return null;
   }
 
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
       onClose();
     }
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-      onClick={handleBackdropClick}
+      className="fixed inset-0 z-50 flex items-center justify-center"
       role="dialog"
       aria-modal="true"
       aria-labelledby="storage-info-title"
     >
-      <div className="bg-darkBlue-400 relative mx-4 w-full max-w-lg rounded-lg border border-gray-400/20 p-6 text-white shadow-lg">
+      <button
+        className="fixed inset-0 z-0 bg-black"
+        onClick={handleBackdropClick}
+        onKeyDown={handleKeyDown}
+        aria-label="Close modal"
+        tabIndex={-1}
+      />
+      <div className="bg-darkBlue-400 relative z-10 mx-4 w-full max-w-lg rounded-lg border border-gray-400/20 p-6 text-white shadow-lg">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 rounded p-1 transition-colors hover:bg-white/10"
