@@ -35,6 +35,87 @@ import { MobileWarning } from "@web/views/Onboarding/steps/mobile/MobileWarning"
 import { ReminderIntroOne } from "@web/views/Onboarding/steps/reminder/ReminderIntroOne";
 import { ReminderIntroTwo } from "@web/views/Onboarding/steps/reminder/ReminderIntroTwo";
 
+const onboardingSteps: OnboardingStepType[] = [
+  {
+    id: "welcome-screen",
+    component: (props: OnboardingStepProps) => (
+      <WelcomeScreen firstName="hello" {...props} />
+    ),
+  },
+  {
+    id: "welcome-note-one",
+    component: (props: OnboardingStepProps) => <WelcomeNoteOne {...props} />,
+  },
+  {
+    id: "welcome-note-two",
+    component: (props: OnboardingStepProps) => <WelcomeNoteTwo {...props} />,
+  },
+  {
+    id: "sign-in-with-google-prelude",
+    component: (props: OnboardingStepProps) => (
+      <SignInWithGooglePrelude {...props} />
+    ),
+  },
+  {
+    id: "sign-in-with-google",
+    component: (props: OnboardingStepProps) => <SignInWithGoogle {...props} />,
+    handlesKeyboardEvents: true,
+  },
+  {
+    id: "reminder-intro-one",
+    component: (props: OnboardingStepProps) => <ReminderIntroOne {...props} />,
+    disablePrevious: true,
+  },
+  {
+    id: "reminder-intro-two",
+    component: (props: OnboardingStepProps) => <ReminderIntroTwo {...props} />,
+  },
+  {
+    id: "set-reminder",
+    component: (props: OnboardingStepProps) => <SetReminder {...props} />,
+  },
+  {
+    id: "set-reminder-success",
+    component: (props: OnboardingStepProps) => (
+      <SetReminderSuccess {...props} />
+    ),
+  },
+
+  {
+    id: "set-someday-events-one",
+    component: (props: OnboardingStepProps) => <SomedayIntroOne {...props} />,
+  },
+  {
+    id: "set-someday-event-two",
+    component: (props: OnboardingStepProps) => <SomedayIntroTwo {...props} />,
+  },
+  {
+    id: "someday-sandbox",
+    component: (props: OnboardingStepProps) => <SomedaySandbox {...props} />,
+    handlesKeyboardEvents: true,
+  },
+  {
+    id: "migration-intro",
+    component: (props: OnboardingStepProps) => <MigrationIntro {...props} />,
+    disablePrevious: true,
+  },
+  {
+    id: "someday-migration",
+    component: (props: OnboardingStepProps) => <MigrationSandbox {...props} />,
+  },
+  {
+    id: "outro-two",
+    component: (props: OnboardingStepProps) => <OutroTwo {...props} />,
+    disablePrevious: true,
+  },
+  {
+    id: "outro-quote",
+    component: (props: OnboardingStepProps) => <OutroQuote {...props} />,
+    disablePrevious: true,
+    disableRightArrow: true,
+  },
+];
+
 const _OnboardingFlow: React.FC = () => {
   const navigate = useNavigate();
   const { setHideSteps } = useOnboarding();
@@ -59,95 +140,6 @@ const _OnboardingFlow: React.FC = () => {
       id: "mobile-sign-in",
       component: (props: OnboardingStepProps) => <MobileSignIn {...props} />,
       handlesKeyboardEvents: true,
-    },
-  ];
-
-  const onboardingSteps: OnboardingStepType[] = [
-    {
-      id: "welcome-screen",
-      component: (props: OnboardingStepProps) => (
-        <WelcomeScreen firstName="hello" {...props} />
-      ),
-    },
-    {
-      id: "welcome-note-one",
-      component: (props: OnboardingStepProps) => <WelcomeNoteOne {...props} />,
-    },
-    {
-      id: "welcome-note-two",
-      component: (props: OnboardingStepProps) => <WelcomeNoteTwo {...props} />,
-    },
-    {
-      id: "sign-in-with-google-prelude",
-      component: (props: OnboardingStepProps) => (
-        <SignInWithGooglePrelude {...props} />
-      ),
-    },
-    {
-      id: "sign-in-with-google",
-      component: (props: OnboardingStepProps) => (
-        <SignInWithGoogle {...props} />
-      ),
-      handlesKeyboardEvents: true,
-    },
-    {
-      id: "reminder-intro-one",
-      component: (props: OnboardingStepProps) => (
-        <ReminderIntroOne {...props} />
-      ),
-      disablePrevious: true,
-    },
-    {
-      id: "reminder-intro-two",
-      component: (props: OnboardingStepProps) => (
-        <ReminderIntroTwo {...props} />
-      ),
-    },
-    {
-      id: "set-reminder",
-      component: (props: OnboardingStepProps) => <SetReminder {...props} />,
-    },
-    {
-      id: "set-reminder-success",
-      component: (props: OnboardingStepProps) => (
-        <SetReminderSuccess {...props} />
-      ),
-    },
-
-    {
-      id: "set-someday-events-one",
-      component: (props: OnboardingStepProps) => <SomedayIntroOne {...props} />,
-    },
-    {
-      id: "set-someday-event-two",
-      component: (props: OnboardingStepProps) => <SomedayIntroTwo {...props} />,
-    },
-    {
-      id: "someday-sandbox",
-      component: (props: OnboardingStepProps) => <SomedaySandbox {...props} />,
-      handlesKeyboardEvents: true,
-    },
-    {
-      id: "migration-intro",
-      component: (props: OnboardingStepProps) => <MigrationIntro {...props} />,
-      disablePrevious: true,
-    },
-    {
-      id: "someday-migration",
-      component: (props: OnboardingStepProps) => (
-        <MigrationSandbox {...props} />
-      ),
-    },
-    {
-      id: "outro-two",
-      component: (props: OnboardingStepProps) => <OutroTwo {...props} />,
-      disablePrevious: true,
-    },
-    {
-      id: "outro-quote",
-      component: (props: OnboardingStepProps) => <OutroQuote {...props} />,
-      disablePrevious: true,
-      disableRightArrow: true,
     },
   ];
 
