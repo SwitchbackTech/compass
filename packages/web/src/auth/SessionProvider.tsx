@@ -1,6 +1,7 @@
 import { PropsWithChildren, createContext, useEffect, useState } from "react";
 import { BehaviorSubject } from "rxjs";
 import {
+  debounceTime,
   distinctUntilChanged,
   distinctUntilKeyChanged,
   skip,
@@ -49,19 +50,21 @@ export function sessionInit() {
   checkAuth();
 
   // No need to unsubscribe as this runs for the lifetime of the app
-  session.events.pipe(distinctUntilKeyChanged("action")).subscribe((e) => {
-    checkAuth();
+  session.events
+    .pipe(distinctUntilKeyChanged("action"), debounceTime(300))
+    .subscribe((e) => {
+      checkAuth();
 
-    switch (e.action) {
-      case "REFRESH_SESSION":
-      case "SESSION_CREATED":
-        socket.reconnect(e.action);
-        break;
-      case "SIGN_OUT":
-        socket.disconnect();
-        break;
-    }
-  });
+      switch (e.action) {
+        case "REFRESH_SESSION":
+        case "SESSION_CREATED":
+          socket.reconnect(e.action);
+          break;
+        case "SIGN_OUT":
+          socket.disconnect();
+          break;
+      }
+    });
 }
 
 export function SessionProvider({ children }: PropsWithChildren<{}>) {
