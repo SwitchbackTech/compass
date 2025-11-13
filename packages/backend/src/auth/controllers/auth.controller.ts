@@ -1,13 +1,8 @@
-import { Response } from "express";
 import { ObjectId } from "mongodb";
 import { SessionRequest } from "supertokens-node/framework/express";
 import { zObjectId } from "@core/types/type.utils";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
-import {
-  ReqBody,
-  Res_Promise,
-  SReqBody,
-} from "@backend/common/types/express.types";
+import { ReqBody, Res_Promise } from "@backend/common/types/express.types";
 
 class AuthController {
   createSession = async (
@@ -39,22 +34,6 @@ class AuthController {
     const userId = zObjectId.parse(req.session?.getUserId()).toString();
 
     res.promise({ userId });
-  };
-
-  revokeSessionsByUser = async (
-    req: SReqBody<{ userId?: string }>,
-    res: Response,
-  ) => {
-    const userId = zObjectId.parse(
-      req.body.userId ?? req.session?.getUserId(),
-      { error: () => "Invalid user ID" },
-    );
-
-    const revokeResult = await compassAuthService.revokeSessionsByUser(
-      userId.toString(),
-    );
-
-    res.send(revokeResult);
   };
 }
 

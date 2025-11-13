@@ -3,7 +3,6 @@ import { Logger } from "@core/logger/winston.logger";
 import { Result_Watch_Stop } from "@core/types/sync.types";
 import { Schema_Watch } from "@core/types/watch.types";
 import dayjs from "@core/util/date/dayjs";
-import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import {
   isFullSyncRequired,
@@ -96,10 +95,7 @@ export const pruneSync = async (
       }
     }
 
-    const { sessionsRevoked } =
-      await compassAuthService.revokeSessionsByUser(user);
-
-    return { user, results: stopped, sessionsRevoked, deletedUserData };
+    return { user, results: stopped, deletedUserData };
   });
 
   const pruneResult = await Promise.all(_prunes);
@@ -113,7 +109,6 @@ export const refreshWatch = async (
   }[],
 ) => {
   const _refreshes = toRefresh.map(async (r) => {
-    let revokedSession = false;
     let resynced = false;
 
     try {
@@ -144,13 +139,9 @@ export const refreshWatch = async (
         user: r.user,
         results: refreshesByUser,
         resynced,
-        revokedSession,
       };
     } catch (e) {
-      if (isInvalidGoogleToken(e as Error)) {
-        await compassAuthService.revokeSessionsByUser(r.user);
-        revokedSession = true;
-      } else if (isFullSyncRequired(e as Error)) {
+      if (isFullSyncRequired(e as Error)) {
         userService.restartGoogleCalendarSync(r.user);
         resynced = true;
       } else {
@@ -160,7 +151,7 @@ export const refreshWatch = async (
         );
         throw e;
       }
-      return { user: r.user, results: [], resynced, revokedSession };
+      return { user: r.user, results: [], resynced };
     }
   });
 

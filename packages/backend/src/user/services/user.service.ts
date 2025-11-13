@@ -12,14 +12,12 @@ import { Resource_Sync } from "@core/types/sync.types";
 import { zObjectId } from "@core/types/type.utils";
 import { Schema_User, UserMetadata } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
-import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { ENV } from "@backend/common/constants/env.constants";
 import { isMissingUserTagId } from "@backend/common/constants/env.util";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
 import EmailService from "@backend/email/email.service";
 import eventService from "@backend/event/services/event.service";
@@ -85,11 +83,6 @@ class UserService {
       );
       summary.syncs += staleSyncs.deletedCount;
 
-      initSupertokens();
-      const { sessionsRevoked } =
-        await compassAuthService.revokeSessionsByUser(userId);
-      summary.sessions = sessionsRevoked;
-
       const _user = await this.deleteUser(userId);
       summary.user = _user.deletedCount;
       return summary;
@@ -98,6 +91,7 @@ class UserService {
       console.log("Stopped early because:", _e.description || _e);
 
       const _user = await this.deleteUser(userId);
+
       summary.user = _user.deletedCount;
 
       return summary;

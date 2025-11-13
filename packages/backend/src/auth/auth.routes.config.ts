@@ -22,11 +22,6 @@ export class AuthRoutes extends CommonRoutesConfig {
       .post(authController.createSession)
       .get([verifySession(), authController.getUserIdFromSession]);
 
-    this.app
-      .route(`/api/auth/session/revoke`)
-      .all(authMiddleware.verifyIsDev)
-      .post([verifySession(), authController.revokeSessionsByUser]);
-
     return this.app;
   }
 }

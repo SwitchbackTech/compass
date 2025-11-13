@@ -99,6 +99,9 @@ function mockSuperToken() {
           getUserId() {
             return userId.toString();
           },
+          getHandle() {
+            return sessionId;
+          },
           getAccessTokenPayload(): SupertokensAccessTokenPayload {
             return {
               iat: now.getMilliseconds(),
