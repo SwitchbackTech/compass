@@ -138,7 +138,7 @@ export const initSupertokens = () => {
                 const session = await originalImplementation.refreshPOST(input);
 
                 const userId = zObjectId.safeParse(session?.getUserId(), {
-                  error: () => "Invalid user ID in session",
+                  error: () => "Invalid session",
                 });
 
                 if (!userId.success) {
