@@ -121,7 +121,7 @@ export const StorageInfoModal = ({
         </button>
 
         <div className="mb-4 flex items-center gap-2">
-          <InfoIcon size={24} color={theme.color.text.light} />
+          <InfoIcon size={18} color={theme.color.text.light} />
           <h2
             id="storage-info-title"
             className="text-xl font-semibold text-white"
@@ -136,12 +136,12 @@ export const StorageInfoModal = ({
             your browser data will remove them.
           </p>
           <p>
-            <strong>Your calendar events are safely backed up</strong> and not
-            stored in localStorage.
-          </p>
-          <p>
             Think of day tasks as simple ways to stay focused on today.
             We&apos;ll add cloud backup for tasks soon.
+          </p>
+          <p>
+            <strong>Your calendar events are safely backed up</strong> and not
+            stored in your browser.
           </p>
         </div>
 

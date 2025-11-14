@@ -40,7 +40,7 @@ export const TaskListHeader = () => {
               className="rounded p-1 transition-colors hover:bg-white/10"
               aria-label="View storage information"
             >
-              <InfoIcon size={20} color={theme.color.text.light} />
+              <InfoIcon size={15} color={theme.color.text.light} />
             </button>
           </TooltipWrapper>
         </div>
