@@ -116,8 +116,6 @@ export const initSupertokens = () => {
 
                   const refreshToken = response.oAuthTokens["refresh_token"];
 
-                  console.log("INPUT SESSION:", response);
-
                   if (input.session === undefined || input.session === null) {
                     if (
                       response.createdNewRecipeUser &&
