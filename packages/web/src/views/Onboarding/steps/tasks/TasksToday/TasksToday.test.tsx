@@ -35,7 +35,7 @@ jest.mock("@core/util/date/dayjs", () => {
     "@core/util/date/dayjs",
   );
 
-  const mockDate = "2025-01-01T00:00:00Z"; // Monday, January 1, 2025
+  const mockDate = "2025-01-01T00:00:00Z";
 
   const mockDayjs = (date?: unknown) => {
     if (date === undefined) {

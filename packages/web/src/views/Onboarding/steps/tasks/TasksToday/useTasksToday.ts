@@ -30,7 +30,13 @@ export interface UseTasksTodayReturn {
 // Constants
 export const MAX_TASKS = 5;
 
-// Initialize with 2-3 pre-existing tasks
+// Initial task titles for comparison
+const INITIAL_TASK_TITLES = new Set([
+  "Review project proposal",
+  "Write weekly report",
+]);
+
+// Initialize with 2 pre-existing tasks
 const getInitialTasks = (dateKey: string): Task[] => {
   const existingTasks = loadTasksFromStorage(dateKey);
   if (existingTasks.length > 0) {
@@ -57,20 +63,39 @@ const getInitialTasks = (dateKey: string): Task[] => {
   return initialTasks;
 };
 
+// Check if user has created any tasks beyond the initial ones
+const hasUserCreatedTask = (tasks: Task[]): boolean => {
+  // If there are more than 2 tasks, user has definitely created one
+  if (tasks.length > 2) {
+    return true;
+  }
+  // If there are exactly 2 tasks, check if they match the initial task titles
+  // If any task doesn't match, user has modified/created tasks
+  if (tasks.length === 2) {
+    const taskTitles = new Set(tasks.map((task) => task.title));
+    // If the set of task titles doesn't exactly match initial titles, user has created/modified
+    return (
+      taskTitles.size !== INITIAL_TASK_TITLES.size ||
+      !Array.from(taskTitles).every((title) => INITIAL_TASK_TITLES.has(title))
+    );
+  }
+  // If there are fewer than 2 tasks, something unexpected happened, but assume no user creation
+  return false;
+};
+
 // Custom hook for managing task state and operations
 export const useTasksToday = ({
   onNext,
   onNavigationControlChange,
 }: UseTasksTodayProps): UseTasksTodayReturn => {
-  // Get today's date key
-  const today = dayjs().startOf("day").utc();
-  const dateKey = today.format("YYYY-MM-DD");
+  // Get today's date key (using local time to avoid timezone issues)
+  const dateKey = dayjs().startOf("day").format("YYYY-MM-DD");
 
   // Initialize tasks and check if user has already created a task
+  // getInitialTasks loads from storage, so we use its result directly
   const initialTasks = getInitialTasks(dateKey);
-  const initialStoredTasks = loadTasksFromStorage(dateKey);
-  // More than 2 tasks means user added at least one task beyond the initial two default tasks
-  const hasCreatedTask = initialStoredTasks.length > 2;
+  // Check if user has created tasks beyond the initial ones
+  const hasCreatedTask = hasUserCreatedTask(initialTasks);
 
   // State
   const [isTaskCreated, setIsTaskCreated] = useState(hasCreatedTask);

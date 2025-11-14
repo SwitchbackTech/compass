@@ -36,7 +36,7 @@ export const TasksToday: React.FC<OnboardingStepProps> = ({
     }
   }, [tasks.length]);
 
-  const today = dayjs().startOf("day").utc();
+  const today = dayjs().startOf("day");
   const dateHeader = today.format("dddd");
   const dateSubheader = today.format("MMMM D");
 
