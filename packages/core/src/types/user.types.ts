@@ -15,9 +15,12 @@ export interface Schema_User {
   lastLoggedInAt?: Date;
 }
 
+type SyncStatus = "importing" | "errored" | "completed" | "restart" | null;
+
 export interface UserMetadata extends SupertokensUserMetadata.JSONObject {
   skipOnboarding?: boolean;
   sync?: {
-    importGCal?: "importing" | "errored" | "completed" | "restart" | null;
+    importGCal?: SyncStatus;
+    incrementalGCalSync?: SyncStatus;
   };
 }

@@ -103,6 +103,22 @@ export const shouldImportGCal = (metadata: UserMetadata): boolean => {
   }
 };
 
+export const shouldDoIncrementalGCalSync = (
+  metadata: UserMetadata,
+): boolean => {
+  const sync = metadata.sync;
+
+  switch (sync?.incrementalGCalSync) {
+    case "importing":
+    case "completed":
+      return false;
+    case "restart":
+    case "errored":
+    default:
+      return true;
+  }
+};
+
 export const getCompassEventDateFormat = (
   date: Exclude<Schema_Event["startDate"], undefined>,
 ): string => {

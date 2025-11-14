@@ -1,5 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { CompassCalendarSchema } from "@core/types/calendar.types";
+import { CalendarProvider } from "@core/types/event.types";
+import { EmailDriver } from "@backend/__tests__/drivers/email.driver";
 import { SyncDriver } from "@backend/__tests__/drivers/sync.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
@@ -13,9 +15,8 @@ import { initSupertokens } from "@backend/common/middleware/supertokens.middlewa
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
+import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
-import { CalendarProvider } from "../../../../core/src/types/event.types";
-import { EmailDriver } from "../../__tests__/drivers/email.driver";
 
 describe("UserService", () => {
   beforeAll(initSupertokens);
@@ -119,24 +120,6 @@ describe("UserService", () => {
     });
   });
 
-  describe("saveTimeFor", () => {
-    it("updates the requested timestamp field", async () => {
-      const gUser = UserDriver.generateGoogleUser();
-      const { userId } = await userService.createUser(
-        gUser,
-        faker.string.uuid(),
-      );
-
-      await userService.saveTimeFor("lastLoggedInAt", userId);
-
-      const updatedUser = await mongoService.user.findOne({
-        _id: mongoService.objectId(userId),
-      });
-
-      expect(updatedUser?.lastLoggedInAt).toBeInstanceOf(Date);
-    });
-  });
-
   describe("startGoogleCalendarSync", () => {
     it("initializes calendars, events, and sync metadata", async () => {
       const user = await UserDriver.createUser();
@@ -198,14 +181,14 @@ describe("UserService", () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
 
-      await userService.updateUserMetadata({
+      await userMetadataService.updateUserMetadata({
         userId,
         data: { sync: { importGCal: "restart" } },
       });
 
       await userService.restartGoogleCalendarSync(userId);
 
-      const metadata = await userService.fetchUserMetadata(userId);
+      const metadata = await userMetadataService.fetchUserMetadata(userId);
       expect(metadata.sync?.importGCal).toBe("completed");
 
       const calendars = await calendarService.getByUser(userId);
@@ -218,14 +201,14 @@ describe("UserService", () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
 
-      const metadata = await userService.updateUserMetadata({
+      const metadata = await userMetadataService.updateUserMetadata({
         userId,
         data: { sync: { importGCal: "restart" } },
       });
 
       expect(metadata.sync?.importGCal).toBe("restart");
 
-      const persisted = await userService.fetchUserMetadata(userId);
+      const persisted = await userMetadataService.fetchUserMetadata(userId);
 
       expect(persisted.sync?.importGCal).toBe("restart");
     });
@@ -236,12 +219,12 @@ describe("UserService", () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
 
-      await userService.updateUserMetadata({
+      await userMetadataService.updateUserMetadata({
         userId,
         data: { sync: { importGCal: "restart" } },
       });
 
-      const metadata = await userService.fetchUserMetadata(userId);
+      const metadata = await userMetadataService.fetchUserMetadata(userId);
 
       expect(metadata.sync?.importGCal).toBe("restart");
     });

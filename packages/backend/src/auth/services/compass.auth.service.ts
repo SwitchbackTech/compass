@@ -2,17 +2,20 @@ import { Credentials, TokenPayload } from "google-auth-library";
 import supertokens from "supertokens-node";
 import Session from "supertokens-node/recipe/session";
 import { Logger } from "@core/logger/winston.logger";
+import { mapCompassUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import GoogleAuthService from "@backend/auth/services/google.auth.service";
+import { ENV } from "@backend/common/constants/env.constants";
+import { isMissingUserTagId } from "@backend/common/constants/env.util";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
+import mongoService from "@backend/common/services/mongo.service";
+import EmailService from "@backend/email/email.service";
 import syncService from "@backend/sync/services/sync.service";
 import { getSync } from "@backend/sync/util/sync.queries";
 import { canDoIncrementalSync } from "@backend/sync/util/sync.util";
-import {
-  findCompassUserBy,
-  updateGoogleRefreshToken,
-} from "@backend/user/queries/user.queries";
+import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
 
 const logger = Logger("app:auth.service");
@@ -63,36 +66,51 @@ class CompassAuthService {
     }
   };
 
-  revokeSessionsByUser = async (userId: string) => {
-    const sessionsRevoked = await Session.revokeAllSessionsForUser(userId);
-    return { sessionsRevoked: sessionsRevoked.length };
-  };
-
   async googleSignup(
     gUser: TokenPayload,
     refreshToken: string,
     superTokensUserId: string,
   ) {
-    const { userId } = await userService.initUserData(gUser, refreshToken);
+    const session = await mongoService.startSession();
 
-    await supertokens.createUserIdMapping({
-      superTokensUserId,
-      externalUserId: userId,
-      externalUserIdInfo: "Compass User ID",
+    const user = await session.withTransaction(async () => {
+      const cUser = await userService.initUserData(gUser, refreshToken);
+      const { userId } = cUser;
+
+      await supertokens.createUserIdMapping({
+        superTokensUserId,
+        externalUserId: userId,
+        externalUserIdInfo: "Compass User ID",
+        force: true,
+      });
+
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: { skipOnboarding: false },
+      });
+
+      if (isMissingUserTagId()) {
+        logger.warn(
+          "Did not tag subscriber due to missing EMAILER_ ENV value(s)",
+        );
+      } else {
+        const subscriber = mapCompassUserToEmailSubscriber(cUser);
+
+        await EmailService.addTagToSubscriber(
+          subscriber,
+          ENV.EMAILER_USER_TAG_ID!,
+        );
+      }
+
+      return { cUserId: userId };
     });
 
-    await userService.updateUserMetadata({
-      userId,
-      data: { skipOnboarding: false },
-    });
-
-    return { cUserId: userId };
+    return user;
   }
 
   async googleSignin(
     gUser: TokenPayload,
     oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">,
-    superTokensUserId: string,
   ) {
     const gUserId = StringV4Schema.parse(gUser.sub, {
       error: () => "Invalid Google user ID",
@@ -102,50 +120,49 @@ class CompassAuthService {
       error: () => "Invalid or missing Google refresh token",
     });
 
-    const user = await findCompassUserBy("google.googleId", gUserId);
+    const user = await mongoService.user.findOneAndUpdate(
+      { "google.googleId": gUserId },
+      {
+        $set: {
+          "google.gRefreshToken": refreshToken,
+          lastLoggedInAt: new Date(),
+        },
+      },
+      { returnDocument: "after" },
+    );
 
-    const userId = zObjectId.parse(user?._id).toString();
+    const cUserId = zObjectId
+      .parse(user?._id, { error: () => "Invalid credentials" })
+      .toString();
 
+    // start incremental sync - do not await
     const gAuthClient = new GoogleAuthService();
 
     gAuthClient.oauthClient.setCredentials(oAuthTokens);
 
     const gcal = gAuthClient.getGcalClient();
 
-    if (refreshToken !== user?.google.gRefreshToken) {
-      await updateGoogleRefreshToken(userId, refreshToken);
-    }
-
-    try {
-      await syncService.importIncremental(userId, gcal);
-    } catch (e) {
+    syncService.importIncremental(cUserId, gcal).catch(async (e) => {
       if (
         e instanceof Error &&
         e.message === SyncError.NoSyncToken.description
       ) {
-        logger.info(
-          `Resyncing google data due to missing sync for user: ${userId}`,
-        );
+        const message = `Resyncing google data due to missing sync for user: ${cUserId}`;
 
-        userService.restartGoogleCalendarSync(userId);
+        logger.info(message);
+
+        userService.restartGoogleCalendarSync(cUserId).catch((err) => {
+          logger.error(
+            `Something went wrong with ${message.toLowerCase()}`,
+            err,
+          );
+        });
+      } else {
+        logger.error("Error during incremental sync:", e);
       }
-    }
+    });
 
-    await userService.saveTimeFor("lastLoggedInAt", userId);
-
-    const id = await supertokens.getUserIdMapping({ userId });
-
-    // for existing users without mapping
-    if (id.status === "UNKNOWN_MAPPING_ERROR") {
-      await supertokens.createUserIdMapping({
-        superTokensUserId,
-        externalUserId: userId,
-        externalUserIdInfo: "Compass User ID",
-        force: true,
-      });
-    }
-
-    return { cUserId: userId };
+    return { cUserId };
   }
 }
 

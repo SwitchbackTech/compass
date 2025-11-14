@@ -29,7 +29,7 @@ import { ENV } from "@backend/common/constants/env.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SocketError } from "@backend/common/errors/socket/socket.errors";
 import { handleWsError } from "@backend/servers/websocket/websocket.util";
-import userService from "@backend/user/services/user.service";
+import userMetadataService from "@backend/user/services/user-metadata.service";
 
 const logger = Logger("app:websocket.server");
 
@@ -79,7 +79,7 @@ class WebSocketServer {
     socket.on(
       FETCH_USER_METADATA,
       handleWsError(() =>
-        userService
+        userMetadataService
           .fetchUserMetadata(socket.data.session!.getUserId()!)
           .then((data) => this.handleUserMetadata(sessionSocketId, data)),
       ),

@@ -28,7 +28,7 @@ import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import * as syncQueries from "@backend/sync/util/sync.queries";
 import { updateSync } from "@backend/sync/util/sync.queries";
-import userService from "@backend/user/services/user.service";
+import userMetadataService from "@backend/user/services/user-metadata.service";
 
 describe("SyncController", () => {
   const baseDriver = new BaseDriver();
@@ -304,11 +304,11 @@ describe("SyncController", () => {
 
         const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
 
-        const { sync } = await userService.fetchUserMetadata(userId);
+        const { sync } = await userMetadataService.fetchUserMetadata(userId);
 
         expect(sync?.importGCal).toEqual("completed");
 
-        await userService.updateUserMetadata({
+        await userMetadataService.updateUserMetadata({
           userId,
           data: { sync: { importGCal: "restart" } },
         });
@@ -331,7 +331,7 @@ describe("SyncController", () => {
         const { user, websocketClient } = await websocketUserFlow(true);
         const userId = user._id.toString();
 
-        const { sync } = await userService.fetchUserMetadata(userId);
+        const { sync } = await userMetadataService.fetchUserMetadata(userId);
 
         expect(sync?.importGCal).toEqual("completed");
 
@@ -381,7 +381,7 @@ describe("SyncController", () => {
           Promise.resolve(websocketClient.connect()),
         );
 
-        await userService.updateUserMetadata({
+        await userMetadataService.updateUserMetadata({
           userId,
           data: { sync: { importGCal: "importing" } },
         });
@@ -426,7 +426,7 @@ describe("SyncController", () => {
           Promise.resolve(websocketClient.connect()),
         );
 
-        await userService.updateUserMetadata({
+        await userMetadataService.updateUserMetadata({
           userId,
           data: { sync: { importGCal: "restart" } },
         });
@@ -471,7 +471,7 @@ describe("SyncController", () => {
           Promise.resolve(websocketClient.connect()),
         );
 
-        await userService.updateUserMetadata({
+        await userMetadataService.updateUserMetadata({
           userId,
           data: { sync: { importGCal: "errored" } },
         });

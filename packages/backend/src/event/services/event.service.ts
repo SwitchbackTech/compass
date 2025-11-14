@@ -44,7 +44,7 @@ import { getReadAllFilter } from "@backend/event/services/event.service.util";
 import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.processor";
 
 class EventService {
-  createDefaultSomedays = async (userId: string) => {
+  createDefaultSomedays = async (userId: string, session?: ClientSession) => {
     const { week, month } = getCurrentRangeDates();
 
     const defaultWeekly: Schema_Event_Core = {
@@ -109,6 +109,7 @@ class EventService {
           applyTo: RecurringEventUpdateScope.THIS_EVENT,
         };
       }),
+      session,
     );
   };
 

@@ -1,45 +1,46 @@
-//@ts-nocheck
+import { Request } from "express";
 import { SessionRequest } from "supertokens-node/framework/express";
 import { PriorityReq } from "@core/types/priority.types";
-import { Res_Promise } from "@backend/common/types/express.types";
-import priorityService from "../services/priority.service";
+import { zObjectId } from "@core/types/type.utils";
+import { Res_Promise, SReqBody } from "@backend/common/types/express.types";
+import priorityService from "@backend/priority/services/priority.service";
 
 class PriorityController {
   create = async (req: SReqBody<PriorityReq>, res: Res_Promise) => {
-    const userId = req.session?.getUserId();
+    const user = zObjectId.parse(req.session?.getUserId()).toString();
     const data = req.body;
-    const createRes = await priorityService.create(userId, data);
-    res.promise(createRes);
+    const createRes = await priorityService.create([{ ...data, user }]);
+    res.promise(createRes[0]);
   };
 
-  delete = async (req: SessionRequest, res: Res_Promise) => {
-    const userId = req.session?.getUserId() as string;
+  delete = async (req: Request<{ id: string }>, res: Res_Promise) => {
+    const user = zObjectId.parse(req.session?.getUserId()).toString();
     const priorityId: string = req.params.id;
-    const deleteResponse = await priorityService.deleteById(priorityId, userId);
+    const deleteResponse = await priorityService.deleteById(priorityId, user);
 
     res.promise(deleteResponse);
   };
 
   readAll = async (req: SessionRequest, res: Res_Promise) => {
-    const userId = req.session?.getUserId();
-    const priorities = await priorityService.list(userId);
+    const user = zObjectId.parse(req.session?.getUserId()).toString();
+    const priorities = await priorityService.list(user);
     res.promise(priorities);
   };
 
-  readById = async (req: SessionRequest, res: Res_Promise) => {
-    const userId = req.session?.getUserId();
-    const priority = await priorityService.readById(userId, req.params.id);
+  readById = async (req: Request<{ id: string }>, res: Res_Promise) => {
+    const user = zObjectId.parse(req.session?.getUserId()).toString();
+    const priority = await priorityService.readById(user, req.params.id);
     res.promise(priority);
   };
 
-  update = async (req: SessionRequest, res: Res_Promise) => {
-    const userId = req.session?.getUserId() as string;
-    const priorityId: string = req.params.id;
+  update = async (req: Request<{ id: string }>, res: Res_Promise) => {
+    const user = zObjectId.parse(req.session?.getUserId()).toString();
+    const priorityId = req.params.id;
     const priority: PriorityReq = req.body;
     const response = await priorityService.updateById(
       priorityId,
       priority,
-      userId,
+      user,
     );
 
     res.promise(response);

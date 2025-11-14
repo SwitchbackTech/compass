@@ -4,7 +4,6 @@ import { SessionRequest } from "supertokens-node/framework/express";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
-import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { IS_DEV } from "@backend/common/constants/env.constants";
 import { errorHandler } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
@@ -108,11 +107,14 @@ const handleGoogleError = async (
   e: GaxiosError,
 ) => {
   if (isInvalidGoogleToken(e)) {
-    const revokeResult = await compassAuthService.revokeSessionsByUser(userId);
+    await req.session?.revokeSession();
+
+    // revoke specific sessions for this user
     logger.debug(
-      `Invalid Google token for user: ${userId}\n\t${revokeResult.sessionsRevoked} session(s) revoked as result`,
+      `Invalid Google token for user: ${userId}\n\tsession revoked as result`,
     );
-    res.status(Status.UNAUTHORIZED).send(revokeResult);
+
+    res.status(Status.UNAUTHORIZED).send();
     return;
   }
 
