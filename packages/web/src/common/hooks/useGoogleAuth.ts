@@ -19,7 +19,9 @@ export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
     onSuccess: async (data) => {
       await AuthApi.loginOrSignup(data);
 
-      const metadata = await UserApi.getMetadata();
+      const metadata = await UserApi.getMetadata().catch(() => ({
+        skipOnboarding: true,
+      }));
 
       const skipOnboarding = metadata.skipOnboarding ?? true;
 
