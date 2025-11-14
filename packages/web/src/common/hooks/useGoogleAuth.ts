@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useHasCompletedSignup } from "@web/auth/useHasCompletedSignup";
 import { useSkipOnboarding } from "@web/auth/useSkipOnboarding";
@@ -10,9 +11,9 @@ import { OnboardingStepProps } from "@web/views/Onboarding";
 
 export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
   const navigate = useNavigate();
-  const { setAuthenticated } = useSession();
+  const { setAuthenticated, authenticated } = useSession();
   const { markSignupCompleted } = useHasCompletedSignup();
-  const { updateOnboardingStatus } = useSkipOnboarding();
+  const { updateOnboardingStatus, skipOnboarding } = useSkipOnboarding();
 
   const googleLogin = useGoogleLogin({
     onSuccess: async (data) => {
@@ -36,6 +37,12 @@ export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
       console.error(error);
     },
   });
+
+  useEffect(() => {
+    if (authenticated && skipOnboarding) {
+      navigate(ROOT_ROUTES.ROOT);
+    }
+  }, [authenticated, navigate, skipOnboarding]);
 
   return googleLogin;
 }
