@@ -112,10 +112,8 @@ export const TasksToday: React.FC<OnboardingStepProps> = ({
       onSkip={onSkip}
       content={content}
       isNextBtnDisabled={!isTaskCreated}
-      canNavigateNext={isTaskCreated}
       onNavigationControlChange={onNavigationControlChange}
       isNavPrevented={isNavPrevented}
-      handlesKeyboardEvents={true}
     />
   );
 };
