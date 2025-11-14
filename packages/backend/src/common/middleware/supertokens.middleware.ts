@@ -1,6 +1,7 @@
 import cors from "cors";
 import { TokenPayload } from "google-auth-library";
-import { default as SuperTokens } from "supertokens-node";
+import { ObjectId } from "mongodb";
+import supertokens, { default as SuperTokens, User } from "supertokens-node";
 import Dashboard from "supertokens-node/recipe/dashboard";
 import Session from "supertokens-node/recipe/session";
 import ThirdParty from "supertokens-node/recipe/thirdparty";
@@ -15,6 +16,7 @@ import { Status } from "@core/errors/status.codes";
 import { zObjectId } from "@core/types/type.utils";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { ENV } from "@backend/common/constants/env.constants";
+import mongoService from "@backend/common/services/mongo.service";
 import syncService from "@backend/sync/services/sync.service";
 
 export const initSupertokens = () => {
@@ -61,6 +63,48 @@ export const initSupertokens = () => {
           functions(originalImplementation) {
             return {
               ...originalImplementation,
+              async manuallyCreateOrUpdateUser(input) {
+                const user = await mongoService.user.findOne(
+                  { "google.googleId": input.thirdPartyUserId },
+                  { projection: { _id: 1, signedUpAt: 1, email: 1 } },
+                );
+
+                const id = user?._id.toString() ?? new ObjectId().toString();
+                const timeJoined = user?.signedUpAt?.getTime() ?? Date.now();
+                const thirdParty = [
+                  { id: input.thirdPartyId, userId: input.thirdPartyUserId },
+                ];
+
+                return {
+                  status: "OK",
+                  createdNewRecipeUser: user === null,
+                  recipeUserId: supertokens.convertToRecipeUserId(id),
+                  timeJoined,
+                  thirdParty,
+                  user: new User({
+                    emails: [user?.email ?? input.email],
+                    id,
+                    isPrimaryUser: false,
+                    thirdParty,
+                    timeJoined,
+                    loginMethods: [
+                      {
+                        recipeId: "thirdparty",
+                        recipeUserId: id,
+                        tenantIds: [input.tenantId],
+                        timeJoined,
+                        verified: input.isVerified,
+                        email: input.email,
+                        thirdParty: thirdParty[0],
+                        webauthn: { credentialIds: [] },
+                      },
+                    ],
+                    phoneNumbers: [],
+                    tenantIds: [input.tenantId],
+                    webauthn: { credentialIds: [] },
+                  }),
+                };
+              },
               async signInUp(
                 input: Parameters<typeof originalImplementation.signInUp>[0],
               ) {
@@ -71,6 +115,8 @@ export const initSupertokens = () => {
                     .fromIdTokenPayload as TokenPayload;
 
                   const refreshToken = response.oAuthTokens["refresh_token"];
+
+                  console.log("INPUT SESSION:", response);
 
                   if (input.session === undefined || input.session === null) {
                     if (

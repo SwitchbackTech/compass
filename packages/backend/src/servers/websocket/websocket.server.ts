@@ -42,20 +42,18 @@ class WebSocketServer {
   private onConnection(socket: CompassSocket) {
     const userId = socket.data.session.getUserId();
 
-    const sessionSocketId = StringV4Schema.parse(
-      socket.data.session.getHandle(),
-    );
+    const sessionId = StringV4Schema.parse(socket.data.session.getHandle());
 
     const userConnections = this.#userConnections.get(userId!) ?? [];
 
-    this.#sessionConnections.set(sessionSocketId, socket.id);
+    this.#sessionConnections.set(sessionId, socket.id);
     this.#userConnections.set(userId!, userConnections?.concat(socket.id));
 
     logger.debug(`Connection made to: ${socket.id}`);
 
     socket.on(
       "disconnect",
-      handleWsError(this.onDisconnect({ socket, userId, sessionSocketId })),
+      handleWsError(this.onDisconnect({ socket, userId, sessionId })),
     );
 
     socket.on(
@@ -81,7 +79,7 @@ class WebSocketServer {
       handleWsError(() =>
         userMetadataService
           .fetchUserMetadata(socket.data.session!.getUserId()!)
-          .then((data) => this.handleUserMetadata(sessionSocketId, data)),
+          .then((data) => this.handleUserMetadata(sessionId, data)),
       ),
     );
   }
@@ -89,18 +87,18 @@ class WebSocketServer {
   private onDisconnect({
     socket,
     userId,
-    sessionSocketId,
+    sessionId,
   }: {
     socket: CompassSocket;
     userId: string;
-    sessionSocketId: string;
+    sessionId: string;
   }): () => void {
     return () => {
       logger.debug(`Disconnecting from: ${socket.id}`);
 
       const userConnections = this.#userConnections.get(userId!)!;
 
-      this.#sessionConnections.delete(sessionSocketId!);
+      this.#sessionConnections.delete(sessionId!);
 
       this.#userConnections.set(
         userId!,
@@ -184,11 +182,11 @@ class WebSocketServer {
    * @memberOf WebSocketServer
    */
   private notifySession(
-    sessionSocketId: string,
+    sessionId: string,
     event: keyof ServerToClientEvents,
     ...payload: Parameters<ServerToClientEvents[typeof event]>
   ) {
-    const socketId = this.#sessionConnections.get(sessionSocketId);
+    const socketId = this.#sessionConnections.get(sessionId);
 
     return this.notifyClient(socketId!, event, ...payload);
   }
@@ -219,8 +217,8 @@ class WebSocketServer {
     return this.wsServer;
   }
 
-  handleUserMetadata(sessionSocketId: string, payload: UserMetadata) {
-    return this.notifySession(sessionSocketId, USER_METADATA, payload);
+  handleUserMetadata(sessionId: string, payload: UserMetadata) {
+    return this.notifySession(sessionId, USER_METADATA, payload);
   }
 
   handleImportGCalStart(userId: string) {

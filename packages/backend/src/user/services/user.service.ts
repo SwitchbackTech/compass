@@ -10,10 +10,12 @@ import { Resource_Sync } from "@core/types/sync.types";
 import { zObjectId } from "@core/types/type.utils";
 import { Schema_User, UserMetadata } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
+import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
@@ -30,20 +32,22 @@ class UserService {
   createUser = async (
     gUser: TokenPayload,
     gRefreshToken: string,
+    userId: string = new ObjectId().toString(),
     session?: ClientSession,
   ): Promise<Schema_User & { userId: string }> => {
     const _compassUser = mapUserToCompass(gUser, gRefreshToken);
-    const compassUser = { ..._compassUser, signedUpAt: new Date() };
+    const _id = zObjectId.parse(userId, { error: () => "Invalid user ID" });
+    const compassUser = { ..._compassUser, _id, signedUpAt: new Date() };
 
     const user = await mongoService.user.insertOne(compassUser, { session });
 
-    const userId = zObjectId.parse(user.insertedId.toString(), {
+    const newUserId = zObjectId.parse(user.insertedId.toString(), {
       error: () => "Failed to create Compass user",
     });
 
     return {
       ...compassUser,
-      userId: userId.toString(),
+      userId: newUserId.toString(),
     };
   };
 
@@ -79,6 +83,12 @@ class UserService {
       );
       summary.syncs += staleSyncs.deletedCount;
 
+      initSupertokens();
+
+      const { sessionsRevoked } =
+        await compassAuthService.revokeSessionsByUser(userId);
+      summary.sessions = sessionsRevoked;
+
       const _user = await this.deleteUser(userId);
       summary.user = _user.deletedCount;
       return summary;
@@ -107,14 +117,14 @@ class UserService {
   initUserData = async (
     gUser: TokenPayload,
     gRefreshToken: string,
+    userId?: string,
     session?: ClientSession,
   ) => {
-    const cUser = await this.createUser(gUser, gRefreshToken, session);
-    const { userId } = cUser;
+    const cUser = await this.createUser(gUser, gRefreshToken, userId, session);
 
-    await priorityService.createDefaultPriorities(userId, session);
+    await priorityService.createDefaultPriorities(cUser.userId, session);
 
-    await eventService.createDefaultSomedays(userId, session);
+    await eventService.createDefaultSomedays(cUser.userId, session);
 
     return cUser;
   };

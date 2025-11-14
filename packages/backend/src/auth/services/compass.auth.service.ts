@@ -66,23 +66,25 @@ class CompassAuthService {
     }
   };
 
+  revokeSessionsByUser = async (userId: string) => {
+    const sessionsRevoked = await Session.revokeAllSessionsForUser(userId);
+    return { sessionsRevoked: sessionsRevoked.length };
+  };
+
   async googleSignup(
     gUser: TokenPayload,
     refreshToken: string,
-    superTokensUserId: string,
+    userId: string,
   ) {
     const session = await mongoService.startSession();
 
-    const user = await session.withTransaction(async () => {
-      const cUser = await userService.initUserData(gUser, refreshToken);
-      const { userId } = cUser;
-
-      await supertokens.createUserIdMapping({
-        superTokensUserId,
-        externalUserId: userId,
-        externalUserIdInfo: "Compass User ID",
-        force: true,
-      });
+    const user = await session.withTransaction(async (session) => {
+      const cUser = await userService.initUserData(
+        gUser,
+        refreshToken,
+        userId,
+        session,
+      );
 
       await userMetadataService.updateUserMetadata({
         userId,
@@ -102,7 +104,7 @@ class CompassAuthService {
         );
       }
 
-      return { cUserId: userId };
+      return { cUserId: cUser.userId };
     });
 
     return user;
