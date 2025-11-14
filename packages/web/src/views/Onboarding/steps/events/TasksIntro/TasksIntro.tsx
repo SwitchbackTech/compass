@@ -3,7 +3,7 @@ import { OnboardingText } from "../../../components";
 import { OnboardingStepProps } from "../../../components/Onboarding";
 import { OnboardingCardLayout } from "../../../components/layouts/OnboardingCardLayout";
 
-export const SomedayIntroTwo: React.FC<OnboardingStepProps> = ({
+export const TaskIntro: React.FC<OnboardingStepProps> = ({
   currentStep,
   totalSteps,
   onNext,
@@ -19,14 +19,15 @@ export const SomedayIntroTwo: React.FC<OnboardingStepProps> = ({
       onNext={onNext}
     >
       <OnboardingText>
-        Thankfully, you can store future tasks in the sidebar.
+        You can capture all kinds of tasks in Compass.
       </OnboardingText>
 
       <OnboardingText>
-        Keeping those next to your schedule helps you stay on top of things.
+        We&apos;ll always put them next to your schedule to help you stay on top
+        of things.
       </OnboardingText>
 
-      <OnboardingText>Let's see how that looks.</OnboardingText>
+      <OnboardingText>Let&apos;s see how that looks.</OnboardingText>
     </OnboardingCardLayout>
   );
 };

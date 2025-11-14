@@ -15,7 +15,7 @@ import {
   SignInWithGoogle,
   SignInWithGooglePrelude,
   SomedayIntroOne,
-  SomedayIntroTwo,
+  TaskIntro,
   WelcomeNoteOne,
   WelcomeNoteTwo,
   WelcomeScreen,
@@ -24,6 +24,7 @@ import {
 import { MigrationIntro } from "./steps/events/MigrationIntro/MigrationIntro";
 import { MigrationSandbox } from "./steps/events/MigrationSandbox/MigrationSandbox";
 import { SomedaySandbox } from "./steps/events/SomedaySandbox/SomedaySandbox";
+import { TasksToday } from "./steps/events/TasksToday/TasksToday";
 import { MobileSignIn } from "./steps/mobile/MobileSignIn";
 import { MobileWarning } from "./steps/mobile/MobileWarning";
 import { ReminderIntroOne } from "./steps/reminder/ReminderIntroOne";
@@ -35,7 +36,8 @@ const _OnboardingFlow: React.FC = () => {
   const isMobile = useIsMobile();
   const { hasCompletedSignup } = useHasCompletedSignup();
 
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  // TODO revert this before merging
+  const [showOnboarding, setShowOnboarding] = useState(true);
 
   const loginSteps: OnboardingStepType[] = [
     {
@@ -58,6 +60,10 @@ const _OnboardingFlow: React.FC = () => {
   ];
 
   const onboardingSteps: OnboardingStepType[] = [
+    {
+      id: "tasks-today",
+      component: (props: OnboardingStepProps) => <TasksToday {...props} />,
+    },
     {
       id: "welcome-screen",
       component: (props: OnboardingStepProps) => (
@@ -114,8 +120,12 @@ const _OnboardingFlow: React.FC = () => {
       component: (props: OnboardingStepProps) => <SomedayIntroOne {...props} />,
     },
     {
-      id: "set-someday-event-two",
-      component: (props: OnboardingStepProps) => <SomedayIntroTwo {...props} />,
+      id: "tasks-intro",
+      component: (props: OnboardingStepProps) => <TaskIntro {...props} />,
+    },
+    {
+      id: "tasks-today",
+      component: (props: OnboardingStepProps) => <TasksToday {...props} />,
     },
     {
       id: "someday-sandbox",

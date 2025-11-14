@@ -131,7 +131,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
               </AnimatedText>
               <OnboardingText>{"{dramatic music}"}</OnboardingText>
               <OnboardingText>
-                Don't be shy, jot down a task and type ENTER to save
+                Don&apos;t be shy, jot down a task and type ENTER to save
               </OnboardingText>
               <div style={{ marginTop: "40px" }}>
                 <CheckboxContainer>
@@ -164,8 +164,8 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
                 Nice work. Who said being organized had to be complicated?
               </OnboardingText>
               <OnboardingText>
-                To continue, click the right arrow or press the 'k' key (There's
-                a shortcut for everything here)
+                To continue, click the right arrow or press the &apos;k&apos;
+                key (There&apos;s a shortcut for everything here)
               </OnboardingText>
               <div style={{ marginTop: "40px" }}>
                 <CheckboxContainer>

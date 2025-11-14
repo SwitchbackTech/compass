@@ -8,7 +8,7 @@ export * from "./oauth/SignInWithGoogleSuccess";
 export * from "./reminder/SetReminder";
 export * from "./reminder/SetReminderSuccess";
 export * from "./events/SomdayIntro/SomedayIntroOne";
-export * from "./events/SomdayIntro/SomedayIntroTwo";
+export * from "./events/TasksIntro/TasksIntro";
 export * from "./outro/OutroTwo";
 export * from "./outro/OutroQuote";
 export * from "./mobile/MobileWarning";
