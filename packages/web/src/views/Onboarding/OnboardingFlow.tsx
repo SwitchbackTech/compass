@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useHasCompletedSignup } from "@web/auth/useHasCompletedSignup";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { useIsMobile } from "@web/common/hooks/useIsMobile";
 import {
   useOnboarding,
@@ -217,7 +218,7 @@ const _OnboardingFlow: React.FC = () => {
       steps={onboardingSteps}
       initialStepIndex={getInitialStepIndex()}
       onComplete={() => {
-        navigate("/");
+        navigate(ROOT_ROUTES.DAY);
       }}
     />
   );
