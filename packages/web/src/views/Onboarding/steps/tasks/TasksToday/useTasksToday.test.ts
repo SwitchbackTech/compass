@@ -283,7 +283,7 @@ describe("useTasksToday", () => {
 
   it("should use today's date key for storage", () => {
     (loadTasksFromStorage as jest.Mock).mockReturnValue([]);
-    const today = dayjs().startOf("day").utc();
+    const today = dayjs().startOf("day");
     const expectedDateKey = today.format("YYYY-MM-DD");
 
     renderHook(() => useTasksToday(defaultProps));
