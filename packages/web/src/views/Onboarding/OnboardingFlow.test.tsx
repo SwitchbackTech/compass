@@ -1,25 +1,43 @@
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { useHasCompletedSignup } from "@web/auth/useHasCompletedSignup";
 import { useIsMobile } from "@web/common/hooks/useIsMobile";
 import { OnboardingFlow } from "./OnboardingFlow";
+
+// Mock navigate function
+const mockNavigate = jest.fn();
 
 // Mock dependencies
 jest.mock("@web/auth/useHasCompletedSignup");
 jest.mock("@web/common/hooks/useIsMobile");
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
-  useNavigate: () => jest.fn(),
+  useNavigate: () => mockNavigate,
 }));
 
 // Mock the Onboarding component to avoid complex rendering
 jest.mock("./components/Onboarding", () => ({
-  Onboarding: ({ steps, initialStepIndex = 0 }: any) => (
+  Onboarding: ({
+    steps,
+    initialStepIndex = 0,
+    onComplete,
+  }: {
+    steps: Array<{ id: string }>;
+    initialStepIndex?: number;
+    onComplete?: () => void;
+  }) => (
     <div data-testid="onboarding">
       <div data-testid="total-steps">{steps.length}</div>
       <div data-testid="initial-step-index">{initialStepIndex}</div>
       <div data-testid="first-step-id">{steps[initialStepIndex]?.id}</div>
+      <button
+        data-testid="complete-onboarding"
+        onClick={() => onComplete && onComplete()}
+      >
+        Complete
+      </button>
     </div>
   ),
 }));
@@ -32,6 +50,7 @@ const mockUseIsMobile = useIsMobile as jest.MockedFunction<typeof useIsMobile>;
 describe("OnboardingFlow", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockNavigate.mockClear();
     mockUseIsMobile.mockReturnValue(false);
   });
 
@@ -148,6 +167,57 @@ describe("OnboardingFlow", () => {
       render(<OnboardingFlow />);
 
       expect(mockUseHasCompletedSignup).toHaveBeenCalled();
+    });
+  });
+
+  describe("Onboarding Completion", () => {
+    it("navigates to /day when main onboarding completes", async () => {
+      const user = userEvent.setup();
+
+      mockUseHasCompletedSignup.mockReturnValue({
+        hasCompletedSignup: true,
+        markSignupCompleted: jest.fn(),
+      });
+
+      render(<OnboardingFlow />);
+
+      // Find and click the complete button
+      const completeButton = screen.getByTestId("complete-onboarding");
+      await user.click(completeButton);
+
+      // Should navigate to /day
+      expect(mockNavigate).toHaveBeenCalledWith("/day");
+    });
+
+    it("navigates to /day when new user completes main onboarding after login", async () => {
+      const user = userEvent.setup();
+
+      mockUseHasCompletedSignup.mockReturnValue({
+        hasCompletedSignup: false,
+        markSignupCompleted: jest.fn(),
+      });
+
+      const { rerender } = render(<OnboardingFlow />);
+
+      // Complete login flow first
+      const loginCompleteButton = screen.getByTestId("complete-onboarding");
+      await user.click(loginCompleteButton);
+
+      // After login completes, main onboarding should be shown
+      // Update mock to reflect that signup is now completed
+      mockUseHasCompletedSignup.mockReturnValue({
+        hasCompletedSignup: false,
+        markSignupCompleted: jest.fn(),
+      });
+
+      rerender(<OnboardingFlow />);
+
+      // Complete main onboarding
+      const mainCompleteButton = screen.getByTestId("complete-onboarding");
+      await user.click(mainCompleteButton);
+
+      // Should navigate to /day
+      expect(mockNavigate).toHaveBeenCalledWith("/day");
     });
   });
 });
