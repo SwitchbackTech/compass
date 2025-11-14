@@ -10,7 +10,7 @@ import { OnboardingFlow } from "./OnboardingFlow";
 
 // Mock navigate function
 const mockNavigate = jest.fn();
-const mockLocation = { pathname: ROOT_ROUTES.LOGIN };
+let mockLocationPathname = ROOT_ROUTES.LOGIN;
 
 // Mock dependencies
 jest.mock("@web/auth/useHasCompletedSignup");
@@ -19,7 +19,7 @@ jest.mock("@web/common/hooks/useIsMobile");
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
   useNavigate: () => mockNavigate,
-  useLocation: () => mockLocation,
+  useLocation: () => ({ pathname: mockLocationPathname }),
 }));
 
 // Mock the Onboarding component to avoid complex rendering
@@ -67,7 +67,7 @@ describe("OnboardingFlow", () => {
       isSessionActive: false,
     });
     // Reset location to /login by default
-    mockLocation.pathname = ROOT_ROUTES.LOGIN;
+    mockLocationPathname = ROOT_ROUTES.LOGIN;
   });
 
   describe("New User Flow", () => {
@@ -240,7 +240,7 @@ describe("OnboardingFlow", () => {
   describe("Route-based Behavior", () => {
     describe("/onboarding route", () => {
       beforeEach(() => {
-        mockLocation.pathname = ROOT_ROUTES.ONBOARDING;
+        mockLocationPathname = ROOT_ROUTES.ONBOARDING;
       });
 
       it("ignores localStorage and always starts from beginning", () => {
@@ -323,7 +323,7 @@ describe("OnboardingFlow", () => {
 
     describe("/login route", () => {
       beforeEach(() => {
-        mockLocation.pathname = ROOT_ROUTES.LOGIN;
+        mockLocationPathname = ROOT_ROUTES.LOGIN;
       });
 
       it("preserves localStorage check behavior", () => {

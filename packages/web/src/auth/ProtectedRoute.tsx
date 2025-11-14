@@ -16,6 +16,11 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const handleAuthCheck = () => {
       if (isAuthenticated === false) {
+        // Wait for hasCompletedSignup to be determined (not null) before redirecting
+        if (hasCompletedSignup === null) {
+          return;
+        }
+
         // Check if user has completed signup to determine redirect destination
         if (hasCompletedSignup === true) {
           // User has completed signup before, redirect to /login

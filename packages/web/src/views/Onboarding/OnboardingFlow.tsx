@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuthCheck } from "@web/auth/useAuthCheck";
 import { useHasCompletedSignup } from "@web/auth/useHasCompletedSignup";
@@ -37,7 +37,7 @@ import { ReminderIntroOne } from "./steps/reminder/ReminderIntroOne";
 import { ReminderIntroTwo } from "./steps/reminder/ReminderIntroTwo";
 import { TasksToday } from "./steps/tasks/TasksToday/TasksToday";
 
-const _OnboardingFlow: React.FC = () => {
+const _OnboardingFlow: FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { setHideSteps } = useOnboarding();

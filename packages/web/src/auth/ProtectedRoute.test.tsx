@@ -1,7 +1,6 @@
-import { ReactElement } from "react";
-import { BrowserRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
-import { render, waitFor } from "@testing-library/react";
+import { waitFor } from "@testing-library/react";
+import { render } from "@web/__tests__/__mocks__/mock.render";
 import { AUTH_FAILURE_REASONS } from "@web/common/constants/auth.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
@@ -28,22 +27,6 @@ jest.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
 }));
 
-/**
- * Utility function to wrap a component in BrowserRouter with v7 future props
- */
-const renderWithRouter = (component: ReactElement) => {
-  return render(
-    <BrowserRouter
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true,
-      }}
-    >
-      {component}
-    </BrowserRouter>,
-  );
-};
-
 describe("ProtectedRoute", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -64,7 +47,7 @@ describe("ProtectedRoute", () => {
         markSignupCompleted: jest.fn(),
       });
 
-      renderWithRouter(
+      render(
         <ProtectedRoute>
           <div>Protected Content</div>
         </ProtectedRoute>,
@@ -87,7 +70,7 @@ describe("ProtectedRoute", () => {
         markSignupCompleted: jest.fn(),
       });
 
-      renderWithRouter(
+      render(
         <ProtectedRoute>
           <div>Protected Content</div>
         </ProtectedRoute>,
@@ -112,7 +95,7 @@ describe("ProtectedRoute", () => {
         markSignupCompleted: jest.fn(),
       });
 
-      renderWithRouter(
+      render(
         <ProtectedRoute>
           <div>Protected Content</div>
         </ProtectedRoute>,
@@ -137,7 +120,7 @@ describe("ProtectedRoute", () => {
         markSignupCompleted: jest.fn(),
       });
 
-      const { getByText } = renderWithRouter(
+      const { getByText } = render(
         <ProtectedRoute>
           <div>Protected Content</div>
         </ProtectedRoute>,
@@ -147,6 +130,31 @@ describe("ProtectedRoute", () => {
         expect(getByText("Protected Content")).toBeInTheDocument();
       });
 
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it("does not redirect when hasCompletedSignup is null (loading state)", async () => {
+      mockUseAuthCheck.mockReturnValue({
+        isAuthenticated: false,
+        isCheckingAuth: false,
+        isGoogleTokenActive: false,
+        isSessionActive: false,
+      });
+      mockUseHasCompletedSignup.mockReturnValue({
+        hasCompletedSignup: null,
+        markSignupCompleted: jest.fn(),
+      });
+
+      render(
+        <ProtectedRoute>
+          <div>Protected Content</div>
+        </ProtectedRoute>,
+      );
+
+      // Wait a bit to ensure redirect doesn't happen
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Should not redirect while loading
       expect(mockNavigate).not.toHaveBeenCalled();
     });
   });
@@ -166,7 +174,7 @@ describe("ProtectedRoute", () => {
         markSignupCompleted: jest.fn(),
       });
 
-      renderWithRouter(
+      render(
         <ProtectedRoute>
           <div>Protected Content</div>
         </ProtectedRoute>,
@@ -194,7 +202,7 @@ describe("ProtectedRoute", () => {
         markSignupCompleted: jest.fn(),
       });
 
-      renderWithRouter(
+      render(
         <ProtectedRoute>
           <div>Protected Content</div>
         </ProtectedRoute>,
