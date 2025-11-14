@@ -156,6 +156,71 @@ function mockSuperToken() {
     });
   }
 
+  const mappings = new Map<string, string>();
+
+  async function getUserIdMapping(input: {
+    userId: string;
+    userIdType?: "SUPERTOKENS" | "EXTERNAL" | "ANY";
+    userContext?: Record<string, unknown>;
+  }): Promise<
+    | {
+        status: "OK";
+        superTokensUserId: string;
+        externalUserId: string;
+      }
+    | { status: "UNKNOWN_MAPPING_ERROR" }
+  > {
+    const superTokensUserId = mappings.get(input.userId);
+
+    if (!superTokensUserId) {
+      return { status: "UNKNOWN_MAPPING_ERROR" };
+    }
+
+    return { status: "OK", superTokensUserId, externalUserId: input.userId };
+  }
+
+  async function createUserIdMapping(input: {
+    superTokensUserId: string;
+    externalUserId: string;
+    externalUserIdInfo?: string;
+    userContext?: Record<string, unknown>;
+    force?: boolean;
+  }): Promise<
+    | { status: "OK" | "UNKNOWN_SUPERTOKENS_USER_ID_ERROR" }
+    | {
+        status: "USER_ID_MAPPING_ALREADY_EXISTS_ERROR";
+        doesSuperTokensUserIdExist: boolean;
+        doesExternalUserIdExist: boolean;
+      }
+  > {
+    const superTokensUserId = mappings.get(input.externalUserId);
+    const exists = superTokensUserId === input.superTokensUserId;
+
+    if (superTokensUserId && !input.force) {
+      return {
+        status: "USER_ID_MAPPING_ALREADY_EXISTS_ERROR",
+        doesSuperTokensUserIdExist: exists,
+        doesExternalUserIdExist: true,
+      };
+    }
+
+    mappings.set(input.externalUserId, input.superTokensUserId);
+
+    return { status: "OK" };
+  }
+
+  mockModule(
+    "supertokens-node",
+    (superTokens: typeof import("supertokens-node")) => {
+      const superTokensModule = mergeWith(superTokens, {
+        getUserIdMapping: jest.fn(getUserIdMapping),
+        createUserIdMapping: jest.fn(createUserIdMapping),
+      });
+
+      return mergeWith(superTokensModule, { default: superTokensModule });
+    },
+  );
+
   mockModule(
     "supertokens-node/recipe/session/framework/express",
     (

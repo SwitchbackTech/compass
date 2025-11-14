@@ -3,7 +3,7 @@ import { Status } from "@core/errors/status.codes";
 import { zObjectId } from "@core/types/type.utils";
 import { UserMetadata } from "@core/types/user.types";
 import { SReqBody } from "@backend/common/types/express.types";
-import userService from "@backend/user/services/user.service";
+import userMetadataService from "@backend/user/services/user-metadata.service";
 
 class UserController {
   getMetadata = async (
@@ -11,7 +11,9 @@ class UserController {
     res: Response<UserMetadata>,
   ) => {
     const user = zObjectId.parse(req.session?.getUserId());
-    const metadata = await userService.fetchUserMetadata(user.toString());
+    const metadata = await userMetadataService.fetchUserMetadata(
+      user.toString(),
+    );
 
     res.status(Status.OK).json(metadata);
   };
@@ -22,7 +24,7 @@ class UserController {
   ) => {
     const user = zObjectId.parse(req.session?.getUserId());
 
-    const metadata = await userService.updateUserMetadata({
+    const metadata = await userMetadataService.updateUserMetadata({
       userId: user.toString(),
       data: req.body,
     });

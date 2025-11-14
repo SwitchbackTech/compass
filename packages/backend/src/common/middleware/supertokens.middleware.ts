@@ -88,7 +88,6 @@ export const initSupertokens = () => {
                       await compassAuthService.googleSignin(
                         providerUser,
                         response.oAuthTokens,
-                        response.user.id,
                       );
                     }
                   }
@@ -131,53 +130,6 @@ export const initSupertokens = () => {
 
                 return res;
               },
-              // disabling this section - we dont need to refresh the
-              // google access token on session refresh
-              // as long as the expires_in field of the gTokens is consistent
-              // with what we set within the supertokens dashboard
-              // Google access_token = expires in 3599 seconds (~1 hour)
-              // Google refresh token expires in 10079.98 ~ 7 days
-              // we need to always make sure these values are set exactly
-              // within the Supertokens dashboard
-              // keep this commented out for reference in case we need to
-              // re-enable this logic in the future
-              // async refreshPOST(input) {
-              //   if (!originalImplementation.refreshPOST) {
-              //     throw new BaseError(
-              //       "refreshPOST not implemented",
-              //       "refreshPOST not implemented",
-              //       Status.BAD_REQUEST,
-              //       true,
-              //     );
-              //   }
-
-              //   const session = await originalImplementation.refreshPOST(input);
-
-              //   const userId = zObjectId.safeParse(session?.getUserId(), {
-              //     error: () => "Invalid session",
-              //   });
-
-              //   if (!userId.success) {
-              //     throw new BaseError(
-              //       userId.error.message,
-              //       userId.error.message,
-              //       Status.UNAUTHORIZED,
-              //       true,
-              //     );
-              //   }
-
-              //   // Provider-specific implementation:
-              //   // We refresh the provider access token as standard practice
-              //   // to ensure the refresh token remains
-              //   // valid and to test its liveness.
-              //   const gAuthClient = await getGAuthClientForUser({
-              //     _id: userId.data.toString(),
-              //   });
-
-              //   await gAuthClient.refreshAccessToken();
-
-              //   return session;
-              // },
             };
           },
         },

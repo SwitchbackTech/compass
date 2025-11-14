@@ -1,5 +1,6 @@
 import { OAuth2Client, TokenPayload } from "google-auth-library";
 import { google } from "googleapis";
+import { GaxiosError } from "googleapis-common";
 import { WithId } from "mongodb";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
@@ -13,7 +14,6 @@ import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import compassAuthService from "./compass.auth.service";
 
 const logger = Logger("app:google.auth.service");
 
@@ -55,12 +55,23 @@ export const getGAuthClientForUser = async (
 
 export const getGcalClient = async (userId: string): Promise<gCalendar> => {
   const user = await findCompassUserBy("_id", userId);
+
   if (!user) {
-    logger.error(`Couldn't find user with this id: ${userId}`);
-    await compassAuthService.revokeSessionsByUser(userId);
-    throw error(
-      UserError.UserNotFound,
-      "Revoked session & gave up on gcal auth",
+    logger.error(`getGcalClient: Couldn't find user with this id: ${userId}`);
+
+    // throw gaxios error here to trigger specific session invalidation
+    // see error.express.handler.ts
+    throw new GaxiosError(
+      "invalid_grant",
+      {},
+      {
+        status: Status.BAD_REQUEST,
+        data: { userId },
+        config: {},
+        statusText: "BAD_REQUEST Cannot initialize Gcal client",
+        headers: {},
+        request: { responseURL: "" },
+      },
     );
   }
 

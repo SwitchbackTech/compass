@@ -11,6 +11,7 @@ import {
 } from "@core/types/sync.types";
 import { ExpirationDateSchema } from "@core/types/type.utils";
 import { Schema_Watch, WatchSchema } from "@core/types/watch.types";
+import { shouldDoIncrementalGCalSync } from "@core/util/event/event.util";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
 import { Collections } from "@backend/common/constants/collections";
@@ -37,6 +38,7 @@ import {
   isUsingHttps,
 } from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import userMetadataService from "@backend/user/services/user-metadata.service";
 
 const logger = Logger("app:sync.service");
 
@@ -267,13 +269,63 @@ class SyncService {
     gcal?: gCalendar,
     perPage = 1000,
   ) => {
-    const syncImport = gcal
-      ? await createSyncImport(gcal)
-      : await createSyncImport(userId);
+    logger.info(
+      `Starting incremental Google Calendar sync for user: ${userId}`,
+    );
 
-    const result = await syncImport.importLatestEvents(userId, perPage);
+    try {
+      webSocketServer.handleImportGCalStart(userId);
 
-    return result;
+      const userMeta = await userMetadataService.fetchUserMetadata(userId);
+      const proceed = shouldDoIncrementalGCalSync(userMeta);
+
+      if (!proceed) {
+        webSocketServer.handleImportGCalEnd(
+          userId,
+          `User ${userId} gcal incremental sync is in progress or completed, ignoring this request`,
+        );
+
+        return;
+      }
+
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: { sync: { incrementalGCalSync: "importing" } },
+      });
+
+      const syncImport = gcal
+        ? await createSyncImport(gcal)
+        : await createSyncImport(userId);
+
+      const result = await syncImport.importLatestEvents(userId, perPage);
+
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: { sync: { incrementalGCalSync: "completed" } },
+      });
+
+      webSocketServer.handleImportGCalEnd(userId);
+      webSocketServer.handleBackgroundCalendarChange(userId);
+
+      return result;
+    } catch (error) {
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: { sync: { incrementalGCalSync: "errored" } },
+      });
+
+      logger.error(
+        `Incremental Google Calendar sync failed for user: ${userId}`,
+        error,
+      );
+
+      webSocketServer.handleImportGCalEnd(
+        userId,
+        `Incremental Google Calendar sync failed for user: ${userId}`,
+      );
+
+      throw error;
+    }
   };
 
   refreshWatch = async (

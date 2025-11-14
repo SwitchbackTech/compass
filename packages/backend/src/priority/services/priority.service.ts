@@ -1,14 +1,8 @@
+import { ClientSession } from "mongodb";
 import { Priorities } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
-import { Status } from "@core/errors/status.codes";
-import {
-  PriorityReq,
-  PriorityReqUser,
-  Schema_Priority,
-} from "@core/types/priority.types";
-import { Collections } from "@backend/common/constants/collections";
+import { PriorityReq, Schema_Priority } from "@core/types/priority.types";
 import mongoService from "@backend/common/services/mongo.service";
-import { mapPriorityData } from "./priority.service.helpers";
 
 class PriorityService {
   async list(userId: string) {
@@ -20,68 +14,40 @@ class PriorityService {
   }
 
   async create(
-    userId: string,
-    data: PriorityReq | PriorityReqUser[],
-  ): Promise<Schema_Priority | Schema_Priority[]> {
-    if (data instanceof Array) {
-      const response = await mongoService.db
-        .collection(Collections.PRIORITY)
-        .insertMany(data);
+    data: Array<Omit<Schema_Priority, "_id">>,
+    session?: ClientSession,
+  ): Promise<Schema_Priority[]> {
+    const bulkUpsert = mongoService.priority.initializeUnorderedBulkOp();
 
-      const priorities = mapPriorityData(response.insertedIds, data, userId);
-      return priorities;
-    } else {
-      const priorityExists = await mongoService.recordExists(
-        Collections.PRIORITY,
-        {
-          user: userId,
-          name: data.name,
-        },
-      );
+    data.forEach(({ name, user, ...item }) => {
+      bulkUpsert
+        .find({ name, user })
+        .upsert()
+        .update({ $setOnInsert: { name, user }, $set: item });
+    });
 
-      if (priorityExists) {
-        throw new BaseError(
-          "Priority Exists",
-          `${data.name} already exists`,
-          Status.NOT_IMPLEMENTED,
-          true,
-        );
-      }
+    await bulkUpsert.execute({ session });
 
-      const doc = Object.assign({}, data, { user: userId });
-      const response = await mongoService.db
-        .collection(Collections.PRIORITY)
-        .insertOne(doc);
+    const result = await mongoService.priority
+      .find(
+        { $or: data.map(({ name, user }) => ({ name, user })) },
+        { session },
+      )
+      .toArray();
 
-      const priority: Schema_Priority = {
-        _id: response.insertedId.toString(),
-        user: userId,
-        name: data.name,
-      };
-
-      return priority;
-    }
+    return result.map(({ _id, ...data }) => ({ ...data, _id: _id.toString() }));
   }
 
-  async createDefaultPriorities(userId: string) {
-    return await this.create(userId, [
-      {
-        name: Priorities.UNASSIGNED,
-        user: userId,
-      },
-      {
-        name: Priorities.SELF,
-        user: userId,
-      },
-      {
-        name: Priorities.WORK,
-        user: userId,
-      },
-      {
-        name: Priorities.RELATIONS,
-        user: userId,
-      },
-    ]);
+  async createDefaultPriorities(user: string, session?: ClientSession) {
+    return await this.create(
+      [
+        { name: Priorities.UNASSIGNED, user },
+        { name: Priorities.SELF, user },
+        { name: Priorities.WORK, user },
+        { name: Priorities.RELATIONS, user },
+      ],
+      session,
+    );
   }
 
   async deleteAllByUser(userId: string) {
@@ -127,7 +93,7 @@ class PriorityService {
     );
 
     if (!response) {
-      return new BaseError("Update Failed", "Ensure id is correct", 400, true);
+      throw new BaseError("Update Failed", "Ensure id is correct", 400, true);
     }
 
     return response as unknown as Schema_Priority;
