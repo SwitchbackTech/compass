@@ -1,5 +1,4 @@
 import React from "react";
-import { AgendaContainer, AgendaEvent, AgendaTimeLabel } from "./styled";
 
 export const StaticAgenda: React.FC = () => {
   const staticEvents = [
@@ -10,13 +9,20 @@ export const StaticAgenda: React.FC = () => {
   ];
 
   return (
-    <AgendaContainer>
+    <div className="flex h-full max-w-[330px] flex-col overflow-y-auto">
       {staticEvents.map((event, index) => (
         <div key={index}>
-          <AgendaTimeLabel>{event.time}</AgendaTimeLabel>
-          <AgendaEvent color={event.color}>{event.title}</AgendaEvent>
+          <div className="border-b border-[#333] px-2 py-1 font-['Rubik'] text-xs text-[hsl(47_7_73)]">
+            {event.time}
+          </div>
+          <div
+            className="my-1 rounded px-3 py-2 font-['Rubik'] text-sm text-white"
+            style={{ backgroundColor: event.color }}
+          >
+            {event.title}
+          </div>
         </div>
       ))}
-    </AgendaContainer>
+    </div>
   );
 };

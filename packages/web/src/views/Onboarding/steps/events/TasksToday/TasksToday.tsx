@@ -4,19 +4,6 @@ import { OnboardingStepProps } from "@web/views/Onboarding/components/Onboarding
 import { OnboardingTwoRowLayout } from "@web/views/Onboarding/components/layouts/OnboardingTwoRowLayout";
 import { OnboardingText } from "@web/views/Onboarding/components/styled";
 import { StaticAgenda } from "./StaticAgenda";
-import {
-  BottomContent,
-  DateHeader,
-  DateSubheader,
-  MainContent,
-  RightColumn,
-  SectionTitle,
-  SidebarSection,
-  TaskInput,
-  TaskItem,
-  TasksColumn,
-  TopContent,
-} from "./styled";
 import { useTasksToday } from "./useTasksToday";
 
 export const TasksToday: React.FC<OnboardingStepProps> = ({
@@ -46,8 +33,8 @@ export const TasksToday: React.FC<OnboardingStepProps> = ({
   const dateSubheader = today.format("MMMM D");
 
   const content = (
-    <BottomContent>
-      <TopContent>
+    <div className="flex h-full w-full flex-col items-center">
+      <div className="p-5 text-center">
         {isTaskCreated ? (
           <OnboardingText>
             Great! You&apos;ve created a task. You can add more and continue
@@ -59,15 +46,18 @@ export const TasksToday: React.FC<OnboardingStepProps> = ({
             <OnboardingText>Add a task below</OnboardingText>
           </>
         )}
-      </TopContent>
-      <MainContent>
-        <TasksColumn>
-          <SidebarSection>
-            <DateHeader>{dateHeader}</DateHeader>
-            <DateSubheader>{dateSubheader}</DateSubheader>
+      </div>
+      <div className="z-[5] m-5 flex max-w-[800px] flex-1 gap-5 border border-[#333] bg-[#12151b]">
+        <div className="flex w-[350px] flex-col gap-5 bg-[#23262f] p-5">
+          <div className="flex flex-col gap-3">
+            <h2 className="m-0 mb-0.5 font-['Rubik'] text-2xl text-white">
+              {dateHeader}
+            </h2>
+            <p className="m-0 font-['Rubik'] text-base text-[hsl(47_7_73)]">
+              {dateSubheader}
+            </p>
             {tasks.length < 5 && (
-              <TaskInput
-                autoFocus
+              <input
                 id="task-input"
                 name="task-input"
                 type="text"
@@ -80,19 +70,25 @@ export const TasksToday: React.FC<OnboardingStepProps> = ({
                     handleAddTask();
                   }
                 }}
+                className="w-full rounded border-2 border-[hsl(202_100_67)] bg-white px-3 py-2 font-['Rubik'] text-sm text-black shadow-[0_0_8px_rgba(96,165,250,0.3)] placeholder:text-[#666] focus:border-[hsl(202_100_67)] focus:shadow-[0_0_12px_rgba(96,165,250,0.5)] focus:outline-none"
               />
             )}
             {tasks.map((task) => (
-              <TaskItem key={task.id}>{task.title}</TaskItem>
+              <div
+                key={task.id}
+                className="w-full rounded bg-white px-3 py-2 font-['Rubik'] text-sm text-black"
+              >
+                {task.title}
+              </div>
             ))}
-          </SidebarSection>
-        </TasksColumn>
-        <RightColumn>
-          <SectionTitle>Agenda</SectionTitle>
+          </div>
+        </div>
+        <div className="flex w-[350px] flex-1 flex-col bg-[#23262f] p-5">
+          <h3 className="m-0 mb-2 font-['Rubik'] text-lg text-white">Agenda</h3>
           <StaticAgenda />
-        </RightColumn>
-      </MainContent>
-    </BottomContent>
+        </div>
+      </div>
+    </div>
   );
 
   return (
