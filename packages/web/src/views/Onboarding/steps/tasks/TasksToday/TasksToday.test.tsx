@@ -16,6 +16,7 @@ const TasksTodayWithProvider = withOnboardingProvider(
 // Mock the useTasksToday hook
 jest.mock("./useTasksToday", () => ({
   useTasksToday: jest.fn(),
+  MAX_TASKS: 5,
 }));
 
 // Mock StaticAgenda
