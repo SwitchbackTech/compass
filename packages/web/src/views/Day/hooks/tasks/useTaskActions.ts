@@ -8,6 +8,7 @@ import { Task, UndoOperation } from "../../task.types";
 import { sortTasksByStatus } from "../../util/sort.task";
 import {
   getDateKey,
+  hasSeenStorageInfo,
   loadTasksFromStorage,
   moveTaskToDate,
   saveTasksToStorage,
@@ -28,6 +29,7 @@ interface UseTaskActionsProps {
   dateInView?: dayjs.Dayjs;
   navigateToNextDay?: () => void;
   navigateToPreviousDay?: () => void;
+  onFirstTaskCreated?: () => void;
 }
 
 export function useTaskActions({
@@ -45,6 +47,7 @@ export function useTaskActions({
   dateInView,
   navigateToNextDay,
   navigateToPreviousDay,
+  onFirstTaskCreated,
 }: UseTaskActionsProps) {
   const addTask = (title: string): Task => {
     const newTask: Task = {
@@ -53,6 +56,15 @@ export function useTaskActions({
       status: "todo",
       createdAt: new Date().toISOString(),
     };
+
+    // Check if this is the first task ever created
+    // Only show modal if user hasn't seen it
+    if (!hasSeenStorageInfo() && onFirstTaskCreated) {
+      // Defer modal opening to next tick to avoid blocking UI update from task creation
+      setTimeout(() => {
+        onFirstTaskCreated();
+      }, 0);
+    }
 
     setTasks((prev) => sortTasksByStatus([...prev, newTask]));
     return newTask;

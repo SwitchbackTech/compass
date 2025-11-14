@@ -2,6 +2,7 @@ import dayjs from "@core/util/date/dayjs";
 import { Task, isTask } from "../task.types";
 
 const STORAGE_KEY_PREFIX = "compass.today.tasks";
+const STORAGE_INFO_SEEN_KEY = "compass.day.storage-info-seen";
 
 export function getDateKey(date: Date): string {
   return dayjs(date).utc().format("YYYY-MM-DD");
@@ -60,4 +61,18 @@ export function moveTaskToDate(
   const targetTasks = loadTasksFromStorage(toDateKey);
   const updatedTargetTasks = [...targetTasks, task];
   saveTasksToStorage(toDateKey, updatedTargetTasks);
+}
+
+export function hasSeenStorageInfo(): boolean {
+  if (typeof window === "undefined") {
+    return true;
+  }
+  return localStorage.getItem(STORAGE_INFO_SEEN_KEY) === "true";
+}
+
+export function markStorageInfoAsSeen(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  localStorage.setItem(STORAGE_INFO_SEEN_KEY, "true");
 }

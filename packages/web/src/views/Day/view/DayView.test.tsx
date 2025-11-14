@@ -1,15 +1,9 @@
-import * as PostHogReact from "posthog-js/react";
 import { Provider as ReduxProvider } from "react-redux";
 import { MemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
 import { render, screen, within } from "@testing-library/react";
 import { store } from "@web/store";
 import { DayView } from "./DayView";
-
-// Mock PostHog
-jest.mock("posthog-js/react", () => ({
-  useFeatureFlagEnabled: jest.fn(() => false),
-}));
 
 const renderWithRouter = () => {
   return render(
@@ -32,31 +26,7 @@ describe("DayView", () => {
     localStorage.clear();
   });
 
-  it("should show experimental feature warning when flag is disabled", () => {
-    renderWithRouter();
-
-    expect(screen.getByText(/Experimental Feature/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/This feature is currently in beta/i),
-    ).toBeInTheDocument();
-  });
-
-  it("should not show warning when feature flag is enabled", () => {
-    const mockUseFeatureFlagEnabled = jest.mocked(
-      PostHogReact.useFeatureFlagEnabled,
-    );
-    mockUseFeatureFlagEnabled.mockReturnValue(true);
-
-    renderWithRouter();
-
-    expect(screen.queryByText(/Experimental Feature/i)).not.toBeInTheDocument();
-  });
-
   it("should render TaskList component", () => {
-    const mockUseFeatureFlagEnabled = jest.mocked(
-      PostHogReact.useFeatureFlagEnabled,
-    );
-    mockUseFeatureFlagEnabled.mockReturnValue(true);
     renderWithRouter();
 
     const taskpanel = screen.getByRole("region", { name: "daily-tasks" });
@@ -64,11 +34,6 @@ describe("DayView", () => {
   });
 
   it("should render CalendarAgenda component", () => {
-    const mockUseFeatureFlagEnabled = jest.mocked(
-      PostHogReact.useFeatureFlagEnabled,
-    );
-    mockUseFeatureFlagEnabled.mockReturnValue(true);
-
     renderWithRouter();
 
     expect(screen.getByTestId("calendar-scroll")).toBeInTheDocument();
