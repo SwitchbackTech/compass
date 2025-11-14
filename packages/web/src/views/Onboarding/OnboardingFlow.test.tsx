@@ -2,19 +2,24 @@ import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
+import { useAuthCheck } from "@web/auth/useAuthCheck";
 import { useHasCompletedSignup } from "@web/auth/useHasCompletedSignup";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { useIsMobile } from "@web/common/hooks/useIsMobile";
 import { OnboardingFlow } from "./OnboardingFlow";
 
 // Mock navigate function
 const mockNavigate = jest.fn();
+const mockLocation = { pathname: ROOT_ROUTES.LOGIN };
 
 // Mock dependencies
 jest.mock("@web/auth/useHasCompletedSignup");
+jest.mock("@web/auth/useAuthCheck");
 jest.mock("@web/common/hooks/useIsMobile");
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
   useNavigate: () => mockNavigate,
+  useLocation: () => mockLocation,
 }));
 
 // Mock the Onboarding component to avoid complex rendering
@@ -45,6 +50,9 @@ jest.mock("./components/Onboarding", () => ({
 const mockUseHasCompletedSignup = useHasCompletedSignup as jest.MockedFunction<
   typeof useHasCompletedSignup
 >;
+const mockUseAuthCheck = useAuthCheck as jest.MockedFunction<
+  typeof useAuthCheck
+>;
 const mockUseIsMobile = useIsMobile as jest.MockedFunction<typeof useIsMobile>;
 
 describe("OnboardingFlow", () => {
@@ -52,6 +60,14 @@ describe("OnboardingFlow", () => {
     jest.clearAllMocks();
     mockNavigate.mockClear();
     mockUseIsMobile.mockReturnValue(false);
+    mockUseAuthCheck.mockReturnValue({
+      isAuthenticated: false,
+      isCheckingAuth: false,
+      isGoogleTokenActive: false,
+      isSessionActive: false,
+    });
+    // Reset location to /login by default
+    mockLocation.pathname = ROOT_ROUTES.LOGIN;
   });
 
   describe("New User Flow", () => {
@@ -218,6 +234,130 @@ describe("OnboardingFlow", () => {
 
       // Should navigate to /day
       expect(mockNavigate).toHaveBeenCalledWith("/day");
+    });
+  });
+
+  describe("Route-based Behavior", () => {
+    describe("/onboarding route", () => {
+      beforeEach(() => {
+        mockLocation.pathname = ROOT_ROUTES.ONBOARDING;
+      });
+
+      it("ignores localStorage and always starts from beginning", () => {
+        mockUseHasCompletedSignup.mockReturnValue({
+          hasCompletedSignup: true,
+          markSignupCompleted: jest.fn(),
+        });
+
+        render(<OnboardingFlow />);
+
+        // Should start from index 0, not skip to sign-in-with-google
+        expect(screen.getByTestId("initial-step-index")).toHaveTextContent("0");
+        expect(screen.getByTestId("first-step-id")).toHaveTextContent(
+          "welcome-screen",
+        );
+      });
+
+      it("shows full flow even when hasCompletedSignup is true", () => {
+        mockUseHasCompletedSignup.mockReturnValue({
+          hasCompletedSignup: true,
+          markSignupCompleted: jest.fn(),
+        });
+
+        render(<OnboardingFlow />);
+
+        // Should show onboarding, not login steps
+        expect(screen.getByTestId("onboarding")).toBeInTheDocument();
+        // Should start with welcome-screen (onboarding step), not welcome (login step)
+        expect(screen.getByTestId("first-step-id")).toHaveTextContent(
+          "welcome-screen",
+        );
+        expect(screen.getByTestId("first-step-id")).not.toHaveTextContent(
+          /^welcome$/,
+        );
+      });
+
+      it("skips Google login steps when user is authenticated", () => {
+        mockUseHasCompletedSignup.mockReturnValue({
+          hasCompletedSignup: true,
+          markSignupCompleted: jest.fn(),
+        });
+        mockUseAuthCheck.mockReturnValue({
+          isAuthenticated: true,
+          isCheckingAuth: false,
+          isGoogleTokenActive: true,
+          isSessionActive: true,
+        });
+
+        render(<OnboardingFlow />);
+
+        // Should start from beginning (welcome-screen) when authenticated
+        expect(screen.getByTestId("initial-step-index")).toHaveTextContent("0");
+        expect(screen.getByTestId("first-step-id")).toHaveTextContent(
+          "welcome-screen",
+        );
+      });
+
+      it("skips migration steps when user is authenticated", () => {
+        mockUseHasCompletedSignup.mockReturnValue({
+          hasCompletedSignup: true,
+          markSignupCompleted: jest.fn(),
+        });
+        mockUseAuthCheck.mockReturnValue({
+          isAuthenticated: true,
+          isCheckingAuth: false,
+          isGoogleTokenActive: true,
+          isSessionActive: true,
+        });
+
+        render(<OnboardingFlow />);
+
+        // Should have fewer steps (filtered out Google login and migration steps)
+        const totalSteps = parseInt(
+          screen.getByTestId("total-steps").textContent || "0",
+        );
+        // Original steps count is around 18, filtered should be around 14
+        expect(totalSteps).toBeLessThan(18);
+      });
+    });
+
+    describe("/login route", () => {
+      beforeEach(() => {
+        mockLocation.pathname = ROOT_ROUTES.LOGIN;
+      });
+
+      it("preserves localStorage check behavior", () => {
+        mockUseHasCompletedSignup.mockReturnValue({
+          hasCompletedSignup: true,
+          markSignupCompleted: jest.fn(),
+        });
+
+        render(<OnboardingFlow />);
+
+        // Should skip to sign-in-with-google step
+        const initialStepIndex = parseInt(
+          screen.getByTestId("initial-step-index").textContent || "0",
+        );
+        expect(initialStepIndex).toBeGreaterThan(0);
+        expect(screen.getByTestId("first-step-id")).toHaveTextContent(
+          "sign-in-with-google",
+        );
+      });
+
+      it("shows login steps first for new users", () => {
+        mockUseHasCompletedSignup.mockReturnValue({
+          hasCompletedSignup: false,
+          markSignupCompleted: jest.fn(),
+        });
+
+        render(<OnboardingFlow />);
+
+        // Should show login steps (welcome step)
+        expect(screen.getByTestId("onboarding")).toBeInTheDocument();
+        expect(screen.getByTestId("first-step-id")).toHaveTextContent(
+          "welcome",
+        );
+      });
     });
   });
 });
