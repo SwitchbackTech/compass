@@ -129,7 +129,7 @@ export const DayViewContent = () => {
 
   return (
     <>
-      <div className="relative flex h-screen w-full items-center justify-center gap-8 overflow-hidden px-6 py-8">
+      <div className="flex h-screen w-full items-center justify-center gap-8 overflow-hidden px-6 py-8">
         <ShortcutsOverlay />
         <TaskList />
 
