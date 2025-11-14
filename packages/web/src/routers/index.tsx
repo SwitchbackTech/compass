@@ -14,6 +14,10 @@ import { RootView } from "@web/views/Root";
 const router = createBrowserRouter(
   [
     {
+      path: "/onboarding",
+      element: <OnboardingFlow />,
+    },
+    {
       element: (
         <ProtectedRoute>
           <UserProvider>

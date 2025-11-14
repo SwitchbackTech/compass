@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useHasCompletedSignup } from "@web/auth/useHasCompletedSignup";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { useIsMobile } from "@web/common/hooks/useIsMobile";
 import {
   useOnboarding,
@@ -8,14 +9,14 @@ import {
 } from "@web/views/Onboarding/components/OnboardingContext";
 import { Onboarding, OnboardingStepProps, OnboardingStepType } from "./index";
 import {
+  DayTasksIntro,
   OutroQuote,
   OutroTwo,
   SetReminder,
   SetReminderSuccess,
   SignInWithGoogle,
   SignInWithGooglePrelude,
-  SomedayIntroOne,
-  SomedayIntroTwo,
+  TasksIntro,
   WelcomeNoteOne,
   WelcomeNoteTwo,
   WelcomeScreen,
@@ -23,11 +24,13 @@ import {
 } from "./steps";
 import { MigrationIntro } from "./steps/events/MigrationIntro/MigrationIntro";
 import { MigrationSandbox } from "./steps/events/MigrationSandbox/MigrationSandbox";
+import { SomedayEventsIntro } from "./steps/events/SomedayEventsIntro/SomedayEventsIntro";
 import { SomedaySandbox } from "./steps/events/SomedaySandbox/SomedaySandbox";
 import { MobileSignIn } from "./steps/mobile/MobileSignIn";
 import { MobileWarning } from "./steps/mobile/MobileWarning";
 import { ReminderIntroOne } from "./steps/reminder/ReminderIntroOne";
 import { ReminderIntroTwo } from "./steps/reminder/ReminderIntroTwo";
+import { TasksToday } from "./steps/tasks/TasksToday/TasksToday";
 
 const _OnboardingFlow: React.FC = () => {
   const navigate = useNavigate();
@@ -111,11 +114,21 @@ const _OnboardingFlow: React.FC = () => {
 
     {
       id: "set-someday-events-one",
-      component: (props: OnboardingStepProps) => <SomedayIntroOne {...props} />,
+      component: (props: OnboardingStepProps) => <DayTasksIntro {...props} />,
     },
     {
-      id: "set-someday-event-two",
-      component: (props: OnboardingStepProps) => <SomedayIntroTwo {...props} />,
+      id: "tasks-intro",
+      component: (props: OnboardingStepProps) => <TasksIntro {...props} />,
+    },
+    {
+      id: "tasks-today",
+      component: (props: OnboardingStepProps) => <TasksToday {...props} />,
+    },
+    {
+      id: "someday-events-intro",
+      component: (props: OnboardingStepProps) => (
+        <SomedayEventsIntro {...props} />
+      ),
     },
     {
       id: "someday-sandbox",
@@ -205,7 +218,7 @@ const _OnboardingFlow: React.FC = () => {
       steps={onboardingSteps}
       initialStepIndex={getInitialStepIndex()}
       onComplete={() => {
-        navigate("/");
+        navigate(ROOT_ROUTES.DAY);
       }}
     />
   );

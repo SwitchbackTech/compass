@@ -19,8 +19,7 @@ export const WelcomeNoteTwo: React.FC<OnboardingStepProps> = ({
       onNext={onNext}
     >
       <OnboardingText>
-        To protect yourself from these forces, you&apos;ll need this one thing
-        at all times:
+        To protect yourself, you&apos;ll need this one thing at all times:
       </OnboardingText>
 
       <OnboardingText style={{ fontSize: "2em", margin: "2em 0" }}>
@@ -29,7 +28,7 @@ export const WelcomeNoteTwo: React.FC<OnboardingStepProps> = ({
 
       <OnboardingText>
         Compass Calendar will help you stay focused on what matters to you, one
-        week at a time.
+        day at a time.
       </OnboardingText>
 
       <OnboardingText>Let me show you how.</OnboardingText>
