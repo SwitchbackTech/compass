@@ -52,6 +52,7 @@ export const TasksToday: React.FC<OnboardingStepProps> = ({
           <>
             <OnboardingText>What do you need to do today?</OnboardingText>
             <OnboardingText>Add a task below</OnboardingText>
+            <OnboardingText>Type ENTER to submit</OnboardingText>
           </>
         )}
       </div>
