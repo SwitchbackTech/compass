@@ -58,8 +58,8 @@ export function useTaskActions({
     };
 
     // Check if this is the first task ever created
-    // Only show modal if user hasn't seen it and this appears to be their first task
-    if (tasks.length === 0 && !hasSeenStorageInfo() && onFirstTaskCreated) {
+    // Only show modal if user hasn't seen it
+    if (!hasSeenStorageInfo() && onFirstTaskCreated) {
       // Defer modal opening to next tick to avoid blocking UI update from task creation
       setTimeout(() => {
         onFirstTaskCreated();
