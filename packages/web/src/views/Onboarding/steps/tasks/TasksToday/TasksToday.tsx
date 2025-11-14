@@ -82,18 +82,16 @@ export const TasksToday: React.FC<OnboardingStepProps> = ({
                 className="w-full rounded border-2 border-[hsl(202_100_67)] bg-white px-3 py-2 font-['Rubik'] text-sm text-black shadow-[0_0_8px_rgba(96,165,250,0.3)] placeholder:text-[#666] focus:border-[hsl(202_100_67)] focus:shadow-[0_0_12px_rgba(96,165,250,0.5)] focus:outline-none"
               />
             )}
-            {tasks.length > 0 && (
-              <ul className="m-0 w-full list-none p-0">
-                {tasks.map((task) => (
-                  <li
-                    key={task.id}
-                    className="w-full rounded bg-white px-3 py-2 font-['Rubik'] text-sm text-black"
-                  >
-                    {task.title}
-                  </li>
-                ))}
-              </ul>
-            )}
+            <div className="m-0 flex w-full list-none flex-col gap-2 p-0">
+              {tasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="w-full rounded bg-white px-3 py-2 font-['Rubik'] text-sm text-black"
+                >
+                  {task.title}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
         <div className="flex w-[350px] flex-1 flex-col bg-[#23262f] p-5">
