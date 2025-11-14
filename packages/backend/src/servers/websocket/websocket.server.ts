@@ -130,7 +130,7 @@ class WebSocketServer {
   }
 
   private generateId(req: Request): string {
-    return req.session?.getHandle() ?? "";
+    return StringV4Schema.parse(req.session?.getHandle());
   }
 
   private notifyClient(
