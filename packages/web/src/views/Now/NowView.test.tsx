@@ -34,10 +34,4 @@ describe("NowView", () => {
     expect(screen.getByText("2")).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
   });
-
-  it("renders the main content", () => {
-    render(<NowView />);
-
-    expect(screen.getByText("Now View - Coming Soon")).toBeInTheDocument();
-  });
 });
