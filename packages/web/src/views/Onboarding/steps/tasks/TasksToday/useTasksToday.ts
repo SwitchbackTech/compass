@@ -28,7 +28,7 @@ export interface UseTasksTodayReturn {
 }
 
 // Constants
-const MAX_TASKS = 5;
+export const MAX_TASKS = 5;
 
 // Initialize with 2-3 pre-existing tasks
 const getInitialTasks = (dateKey: string): Task[] => {
@@ -69,6 +69,7 @@ export const useTasksToday = ({
   // Initialize tasks and check if user has already created a task
   const initialTasks = getInitialTasks(dateKey);
   const initialStoredTasks = loadTasksFromStorage(dateKey);
+  // More than 2 tasks means user added at least one task beyond the initial two default tasks
   const hasCreatedTask = initialStoredTasks.length > 2;
 
   // State

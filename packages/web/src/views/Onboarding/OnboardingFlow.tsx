@@ -16,7 +16,7 @@ import {
   SetReminderSuccess,
   SignInWithGoogle,
   SignInWithGooglePrelude,
-  TaskIntro,
+  TasksIntro,
   WelcomeNoteOne,
   WelcomeNoteTwo,
   WelcomeScreen,
@@ -118,7 +118,7 @@ const _OnboardingFlow: React.FC = () => {
     },
     {
       id: "tasks-intro",
-      component: (props: OnboardingStepProps) => <TaskIntro {...props} />,
+      component: (props: OnboardingStepProps) => <TasksIntro {...props} />,
     },
     {
       id: "tasks-today",

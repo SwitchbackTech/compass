@@ -10,8 +10,8 @@ export const StaticAgenda: React.FC = () => {
 
   return (
     <div className="flex h-full max-w-[330px] flex-col overflow-y-auto">
-      {staticEvents.map((event, index) => (
-        <div key={index}>
+      {staticEvents.map((event) => (
+        <div key={`${event.time}-${event.title}`}>
           <div className="border-b border-[#333] px-2 py-1 font-['Rubik'] text-xs text-[hsl(47_7_73)]">
             {event.time}
           </div>

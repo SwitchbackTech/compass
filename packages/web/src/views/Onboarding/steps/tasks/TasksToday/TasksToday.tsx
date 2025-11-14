@@ -4,7 +4,7 @@ import { OnboardingStepProps } from "@web/views/Onboarding/components/Onboarding
 import { OnboardingTwoRowLayout } from "@web/views/Onboarding/components/layouts/OnboardingTwoRowLayout";
 import { OnboardingText } from "@web/views/Onboarding/components/styled";
 import { StaticAgenda } from "./StaticAgenda";
-import { useTasksToday } from "./useTasksToday";
+import { MAX_TASKS, useTasksToday } from "./useTasksToday";
 
 export const TasksToday: React.FC<OnboardingStepProps> = ({
   currentStep,
@@ -31,7 +31,7 @@ export const TasksToday: React.FC<OnboardingStepProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (tasks.length < 5 && inputRef.current) {
+    if (tasks.length < MAX_TASKS && inputRef.current) {
       inputRef.current.focus();
     }
   }, [tasks.length]);
@@ -64,7 +64,7 @@ export const TasksToday: React.FC<OnboardingStepProps> = ({
             <p className="m-0 font-['Rubik'] text-base text-[hsl(47_7_73)]">
               {dateSubheader}
             </p>
-            {tasks.length < 5 && (
+            {tasks.length < MAX_TASKS && (
               <input
                 ref={inputRef}
                 id="task-input"
@@ -82,14 +82,18 @@ export const TasksToday: React.FC<OnboardingStepProps> = ({
                 className="w-full rounded border-2 border-[hsl(202_100_67)] bg-white px-3 py-2 font-['Rubik'] text-sm text-black shadow-[0_0_8px_rgba(96,165,250,0.3)] placeholder:text-[#666] focus:border-[hsl(202_100_67)] focus:shadow-[0_0_12px_rgba(96,165,250,0.5)] focus:outline-none"
               />
             )}
-            {tasks.map((task) => (
-              <div
-                key={task.id}
-                className="w-full rounded bg-white px-3 py-2 font-['Rubik'] text-sm text-black"
-              >
-                {task.title}
-              </div>
-            ))}
+            {tasks.length > 0 && (
+              <ul className="m-0 w-full list-none p-0">
+                {tasks.map((task) => (
+                  <li
+                    key={task.id}
+                    className="w-full rounded bg-white px-3 py-2 font-['Rubik'] text-sm text-black"
+                  >
+                    {task.title}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
         <div className="flex w-[350px] flex-1 flex-col bg-[#23262f] p-5">
