@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import CommandPalette, {
   filterItems,
   getItemIndex,
@@ -149,6 +149,12 @@ const CmdPalette = ({
             },
           },
 
+          {
+            id: "redo-onboarding",
+            children: "Re-do onboarding",
+            icon: "ArrowPathIcon",
+            onClick: () => window.open(ROOT_ROUTES.ONBOARDING, "_blank"),
+          },
           {
             id: "log-out",
             children: "Log Out [z]",
