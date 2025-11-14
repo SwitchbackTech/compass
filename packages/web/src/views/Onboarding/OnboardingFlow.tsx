@@ -8,13 +8,13 @@ import {
 } from "@web/views/Onboarding/components/OnboardingContext";
 import { Onboarding, OnboardingStepProps, OnboardingStepType } from "./index";
 import {
+  DayTasksIntro,
   OutroQuote,
   OutroTwo,
   SetReminder,
   SetReminderSuccess,
   SignInWithGoogle,
   SignInWithGooglePrelude,
-  SomedayIntroOne,
   TaskIntro,
   WelcomeNoteOne,
   WelcomeNoteTwo,
@@ -23,12 +23,13 @@ import {
 } from "./steps";
 import { MigrationIntro } from "./steps/events/MigrationIntro/MigrationIntro";
 import { MigrationSandbox } from "./steps/events/MigrationSandbox/MigrationSandbox";
+import { SomedayEventsIntro } from "./steps/events/SomedayEventsIntro/SomedayEventsIntro";
 import { SomedaySandbox } from "./steps/events/SomedaySandbox/SomedaySandbox";
-import { TasksToday } from "./steps/events/TasksToday/TasksToday";
 import { MobileSignIn } from "./steps/mobile/MobileSignIn";
 import { MobileWarning } from "./steps/mobile/MobileWarning";
 import { ReminderIntroOne } from "./steps/reminder/ReminderIntroOne";
 import { ReminderIntroTwo } from "./steps/reminder/ReminderIntroTwo";
+import { TasksToday } from "./steps/tasks/TasksToday/TasksToday";
 
 const _OnboardingFlow: React.FC = () => {
   const navigate = useNavigate();
@@ -36,8 +37,7 @@ const _OnboardingFlow: React.FC = () => {
   const isMobile = useIsMobile();
   const { hasCompletedSignup } = useHasCompletedSignup();
 
-  // TODO revert this before merging
-  const [showOnboarding, setShowOnboarding] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const loginSteps: OnboardingStepType[] = [
     {
@@ -60,10 +60,6 @@ const _OnboardingFlow: React.FC = () => {
   ];
 
   const onboardingSteps: OnboardingStepType[] = [
-    {
-      id: "tasks-today",
-      component: (props: OnboardingStepProps) => <TasksToday {...props} />,
-    },
     {
       id: "welcome-screen",
       component: (props: OnboardingStepProps) => (
@@ -117,7 +113,7 @@ const _OnboardingFlow: React.FC = () => {
 
     {
       id: "set-someday-events-one",
-      component: (props: OnboardingStepProps) => <SomedayIntroOne {...props} />,
+      component: (props: OnboardingStepProps) => <DayTasksIntro {...props} />,
     },
     {
       id: "tasks-intro",
@@ -126,6 +122,12 @@ const _OnboardingFlow: React.FC = () => {
     {
       id: "tasks-today",
       component: (props: OnboardingStepProps) => <TasksToday {...props} />,
+    },
+    {
+      id: "someday-events-intro",
+      component: (props: OnboardingStepProps) => (
+        <SomedayEventsIntro {...props} />
+      ),
     },
     {
       id: "someday-sandbox",

@@ -251,6 +251,102 @@ describe("TasksToday", () => {
     });
   });
 
+  describe("Autofocus Functionality", () => {
+    it("focuses input when component mounts with tasks.length < 5", () => {
+      mockUseTasksToday.mockReturnValue({
+        ...defaultHookReturn,
+        tasks: [],
+      });
+
+      render(<TasksTodayWithProvider {...defaultProps} />);
+
+      const taskInput = screen.getByPlaceholderText("Create new task...");
+      expect(taskInput).toHaveFocus();
+    });
+
+    it("focuses input when tasks.length is less than 5", () => {
+      mockUseTasksToday.mockReturnValue({
+        ...defaultHookReturn,
+        tasks: [
+          {
+            id: "task-1",
+            title: "Task 1",
+            status: "todo" as const,
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      });
+
+      render(<TasksTodayWithProvider {...defaultProps} />);
+
+      const taskInput = screen.getByPlaceholderText("Create new task...");
+      expect(taskInput).toHaveFocus();
+    });
+
+    it("focuses input when tasks.length changes from >= 5 to < 5", () => {
+      const tasksWithLimit: Task[] = Array.from({ length: 5 }, (_, i) => ({
+        id: `task-${i}`,
+        title: `Task ${i}`,
+        status: "todo" as const,
+        createdAt: new Date().toISOString(),
+      }));
+
+      mockUseTasksToday.mockReturnValue({
+        ...defaultHookReturn,
+        tasks: tasksWithLimit,
+      });
+
+      const { rerender } = render(<TasksTodayWithProvider {...defaultProps} />);
+
+      // Input should not be rendered when tasks.length === 5
+      expect(
+        screen.queryByPlaceholderText("Create new task..."),
+      ).not.toBeInTheDocument();
+
+      // Now reduce tasks to less than 5
+      const reducedTasks: Task[] = [
+        {
+          id: "task-1",
+          title: "Task 1",
+          status: "todo" as const,
+          createdAt: new Date().toISOString(),
+        },
+      ];
+
+      mockUseTasksToday.mockReturnValue({
+        ...defaultHookReturn,
+        tasks: reducedTasks,
+      });
+
+      rerender(<TasksTodayWithProvider {...defaultProps} />);
+
+      const taskInput = screen.getByPlaceholderText("Create new task...");
+      expect(taskInput).toBeInTheDocument();
+      expect(taskInput).toHaveFocus();
+    });
+
+    it("does not focus input when tasks.length >= 5", () => {
+      const tasksWithLimit: Task[] = Array.from({ length: 5 }, (_, i) => ({
+        id: `task-${i}`,
+        title: `Task ${i}`,
+        status: "todo" as const,
+        createdAt: new Date().toISOString(),
+      }));
+
+      mockUseTasksToday.mockReturnValue({
+        ...defaultHookReturn,
+        tasks: tasksWithLimit,
+      });
+
+      render(<TasksTodayWithProvider {...defaultProps} />);
+
+      // Input should not be rendered when tasks.length >= 5
+      expect(
+        screen.queryByPlaceholderText("Create new task..."),
+      ).not.toBeInTheDocument();
+    });
+  });
+
   describe("Navigation Control", () => {
     it("disables next button when task is not created", () => {
       mockUseTasksToday.mockReturnValue({

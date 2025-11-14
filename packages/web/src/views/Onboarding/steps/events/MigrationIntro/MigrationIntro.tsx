@@ -192,7 +192,7 @@ export const MigrationIntro: React.FC<OnboardingStepProps> = ({
             a week/month.
           </OnboardingText>
           <OnboardingText>
-            Let's go to the next screen to practice.
+            Let&apos;s practice on the next screen.
           </OnboardingText>
         </RightColumn>
       </TwoColumnContainer>

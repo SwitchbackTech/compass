@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 import { OnboardingCardLayout, OnboardingText } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
@@ -91,20 +91,46 @@ export const WelcomeStep: React.FC<OnboardingStepProps> = ({
     timeStr,
   ];
 
-  const checkLines = [
-    { text: "Night Vision Check", result: "98% Lanterns Lit" },
-    { text: "Staff Emergency Contacts", result: "Secured in Cabin" },
-    { text: "Initializing Compass Alignment", result: "Done" },
-    { text: "Provisions Check", result: "Sufficient" },
-    { text: "Rigging Integrity Scan", result: "All Lines Taut" },
-    { text: "Chart Room Calibration", result: "Complete" },
-    { text: "Crew Roster Verification", result: "One Missing" },
-    { text: "Wind Vectors Computed", result: "Favorable" },
-    { text: "Final Anchor Check", result: "Ready to Hoist" },
-    { text: "Sails Unfurled", result: "Awaiting Orders" },
-  ];
+  const checkLines = useMemo(
+    () => [
+      { text: "Night Vision Check", result: "98% Lanterns Lit" },
+      { text: "Staff Emergency Contacts", result: "Secured in Cabin" },
+      { text: "Initializing Compass Alignment", result: "Done" },
+      { text: "Provisions Check", result: "Sufficient" },
+      { text: "Rigging Integrity Scan", result: "All Lines Taut" },
+      { text: "Chart Room Calibration", result: "Complete" },
+      { text: "Crew Roster Verification", result: "One Missing" },
+      { text: "Wind Vectors Computed", result: "Favorable" },
+      { text: "Final Anchor Check", result: "Ready to Hoist" },
+      { text: "Sails Unfurled", result: "Awaiting Orders" },
+    ],
+    [],
+  );
 
   const finalLines = ["Press Any Key to board"];
+
+  const skipAnimation = useCallback(() => {
+    if (!animationComplete) {
+      // Skip animation - show all content immediately and stop timeouts
+      setAnimationSkipped(true);
+      setVisibleLines(textLines.length + checkLines.length + finalLines.length);
+      const allCheckResults: Record<string, boolean> = {};
+      checkLines.forEach((check) => {
+        allCheckResults[check.text] = true;
+      });
+      setCheckResults(allCheckResults);
+      setAnimationComplete(true);
+    } else {
+      // Animation is complete, move to next step
+      onNext();
+    }
+  }, [
+    animationComplete,
+    checkLines,
+    finalLines.length,
+    onNext,
+    textLines.length,
+  ]);
 
   useEffect(() => {
     if (animationSkipped) return;
@@ -160,7 +186,7 @@ export const WelcomeStep: React.FC<OnboardingStepProps> = ({
       clearTimeout(initialDelay);
       clearTimeout(timeoutId);
     };
-  }, [animationSkipped]);
+  }, [animationSkipped, checkLines, finalLines.length, textLines.length]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -169,22 +195,7 @@ export const WelcomeStep: React.FC<OnboardingStepProps> = ({
 
       if (isRightArrow || isEnter) {
         event.preventDefault();
-        if (!animationComplete) {
-          // Skip animation - show all content immediately and stop timeouts
-          setAnimationSkipped(true);
-          setVisibleLines(
-            textLines.length + checkLines.length + finalLines.length,
-          );
-          const allCheckResults: Record<string, boolean> = {};
-          checkLines.forEach((check) => {
-            allCheckResults[check.text] = true;
-          });
-          setCheckResults(allCheckResults);
-          setAnimationComplete(true);
-        } else {
-          // Animation is complete, move to next step
-          onNext();
-        }
+        skipAnimation();
       } else if (animationComplete) {
         // After animation is complete, any key press should trigger next
         event.preventDefault();
@@ -194,13 +205,7 @@ export const WelcomeStep: React.FC<OnboardingStepProps> = ({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [
-    animationComplete,
-    onNext,
-    textLines.length,
-    checkLines,
-    finalLines.length,
-  ]);
+  }, [animationComplete, onNext, skipAnimation]);
 
   return (
     <OnboardingCardLayout
@@ -213,7 +218,7 @@ export const WelcomeStep: React.FC<OnboardingStepProps> = ({
       prevBtnDisabled
       showFooter={false}
     >
-      <CRTContainer>
+      <CRTContainer onClick={skipAnimation}>
         {textLines.map((line, index) => (
           <AnimatedText key={index} delay={0} visible={index < visibleLines}>
             {line}

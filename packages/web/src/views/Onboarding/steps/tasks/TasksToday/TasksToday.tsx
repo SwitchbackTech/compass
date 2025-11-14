@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { OnboardingStepProps } from "@web/views/Onboarding/components/Onboarding";
 import { OnboardingTwoRowLayout } from "@web/views/Onboarding/components/layouts/OnboardingTwoRowLayout";
@@ -27,6 +27,14 @@ export const TasksToday: React.FC<OnboardingStepProps> = ({
     onNext,
     onNavigationControlChange,
   });
+
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (tasks.length < 5 && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [tasks.length]);
 
   const today = dayjs().startOf("day").utc();
   const dateHeader = today.format("dddd");
@@ -58,6 +66,7 @@ export const TasksToday: React.FC<OnboardingStepProps> = ({
             </p>
             {tasks.length < 5 && (
               <input
+                ref={inputRef}
                 id="task-input"
                 name="task-input"
                 type="text"

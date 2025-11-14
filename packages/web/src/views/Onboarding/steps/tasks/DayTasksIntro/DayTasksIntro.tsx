@@ -3,7 +3,7 @@ import { OnboardingText } from "../../../components";
 import { OnboardingStepProps } from "../../../components/Onboarding";
 import { OnboardingCardLayout } from "../../../components/layouts/OnboardingCardLayout";
 
-export const SomedayIntroOne: React.FC<OnboardingStepProps> = ({
+export const DayTasksIntro: React.FC<OnboardingStepProps> = ({
   currentStep,
   totalSteps,
   onNext,
