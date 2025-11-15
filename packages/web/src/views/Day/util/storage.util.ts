@@ -3,6 +3,17 @@ import { Task, isTask } from "../task.types";
 
 const STORAGE_KEY_PREFIX = "compass.today.tasks";
 const STORAGE_INFO_SEEN_KEY = "compass.day.storage-info-seen";
+export const COMPASS_TASKS_SAVED_EVENT_NAME = "compass.tasks.saved" as const;
+
+/**
+ * Event detail for the "compass.tasks.saved" custom event.
+ * Dispatched when tasks are saved to localStorage to enable same-tab synchronization.
+ */
+export interface CompassTasksSavedEventDetail {
+  dateKey: string;
+}
+
+export type CompassTasksSavedEvent = CustomEvent<CompassTasksSavedEventDetail>;
 
 export function getDateKey(date: Date): string {
   return dayjs(date).utc().format("YYYY-MM-DD");
@@ -42,6 +53,13 @@ export function saveTasksToStorage(dateKey: string, tasks: Task[]): void {
 
   try {
     window.localStorage.setItem(getStorageKey(dateKey), JSON.stringify(tasks));
+    // Dispatch custom event for same-tab synchronization
+    const eventDetail: CompassTasksSavedEventDetail = { dateKey };
+    window.dispatchEvent(
+      new CustomEvent(COMPASS_TASKS_SAVED_EVENT_NAME, {
+        detail: eventDetail,
+      }),
+    );
   } catch (error) {
     console.error("Error saving tasks to localStorage:", error);
   }
