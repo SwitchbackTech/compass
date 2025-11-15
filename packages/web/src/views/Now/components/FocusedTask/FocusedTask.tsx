@@ -8,9 +8,16 @@ import { Task } from "@web/views/Day/task.types";
 interface FocusedTaskProps {
   task: Task;
   onCompleteTask: () => void;
+  onPreviousTask: () => void;
+  onNextTask: () => void;
 }
 
-export const FocusedTask = ({ task, onCompleteTask }: FocusedTaskProps) => {
+export const FocusedTask = ({
+  task,
+  onCompleteTask,
+  onPreviousTask,
+  onNextTask,
+}: FocusedTaskProps) => {
   return (
     <div className="flex flex-col items-center gap-6">
       <div className="flex flex-col items-center gap-4">
@@ -27,8 +34,20 @@ export const FocusedTask = ({ task, onCompleteTask }: FocusedTaskProps) => {
           >
             <CheckCircle size={40} className="text-white" />
           </button>
-          <ArrowCircleLeft size={40} className="text-white" />
-          <ArrowCircleRight size={40} className="text-white" />
+          <button
+            onClick={onPreviousTask}
+            aria-label="Previous task"
+            className="cursor-pointer rounded transition-opacity hover:opacity-80 focus:ring-2 focus:ring-white/50 focus:outline-none"
+          >
+            <ArrowCircleLeft size={40} className="text-white" />
+          </button>
+          <button
+            onClick={onNextTask}
+            aria-label="Next task"
+            className="cursor-pointer rounded transition-opacity hover:opacity-80 focus:ring-2 focus:ring-white/50 focus:outline-none"
+          >
+            <ArrowCircleRight size={40} className="text-white" />
+          </button>
         </div>
       </div>
     </div>

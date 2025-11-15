@@ -8,7 +8,7 @@ export const NowView = () => {
   useNowShortcuts();
 
   // Get shortcuts for the Now view
-  const { global } = getShortcuts({ isNow: true });
+  const { global, nowShortcuts } = getShortcuts({ isNow: true });
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900">
@@ -17,6 +17,9 @@ export const NowView = () => {
         className="fixed top-24 left-3 z-30 hidden w-[240px] rounded-lg border border-white/10 bg-[#1e1e1e]/90 p-3 shadow-lg backdrop-blur-sm md:block"
       >
         <div className="mb-2 text-xs font-medium text-white">Shortcuts</div>
+        {nowShortcuts.length > 0 && (
+          <ShortcutSection title="Now" shortcuts={nowShortcuts} />
+        )}
         <ShortcutSection title="Global" shortcuts={global} />
       </aside>
 

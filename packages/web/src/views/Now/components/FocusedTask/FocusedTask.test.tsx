@@ -20,19 +20,35 @@ describe("FocusedTask", () => {
   };
 
   const mockOnCompleteTask = jest.fn();
+  const mockOnPreviousTask = jest.fn();
+  const mockOnNextTask = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it("renders the task title", () => {
-    render(<FocusedTask task={mockTask} onCompleteTask={mockOnCompleteTask} />);
+    render(
+      <FocusedTask
+        task={mockTask}
+        onCompleteTask={mockOnCompleteTask}
+        onPreviousTask={mockOnPreviousTask}
+        onNextTask={mockOnNextTask}
+      />,
+    );
 
     expect(screen.getByText("Test Task")).toBeInTheDocument();
   });
 
   it("renders the task title in a heading", () => {
-    render(<FocusedTask task={mockTask} onCompleteTask={mockOnCompleteTask} />);
+    render(
+      <FocusedTask
+        task={mockTask}
+        onCompleteTask={mockOnCompleteTask}
+        onPreviousTask={mockOnPreviousTask}
+        onNextTask={mockOnNextTask}
+      />,
+    );
 
     const heading = screen.getByRole("heading", { level: 2 });
     expect(heading).toBeInTheDocument();
@@ -44,6 +60,8 @@ describe("FocusedTask", () => {
       <FocusedTask
         task={mockCompletedTask}
         onCompleteTask={mockOnCompleteTask}
+        onPreviousTask={mockOnPreviousTask}
+        onNextTask={mockOnNextTask}
       />,
     );
 
@@ -61,7 +79,12 @@ describe("FocusedTask", () => {
     };
 
     render(
-      <FocusedTask task={longTitleTask} onCompleteTask={mockOnCompleteTask} />,
+      <FocusedTask
+        task={longTitleTask}
+        onCompleteTask={mockOnCompleteTask}
+        onPreviousTask={mockOnPreviousTask}
+        onNextTask={mockOnNextTask}
+      />,
     );
 
     expect(
@@ -83,6 +106,8 @@ describe("FocusedTask", () => {
       <FocusedTask
         task={specialCharTask}
         onCompleteTask={mockOnCompleteTask}
+        onPreviousTask={mockOnPreviousTask}
+        onNextTask={mockOnNextTask}
       />,
     );
 
@@ -100,7 +125,12 @@ describe("FocusedTask", () => {
     };
 
     render(
-      <FocusedTask task={emptyTitleTask} onCompleteTask={mockOnCompleteTask} />,
+      <FocusedTask
+        task={emptyTitleTask}
+        onCompleteTask={mockOnCompleteTask}
+        onPreviousTask={mockOnPreviousTask}
+        onNextTask={mockOnNextTask}
+      />,
     );
 
     const heading = screen.getByRole("heading", { level: 2 });
@@ -109,7 +139,14 @@ describe("FocusedTask", () => {
 
   it("calls onCompleteTask when CheckCircle is clicked", async () => {
     const user = userEvent.setup();
-    render(<FocusedTask task={mockTask} onCompleteTask={mockOnCompleteTask} />);
+    render(
+      <FocusedTask
+        task={mockTask}
+        onCompleteTask={mockOnCompleteTask}
+        onPreviousTask={mockOnPreviousTask}
+        onNextTask={mockOnNextTask}
+      />,
+    );
 
     const checkButton = screen.getByRole("button", {
       name: "Mark task as complete",

@@ -8,6 +8,7 @@ import {
 } from "@web/views/Day/util/storage.util";
 import { useAvailableTasks } from "@web/views/Now/hooks/useAvailableTasks";
 import { useFocusedTask } from "@web/views/Now/hooks/useFocusedTask";
+import { useNowViewShortcuts } from "@web/views/Now/hooks/useNowViewShortcuts";
 import { useTaskFocus } from "@web/views/Now/hooks/useTaskFocus";
 import { AllTasksCompleted } from "../AllTasksCompleted/AllTasksCompleted";
 import { FocusedTask } from "../FocusedTask/FocusedTask";
@@ -21,6 +22,45 @@ export const TaskSelector = () => {
     focusedTask,
     availableTasks,
     setFocusedTask,
+  });
+
+  const handlePreviousTask = () => {
+    if (!focusedTask || availableTasks.length === 0) return;
+
+    const currentTaskIndex = availableTasks.findIndex(
+      (task) => task.id === focusedTask.id,
+    );
+
+    if (currentTaskIndex === -1) return;
+
+    // Wrap around: if at first task, go to last task
+    const previousIndex =
+      currentTaskIndex === 0 ? availableTasks.length - 1 : currentTaskIndex - 1;
+
+    setFocusedTask(availableTasks[previousIndex].id);
+  };
+
+  const handleNextTask = () => {
+    if (!focusedTask || availableTasks.length === 0) return;
+
+    const currentTaskIndex = availableTasks.findIndex(
+      (task) => task.id === focusedTask.id,
+    );
+
+    if (currentTaskIndex === -1) return;
+
+    // Wrap around: if at last task, go to first task
+    const nextIndex =
+      currentTaskIndex === availableTasks.length - 1 ? 0 : currentTaskIndex + 1;
+
+    setFocusedTask(availableTasks[nextIndex].id);
+  };
+
+  useNowViewShortcuts({
+    focusedTask,
+    availableTasks,
+    onPreviousTask: handlePreviousTask,
+    onNextTask: handleNextTask,
   });
 
   const handleCompleteTask = () => {
@@ -42,7 +82,6 @@ export const TaskSelector = () => {
     );
     saveTasksToStorage(dateKey, updatedTasks);
 
-    console.log("availableTasks", availableTasks);
     // If this is the last task, navigate to Day view
     if (availableTasks.length === 1) {
       navigate(ROOT_ROUTES.DAY);
@@ -66,7 +105,12 @@ export const TaskSelector = () => {
 
   if (focusedTask) {
     return (
-      <FocusedTask task={focusedTask} onCompleteTask={handleCompleteTask} />
+      <FocusedTask
+        task={focusedTask}
+        onCompleteTask={handleCompleteTask}
+        onPreviousTask={handlePreviousTask}
+        onNextTask={handleNextTask}
+      />
     );
   }
 
