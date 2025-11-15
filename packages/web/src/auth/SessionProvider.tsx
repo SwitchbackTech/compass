@@ -12,12 +12,14 @@ interface SessionContext {
   loading: boolean;
   authenticated: boolean;
   setAuthenticated: (value: boolean) => void;
+  setLoading: (value: boolean) => void;
 }
 
 export const SessionContext = createContext<SessionContext>({
   authenticated: false,
   loading: true,
   setAuthenticated: () => {},
+  setLoading: () => {},
 });
 
 const authenticated$ = new BehaviorSubject(false);
@@ -89,6 +91,7 @@ export function SessionProvider({ children }: PropsWithChildren<{}>) {
         authenticated,
         loading,
         setAuthenticated: (value: boolean) => authenticated$.next(value),
+        setLoading: (value: boolean) => loading$.next(value),
       }}
     >
       {children}

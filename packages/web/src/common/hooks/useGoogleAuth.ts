@@ -33,13 +33,14 @@ export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
 
       setAuthenticated(true);
 
-      if (skipOnboarding) navigate(ROOT_ROUTES.ROOT);
+      navigate(skipOnboarding ? ROOT_ROUTES.ROOT : ROOT_ROUTES.ONBOARDING);
     },
     onError: (error) => {
       console.error(error);
     },
   });
 
+  // Redirect if already authenticated and visits the login/signup page
   useEffect(() => {
     if (authenticated && skipOnboarding) {
       navigate(ROOT_ROUTES.ROOT);

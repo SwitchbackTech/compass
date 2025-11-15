@@ -1,20 +1,18 @@
 import "@testing-library/jest-dom";
 import { waitFor } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
+import { ProtectedRoute } from "@web/auth/ProtectedRoute";
+import { useHasCompletedSignup } from "@web/auth/useHasCompletedSignup";
 import { AUTH_FAILURE_REASONS } from "@web/common/constants/auth.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
-import { ProtectedRoute } from "./ProtectedRoute";
-import { useAuthCheck } from "./useAuthCheck";
-import { useHasCompletedSignup } from "./useHasCompletedSignup";
+import { useSession } from "@web/common/hooks/useSession";
 
 // Mock dependencies
-jest.mock("./useAuthCheck");
-jest.mock("./useHasCompletedSignup");
+jest.mock("@web/common/hooks/useSession");
+jest.mock("@web/auth/useHasCompletedSignup");
 
-const mockUseAuthCheck = useAuthCheck as jest.MockedFunction<
-  typeof useAuthCheck
->;
+const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
 const mockUseHasCompletedSignup = useHasCompletedSignup as jest.MockedFunction<
   typeof useHasCompletedSignup
 >;
@@ -36,12 +34,13 @@ describe("ProtectedRoute", () => {
 
   describe("Redirect Logic", () => {
     it("redirects to /onboarding when not authenticated and hasCompletedSignup is false", async () => {
-      mockUseAuthCheck.mockReturnValue({
-        isAuthenticated: false,
-        isCheckingAuth: false,
-        isGoogleTokenActive: false,
-        isSessionActive: false,
+      mockUseSession.mockReturnValue({
+        authenticated: false,
+        loading: false,
+        setAuthenticated: jest.fn(),
+        setLoading: jest.fn(),
       });
+
       mockUseHasCompletedSignup.mockReturnValue({
         hasCompletedSignup: false,
         markSignupCompleted: jest.fn(),
@@ -58,12 +57,12 @@ describe("ProtectedRoute", () => {
       });
     });
 
-    it("redirects to /login when not authenticated and hasCompletedSignup is true (Google token expired)", async () => {
-      mockUseAuthCheck.mockReturnValue({
-        isAuthenticated: false,
-        isCheckingAuth: false,
-        isGoogleTokenActive: false,
-        isSessionActive: false,
+    it("redirects to /login when not authenticated and hasCompletedSignup is true (user session expired)", async () => {
+      mockUseSession.mockReturnValue({
+        authenticated: false,
+        loading: false,
+        setAuthenticated: jest.fn(),
+        setLoading: jest.fn(),
       });
       mockUseHasCompletedSignup.mockReturnValue({
         hasCompletedSignup: true,
@@ -78,17 +77,17 @@ describe("ProtectedRoute", () => {
 
       await waitFor(() => {
         expect(mockNavigate).toHaveBeenCalledWith(
-          `${ROOT_ROUTES.LOGIN}?reason=${AUTH_FAILURE_REASONS.GAUTH_SESSION_EXPIRED}`,
+          `${ROOT_ROUTES.LOGIN}?reason=${AUTH_FAILURE_REASONS.USER_SESSION_EXPIRED}`,
         );
       });
     });
 
     it("redirects to /login when not authenticated and hasCompletedSignup is true (user session expired)", async () => {
-      mockUseAuthCheck.mockReturnValue({
-        isAuthenticated: false,
-        isCheckingAuth: false,
-        isGoogleTokenActive: true,
-        isSessionActive: false,
+      mockUseSession.mockReturnValue({
+        authenticated: false,
+        loading: false,
+        setAuthenticated: jest.fn(),
+        setLoading: jest.fn(),
       });
       mockUseHasCompletedSignup.mockReturnValue({
         hasCompletedSignup: true,
@@ -109,11 +108,11 @@ describe("ProtectedRoute", () => {
     });
 
     it("does not redirect when authenticated", async () => {
-      mockUseAuthCheck.mockReturnValue({
-        isAuthenticated: true,
-        isCheckingAuth: false,
-        isGoogleTokenActive: true,
-        isSessionActive: true,
+      mockUseSession.mockReturnValue({
+        authenticated: true,
+        loading: false,
+        setAuthenticated: jest.fn(),
+        setLoading: jest.fn(),
       });
       mockUseHasCompletedSignup.mockReturnValue({
         hasCompletedSignup: true,
@@ -134,11 +133,11 @@ describe("ProtectedRoute", () => {
     });
 
     it("does not redirect when hasCompletedSignup is null (loading state)", async () => {
-      mockUseAuthCheck.mockReturnValue({
-        isAuthenticated: false,
-        isCheckingAuth: false,
-        isGoogleTokenActive: false,
-        isSessionActive: false,
+      mockUseSession.mockReturnValue({
+        authenticated: false,
+        loading: false,
+        setAuthenticated: jest.fn(),
+        setLoading: jest.fn(),
       });
       mockUseHasCompletedSignup.mockReturnValue({
         hasCompletedSignup: null,
@@ -163,11 +162,11 @@ describe("ProtectedRoute", () => {
     it("checks localStorage for hasCompletedSignup when determining redirect", async () => {
       localStorage.setItem(STORAGE_KEYS.HAS_COMPLETED_SIGNUP, "true");
 
-      mockUseAuthCheck.mockReturnValue({
-        isAuthenticated: false,
-        isCheckingAuth: false,
-        isGoogleTokenActive: false,
-        isSessionActive: false,
+      mockUseSession.mockReturnValue({
+        authenticated: false,
+        loading: false,
+        setAuthenticated: jest.fn(),
+        setLoading: jest.fn(),
       });
       mockUseHasCompletedSignup.mockReturnValue({
         hasCompletedSignup: true,
@@ -191,11 +190,11 @@ describe("ProtectedRoute", () => {
     it("redirects to /onboarding when localStorage indicates user hasn't completed signup", async () => {
       localStorage.setItem(STORAGE_KEYS.HAS_COMPLETED_SIGNUP, "false");
 
-      mockUseAuthCheck.mockReturnValue({
-        isAuthenticated: false,
-        isCheckingAuth: false,
-        isGoogleTokenActive: false,
-        isSessionActive: false,
+      mockUseSession.mockReturnValue({
+        authenticated: false,
+        loading: false,
+        setAuthenticated: jest.fn(),
+        setLoading: jest.fn(),
       });
       mockUseHasCompletedSignup.mockReturnValue({
         hasCompletedSignup: false,

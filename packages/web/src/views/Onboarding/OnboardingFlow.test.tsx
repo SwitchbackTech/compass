@@ -1,12 +1,16 @@
+import { RequestHandler, rest } from "msw";
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Status } from "@core/errors/status.codes";
 import { render } from "@web/__tests__/__mocks__/mock.render";
-import { useAuthCheck } from "@web/auth/useAuthCheck";
+import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { useHasCompletedSignup } from "@web/auth/useHasCompletedSignup";
+import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { useIsMobile } from "@web/common/hooks/useIsMobile";
-import { OnboardingFlow } from "./OnboardingFlow";
+import { useSession } from "@web/common/hooks/useSession";
+import { OnboardingFlow } from "@web/views/Onboarding/OnboardingFlow";
 
 // Mock navigate function
 const mockNavigate = jest.fn();
@@ -14,7 +18,7 @@ let mockLocationPathname = ROOT_ROUTES.LOGIN;
 
 // Mock dependencies
 jest.mock("@web/auth/useHasCompletedSignup");
-jest.mock("@web/auth/useAuthCheck");
+jest.mock("@web/common/hooks/useSession");
 jest.mock("@web/common/hooks/useIsMobile");
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
@@ -50,21 +54,30 @@ jest.mock("./components/Onboarding", () => ({
 const mockUseHasCompletedSignup = useHasCompletedSignup as jest.MockedFunction<
   typeof useHasCompletedSignup
 >;
-const mockUseAuthCheck = useAuthCheck as jest.MockedFunction<
-  typeof useAuthCheck
->;
+const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
 const mockUseIsMobile = useIsMobile as jest.MockedFunction<typeof useIsMobile>;
 
+const metadataHandlers: RequestHandler[] = [
+  rest.get(`${ENV_WEB.API_BASEURL}/user/metadata`, (_req, res, ctx) => {
+    return res(ctx.status(Status.OK), ctx.json({ skipOnboarding: false }));
+  }),
+  rest.post(`${ENV_WEB.API_BASEURL}/user/metadata`, (req, res, ctx) => {
+    return res(ctx.status(Status.OK), ctx.json(req.json()));
+  }),
+];
+
 describe("OnboardingFlow", () => {
+  beforeEach(() => server.use(...metadataHandlers));
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockNavigate.mockClear();
     mockUseIsMobile.mockReturnValue(false);
-    mockUseAuthCheck.mockReturnValue({
-      isAuthenticated: false,
-      isCheckingAuth: false,
-      isGoogleTokenActive: false,
-      isSessionActive: false,
+    mockUseSession.mockReturnValue({
+      authenticated: false,
+      loading: false,
+      setAuthenticated: jest.fn(),
+      setLoading: jest.fn(),
     });
     // Reset location to /login by default
     mockLocationPathname = ROOT_ROUTES.LOGIN;
@@ -282,11 +295,11 @@ describe("OnboardingFlow", () => {
           hasCompletedSignup: true,
           markSignupCompleted: jest.fn(),
         });
-        mockUseAuthCheck.mockReturnValue({
-          isAuthenticated: true,
-          isCheckingAuth: false,
-          isGoogleTokenActive: true,
-          isSessionActive: true,
+        mockUseSession.mockReturnValue({
+          authenticated: true,
+          loading: false,
+          setAuthenticated: jest.fn(),
+          setLoading: jest.fn(),
         });
 
         render(<OnboardingFlow />);
@@ -303,11 +316,11 @@ describe("OnboardingFlow", () => {
           hasCompletedSignup: true,
           markSignupCompleted: jest.fn(),
         });
-        mockUseAuthCheck.mockReturnValue({
-          isAuthenticated: true,
-          isCheckingAuth: false,
-          isGoogleTokenActive: true,
-          isSessionActive: true,
+        mockUseSession.mockReturnValue({
+          authenticated: true,
+          loading: false,
+          setAuthenticated: jest.fn(),
+          setLoading: jest.fn(),
         });
 
         render(<OnboardingFlow />);
