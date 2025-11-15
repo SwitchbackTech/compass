@@ -132,12 +132,10 @@ describe("TaskSelector", () => {
 
     mockSetFocusedTask.mockClear();
 
-    const taskElement = screen
-      .getByText("Test Task")
-      .closest('[role="button"]');
+    const taskElement = screen.getByRole("button", { name: /Test Task/i });
     expect(taskElement).toBeInTheDocument();
 
-    await user.click(taskElement!);
+    await user.click(taskElement);
 
     // After auto-focus, clicking should call setFocusedTask again
     expect(mockSetFocusedTask).toHaveBeenCalledWith("task-1");
@@ -212,12 +210,10 @@ describe("TaskSelector", () => {
     expect(screen.getByText("Test Task")).toBeInTheDocument();
 
     // Select a task
-    const taskElement = screen
-      .getByText("Test Task")
-      .closest('[role="button"]');
+    const taskElement = screen.getByRole("button", { name: /Test Task/i });
     expect(taskElement).toBeInTheDocument();
 
-    await user.click(taskElement!);
+    await user.click(taskElement);
 
     // Verify setFocusedTask was called
     expect(mockSetFocusedTask).toHaveBeenCalledWith("task-1");
