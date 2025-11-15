@@ -11,6 +11,7 @@ import { useFocusedTask } from "@web/views/Now/hooks/useFocusedTask";
 import { useNowViewShortcuts } from "@web/views/Now/hooks/useNowViewShortcuts";
 import { useTaskFocus } from "@web/views/Now/hooks/useTaskFocus";
 import { AllTasksCompleted } from "../AllTasksCompleted/AllTasksCompleted";
+import { AvailableTasks } from "../AvailableTasks/AvailableTasks";
 import { FocusedTask } from "../FocusedTask/FocusedTask";
 
 export const TaskSelector = () => {
@@ -117,4 +118,12 @@ export const TaskSelector = () => {
   if (hasCompletedTasks) {
     return <AllTasksCompleted />;
   }
+
+  if (availableTasks.length === 0) {
+    return null;
+  }
+
+  return (
+    <AvailableTasks tasks={availableTasks} onTaskSelect={setFocusedTask} />
+  );
 };

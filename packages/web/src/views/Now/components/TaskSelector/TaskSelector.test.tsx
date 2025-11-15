@@ -97,6 +97,8 @@ describe("TaskSelector", () => {
     });
     mockUseAvailableTasks.mockReturnValue({
       availableTasks: mockTasks,
+      allTasks: mockTasks,
+      hasCompletedTasks: false,
     });
 
     render(<TaskSelector />);
@@ -117,6 +119,8 @@ describe("TaskSelector", () => {
     });
     mockUseAvailableTasks.mockReturnValue({
       availableTasks: mockTasks,
+      allTasks: mockTasks,
+      hasCompletedTasks: false,
     });
 
     render(<TaskSelector />);
@@ -140,7 +144,7 @@ describe("TaskSelector", () => {
     expect(mockSetFocusedTask).toHaveBeenCalledTimes(1);
   });
 
-  it("renders empty state when no tasks are available", () => {
+  it("renders nothing when no tasks are available", () => {
     mockUseFocusedTask.mockReturnValue({
       focusedTask: null,
       setFocusedTask: mockSetFocusedTask,
@@ -151,12 +155,9 @@ describe("TaskSelector", () => {
       hasCompletedTasks: false,
     });
 
-    render(<TaskSelector />);
+    const { container } = render(<TaskSelector />);
 
-    expect(screen.getByText("No tasks available")).toBeInTheDocument();
-    expect(
-      screen.getByText("Create tasks in the Day view to focus on them here"),
-    ).toBeInTheDocument();
+    expect(container.firstChild).toBeNull();
   });
 
   it("renders AllTasksCompleted when all tasks are completed", () => {
@@ -527,6 +528,8 @@ describe("TaskSelector", () => {
       });
       mockUseAvailableTasks.mockReturnValue({
         availableTasks: mockTasks,
+        allTasks: mockTasks,
+        hasCompletedTasks: false,
       });
 
       render(<TaskSelector />);
