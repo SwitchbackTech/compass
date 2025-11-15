@@ -15,6 +15,7 @@ import {
 import { UserContext } from "supertokens-node/lib/build/types";
 import { createMockCalendarListEntry as mockCalendarListCreate } from "@core/__tests__/helpers/gcal.factory";
 import { gSchema$CalendarListEntry } from "@core/types/gcal";
+import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import { UserMetadata } from "@core/types/user.types";
 import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
 import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
@@ -85,29 +86,39 @@ function mockSuperToken() {
             ? JSON.parse(sessionString)
             : undefined;
 
-        if (typeof session?.userId === "string") {
-          req.session = {
-            getUserId() {
-              return session.userId;
-            },
-            getAccessTokenPayload(): SupertokensAccessTokenPayload {
-              return {
-                iat: now.getMilliseconds(),
-                exp: now.getMilliseconds() + 5000,
-                iss: req.headers.origin ?? "http://localhost",
-                sub: session.userId,
-                rsub: session.userId,
-                tId,
-                sessionHandle: session.sessionId ?? sessionHandle,
-                refreshTokenHash1: null,
-                parentRefreshTokenHash1: null,
-                antiCsrfToken: null,
-              };
-            },
-          } as SessionContainerInterface;
+        const userId = zObjectId.parse(session?.userId, {
+          error: () => "invalid superToken session",
+        });
 
-          return next?.();
-        }
+        const sessionId = StringV4Schema.parse(
+          session?.sessionId ?? sessionHandle,
+          { error: () => "invalid superToken session" },
+        );
+
+        req.session = {
+          getUserId() {
+            return userId.toString();
+          },
+          getHandle() {
+            return sessionId;
+          },
+          getAccessTokenPayload(): SupertokensAccessTokenPayload {
+            return {
+              iat: now.getMilliseconds(),
+              exp: now.getMilliseconds() + 5000,
+              iss: req.headers.origin ?? "http://localhost",
+              sub: userId.toString(),
+              rsub: userId.toString(),
+              tId,
+              sessionHandle: sessionId,
+              refreshTokenHash1: null,
+              parentRefreshTokenHash1: null,
+              antiCsrfToken: null,
+            };
+          },
+        } as SessionContainerInterface;
+
+        return next?.();
 
         if (input?.verifySessionOptions?.sessionRequired) {
           throw new Error("invalid superToken session");
@@ -144,6 +155,71 @@ function mockSuperToken() {
         .get(userId)!,
     });
   }
+
+  const mappings = new Map<string, string>();
+
+  async function getUserIdMapping(input: {
+    userId: string;
+    userIdType?: "SUPERTOKENS" | "EXTERNAL" | "ANY";
+    userContext?: Record<string, unknown>;
+  }): Promise<
+    | {
+        status: "OK";
+        superTokensUserId: string;
+        externalUserId: string;
+      }
+    | { status: "UNKNOWN_MAPPING_ERROR" }
+  > {
+    const superTokensUserId = mappings.get(input.userId);
+
+    if (!superTokensUserId) {
+      return { status: "UNKNOWN_MAPPING_ERROR" };
+    }
+
+    return { status: "OK", superTokensUserId, externalUserId: input.userId };
+  }
+
+  async function createUserIdMapping(input: {
+    superTokensUserId: string;
+    externalUserId: string;
+    externalUserIdInfo?: string;
+    userContext?: Record<string, unknown>;
+    force?: boolean;
+  }): Promise<
+    | { status: "OK" | "UNKNOWN_SUPERTOKENS_USER_ID_ERROR" }
+    | {
+        status: "USER_ID_MAPPING_ALREADY_EXISTS_ERROR";
+        doesSuperTokensUserIdExist: boolean;
+        doesExternalUserIdExist: boolean;
+      }
+  > {
+    const superTokensUserId = mappings.get(input.externalUserId);
+    const exists = superTokensUserId === input.superTokensUserId;
+
+    if (superTokensUserId && !input.force) {
+      return {
+        status: "USER_ID_MAPPING_ALREADY_EXISTS_ERROR",
+        doesSuperTokensUserIdExist: exists,
+        doesExternalUserIdExist: true,
+      };
+    }
+
+    mappings.set(input.externalUserId, input.superTokensUserId);
+
+    return { status: "OK" };
+  }
+
+  mockModule(
+    "supertokens-node",
+    (superTokens: typeof import("supertokens-node")) => {
+      const superTokensModule = mergeWith(superTokens, {
+        getUserIdMapping: jest.fn(getUserIdMapping),
+        createUserIdMapping: jest.fn(createUserIdMapping),
+      });
+
+      return mergeWith(superTokensModule, { default: superTokensModule });
+    },
+  );
 
   mockModule(
     "supertokens-node/recipe/session/framework/express",

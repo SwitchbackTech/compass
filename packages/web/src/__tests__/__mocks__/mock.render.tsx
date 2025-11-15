@@ -13,6 +13,7 @@ import { GlobalStyle } from "@web/components/GlobalStyle";
 import type { store as compassStore } from "@web/store";
 import { reducers } from "@web/store/reducers";
 import { sagas } from "@web/store/sagas";
+import { SessionProvider } from "../../auth/SessionProvider";
 
 type CustomRenderOptions = Omit<RenderOptions, "wrapper"> & {
   state?: any;
@@ -23,21 +24,23 @@ const AllTheProviders =
   (store: typeof compassStore) =>
   ({ children }: PropsWithChildren<{}>) => {
     return (
-      <DndProvider backend={HTML5Backend}>
-        <GoogleOAuthProvider clientId="anyClientId">
-          <GlobalStyle />
-          <ThemeProvider theme={theme}>
-            <BrowserRouter
-              future={{
-                v7_startTransition: true,
-                v7_relativeSplatPath: true,
-              }}
-            >
-              <Provider store={store}>{children}</Provider>
-            </BrowserRouter>
-          </ThemeProvider>
-        </GoogleOAuthProvider>
-      </DndProvider>
+      <SessionProvider>
+        <DndProvider backend={HTML5Backend}>
+          <GoogleOAuthProvider clientId="anyClientId">
+            <GlobalStyle />
+            <ThemeProvider theme={theme}>
+              <BrowserRouter
+                future={{
+                  v7_startTransition: true,
+                  v7_relativeSplatPath: true,
+                }}
+              >
+                <Provider store={store}>{children}</Provider>
+              </BrowserRouter>
+            </ThemeProvider>
+          </GoogleOAuthProvider>
+        </DndProvider>
+      </SessionProvider>
     );
   };
 

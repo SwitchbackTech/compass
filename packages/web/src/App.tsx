@@ -5,39 +5,52 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { Provider } from "react-redux";
 import { ToastContainer } from "react-toastify";
 import { ThemeProvider } from "styled-components";
-import SuperTokens, { SuperTokensWrapper } from "supertokens-auth-react";
-import Session from "supertokens-auth-react/recipe/session";
+import SuperTokens from "supertokens-web-js";
+import Session from "supertokens-web-js/recipe/session";
+import ThirdParty from "supertokens-web-js/recipe/thirdparty";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { APP_NAME, PORT_DEFAULT_WEB } from "@core/constants/core.constants";
+import { APP_NAME } from "@core/constants/core.constants";
+import { SessionProvider, sessionInit } from "@web/auth/SessionProvider";
+import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { sagaMiddleware } from "@web/common/store/middlewares";
+import { theme } from "@web/common/styles/theme";
 import { GlobalStyle } from "@web/components/GlobalStyle";
+import { IconProvider } from "@web/components/IconProvider/IconProvider";
+import { RootRouter } from "@web/routers";
+import { store } from "@web/store";
 import { sagas } from "@web/store/sagas";
-import { theme } from "./common/styles/theme";
-import { IconProvider } from "./components/IconProvider/IconProvider";
-import { RootRouter } from "./routers";
-import { store } from "./store";
 
 SuperTokens.init({
   appInfo: {
     appName: APP_NAME,
     apiDomain: ENV_WEB.API_BASEURL,
     apiBasePath: ROOT_ROUTES.API,
-    websiteBasePath: ROOT_ROUTES.LOGIN,
-    websiteDomain: `http://localhost:${PORT_DEFAULT_WEB}`,
   },
-  recipeList: [Session.init()],
+  recipeList: [
+    ThirdParty.init(),
+    Session.init({
+      postAPIHook: async (context) => {
+        session.emit(context.action, context);
+      },
+      onHandleEvent: (event) => {
+        session.emit(event.action, event);
+      },
+    }),
+  ],
 });
+
+sessionInit();
 
 sagaMiddleware.run(sagas);
 
 export const App = () => {
   const renderRequiredProviders = () => (
-    <DndProvider backend={HTML5Backend}>
-      <Provider store={store}>
-        <GoogleOAuthProvider clientId={ENV_WEB.GOOGLE_CLIENT_ID || ""}>
-          <SuperTokensWrapper>
+    <SessionProvider>
+      <DndProvider backend={HTML5Backend}>
+        <Provider store={store}>
+          <GoogleOAuthProvider clientId={ENV_WEB.GOOGLE_CLIENT_ID || ""}>
             <GlobalStyle />
             <ThemeProvider theme={theme}>
               <IconProvider>
@@ -57,10 +70,10 @@ export const App = () => {
                 limit={1}
               />
             </ThemeProvider>
-          </SuperTokensWrapper>
-        </GoogleOAuthProvider>
-      </Provider>
-    </DndProvider>
+          </GoogleOAuthProvider>
+        </Provider>
+      </DndProvider>
+    </SessionProvider>
   );
 
   const renderOptionalProviders = (children: React.ReactNode) => {

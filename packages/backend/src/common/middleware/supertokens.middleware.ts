@@ -1,23 +1,24 @@
 import cors from "cors";
-import SuperTokens from "supertokens-node";
+import { TokenPayload } from "google-auth-library";
+import { ObjectId } from "mongodb";
+import supertokens, { default as SuperTokens, User } from "supertokens-node";
 import Dashboard from "supertokens-node/recipe/dashboard";
-import {
-  default as Session,
-  SessionContainer,
-} from "supertokens-node/recipe/session";
+import Session from "supertokens-node/recipe/session";
+import ThirdParty from "supertokens-node/recipe/thirdparty";
 import UserMetadata from "supertokens-node/recipe/usermetadata";
 import {
   APP_NAME,
   PORT_DEFAULT_BACKEND,
   PORT_DEFAULT_WEB,
 } from "@core/constants/core.constants";
+import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
-import { Logger } from "@core/logger/winston.logger";
+import { zObjectId } from "@core/types/type.utils";
+import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { ENV } from "@backend/common/constants/env.constants";
-import { SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
-import { webSocketServer } from "@backend/servers/websocket/websocket.server";
-
-const logger = Logger("app:supertokens.middleware");
+import mongoService from "@backend/common/services/mongo.service";
+import syncService from "@backend/sync/services/sync.service";
+import userMetadataService from "@backend/user/services/user-metadata.service";
 
 export const initSupertokens = () => {
   SuperTokens.init({
@@ -34,55 +35,150 @@ export const initSupertokens = () => {
     },
     framework: "express",
     recipeList: [
-      Dashboard.init(),
-      Session.init({
-        errorHandlers: {
-          onTryRefreshToken: async (message, _request, response) => {
-            logger.warn(
-              `Session expired: ${message}. User tried to refresh the session.`,
-            );
+      // see added endpoints
+      // https://app.swaggerhub.com/apis/supertokens/FDI/3.0.0
+      // https://supertokens.com/docs/references/fdi/introduction
+      ThirdParty.init({
+        signInAndUpFeature: {
+          providers: [
+            {
+              config: {
+                thirdPartyId: "google",
+                clients: [
+                  {
+                    clientType: "web",
+                    clientId: ENV.GOOGLE_CLIENT_ID,
+                    clientSecret: ENV.GOOGLE_CLIENT_SECRET,
+                    scope: [
+                      "https://www.googleapis.com/auth/userinfo.email",
+                      "https://www.googleapis.com/auth/calendar.readonly",
+                      "https://www.googleapis.com/auth/calendar.events",
+                    ],
+                  },
+                ],
+              },
+            },
+          ],
+        },
+        override: {
+          functions(originalImplementation) {
+            return {
+              ...originalImplementation,
+              async manuallyCreateOrUpdateUser(input) {
+                const user = await mongoService.user.findOne(
+                  { "google.googleId": input.thirdPartyUserId },
+                  { projection: { _id: 1, signedUpAt: 1, email: 1 } },
+                );
 
-            response.setStatusCode(Status.UNAUTHORIZED);
-            response.sendJSONResponse({
-              error: "Session expired. Please log in again.",
-            });
+                const id = user?._id.toString() ?? new ObjectId().toString();
+                const timeJoined = user?.signedUpAt?.getTime() ?? Date.now();
+                const thirdParty = [
+                  { id: input.thirdPartyId, userId: input.thirdPartyUserId },
+                ];
+
+                return {
+                  status: "OK",
+                  createdNewRecipeUser: user === null,
+                  recipeUserId: supertokens.convertToRecipeUserId(id),
+                  timeJoined,
+                  thirdParty,
+                  user: new User({
+                    emails: [user?.email ?? input.email],
+                    id,
+                    isPrimaryUser: false,
+                    thirdParty,
+                    timeJoined,
+                    loginMethods: [
+                      {
+                        recipeId: "thirdparty",
+                        recipeUserId: id,
+                        tenantIds: [input.tenantId],
+                        timeJoined,
+                        verified: input.isVerified,
+                        email: input.email,
+                        thirdParty: thirdParty[0],
+                        webauthn: { credentialIds: [] },
+                      },
+                    ],
+                    phoneNumbers: [],
+                    tenantIds: [input.tenantId],
+                    webauthn: { credentialIds: [] },
+                  }),
+                };
+              },
+              async signInUp(
+                input: Parameters<typeof originalImplementation.signInUp>[0],
+              ) {
+                const response = await originalImplementation.signInUp(input);
+
+                if (response.status === "OK") {
+                  const providerUser = response.rawUserInfoFromProvider
+                    .fromIdTokenPayload as TokenPayload;
+
+                  const refreshToken = response.oAuthTokens["refresh_token"];
+
+                  if (input.session === undefined || input.session === null) {
+                    if (
+                      response.createdNewRecipeUser &&
+                      response.user.loginMethods.length === 1
+                    ) {
+                      // sign up logic
+                      await compassAuthService.googleSignup(
+                        providerUser,
+                        refreshToken,
+                        response.user.id,
+                      );
+                    } else {
+                      // sign in logic
+                      await compassAuthService.googleSignin(
+                        providerUser,
+                        response.oAuthTokens,
+                      );
+                    }
+                  }
+                }
+
+                return response;
+              },
+            };
           },
         },
+      }),
+      Dashboard.init(),
+      Session.init({
         override: {
           apis(originalImplementation) {
             return {
               ...originalImplementation,
               async signOutPOST(input) {
-                const data: SupertokensAccessTokenPayload =
-                  input.session.getAccessTokenPayload();
+                if (!originalImplementation.signOutPOST) {
+                  throw new BaseError(
+                    "signOutPOST not implemented",
+                    "signOutPOST not implemented",
+                    Status.BAD_REQUEST,
+                    true,
+                  );
+                }
+                const userId = zObjectId.parse(input.session.getUserId());
 
-                const socketId = data.sessionHandle;
-
-                return originalImplementation.signOutPOST!(input).then(
-                  (res) => {
-                    webSocketServer.handleUserSignOut(socketId!);
-
-                    return res;
-                  },
+                const userSessions = await Session.getAllSessionHandlesForUser(
+                  userId.toString(),
                 );
-              },
-              async refreshPOST(input) {
-                return originalImplementation.refreshPOST!(input).then(
-                  async (session: SessionContainer) => {
-                    const data: SupertokensAccessTokenPayload =
-                      session.getAccessTokenPayload();
 
-                    const socketId = data.sessionHandle;
+                const lastActiveSession = userSessions.length < 2;
 
-                    webSocketServer.handleUserRefreshToken(socketId!);
+                const res = await originalImplementation.signOutPOST(input);
 
-                    logger.debug(
-                      `Session refreshed for user ${data.sub} client.`,
-                    );
+                await userMetadataService.updateUserMetadata({
+                  userId: userId.toString(),
+                  data: { sync: { incrementalGCalSync: "restart" } },
+                });
 
-                    return session;
-                  },
-                );
+                if (lastActiveSession) {
+                  await syncService.stopWatches(userId.toString());
+                }
+
+                return res;
               },
             };
           },

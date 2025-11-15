@@ -1,14 +1,7 @@
-import { NextFunction, Request, Response } from "express";
+import { Request } from "express";
 import { Server as HttpServer } from "node:http";
 import { ExtendedError, Server as SocketIOServer } from "socket.io";
-import { SessionRequest } from "supertokens-node/framework/express";
-import {
-  ExpressRequest,
-  ExpressResponse,
-} from "supertokens-node/lib/build/framework/express/framework";
-import SessionError from "supertokens-node/lib/build/recipe/session/error";
-import SessionRecipe from "supertokens-node/lib/build/recipe/session/recipe";
-import { makeDefaultUserContextFromAPI } from "supertokens-node/lib/build/utils";
+import { verifySession } from "supertokens-node/recipe/session/framework/express";
 import {
   EVENT_CHANGED,
   EVENT_CHANGE_PROCESSED,
@@ -20,11 +13,9 @@ import {
   SOMEDAY_EVENT_CHANGED,
   SOMEDAY_EVENT_CHANGE_PROCESSED,
   USER_METADATA,
-  USER_REFRESH_TOKEN,
-  USER_SIGN_OUT,
 } from "@core/constants/websocket.constants";
-import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
+import { StringV4Schema } from "@core/types/type.utils";
 import { UserMetadata } from "@core/types/user.types";
 import {
   ClientToServerEvents,
@@ -38,7 +29,7 @@ import { ENV } from "@backend/common/constants/env.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SocketError } from "@backend/common/errors/socket/socket.errors";
 import { handleWsError } from "@backend/servers/websocket/websocket.util";
-import userService from "@backend/user/services/user.service";
+import userMetadataService from "@backend/user/services/user-metadata.service";
 
 const logger = Logger("app:websocket.server");
 
@@ -51,21 +42,18 @@ class WebSocketServer {
   private onConnection(socket: CompassSocket) {
     const userId = socket.data.session.getUserId();
 
-    const sessionSocketId =
-      socket.data.session.getAccessTokenPayload().sessionHandle;
+    const sessionId = StringV4Schema.parse(socket.data.session.getHandle());
 
     const userConnections = this.#userConnections.get(userId!) ?? [];
 
-    this.#sessionConnections.set(sessionSocketId, socket.id);
+    this.#sessionConnections.set(sessionId, socket.id);
     this.#userConnections.set(userId!, userConnections?.concat(socket.id));
 
     logger.debug(`Connection made to: ${socket.id}`);
 
-    console.log(this.#sessionConnections);
-
     socket.on(
       "disconnect",
-      handleWsError(this.onDisconnect({ socket, userId, sessionSocketId })),
+      handleWsError(this.onDisconnect({ socket, userId, sessionId })),
     );
 
     socket.on(
@@ -89,9 +77,9 @@ class WebSocketServer {
     socket.on(
       FETCH_USER_METADATA,
       handleWsError(() =>
-        userService
+        userMetadataService
           .fetchUserMetadata(socket.data.session!.getUserId()!)
-          .then((data) => this.handleUserMetadata(sessionSocketId, data)),
+          .then((data) => this.handleUserMetadata(sessionId, data)),
       ),
     );
   }
@@ -99,25 +87,23 @@ class WebSocketServer {
   private onDisconnect({
     socket,
     userId,
-    sessionSocketId,
+    sessionId,
   }: {
     socket: CompassSocket;
     userId: string;
-    sessionSocketId: string;
+    sessionId: string;
   }): () => void {
     return () => {
       logger.debug(`Disconnecting from: ${socket.id}`);
 
       const userConnections = this.#userConnections.get(userId!)!;
 
-      this.#sessionConnections.delete(sessionSocketId!);
+      this.#sessionConnections.delete(sessionId!);
 
       this.#userConnections.set(
         userId!,
         userConnections.filter((id) => id !== socket.id),
       );
-
-      console.log(this.#sessionConnections);
     };
   }
 
@@ -142,7 +128,7 @@ class WebSocketServer {
   }
 
   private generateId(req: Request): string {
-    return req.session?.getAccessTokenPayload()?.sessionHandle;
+    return StringV4Schema.parse(req.session?.getHandle());
   }
 
   private notifyClient(
@@ -196,55 +182,13 @@ class WebSocketServer {
    * @memberOf WebSocketServer
    */
   private notifySession(
-    sessionSocketId: string,
+    sessionId: string,
     event: keyof ServerToClientEvents,
     ...payload: Parameters<ServerToClientEvents[typeof event]>
   ) {
-    const socketId = this.#sessionConnections.get(sessionSocketId);
+    const socketId = this.#sessionConnections.get(sessionId);
 
     return this.notifyClient(socketId!, event, ...payload);
-  }
-
-  /**
-   * verifySession
-   *
-   * We are manually verifying the session here
-   * to prevent the default supertokens behavior
-   * of attempting to refresh the session if it is expired internally
-   * since the socket's session might be stale.
-   * We offload the refresh mechanism to the client.
-   */
-  private async verifySession(
-    req: SessionRequest,
-    res: Response,
-    next: NextFunction,
-  ) {
-    try {
-      const request = new ExpressRequest(req);
-      const response = new ExpressResponse(res);
-      const userContext = makeDefaultUserContextFromAPI(request);
-      const sessionRecipe = SessionRecipe.getInstanceOrThrowError();
-      const session = await sessionRecipe.verifySession(
-        { sessionRequired: true },
-        request,
-        response,
-        userContext,
-      );
-
-      Object.assign(req, { session });
-
-      next();
-    } catch (err) {
-      const error = err as SessionError;
-
-      logger.error(error.message, error);
-
-      res.writeHead(Status.UNAUTHORIZED, {
-        "Content-Type": "application/json",
-      });
-
-      res.end(JSON.stringify({ type: error.type, message: "Invalid Session" }));
-    }
   }
 
   init(server: HttpServer) {
@@ -253,9 +197,12 @@ class WebSocketServer {
       ServerToClientEvents,
       InterServerEvents,
       SocketData
-    >(server, { cors: { origin: ENV.ORIGINS_ALLOWED, credentials: true } });
+    >(server, {
+      cors: { origin: ENV.ORIGINS_ALLOWED, credentials: true },
+      transports: ["websocket", "polling"],
+    });
 
-    this.wsServer.engine.use(this.verifySession.bind(this));
+    this.wsServer.engine.use(verifySession());
 
     this.wsServer.engine.generateId = this.generateId.bind(this);
 
@@ -270,16 +217,8 @@ class WebSocketServer {
     return this.wsServer;
   }
 
-  handleUserSignOut(sessionSocketId: string) {
-    return this.notifySession(sessionSocketId, USER_SIGN_OUT);
-  }
-
-  handleUserRefreshToken(sessionSocketId: string) {
-    return this.notifySession(sessionSocketId, USER_REFRESH_TOKEN);
-  }
-
-  handleUserMetadata(sessionSocketId: string, payload: UserMetadata) {
-    return this.notifySession(sessionSocketId, USER_METADATA, payload);
+  handleUserMetadata(sessionId: string, payload: UserMetadata) {
+    return this.notifySession(sessionId, USER_METADATA, payload);
   }
 
   handleImportGCalStart(userId: string) {

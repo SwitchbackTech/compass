@@ -17,15 +17,3 @@ export const findCompassUsersBy = async (key: Ids_User, value: string) => {
 
   return users;
 };
-
-export const updateGoogleRefreshToken = async (
-  id: string,
-  gRefreshToken: string,
-) => {
-  const filter = getIdFilter("_id", id);
-  const result = await mongoService.user.findOneAndUpdate(filter, {
-    $set: { "google.gRefreshToken": gRefreshToken },
-  });
-
-  return result;
-};

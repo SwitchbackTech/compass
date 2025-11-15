@@ -1,14 +1,11 @@
 import { TokenPayload } from "google-auth-library";
-import mergeWith from "lodash.mergewith";
-import { ObjectId } from "mongodb";
+import { ClientSession, ObjectId } from "mongodb";
 import SupertokensUserMetadata, {
   JSONObject,
 } from "supertokens-node/recipe/usermetadata";
 import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 import { mapUserToCompass } from "@core/mappers/map.user";
-import { mapCompassUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
-import { UserInfo_Google } from "@core/types/auth.types";
 import { Resource_Sync } from "@core/types/sync.types";
 import { zObjectId } from "@core/types/type.utils";
 import { Schema_User, UserMetadata } from "@core/types/user.types";
@@ -16,41 +13,41 @@ import { shouldImportGCal } from "@core/util/event/event.util";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import calendarService from "@backend/calendar/services/calendar.service";
-import { ENV } from "@backend/common/constants/env.constants";
-import { isMissingUserTagId } from "@backend/common/constants/env.util";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
-import EmailService from "@backend/email/email.service";
 import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import syncService from "@backend/sync/services/sync.service";
 import { isUsingHttps } from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import userMetadataService from "@backend/user/services/user-metadata.service";
 import { Summary_Delete } from "@backend/user/types/user.types";
 
 const logger = Logger("app:user.service");
 
 class UserService {
   createUser = async (
-    gUser: UserInfo_Google["gUser"],
+    gUser: TokenPayload,
     gRefreshToken: string,
+    userId: string = new ObjectId().toString(),
+    session?: ClientSession,
   ): Promise<Schema_User & { userId: string }> => {
     const _compassUser = mapUserToCompass(gUser, gRefreshToken);
-    const compassUser = { ..._compassUser, signedUpAt: new Date() };
+    const _id = zObjectId.parse(userId, { error: () => "Invalid user ID" });
+    const compassUser = { ..._compassUser, _id, signedUpAt: new Date() };
 
-    const createUserRes = await mongoService.user.insertOne(compassUser);
+    const user = await mongoService.user.insertOne(compassUser, { session });
 
-    const userId = createUserRes.insertedId.toString();
-    if (!userId) {
-      throw error(AuthError.NoUserId, "Failed to create Compass user");
-    }
+    const newUserId = zObjectId.parse(user.insertedId.toString(), {
+      error: () => "Failed to create Compass user",
+    });
 
     return {
       ...compassUser,
-      userId,
+      userId: newUserId.toString(),
     };
   };
 
@@ -87,6 +84,7 @@ class UserService {
       summary.syncs += staleSyncs.deletedCount;
 
       initSupertokens();
+
       const { sessionsRevoked } =
         await compassAuthService.revokeSessionsByUser(userId);
       summary.sessions = sessionsRevoked;
@@ -99,6 +97,7 @@ class UserService {
       console.log("Stopped early because:", _e.description || _e);
 
       const _user = await this.deleteUser(userId);
+
       summary.user = _user.deletedCount;
 
       return summary;
@@ -115,36 +114,19 @@ class UserService {
     return response;
   };
 
-  initUserData = async (gUser: TokenPayload, gRefreshToken: string) => {
-    const cUser = await this.createUser(gUser, gRefreshToken);
-    const { userId, email } = cUser;
+  initUserData = async (
+    gUser: TokenPayload,
+    gRefreshToken: string,
+    userId?: string,
+    session?: ClientSession,
+  ) => {
+    const cUser = await this.createUser(gUser, gRefreshToken, userId, session);
 
-    if (isMissingUserTagId()) {
-      logger.warn(
-        "Did not tag subscriber due to missing EMAILER_ ENV value(s)",
-      );
-    } else {
-      const subscriber = mapCompassUserToEmailSubscriber(cUser);
-      await EmailService.addTagToSubscriber(
-        subscriber,
-        ENV.EMAILER_USER_TAG_ID!,
-      );
-    }
+    await priorityService.createDefaultPriorities(cUser.userId, session);
 
-    await priorityService.createDefaultPriorities(userId);
+    await eventService.createDefaultSomedays(cUser.userId, session);
 
-    await eventService.createDefaultSomedays(userId);
-
-    return { userId, email };
-  };
-
-  saveTimeFor = async (label: "lastLoggedInAt", userId: string) => {
-    const res = await mongoService.user.findOneAndUpdate(
-      { _id: mongoService.objectId(userId) },
-      { $set: { [label]: new Date() } },
-    );
-
-    return res;
+    return cUser;
   };
 
   stopGoogleCalendarSync = async (user: string | ObjectId): Promise<void> => {
@@ -189,7 +171,7 @@ class UserService {
     try {
       webSocketServer.handleImportGCalStart(userId);
 
-      const userMeta = await this.fetchUserMetadata(userId);
+      const userMeta = await userMetadataService.fetchUserMetadata(userId);
       const proceed = shouldImportGCal(userMeta);
 
       if (!proceed) {
@@ -201,7 +183,7 @@ class UserService {
         return;
       }
 
-      await this.updateUserMetadata({
+      await userMetadataService.updateUserMetadata({
         userId,
         data: { sync: { importGCal: "importing" } },
       });
@@ -209,7 +191,7 @@ class UserService {
       await this.stopGoogleCalendarSync(userId);
       await this.startGoogleCalendarSync(userId);
 
-      await this.updateUserMetadata({
+      await userMetadataService.updateUserMetadata({
         userId,
         data: { sync: { importGCal: "completed" } },
       });
@@ -217,7 +199,7 @@ class UserService {
       webSocketServer.handleImportGCalEnd(userId);
       webSocketServer.handleBackgroundCalendarChange(userId);
     } catch (err) {
-      await this.updateUserMetadata({
+      await userMetadataService.updateUserMetadata({
         userId,
         data: { sync: { importGCal: "errored" } },
       });
@@ -229,32 +211,6 @@ class UserService {
         `Import gCal failed for user: ${userId}`,
       );
     }
-  };
-
-  /*
-   * updateUserMetadata
-   *
-   * Nested objects and all lower-level properties
-   * will merge with existing ones.
-   *
-   * @memberOf UserService
-   */
-  updateUserMetadata = async ({
-    userId,
-    data,
-  }: {
-    userId: string;
-    data: Partial<UserMetadata>;
-  }): Promise<UserMetadata> => {
-    const value = await this.fetchUserMetadata(userId);
-    const update = mergeWith(value, data);
-
-    const { status, metadata } =
-      await SupertokensUserMetadata.updateUserMetadata(userId, update);
-
-    if (status !== "OK") throw new Error("Failed to update user metadata");
-
-    return metadata;
   };
 
   fetchUserMetadata = async (

@@ -4,13 +4,13 @@ import type {
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from "axios";
-import { signOut } from "supertokens-auth-react/recipe/session";
+import { signOut } from "supertokens-web-js/recipe/session";
 import { Status } from "@core/errors/status.codes";
 import { AUTH_FAILURE_REASONS } from "@web/common/constants/auth.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { CompassApi } from "./compass.api";
 
-jest.mock("supertokens-auth-react/recipe/session", () => ({
+jest.mock("supertokens-web-js/recipe/session", () => ({
   signOut: jest.fn(),
 }));
 

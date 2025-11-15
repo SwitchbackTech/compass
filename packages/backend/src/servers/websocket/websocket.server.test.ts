@@ -3,6 +3,7 @@
  *
  * we do not need the database for this test
  */
+import { ObjectId } from "mongodb";
 import { randomUUID } from "node:crypto";
 import { updateUserMetadata } from "supertokens-node/recipe/usermetadata";
 import {
@@ -12,7 +13,6 @@ import {
   SOMEDAY_EVENT_CHANGED,
   SOMEDAY_EVENT_CHANGE_PROCESSED,
   USER_METADATA,
-  USER_REFRESH_TOKEN,
 } from "@core/constants/websocket.constants";
 import { UserMetadata } from "@core/types/user.types";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
@@ -34,7 +34,7 @@ describe("WebSocket Server", () => {
   describe("Connection: ", () => {
     describe("With Valid Session: ", () => {
       it("connects a client connecting with a valid session", async () => {
-        const userId = randomUUID();
+        const userId = new ObjectId().toString();
 
         const client = baseDriver.createWebsocketClient(
           { userId },
@@ -109,7 +109,7 @@ describe("WebSocket Server", () => {
   describe("Emission: ", () => {
     describe("To Specific User Session: ", () => {
       it("emits event to the correct user session socketId", async () => {
-        const userId = randomUUID();
+        const userId = new ObjectId().toString();
         const sessionIdOne = randomUUID();
         const sessionIdTwo = randomUUID();
 
@@ -128,7 +128,9 @@ describe("WebSocket Server", () => {
         });
 
         clientTwo.once("connect", () =>
-          webSocketServer.handleUserRefreshToken(sessionIdTwo),
+          webSocketServer.handleUserMetadata(sessionIdTwo, {
+            skipOnboarding: false,
+          }),
         );
 
         await expect(
@@ -139,8 +141,6 @@ describe("WebSocket Server", () => {
             baseDriver.waitUntilWebsocketEvent(clientTwo, USER_METADATA, () =>
               Promise.resolve(clientTwo.connect()),
             ),
-            baseDriver.waitUntilWebsocketEvent(clientOne, USER_REFRESH_TOKEN),
-            baseDriver.waitUntilWebsocketEvent(clientTwo, USER_REFRESH_TOKEN),
           ]),
         ).resolves.toEqual([
           expect.objectContaining({
@@ -148,26 +148,17 @@ describe("WebSocket Server", () => {
             value: [userMetadata],
           }),
           expect.objectContaining({
-            status: "rejected",
-            reason: new Error(
-              `Operation timed out. Wait for ${USER_METADATA} timed out`,
-            ),
+            status: "fulfilled",
+            value: [{ skipOnboarding: false }],
           }),
-          expect.objectContaining({
-            status: "rejected",
-            reason: new Error(
-              `Operation timed out. Wait for ${USER_REFRESH_TOKEN} timed out`,
-            ),
-          }),
-          expect.objectContaining({ status: "fulfilled", value: [] }),
         ]);
       });
     });
 
     describe("To All User Sessions: ", () => {
       it("emits event to all the active sessions of a user", async () => {
-        const userIdOne = randomUUID();
-        const userIdTwo = randomUUID();
+        const userIdOne = new ObjectId().toString();
+        const userIdTwo = new ObjectId().toString();
         const sessionIdOne = randomUUID();
         const sessionIdTwo = randomUUID();
         const sessionIdThree = randomUUID();
@@ -222,7 +213,7 @@ describe("WebSocket Server", () => {
 
     describe("To Disconnected Session: ", () => {
       it("ignores change if no connection between client and ws server", () => {
-        const userId = randomUUID();
+        const userId = new ObjectId().toString();
         const sessionId = randomUUID();
 
         expect(
@@ -236,12 +227,6 @@ describe("WebSocket Server", () => {
         expect(
           webSocketServer.handleUserMetadata(sessionId, userMetadata),
         ).toEqual("IGNORED");
-
-        expect(webSocketServer.handleUserRefreshToken(sessionId)).toEqual(
-          "IGNORED",
-        );
-
-        expect(webSocketServer.handleUserSignOut(sessionId)).toEqual("IGNORED");
       });
     });
   });
@@ -249,7 +234,7 @@ describe("WebSocket Server", () => {
   describe("Server Sent Events: ", () => {
     describe("handleBackgroundCalendarChange: ", () => {
       it("emits the `EVENT_CHANGED` event without a payload to the client", async () => {
-        const userId = randomUUID();
+        const userId = new ObjectId().toString();
 
         const client = baseDriver.createWebsocketClient(
           { userId },
@@ -270,7 +255,7 @@ describe("WebSocket Server", () => {
 
     describe("handleBackgroundSomedayChange: ", () => {
       it("emits the `SOMEDAY_EVENT_CHANGED` event without a payload to the client", async () => {
-        const userId = randomUUID();
+        const userId = new ObjectId().toString();
 
         const client = baseDriver.createWebsocketClient(
           { userId },
@@ -293,7 +278,7 @@ describe("WebSocket Server", () => {
 
     describe("handleUserMetadata: ", () => {
       it("emits the `USER_METADATA` event with a `UserMetadata` payload to the client", async () => {
-        const userId = randomUUID();
+        const userId = new ObjectId().toString();
         const sessionId = randomUUID();
 
         const client = baseDriver.createWebsocketClient(
@@ -317,7 +302,7 @@ describe("WebSocket Server", () => {
   describe("Client Sent Events: ", () => {
     describe(EVENT_CHANGE_PROCESSED, () => {
       it("listens for the `EVENT_CHANGE_PROCESSED` event", async () => {
-        const userId = randomUUID();
+        const userId = new ObjectId().toString();
 
         const client = baseDriver.createWebsocketClient(
           { userId },
@@ -342,7 +327,7 @@ describe("WebSocket Server", () => {
       });
 
       it("listens for the `SOMEDAY_EVENT_CHANGE_PROCESSED` event", async () => {
-        const userId = randomUUID();
+        const userId = new ObjectId().toString();
 
         const client = baseDriver.createWebsocketClient(
           { userId },
@@ -369,7 +354,7 @@ describe("WebSocket Server", () => {
 
     describe(FETCH_USER_METADATA, () => {
       it("listens for the `FETCH_USER_METADATA` event", async () => {
-        const userId = randomUUID();
+        const userId = new ObjectId().toString();
 
         await updateUserMetadata(userId, userMetadata);
 

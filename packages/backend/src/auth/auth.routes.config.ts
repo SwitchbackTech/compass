@@ -15,34 +15,12 @@ export class AuthRoutes extends CommonRoutesConfig {
   }
 
   configureRoutes(): express.Application {
-    /**
-     * Checks whether user's google access token is still valid
-     */
-    this.app
-      .route(`/api/auth/google`)
-      .get([verifySession(), authController.verifyGToken]);
-
     this.app
       .route(`/api/auth/session`)
       .all(authMiddleware.verifyIsDev)
 
       .post(authController.createSession)
       .get([verifySession(), authController.getUserIdFromSession]);
-
-    this.app
-      .route(`/api/auth/session/revoke`)
-      .all(authMiddleware.verifyIsDev)
-      .post([verifySession(), authController.revokeSessionsByUser]);
-
-    /**
-     * Google calls this route after successful oauth
-     */
-    this.app
-      .route(`/api/oauth/google`)
-      .post([
-        authMiddleware.verifyGoogleOauthCode,
-        authController.loginOrSignup,
-      ]);
 
     return this.app;
   }

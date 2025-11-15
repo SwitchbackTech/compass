@@ -10,8 +10,9 @@ import { NotFoundView } from "@web/views/NotFound";
 import { NowView } from "@web/views/Now/NowView";
 import OnboardingFlow from "@web/views/Onboarding/OnboardingFlow";
 import { RootView } from "@web/views/Root";
+import { AbsoluteOverflowLoader } from "../components/AbsoluteOverflowLoader";
 
-const router = createBrowserRouter(
+export const router = createBrowserRouter(
   [
     {
       path: "/onboarding",
@@ -40,13 +41,13 @@ const router = createBrowserRouter(
           path: ROOT_ROUTES.DAY,
           element: <DayView />,
         },
+        { path: ROOT_ROUTES.LOGOUT, element: <LogoutView /> },
       ],
     },
     {
       path: ROOT_ROUTES.LOGIN,
       element: <OnboardingFlow />,
     },
-    { path: ROOT_ROUTES.LOGOUT, element: <LogoutView /> },
     { path: "*", element: <NotFoundView /> },
   ],
   {
@@ -57,5 +58,11 @@ const router = createBrowserRouter(
 );
 
 export const RootRouter = () => {
-  return <RouterProvider router={router} />;
+  return (
+    <RouterProvider
+      router={router}
+      future={{ v7_startTransition: true }}
+      fallbackElement={<AbsoluteOverflowLoader />}
+    />
+  );
 };

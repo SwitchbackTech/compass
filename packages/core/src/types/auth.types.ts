@@ -1,28 +1,10 @@
 import { Credentials, TokenPayload } from "google-auth-library";
-import { BaseError } from "@core/errors/errors.base";
+import type { User } from "supertokens-node";
 
 export interface Result_Auth_Compass {
-  cUserId?: string;
-  error?: BaseError;
-  isNewUser?: boolean;
-  email?: string;
-}
-
-export interface Result_VerifyGToken {
-  isValid: boolean;
-  error?: BaseError | Error;
-}
-
-export interface User_Google {
-  id: string;
-  email: string;
-  family_name: string;
-  given_name: string;
-  locale: string;
-  name: string;
-  picture: string;
-  verified_email: boolean;
-  tokens: Credentials;
+  status: "OK";
+  createdNewRecipeUser: boolean;
+  user: User;
 }
 
 export interface UserInfo_Google {

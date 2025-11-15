@@ -1,18 +1,19 @@
 import { OAuth2Client, TokenPayload } from "google-auth-library";
 import { google } from "googleapis";
+import { GaxiosError } from "googleapis-common";
 import { WithId } from "mongodb";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { UserInfo_Google } from "@core/types/auth.types";
 import { gCalendar } from "@core/types/gcal";
+import { StringV4Schema } from "@core/types/type.utils";
 import { Schema_User } from "@core/types/user.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import compassAuthService from "./compass.auth.service";
 
 const logger = Logger("app:google.auth.service");
 
@@ -54,12 +55,23 @@ export const getGAuthClientForUser = async (
 
 export const getGcalClient = async (userId: string): Promise<gCalendar> => {
   const user = await findCompassUserBy("_id", userId);
+
   if (!user) {
-    logger.error(`Couldn't find user with this id: ${userId}`);
-    await compassAuthService.revokeSessionsByUser(userId);
-    throw error(
-      UserError.UserNotFound,
-      "Revoked session & gave up on gcal auth",
+    logger.error(`getGcalClient: Couldn't find user with this id: ${userId}`);
+
+    // throw gaxios error here to trigger specific session invalidation
+    // see error.express.handler.ts
+    throw new GaxiosError(
+      "invalid_grant",
+      {},
+      {
+        status: Status.BAD_REQUEST,
+        data: { userId },
+        config: {},
+        statusText: "BAD_REQUEST Cannot initialize Gcal client",
+        headers: {},
+        request: { responseURL: "" },
+      },
     );
   }
 
@@ -118,10 +130,10 @@ class GoogleAuthService {
     return payload;
   }
 
-  async getAccessToken() {
+  async refreshAccessToken() {
     const { token } = await this.oauthClient.getAccessToken();
 
-    if (!token) {
+    if (!StringV4Schema.safeParse(token).success) {
       throw error(
         AuthError.NoGAuthAccessToken,
         "Google auth access token not returned",
