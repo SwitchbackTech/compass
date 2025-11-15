@@ -10,7 +10,7 @@ import {
 import { useAvailableTasks } from "@web/views/Now/hooks/useAvailableTasks";
 import { useFocusedTask } from "@web/views/Now/hooks/useFocusedTask";
 import { useTaskFocus } from "@web/views/Now/hooks/useTaskFocus";
-import { useNowViewShortcuts } from "@web/views/Now/shortcuts/useNowViewShortcuts";
+import { useNowShortcuts } from "@web/views/Now/shortcuts/useNowShortcuts";
 import { AllTasksCompleted } from "../AllTasksCompleted/AllTasksCompleted";
 import { AvailableTasks } from "../AvailableTasks/AvailableTasks";
 import { FocusedTask } from "../FocusedTask/FocusedTask";
@@ -58,7 +58,7 @@ export const TaskSelector = () => {
     setFocusedTask(availableTasks[nextIndex].id);
   };
 
-  useNowViewShortcuts({
+  useNowShortcuts({
     focusedTask,
     availableTasks,
     onPreviousTask: handlePreviousTask,
