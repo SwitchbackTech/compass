@@ -2,11 +2,19 @@ import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import dayjs from "@core/util/date/dayjs";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { Task } from "@web/views/Day/task.types";
 import * as storageUtil from "@web/views/Day/util/storage.util";
 import { useAvailableTasks } from "@web/views/Now/hooks/useAvailableTasks";
 import { useFocusedTask } from "@web/views/Now/hooks/useFocusedTask";
 import { TaskSelector } from "./TaskSelector";
+
+// Mock useNavigate
+const mockNavigate = jest.fn();
+jest.mock("react-router-dom", () => ({
+  ...jest.requireActual("react-router-dom"),
+  useNavigate: () => mockNavigate,
+}));
 
 jest.mock("@web/views/Now/hooks/useFocusedTask");
 jest.mock("@web/views/Now/hooks/useAvailableTasks");
@@ -48,6 +56,7 @@ describe("TaskSelector", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockNavigate.mockClear();
     mockSetFocusedTask.mockClear();
     (storageUtil.getDateKey as jest.Mock).mockReturnValue(mockDateKey);
     (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(mockTasks);
@@ -69,6 +78,8 @@ describe("TaskSelector", () => {
     });
     mockUseAvailableTasks.mockReturnValue({
       availableTasks: [],
+      allTasks: [],
+      hasCompletedTasks: false,
     });
 
     render(<TaskSelector />);
@@ -136,6 +147,8 @@ describe("TaskSelector", () => {
     });
     mockUseAvailableTasks.mockReturnValue({
       availableTasks: [],
+      allTasks: [],
+      hasCompletedTasks: false,
     });
 
     render(<TaskSelector />);
@@ -144,6 +157,37 @@ describe("TaskSelector", () => {
     expect(
       screen.getByText("Create tasks in the Day view to focus on them here"),
     ).toBeInTheDocument();
+  });
+
+  it("renders AllTasksCompleted when all tasks are completed", () => {
+    mockUseFocusedTask.mockReturnValue({
+      focusedTask: null,
+      setFocusedTask: mockSetFocusedTask,
+    });
+    mockUseAvailableTasks.mockReturnValue({
+      availableTasks: [],
+      allTasks: [
+        {
+          id: "task-1",
+          title: "Completed Task",
+          status: "completed",
+          createdAt: "2025-11-15T10:00:00Z",
+        },
+      ],
+      hasCompletedTasks: true,
+    });
+
+    render(<TaskSelector />);
+
+    expect(
+      screen.getByText("All tasks completed for today!"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Great work! Add more tasks in the Day view to keep going.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Go to Day view")).toBeInTheDocument();
   });
 
   it("switches from AvailableTasks to FocusedTask when task is selected", async () => {
@@ -156,6 +200,8 @@ describe("TaskSelector", () => {
     });
     mockUseAvailableTasks.mockReturnValue({
       availableTasks: mockTasks,
+      allTasks: mockTasks,
+      hasCompletedTasks: false,
     });
 
     const { rerender } = render(<TaskSelector />);
@@ -202,6 +248,8 @@ describe("TaskSelector", () => {
       });
       mockUseAvailableTasks.mockReturnValue({
         availableTasks: mockTasks,
+        allTasks: mockTasks,
+        hasCompletedTasks: false,
       });
 
       render(<TaskSelector />);
@@ -219,6 +267,8 @@ describe("TaskSelector", () => {
       });
       mockUseAvailableTasks.mockReturnValue({
         availableTasks: mockTasks,
+        allTasks: mockTasks,
+        hasCompletedTasks: false,
       });
 
       render(<TaskSelector />);
@@ -235,6 +285,8 @@ describe("TaskSelector", () => {
       });
       mockUseAvailableTasks.mockReturnValue({
         availableTasks: [],
+        allTasks: [],
+        hasCompletedTasks: false,
       });
 
       render(<TaskSelector />);
@@ -252,9 +304,13 @@ describe("TaskSelector", () => {
       mockUseAvailableTasks
         .mockReturnValueOnce({
           availableTasks: [],
+          allTasks: [],
+          hasCompletedTasks: false,
         })
         .mockReturnValueOnce({
           availableTasks: mockTasks,
+          allTasks: mockTasks,
+          hasCompletedTasks: false,
         });
 
       const { rerender } = render(<TaskSelector />);
@@ -281,6 +337,8 @@ describe("TaskSelector", () => {
       });
       mockUseAvailableTasks.mockReturnValue({
         availableTasks: mockTasks,
+        allTasks: mockTasks,
+        hasCompletedTasks: false,
       });
 
       const { rerender } = render(<TaskSelector />);
@@ -337,6 +395,8 @@ describe("TaskSelector", () => {
       });
       mockUseAvailableTasks.mockReturnValue({
         availableTasks: tasks,
+        allTasks: tasks,
+        hasCompletedTasks: false,
       });
       (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(tasks);
 
@@ -388,6 +448,8 @@ describe("TaskSelector", () => {
       });
       mockUseAvailableTasks.mockReturnValue({
         availableTasks: tasks,
+        allTasks: tasks,
+        hasCompletedTasks: false,
       });
       (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(tasks);
 
@@ -413,7 +475,7 @@ describe("TaskSelector", () => {
       expect(mockSetFocusedTask).toHaveBeenCalledWith("task-1");
     });
 
-    it("marks task as complete and clears focus when it's the only task", async () => {
+    it("marks task as complete and navigates to Day view when it's the only task", async () => {
       const user = userEvent.setup({ delay: null });
       const tasks: Task[] = [
         {
@@ -430,6 +492,8 @@ describe("TaskSelector", () => {
       });
       mockUseAvailableTasks.mockReturnValue({
         availableTasks: tasks,
+        allTasks: tasks,
+        hasCompletedTasks: false,
       });
       (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(tasks);
 
@@ -451,8 +515,9 @@ describe("TaskSelector", () => {
         ]),
       );
 
-      // Verify focus is cleared
-      expect(mockSetFocusedTask).toHaveBeenCalledWith(null);
+      // Verify navigation to Day view
+      expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
+      expect(mockSetFocusedTask).not.toHaveBeenCalled();
     });
 
     it("does nothing when no task is focused", async () => {

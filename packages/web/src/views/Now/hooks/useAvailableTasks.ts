@@ -8,12 +8,16 @@ import {
 
 export function useAvailableTasks() {
   const [availableTasks, setAvailableTasks] = useState<Task[]>([]);
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
 
   useEffect(() => {
     const loadAvailableTasks = () => {
       const today = dayjs().utc();
       const dateKey = getDateKey(today.toDate());
       const tasks = loadTasksFromStorage(dateKey);
+
+      // Store all tasks
+      setAllTasks(tasks);
 
       // Filter out completed tasks and sort by creation date (newest first)
       const incompleteTasks = tasks
@@ -39,7 +43,12 @@ export function useAvailableTasks() {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
+  // Determine if all tasks are completed (has tasks but none are incomplete)
+  const hasCompletedTasks = allTasks.length > 0 && availableTasks.length === 0;
+
   return {
     availableTasks,
+    allTasks,
+    hasCompletedTasks,
   };
 }

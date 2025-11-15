@@ -1,4 +1,5 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { act } from "react";
+import { renderHook, waitFor } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
 import { Task } from "@web/views/Day/task.types";
 import * as storageUtil from "@web/views/Day/util/storage.util";
@@ -59,6 +60,8 @@ describe("useAvailableTasks", () => {
       expect(result.current.availableTasks).toHaveLength(2);
       expect(result.current.availableTasks[0].id).toBe("task-2");
       expect(result.current.availableTasks[1].id).toBe("task-1");
+      expect(result.current.allTasks).toEqual(mockTasks);
+      expect(result.current.hasCompletedTasks).toBe(false);
     });
   });
 
@@ -95,6 +98,8 @@ describe("useAvailableTasks", () => {
       expect(
         result.current.availableTasks.every((task) => task.status === "todo"),
       ).toBe(true);
+      expect(result.current.allTasks).toEqual(mockTasks);
+      expect(result.current.hasCompletedTasks).toBe(false);
     });
   });
 
@@ -139,6 +144,8 @@ describe("useAvailableTasks", () => {
 
     await waitFor(() => {
       expect(result.current.availableTasks).toEqual([]);
+      expect(result.current.allTasks).toEqual([]);
+      expect(result.current.hasCompletedTasks).toBe(false);
     });
   });
 
@@ -250,6 +257,47 @@ describe("useAvailableTasks", () => {
 
     await waitFor(() => {
       expect(result.current.availableTasks).toEqual([]);
+      expect(result.current.allTasks).toEqual([]);
+      expect(result.current.hasCompletedTasks).toBe(false);
+    });
+  });
+
+  it("returns hasCompletedTasks as true when all tasks are completed", async () => {
+    const mockTasks: Task[] = [
+      {
+        id: "task-1",
+        title: "Task 1",
+        status: "completed",
+        createdAt: "2025-11-15T10:00:00Z",
+      },
+      {
+        id: "task-2",
+        title: "Task 2",
+        status: "completed",
+        createdAt: "2025-11-15T11:00:00Z",
+      },
+    ];
+
+    (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(mockTasks);
+
+    const { result } = renderHook(() => useAvailableTasks());
+
+    await waitFor(() => {
+      expect(result.current.availableTasks).toEqual([]);
+      expect(result.current.allTasks).toEqual(mockTasks);
+      expect(result.current.hasCompletedTasks).toBe(true);
+    });
+  });
+
+  it("returns hasCompletedTasks as false when no tasks exist", async () => {
+    (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue([]);
+
+    const { result } = renderHook(() => useAvailableTasks());
+
+    await waitFor(() => {
+      expect(result.current.availableTasks).toEqual([]);
+      expect(result.current.allTasks).toEqual([]);
+      expect(result.current.hasCompletedTasks).toBe(false);
     });
   });
 });

@@ -1,4 +1,6 @@
+import { useNavigate } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
   getDateKey,
   loadTasksFromStorage,
@@ -7,12 +9,14 @@ import {
 import { useAvailableTasks } from "@web/views/Now/hooks/useAvailableTasks";
 import { useFocusedTask } from "@web/views/Now/hooks/useFocusedTask";
 import { useTaskFocus } from "@web/views/Now/hooks/useTaskFocus";
+import { AllTasksCompleted } from "../AllTasksCompleted/AllTasksCompleted";
 import { AvailableTasks } from "../AvailableTasks/AvailableTasks";
 import { FocusedTask } from "../FocusedTask/FocusedTask";
 
 export const TaskSelector = () => {
+  const navigate = useNavigate();
   const { focusedTask, setFocusedTask } = useFocusedTask();
-  const { availableTasks } = useAvailableTasks();
+  const { availableTasks, hasCompletedTasks } = useAvailableTasks();
 
   useTaskFocus({
     focusedTask,
@@ -43,6 +47,12 @@ export const TaskSelector = () => {
     );
     saveTasksToStorage(dateKey, updatedTasks);
 
+    // If this is the last task, navigate to Day view
+    if (availableTasks.length === 1) {
+      navigate(ROOT_ROUTES.DAY);
+      return;
+    }
+
     // Find the next incomplete task
     // If there's a next task in the availableTasks list, focus on it
     if (currentTaskIndex >= 0 && currentTaskIndex < availableTasks.length - 1) {
@@ -61,6 +71,10 @@ export const TaskSelector = () => {
     return (
       <FocusedTask task={focusedTask} onCompleteTask={handleCompleteTask} />
     );
+  }
+
+  if (hasCompletedTasks) {
+    return <AllTasksCompleted />;
   }
 
   return (
