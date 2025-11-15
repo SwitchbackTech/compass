@@ -163,6 +163,12 @@ class CompassAuthService {
 
         logger.info(message);
 
+        // mark in metadata to restart full import
+        await userMetadataService.updateUserMetadata({
+          userId: cUserId,
+          data: { sync: { importGCal: "restart" } },
+        });
+
         userService.restartGoogleCalendarSync(cUserId).catch((err) => {
           logger.error(
             `Something went wrong with ${message.toLowerCase()}`,

@@ -18,6 +18,7 @@ import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { ENV } from "@backend/common/constants/env.constants";
 import mongoService from "@backend/common/services/mongo.service";
 import syncService from "@backend/sync/services/sync.service";
+import userMetadataService from "@backend/user/services/user-metadata.service";
 
 export const initSupertokens = () => {
   SuperTokens.init({
@@ -167,6 +168,11 @@ export const initSupertokens = () => {
                 const lastActiveSession = userSessions.length < 2;
 
                 const res = await originalImplementation.signOutPOST(input);
+
+                await userMetadataService.updateUserMetadata({
+                  userId: userId.toString(),
+                  data: { sync: { incrementalGCalSync: "restart" } },
+                });
 
                 if (lastActiveSession) {
                   await syncService.stopWatches(userId.toString());
