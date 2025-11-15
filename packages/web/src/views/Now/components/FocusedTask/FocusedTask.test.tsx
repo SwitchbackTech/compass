@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Task } from "@web/views/Day/task.types";
 import { FocusedTask } from "./FocusedTask";
 
@@ -18,14 +19,20 @@ describe("FocusedTask", () => {
     createdAt: "2025-11-15T11:00:00Z",
   };
 
+  const mockOnCompleteTask = jest.fn();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("renders the task title", () => {
-    render(<FocusedTask task={mockTask} />);
+    render(<FocusedTask task={mockTask} onCompleteTask={mockOnCompleteTask} />);
 
     expect(screen.getByText("Test Task")).toBeInTheDocument();
   });
 
   it("renders the task title in a heading", () => {
-    render(<FocusedTask task={mockTask} />);
+    render(<FocusedTask task={mockTask} onCompleteTask={mockOnCompleteTask} />);
 
     const heading = screen.getByRole("heading", { level: 2 });
     expect(heading).toBeInTheDocument();
@@ -33,7 +40,12 @@ describe("FocusedTask", () => {
   });
 
   it("renders task with completed status", () => {
-    render(<FocusedTask task={mockCompletedTask} />);
+    render(
+      <FocusedTask
+        task={mockCompletedTask}
+        onCompleteTask={mockOnCompleteTask}
+      />,
+    );
 
     expect(screen.getByText("Completed Task")).toBeInTheDocument();
     const heading = screen.getByRole("heading", { level: 2 });
@@ -48,7 +60,9 @@ describe("FocusedTask", () => {
       createdAt: "2025-11-15T12:00:00Z",
     };
 
-    render(<FocusedTask task={longTitleTask} />);
+    render(
+      <FocusedTask task={longTitleTask} onCompleteTask={mockOnCompleteTask} />,
+    );
 
     expect(
       screen.getByText(
@@ -65,7 +79,12 @@ describe("FocusedTask", () => {
       createdAt: "2025-11-15T13:00:00Z",
     };
 
-    render(<FocusedTask task={specialCharTask} />);
+    render(
+      <FocusedTask
+        task={specialCharTask}
+        onCompleteTask={mockOnCompleteTask}
+      />,
+    );
 
     expect(
       screen.getByText("Task with @#$%^&*() special chars!"),
@@ -80,9 +99,23 @@ describe("FocusedTask", () => {
       createdAt: "2025-11-15T14:00:00Z",
     };
 
-    render(<FocusedTask task={emptyTitleTask} />);
+    render(
+      <FocusedTask task={emptyTitleTask} onCompleteTask={mockOnCompleteTask} />,
+    );
 
     const heading = screen.getByRole("heading", { level: 2 });
     expect(heading).toHaveTextContent("");
+  });
+
+  it("calls onCompleteTask when CheckCircle is clicked", async () => {
+    const user = userEvent.setup();
+    render(<FocusedTask task={mockTask} onCompleteTask={mockOnCompleteTask} />);
+
+    const checkButton = screen.getByRole("button", {
+      name: "Mark task as complete",
+    });
+    await user.click(checkButton);
+
+    expect(mockOnCompleteTask).toHaveBeenCalledTimes(1);
   });
 });
