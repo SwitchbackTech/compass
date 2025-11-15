@@ -3,6 +3,8 @@ import dayjs from "@core/util/date/dayjs";
 import { TaskContext } from "@web/views/Day/context/TaskProvider";
 import { Task } from "@web/views/Day/task.types";
 import {
+  COMPASS_TASKS_SAVED_EVENT_NAME,
+  CompassTasksSavedEvent,
   getDateKey,
   loadTasksFromStorage,
 } from "@web/views/Day/util/storage.util";
@@ -69,7 +71,7 @@ export function useAvailableTasks() {
       };
 
       // Listen for custom event (same-tab synchronization)
-      const handleTasksSaved = (e: CustomEvent<{ dateKey: string }>) => {
+      const handleTasksSaved = (e: CompassTasksSavedEvent) => {
         const today = dayjs().utc();
         const todayDateKey = getDateKey(today.toDate());
         // Only reload if the saved tasks are for today
@@ -80,13 +82,13 @@ export function useAvailableTasks() {
 
       window.addEventListener("storage", handleStorageChange);
       window.addEventListener(
-        "compass.tasks.saved",
+        COMPASS_TASKS_SAVED_EVENT_NAME,
         handleTasksSaved as EventListener,
       );
       return () => {
         window.removeEventListener("storage", handleStorageChange);
         window.removeEventListener(
-          "compass.tasks.saved",
+          COMPASS_TASKS_SAVED_EVENT_NAME,
           handleTasksSaved as EventListener,
         );
       };
