@@ -50,14 +50,12 @@ export const isInvalidGoogleToken = (e: GaxiosError | Error) => {
   return isGoogleError(e) && isInvalid;
 };
 
-export const isGoogleError = (e: GaxiosError | Error) => {
+export const isGoogleError = (e: unknown) => {
   return e instanceof GaxiosError;
 };
 
 export const isFullSyncRequired = (e: GaxiosError | Error) => {
-  const isFromGoogle = e instanceof GaxiosError;
-
-  if (isFromGoogle && e.code && parseInt(e?.code) === 410) {
+  if (isGoogleError(e) && e.code && parseInt(e?.code) === 410) {
     return true;
   }
 

@@ -16,9 +16,9 @@ import {
 } from "@backend/common/services/gcal/gcal.utils";
 import { CompassError, Info_Error } from "@backend/common/types/error.types";
 import { SessionResponse } from "@backend/common/types/express.types";
-import { SyncController } from "@backend/sync/controllers/sync.controller";
 import { getSyncByToken } from "@backend/sync/util/sync.queries";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import userService from "@backend/user/services/user.service";
 
 const logger = Logger("app:express.handler");
 
@@ -118,7 +118,18 @@ const handleGoogleError = async (
     return;
   }
 
-  if (isFullSyncRequired(e)) return SyncController.importGCal(req, res);
+  if (isFullSyncRequired(e)) {
+    userService.restartGoogleCalendarSync(userId).catch((err) => {
+      logger.error(
+        `Something went wrong with resyncing google calendars for user: ${userId}`,
+        err,
+      );
+    });
+
+    res.status(Status.BAD_REQUEST).send({ message: "Full sync in progress." });
+
+    return;
+  }
 
   if (isInvalidValue(e)) {
     logger.error(
