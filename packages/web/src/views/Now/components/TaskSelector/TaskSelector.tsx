@@ -68,6 +68,7 @@ export const TaskSelector = () => {
     if (!focusedTask) return;
 
     // Find the current task's index in availableTasks before completing it
+    // We need this to determine navigation direction
     const currentTaskIndex = availableTasks.findIndex(
       (task) => task.id === focusedTask.id,
     );
@@ -83,24 +84,57 @@ export const TaskSelector = () => {
     );
     saveTasksToStorage(dateKey, updatedTasks);
 
-    // If this is the last task, navigate to Day view
-    if (availableTasks.length === 1) {
+    // Filter incomplete tasks from updatedTasks (same logic as useAvailableTasks)
+    // This ensures we use fresh data instead of stale availableTasks state
+    const incompleteTasks = updatedTasks
+      .filter((task) => task.status === "todo")
+      .map((task, index) => ({ task, index }))
+      .sort((a, b) => {
+        const timeDiff =
+          new Date(b.task.createdAt).getTime() -
+          new Date(a.task.createdAt).getTime();
+        return timeDiff !== 0 ? timeDiff : b.index - a.index;
+      })
+      .map(({ task }) => task);
+
+    // If this was the last task, navigate to Day view
+    if (incompleteTasks.length === 0) {
       navigate(ROOT_ROUTES.DAY);
       return;
     }
 
-    // Find the next incomplete task
-    // If there's a next task in the availableTasks list, focus on it
+    // Determine the next task to focus using the fresh incompleteTasks list
+    // Find the next/previous task by ID from availableTasks, then locate it in incompleteTasks
+    // This ensures we use the correct navigation direction regardless of array order differences
     if (currentTaskIndex >= 0 && currentTaskIndex < availableTasks.length - 1) {
-      // Next task exists
-      setFocusedTask(availableTasks[currentTaskIndex + 1].id);
+      // Next task exists in availableTasks - find it in incompleteTasks
+      const nextTaskId = availableTasks[currentTaskIndex + 1].id;
+      const nextTask = incompleteTasks.find((task) => task.id === nextTaskId);
+      if (nextTask) {
+        setFocusedTask(nextTask.id);
+      } else {
+        // Fallback: focus on the first available task
+        setFocusedTask(incompleteTasks[0].id);
+      }
     } else if (currentTaskIndex > 0) {
-      // Previous task exists (we're at the end, go to previous)
-      setFocusedTask(availableTasks[currentTaskIndex - 1].id);
+      // Previous task exists (we were at the end, go to previous)
+      const previousTaskId = availableTasks[currentTaskIndex - 1].id;
+      const previousTask = incompleteTasks.find(
+        (task) => task.id === previousTaskId,
+      );
+      if (previousTask) {
+        setFocusedTask(previousTask.id);
+      } else {
+        // Fallback: focus on the last available task
+        setFocusedTask(incompleteTasks[incompleteTasks.length - 1].id);
+      }
     } else {
-      // No more incomplete tasks
-      setFocusedTask(null);
-      console.log("No more incomplete tasks");
+      // Fallback: focus on the first available task
+      if (incompleteTasks.length > 0) {
+        setFocusedTask(incompleteTasks[0].id);
+      } else {
+        setFocusedTask(null);
+      }
     }
   };
 
