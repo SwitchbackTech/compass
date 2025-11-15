@@ -18,6 +18,9 @@ const webEnvSchema = z.object({
     .string()
     .optional()
     .transform((val) => (val === "undefined" ? undefined : val)),
+  // Frontegg POC configuration (optional)
+  FRONTEGG_BASE_URL: z.string().url().optional(),
+  FRONTEGG_CLIENT_ID: z.string().optional(),
 });
 
 export const ENV_WEB = webEnvSchema.parse({
@@ -27,6 +30,8 @@ export const ENV_WEB = webEnvSchema.parse({
   NODE_ENV: process.env["NODE_ENV"],
   POSTHOG_KEY: process.env["POSTHOG_KEY"],
   POSTHOG_HOST: process.env["POSTHOG_HOST"],
+  FRONTEGG_BASE_URL: process.env["FRONTEGG_BASE_URL"],
+  FRONTEGG_CLIENT_ID: process.env["FRONTEGG_CLIENT_ID"],
 });
 
 export const IS_DEV = isDev(ENV_WEB.NODE_ENV);

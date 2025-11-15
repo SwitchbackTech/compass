@@ -6,6 +6,8 @@
   "main": "build/src/app.js",
   "dependencies": {
     "@compass/core": "1.0.0",
+    "@frontegg/client": "^5.3.2",
+    "@frontegg/rest-api": "^7.92.0",
     "chalk": "4.1.2",
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",
