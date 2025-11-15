@@ -14,6 +14,7 @@ import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { WatchError } from "@backend/common/errors/sync/watch.errors";
 import {
   isFullSyncRequired,
+  isGoogleError,
   isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
@@ -62,7 +63,7 @@ export class SyncController {
         return;
       }
 
-      if (isInvalidGoogleToken(e as Error)) {
+      if (isGoogleError(e)) {
         const _id = new ObjectId(channelId);
         const watch = await mongoService.watch.findOne({ _id, resourceId });
 
@@ -80,28 +81,31 @@ export class SyncController {
 
         const userId = sync?.user;
 
-        if (userId) {
-          console.warn(
-            `Cleaning data after this user revoked access: ${userId}`,
-          );
-          await userService.deleteCompassDataForUser(userId, false);
+        if (isInvalidGoogleToken(e)) {
+          if (userId) {
+            logger.warn(
+              `Cleaning data after this user revoked access: ${userId}`,
+            );
+
+            await userService.deleteCompassDataForUser(userId, false);
+
+            res
+              .status(Status.GONE)
+              .send("User revoked access, deleted all data");
+
+            return;
+          }
+
+          const msg = `Ignored update due to revoked access for channelId: ${channelId}`;
+
+          logger.warn(msg);
+
+          res.status(Status.GONE).send(msg);
+
+          return;
+        } else if (isFullSyncRequired(e as Error) && userId) {
+          return userService.restartGoogleCalendarSync(userId);
         }
-
-        res.status(Status.GONE).send("User revoked access, deleted all data");
-        return;
-
-        const msg = `Ignored update due to revoked access for channelId: ${JSON.stringify(
-          channelId,
-        )}
-        `;
-        console.warn(msg);
-
-        res.status(Status.GONE).send(msg);
-        return;
-      }
-
-      if (isFullSyncRequired(e as Error)) {
-        return SyncController.importGCal(req, res);
       }
 
       if (
