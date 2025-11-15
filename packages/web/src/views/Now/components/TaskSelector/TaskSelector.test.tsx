@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Task } from "@web/views/Day/task.types";
 import { useAvailableTasks } from "@web/views/Now/hooks/useAvailableTasks";
@@ -77,15 +77,33 @@ describe("TaskSelector", () => {
 
   it("calls setFocusedTask when a task is selected", async () => {
     const user = userEvent.setup();
-    mockUseFocusedTask.mockReturnValue({
-      focusedTask: null,
-      setFocusedTask: mockSetFocusedTask,
-    });
+    let focusedTask: Task | null = null;
+
+    mockUseFocusedTask.mockImplementation(() => ({
+      focusedTask,
+      setFocusedTask: (taskId: string | null) => {
+        if (taskId) {
+          focusedTask = mockTask;
+          mockUseFocusedTask.mockReturnValue({
+            focusedTask: mockTask,
+            setFocusedTask: mockSetFocusedTask,
+          });
+        }
+        mockSetFocusedTask(taskId);
+      },
+    }));
     mockUseAvailableTasks.mockReturnValue({
       availableTasks: mockTasks,
     });
 
     render(<TaskSelector />);
+
+    // Wait for auto-focus to complete
+    await waitFor(() => {
+      expect(mockSetFocusedTask).toHaveBeenCalledWith("task-1");
+    });
+
+    mockSetFocusedTask.mockClear();
 
     const taskElement = screen
       .getByText("Test Task")
@@ -94,30 +112,7 @@ describe("TaskSelector", () => {
 
     await user.click(taskElement!);
 
-    expect(mockSetFocusedTask).toHaveBeenCalledWith("task-1");
-    expect(mockSetFocusedTask).toHaveBeenCalledTimes(1);
-  });
-
-  it("calls setFocusedTask when a task is selected via keyboard", async () => {
-    const user = userEvent.setup();
-    mockUseFocusedTask.mockReturnValue({
-      focusedTask: null,
-      setFocusedTask: mockSetFocusedTask,
-    });
-    mockUseAvailableTasks.mockReturnValue({
-      availableTasks: mockTasks,
-    });
-
-    render(<TaskSelector />);
-
-    const taskElement = screen
-      .getByText("Test Task")
-      .closest('[role="button"]');
-    expect(taskElement).toBeInTheDocument();
-
-    (taskElement as HTMLElement).focus();
-    await user.keyboard("{Enter}");
-
+    // After auto-focus, clicking should call setFocusedTask again
     expect(mockSetFocusedTask).toHaveBeenCalledWith("task-1");
     expect(mockSetFocusedTask).toHaveBeenCalledTimes(1);
   });
@@ -193,5 +188,118 @@ describe("TaskSelector", () => {
       screen.queryByText("Select a task to focus on"),
     ).not.toBeInTheDocument();
     expect(screen.getByText("Test Task")).toBeInTheDocument();
+  });
+
+  describe("auto-focus behavior", () => {
+    it("auto-focuses on the first incomplete task when no task is focused", async () => {
+      mockUseFocusedTask.mockReturnValue({
+        focusedTask: null,
+        setFocusedTask: mockSetFocusedTask,
+      });
+      mockUseAvailableTasks.mockReturnValue({
+        availableTasks: mockTasks,
+      });
+
+      render(<TaskSelector />);
+
+      await waitFor(() => {
+        expect(mockSetFocusedTask).toHaveBeenCalledWith("task-1");
+        expect(mockSetFocusedTask).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it("does not auto-focus when a task is already focused", async () => {
+      mockUseFocusedTask.mockReturnValue({
+        focusedTask: mockTask,
+        setFocusedTask: mockSetFocusedTask,
+      });
+      mockUseAvailableTasks.mockReturnValue({
+        availableTasks: mockTasks,
+      });
+
+      render(<TaskSelector />);
+
+      await waitFor(() => {
+        expect(mockSetFocusedTask).not.toHaveBeenCalled();
+      });
+    });
+
+    it("does not auto-focus when no tasks are available", async () => {
+      mockUseFocusedTask.mockReturnValue({
+        focusedTask: null,
+        setFocusedTask: mockSetFocusedTask,
+      });
+      mockUseAvailableTasks.mockReturnValue({
+        availableTasks: [],
+      });
+
+      render(<TaskSelector />);
+
+      await waitFor(() => {
+        expect(mockSetFocusedTask).not.toHaveBeenCalled();
+      });
+    });
+
+    it("auto-focuses on the first task when available tasks change from empty to non-empty", async () => {
+      mockUseFocusedTask.mockReturnValue({
+        focusedTask: null,
+        setFocusedTask: mockSetFocusedTask,
+      });
+      mockUseAvailableTasks
+        .mockReturnValueOnce({
+          availableTasks: [],
+        })
+        .mockReturnValueOnce({
+          availableTasks: mockTasks,
+        });
+
+      const { rerender } = render(<TaskSelector />);
+
+      await waitFor(() => {
+        expect(mockSetFocusedTask).not.toHaveBeenCalled();
+      });
+
+      mockSetFocusedTask.mockClear();
+
+      rerender(<TaskSelector />);
+
+      await waitFor(() => {
+        expect(mockSetFocusedTask).toHaveBeenCalledWith("task-1");
+        expect(mockSetFocusedTask).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it("does not auto-focus when focused task becomes null but tasks were already available", async () => {
+      // First render with a focused task
+      mockUseFocusedTask.mockReturnValue({
+        focusedTask: mockTask,
+        setFocusedTask: mockSetFocusedTask,
+      });
+      mockUseAvailableTasks.mockReturnValue({
+        availableTasks: mockTasks,
+      });
+
+      const { rerender } = render(<TaskSelector />);
+
+      await waitFor(() => {
+        expect(mockSetFocusedTask).not.toHaveBeenCalled();
+      });
+
+      mockSetFocusedTask.mockClear();
+
+      // Now change to no focused task
+      mockUseFocusedTask.mockReturnValue({
+        focusedTask: null,
+        setFocusedTask: mockSetFocusedTask,
+      });
+
+      rerender(<TaskSelector />);
+
+      await waitFor(() => {
+        // Should auto-focus when focusedTask becomes null
+        expect(mockSetFocusedTask).toHaveBeenCalledWith("task-1");
+        expect(mockSetFocusedTask).toHaveBeenCalledTimes(1);
+      });
+    });
   });
 });

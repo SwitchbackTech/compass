@@ -30,6 +30,12 @@ export function useFocusedTask() {
       const tasks = loadTasksFromStorage(dateKey);
       const task = tasks.find((t) => t.id === focusedTaskId);
       if (task) {
+        // If task is completed, clear it from storage
+        if (task.status === "completed") {
+          clearStorage();
+          setFocusedTaskState(null);
+          return;
+        }
         setFocusedTaskState(task);
         return;
       }
@@ -69,6 +75,12 @@ export function useFocusedTask() {
     const tasks = loadTasksFromStorage(dateKey);
     const task = tasks.find((t) => t.id === taskId);
     if (task) {
+      // Don't allow focusing on completed tasks
+      if (task.status === "completed") {
+        clearStorage();
+        setFocusedTaskState(null);
+        return;
+      }
       setFocusedTaskId(taskId);
       setFocusedTaskState(task);
       return;
