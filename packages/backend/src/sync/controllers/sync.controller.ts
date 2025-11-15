@@ -117,6 +117,7 @@ export class SyncController {
           return;
         } else {
           res.status(Status.BAD_REQUEST).send("Google API error");
+          return;
         }
       }
 
