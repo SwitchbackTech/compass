@@ -10,7 +10,6 @@ import { useAvailableTasks } from "@web/views/Now/hooks/useAvailableTasks";
 import { useFocusedTask } from "@web/views/Now/hooks/useFocusedTask";
 import { useTaskFocus } from "@web/views/Now/hooks/useTaskFocus";
 import { AllTasksCompleted } from "../AllTasksCompleted/AllTasksCompleted";
-import { AvailableTasks } from "../AvailableTasks/AvailableTasks";
 import { FocusedTask } from "../FocusedTask/FocusedTask";
 
 export const TaskSelector = () => {
@@ -23,10 +22,6 @@ export const TaskSelector = () => {
     availableTasks,
     setFocusedTask,
   });
-
-  const handleSelectTask = (taskId: string) => {
-    setFocusedTask(taskId);
-  };
 
   const handleCompleteTask = () => {
     if (!focusedTask) return;
@@ -47,6 +42,7 @@ export const TaskSelector = () => {
     );
     saveTasksToStorage(dateKey, updatedTasks);
 
+    console.log("availableTasks", availableTasks);
     // If this is the last task, navigate to Day view
     if (availableTasks.length === 1) {
       navigate(ROOT_ROUTES.DAY);
@@ -64,6 +60,7 @@ export const TaskSelector = () => {
     } else {
       // No more incomplete tasks
       setFocusedTask(null);
+      console.log("No more incomplete tasks");
     }
   };
 
@@ -76,8 +73,4 @@ export const TaskSelector = () => {
   if (hasCompletedTasks) {
     return <AllTasksCompleted />;
   }
-
-  return (
-    <AvailableTasks tasks={availableTasks} onSelectTask={handleSelectTask} />
-  );
 };
