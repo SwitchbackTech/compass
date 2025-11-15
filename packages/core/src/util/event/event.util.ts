@@ -110,8 +110,8 @@ export const shouldDoIncrementalGCalSync = (
 
   switch (sync?.incrementalGCalSync) {
     case "importing":
-    case "completed":
       return false;
+    case "completed":
     case "restart":
     case "errored":
     default:
