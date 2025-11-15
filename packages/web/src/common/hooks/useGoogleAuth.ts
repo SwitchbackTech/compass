@@ -42,8 +42,8 @@ export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
 
   // Redirect if already authenticated and visits the login/signup page
   useEffect(() => {
-    if (authenticated && skipOnboarding) {
-      navigate(ROOT_ROUTES.ROOT);
+    if (authenticated) {
+      navigate(skipOnboarding ? ROOT_ROUTES.ROOT : ROOT_ROUTES.ONBOARDING);
     }
   }, [authenticated, navigate, skipOnboarding]);
 

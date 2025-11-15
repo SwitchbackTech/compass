@@ -88,7 +88,10 @@ class CompassAuthService {
 
       await userMetadataService.updateUserMetadata({
         userId,
-        data: { skipOnboarding: false },
+        data: {
+          skipOnboarding: false,
+          sync: { importGCal: "restart", incrementalGCalSync: "restart" },
+        },
       });
 
       if (isMissingUserTagId()) {
@@ -103,6 +106,13 @@ class CompassAuthService {
           ENV.EMAILER_USER_TAG_ID!,
         );
       }
+
+      userService.restartGoogleCalendarSync(cUser.userId).catch((err) => {
+        logger.error(
+          `Something went wrong with starting calendar sync for user ${cUser.userId}`,
+          err,
+        );
+      });
 
       return { cUserId: cUser.userId };
     });
