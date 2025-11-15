@@ -112,7 +112,7 @@ export class SyncController {
             );
           });
 
-          res.status(Status.OK).send({ message: "Full sync initiated" });
+          res.status(Status.OK).send({ message: "Full sync in progress." });
 
           return;
         } else {
