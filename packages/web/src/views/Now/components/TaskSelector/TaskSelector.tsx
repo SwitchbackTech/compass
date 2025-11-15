@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import dayjs from "@core/util/date/dayjs";
 import {
   getDateKey,
@@ -7,6 +6,7 @@ import {
 } from "@web/views/Day/util/storage.util";
 import { useAvailableTasks } from "@web/views/Now/hooks/useAvailableTasks";
 import { useFocusedTask } from "@web/views/Now/hooks/useFocusedTask";
+import { useTaskFocus } from "@web/views/Now/hooks/useTaskFocus";
 import { AvailableTasks } from "../AvailableTasks/AvailableTasks";
 import { FocusedTask } from "../FocusedTask/FocusedTask";
 
@@ -14,12 +14,11 @@ export const TaskSelector = () => {
   const { focusedTask, setFocusedTask } = useFocusedTask();
   const { availableTasks } = useAvailableTasks();
 
-  // Auto-focus on the first incomplete task when no task is focused
-  useEffect(() => {
-    if (!focusedTask && availableTasks.length > 0) {
-      setFocusedTask(availableTasks[0].id);
-    }
-  }, [focusedTask, availableTasks, setFocusedTask]);
+  useTaskFocus({
+    focusedTask,
+    availableTasks,
+    setFocusedTask,
+  });
 
   const handleSelectTask = (taskId: string) => {
     setFocusedTask(taskId);
