@@ -9,8 +9,8 @@ import {
 } from "@web/views/Day/util/storage.util";
 import { useAvailableTasks } from "@web/views/Now/hooks/useAvailableTasks";
 import { useFocusedTask } from "@web/views/Now/hooks/useFocusedTask";
-import { useNowViewShortcuts } from "@web/views/Now/hooks/useNowViewShortcuts";
 import { useTaskFocus } from "@web/views/Now/hooks/useTaskFocus";
+import { useNowViewShortcuts } from "@web/views/Now/shortcuts/useNowViewShortcuts";
 import { AllTasksCompleted } from "../AllTasksCompleted/AllTasksCompleted";
 import { AvailableTasks } from "../AvailableTasks/AvailableTasks";
 import { FocusedTask } from "../FocusedTask/FocusedTask";

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
-import { ShortcutKey } from "@web/views/Day/components/Shortcuts/types/shortcut.types";
 import { Task } from "@web/views/Day/task.types";
 import { isEditable } from "@web/views/Day/util/shortcut.util";
+import { NowViewShortcutKey } from "@web/views/Now/shortcuts/now.shortcut.types";
 
 interface Props {
   focusedTask: Task | null;
@@ -19,42 +19,27 @@ export function useNowViewShortcuts({
   onPreviousTask,
   onNextTask,
 }: Props) {
-  // TODO change so that the keys are specific to the now view
   // Define strongly-typed handler mapping
-  const handlers: Record<ShortcutKey, (e: KeyboardEvent) => void> = useMemo(
-    () => ({
-      // Global shortcuts (not handled in this hook)
-      "1": () => {},
-      "2": () => {},
-      "3": () => {},
+  const handlers: Record<NowViewShortcutKey, (e: KeyboardEvent) => void> =
+    useMemo(
+      () => ({
+        // Global shortcuts (handled in useNowShortcuts hook, but included in type)
+        "1": () => {},
+        "2": () => {},
+        "3": () => {},
 
-      // Navigation shortcuts
-      j: (e) => {
-        e.preventDefault();
-        onPreviousTask();
-      },
-      k: (e) => {
-        e.preventDefault();
-        onNextTask();
-      },
-      t: () => {},
-
-      // Task shortcuts
-      u: () => {},
-      c: () => {},
-      e: () => {},
-      Delete: () => {},
-      Enter: () => {},
-      Escape: () => {},
-      Esc: () => {},
-
-      // Calendar shortcuts
-      i: () => {},
-      "↑": () => {},
-      "↓": () => {},
-    }),
-    [onPreviousTask, onNextTask],
-  );
+        // Navigation shortcuts
+        j: (e) => {
+          e.preventDefault();
+          onPreviousTask();
+        },
+        k: (e) => {
+          e.preventDefault();
+          onNextTask();
+        },
+      }),
+      [onPreviousTask, onNextTask],
+    );
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -81,7 +66,7 @@ export function useNowViewShortcuts({
             : key === "delete"
               ? "Delete"
               : key;
-      const handler = handlers[normalizedKey as ShortcutKey];
+      const handler = handlers[normalizedKey as NowViewShortcutKey];
       if (handler) {
         handler(e);
       }

@@ -1,6 +1,6 @@
 import { ShortcutSection } from "../Day/components/Shortcuts/components/ShortcutSection";
 import { getShortcuts } from "../Day/components/Shortcuts/data/shortcuts.data";
-import { useNowShortcuts } from "./useNowShortcuts";
+import { useNowShortcuts } from "./shortcuts/useNowShortcuts";
 import { NowViewContent } from "./view/NowViewContent";
 
 export const NowView = () => {

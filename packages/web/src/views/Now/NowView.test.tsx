@@ -4,17 +4,26 @@ import { render, screen } from "@testing-library/react";
 import { NowView } from "./NowView";
 
 // Mock the useNowShortcuts hook
-jest.mock("./useNowShortcuts", () => ({
+jest.mock("./shortcuts/useNowShortcuts", () => ({
   useNowShortcuts: jest.fn(),
 }));
 
+const renderWithRouter = (ui: React.ReactNode, routeProps = {}) =>
+  render(
+    <MemoryRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+        ...routeProps,
+      }}
+    >
+      {ui}
+    </MemoryRouter>,
+  );
+
 describe("NowView", () => {
   it("renders the shortcuts overlay", () => {
-    render(
-      <MemoryRouter>
-        <NowView />
-      </MemoryRouter>,
-    );
+    renderWithRouter(<NowView />);
 
     expect(
       screen.getByRole("complementary", { name: "Shortcut overlay" }),
@@ -23,11 +32,7 @@ describe("NowView", () => {
   });
 
   it("renders global shortcuts", () => {
-    render(
-      <MemoryRouter>
-        <NowView />
-      </MemoryRouter>,
-    );
+    renderWithRouter(<NowView />);
 
     expect(screen.getByText("Global")).toBeInTheDocument();
     expect(screen.getByText("Now")).toBeInTheDocument();
@@ -36,11 +41,7 @@ describe("NowView", () => {
   });
 
   it("renders shortcut keys correctly", () => {
-    render(
-      <MemoryRouter>
-        <NowView />
-      </MemoryRouter>,
-    );
+    renderWithRouter(<NowView />);
 
     // Check that shortcut keys are rendered
     expect(screen.getByText("1")).toBeInTheDocument();

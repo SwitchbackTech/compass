@@ -1,5 +1,5 @@
 import dayjs from "@core/util/date/dayjs";
-import { Shortcut } from "../types/shortcut.types";
+import { Shortcut } from "@web/common/types/global.shortcut.types";
 
 // Define all possible shortcut keys as a const object for type safety
 export const SHORTCUT_KEYS = {
