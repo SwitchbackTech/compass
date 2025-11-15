@@ -115,6 +115,8 @@ export class SyncController {
           res.status(Status.OK).send({ message: "Full sync initiated" });
 
           return;
+        } else {
+          res.status(Status.BAD_REQUEST).send("Google API error");
         }
       }
 
