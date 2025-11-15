@@ -126,7 +126,7 @@ const handleGoogleError = async (
       );
     });
 
-    res.status(Status.BAD_REQUEST).send({ error: "Full sync in progress." });
+    res.status(Status.BAD_REQUEST).send({ message: "Full sync in progress." });
 
     return;
   }
