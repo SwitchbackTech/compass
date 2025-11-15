@@ -32,15 +32,35 @@ export function useAvailableTasks() {
 
     loadAvailableTasks();
 
-    // Listen for storage changes to reload tasks
+    // Listen for storage changes to reload tasks (cross-tab synchronization)
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === null || e.key?.startsWith("compass.today.tasks")) {
         loadAvailableTasks();
       }
     };
 
+    // Listen for custom event (same-tab synchronization)
+    const handleTasksSaved = (e: CustomEvent<{ dateKey: string }>) => {
+      const today = dayjs().utc();
+      const todayDateKey = getDateKey(today.toDate());
+      // Only reload if the saved tasks are for today
+      if (e.detail.dateKey === todayDateKey) {
+        loadAvailableTasks();
+      }
+    };
+
     window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    window.addEventListener(
+      "compass.tasks.saved",
+      handleTasksSaved as EventListener,
+    );
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener(
+        "compass.tasks.saved",
+        handleTasksSaved as EventListener,
+      );
+    };
   }, []);
 
   // Determine if all tasks are completed (has tasks but none are incomplete)

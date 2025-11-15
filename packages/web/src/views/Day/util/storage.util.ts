@@ -42,6 +42,12 @@ export function saveTasksToStorage(dateKey: string, tasks: Task[]): void {
 
   try {
     window.localStorage.setItem(getStorageKey(dateKey), JSON.stringify(tasks));
+    // Dispatch custom event for same-tab synchronization
+    window.dispatchEvent(
+      new CustomEvent("compass.tasks.saved", {
+        detail: { dateKey },
+      }),
+    );
   } catch (error) {
     console.error("Error saving tasks to localStorage:", error);
   }
