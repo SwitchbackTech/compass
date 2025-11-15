@@ -20,6 +20,7 @@ export const AvailableTasks = ({
             <button
               key={task.id}
               onClick={() => onTaskSelect(task.id)}
+              aria-label={`Select ${task.title}`}
               className="rounded-lg border border-white/10 bg-white/5 px-6 py-3 text-white transition-colors hover:bg-white/10 focus:ring-2 focus:ring-white/50 focus:outline-none"
             >
               {task.title}
