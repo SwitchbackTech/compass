@@ -119,7 +119,12 @@ const handleGoogleError = async (
   }
 
   if (isFullSyncRequired(e)) {
-    userService.restartGoogleCalendarSync(userId);
+    userService.restartGoogleCalendarSync(userId).catch((err) => {
+      logger.error(
+        `Something went wrong with resyncing google calendars for user: ${userId}`,
+        err,
+      );
+    });
 
     res.status(Status.BAD_REQUEST).send({ error: "Full sync in progress." });
 
