@@ -30,21 +30,21 @@ export const FocusedTask = ({
           <button
             onClick={onCompleteTask}
             aria-label="Mark task as complete"
-            className="cursor-pointer rounded transition-opacity hover:opacity-80 focus:ring-2 focus:ring-white/50 focus:outline-none"
+            className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:bg-white/10 hover:shadow-lg hover:shadow-white/20 focus:bg-white/10 focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent focus:outline-none"
           >
             <CheckCircle size={40} className="text-white" />
           </button>
           <button
             onClick={onPreviousTask}
             aria-label="Previous task"
-            className="cursor-pointer rounded transition-opacity hover:opacity-80 focus:ring-2 focus:ring-white/50 focus:outline-none"
+            className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:bg-white/10 hover:shadow-lg hover:shadow-white/20 focus:bg-white/10 focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent focus:outline-none"
           >
             <ArrowCircleLeft size={40} className="text-white" />
           </button>
           <button
             onClick={onNextTask}
             aria-label="Next task"
-            className="cursor-pointer rounded transition-opacity hover:opacity-80 focus:ring-2 focus:ring-white/50 focus:outline-none"
+            className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:bg-white/10 hover:shadow-lg hover:shadow-white/20 focus:bg-white/10 focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent focus:outline-none"
           >
             <ArrowCircleRight size={40} className="text-white" />
           </button>
