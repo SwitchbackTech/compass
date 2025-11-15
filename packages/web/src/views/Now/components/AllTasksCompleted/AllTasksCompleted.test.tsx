@@ -20,7 +20,12 @@ describe("AllTasksCompleted", () => {
 
   it("renders completion message and button", () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <AllTasksCompleted />
       </MemoryRouter>,
     );
@@ -40,7 +45,12 @@ describe("AllTasksCompleted", () => {
     const user = userEvent.setup({ delay: null });
 
     render(
-      <MemoryRouter>
+      <MemoryRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <AllTasksCompleted />
       </MemoryRouter>,
     );
