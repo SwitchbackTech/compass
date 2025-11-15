@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { getIncompleteTasksSorted } from "@web/views/Day/util/sort.task";
 import {
   getDateKey,
   loadTasksFromStorage,
@@ -86,16 +87,7 @@ export const TaskSelector = () => {
 
     // Filter incomplete tasks from updatedTasks (same logic as useAvailableTasks)
     // This ensures we use fresh data instead of stale availableTasks state
-    const incompleteTasks = updatedTasks
-      .filter((task) => task.status === "todo")
-      .map((task, index) => ({ task, index }))
-      .sort((a, b) => {
-        const timeDiff =
-          new Date(b.task.createdAt).getTime() -
-          new Date(a.task.createdAt).getTime();
-        return timeDiff !== 0 ? timeDiff : b.index - a.index;
-      })
-      .map(({ task }) => task);
+    const incompleteTasks = getIncompleteTasksSorted(updatedTasks);
 
     // If this was the last task, navigate to Day view
     if (incompleteTasks.length === 0) {

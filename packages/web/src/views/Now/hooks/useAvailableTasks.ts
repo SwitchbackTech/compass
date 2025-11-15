@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { TaskContext } from "@web/views/Day/context/TaskProvider";
 import { Task } from "@web/views/Day/task.types";
+import { getIncompleteTasksSorted } from "@web/views/Day/util/sort.task";
 import {
   COMPASS_TASKS_SAVED_EVENT_NAME,
   CompassTasksSavedEvent,
@@ -23,16 +24,7 @@ export function useAvailableTasks() {
 
     // Filter out completed tasks and sort by creation date (newest first)
     // Use array index as tie-breaker for tasks with identical timestamps
-    const incompleteTasks = tasks
-      .filter((task) => task.status === "todo")
-      .map((task, index) => ({ task, index }))
-      .sort((a, b) => {
-        const timeDiff =
-          new Date(b.task.createdAt).getTime() -
-          new Date(a.task.createdAt).getTime();
-        return timeDiff !== 0 ? timeDiff : b.index - a.index;
-      })
-      .map(({ task }) => task);
+    const incompleteTasks = getIncompleteTasksSorted(tasks);
 
     setAvailableTasks(incompleteTasks);
   };
