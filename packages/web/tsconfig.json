@@ -1,5 +1,5 @@
 {
-  /* 
+  /*
   - does not extend root tsconfig, because it'd causing an unnecessary
   dependency with the backend code
   - webpack handles most TSC compilation details for web
@@ -7,10 +7,10 @@
   // "include": ["./src/**/*.tsx", "./src/**/*.ts", "./declaration.d.ts"],
   // "exclude": ["./src/node_modules", "**/*.test.ts"],
   "compilerOptions": {
-    "allowUnreachableCode": true,
+    "allowUnreachableCode": false,
     "target": "es6",
-    "module": "Node16",
-    "moduleResolution": "node16",
+    "module": "preserve",
+    "moduleResolution": "bundler",
     // "declaration": true, // originally set to true, commented during refactor
     "strict": true,
     // "noImplicitAny": true /* Raise error on expressions and declarations with an implied 'any' type. */,
@@ -33,6 +33,10 @@
       "@core/*": ["../core/src/*"]
     },
     "lib": ["ES6", "dom"],
-    "plugins": [{ "name": "typescript-plugin-css-modules" }]
+    "plugins": [
+      {
+        "name": "typescript-plugin-css-modules"
+      }
+    ]
   }
 }

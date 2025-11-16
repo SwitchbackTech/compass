@@ -7,6 +7,8 @@ import { fileURLToPath } from "url";
 import webpack from "webpack";
 import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
 
+const logger = Reflect.get(globalThis, "console");
+const process = Reflect.get(globalThis, "process");
 const __filename = fileURLToPath(import.meta.url);
 const _dirname = dirname(__filename);
 const resolvePath = (p) => _resolve(_dirname, p);
@@ -23,14 +25,14 @@ const loadEnvFile = (envName) => {
 
   // Handle unmapped environment names explicitly
   if (typeof envFile === "undefined") {
-    console.error(
+    logger.error(
       `Error: Unrecognized environment name '${envName}'. Valid options are: ${Object.keys(map).join(", ")}.`,
     );
     return;
   }
   // Skip file loading for test environment or if file is explicitly null
   if (envName === "test" || envFile === null) {
-    console.log(
+    logger.log(
       `Skipping env file load for ${envName} environment (using process.env)`,
     );
     return;
@@ -46,16 +48,21 @@ const loadEnvFile = (envName) => {
   );
 
   if (fs.existsSync(fullPath)) {
-    console.log(`Creating a ${envName} build using ${envFile} ...`);
+    logger.log(`Creating a ${envName} build using ${envFile} ...`);
     dotenv.config({ path: fullPath, override: true });
   } else {
     // Only warn, don't exit - allow environment variables to be provided via process.env (e.g., in CI)
-    console.warn(
+    logger.warn(
       `Warning: Env file not found: ${fullPath}. Using environment variables from process.env`,
     );
   }
 };
 
+/**
+ * @param {{ WEBPACK_BUNDLE: true; WEBPACK_BUILD: true }} env - Environment variables passed to webpack
+ * @param {{ mode: string; nodeEnv: string; env: { WEBPACK_BUNDLE: true, WEBPACK_BUILD: true } }} argv - Command line arguments passed to webpack
+ * @returns {import('webpack').Configuration} - Webpack configuration object
+ */
 export default (env, argv) => {
   const IS_DEV = argv.mode === "development";
 
@@ -73,7 +80,7 @@ export default (env, argv) => {
   const PORT = process.env.PORT || "3000";
 
   if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === "undefined") {
-    console.error(`Oopsies, you're missing the GOOGLE_CLIENT_ID variable.
+    logger.error(`Oopsies, you're missing the GOOGLE_CLIENT_ID variable.
       Make sure you include all required environment variables in the .env file.
       Reference: https://docs.compasscalendar.com/docs/get-started/setup
     `);
@@ -125,6 +132,47 @@ export default (env, argv) => {
     entry: "./src/index.tsx",
     // got devtool sourcemap errors with: eval, eval-cheap-source-map
     devtool: IS_DEV ? "cheap-module-source-map" : "source-map",
+    optimization: {
+      splitChunks: {
+        chunks: "all",
+        cacheGroups: {
+          react: {
+            test: /[\\/]node_modules[\\/](react|react-dom|react-router)[\\/]/,
+            name: "react",
+            chunks: "all",
+            priority: 20,
+          },
+          analytics: {
+            test: /[\\/]node_modules[\\/](posthog-js|posthog-js\/react)[\\/]/,
+            name: "analytics",
+            chunks: "all",
+            priority: 15,
+          },
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: "vendors",
+            chunks: "all",
+            priority: 10,
+            maxSize: 50000,
+            reuseExistingChunk: true,
+          },
+          views: {
+            test: /views/,
+            name: "views-common",
+            chunks: "all",
+            minChunks: 2,
+            priority: 5,
+          },
+          common: {
+            name: "common",
+            minChunks: 2,
+            chunks: "all",
+            enforce: true,
+          },
+        },
+      },
+      runtimeChunk: "single",
+    },
     module: {
       rules: [
         {
@@ -199,15 +247,13 @@ export default (env, argv) => {
         "@core": resolvePath("../core/src"),
         "@web/assets": resolvePath("./src/assets"),
         "@web/auth": resolvePath("./src/auth"),
-        "@web/backend": resolvePath("../backend/src"),
         "@web/common": resolvePath("./src/common"),
         "@web/components": resolvePath("./src/components"),
-        "@web/containers": resolvePath("./src/containers"),
         "@web/ducks": resolvePath("./src/ducks/"),
         "@web/public": resolvePath("./src/public"),
         "@web/routers": resolvePath("./src/routers"),
-        "@web/store": resolvePath("./src/store"),
         "@web/socket": resolvePath("./src/socket"),
+        "@web/store": resolvePath("./src/store"),
         "@web/views": resolvePath("./src/views"),
       },
     },
