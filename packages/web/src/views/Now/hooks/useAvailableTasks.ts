@@ -1,9 +1,10 @@
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { Task } from "@web/common/types/task.types";
 import {
   COMPASS_TASKS_SAVED_EVENT_NAME,
   CompassTasksSavedEvent,
+  TODAY_TASKS_STORAGE_KEY_PREFIX,
   getDateKey,
   getTodayDateKey,
   loadTasksFromStorage,
@@ -12,80 +13,69 @@ import { getIncompleteTasksSorted } from "@web/common/utils/task/sort.task";
 import { TaskContext } from "@web/views/Day/context/TaskProvider";
 
 export function useAvailableTasks() {
-  const [availableTasks, setAvailableTasks] = useState<Task[]>([]);
-  const [allTasks, setAllTasks] = useState<Task[]>([]);
-
-  // Try to use TaskContext if available (for tests and when used within TaskProvider)
+  const [storedTasks, setStoredTasks] = useState<Task[]>([]);
   const taskContext = useContext(TaskContext);
-  const useContextTasks = taskContext !== undefined;
+  const hasTaskContext = taskContext !== undefined;
 
-  const processTasks = (tasks: Task[]) => {
-    // Store all tasks
-    setAllTasks(tasks);
-
-    // Filter out completed tasks and sort by creation date (newest first)
-    // Use array index as tie-breaker for tasks with identical timestamps
-    const incompleteTasks = getIncompleteTasksSorted(tasks);
-
-    setAvailableTasks(incompleteTasks);
-  };
+  const loadStoredTasks = useCallback(() => {
+    const dateKey = getTodayDateKey();
+    const tasks = loadTasksFromStorage(dateKey);
+    setStoredTasks(tasks);
+  }, []);
 
   useEffect(() => {
-    if (useContextTasks && taskContext) {
-      // Use tasks from context (for tests and when used within TaskProvider)
-      const dateKey = getTodayDateKey();
-      const contextTasks = taskContext.tasks;
+    if (hasTaskContext) {
+      return;
+    }
 
-      // Filter tasks for today only
-      const todayTasks = contextTasks.filter((task) => {
-        const taskDate = dayjs(task.createdAt).utc();
-        const taskDateKey = getDateKey(taskDate.toDate());
-        return taskDateKey === dateKey;
-      });
+    loadStoredTasks();
 
-      processTasks(todayTasks);
-    } else {
-      // Fall back to localStorage (for production use outside TaskProvider)
-      const loadAvailableTasks = () => {
-        const dateKey = getTodayDateKey();
-        const tasks = loadTasksFromStorage(dateKey);
-        processTasks(tasks);
-      };
+    // Listen for storage changes to reload tasks (cross-tab synchronization)
+    const handleStorageChange = (event: StorageEvent) => {
+      if (!event.key || event.key.startsWith(TODAY_TASKS_STORAGE_KEY_PREFIX)) {
+        loadStoredTasks();
+      }
+    };
 
-      loadAvailableTasks();
+    // Listen for custom event (same-tab synchronization)
+    const handleTasksSaved = (event: CompassTasksSavedEvent) => {
+      if (event.detail.dateKey === getTodayDateKey()) {
+        loadStoredTasks();
+      }
+    };
 
-      // Listen for storage changes to reload tasks (cross-tab synchronization)
-      const handleStorageChange = (e: StorageEvent) => {
-        if (e.key === null || e.key?.startsWith("compass.today.tasks")) {
-          loadAvailableTasks();
-        }
-      };
-
-      // Listen for custom event (same-tab synchronization)
-      const handleTasksSaved = (e: CompassTasksSavedEvent) => {
-        const todayDateKey = getTodayDateKey();
-        // Only reload if the saved tasks are for today
-        if (e.detail.dateKey === todayDateKey) {
-          loadAvailableTasks();
-        }
-      };
-
-      window.addEventListener("storage", handleStorageChange);
-      window.addEventListener(
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener(
+      COMPASS_TASKS_SAVED_EVENT_NAME,
+      handleTasksSaved as EventListener,
+    );
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener(
         COMPASS_TASKS_SAVED_EVENT_NAME,
         handleTasksSaved as EventListener,
       );
-      return () => {
-        window.removeEventListener("storage", handleStorageChange);
-        window.removeEventListener(
-          COMPASS_TASKS_SAVED_EVENT_NAME,
-          handleTasksSaved as EventListener,
-        );
-      };
-    }
-  }, [useContextTasks, taskContext?.tasks, taskContext]);
+    };
+  }, [hasTaskContext, loadStoredTasks]);
 
-  // Determine if all tasks are completed (has tasks but none are incomplete)
+  const contextTasksForToday = useMemo(() => {
+    if (!hasTaskContext || !taskContext) {
+      return null;
+    }
+
+    const todayKey = getTodayDateKey();
+    return taskContext.tasks.filter((task) => {
+      const taskDate = dayjs(task.createdAt).utc();
+      const taskDateKey = getDateKey(taskDate.toDate());
+      return taskDateKey === todayKey;
+    });
+  }, [hasTaskContext, taskContext]);
+
+  const allTasks = contextTasksForToday ?? storedTasks;
+  const availableTasks = useMemo(
+    () => getIncompleteTasksSorted(allTasks),
+    [allTasks],
+  );
   const hasCompletedTasks = allTasks.length > 0 && availableTasks.length === 0;
 
   return {
