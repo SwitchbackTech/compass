@@ -29,10 +29,12 @@ export const ShortcutsOverlay = ({
   return (
     <aside
       aria-label={ariaLabel}
-      className={`fixed top-24 left-3 z-30 hidden w-[240px] rounded-lg border border-white/10 bg-[#1e1e1e]/90 p-3 shadow-lg backdrop-blur-sm md:block ${className}`}
+      className={`bg-bg-secondary border-border-primary fixed top-24 left-3 z-30 hidden w-[240px] rounded-lg border p-3 shadow-lg backdrop-blur-sm md:block ${className}`}
     >
       {heading && (
-        <div className="mb-2 text-xs font-medium text-white">{heading}</div>
+        <div className="text-text-lighter mb-2 text-xs font-medium">
+          {heading}
+        </div>
       )}
       {visibleSections.map((section) => (
         <ShortcutSection
