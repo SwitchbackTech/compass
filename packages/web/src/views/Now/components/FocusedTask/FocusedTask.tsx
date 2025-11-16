@@ -40,7 +40,7 @@ const ButtonWithShortcut = ({
         onMouseLeave={() => setIsHovered(false)}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:bg-white/10 hover:shadow-lg hover:shadow-white/20 focus:bg-white/10 focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent focus:outline-none"
+        className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:brightness-125 focus:brightness-125 focus:outline-none"
       >
         {children}
       </button>
@@ -63,7 +63,7 @@ export const FocusedTask = ({
     <div className="flex flex-col items-center gap-6">
       <div className="flex flex-col items-center gap-10">
         <div className="flex items-center gap-3">
-          <h2 className="text-4xl font-bold text-white drop-shadow-lg">
+          <h2 className="text-text-lighter text-4xl font-bold drop-shadow-lg">
             {task.title}
           </h2>
         </div>
@@ -73,21 +73,21 @@ export const FocusedTask = ({
             ariaLabel="Mark task as complete"
             shortcut="Enter"
           >
-            <CheckCircleIcon size={40} className="text-white" />
+            <CheckCircleIcon size={40} className="text-text-light" />
           </ButtonWithShortcut>
           <ButtonWithShortcut
             onClick={onPreviousTask}
             ariaLabel="Previous task"
             shortcut="j"
           >
-            <ArrowCircleLeftIcon size={40} className="text-white" />
+            <ArrowCircleLeftIcon size={40} className="text-text-light" />
           </ButtonWithShortcut>
           <ButtonWithShortcut
             onClick={onNextTask}
             ariaLabel="Next task"
             shortcut="k"
           >
-            <ArrowCircleRightIcon size={40} className="text-white" />
+            <ArrowCircleRightIcon size={40} className="text-text-light" />
           </ButtonWithShortcut>
         </div>
       </div>
