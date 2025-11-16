@@ -143,6 +143,12 @@ TZ=Etc/UTC
 3. **Check Code Style**: `yarn prettier . --write`
 4. **Manual Validation**: Open http://localhost:9080/ and verify login page loads
 
+### Styling
+
+- Use tailwind for styling.
+- Use the semantic colors defined in the `@web/common/styles/theme.ts` file.
+- Do NOT use raw tailwind colors like `bg-blue-300` or `text-gray-100`. Use the semantic colors like `bg-bg-primary` or `text-text-light` instead.
+
 ### CI/CD Integration
 
 - GitHub Actions runs `yarn install` and `yarn test`
