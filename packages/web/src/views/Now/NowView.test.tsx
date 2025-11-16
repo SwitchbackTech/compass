@@ -1,20 +1,16 @@
-import { MemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
+import { renderWithMemoryRouter } from "@web/__tests__/utils/providers/MemoryRouter";
 import { NowView } from "./NowView";
 
 // Mock the useNowShortcuts hook
-jest.mock("./useNowShortcuts", () => ({
+jest.mock("./shortcuts/useNowShortcuts", () => ({
   useNowShortcuts: jest.fn(),
 }));
 
 describe("NowView", () => {
   it("renders the shortcuts overlay", () => {
-    render(
-      <MemoryRouter>
-        <NowView />
-      </MemoryRouter>,
-    );
+    renderWithMemoryRouter(<NowView />);
 
     expect(
       screen.getByRole("complementary", { name: "Shortcut overlay" }),
@@ -23,24 +19,16 @@ describe("NowView", () => {
   });
 
   it("renders global shortcuts", () => {
-    render(
-      <MemoryRouter>
-        <NowView />
-      </MemoryRouter>,
-    );
+    renderWithMemoryRouter(<NowView />);
 
     expect(screen.getByText("Global")).toBeInTheDocument();
-    expect(screen.getByText("Now")).toBeInTheDocument();
+    expect(screen.getAllByText("Now")).toHaveLength(2);
     expect(screen.getByText("Day")).toBeInTheDocument();
     expect(screen.getByText("Week")).toBeInTheDocument();
   });
 
   it("renders shortcut keys correctly", () => {
-    render(
-      <MemoryRouter>
-        <NowView />
-      </MemoryRouter>,
-    );
+    renderWithMemoryRouter(<NowView />);
 
     // Check that shortcut keys are rendered
     expect(screen.getByText("1")).toBeInTheDocument();

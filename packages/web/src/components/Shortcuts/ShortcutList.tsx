@@ -1,4 +1,4 @@
-import { Shortcut } from "../types/shortcut.types";
+import { Shortcut } from "@web/common/types/global.shortcut.types";
 import { ShortcutHint } from "./ShortcutHint";
 
 export const ShortcutList = ({ shortcuts }: { shortcuts: Shortcut[] }) => {

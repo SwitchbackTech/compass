@@ -11,7 +11,7 @@ jest.mock("../components/Agenda/Agenda", () => ({
 }));
 
 // Mock the ShortcutsOverlay component
-jest.mock("../components/Shortcuts/components/ShortcutsOverlay", () => ({
+jest.mock("@web/components/Shortcuts/ShortcutsOverlay", () => ({
   ShortcutsOverlay: () => <div data-testid="shortcuts-overlay" />,
 }));
 

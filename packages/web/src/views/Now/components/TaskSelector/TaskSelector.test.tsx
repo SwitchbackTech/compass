@@ -1,12 +1,13 @@
+import { MemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
-import { render, screen, waitFor } from "@testing-library/react";
+import { RenderOptions, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import dayjs from "@core/util/date/dayjs";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { Task } from "@web/views/Day/task.types";
 import * as storageUtil from "@web/views/Day/util/storage.util";
 import { useAvailableTasks } from "@web/views/Now/hooks/useAvailableTasks";
 import { useFocusedTask } from "@web/views/Now/hooks/useFocusedTask";
+import { NowViewProvider } from "../../context/NowViewProvider";
 import { TaskSelector } from "./TaskSelector";
 
 // Mock useNavigate
@@ -21,6 +22,7 @@ jest.mock("@web/views/Now/hooks/useAvailableTasks");
 jest.mock("@web/views/Day/util/storage.util", () => ({
   ...jest.requireActual("@web/views/Day/util/storage.util"),
   getDateKey: jest.fn(),
+  getTodayDateKey: jest.fn(),
   loadTasksFromStorage: jest.fn(),
   saveTasksToStorage: jest.fn(),
 }));
@@ -31,6 +33,26 @@ const mockUseFocusedTask = useFocusedTask as jest.MockedFunction<
 const mockUseAvailableTasks = useAvailableTasks as jest.MockedFunction<
   typeof useAvailableTasks
 >;
+
+const NowProviders = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <MemoryRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
+      <NowViewProvider>{children}</NowViewProvider>
+    </MemoryRouter>
+  );
+};
+
+export const renderWithNowProvider = (
+  component: React.ReactElement,
+  options?: Omit<RenderOptions, "wrapper">,
+) => {
+  return render(component, { wrapper: NowProviders, ...options });
+};
 
 describe("TaskSelector", () => {
   const mockSetFocusedTask = jest.fn();
@@ -59,6 +81,7 @@ describe("TaskSelector", () => {
     mockNavigate.mockClear();
     mockSetFocusedTask.mockClear();
     (storageUtil.getDateKey as jest.Mock).mockReturnValue(mockDateKey);
+    (storageUtil.getTodayDateKey as jest.Mock).mockReturnValue(mockDateKey);
     (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(mockTasks);
     (storageUtil.saveTasksToStorage as jest.Mock).mockImplementation(() => {});
 
@@ -82,7 +105,7 @@ describe("TaskSelector", () => {
       hasCompletedTasks: false,
     });
 
-    render(<TaskSelector />);
+    renderWithNowProvider(<TaskSelector />);
 
     expect(screen.getByText("Test Task")).toBeInTheDocument();
     expect(
@@ -101,7 +124,7 @@ describe("TaskSelector", () => {
       hasCompletedTasks: false,
     });
 
-    render(<TaskSelector />);
+    renderWithNowProvider(<TaskSelector />);
 
     expect(screen.getByText("Select a task to focus on")).toBeInTheDocument();
     expect(screen.getByText("Test Task")).toBeInTheDocument();
@@ -123,7 +146,7 @@ describe("TaskSelector", () => {
       hasCompletedTasks: false,
     });
 
-    render(<TaskSelector />);
+    renderWithNowProvider(<TaskSelector />);
 
     // Wait for auto-focus to complete
     await waitFor(() => {
@@ -153,7 +176,7 @@ describe("TaskSelector", () => {
       hasCompletedTasks: false,
     });
 
-    const { container } = render(<TaskSelector />);
+    const { container } = renderWithNowProvider(<TaskSelector />);
 
     expect(container.firstChild).toBeNull();
   });
@@ -176,7 +199,7 @@ describe("TaskSelector", () => {
       hasCompletedTasks: true,
     });
 
-    render(<TaskSelector />);
+    renderWithNowProvider(<TaskSelector />);
 
     expect(
       screen.getByText("All tasks completed for today!"),
@@ -203,7 +226,7 @@ describe("TaskSelector", () => {
       hasCompletedTasks: false,
     });
 
-    const { rerender } = render(<TaskSelector />);
+    const { rerender } = renderWithNowProvider(<TaskSelector />);
 
     // Initially shows AvailableTasks
     expect(screen.getByText("Select a task to focus on")).toBeInTheDocument();
@@ -224,7 +247,6 @@ describe("TaskSelector", () => {
       setFocusedTask: mockSetFocusedTask,
     });
 
-    // Rerender with updated mock
     rerender(<TaskSelector />);
 
     // Now shows FocusedTask
@@ -249,7 +271,7 @@ describe("TaskSelector", () => {
         hasCompletedTasks: false,
       });
 
-      render(<TaskSelector />);
+      renderWithNowProvider(<TaskSelector />);
 
       await waitFor(() => {
         expect(mockSetFocusedTask).toHaveBeenCalledWith("task-1");
@@ -268,7 +290,7 @@ describe("TaskSelector", () => {
         hasCompletedTasks: false,
       });
 
-      render(<TaskSelector />);
+      renderWithNowProvider(<TaskSelector />);
 
       await waitFor(() => {
         expect(mockSetFocusedTask).not.toHaveBeenCalled();
@@ -286,7 +308,7 @@ describe("TaskSelector", () => {
         hasCompletedTasks: false,
       });
 
-      render(<TaskSelector />);
+      renderWithNowProvider(<TaskSelector />);
 
       await waitFor(() => {
         expect(mockSetFocusedTask).not.toHaveBeenCalled();
@@ -310,7 +332,7 @@ describe("TaskSelector", () => {
           hasCompletedTasks: false,
         });
 
-      const { rerender } = render(<TaskSelector />);
+      const { rerender } = renderWithNowProvider(<TaskSelector />);
 
       await waitFor(() => {
         expect(mockSetFocusedTask).not.toHaveBeenCalled();
@@ -338,7 +360,7 @@ describe("TaskSelector", () => {
         hasCompletedTasks: false,
       });
 
-      const { rerender } = render(<TaskSelector />);
+      const { rerender } = renderWithNowProvider(<TaskSelector />);
 
       await waitFor(() => {
         expect(mockSetFocusedTask).not.toHaveBeenCalled();
@@ -397,7 +419,7 @@ describe("TaskSelector", () => {
       });
       (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(tasks);
 
-      render(<TaskSelector />);
+      renderWithNowProvider(<TaskSelector />);
 
       const checkButton = screen.getByRole("button", {
         name: "Mark task as complete",
@@ -418,7 +440,19 @@ describe("TaskSelector", () => {
         ]),
       );
 
-      // Verify navigation to next task
+      // Verify task was marked as completed and next task was focused
+      expect(storageUtil.loadTasksFromStorage).toHaveBeenCalledWith(
+        mockDateKey,
+      );
+      expect(storageUtil.saveTasksToStorage).toHaveBeenCalledWith(
+        mockDateKey,
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: "task-1",
+            status: "completed",
+          }),
+        ]),
+      );
       expect(mockSetFocusedTask).toHaveBeenCalledWith("task-2");
     });
 
@@ -450,7 +484,7 @@ describe("TaskSelector", () => {
       });
       (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(tasks);
 
-      render(<TaskSelector />);
+      renderWithNowProvider(<TaskSelector />);
 
       const checkButton = screen.getByRole("button", {
         name: "Mark task as complete",
@@ -468,7 +502,16 @@ describe("TaskSelector", () => {
         ]),
       );
 
-      // Verify navigation to previous task
+      // Verify task was marked as completed and previous task was focused
+      expect(storageUtil.saveTasksToStorage).toHaveBeenCalledWith(
+        mockDateKey,
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: "task-2",
+            status: "completed",
+          }),
+        ]),
+      );
       expect(mockSetFocusedTask).toHaveBeenCalledWith("task-1");
     });
 
@@ -494,7 +537,7 @@ describe("TaskSelector", () => {
       });
       (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(tasks);
 
-      render(<TaskSelector />);
+      renderWithNowProvider(<TaskSelector />);
 
       const checkButton = screen.getByRole("button", {
         name: "Mark task as complete",
@@ -512,9 +555,17 @@ describe("TaskSelector", () => {
         ]),
       );
 
-      // Verify navigation to Day view
-      expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
-      expect(mockSetFocusedTask).not.toHaveBeenCalled();
+      // Verify task was marked as completed and navigation to Day view occurred
+      expect(storageUtil.saveTasksToStorage).toHaveBeenCalledWith(
+        mockDateKey,
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: "task-1",
+            status: "completed",
+          }),
+        ]),
+      );
+      expect(mockNavigate).toHaveBeenCalledWith("/day");
     });
 
     it("does nothing when no task is focused", async () => {
@@ -528,7 +579,7 @@ describe("TaskSelector", () => {
         hasCompletedTasks: false,
       });
 
-      render(<TaskSelector />);
+      renderWithNowProvider(<TaskSelector />);
 
       // Should not render the check button when no task is focused
       expect(

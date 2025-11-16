@@ -1,29 +1,5 @@
 import dayjs from "@core/util/date/dayjs";
-import { Shortcut } from "../types/shortcut.types";
-
-// Define all possible shortcut keys as a const object for type safety
-export const SHORTCUT_KEYS = {
-  // Global shortcuts
-  "1": "1",
-  "2": "2",
-  "3": "3",
-  // Navigation shortcuts
-  j: "j",
-  k: "k",
-  t: "t",
-  // Task shortcuts
-  u: "u",
-  c: "c",
-  e: "e",
-  Delete: "Delete",
-  Enter: "Enter",
-  Escape: "Escape",
-  Esc: "Esc",
-  // Calendar shortcuts
-  i: "i",
-  "↑": "↑",
-  "↓": "↓",
-} as const;
+import { Shortcut } from "@web/common/types/global.shortcut.types";
 
 interface ShortcutsConfig {
   isHome?: boolean;
@@ -35,7 +11,7 @@ interface ShortcutsConfig {
 export const getShortcuts = (config: ShortcutsConfig = {}) => {
   const { isHome = false, isToday = true, isNow = false, currentDate } = config;
 
-  const global: Shortcut[] = [
+  const globalShortcuts: Shortcut[] = [
     { k: "1", label: "Now" },
     { k: "2", label: "Day" },
     { k: "3", label: "Week" },
@@ -52,7 +28,9 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
       { k: "k", label: "Next day" },
       { k: "Enter", label: "Go to Today" },
     ];
-  } else if (isToday) {
+  }
+
+  if (isToday) {
     dayTaskShortcuts = [
       { k: "u", label: "Focus on tasks" },
       { k: "c", label: "Create task" },
@@ -72,36 +50,23 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
             : "Go to today";
         })(),
       },
-      // { k: "e", label: "Edit event title" },
-      // { k: "Delete", label: "Delete event" },
-      // { k: "↑", label: "Move up 15m" },
-      // { k: "↓", label: "Move down 15m" },
     ];
-  } else if (isNow) {
+  }
+  if (isNow) {
     nowShortcuts = [
       { k: "j", label: "Previous task" },
       { k: "k", label: "Next task" },
-      { k: "Enter", label: "Complete focused task" },
+      { k: "Enter", label: "Mark complete" },
       { k: "Esc", label: "Back to Today" },
     ];
   }
 
-  // Flatten all active shortcuts for easy key extraction
-  const allShortcuts = [
-    ...global,
-    ...homeShortcuts,
-    ...dayTaskShortcuts,
-    ...dayAgendaShortcuts,
-    ...nowShortcuts,
-  ];
-
   return {
-    global,
+    globalShortcuts,
     homeShortcuts,
     dayTaskShortcuts,
     dayAgendaShortcuts,
     nowShortcuts,
-    allShortcuts,
     isHome,
     isToday,
     isNow,

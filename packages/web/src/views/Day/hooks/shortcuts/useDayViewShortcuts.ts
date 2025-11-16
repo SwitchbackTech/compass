@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
-import { ShortcutKey } from "../../components/Shortcuts/types/shortcut.types";
+import { DayViewShortcutKey } from "@web/views/Day/components/Shortcuts/day.shortcut.types";
 import {
   getFocusedTaskId,
   isEditable,
@@ -75,107 +75,107 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   } = config;
 
   // Define strongly-typed handler mapping
-  const handlers: Record<ShortcutKey, (e: KeyboardEvent) => void> = useMemo(
-    () => ({
-      // Global shortcuts (not handled in this hook)
-      "1": (e) => {
-        e.preventDefault();
-        onNavigateNow?.();
-      },
-      "2": () => {},
-      "3": (e) => {
-        e.preventDefault();
-        onNavigateWeek?.();
-      },
-
-      // Navigation shortcuts
-      j: (e) => {
-        e.preventDefault();
-        onPrevDay?.();
-      },
-      k: (e) => {
-        e.preventDefault();
-        onNextDay?.();
-      },
-      t: (e) => {
-        e.preventDefault();
-        onGoToToday?.();
-      },
-
-      // Task shortcuts
-      u: (e) => {
-        e.preventDefault();
-        onFocusTasks?.();
-      },
-
-      c: (e) => {
-        e.preventDefault();
-        onAddTask?.();
-      },
-      e: (e) => {
-        e.preventDefault();
-        onEditTask?.();
-      },
-      Delete: (e) => {
-        // Don't handle Delete key if we're in an editable element
-        if (isEditable(e.target)) {
-          return;
-        }
-
-        // Only delete if focused on a task checkbox, not an input
-        if (isFocusedOnTaskCheckbox()) {
+  const handlers: Record<DayViewShortcutKey, (e: KeyboardEvent) => void> =
+    useMemo(
+      () => ({
+        // Global shortcuts
+        "1": (e) => {
           e.preventDefault();
-          onDeleteTask?.();
-        }
-      },
-      Enter: (e) => {
-        if (hasFocusedTask && !isEditingTask) {
-          const activeElement = document.activeElement as HTMLElement | null;
-          const isTaskButton =
-            activeElement?.getAttribute("role") === "checkbox" &&
-            activeElement?.dataset?.taskId;
+          onNavigateNow?.();
+        },
+        "2": () => {
+          return;
+        },
+        "3": (e) => {
+          e.preventDefault();
+          onNavigateWeek?.();
+        },
 
-          // Let the task button handle Enter if it's focused
-          if (!isTaskButton) {
-            e.preventDefault();
-            onCompleteTask?.();
+        // Navigation shortcuts
+        j: (e) => {
+          e.preventDefault();
+          onPrevDay?.();
+        },
+        k: (e) => {
+          e.preventDefault();
+          onNextDay?.();
+        },
+        t: (e) => {
+          e.preventDefault();
+          onGoToToday?.();
+        },
+
+        // Task shortcuts
+        u: (e) => {
+          e.preventDefault();
+          onFocusTasks?.();
+        },
+        c: (e) => {
+          e.preventDefault();
+          onAddTask?.();
+        },
+        e: (e) => {
+          e.preventDefault();
+          onEditTask?.();
+        },
+        Delete: (e) => {
+          // Don't handle Delete key if we're in an editable element
+          if (isEditable(e.target)) {
+            return;
           }
-        }
-      },
-      Escape: (e) => {
-        e.preventDefault();
-        onEscape?.();
-      },
-      Esc: (e) => {
-        e.preventDefault();
-        onEscape?.();
-      },
 
-      // Calendar shortcuts
-      i: (e) => {
-        e.preventDefault();
-        onFocusAgenda?.();
-      },
-      "↑": () => {},
-      "↓": () => {},
-    }),
-    [
-      hasFocusedTask,
-      isEditingTask,
-      onAddTask,
-      onCompleteTask,
-      onDeleteTask,
-      onEditTask,
-      onEscape,
-      onFocusAgenda,
-      onFocusTasks,
-      onNavigateNow,
-      onNavigateWeek,
-      onPrevDay,
-      onNextDay,
-      onGoToToday,
-    ],
-  );
+          // Only delete if focused on a task checkbox, not an input
+          if (isFocusedOnTaskCheckbox()) {
+            e.preventDefault();
+            onDeleteTask?.();
+          }
+        },
+        Enter: (e) => {
+          if (hasFocusedTask && !isEditingTask) {
+            const activeElement = document.activeElement as HTMLElement | null;
+            const isTaskButton =
+              activeElement?.getAttribute("role") === "checkbox" &&
+              activeElement?.dataset?.taskId;
+
+            // Let the task button handle Enter if it's focused
+            if (!isTaskButton) {
+              e.preventDefault();
+              onCompleteTask?.();
+            }
+          }
+        },
+        Escape: (e) => {
+          e.preventDefault();
+          onEscape?.();
+        },
+        Esc: (e) => {
+          e.preventDefault();
+          onEscape?.();
+        },
+
+        // Calendar shortcuts
+        i: (e) => {
+          e.preventDefault();
+          onFocusAgenda?.();
+        },
+      }),
+      [
+        hasFocusedTask,
+        isEditingTask,
+        onAddTask,
+        onCompleteTask,
+        onDeleteTask,
+        onEditTask,
+        onEscape,
+        onFocusAgenda,
+        onFocusTasks,
+        onNavigateNow,
+        onNavigateWeek,
+        onPrevDay,
+        onNextDay,
+        onGoToToday,
+      ],
+    );
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -237,7 +237,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
             : key === "delete"
               ? "Delete"
               : key;
-      const handler = handlers[normalizedKey as ShortcutKey];
+      const handler = handlers[normalizedKey as DayViewShortcutKey];
       if (handler) {
         handler(e);
       }

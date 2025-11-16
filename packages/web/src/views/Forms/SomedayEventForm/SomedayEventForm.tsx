@@ -1,5 +1,4 @@
 import React, { KeyboardEvent, MouseEvent, useCallback, useRef } from "react";
-import "react-toastify/dist/ReactToastify.css";
 import { Key } from "ts-key-enum";
 import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";

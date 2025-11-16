@@ -14,14 +14,11 @@ jest.mock("react-router-dom", () => ({
 }));
 
 // Mock ShortcutHint component
-jest.mock(
-  "@web/views/Day/components/Shortcuts/components/ShortcutHint",
-  () => ({
-    ShortcutHint: ({ children }: { children: React.ReactNode }) => (
-      <span data-testid="shortcut-hint">{children}</span>
-    ),
-  }),
-);
+jest.mock("@web/components/Shortcuts/ShortcutHint", () => ({
+  ShortcutHint: ({ children }: { children: React.ReactNode }) => (
+    <span data-testid="shortcut-hint">{children}</span>
+  ),
+}));
 
 describe("SelectView", () => {
   beforeEach(() => {
