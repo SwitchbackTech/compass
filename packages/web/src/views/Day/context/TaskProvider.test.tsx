@@ -2,6 +2,7 @@ import { act } from "react";
 import { renderHook } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
 import { Task } from "../../../common/types/task.types";
+import { TODAY_TASKS_STORAGE_KEY_PREFIX } from "../../../common/utils/storage/storage.util";
 import { useTasks } from "../hooks/tasks/useTasks";
 import { TaskProviderWrapper } from "../util/day.test-util";
 
@@ -138,7 +139,7 @@ describe("TaskProvider", () => {
     // Check localStorage
     const today = dayjs().utc();
     const dateKey = today.format("YYYY-MM-DD");
-    const storageKey = `compass.today.tasks.${dateKey}`;
+    const storageKey = `${TODAY_TASKS_STORAGE_KEY_PREFIX}.${dateKey}`;
     const stored = localStorage.getItem(storageKey);
 
     expect(stored).toBeTruthy();
@@ -151,7 +152,7 @@ describe("TaskProvider", () => {
     // Pre-populate localStorage
     const today = dayjs().utc();
     const dateKey = today.format("YYYY-MM-DD");
-    const storageKey = `compass.today.tasks.${dateKey}`;
+    const storageKey = `${TODAY_TASKS_STORAGE_KEY_PREFIX}.${dateKey}`;
     const mockTasks: Task[] = [
       {
         id: "task-1",
@@ -174,7 +175,7 @@ describe("TaskProvider", () => {
     // Pre-populate localStorage with mixed statuses
     const today = dayjs().utc();
     const dateKey = today.format("YYYY-MM-DD");
-    const storageKey = `compass.today.tasks.${dateKey}`;
+    const storageKey = `${TODAY_TASKS_STORAGE_KEY_PREFIX}.${dateKey}`;
     const mockTasks: Task[] = [
       {
         id: "task-1",
