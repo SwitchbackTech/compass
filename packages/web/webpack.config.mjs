@@ -143,7 +143,7 @@ export default (env, argv) => {
             priority: 20,
           },
           analytics: {
-            test: /[\\/]node_modules[\\/](posthog-js|posthog-js\/react)[\\/]/,
+            test: /[\\/]node_modules[\\/](posthog-js)[\\/]/,
             name: "analytics",
             chunks: "all",
             priority: 15,
