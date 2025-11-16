@@ -1,1 +1,66 @@
 @import "tailwindcss";
+
+@theme {
+  /* Semantic colors */
+  --color-bg-primary: hsl(222 28 7);
+  --color-bg-secondary: hsl(218 24 9);
+  --color-border-primary: hsl(219 18 34 / 20%);
+  --color-border-primary-dark: hsl(0 0 0 / 50.2%);
+  --color-border-secondary: hsl(47 7 73);
+  --color-fg-primary: hsl(47 7 73);
+  --color-fg-primary-dark: hsl(208 13 71 / 54.9%);
+  --color-gradient-accent-light-start: hsl(202 100 67);
+  --color-gradient-accent-light-end: hsl(196 45 78);
+  --color-grid-line-primary: hsl(219 18 34 / 20%);
+  --color-menu-bg: hsl(0 0 98);
+  --color-panel-bg: hsl(219 8 46 / 20%);
+  --color-panel-scrollbar: hsl(219 8 46 / 20%);
+  --color-panel-scrollbar-active: hsl(221 9 37);
+  --color-panel-shadow: hsl(221 9 37);
+  --color-panel-text: hsl(0 0 98);
+  --color-shadow-default: hsla(0 0 0 / 25%);
+  --color-status-success: hsl(105 61 62);
+  --color-status-error: hsl(0 63 60);
+  --color-status-warning: hsl(25 100 63);
+  --color-status-info: hsl(202 100 67);
+  --color-tag-one: hsl(202 100 67);
+  --color-tag-two: hsl(105 61 62);
+  --color-tag-three: hsl(270 100 83);
+  --color-text-accent: hsl(202 100 67);
+  --color-text-light: hsl(47 7 73);
+  --color-text-lighter: hsl(0 0 100);
+  --color-text-light-inactive: hsl(208 13 71 / 54.9%);
+  --color-text-dark: hsl(222 28 7);
+  --color-text-dark-placeholder: hsl(219 8 46 / 90.2%);
+
+  /* Raw colors - blue */
+  /* Do NOT use these anymore - use the semantic colors instead */
+  --color-blue-200: hsl(196 60 59);
+
+  /* Raw colors - gray */
+  --color-gray-900: hsl(0 0 0 / 50.2%);
+  --color-gray-800: hsl(219 18 34 / 20%);
+  --color-gray-700: hsl(219 18 34 / 25.1%);
+  --color-gray-600: hsl(219 8 46 / 20%);
+  --color-gray-500: hsl(219 8 46 / 20%);
+  --color-gray-400: hsl(221 9 37);
+  --color-gray-300: hsl(219 8 46 / 90.2%);
+  --color-gray-200: hsl(208 13 71 / 54.9%);
+
+  /* Raw colors - white */
+  --color-white-100: hsl(0 0 100);
+
+  /* Font sizes */
+  --font-size-xs: 0.563rem;
+  --font-size-s: 0.688rem;
+  --font-size-m: 0.8125rem;
+  --font-size-l: 1rem;
+  --font-size-xl: 1.125rem;
+  --font-size-xxl: 1.3rem;
+  --font-size-xxxl: 1.6rem;
+  --font-size-4xl: 1.7rem;
+  --font-size-5xl: 2rem;
+
+  /* Border radius */
+  --radius-default: 4px;
+}
