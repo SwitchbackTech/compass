@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { ZIndex } from "@web/common/constants/web.constants";
 import { c } from "@web/common/styles/colors";
 import { Flex } from "@web/components/Flex";
 import { JustifyContent } from "@web/components/Flex/styled";
@@ -32,7 +33,7 @@ export const StyledRightGroup = styled(Flex)`
   flex-direction: column;
   justify-content: space-between;
   height: 100%;
-  z-index: 2;
+  z-index: ${ZIndex.LAYER_2};
 `;
 
 export const StyledHeaderLabel = styled(Flex)`
