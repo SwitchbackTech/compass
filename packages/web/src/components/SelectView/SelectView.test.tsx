@@ -227,7 +227,7 @@ describe("SelectView", () => {
       await waitFor(() => {
         const nowOption = screen.getByRole("option", { name: /now/i });
         expect(nowOption).toHaveAttribute("aria-selected", "true");
-        expect(nowOption).toHaveClass("bg-white/20");
+        expect(nowOption).toHaveClass("bg-fg-primary");
 
         const dayOption = screen.getByRole("option", { name: /day/i });
         expect(dayOption).toHaveAttribute("aria-selected", "false");
@@ -571,7 +571,7 @@ describe("SelectView", () => {
 
       // Day option should be both selected and initially highlighted
       expect(dayOption).toHaveAttribute("aria-selected", "true");
-      expect(dayOption).toHaveClass("bg-white/20");
+      expect(dayOption).toHaveClass("bg-fg-primary");
 
       // Pressing ArrowDown from Day should move to Week
       await act(async () => {

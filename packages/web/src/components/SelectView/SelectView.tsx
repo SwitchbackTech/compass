@@ -147,7 +147,7 @@ export const SelectView = ({
           })}
           id={dropdownId}
           data-testid="view-select-dropdown"
-          className="inset-inline-end-0 absolute top-full z-50 mt-1 min-w-[140px] rounded border border-gray-600 bg-gray-800 py-1 shadow-lg"
+          className="inset-inline-end-0 bg-bg-secondary absolute top-full z-50 mt-1 min-w-[140px] rounded border border-gray-600 py-1 shadow-lg"
           role="listbox"
         >
           {options.map((option, index) => {
@@ -169,16 +169,20 @@ export const SelectView = ({
                 tabIndex={isActive ? 0 : -1}
                 className={`flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm transition-colors ${
                   isSelected
-                    ? "bg-white/20 text-white"
-                    : "text-white/90 hover:bg-white/10"
+                    ? "bg-fg-primary text-text-dark"
+                    : "text-fg-primary hover:bg-fg-primary-dark"
                 } ${
                   isActive && !isSelected
-                    ? "bg-white/15 ring-1 ring-white/30"
+                    ? "bg-fg-primary-dark ring-fg-primary-dark ring-1"
                     : ""
                 }`}
               >
                 <span>{option.label}</span>
-                <ShortcutHint>{index + 1}</ShortcutHint>
+                <ShortcutHint
+                  className={`${isSelected ? "text-text-dark" : "text-text-light"}`}
+                >
+                  {index + 1}
+                </ShortcutHint>
               </div>
             );
           })}
