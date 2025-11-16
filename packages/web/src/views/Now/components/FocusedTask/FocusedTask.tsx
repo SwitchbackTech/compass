@@ -1,11 +1,10 @@
-import { useState } from "react";
 import {
   ArrowCircleLeftIcon,
   ArrowCircleRightIcon,
   CheckCircleIcon,
 } from "@phosphor-icons/react";
 import { Task } from "@web/common/types/task.types";
-import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
+import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 interface FocusedTaskProps {
   task: Task;
@@ -13,45 +12,6 @@ interface FocusedTaskProps {
   onPreviousTask: () => void;
   onNextTask: () => void;
 }
-
-interface ButtonWithShortcutProps {
-  onClick: () => void;
-  ariaLabel: string;
-  shortcut: string;
-  children: React.ReactNode;
-}
-
-const ButtonWithShortcut = ({
-  onClick,
-  ariaLabel,
-  shortcut,
-  children,
-}: ButtonWithShortcutProps) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
-  const showShortcut = isHovered || isFocused;
-
-  return (
-    <div className="relative inline-block">
-      <button
-        onClick={onClick}
-        aria-label={ariaLabel}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:brightness-125 focus:brightness-125 focus:outline-none"
-      >
-        {children}
-      </button>
-      {showShortcut && (
-        <div className="absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 transform">
-          <ShortcutHint>{shortcut}</ShortcutHint>
-        </div>
-      )}
-    </div>
-  );
-};
 
 export const FocusedTask = ({
   task,
@@ -68,27 +28,42 @@ export const FocusedTask = ({
           </h2>
         </div>
         <div className="flex items-center justify-center gap-3">
-          <ButtonWithShortcut
-            onClick={onCompleteTask}
-            ariaLabel="Mark task as complete"
+          <TooltipWrapper
+            description="Mark Done"
             shortcut="Enter"
+            onClick={onCompleteTask}
           >
-            <CheckCircleIcon size={40} className="text-text-light" />
-          </ButtonWithShortcut>
-          <ButtonWithShortcut
-            onClick={onPreviousTask}
-            ariaLabel="Previous task"
+            <button
+              aria-label="Mark task as complete"
+              className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:brightness-125 focus:brightness-125"
+            >
+              <CheckCircleIcon size={40} className="text-text-light" />
+            </button>
+          </TooltipWrapper>
+          <TooltipWrapper
+            description="Previous Task"
             shortcut="j"
+            onClick={onPreviousTask}
           >
-            <ArrowCircleLeftIcon size={40} className="text-text-light" />
-          </ButtonWithShortcut>
-          <ButtonWithShortcut
-            onClick={onNextTask}
-            ariaLabel="Next task"
+            <button
+              aria-label="Previous task"
+              className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:brightness-125 focus:brightness-125"
+            >
+              <ArrowCircleLeftIcon size={40} className="text-text-light" />
+            </button>
+          </TooltipWrapper>
+          <TooltipWrapper
+            description="Next Task"
             shortcut="k"
+            onClick={onNextTask}
           >
-            <ArrowCircleRightIcon size={40} className="text-text-light" />
-          </ButtonWithShortcut>
+            <button
+              aria-label="Next task"
+              className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:brightness-125 focus:brightness-125"
+            >
+              <ArrowCircleRightIcon size={40} className="text-text-light" />
+            </button>
+          </TooltipWrapper>
         </div>
       </div>
     </div>

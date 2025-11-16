@@ -156,8 +156,8 @@ describe("FocusedTask", () => {
     expect(mockOnCompleteTask).toHaveBeenCalledTimes(1);
   });
 
-  describe("Shortcut Hints", () => {
-    it("does not show shortcut hint initially", () => {
+  describe("Tooltip Hints", () => {
+    it("does not show tooltip initially", () => {
       render(
         <FocusedTask
           task={mockTask}
@@ -167,13 +167,16 @@ describe("FocusedTask", () => {
         />,
       );
 
-      // Shortcut hints should not be visible initially
+      // Tooltips should not be visible initially
+      expect(screen.queryByText("Mark Done")).not.toBeInTheDocument();
+      expect(screen.queryByText("Previous Task")).not.toBeInTheDocument();
+      expect(screen.queryByText("Next Task")).not.toBeInTheDocument();
       expect(screen.queryByText("Enter")).not.toBeInTheDocument();
       expect(screen.queryByText("j")).not.toBeInTheDocument();
       expect(screen.queryByText("k")).not.toBeInTheDocument();
     });
 
-    it("shows shortcut hint on hover for complete button", async () => {
+    it("shows tooltip on hover for complete button", async () => {
       const user = userEvent.setup();
       render(
         <FocusedTask
@@ -188,19 +191,24 @@ describe("FocusedTask", () => {
         name: "Mark task as complete",
       });
 
-      // Shortcut hint should not be visible initially
+      // Tooltip should not be visible initially
+      expect(screen.queryByText("Mark Done")).not.toBeInTheDocument();
       expect(screen.queryByText("Enter")).not.toBeInTheDocument();
 
-      // Hover over button to show shortcut hint
+      // Hover over button to show tooltip
       await user.hover(completeButton);
 
-      // Wait for shortcut hint to appear
-      await waitFor(() => {
-        expect(screen.getByText("Enter")).toBeInTheDocument();
-      });
+      // Wait for tooltip to appear with both description and shortcut
+      await waitFor(
+        () => {
+          expect(screen.getByText("Mark Done")).toBeInTheDocument();
+          expect(screen.getByText("Enter")).toBeInTheDocument();
+        },
+        { timeout: 500 },
+      );
     });
 
-    it("shows shortcut hint on hover for previous button", async () => {
+    it("shows tooltip on hover for previous button", async () => {
       const user = userEvent.setup();
       render(
         <FocusedTask
@@ -215,19 +223,24 @@ describe("FocusedTask", () => {
         name: "Previous task",
       });
 
-      // Shortcut hint should not be visible initially
+      // Tooltip should not be visible initially
+      expect(screen.queryByText("Previous Task")).not.toBeInTheDocument();
       expect(screen.queryByText("j")).not.toBeInTheDocument();
 
-      // Hover over button to show shortcut hint
+      // Hover over button to show tooltip
       await user.hover(previousButton);
 
-      // Wait for shortcut hint to appear
-      await waitFor(() => {
-        expect(screen.getByText("j")).toBeInTheDocument();
-      });
+      // Wait for tooltip to appear with both description and shortcut
+      await waitFor(
+        () => {
+          expect(screen.getByText("Previous Task")).toBeInTheDocument();
+          expect(screen.getByText("j")).toBeInTheDocument();
+        },
+        { timeout: 500 },
+      );
     });
 
-    it("shows shortcut hint on hover for next button", async () => {
+    it("shows tooltip on hover for next button", async () => {
       const user = userEvent.setup();
       render(
         <FocusedTask
@@ -242,19 +255,24 @@ describe("FocusedTask", () => {
         name: "Next task",
       });
 
-      // Shortcut hint should not be visible initially
+      // Tooltip should not be visible initially
+      expect(screen.queryByText("Next Task")).not.toBeInTheDocument();
       expect(screen.queryByText("k")).not.toBeInTheDocument();
 
-      // Hover over button to show shortcut hint
+      // Hover over button to show tooltip
       await user.hover(nextButton);
 
-      // Wait for shortcut hint to appear
-      await waitFor(() => {
-        expect(screen.getByText("k")).toBeInTheDocument();
-      });
+      // Wait for tooltip to appear with both description and shortcut
+      await waitFor(
+        () => {
+          expect(screen.getByText("Next Task")).toBeInTheDocument();
+          expect(screen.getByText("k")).toBeInTheDocument();
+        },
+        { timeout: 500 },
+      );
     });
 
-    it("hides shortcut hint when mouse leaves complete button", async () => {
+    it("hides tooltip when mouse leaves complete button", async () => {
       const user = userEvent.setup();
       render(
         <FocusedTask
@@ -269,120 +287,25 @@ describe("FocusedTask", () => {
         name: "Mark task as complete",
       });
 
-      // Hover to show shortcut hint
+      // Hover to show tooltip
       await user.hover(completeButton);
-      await waitFor(() => {
-        expect(screen.getByText("Enter")).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByText("Mark Done")).toBeInTheDocument();
+          expect(screen.getByText("Enter")).toBeInTheDocument();
+        },
+        { timeout: 500 },
+      );
 
-      // Move mouse away to hide shortcut hint
+      // Move mouse away to hide tooltip
       await user.unhover(completeButton);
-      await waitFor(() => {
-        expect(screen.queryByText("Enter")).not.toBeInTheDocument();
-      });
-    });
-
-    it("shows shortcut hint on focus for complete button", async () => {
-      const user = userEvent.setup();
-      render(
-        <FocusedTask
-          task={mockTask}
-          onCompleteTask={mockOnCompleteTask}
-          onPreviousTask={mockOnPreviousTask}
-          onNextTask={mockOnNextTask}
-        />,
+      await waitFor(
+        () => {
+          expect(screen.queryByText("Mark Done")).not.toBeInTheDocument();
+          expect(screen.queryByText("Enter")).not.toBeInTheDocument();
+        },
+        { timeout: 500 },
       );
-
-      const completeButton = screen.getByRole("button", {
-        name: "Mark task as complete",
-      });
-
-      // Shortcut hint should not be visible initially
-      expect(screen.queryByText("Enter")).not.toBeInTheDocument();
-
-      // Focus on button to show shortcut hint
-      await user.tab();
-      expect(completeButton).toHaveFocus();
-
-      // Wait for shortcut hint to appear
-      await waitFor(() => {
-        expect(screen.getByText("Enter")).toBeInTheDocument();
-      });
-    });
-
-    it("hides shortcut hint when button loses focus", async () => {
-      render(
-        <FocusedTask
-          task={mockTask}
-          onCompleteTask={mockOnCompleteTask}
-          onPreviousTask={mockOnPreviousTask}
-          onNextTask={mockOnNextTask}
-        />,
-      );
-
-      const completeButton = screen.getByRole("button", {
-        name: "Mark task as complete",
-      });
-
-      // Focus to show shortcut hint
-      completeButton.focus();
-      await waitFor(() => {
-        expect(screen.getByText("Enter")).toBeInTheDocument();
-      });
-
-      // Blur to hide shortcut hint
-      completeButton.blur();
-      await waitFor(() => {
-        expect(screen.queryByText("Enter")).not.toBeInTheDocument();
-      });
-    });
-
-    it("shows shortcut hint on focus for previous button", async () => {
-      render(
-        <FocusedTask
-          task={mockTask}
-          onCompleteTask={mockOnCompleteTask}
-          onPreviousTask={mockOnPreviousTask}
-          onNextTask={mockOnNextTask}
-        />,
-      );
-
-      const previousButton = screen.getByRole("button", {
-        name: "Previous task",
-      });
-
-      // Shortcut hint should not be visible initially
-      expect(screen.queryByText("j")).not.toBeInTheDocument();
-
-      // Focus on button to show shortcut hint
-      previousButton.focus();
-      await waitFor(() => {
-        expect(screen.getByText("j")).toBeInTheDocument();
-      });
-    });
-
-    it("shows shortcut hint on focus for next button", async () => {
-      render(
-        <FocusedTask
-          task={mockTask}
-          onCompleteTask={mockOnCompleteTask}
-          onPreviousTask={mockOnPreviousTask}
-          onNextTask={mockOnNextTask}
-        />,
-      );
-
-      const nextButton = screen.getByRole("button", {
-        name: "Next task",
-      });
-
-      // Shortcut hint should not be visible initially
-      expect(screen.queryByText("k")).not.toBeInTheDocument();
-
-      // Focus on button to show shortcut hint
-      nextButton.focus();
-      await waitFor(() => {
-        expect(screen.getByText("k")).toBeInTheDocument();
-      });
     });
   });
 });
