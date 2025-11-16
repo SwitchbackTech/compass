@@ -10,7 +10,6 @@ import {
 } from "@web/views/Day/util/storage.util";
 import { useAvailableTasks } from "../hooks/useAvailableTasks";
 import { useFocusedTask } from "../hooks/useFocusedTask";
-import { useTaskFocus } from "../hooks/useTaskFocus";
 import { useNowShortcuts } from "../shortcuts/useNowShortcuts";
 
 interface NowViewContextValue {
@@ -33,14 +32,8 @@ interface NowViewProviderProps {
 
 export function NowViewProvider({ children }: NowViewProviderProps) {
   const navigate = useNavigate();
-  const { focusedTask, setFocusedTask } = useFocusedTask();
   const { availableTasks, hasCompletedTasks } = useAvailableTasks();
-
-  useTaskFocus({
-    focusedTask,
-    availableTasks,
-    setFocusedTask,
-  });
+  const { focusedTask, setFocusedTask } = useFocusedTask({ availableTasks });
 
   const handlePreviousTask = useCallback(() => {
     if (!focusedTask || availableTasks.length === 0) return;

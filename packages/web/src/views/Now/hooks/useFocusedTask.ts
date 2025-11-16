@@ -1,14 +1,20 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Task } from "@web/views/Day/task.types";
 import {
   getTodayDateKey,
   loadTasksFromStorage,
 } from "@web/views/Day/util/storage.util";
 
-export function useFocusedTask() {
+interface UseFocusedTaskOptions {
+  availableTasks?: Task[];
+}
+
+export function useFocusedTask({
+  availableTasks = [],
+}: UseFocusedTaskOptions = {}) {
   const [focusedTask, setFocusedTaskState] = useState<Task | null>(null);
 
-  const setFocusedTask = (taskId: string | null) => {
+  const setFocusedTask = useCallback((taskId: string | null) => {
     if (taskId === null) {
       setFocusedTaskState(null);
       return;
@@ -30,7 +36,13 @@ export function useFocusedTask() {
 
     // Task not found
     setFocusedTaskState(null);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!focusedTask && availableTasks.length > 0) {
+      setFocusedTask(availableTasks[0].id);
+    }
+  }, [focusedTask, availableTasks, setFocusedTask]);
 
   return {
     focusedTask,
