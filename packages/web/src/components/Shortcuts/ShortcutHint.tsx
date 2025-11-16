@@ -1,11 +1,11 @@
-import React from "react";
+import { HTMLProps, ReactNode } from "react";
 
 export function ShortcutHint({
   children,
   title,
   className = "",
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   title?: string;
   className?: string;
 }) {
@@ -22,3 +22,22 @@ export function ShortcutHint({
     </span>
   );
 }
+
+interface LegacyProps extends HTMLProps<HTMLDivElement> {
+  children?: ReactNode;
+}
+
+export const LegacyShortcutHint = ({
+  children,
+  className = "",
+  ...props
+}: LegacyProps) => {
+  return (
+    <div
+      className={`border-bg-primary bg-fg-primary flex rounded border px-2.5 py-[5px] ${className}`}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+};

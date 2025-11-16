@@ -1,10 +1,10 @@
 import React, { ReactNode, useEffect, useRef, useState } from "react";
+import { LegacyShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@web/components/Tooltip";
-import { FormattedShortcutTip } from "@web/components/Tooltip/FormattedShortcutTip";
 import { useMenuContext } from "./ActionsMenu";
 import { StyledMenuItem } from "./styled";
 
@@ -94,7 +94,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
         </StyledMenuItem>
       </TooltipTrigger>
       <TooltipContent>
-        <FormattedShortcutTip>{tooltipContent}</FormattedShortcutTip>
+        <LegacyShortcutHint>{tooltipContent}</LegacyShortcutHint>
       </TooltipContent>
     </Tooltip>
   );

@@ -4,11 +4,7 @@ interface Props extends HTMLProps<HTMLDivElement> {
   children?: ReactNode;
 }
 
-export const FormattedShortcutTip = ({
-  children,
-  className = "",
-  ...props
-}: Props) => {
+export const ShortcutHint = ({ children, className = "", ...props }: Props) => {
   return (
     <div
       className={`border-bg-primary bg-fg-primary flex rounded border px-2.5 py-[5px] ${className}`}
