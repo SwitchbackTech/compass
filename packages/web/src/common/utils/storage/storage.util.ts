@@ -1,7 +1,7 @@
 import dayjs from "@core/util/date/dayjs";
 import { Task, isTask } from "@web/common/types/task.types";
 
-const STORAGE_KEY_PREFIX = "compass.today.tasks";
+export const TODAY_TASKS_STORAGE_KEY_PREFIX = "compass.today.tasks";
 const STORAGE_INFO_SEEN_KEY = "compass.day.storage-info-seen";
 export const COMPASS_TASKS_SAVED_EVENT_NAME = "compass.tasks.saved" as const;
 
@@ -25,7 +25,7 @@ export function getTodayDateKey(): string {
 }
 
 export function getStorageKey(dateKey: string): string {
-  return `${STORAGE_KEY_PREFIX}.${dateKey}`;
+  return `${TODAY_TASKS_STORAGE_KEY_PREFIX}.${dateKey}`;
 }
 
 export function loadTasksFromStorage(dateKey: string): Task[] {
@@ -68,6 +68,25 @@ export function saveTasksToStorage(dateKey: string, tasks: Task[]): void {
   } catch (error) {
     console.error("Error saving tasks to localStorage:", error);
   }
+}
+
+export function loadTodayTasks(): Task[] {
+  const dateKey = getTodayDateKey();
+  return loadTasksFromStorage(dateKey);
+}
+
+export function updateTasksForDate(
+  dateKey: string,
+  updater: (tasks: Task[]) => Task[],
+): Task[] {
+  const updatedTasks = updater(loadTasksFromStorage(dateKey));
+  saveTasksToStorage(dateKey, updatedTasks);
+  return updatedTasks;
+}
+
+export function updateTodayTasks(updater: (tasks: Task[]) => Task[]): Task[] {
+  const dateKey = getTodayDateKey();
+  return updateTasksForDate(dateKey, updater);
 }
 
 export function moveTaskToDate(
