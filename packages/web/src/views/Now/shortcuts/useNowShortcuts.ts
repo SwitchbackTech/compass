@@ -55,11 +55,11 @@ export function useNowShortcuts(props?: Props) {
           e.preventDefault();
           onNextTask?.();
         },
-        Enter: (e) => {
+        enter: (e) => {
           e.preventDefault();
           onCompleteTask?.();
         },
-        Escape: (e) => {
+        escape: (e) => {
           e.preventDefault();
           navigate(ROOT_ROUTES.DAY);
         },
@@ -85,17 +85,7 @@ export function useNowShortcuts(props?: Props) {
         }
       }
 
-      // Use the handler mapping instead of switch statement
-      // Handle case insensitive keys by normalizing to lowercase for most keys
-      const normalizedKey =
-        key === "escape"
-          ? "Escape"
-          : key === "enter"
-            ? "Enter"
-            : key === "delete"
-              ? "Delete"
-              : key;
-      const handler = handlers[normalizedKey as NowViewShortcutKey];
+      const handler = handlers[key as NowViewShortcutKey];
       if (handler) {
         handler(e);
       }
