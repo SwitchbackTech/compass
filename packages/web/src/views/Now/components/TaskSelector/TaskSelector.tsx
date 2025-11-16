@@ -57,13 +57,6 @@ export const TaskSelector = () => {
     setFocusedTask(availableTasks[nextIndex].id);
   };
 
-  useNowShortcuts({
-    focusedTask,
-    availableTasks,
-    onPreviousTask: handlePreviousTask,
-    onNextTask: handleNextTask,
-  });
-
   const handleCompleteTask = () => {
     if (!focusedTask) return;
 
@@ -127,6 +120,14 @@ export const TaskSelector = () => {
       }
     }
   };
+
+  useNowShortcuts({
+    focusedTask,
+    availableTasks,
+    onPreviousTask: handlePreviousTask,
+    onNextTask: handleNextTask,
+    onCompleteTask: handleCompleteTask,
+  });
 
   if (focusedTask) {
     return (

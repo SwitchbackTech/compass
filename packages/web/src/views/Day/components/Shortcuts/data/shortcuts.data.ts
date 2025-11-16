@@ -80,7 +80,7 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
     nowShortcuts = [
       { k: "j", label: "Previous task" },
       { k: "k", label: "Next task" },
-      { k: "Enter", label: "Complete focused task" },
+      { k: "Enter", label: "Mark complete" },
       { k: "Esc", label: "Back to Today" },
     ];
   }

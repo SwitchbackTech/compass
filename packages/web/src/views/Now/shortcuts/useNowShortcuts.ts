@@ -10,6 +10,7 @@ interface Props {
   availableTasks?: Task[];
   onPreviousTask?: () => void;
   onNextTask?: () => void;
+  onCompleteTask?: () => void;
 }
 
 /**
@@ -23,6 +24,7 @@ export function useNowShortcuts(props?: Props) {
     availableTasks = [],
     onPreviousTask,
     onNextTask,
+    onCompleteTask,
   } = props || {};
 
   // Define strongly-typed handler mapping
@@ -53,8 +55,16 @@ export function useNowShortcuts(props?: Props) {
           e.preventDefault();
           onNextTask?.();
         },
+        Enter: (e) => {
+          e.preventDefault();
+          onCompleteTask?.();
+        },
+        Escape: (e) => {
+          e.preventDefault();
+          navigate(ROOT_ROUTES.DAY);
+        },
       }),
-      [navigate, onPreviousTask, onNextTask],
+      [navigate, onPreviousTask, onNextTask, onCompleteTask],
     );
 
   const handleKeyDown = useCallback(
@@ -68,7 +78,7 @@ export function useNowShortcuts(props?: Props) {
       }
 
       // For task shortcuts (j, k), only handle if task props are provided and conditions are met
-      const isTaskShortcut = key === "j" || key === "k";
+      const isTaskShortcut = key === "j" || key === "k" || key === "enter";
       if (isTaskShortcut) {
         if (!focusedTask || availableTasks.length === 0) {
           return;

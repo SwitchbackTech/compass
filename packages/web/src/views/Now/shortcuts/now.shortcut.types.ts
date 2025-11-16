@@ -4,6 +4,8 @@ export const NOW_VIEW_SHORTCUT_KEYS = {
   ...GLOBAL_SHORTCUT_KEYS,
   j: "j",
   k: "k",
+  Enter: "Enter",
+  Escape: "Escape",
 } as const;
 
 // Infer Now view shortcut key type from constant

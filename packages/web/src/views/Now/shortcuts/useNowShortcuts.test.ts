@@ -124,6 +124,22 @@ describe("useNowShortcuts", () => {
       expect(mockNavigate).toHaveBeenCalledWith("/");
     });
 
+    it("should navigate to Day when 'Escape' is pressed", () => {
+      renderHook(() => useNowShortcuts());
+
+      const keydownHandler = mockAddEventListener.mock.calls[0][1];
+      const mockEvent = {
+        key: "Escape",
+        preventDefault: jest.fn(),
+        target: document.createElement("div"),
+      };
+
+      keydownHandler(mockEvent);
+
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(mockNavigate).toHaveBeenCalledWith("/day");
+    });
+
     it("should not handle unknown keys", () => {
       renderHook(() => useNowShortcuts());
 
@@ -147,6 +163,7 @@ describe("useNowShortcuts", () => {
       availableTasks: [mockTask1, mockTask2],
       onPreviousTask: jest.fn(),
       onNextTask: jest.fn(),
+      onCompleteTask: jest.fn(),
     };
 
     it("should call onPreviousTask when 'j' is pressed", () => {
@@ -273,6 +290,43 @@ describe("useNowShortcuts", () => {
       expect(props.onPreviousTask).toHaveBeenCalled();
       expect(mockEvent.preventDefault).toHaveBeenCalled();
     });
+
+    it("should call onCompleteTask when 'Enter' is pressed", () => {
+      const props = { ...defaultProps };
+      renderHook(() => useNowShortcuts(props));
+
+      const keydownHandler = mockAddEventListener.mock.calls[0][1];
+      const mockEvent = {
+        key: "Enter",
+        preventDefault: jest.fn(),
+        target: document.createElement("div"),
+      };
+
+      keydownHandler(mockEvent);
+
+      expect(props.onCompleteTask).toHaveBeenCalled();
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+    });
+
+    it("should not handle Enter shortcut when there is no focused task", () => {
+      const props = {
+        ...defaultProps,
+        focusedTask: null,
+      };
+      renderHook(() => useNowShortcuts(props));
+
+      const keydownHandler = mockAddEventListener.mock.calls[0][1];
+      const mockEvent = {
+        key: "Enter",
+        preventDefault: jest.fn(),
+        target: document.createElement("div"),
+      };
+
+      keydownHandler(mockEvent);
+
+      expect(props.onCompleteTask).not.toHaveBeenCalled();
+      expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+    });
   });
 
   describe("editable element handling", () => {
@@ -281,6 +335,7 @@ describe("useNowShortcuts", () => {
       availableTasks: [mockTask1, mockTask2],
       onPreviousTask: jest.fn(),
       onNextTask: jest.fn(),
+      onCompleteTask: jest.fn(),
     };
 
     it("should not handle shortcuts when typing in input elements", () => {

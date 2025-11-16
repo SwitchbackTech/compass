@@ -123,7 +123,7 @@ describe("shortcuts.data", () => {
       expect(shortcuts.nowShortcuts[1]).toEqual({ k: "k", label: "Next task" });
       expect(shortcuts.nowShortcuts[2]).toEqual({
         k: "Enter",
-        label: "Complete focused task",
+        label: "Mark complete",
       });
       expect(shortcuts.nowShortcuts[3]).toEqual({
         k: "Esc",
