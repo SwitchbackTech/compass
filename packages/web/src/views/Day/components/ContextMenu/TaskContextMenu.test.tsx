@@ -78,7 +78,7 @@ describe("TaskContextMenu", () => {
     await waitFor(() => {
       const deleteMenuItem = screen.getByText("Delete Task");
       expect(deleteMenuItem).toBeInTheDocument();
-      expect(deleteMenuItem.closest("li")).toHaveClass("cursor-pointer");
+      expect(deleteMenuItem.closest("button")).toHaveClass("cursor-pointer");
     });
   });
 
