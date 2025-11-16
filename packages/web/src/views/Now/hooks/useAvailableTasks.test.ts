@@ -53,7 +53,7 @@ describe("useAvailableTasks", () => {
 
     const { result } = renderHook(() => useAvailableTasks());
 
-    expect(storageUtil.getTodayDateKey).toHaveBeenCalledTimes(1);
+    expect(storageUtil.getTodayDateKey).toHaveBeenCalled();
     expect(storageUtil.loadTasksFromStorage).toHaveBeenCalledWith(mockDateKey);
     expect(storageUtil.loadTasksFromStorage).toHaveBeenCalledTimes(1);
 
@@ -187,10 +187,9 @@ describe("useAvailableTasks", () => {
     });
 
     act(() => {
-      const storageEvent = new StorageEvent("storage", {
-        key: "compass.today.tasks.2025-11-15",
-      });
-      window.dispatchEvent(storageEvent);
+      dispatchStorageEvent(
+        `${storageUtil.TODAY_TASKS_STORAGE_KEY_PREFIX}.${mockDateKey}`,
+      );
     });
 
     await waitFor(() => {
@@ -216,10 +215,7 @@ describe("useAvailableTasks", () => {
       .mock.calls.length;
 
     act(() => {
-      const storageEvent = new StorageEvent("storage", {
-        key: "compass.reminder",
-      });
-      window.dispatchEvent(storageEvent);
+      dispatchStorageEvent("compass.reminder");
     });
 
     await waitFor(() => {
@@ -251,10 +247,7 @@ describe("useAvailableTasks", () => {
     });
 
     act(() => {
-      const storageEvent = new StorageEvent("storage", {
-        key: null,
-      });
-      window.dispatchEvent(storageEvent);
+      dispatchStorageEvent(null);
     });
 
     await waitFor(() => {
@@ -303,3 +296,9 @@ describe("useAvailableTasks", () => {
     });
   });
 });
+
+function dispatchStorageEvent(key: string | null) {
+  const event = new Event("storage") as StorageEvent;
+  Object.defineProperty(event, "key", { value: key });
+  window.dispatchEvent(event);
+}

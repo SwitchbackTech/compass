@@ -25,6 +25,7 @@ jest.mock("@web/common/utils/storage/storage.util", () => ({
   getTodayDateKey: jest.fn(),
   loadTasksFromStorage: jest.fn(),
   saveTasksToStorage: jest.fn(),
+  updateTodayTasks: jest.fn(),
 }));
 
 const mockUseFocusedTask = useFocusedTask as jest.MockedFunction<
@@ -84,6 +85,9 @@ describe("TaskSelector", () => {
     (storageUtil.getTodayDateKey as jest.Mock).mockReturnValue(mockDateKey);
     (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(mockTasks);
     (storageUtil.saveTasksToStorage as jest.Mock).mockImplementation(() => {});
+    (storageUtil.updateTodayTasks as jest.Mock).mockImplementation(
+      () => mockTasks,
+    );
 
     // Use fake timers to control the current time
     jest.useFakeTimers();
@@ -284,7 +288,13 @@ describe("TaskSelector", () => {
         allTasks: tasks,
         hasCompletedTasks: false,
       });
-      (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(tasks);
+      let lastUpdatedTasks: Task[] = [];
+      (storageUtil.updateTodayTasks as jest.Mock).mockImplementation(
+        (updater: (taskList: Task[]) => Task[]) => {
+          lastUpdatedTasks = updater(tasks);
+          return lastUpdatedTasks;
+        },
+      );
 
       renderWithNowProvider(<TaskSelector />);
 
@@ -293,33 +303,10 @@ describe("TaskSelector", () => {
       });
       await user.click(checkButton);
 
-      // Verify task was marked as completed
-      expect(storageUtil.loadTasksFromStorage).toHaveBeenCalledWith(
-        mockDateKey,
-      );
-      expect(storageUtil.saveTasksToStorage).toHaveBeenCalledWith(
-        mockDateKey,
-        expect.arrayContaining([
-          expect.objectContaining({
-            id: "task-1",
-            status: "completed",
-          }),
-        ]),
-      );
-
-      // Verify task was marked as completed and next task was focused
-      expect(storageUtil.loadTasksFromStorage).toHaveBeenCalledWith(
-        mockDateKey,
-      );
-      expect(storageUtil.saveTasksToStorage).toHaveBeenCalledWith(
-        mockDateKey,
-        expect.arrayContaining([
-          expect.objectContaining({
-            id: "task-1",
-            status: "completed",
-          }),
-        ]),
-      );
+      expect(storageUtil.updateTodayTasks).toHaveBeenCalledTimes(1);
+      expect(
+        lastUpdatedTasks.find((task) => task.id === "task-1")?.status,
+      ).toBe("completed");
       expect(mockSetFocusedTask).toHaveBeenCalledWith("task-2");
     });
 
@@ -349,7 +336,13 @@ describe("TaskSelector", () => {
         allTasks: tasks,
         hasCompletedTasks: false,
       });
-      (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(tasks);
+      let lastUpdatedTasks: Task[] = [];
+      (storageUtil.updateTodayTasks as jest.Mock).mockImplementation(
+        (updater: (taskList: Task[]) => Task[]) => {
+          lastUpdatedTasks = updater(tasks);
+          return lastUpdatedTasks;
+        },
+      );
 
       renderWithNowProvider(<TaskSelector />);
 
@@ -358,27 +351,10 @@ describe("TaskSelector", () => {
       });
       await user.click(checkButton);
 
-      // Verify task was marked as completed
-      expect(storageUtil.saveTasksToStorage).toHaveBeenCalledWith(
-        mockDateKey,
-        expect.arrayContaining([
-          expect.objectContaining({
-            id: "task-2",
-            status: "completed",
-          }),
-        ]),
-      );
-
-      // Verify task was marked as completed and previous task was focused
-      expect(storageUtil.saveTasksToStorage).toHaveBeenCalledWith(
-        mockDateKey,
-        expect.arrayContaining([
-          expect.objectContaining({
-            id: "task-2",
-            status: "completed",
-          }),
-        ]),
-      );
+      expect(storageUtil.updateTodayTasks).toHaveBeenCalledTimes(1);
+      expect(
+        lastUpdatedTasks.find((task) => task.id === "task-2")?.status,
+      ).toBe("completed");
       expect(mockSetFocusedTask).toHaveBeenCalledWith("task-1");
     });
 
@@ -402,7 +378,13 @@ describe("TaskSelector", () => {
         allTasks: tasks,
         hasCompletedTasks: false,
       });
-      (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(tasks);
+      let lastUpdatedTasks: Task[] = [];
+      (storageUtil.updateTodayTasks as jest.Mock).mockImplementation(
+        (updater: (taskList: Task[]) => Task[]) => {
+          lastUpdatedTasks = updater(tasks);
+          return lastUpdatedTasks;
+        },
+      );
 
       renderWithNowProvider(<TaskSelector />);
 
@@ -411,27 +393,10 @@ describe("TaskSelector", () => {
       });
       await user.click(checkButton);
 
-      // Verify task was marked as completed
-      expect(storageUtil.saveTasksToStorage).toHaveBeenCalledWith(
-        mockDateKey,
-        expect.arrayContaining([
-          expect.objectContaining({
-            id: "task-1",
-            status: "completed",
-          }),
-        ]),
-      );
-
-      // Verify task was marked as completed and navigation to Day view occurred
-      expect(storageUtil.saveTasksToStorage).toHaveBeenCalledWith(
-        mockDateKey,
-        expect.arrayContaining([
-          expect.objectContaining({
-            id: "task-1",
-            status: "completed",
-          }),
-        ]),
-      );
+      expect(storageUtil.updateTodayTasks).toHaveBeenCalledTimes(1);
+      expect(
+        lastUpdatedTasks.find((task) => task.id === "task-1")?.status,
+      ).toBe("completed");
       expect(mockNavigate).toHaveBeenCalledWith("/day");
     });
 

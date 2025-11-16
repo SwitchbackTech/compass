@@ -2,11 +2,7 @@ import React, { createContext, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { Task } from "@web/common/types/task.types";
-import {
-  getTodayDateKey,
-  loadTasksFromStorage,
-  saveTasksToStorage,
-} from "@web/common/utils/storage/storage.util";
+import { updateTodayTasks } from "@web/common/utils/storage/storage.util";
 import { getIncompleteTasksSorted } from "@web/common/utils/task/sort.task";
 import { useAvailableTasks } from "../hooks/useAvailableTasks";
 import { useFocusedTask } from "../hooks/useFocusedTask";
@@ -34,6 +30,13 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
   const navigate = useNavigate();
   const { availableTasks, hasCompletedTasks } = useAvailableTasks();
   const { focusedTask, setFocusedTask } = useFocusedTask({ availableTasks });
+  const completeFocusedTask = useCallback((taskId: string) => {
+    return updateTodayTasks((tasks) =>
+      tasks.map((task) =>
+        task.id === taskId ? { ...task, status: "completed" as const } : task,
+      ),
+    );
+  }, []);
 
   const handlePreviousTask = useCallback(() => {
     if (!focusedTask || availableTasks.length === 0) return;
@@ -70,57 +73,36 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
   const handleCompleteTask = useCallback(() => {
     if (!focusedTask) return;
 
-    // Find the current task's index in availableTasks before completing it
-    // We need this to determine navigation direction
     const currentTaskIndex = availableTasks.findIndex(
       (task) => task.id === focusedTask.id,
     );
-
-    // Mark the current task as completed
-    const dateKey = getTodayDateKey();
-    const tasks = loadTasksFromStorage(dateKey);
-    const updatedTasks = tasks.map((task) =>
-      task.id === focusedTask.id
-        ? { ...task, status: "completed" as const }
-        : task,
-    );
-    saveTasksToStorage(dateKey, updatedTasks);
-
-    // Filter incomplete tasks from updatedTasks (same logic as useAvailableTasks)
-    // This ensures we use fresh data instead of stale availableTasks state
+    const updatedTasks = completeFocusedTask(focusedTask.id);
     const incompleteTasks = getIncompleteTasksSorted(updatedTasks);
 
-    // If this was the last task, navigate to Day view
     if (incompleteTasks.length === 0) {
       navigate(ROOT_ROUTES.DAY);
       return;
     }
 
-    // Determine the next task to focus using the fresh incompleteTasks list
-    // Find the next/previous task by ID from availableTasks, then locate it in incompleteTasks
-    // This ensures we use the correct navigation direction regardless of array order differences
-    let nextTaskToFocus: Task | undefined;
-    if (currentTaskIndex >= 0 && currentTaskIndex < availableTasks.length - 1) {
-      // Next task exists in availableTasks - find it in incompleteTasks
-      const nextTaskId = availableTasks[currentTaskIndex + 1].id;
-      nextTaskToFocus = incompleteTasks.find((task) => task.id === nextTaskId);
-    } else if (currentTaskIndex > 0) {
-      // Previous task exists (we were at the end, go to previous)
-      const previousTaskId = availableTasks[currentTaskIndex - 1].id;
-      nextTaskToFocus = incompleteTasks.find(
-        (task) => task.id === previousTaskId,
-      );
+    const nextTask = getNextTaskAfterCompletion({
+      availableTasks,
+      incompleteTasks,
+      currentTaskIndex,
+    });
+
+    if (nextTask) {
+      setFocusedTask(nextTask.id);
+      return;
     }
 
-    if (nextTaskToFocus) {
-      setFocusedTask(nextTaskToFocus.id);
-    } else if (incompleteTasks.length > 0) {
-      // Fallback: focus on the first available task
-      setFocusedTask(incompleteTasks[0].id);
-    } else {
-      setFocusedTask(null);
-    }
-  }, [focusedTask, availableTasks, navigate, setFocusedTask]);
+    setFocusedTask(incompleteTasks[0].id);
+  }, [
+    availableTasks,
+    completeFocusedTask,
+    focusedTask,
+    navigate,
+    setFocusedTask,
+  ]);
 
   // Single call to useNowShortcuts at provider level
   useNowShortcuts({
@@ -144,4 +126,28 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
   return (
     <NowViewContext.Provider value={value}>{children}</NowViewContext.Provider>
   );
+}
+
+interface NextTaskParams {
+  availableTasks: Task[];
+  incompleteTasks: Task[];
+  currentTaskIndex: number;
+}
+
+function getNextTaskAfterCompletion({
+  availableTasks,
+  incompleteTasks,
+  currentTaskIndex,
+}: NextTaskParams): Task | null {
+  if (currentTaskIndex >= 0 && currentTaskIndex < availableTasks.length - 1) {
+    const nextTaskId = availableTasks[currentTaskIndex + 1].id;
+    return incompleteTasks.find((task) => task.id === nextTaskId) ?? null;
+  }
+
+  if (currentTaskIndex > 0) {
+    const previousTaskId = availableTasks[currentTaskIndex - 1].id;
+    return incompleteTasks.find((task) => task.id === previousTaskId) ?? null;
+  }
+
+  return incompleteTasks[0] ?? null;
 }
