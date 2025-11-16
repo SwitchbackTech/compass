@@ -2,10 +2,11 @@ import { useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { ShortcutsOverlay } from "@web/components/Shortcuts/ShortcutsOverlay";
 import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { Agenda } from "../components/Agenda/Agenda";
-import { ShortcutsOverlay } from "../components/Shortcuts/components/ShortcutsOverlay";
+import { getShortcuts } from "../components/Shortcuts/data/shortcuts.data";
 import { StorageInfoModal } from "../components/StorageInfoModal/StorageInfoModal";
 import { TaskList } from "../components/TaskList/TaskList";
 import { useStorageInfoModal } from "../context/StorageInfoModalContext";
@@ -34,6 +35,7 @@ export const DayViewContent = () => {
 
   const navigate = useNavigate();
   const dateInView = useDateInView();
+  const shortcuts = getShortcuts({ currentDate: dateInView });
   const events = useAppSelector(selectDayEvents);
   const scrollToNowLineRef = useRef<() => void>();
   useDayEvents(dateInView);
@@ -130,7 +132,15 @@ export const DayViewContent = () => {
   return (
     <>
       <div className="flex h-screen w-full items-center justify-center gap-8 overflow-hidden px-6 py-8">
-        <ShortcutsOverlay />
+        <ShortcutsOverlay
+          sections={[
+            { title: "Home", shortcuts: shortcuts.homeShortcuts },
+            { title: "Tasks", shortcuts: shortcuts.dayTaskShortcuts },
+            { title: "Calendar", shortcuts: shortcuts.dayAgendaShortcuts },
+            { title: "Now", shortcuts: shortcuts.nowShortcuts },
+            { title: "Global", shortcuts: shortcuts.global },
+          ]}
+        />
         <TaskList />
 
         <Agenda onScrollToNowLineReady={handleScrollToNowLineReady} />

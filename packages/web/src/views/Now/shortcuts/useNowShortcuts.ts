@@ -40,7 +40,7 @@ export function useNowShortcuts(props?: Props) {
         },
         "3": (e) => {
           e.preventDefault();
-          // For now, navigate to root (week view not implemented yet)
+          // Root route is currently the week view
           navigate(ROOT_ROUTES.ROOT);
         },
 

@@ -9,7 +9,7 @@ import {
   useRole,
 } from "@floating-ui/react";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { ShortcutHint } from "@web/views/Day/components/Shortcuts/components/ShortcutHint";
+import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 
 interface SelectViewProps {
   displayLabel?: string;
