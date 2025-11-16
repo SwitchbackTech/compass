@@ -21,6 +21,7 @@ jest.mock("@web/views/Now/hooks/useAvailableTasks");
 jest.mock("@web/views/Day/util/storage.util", () => ({
   ...jest.requireActual("@web/views/Day/util/storage.util"),
   getDateKey: jest.fn(),
+  getTodayDateKey: jest.fn(),
   loadTasksFromStorage: jest.fn(),
   saveTasksToStorage: jest.fn(),
 }));
@@ -59,6 +60,7 @@ describe("TaskSelector", () => {
     mockNavigate.mockClear();
     mockSetFocusedTask.mockClear();
     (storageUtil.getDateKey as jest.Mock).mockReturnValue(mockDateKey);
+    (storageUtil.getTodayDateKey as jest.Mock).mockReturnValue(mockDateKey);
     (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(mockTasks);
     (storageUtil.saveTasksToStorage as jest.Mock).mockImplementation(() => {});
 

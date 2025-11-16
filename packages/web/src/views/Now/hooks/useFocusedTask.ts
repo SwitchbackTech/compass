@@ -1,8 +1,7 @@
 import { useState } from "react";
-import dayjs from "@core/util/date/dayjs";
 import { Task } from "@web/views/Day/task.types";
 import {
-  getDateKey,
+  getTodayDateKey,
   loadTasksFromStorage,
 } from "@web/views/Day/util/storage.util";
 
@@ -16,8 +15,7 @@ export function useFocusedTask() {
     }
 
     // Find the task to ensure it exists (today only)
-    const today = dayjs().utc();
-    const dateKey = getDateKey(today.toDate());
+    const dateKey = getTodayDateKey();
     const tasks = loadTasksFromStorage(dateKey);
     const task = tasks.find((t) => t.id === taskId);
     if (task) {

@@ -8,6 +8,7 @@ jest.mock("@web/views/Day/util/storage.util", () => ({
   ...jest.requireActual("@web/views/Day/util/storage.util"),
   loadTasksFromStorage: jest.fn(),
   getDateKey: jest.fn(),
+  getTodayDateKey: jest.fn(),
 }));
 
 describe("useFocusedTask", () => {
@@ -17,6 +18,7 @@ describe("useFocusedTask", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (storageUtil.getDateKey as jest.Mock).mockReturnValue(mockDateKey);
+    (storageUtil.getTodayDateKey as jest.Mock).mockReturnValue(mockDateKey);
     (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue([]);
 
     // Use fake timers to control the current time
@@ -55,7 +57,7 @@ describe("useFocusedTask", () => {
 
     await waitFor(() => {
       expect(result.current.focusedTask).toEqual(mockTask);
-      expect(storageUtil.getDateKey).toHaveBeenCalledWith(mockToday.toDate());
+      expect(storageUtil.getTodayDateKey).toHaveBeenCalledTimes(1);
       expect(storageUtil.loadTasksFromStorage).toHaveBeenCalledWith(
         mockDateKey,
       );

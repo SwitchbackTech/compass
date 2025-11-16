@@ -7,6 +7,7 @@ import {
   COMPASS_TASKS_SAVED_EVENT_NAME,
   CompassTasksSavedEvent,
   getDateKey,
+  getTodayDateKey,
   loadTasksFromStorage,
 } from "@web/views/Day/util/storage.util";
 
@@ -32,8 +33,7 @@ export function useAvailableTasks() {
   useEffect(() => {
     if (useContextTasks && taskContext) {
       // Use tasks from context (for tests and when used within TaskProvider)
-      const today = dayjs().utc();
-      const dateKey = getDateKey(today.toDate());
+      const dateKey = getTodayDateKey();
       const contextTasks = taskContext.tasks;
 
       // Filter tasks for today only
@@ -47,8 +47,7 @@ export function useAvailableTasks() {
     } else {
       // Fall back to localStorage (for production use outside TaskProvider)
       const loadAvailableTasks = () => {
-        const today = dayjs().utc();
-        const dateKey = getDateKey(today.toDate());
+        const dateKey = getTodayDateKey();
         const tasks = loadTasksFromStorage(dateKey);
         processTasks(tasks);
       };
@@ -64,8 +63,7 @@ export function useAvailableTasks() {
 
       // Listen for custom event (same-tab synchronization)
       const handleTasksSaved = (e: CompassTasksSavedEvent) => {
-        const today = dayjs().utc();
-        const todayDateKey = getDateKey(today.toDate());
+        const todayDateKey = getTodayDateKey();
         // Only reload if the saved tasks are for today
         if (e.detail.dateKey === todayDateKey) {
           loadAvailableTasks();

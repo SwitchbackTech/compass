@@ -1,9 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import dayjs from "@core/util/date/dayjs";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { getIncompleteTasksSorted } from "@web/views/Day/util/sort.task";
 import {
-  getDateKey,
+  getTodayDateKey,
   loadTasksFromStorage,
   saveTasksToStorage,
 } from "@web/views/Day/util/storage.util";
@@ -75,8 +74,7 @@ export const TaskSelector = () => {
     );
 
     // Mark the current task as completed
-    const today = dayjs().utc();
-    const dateKey = getDateKey(today.toDate());
+    const dateKey = getTodayDateKey();
     const tasks = loadTasksFromStorage(dateKey);
     const updatedTasks = tasks.map((task) =>
       task.id === focusedTask.id

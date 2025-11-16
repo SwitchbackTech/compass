@@ -19,6 +19,11 @@ export function getDateKey(date: Date): string {
   return dayjs(date).utc().format("YYYY-MM-DD");
 }
 
+export function getTodayDateKey(): string {
+  const todayUTC = dayjs().startOf("day").utc();
+  return getDateKey(todayUTC.toDate());
+}
+
 export function getStorageKey(dateKey: string): string {
   return `${STORAGE_KEY_PREFIX}.${dateKey}`;
 }
