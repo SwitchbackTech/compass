@@ -7,7 +7,7 @@ import {
   TooltipTrigger,
 } from "@web/components/Tooltip";
 import { Flex } from "../Flex";
-import { TooltipDescription } from "./Description";
+import { TooltipDescription } from "./Description/TooltipDescription";
 import { StyledShortcutTip } from "./styled";
 
 export interface Props {

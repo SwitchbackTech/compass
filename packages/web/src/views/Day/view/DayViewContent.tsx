@@ -2,7 +2,7 @@ import { useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { ShortcutsOverlay } from "@web/components/Shortcuts/ShortcutsOverlay";
+import { ShortcutsOverlay } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
 import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { getShortcuts } from "../../../common/utils/shortcut/data/shortcuts.data";

@@ -8,7 +8,7 @@ import {
 import { FloatingPortal, useMergeRefs } from "@floating-ui/react";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { StyledShortcutTip } from "./styled";
-import { TooltipOptions } from "./types";
+import { TooltipOptions } from "./tooltip.types";
 import { TooltipContext, useTooltip, useTooltipContext } from "./useTooltip";
 
 export function Tooltip({

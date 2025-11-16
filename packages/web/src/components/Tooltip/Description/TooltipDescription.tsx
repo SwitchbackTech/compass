@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import { FC } from "react";
 import { Text } from "@web/components/Text";
 
 interface Props {
