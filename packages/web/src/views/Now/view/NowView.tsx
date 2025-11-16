@@ -1,7 +1,7 @@
 import { ShortcutsOverlay } from "@web/components/Shortcuts/ShortcutsOverlay";
-import { getShortcuts } from "../../common/utils/shortcut/data/shortcuts.data";
-import { NowViewProvider } from "./context/NowViewProvider";
-import { NowViewContent } from "./view/NowViewContent";
+import { getShortcuts } from "../../../common/utils/shortcut/data/shortcuts.data";
+import { NowViewProvider } from "../context/NowViewProvider";
+import { NowViewContent } from "./NowViewContent";
 
 export const NowView = () => {
   // Get shortcuts for the Now view
