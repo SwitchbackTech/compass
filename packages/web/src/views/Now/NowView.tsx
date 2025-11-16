@@ -1,5 +1,5 @@
 import { ShortcutsOverlay } from "@web/components/Shortcuts/ShortcutsOverlay";
-import { getShortcuts } from "../Day/components/Shortcuts/data/shortcuts.data";
+import { getShortcuts } from "../../common/utils/shortcut/data/shortcuts.data";
 import { NowViewProvider } from "./context/NowViewProvider";
 import { NowViewContent } from "./view/NowViewContent";
 
