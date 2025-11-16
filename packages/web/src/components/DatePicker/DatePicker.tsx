@@ -1,7 +1,6 @@
 import classNames from "classnames";
 import React, { useEffect, useRef } from "react";
 import ReactDatePicker, { ReactDatePickerProps } from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import { darken, isDark } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
