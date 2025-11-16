@@ -33,23 +33,6 @@
   --color-text-dark: hsl(222 28 7);
   --color-text-dark-placeholder: hsl(219 8 46 / 90.2%);
 
-  /* Raw colors - blue */
-  /* Do NOT use these anymore - use the semantic colors instead */
-  --color-blue-200: hsl(196 60 59);
-
-  /* Raw colors - gray */
-  --color-gray-900: hsl(0 0 0 / 50.2%);
-  --color-gray-800: hsl(219 18 34 / 20%);
-  --color-gray-700: hsl(219 18 34 / 25.1%);
-  --color-gray-600: hsl(219 8 46 / 20%);
-  --color-gray-500: hsl(219 8 46 / 20%);
-  --color-gray-400: hsl(221 9 37);
-  --color-gray-300: hsl(219 8 46 / 90.2%);
-  --color-gray-200: hsl(208 13 71 / 54.9%);
-
-  /* Raw colors - white */
-  --color-white-100: hsl(0 0 100);
-
   /* Font sizes */
   --font-size-xs: 0.563rem;
   --font-size-s: 0.688rem;
@@ -63,4 +46,20 @@
 
   /* Border radius */
   --radius-default: 4px;
+
+  /**
+  * Raw colors 
+  * Do NOT use these anymore - use the semantic colors instead
+  * https://github.com/SwitchbackTech/compass/issues/1265
+  */
+  --color-blue-200: hsl(196 60 59);
+  --color-gray-900: hsl(0 0 0 / 50.2%);
+  --color-gray-800: hsl(219 18 34 / 20%);
+  --color-gray-700: hsl(219 18 34 / 25.1%);
+  --color-gray-600: hsl(219 8 46 / 20%);
+  --color-gray-500: hsl(219 8 46 / 20%);
+  --color-gray-400: hsl(221 9 37);
+  --color-gray-300: hsl(219 8 46 / 90.2%);
+  --color-gray-200: hsl(208 13 71 / 54.9%);
+  --color-white-100: hsl(0 0 100);
 }
