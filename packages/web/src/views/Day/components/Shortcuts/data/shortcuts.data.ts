@@ -1,30 +1,6 @@
 import dayjs from "@core/util/date/dayjs";
 import { Shortcut } from "@web/common/types/global.shortcut.types";
 
-// Define all possible shortcut keys as a const object for type safety
-export const SHORTCUT_KEYS = {
-  // Global shortcuts
-  "1": "1",
-  "2": "2",
-  "3": "3",
-  // Navigation shortcuts
-  j: "j",
-  k: "k",
-  t: "t",
-  // Task shortcuts
-  u: "u",
-  c: "c",
-  e: "e",
-  Delete: "Delete",
-  Enter: "Enter",
-  Escape: "Escape",
-  Esc: "Esc",
-  // Calendar shortcuts
-  i: "i",
-  "↑": "↑",
-  "↓": "↓",
-} as const;
-
 interface ShortcutsConfig {
   isHome?: boolean;
   isToday?: boolean;
