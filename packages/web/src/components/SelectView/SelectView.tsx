@@ -147,7 +147,7 @@ export const SelectView = ({
           })}
           id={dropdownId}
           data-testid="view-select-dropdown"
-          className="inset-inline-end-0 bg-bg-secondary absolute top-full z-50 mt-1 min-w-[140px] rounded border border-gray-600 py-1 shadow-lg"
+          className="inset-inline-end-0 bg-bg-secondary border-border-primary absolute top-full z-50 mt-1 min-w-[140px] rounded border py-1 shadow-lg"
           role="listbox"
         >
           {options.map((option, index) => {
