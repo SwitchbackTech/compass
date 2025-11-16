@@ -29,7 +29,9 @@ export const TooltipWrapper: React.FC<Props> = ({
     <Tooltip open={isTooltipOpen} onOpenChange={setIsTooltipOpen}>
       <TooltipTrigger onClick={onClick}>{children}</TooltipTrigger>
 
-      <TooltipContent className="Tooltip">
+      <TooltipContent
+        className={`${description ? "bg-fg-primary" : ""} rounded p-1`}
+      >
         <Flex alignItems={AlignItems.CENTER}>
           {description && <TooltipDescription description={description} />}
           {shortcut && (

@@ -50,7 +50,6 @@ export const TooltipTrigger = forwardRef<
   return (
     <div
       ref={ref}
-      role="button"
       data-state={context.open ? "open" : "closed"}
       {...context.getReferenceProps(props)}
     >
