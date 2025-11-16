@@ -11,7 +11,7 @@ export const FormattedShortcutTip = ({
 }: Props) => {
   return (
     <div
-      className={`border-bg-primary bg-color-fg-primary flex rounded border px-2.5 py-[5px] ${className}`}
+      className={`border-bg-primary bg-fg-primary flex rounded border px-2.5 py-[5px] ${className}`}
       {...props}
     >
       {children}
