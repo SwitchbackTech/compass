@@ -16,7 +16,10 @@ import { useDateNavigation } from "../hooks/navigation/useDateNavigation";
 import { useDayViewShortcuts } from "../hooks/shortcuts/useDayViewShortcuts";
 import { useTasks } from "../hooks/tasks/useTasks";
 import { focusFirstAgendaEvent } from "../util/agenda/focus.util";
-import { focusOnAddTaskInput, focusOnFirstTask } from "../util/shortcut.util";
+import {
+  focusOnAddTaskInput,
+  focusOnFirstTask,
+} from "../util/day.shortcut.util";
 
 export const DayViewContent = () => {
   const {

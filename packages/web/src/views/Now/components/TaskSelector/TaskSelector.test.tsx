@@ -4,7 +4,7 @@ import { RenderOptions, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import dayjs from "@core/util/date/dayjs";
 import { Task } from "@web/common/types/task.types";
-import * as storageUtil from "@web/views/Day/util/storage.util";
+import * as storageUtil from "@web/common/utils/storage/storage.util";
 import { useAvailableTasks } from "@web/views/Now/hooks/useAvailableTasks";
 import { useFocusedTask } from "@web/views/Now/hooks/useFocusedTask";
 import { NowViewProvider } from "../../context/NowViewProvider";

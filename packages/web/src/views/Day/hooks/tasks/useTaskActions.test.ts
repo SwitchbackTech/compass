@@ -1,8 +1,8 @@
 import dayjs from "dayjs";
 import { act, renderHook } from "@testing-library/react";
 import { Task } from "../../../../common/types/task.types";
+import * as storageUtil from "../../../../common/utils/storage/storage.util";
 import { showMigrationToast } from "../../components/Toasts/MigrationToast/MigrationToast";
-import * as storageUtil from "../../util/storage.util";
 import { useTaskActions } from "./useTaskActions";
 
 jest.mock("../../util/storage.util", () => ({

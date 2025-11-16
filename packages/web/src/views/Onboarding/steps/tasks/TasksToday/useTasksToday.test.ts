@@ -5,7 +5,7 @@ import { Task } from "@web/common/types/task.types";
 import {
   loadTasksFromStorage,
   saveTasksToStorage,
-} from "@web/views/Day/util/storage.util";
+} from "@web/common/utils/storage/storage.util";
 import { useTasksToday } from "./useTasksToday";
 
 // Mock the storage utilities

@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { theme } from "@web/common/styles/theme";
 import { InfoIcon } from "@web/components/Icons/Info";
 import { StyledXIcon } from "@web/components/Icons/X";
-import { markStorageInfoAsSeen } from "../../util/storage.util";
+import { markStorageInfoAsSeen } from "../../../../common/utils/storage/storage.util";
 
 interface StorageInfoModalProps {
   isOpen: boolean;

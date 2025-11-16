@@ -3,7 +3,7 @@ import { Task } from "@web/common/types/task.types";
 import {
   getTodayDateKey,
   loadTasksFromStorage,
-} from "@web/views/Day/util/storage.util";
+} from "@web/common/utils/storage/storage.util";
 
 interface UseFocusedTaskOptions {
   availableTasks?: Task[];

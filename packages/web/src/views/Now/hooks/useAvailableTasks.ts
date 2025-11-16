@@ -1,15 +1,15 @@
 import { useContext, useEffect, useState } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { Task } from "@web/common/types/task.types";
-import { getIncompleteTasksSorted } from "@web/common/utils/task/sort.task";
-import { TaskContext } from "@web/views/Day/context/TaskProvider";
 import {
   COMPASS_TASKS_SAVED_EVENT_NAME,
   CompassTasksSavedEvent,
   getDateKey,
   getTodayDateKey,
   loadTasksFromStorage,
-} from "@web/views/Day/util/storage.util";
+} from "@web/common/utils/storage/storage.util";
+import { getIncompleteTasksSorted } from "@web/common/utils/task/sort.task";
+import { TaskContext } from "@web/views/Day/context/TaskProvider";
 
 export function useAvailableTasks() {
   const [availableTasks, setAvailableTasks] = useState<Task[]>([]);

@@ -6,7 +6,7 @@ import {
   isEditable,
   isFocusedOnTaskCheckbox,
   isFocusedWithinTask,
-} from "../../util/shortcut.util";
+} from "../../util/day.shortcut.util";
 
 interface KeyboardShortcutsConfig {
   // Task management
