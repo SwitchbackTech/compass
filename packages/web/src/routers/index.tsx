@@ -78,7 +78,6 @@ export const router = createBrowserRouter(
     },
     {
       path: "*",
-      element: <NotFoundView />,
       lazy: async () =>
         import(/* webpackChunkName: "not-found" */ "@web/views/NotFound").then(
           (module) => ({
