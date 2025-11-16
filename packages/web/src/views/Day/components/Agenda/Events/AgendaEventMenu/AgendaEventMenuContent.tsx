@@ -21,7 +21,7 @@ export const AgendaEventMenuContent = forwardRef<
   const priority = event.priority || Priorities.UNASSIGNED;
   const priorityColor = colorByPriority[priority];
   const darkPriorityColor = darken(priorityColor);
-  const shouldUseLightText = !isDark(darkPriorityColor);
+  const shouldUseLightText = isDark(darkPriorityColor);
 
   let timeDisplay = "";
   if (!event.isAllDay) {
