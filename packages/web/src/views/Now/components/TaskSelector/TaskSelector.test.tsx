@@ -19,8 +19,8 @@ jest.mock("react-router-dom", () => ({
 
 jest.mock("@web/views/Now/hooks/useFocusedTask");
 jest.mock("@web/views/Now/hooks/useAvailableTasks");
-jest.mock("@web/views/Day/util/storage.util", () => ({
-  ...jest.requireActual("@web/views/Day/util/storage.util"),
+jest.mock("@web/common/utils/storage/storage.util", () => ({
+  ...jest.requireActual("@web/common/utils/storage/storage.util"),
   getDateKey: jest.fn(),
   getTodayDateKey: jest.fn(),
   loadTasksFromStorage: jest.fn(),

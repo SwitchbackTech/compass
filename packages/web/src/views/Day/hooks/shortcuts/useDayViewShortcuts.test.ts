@@ -23,7 +23,7 @@ jest.mock("react-toastify", () => ({
 }));
 
 // Mock shortcut utility functions
-jest.mock("../../util/shortcut.util", () => ({
+jest.mock("../../util/day.shortcut.util", () => ({
   isEditable: jest.fn(),
   isFocusedOnTaskCheckbox: jest.fn(),
   isFocusedWithinTask: jest.fn(),
@@ -41,7 +41,7 @@ describe("useDayViewShortcuts", () => {
     const {
       isEditable,
       isFocusedOnTaskCheckbox,
-    } = require("../../util/shortcut.util");
+    } = require("../../util/day.shortcut.util");
     mockIsEditable = isEditable as jest.Mock;
     mockIsFocusedOnTaskCheckbox = isFocusedOnTaskCheckbox as jest.Mock;
 
@@ -409,7 +409,7 @@ describe("useDayViewShortcuts", () => {
       const {
         isFocusedWithinTask,
         getFocusedTaskId,
-      } = require("../../util/shortcut.util");
+      } = require("../../util/day.shortcut.util");
       mockIsFocusedWithinTask = isFocusedWithinTask as jest.Mock;
       mockGetFocusedTaskId = getFocusedTaskId as jest.Mock;
     });

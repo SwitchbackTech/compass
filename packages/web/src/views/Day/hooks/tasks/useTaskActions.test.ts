@@ -5,8 +5,8 @@ import * as storageUtil from "../../../../common/utils/storage/storage.util";
 import { showMigrationToast } from "../../components/Toasts/MigrationToast/MigrationToast";
 import { useTaskActions } from "./useTaskActions";
 
-jest.mock("../../util/storage.util", () => ({
-  ...jest.requireActual("../../util/storage.util"),
+jest.mock("../../../../common/utils/storage/storage.util", () => ({
+  ...jest.requireActual("../../../../common/utils/storage/storage.util"),
   loadTasksFromStorage: jest.fn(),
   saveTasksToStorage: jest.fn(),
   moveTaskToDate: jest.fn(),

@@ -4,8 +4,8 @@ import { Task } from "@web/common/types/task.types";
 import * as storageUtil from "@web/common/utils/storage/storage.util";
 import { useFocusedTask } from "./useFocusedTask";
 
-jest.mock("@web/views/Day/util/storage.util", () => ({
-  ...jest.requireActual("@web/views/Day/util/storage.util"),
+jest.mock("@web/common/utils/storage/storage.util", () => ({
+  ...jest.requireActual("@web/common/utils/storage/storage.util"),
   loadTasksFromStorage: jest.fn(),
   getDateKey: jest.fn(),
   getTodayDateKey: jest.fn(),

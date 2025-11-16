@@ -9,7 +9,7 @@ import {
 import { useTasksToday } from "./useTasksToday";
 
 // Mock the storage utilities
-jest.mock("@web/views/Day/util/storage.util", () => ({
+jest.mock("@web/common/utils/storage/storage.util", () => ({
   loadTasksFromStorage: jest.fn(),
   saveTasksToStorage: jest.fn(),
 }));

@@ -9,13 +9,13 @@ jest.mock("react-router-dom", () => ({
 }));
 
 // Mock the shortcut utility
-jest.mock("@web/views/Day/util/shortcut.util", () => ({
+jest.mock("@web/views/Day/util/day.shortcut.util", () => ({
   isEditable: jest.fn(),
 }));
 
 const mockNavigate = jest.fn();
 const mockIsEditable = jest.requireMock(
-  "@web/views/Day/util/shortcut.util",
+  "@web/views/Day/util/day.shortcut.util",
 ).isEditable;
 
 // Mock addEventListener and removeEventListener
