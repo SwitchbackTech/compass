@@ -94,9 +94,19 @@ export const SomedayEventsContainer: FC<Props> = ({
               {!isDraftingNew && (
                 <div style={{ opacity: state.isDragging ? 0 : 1 }}>
                   {state.isDragging ? (
-                    <AddSomedayEvent />
+                    <AddSomedayEvent
+                      onKeyDown={() =>
+                        context.actions.createSomedayDraft(category)
+                      }
+                    />
                   ) : (
-                    renderWithTooltip(<AddSomedayEvent />)
+                    renderWithTooltip(
+                      <AddSomedayEvent
+                        onKeyDown={() =>
+                          context.actions.createSomedayDraft(category)
+                        }
+                      />,
+                    )
                   )}
                 </div>
               )}

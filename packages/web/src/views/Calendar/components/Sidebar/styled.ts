@@ -32,6 +32,10 @@ export const EventPlaceholder = styled.div`
   opacity: 0.5;
   transition: opacity 0.2s;
 
+  &:focus {
+    background-color: ${({ theme }) => theme.color.bg.primary};
+  }
+
   &:hover {
     opacity: 1;
   }
