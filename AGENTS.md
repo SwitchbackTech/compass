@@ -146,7 +146,7 @@ TZ=Etc/UTC
 ### Styling
 
 - Use tailwind for styling.
-- Use the semantic colors defined in the `@web/common/styles/theme.ts` file.
+- Use the semantic colors defined in `packages/web/src/index.css` using the `@theme` directive.
 - Do NOT use raw tailwind colors like `bg-blue-300` or `text-gray-100`. Use the semantic colors like `bg-bg-primary` or `text-text-light` instead.
 
 ### CI/CD Integration
