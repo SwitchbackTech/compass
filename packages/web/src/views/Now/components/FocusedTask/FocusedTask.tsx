@@ -1,9 +1,11 @@
+import { useState } from "react";
 import {
-  ArrowCircleLeft,
-  ArrowCircleRight,
-  CheckCircle,
+  ArrowCircleLeftIcon,
+  ArrowCircleRightIcon,
+  CheckCircleIcon,
 } from "@phosphor-icons/react";
 import { Task } from "@web/common/types/task.types";
+import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 
 interface FocusedTaskProps {
   task: Task;
@@ -11,6 +13,45 @@ interface FocusedTaskProps {
   onPreviousTask: () => void;
   onNextTask: () => void;
 }
+
+interface ButtonWithShortcutProps {
+  onClick: () => void;
+  ariaLabel: string;
+  shortcut: string;
+  children: React.ReactNode;
+}
+
+const ButtonWithShortcut = ({
+  onClick,
+  ariaLabel,
+  shortcut,
+  children,
+}: ButtonWithShortcutProps) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const showShortcut = isHovered || isFocused;
+
+  return (
+    <div className="relative inline-block">
+      <button
+        onClick={onClick}
+        aria-label={ariaLabel}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
+        className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:bg-white/10 hover:shadow-lg hover:shadow-white/20 focus:bg-white/10 focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent focus:outline-none"
+      >
+        {children}
+      </button>
+      {showShortcut && (
+        <div className="absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 transform">
+          <ShortcutHint>{shortcut}</ShortcutHint>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const FocusedTask = ({
   task,
@@ -27,27 +68,27 @@ export const FocusedTask = ({
           </h2>
         </div>
         <div className="flex items-center justify-center gap-3">
-          <button
+          <ButtonWithShortcut
             onClick={onCompleteTask}
-            aria-label="Mark task as complete"
-            className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:bg-white/10 hover:shadow-lg hover:shadow-white/20 focus:bg-white/10 focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent focus:outline-none"
+            ariaLabel="Mark task as complete"
+            shortcut="Enter"
           >
-            <CheckCircle size={40} className="text-white" />
-          </button>
-          <button
+            <CheckCircleIcon size={40} className="text-white" />
+          </ButtonWithShortcut>
+          <ButtonWithShortcut
             onClick={onPreviousTask}
-            aria-label="Previous task"
-            className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:bg-white/10 hover:shadow-lg hover:shadow-white/20 focus:bg-white/10 focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent focus:outline-none"
+            ariaLabel="Previous task"
+            shortcut="j"
           >
-            <ArrowCircleLeft size={40} className="text-white" />
-          </button>
-          <button
+            <ArrowCircleLeftIcon size={40} className="text-white" />
+          </ButtonWithShortcut>
+          <ButtonWithShortcut
             onClick={onNextTask}
-            aria-label="Next task"
-            className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:bg-white/10 hover:shadow-lg hover:shadow-white/20 focus:bg-white/10 focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent focus:outline-none"
+            ariaLabel="Next task"
+            shortcut="k"
           >
-            <ArrowCircleRight size={40} className="text-white" />
-          </button>
+            <ArrowCircleRightIcon size={40} className="text-white" />
+          </ButtonWithShortcut>
         </div>
       </div>
     </div>
