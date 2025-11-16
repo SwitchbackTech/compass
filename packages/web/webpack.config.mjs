@@ -157,7 +157,7 @@ export default (env, argv) => {
             reuseExistingChunk: true,
           },
           views: {
-            test: /views/,
+            test: /[\\/]src[\\/]views[\\/]/,
             name: "views-common",
             chunks: "all",
             minChunks: 2,
