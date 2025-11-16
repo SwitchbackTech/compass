@@ -4,7 +4,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@web/components/Tooltip";
-import { StyledShortcutTip } from "@web/components/Tooltip/styled";
+import { FormattedShortcutTip } from "@web/components/Tooltip/FormattedShortcutTip";
 import { useMenuContext } from "./ActionsMenu";
 import { StyledMenuItem } from "./styled";
 
@@ -94,7 +94,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
         </StyledMenuItem>
       </TooltipTrigger>
       <TooltipContent>
-        <StyledShortcutTip>{tooltipContent}</StyledShortcutTip>
+        <FormattedShortcutTip>{tooltipContent}</FormattedShortcutTip>
       </TooltipContent>
     </Tooltip>
   );

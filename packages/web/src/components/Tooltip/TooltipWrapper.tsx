@@ -8,7 +8,7 @@ import {
 } from "@web/components/Tooltip";
 import { Flex } from "../Flex";
 import { TooltipDescription } from "./Description/TooltipDescription";
-import { StyledShortcutTip } from "./styled";
+import { FormattedShortcutTip } from "./FormattedShortcutTip";
 
 export interface Props {
   children: ReactNode;
@@ -33,13 +33,13 @@ export const TooltipWrapper: React.FC<Props> = ({
         <Flex alignItems={AlignItems.CENTER}>
           {description && <TooltipDescription description={description} />}
           {shortcut && (
-            <StyledShortcutTip>
+            <FormattedShortcutTip>
               {typeof shortcut === "string" ? (
                 <Text size="s">{shortcut}</Text>
               ) : (
                 shortcut
               )}
-            </StyledShortcutTip>
+            </FormattedShortcutTip>
           )}
         </Flex>
       </TooltipContent>
