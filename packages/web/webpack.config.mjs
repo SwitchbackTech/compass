@@ -153,7 +153,7 @@ export default (env, argv) => {
             name: "vendors",
             chunks: "all",
             priority: 10,
-            maxSize: 50000,
+            maxSize: 100000, // 100KB
             reuseExistingChunk: true,
           },
           views: {

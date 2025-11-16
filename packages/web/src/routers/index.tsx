@@ -5,7 +5,6 @@ import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { AuthenticatedLayout } from "@web/components/AuthenticatedLayout/AuthenticatedLayout";
 import { loadLoggedInData, loadLoginData } from "@web/routers/loaders";
 import SocketProvider from "@web/socket/SocketProvider";
-import { NotFoundView } from "@web/views/NotFound";
 
 export const router = createBrowserRouter(
   [
@@ -71,7 +70,7 @@ export const router = createBrowserRouter(
       loader: loadLoginData,
       lazy: async () =>
         import(
-          /* webpackChunkName: "login" */ "@web/views/Onboarding/OnboardingFlow"
+          /* webpackChunkName: "onboarding" */ "@web/views/Onboarding/OnboardingFlow"
         ).then((module) => ({
           Component: module.OnboardingFlow,
         })),
