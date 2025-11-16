@@ -3,8 +3,8 @@ import "@testing-library/jest-dom";
 import { RenderOptions, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import dayjs from "@core/util/date/dayjs";
-import { Task } from "@web/views/Day/task.types";
-import * as storageUtil from "@web/views/Day/util/storage.util";
+import { Task } from "@web/common/types/task.types";
+import * as storageUtil from "@web/common/utils/storage/storage.util";
 import { useAvailableTasks } from "@web/views/Now/hooks/useAvailableTasks";
 import { useFocusedTask } from "@web/views/Now/hooks/useFocusedTask";
 import { NowViewProvider } from "../../context/NowViewProvider";
@@ -19,8 +19,8 @@ jest.mock("react-router-dom", () => ({
 
 jest.mock("@web/views/Now/hooks/useFocusedTask");
 jest.mock("@web/views/Now/hooks/useAvailableTasks");
-jest.mock("@web/views/Day/util/storage.util", () => ({
-  ...jest.requireActual("@web/views/Day/util/storage.util"),
+jest.mock("@web/common/utils/storage/storage.util", () => ({
+  ...jest.requireActual("@web/common/utils/storage/storage.util"),
   getDateKey: jest.fn(),
   getTodayDateKey: jest.fn(),
   loadTasksFromStorage: jest.fn(),

@@ -1,13 +1,13 @@
 import React, { createContext, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { Task } from "@web/views/Day/task.types";
-import { getIncompleteTasksSorted } from "@web/views/Day/util/sort.task";
+import { Task } from "@web/common/types/task.types";
 import {
   getTodayDateKey,
   loadTasksFromStorage,
   saveTasksToStorage,
-} from "@web/views/Day/util/storage.util";
+} from "@web/common/utils/storage/storage.util";
+import { getIncompleteTasksSorted } from "@web/common/utils/task/sort.task";
 import { useAvailableTasks } from "../hooks/useAvailableTasks";
 import { useFocusedTask } from "../hooks/useFocusedTask";
 import { useNowShortcuts } from "../shortcuts/useNowShortcuts";

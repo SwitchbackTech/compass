@@ -1,12 +1,12 @@
 import dayjs from "dayjs";
 import { act, renderHook } from "@testing-library/react";
+import { Task } from "../../../../common/types/task.types";
+import * as storageUtil from "../../../../common/utils/storage/storage.util";
 import { showMigrationToast } from "../../components/Toasts/MigrationToast/MigrationToast";
-import { Task } from "../../task.types";
-import * as storageUtil from "../../util/storage.util";
 import { useTaskActions } from "./useTaskActions";
 
-jest.mock("../../util/storage.util", () => ({
-  ...jest.requireActual("../../util/storage.util"),
+jest.mock("../../../../common/utils/storage/storage.util", () => ({
+  ...jest.requireActual("../../../../common/utils/storage/storage.util"),
   loadTasksFromStorage: jest.fn(),
   saveTasksToStorage: jest.fn(),
   moveTaskToDate: jest.fn(),

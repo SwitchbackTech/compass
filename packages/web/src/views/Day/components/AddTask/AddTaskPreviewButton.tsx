@@ -1,6 +1,6 @@
 import { ID_ADD_TASK_BUTTON } from "@web/common/constants/web.constants";
 import { PlusIcon } from "../Icons/PlusIcon";
-import { Shortcut } from "../Shortcuts/components/ShortcutTip";
+import { Shortcut } from "../Shortcuts/ShortcutTip";
 
 interface AddTaskPreviewButtonProps {
   onBeginAddingTask: () => void;

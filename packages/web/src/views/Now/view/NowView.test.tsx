@@ -4,7 +4,7 @@ import { renderWithMemoryRouter } from "@web/__tests__/utils/providers/MemoryRou
 import { NowView } from "./NowView";
 
 // Mock the useNowShortcuts hook
-jest.mock("./shortcuts/useNowShortcuts", () => ({
+jest.mock("../shortcuts/useNowShortcuts", () => ({
   useNowShortcuts: jest.fn(),
 }));
 

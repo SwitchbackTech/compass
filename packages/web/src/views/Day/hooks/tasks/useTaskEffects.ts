@@ -1,10 +1,10 @@
 import { useEffect } from "react";
-import { Task } from "../../task.types";
-import { sortTasksByStatus } from "../../util/sort.task";
+import { Task } from "@web/common/types/task.types";
 import {
   loadTasksFromStorage,
   saveTasksToStorage,
-} from "../../util/storage.util";
+} from "@web/common/utils/storage/storage.util";
+import { sortTasksByStatus } from "@web/common/utils/task/sort.task";
 
 interface UseTaskEffectsProps {
   tasks: Task[];

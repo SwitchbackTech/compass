@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { renderHook } from "@testing-library/react";
-import { Task } from "@web/views/Day/task.types";
+import { Task } from "@web/common/types/task.types";
 import { useNowShortcuts } from "./useNowShortcuts";
 
 // Mock react-router-dom
@@ -9,13 +9,13 @@ jest.mock("react-router-dom", () => ({
 }));
 
 // Mock the shortcut utility
-jest.mock("@web/views/Day/util/shortcut.util", () => ({
+jest.mock("@web/views/Day/util/day.shortcut.util", () => ({
   isEditable: jest.fn(),
 }));
 
 const mockNavigate = jest.fn();
 const mockIsEditable = jest.requireMock(
-  "@web/views/Day/util/shortcut.util",
+  "@web/views/Day/util/day.shortcut.util",
 ).isEditable;
 
 // Mock addEventListener and removeEventListener

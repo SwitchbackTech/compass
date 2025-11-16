@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
-import { Task, UndoOperation } from "../../task.types";
-import { getDateKey } from "../../util/storage.util";
+import { Task, UndoOperation } from "../../../../common/types/task.types";
+import { getDateKey } from "../../../../common/utils/storage/storage.util";
 
 interface UseTaskStateProps {
   currentDate?: Date;

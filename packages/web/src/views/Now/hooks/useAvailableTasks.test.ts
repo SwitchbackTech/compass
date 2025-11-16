@@ -1,12 +1,12 @@
 import { act } from "react";
 import { renderHook, waitFor } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
-import { Task } from "@web/views/Day/task.types";
-import * as storageUtil from "@web/views/Day/util/storage.util";
+import { Task } from "@web/common/types/task.types";
+import * as storageUtil from "@web/common/utils/storage/storage.util";
 import { useAvailableTasks } from "./useAvailableTasks";
 
-jest.mock("@web/views/Day/util/storage.util", () => ({
-  ...jest.requireActual("@web/views/Day/util/storage.util"),
+jest.mock("@web/common/utils/storage/storage.util", () => ({
+  ...jest.requireActual("@web/common/utils/storage/storage.util"),
   loadTasksFromStorage: jest.fn(),
   getDateKey: jest.fn(),
   getTodayDateKey: jest.fn(),

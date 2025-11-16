@@ -3,7 +3,7 @@ import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
-import { Task } from "@web/views/Day/task.types";
+import { Task } from "@web/common/types/task.types";
 import { withOnboardingProvider } from "../../../components/OnboardingContext";
 import { TasksToday } from "./TasksToday";
 import { useTasksToday } from "./useTasksToday";

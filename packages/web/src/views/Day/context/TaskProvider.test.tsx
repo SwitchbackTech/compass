@@ -1,8 +1,8 @@
 import { act } from "react";
 import { renderHook } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
+import { Task } from "../../../common/types/task.types";
 import { useTasks } from "../hooks/tasks/useTasks";
-import { Task } from "../task.types";
 import { TaskProviderWrapper } from "../util/day.test-util";
 
 describe("TaskProvider", () => {

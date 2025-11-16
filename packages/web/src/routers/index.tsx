@@ -21,11 +21,11 @@ export const router = createBrowserRouter(
         {
           path: ROOT_ROUTES.NOW,
           lazy: async () =>
-            import(/* webpackChunkName: "now" */ "@web/views/Now/NowView").then(
-              (module) => ({
-                Component: module.NowView,
-              }),
-            ),
+            import(
+              /* webpackChunkName: "now" */ "@web/views/Now/view/NowView"
+            ).then((module) => ({
+              Component: module.NowView,
+            })),
         },
         {
           path: ROOT_ROUTES.DAY,

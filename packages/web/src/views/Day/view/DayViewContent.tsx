@@ -5,8 +5,8 @@ import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { ShortcutsOverlay } from "@web/components/Shortcuts/ShortcutsOverlay";
 import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
+import { getShortcuts } from "../../../common/utils/shortcut/data/shortcuts.data";
 import { Agenda } from "../components/Agenda/Agenda";
-import { getShortcuts } from "../components/Shortcuts/data/shortcuts.data";
 import { StorageInfoModal } from "../components/StorageInfoModal/StorageInfoModal";
 import { TaskList } from "../components/TaskList/TaskList";
 import { useStorageInfoModal } from "../context/StorageInfoModalContext";
@@ -16,7 +16,10 @@ import { useDateNavigation } from "../hooks/navigation/useDateNavigation";
 import { useDayViewShortcuts } from "../hooks/shortcuts/useDayViewShortcuts";
 import { useTasks } from "../hooks/tasks/useTasks";
 import { focusFirstAgendaEvent } from "../util/agenda/focus.util";
-import { focusOnAddTaskInput, focusOnFirstTask } from "../util/shortcut.util";
+import {
+  focusOnAddTaskInput,
+  focusOnFirstTask,
+} from "../util/day.shortcut.util";
 
 export const DayViewContent = () => {
   const {

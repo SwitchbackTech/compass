@@ -1,4 +1,4 @@
-import { GLOBAL_SHORTCUT_KEYS } from "../../../../common/types/global.shortcut.types";
+import { GLOBAL_SHORTCUT_KEYS } from "@web/common/types/global.shortcut.types";
 
 export const DAY_VIEW_SHORTCUT_KEYS = {
   ...GLOBAL_SHORTCUT_KEYS,

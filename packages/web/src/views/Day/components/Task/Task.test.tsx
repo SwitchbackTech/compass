@@ -2,7 +2,7 @@ import { act } from "react";
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Task as TaskType } from "../../task.types";
+import { Task as TaskType } from "../../../../common/types/task.types";
 import { Task, TaskProps } from "./Task";
 
 describe("Task - migration", () => {

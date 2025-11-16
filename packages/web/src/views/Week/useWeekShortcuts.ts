@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { isEditable } from "../Day/util/shortcut.util";
+import { isEditable } from "../Day/util/day.shortcut.util";
 
 export const useWeekShortcuts = () => {
   const navigate = useNavigate();

@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Task } from "@web/views/Day/task.types";
+import { Task } from "@web/common/types/task.types";
 import { AvailableTasks } from "./AvailableTasks";
 
 describe("AvailableTasks", () => {

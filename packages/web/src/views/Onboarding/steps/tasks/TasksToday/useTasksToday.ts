@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import dayjs from "@core/util/date/dayjs";
-import { Task } from "@web/views/Day/task.types";
+import { Task } from "@web/common/types/task.types";
 import {
   loadTasksFromStorage,
   saveTasksToStorage,
-} from "@web/views/Day/util/storage.util";
+} from "@web/common/utils/storage/storage.util";
 
 export interface UseTasksTodayProps {
   onNext: () => void;

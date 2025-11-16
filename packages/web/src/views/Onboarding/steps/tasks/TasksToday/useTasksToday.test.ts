@@ -1,15 +1,15 @@
 import { act } from "react";
 import { renderHook } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
-import { Task } from "@web/views/Day/task.types";
+import { Task } from "@web/common/types/task.types";
 import {
   loadTasksFromStorage,
   saveTasksToStorage,
-} from "@web/views/Day/util/storage.util";
+} from "@web/common/utils/storage/storage.util";
 import { useTasksToday } from "./useTasksToday";
 
 // Mock the storage utilities
-jest.mock("@web/views/Day/util/storage.util", () => ({
+jest.mock("@web/common/utils/storage/storage.util", () => ({
   loadTasksFromStorage: jest.fn(),
   saveTasksToStorage: jest.fn(),
 }));
