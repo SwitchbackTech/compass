@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Task } from "@web/common/types/task.types";
 import { FocusedTask } from "./FocusedTask";
@@ -154,5 +154,158 @@ describe("FocusedTask", () => {
     await user.click(checkButton);
 
     expect(mockOnCompleteTask).toHaveBeenCalledTimes(1);
+  });
+
+  describe("Tooltip Hints", () => {
+    it("does not show tooltip initially", () => {
+      render(
+        <FocusedTask
+          task={mockTask}
+          onCompleteTask={mockOnCompleteTask}
+          onPreviousTask={mockOnPreviousTask}
+          onNextTask={mockOnNextTask}
+        />,
+      );
+
+      // Tooltips should not be visible initially
+      expect(screen.queryByText("Mark Done")).not.toBeInTheDocument();
+      expect(screen.queryByText("Previous Task")).not.toBeInTheDocument();
+      expect(screen.queryByText("Next Task")).not.toBeInTheDocument();
+      expect(screen.queryByText("Enter")).not.toBeInTheDocument();
+      expect(screen.queryByText("j")).not.toBeInTheDocument();
+      expect(screen.queryByText("k")).not.toBeInTheDocument();
+    });
+
+    it("shows tooltip on hover for complete button", async () => {
+      const user = userEvent.setup();
+      render(
+        <FocusedTask
+          task={mockTask}
+          onCompleteTask={mockOnCompleteTask}
+          onPreviousTask={mockOnPreviousTask}
+          onNextTask={mockOnNextTask}
+        />,
+      );
+
+      const completeButton = screen.getByRole("button", {
+        name: "Mark task as complete",
+      });
+
+      // Tooltip should not be visible initially
+      expect(screen.queryByText("Mark Done")).not.toBeInTheDocument();
+      expect(screen.queryByText("Enter")).not.toBeInTheDocument();
+
+      // Hover over button to show tooltip
+      await user.hover(completeButton);
+
+      // Wait for tooltip to appear with both description and shortcut
+      await waitFor(
+        () => {
+          expect(screen.getByText("Mark Done")).toBeInTheDocument();
+          expect(screen.getByText("Enter")).toBeInTheDocument();
+        },
+        { timeout: 500 },
+      );
+    });
+
+    it("shows tooltip on hover for previous button", async () => {
+      const user = userEvent.setup();
+      render(
+        <FocusedTask
+          task={mockTask}
+          onCompleteTask={mockOnCompleteTask}
+          onPreviousTask={mockOnPreviousTask}
+          onNextTask={mockOnNextTask}
+        />,
+      );
+
+      const previousButton = screen.getByRole("button", {
+        name: "Previous task",
+      });
+
+      // Tooltip should not be visible initially
+      expect(screen.queryByText("Previous Task")).not.toBeInTheDocument();
+      expect(screen.queryByText("j")).not.toBeInTheDocument();
+
+      // Hover over button to show tooltip
+      await user.hover(previousButton);
+
+      // Wait for tooltip to appear with both description and shortcut
+      await waitFor(
+        () => {
+          expect(screen.getByText("Previous Task")).toBeInTheDocument();
+          expect(screen.getByText("j")).toBeInTheDocument();
+        },
+        { timeout: 500 },
+      );
+    });
+
+    it("shows tooltip on hover for next button", async () => {
+      const user = userEvent.setup();
+      render(
+        <FocusedTask
+          task={mockTask}
+          onCompleteTask={mockOnCompleteTask}
+          onPreviousTask={mockOnPreviousTask}
+          onNextTask={mockOnNextTask}
+        />,
+      );
+
+      const nextButton = screen.getByRole("button", {
+        name: "Next task",
+      });
+
+      // Tooltip should not be visible initially
+      expect(screen.queryByText("Next Task")).not.toBeInTheDocument();
+      expect(screen.queryByText("k")).not.toBeInTheDocument();
+
+      // Hover over button to show tooltip
+      await user.hover(nextButton);
+
+      // Wait for tooltip to appear with both description and shortcut
+      await waitFor(
+        () => {
+          expect(screen.getByText("Next Task")).toBeInTheDocument();
+          expect(screen.getByText("k")).toBeInTheDocument();
+        },
+        { timeout: 500 },
+      );
+    });
+
+    it("hides tooltip when mouse leaves complete button", async () => {
+      const user = userEvent.setup();
+      render(
+        <FocusedTask
+          task={mockTask}
+          onCompleteTask={mockOnCompleteTask}
+          onPreviousTask={mockOnPreviousTask}
+          onNextTask={mockOnNextTask}
+        />,
+      );
+
+      const completeButton = screen.getByRole("button", {
+        name: "Mark task as complete",
+      });
+
+      // Hover to show tooltip
+      await user.hover(completeButton);
+      await waitFor(
+        () => {
+          expect(screen.getByText("Mark Done")).toBeInTheDocument();
+          expect(screen.getByText("Enter")).toBeInTheDocument();
+        },
+        { timeout: 500 },
+      );
+
+      // Move mouse away to hide tooltip
+      await user.unhover(completeButton);
+      await waitFor(
+        () => {
+          expect(screen.queryByText("Mark Done")).not.toBeInTheDocument();
+          expect(screen.queryByText("Enter")).not.toBeInTheDocument();
+        },
+        { timeout: 500 },
+      );
+    });
   });
 });

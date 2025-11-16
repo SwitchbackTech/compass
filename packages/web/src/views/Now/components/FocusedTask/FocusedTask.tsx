@@ -1,9 +1,10 @@
 import {
-  ArrowCircleLeft,
-  ArrowCircleRight,
-  CheckCircle,
+  ArrowCircleLeftIcon,
+  ArrowCircleRightIcon,
+  CheckCircleIcon,
 } from "@phosphor-icons/react";
 import { Task } from "@web/common/types/task.types";
+import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 interface FocusedTaskProps {
   task: Task;
@@ -20,34 +21,49 @@ export const FocusedTask = ({
 }: FocusedTaskProps) => {
   return (
     <div className="flex flex-col items-center gap-6">
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center gap-10">
         <div className="flex items-center gap-3">
-          <h2 className="text-4xl font-bold text-white drop-shadow-lg">
+          <h2 className="text-text-lighter text-4xl font-bold drop-shadow-lg">
             {task.title}
           </h2>
         </div>
         <div className="flex items-center justify-center gap-3">
-          <button
+          <TooltipWrapper
+            description="Mark Done"
+            shortcut="Enter"
             onClick={onCompleteTask}
-            aria-label="Mark task as complete"
-            className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:bg-white/10 hover:shadow-lg hover:shadow-white/20 focus:bg-white/10 focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent focus:outline-none"
           >
-            <CheckCircle size={40} className="text-white" />
-          </button>
-          <button
+            <button
+              aria-label="Mark task as complete"
+              className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:brightness-125 focus:brightness-125"
+            >
+              <CheckCircleIcon size={40} className="text-text-light" />
+            </button>
+          </TooltipWrapper>
+          <TooltipWrapper
+            description="Previous Task"
+            shortcut="j"
             onClick={onPreviousTask}
-            aria-label="Previous task"
-            className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:bg-white/10 hover:shadow-lg hover:shadow-white/20 focus:bg-white/10 focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent focus:outline-none"
           >
-            <ArrowCircleLeft size={40} className="text-white" />
-          </button>
-          <button
+            <button
+              aria-label="Previous task"
+              className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:brightness-125 focus:brightness-125"
+            >
+              <ArrowCircleLeftIcon size={40} className="text-text-light" />
+            </button>
+          </TooltipWrapper>
+          <TooltipWrapper
+            description="Next Task"
+            shortcut="k"
             onClick={onNextTask}
-            aria-label="Next task"
-            className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:bg-white/10 hover:shadow-lg hover:shadow-white/20 focus:bg-white/10 focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent focus:outline-none"
           >
-            <ArrowCircleRight size={40} className="text-white" />
-          </button>
+            <button
+              aria-label="Next task"
+              className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:brightness-125 focus:brightness-125"
+            >
+              <ArrowCircleRightIcon size={40} className="text-text-light" />
+            </button>
+          </TooltipWrapper>
         </div>
       </div>
     </div>

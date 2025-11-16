@@ -7,11 +7,11 @@ import { DayViewContent } from "./DayViewContent";
 
 // Mock the Agenda component
 jest.mock("../components/Agenda/Agenda", () => ({
-  Agenda: () => <div className="h-96 bg-gray-100">Calendar Content</div>,
+  Agenda: () => <div className="h-96">Calendar Content</div>,
 }));
 
 // Mock the ShortcutsOverlay component
-jest.mock("@web/components/Shortcuts/ShortcutsOverlay", () => ({
+jest.mock("@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay", () => ({
   ShortcutsOverlay: () => <div data-testid="shortcuts-overlay" />,
 }));
 

@@ -7,8 +7,7 @@ import {
 } from "react";
 import { FloatingPortal, useMergeRefs } from "@floating-ui/react";
 import { ZIndex } from "@web/common/constants/web.constants";
-import { StyledShortcutTip } from "./styled";
-import { TooltipOptions } from "./types";
+import { TooltipOptions } from "./tooltip.types";
 import { TooltipContext, useTooltip, useTooltipContext } from "./useTooltip";
 
 export function Tooltip({
@@ -51,7 +50,6 @@ export const TooltipTrigger = forwardRef<
   return (
     <div
       ref={ref}
-      role="button"
       data-state={context.open ? "open" : "closed"}
       {...context.getReferenceProps(props)}
     >
@@ -63,14 +61,14 @@ export const TooltipTrigger = forwardRef<
 export const TooltipContent = forwardRef<
   HTMLDivElement,
   HTMLProps<HTMLDivElement>
->(function TooltipContent(props, propRef) {
+>(function TooltipContent({ children, style, ...props }, propRef) {
   const context = useTooltipContext();
   const ref = useMergeRefs([context.refs.setFloating, propRef]);
 
   return (
     <FloatingPortal>
       {context.open && (
-        <StyledShortcutTip
+        <div
           ref={ref}
           style={{
             left: context.x ?? 0,
@@ -78,10 +76,12 @@ export const TooltipContent = forwardRef<
             top: context.y ?? 0,
             visibility: context.x == null ? "hidden" : "visible",
             zIndex: ZIndex.LAYER_3,
-            ...props.style,
+            ...style,
           }}
           {...context.getFloatingProps(props)}
-        />
+        >
+          {children}
+        </div>
       )}
     </FloatingPortal>
   );

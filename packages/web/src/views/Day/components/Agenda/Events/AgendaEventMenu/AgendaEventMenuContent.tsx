@@ -20,8 +20,8 @@ export const AgendaEventMenuContent = forwardRef<
 
   const priority = event.priority || Priorities.UNASSIGNED;
   const priorityColor = colorByPriority[priority];
-  const darkenedColor = darken(priorityColor);
-  const isBackgroundDark = isDark(darkenedColor);
+  const darkPriorityColor = darken(priorityColor);
+  const shouldUseLightText = isDark(darkPriorityColor);
 
   let timeDisplay = "";
   if (!event.isAllDay) {
@@ -43,7 +43,7 @@ export const AgendaEventMenuContent = forwardRef<
           aria-describedby={event.description ? "event-description" : undefined}
           className="z-50 max-w-80 min-w-64 rounded-lg p-4 shadow-lg"
           style={{
-            backgroundColor: darkenedColor,
+            backgroundColor: darkPriorityColor,
             left: context.x ?? 0,
             position: context.strategy,
             top: context.y ?? 0,
@@ -57,7 +57,7 @@ export const AgendaEventMenuContent = forwardRef<
             <h3
               id="event-title"
               className={`text-sm font-semibold ${
-                isBackgroundDark ? "text-white" : "text-gray-900"
+                shouldUseLightText ? "text-text-lighter" : "text-text-dark"
               }`}
             >
               {event.title || "Untitled Event"}
@@ -65,7 +65,7 @@ export const AgendaEventMenuContent = forwardRef<
             {timeDisplay && (
               <time
                 className={`text-xs font-medium ${
-                  isBackgroundDark ? "text-gray-200" : "text-gray-700"
+                  shouldUseLightText ? "text-text-lighter/90" : "text-text-dark"
                 }`}
                 dateTime={event.startDate}
               >
@@ -76,7 +76,7 @@ export const AgendaEventMenuContent = forwardRef<
               <p
                 id="event-description"
                 className={`text-xs leading-relaxed ${
-                  isBackgroundDark ? "text-gray-200" : "text-gray-700"
+                  shouldUseLightText ? "text-text-lighter/85" : "text-text-dark"
                 }`}
               >
                 {event.description}

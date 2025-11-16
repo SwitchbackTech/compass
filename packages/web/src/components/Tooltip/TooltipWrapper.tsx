@@ -7,8 +7,8 @@ import {
   TooltipTrigger,
 } from "@web/components/Tooltip";
 import { Flex } from "../Flex";
-import { TooltipDescription } from "./Description";
-import { StyledShortcutTip } from "./styled";
+import { LegacyShortcutHint } from "../Shortcuts/ShortcutHint";
+import { TooltipDescription } from "./Description/TooltipDescription";
 
 export interface Props {
   children: ReactNode;
@@ -29,17 +29,19 @@ export const TooltipWrapper: React.FC<Props> = ({
     <Tooltip open={isTooltipOpen} onOpenChange={setIsTooltipOpen}>
       <TooltipTrigger onClick={onClick}>{children}</TooltipTrigger>
 
-      <TooltipContent className="Tooltip">
+      <TooltipContent
+        className={`${description ? "bg-fg-primary" : ""} rounded p-1`}
+      >
         <Flex alignItems={AlignItems.CENTER}>
           {description && <TooltipDescription description={description} />}
           {shortcut && (
-            <StyledShortcutTip>
+            <LegacyShortcutHint>
               {typeof shortcut === "string" ? (
                 <Text size="s">{shortcut}</Text>
               ) : (
                 shortcut
               )}
-            </StyledShortcutTip>
+            </LegacyShortcutHint>
           )}
         </Flex>
       </TooltipContent>

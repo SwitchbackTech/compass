@@ -36,7 +36,7 @@ export const AgendaEvent = ({ event }: { event: Schema_Event }) => {
       <AgendaEventMenuTrigger asChild>
         <div
           className={`absolute right-2 left-2 flex items-center rounded px-2 text-xs focus:ring-2 focus:ring-yellow-200 focus:outline-none ${
-            isBackgroundDark ? "text-white" : "text-gray-900"
+            isBackgroundDark ? "text-text-light" : "text-text-dark"
           } ${isPast ? "opacity-60" : ""}`}
           style={{
             height: `${renderedHeight}px`,
