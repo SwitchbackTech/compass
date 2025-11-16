@@ -83,8 +83,8 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
           e.preventDefault();
           onNavigateNow?.();
         },
-        "2": (e) => {
-          console.log("2", e);
+        "2": () => {
+          return;
         },
         "3": (e) => {
           e.preventDefault();
