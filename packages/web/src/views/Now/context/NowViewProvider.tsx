@@ -106,35 +106,26 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
     // Determine the next task to focus using the fresh incompleteTasks list
     // Find the next/previous task by ID from availableTasks, then locate it in incompleteTasks
     // This ensures we use the correct navigation direction regardless of array order differences
+    let nextTaskToFocus: Task | undefined;
     if (currentTaskIndex >= 0 && currentTaskIndex < availableTasks.length - 1) {
       // Next task exists in availableTasks - find it in incompleteTasks
       const nextTaskId = availableTasks[currentTaskIndex + 1].id;
-      const nextTask = incompleteTasks.find((task) => task.id === nextTaskId);
-      if (nextTask) {
-        setFocusedTask(nextTask.id);
-      } else {
-        // Fallback: focus on the first available task
-        setFocusedTask(incompleteTasks[0].id);
-      }
+      nextTaskToFocus = incompleteTasks.find((task) => task.id === nextTaskId);
     } else if (currentTaskIndex > 0) {
       // Previous task exists (we were at the end, go to previous)
       const previousTaskId = availableTasks[currentTaskIndex - 1].id;
-      const previousTask = incompleteTasks.find(
+      nextTaskToFocus = incompleteTasks.find(
         (task) => task.id === previousTaskId,
       );
-      if (previousTask) {
-        setFocusedTask(previousTask.id);
-      } else {
-        // Fallback: focus on the last available task
-        setFocusedTask(incompleteTasks[incompleteTasks.length - 1].id);
-      }
-    } else {
+    }
+
+    if (nextTaskToFocus) {
+      setFocusedTask(nextTaskToFocus.id);
+    } else if (incompleteTasks.length > 0) {
       // Fallback: focus on the first available task
-      if (incompleteTasks.length > 0) {
-        setFocusedTask(incompleteTasks[0].id);
-      } else {
-        setFocusedTask(null);
-      }
+      setFocusedTask(incompleteTasks[0].id);
+    } else {
+      setFocusedTask(null);
     }
   }, [focusedTask, availableTasks, navigate, setFocusedTask]);
 
