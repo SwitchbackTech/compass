@@ -247,7 +247,6 @@ describe("TaskSelector", () => {
       setFocusedTask: mockSetFocusedTask,
     });
 
-    // Rerender with updated mock (rerender maintains the wrapper)
     rerender(<TaskSelector />);
 
     // Now shows FocusedTask
@@ -375,7 +374,6 @@ describe("TaskSelector", () => {
         setFocusedTask: mockSetFocusedTask,
       });
 
-      // Rerender with updated mock (rerender maintains the wrapper)
       rerender(<TaskSelector />);
 
       await waitFor(() => {
