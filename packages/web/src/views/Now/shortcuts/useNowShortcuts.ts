@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { Task } from "@web/views/Day/task.types";
+import { Task } from "@web/common/types/task.types";
 import { isEditable } from "@web/views/Day/util/shortcut.util";
 import { NowViewShortcutKey } from "@web/views/Now/shortcuts/now.shortcut.types";
 

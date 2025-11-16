@@ -1,5 +1,5 @@
 import dayjs from "@core/util/date/dayjs";
-import { Task, isTask } from "../task.types";
+import { Task, isTask } from "@web/common/types/task.types";
 
 const STORAGE_KEY_PREFIX = "compass.today.tasks";
 const STORAGE_INFO_SEEN_KEY = "compass.day.storage-info-seen";

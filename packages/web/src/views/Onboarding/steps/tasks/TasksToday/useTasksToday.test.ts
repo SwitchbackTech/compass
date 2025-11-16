@@ -1,7 +1,7 @@
 import { act } from "react";
 import { renderHook } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
-import { Task } from "@web/views/Day/task.types";
+import { Task } from "@web/common/types/task.types";
 import {
   loadTasksFromStorage,
   saveTasksToStorage,

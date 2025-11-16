@@ -1,4 +1,4 @@
-import { Task } from "../task.types";
+import { Task } from "../../types/task.types";
 import { getIncompleteTasksSorted, sortTasksByStatus } from "./sort.task";
 
 describe("taskSort.util", () => {

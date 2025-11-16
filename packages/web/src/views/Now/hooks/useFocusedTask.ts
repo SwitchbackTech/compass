@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Task } from "@web/views/Day/task.types";
+import { Task } from "@web/common/types/task.types";
 import {
   getTodayDateKey,
   loadTasksFromStorage,

@@ -1,7 +1,7 @@
 import React from "react";
 import { DATA_TASK_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { ArrowButton } from "@web/components/Button/ArrowButton";
-import { Task as TaskType } from "../../task.types";
+import { Task as TaskType } from "../../../../common/types/task.types";
 import { TaskCircleIcon } from "../Icons/TaskCircleIcon";
 
 export interface TaskProps {

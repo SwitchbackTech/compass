@@ -1,9 +1,9 @@
 import React, { createContext } from "react";
+import { Task, UndoOperation } from "../../../common/types/task.types";
 import { useDateNavigation } from "../hooks/navigation/useDateNavigation";
 import { useTaskActions } from "../hooks/tasks/useTaskActions";
 import { useTaskEffects } from "../hooks/tasks/useTaskEffects";
 import { useTaskState } from "../hooks/tasks/useTaskState";
-import { Task, UndoOperation } from "../task.types";
 import { useStorageInfoModal } from "./StorageInfoModalContext";
 
 interface TaskContextValue {

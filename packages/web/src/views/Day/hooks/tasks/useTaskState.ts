@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Task, UndoOperation } from "../../task.types";
+import { Task, UndoOperation } from "../../../../common/types/task.types";
 import { getDateKey } from "../../util/storage.util";
 
 interface UseTaskStateProps {

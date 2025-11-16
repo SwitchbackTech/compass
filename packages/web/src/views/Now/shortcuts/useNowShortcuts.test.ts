@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { renderHook } from "@testing-library/react";
-import { Task } from "@web/views/Day/task.types";
+import { Task } from "@web/common/types/task.types";
 import { useNowShortcuts } from "./useNowShortcuts";
 
 // Mock react-router-dom

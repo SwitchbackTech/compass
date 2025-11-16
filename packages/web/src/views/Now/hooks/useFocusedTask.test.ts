@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
-import { Task } from "@web/views/Day/task.types";
+import { Task } from "@web/common/types/task.types";
 import * as storageUtil from "@web/views/Day/util/storage.util";
 import { useFocusedTask } from "./useFocusedTask";
 

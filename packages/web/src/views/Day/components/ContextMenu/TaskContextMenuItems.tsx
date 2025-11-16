@@ -1,6 +1,6 @@
 import { Trash } from "@phosphor-icons/react";
+import { Task } from "../../../../common/types/task.types";
 import { useTasks } from "../../hooks/tasks/useTasks";
-import { Task } from "../../task.types";
 
 interface Props {
   task: Task;

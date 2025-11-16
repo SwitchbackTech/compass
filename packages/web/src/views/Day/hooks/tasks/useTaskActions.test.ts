@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import { act, renderHook } from "@testing-library/react";
+import { Task } from "../../../../common/types/task.types";
 import { showMigrationToast } from "../../components/Toasts/MigrationToast/MigrationToast";
-import { Task } from "../../task.types";
 import * as storageUtil from "../../util/storage.util";
 import { useTaskActions } from "./useTaskActions";
 

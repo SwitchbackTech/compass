@@ -1,8 +1,8 @@
 import { useContext, useEffect, useState } from "react";
 import dayjs from "@core/util/date/dayjs";
+import { Task } from "@web/common/types/task.types";
+import { getIncompleteTasksSorted } from "@web/common/utils/task/sort.task";
 import { TaskContext } from "@web/views/Day/context/TaskProvider";
-import { Task } from "@web/views/Day/task.types";
-import { getIncompleteTasksSorted } from "@web/views/Day/util/sort.task";
 import {
   COMPASS_TASKS_SAVED_EVENT_NAME,
   CompassTasksSavedEvent,

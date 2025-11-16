@@ -2,10 +2,10 @@ import dayjs from "dayjs";
 import { useCallback } from "react";
 import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
+import { Task, UndoOperation } from "../../../../common/types/task.types";
+import { sortTasksByStatus } from "../../../../common/utils/task/sort.task";
 import { showMigrationToast } from "../../components/Toasts/MigrationToast/MigrationToast";
 import { showUndoDeleteToast } from "../../components/Toasts/UndoToast/UndoDeleteToast";
-import { Task, UndoOperation } from "../../task.types";
-import { sortTasksByStatus } from "../../util/sort.task";
 import {
   getDateKey,
   hasSeenStorageInfo,

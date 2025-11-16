@@ -3,7 +3,7 @@ import {
   ArrowCircleRight,
   CheckCircle,
 } from "@phosphor-icons/react";
-import { Task } from "@web/views/Day/task.types";
+import { Task } from "@web/common/types/task.types";
 
 interface FocusedTaskProps {
   task: Task;
