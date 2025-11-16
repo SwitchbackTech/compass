@@ -25,7 +25,7 @@ export const AgendaEvents = () => {
       >
         {/* Current time indicator for events column */}
         <div
-          className="border-red absolute right-0 left-0 z-30 border-t-2"
+          className="absolute right-0 left-0 z-30 border-t-2"
           style={{
             top: `${getNowLinePosition(currentTime)}px`,
           }}
