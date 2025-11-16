@@ -2,6 +2,7 @@
 
 @theme {
   /* Semantic colors */
+  --color-accent-primary: hsl(202 100 67);
   --color-bg-primary: hsl(222 28 7);
   --color-bg-secondary: hsl(218 24 9);
   --color-border-primary: hsl(219 18 34 / 20%);
@@ -26,7 +27,6 @@
   --color-tag-one: hsl(202 100 67);
   --color-tag-two: hsl(105 61 62);
   --color-tag-three: hsl(270 100 83);
-  --color-text-accent: hsl(202 100 67);
   --color-text-light: hsl(47 7 73);
   --color-text-lighter: hsl(0 0 100);
   --color-text-light-inactive: hsl(208 13 71 / 54.9%);
