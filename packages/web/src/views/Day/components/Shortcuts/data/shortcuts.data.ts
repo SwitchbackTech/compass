@@ -35,7 +35,7 @@ interface ShortcutsConfig {
 export const getShortcuts = (config: ShortcutsConfig = {}) => {
   const { isHome = false, isToday = true, isNow = false, currentDate } = config;
 
-  const global: Shortcut[] = [
+  const globalShortcuts: Shortcut[] = [
     { k: "1", label: "Now" },
     { k: "2", label: "Day" },
     { k: "3", label: "Week" },
@@ -52,7 +52,9 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
       { k: "k", label: "Next day" },
       { k: "Enter", label: "Go to Today" },
     ];
-  } else if (isToday) {
+  }
+
+  if (isToday) {
     dayTaskShortcuts = [
       { k: "u", label: "Focus on tasks" },
       { k: "c", label: "Create task" },
@@ -72,12 +74,9 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
             : "Go to today";
         })(),
       },
-      // { k: "e", label: "Edit event title" },
-      // { k: "Delete", label: "Delete event" },
-      // { k: "↑", label: "Move up 15m" },
-      // { k: "↓", label: "Move down 15m" },
     ];
-  } else if (isNow) {
+  }
+  if (isNow) {
     nowShortcuts = [
       { k: "j", label: "Previous task" },
       { k: "k", label: "Next task" },
@@ -86,22 +85,12 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
     ];
   }
 
-  // Flatten all active shortcuts for easy key extraction
-  const allShortcuts = [
-    ...global,
-    ...homeShortcuts,
-    ...dayTaskShortcuts,
-    ...dayAgendaShortcuts,
-    ...nowShortcuts,
-  ];
-
   return {
-    global,
+    globalShortcuts,
     homeShortcuts,
     dayTaskShortcuts,
     dayAgendaShortcuts,
     nowShortcuts,
-    allShortcuts,
     isHome,
     isToday,
     isNow,

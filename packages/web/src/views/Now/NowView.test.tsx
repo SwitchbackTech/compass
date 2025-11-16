@@ -22,7 +22,7 @@ describe("NowView", () => {
     renderWithMemoryRouter(<NowView />);
 
     expect(screen.getByText("Global")).toBeInTheDocument();
-    expect(screen.getByText("Now")).toBeInTheDocument();
+    expect(screen.getAllByText("Now")).toHaveLength(2);
     expect(screen.getByText("Day")).toBeInTheDocument();
     expect(screen.getByText("Week")).toBeInTheDocument();
   });

@@ -6,10 +6,10 @@ describe("shortcuts.data", () => {
     it("should return default shortcuts when no config provided", () => {
       const shortcuts = getShortcuts();
 
-      expect(shortcuts.global).toHaveLength(3);
-      expect(shortcuts.global[0]).toEqual({ k: "1", label: "Now" });
-      expect(shortcuts.global[1]).toEqual({ k: "2", label: "Day" });
-      expect(shortcuts.global[2]).toEqual({ k: "3", label: "Week" });
+      expect(shortcuts.globalShortcuts).toHaveLength(3);
+      expect(shortcuts.globalShortcuts[0]).toEqual({ k: "1", label: "Now" });
+      expect(shortcuts.globalShortcuts[1]).toEqual({ k: "2", label: "Day" });
+      expect(shortcuts.globalShortcuts[2]).toEqual({ k: "3", label: "Week" });
 
       expect(shortcuts.dayAgendaShortcuts).toHaveLength(2);
       expect(shortcuts.dayAgendaShortcuts[0]).toEqual({
@@ -132,22 +132,6 @@ describe("shortcuts.data", () => {
 
       expect(shortcuts.dayTaskShortcuts).toHaveLength(0);
       expect(shortcuts.dayAgendaShortcuts).toHaveLength(0);
-    });
-
-    it("should include all shortcuts in allShortcuts array", () => {
-      const shortcuts = getShortcuts({
-        isToday: true,
-        currentDate: dayjs().startOf("day").utc(),
-      });
-
-      const expectedLength =
-        shortcuts.global.length +
-        shortcuts.homeShortcuts.length +
-        shortcuts.dayTaskShortcuts.length +
-        shortcuts.dayAgendaShortcuts.length +
-        shortcuts.nowShortcuts.length;
-
-      expect(shortcuts.allShortcuts).toHaveLength(expectedLength);
     });
   });
 });

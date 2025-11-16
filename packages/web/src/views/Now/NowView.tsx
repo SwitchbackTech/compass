@@ -8,14 +8,14 @@ export const NowView = () => {
   useNowShortcuts();
 
   // Get shortcuts for the Now view
-  const { global, nowShortcuts } = getShortcuts({ isNow: true });
+  const { globalShortcuts, nowShortcuts } = getShortcuts({ isNow: true });
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900">
       <ShortcutsOverlay
         sections={[
           { title: "Now", shortcuts: nowShortcuts },
-          { title: "Global", shortcuts: global },
+          { title: "Global", shortcuts: globalShortcuts },
         ]}
       />
       <NowViewContent />
