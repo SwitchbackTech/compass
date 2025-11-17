@@ -5,5 +5,6 @@ export const ROOT_ROUTES = {
   ONBOARDING: "/onboarding",
   ROOT: "/",
   DAY: "/day",
+  DAY_DATE: "/day/:dateString",
   NOW: "/now",
 };

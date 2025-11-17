@@ -1,18 +1,14 @@
-import dayjs from "@core/util/date/dayjs";
-import { DateNavigationProvider } from "../context/DateNavigationProvider";
-import { StorageInfoModalProvider } from "../context/StorageInfoModalContext";
-import { TaskProvider } from "../context/TaskProvider";
-import { DayViewContent } from "./DayViewContent";
+import { Outlet } from "react-router-dom";
+import { DateNavigationProvider } from "@web/views/Day/context/DateNavigationProvider";
+import { StorageInfoModalProvider } from "@web/views/Day/context/StorageInfoModalContext";
+import { TaskProvider } from "@web/views/Day/context/TaskProvider";
 
 export function DayView() {
-  // Initialize with today's date - get today's date at midnight in user's timezone, then convert to UTC
-  const todayUTC = dayjs().startOf("day").utc();
-
   return (
-    <DateNavigationProvider initialDate={todayUTC}>
+    <DateNavigationProvider>
       <StorageInfoModalProvider>
         <TaskProvider>
-          <DayViewContent />
+          <Outlet />
         </TaskProvider>
       </StorageInfoModalProvider>
     </DateNavigationProvider>

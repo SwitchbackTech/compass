@@ -5,8 +5,33 @@ import {
   distinctUntilKeyChanged,
   skip,
 } from "rxjs/operators";
+import SuperTokens from "supertokens-web-js";
+import Session from "supertokens-web-js/recipe/session";
+import ThirdParty from "supertokens-web-js/recipe/thirdparty";
+import { APP_NAME } from "@core/constants/core.constants";
 import { session } from "@web/common/classes/Session";
+import { ENV_WEB } from "@web/common/constants/env.constants";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
 import * as socket from "@web/socket/SocketProvider";
+
+SuperTokens.init({
+  appInfo: {
+    appName: APP_NAME,
+    apiDomain: ENV_WEB.API_BASEURL,
+    apiBasePath: ROOT_ROUTES.API,
+  },
+  recipeList: [
+    ThirdParty.init(),
+    Session.init({
+      postAPIHook: async (context) => {
+        session.emit(context.action, context);
+      },
+      onHandleEvent: (event) => {
+        session.emit(event.action, event);
+      },
+    }),
+  ],
+});
 
 interface SessionContext {
   loading: boolean;

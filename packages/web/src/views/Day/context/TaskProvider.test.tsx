@@ -1,29 +1,38 @@
-import { act } from "react";
-import { renderHook } from "@testing-library/react";
+import { PropsWithChildren, act } from "react";
+import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
-import { Task } from "../../../common/types/task.types";
-import { TODAY_TASKS_STORAGE_KEY_PREFIX } from "../../../common/utils/storage/storage.util";
-import { useTasks } from "../hooks/tasks/useTasks";
-import { TaskProviderWrapper } from "../util/day.test-util";
+import { renderHook } from "@web/__tests__/__mocks__/mock.render";
+import { TODAY_TASKS_STORAGE_KEY_PREFIX } from "@web/common/utils/storage/storage.util";
+import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
+import { Task } from "@web/views/Day/task.types";
+import { TaskProviderWrapper } from "@web/views/Day/util/day.test-util";
 
 describe("TaskProvider", () => {
+  function Wrapper(props: PropsWithChildren) {
+    return (
+      <RouterProvider
+        future={{ v7_startTransition: true }}
+        router={createMemoryRouter(
+          [{ index: true, element: <TaskProviderWrapper {...props} /> }],
+          { initialEntries: ["/"], future: { v7_relativeSplatPath: true } },
+        )}
+      />
+    );
+  }
+
   beforeEach(() => {
     // Clear localStorage before each test
     localStorage.clear();
   });
 
   it("should provide task context to children", () => {
-    const { result } = renderHook(() => useTasks(), {
-      wrapper: TaskProviderWrapper,
-    });
+    const { result } = renderHook(useTasks, { wrapper: Wrapper });
 
     expect(result.current.tasks).toEqual([]);
   });
 
   it("should add a task", () => {
-    const { result } = renderHook(() => useTasks(), {
-      wrapper: TaskProviderWrapper,
-    });
+    const { result } = renderHook(useTasks, { wrapper: Wrapper });
 
     act(() => {
       result.current.addTask("Test task");
@@ -35,9 +44,7 @@ describe("TaskProvider", () => {
   });
 
   it("should update task title", () => {
-    const { result } = renderHook(() => useTasks(), {
-      wrapper: TaskProviderWrapper,
-    });
+    const { result } = renderHook(useTasks, { wrapper: Wrapper });
 
     let taskId: string;
     act(() => {
@@ -53,9 +60,7 @@ describe("TaskProvider", () => {
   });
 
   it("should toggle task status", () => {
-    const { result } = renderHook(() => useTasks(), {
-      wrapper: TaskProviderWrapper,
-    });
+    const { result } = renderHook(useTasks, { wrapper: Wrapper });
 
     let taskId: string;
     act(() => {
@@ -79,9 +84,7 @@ describe("TaskProvider", () => {
   });
 
   it("should move completed tasks to the end", () => {
-    const { result } = renderHook(() => useTasks(), {
-      wrapper: TaskProviderWrapper,
-    });
+    const { result } = renderHook(useTasks, { wrapper: Wrapper });
 
     let task1Id: string = "",
       task2Id: string = "",
@@ -108,9 +111,7 @@ describe("TaskProvider", () => {
   });
 
   it("should delete a task", () => {
-    const { result } = renderHook(() => useTasks(), {
-      wrapper: TaskProviderWrapper,
-    });
+    const { result } = renderHook(useTasks, { wrapper: Wrapper });
 
     let taskId: string;
     act(() => {
@@ -128,9 +129,7 @@ describe("TaskProvider", () => {
   });
 
   it("should persist tasks to localStorage", () => {
-    const { result } = renderHook(() => useTasks(), {
-      wrapper: TaskProviderWrapper,
-    });
+    const { result } = renderHook(useTasks, { wrapper: Wrapper });
 
     act(() => {
       result.current.addTask("Persisted task");
@@ -163,9 +162,7 @@ describe("TaskProvider", () => {
     ];
     localStorage.setItem(storageKey, JSON.stringify(mockTasks));
 
-    const { result } = renderHook(() => useTasks(), {
-      wrapper: TaskProviderWrapper,
-    });
+    const { result } = renderHook(useTasks, { wrapper: Wrapper });
 
     expect(result.current.tasks).toHaveLength(1);
     expect(result.current.tasks[0].title).toBe("Loaded task");
@@ -198,9 +195,7 @@ describe("TaskProvider", () => {
     ];
     localStorage.setItem(storageKey, JSON.stringify(mockTasks));
 
-    const { result } = renderHook(() => useTasks(), {
-      wrapper: TaskProviderWrapper,
-    });
+    const { result } = renderHook(useTasks, { wrapper: Wrapper });
 
     // Tasks should be sorted with todos first, completed last
     expect(result.current.tasks[0].id).toBe("task-1");
@@ -209,9 +204,7 @@ describe("TaskProvider", () => {
   });
 
   it("should move uncompleted task back to top section", () => {
-    const { result } = renderHook(() => useTasks(), {
-      wrapper: TaskProviderWrapper,
-    });
+    const { result } = renderHook(useTasks, { wrapper: Wrapper });
 
     let task2Id: string;
 
@@ -244,9 +237,7 @@ describe("TaskProvider", () => {
   });
 
   it("should restore a deleted task", () => {
-    const { result } = renderHook(() => useTasks(), {
-      wrapper: TaskProviderWrapper,
-    });
+    const { result } = renderHook(useTasks, { wrapper: Wrapper });
 
     let taskId: string;
     act(() => {
@@ -277,9 +268,7 @@ describe("TaskProvider", () => {
   });
 
   it("should not restore when no task is deleted", () => {
-    const { result } = renderHook(() => useTasks(), {
-      wrapper: TaskProviderWrapper,
-    });
+    const { result } = renderHook(useTasks, { wrapper: Wrapper });
 
     expect(result.current.tasks).toHaveLength(0);
     expect(result.current.undoState).toBeNull();
@@ -294,9 +283,7 @@ describe("TaskProvider", () => {
   });
 
   it("should only track the most recent deleted task when multiple tasks are deleted quickly", () => {
-    const { result } = renderHook(() => useTasks(), {
-      wrapper: TaskProviderWrapper,
-    });
+    const { result } = renderHook(useTasks, { wrapper: Wrapper });
 
     let firstTaskId = "";
     let secondTaskId = "";

@@ -1,41 +1,26 @@
-import { Provider as ReduxProvider } from "react-redux";
-import { MemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
-import { render, screen, within } from "@testing-library/react";
-import { store } from "@web/store";
-import { DayView } from "./DayView";
-
-const renderWithRouter = () => {
-  return render(
-    <ReduxProvider store={store}>
-      <MemoryRouter
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true,
-        }}
-        initialEntries={["/day"]}
-      >
-        <DayView />
-      </MemoryRouter>
-    </ReduxProvider>,
-  );
-};
+import { screen, within } from "@testing-library/react";
+import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
+import { DayViewContent } from "@web/views/Day/view/DayViewContent";
 
 describe("DayView", () => {
   beforeEach(() => {
     localStorage.clear();
   });
 
-  it("should render TaskList component", () => {
-    renderWithRouter();
+  it("should render TaskList component", async () => {
+    renderWithDayProviders(<DayViewContent />);
 
-    const taskpanel = screen.getByRole("region", { name: "daily-tasks" });
+    const taskpanel = await screen.findByRole("region", {
+      name: "daily-tasks",
+    });
+
     expect(within(taskpanel).getByText("Create task")).toBeInTheDocument();
   });
 
-  it("should render CalendarAgenda component", () => {
-    renderWithRouter();
+  it("should render CalendarAgenda component", async () => {
+    renderWithDayProviders(<DayViewContent />);
 
-    expect(screen.getByTestId("calendar-scroll")).toBeInTheDocument();
+    expect(await screen.findByTestId("calendar-scroll")).toBeInTheDocument();
   });
 });

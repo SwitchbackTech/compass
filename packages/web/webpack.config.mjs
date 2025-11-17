@@ -116,6 +116,7 @@ export default (env, argv) => {
       hash: true,
       template: "./src/index.html",
       favicon: "./src/favicon.ico",
+      publicPath: "/",
     }),
     // minify css
     new MiniCssExtractPlugin({
@@ -141,12 +142,14 @@ export default (env, argv) => {
             name: "react",
             chunks: "all",
             priority: 20,
+            reuseExistingChunk: true,
           },
           analytics: {
             test: /[\\/]node_modules[\\/](posthog-js)[\\/]/,
             name: "analytics",
             chunks: "all",
             priority: 15,
+            reuseExistingChunk: true,
           },
           vendor: {
             test: /[\\/]node_modules[\\/]/,
@@ -161,12 +164,14 @@ export default (env, argv) => {
             name: "views-common",
             chunks: "all",
             minChunks: 2,
+            reuseExistingChunk: true,
             priority: 5,
           },
           common: {
             name: "common",
             minChunks: 2,
             chunks: "all",
+            reuseExistingChunk: true,
             enforce: true,
           },
         },
@@ -262,6 +267,7 @@ export default (env, argv) => {
       clean: true,
       filename: "[name].[contenthash].js",
       path: `${_resolve(_dirname, "../../build/web")}`,
+      publicPath: "/",
     },
 
     devServer: {

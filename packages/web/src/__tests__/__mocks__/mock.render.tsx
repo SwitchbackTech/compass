@@ -1,53 +1,49 @@
-import { PropsWithChildren, ReactElement } from "react";
-import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
-import { Provider } from "react-redux";
-import { BrowserRouter } from "react-router-dom";
-import { ThemeProvider } from "styled-components";
-import { GoogleOAuthProvider } from "@react-oauth/google";
+import { ComponentType, PropsWithChildren, ReactElement } from "react";
+import { RouterProvider, RouterProviderProps } from "react-router-dom";
 import { configureStore } from "@reduxjs/toolkit";
 import { RenderOptions, render, renderHook } from "@testing-library/react";
 import { sagaMiddleware } from "@web/common/store/middlewares";
-import { theme } from "@web/common/styles/theme";
-import { GlobalStyle } from "@web/components/GlobalStyle";
+import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
+import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
 import type { store as compassStore } from "@web/store";
 import { reducers } from "@web/store/reducers";
 import { sagas } from "@web/store/sagas";
-import { SessionProvider } from "../../auth/SessionProvider";
 
-type CustomRenderOptions = Omit<RenderOptions, "wrapper"> & {
+interface CustomRenderOptions extends RenderOptions {
   state?: any;
   store?: typeof compassStore;
-};
+  router?: RouterProviderProps["router"];
+  wrapper?: ComponentType<PropsWithChildren>;
+}
 
-const AllTheProviders =
-  (store: typeof compassStore) =>
-  ({ children }: PropsWithChildren<{}>) => {
+const TestProviders = (props?: {
+  router?: RouterProviderProps["router"];
+  store?: typeof compassStore;
+}) => {
+  return ({ children }: PropsWithChildren) => {
+    if (!props?.router) {
+      return <CompassRequiredProviders {...props} children={children} />;
+    }
+
     return (
-      <SessionProvider>
-        <DndProvider backend={HTML5Backend}>
-          <GoogleOAuthProvider clientId="anyClientId">
-            <GlobalStyle />
-            <ThemeProvider theme={theme}>
-              <BrowserRouter
-                future={{
-                  v7_startTransition: true,
-                  v7_relativeSplatPath: true,
-                }}
-              >
-                <Provider store={store}>{children}</Provider>
-              </BrowserRouter>
-            </ThemeProvider>
-          </GoogleOAuthProvider>
-        </DndProvider>
-      </SessionProvider>
+      <CompassRequiredProviders store={props?.store}>
+        <RouterProvider
+          router={props.router}
+          fallbackElement={<AbsoluteOverflowLoader />}
+          future={{
+            v7_startTransition: true,
+          }}
+        />
+      </CompassRequiredProviders>
     );
   };
+};
 
 const customRender = (
   ui: ReactElement,
   {
     state,
+    router,
     store = configureStore({
       middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().concat(sagaMiddleware),
@@ -55,19 +51,25 @@ const customRender = (
       preloadedState: state,
     }),
     ...renderOptions
-  }: CustomRenderOptions = {},
+  }: Omit<CustomRenderOptions, "wrapper"> = {},
 ) => {
   sagaMiddleware.run(sagas);
 
   const options: RenderOptions = { ...renderOptions };
+
   // wraps test component with providers
-  return render(ui, { wrapper: AllTheProviders(store), ...options });
+  return render(ui, {
+    wrapper: TestProviders({ store, router }),
+    ...options,
+  });
 };
 
 const customRenderHook = <ReturnType, Props>(
   hook: (props: Props) => ReturnType,
   {
+    wrapper: WrapperComponent,
     state,
+    router,
     store = configureStore({
       middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().concat(sagaMiddleware),
@@ -80,8 +82,23 @@ const customRenderHook = <ReturnType, Props>(
   sagaMiddleware.run(sagas);
 
   const options: RenderOptions = { ...renderOptions };
+  const BaseProviders = TestProviders({ store, router });
+
+  const Wrapper = (props: PropsWithChildren) => {
+    if (!WrapperComponent) return <BaseProviders {...props} />;
+
+    return (
+      <BaseProviders>
+        <WrapperComponent {...props} />
+      </BaseProviders>
+    );
+  };
+
   // wraps test component with providers
-  return renderHook(hook, { wrapper: AllTheProviders(store), ...options });
+  return renderHook(hook, {
+    wrapper: Wrapper,
+    ...options,
+  });
 };
 
 export * from "@testing-library/react";

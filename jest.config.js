@@ -1,8 +1,15 @@
+import { resolve } from "node:path";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+
 /*
  * For a detailed explanation regarding each configuration property, visit:
  * https://jestjs.io/docs/configuration
  *
  */
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 /** @type { Exclude<Exclude<import("jest").Config["projects"], undefined>[number], string>} */
 const backendProject = {
@@ -150,12 +157,11 @@ const config = {
         "^@web/auth(/(.*)$)?": "<rootDir>/packages/web/src/auth/$1",
         "^@web/common(/(.*)$)?": "<rootDir>/packages/web/src/common/$1",
         "^@web/components(/(.*)$)?": "<rootDir>/packages/web/src/components/$1",
-        "^@web/containers(/(.*)$)?": "<rootDir>/packages/web/src/containers/$1",
         "^@web/ducks(/(.*)$)?": "<rootDir>/packages/web/src/ducks/$1",
         "^@web/public(/(.*)$)?": "<rootDir>/packages/web/src/public/$1",
-        "^@web/routers(/(.*)$)?": "<rootDir>/packages/web/src/routers/",
-        "^@web/store((/(.*)$)?)?": "<rootDir>/packages/web/src/store/$1",
+        "^@web/routers(/(.*)$)?": "<rootDir>/packages/web/src/routers/$1",
         "^@web/socket(/(.*)$)?": "<rootDir>/packages/web/src/socket/$1",
+        "^@web/store((/(.*)$)?)?": "<rootDir>/packages/web/src/store/$1",
         "^@web/views(/(.*)$)?": "<rootDir>/packages/web/src/views/$1",
         "^.+\\.(css|less)$":
           "<rootDir>/packages/web/src/__tests__/__mocks__/css.stub.js",
@@ -165,12 +171,13 @@ const config = {
       },
       setupFiles: [
         "<rootDir>/packages/core/src/__tests__/core.test.init.ts",
-        "<rootDir>/packages/web/src/__tests__/web.test.init.js",
+        "<rootDir>/packages/core/src/__tests__/core.test.start.ts",
+        "<rootDir>/packages/web/src/__tests__/web.test.init.ts",
       ],
       setupFilesAfterEnv: [
-        "<rootDir>/packages/web/src/__tests__/web.test.start.js",
+        "<rootDir>/packages/web/src/__tests__/web.test.start.ts",
       ],
-      testEnvironment: "jsdom",
+      testEnvironment: resolve(__dirname, "jest.env.ts"),
       testMatch: ["<rootDir>/packages/web/**/*.(test|spec).[jt]s?(x)"],
       transformIgnorePatterns: [
         //https://github.com/react-dnd/react-dnd/issues/3443
@@ -295,5 +302,4 @@ const config = {
   // watchman: true,
 };
 
-// eslint-disable-next-line no-undef
-module.exports = config;
+export default config;

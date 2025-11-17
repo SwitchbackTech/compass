@@ -1,21 +1,26 @@
-import { RouterProvider, createBrowserRouter } from "react-router-dom";
-import { UserProvider } from "@web/auth/UserProvider";
+import {
+  RouterProvider,
+  RouterProviderProps,
+  createBrowserRouter,
+} from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
-import { AuthenticatedLayout } from "@web/components/AuthenticatedLayout/AuthenticatedLayout";
-import { loadLoggedInData, loadLoginData } from "@web/routers/loaders";
-import SocketProvider from "@web/socket/SocketProvider";
+import {
+  loadDayData,
+  loadLoggedInData,
+  loadLoginData,
+  loadSpecificDayData,
+} from "@web/routers/loaders";
 
 export const router = createBrowserRouter(
   [
     {
-      element: (
-        <UserProvider>
-          <SocketProvider>
-            <AuthenticatedLayout />
-          </SocketProvider>
-        </UserProvider>
-      ),
+      lazy: async () =>
+        import(/* webpackChunkName: "calendar" */ "@web/views/Root").then(
+          (module) => ({
+            Component: module.RootView,
+          }),
+        ),
       loader: loadLoggedInData,
       children: [
         {
@@ -32,9 +37,22 @@ export const router = createBrowserRouter(
           lazy: async () =>
             import(
               /* webpackChunkName: "day" */ "@web/views/Day/view/DayView"
-            ).then((module) => ({
-              Component: module.DayView,
-            })),
+            ).then((module) => ({ Component: module.DayView })),
+          children: [
+            {
+              path: ROOT_ROUTES.DAY_DATE,
+              id: ROOT_ROUTES.DAY_DATE,
+              loader: loadSpecificDayData,
+              lazy: async () =>
+                import(
+                  /* webpackChunkName: "date" */ "@web/views/Day/view/DayViewContent"
+                ).then((module) => ({ Component: module.DayViewContent })),
+            },
+            {
+              index: true,
+              loader: loadDayData,
+            },
+          ],
         },
         {
           path: ROOT_ROUTES.LOGOUT,
@@ -48,9 +66,9 @@ export const router = createBrowserRouter(
         {
           path: ROOT_ROUTES.ROOT,
           lazy: async () =>
-            import(/* webpackChunkName: "home" */ "@web/views/Root").then(
+            import(/* webpackChunkName: "home" */ "@web/views/Calendar").then(
               (module) => ({
-                Component: module.RootView,
+                Component: module.CalendarView,
               }),
             ),
         },
@@ -92,10 +110,12 @@ export const router = createBrowserRouter(
   },
 );
 
-export const RootRouter = () => {
+export const CompassRouterProvider = (
+  props?: Partial<Pick<RouterProviderProps, "router">>,
+) => {
   return (
     <RouterProvider
-      router={router}
+      router={props?.router ?? router}
       future={{ v7_startTransition: true }}
       fallbackElement={<AbsoluteOverflowLoader />}
     />

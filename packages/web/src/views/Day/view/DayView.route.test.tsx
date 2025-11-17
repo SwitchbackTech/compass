@@ -1,14 +1,20 @@
 import { act } from "react";
+import { createMemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import dayjs from "@core/util/date/dayjs";
+import { render } from "@web/__tests__/__mocks__/mock.render";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
+import {
+  loadDayData,
+  loadSpecificDayData,
+  loadTodayData,
+} from "@web/routers/loaders";
 import {
   DAY_HEADING_FORMAT,
   DAY_SUBHEADING_FORMAT,
-} from "../components/TaskList/TaskListHeader";
-import { renderWithDayProviders } from "../util/day.test-util";
-import { DayView } from "./DayView";
-import { DayViewContent } from "./DayViewContent";
+} from "@web/views/Day/components/TaskList/TaskListHeader";
 
 // Mock the Agenda component
 jest.mock("../components/Agenda/Agenda", () => ({
@@ -32,6 +38,43 @@ jest.mock("../hooks/shortcuts/useDayViewShortcuts", () => {
   };
 });
 
+const createRouter = () =>
+  createMemoryRouter(
+    [
+      {
+        path: ROOT_ROUTES.DAY,
+        lazy: async () =>
+          import(
+            /* webpackChunkName: "day" */ "@web/views/Day/view/DayView"
+          ).then((module) => ({ Component: module.DayView })),
+        children: [
+          {
+            path: ROOT_ROUTES.DAY_DATE,
+            id: ROOT_ROUTES.DAY_DATE,
+            loader: loadSpecificDayData,
+            lazy: async () =>
+              import(
+                /* webpackChunkName: "date" */ "@web/views/Day/view/DayViewContent"
+              ).then((module) => ({ Component: module.DayViewContent })),
+          },
+          {
+            index: true,
+            loader: loadDayData,
+          },
+        ],
+      },
+    ],
+    {
+      future: { v7_relativeSplatPath: true },
+      initialEntries: [`${ROOT_ROUTES.DAY}/${loadTodayData().dateString}`],
+    },
+  );
+
+// Test with a specific date to avoid timezone issues
+const dateString = "2025-10-19";
+
+const testDate = dayjs.utc(dateString, dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT); // Sunday
+
 describe("TodayView Routing", () => {
   beforeEach(() => {
     mockUseDayViewShortcuts.mockReset();
@@ -44,95 +87,103 @@ describe("TodayView Routing", () => {
     localStorage.clear();
   });
 
-  it("should show today's date when navigating to /day", () => {
-    renderWithDayProviders(<DayView />);
+  it("should show today's date when navigating to /day", async () => {
+    const router = createRouter();
+
+    await act(() => render(<></>, { router }));
 
     // Should show today's date in the header
     const todayHeading = new Date().toLocaleDateString("en-US", {
       weekday: "long",
     });
+
     expect(screen.getByText(todayHeading)).toBeInTheDocument();
   });
 
   it("should show next day label when clicking next day button", async () => {
-    // Test with a specific date to avoid timezone issues
-    const testDate = dayjs.utc("2025-10-19"); // Sunday
-    const { user } = renderWithDayProviders(<DayViewContent />, {
-      initialDate: testDate,
-    });
+    const user = userEvent.setup();
+    const router = createRouter();
+
+    await act(() => render(<></>, { router }));
+
+    await act(() => router.navigate(`${ROOT_ROUTES.DAY}/${dateString}`));
 
     // Find and click the next day button
     const nextDayButton = screen.getByRole("button", { name: "Next day" });
-    await act(async () => {
-      await user.click(nextDayButton);
-    });
+
+    await act(() => user.click(nextDayButton));
 
     // Should show tomorrow's date (Monday, October 20)
     const tomorrow = testDate.add(1, "day");
     const tomorrowWeekday = tomorrow.format(DAY_HEADING_FORMAT);
     const tomorrowDate = tomorrow.format(DAY_SUBHEADING_FORMAT);
+
     expect(screen.getByText(tomorrowWeekday)).toBeInTheDocument();
     expect(screen.getByText(tomorrowDate)).toBeInTheDocument();
   });
 
   it("should show previous day when clicking previous day button", async () => {
-    // Test with a specific date to avoid timezone issues
-    const testDate = dayjs.utc("2025-10-19"); // Sunday
-    const { user } = renderWithDayProviders(<DayViewContent />, {
-      initialDate: testDate,
-    });
+    const user = userEvent.setup();
+    const router = createRouter();
+
+    await act(() => render(<></>, { router }));
+
+    await act(() => router.navigate(`${ROOT_ROUTES.DAY}/${dateString}`));
 
     // Find and click the previous day button
     const prevDayButton = screen.getByRole("button", { name: "Previous day" });
-    await act(async () => {
-      await user.click(prevDayButton);
-    });
+
+    await act(() => user.click(prevDayButton));
 
     // Should show yesterday's date (Saturday, October 18)
     const yesterday = testDate.subtract(1, "day");
     const yesterdayWeekday = yesterday.format(DAY_HEADING_FORMAT);
     const yesterdayDate = yesterday.format(DAY_SUBHEADING_FORMAT);
+
     expect(screen.getByText(yesterdayWeekday)).toBeInTheDocument();
     expect(screen.getByText(yesterdayDate)).toBeInTheDocument();
   });
 
   it("should show today when clicking go to today button", async () => {
-    // Test with a specific date to avoid timezone issues
-    const testDate = dayjs.utc("2025-10-19"); // Sunday
-    const { user } = renderWithDayProviders(<DayViewContent />, {
-      initialDate: testDate,
-    });
+    const user = userEvent.setup();
+    const router = createRouter();
+
+    await act(() => render(<></>, { router }));
+
+    await act(() => router.navigate(`${ROOT_ROUTES.DAY}/${dateString}`));
 
     // Go to different day to make the "Go to today" button visible
     const prevDayButton = screen.getByRole("button", { name: "Previous day" });
-    await act(async () => {
-      await user.click(prevDayButton);
-    });
+
+    await act(() => user.click(prevDayButton));
 
     // Wait for the navigation to complete and verify we're on yesterday
     const yesterday = testDate.subtract(1, "day");
     const yesterdayWeekday = yesterday.format(DAY_HEADING_FORMAT);
+
     await screen.findByText(yesterdayWeekday);
 
     // Find and click the go to today button (it should be visible when not viewing today)
     const goToTodayButton = screen.getByRole("button", { name: "Go to today" });
-    await act(async () => {
-      await user.click(goToTodayButton);
-    });
+
+    await act(() => user.click(goToTodayButton));
 
     // Should show today's date (the actual current date, not the test date)
     const today = dayjs().utc();
     const todayWeekday = today.format(DAY_HEADING_FORMAT);
     const todayDate = today.format(DAY_SUBHEADING_FORMAT);
+
     expect(screen.getByText(todayWeekday)).toBeInTheDocument();
     expect(screen.getByText(todayDate)).toBeInTheDocument();
   });
 
-  it("should render specific dates correctly", () => {
+  it("should render specific dates correctly", async () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date("2025-10-20T12:00:00.000Z"));
 
-    renderWithDayProviders(<DayView />);
+    const router = createRouter();
+
+    await act(() => render(<></>, { router }));
 
     expect(screen.getByText("Monday")).toBeInTheDocument();
     expect(screen.getByText("October 20")).toBeInTheDocument();
@@ -142,79 +193,108 @@ describe("TodayView Routing", () => {
 });
 describe("Navigation with URL updates", () => {
   it("should update URL when navigating to next day", async () => {
-    const { user } = renderWithDayProviders(<DayViewContent />);
+    const user = userEvent.setup();
+    const router = createRouter();
 
-    // Mock window.location for testing
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    delete (window as any).location;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any).location = { pathname: "/day" };
+    await act(() => render(<></>, { router }));
 
     // Find and click the next day button
     const nextDayButton = screen.getByRole("button", { name: "Next day" });
+
+    const nextDay = dayjs
+      .utc()
+      .add(1, "day")
+      .format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
+
     await act(async () => {
       await user.click(nextDayButton);
     });
 
-    // The navigation should be called (we can't easily test the actual URL change in this context)
-    // but we can verify the button click works
+    expect(router.state.location.pathname).toEqual(
+      `${ROOT_ROUTES.DAY}/${nextDay}`,
+    );
+
     expect(nextDayButton).toBeInTheDocument();
   });
 
   it("should update URL when navigating to previous day", async () => {
-    const { user } = renderWithDayProviders(<DayViewContent />);
+    const user = userEvent.setup();
+    const router = createRouter();
+
+    await act(() => render(<></>, { router }));
 
     // Find and click the previous day button
-    const prevDayButton = screen.getByRole("button", {
-      name: "Previous day",
-    });
-    await act(async () => {
-      await user.click(prevDayButton);
-    });
+    const prevDayButton = screen.getByRole("button", { name: "Previous day" });
+
+    await act(() => user.click(prevDayButton));
+
+    const prevDay = dayjs
+      .utc()
+      .subtract(1, "day")
+      .format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
 
     // Verify the button click works
     expect(prevDayButton).toBeInTheDocument();
+
+    expect(router.state.location.pathname).toEqual(
+      `${ROOT_ROUTES.DAY}/${prevDay}`,
+    );
   });
 
-  it("should display correct date in header when viewing specific date", () => {
-    // Test with a specific date - use UTC to avoid timezone issues
+  it("should display correct date in header when viewing specific date", async () => {
+    const router = createRouter();
     const specificDate = dayjs.utc("2025-10-20");
-    renderWithDayProviders(<DayViewContent />, {
-      initialDate: specificDate,
-    });
+    const testDateString = specificDate.format(
+      dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+    );
+
+    await act(() => render(<></>, { router }));
+    await act(() => router.navigate(`${ROOT_ROUTES.DAY}/${testDateString}`));
+
+    expect(router.state.location.pathname).toEqual(
+      `${ROOT_ROUTES.DAY}/${testDateString}`,
+    );
 
     // Should show October 20, 2025 (Monday)
     expect(screen.getByText("Monday")).toBeInTheDocument();
     expect(screen.getByText("October 20")).toBeInTheDocument();
   });
 
-  it("should show today indicator when viewing today", () => {
+  it("should show today indicator when viewing today", async () => {
     // Test with today's date (using UTC for consistency)
     const today = dayjs().utc();
-    renderWithDayProviders(<DayViewContent />, {
-      initialDate: today,
-    });
+
+    const router = createRouter();
+
+    await act(() => render(<></>, { router }));
 
     // Should show today's date
     const todayWeekday = today.format(DAY_HEADING_FORMAT);
     const todayDate = today.format(DAY_SUBHEADING_FORMAT);
-    expect(screen.getByText(todayWeekday)).toBeInTheDocument();
-    expect(screen.getByText(todayDate)).toBeInTheDocument();
+
+    await expect(screen.findByText(todayWeekday)).resolves.toBeInTheDocument();
+    await expect(screen.findByText(todayDate)).resolves.toBeInTheDocument();
   });
 
-  it("should display dates in local timezone regardless of UTC offset", () => {
+  it("should display dates in local timezone regardless of UTC offset", async () => {
     jest.useFakeTimers();
     // Set time to 11pm on Oct 19 in CST (4am Oct 20 UTC)
     jest.setSystemTime(new Date("2025-10-20T04:00:00.000Z"));
 
     // Mock timezone to CST
     const testDate = dayjs.utc("2025-10-20T04:00:00.000Z");
-    renderWithDayProviders(<DayViewContent />, {
-      initialDate: testDate,
-    });
+    const testDateString = testDate.format(
+      dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+    );
+
+    const router = createRouter();
+
+    await act(() => render(<></>, { router }));
+    await act(() => router.navigate(`${ROOT_ROUTES.DAY}/${testDateString}`));
 
     // Should show Oct 19 (local), not Oct 20 (UTC)
     const localDate = testDate.local();
+
     expect(
       screen.getByText(localDate.format(DAY_HEADING_FORMAT)),
     ).toBeInTheDocument();

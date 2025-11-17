@@ -34,11 +34,13 @@ describe("TaskListHeader", () => {
     localStorage.clear();
   });
 
-  it("should render the today heading with current date", () => {
+  it("should render the today heading with current date", async () => {
     renderTaskList();
 
-    const headingButton = screen.getByRole("button", { name: /select view/i });
-    const subheading = screen.getByRole("heading", { level: 3 });
+    const headingButton = await screen.findByRole("button", {
+      name: /select view/i,
+    });
+    const subheading = await screen.findByRole("heading", { level: 3 });
     expect(headingButton).toBeInTheDocument();
     expect(subheading).toBeInTheDocument();
     expect(headingButton.textContent).toMatch(/\w+/); // Matches format like "Wednesday"
@@ -51,11 +53,13 @@ describe("TaskListHeader", () => {
 
     // Verify initial heading shows correct date
     const expectedInitialDate = format(testDate);
-    const headingButton = screen.getByRole("button", { name: /select view/i });
+    const headingButton = await screen.findByRole("button", {
+      name: /select view/i,
+    });
     expect(headingButton).toHaveTextContent(expectedInitialDate);
 
     // Click the next day button
-    const nextButton = screen.getByRole("button", { name: "Next day" });
+    const nextButton = await screen.findByRole("button", { name: "Next day" });
     await act(async () => {
       await user.click(nextButton);
     });
@@ -73,11 +77,15 @@ describe("TaskListHeader", () => {
 
     // Verify initial heading shows correct date
     const expectedInitialDate = format(testDate);
-    const headingButton = screen.getByRole("button", { name: /select view/i });
+    const headingButton = await screen.findByRole("button", {
+      name: /select view/i,
+    });
     expect(headingButton).toHaveTextContent(expectedInitialDate);
 
     // Click the previous day button
-    const prevButton = screen.getByRole("button", { name: "Previous day" });
+    const prevButton = await screen.findByRole("button", {
+      name: "Previous day",
+    });
     await act(async () => {
       await user.click(prevButton);
     });
@@ -93,9 +101,13 @@ describe("TaskListHeader", () => {
     const testDate = createUtcDate("2025-01-15T12:00:00Z");
     const { user } = renderTaskList({}, testDate);
 
-    const headingButton = screen.getByRole("button", { name: /select view/i });
-    const nextButton = screen.getByRole("button", { name: "Next day" });
-    const prevButton = screen.getByRole("button", { name: "Previous day" });
+    const headingButton = await screen.findByRole("button", {
+      name: /select view/i,
+    });
+    const nextButton = await screen.findByRole("button", { name: "Next day" });
+    const prevButton = await screen.findByRole("button", {
+      name: "Previous day",
+    });
 
     // Click next day twice
     await act(async () => {
@@ -129,8 +141,10 @@ describe("TaskListHeader", () => {
     const { user } = renderTaskList({}, testDate);
 
     const initialDate = format(testDate);
-    const headingButton = screen.getByRole("button", { name: /select view/i });
-    const nextButton = screen.getByRole("button", { name: "Next day" });
+    const headingButton = await screen.findByRole("button", {
+      name: /select view/i,
+    });
+    const nextButton = await screen.findByRole("button", { name: "Next day" });
 
     // Verify initial date is end of January
     expect(headingButton).toHaveTextContent(initialDate);
@@ -147,18 +161,20 @@ describe("TaskListHeader", () => {
     });
   });
 
-  it("should show go to today button when viewing a different day", () => {
+  it("should show go to today button when viewing a different day", async () => {
     const testDate = createUtcDate("2025-01-15T12:00:00Z");
     renderTaskList({}, testDate);
 
-    const goToTodayButton = screen.getByRole("button", { name: "Go to today" });
+    const goToTodayButton = await screen.findByRole("button", {
+      name: "Go to today",
+    });
     expect(goToTodayButton).toBeInTheDocument();
   });
 
-  it("should not show go to today button when viewing today", () => {
+  it("should not show go to today button when viewing today", async () => {
     renderTaskList();
 
-    const goToTodayButton = screen.getByLabelText("Go to today");
+    const goToTodayButton = await screen.findByLabelText("Go to today");
     expect(goToTodayButton).toBeInTheDocument();
 
     // Check that the wrapper div has the invisible class
@@ -172,8 +188,12 @@ describe("TaskListHeader", () => {
     const { user } = renderTaskList({}, testDate);
 
     const expectedInitialDate = format(testDate);
-    const headingButton = screen.getByRole("button", { name: /select view/i });
-    const goToTodayButton = screen.getByRole("button", { name: "Go to today" });
+    const headingButton = await screen.findByRole("button", {
+      name: /select view/i,
+    });
+    const goToTodayButton = await screen.findByRole("button", {
+      name: "Go to today",
+    });
 
     // Verify initial heading shows the test date
     expect(headingButton).toHaveTextContent(expectedInitialDate);
@@ -195,7 +215,9 @@ describe("TaskListHeader", () => {
     const { user } = renderTaskList({}, testDate);
 
     // Verify the go to today button is initially visible
-    const goToTodayButton = screen.getByRole("button", { name: "Go to today" });
+    const goToTodayButton = await screen.findByRole("button", {
+      name: "Go to today",
+    });
     expect(goToTodayButton).toBeInTheDocument();
 
     // Check that the wrapper div does NOT have the invisible class initially
@@ -217,7 +239,7 @@ describe("TaskListHeader", () => {
 });
 
 describe("TaskListHeader - Timezone Handling", () => {
-  it("should display date in local timezone, not UTC", () => {
+  it("should display date in local timezone, not UTC", async () => {
     // Simulate 8pm CST on Oct 19 (which is 1am UTC on Oct 20)
     const cstDate = createUtcDate("2025-10-20T01:00:00Z"); // UTC time
     const utcDayjs = dayjs.utc(cstDate);
@@ -227,8 +249,10 @@ describe("TaskListHeader - Timezone Handling", () => {
     // Should show local date (Oct 19), not UTC date (Oct 20)
     const localDate = utcDayjs.local();
     const expectedHeading = localDate.format(DAY_HEADING_FORMAT);
-    const headingButton = screen.getByRole("button", { name: /select view/i });
-    const subheading = screen.getByRole("heading", { level: 3 });
+    const headingButton = await screen.findByRole("button", {
+      name: /select view/i,
+    });
+    const subheading = await screen.findByRole("heading", { level: 3 });
 
     expect(headingButton).toHaveTextContent(expectedHeading);
     expect(subheading).toHaveTextContent(
@@ -236,7 +260,7 @@ describe("TaskListHeader - Timezone Handling", () => {
     );
   });
 
-  it("should correctly identify today in local timezone", () => {
+  it("should correctly identify today in local timezone", async () => {
     // Mock current time to be 11pm local (which might be next day in UTC)
     jest.useFakeTimers();
     jest.setSystemTime(new Date("2025-10-19T23:00:00-05:00"));
@@ -247,7 +271,7 @@ describe("TaskListHeader - Timezone Handling", () => {
     renderTaskList({}, todayUtc.toDate());
 
     // "Go to today" button should be invisible because we're viewing today
-    const goToTodayButton = screen.getByLabelText("Go to today");
+    const goToTodayButton = await screen.findByLabelText("Go to today");
     const wrapperDiv = goToTodayButton?.parentElement?.parentElement;
     expect(wrapperDiv).toHaveClass("invisible");
 

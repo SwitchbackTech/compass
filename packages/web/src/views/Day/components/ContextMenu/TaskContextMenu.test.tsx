@@ -23,7 +23,7 @@ describe("TaskContextMenu", () => {
     renderWithDayProviders(<TaskList />);
 
     // Add a task first
-    const addButton = screen.getByText("Create task");
+    const addButton = await screen.findByText("Create task");
     await act(async () => {
       await user.click(addButton);
     });
@@ -45,8 +45,8 @@ describe("TaskContextMenu", () => {
     });
 
     // Check that context menu appears
-    await waitFor(() => {
-      expect(screen.getByText("Delete Task")).toBeInTheDocument();
+    await waitFor(async () => {
+      expect(await screen.findByText("Delete Task")).toBeInTheDocument();
     });
   });
 
@@ -55,7 +55,7 @@ describe("TaskContextMenu", () => {
     renderWithDayProviders(<TaskList />);
 
     // Add a task
-    const addButton = screen.getByText("Create task");
+    const addButton = await screen.findByText("Create task");
     await act(async () => {
       await user.click(addButton);
     });
@@ -75,8 +75,8 @@ describe("TaskContextMenu", () => {
     });
 
     // Check that Delete Task menu item is visible
-    await waitFor(() => {
-      const deleteMenuItem = screen.getByText("Delete Task");
+    await waitFor(async () => {
+      const deleteMenuItem = await screen.findByText("Delete Task");
       expect(deleteMenuItem).toBeInTheDocument();
       expect(deleteMenuItem.closest("button")).toHaveClass("cursor-pointer");
     });
@@ -86,7 +86,7 @@ describe("TaskContextMenu", () => {
     const { user } = renderWithDayProviders(<TaskList />);
 
     // Add a task
-    const addButton = screen.getByText("Create task");
+    const addButton = await screen.findByText("Create task");
     await act(async () => {
       await user.click(addButton);
     });
@@ -108,11 +108,11 @@ describe("TaskContextMenu", () => {
     });
 
     // Click Delete Task
-    await waitFor(() => {
-      expect(screen.getByText("Delete Task")).toBeInTheDocument();
+    await waitFor(async () => {
+      expect(await screen.findByText("Delete Task")).toBeInTheDocument();
     });
 
-    const deleteButton = screen.getByText("Delete Task");
+    const deleteButton = await screen.findByText("Delete Task");
     await act(async () => {
       await user.click(deleteButton);
     });
@@ -127,7 +127,7 @@ describe("TaskContextMenu", () => {
     const { user } = renderWithDayProviders(<TaskList />);
 
     // Add a task
-    const addButton = screen.getByText("Create task");
+    const addButton = await screen.findByText("Create task");
     await act(async () => {
       await user.click(addButton);
     });
@@ -147,8 +147,8 @@ describe("TaskContextMenu", () => {
     });
 
     // Check that menu is open
-    await waitFor(() => {
-      expect(screen.getByText("Delete Task")).toBeInTheDocument();
+    await waitFor(async () => {
+      expect(await screen.findByText("Delete Task")).toBeInTheDocument();
     });
 
     // Click outside the menu (on the heading button)
@@ -167,7 +167,7 @@ describe("TaskContextMenu", () => {
     const { user } = renderWithDayProviders(<TaskList />);
 
     // Add a task
-    const addButton = screen.getByText("Create task");
+    const addButton = await screen.findByText("Create task");
     await act(async () => {
       await user.click(addButton);
     });
@@ -187,8 +187,8 @@ describe("TaskContextMenu", () => {
     });
 
     // Check that menu is open
-    await waitFor(() => {
-      expect(screen.getByText("Delete Task")).toBeInTheDocument();
+    await waitFor(async () => {
+      expect(await screen.findByText("Delete Task")).toBeInTheDocument();
     });
 
     // Press Escape key
@@ -206,7 +206,7 @@ describe("TaskContextMenu", () => {
     const { user } = renderWithDayProviders(<TaskList />);
 
     // Right-click on the add task button
-    const addButton = screen.getByText("Create task");
+    const addButton = await screen.findByText("Create task");
     await act(async () => {
       await user.pointer({ target: addButton, keys: "[MouseRight]" });
     });
@@ -219,7 +219,7 @@ describe("TaskContextMenu", () => {
     const { user } = renderWithDayProviders(<TaskList />);
 
     // Add two tasks
-    const addButton = screen.getByText("Create task");
+    const addButton = await screen.findByText("Create task");
     await act(async () => {
       await user.click(addButton);
     });
@@ -232,7 +232,7 @@ describe("TaskContextMenu", () => {
       expect(screen.getByDisplayValue("First task")).toBeInTheDocument();
     });
 
-    const addButton2 = screen.getByText("Create task");
+    const addButton2 = await screen.findByText("Create task");
     await act(async () => {
       await user.click(addButton2);
     });
@@ -254,12 +254,12 @@ describe("TaskContextMenu", () => {
     });
 
     // Check that menu appears and shows correct task
-    await waitFor(() => {
-      expect(screen.getByText("Delete Task")).toBeInTheDocument();
+    await waitFor(async () => {
+      expect(await screen.findByText("Delete Task")).toBeInTheDocument();
     });
 
     // Click Delete Task
-    const deleteButton = screen.getByText("Delete Task");
+    const deleteButton = await screen.findByText("Delete Task");
     await act(async () => {
       await user.click(deleteButton);
     });

@@ -1,4 +1,5 @@
 import { SyntheticEvent, act } from "react";
+import { createMemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -43,6 +44,10 @@ jest.mock("@web/common/utils/event/event-target-visibility.util", () => ({
     },
 }));
 
+const router = createMemoryRouter([{ index: true, Component: CalendarView }], {
+  initialEntries: ["/"],
+});
+
 const mockConfirm = jest.spyOn(window, "confirm");
 
 describe("Event Form", () => {
@@ -50,7 +55,8 @@ describe("Event Form", () => {
     jest.resetAllMocks();
   });
   it("closes after clicking outside", async () => {
-    render(<CalendarView />, { state: preloadedState });
+    await act(() => render(<></>, { router, state: preloadedState }));
+
     const user = userEvent.setup();
 
     await act(async () => {
@@ -68,14 +74,19 @@ describe("Event Form", () => {
   });
   it("closes after clicking trash icon", async () => {
     mockConfirm.mockReturnValue(true);
+
     const user = userEvent.setup();
-    render(<CalendarView />, {
-      state: findAndUpdateEventInPreloadedState(
-        preloadedState,
-        EUROPE_TRIP._id as string,
-        freshenEventStartEndDate,
-      ),
-    });
+
+    await act(() =>
+      render(<></>, {
+        router,
+        state: findAndUpdateEventInPreloadedState(
+          preloadedState,
+          EUROPE_TRIP._id as string,
+          freshenEventStartEndDate,
+        ),
+      }),
+    );
 
     await act(async () => {
       await user.click(screen.getByRole("button", { name: "Europe Trip < >" }));
@@ -103,7 +114,10 @@ describe("Event Form", () => {
   describe("DatePicker", () => {
     it("does not open dialog by default", async () => {
       const user = userEvent.setup();
-      const { container } = render(<CalendarView />, { state: preloadedState });
+
+      const { container } = await act(() =>
+        render(<></>, { router, state: preloadedState }),
+      );
 
       await act(async () => {
         const climbBtn = document.querySelector(
@@ -120,7 +134,9 @@ describe("Event Form", () => {
 
   describe("Reminder", () => {
     it("it should be focused when the 'r' keyboard shortcut is used", async () => {
-      const { container } = render(<CalendarView />, { state: preloadedState });
+      const { container } = await act(() =>
+        render(<></>, { router, state: preloadedState }),
+      );
 
       const reminderPlaceholder = screen.getByText(
         "Click to add your reminder",
@@ -137,7 +153,8 @@ describe("Event Form", () => {
 
     it("it should be focused when the 'edit reminder' btn is clicked in the command palette", async () => {
       const user = userEvent.setup();
-      render(<CalendarView />);
+
+      await act(() => render(<></>, { router, state: preloadedState }));
 
       expect(
         screen.getByText("Click to add your reminder"),
