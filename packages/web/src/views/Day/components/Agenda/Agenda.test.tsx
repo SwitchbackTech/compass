@@ -1,6 +1,6 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { Schema_Event } from "@core/types/event.types";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import { renderWithDayProviders } from "../../util/day.test-util";
@@ -15,16 +15,16 @@ const renderAgenda = (
 };
 
 describe("CalendarAgenda", () => {
-  it("should render time labels", () => {
+  it("should render time labels", async () => {
     renderAgenda();
 
-    expect(screen.getByText("12am")).toBeInTheDocument();
-    expect(screen.getByText("12pm")).toBeInTheDocument();
-    expect(screen.getByText("6am")).toBeInTheDocument();
-    expect(screen.getByText("6pm")).toBeInTheDocument();
+    expect(await screen.findByText("12am")).toBeInTheDocument();
+    expect(await screen.findByText("12pm")).toBeInTheDocument();
+    expect(await screen.findByText("6am")).toBeInTheDocument();
+    expect(await screen.findByText("6pm")).toBeInTheDocument();
   });
 
-  it("should render multiple events", () => {
+  it("should render multiple events", async () => {
     const mockEvents: Schema_Event[] = [
       {
         _id: "event-1",
@@ -44,11 +44,11 @@ describe("CalendarAgenda", () => {
 
     renderAgenda(mockEvents);
 
-    expect(screen.getByText("Event 1")).toBeInTheDocument();
-    expect(screen.getByText("Event 2")).toBeInTheDocument();
+    expect(await screen.findByText("Event 1")).toBeInTheDocument();
+    expect(await screen.findByText("Event 2")).toBeInTheDocument();
   });
 
-  it("should render all-day events", () => {
+  it("should render all-day events", async () => {
     const mockEvents: Schema_Event[] = [
       {
         _id: "event-all-day",
@@ -61,17 +61,19 @@ describe("CalendarAgenda", () => {
 
     renderAgenda(mockEvents);
 
-    expect(screen.getByText("All Day Event")).toBeInTheDocument();
+    expect(await screen.findByText("All Day Event")).toBeInTheDocument();
   });
 
-  it("should show skeleton during loading", () => {
+  it("should show skeleton during loading", async () => {
     renderAgenda([], { isProcessing: true });
 
-    const skeletonElements = document.querySelectorAll(".animate-pulse");
-    expect(skeletonElements.length).toBeGreaterThan(0);
+    await waitFor(() => {
+      const skeletonElements = document.querySelectorAll(".animate-pulse");
+      expect(skeletonElements.length).toBeGreaterThan(0);
+    });
   });
 
-  it("should not show skeleton or error when events are loaded", () => {
+  it("should not show skeleton or error when events are loaded", async () => {
     const mockEvents: Schema_Event[] = [
       {
         _id: "event-1",
@@ -87,10 +89,10 @@ describe("CalendarAgenda", () => {
     const skeletonElements = document.querySelectorAll(".animate-pulse");
     expect(skeletonElements).toHaveLength(0);
     expect(screen.queryByText("Failed to load events")).not.toBeInTheDocument();
-    expect(screen.getByText("Test Event")).toBeInTheDocument();
+    expect(await screen.findByText("Test Event")).toBeInTheDocument();
   });
 
-  it("should render events with correct tabIndex and data attributes", () => {
+  it("should render events with correct tabIndex and data attributes", async () => {
     const mockEvents: Schema_Event[] = [
       {
         _id: "all-day-1",
@@ -110,14 +112,14 @@ describe("CalendarAgenda", () => {
 
     renderAgenda(mockEvents);
 
-    const allDayEvent = screen.getByRole("button", {
+    const allDayEvent = await screen.findByRole("button", {
       name: "All Day Event 1",
     });
     expect(allDayEvent).toHaveAttribute("tabIndex", "0");
     expect(allDayEvent).toHaveAttribute("role", "button");
     expect(allDayEvent).toHaveAttribute("data-event-id", "all-day-1");
 
-    const timedEvent = screen.getByRole("button", {
+    const timedEvent = await screen.findByRole("button", {
       name: "Timed Event 1",
     });
     expect(timedEvent).toHaveAttribute("tabIndex", "0");
@@ -156,30 +158,34 @@ describe("CalendarAgenda", () => {
       },
     ];
 
-    const { user } = renderAgenda(mockEvents);
+    const { user } = await act(() => renderAgenda(mockEvents));
 
     await act(async () => {
       await user.tab();
     });
+
     expect(document.activeElement).toHaveTextContent("Apple Event");
 
     await act(async () => {
       await user.tab();
     });
+
     expect(document.activeElement).toHaveTextContent("Zebra Event");
 
     await act(async () => {
       await user.tab();
     });
+
     expect(document.activeElement).toHaveTextContent("Breakfast Event");
 
     await act(async () => {
       await user.tab();
     });
+
     expect(document.activeElement).toHaveTextContent("Lunch Event");
   });
 
-  it("should filter out deleted events immediately", () => {
+  it("should filter out deleted events immediately", async () => {
     const mockEvents: Schema_Event[] = [
       {
         _id: "event-1",
@@ -197,16 +203,16 @@ describe("CalendarAgenda", () => {
       },
     ];
 
-    const firstRender = renderAgenda(mockEvents);
+    const firstRender = await act(() => renderAgenda(mockEvents));
 
-    expect(screen.getByText("Event 1")).toBeInTheDocument();
-    expect(screen.getByText("Event 2")).toBeInTheDocument();
+    expect(await screen.findByText("Event 1")).toBeInTheDocument();
+    expect(await screen.findByText("Event 2")).toBeInTheDocument();
 
     firstRender.unmount();
 
-    renderAgenda([mockEvents[0]]);
+    await act(() => renderAgenda(mockEvents.slice(0, 1)));
 
-    expect(screen.getByText("Event 1")).toBeInTheDocument();
+    expect(await screen.findByText("Event 1")).toBeInTheDocument();
     expect(screen.queryByText("Event 2")).not.toBeInTheDocument();
   });
 });

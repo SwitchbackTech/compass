@@ -1,55 +1,52 @@
-import React, { createContext } from "react";
-import { useNavigate } from "react-router-dom";
-import dayjs, { Dayjs } from "@core/util/date/dayjs";
+import { PropsWithChildren, createContext, useCallback } from "react";
+import { useNavigate, useRouteLoaderData } from "react-router-dom";
+import dayjs from "@core/util/date/dayjs";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { useSyncDate } from "../hooks/navigation/useSyncDate";
+import { DayLoaderData, loadTodayData } from "@web/routers/loaders";
 
-interface DateNavigationContextValue {
-  dateInView: Dayjs;
+interface DateNavigationContextProps extends DayLoaderData {
   navigateToNextDay: () => void;
   navigateToPreviousDay: () => void;
   navigateToToday: () => void;
 }
 
-export const DateNavigationContext = createContext<
-  DateNavigationContextValue | undefined
->(undefined);
+export const DateNavigationContext = createContext<DateNavigationContextProps>({
+  ...loadTodayData(),
+  navigateToNextDay: () => {},
+  navigateToPreviousDay: () => {},
+  navigateToToday: () => {},
+});
 
-interface DateNavigationProviderProps {
-  children: React.ReactNode;
-  initialDate: Dayjs;
-}
+const dateFormat = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
 
-export function DateNavigationProvider({
-  children,
-  initialDate,
-}: DateNavigationProviderProps) {
-  const [dateInView, setDateInView] = useSyncDate(initialDate);
+export function DateNavigationProvider({ children }: PropsWithChildren) {
   const navigate = useNavigate();
+  const routeData = useRouteLoaderData(ROOT_ROUTES.DAY_DATE) as
+    | DayLoaderData
+    | undefined;
 
-  const navigateToNextDay = () => {
+  const { dateInView, dateString } = routeData ?? loadTodayData();
+
+  const navigateToNextDay = useCallback(() => {
     const nextDate = dateInView.add(1, "day");
-    setDateInView(nextDate);
-    // Keep URL as /day - date is tracked internally
-    navigate(ROOT_ROUTES.DAY, { replace: true });
-  };
 
-  const navigateToPreviousDay = () => {
+    navigate(`${ROOT_ROUTES.DAY}/${nextDate.format(dateFormat)}`);
+  }, [dateInView, navigate]);
+
+  const navigateToPreviousDay = useCallback(() => {
     const prevDate = dateInView.subtract(1, "day");
-    setDateInView(prevDate);
-    // Keep URL as /day - date is tracked internally
-    navigate(ROOT_ROUTES.DAY, { replace: true });
-  };
+    navigate(`${ROOT_ROUTES.DAY}/${prevDate.format(dateFormat)}`);
+  }, [dateInView, navigate]);
 
-  const navigateToToday = () => {
-    // Get today's date at midnight in user's timezone, then convert to UTC
-    const today = dayjs().startOf("day").utc();
-    setDateInView(today);
-    navigate(ROOT_ROUTES.DAY, { replace: true });
-  };
+  const navigateToToday = useCallback(() => {
+    const { dateString } = loadTodayData();
 
-  const value: DateNavigationContextValue = {
+    navigate(`${ROOT_ROUTES.DAY}/${dateString}`);
+  }, [navigate]);
+
+  const value: DateNavigationContextProps = {
     dateInView,
+    dateString,
     navigateToNextDay,
     navigateToPreviousDay,
     navigateToToday,

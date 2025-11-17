@@ -1,3 +1,4 @@
+import { default as mockMergeWith } from "lodash.mergewith";
 import { faker as mockFaker } from "@faker-js/faker";
 
 export const mockBSON = () => {
@@ -23,3 +24,19 @@ export const mockBSON = () => {
     },
   }));
 };
+
+export function mockModule<T>(
+  mockPath: string,
+  mockFactory: (mockedModule: T) => object = () => ({}),
+  mockAsEsModule = true,
+) {
+  const mockedModule = jest.requireActual(mockPath);
+
+  jest.mock<T>(mockPath, () =>
+    mockMergeWith(
+      { __esModule: mockAsEsModule },
+      mockedModule,
+      mockFactory(mockedModule),
+    ),
+  );
+}

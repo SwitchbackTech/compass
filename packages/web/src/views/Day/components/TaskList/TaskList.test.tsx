@@ -4,7 +4,7 @@ import { screen, waitFor } from "@testing-library/react";
 import {
   addTasks,
   clickCreateTaskButton,
-} from "../../../../__tests__/utils/tasks/task.test.util";
+} from "@web/__tests__/utils/tasks/task.test.util";
 import { renderWithDayProviders } from "../../util/day.test-util";
 import { TaskList } from "./TaskList";
 
@@ -13,10 +13,10 @@ describe("TaskList", () => {
     localStorage.clear();
   });
 
-  it("should render create task button", () => {
+  it("should render create task button", async () => {
     renderWithDayProviders(<TaskList />);
 
-    const addButton = screen.getByText("Create task");
+    const addButton = await screen.findByText("Create task");
     expect(addButton).toBeInTheDocument();
   });
 
@@ -53,7 +53,7 @@ describe("TaskList", () => {
   it("should not add empty task", async () => {
     const { user } = renderWithDayProviders(<TaskList />);
 
-    const addButton = screen.getByText("Create task");
+    const addButton = await screen.findByText("Create task");
     await act(async () => {
       await user.click(addButton);
     });
@@ -75,7 +75,7 @@ describe("TaskList", () => {
   it("should cancel adding task on Escape", async () => {
     const { user } = renderWithDayProviders(<TaskList />);
 
-    const addButton = screen.getByText("Create task");
+    const addButton = await screen.findByText("Create task");
     await act(async () => {
       await user.click(addButton);
     });
@@ -181,9 +181,9 @@ describe("TaskList", () => {
   it("should show keyboard shortcut hint on hover over add button", async () => {
     const { user } = renderWithDayProviders(<TaskList />);
 
-    const addTaskArea = screen.getByText("Create task").parentElement!;
+    const addTaskArea = await screen.findByText("Create task")!;
     await act(async () => {
-      await user.hover(addTaskArea);
+      await user.hover(addTaskArea.parentElement!);
     });
 
     await waitFor(() => {

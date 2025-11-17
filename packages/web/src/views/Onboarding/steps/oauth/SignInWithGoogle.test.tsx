@@ -8,9 +8,9 @@ import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
-import { SignInUpInput } from "../../../../components/oauth/ouath.types";
-import { withOnboardingProvider } from "../../components/OnboardingContext";
-import { SignInWithGoogle } from "./SignInWithGoogle";
+import { SignInUpInput } from "@web/components/oauth/ouath.types";
+import { withOnboardingProvider } from "@web/views/Onboarding/components/OnboardingContext";
+import { SignInWithGoogle } from "@web/views/Onboarding/steps/oauth/SignInWithGoogle";
 
 // Mock the APIs
 jest.mock("@web/common/apis/auth.api", () => ({
@@ -35,21 +35,17 @@ jest.mock("react-router-dom", () => ({
 // Mock useGoogleLogin
 const mockLogin = jest.fn();
 
-jest.mock("@web/components/oauth/google/useGoogleLogin", () => ({
-  useGoogleLogin: jest.fn(),
-}));
-
-jest.mock("@web/common/classes/Session", () => {
-  return {
-    session: {
-      doesSessionExist: jest.fn().mockResolvedValue(true),
-      events: {
-        subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() }),
-        pipe: jest.fn().mockReturnThis(),
-      },
-    },
-  };
-});
+// jest.mock("@web/common/classes/Session", () => {
+//   return {
+//     session: {
+//       doesSessionExist: jest.fn().mockResolvedValue(true),
+//       events: {
+//         subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() }),
+//         pipe: jest.fn().mockReturnThis(),
+//       },
+//     },
+//   };
+// });
 
 const mockAuthApi = AuthApi as jest.Mocked<typeof AuthApi>;
 const mockUseGoogleLogin = useGoogleLogin as jest.MockedFunction<
@@ -129,12 +125,7 @@ describe("SignInWithGoogle", () => {
       let onSuccessCallback: ((data: SignInUpInput) => void) | undefined;
 
       // Mock the auth endpoint
-      server.use(
-        rest.post(`${ENV_WEB.API_BASEURL}/signinup`, (_req, res, ctx) => {
-          return res(ctx.json({ isNewUser: true }));
-        }),
-        ...userMetadataHandlers,
-      );
+      server.use(...userMetadataHandlers);
 
       mockAuthApi.loginOrSignup.mockResolvedValue({
         createdNewRecipeUser: true,
@@ -224,17 +215,7 @@ describe("SignInWithGoogle", () => {
       let onSuccessCallback: ((data: SignInUpInput) => void) | undefined;
 
       // Mock the auth endpoint
-      server.use(
-        rest.post(`${ENV_WEB.API_BASEURL}/signinup`, (_req, res, ctx) => {
-          return res(ctx.json({ isNewUser: true }));
-        }),
-        rest.get(`${ENV_WEB.API_BASEURL}/user/metadata`, (_req, res, ctx) => {
-          return res(ctx.json({ skipOnboarding: true }));
-        }),
-        rest.post(`${ENV_WEB.API_BASEURL}/user/metadata`, (_req, res, ctx) => {
-          return res(ctx.json({ skipOnboarding: true }));
-        }),
-      );
+      server.use(...userMetadataHandlers);
 
       // Use real API calls instead of mocks
       jest.unmock("@web/common/apis/auth.api");

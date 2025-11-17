@@ -24,6 +24,20 @@ export const zObjectId = zod4.pipe(
 
 export const zBase64String = zod4Mini.base64();
 
+export const zYearMonthDayString = zod4.string().refine(
+  (dateString) => {
+    return dayjs(
+      dateString,
+      dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+      true,
+    ).isValid();
+  },
+  {
+    error: () =>
+      `Invalid date string. Must be in ${dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT} format.`,
+  },
+);
+
 export const TimezoneSchema = zod4.string().refine(
   (timeZone) => {
     try {

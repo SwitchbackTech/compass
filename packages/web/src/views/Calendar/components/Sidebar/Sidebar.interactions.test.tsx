@@ -1,5 +1,6 @@
 import { rest } from "msw";
 import { act } from "react";
+import { createMemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -15,9 +16,14 @@ jest.mock("@web/auth/auth.util", () => ({
 }));
 
 describe("Sidebar: Interactions", () => {
+  const router = createMemoryRouter(
+    [{ index: true, Component: CalendarView }],
+    { initialEntries: ["/"] },
+  );
+
   it("opens and closes existing someday event form", async () => {
     const user = userEvent.setup();
-    render(<CalendarView />, { state: preloadedState });
+    render(<></>, { state: preloadedState, router });
 
     const existing = await screen.findByRole("button", {
       name: /europe trip/i,
@@ -44,7 +50,7 @@ describe("Sidebar: Interactions", () => {
       }),
     );
     const user = userEvent.setup();
-    render(<CalendarView />, { state: preloadedState });
+    render(<></>, { state: preloadedState, router });
 
     await act(async () => {
       await user.click(screen.getAllByText("+")[0]);
@@ -52,7 +58,7 @@ describe("Sidebar: Interactions", () => {
 
     const formTitle = await screen.findByRole("input");
     await act(async () => {
-      await user.type(formTitle, LEARN_CHINESE.title);
+      await user.type(formTitle, LEARN_CHINESE.title!);
     });
 
     await act(async () => {

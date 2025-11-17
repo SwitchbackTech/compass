@@ -1,111 +1,70 @@
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
-import { DesktopOS } from "@web/common/utils/device/device.util";
-import { getMetaKey } from "./shortcut.util";
-
-// Mock the device utility
-jest.mock("@web/common/utils/device/device.util", () => ({
-  DesktopOS: {
-    Linux: "linux",
-    MacOS: "mac_os",
-    Windows: "windows",
-    Unknown: "unknown",
-  },
-  getDesktopOS: jest.fn(),
-}));
-
-// Mock Phosphor icons with specific test IDs
-jest.mock("@phosphor-icons/react", () => ({
-  Command: ({ size, ...props }: any) => {
-    const React = require("react");
-    return React.createElement(
-      "svg",
-      {
-        "data-testid": "command-icon",
-        width: size,
-        height: size,
-        ...props,
-      },
-      React.createElement("title", null, "Command"),
-    );
-  },
-  WindowsLogo: ({ size, ...props }: any) => {
-    const React = require("react");
-    return React.createElement(
-      "svg",
-      {
-        "data-testid": "windows-logo-icon",
-        width: size,
-        height: size,
-        ...props,
-      },
-      React.createElement("title", null, "Windows Logo"),
-    );
-  },
-}));
-
-const mockGetDesktopOS =
-  require("@web/common/utils/device/device.util").getDesktopOS;
+import * as deviceUtil from "@web/common/utils/device/device.util";
+import { getMetaKey } from "@web/common/utils/shortcut/shortcut.util";
 
 describe("shortcut.util", () => {
+  const DesktopOS = deviceUtil.DesktopOS;
+  const getDesktopOSSpy = jest.spyOn(deviceUtil, "getDesktopOS");
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   describe("getMetaKey", () => {
     it("should return Command icon for macOS", () => {
-      mockGetDesktopOS.mockReturnValue(DesktopOS.MacOS);
+      getDesktopOSSpy.mockReturnValue(DesktopOS.MacOS);
 
       render(getMetaKey());
       const commandIcon = screen.getByTestId("command-icon");
 
-      expect(mockGetDesktopOS).toHaveBeenCalled();
+      expect(getDesktopOSSpy).toHaveBeenCalled();
       expect(commandIcon).toBeInTheDocument();
     });
 
     it("should return WindowsLogo icon for Windows", () => {
-      mockGetDesktopOS.mockReturnValue(DesktopOS.Windows);
+      getDesktopOSSpy.mockReturnValue(DesktopOS.Windows);
 
       render(getMetaKey());
       const windowsIcon = screen.getByTestId("windows-logo-icon");
 
-      expect(mockGetDesktopOS).toHaveBeenCalled();
+      expect(getDesktopOSSpy).toHaveBeenCalled();
       expect(windowsIcon).toBeInTheDocument();
     });
 
     it("should return WindowsLogo icon for Linux", () => {
-      mockGetDesktopOS.mockReturnValue(DesktopOS.Linux);
+      getDesktopOSSpy.mockReturnValue(DesktopOS.Linux);
 
       render(getMetaKey());
       const windowsIcon = screen.getByTestId("windows-logo-icon");
 
-      expect(mockGetDesktopOS).toHaveBeenCalled();
+      expect(getDesktopOSSpy).toHaveBeenCalled();
       expect(windowsIcon).toBeInTheDocument();
     });
 
     it("should return WindowsLogo icon for Unknown OS", () => {
-      mockGetDesktopOS.mockReturnValue(DesktopOS.Unknown);
+      getDesktopOSSpy.mockReturnValue(DesktopOS.Unknown);
 
       render(getMetaKey());
       const windowsIcon = screen.getByTestId("windows-logo-icon");
 
-      expect(mockGetDesktopOS).toHaveBeenCalled();
+      expect(getDesktopOSSpy).toHaveBeenCalled();
       expect(windowsIcon).toBeInTheDocument();
     });
 
     it("should return WindowsLogo icon when getDesktopOS returns undefined", () => {
-      mockGetDesktopOS.mockReturnValue(undefined);
+      getDesktopOSSpy.mockReturnValue(undefined);
 
       render(getMetaKey());
       const windowsIcon = screen.getByTestId("windows-logo-icon");
 
-      expect(mockGetDesktopOS).toHaveBeenCalled();
+      expect(getDesktopOSSpy).toHaveBeenCalled();
       expect(windowsIcon).toBeInTheDocument();
     });
 
     it("should pass size prop to Command icon on macOS", () => {
-      mockGetDesktopOS.mockReturnValue(DesktopOS.MacOS);
+      getDesktopOSSpy.mockReturnValue(DesktopOS.MacOS);
       const size = 20;
 
       render(getMetaKey({ size }));
@@ -118,7 +77,7 @@ describe("shortcut.util", () => {
     });
 
     it("should pass size prop to WindowsLogo icon on Windows", () => {
-      mockGetDesktopOS.mockReturnValue(DesktopOS.Windows);
+      getDesktopOSSpy.mockReturnValue(DesktopOS.Windows);
       const size = 16;
 
       render(getMetaKey({ size }));
@@ -131,7 +90,7 @@ describe("shortcut.util", () => {
     });
 
     it("should use default size of 14 when no size is provided", () => {
-      mockGetDesktopOS.mockReturnValue(DesktopOS.MacOS);
+      getDesktopOSSpy.mockReturnValue(DesktopOS.MacOS);
 
       render(getMetaKey());
       const commandIcon = screen.getByTestId("command-icon");
@@ -142,7 +101,7 @@ describe("shortcut.util", () => {
     });
 
     it("should use default size of 14 when empty object is provided", () => {
-      mockGetDesktopOS.mockReturnValue(DesktopOS.MacOS);
+      getDesktopOSSpy.mockReturnValue(DesktopOS.MacOS);
 
       render(getMetaKey({}));
       const commandIcon = screen.getByTestId("command-icon");

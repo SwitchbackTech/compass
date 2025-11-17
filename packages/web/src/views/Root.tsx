@@ -1,5 +1,13 @@
-import { CalendarView } from "@web/views/Calendar";
+import { UserProvider } from "@web/auth/UserProvider";
+import { AuthenticatedLayout } from "@web/components/AuthenticatedLayout/AuthenticatedLayout";
+import SocketProvider from "@web/socket/SocketProvider";
 
 export const RootView = () => {
-  return <CalendarView />;
+  return (
+    <UserProvider>
+      <SocketProvider>
+        <AuthenticatedLayout />
+      </SocketProvider>
+    </UserProvider>
+  );
 };

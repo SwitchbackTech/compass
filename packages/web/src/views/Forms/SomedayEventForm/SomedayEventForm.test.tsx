@@ -28,8 +28,6 @@ const mockOnDelete = jest.fn();
 const mockSetEvent = jest.fn();
 const mockDuplicateEvent = jest.fn();
 
-jest.mock("react-toastify", () => ({ toast: jest.fn() }));
-
 describe("SomedayEventForm Hotkeys", () => {
   beforeEach(() => jest.resetAllMocks());
 
