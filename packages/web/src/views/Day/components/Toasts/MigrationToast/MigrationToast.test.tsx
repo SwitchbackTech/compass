@@ -1,13 +1,7 @@
 import { toast } from "react-toastify";
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { showMigrationToast } from "./MigrationToast";
-
-jest.mock("react-toastify", () => ({
-  toast: jest.fn(),
-  dismiss: jest.fn(),
-  update: jest.fn(),
-}));
+import { showMigrationToast } from "@web/views/Day/components/Toasts/MigrationToast/MigrationToast";
 
 // Mock the getMetaKey utility
 jest.mock("@web/common/utils/shortcut/shortcut.util", () => ({
@@ -17,13 +11,6 @@ jest.mock("@web/common/utils/shortcut/shortcut.util", () => ({
 describe("MigrationToast", () => {
   const mockOnNavigate = jest.fn();
   const mockOnUndo = jest.fn();
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    // Mock toast methods
-    (toast as unknown as jest.Mock).dismiss = jest.fn();
-    (toast as unknown as jest.Mock).update = jest.fn();
-  });
 
   describe("MigrationToastComponent", () => {
     it("renders forward migration message", () => {

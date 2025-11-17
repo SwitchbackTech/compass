@@ -1,7 +1,14 @@
-import { redirect } from "react-router-dom";
+import { LoaderFunctionArgs, redirect } from "react-router-dom";
+import { zYearMonthDayString } from "@core/types/type.utils";
+import dayjs, { Dayjs } from "@core/util/date/dayjs";
+import { AUTH_FAILURE_REASONS } from "@web/common/constants/auth.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
-import { AUTH_FAILURE_REASONS } from "../common/constants/auth.constants";
+
+export interface DayLoaderData {
+  dateInView: Dayjs; // in UTC
+  dateString: string;
+}
 
 export async function loadAuthenticated() {
   const { session } = await import("../common/classes/Session");
@@ -61,4 +68,31 @@ export async function loadLoggedInData() {
   }
 
   return { authenticated, skipOnboarding, hasCompletedSignup };
+}
+
+export function loadTodayData(): DayLoaderData {
+  const dateInView = dayjs().utc();
+  const dateFormat = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
+
+  return { dateInView, dateString: dateInView.format(dateFormat) };
+}
+
+export async function loadDayData() {
+  const { dateString } = loadTodayData();
+
+  return redirect(`${ROOT_ROUTES.DAY}/${dateString}`);
+}
+
+export async function loadSpecificDayData({
+  params,
+}: LoaderFunctionArgs<unknown>): Promise<DayLoaderData | Response> {
+  const parsedDate = zYearMonthDayString.safeParse(params.dateString);
+  const { success, data: dateString } = parsedDate;
+
+  if (!success) return redirect(ROOT_ROUTES.DAY);
+
+  return Promise.resolve({
+    dateString,
+    dateInView: dayjs(dateString, dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
+  });
 }

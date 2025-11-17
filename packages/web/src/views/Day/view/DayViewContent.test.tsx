@@ -41,17 +41,17 @@ describe("TodayViewContent", () => {
     localStorage.clear();
   });
 
-  it("should render the main layout with tasks and calendar sections", () => {
+  it("should render the main layout with tasks and calendar sections", async () => {
     renderWithDayProviders(<DayViewContent />);
 
     // Verify the main components are present
     expect(
-      screen.getByRole("button", { name: "Create new task" }),
+      await screen.findByRole("button", { name: "Create new task" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Calendar Content")).toBeInTheDocument();
+    expect(await screen.findByText("Calendar Content")).toBeInTheDocument();
   });
 
-  it("focuses the add task input when typing the 't' shortcut", async () => {
+  it("focuses the add task input when typing the 'c' shortcut", async () => {
     const actualShortcuts = jest.requireActual(
       "../hooks/shortcuts/useDayViewShortcuts",
     );
@@ -63,7 +63,9 @@ describe("TodayViewContent", () => {
       }),
     );
 
-    const { user } = renderWithDayProviders(<DayViewContent />);
+    const { user } = await act(() =>
+      renderWithDayProviders(<DayViewContent />),
+    );
 
     await act(async () => {
       await user.keyboard("c");
@@ -76,7 +78,7 @@ describe("TodayViewContent", () => {
     expect(addTaskInput).toHaveFocus();
   });
 
-  it("should display today's date in the tasks section", () => {
+  it("should display today's date in the tasks section", async () => {
     renderWithDayProviders(<DayViewContent />);
 
     // Check that today's date is displayed
@@ -87,15 +89,15 @@ describe("TodayViewContent", () => {
       month: "long",
       day: "numeric",
     });
-    expect(screen.getByText(todayHeading)).toBeInTheDocument();
-    expect(screen.getByText(todaySubheading)).toBeInTheDocument();
+    expect(await screen.findByText(todayHeading)).toBeInTheDocument();
+    expect(await screen.findByText(todaySubheading)).toBeInTheDocument();
   });
 
   it("should allow users to create new tasks", async () => {
     const { user } = renderWithDayProviders(<DayViewContent />);
 
     // Click the add task button
-    const addTaskButton = screen.getByRole("button", {
+    const addTaskButton = await screen.findByRole("button", {
       name: "Create new task",
     });
     await act(() => user.click(addTaskButton));
@@ -106,21 +108,21 @@ describe("TodayViewContent", () => {
     ).toBeInTheDocument();
   });
 
-  it("should maintain a fixed height layout that fills the viewport", () => {
+  it("should maintain a fixed height layout that fills the viewport", async () => {
     renderWithDayProviders(<DayViewContent />);
 
     // The layout should be present and functional
     expect(
-      screen.getByRole("button", { name: "Create new task" }),
+      await screen.findByRole("button", { name: "Create new task" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Calendar Content")).toBeInTheDocument();
+    expect(await screen.findByText("Calendar Content")).toBeInTheDocument();
   });
 
-  it("should display add task button", () => {
+  it("should display add task button", async () => {
     renderWithDayProviders(<DayViewContent />);
 
     // The tasks section should be present and functional
-    const addTaskButton = screen.getByRole("button", {
+    const addTaskButton = await screen.findByRole("button", {
       name: "Create new task",
     });
     expect(addTaskButton).toBeInTheDocument();
@@ -135,7 +137,7 @@ describe("TodayViewContent", () => {
     await addTasks(user, ["Test task"]);
 
     // Find the task checkbox and focus on it
-    const taskCheckbox = screen.getByRole("checkbox", {
+    const taskCheckbox = await screen.findByRole("checkbox", {
       name: /toggle test task/i,
     });
     await act(() => taskCheckbox.focus());
@@ -171,7 +173,7 @@ describe("TodayViewContent", () => {
     });
 
     // Assert task still exists in DOM
-    const taskCheckbox = screen.getByRole("checkbox", {
+    const taskCheckbox = await screen.findByRole("checkbox", {
       name: /toggle test task/i,
     });
     expect(taskCheckbox).toBeInTheDocument();

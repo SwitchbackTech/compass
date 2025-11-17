@@ -1,6 +1,6 @@
 import { Handler, NextFunction, Response } from "express";
 import { GoogleApis } from "googleapis";
-import mergeWith, { default as mockMergeWith } from "lodash.mergewith";
+import mergeWith from "lodash.mergewith";
 import { randomUUID } from "node:crypto";
 import { SessionRequest } from "supertokens-node/framework/express";
 import {
@@ -14,6 +14,7 @@ import {
 } from "supertokens-node/lib/build/recipe/session/types";
 import { UserContext } from "supertokens-node/lib/build/types";
 import { createMockCalendarListEntry as mockCalendarListCreate } from "@core/__tests__/helpers/gcal.factory";
+import { mockModule } from "@core/__tests__/mock.setup";
 import { gSchema$CalendarListEntry } from "@core/types/gcal";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import { UserMetadata } from "@core/types/user.types";
@@ -55,7 +56,7 @@ function mockGoogleapis() {
   });
 }
 
-function mockSuperToken() {
+function mockSuperTokens() {
   const userMetadata = new Map<string, UserMetadata>();
 
   function verifySession(input: {
@@ -330,22 +331,6 @@ export function mockEnv(env: Partial<typeof ENV>) {
   );
 }
 
-export function mockModule<T>(
-  mockPath: string,
-  mockFactory: (mockedModule: T) => object = () => ({}),
-  mockAsEsModule = true,
-) {
-  const mockedModule = jest.requireActual(mockPath);
-
-  jest.mock(mockPath, () =>
-    mockMergeWith(
-      { __esModule: mockAsEsModule },
-      mockedModule,
-      mockFactory(mockedModule),
-    ),
-  );
-}
-
 export function mockNodeModules() {
   beforeEach(mockCompassTestState);
   afterEach(() => jest.unmock("compass-test-state"));
@@ -353,5 +338,5 @@ export function mockNodeModules() {
   mockWinstonLogger();
   mockHttpLoggingMiddleware();
   mockGoogleapis();
-  mockSuperToken();
+  mockSuperTokens();
 }

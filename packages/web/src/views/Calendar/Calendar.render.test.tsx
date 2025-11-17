@@ -1,34 +1,34 @@
+import { act } from "react";
+import { createMemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
-import { screen, waitFor } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { GROCERIES } from "@core/__mocks__/v1/events/events.misc";
+import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
 import { findAndUpdateEventInPreloadedState } from "@web/__tests__/utils/state/store.test.util";
 import { getWeekDayLabel } from "@web/common/utils/event/event.util";
 import { CalendarView } from "@web/views/Calendar";
 import { freshenEventStartEndDate } from "@web/views/Calendar/calendar.render.test.utils";
-import { render } from "../../__tests__/__mocks__/mock.render";
 
-beforeAll(() => {
-  window.HTMLElement.prototype.scroll = jest.fn();
+const router = createMemoryRouter([{ index: true, Component: CalendarView }], {
+  initialEntries: ["/"],
 });
 
 describe("Scroll", () => {
   // separate from other tests to preserve
   // '.toHaveBeenCalledTimes' reliability
   it("only scrolls once", async () => {
-    await waitFor(() => {
-      render(<CalendarView />);
-    });
+    const scrollSpy = jest.spyOn(window.HTMLElement.prototype, "scroll");
 
-    expect(window.HTMLElement.prototype.scroll).toHaveBeenCalledTimes(1);
+    await act(() => render(<></>, { router }));
+
+    expect(scrollSpy).toHaveBeenCalledTimes(1);
   });
 });
 
 describe("Calendar: Display without State", () => {
   it("displays all the things that a user needs to see", async () => {
-    await waitFor(() => {
-      render(<CalendarView />);
-    });
+    await act(() => render(<></>, { router }));
 
     /* week nav arrows */
     expect(
@@ -61,9 +61,8 @@ describe("Calendar: Display with State", () => {
       freshenEventStartEndDate,
     );
 
-    await waitFor(() => {
-      render(<CalendarView />, { state: newPreloadedState });
-    });
+    await act(() => render(<></>, { state: newPreloadedState, router }));
+
     expect(
       screen.getByRole("button", { name: /groceries/i }),
     ).toBeInTheDocument();

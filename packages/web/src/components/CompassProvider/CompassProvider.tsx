@@ -1,0 +1,74 @@
+import { PostHogProvider } from "posthog-js/react";
+import { PropsWithChildren } from "react";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import { Provider } from "react-redux";
+import { ToastContainer } from "react-toastify";
+import { ThemeProvider } from "styled-components";
+import { GoogleOAuthProvider } from "@react-oauth/google";
+import { SessionProvider } from "@web/auth/SessionProvider";
+import { ENV_WEB } from "@web/common/constants/env.constants";
+import { theme } from "@web/common/styles/theme";
+import { GlobalStyle } from "@web/components/GlobalStyle";
+import { IconProvider } from "@web/components/IconProvider/IconProvider";
+import { store } from "@web/store";
+
+function isPosthogEnabled() {
+  return !!ENV_WEB.POSTHOG_HOST && !!ENV_WEB.POSTHOG_KEY;
+}
+
+export const CompassRequiredProviders = (
+  props: PropsWithChildren<{ store?: typeof store }>,
+) => (
+  <SessionProvider>
+    <DndProvider backend={HTML5Backend}>
+      <Provider store={props?.store ?? store}>
+        <GoogleOAuthProvider clientId={ENV_WEB.GOOGLE_CLIENT_ID || ""}>
+          <GlobalStyle />
+          <ThemeProvider theme={theme}>
+            <IconProvider>{props.children}</IconProvider>
+            <ToastContainer
+              position="bottom-left"
+              autoClose={5000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="dark"
+              limit={1}
+            />
+          </ThemeProvider>
+        </GoogleOAuthProvider>
+      </Provider>
+    </DndProvider>
+  </SessionProvider>
+);
+
+export const CompassOptionalProviders = ({ children }: PropsWithChildren) => {
+  let wrappedChildren = children;
+
+  if (isPosthogEnabled()) {
+    wrappedChildren = (
+      <PostHogProvider
+        apiKey={ENV_WEB.POSTHOG_KEY as string}
+        options={{
+          api_host: ENV_WEB.POSTHOG_HOST!,
+          capture_exceptions: {
+            capture_unhandled_errors: true,
+            capture_unhandled_rejections: true,
+            capture_console_errors: true,
+          },
+          opt_in_site_apps: true,
+          person_profiles: "always",
+        }}
+      >
+        {wrappedChildren}
+      </PostHogProvider>
+    );
+  }
+
+  return wrappedChildren;
+};

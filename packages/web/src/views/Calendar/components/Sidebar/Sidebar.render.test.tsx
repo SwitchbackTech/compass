@@ -1,3 +1,5 @@
+import { act } from "react";
+import { createMemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
 import { screen, waitFor, within } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
@@ -8,9 +10,13 @@ beforeAll(() => {
   window.HTMLElement.prototype.scroll = jest.fn();
 });
 
+const router = createMemoryRouter([{ index: true, Component: CalendarView }], {
+  initialEntries: ["/"],
+});
+
 describe("Sidebar: Display without State", () => {
   it("renders sidebar with sections and icons when no events exist", async () => {
-    await waitFor(() => render(<CalendarView />));
+    await act(() => render(<></>, { state: {}, router }));
 
     expect(
       screen.getByRole("heading", { name: /this week/i }),
@@ -32,9 +38,7 @@ describe("Sidebar: Display without State", () => {
 
 describe("Sidebar: Display with State", () => {
   it("displays pre-existing someday event", async () => {
-    await waitFor(() => {
-      render(<CalendarView />, { state: preloadedState });
-    });
+    await act(() => render(<></>, { state: preloadedState, router }));
 
     await waitFor(() => {
       expect(

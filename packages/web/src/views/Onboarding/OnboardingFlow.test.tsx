@@ -1,12 +1,8 @@
-import { RequestHandler, rest } from "msw";
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Status } from "@core/errors/status.codes";
 import { render } from "@web/__tests__/__mocks__/mock.render";
-import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { useHasCompletedSignup } from "@web/auth/useHasCompletedSignup";
-import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { useIsMobile } from "@web/common/hooks/useIsMobile";
 import { useSession } from "@web/common/hooks/useSession";
@@ -57,18 +53,7 @@ const mockUseHasCompletedSignup = useHasCompletedSignup as jest.MockedFunction<
 const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
 const mockUseIsMobile = useIsMobile as jest.MockedFunction<typeof useIsMobile>;
 
-const metadataHandlers: RequestHandler[] = [
-  rest.get(`${ENV_WEB.API_BASEURL}/user/metadata`, (_req, res, ctx) => {
-    return res(ctx.status(Status.OK), ctx.json({ skipOnboarding: false }));
-  }),
-  rest.post(`${ENV_WEB.API_BASEURL}/user/metadata`, (req, res, ctx) => {
-    return res(ctx.status(Status.OK), ctx.json(req.json()));
-  }),
-];
-
 describe("OnboardingFlow", () => {
-  beforeEach(() => server.use(...metadataHandlers));
-
   beforeEach(() => {
     jest.clearAllMocks();
     mockNavigate.mockClear();

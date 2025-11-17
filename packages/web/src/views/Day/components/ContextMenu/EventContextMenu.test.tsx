@@ -2,7 +2,6 @@ import { ObjectId } from "bson";
 import { act } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
@@ -32,9 +31,8 @@ const renderAgendaEvents = (events: Schema_Event[]) => {
   const store = createStoreWithEvents(events);
   const utils = renderWithDayProviders(<AgendaEvents />, { store });
   const dispatchSpy = jest.spyOn(store, "dispatch");
-  const user = userEvent.setup();
 
-  return { store, dispatchSpy, user, ...utils };
+  return { store, dispatchSpy, ...utils };
 };
 
 describe("EventContextMenu", () => {

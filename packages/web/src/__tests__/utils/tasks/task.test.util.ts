@@ -1,15 +1,8 @@
 import { act } from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 type User = ReturnType<typeof userEvent.setup>;
-
-export function setup(jsx: React.ReactElement) {
-  return {
-    user: userEvent.setup(),
-    ...render(jsx),
-  };
-}
 
 export const addTasks = async (user: User, taskTitles: string[]) => {
   for (const title of taskTitles) {
