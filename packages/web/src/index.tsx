@@ -3,8 +3,8 @@ import { createRoot } from "react-dom/client";
 import "react-toastify/dist/ReactToastify.css";
 import { sessionInit } from "@web/auth/SessionProvider";
 import { sagaMiddleware } from "@web/common/store/middlewares";
+import { App } from "@web/components/App/App";
 import { sagas } from "@web/store/sagas";
-import { App } from "./App";
 import "./index.css";
 
 const container = document.getElementById("root");
