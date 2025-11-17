@@ -15,9 +15,7 @@ if (!container) {
 
 const root = createRoot(container);
 
-window.addEventListener("load", () => {
-  sagaMiddleware.run(sagas);
-  sessionInit();
-});
+sagaMiddleware.run(sagas);
+sessionInit();
 
 root.render(<App />);
