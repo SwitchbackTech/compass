@@ -177,7 +177,7 @@ const config = {
       setupFilesAfterEnv: [
         "<rootDir>/packages/web/src/__tests__/web.test.start.ts",
       ],
-      testEnvironment: resolve(__dirname, "jest.env.ts"),
+      testEnvironment: resolve(__dirname, "jest.jsdom.ts"),
       testMatch: ["<rootDir>/packages/web/**/*.(test|spec).[jt]s?(x)"],
       transformIgnorePatterns: [
         //https://github.com/react-dnd/react-dnd/issues/3443
