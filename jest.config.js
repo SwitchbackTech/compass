@@ -1,15 +1,8 @@
-import { resolve } from "node:path";
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-
 /*
  * For a detailed explanation regarding each configuration property, visit:
  * https://jestjs.io/docs/configuration
  *
  */
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 /** @type { Exclude<Exclude<import("jest").Config["projects"], undefined>[number], string>} */
 const backendProject = {
@@ -177,7 +170,7 @@ const config = {
       setupFilesAfterEnv: [
         "<rootDir>/packages/web/src/__tests__/web.test.start.ts",
       ],
-      testEnvironment: resolve(__dirname, "jest.jsdom.ts"),
+      testEnvironment: "<rootDir>/packages/web/src/__tests__/jsdom.ts",
       testMatch: ["<rootDir>/packages/web/**/*.(test|spec).[jt]s?(x)"],
       transformIgnorePatterns: [
         //https://github.com/react-dnd/react-dnd/issues/3443
