@@ -157,6 +157,7 @@ describe("TaskProvider", () => {
         id: "task-1",
         title: "Loaded task",
         status: "todo" as const,
+        order: 0,
         createdAt: new Date().toISOString(),
       },
     ];
@@ -179,18 +180,21 @@ describe("TaskProvider", () => {
         title: "Todo 1",
         status: "todo" as const,
         createdAt: "2024-01-01T10:00:00Z",
+        order: 0,
       },
       {
         id: "task-2",
         title: "Completed 1",
         status: "completed" as const,
         createdAt: "2024-01-01T11:00:00Z",
+        order: 0,
       },
       {
         id: "task-3",
         title: "Todo 2",
         status: "todo" as const,
         createdAt: "2024-01-01T12:00:00Z",
+        order: 1,
       },
     ];
     localStorage.setItem(storageKey, JSON.stringify(mockTasks));
@@ -325,5 +329,116 @@ describe("TaskProvider", () => {
     expect(result.current.tasks[0].title).toBe("Second task");
     expect(result.current.tasks[0].id).toBe(secondTaskId);
     expect(result.current.undoState).toBeNull();
+  });
+
+  describe("reorderTasks", () => {
+    it("should reorder tasks and update order within status groups", () => {
+      const { result } = renderHook(useTasks, { wrapper: Wrapper });
+
+      act(() => {
+        result.current.addTask("Task 1");
+        result.current.addTask("Task 2");
+        result.current.addTask("Task 3");
+      });
+
+      // Mark one task as completed
+      act(() => {
+        result.current.onStatusToggle(result.current.tasks[2].id);
+      });
+
+      expect(result.current.tasks).toHaveLength(3);
+      expect(result.current.tasks[0].status).toBe("todo");
+      expect(result.current.tasks[1].status).toBe("todo");
+      expect(result.current.tasks[2].status).toBe("completed");
+
+      const originalIds = result.current.tasks.map((t) => t.id);
+
+      // Reorder: move first todo task to second position
+      act(() => {
+        result.current.reorderTasks(0, 1);
+      });
+
+      // After reordering, the array should have Task2, Task1, Task3
+      expect(result.current.tasks[0].id).toBe(originalIds[1]); // Task2 now first
+      expect(result.current.tasks[1].id).toBe(originalIds[0]); // Task1 now second
+      expect(result.current.tasks[2].id).toBe(originalIds[2]); // Task3 still last
+
+      // Check order values within status groups
+      const todoTasks = result.current.tasks.filter((t) => t.status === "todo");
+      const completedTasks = result.current.tasks.filter(
+        (t) => t.status === "completed",
+      );
+
+      expect(todoTasks[0].order).toBe(0); // First todo task
+      expect(todoTasks[1].order).toBe(1); // Second todo task
+      expect(completedTasks[0].order).toBe(0); // Completed task
+    });
+
+    it("should handle reordering within the same status group", () => {
+      const { result } = renderHook(useTasks, { wrapper: Wrapper });
+
+      act(() => {
+        result.current.addTask("Task 1");
+        result.current.addTask("Task 2");
+        result.current.addTask("Task 3");
+      });
+
+      const originalIds = result.current.tasks.map((t) => t.id);
+
+      act(() => {
+        result.current.reorderTasks(0, 2);
+      });
+
+      // After reordering 0->2: Task2, Task3, Task1
+      expect(result.current.tasks[0].id).toBe(originalIds[1]); // Task 2 now first
+      expect(result.current.tasks[1].id).toBe(originalIds[2]); // Task 3 now second
+      expect(result.current.tasks[2].id).toBe(originalIds[0]); // Task 1 now third
+
+      // Check order is updated
+      expect(result.current.tasks[0].order).toBe(0);
+      expect(result.current.tasks[1].order).toBe(1);
+      expect(result.current.tasks[2].order).toBe(2);
+    });
+
+    it("should handle reordering across status boundaries", () => {
+      const { result } = renderHook(useTasks, { wrapper: Wrapper });
+
+      act(() => {
+        result.current.addTask("Todo Task");
+        result.current.addTask("Completed Task");
+      });
+
+      // Mark second task as completed
+      act(() => {
+        result.current.onStatusToggle(result.current.tasks[1].id);
+      });
+
+      expect(result.current.tasks[0].status).toBe("todo");
+      expect(result.current.tasks[1].status).toBe("completed");
+
+      const originalIds = result.current.tasks.map((t) => t.id);
+
+      // Move todo task to completed position (index 1)
+      act(() => {
+        result.current.reorderTasks(0, 1);
+      });
+
+      // After reordering: [Completed Task, Todo Task]
+      expect(result.current.tasks[0].id).toBe(originalIds[1]); // Completed task now first
+      expect(result.current.tasks[1].id).toBe(originalIds[0]); // Todo task now second
+
+      // Status should remain the same (reorderTasks doesn't change status)
+      expect(result.current.tasks[0].status).toBe("completed");
+      expect(result.current.tasks[1].status).toBe("todo");
+
+      // Check order is updated correctly within status groups
+      const todoTasks = result.current.tasks.filter((t) => t.status === "todo");
+      const completedTasks = result.current.tasks.filter(
+        (t) => t.status === "completed",
+      );
+
+      expect(todoTasks[0].order).toBe(0); // Todo task gets order 0
+      expect(completedTasks[0].order).toBe(0); // Completed task gets order 0
+    });
   });
 });
