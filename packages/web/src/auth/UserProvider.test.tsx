@@ -1,7 +1,12 @@
+import { AxiosError } from "axios";
+import { rest } from "msw";
 import { usePostHog } from "posthog-js/react";
+import { act } from "react";
 import "@testing-library/jest-dom";
 import { render, waitFor } from "@testing-library/react";
-import { session } from "../common/classes/Session";
+import { Status } from "../../../core/src/errors/status.codes";
+import { server } from "../__tests__/__mocks__/server/mock.server";
+import { ENV_WEB } from "../common/constants/env.constants";
 import { UserProvider } from "./UserProvider";
 
 // Mock PostHog
@@ -16,10 +21,6 @@ jest.mock("@web/components/AbsoluteOverflowLoader", () => ({
 describe("UserProvider", () => {
   const mockIdentify = jest.fn();
 
-  const mockGetAccessTokenPayloadSecurely = jest
-    .spyOn(session, "getAccessTokenPayloadSecurely")
-    .mockImplementation(jest.fn());
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -29,29 +30,23 @@ describe("UserProvider", () => {
       const testUserId = "test-user-123";
       const testEmail = "test@example.com";
 
-      // Mock session with userId and email
-      mockGetAccessTokenPayloadSecurely.mockResolvedValue({
-        sub: testUserId,
-        email: testEmail,
-      });
-
       // Mock PostHog as enabled
       mockUsePostHog.mockReturnValue({
         identify: mockIdentify,
       } as any);
 
-      render(
-        <UserProvider>
-          <div>Test Child</div>
-        </UserProvider>,
+      await act(() =>
+        render(
+          <UserProvider>
+            <div>Test Child</div>
+          </UserProvider>,
+        ),
       );
 
       // Wait for async data fetch and PostHog identify to be called
-      await waitFor(() => {
-        expect(mockIdentify).toHaveBeenCalledWith(testEmail, {
-          email: testEmail,
-          userId: testUserId,
-        });
+      expect(mockIdentify).toHaveBeenCalledWith(testEmail, {
+        email: testEmail,
+        userId: testUserId,
       });
 
       // Verify it was called exactly once
@@ -59,101 +54,74 @@ describe("UserProvider", () => {
     });
 
     it("should NOT call posthog.identify when PostHog is disabled", async () => {
-      const testUserId = "test-user-123";
-      const testEmail = "test@example.com";
-
-      // Mock session with userId and email
-      mockGetAccessTokenPayloadSecurely.mockResolvedValue({
-        sub: testUserId,
-        email: testEmail,
-      });
-
       // Mock PostHog as disabled (returns undefined/null)
       mockUsePostHog.mockReturnValue(undefined as any);
 
-      render(
-        <UserProvider>
-          <div>Test Child</div>
-        </UserProvider>,
+      await act(() =>
+        render(
+          <UserProvider>
+            <div>Test Child</div>
+          </UserProvider>,
+        ),
       );
-
-      // Wait a bit to ensure no identify call happens
-      await waitFor(() => {
-        expect(mockGetAccessTokenPayloadSecurely).toHaveBeenCalled();
-      });
 
       // Verify identify was never called
       expect(mockIdentify).not.toHaveBeenCalled();
     });
 
     it("should NOT call posthog.identify when email is missing from session", async () => {
-      const testUserId = "test-user-123";
-
-      // Mock session with userId but NO email
-      mockGetAccessTokenPayloadSecurely.mockResolvedValue({
-        sub: testUserId,
-        // email is missing
-      });
+      server.use(
+        rest.get(`${ENV_WEB.API_BASEURL}/user/profile`, (_req, res, ctx) => {
+          return res(
+            ctx.status(Status.OK),
+            ctx.json({ userId: "test-user-123" }),
+          );
+        }),
+      );
 
       // Mock PostHog as enabled
       mockUsePostHog.mockReturnValue({
         identify: mockIdentify,
       } as any);
 
-      render(
-        <UserProvider>
-          <div>Test Child</div>
-        </UserProvider>,
+      await act(() =>
+        render(
+          <UserProvider>
+            <div>Test Child</div>
+          </UserProvider>,
+        ),
       );
-
-      // Wait for data fetch
-      await waitFor(() => {
-        expect(mockGetAccessTokenPayloadSecurely).toHaveBeenCalled();
-      });
 
       // Verify identify was not called because email is missing
       expect(mockIdentify).not.toHaveBeenCalled();
     });
 
     it("should NOT call posthog.identify when userId is missing", async () => {
-      const testEmail = "test@example.com";
-
-      // Mock session with email but NO userId (sub)
-      mockGetAccessTokenPayloadSecurely.mockResolvedValue({
-        email: testEmail,
-        // sub is missing
-      });
+      server.use(
+        rest.get(`${ENV_WEB.API_BASEURL}/user/profile`, (_req, res, ctx) => {
+          return res(
+            ctx.status(Status.OK),
+            ctx.json({ email: "test@example.com" }),
+          );
+        }),
+      );
 
       // Mock PostHog as enabled
       mockUsePostHog.mockReturnValue({
         identify: mockIdentify,
       } as any);
 
-      render(
-        <UserProvider>
-          <div>Test Child</div>
-        </UserProvider>,
+      await act(() =>
+        render(
+          <UserProvider>
+            <div>Test Child</div>
+          </UserProvider>,
+        ),
       );
-
-      // The component should show loading state because userId is null
-      // and identify should never be called
-      await waitFor(() => {
-        expect(mockGetAccessTokenPayloadSecurely).toHaveBeenCalled();
-      });
-
       expect(mockIdentify).not.toHaveBeenCalled();
     });
 
     it("should handle posthog.identify not being a function gracefully", async () => {
-      const testUserId = "test-user-123";
-      const testEmail = "test@example.com";
-
-      // Mock session with userId and email
-      mockGetAccessTokenPayloadSecurely.mockResolvedValue({
-        sub: testUserId,
-        email: testEmail,
-      });
-
       // Mock PostHog with identify not being a function
       mockUsePostHog.mockReturnValue({
         identify: null,
@@ -168,31 +136,37 @@ describe("UserProvider", () => {
         );
       }).not.toThrow();
 
-      await waitFor(() => {
-        expect(mockGetAccessTokenPayloadSecurely).toHaveBeenCalled();
-      });
-
       // Verify identify was not called
       expect(mockIdentify).not.toHaveBeenCalled();
     });
 
     it("should render children after user data is loaded", async () => {
-      const testUserId = "test-user-123";
-      const testEmail = "test@example.com";
-
-      mockGetAccessTokenPayloadSecurely.mockResolvedValue({
-        sub: testUserId,
-        email: testEmail,
-      });
+      server.use(
+        rest.get(`${ENV_WEB.API_BASEURL}/user/profile`, (_req, res, ctx) => {
+          return waitFor(
+            () =>
+              res(
+                ctx.status(Status.OK),
+                ctx.json({
+                  userId: "test-user-123",
+                  email: "test@example.com",
+                }),
+              ),
+            { timeout: 100 },
+          );
+        }),
+      );
 
       mockUsePostHog.mockReturnValue({
         identify: mockIdentify,
       } as any);
 
-      const { getByText } = render(
-        <UserProvider>
-          <div>Test Child Content</div>
-        </UserProvider>,
+      const { getByText } = await act(() =>
+        render(
+          <UserProvider>
+            <div>Test Child Content</div>
+          </UserProvider>,
+        ),
       );
 
       // Initially should show loading
@@ -205,32 +179,31 @@ describe("UserProvider", () => {
     });
 
     it("should handle session fetch errors gracefully", async () => {
+      server.use(
+        rest.get(`${ENV_WEB.API_BASEURL}/user/profile`, (_req, res, ctx) => {
+          return res(ctx.status(Status.UNAUTHORIZED));
+        }),
+      );
+
       const consoleErrorSpy = jest
         .spyOn(console, "error")
         .mockImplementation(() => {});
-
-      // Mock session to throw an error
-      mockGetAccessTokenPayloadSecurely.mockRejectedValue(
-        new Error("Session error"),
-      );
 
       mockUsePostHog.mockReturnValue({
         identify: mockIdentify,
       } as any);
 
-      render(
-        <UserProvider>
-          <div>Test Child</div>
-        </UserProvider>,
+      await act(() =>
+        render(
+          <UserProvider>
+            <div>Test Child</div>
+          </UserProvider>,
+        ),
       );
 
-      // Should log error
-      await waitFor(() => {
-        expect(consoleErrorSpy).toHaveBeenCalledWith(
-          "Failed to get user because:",
-          expect.any(Error),
-        );
-      });
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        new AxiosError("Request failed with status code 401"),
+      );
 
       // Should not call identify
       expect(mockIdentify).not.toHaveBeenCalled();

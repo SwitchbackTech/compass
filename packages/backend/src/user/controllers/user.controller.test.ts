@@ -28,6 +28,7 @@ describe("UserController", () => {
 
       expect(response.body).toEqual(
         expect.objectContaining({
+          userId: user._id.toString(),
           firstName: user.firstName,
           lastName: user.lastName,
           name: user.name,

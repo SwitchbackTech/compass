@@ -4,37 +4,43 @@ import {
   createContext,
   useEffect,
   useLayoutEffect,
+  useRef,
   useState,
 } from "react";
+import { UserProfile } from "@core/types/user.types";
+import { UserApi } from "@web/common/apis/user.api";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
-import { getUserEmail, getUserId } from "./auth.util";
 
 const UserContext = createContext<
-  { isLoadingUser: boolean; userId: string } | undefined
+  | Partial<
+      { isLoadingUser: boolean; userId: string } & Omit<UserProfile, "_id">
+    >
+  | undefined
 >(undefined);
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [userId, setUserId] = useState<string | null>(null);
-  const [email, setEmail] = useState<string | null>(null);
+  const profile = useRef<UserProfile | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(false);
   const posthog = usePostHog();
+  const userId = profile.current?.userId ?? null;
+  const email = profile.current?.email ?? null;
 
   useLayoutEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const uid = await getUserId();
-        const userEmail = await getUserEmail();
-        setUserId(uid);
-        setEmail(userEmail);
-      } catch (e) {
-        console.error("Failed to get user because:", e);
-      } finally {
-        setIsLoadingUser(false);
-      }
-    };
+    if (profile.current) return;
 
-    void fetchUserData();
-  }, []);
+    setIsLoadingUser(true);
+
+    UserApi.getProfile()
+      .then((userProfile) => {
+        profile.current = userProfile;
+      })
+      .catch((e) => {
+        console.error("Failed to get user profile because:", e);
+      })
+      .finally(() => {
+        setIsLoadingUser(false);
+      });
+  }, [profile.current]);
 
   // Identify user in PostHog when userId and email are available
   // Only runs if PostHog is enabled (POSTHOG_HOST and POSTHOG_KEY are set)
@@ -49,7 +55,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <UserContext.Provider value={{ userId, isLoadingUser }}>
+    <UserContext.Provider
+      value={{ ...(profile.current ?? {}), userId, isLoadingUser }}
+    >
       {children}
     </UserContext.Provider>
   );

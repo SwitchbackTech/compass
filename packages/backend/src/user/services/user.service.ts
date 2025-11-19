@@ -58,6 +58,7 @@ class UserService {
       {
         session,
         projection: {
+          userId: { $toString: "$_id" },
           picture: "$google.picture",
           firstName: 1,
           lastName: 1,
@@ -70,7 +71,7 @@ class UserService {
 
     if (!user) throw error(UserError.UserNotFound, "Failed to find user");
 
-    return { ...user, picture: Reflect.get(user, "picture") };
+    return user as unknown as UserProfile;
   };
 
   deleteCompassDataForUser = async (userId: string, gcalAccess = true) => {

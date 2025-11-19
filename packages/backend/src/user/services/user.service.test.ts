@@ -11,6 +11,7 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import calendarService from "@backend/calendar/services/calendar.service";
+import { UserError } from "@backend/common/errors/user/user.errors";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
@@ -41,6 +42,35 @@ describe("UserService", () => {
             gRefreshToken: refreshToken,
           }),
         }),
+      );
+    });
+  });
+
+  describe("getProfile", () => {
+    it("returns the user profile for a valid user ID", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id;
+
+      const profile = await userService.getProfile(userId);
+
+      expect(profile).toEqual(
+        expect.objectContaining({
+          userId: userId.toString(),
+          picture: user.google.picture,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          name: user.name,
+          email: user.email,
+          locale: user.locale,
+        }),
+      );
+    });
+
+    it("throws UserNotFound error when user does not exist", async () => {
+      const nonExistentId = mongoService.objectId();
+
+      await expect(userService.getProfile(nonExistentId)).rejects.toThrow(
+        UserError.UserNotFound.description,
       );
     });
   });
