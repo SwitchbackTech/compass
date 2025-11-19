@@ -14,7 +14,7 @@ describe("useDNDTasksContext", () => {
       .mockImplementation(() => {});
 
     expect(() => render(<TestComponent />)).toThrow(
-      "useDNDTasksContext must be used within useDNDTasksProvider",
+      "useDNDTasksContext must be used within DNDTasksProvider",
     );
 
     consoleSpy.mockRestore();
