@@ -63,6 +63,7 @@ export const Tasks = () => {
                     ) : null}
 
                     <Task
+                      key={task.id}
                       task={task}
                       index={index}
                       isEditing={editingTaskId === task.id}
