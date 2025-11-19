@@ -38,6 +38,7 @@ interface TaskContextValue {
   toggleTaskStatus: (taskId: string) => void;
   updateTaskTitle: (taskId: string, title: string) => void;
   migrateTask: (id: string, direction: "forward" | "backward") => void;
+  reorderTasks: (sourceIndex: number, destinationIndex: number) => void;
 }
 export const TaskContext = createContext<TaskContextValue | undefined>(
   undefined,
@@ -105,6 +106,23 @@ export function TaskProvider({ children }: TaskProviderProps) {
     toggleTaskStatus: actions.toggleTaskStatus,
     updateTaskTitle: actions.updateTaskTitle,
     migrateTask: actions.migrateTask,
+    reorderTasks: (sourceIndex: number, destinationIndex: number) => {
+      state.setTasks((prev) => {
+        const newTasks = Array.from(prev);
+        const [moved] = newTasks.splice(sourceIndex, 1);
+        newTasks.splice(destinationIndex, 0, moved);
+        // Update order
+        const todoTasks = newTasks.filter((t) => t.status === "todo");
+        const completedTasks = newTasks.filter((t) => t.status === "completed");
+        todoTasks.forEach((task, index) => {
+          task.order = index;
+        });
+        completedTasks.forEach((task, index) => {
+          task.order = index;
+        });
+        return newTasks;
+      });
+    },
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;

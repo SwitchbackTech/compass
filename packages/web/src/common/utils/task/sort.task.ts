@@ -2,15 +2,19 @@ import { Task } from "@web/common/types/task.types";
 
 /**
  * Sorts tasks by status, placing incomplete tasks first and completed tasks last.
- * Maintains the original order within each group.
+ * Within each status group, sorts by order field.
  *
  * @param tasks - Array of tasks to sort
- * @returns New array with tasks sorted by status
+ * @returns New array with tasks sorted by status and order
  */
 export function sortTasksByStatus(tasks: Task[]): Task[] {
   const incompleteTasks = tasks.filter((task) => task.status !== "completed");
   const completedTasks = tasks.filter((task) => task.status === "completed");
-  return [...incompleteTasks, ...completedTasks];
+  const sortedIncomplete = [...incompleteTasks].sort(
+    (a, b) => a.order - b.order,
+  );
+  const sortedCompleted = [...completedTasks].sort((a, b) => a.order - b.order);
+  return [...sortedIncomplete, ...sortedCompleted];
 }
 
 /**

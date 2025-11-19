@@ -1,7 +1,5 @@
 import { PostHogProvider } from "posthog-js/react";
 import { PropsWithChildren } from "react";
-import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
 import { Provider } from "react-redux";
 import { ToastContainer } from "react-toastify";
 import { ThemeProvider } from "styled-components";
@@ -21,29 +19,27 @@ export const CompassRequiredProviders = (
   props: PropsWithChildren<{ store?: typeof store }>,
 ) => (
   <SessionProvider>
-    <DndProvider backend={HTML5Backend}>
-      <Provider store={props?.store ?? store}>
-        <GoogleOAuthProvider clientId={ENV_WEB.GOOGLE_CLIENT_ID || ""}>
-          <GlobalStyle />
-          <ThemeProvider theme={theme}>
-            <IconProvider>{props.children}</IconProvider>
-            <ToastContainer
-              position="bottom-left"
-              autoClose={5000}
-              hideProgressBar={false}
-              newestOnTop={false}
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              theme="dark"
-              limit={1}
-            />
-          </ThemeProvider>
-        </GoogleOAuthProvider>
-      </Provider>
-    </DndProvider>
+    <Provider store={props?.store ?? store}>
+      <GoogleOAuthProvider clientId={ENV_WEB.GOOGLE_CLIENT_ID || ""}>
+        <GlobalStyle />
+        <ThemeProvider theme={theme}>
+          <IconProvider>{props.children}</IconProvider>
+          <ToastContainer
+            position="bottom-left"
+            autoClose={5000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="dark"
+            limit={1}
+          />
+        </ThemeProvider>
+      </GoogleOAuthProvider>
+    </Provider>
   </SessionProvider>
 );
 

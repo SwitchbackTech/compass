@@ -9,18 +9,21 @@ describe("taskSort.util", () => {
           id: "task-1",
           title: "Task 1",
           status: "todo",
+          order: 0,
           createdAt: "2024-01-01T10:00:00Z",
         },
         {
           id: "task-2",
           title: "Task 2",
           status: "completed",
+          order: 0,
           createdAt: "2024-01-01T11:00:00Z",
         },
         {
           id: "task-3",
           title: "Task 3",
           status: "todo",
+          order: 1,
           createdAt: "2024-01-01T12:00:00Z",
         },
       ];
@@ -32,62 +35,68 @@ describe("taskSort.util", () => {
       expect(result[2].id).toBe("task-2");
     });
 
-    it("should maintain order of incomplete tasks", () => {
+    it("should sort incomplete tasks by order", () => {
       const tasks: Task[] = [
         {
           id: "task-1",
           title: "First todo",
           status: "todo",
+          order: 2,
           createdAt: "2024-01-01T10:00:00Z",
         },
         {
           id: "task-2",
           title: "Second todo",
           status: "todo",
+          order: 0,
           createdAt: "2024-01-01T11:00:00Z",
         },
         {
           id: "task-3",
           title: "Third todo",
           status: "todo",
+          order: 1,
           createdAt: "2024-01-01T12:00:00Z",
         },
       ];
 
       const result = sortTasksByStatus(tasks);
 
-      expect(result[0].id).toBe("task-1");
-      expect(result[1].id).toBe("task-2");
-      expect(result[2].id).toBe("task-3");
+      expect(result[0].id).toBe("task-2"); // order 0
+      expect(result[1].id).toBe("task-3"); // order 1
+      expect(result[2].id).toBe("task-1"); // order 2
     });
 
-    it("should maintain order of completed tasks", () => {
+    it("should sort completed tasks by order", () => {
       const tasks: Task[] = [
         {
           id: "task-1",
           title: "First completed",
           status: "completed",
+          order: 2,
           createdAt: "2024-01-01T10:00:00Z",
         },
         {
           id: "task-2",
           title: "Second completed",
           status: "completed",
+          order: 0,
           createdAt: "2024-01-01T11:00:00Z",
         },
         {
           id: "task-3",
           title: "Third completed",
           status: "completed",
+          order: 1,
           createdAt: "2024-01-01T12:00:00Z",
         },
       ];
 
       const result = sortTasksByStatus(tasks);
 
-      expect(result[0].id).toBe("task-1");
-      expect(result[1].id).toBe("task-2");
-      expect(result[2].id).toBe("task-3");
+      expect(result[0].id).toBe("task-2"); // order 0
+      expect(result[1].id).toBe("task-3"); // order 1
+      expect(result[2].id).toBe("task-1"); // order 2
     });
 
     it("should handle empty array", () => {
@@ -101,44 +110,49 @@ describe("taskSort.util", () => {
           id: "task-1",
           title: "Todo 1",
           status: "todo",
+          order: 1,
           createdAt: "2024-01-01T10:00:00Z",
         },
         {
           id: "task-2",
           title: "Completed 1",
           status: "completed",
+          order: 0,
           createdAt: "2024-01-01T11:00:00Z",
         },
         {
           id: "task-3",
           title: "Todo 2",
           status: "todo",
+          order: 0,
           createdAt: "2024-01-01T12:00:00Z",
         },
         {
           id: "task-4",
           title: "Completed 2",
           status: "completed",
+          order: 1,
           createdAt: "2024-01-01T13:00:00Z",
         },
         {
           id: "task-5",
           title: "Todo 3",
           status: "todo",
+          order: 2,
           createdAt: "2024-01-01T14:00:00Z",
         },
       ];
 
       const result = sortTasksByStatus(tasks);
 
-      // All todos should come first
-      expect(result[0].id).toBe("task-1");
-      expect(result[1].id).toBe("task-3");
-      expect(result[2].id).toBe("task-5");
+      // All todos should come first, sorted by order
+      expect(result[0].id).toBe("task-3"); // todo order 0
+      expect(result[1].id).toBe("task-1"); // todo order 1
+      expect(result[2].id).toBe("task-5"); // todo order 2
 
-      // All completed should come after
-      expect(result[3].id).toBe("task-2");
-      expect(result[4].id).toBe("task-4");
+      // All completed should come after, sorted by order
+      expect(result[3].id).toBe("task-2"); // completed order 0
+      expect(result[4].id).toBe("task-4"); // completed order 1
     });
 
     it("should not mutate original array", () => {
@@ -147,12 +161,14 @@ describe("taskSort.util", () => {
           id: "task-1",
           title: "Task 1",
           status: "todo",
+          order: 0,
           createdAt: "2024-01-01T10:00:00Z",
         },
         {
           id: "task-2",
           title: "Task 2",
           status: "completed",
+          order: 0,
           createdAt: "2024-01-01T11:00:00Z",
         },
       ];
@@ -171,18 +187,21 @@ describe("taskSort.util", () => {
           id: "task-1",
           title: "Todo 1",
           status: "todo",
+          order: 0,
           createdAt: "2024-01-01T10:00:00Z",
         },
         {
           id: "task-2",
           title: "Completed 1",
           status: "completed",
+          order: 0,
           createdAt: "2024-01-01T11:00:00Z",
         },
         {
           id: "task-3",
           title: "Todo 2",
           status: "todo",
+          order: 0,
           createdAt: "2024-01-01T12:00:00Z",
         },
       ];
@@ -201,18 +220,21 @@ describe("taskSort.util", () => {
           id: "task-1",
           title: "Oldest",
           status: "todo",
+          order: 0,
           createdAt: "2024-01-01T10:00:00Z",
         },
         {
           id: "task-2",
           title: "Middle",
           status: "todo",
+          order: 0,
           createdAt: "2024-01-01T12:00:00Z",
         },
         {
           id: "task-3",
           title: "Newest",
           status: "todo",
+          order: 0,
           createdAt: "2024-01-01T14:00:00Z",
         },
       ];
@@ -231,18 +253,21 @@ describe("taskSort.util", () => {
           id: "task-1",
           title: "First",
           status: "todo",
+          order: 0,
           createdAt: sameTimestamp,
         },
         {
           id: "task-2",
           title: "Second",
           status: "todo",
+          order: 0,
           createdAt: sameTimestamp,
         },
         {
           id: "task-3",
           title: "Third",
           status: "todo",
+          order: 0,
           createdAt: sameTimestamp,
         },
       ];
@@ -266,12 +291,14 @@ describe("taskSort.util", () => {
           id: "task-1",
           title: "Completed 1",
           status: "completed",
+          order: 0,
           createdAt: "2024-01-01T10:00:00Z",
         },
         {
           id: "task-2",
           title: "Completed 2",
           status: "completed",
+          order: 0,
           createdAt: "2024-01-01T11:00:00Z",
         },
       ];
@@ -287,18 +314,21 @@ describe("taskSort.util", () => {
           id: "task-1",
           title: "Todo 1",
           status: "todo",
+          order: 0,
           createdAt: "2024-01-01T10:00:00Z",
         },
         {
           id: "task-2",
           title: "Todo 2",
           status: "todo",
+          order: 0,
           createdAt: "2024-01-01T12:00:00Z",
         },
         {
           id: "task-3",
           title: "Todo 3",
           status: "todo",
+          order: 0,
           createdAt: "2024-01-01T11:00:00Z",
         },
       ];
@@ -317,12 +347,14 @@ describe("taskSort.util", () => {
           id: "task-1",
           title: "Task 1",
           status: "todo",
+          order: 0,
           createdAt: "2024-01-01T10:00:00Z",
         },
         {
           id: "task-2",
           title: "Task 2",
           status: "completed",
+          order: 0,
           createdAt: "2024-01-01T11:00:00Z",
         },
       ];
@@ -339,24 +371,28 @@ describe("taskSort.util", () => {
           id: "task-1",
           title: "Old todo",
           status: "todo",
+          order: 0,
           createdAt: "2024-01-01T10:00:00Z",
         },
         {
           id: "task-2",
           title: "Completed",
           status: "completed",
+          order: 0,
           createdAt: "2024-01-01T11:00:00Z",
         },
         {
           id: "task-3",
           title: "New todo",
           status: "todo",
+          order: 0,
           createdAt: "2024-01-01T14:00:00Z",
         },
         {
           id: "task-4",
           title: "Middle todo",
           status: "todo",
+          order: 0,
           createdAt: "2024-01-01T12:00:00Z",
         },
       ];

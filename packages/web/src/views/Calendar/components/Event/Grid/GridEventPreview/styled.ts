@@ -1,12 +1,16 @@
 import type { CSSProperties } from "react";
-import type { XYCoord } from "react-dnd";
 import styled from "styled-components";
 import { Priority } from "@core/constants/core.constants";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
 
-export const getItemStyles = (currentOffset: XYCoord | null) => {
+export const getItemStyles = (
+  currentOffset: {
+    x: number;
+    y: number;
+  } | null,
+) => {
   if (!currentOffset) {
     return {
       display: "none",

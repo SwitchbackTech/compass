@@ -4,6 +4,7 @@ const TaskSchema = z.object({
   id: z.string(),
   title: z.string(),
   status: z.enum(["todo", "completed"]),
+  order: z.number().default(0),
   createdAt: z.string().datetime(),
 });
 

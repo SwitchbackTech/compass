@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { DNDTasksProvider } from "@web/views/Day/context/DNDTasksProvider";
 import { useTasks } from "../../hooks/tasks/useTasks";
 import { AddTaskActiveButton } from "../AddTask/AddTaskActiveButton";
 import { AddTaskPreviewButton } from "../AddTask/AddTaskPreviewButton";
@@ -60,11 +61,13 @@ export function TaskList() {
 
       <div
         ref={tasksScrollRef}
-        className="flex-1 overflow-y-auto p-4"
+        className="flex flex-1 flex-col gap-2 overflow-y-auto p-4"
         style={{ overscrollBehavior: "contain" }}
       >
         <TaskContextMenuWrapper>
-          <Tasks />
+          <DNDTasksProvider>
+            <Tasks />
+          </DNDTasksProvider>
         </TaskContextMenuWrapper>
 
         {isAddingTask ? (
