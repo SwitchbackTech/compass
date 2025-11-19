@@ -26,7 +26,7 @@ export function DNDTasksProvider({ children }: PropsWithChildren) {
       setSelectedTaskIndex(source.index);
       provided.announce(`Started dragging task "${task?.title}"`);
     },
-    [],
+    [tasks, setSelectedTaskIndex],
   );
 
   const onDragEnd = useCallback(
