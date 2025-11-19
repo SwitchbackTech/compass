@@ -118,10 +118,12 @@ class EventService {
   REMINDER: this should only delete a user's *Compass* events --
             don't ever delete their events in gcal or any other 3rd party calendar
   */
-  deleteAllByUser = async (userId: string) => {
-    const response = await mongoService.db
-      .collection(Collections.EVENT)
-      .deleteMany({ user: userId });
+  deleteAllByUser = async (userId: string, session?: ClientSession) => {
+    const response = await mongoService.event.deleteMany(
+      { user: userId },
+      { session },
+    );
+
     return response;
   };
 

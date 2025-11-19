@@ -3,7 +3,6 @@ import { ClientSession, ObjectId } from "mongodb";
 import SupertokensUserMetadata, {
   JSONObject,
 } from "supertokens-node/recipe/usermetadata";
-import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 import { mapUserToCompass } from "@core/mappers/map.user";
 import { Resource_Sync } from "@core/types/sync.types";
@@ -13,8 +12,6 @@ import { shouldImportGCal } from "@core/util/event/event.util";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import calendarService from "@backend/calendar/services/calendar.service";
-import { AuthError } from "@backend/common/errors/auth/auth.errors";
-import { error } from "@backend/common/errors/handlers/error.handler";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
@@ -22,7 +19,6 @@ import priorityService from "@backend/priority/services/priority.service";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import syncService from "@backend/sync/services/sync.service";
 import { isUsingHttps } from "@backend/sync/util/sync.util";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import { Summary_Delete } from "@backend/user/types/user.types";
 
@@ -52,66 +48,73 @@ class UserService {
   };
 
   deleteCompassDataForUser = async (userId: string, gcalAccess = true) => {
+    const _id = zObjectId.parse(userId);
     const summary: Summary_Delete = {};
+    const session = await mongoService.startSession();
 
-    try {
-      const priorities = await priorityService.deleteAllByUser(userId);
+    const result = await session.withTransaction(async (session) => {
+      const user = await mongoService.user.findOne({ _id }, { session });
+
+      if (!user) {
+        logger.warn(`User(${userId}) not found while deleting compass data`);
+      }
+
+      const priorities = await priorityService.deleteAllByUser(userId, session);
       summary.priorities = priorities.deletedCount;
 
-      const calendars = await calendarService.deleteAllByUser(userId);
+      const calendars = await calendarService.deleteAllByUser(userId, session);
       summary.calendars = calendars.deletedCount;
 
-      const events = await eventService.deleteAllByUser(userId);
+      const events = await eventService.deleteAllByUser(userId, session);
       summary.events = events.deletedCount;
 
       if (gcalAccess) {
-        const watches = await syncService.stopWatches(userId);
+        const watches = await syncService.stopWatches(
+          userId,
+          undefined,
+          new ObjectId().toString(),
+          session,
+        );
         summary.eventWatches = watches.length;
+      } else {
+        const watches = await mongoService.watch.deleteMany(
+          { user: userId },
+          { session },
+        );
+        summary.eventWatches = watches.deletedCount;
       }
 
-      const user = await findCompassUserBy("_id", userId);
-      if (!user) {
-        throw error(AuthError.NoUserId, "Failed to find user");
-      }
-
-      const syncs = await syncService.deleteAllByUser(userId);
+      const syncs = await syncService.deleteAllByUser(userId, session);
       summary.syncs = syncs.deletedCount;
 
-      // delete other users with same email
-      const staleSyncs = await syncService.deleteAllByGcalId(
-        user.google.googleId,
-      );
-      summary.syncs += staleSyncs.deletedCount;
+      if (user) {
+        // delete other users sync with same Google calendar ID (email)
+        const gCalId = user.email;
+        const staleSyncs = await syncService.deleteAllByGcalId(gCalId, session);
+        summary.syncs += staleSyncs.deletedCount;
+      }
 
+      // revoke all sessions
       initSupertokens();
-
-      const { sessionsRevoked } =
-        await compassAuthService.revokeSessionsByUser(userId);
+      const { sessionsRevoked } = await compassAuthService
+        .revokeSessionsByUser(userId)
+        .catch((err) => {
+          logger.error(
+            `Failed to revoke sessions for user: ${userId} during data deletion`,
+            err,
+          );
+          return { sessionsRevoked: 0 };
+        });
       summary.sessions = sessionsRevoked;
 
-      const _user = await this.deleteUser(userId);
-      summary.user = _user.deletedCount;
-      return summary;
-    } catch (e) {
-      const _e = e as BaseError;
-      console.log("Stopped early because:", _e.description || _e);
-
-      const _user = await this.deleteUser(userId);
-
-      summary.user = _user.deletedCount;
+      // delete user
+      const userDel = await mongoService.user.deleteOne({ _id }, { session });
+      summary.user = userDel.deletedCount;
 
       return summary;
-    }
-  };
-
-  deleteUser = async (userId: string) => {
-    logger.info(`Deleting all data for user: ${userId}`);
-
-    const response = await mongoService.user.deleteOne({
-      _id: mongoService.objectId(userId),
     });
 
-    return response;
+    return result;
   };
 
   initUserData = async (
