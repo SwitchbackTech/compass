@@ -174,10 +174,11 @@ class CalendarService {
   /**
    * Delete all calendars for a user
    */
-  async deleteAllByUser(userId: ObjectId | string) {
-    const response = await mongoService.calendar.deleteMany({
-      user: zObjectId.parse(userId),
-    });
+  async deleteAllByUser(userId: ObjectId | string, session?: ClientSession) {
+    const response = await mongoService.calendar.deleteMany(
+      { user: zObjectId.parse(userId) },
+      { session },
+    );
 
     return response;
   }

@@ -1,5 +1,5 @@
 import { GaxiosError } from "gaxios";
-import { ObjectId } from "mongodb";
+import { ClientSession, ObjectId } from "mongodb";
 import { RESULT_NOTIFIED_CLIENT } from "@core/constants/websocket.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { gCalendar } from "@core/types/gcal";
@@ -43,17 +43,21 @@ import userMetadataService from "@backend/user/services/user-metadata.service";
 const logger = Logger("app:sync.service");
 
 class SyncService {
-  deleteAllByGcalId = async (gCalendarId: string) => {
-    const delRes = await mongoService.db
-      .collection(Collections.SYNC)
-      .deleteMany({ "google.events.gCalendarId": gCalendarId });
+  deleteAllByGcalId = async (gCalendarId: string, session?: ClientSession) => {
+    const delRes = await mongoService.sync.deleteMany(
+      { "google.events.gCalendarId": gCalendarId },
+      { session },
+    );
+
     return delRes;
   };
 
-  deleteAllByUser = async (userId: string) => {
-    const delRes = await mongoService.db
-      .collection(Collections.SYNC)
-      .deleteMany({ user: userId });
+  deleteAllByUser = async (userId: string, session?: ClientSession) => {
+    const delRes = await mongoService.sync.deleteMany(
+      { user: userId },
+      { session },
+    );
+
     return delRes;
   };
 
@@ -605,8 +609,11 @@ class SyncService {
     resourceId: string,
     gcal?: gCalendar,
     quotaUser?: string,
+    session?: ClientSession,
   ) => {
     if (!gcal) gcal = await getGcalClient(user);
+
+    const filter = { user, _id: new ObjectId(channelId), resourceId };
 
     try {
       await gcalService.stopWatch(gcal, {
@@ -615,11 +622,7 @@ class SyncService {
         resourceId,
       });
 
-      await mongoService.watch.deleteOne({
-        user,
-        _id: new ObjectId(channelId),
-        resourceId,
-      });
+      await mongoService.watch.deleteOne(filter, { session });
 
       return { channelId, resourceId };
     } catch (e) {
@@ -627,11 +630,7 @@ class SyncService {
       const code = (_e.code as unknown as number) || 0;
 
       if (_e.code === "404" || code === 404) {
-        await mongoService.watch.deleteOne({
-          user,
-          _id: new ObjectId(channelId),
-          resourceId,
-        });
+        await mongoService.watch.deleteOne(filter, { session });
 
         logger.warn(
           "Channel no longer exists. Corresponding sync record deleted",
@@ -648,25 +647,33 @@ class SyncService {
     user: string,
     gcal?: gCalendar,
     quotaUser?: string,
+    session?: ClientSession,
   ): Promise<Result_Watch_Stop> => {
     logger.debug(`Stopping all gcal event watches for user: ${user}`);
 
     if (!gcal) gcal = await getGcalClient(user);
 
-    const watches = await mongoService.watch.find({ user }).toArray();
+    const watches = await mongoService.watch
+      .find({ user }, { session })
+      .toArray();
 
     const result = await Promise.all(
       watches.map(async ({ _id, resourceId }) =>
-        this.stopWatch(user, _id.toString(), resourceId, gcal, quotaUser).catch(
-          (error) => {
-            logger.error(
-              `Error stopping watch for user: ${user}, channelId: ${_id.toString()}`,
-              error,
-            );
+        this.stopWatch(
+          user,
+          _id.toString(),
+          resourceId,
+          gcal,
+          quotaUser,
+          session,
+        ).catch((error) => {
+          logger.error(
+            `Error stopping watch for user: ${user}, channelId: ${_id.toString()}`,
+            error,
+          );
 
-            return undefined;
-          },
-        ),
+          return undefined;
+        }),
       ),
     );
 

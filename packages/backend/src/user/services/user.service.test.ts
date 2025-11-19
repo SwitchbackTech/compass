@@ -67,6 +67,7 @@ describe("UserService", () => {
           calendars: expect.any(Number),
           events: expect.any(Number),
           syncs: expect.any(Number),
+          eventWatches: expect.any(Number),
           user: 1,
         }),
       );
@@ -77,17 +78,15 @@ describe("UserService", () => {
       ).toBe(0);
       expect(await mongoService.event.countDocuments({ user: userId })).toBe(0);
       expect(await mongoService.sync.findOne({ user: userId })).toBeNull();
-    });
-  });
-
-  describe("deleteUser", () => {
-    it("removes the user document", async () => {
-      const user = await UserDriver.createUser();
-
-      const result = await userService.deleteUser(user._id.toString());
-
-      expect(result.deletedCount).toBe(1);
-      expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
+      expect(await mongoService.watch.findOne({ user: userId })).toBeNull();
+      expect(
+        await mongoService.sync.findOne({
+          $or: [
+            { "google.calendarlist.gCalendarId": user.email },
+            { "google.events.gCalendarId": user.email },
+          ],
+        }),
+      ).toBeNull();
     });
   });
 

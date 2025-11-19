@@ -50,10 +50,13 @@ class PriorityService {
     );
   }
 
-  async deleteAllByUser(userId: string) {
+  async deleteAllByUser(userId: string, session?: ClientSession) {
     const filter = { user: { $eq: userId } };
 
-    const response = await mongoService.priority.deleteMany(filter);
+    const response = await mongoService.priority.deleteMany(filter, {
+      session,
+    });
+
     return response;
   }
 
