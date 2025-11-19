@@ -4,24 +4,26 @@ _A focused workspace for organizing your day and staying on track; All your even
 
 https://github.com/user-attachments/assets/ba7b91b9-1984-49f2-afc6-7fcda1100b31
 
-
 ---
-
 
 ## Benefits
 
 ### 🧘 Get clear
+
 Plan your Month → Week → Day → Now
 
 ### 1️⃣ Simplify your life
+
 One app for tasks, events, and plans
 
 ### ⚡ Go fast
+
 Shortcuts, command palette, lightweight code
 
 ### 🔄 Keep your GCal
-Events sync to Google Calendar*
-  
+
+Events sync to Google Calendar\*
+
 ## Features
 
 ### The unique stuff
@@ -53,7 +55,7 @@ Events sync to Google Calendar*
 
 Features we don't support yet:
 
-- 📂 Sub-calendars (*only primary calendar is supported)
+- 📂 Sub-calendars (\*only primary calendar is supported)
 - 🔗 Sharing
 - 📍 Location
 - ⏰ Reminders
@@ -76,4 +78,3 @@ Features we don't support yet:
 ![Jest](https://img.shields.io/badge/-jest-%23C21325?style=for-the-badge&logo=jest&logoColor=white)
 ![Testing-Library](https://img.shields.io/badge/-TestingLibrary-%23E33332?style=for-the-badge&logo=testing-library&logoColor=white)
 ![Ngrok](https://img.shields.io/badge/ngrok-1F1F1F?style=for-the-badge&logo=ngrok&logoColor=white)
-

@@ -35,9 +35,9 @@ export function DNDTasksProvider({ children }: PropsWithChildren) {
 
       if (!destination || destination.index === source.index) return;
 
-      const task = tasks[destination.index];
-      const aboveTask = tasks[destination.index - 1];
-      const belowTask = tasks[destination.index + 1];
+      const task = tasks[source.index];
+      const aboveTask = tasks[source.index - 1];
+      const belowTask = tasks[source.index + 1];
       const aboveText = aboveTask ? ` below "${aboveTask?.title}"` : "";
       const belowText = belowTask ? ` above "${belowTask?.title}"` : "";
 

@@ -10,8 +10,10 @@ import { Task } from "@web/common/types/task.types";
 export function sortTasksByStatus(tasks: Task[]): Task[] {
   const incompleteTasks = tasks.filter((task) => task.status !== "completed");
   const completedTasks = tasks.filter((task) => task.status === "completed");
-  const sortedIncomplete = incompleteTasks.sort((a, b) => a.order - b.order);
-  const sortedCompleted = completedTasks.sort((a, b) => a.order - b.order);
+  const sortedIncomplete = [...incompleteTasks].sort(
+    (a, b) => a.order - b.order,
+  );
+  const sortedCompleted = [...completedTasks].sort((a, b) => a.order - b.order);
   return [...sortedIncomplete, ...sortedCompleted];
 }
 
