@@ -6,7 +6,7 @@ export function useDNDTasksContext() {
 
   if (!context) {
     throw new Error(
-      "useDNDTasksContext must be used within useDNDTasksProvider",
+      "useDNDTasksContext must be used within DNDTasksProvider",
     );
   }
 
