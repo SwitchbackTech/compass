@@ -141,7 +141,7 @@ describe("DNDTasksProvider", () => {
 
     expect(mockReorderTasks).toHaveBeenCalledWith(0, 1);
     expect(mockAnnounce).toHaveBeenCalledWith(
-      'Dropped task "Task 2" at new position below "Task 1".',
+      'Dropped task "Task 1" at new position below "Task 2".',
     );
   });
 

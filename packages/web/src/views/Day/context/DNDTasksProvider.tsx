@@ -38,13 +38,14 @@ export function DNDTasksProvider({ children }: PropsWithChildren) {
       const task = tasks[source.index];
       const aboveTask = tasks[source.index - 1];
       const belowTask = tasks[source.index + 1];
-      const aboveText = aboveTask ? ` below "${aboveTask?.title}"` : "";
-      const belowText = belowTask ? ` above "${belowTask?.title}"` : "";
+      const aboveText = aboveTask ? ` above "${aboveTask?.title}"` : "";
+      const belowText = belowTask ? ` below "${belowTask?.title}"` : "";
+      const suffix = destination.index < source.index ? aboveText : belowText;
 
       reorderTasks(source.index, destination.index);
 
       provided.announce(
-        `Dropped task "${task.title}" at new position${aboveText}${belowText}.`,
+        `Dropped task "${task.title}" at new position${suffix}.`,
       );
     },
     [tasks, reorderTasks],
