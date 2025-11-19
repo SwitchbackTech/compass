@@ -1,11 +1,21 @@
 import { Request, Response } from "express";
 import { Status } from "@core/errors/status.codes";
 import { zObjectId } from "@core/types/type.utils";
-import { UserMetadata } from "@core/types/user.types";
+import { UserMetadata, UserProfile } from "@core/types/user.types";
 import { SReqBody } from "@backend/common/types/express.types";
 import userMetadataService from "@backend/user/services/user-metadata.service";
+import userService from "@backend/user/services/user.service";
 
 class UserController {
+  getProfile = async (
+    req: Request<never, UserProfile, never, never>,
+    res: Response<UserProfile>,
+  ) => {
+    const user = zObjectId.parse(req.session?.getUserId());
+    const profile = await userService.getProfile(user);
+
+    res.status(Status.OK).json(profile);
+  };
   getMetadata = async (
     req: Request<never, UserMetadata, never, never>,
     res: Response<UserMetadata>,

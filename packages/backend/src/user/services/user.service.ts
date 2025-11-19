@@ -7,11 +7,13 @@ import { Logger } from "@core/logger/winston.logger";
 import { mapUserToCompass } from "@core/mappers/map.user";
 import { Resource_Sync } from "@core/types/sync.types";
 import { zObjectId } from "@core/types/type.utils";
-import { Schema_User, UserMetadata } from "@core/types/user.types";
+import { Schema_User, UserMetadata, UserProfile } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import calendarService from "@backend/calendar/services/calendar.service";
+import { error } from "@backend/common/errors/handlers/error.handler";
+import { UserError } from "@backend/common/errors/user/user.errors";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
@@ -45,6 +47,30 @@ class UserService {
       ...compassUser,
       userId: newUserId.toString(),
     };
+  };
+
+  getProfile = async (
+    _id: ObjectId,
+    session?: ClientSession,
+  ): Promise<UserProfile> => {
+    const user = await mongoService.user.findOne(
+      { _id },
+      {
+        session,
+        projection: {
+          picture: "$google.picture",
+          firstName: 1,
+          lastName: 1,
+          name: 1,
+          email: 1,
+          locale: 1,
+        },
+      },
+    );
+
+    if (!user) throw error(UserError.UserNotFound, "Failed to find user");
+
+    return { ...user, picture: Reflect.get(user, "picture") };
   };
 
   deleteCompassDataForUser = async (userId: string, gcalAccess = true) => {

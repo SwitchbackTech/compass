@@ -24,3 +24,11 @@ export interface UserMetadata extends SupertokensUserMetadata.JSONObject {
     incrementalGCalSync?: SyncStatus;
   };
 }
+
+export interface UserProfile
+  extends Pick<
+    Schema_User,
+    "firstName" | "lastName" | "name" | "email" | "locale"
+  > {
+  picture: string;
+}
