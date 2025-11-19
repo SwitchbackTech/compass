@@ -29,7 +29,8 @@ export interface UserMetadata extends SupertokensUserMetadata.JSONObject {
 export interface UserProfile
   extends Pick<
     WithCompassId<Schema_User>,
-    "_id" | "firstName" | "lastName" | "name" | "email" | "locale"
+    "firstName" | "lastName" | "name" | "email" | "locale"
   > {
   picture: string;
+  userId: string;
 }

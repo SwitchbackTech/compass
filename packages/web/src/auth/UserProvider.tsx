@@ -22,7 +22,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const profile = useRef<UserProfile | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(false);
   const posthog = usePostHog();
-  const userId = profile.current?._id ?? null;
+  const userId = profile.current?.userId ?? null;
   const email = profile.current?.email ?? null;
 
   useLayoutEffect(() => {
@@ -40,7 +40,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       .finally(() => {
         setIsLoadingUser(false);
       });
-  }, []);
+  }, [profile.current]);
 
   // Identify user in PostHog when userId and email are available
   // Only runs if PostHog is enabled (POSTHOG_HOST and POSTHOG_KEY are set)

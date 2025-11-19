@@ -52,6 +52,19 @@ export const globalHandlers = [
   rest.options(`${ENV_WEB.API_BASEURL}/event`, (_req, res, ctx) => {
     return res(ctx.json([]));
   }),
+  rest.get(`${ENV_WEB.API_BASEURL}/user/profile`, (_req, res, ctx) => {
+    return res(
+      ctx.status(Status.OK),
+      ctx.json({
+        userId: "test-user-123",
+        email: "test@example.com",
+        name: faker.person.fullName(),
+        firstName: faker.person.firstName(),
+        lastName: faker.person.lastName(),
+        photo: faker.image.avatar(),
+      }),
+    );
+  }),
   rest.get(`${ENV_WEB.API_BASEURL}/user/metadata`, (_req, res, ctx) => {
     return res(ctx.status(Status.OK), ctx.json({ skipOnboarding: false }));
   }),

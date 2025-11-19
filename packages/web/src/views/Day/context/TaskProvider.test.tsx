@@ -2,9 +2,9 @@ import { PropsWithChildren, act } from "react";
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
+import { Task } from "@web/common/types/task.types";
 import { TODAY_TASKS_STORAGE_KEY_PREFIX } from "@web/common/utils/storage/storage.util";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
-import { Task } from "@web/views/Day/task.types";
 import { TaskProviderWrapper } from "@web/views/Day/util/day.test-util";
 
 describe("TaskProvider", () => {
