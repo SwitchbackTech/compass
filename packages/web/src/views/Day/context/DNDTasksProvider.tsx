@@ -47,7 +47,7 @@ export function DNDTasksProvider({ children }: PropsWithChildren) {
         `Dropped task "${task.title}" at new position${aboveText}${belowText}.`,
       );
     },
-    [reorderTasks],
+    [tasks, reorderTasks],
   );
 
   const value: DNDTasksContextProps = {
