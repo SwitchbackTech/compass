@@ -13,7 +13,7 @@ import { getServerUri } from "@backend/servers/websocket/websocket.util";
 export class BaseDriver {
   private readonly app = initExpressServer();
   private readonly http = http.createServer(this.app);
-  private readonly server = agent(this.app);
+  private readonly server = agent(this.http);
   private readonly websocketClients: Socket[] = [];
 
   private websocketServer?: CompassSocketServer;
@@ -108,7 +108,14 @@ export class BaseDriver {
 
       await this.websocketServer?.close();
 
-      this.http.removeAllListeners();
+      if (!this.http.listening) return;
+
+      await new Promise<void>((resolve, reject) => {
+        this.http.close((err) => {
+          if (err) return reject(err);
+          resolve();
+        });
+      });
     } catch (error) {
       console.error(error);
     }

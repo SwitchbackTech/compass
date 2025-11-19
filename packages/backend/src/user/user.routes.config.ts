@@ -10,6 +10,11 @@ export class UserRoutes extends CommonRoutesConfig {
 
   configureRoutes(): express.Application {
     this.app
+      .route(`/api/user/profile`)
+      .all(verifySession())
+      .get(userController.getProfile);
+
+    this.app
       .route(`/api/user/metadata`)
       .all(verifySession())
       .get(userController.getMetadata)
