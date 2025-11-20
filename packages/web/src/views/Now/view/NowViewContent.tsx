@@ -1,8 +1,8 @@
-import { TaskSelector } from "../components/TaskSelector/TaskSelector";
+import { TaskSelector } from "@web/views/Now/components/TaskSelector/TaskSelector";
 
 export const NowViewContent = () => {
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center px-6 py-8">
+    <div className="flex items-center justify-center px-6 py-8">
       <TaskSelector />
     </div>
   );

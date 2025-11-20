@@ -1,7 +1,17 @@
-import { ComponentType, PropsWithChildren, ReactElement } from "react";
+import {
+  ComponentType,
+  PropsWithChildren,
+  ReactElement,
+  isValidElement,
+} from "react";
 import { RouterProvider, RouterProviderProps } from "react-router-dom";
 import { configureStore } from "@reduxjs/toolkit";
-import { RenderOptions, render, renderHook } from "@testing-library/react";
+import {
+  RenderHookOptions,
+  RenderOptions,
+  render,
+  renderHook,
+} from "@testing-library/react";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
@@ -16,13 +26,27 @@ interface CustomRenderOptions extends RenderOptions {
   wrapper?: ComponentType<PropsWithChildren>;
 }
 
+interface CustomRenderHookOptions<Props>
+  extends CustomRenderOptions,
+    Omit<RenderHookOptions<Props>, "wrapper"> {}
+
 const TestProviders = (props?: {
   router?: RouterProviderProps["router"];
   store?: typeof compassStore;
 }) => {
-  return ({ children }: PropsWithChildren) => {
+  return function TestProvidersWrapper({ children }: PropsWithChildren) {
     if (!props?.router) {
-      return <CompassRequiredProviders {...props} children={children} />;
+      return (
+        <CompassRequiredProviders {...props}>
+          {children}
+        </CompassRequiredProviders>
+      );
+    }
+
+    if (isValidElement(children)) {
+      console.warn(
+        "When providing a router, children is not a valid option and will be ignored.",
+      );
     }
 
     return (
@@ -77,11 +101,11 @@ const customRenderHook = <ReturnType, Props>(
       preloadedState: state,
     }),
     ...renderOptions
-  }: CustomRenderOptions = {},
+  }: CustomRenderHookOptions<Props> = {},
 ) => {
   sagaMiddleware.run(sagas);
 
-  const options: RenderOptions = { ...renderOptions };
+  const options: RenderHookOptions<Props> = { ...renderOptions };
   const BaseProviders = TestProviders({ store, router });
 
   const Wrapper = (props: PropsWithChildren) => {
@@ -89,7 +113,7 @@ const customRenderHook = <ReturnType, Props>(
 
     return (
       <BaseProviders>
-        <WrapperComponent {...props} />
+        <WrapperComponent {...options.initialProps} {...props} />
       </BaseProviders>
     );
   };

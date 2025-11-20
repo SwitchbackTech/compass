@@ -2,24 +2,28 @@ import { useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { ID_MAIN } from "@web/common/constants/web.constants";
+import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
+import { FlexDirections } from "@web/components/Flex/styled";
 import { ShortcutsOverlay } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
 import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
-import { getShortcuts } from "../../../common/utils/shortcut/data/shortcuts.data";
-import { Agenda } from "../components/Agenda/Agenda";
-import { StorageInfoModal } from "../components/StorageInfoModal/StorageInfoModal";
-import { TaskList } from "../components/TaskList/TaskList";
-import { useStorageInfoModal } from "../context/StorageInfoModalContext";
-import { useDayEvents } from "../hooks/events/useDayEvents";
-import { useDateInView } from "../hooks/navigation/useDateInView";
-import { useDateNavigation } from "../hooks/navigation/useDateNavigation";
-import { useDayViewShortcuts } from "../hooks/shortcuts/useDayViewShortcuts";
-import { useTasks } from "../hooks/tasks/useTasks";
-import { focusFirstAgendaEvent } from "../util/agenda/focus.util";
+import { StyledCalendar } from "@web/views/Calendar/styled";
+import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
+import { Header } from "@web/views/Day/components/Header/Header";
+import { StorageInfoModal } from "@web/views/Day/components/StorageInfoModal/StorageInfoModal";
+import { TaskList } from "@web/views/Day/components/TaskList/TaskList";
+import { useStorageInfoModal } from "@web/views/Day/context/StorageInfoModalContext";
+import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
+import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
+import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
+import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
+import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
+import { focusFirstAgendaEvent } from "@web/views/Day/util/agenda/focus.util";
 import {
   focusOnAddTaskInput,
   focusOnFirstTask,
-} from "../util/day.shortcut.util";
+} from "@web/views/Day/util/day.shortcut.util";
 
 export const DayViewContent = () => {
   const {
@@ -134,20 +138,32 @@ export const DayViewContent = () => {
 
   return (
     <>
-      <div className="flex h-screen w-full items-center justify-center gap-8 overflow-hidden px-6 py-8">
-        <ShortcutsOverlay
-          sections={[
-            { title: "Home", shortcuts: shortcuts.homeShortcuts },
-            { title: "Tasks", shortcuts: shortcuts.dayTaskShortcuts },
-            { title: "Calendar", shortcuts: shortcuts.dayAgendaShortcuts },
-            { title: "Global", shortcuts: shortcuts.globalShortcuts },
-          ]}
-        />
-        <TaskList />
+      <StyledCalendar
+        direction={FlexDirections.COLUMN}
+        id={ID_MAIN}
+        className="flex-column flex overflow-hidden"
+      >
+        <Header />
 
-        <Agenda onScrollToNowLineReady={handleScrollToNowLineReady} />
-      </div>
+        <div
+          className={`flex flex-1 gap-8 self-center overflow-hidden px-6 py-8`}
+        >
+          <TaskList />
+
+          <Agenda onScrollToNowLineReady={handleScrollToNowLineReady} />
+        </div>
+      </StyledCalendar>
+
       <StorageInfoModal isOpen={isModalOpen} onClose={closeModal} />
+
+      <ShortcutsOverlay
+        sections={[
+          { title: "Home", shortcuts: shortcuts.homeShortcuts },
+          { title: "Tasks", shortcuts: shortcuts.dayTaskShortcuts },
+          { title: "Calendar", shortcuts: shortcuts.dayAgendaShortcuts },
+          { title: "Global", shortcuts: shortcuts.globalShortcuts },
+        ]}
+      />
     </>
   );
 };
