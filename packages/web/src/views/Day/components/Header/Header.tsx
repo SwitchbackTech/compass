@@ -14,14 +14,12 @@ export const Header: FC = () => {
   useReminderHotkey(() => reminderRef.current?.focus(), [reminderRef]);
 
   return (
-    <>
-      <StyledHeaderRow alignItems={AlignItems.BASELINE}>
-        <StyledLeftGroup />
+    <StyledHeaderRow alignItems={AlignItems.BASELINE}>
+      <StyledLeftGroup />
 
-        <Reminder ref={reminderRef} />
+      <Reminder ref={reminderRef} />
 
-        <SelectView />
-      </StyledHeaderRow>
-    </>
+      <SelectView />
+    </StyledHeaderRow>
   );
 };
