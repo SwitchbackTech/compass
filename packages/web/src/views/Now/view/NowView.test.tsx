@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import { renderWithMemoryRouter } from "@web/__tests__/utils/providers/MemoryRouter";
-import { NowView } from "./NowView";
+import { NowView } from "@web/views/Now/view/NowView";
 
 // Mock the useNowShortcuts hook
 jest.mock("../shortcuts/useNowShortcuts", () => ({
@@ -9,8 +9,8 @@ jest.mock("../shortcuts/useNowShortcuts", () => ({
 }));
 
 describe("NowView", () => {
-  it("renders the shortcuts overlay", () => {
-    renderWithMemoryRouter(<NowView />);
+  it("renders the shortcuts overlay", async () => {
+    await renderWithMemoryRouter(<NowView />);
 
     expect(
       screen.getByRole("complementary", { name: "Shortcut overlay" }),
@@ -18,21 +18,45 @@ describe("NowView", () => {
     expect(screen.getByText("Shortcuts")).toBeInTheDocument();
   });
 
-  it("renders global shortcuts", () => {
-    renderWithMemoryRouter(<NowView />);
+  it("renders the header with reminder and view selector", async () => {
+    await renderWithMemoryRouter(<NowView />);
+
+    // Check that Header components are rendered
+    expect(screen.getByText("Click to add your reminder")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /select view/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("renders global shortcuts", async () => {
+    await renderWithMemoryRouter(<NowView />);
 
     expect(screen.getByText("Global")).toBeInTheDocument();
     expect(screen.getAllByText("Now")).toHaveLength(2);
     expect(screen.getByText("Day")).toBeInTheDocument();
-    expect(screen.getByText("Week")).toBeInTheDocument();
+    expect(screen.getAllByText("Week")).toHaveLength(2);
   });
 
-  it("renders shortcut keys correctly", () => {
-    renderWithMemoryRouter(<NowView />);
+  it("renders shortcut keys correctly", async () => {
+    await renderWithMemoryRouter(<NowView />);
 
     // Check that shortcut keys are rendered
     expect(screen.getByText("1")).toBeInTheDocument();
     expect(screen.getByText("2")).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
+  });
+
+  it("renders the main layout structure", async () => {
+    await renderWithMemoryRouter(<NowView />);
+
+    // Check that the main calendar container is rendered
+    const mainElement = document.getElementById("mainSection");
+    expect(mainElement).toBeInTheDocument();
+    expect(mainElement).toHaveClass(
+      "flex-column",
+      "flex",
+      "h-screen",
+      "overflow-hidden",
+    );
   });
 });

@@ -1,9 +1,9 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
-import { addTasks } from "../../../__tests__/utils/tasks/task.test.util";
-import { renderWithDayProviders } from "../util/day.test-util";
-import { DayViewContent } from "./DayViewContent";
+import { addTasks } from "@web/__tests__/utils/tasks/task.test.util";
+import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
+import { DayViewContent } from "@web/views/Day/view/DayViewContent";
 
 // Mock the Agenda component
 jest.mock("../components/Agenda/Agenda", () => ({
@@ -49,6 +49,18 @@ describe("TodayViewContent", () => {
       await screen.findByRole("button", { name: "Create new task" }),
     ).toBeInTheDocument();
     expect(await screen.findByText("Calendar Content")).toBeInTheDocument();
+  });
+
+  it("should render the header with reminder and view selector", async () => {
+    renderWithDayProviders(<DayViewContent />);
+
+    // Check that Header components are rendered
+    expect(
+      await screen.findByText("Click to add your reminder"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("button", { name: /select view/i }),
+    ).toHaveLength(2); // Header SelectView + TaskList date selector
   });
 
   it("focuses the add task input when typing the 'c' shortcut", async () => {
