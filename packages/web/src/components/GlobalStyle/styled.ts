@@ -12,7 +12,7 @@ export const GlobalStyle = createGlobalStyle`
   body {
     margin: 0;
     background-color: ${theme.color.bg.primary};
-    overflow: hidden;
+    overflow-x: hidden;
   }
 
   .react-datepicker-popper {
