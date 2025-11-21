@@ -76,6 +76,14 @@ export function useTaskActions({
     );
   };
 
+  const updateTaskDescription = (taskId: string, description: string) => {
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === taskId ? { ...task, description } : task,
+      ),
+    );
+  };
+
   const toggleTaskStatus = (taskId: string) => {
     setTasks((prev) => {
       const updatedTasks = prev.map((task) => {
@@ -312,6 +320,7 @@ export function useTaskActions({
   return {
     addTask,
     updateTaskTitle,
+    updateTaskDescription,
     toggleTaskStatus,
     deleteTask,
     restoreTask,

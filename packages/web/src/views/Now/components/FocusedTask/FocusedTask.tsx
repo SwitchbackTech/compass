@@ -5,12 +5,14 @@ import {
 } from "@phosphor-icons/react";
 import { Task } from "@web/common/types/task.types";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+import { TaskDescription } from "../TaskDescription/TaskDescription";
 
 interface FocusedTaskProps {
   task: Task;
   onCompleteTask: () => void;
   onPreviousTask: () => void;
   onNextTask: () => void;
+  onUpdateDescription: (description: string) => void;
 }
 
 export const FocusedTask = ({
@@ -18,6 +20,7 @@ export const FocusedTask = ({
   onCompleteTask,
   onPreviousTask,
   onNextTask,
+  onUpdateDescription,
 }: FocusedTaskProps) => {
   return (
     <div className="flex flex-col items-center gap-6">
@@ -27,6 +30,10 @@ export const FocusedTask = ({
             {task.title}
           </h2>
         </div>
+        <TaskDescription
+          description={task.description}
+          onSave={onUpdateDescription}
+        />
         <div className="flex items-center justify-center gap-3">
           <TooltipWrapper
             description="Mark Done"

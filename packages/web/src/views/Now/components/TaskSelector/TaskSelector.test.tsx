@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import dayjs from "@core/util/date/dayjs";
 import { Task } from "@web/common/types/task.types";
 import * as storageUtil from "@web/common/utils/storage/storage.util";
+import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
 import { useAvailableTasks } from "@web/views/Now/hooks/useAvailableTasks";
 import { useFocusedTask } from "@web/views/Now/hooks/useFocusedTask";
 import { NowViewProvider } from "../../context/NowViewProvider";
@@ -37,14 +38,16 @@ const mockUseAvailableTasks = useAvailableTasks as jest.MockedFunction<
 
 const NowProviders = ({ children }: { children: React.ReactNode }) => {
   return (
-    <MemoryRouter
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true,
-      }}
-    >
-      <NowViewProvider>{children}</NowViewProvider>
-    </MemoryRouter>
+    <CompassRequiredProviders>
+      <MemoryRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <NowViewProvider>{children}</NowViewProvider>
+      </MemoryRouter>
+    </CompassRequiredProviders>
   );
 };
 
