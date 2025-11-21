@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom";
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { render } from "@web/__tests__/__mocks__/mock.render";
 import { Task } from "@web/common/types/task.types";
 import { FocusedTask } from "./FocusedTask";
 
@@ -22,6 +23,7 @@ describe("FocusedTask", () => {
   const mockOnCompleteTask = jest.fn();
   const mockOnPreviousTask = jest.fn();
   const mockOnNextTask = jest.fn();
+  const mockOnUpdateDescription = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -34,6 +36,7 @@ describe("FocusedTask", () => {
         onCompleteTask={mockOnCompleteTask}
         onPreviousTask={mockOnPreviousTask}
         onNextTask={mockOnNextTask}
+        onUpdateDescription={mockOnUpdateDescription}
       />,
     );
 
@@ -47,6 +50,7 @@ describe("FocusedTask", () => {
         onCompleteTask={mockOnCompleteTask}
         onPreviousTask={mockOnPreviousTask}
         onNextTask={mockOnNextTask}
+        onUpdateDescription={mockOnUpdateDescription}
       />,
     );
 
@@ -62,6 +66,7 @@ describe("FocusedTask", () => {
         onCompleteTask={mockOnCompleteTask}
         onPreviousTask={mockOnPreviousTask}
         onNextTask={mockOnNextTask}
+        onUpdateDescription={mockOnUpdateDescription}
       />,
     );
 
@@ -84,6 +89,7 @@ describe("FocusedTask", () => {
         onCompleteTask={mockOnCompleteTask}
         onPreviousTask={mockOnPreviousTask}
         onNextTask={mockOnNextTask}
+        onUpdateDescription={mockOnUpdateDescription}
       />,
     );
 
@@ -108,6 +114,7 @@ describe("FocusedTask", () => {
         onCompleteTask={mockOnCompleteTask}
         onPreviousTask={mockOnPreviousTask}
         onNextTask={mockOnNextTask}
+        onUpdateDescription={mockOnUpdateDescription}
       />,
     );
 
@@ -130,6 +137,7 @@ describe("FocusedTask", () => {
         onCompleteTask={mockOnCompleteTask}
         onPreviousTask={mockOnPreviousTask}
         onNextTask={mockOnNextTask}
+        onUpdateDescription={mockOnUpdateDescription}
       />,
     );
 
@@ -145,6 +153,7 @@ describe("FocusedTask", () => {
         onCompleteTask={mockOnCompleteTask}
         onPreviousTask={mockOnPreviousTask}
         onNextTask={mockOnNextTask}
+        onUpdateDescription={mockOnUpdateDescription}
       />,
     );
 
@@ -164,6 +173,7 @@ describe("FocusedTask", () => {
           onCompleteTask={mockOnCompleteTask}
           onPreviousTask={mockOnPreviousTask}
           onNextTask={mockOnNextTask}
+          onUpdateDescription={mockOnUpdateDescription}
         />,
       );
 
@@ -184,6 +194,7 @@ describe("FocusedTask", () => {
           onCompleteTask={mockOnCompleteTask}
           onPreviousTask={mockOnPreviousTask}
           onNextTask={mockOnNextTask}
+          onUpdateDescription={mockOnUpdateDescription}
         />,
       );
 
@@ -216,6 +227,7 @@ describe("FocusedTask", () => {
           onCompleteTask={mockOnCompleteTask}
           onPreviousTask={mockOnPreviousTask}
           onNextTask={mockOnNextTask}
+          onUpdateDescription={mockOnUpdateDescription}
         />,
       );
 
@@ -248,6 +260,7 @@ describe("FocusedTask", () => {
           onCompleteTask={mockOnCompleteTask}
           onPreviousTask={mockOnPreviousTask}
           onNextTask={mockOnNextTask}
+          onUpdateDescription={mockOnUpdateDescription}
         />,
       );
 
@@ -280,6 +293,7 @@ describe("FocusedTask", () => {
           onCompleteTask={mockOnCompleteTask}
           onPreviousTask={mockOnPreviousTask}
           onNextTask={mockOnNextTask}
+          onUpdateDescription={mockOnUpdateDescription}
         />,
       );
 
