@@ -3,6 +3,9 @@ import styled from "styled-components";
 import { Pencil } from "@phosphor-icons/react";
 import { Textarea } from "@web/components/Textarea";
 
+const MAX_DESCRIPTION_LENGTH = 255;
+const NEAR_LIMIT_THRESHOLD = Math.floor(MAX_DESCRIPTION_LENGTH * 0.9); // 90% of max
+
 interface TaskDescriptionProps {
   description?: string;
   onSave: (description: string) => void;
@@ -107,9 +110,11 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(description);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const originalValueRef = useRef(description);
 
   useEffect(() => {
     setValue(description);
+    originalValueRef.current = description;
   }, [description]);
 
   useEffect(() => {
@@ -124,26 +129,27 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
 
   const handleBlur = () => {
     setIsEditing(false);
-    if (value !== description) {
+    if (value !== originalValueRef.current) {
       onSave(value);
+      originalValueRef.current = value;
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
-    if (newValue.length <= 255) {
+    if (newValue.length <= MAX_DESCRIPTION_LENGTH) {
       setValue(newValue);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Escape") {
-      setValue(description);
+      setValue(originalValueRef.current);
       setIsEditing(false);
     }
   };
 
-  const isNearLimit = value.length >= 230;
+  const isNearLimit = value.length >= NEAR_LIMIT_THRESHOLD;
 
   return (
     <DescriptionContainer>
@@ -156,10 +162,10 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             placeholder="Add a description..."
-            maxLength={255}
+            maxLength={MAX_DESCRIPTION_LENGTH}
           />
           <CharacterCount isNearLimit={isNearLimit}>
-            {value.length}/255
+            {value.length}/{MAX_DESCRIPTION_LENGTH}
           </CharacterCount>
         </>
       ) : (
