@@ -7,7 +7,6 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { SessionProvider } from "@web/auth/SessionProvider";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { theme } from "@web/common/styles/theme";
-import { GlobalStyle } from "@web/components/GlobalStyle";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
 import { store } from "@web/store";
 
@@ -21,7 +20,6 @@ export const CompassRequiredProviders = (
   <SessionProvider>
     <Provider store={props?.store ?? store}>
       <GoogleOAuthProvider clientId={ENV_WEB.GOOGLE_CLIENT_ID || ""}>
-        <GlobalStyle />
         <ThemeProvider theme={theme}>
           <IconProvider>{props.children}</IconProvider>
           <ToastContainer
