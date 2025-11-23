@@ -1,6 +1,6 @@
-import { NoTaskAvailable } from "@web/views/Now/components/AllTasksCompleted/NoTaskAvailable";
 import { AvailableTasks } from "@web/views/Now/components/AvailableTasks/AvailableTasks";
 import { FocusedTask } from "@web/views/Now/components/FocusedTask/FocusedTask";
+import { NoTaskAvailable } from "@web/views/Now/components/NoTaskAvailable/NoTaskAvailable";
 import { useNowActions } from "@web/views/Now/hooks/useNowActions";
 
 export const TaskSelector = () => {

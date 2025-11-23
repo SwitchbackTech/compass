@@ -3,7 +3,7 @@ import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { NoTaskAvailable } from "./NoTaskAvailable";
+import { NoTaskAvailable } from "@web/views/Now/components/NoTaskAvailable/NoTaskAvailable";
 
 // Mock useNavigate
 const mockNavigate = jest.fn();
