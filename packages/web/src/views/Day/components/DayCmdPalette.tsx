@@ -7,6 +7,7 @@ import CommandPalette, {
 import "react-cmdk/dist/cmdk.css";
 import { useNavigate } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
+import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
@@ -62,59 +63,7 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
           },
         ],
       },
-      {
-        heading: "More",
-        id: "advanced",
-        items: [
-          {
-            id: "redo-onboarding",
-            children: "Re-do onboarding",
-            icon: "ArrowPathIcon",
-            onClick: () => window.open(ROOT_ROUTES.ONBOARDING, "_blank"),
-          },
-          {
-            id: "code",
-            children: "View Code",
-            icon: "CodeBracketIcon",
-            href: "https://github.com/SwitchbackTech/compass",
-            target: "_blank",
-          },
-          {
-            id: "report-bug",
-            children: "Report Bug",
-            icon: "BugAntIcon",
-            href: "https://github.com/SwitchbackTech/compass/issues/new?assignees=&projects=&template=2-bug-report.yml",
-            target: "_blank",
-          },
-          {
-            id: "share-feedback",
-            children: "Share Feedback",
-            icon: "EnvelopeOpenIcon",
-            href: "mailto:tyler@switchback.tech",
-            target: "_blank",
-          },
-          {
-            id: "discord",
-            children: "Join Discord",
-            icon: "ChatBubbleLeftRightIcon",
-            href: "https://www.discord.gg/H3DVMnKmUd",
-            target: "_blank",
-          },
-          {
-            id: "donate",
-            children: "Donate",
-            icon: "CreditCardIcon",
-            href: "https://buy.stripe.com/cNi8wQ6pE9gyejz6hZ9sk00",
-            target: "_blank",
-          },
-          {
-            id: "log-out",
-            children: "Log Out",
-            icon: "ArrowRightOnRectangleIcon",
-            onClick: () => navigate(ROOT_ROUTES.LOGOUT),
-          },
-        ],
-      },
+      ...moreCommandPaletteItems,
     ],
     search,
   );
