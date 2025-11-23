@@ -20,6 +20,7 @@ const StyledDescription = styled(Textarea)`
   min-height: 60px;
   position: relative;
   width: 100%;
+  color: ${({ theme }) => theme.color.text.light};
   transition: ${({ theme }) => theme.transition.default};
   resize: vertical;
 
@@ -76,6 +77,7 @@ const DescriptionText = styled.div`
   cursor: pointer;
   padding: 12px 16px;
   min-height: 60px;
+  text-align: center;
   border-radius: ${({ theme }) => theme.shape.borderRadius};
   transition: ${({ theme }) => theme.transition.default};
   font-size: ${({ theme }) => theme.text.size.xl};
@@ -171,9 +173,9 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
       ) : (
         <DescriptionText
           onClick={handleClick}
-          className={!description ? "empty" : ""}
+          className={value.length < 1 ? "empty" : ""}
         >
-          {description || "Add a description..."}
+          {value ?? "Add a description..."}
           <EditIcon size={20} className="edit-icon" weight="regular" />
         </DescriptionText>
       )}
