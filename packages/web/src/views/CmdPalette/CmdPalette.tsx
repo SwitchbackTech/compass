@@ -79,7 +79,7 @@ const CmdPalette = ({
 
   const _discardDraft = () => {
     if (isEventFormOpen()) {
-      dispatch(draftSlice.actions.discard());
+      dispatch(draftSlice.actions.discard(undefined));
     }
   };
 
@@ -149,7 +149,6 @@ const CmdPalette = ({
               util.goToToday();
             },
           },
-
           {
             id: "redo-onboarding",
             children: "Re-do onboarding",

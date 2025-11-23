@@ -9,6 +9,8 @@ import { useNavigate } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { onEventTargetVisibility } from "@web/common/utils/event/event-target-visibility.util";
+import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
@@ -54,12 +56,32 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
             onClick: () => navigate(ROOT_ROUTES.ROOT),
           },
           {
+            id: "edit-reminder",
+            children: `Edit Reminder [r]`,
+            icon: "PencilSquareIcon",
+            onClick: onEventTargetVisibility(() =>
+              dispatch(viewSlice.actions.updateReminder(true)),
+            ),
+          },
+          {
             id: "today",
             children: `Go to Today (${today.format("dddd, MMMM D")}) [t]`,
             icon: "ArrowUturnDownIcon",
             onClick: () => {
               onGoToToday?.();
             },
+          },
+          {
+            id: "redo-onboarding",
+            children: "Re-do onboarding",
+            icon: "ArrowPathIcon",
+            onClick: () => window.open(ROOT_ROUTES.ONBOARDING, "_blank"),
+          },
+          {
+            id: "log-out",
+            children: "Log Out [z]",
+            icon: "ArrowRightOnRectangleIcon",
+            onClick: () => navigate(ROOT_ROUTES.LOGOUT),
           },
         ],
       },
