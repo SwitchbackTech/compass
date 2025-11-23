@@ -68,6 +68,7 @@ describe("TaskSelector", () => {
     title: "Test Task",
     status: "todo",
     createdAt: "2025-11-15T10:00:00Z",
+    order: 1,
   };
 
   const mockTasks: Task[] = [
@@ -77,6 +78,7 @@ describe("TaskSelector", () => {
       title: "Another Task",
       status: "todo",
       createdAt: "2025-11-15T11:00:00Z",
+      order: 2,
     },
   ];
 
@@ -164,7 +166,7 @@ describe("TaskSelector", () => {
     expect(mockSetFocusedTask).toHaveBeenCalledWith("task-1");
   });
 
-  it("renders nothing when no tasks are available", () => {
+  it("renders NoTaskAvailable when no tasks are available", () => {
     mockUseFocusedTask.mockReturnValue({
       focusedTask: null,
       setFocusedTask: mockSetFocusedTask,
@@ -175,9 +177,15 @@ describe("TaskSelector", () => {
       hasCompletedTasks: false,
     });
 
-    const { container } = renderWithNowProvider(<TaskSelector />);
+    renderWithNowProvider(<TaskSelector />);
 
-    expect(container.firstChild).toBeNull();
+    expect(
+      screen.getByText("You don't have any task scheduled."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Add tasks in the Day view to get started."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Go to Day view")).toBeInTheDocument();
   });
 
   it("renders AllTasksCompleted when all tasks are completed", () => {
@@ -193,6 +201,7 @@ describe("TaskSelector", () => {
           title: "Completed Task",
           status: "completed",
           createdAt: "2025-11-15T10:00:00Z",
+          order: 1,
         },
       ],
       hasCompletedTasks: true,
@@ -267,18 +276,21 @@ describe("TaskSelector", () => {
           title: "First Task",
           status: "todo",
           createdAt: "2025-11-15T10:00:00Z",
+          order: 1,
         },
         {
           id: "task-2",
           title: "Second Task",
           status: "todo",
           createdAt: "2025-11-15T11:00:00Z",
+          order: 2,
         },
         {
           id: "task-3",
           title: "Third Task",
           status: "todo",
           createdAt: "2025-11-15T12:00:00Z",
+          order: 3,
         },
       ];
 
@@ -321,12 +333,14 @@ describe("TaskSelector", () => {
           title: "First Task",
           status: "todo",
           createdAt: "2025-11-15T10:00:00Z",
+          order: 1,
         },
         {
           id: "task-2",
           title: "Second Task",
           status: "todo",
           createdAt: "2025-11-15T11:00:00Z",
+          order: 2,
         },
       ];
 
@@ -369,6 +383,7 @@ describe("TaskSelector", () => {
           title: "Only Task",
           status: "todo",
           createdAt: "2025-11-15T10:00:00Z",
+          order: 1,
         },
       ];
 

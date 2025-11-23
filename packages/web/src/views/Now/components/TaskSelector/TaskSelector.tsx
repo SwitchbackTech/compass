@@ -1,7 +1,7 @@
+import { NoTaskAvailable } from "@web/views/Now/components/AllTasksCompleted/NoTaskAvailable";
+import { AvailableTasks } from "@web/views/Now/components/AvailableTasks/AvailableTasks";
+import { FocusedTask } from "@web/views/Now/components/FocusedTask/FocusedTask";
 import { useNowActions } from "@web/views/Now/hooks/useNowActions";
-import { AllTasksCompleted } from "../AllTasksCompleted/AllTasksCompleted";
-import { AvailableTasks } from "../AvailableTasks/AvailableTasks";
-import { FocusedTask } from "../FocusedTask/FocusedTask";
 
 export const TaskSelector = () => {
   const {
@@ -29,12 +29,8 @@ export const TaskSelector = () => {
     );
   }
 
-  if (hasCompletedTasks) {
-    return <AllTasksCompleted />;
-  }
-
-  if (availableTasks.length === 0) {
-    return null;
+  if (hasCompletedTasks || availableTasks.length === 0) {
+    return <NoTaskAvailable allCompleted={hasCompletedTasks} />;
   }
 
   return (
