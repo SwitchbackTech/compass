@@ -175,7 +175,7 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
           onClick={handleClick}
           className={value.length < 1 ? "empty" : ""}
         >
-          {value ?? "Add a description..."}
+          {value.length < 1 ? "Add a description..." : value}
           <EditIcon size={20} className="edit-icon" weight="regular" />
         </DescriptionText>
       )}
