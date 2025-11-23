@@ -17,6 +17,10 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
     { k: "3", label: "Week" },
   ];
 
+  const cmdPaletteShortcuts: Shortcut[] = [
+    { k: "⌘K", label: "Command Palette" },
+  ];
+
   let homeShortcuts: Shortcut[] = [];
   let dayTaskShortcuts: Shortcut[] = [];
   let dayAgendaShortcuts: Shortcut[] = [];
@@ -67,6 +71,7 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
     dayTaskShortcuts,
     dayAgendaShortcuts,
     nowShortcuts,
+    cmdPaletteShortcuts,
     isHome,
     isToday,
     isNow,

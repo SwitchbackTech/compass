@@ -10,6 +10,7 @@ import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { StyledCalendar } from "@web/views/Calendar/styled";
 import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
+import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
 import { Header } from "@web/views/Day/components/Header/Header";
 import { StorageInfoModal } from "@web/views/Day/components/StorageInfoModal/StorageInfoModal";
 import { TaskList } from "@web/views/Day/components/TaskList/TaskList";
@@ -138,6 +139,7 @@ export const DayViewContent = () => {
 
   return (
     <>
+      <DayCmdPalette onGoToToday={handleGoToToday} />
       <StyledCalendar
         direction={FlexDirections.COLUMN}
         id={ID_MAIN}
@@ -162,6 +164,7 @@ export const DayViewContent = () => {
           { title: "Tasks", shortcuts: shortcuts.dayTaskShortcuts },
           { title: "Calendar", shortcuts: shortcuts.dayAgendaShortcuts },
           { title: "Global", shortcuts: shortcuts.globalShortcuts },
+          { title: "Command", shortcuts: shortcuts.cmdPaletteShortcuts },
         ]}
       />
     </>
