@@ -10,8 +10,8 @@ export const AvailableTasks = ({
   onTaskSelect,
 }: AvailableTasksProps) => {
   return (
-    <div className="flex flex-col items-center gap-6">
-      <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-1 flex-col items-center gap-6">
+      <div className="flex flex-1 flex-col items-center gap-4">
         <p className="text-2xl font-semibold text-white">
           Select a task to focus on
         </p>

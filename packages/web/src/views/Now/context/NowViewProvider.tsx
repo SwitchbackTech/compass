@@ -16,6 +16,7 @@ interface NowViewContextValue {
   handlePreviousTask: () => void;
   handleNextTask: () => void;
   handleCompleteTask: () => void;
+  updateTaskDescription: (taskId: string, description: string) => void;
 }
 
 export const NowViewContext = createContext<NowViewContextValue | undefined>(
@@ -37,6 +38,17 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
       ),
     );
   }, []);
+
+  const updateTaskDescription = useCallback(
+    (taskId: string, description: string) => {
+      updateTodayTasks((tasks) =>
+        tasks.map((task) =>
+          task.id === taskId ? { ...task, description } : task,
+        ),
+      );
+    },
+    [],
+  );
 
   const handlePreviousTask = useCallback(() => {
     if (!focusedTask || availableTasks.length === 0) return;
@@ -121,6 +133,7 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
     handlePreviousTask,
     handleNextTask,
     handleCompleteTask,
+    updateTaskDescription,
   };
 
   return (

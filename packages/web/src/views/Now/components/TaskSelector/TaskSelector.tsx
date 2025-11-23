@@ -12,6 +12,7 @@ export const TaskSelector = () => {
     handlePreviousTask,
     handleNextTask,
     handleCompleteTask,
+    updateTaskDescription,
   } = useNowActions();
 
   if (focusedTask) {
@@ -21,6 +22,9 @@ export const TaskSelector = () => {
         onCompleteTask={handleCompleteTask}
         onPreviousTask={handlePreviousTask}
         onNextTask={handleNextTask}
+        onUpdateDescription={(description: string) =>
+          updateTaskDescription(focusedTask.id, description)
+        }
       />
     );
   }

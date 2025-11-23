@@ -24,7 +24,7 @@ export const NowView = () => {
         <Header />
 
         <div
-          className={`from-bg-bg-primary via-bg-bg-secondary to-bg-bg-primary flex flex-1 gap-8 self-center overflow-hidden bg-gradient-to-b px-6 py-8`}
+          className={`from-bg-bg-primary via-bg-bg-secondary to-bg-bg-primary flex max-w-3/4 min-w-3/4 flex-1 justify-center gap-8 self-center overflow-hidden bg-gradient-to-b px-6 py-8`}
         >
           <NowViewContent />
         </div>

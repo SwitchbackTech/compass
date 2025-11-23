@@ -179,6 +179,8 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
+      if (!e.key) return;
+
       const key = e.key.toLowerCase();
       const target = e.target as EventTarget | null;
 
