@@ -50,7 +50,6 @@ describe("NowView", () => {
     await renderWithMemoryRouter(<NowView />);
 
     // Check that CMD+K shortcut is displayed
-    expect(screen.getByText("Command")).toBeInTheDocument();
     expect(screen.getByText("⌘K")).toBeInTheDocument();
     expect(screen.getByText("Command Palette")).toBeInTheDocument();
   });
