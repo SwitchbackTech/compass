@@ -15,6 +15,7 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
     { k: "1", label: "Now" },
     { k: "2", label: "Day" },
     { k: "3", label: "Week" },
+    { k: "⌘K", label: "Command Palette" },
   ];
 
   let homeShortcuts: Shortcut[] = [];

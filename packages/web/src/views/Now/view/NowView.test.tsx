@@ -46,6 +46,15 @@ describe("NowView", () => {
     expect(screen.getByText("3")).toBeInTheDocument();
   });
 
+  it("renders command palette shortcut", async () => {
+    await renderWithMemoryRouter(<NowView />);
+
+    // Check that CMD+K shortcut is displayed
+    expect(screen.getByText("Global")).toBeInTheDocument();
+    expect(screen.getByText("⌘K")).toBeInTheDocument();
+    expect(screen.getByText("Command Palette")).toBeInTheDocument();
+  });
+
   it("renders the main layout structure", async () => {
     await renderWithMemoryRouter(<NowView />);
 

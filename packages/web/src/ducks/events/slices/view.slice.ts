@@ -12,7 +12,7 @@ interface State_View {
     isOpen: boolean;
   };
   header: {
-    reminder: string;
+    reminder: string | boolean;
   };
 }
 

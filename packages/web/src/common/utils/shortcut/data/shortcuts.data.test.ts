@@ -6,10 +6,14 @@ describe("shortcuts.data", () => {
     it("should return default shortcuts when no config provided", () => {
       const shortcuts = getShortcuts();
 
-      expect(shortcuts.globalShortcuts).toHaveLength(3);
+      expect(shortcuts.globalShortcuts).toHaveLength(4);
       expect(shortcuts.globalShortcuts[0]).toEqual({ k: "1", label: "Now" });
       expect(shortcuts.globalShortcuts[1]).toEqual({ k: "2", label: "Day" });
       expect(shortcuts.globalShortcuts[2]).toEqual({ k: "3", label: "Week" });
+      expect(shortcuts.globalShortcuts[3]).toEqual({
+        k: "⌘K",
+        label: "Command Palette",
+      });
 
       expect(shortcuts.dayAgendaShortcuts).toHaveLength(2);
       expect(shortcuts.dayAgendaShortcuts[0]).toEqual({

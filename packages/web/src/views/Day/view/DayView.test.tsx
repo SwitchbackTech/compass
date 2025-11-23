@@ -23,4 +23,13 @@ describe("DayView", () => {
 
     expect(await screen.findByTestId("calendar-scroll")).toBeInTheDocument();
   });
+
+  it("should render command palette shortcut", async () => {
+    renderWithDayProviders(<DayViewContent />);
+
+    // Check that CMD+K shortcut is displayed in the shortcuts overlay
+    expect(await screen.findByText("Global")).toBeInTheDocument();
+    expect(screen.getByText("⌘K")).toBeInTheDocument();
+    expect(screen.getByText("Command Palette")).toBeInTheDocument();
+  });
 });

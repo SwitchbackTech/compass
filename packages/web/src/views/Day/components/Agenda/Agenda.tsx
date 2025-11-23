@@ -46,7 +46,7 @@ export const Agenda = ({ onScrollToNowLineReady }: AgendaProps) => {
       <AllDayAgendaEvents allDayEvents={allDayEvents} />
       <div
         ref={scrollRef}
-        className="relative flex flex-1 overflow-x-hidden overflow-y-auto"
+        className="relative z-5 flex flex-1 overflow-x-hidden overflow-y-auto"
         data-testid="calendar-scroll"
         style={{
           overscrollBehavior: "contain",

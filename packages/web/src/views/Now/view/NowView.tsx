@@ -4,14 +4,18 @@ import { FlexDirections } from "@web/components/Flex/styled";
 import { ShortcutsOverlay } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
 import { StyledCalendar } from "@web/views/Calendar/styled";
 import { Header } from "@web/views/Day/components/Header/Header";
+import { NowCmdPalette } from "@web/views/Now/components/NowCmdPalette";
 import { NowViewProvider } from "@web/views/Now/context/NowViewProvider";
 import { NowViewContent } from "@web/views/Now/view/NowViewContent";
 
 export const NowView = () => {
-  const { globalShortcuts, nowShortcuts } = getShortcuts({ isNow: true });
+  const { globalShortcuts, nowShortcuts } = getShortcuts({
+    isNow: true,
+  });
 
   return (
     <NowViewProvider>
+      <NowCmdPalette />
       <StyledCalendar
         direction={FlexDirections.COLUMN}
         id={ID_MAIN}
