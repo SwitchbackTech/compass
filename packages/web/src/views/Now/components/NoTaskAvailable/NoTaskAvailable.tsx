@@ -1,7 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 
-export const AllTasksCompleted = () => {
+export const NoTaskAvailable = ({
+  allCompleted = false,
+}: {
+  allCompleted?: boolean;
+}) => {
   const navigate = useNavigate();
 
   const handleNavigateToDay = () => {
@@ -12,10 +16,14 @@ export const AllTasksCompleted = () => {
     <div className="flex flex-col items-center gap-6">
       <div className="flex flex-col items-center gap-4">
         <p className="text-2xl font-semibold text-white">
-          All tasks completed for today!
+          {allCompleted
+            ? "All tasks completed for today!"
+            : "You don't have any task scheduled."}
         </p>
         <p className="text-lg text-white/70">
-          Great work! Add more tasks in the Day view to keep going.
+          {allCompleted
+            ? "Great work! Add more tasks in the Day view to keep going."
+            : "Add tasks in the Day view to get started."}
         </p>
       </div>
       <button
