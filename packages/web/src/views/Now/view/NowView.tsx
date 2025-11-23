@@ -9,7 +9,7 @@ import { NowViewProvider } from "@web/views/Now/context/NowViewProvider";
 import { NowViewContent } from "@web/views/Now/view/NowViewContent";
 
 export const NowView = () => {
-  const { globalShortcuts, nowShortcuts, cmdPaletteShortcuts } = getShortcuts({
+  const { globalShortcuts, nowShortcuts } = getShortcuts({
     isNow: true,
   });
 
@@ -34,7 +34,6 @@ export const NowView = () => {
         sections={[
           { title: "Now", shortcuts: nowShortcuts },
           { title: "Global", shortcuts: globalShortcuts },
-          { title: "Command", shortcuts: cmdPaletteShortcuts },
         ]}
       />
     </NowViewProvider>

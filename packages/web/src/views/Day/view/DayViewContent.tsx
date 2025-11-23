@@ -164,7 +164,6 @@ export const DayViewContent = () => {
           { title: "Tasks", shortcuts: shortcuts.dayTaskShortcuts },
           { title: "Calendar", shortcuts: shortcuts.dayAgendaShortcuts },
           { title: "Global", shortcuts: shortcuts.globalShortcuts },
-          { title: "Command", shortcuts: shortcuts.cmdPaletteShortcuts },
         ]}
       />
     </>
