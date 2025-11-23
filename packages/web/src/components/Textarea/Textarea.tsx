@@ -1,7 +1,6 @@
-import React, {
+import {
   ForwardRefRenderFunction,
   ForwardedRef,
-  RefObject,
   forwardRef,
   useRef,
 } from "react";
@@ -17,7 +16,7 @@ const _Textarea: ForwardRefRenderFunction<
   parentRef: ForwardedRef<HTMLTextAreaElement>,
 ) => {
   const newRef = useRef<HTMLTextAreaElement>(null);
-  const ref = (parentRef || newRef) as RefObject<HTMLTextAreaElement>;
+  const ref = parentRef ?? newRef;
 
   return (
     <Focusable
