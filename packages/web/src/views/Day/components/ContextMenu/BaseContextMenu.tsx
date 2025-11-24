@@ -37,7 +37,7 @@ export const BaseContextMenu = React.forwardRef<
       ref={ref}
       style={style}
       {...getFloatingProps()}
-      className="absolute z-[1000] min-w-[160px] list-none rounded border border-gray-600 bg-gray-800 py-1 shadow-md"
+      className="bg-bg-secondary absolute z-[1000] min-w-[160px] list-none rounded border border-gray-600 shadow-md"
     >
       {children}
     </ul>
