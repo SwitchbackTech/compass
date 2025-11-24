@@ -1,5 +1,5 @@
 import { DefaultTheme } from "styled-components";
-import { c, textDark, textLight } from "./colors";
+import { c, textDark, textLight } from "@web/common/styles/colors";
 
 export const theme: DefaultTheme = {
   color: {
@@ -87,9 +87,9 @@ export const theme: DefaultTheme = {
   ): typeof textLight | typeof textDark => {
     // Convert hex to RGB
     const hex = backgroundColor.replace("#", "");
-    const r = parseInt(hex.substr(0, 2), 16);
-    const g = parseInt(hex.substr(2, 2), 16);
-    const b = parseInt(hex.substr(4, 2), 16);
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
 
     // Calculate relative luminance using WCAG formula
     // https://www.w3.org/TR/WCAG20-TECHS/G17.html
