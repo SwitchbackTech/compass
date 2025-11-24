@@ -62,9 +62,8 @@ export const AgendaEvent = ({ event }: { event: Schema_GridEvent }) => {
 
     // When there are 3 or more overlapping events, use varying widths
     // Each subsequent event gets narrower and higher z-index
-    const maxWidthFraction = (totalOverlapping - order + 1) / totalOverlapping;
-    const minWidthFraction = (totalOverlapping - order + 1) / totalOverlapping;
-    const widthPercent = maxWidthFraction * 100;
+    const widthFraction = (totalOverlapping - order + 1) / totalOverlapping;
+    const widthPercent = widthFraction * 100;
 
     // Stack events with slight offset for visibility
     const leftOffset = (order - 1) * 8; // 8px offset per event
@@ -79,15 +78,26 @@ export const AgendaEvent = ({ event }: { event: Schema_GridEvent }) => {
 
   const overlappingStyles = getOverlappingStyles();
 
+  // Build className based on event properties
+  const getEventClassName = () => {
+    const baseClasses =
+      "absolute flex items-center rounded px-2 text-xs focus:ring-2 focus:ring-yellow-200 focus:outline-none";
+    const textColorClass = isBackgroundDark
+      ? "text-text-light"
+      : "text-text-dark";
+    const opacityClass = isPast ? "opacity-60" : "";
+    const borderClass = event.position.isOverlapping
+      ? "border border-border-primary"
+      : "";
+
+    return `${baseClasses} ${textColorClass} ${opacityClass} ${borderClass}`.trim();
+  };
+
   return (
     <AgendaEventMenu>
       <AgendaEventMenuTrigger asChild>
         <div
-          className={`absolute flex items-center rounded px-2 text-xs focus:ring-2 focus:ring-yellow-200 focus:outline-none ${
-            isBackgroundDark ? "text-text-light" : "text-text-dark"
-          } ${isPast ? "opacity-60" : ""} ${
-            event.position.isOverlapping ? "border-border-primary border" : ""
-          }`}
+          className={getEventClassName()}
           style={{
             height: `${renderedHeight}px`,
             top: `${startPosition}px`,
