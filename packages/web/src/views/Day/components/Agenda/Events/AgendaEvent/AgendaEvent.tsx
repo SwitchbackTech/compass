@@ -1,14 +1,14 @@
 import { Priorities } from "@core/constants/core.constants";
-import { Schema_Event } from "@core/types/event.types";
 import { isDark } from "@core/util/color.utils";
 import { colorByPriority } from "@web/common/styles/theme.util";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getAgendaEventPosition } from "@web/views/Day/util/agenda/agenda.util";
 import { useEventContextMenu } from "../../../ContextMenu/EventContextMenuContext";
 import { AgendaEventMenu } from "../AgendaEventMenu/AgendaEventMenu";
 import { AgendaEventMenuContent } from "../AgendaEventMenu/AgendaEventMenuContent";
 import { AgendaEventMenuTrigger } from "../AgendaEventMenu/AgendaEventMenuTrigger";
 
-export const AgendaEvent = ({ event }: { event: Schema_Event }) => {
+export const AgendaEvent = ({ event }: { event: Schema_GridEvent }) => {
   const { openContextMenu } = useEventContextMenu();
 
   if (!event.startDate || !event.endDate) return null;
@@ -31,17 +31,68 @@ export const AgendaEvent = ({ event }: { event: Schema_Event }) => {
     openContextMenu(event, { x: e.clientX, y: e.clientY });
   };
 
+  // Calculate styles for overlapping events
+  const getOverlappingStyles = () => {
+    if (!event.position.isOverlapping) {
+      return {
+        left: "0.5rem", // 2 in Tailwind
+        right: "0.5rem", // 2 in Tailwind
+        width: "auto",
+        zIndex: 1,
+      };
+    }
+
+    // Get the total number of overlapping events from the position
+    // The widthMultiplier represents 1/n where n is the number of overlapping events
+    const totalOverlapping = Math.round(1 / event.position.widthMultiplier);
+    const order = event.position.horizontalOrder;
+
+    // When there are less than 3 overlapping events, use equal widths
+    if (totalOverlapping < 3) {
+      const widthPercent = 100 / totalOverlapping;
+      const leftPercent = widthPercent * (order - 1);
+
+      return {
+        left: `calc(${leftPercent}% + 0.5rem)`,
+        width: `calc(${widthPercent}% - 1rem)`,
+        right: "auto",
+        zIndex: order,
+      };
+    }
+
+    // When there are 3 or more overlapping events, use varying widths
+    // Each subsequent event gets narrower and higher z-index
+    const maxWidthFraction = (totalOverlapping - order + 1) / totalOverlapping;
+    const minWidthFraction = (totalOverlapping - order + 1) / totalOverlapping;
+    const widthPercent = maxWidthFraction * 100;
+
+    // Stack events with slight offset for visibility
+    const leftOffset = (order - 1) * 8; // 8px offset per event
+
+    return {
+      left: `${leftOffset}px`,
+      width: `calc(${widthPercent}% - ${leftOffset}px - 0.5rem)`,
+      right: "auto",
+      zIndex: order,
+    };
+  };
+
+  const overlappingStyles = getOverlappingStyles();
+
   return (
     <AgendaEventMenu>
       <AgendaEventMenuTrigger asChild>
         <div
-          className={`absolute right-2 left-2 flex items-center rounded px-2 text-xs focus:ring-2 focus:ring-yellow-200 focus:outline-none ${
+          className={`absolute flex items-center rounded px-2 text-xs focus:ring-2 focus:ring-yellow-200 focus:outline-none ${
             isBackgroundDark ? "text-text-light" : "text-text-dark"
-          } ${isPast ? "opacity-60" : ""}`}
+          } ${isPast ? "opacity-60" : ""} ${
+            event.position.isOverlapping ? "border-border-primary border" : ""
+          }`}
           style={{
             height: `${renderedHeight}px`,
             top: `${startPosition}px`,
             backgroundColor,
+            ...overlappingStyles,
           }}
           tabIndex={0}
           role="button"

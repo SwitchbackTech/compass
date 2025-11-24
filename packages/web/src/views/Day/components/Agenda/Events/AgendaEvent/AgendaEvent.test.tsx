@@ -2,8 +2,9 @@ import { ObjectId } from "bson";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import { Origin, Priorities } from "@core/constants/core.constants";
-import { Schema_Event } from "@core/types/event.types";
 import { colorByPriority } from "@web/common/styles/theme.util";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { EventContextMenuProvider } from "../../../ContextMenu/EventContextMenuContext";
 import { AgendaEvent } from "./AgendaEvent";
 
@@ -29,7 +30,7 @@ function renderWithMenuProvider(ui: React.ReactElement) {
 }
 
 describe("AgendaEvent", () => {
-  const baseEvent: Schema_Event = {
+  const baseEvent: Schema_GridEvent = {
     _id: new ObjectId().toString(),
     title: "Test Event",
     description: "Test description",
@@ -37,10 +38,14 @@ describe("AgendaEvent", () => {
     endDate: "2024-01-15T10:00:00Z",
     isAllDay: false,
     origin: Origin.COMPASS,
+    user: "test-user",
+    priority: Priorities.UNASSIGNED,
+    recurrence: undefined,
+    position: gridEventDefaultPosition,
   };
 
   it("should render event with UNASSIGNED priority color", () => {
-    const event: Schema_Event = {
+    const event: Schema_GridEvent = {
       ...baseEvent,
       priority: Priorities.UNASSIGNED,
     };
@@ -54,7 +59,7 @@ describe("AgendaEvent", () => {
   });
 
   it("should render event with WORK priority color", () => {
-    const event: Schema_Event = {
+    const event: Schema_GridEvent = {
       ...baseEvent,
       priority: Priorities.WORK,
     };
@@ -68,7 +73,7 @@ describe("AgendaEvent", () => {
   });
 
   it("should render event with RELATIONS priority color", () => {
-    const event: Schema_Event = {
+    const event: Schema_GridEvent = {
       ...baseEvent,
       priority: Priorities.RELATIONS,
     };
@@ -82,7 +87,7 @@ describe("AgendaEvent", () => {
   });
 
   it("should render event with SELF priority color", () => {
-    const event: Schema_Event = {
+    const event: Schema_GridEvent = {
       ...baseEvent,
       priority: Priorities.SELF,
     };
@@ -96,12 +101,12 @@ describe("AgendaEvent", () => {
   });
 
   it("should default to UNASSIGNED priority color when priority is missing", () => {
-    const event: Partial<Schema_Event> = {
+    const event: Partial<Schema_GridEvent> = {
       ...baseEvent,
       priority: undefined,
     };
 
-    renderWithMenuProvider(<AgendaEvent event={event as Schema_Event} />);
+    renderWithMenuProvider(<AgendaEvent event={event as Schema_GridEvent} />);
 
     const eventElement = screen.getByRole("button");
     expect(eventElement).toHaveStyle({
@@ -110,26 +115,79 @@ describe("AgendaEvent", () => {
   });
 
   it("should not render when startDate is missing", () => {
-    const event: Partial<Schema_Event> = {
+    const event: Partial<Schema_GridEvent> = {
       ...baseEvent,
       startDate: undefined,
     };
 
     const { container } = renderWithMenuProvider(
-      <AgendaEvent event={event as Schema_Event} />,
+      <AgendaEvent event={event as Schema_GridEvent} />,
     );
     expect(container.firstChild).toBeNull();
   });
 
   it("should not render when endDate is missing", () => {
-    const event: Partial<Schema_Event> = {
+    const event: Partial<Schema_GridEvent> = {
       ...baseEvent,
       endDate: undefined,
     };
 
     const { container } = renderWithMenuProvider(
-      <AgendaEvent event={event as Schema_Event} />,
+      <AgendaEvent event={event as Schema_GridEvent} />,
     );
     expect(container.firstChild).toBeNull();
+  });
+
+  it("should render with overlapping styles when 2 events overlap", () => {
+    const event: Schema_GridEvent = {
+      ...baseEvent,
+      position: {
+        ...gridEventDefaultPosition,
+        isOverlapping: true,
+        widthMultiplier: 0.5, // 1/2 = 2 overlapping events
+        horizontalOrder: 1,
+      },
+    };
+
+    renderWithMenuProvider(<AgendaEvent event={event} />);
+
+    const eventElement = screen.getByRole("button");
+    // When overlapping, should have a border
+    expect(eventElement).toHaveClass("border");
+    expect(eventElement).toHaveClass("border-border-primary");
+  });
+
+  it("should render with correct z-index for second overlapping event", () => {
+    const event: Schema_GridEvent = {
+      ...baseEvent,
+      position: {
+        ...gridEventDefaultPosition,
+        isOverlapping: true,
+        widthMultiplier: 0.5, // 1/2 = 2 overlapping events
+        horizontalOrder: 2,
+      },
+    };
+
+    renderWithMenuProvider(<AgendaEvent event={event} />);
+
+    const eventElement = screen.getByRole("button");
+    expect(eventElement).toHaveStyle({ zIndex: "2" });
+  });
+
+  it("should render with correct z-index for third overlapping event", () => {
+    const event: Schema_GridEvent = {
+      ...baseEvent,
+      position: {
+        ...gridEventDefaultPosition,
+        isOverlapping: true,
+        widthMultiplier: 0.33, // 1/3 = 3 overlapping events
+        horizontalOrder: 3,
+      },
+    };
+
+    renderWithMenuProvider(<AgendaEvent event={event} />);
+
+    const eventElement = screen.getByRole("button");
+    expect(eventElement).toHaveStyle({ zIndex: "3" });
   });
 });
