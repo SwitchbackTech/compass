@@ -31,12 +31,12 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
 
   const escapeListener = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && open) {
         setOpen(false);
         dispatch(settingsSlice.actions.closeCmdPalette());
       }
     },
-    [dispatch, setOpen],
+    [dispatch, setOpen, open],
   );
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
     window.addEventListener("keydown", escapeListener);
 
     return () => window.removeEventListener("keydown", escapeListener);
-  }, []);
+  }, [escapeListener]);
 
   useHandleOpenCommandPalette(setOpen);
 
