@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import CommandPalette, {
   filterItems,
   getItemIndex,
@@ -29,9 +29,25 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
   const [page] = useState<"root">("root");
   const [search, setSearch] = useState("");
 
+  const escapeListener = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape" && open) {
+        setOpen(false);
+        dispatch(settingsSlice.actions.closeCmdPalette());
+      }
+    },
+    [dispatch, setOpen, open],
+  );
+
   useEffect(() => {
     setOpen(_open);
   }, [_open]);
+
+  useEffect(() => {
+    window.addEventListener("keydown", escapeListener);
+
+    return () => window.removeEventListener("keydown", escapeListener);
+  }, [escapeListener]);
 
   useHandleOpenCommandPalette(setOpen);
 
