@@ -3,6 +3,7 @@ import { isDark } from "@core/util/color.utils";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getAgendaEventPosition } from "@web/views/Day/util/agenda/agenda.util";
+import { theme } from "../../../../../../common/styles/theme";
 import { useEventContextMenu } from "../../../ContextMenu/EventContextMenuContext";
 import { AgendaEventMenu } from "../AgendaEventMenu/AgendaEventMenu";
 import { AgendaEventMenuContent } from "../AgendaEventMenu/AgendaEventMenuContent";
@@ -53,8 +54,8 @@ export const AgendaEvent = ({ event }: { event: Schema_GridEvent }) => {
       const leftPercent = widthPercent * (order - 1);
 
       return {
-        left: `calc(${leftPercent}% + 0.5rem)`,
-        width: `calc(${widthPercent}% - 1rem)`,
+        left: `${leftPercent}%`,
+        width: `calc(${widthPercent}% - ${theme.spacing.s})`,
         right: "auto",
         zIndex: order,
       };
@@ -62,16 +63,15 @@ export const AgendaEvent = ({ event }: { event: Schema_GridEvent }) => {
 
     // When there are 3 or more overlapping events, use varying widths
     // Each subsequent event gets narrower and higher z-index
-    const widthFraction = (totalOverlapping - order + 1) / totalOverlapping;
-    const widthPercent = widthFraction * 100;
+    const widthPercent = 100 - (order - 1) * 3;
 
     // Stack events with slight offset for visibility
-    const leftOffset = (order - 1) * 8; // 8px offset per event
+    const leftOffset = (order - 1) * 8; // 8px offset per event - theme.spacing.s
 
     return {
       left: `${leftOffset}px`,
       width: `calc(${widthPercent}% - ${leftOffset}px - 0.5rem)`,
-      right: "auto",
+      right: `${leftOffset}px`,
       zIndex: order,
     };
   };
