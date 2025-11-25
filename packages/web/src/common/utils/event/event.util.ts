@@ -22,8 +22,9 @@ import {
   Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 
-export const gridEventDefaultPosition = {
+export const gridEventDefaultPosition: Schema_GridEvent["position"] = {
   isOverlapping: false,
+  totalEventsInGroup: 1,
   widthMultiplier: 1,
   horizontalOrder: 1,
   initialX: null,
