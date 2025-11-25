@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
   selectIsDayEventsProcessing,
   selectTimedDayEvents,
@@ -17,6 +17,13 @@ export const AgendaEvents = () => {
   const isLoading = useAppSelector(selectIsDayEventsProcessing);
   const currentTime = new Date();
   const agendaRef = useRef<HTMLDivElement>(null);
+  const [isRefSet, setIsRefSet] = useState(false);
+
+  useLayoutEffect(() => {
+    if (agendaRef.current) {
+      setIsRefSet(true);
+    }
+  }, []);
 
   return (
     <EventContextMenuProvider>
@@ -34,7 +41,7 @@ export const AgendaEvents = () => {
         />
 
         {/* Event blocks */}
-        {isLoading || agendaRef.current === null ? (
+        {isLoading || !isRefSet ? (
           <AgendaSkeleton />
         ) : (
           events.map((event) => (
