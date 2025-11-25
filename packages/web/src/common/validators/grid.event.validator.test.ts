@@ -18,6 +18,7 @@ describe("validateGridEvent", () => {
         horizontalOrder: 0,
         initialX: 0,
         initialY: 0,
+        totalEventsInGroup: 1,
         isOverlapping: false,
         widthMultiplier: 1,
       },
@@ -44,6 +45,7 @@ describe("validateGridEvent", () => {
         initialX: 0,
         initialY: 0,
         isOverlapping: false,
+        totalEventsInGroup: 1,
         widthMultiplier: 1,
       },
     };
@@ -63,6 +65,7 @@ describe("validateGridEvent", () => {
       position: {
         dragOffset: { y: 0, x: 0 },
         horizontalOrder: 0,
+        totalEventsInGroup: 1,
         initialX: 0,
         initialY: 0,
         isOverlapping: false,

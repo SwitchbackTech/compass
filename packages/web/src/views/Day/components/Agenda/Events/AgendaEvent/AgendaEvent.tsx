@@ -1,18 +1,30 @@
 import { Priorities } from "@core/constants/core.constants";
+import { Schema_Event } from "@core/types/event.types";
 import { isDark } from "@core/util/color.utils";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { getOverlappingStyles } from "@web/common/utils/overlap/overlap";
+import { AgendaEventMenu } from "@web/views/Day/components/Agenda/Events/AgendaEventMenu/AgendaEventMenu";
+import { AgendaEventMenuContent } from "@web/views/Day/components/Agenda/Events/AgendaEventMenu/AgendaEventMenuContent";
+import { AgendaEventMenuTrigger } from "@web/views/Day/components/Agenda/Events/AgendaEventMenu/AgendaEventMenuTrigger";
+import { useEventContextMenu } from "@web/views/Day/components/ContextMenu/EventContextMenuContext";
 import { getAgendaEventPosition } from "@web/views/Day/util/agenda/agenda.util";
-import { theme } from "../../../../../../common/styles/theme";
-import { useEventContextMenu } from "../../../ContextMenu/EventContextMenuContext";
-import { AgendaEventMenu } from "../AgendaEventMenu/AgendaEventMenu";
-import { AgendaEventMenuContent } from "../AgendaEventMenu/AgendaEventMenuContent";
-import { AgendaEventMenuTrigger } from "../AgendaEventMenu/AgendaEventMenuTrigger";
 
-export const AgendaEvent = ({ event }: { event: Schema_GridEvent }) => {
+export const AgendaEvent = ({
+  event,
+  containerWidth,
+  canvasContext,
+}: {
+  event: Schema_GridEvent;
+  containerWidth: number;
+  canvasContext: CanvasRenderingContext2D | null;
+}) => {
   const { openContextMenu } = useEventContextMenu();
 
   if (!event.startDate || !event.endDate) return null;
+
+  const textMeasure = canvasContext?.measureText(event.title ?? "");
+  const textWidth = textMeasure?.width ?? 0;
 
   const startDate = new Date(event.startDate);
   const endDate = new Date(event.endDate);
@@ -29,54 +41,14 @@ export const AgendaEvent = ({ event }: { event: Schema_GridEvent }) => {
 
   const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
-    openContextMenu(event, { x: e.clientX, y: e.clientY });
+    openContextMenu(event as Schema_Event, { x: e.clientX, y: e.clientY });
   };
 
-  // Calculate styles for overlapping events
-  const getOverlappingStyles = () => {
-    if (!event.position.isOverlapping) {
-      return {
-        left: "0.5rem", // 2 in Tailwind
-        right: "0.5rem", // 2 in Tailwind
-        width: "auto",
-        zIndex: 1,
-      };
-    }
-
-    // Get the total number of overlapping events from the position
-    // The widthMultiplier represents 1/n where n is the number of overlapping events
-    const totalOverlapping = Math.round(1 / event.position.widthMultiplier);
-    const order = event.position.horizontalOrder;
-
-    // When there are less than 3 overlapping events, use equal widths
-    if (totalOverlapping < 3) {
-      const widthPercent = 100 / totalOverlapping;
-      const leftPercent = widthPercent * (order - 1);
-
-      return {
-        left: `${leftPercent}%`,
-        width: `calc(${widthPercent}% - ${theme.spacing.s})`,
-        right: "auto",
-        zIndex: order,
-      };
-    }
-
-    // When there are 3 or more overlapping events, use varying widths
-    // Each subsequent event gets narrower and higher z-index
-    const widthPercent = 100 - (order - 1) * 3;
-
-    // Stack events with slight offset for visibility
-    const leftOffset = (order - 1) * 8; // 8px offset per event - theme.spacing.s
-
-    return {
-      left: `${leftOffset}px`,
-      width: `calc(${widthPercent}% - ${leftOffset}px - 0.5rem)`,
-      right: `${leftOffset}px`,
-      zIndex: order,
-    };
-  };
-
-  const overlappingStyles = getOverlappingStyles();
+  const overlappingStyles = getOverlappingStyles(
+    event,
+    containerWidth,
+    textWidth,
+  );
 
   // Build className based on event properties
   const getEventClassName = () => {
@@ -86,11 +58,11 @@ export const AgendaEvent = ({ event }: { event: Schema_GridEvent }) => {
       ? "text-text-light"
       : "text-text-dark";
     const opacityClass = isPast ? "opacity-60" : "";
-    const borderClass = event.position.isOverlapping
-      ? "border border-border-primary"
+    const overlappingClass = event.position.isOverlapping
+      ? "border border-border-transparent shadow-md hover:!z-40 focus:!z-40"
       : "";
 
-    return `${baseClasses} ${textColorClass} ${opacityClass} ${borderClass}`.trim();
+    return `${baseClasses} ${textColorClass} ${opacityClass} ${overlappingClass}`.trim();
   };
 
   return (
@@ -113,7 +85,7 @@ export const AgendaEvent = ({ event }: { event: Schema_GridEvent }) => {
           <span className="flex-1 truncate">{event.title || "Untitled"}</span>
         </div>
       </AgendaEventMenuTrigger>
-      <AgendaEventMenuContent event={event} />
+      <AgendaEventMenuContent event={event as Schema_Event} />
     </AgendaEventMenu>
   );
 };
