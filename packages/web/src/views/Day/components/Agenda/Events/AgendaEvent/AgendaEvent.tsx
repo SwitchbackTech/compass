@@ -23,6 +23,10 @@ export const AgendaEvent = ({
 
   if (!event.startDate || !event.endDate) return null;
 
+  // Set canvas font to match 'text-xs' Tailwind class (0.75rem = 12px)
+  if (canvasContext) {
+    canvasContext.font = "0.75rem sans-serif";
+  }
   const textMeasure = canvasContext?.measureText(event.title ?? "");
   const textWidth = textMeasure?.width ?? 0;
 
