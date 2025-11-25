@@ -4,18 +4,19 @@ import {
   selectTimedDayEvents,
 } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
+import { AgendaSkeleton } from "@web/views/Day/components/Agenda/AgendaSkeleton/AgendaSkeleton";
+import { AgendaEvent } from "@web/views/Day/components/Agenda/Events/AgendaEvent/AgendaEvent";
+import { EventContextMenuProvider } from "@web/views/Day/components/ContextMenu/EventContextMenuContext";
 import { getNowLinePosition } from "@web/views/Day/util/agenda/agenda.util";
-import { EventContextMenuProvider } from "../../../ContextMenu/EventContextMenuContext";
-import { AgendaSkeleton } from "../../AgendaSkeleton/AgendaSkeleton";
-import { AgendaEvent } from "./AgendaEvent";
+
+const canvas = document.createElement("canvas");
+const canvasContext = canvas.getContext("2d");
 
 export const AgendaEvents = () => {
   const events = useAppSelector(selectTimedDayEvents);
   const isLoading = useAppSelector(selectIsDayEventsProcessing);
   const currentTime = new Date();
   const agendaRef = useRef<HTMLDivElement>(null);
-  const canvas = useRef<HTMLCanvasElement>(document.createElement("canvas"));
-  const canvasContext = canvas.current.getContext("2d");
 
   return (
     <EventContextMenuProvider>
@@ -33,14 +34,14 @@ export const AgendaEvents = () => {
         />
 
         {/* Event blocks */}
-        {isLoading ? (
+        {isLoading || agendaRef.current === null ? (
           <AgendaSkeleton />
         ) : (
           events.map((event) => (
             <AgendaEvent
               key={event._id}
               event={event}
-              containerWidth={agendaRef.current?.clientWidth ?? 100}
+              containerWidth={agendaRef.current!.clientWidth}
               canvasContext={canvasContext}
             />
           ))

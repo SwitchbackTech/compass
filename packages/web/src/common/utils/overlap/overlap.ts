@@ -52,22 +52,15 @@ const adjustEventGroup = (eventGroup: Schema_GridEvent[]) => {
     sortEventsByTitle(eventGroup);
   }
 
-  // horizontal order based on title length,
-  // used to determine z-index and width multiplier
-  const titleLength = eventGroup.reduce(
-    (sum, e) => sum + (e.title?.length ?? 0),
-    0,
-  );
+  const multiplier = roundToTwoDecimals(1 / eventGroup.length);
 
   [...eventGroup]
     .sort((a, b) => (b.title?.length ?? 0) - (a.title?.length ?? 0))
     .forEach((event, index) => {
       event.position.isOverlapping = true;
       event.position.totalEventsInGroup = eventGroup.length;
+      event.position.widthMultiplier *= multiplier; // @deprecated
       event.position.horizontalOrder = index + 1;
-      event.position.widthMultiplier = roundToTwoDecimals(
-        Math.max(0.25, (event.title?.length ?? 1) / titleLength),
-      );
     });
 };
 
@@ -81,7 +74,7 @@ export const getOverlappingStyles = (
   const order = event.position.horizontalOrder ?? 0;
   const index = (totalEventsInGroup ?? 1) - order;
   const themeSpacing = parseInt(theme.spacing.s);
-  const spacing = themeSpacing * 3; // Reduce spacing for higher index
+  const spacing = themeSpacing * 3;
   const maxWidthDivisor = isOverlapping ? 2 : 1;
   const maxContainerWidth = gridWidth - themeSpacing;
   const maxWidth = maxContainerWidth / maxWidthDivisor;
