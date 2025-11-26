@@ -13,10 +13,12 @@ import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { useNowActions } from "@web/views/Now/hooks/useNowActions";
 
 export const NowCmdPalette = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const { descriptionRef } = useNowActions();
 
   const _open = useAppSelector(selectIsCmdPaletteOpen);
 
@@ -47,6 +49,14 @@ export const NowCmdPalette = () => {
             children: "Go to Week [3]",
             icon: "CalendarIcon",
             onClick: () => navigate(ROOT_ROUTES.ROOT),
+          },
+          {
+            id: "edit-description",
+            children: `Edit Description [d]`,
+            icon: "PencilIcon",
+            onClick: onEventTargetVisibility(() =>
+              descriptionRef.current?.focus(),
+            ),
           },
           {
             id: "edit-reminder",

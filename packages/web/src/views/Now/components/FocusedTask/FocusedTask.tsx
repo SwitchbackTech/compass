@@ -1,3 +1,4 @@
+import React from "react";
 import {
   ArrowCircleLeftIcon,
   ArrowCircleRightIcon,
@@ -5,7 +6,10 @@ import {
 } from "@phosphor-icons/react";
 import { Task } from "@web/common/types/task.types";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { TaskDescription } from "../TaskDescription/TaskDescription";
+import {
+  TaskDescription,
+  TaskDescriptionRef,
+} from "../TaskDescription/TaskDescription";
 
 interface FocusedTaskProps {
   task: Task;
@@ -13,6 +17,7 @@ interface FocusedTaskProps {
   onPreviousTask: () => void;
   onNextTask: () => void;
   onUpdateDescription: (description: string) => void;
+  descriptionRef?: React.RefObject<TaskDescriptionRef>;
 }
 
 export const FocusedTask = ({
@@ -21,6 +26,7 @@ export const FocusedTask = ({
   onPreviousTask,
   onNextTask,
   onUpdateDescription,
+  descriptionRef,
 }: FocusedTaskProps) => {
   return (
     <div className="flex flex-1 flex-col items-center gap-10">
@@ -30,6 +36,7 @@ export const FocusedTask = ({
         </h2>
       </div>
       <TaskDescription
+        ref={descriptionRef}
         description={task.description}
         onSave={onUpdateDescription}
       />

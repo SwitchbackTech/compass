@@ -13,6 +13,7 @@ export const TaskSelector = () => {
     handleNextTask,
     handleCompleteTask,
     updateTaskDescription,
+    descriptionRef,
   } = useNowActions();
 
   if (focusedTask) {
@@ -25,6 +26,7 @@ export const TaskSelector = () => {
         onUpdateDescription={(description: string) =>
           updateTaskDescription(focusedTask.id, description)
         }
+        descriptionRef={descriptionRef}
       />
     );
   }

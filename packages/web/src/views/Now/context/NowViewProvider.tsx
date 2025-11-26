@@ -1,9 +1,10 @@
-import React, { createContext, useCallback } from "react";
+import React, { createContext, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { Task } from "@web/common/types/task.types";
 import { updateTodayTasks } from "@web/common/utils/storage/storage.util";
 import { getIncompleteTasksSorted } from "@web/common/utils/task/sort.task";
+import { TaskDescriptionRef } from "../components/TaskDescription/TaskDescription";
 import { useAvailableTasks } from "../hooks/useAvailableTasks";
 import { useFocusedTask } from "../hooks/useFocusedTask";
 import { useNowShortcuts } from "../shortcuts/useNowShortcuts";
@@ -17,6 +18,8 @@ interface NowViewContextValue {
   handleNextTask: () => void;
   handleCompleteTask: () => void;
   updateTaskDescription: (taskId: string, description: string) => void;
+  descriptionRef: React.RefObject<TaskDescriptionRef>;
+  reminderRef: React.RefObject<{ focus: () => void }>;
 }
 
 export const NowViewContext = createContext<NowViewContextValue | undefined>(
@@ -31,6 +34,9 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
   const navigate = useNavigate();
   const { availableTasks, hasCompletedTasks } = useAvailableTasks();
   const { focusedTask, setFocusedTask } = useFocusedTask({ availableTasks });
+  const descriptionRef = useRef<TaskDescriptionRef>(null);
+  const reminderRef = useRef<{ focus: () => void }>(null);
+
   const completeFocusedTask = useCallback((taskId: string) => {
     return updateTodayTasks((tasks) =>
       tasks.map((task) =>
@@ -123,6 +129,8 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
     onPreviousTask: handlePreviousTask,
     onNextTask: handleNextTask,
     onCompleteTask: handleCompleteTask,
+    onFocusDescription: () => descriptionRef.current?.focus(),
+    onFocusReminder: () => reminderRef.current?.focus(),
   });
 
   const value: NowViewContextValue = {
@@ -134,6 +142,8 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
     handleNextTask,
     handleCompleteTask,
     updateTaskDescription,
+    descriptionRef,
+    reminderRef,
   };
 
   return (

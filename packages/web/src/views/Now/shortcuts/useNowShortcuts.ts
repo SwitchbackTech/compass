@@ -11,6 +11,8 @@ interface Props {
   onPreviousTask?: () => void;
   onNextTask?: () => void;
   onCompleteTask?: () => void;
+  onFocusDescription?: () => void;
+  onFocusReminder?: () => void;
 }
 
 /**
@@ -25,6 +27,8 @@ export function useNowShortcuts(props?: Props) {
     onPreviousTask,
     onNextTask,
     onCompleteTask,
+    onFocusDescription,
+    onFocusReminder,
   } = props || {};
 
   // Define strongly-typed handler mapping
@@ -46,6 +50,16 @@ export function useNowShortcuts(props?: Props) {
           navigate(ROOT_ROUTES.ROOT);
         },
 
+        // Edit shortcuts
+        r: (e) => {
+          e.preventDefault();
+          onFocusReminder?.();
+        },
+        d: (e) => {
+          e.preventDefault();
+          onFocusDescription?.();
+        },
+
         // Task navigation shortcuts (only active when task props are provided)
         j: (e) => {
           e.preventDefault();
@@ -64,7 +78,14 @@ export function useNowShortcuts(props?: Props) {
           navigate(ROOT_ROUTES.DAY);
         },
       }),
-      [navigate, onPreviousTask, onNextTask, onCompleteTask],
+      [
+        navigate,
+        onPreviousTask,
+        onNextTask,
+        onCompleteTask,
+        onFocusDescription,
+        onFocusReminder,
+      ],
     );
 
   const handleKeyDown = useCallback(

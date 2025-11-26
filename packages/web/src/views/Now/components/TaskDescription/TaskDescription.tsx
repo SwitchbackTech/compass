@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
 import styled from "styled-components";
 import { Pencil } from "@phosphor-icons/react";
 import { Textarea } from "@web/components/Textarea";
@@ -27,6 +27,12 @@ const StyledDescription = styled(Textarea)`
   &:hover {
     filter: brightness(90%);
     background-color: ${({ theme }) => theme.color.border.primary};
+  }
+
+  &:focus {
+    outline: none;
+    background-color: ${({ theme }) => theme.color.border.primary};
+    filter: brightness(85%);
   }
 
   &::-webkit-scrollbar {
@@ -91,6 +97,12 @@ const DescriptionText = styled.div`
     background-color: ${({ theme }) => theme.color.border.primary};
   }
 
+  &:focus {
+    outline: none;
+    background-color: ${({ theme }) => theme.color.border.primary};
+    filter: brightness(85%);
+  }
+
   &.empty {
     color: ${({ theme }) => theme.color.text.lighter};
     font-style: italic;
@@ -105,10 +117,14 @@ const CharacterCount = styled.div<{ isNearLimit: boolean }>`
   margin-top: 4px;
 `;
 
-export const TaskDescription: React.FC<TaskDescriptionProps> = ({
-  description = "",
-  onSave,
-}) => {
+export interface TaskDescriptionRef {
+  focus: () => void;
+}
+
+export const TaskDescription = React.forwardRef<
+  TaskDescriptionRef,
+  TaskDescriptionProps
+>(({ description = "", onSave }, ref) => {
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(description);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -129,6 +145,11 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
     setIsEditing(true);
   };
 
+  // Expose focus method to parent via ref
+  useImperativeHandle(ref, () => ({
+    focus: handleClick,
+  }));
+
   const handleBlur = () => {
     setIsEditing(false);
     if (value !== originalValueRef.current) {
@@ -148,6 +169,15 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
     if (e.key === "Escape") {
       setValue(originalValueRef.current);
       setIsEditing(false);
+    }
+    // Save on Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux)
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      setIsEditing(false);
+      if (value !== originalValueRef.current) {
+        onSave(value);
+        originalValueRef.current = value;
+      }
     }
   };
 
@@ -181,4 +211,6 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
       )}
     </DescriptionContainer>
   );
-};
+});
+
+TaskDescription.displayName = "TaskDescription";

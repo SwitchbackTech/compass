@@ -4,6 +4,8 @@ export const NOW_VIEW_SHORTCUT_KEYS = {
   ...GLOBAL_SHORTCUT_KEYS,
   j: "j",
   k: "k",
+  r: "r",
+  d: "d",
   Enter: "enter",
   Escape: "escape",
 } as const;
