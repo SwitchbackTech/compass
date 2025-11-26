@@ -1,6 +1,7 @@
 import React from "react";
 import { toast } from "react-toastify";
 import { getMetaKey } from "@web/common/utils/shortcut/shortcut.util";
+import { toastDefaultOptions } from "@web/views/Day/components/Toasts";
 
 interface MigrationToastProps {
   direction: "forward" | "backward";
@@ -59,11 +60,7 @@ export const showMigrationToast = (
       onUndo={onUndo}
       toastId=""
     />,
-    {
-      autoClose: 5000,
-      position: "bottom-left",
-      closeOnClick: true,
-    },
+    toastDefaultOptions,
   );
 
   // Update the component with the actual toast ID
