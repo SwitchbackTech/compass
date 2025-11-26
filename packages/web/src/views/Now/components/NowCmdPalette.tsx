@@ -9,7 +9,6 @@ import { useNavigate } from "react-router-dom";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { onEventTargetVisibility } from "@web/common/utils/event/event-target-visibility.util";
-import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
@@ -18,7 +17,7 @@ import { useNowActions } from "@web/views/Now/hooks/useNowActions";
 export const NowCmdPalette = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { descriptionRef } = useNowActions();
+  const { descriptionRef, reminderRef } = useNowActions();
 
   const _open = useAppSelector(selectIsCmdPaletteOpen);
 
@@ -63,7 +62,7 @@ export const NowCmdPalette = () => {
             children: `Edit Reminder [r]`,
             icon: "PencilSquareIcon",
             onClick: onEventTargetVisibility(() =>
-              dispatch(viewSlice.actions.updateReminder(true)),
+              reminderRef.current?.focus(),
             ),
           },
           {
