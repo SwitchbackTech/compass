@@ -137,55 +137,33 @@
   }
 
   /* Toast styling - override react-toastify defaults to use theme colors */
+  /* Specificity seems to default to the original toast styles - use !important */
   .Toastify__toast-container {
-    .Toastify__toast {
-      background-color: var(--color-bg-primary);
-      color: var(--color-text-lighter);
-      border: 1px solid var(--color-accent-primary);
-      border-radius: var(--radius-default);
+    .Toastify__toast,
+    .Toastify__toast--dark {
+      background-color: var(--color-bg-primary) !important;
+      color: var(--color-text-lighter) !important;
       box-shadow:
         0 4px 2px var(--color-border-primary-dark),
-        0 0 10px hsl(207 14 57);
+        0 0 10px hsl(207 14 57) !important;
     }
 
-    .Toastify__toast--dark {
-      background-color: var(--color-bg-primary);
-      color: var(--color-text-lighter);
-      border: 1px solid var(--color-accent-primary);
-      border-radius: var(--radius-default);
-    }
-
-    .Toastify__progress-bar {
-      background: linear-gradient(
-        to right,
-        var(--color-accent-primary),
-        var(--color-gradient-accent-light-end)
-      );
-    }
-
+    .Toastify__progress-bar,
     .Toastify__progress-bar--dark {
       background: linear-gradient(
         to right,
         var(--color-accent-primary),
         var(--color-gradient-accent-light-end)
-      );
+      ) !important;
     }
 
-    .Toastify__close-button {
-      color: var(--color-text-lighter);
-      opacity: 0.7;
-
-      &:hover {
-        opacity: 1;
-      }
-    }
-
+    .Toastify__close-button,
     .Toastify__close-button--dark {
-      color: var(--color-text-lighter);
-      opacity: 0.7;
+      color: var(--color-text-lighter) !important;
+      opacity: 0.7 !important;
 
       &:hover {
-        opacity: 1;
+        opacity: 1 !important;
       }
     }
   }
