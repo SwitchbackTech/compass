@@ -164,6 +164,8 @@ describe("useNowShortcuts", () => {
       onPreviousTask: jest.fn(),
       onNextTask: jest.fn(),
       onCompleteTask: jest.fn(),
+      onFocusDescription: jest.fn(),
+      onFocusReminder: jest.fn(),
     };
 
     it("should call onPreviousTask when 'j' is pressed", () => {
@@ -327,6 +329,40 @@ describe("useNowShortcuts", () => {
       expect(props.onCompleteTask).not.toHaveBeenCalled();
       expect(mockEvent.preventDefault).not.toHaveBeenCalled();
     });
+
+    it("should call onFocusDescription when 'd' is pressed", () => {
+      const props = { ...defaultProps };
+      renderHook(() => useNowShortcuts(props));
+
+      const keydownHandler = mockAddEventListener.mock.calls[0][1];
+      const mockEvent = {
+        key: "d",
+        preventDefault: jest.fn(),
+        target: document.createElement("div"),
+      };
+
+      keydownHandler(mockEvent);
+
+      expect(props.onFocusDescription).toHaveBeenCalled();
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+    });
+
+    it("should call onFocusReminder when 'r' is pressed", () => {
+      const props = { ...defaultProps };
+      renderHook(() => useNowShortcuts(props));
+
+      const keydownHandler = mockAddEventListener.mock.calls[0][1];
+      const mockEvent = {
+        key: "r",
+        preventDefault: jest.fn(),
+        target: document.createElement("div"),
+      };
+
+      keydownHandler(mockEvent);
+
+      expect(props.onFocusReminder).toHaveBeenCalled();
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+    });
   });
 
   describe("editable element handling", () => {
@@ -336,6 +372,8 @@ describe("useNowShortcuts", () => {
       onPreviousTask: jest.fn(),
       onNextTask: jest.fn(),
       onCompleteTask: jest.fn(),
+      onFocusDescription: jest.fn(),
+      onFocusReminder: jest.fn(),
     };
 
     it("should not handle shortcuts when typing in input elements", () => {
