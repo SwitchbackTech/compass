@@ -106,10 +106,6 @@
 }
 
 @layer components {
-  .react-datepicker-popper {
-    z-index: 20;
-  }
-
   :focus-visible {
     outline: none;
   }
