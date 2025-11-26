@@ -1,5 +1,6 @@
 import React from "react";
 import { toast } from "react-toastify";
+import { toastDefaultOptions } from "@web/views/Day/components/Toasts";
 
 interface Props {
   targetMonthName: string;
@@ -44,9 +45,6 @@ export const showMigrationToast = (
       targetMonthName={targetMonthName}
       onGoToMonth={onGoToMonth}
     />,
-    {
-      autoClose: 5000,
-      position: "bottom-left",
-    },
+    toastDefaultOptions,
   );
 };
