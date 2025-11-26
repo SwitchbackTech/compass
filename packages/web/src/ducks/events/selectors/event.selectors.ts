@@ -5,6 +5,7 @@ import { isProcessing } from "@web/common/store/helpers";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
+import { adjustOverlappingEvents } from "@web/common/utils/overlap/overlap";
 import { RootState } from "@web/store";
 
 type Schema_GridEvent_NoPosition = Omit<Schema_GridEvent, "position">;
@@ -78,10 +79,13 @@ export const selectDayEvents = createSelector(
 export const selectIsDayEventsProcessing = (state: RootState) =>
   isProcessing(state.events.getDayEvents);
 
-export const selectTimedDayEvents = createSelector(selectDayEvents, (events) =>
-  events
-    .filter((event) => !event.isAllDay)
-    .sort((a, b) =>
-      dayjs(a.startDate as string).diff(dayjs(b.startDate as string)),
-    ),
+export const selectTimedDayEvents = createSelector(
+  selectDayEvents,
+  (events) => {
+    const timedEvents: Schema_GridEvent[] = events
+      .filter((event) => !event.isAllDay)
+      .map(assembleGridEvent);
+
+    return adjustOverlappingEvents(timedEvents);
+  },
 );

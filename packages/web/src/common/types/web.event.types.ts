@@ -36,6 +36,7 @@ export const GridEventSchema = WebCoreEventSchema.extend({
   order: z.number().optional(), // allow carry over from Someday events
   position: z.object({
     isOverlapping: z.boolean(),
+    totalEventsInGroup: z.number().default(1),
     widthMultiplier: z.number(), // EG: 0.5 for half width
     horizontalOrder: z.number(),
     dragOffset: z.object({ x: z.number(), y: z.number() }),

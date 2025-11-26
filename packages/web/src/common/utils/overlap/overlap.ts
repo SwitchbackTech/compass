@@ -1,4 +1,5 @@
 import dayjs from "@core/util/date/dayjs";
+import { theme } from "@web/common/styles/theme";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 export const adjustOverlappingEvents = (
@@ -53,11 +54,41 @@ const adjustEventGroup = (eventGroup: Schema_GridEvent[]) => {
 
   const multiplier = roundToTwoDecimals(1 / eventGroup.length);
 
-  eventGroup.forEach((event, index) => {
-    event.position.isOverlapping = true;
-    event.position.widthMultiplier *= multiplier;
-    event.position.horizontalOrder = index + 1;
-  });
+  [...eventGroup]
+    .sort((a, b) => (b.title?.length ?? 0) - (a.title?.length ?? 0))
+    .forEach((event, index) => {
+      event.position.isOverlapping = true;
+      event.position.totalEventsInGroup = eventGroup.length;
+      event.position.widthMultiplier *= multiplier; // @deprecated
+      event.position.horizontalOrder = index + 1;
+    });
+};
+
+export const getOverlappingStyles = (
+  event: Schema_GridEvent,
+  gridWidth: number,
+  textWidth: number,
+) => {
+  const isOverlapping = event.position.isOverlapping;
+  const totalEventsInGroup = event.position.totalEventsInGroup ?? 1;
+  const order = event.position.horizontalOrder ?? 0;
+  const index = (totalEventsInGroup ?? 1) - order;
+  const themeSpacing = parseInt(theme.spacing.s);
+  const spacing = themeSpacing * 3;
+  const maxWidthDivisor = isOverlapping ? 2 : 1;
+  const maxContainerWidth = gridWidth - themeSpacing;
+  const maxWidth = maxContainerWidth / maxWidthDivisor;
+  const borderRingSpace = 2;
+  const spread = maxContainerWidth / totalEventsInGroup;
+  const _textWidth = textWidth + borderRingSpace;
+  const width = Math.min(maxWidth, Math.max(spread, _textWidth + spacing));
+  const offset = spread * (index + 1);
+
+  return {
+    left: `${maxContainerWidth - Math.max(width, offset) - borderRingSpace}px`,
+    width: `${width}px`,
+    zIndex: order,
+  };
 };
 
 const roundToTwoDecimals = (value: number): number => {
