@@ -57,7 +57,10 @@ export const Tasks = () => {
                     }}
                   >
                     {tasks.length > 1 ? (
-                      <IconButton {...provided.dragHandleProps}>
+                      <IconButton
+                        {...provided.dragHandleProps}
+                        aria-label={`Reorder ${task.title}. Press space to start dragging, use arrow keys to move, space to drop, or escape to cancel.`}
+                      >
                         <DotsSixVerticalIcon />
                       </IconButton>
                     ) : null}
