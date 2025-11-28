@@ -88,7 +88,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     }
   }, [hasFocusedTask, isEditingTask, onCompleteTask]);
 
-  const handMigrationNavigation = useCallback(
+  const handleMigrationNavigation = useCallback(
     (direction: "forward" | "backward") => () => {
       if (isFocusedWithinTask()) {
         const taskId = getFocusedTaskId();
@@ -148,13 +148,13 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   useKeyDownEvent({
     combination: ["Meta", "Control", "ArrowRight"],
     exactMatch: false,
-    handler: handMigrationNavigation("forward"),
+    handler: handleMigrationNavigation("forward"),
   });
 
   useKeyDownEvent({
     combination: ["Meta", "Control", "ArrowLeft"],
     exactMatch: false,
-    handler: handMigrationNavigation("backward"),
+    handler: handleMigrationNavigation("backward"),
   });
 
   // Agenda shortcuts

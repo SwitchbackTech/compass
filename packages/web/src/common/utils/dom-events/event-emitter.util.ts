@@ -65,9 +65,9 @@ export function pressKey(
   }: { keyUpInit?: KeyboardEventInit; keyDownInit?: KeyboardEventInit } = {},
 ) {
   window.dispatchEvent(
-    new KeyboardEvent("keydown", { ...keyUpInit, key, composed: true }),
+    new KeyboardEvent("keydown", { ...keyDownInit, key, composed: true }),
   );
   window.dispatchEvent(
-    new KeyboardEvent("keyup", { ...keyDownInit, key, composed: true }),
+    new KeyboardEvent("keyup", { ...keyUpInit, key, composed: true }),
   );
 }

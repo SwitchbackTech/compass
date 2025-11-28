@@ -60,7 +60,7 @@ export function useGlobalShortcuts() {
   });
 
   // firefox 36 and below uses 'Esc' instead of 'Escape'
-  useKeyUpEvent({
+  useKeyDownEvent({
     combination: ["Esc"],
     deps: [dispatch],
     listenWhileEditing: true,

@@ -65,7 +65,7 @@ export function useNowShortcuts(props?: Props) {
   useKeyUpEvent({
     combination: ["k"],
     handler: handleTaskNavigation(onNextTask),
-    deps: [handleTaskNavigation, onPreviousTask],
+    deps: [handleTaskNavigation, onNextTask],
   });
 
   useKeyUpEvent({
