@@ -398,9 +398,7 @@ describe("useDayViewShortcuts", () => {
       await act(() => renderHook(() => useDayViewShortcuts(config)));
 
       fireEvent.keyDown(window, { key: "Meta", metaKey: true });
-      console.log("After Meta down:", JSON.stringify(keyPressed.getValue()));
       fireEvent.keyDown(window, { key: "z", metaKey: true });
-      console.log("After z down:", JSON.stringify(keyPressed.getValue()));
       fireEvent.keyUp(window, { key: "z", metaKey: true });
 
       expect(onRestoreTask).toHaveBeenCalled();
