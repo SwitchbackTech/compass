@@ -1,12 +1,11 @@
 import { SyntheticEvent } from "react";
-import { onEventTargetVisibility } from "./event-target-visibility.util";
+import { onEventTargetVisibility } from "@web/common/utils/dom-events/event-target-visibility.util";
 
 // Mock IntersectionObserver
 const mockIntersectionObserver = jest.fn();
 const mockObserve = jest.fn();
 const mockDisconnect = jest.fn();
 
-// @ts-ignore
 global.IntersectionObserver = mockIntersectionObserver;
 
 describe("onEventTargetVisibility", () => {

@@ -1,6 +1,6 @@
 import { Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
-import { isDark } from "@core/util/color.utils";
+import { darken, isDark } from "@core/util/color.utils";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getOverlappingStyles } from "@web/common/utils/overlap/overlap";
@@ -61,12 +61,11 @@ export const AgendaEvent = ({
     const textColorClass = isBackgroundDark
       ? "text-text-light"
       : "text-text-dark";
-    const opacityClass = isPast ? "opacity-60" : "";
     const overlappingClass = event.position.isOverlapping
       ? "border border-border-transparent shadow-md hover:!z-40 focus:!z-40"
       : "";
 
-    return `${baseClasses} ${textColorClass} ${opacityClass} ${overlappingClass}`.trim();
+    return `${baseClasses} ${textColorClass} ${overlappingClass}`.trim();
   };
 
   return (
@@ -77,7 +76,9 @@ export const AgendaEvent = ({
           style={{
             height: `${renderedHeight}px`,
             top: `${startPosition}px`,
-            backgroundColor,
+            backgroundColor: isPast
+              ? darken(backgroundColor, 25)
+              : backgroundColor,
             ...overlappingStyles,
           }}
           tabIndex={0}

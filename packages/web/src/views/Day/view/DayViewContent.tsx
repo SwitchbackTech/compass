@@ -1,7 +1,5 @@
 import { useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
 import { FlexDirections } from "@web/components/Flex/styled";
@@ -40,12 +38,11 @@ export const DayViewContent = () => {
     undoToastId,
   } = useTasks();
   const { isOpen: isModalOpen, closeModal } = useStorageInfoModal();
-
-  const navigate = useNavigate();
   const dateInView = useDateInView();
   const shortcuts = getShortcuts({ currentDate: dateInView });
   const events = useAppSelector(selectDayEvents);
   const scrollToNowLineRef = useRef<() => void>();
+
   useDayEvents(dateInView);
 
   const { navigateToNextDay, navigateToPreviousDay, navigateToToday } =
@@ -84,18 +81,6 @@ export const DayViewContent = () => {
     }
   };
 
-  const handleNavigateNow = () => {
-    navigate(ROOT_ROUTES.NOW);
-  };
-
-  const handleNavigateDay = () => {
-    navigate(ROOT_ROUTES.DAY);
-  };
-
-  const handleNavigateWeek = () => {
-    navigate(ROOT_ROUTES.ROOT);
-  };
-
   const handleFocusAgenda = () => {
     focusFirstAgendaEvent(events);
   };
@@ -130,9 +115,6 @@ export const DayViewContent = () => {
     onNextDay: navigateToNextDay,
     onPrevDay: navigateToPreviousDay,
     onGoToToday: handleGoToToday,
-    onNavigateNow: handleNavigateNow,
-    onNavigateDay: handleNavigateDay,
-    onNavigateWeek: handleNavigateWeek,
     hasFocusedTask,
     undoToastId,
   });

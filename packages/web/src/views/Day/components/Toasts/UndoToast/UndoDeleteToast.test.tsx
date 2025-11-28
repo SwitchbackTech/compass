@@ -1,6 +1,10 @@
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { UndoDeleteToast, showUndoDeleteToast } from "./UndoDeleteToast";
+import { getMetaKeyText as mockGetMetaKeyText } from "@web/common/utils/shortcut/shortcut.util";
+import {
+  UndoDeleteToast,
+  showUndoDeleteToast,
+} from "@web/views/Day/components/Toasts/UndoToast/UndoDeleteToast";
 
 jest.mock("react-toastify", () => ({
   toast: jest.fn(),
@@ -10,7 +14,10 @@ jest.mock("react-toastify", () => ({
 
 // Mock the getMetaKey utility
 jest.mock("@web/common/utils/shortcut/shortcut.util", () => ({
-  getMetaKey: jest.fn(() => <span data-testid="meta-key">⌘</span>),
+  ...jest.requireActual("@web/common/utils/shortcut/shortcut.util"),
+  getMetaKey: jest.fn(() => (
+    <span data-testid="meta-key">{mockGetMetaKeyText()}</span>
+  )),
 }));
 
 describe("UndoDeleteToast", () => {

@@ -1,8 +1,7 @@
 import {
   ShortcutProps,
-  useShortcuts,
-} from "@web/views/Calendar/hooks/shortcuts/useShortcuts";
-import { useWeekShortcuts } from "@web/views/Week/useWeekShortcuts";
+  useWeekShortcuts,
+} from "@web/views/Calendar/hooks/shortcuts/useWeekShortcuts";
 
 export function Shortcuts({
   children,
@@ -11,8 +10,7 @@ export function Shortcuts({
   children: React.ReactNode;
   shortcutsProps: ShortcutProps;
 }) {
-  useShortcuts(shortcutsProps);
-  useWeekShortcuts();
+  useWeekShortcuts(shortcutsProps);
 
   return children;
 }

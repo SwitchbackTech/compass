@@ -1,4 +1,5 @@
 import React from "react";
+import { useSetupKeyEvents } from "@web/common/hooks/useKeyboardEvent";
 import {
   CompassOptionalProviders,
   CompassRequiredProviders,
@@ -6,6 +7,8 @@ import {
 import { CompassRouterProvider } from "@web/routers";
 
 export const App = () => {
+  useSetupKeyEvents();
+
   return (
     <React.StrictMode>
       <CompassOptionalProviders>
