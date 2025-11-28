@@ -17,7 +17,7 @@ describe("shortcut.util", () => {
       getDesktopOSSpy.mockReturnValue(DesktopOS.MacOS);
 
       render(getMetaKey());
-      const commandIcon = screen.getByTestId("command-icon");
+      const commandIcon = screen.getByTestId("macos-meta-icon");
 
       expect(getDesktopOSSpy).toHaveBeenCalled();
       expect(commandIcon).toBeInTheDocument();
@@ -27,7 +27,7 @@ describe("shortcut.util", () => {
       getDesktopOSSpy.mockReturnValue(DesktopOS.Windows);
 
       render(getMetaKey());
-      const windowsIcon = screen.getByTestId("windows-logo-icon");
+      const windowsIcon = screen.getByTestId("windows-meta-icon");
 
       expect(getDesktopOSSpy).toHaveBeenCalled();
       expect(windowsIcon).toBeInTheDocument();
@@ -37,7 +37,7 @@ describe("shortcut.util", () => {
       getDesktopOSSpy.mockReturnValue(DesktopOS.Linux);
 
       render(getMetaKey());
-      const windowsIcon = screen.getByTestId("windows-logo-icon");
+      const windowsIcon = screen.getByTestId("windows-meta-icon");
 
       expect(getDesktopOSSpy).toHaveBeenCalled();
       expect(windowsIcon).toBeInTheDocument();
@@ -47,7 +47,7 @@ describe("shortcut.util", () => {
       getDesktopOSSpy.mockReturnValue(DesktopOS.Unknown);
 
       render(getMetaKey());
-      const windowsIcon = screen.getByTestId("windows-logo-icon");
+      const windowsIcon = screen.getByTestId("windows-meta-icon");
 
       expect(getDesktopOSSpy).toHaveBeenCalled();
       expect(windowsIcon).toBeInTheDocument();
@@ -57,7 +57,7 @@ describe("shortcut.util", () => {
       getDesktopOSSpy.mockReturnValue(undefined);
 
       render(getMetaKey());
-      const windowsIcon = screen.getByTestId("windows-logo-icon");
+      const windowsIcon = screen.getByTestId("windows-meta-icon");
 
       expect(getDesktopOSSpy).toHaveBeenCalled();
       expect(windowsIcon).toBeInTheDocument();
@@ -68,7 +68,7 @@ describe("shortcut.util", () => {
       const size = 20;
 
       render(getMetaKey({ size }));
-      const commandIcon = screen.getByTestId("command-icon");
+      const commandIcon = screen.getByTestId("macos-meta-icon");
 
       expect(commandIcon).toBeInTheDocument();
       // The size prop should be passed to the Command component
@@ -81,7 +81,7 @@ describe("shortcut.util", () => {
       const size = 16;
 
       render(getMetaKey({ size }));
-      const windowsIcon = screen.getByTestId("windows-logo-icon");
+      const windowsIcon = screen.getByTestId("windows-meta-icon");
 
       expect(windowsIcon).toBeInTheDocument();
       // The size prop should be passed to the WindowsLogo component
@@ -93,7 +93,7 @@ describe("shortcut.util", () => {
       getDesktopOSSpy.mockReturnValue(DesktopOS.MacOS);
 
       render(getMetaKey());
-      const commandIcon = screen.getByTestId("command-icon");
+      const commandIcon = screen.getByTestId("macos-meta-icon");
 
       expect(commandIcon).toBeInTheDocument();
       expect(commandIcon).toHaveAttribute("width", "14");
@@ -104,7 +104,7 @@ describe("shortcut.util", () => {
       getDesktopOSSpy.mockReturnValue(DesktopOS.MacOS);
 
       render(getMetaKey({}));
-      const commandIcon = screen.getByTestId("command-icon");
+      const commandIcon = screen.getByTestId("macos-meta-icon");
 
       expect(commandIcon).toBeInTheDocument();
       expect(commandIcon).toHaveAttribute("width", "14");

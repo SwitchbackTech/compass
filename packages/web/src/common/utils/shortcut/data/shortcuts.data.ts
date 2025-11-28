@@ -1,5 +1,6 @@
 import dayjs from "@core/util/date/dayjs";
 import { Shortcut } from "@web/common/types/global.shortcut.types";
+import { getMetaKeyText } from "@web/common/utils/shortcut/shortcut.util";
 
 interface ShortcutsConfig {
   isHome?: boolean;
@@ -15,7 +16,9 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
     { k: "1", label: "Now" },
     { k: "2", label: "Day" },
     { k: "3", label: "Week" },
-    { k: "⌘K", label: "Command Palette" },
+    { k: "r", label: "Edit reminder" },
+    { k: "z", label: "Logout" },
+    { k: `${getMetaKeyText()}K`, label: "Command Palette" },
   ];
 
   let homeShortcuts: Shortcut[] = [];
@@ -55,6 +58,8 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
   }
   if (isNow) {
     nowShortcuts = [
+      { k: "d", label: "Edit description" },
+      { k: `${getMetaKeyText()}Enter`, label: "Save description" },
       { k: "j", label: "Previous task" },
       { k: "k", label: "Next task" },
       { k: "Enter", label: "Mark complete" },

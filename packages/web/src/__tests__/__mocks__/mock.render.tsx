@@ -12,6 +12,7 @@ import {
   render,
   renderHook,
 } from "@testing-library/react";
+import { useSetupKeyEvents } from "@web/common/hooks/useKeyboardEvent";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
@@ -35,6 +36,8 @@ const TestProviders = (props?: {
   store?: typeof compassStore;
 }) => {
   return function TestProvidersWrapper({ children }: PropsWithChildren) {
+    useSetupKeyEvents();
+
     if (!props?.router) {
       return (
         <CompassRequiredProviders {...props}>
@@ -109,6 +112,8 @@ const customRenderHook = <ReturnType, Props>(
   const BaseProviders = TestProviders({ store, router });
 
   const Wrapper = (props: PropsWithChildren) => {
+    useSetupKeyEvents();
+
     if (!WrapperComponent) return <BaseProviders {...props} />;
 
     return (

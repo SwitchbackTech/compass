@@ -1,17 +1,23 @@
 import dayjs from "@core/util/date/dayjs";
-import { getShortcuts } from "./shortcuts.data";
+import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
+import { getMetaKeyText } from "@web/common/utils/shortcut/shortcut.util";
 
 describe("shortcuts.data", () => {
   describe("getShortcuts", () => {
     it("should return default shortcuts when no config provided", () => {
       const shortcuts = getShortcuts();
 
-      expect(shortcuts.globalShortcuts).toHaveLength(4);
+      expect(shortcuts.globalShortcuts).toHaveLength(6);
       expect(shortcuts.globalShortcuts[0]).toEqual({ k: "1", label: "Now" });
       expect(shortcuts.globalShortcuts[1]).toEqual({ k: "2", label: "Day" });
       expect(shortcuts.globalShortcuts[2]).toEqual({ k: "3", label: "Week" });
       expect(shortcuts.globalShortcuts[3]).toEqual({
-        k: "⌘K",
+        k: "r",
+        label: "Edit reminder",
+      });
+      expect(shortcuts.globalShortcuts[4]).toEqual({ k: "z", label: "Logout" });
+      expect(shortcuts.globalShortcuts[5]).toEqual({
+        k: `${getMetaKeyText()}K`,
         label: "Command Palette",
       });
 
@@ -119,17 +125,25 @@ describe("shortcuts.data", () => {
         isNow: true,
       });
 
-      expect(shortcuts.nowShortcuts).toHaveLength(4);
+      expect(shortcuts.nowShortcuts).toHaveLength(6);
       expect(shortcuts.nowShortcuts[0]).toEqual({
+        k: "d",
+        label: "Edit description",
+      });
+      expect(shortcuts.nowShortcuts[1]).toEqual({
+        k: `${getMetaKeyText()}Enter`,
+        label: "Save description",
+      });
+      expect(shortcuts.nowShortcuts[2]).toEqual({
         k: "j",
         label: "Previous task",
       });
-      expect(shortcuts.nowShortcuts[1]).toEqual({ k: "k", label: "Next task" });
-      expect(shortcuts.nowShortcuts[2]).toEqual({
+      expect(shortcuts.nowShortcuts[3]).toEqual({ k: "k", label: "Next task" });
+      expect(shortcuts.nowShortcuts[4]).toEqual({
         k: "Enter",
         label: "Mark complete",
       });
-      expect(shortcuts.nowShortcuts[3]).toEqual({
+      expect(shortcuts.nowShortcuts[5]).toEqual({
         k: "Esc",
         label: "Back to Today",
       });

@@ -1,10 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { Pencil } from "@phosphor-icons/react";
+import {
+  CompassDOMEvents,
+  compassEventEmitter,
+} from "@web/common/utils/dom-events/event-emitter.util";
 import { Textarea } from "@web/components/Textarea";
 
 const MAX_DESCRIPTION_LENGTH = 255;
 const NEAR_LIMIT_THRESHOLD = Math.floor(MAX_DESCRIPTION_LENGTH * 0.9); // 90% of max
+export const TASK_DESCRIPTION_ID = "focused-task-textarea";
 
 interface TaskDescriptionProps {
   description?: string;
@@ -121,9 +126,36 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
 
   useEffect(() => {
     if (isEditing && textareaRef.current) {
+      const length = textareaRef.current.value.length;
+
       textareaRef.current.focus();
+      textareaRef.current.setSelectionRange(length, length);
     }
   }, [isEditing]);
+
+  useEffect(() => {
+    if (isEditing) return;
+
+    const handler = () => setIsEditing(true);
+
+    compassEventEmitter.on(CompassDOMEvents.FOCUS_TASK_DESCRIPTION, handler);
+
+    return () => {
+      compassEventEmitter.off(CompassDOMEvents.FOCUS_TASK_DESCRIPTION, handler);
+    };
+  }, [isEditing, setIsEditing]);
+
+  useEffect(() => {
+    if (!isEditing) return;
+
+    const handler = () => textareaRef.current?.blur();
+
+    compassEventEmitter.on(CompassDOMEvents.SAVE_TASK_DESCRIPTION, handler);
+
+    return () => {
+      compassEventEmitter.off(CompassDOMEvents.SAVE_TASK_DESCRIPTION, handler);
+    };
+  }, [isEditing, setIsEditing]);
 
   const handleClick = () => {
     setIsEditing(true);
@@ -165,6 +197,7 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
             onKeyDown={handleKeyDown}
             placeholder="Add a description..."
             maxLength={MAX_DESCRIPTION_LENGTH}
+            id={TASK_DESCRIPTION_ID}
           />
           <CharacterCount isNearLimit={isNearLimit}>
             {value.length}/{MAX_DESCRIPTION_LENGTH}

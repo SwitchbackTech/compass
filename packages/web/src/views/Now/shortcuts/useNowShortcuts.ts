@@ -1,9 +1,15 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import {
+  useKeyDownEvent,
+  useKeyUpEvent,
+} from "@web/common/hooks/useKeyboardEvent";
 import { Task } from "@web/common/types/task.types";
-import { isEditable } from "@web/views/Day/util/day.shortcut.util";
-import { NowViewShortcutKey } from "@web/views/Now/shortcuts/now.shortcut.types";
+import {
+  CompassDOMEvents,
+  compassEventEmitter,
+} from "@web/common/utils/dom-events/event-emitter.util";
 
 interface Props {
   focusedTask?: Task | null;
@@ -18,7 +24,6 @@ interface Props {
  * Handles both global navigation shortcuts (1, 2, 3) and task-specific shortcuts (j, k)
  */
 export function useNowShortcuts(props?: Props) {
-  const navigate = useNavigate();
   const {
     focusedTask = null,
     availableTasks = [],
@@ -27,74 +32,57 @@ export function useNowShortcuts(props?: Props) {
     onCompleteTask,
   } = props || {};
 
-  // Define strongly-typed handler mapping
-  const handlers: Record<NowViewShortcutKey, (e: KeyboardEvent) => void> =
-    useMemo(
-      () => ({
-        // Global navigation shortcuts
-        "1": (e) => {
-          e.preventDefault();
-          navigate(ROOT_ROUTES.NOW);
-        },
-        "2": (e) => {
-          e.preventDefault();
-          navigate(ROOT_ROUTES.DAY);
-        },
-        "3": (e) => {
-          e.preventDefault();
-          // Root route is currently the week view
-          navigate(ROOT_ROUTES.ROOT);
-        },
+  const navigate = useNavigate();
 
-        // Task navigation shortcuts (only active when task props are provided)
-        j: (e) => {
-          e.preventDefault();
-          onPreviousTask?.();
-        },
-        k: (e) => {
-          e.preventDefault();
-          onNextTask?.();
-        },
-        enter: (e) => {
-          e.preventDefault();
-          onCompleteTask?.();
-        },
-        escape: (e) => {
-          e.preventDefault();
-          navigate(ROOT_ROUTES.DAY);
-        },
-      }),
-      [navigate, onPreviousTask, onNextTask, onCompleteTask],
-    );
+  const handleTaskNavigation = useCallback(
+    (handler?: () => void) => {
+      if (!focusedTask || availableTasks.length === 0) return;
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      const key = e.key.toLowerCase();
-      const target = e.target as EventTarget | null;
-
-      // Don't intercept when typing in inputs
-      if (isEditable(target)) {
-        return;
-      }
-
-      // For task shortcuts (j, k), only handle if task props are provided and conditions are met
-      const isTaskShortcut = key === "j" || key === "k" || key === "enter";
-      if (isTaskShortcut) {
-        if (!focusedTask || availableTasks.length === 0) {
-          return;
-        }
-      }
-
-      const handler = handlers[key as NowViewShortcutKey];
-      if (handler) {
-        handler(e);
-      }
+      return handler;
     },
-    [handlers, focusedTask, availableTasks.length],
+    [focusedTask, availableTasks.length],
   );
 
-  useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleKeyDown]);
+  useKeyUpEvent({
+    combination: ["d"],
+    handler: () =>
+      compassEventEmitter.emit(CompassDOMEvents.FOCUS_TASK_DESCRIPTION),
+  });
+
+  useKeyDownEvent({
+    combination: ["Meta", "Enter"],
+    listenWhileEditing: true,
+    handler: () =>
+      compassEventEmitter.emit(CompassDOMEvents.SAVE_TASK_DESCRIPTION),
+  });
+
+  useKeyUpEvent({
+    combination: ["j"],
+    handler: handleTaskNavigation(onPreviousTask),
+    deps: [handleTaskNavigation, onPreviousTask],
+  });
+
+  useKeyUpEvent({
+    combination: ["k"],
+    handler: handleTaskNavigation(onNextTask),
+    deps: [handleTaskNavigation, onPreviousTask],
+  });
+
+  useKeyUpEvent({
+    combination: ["Enter"],
+    handler: handleTaskNavigation(onCompleteTask),
+    deps: [handleTaskNavigation, onCompleteTask],
+  });
+
+  useKeyDownEvent({
+    combination: ["Escape"],
+    deps: [navigate],
+    handler: () => navigate(ROOT_ROUTES.DAY),
+  });
+
+  useKeyUpEvent({
+    combination: ["Esc"],
+    deps: [navigate],
+    handler: () => navigate(ROOT_ROUTES.DAY),
+  });
 }

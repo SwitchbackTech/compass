@@ -1,3 +1,4 @@
+import { StringV4Schema } from "@core/types/type.utils";
 import { ID_ADD_TASK_BUTTON } from "@web/common/constants/web.constants";
 
 export const isFocusedOnTaskCheckbox = () => {
@@ -5,7 +6,7 @@ export const isFocusedOnTaskCheckbox = () => {
   const activeElement = document.activeElement as HTMLElement | null;
   const isTaskButton =
     activeElement?.getAttribute("role") === "checkbox" &&
-    activeElement?.dataset?.taskId;
+    StringV4Schema.safeParse(activeElement?.dataset?.taskId).success;
   return isTaskButton;
 };
 
