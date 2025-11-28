@@ -216,12 +216,12 @@ describe("shortcut.util", () => {
       expect(icon).toHaveAttribute("height", customSize.toString());
     });
 
-    it("should apply custom size to text spans via className", () => {
+    it("should apply custom size to text spans", () => {
       const customSize = 18;
       render(<ShortCutLabel k="a" size={customSize} />);
 
       const textSpan = screen.getByText("a");
-      expect(textSpan).toHaveClass(`font-${customSize}`);
+      expect(textSpan).toHaveStyle(`font-size: ${customSize}px`);
     });
 
     it("should use default size of 14 when not specified", () => {

@@ -1,13 +1,13 @@
 import React from "react";
 import styled from "styled-components";
-import { ArrowRight } from "@phosphor-icons/react";
-import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
+import { ArrowRightIcon } from "@phosphor-icons/react";
+import { getMetaKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
 import { Text } from "@web/components/Text";
 import MenuItem from "@web/views/Forms/ActionsMenu/MenuItem";
 
-const StyledArrowRight = styled(ArrowRight)`
-  width: 16px;
-  height: 16px;
+const StyledArrowRight = styled(ArrowRightIcon)`
+  width: 14px;
+  height: 14px;
 `;
 
 interface Props {
@@ -28,11 +28,11 @@ export const MigrateForwardMenuButton: React.FC<Props> = ({
       bgColor={bgColor}
       tooltipContent={
         <Text size="s" style={{ display: "flex", alignItems: "center" }}>
-          CTRL + {getModifierKeyIcon()} + <StyledArrowRight />
+          CTRL + {getMetaKeyIcon({ size: 14 })} + <StyledArrowRight />
         </Text>
       }
     >
-      <ArrowRight size={16} />
+      <ArrowRightIcon size={14} />
       <span>{tooltipText}</span>
     </MenuItem>
   );

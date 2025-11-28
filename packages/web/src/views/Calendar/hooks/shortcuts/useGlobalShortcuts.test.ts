@@ -2,6 +2,7 @@ import { act } from "react";
 import { useNavigate } from "react-router-dom";
 import { configureStore } from "@reduxjs/toolkit";
 import { fireEvent } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { sagaMiddleware } from "@web/common/store/middlewares";
@@ -12,6 +13,11 @@ import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { reducers } from "@web/store/reducers";
 import { sagas } from "@web/store/sagas";
 import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
+import {
+  mockLinuxUserAgent,
+  mockMacOSUserAgent,
+  mockWindowsUserAgent,
+} from "../../../../__tests__/__mocks__/mock.setup";
 
 // Mock react-router-dom
 jest.mock("react-router-dom", () => ({
@@ -75,25 +81,30 @@ describe("useGlobalShortcuts", () => {
     );
   });
 
-  it(`should toggle command palette when '${getModifierKey()}+k' is pressed`, () => {
-    const store = createTestStore();
-    const dispatchSpy = jest.spyOn(store, "dispatch");
+  it.each([
+    { os: "Windows", mockFn: mockWindowsUserAgent },
+    { os: "Linux", mockFn: mockLinuxUserAgent },
+    { os: "MacOS", mockFn: mockMacOSUserAgent },
+  ])(
+    `should toggle command palette when '${getModifierKey()}+k' is pressed - $os`,
+    async ({ mockFn }) => {
+      const osSpy = mockFn();
+      const store = createTestStore();
+      const dispatchSpy = jest.spyOn(store, "dispatch");
 
-    act(() => renderHook(() => useGlobalShortcuts(), { store }));
+      act(() => renderHook(() => useGlobalShortcuts(), { store }));
 
-    const modifierKey = getModifierKey();
-    const isMetaKey = modifierKey === "Meta";
-    const modifierProps = isMetaKey ? { metaKey: true } : { ctrlKey: true };
+      await act(async () => {
+        await userEvent.keyboard(`{${getModifierKey()}>}{k}`);
+      });
 
-    act(() => {
-      fireEvent.keyDown(window, { key: modifierKey, ...modifierProps });
-      fireEvent.keyDown(window, { key: "k", ...modifierProps });
-    });
+      expect(dispatchSpy).toHaveBeenCalledWith(
+        settingsSlice.actions.toggleCmdPalette(),
+      );
 
-    expect(dispatchSpy).toHaveBeenCalledWith(
-      settingsSlice.actions.toggleCmdPalette(),
-    );
-  });
+      osSpy.mockRestore();
+    },
+  );
 
   it("should close command palette when 'Escape' is pressed", () => {
     const store = createTestStore();

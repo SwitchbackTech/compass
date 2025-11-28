@@ -141,6 +141,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     handler: onEscape,
   });
 
+  // firefox <36 support
   useKeyDownEvent({
     combination: ["Esc"],
     listenWhileEditing: true,
@@ -148,14 +149,16 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   });
 
   useKeyDownEvent({
-    combination: [getModifierKey(), "ArrowRight"],
+    combination: ["Control", "Meta", "ArrowRight"],
     exactMatch: false,
+    listenWhileEditing: true,
     handler: handleMigrationNavigation("forward"),
   });
 
   useKeyDownEvent({
-    combination: [getModifierKey(), "ArrowLeft"],
+    combination: ["Control", "Meta", "ArrowLeft"],
     exactMatch: false,
+    listenWhileEditing: true,
     handler: handleMigrationNavigation("backward"),
   });
 

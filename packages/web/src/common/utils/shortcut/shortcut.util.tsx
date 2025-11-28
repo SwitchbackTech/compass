@@ -1,4 +1,9 @@
-import { CommandIcon, ControlIcon, Icon } from "@phosphor-icons/react";
+import {
+  CommandIcon,
+  ControlIcon,
+  Icon,
+  WindowsLogoIcon,
+} from "@phosphor-icons/react";
 import { DesktopOS, getDesktopOS } from "@web/common/utils/device/device.util";
 
 const keyIconMap: Record<string, Icon> = {
@@ -17,7 +22,7 @@ export function ShortCutLabel({ k, size = 14 }: { k: string; size?: number }) {
     }
 
     return (
-      <span key={key} data-testid={testId} className={`font-${size}`}>
+      <span key={key} data-testid={testId} style={{ fontSize: `${size}px` }}>
         {key}
       </span>
     );
@@ -43,4 +48,17 @@ export const getModifierKeyIcon = ({ size = 14 }: { size?: number } = {}) => {
   const k = getModifierKey();
 
   return <ShortCutLabel k={k} size={size} />;
+};
+
+export const getMetaKeyIcon = ({ size = 14 }: { size?: number } = {}) => {
+  const desktopOS = getDesktopOS();
+  const testId = `${desktopOS?.toLowerCase()}-icon`;
+
+  switch (desktopOS) {
+    case DesktopOS.MacOS:
+      return <CommandIcon size={size} data-testid={testId} />;
+    case DesktopOS.Windows:
+    default:
+      return <WindowsLogoIcon size={size} data-testid={testId} />;
+  }
 };
