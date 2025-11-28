@@ -4,6 +4,7 @@ import {
   useKeyDownEvent,
   useKeyUpEvent,
 } from "@web/common/hooks/useKeyboardEvent";
+import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
@@ -46,7 +47,7 @@ export function useGlobalShortcuts() {
   });
 
   useKeyDownEvent({
-    combination: ["Meta", "k"],
+    combination: [getModifierKey(), "k"],
     deps: [dispatch],
     listenWhileEditing: true,
     handler: () => dispatch(settingsSlice.actions.toggleCmdPalette()),

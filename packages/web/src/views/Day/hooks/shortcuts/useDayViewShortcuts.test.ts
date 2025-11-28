@@ -2,40 +2,29 @@ import { act } from "react";
 import { fireEvent } from "@testing-library/react";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import { keyPressed } from "@web/common/utils/dom-events/event-emitter.util";
+import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
-import {
-  getFocusedTaskId,
-  isEditable,
-  isFocusedOnTaskCheckbox,
-  isFocusedWithinTask,
-} from "@web/views/Day/util/day.shortcut.util";
-
-// Mock react-toastify
-jest.mock("react-toastify", () => ({
-  toast: {
-    dismiss: jest.fn(),
-  },
-  ToastContainer: () => null,
-}));
 
 // Mock shortcut utility functions
 jest.mock("@web/views/Day/util/day.shortcut.util");
 
 describe("useDayViewShortcuts", () => {
-  const mockIsEditable = isEditable as jest.Mock;
-  const mockIsFocusedOnTaskCheckbox = isFocusedOnTaskCheckbox as jest.Mock;
-  const mockIsFocusedWithinTask = isFocusedWithinTask as jest.Mock;
-  const mockGetFocusedTaskId = getFocusedTaskId as jest.Mock;
+  const {
+    isEditable,
+    isFocusedOnTaskCheckbox,
+    isFocusedWithinTask,
+    getFocusedTaskId,
+  } = jest.requireMock("@web/views/Day/util/day.shortcut.util");
 
   beforeEach(() => {
     jest.clearAllMocks();
     keyPressed.next(null);
 
     // Set default mock implementations
-    mockIsEditable.mockReturnValue(false);
-    mockIsFocusedOnTaskCheckbox.mockReturnValue(false);
-    mockIsFocusedWithinTask.mockReturnValue(false);
-    mockGetFocusedTaskId.mockReturnValue(null);
+    isEditable.mockReturnValue(false);
+    isFocusedOnTaskCheckbox.mockReturnValue(false);
+    isFocusedWithinTask.mockReturnValue(false);
+    getFocusedTaskId.mockReturnValue(null);
   });
 
   afterEach(() => {
@@ -156,7 +145,7 @@ describe("useDayViewShortcuts", () => {
     const config = { ...defaultConfig };
     await act(() => renderHook(() => useDayViewShortcuts(config)));
 
-    mockIsEditable.mockReturnValue(true);
+    isEditable.mockReturnValue(true);
 
     const input = document.createElement("input");
     fireEvent.keyDown(input, { key: "u" });
@@ -169,7 +158,7 @@ describe("useDayViewShortcuts", () => {
     const config = { ...defaultConfig };
     await act(() => renderHook(() => useDayViewShortcuts(config)));
 
-    mockIsEditable.mockReturnValue(true);
+    isEditable.mockReturnValue(true);
 
     const textarea = document.createElement("textarea");
     fireEvent.keyDown(textarea, { key: "c" });
@@ -182,7 +171,7 @@ describe("useDayViewShortcuts", () => {
     const config = { ...defaultConfig };
     await act(() => renderHook(() => useDayViewShortcuts(config)));
 
-    mockIsEditable.mockReturnValue(true);
+    isEditable.mockReturnValue(true);
 
     const div = document.createElement("div");
     div.setAttribute("contenteditable", "true");
@@ -218,7 +207,7 @@ describe("useDayViewShortcuts", () => {
     const config = { ...defaultConfig, hasFocusedTask: true };
     await act(() => renderHook(() => useDayViewShortcuts(config)));
 
-    mockIsFocusedOnTaskCheckbox.mockReturnValue(true);
+    isFocusedOnTaskCheckbox.mockReturnValue(true);
 
     // Mock document.activeElement to be a task button
     const taskButton = document.createElement("button");
@@ -276,15 +265,17 @@ describe("useDayViewShortcuts", () => {
       await act(() => renderHook(() => useDayViewShortcuts(config)));
 
       // Mock utility functions to return task-focused state
-      mockIsFocusedWithinTask.mockReturnValue(true);
-      mockGetFocusedTaskId.mockReturnValue("task-123");
+      isFocusedWithinTask.mockReturnValue(true);
+      getFocusedTaskId.mockReturnValue("task-123");
 
-      fireEvent.keyDown(window, { key: "Control", ctrlKey: true });
-      fireEvent.keyDown(window, { key: "Meta", ctrlKey: true, metaKey: true });
+      const modifierKey = getModifierKey();
+      const isMetaKey = modifierKey === "Meta";
+      const modifierProps = isMetaKey ? { metaKey: true } : { ctrlKey: true };
+
+      fireEvent.keyDown(window, { key: modifierKey, ...modifierProps });
       fireEvent.keyDown(window, {
         key: "ArrowRight",
-        ctrlKey: true,
-        metaKey: true,
+        ...modifierProps,
       });
 
       expect(onMigrateTask).toHaveBeenCalledWith("task-123", "forward");
@@ -299,15 +290,17 @@ describe("useDayViewShortcuts", () => {
       await act(() => renderHook(() => useDayViewShortcuts(config)));
 
       // Mock utility functions to return task-focused state
-      mockIsFocusedWithinTask.mockReturnValue(true);
-      mockGetFocusedTaskId.mockReturnValue("task-456");
+      isFocusedWithinTask.mockReturnValue(true);
+      getFocusedTaskId.mockReturnValue("task-456");
 
-      fireEvent.keyDown(window, { key: "Control", ctrlKey: true });
-      fireEvent.keyDown(window, { key: "Meta", ctrlKey: true, metaKey: true });
+      const modifierKey = getModifierKey();
+      const isMetaKey = modifierKey === "Meta";
+      const modifierProps = isMetaKey ? { metaKey: true } : { ctrlKey: true };
+
+      fireEvent.keyDown(window, { key: modifierKey, ...modifierProps });
       fireEvent.keyDown(window, {
         key: "ArrowLeft",
-        ctrlKey: true,
-        metaKey: true,
+        ...modifierProps,
       });
 
       expect(onMigrateTask).toHaveBeenCalledWith("task-456", "backward");
@@ -356,18 +349,20 @@ describe("useDayViewShortcuts", () => {
       await act(() => renderHook(() => useDayViewShortcuts(config)));
 
       // Mock utility functions to return task-focused state
-      mockIsFocusedWithinTask.mockReturnValue(true);
-      mockGetFocusedTaskId.mockReturnValue("task-789");
+      isFocusedWithinTask.mockReturnValue(true);
+      getFocusedTaskId.mockReturnValue("task-789");
+
+      const modifierKey = getModifierKey();
+      const isMetaKey = modifierKey === "Meta";
+      const modifierProps = isMetaKey ? { metaKey: true } : { ctrlKey: true };
 
       const input = document.createElement("input");
       document.body.appendChild(input);
 
-      fireEvent.keyDown(input, { key: "Control", ctrlKey: true });
-      fireEvent.keyDown(input, { key: "Meta", ctrlKey: true, metaKey: true });
+      fireEvent.keyDown(input, { key: modifierKey, ...modifierProps });
       fireEvent.keyDown(input, {
         key: "ArrowRight",
-        ctrlKey: true,
-        metaKey: true,
+        ...modifierProps,
       });
 
       document.body.removeChild(input);
@@ -397,9 +392,13 @@ describe("useDayViewShortcuts", () => {
       };
       await act(() => renderHook(() => useDayViewShortcuts(config)));
 
-      fireEvent.keyDown(window, { key: "Meta", metaKey: true });
-      fireEvent.keyDown(window, { key: "z", metaKey: true });
-      fireEvent.keyUp(window, { key: "z", metaKey: true });
+      const modifierKey = getModifierKey();
+      const isMetaKey = modifierKey === "Meta";
+      const modifierProps = isMetaKey ? { metaKey: true } : { ctrlKey: true };
+
+      fireEvent.keyDown(window, { key: modifierKey, ...modifierProps });
+      fireEvent.keyDown(window, { key: "z", ...modifierProps });
+      fireEvent.keyUp(window, { key: "z", ...modifierProps });
 
       expect(onRestoreTask).toHaveBeenCalled();
     });
@@ -414,9 +413,13 @@ describe("useDayViewShortcuts", () => {
       };
       await act(() => renderHook(() => useDayViewShortcuts(config)));
 
-      fireEvent.keyDown(window, { key: "Meta", metaKey: true });
-      fireEvent.keyDown(window, { key: "z", metaKey: true });
-      fireEvent.keyUp(window, { key: "z", metaKey: true });
+      const modifierKey = getModifierKey();
+      const isMetaKey = modifierKey === "Meta";
+      const modifierProps = isMetaKey ? { metaKey: true } : { ctrlKey: true };
+
+      fireEvent.keyDown(window, { key: modifierKey, ...modifierProps });
+      fireEvent.keyDown(window, { key: "z", ...modifierProps });
+      fireEvent.keyUp(window, { key: "z", ...modifierProps });
 
       expect(onRestoreTask).toHaveBeenCalled();
       expect(mockToastDismiss).toHaveBeenCalledWith(undoToastId);
@@ -433,9 +436,13 @@ describe("useDayViewShortcuts", () => {
       };
       await act(() => renderHook(() => useDayViewShortcuts(config)));
 
-      fireEvent.keyDown(window, { key: "Meta", metaKey: true });
-      fireEvent.keyDown(window, { key: "Z", metaKey: true });
-      fireEvent.keyUp(window, { key: "Z", metaKey: true });
+      const modifierKey = getModifierKey();
+      const isMetaKey = modifierKey === "Meta";
+      const modifierProps = isMetaKey ? { metaKey: true } : { ctrlKey: true };
+
+      fireEvent.keyDown(window, { key: modifierKey, ...modifierProps });
+      fireEvent.keyDown(window, { key: "Z", ...modifierProps });
+      fireEvent.keyUp(window, { key: "Z", ...modifierProps });
 
       expect(onRestoreTask).toHaveBeenCalled();
     });
@@ -468,9 +475,13 @@ describe("useDayViewShortcuts", () => {
       };
       await act(() => renderHook(() => useDayViewShortcuts(config)));
 
-      fireEvent.keyDown(window, { key: "Meta", metaKey: true });
-      fireEvent.keyDown(window, { key: "z", metaKey: true });
-      fireEvent.keyUp(window, { key: "z", metaKey: true });
+      const modifierKey = getModifierKey();
+      const isMetaKey = modifierKey === "Meta";
+      const modifierProps = isMetaKey ? { metaKey: true } : { ctrlKey: true };
+
+      fireEvent.keyDown(window, { key: modifierKey, ...modifierProps });
+      fireEvent.keyDown(window, { key: "z", ...modifierProps });
+      fireEvent.keyUp(window, { key: "z", ...modifierProps });
 
       // Should call event restore, not task restore
       expect(onRestoreEvent).toHaveBeenCalled();
@@ -489,9 +500,13 @@ describe("useDayViewShortcuts", () => {
       };
       await act(() => renderHook(() => useDayViewShortcuts(config)));
 
-      fireEvent.keyDown(window, { key: "Control", ctrlKey: true });
-      fireEvent.keyDown(window, { key: "z", ctrlKey: true });
-      fireEvent.keyUp(window, { key: "z", ctrlKey: true });
+      const modifierKey = getModifierKey();
+      const isMetaKey = modifierKey === "Meta";
+      const modifierProps = isMetaKey ? { metaKey: true } : { ctrlKey: true };
+
+      fireEvent.keyDown(window, { key: modifierKey, ...modifierProps });
+      fireEvent.keyDown(window, { key: "z", ...modifierProps });
+      fireEvent.keyUp(window, { key: "z", ...modifierProps });
 
       expect(onRestoreEvent).toHaveBeenCalled();
       expect(mockToastDismiss).toHaveBeenCalledWith(eventUndoToastId);
@@ -510,9 +525,13 @@ describe("useDayViewShortcuts", () => {
       };
       await act(() => renderHook(() => useDayViewShortcuts(config)));
 
-      fireEvent.keyDown(window, { key: "Meta", metaKey: true });
-      fireEvent.keyDown(window, { key: "z", metaKey: true });
-      fireEvent.keyUp(window, { key: "z", metaKey: true });
+      const modifierKey = getModifierKey();
+      const isMetaKey = modifierKey === "Meta";
+      const modifierProps = isMetaKey ? { metaKey: true } : { ctrlKey: true };
+
+      fireEvent.keyDown(window, { key: modifierKey, ...modifierProps });
+      fireEvent.keyDown(window, { key: "z", ...modifierProps });
+      fireEvent.keyUp(window, { key: "z", ...modifierProps });
 
       // Should call task restore since no event undo exists
       expect(onRestoreTask).toHaveBeenCalled();

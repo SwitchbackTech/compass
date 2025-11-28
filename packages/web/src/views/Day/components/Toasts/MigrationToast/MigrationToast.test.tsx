@@ -1,74 +1,66 @@
-import { toast } from "react-toastify";
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { getMetaKeyText as mockGetMetaKeyText } from "@web/common/utils/shortcut/shortcut.util";
+import { getModifierKeyTestId } from "@web/common/utils/shortcut/shortcut.util";
 import { showMigrationToast } from "@web/views/Day/components/Toasts/MigrationToast/MigrationToast";
 
-// Mock the getMetaKey utility
-jest.mock("@web/common/utils/shortcut/shortcut.util", () => ({
-  ...jest.requireActual("@web/common/utils/shortcut/shortcut.util"),
-  getMetaKey: jest.fn(() => (
-    <span data-testid="meta-key">{mockGetMetaKeyText()}</span>
-  )),
-}));
-
 describe("MigrationToast", () => {
+  const { toast } = jest.requireMock("react-toastify");
   const mockOnNavigate = jest.fn();
   const mockOnUndo = jest.fn();
 
   describe("MigrationToastComponent", () => {
     it("renders forward migration message", () => {
-      (toast as unknown as jest.Mock).mockReturnValue("test-toast-id");
+      toast.mockReturnValue("test-toast-id");
 
       showMigrationToast("forward", mockOnNavigate, mockOnUndo);
 
-      const toastCall = (toast as unknown as jest.Mock).mock.calls[0][0];
+      const toastCall = toast.mock.calls[0][0];
       render(toastCall);
 
       expect(screen.getByText("Migrated forward.")).toBeInTheDocument();
     });
 
     it("renders backward migration message", () => {
-      (toast as unknown as jest.Mock).mockReturnValue("test-toast-id");
+      toast.mockReturnValue("test-toast-id");
 
       showMigrationToast("backward", mockOnNavigate, mockOnUndo);
 
-      const toastCall = (toast as unknown as jest.Mock).mock.calls[0][0];
+      const toastCall = toast.mock.calls[0][0];
       render(toastCall);
 
       expect(screen.getByText("Migrated backward.")).toBeInTheDocument();
     });
 
     it("displays undo hint with keyboard shortcut", () => {
-      (toast as unknown as jest.Mock).mockReturnValue("test-toast-id");
+      toast.mockReturnValue("test-toast-id");
 
       showMigrationToast("forward", mockOnNavigate, mockOnUndo);
 
-      const toastCall = (toast as unknown as jest.Mock).mock.calls[0][0];
+      const toastCall = toast.mock.calls[0][0];
       render(toastCall);
 
       expect(screen.getByText("Undo")).toBeInTheDocument();
       expect(screen.getByText("+ Z")).toBeInTheDocument();
-      expect(screen.getByTestId("meta-key")).toBeInTheDocument();
+      expect(screen.getByTestId(getModifierKeyTestId())).toBeInTheDocument();
     });
 
     it("displays navigate button", () => {
-      (toast as unknown as jest.Mock).mockReturnValue("test-toast-id");
+      toast.mockReturnValue("test-toast-id");
 
       showMigrationToast("forward", mockOnNavigate, mockOnUndo);
 
-      const toastCall = (toast as unknown as jest.Mock).mock.calls[0][0];
+      const toastCall = toast.mock.calls[0][0];
       render(toastCall);
 
       expect(screen.getByText("Go to day")).toBeInTheDocument();
     });
 
     it("calls onUndo when undo section is clicked", () => {
-      (toast as unknown as jest.Mock).mockReturnValue("test-toast-id");
+      toast.mockReturnValue("test-toast-id");
 
       showMigrationToast("forward", mockOnNavigate, mockOnUndo);
 
-      const toastCall = (toast as unknown as jest.Mock).mock.calls[0][0];
+      const toastCall = toast.mock.calls[0][0];
       render(toastCall);
 
       const undoButton = screen
@@ -81,13 +73,12 @@ describe("MigrationToast", () => {
 
     it("calls toast.dismiss with toast ID when undo is clicked", () => {
       const testToastId = "test-toast-id";
-      (toast as unknown as jest.Mock).mockReturnValue(testToastId);
+      toast.mockReturnValue(testToastId);
 
       showMigrationToast("forward", mockOnNavigate, mockOnUndo);
 
       // Get the updated component (second call to toast.update)
-      const updateCall = ((toast as unknown as jest.Mock).update as jest.Mock)
-        .mock.calls[0];
+      const updateCall = toast.update.mock.calls[0];
       const updatedComponent = updateCall[1].render;
       render(updatedComponent);
 
@@ -96,17 +87,15 @@ describe("MigrationToast", () => {
         .closest("button");
       fireEvent.click(undoButton!);
 
-      expect((toast as unknown as jest.Mock).dismiss).toHaveBeenCalledWith(
-        testToastId,
-      );
+      expect(toast.dismiss).toHaveBeenCalledWith(testToastId);
     });
 
     it("calls onNavigate when Go to day button is clicked", () => {
-      (toast as unknown as jest.Mock).mockReturnValue("test-toast-id");
+      toast.mockReturnValue("test-toast-id");
 
       showMigrationToast("forward", mockOnNavigate, mockOnUndo);
 
-      const toastCall = (toast as unknown as jest.Mock).mock.calls[0][0];
+      const toastCall = toast.mock.calls[0][0];
       render(toastCall);
 
       const navigateButton = screen.getByText("Go to day");
@@ -132,7 +121,7 @@ describe("MigrationToast", () => {
 
     it("returns toast ID", () => {
       const expectedId = "test-toast-id";
-      (toast as unknown as jest.Mock).mockReturnValue(expectedId);
+      toast.mockReturnValue(expectedId);
 
       const toastId = showMigrationToast("forward", mockOnNavigate, mockOnUndo);
 
@@ -141,16 +130,13 @@ describe("MigrationToast", () => {
 
     it("calls toast.update with the correct toast ID", () => {
       const testToastId = "test-toast-id";
-      (toast as unknown as jest.Mock).mockReturnValue(testToastId);
+      toast.mockReturnValue(testToastId);
 
       showMigrationToast("forward", mockOnNavigate, mockOnUndo);
 
-      expect((toast as unknown as jest.Mock).update).toHaveBeenCalledWith(
-        testToastId,
-        {
-          render: expect.any(Object),
-        },
-      );
+      expect(toast.update).toHaveBeenCalledWith(testToastId, {
+        render: expect.any(Object),
+      });
     });
   });
 });

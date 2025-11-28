@@ -1,34 +1,17 @@
+import { toast } from "react-toastify";
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { getMetaKeyText as mockGetMetaKeyText } from "@web/common/utils/shortcut/shortcut.util";
+import { getModifierKeyTestId } from "@web/common/utils/shortcut/shortcut.util";
 import {
   UndoDeleteToast,
   showUndoDeleteToast,
 } from "@web/views/Day/components/Toasts/UndoToast/UndoDeleteToast";
-
-jest.mock("react-toastify", () => ({
-  toast: jest.fn(),
-  dismiss: jest.fn(),
-  update: jest.fn(),
-}));
-
-// Mock the getMetaKey utility
-jest.mock("@web/common/utils/shortcut/shortcut.util", () => ({
-  ...jest.requireActual("@web/common/utils/shortcut/shortcut.util"),
-  getMetaKey: jest.fn(() => (
-    <span data-testid="meta-key">{mockGetMetaKeyText()}</span>
-  )),
-}));
 
 describe("UndoDeleteToast", () => {
   const mockOnRestore = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
-    // Mock toast methods
-    const { toast } = require("react-toastify");
-    toast.dismiss = jest.fn();
-    toast.update = jest.fn();
   });
 
   describe("UndoDeleteToastComponent", () => {
@@ -47,7 +30,7 @@ describe("UndoDeleteToast", () => {
       );
 
       expect(screen.getByText("+ Z")).toBeInTheDocument();
-      expect(screen.getByTestId("meta-key")).toBeInTheDocument();
+      expect(screen.getByTestId(getModifierKeyTestId())).toBeInTheDocument();
     });
 
     it("should call onRestore when clicked", () => {
@@ -62,7 +45,6 @@ describe("UndoDeleteToast", () => {
     });
 
     it("should call toast.dismiss with specific toast ID when clicked", () => {
-      const { toast } = require("react-toastify");
       const testToastId = "test-toast-id";
 
       render(
@@ -78,7 +60,7 @@ describe("UndoDeleteToast", () => {
 
   describe("showUndoDeleteToast", () => {
     it("should return toast ID", () => {
-      const { toast } = require("react-toastify");
+      const { toast } = jest.requireMock("react-toastify");
       toast.mockReturnValue("test-toast-id");
 
       const toastId = showUndoDeleteToast(mockOnRestore);
@@ -87,7 +69,7 @@ describe("UndoDeleteToast", () => {
     });
 
     it("should call toast.update with the correct toast ID", () => {
-      const { toast } = require("react-toastify");
+      const { toast } = jest.requireMock("react-toastify");
       toast.mockReturnValue("test-toast-id");
 
       showUndoDeleteToast(mockOnRestore);

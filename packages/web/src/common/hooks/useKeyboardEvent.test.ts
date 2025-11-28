@@ -1,6 +1,7 @@
 import { fireEvent } from "@testing-library/react";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import { useKeyboardEvent } from "@web/common/hooks/useKeyboardEvent";
+import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 
 // Mock isEditable
 jest.mock("@web/views/Day/util/day.shortcut.util", () => ({
@@ -66,13 +67,13 @@ describe("useKeyboardEvent", () => {
   it("should handle multi-key combinations", () => {
     renderHook(() =>
       useKeyboardEvent({
-        combination: ["Control", "a"],
+        combination: [getModifierKey(), "a"],
         handler: mockHandler,
         eventType: "keyup",
       }),
     );
 
-    fireEvent.keyDown(window, { key: "Control" });
+    fireEvent.keyDown(window, { key: getModifierKey() });
     fireEvent.keyDown(window, { key: "a", ctrlKey: true });
     fireEvent.keyUp(window, { key: "a", ctrlKey: true });
 

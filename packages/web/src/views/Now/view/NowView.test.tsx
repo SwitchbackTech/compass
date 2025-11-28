@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import { renderWithMemoryRouter } from "@web/__tests__/utils/providers/MemoryRouter";
-import { getMetaKeyText } from "@web/common/utils/shortcut/shortcut.util";
+import { getModifierKeyTestId } from "@web/common/utils/shortcut/shortcut.util";
 import { NowView } from "@web/views/Now/view/NowView";
 
 // Mock the useNowShortcuts hook
@@ -52,7 +52,10 @@ describe("NowView", () => {
 
     // Check that CMD+K shortcut is displayed
     expect(screen.getByText("Global")).toBeInTheDocument();
-    expect(screen.getByText(`${getMetaKeyText()}K`)).toBeInTheDocument();
+    expect(
+      screen.getAllByTestId(getModifierKeyTestId())[0],
+    ).toBeInTheDocument();
+    expect(screen.getAllByTestId("k-icon")[0]).toBeInTheDocument();
     expect(screen.getByText("Command Palette")).toBeInTheDocument();
   });
 

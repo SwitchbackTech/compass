@@ -1,9 +1,9 @@
 import React from "react";
 import styled from "styled-components";
 import { ArrowDown } from "@phosphor-icons/react";
-import { getMetaKey } from "@web/common/utils/shortcut/shortcut.util";
+import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
 import { Text } from "@web/components/Text";
-import MenuItem from "../ActionsMenu/MenuItem";
+import MenuItem from "@web/views/Forms/ActionsMenu/MenuItem";
 
 const StyledArrowDown = styled(ArrowDown)`
   width: 16px;
@@ -28,7 +28,7 @@ export const MigrateBelowMenuButton: React.FC<Props> = ({
       bgColor={bgColor}
       tooltipContent={
         <Text size="s" style={{ display: "flex", alignItems: "center" }}>
-          CTRL + {getMetaKey()} + <StyledArrowDown />
+          CTRL + {getModifierKeyIcon()} + <StyledArrowDown />
         </Text>
       }
     >
