@@ -27,9 +27,9 @@ import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
-import { DateCalcs } from "../grid/useDateCalcs";
-import { Util_Scroll } from "../grid/useScroll";
-import { WeekProps } from "../useWeek";
+import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { Util_Scroll } from "@web/views/Calendar/hooks/grid/useScroll";
+import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 
 export interface ShortcutProps {
   today: Dayjs;
@@ -41,7 +41,7 @@ export interface ShortcutProps {
   scrollUtil: Util_Scroll;
 }
 
-export const useShortcuts = ({
+export const useWeekShortcuts = ({
   today,
   dateCalcs,
   isCurrentWeek,
@@ -93,7 +93,7 @@ export const useShortcuts = ({
 
     const _discardDraft = () => {
       if (isEventFormOpen()) {
-        dispatch(draftSlice.actions.discard());
+        dispatch(draftSlice.actions.discard(undefined));
       }
     };
 

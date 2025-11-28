@@ -1,6 +1,7 @@
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
+import { render } from "@web/__tests__/__mocks__/mock.render";
 import { AuthenticatedLayout } from "./AuthenticatedLayout";
 
 // Mock useRefetch hook

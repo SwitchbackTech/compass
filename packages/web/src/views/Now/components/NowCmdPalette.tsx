@@ -1,34 +1,19 @@
-import { useEffect, useState } from "react";
-import CommandPalette, {
-  filterItems,
-  getItemIndex,
-  useHandleOpenCommandPalette,
-} from "react-cmdk";
+import { useState } from "react";
+import CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
-import { useNavigate } from "react-router-dom";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { onEventTargetVisibility } from "@web/common/utils/event/event-target-visibility.util";
-import { viewSlice } from "@web/ducks/events/slices/view.slice";
+import { pressKey } from "@web/common/utils/dom-events/event-emitter.util";
+import { onEventTargetVisibility } from "@web/common/utils/dom-events/event-target-visibility.util";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
 export const NowCmdPalette = () => {
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-
-  const _open = useAppSelector(selectIsCmdPaletteOpen);
-
-  const [open, setOpen] = useState<boolean>(false);
+  const open = useAppSelector(selectIsCmdPaletteOpen);
   const [page] = useState<"root">("root");
   const [search, setSearch] = useState("");
-
-  useEffect(() => {
-    setOpen(_open);
-  }, [_open]);
-
-  useHandleOpenCommandPalette(setOpen);
 
   const filteredItems = filterItems(
     [
@@ -40,21 +25,19 @@ export const NowCmdPalette = () => {
             id: "go-to-day",
             children: "Go to Day [2]",
             icon: "CalendarDaysIcon",
-            onClick: () => navigate(ROOT_ROUTES.DAY),
+            onClick: () => pressKey("2"),
           },
           {
             id: "go-to-week",
             children: "Go to Week [3]",
             icon: "CalendarIcon",
-            onClick: () => navigate(ROOT_ROUTES.ROOT),
+            onClick: () => pressKey("3"),
           },
           {
             id: "edit-reminder",
             children: `Edit Reminder [r]`,
             icon: "PencilSquareIcon",
-            onClick: onEventTargetVisibility(() =>
-              dispatch(viewSlice.actions.updateReminder(true)),
-            ),
+            onClick: onEventTargetVisibility(() => pressKey("r")),
           },
           {
             id: "redo-onboarding",
@@ -66,7 +49,7 @@ export const NowCmdPalette = () => {
             id: "log-out",
             children: "Log Out [z]",
             icon: "ArrowRightOnRectangleIcon",
-            onClick: () => navigate(ROOT_ROUTES.LOGOUT),
+            onClick: () => pressKey("z"),
           },
         ],
       },
@@ -78,10 +61,7 @@ export const NowCmdPalette = () => {
   return (
     <CommandPalette
       onChangeSearch={setSearch}
-      onChangeOpen={() => {
-        dispatch(settingsSlice.actions.closeCmdPalette());
-        setOpen(!open);
-      }}
+      onChangeOpen={() => dispatch(settingsSlice.actions.closeCmdPalette())}
       search={search}
       isOpen={open}
       page={page}

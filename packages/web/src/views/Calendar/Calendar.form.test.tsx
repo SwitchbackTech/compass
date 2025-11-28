@@ -8,6 +8,7 @@ import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
 import { findAndUpdateEventInPreloadedState } from "@web/__tests__/utils/state/store.test.util";
 import { CalendarView } from "@web/views/Calendar";
+import { AuthenticatedLayout } from "../../components/AuthenticatedLayout/AuthenticatedLayout";
 import { freshenEventStartEndDate } from "./calendar.render.test.utils";
 
 // Mock IntersectionObserver for jsdom
@@ -34,7 +35,7 @@ jest.mock("@web/views/Calendar/hooks/mouse/useEventListener", () => ({
   useEventListener: jest.fn(),
 }));
 
-jest.mock("@web/common/utils/event/event-target-visibility.util", () => ({
+jest.mock("@web/common/utils/dom-events/event-target-visibility.util", () => ({
   onEventTargetVisibility:
     (callback: () => void, visible = false) =>
     (event: SyntheticEvent<Element, Event>) => {
@@ -44,7 +45,16 @@ jest.mock("@web/common/utils/event/event-target-visibility.util", () => ({
     },
 }));
 
-const router = createMemoryRouter([{ index: true, Component: CalendarView }], {
+function Component() {
+  return (
+    <>
+      <AuthenticatedLayout />
+      <CalendarView />
+    </>
+  );
+}
+
+const router = createMemoryRouter([{ index: true, Component }], {
   initialEntries: ["/"],
 });
 
@@ -161,7 +171,7 @@ describe("Event Form", () => {
       ).toBeInTheDocument();
 
       await act(async () => {
-        await user.keyboard("{Control>}k{/Control}");
+        await user.keyboard("{Meta>}k{/Meta}");
       });
 
       const cmdPaletteEditBtn = await screen.findByRole("button", {

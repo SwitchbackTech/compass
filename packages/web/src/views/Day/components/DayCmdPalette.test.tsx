@@ -1,9 +1,11 @@
 import { act } from "react";
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
+import { keyPressed } from "@web/common/utils/dom-events/event-emitter.util";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
+import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
 
 // Mock react-router-dom
@@ -28,21 +30,30 @@ global.window.open = mockWindowOpen;
 
 // Mock dispatch
 const mockDispatch = jest.fn();
+
+// Mock onEventTargetVisibility
+jest.mock("@web/common/utils/dom-events/event-target-visibility.util", () => ({
+  onEventTargetVisibility: (callback: () => void) => callback,
+}));
+
 jest.mock("@web/store/store.hooks", () => ({
   useAppDispatch: () => mockDispatch,
   useAppSelector: jest.requireActual("@web/store/store.hooks").useAppSelector,
 }));
 
-// Mock onEventTargetVisibility
-jest.mock("@web/common/utils/event/event-target-visibility.util", () => ({
-  onEventTargetVisibility: (callback: () => void) => callback,
-}));
+function Component() {
+  useGlobalShortcuts();
+
+  return <DayCmdPalette />;
+}
 
 describe("DayCmdPalette", () => {
   const mockNavigate = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
+    keyPressed.next(null);
+
     (require("react-router-dom").useNavigate as jest.Mock).mockReturnValue(
       mockNavigate,
     );
@@ -50,7 +61,7 @@ describe("DayCmdPalette", () => {
 
   it("renders navigation items when open", async () => {
     await act(() =>
-      render(<DayCmdPalette />, {
+      render(<Component />, {
         state: { settings: { isCmdPaletteOpen: true } },
       }),
     );
@@ -68,7 +79,7 @@ describe("DayCmdPalette", () => {
 
   it("does not render when closed", async () => {
     await act(() =>
-      render(<DayCmdPalette />, {
+      render(<Component />, {
         state: { settings: { isCmdPaletteOpen: false } },
       }),
     );
@@ -79,13 +90,13 @@ describe("DayCmdPalette", () => {
   it("closes the command palette when Escape key is pressed", async () => {
     const user = userEvent.setup();
     await act(() =>
-      render(<DayCmdPalette />, {
+      render(<Component />, {
         state: { settings: { isCmdPaletteOpen: true } },
       }),
     );
 
     // Simulate CMD+k key press to open
-    await user.keyboard("{Meta>}k{/Meta}");
+    await act(() => user.keyboard("{Meta>}k{/Meta}"));
 
     expect(screen.getByText("Navigation")).toBeInTheDocument();
 
@@ -100,12 +111,12 @@ describe("DayCmdPalette", () => {
   it("navigates to now when Go to Now is clicked", async () => {
     const user = userEvent.setup();
     await act(() =>
-      render(<DayCmdPalette />, {
+      render(<Component />, {
         state: { settings: { isCmdPaletteOpen: true } },
       }),
     );
 
-    await user.click(screen.getByText("Go to Now [1]"));
+    await act(() => user.click(screen.getByText("Go to Now [1]")));
 
     expect(mockNavigate).toHaveBeenCalledWith("/now");
   });
@@ -113,29 +124,36 @@ describe("DayCmdPalette", () => {
   it("navigates to week when Go to Week is clicked", async () => {
     const user = userEvent.setup();
     await act(() =>
-      render(<DayCmdPalette />, {
+      render(<Component />, {
         state: { settings: { isCmdPaletteOpen: true } },
       }),
     );
 
-    await user.click(screen.getByText("Go to Week [3]"));
+    await act(() => user.click(screen.getByText("Go to Week [3]")));
 
     expect(mockNavigate).toHaveBeenCalledWith("/");
   });
 
   it("dispatches updateReminder when Edit Reminder is clicked", async () => {
     const user = userEvent.setup();
+
     await act(() =>
-      render(<DayCmdPalette />, {
+      render(<Component />, {
         state: { settings: { isCmdPaletteOpen: true } },
       }),
     );
 
-    await user.click(screen.getByText("Edit Reminder [r]"));
+    const cmdPaletteEditBtn = await screen.findByRole("button", {
+      name: /edit reminder \[r\]/i,
+    });
 
-    expect(mockDispatch).toHaveBeenCalledWith(
-      viewSlice.actions.updateReminder(true),
-    );
+    await act(() => user.click(cmdPaletteEditBtn));
+
+    await waitFor(() => {
+      expect(mockDispatch).toHaveBeenCalledWith(
+        viewSlice.actions.updateReminder(true),
+      );
+    });
   });
 
   it("calls onGoToToday when Go to Today is clicked", async () => {
@@ -147,7 +165,9 @@ describe("DayCmdPalette", () => {
       }),
     );
 
-    await user.click(screen.getByText("Go to Today (Monday, November 24) [t]"));
+    await act(() =>
+      user.click(screen.getByText("Go to Today (Monday, November 24) [t]")),
+    );
 
     expect(mockOnGoToToday).toHaveBeenCalled();
   });
@@ -155,12 +175,12 @@ describe("DayCmdPalette", () => {
   it("opens onboarding in new tab when Re-do onboarding is clicked", async () => {
     const user = userEvent.setup();
     await act(() =>
-      render(<DayCmdPalette />, {
+      render(<Component />, {
         state: { settings: { isCmdPaletteOpen: true } },
       }),
     );
 
-    await user.click(screen.getByText("Re-do onboarding"));
+    await act(() => user.click(screen.getByText("Re-do onboarding")));
 
     expect(mockWindowOpen).toHaveBeenCalledWith("/onboarding", "_blank");
   });
@@ -168,12 +188,12 @@ describe("DayCmdPalette", () => {
   it("navigates to logout when Log Out is clicked", async () => {
     const user = userEvent.setup();
     await act(() =>
-      render(<DayCmdPalette />, {
+      render(<Component />, {
         state: { settings: { isCmdPaletteOpen: true } },
       }),
     );
 
-    await user.click(screen.getByText("Log Out [z]"));
+    await act(() => user.click(screen.getByText("Log Out [z]")));
 
     expect(mockNavigate).toHaveBeenCalledWith("/logout");
   });
@@ -181,7 +201,7 @@ describe("DayCmdPalette", () => {
   it("filters items based on search input", async () => {
     const user = userEvent.setup();
     await act(() =>
-      render(<DayCmdPalette />, {
+      render(<Component />, {
         state: { settings: { isCmdPaletteOpen: true } },
       }),
     );

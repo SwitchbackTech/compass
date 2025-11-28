@@ -1,11 +1,15 @@
 import { toast } from "react-toastify";
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
+import { getMetaKeyText as mockGetMetaKeyText } from "@web/common/utils/shortcut/shortcut.util";
 import { showMigrationToast } from "@web/views/Day/components/Toasts/MigrationToast/MigrationToast";
 
 // Mock the getMetaKey utility
 jest.mock("@web/common/utils/shortcut/shortcut.util", () => ({
-  getMetaKey: jest.fn(() => <span data-testid="meta-key">⌘</span>),
+  ...jest.requireActual("@web/common/utils/shortcut/shortcut.util"),
+  getMetaKey: jest.fn(() => (
+    <span data-testid="meta-key">{mockGetMetaKeyText()}</span>
+  )),
 }));
 
 describe("MigrationToast", () => {

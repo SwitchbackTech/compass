@@ -1,0 +1,106 @@
+import { useNavigate } from "react-router-dom";
+import { configureStore } from "@reduxjs/toolkit";
+import { fireEvent } from "@testing-library/react";
+import { renderHook } from "@web/__tests__/__mocks__/mock.render";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { sagaMiddleware } from "@web/common/store/middlewares";
+import { viewSlice } from "@web/ducks/events/slices/view.slice";
+import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
+import { reducers } from "@web/store/reducers";
+import { sagas } from "@web/store/sagas";
+import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
+
+// Mock react-router-dom
+jest.mock("react-router-dom", () => ({
+  ...jest.requireActual("react-router-dom"),
+  useNavigate: jest.fn(),
+}));
+
+const mockNavigate = jest.fn();
+
+const createTestStore = () => {
+  const store = configureStore({
+    reducer: reducers,
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware().concat(sagaMiddleware),
+  });
+  sagaMiddleware.run(sagas);
+  return store;
+};
+
+describe("useGlobalShortcuts", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (useNavigate as jest.Mock).mockReturnValue(mockNavigate);
+  });
+
+  it("should navigate to NOW when '1' is pressed", () => {
+    renderHook(() => useGlobalShortcuts());
+    fireEvent.keyDown(window, { key: "1" });
+    fireEvent.keyUp(window, { key: "1" });
+    expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.NOW);
+  });
+
+  it("should navigate to DAY when '2' is pressed", () => {
+    renderHook(() => useGlobalShortcuts());
+    fireEvent.keyDown(window, { key: "2" });
+    fireEvent.keyUp(window, { key: "2" });
+    expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
+  });
+
+  it("should navigate to ROOT when '3' is pressed", () => {
+    renderHook(() => useGlobalShortcuts());
+    fireEvent.keyDown(window, { key: "3" });
+    fireEvent.keyUp(window, { key: "3" });
+    expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.ROOT);
+  });
+
+  it("should navigate to LOGOUT when 'z' is pressed", () => {
+    renderHook(() => useGlobalShortcuts());
+    fireEvent.keyDown(window, { key: "z" });
+    fireEvent.keyUp(window, { key: "z" });
+    expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.LOGOUT);
+  });
+
+  it("should open reminder when 'r' is pressed", () => {
+    const store = createTestStore();
+    // Spy on dispatch
+    const dispatchSpy = jest.spyOn(store, "dispatch");
+
+    renderHook(() => useGlobalShortcuts(), { store });
+
+    fireEvent.keyDown(window, { key: "r" });
+    fireEvent.keyUp(window, { key: "r" });
+
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      viewSlice.actions.updateReminder(true),
+    );
+  });
+
+  it("should toggle command palette when 'Meta+k' is pressed", () => {
+    const store = createTestStore();
+    const dispatchSpy = jest.spyOn(store, "dispatch");
+
+    renderHook(() => useGlobalShortcuts(), { store });
+
+    fireEvent.keyDown(window, { key: "Meta" });
+    fireEvent.keyDown(window, { key: "k", metaKey: true });
+
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      settingsSlice.actions.toggleCmdPalette(),
+    );
+  });
+
+  it("should close command palette when 'Escape' is pressed", () => {
+    const store = createTestStore();
+    const dispatchSpy = jest.spyOn(store, "dispatch");
+
+    renderHook(() => useGlobalShortcuts(), { store });
+
+    fireEvent.keyDown(window, { key: "Escape" });
+
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      settingsSlice.actions.closeCmdPalette(),
+    );
+  });
+});

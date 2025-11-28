@@ -1,6 +1,7 @@
 import React, {
   ForwardedRef,
   forwardRef,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useRef,
@@ -8,12 +9,13 @@ import React, {
 } from "react";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { ID_REMINDER_INPUT } from "@web/common/constants/web.constants";
+import { useKeyDownEvent } from "@web/common/hooks/useKeyboardEvent";
 import { theme } from "@web/common/styles/theme";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectReminder } from "@web/ducks/events/selectors/view.selectors";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { generateHandDrawnUnderline } from "./reminder-util";
+import { generateHandDrawnUnderline } from "@web/views/Calendar/components/Header/Reminder/reminder-util";
 import {
   StyledCharCounter,
   StyledPlaceholderUnderline,
@@ -196,25 +198,30 @@ export const Reminder = forwardRef(
       }
     }, [reminder, isEditing]);
 
-    // Effect to handle ESC key
-    useEffect(() => {
-      const handleEscKey = (e: KeyboardEvent) => {
-        if (e.key === "Escape" && isEditing) {
-          setIsEditing(false);
-          // Save to localStorage on ESC
-          if (reminderRef.current) {
-            const value = reminderRef.current.textContent || "";
-            setReminder(value);
-            localStorage.setItem(STORAGE_KEYS.REMINDER, value);
-          }
+    const handleEscKey = useCallback(() => {
+      if (isEditing) {
+        setIsEditing(false);
+        // Save to localStorage on ESC
+        if (reminderRef.current) {
+          const value = reminderRef.current.textContent || "";
+          setReminder(value);
+          localStorage.setItem(STORAGE_KEYS.REMINDER, value);
         }
-      };
-
-      window.addEventListener("keydown", handleEscKey);
-      return () => {
-        window.removeEventListener("keydown", handleEscKey);
-      };
+      }
     }, [isEditing]);
+
+    // Effect to handle ESC key
+    useKeyDownEvent({
+      combination: ["Escape"],
+      listenWhileEditing: true,
+      handler: handleEscKey,
+    });
+
+    useKeyDownEvent({
+      combination: ["Esc"],
+      listenWhileEditing: true,
+      handler: handleEscKey,
+    });
 
     const handleReminderClick = () => {
       cursorPositionRef.current = null; // Reset cursor position

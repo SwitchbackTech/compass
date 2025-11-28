@@ -1,11 +1,6 @@
-import { useEffect, useState } from "react";
-import CommandPalette, {
-  filterItems,
-  getItemIndex,
-  useHandleOpenCommandPalette,
-} from "react-cmdk";
+import { useState } from "react";
+import CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
-import { useNavigate } from "react-router-dom";
 import {
   SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
@@ -13,23 +8,23 @@ import {
 import { Categories_Event } from "@core/types/event.types";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { pressKey } from "@web/common/utils/dom-events/event-emitter.util";
+import { onEventTargetVisibility } from "@web/common/utils/dom-events/event-target-visibility.util";
 import {
   createAlldayDraft,
   createTimedDraft,
 } from "@web/common/utils/draft/draft.util";
 import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
-import { onEventTargetVisibility } from "@web/common/utils/event/event-target-visibility.util";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
 } from "@web/ducks/events/selectors/someday.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { ShortcutProps } from "@web/views/Calendar/hooks/shortcuts/useShortcuts";
+import { ShortcutProps } from "@web/views/Calendar/hooks/shortcuts/useWeekShortcuts";
 
 const CmdPalette = ({
   today,
@@ -40,21 +35,11 @@ const CmdPalette = ({
   scrollUtil,
 }: ShortcutProps) => {
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
-  const _open = useAppSelector(selectIsCmdPaletteOpen);
-
-  const [open, setOpen] = useState<boolean>(false);
+  const open = useAppSelector(selectIsCmdPaletteOpen);
   const [page] = useState<"root" | "projects">("root");
   const [search, setSearch] = useState("");
-
-  useEffect(() => {
-    setOpen(_open);
-  }, [_open]);
-
-  useHandleOpenCommandPalette(setOpen);
 
   const handleCreateSomedayDraft = async (
     category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
@@ -135,9 +120,7 @@ const CmdPalette = ({
             id: "edit-reminder",
             children: `Edit Reminder [r]`,
             icon: "PencilSquareIcon",
-            onClick: onEventTargetVisibility(() =>
-              dispatch(viewSlice.actions.updateReminder(true)),
-            ),
+            onClick: onEventTargetVisibility(() => pressKey("r")),
           },
           {
             id: "today",
@@ -159,7 +142,7 @@ const CmdPalette = ({
             id: "log-out",
             children: "Log Out [z]",
             icon: "ArrowRightOnRectangleIcon",
-            onClick: () => navigate(ROOT_ROUTES.LOGOUT),
+            onClick: () => pressKey("z"),
           },
         ],
       },
@@ -171,10 +154,7 @@ const CmdPalette = ({
   return (
     <CommandPalette
       onChangeSearch={setSearch}
-      onChangeOpen={() => {
-        dispatch(settingsSlice.actions.closeCmdPalette());
-        setOpen(!open);
-      }}
+      onChangeOpen={() => dispatch(settingsSlice.actions.closeCmdPalette())}
       search={search}
       isOpen={open}
       page={page}
