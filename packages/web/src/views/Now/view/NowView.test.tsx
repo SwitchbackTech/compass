@@ -66,10 +66,15 @@ describe("NowView", () => {
     const mainElement = document.getElementById("mainSection");
     expect(mainElement).toBeInTheDocument();
     expect(mainElement).toHaveClass(
-      "flex-column",
+      "bg-bg-primary",
       "flex",
       "h-screen",
       "overflow-hidden",
+      "flex-1",
+      "flex-col",
+      "items-center",
+      "justify-center",
+      "p-8",
     );
   });
 });

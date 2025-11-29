@@ -33,7 +33,7 @@ describe("Tasks Tab Navigation", () => {
 
     // Verify the component renders without errors by checking for the container div
     await waitFor(() => {
-      const container = document.querySelector("#task-list-drop-zone");
+      const container = screen.getByRole("list", { name: "Task list" });
       expect(container).toBeInTheDocument();
     });
   });
@@ -62,9 +62,10 @@ describe("Tasks Keyboard Drag and Drop", () => {
     // Add only one task
     await addTasks(user, ["Single task"]);
 
-    // Verify no drag handles are rendered
-    const dragHandles = screen.queryAllByRole("button", { name: /Reorder/i });
-    expect(dragHandles.length).toBe(0);
+    // Verify drag handles are rendered but hidden
+    const dragHandles = screen.getAllByRole("button", { name: /Reorder/i });
+    expect(dragHandles.length).toBe(1);
+    expect(dragHandles[0]).toHaveClass("hidden");
   });
 
   it("should have focusable drag handles for keyboard navigation", async () => {
@@ -160,11 +161,13 @@ describe("Tasks Keyboard Drag and Drop", () => {
     expect(describedById).toBeTruthy();
 
     // Verify the description element exists and has correct text
-    const descriptionElement = document.getElementById(describedById!);
-    expect(descriptionElement).toBeInTheDocument();
-    expect(descriptionElement).toHaveTextContent(
+    const descriptionElements = screen.getAllByText(
       "Press space to start dragging this task.",
     );
+    const descriptionElement = descriptionElements.find(
+      (el) => el.id === describedById,
+    );
+    expect(descriptionElement).toBeInTheDocument();
     expect(descriptionElement).toHaveClass("hidden");
   });
 });

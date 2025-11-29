@@ -1,6 +1,4 @@
-import { ID_MAIN } from "@web/common/constants/web.constants";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
-import { FlexDirections } from "@web/components/Flex/styled";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { RootProps } from "@web/views/Calendar/calendarView.types";
@@ -81,7 +79,7 @@ export const CalendarView = () => {
                 />
               )}
             </ContextMenuWrapper>
-            <StyledCalendar direction={FlexDirections.COLUMN} id={ID_MAIN}>
+            <StyledCalendar>
               <Header
                 rootProps={rootProps}
                 scrollUtil={scrollUtil}

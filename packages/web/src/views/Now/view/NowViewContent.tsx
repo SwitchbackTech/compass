@@ -2,7 +2,7 @@ import { TaskSelector } from "@web/views/Now/components/TaskSelector/TaskSelecto
 
 export const NowViewContent = () => {
   return (
-    <div className="flex w-full items-center justify-center px-6 py-8">
+    <div className="flex w-full items-center justify-center p-8">
       <TaskSelector />
     </div>
   );
