@@ -66,7 +66,7 @@ export const Tasks = () => {
                       <button
                         {...draggableProvider.dragHandleProps}
                         className="hover:bg-border-primary flex cursor-grab items-center justify-center text-white transition-colors hover:scale-105 focus:bg-white/20 focus:ring-2 focus:ring-white/50 focus:outline-none active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
-                        aria-label={`Reorder ${task.title} button.`}
+                        aria-label={`Reorder ${task.title}`}
                         aria-describedby={`description-${task.id}`}
                         style={{
                           borderRadius: theme.shape.borderRadius,
