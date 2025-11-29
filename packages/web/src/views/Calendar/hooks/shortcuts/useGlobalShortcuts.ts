@@ -59,12 +59,4 @@ export function useGlobalShortcuts() {
     listenWhileEditing: true,
     handler: () => dispatch(settingsSlice.actions.closeCmdPalette()),
   });
-
-  // firefox 36 and below uses 'Esc' instead of 'Escape'
-  useKeyDownEvent({
-    combination: ["Esc"],
-    deps: [dispatch],
-    listenWhileEditing: true,
-    handler: () => dispatch(settingsSlice.actions.closeCmdPalette()),
-  });
 }

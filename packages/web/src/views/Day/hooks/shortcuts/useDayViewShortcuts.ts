@@ -141,13 +141,6 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     handler: onEscape,
   });
 
-  // firefox <36 support
-  useKeyDownEvent({
-    combination: ["Esc"],
-    listenWhileEditing: true,
-    handler: onEscape,
-  });
-
   useKeyDownEvent({
     combination: ["Control", "Meta", "ArrowRight"],
     exactMatch: false,
