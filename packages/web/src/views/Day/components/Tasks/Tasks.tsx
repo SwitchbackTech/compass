@@ -1,6 +1,6 @@
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import { DotsSixVerticalIcon } from "@phosphor-icons/react";
-import IconButton from "@web/components/IconButton/IconButton";
+import { theme } from "@web/common/styles/theme";
 import { getStyle } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEvent/styled";
 import { DropZone } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventsContainer/Dropzone";
 import { Task } from "@web/views/Day/components/Task/Task";
@@ -22,18 +22,23 @@ export const Tasks = () => {
     migrateTask,
   } = useTasks();
 
-  const { onDragStart, onDragEnd } = useDNDTasksContext();
+  const { onDragStart, onDragUpdate, onDragEnd } = useDNDTasksContext();
 
   return (
-    <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
+    <DragDropContext
+      onDragStart={onDragStart}
+      onDragUpdate={onDragUpdate}
+      onDragEnd={onDragEnd}
+      dragHandleUsageInstructions="use arrow keys to move, space to drop, or escape to cancel. Ensure your screen reader is in focus mode or forms mode"
+    >
       <Droppable droppableId="task-list">
-        {(provided, snapshot) => (
+        {(droppableProvider, droppableSnapshot) => (
           <DropZone
             id="task-list-drop-zone"
             className="flex flex-col gap-2"
-            ref={provided.innerRef}
-            isActive={snapshot.isDraggingOver}
-            {...provided.droppableProps}
+            ref={droppableProvider.innerRef}
+            isActive={droppableSnapshot.isDraggingOver}
+            {...droppableProvider.droppableProps}
           >
             {tasks.map((task, index) => (
               <Draggable
@@ -41,28 +46,35 @@ export const Tasks = () => {
                 draggableId={task.id}
                 index={index}
                 isDragDisabled={tasks.length === 1}
+                disableInteractiveElementBlocking
               >
-                {(provided, snapshot) => (
+                {(draggableProvider, draggableSnapshot) => (
                   <div
-                    {...provided.draggableProps}
-                    ref={provided.innerRef}
+                    {...draggableProvider.draggableProps}
+                    ref={draggableProvider.innerRef}
                     className={tasks.length > 1 ? "flex flex-row gap-2" : ""}
                     style={{
                       userSelect: "none",
                       ...getStyle(
-                        snapshot,
+                        draggableSnapshot,
                         false,
-                        provided.draggableProps.style,
+                        draggableProvider.draggableProps.style,
                       ),
                     }}
                   >
                     {tasks.length > 1 ? (
-                      <IconButton
-                        {...provided.dragHandleProps}
-                        aria-label={`Reorder ${task.title}. Press space to start dragging, use arrow keys to move, space to drop, or escape to cancel.`}
+                      <button
+                        {...draggableProvider.dragHandleProps}
+                        className="hover:bg-border-primary flex cursor-grab items-center justify-center text-white transition-colors hover:scale-105 focus:bg-white/20 focus:ring-2 focus:ring-white/50 focus:outline-none active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                        aria-label={`Reorder ${task.title} button.`}
+                        aria-describedby={`description-${task.id}`}
+                        style={{
+                          borderRadius: theme.shape.borderRadius,
+                          border: "2px solid transparent",
+                        }}
                       >
                         <DotsSixVerticalIcon />
-                      </IconButton>
+                      </button>
                     ) : null}
 
                     <Task
@@ -82,12 +94,15 @@ export const Tasks = () => {
                         editingTaskId === task.id ? editingTitle : task.title
                       }
                     />
+                    <div id={`description-${task.id}`} className="hidden">
+                      Press space to start dragging this task.
+                    </div>
                   </div>
                 )}
               </Draggable>
             ))}
 
-            {provided.placeholder}
+            {droppableProvider.placeholder}
           </DropZone>
         )}
       </Droppable>

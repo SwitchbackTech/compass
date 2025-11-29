@@ -154,4 +154,29 @@ describe("Tasks Keyboard Drag and Drop", () => {
     // The Escape key behavior is provided by @hello-pangea/dnd's keyboard sensor
     // and should be tested in E2E tests.
   });
+
+  it("should have accessible description for drag handles", async () => {
+    const { user } = renderWithDayProviders(<TaskList />);
+
+    // Add multiple tasks
+    await addTasks(user, ["First task", "Second task"]);
+
+    // Find drag handles
+    const dragHandles = document.querySelectorAll(
+      "[data-rfd-drag-handle-draggable-id]",
+    );
+    const firstDragHandle = dragHandles[0] as HTMLElement;
+
+    // Verify drag handle has aria-describedby
+    const describedById = firstDragHandle.getAttribute("aria-describedby");
+    expect(describedById).toBeTruthy();
+
+    // Verify the description element exists and has correct text
+    const descriptionElement = document.getElementById(describedById!);
+    expect(descriptionElement).toBeInTheDocument();
+    expect(descriptionElement).toHaveTextContent(
+      "Press space to start dragging this task.",
+    );
+    expect(descriptionElement).toHaveClass("hidden");
+  });
 });
