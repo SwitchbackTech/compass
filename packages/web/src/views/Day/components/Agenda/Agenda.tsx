@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef } from "react";
 import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
-import { AgendaEvents } from "./Events/AgendaEvent/AgendaEvents";
-import { AllDayAgendaEvents } from "./Events/AllDayAgendaEvent/AllDayAgendaEvents";
-import { NowLine } from "./NowLine/NowLine";
-import { TimeLabels } from "./TimeLabels/TimeLabels";
+import { AgendaEvents } from "@web/views/Day/components/Agenda/Events/AgendaEvent/AgendaEvents";
+import { AllDayAgendaEvents } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/AllDayAgendaEvents";
+import { NowLine } from "@web/views/Day/components/Agenda/NowLine/NowLine";
+import { TimeLabels } from "@web/views/Day/components/Agenda/TimeLabels/TimeLabels";
 
 interface AgendaProps {
   onScrollToNowLineReady?: (scrollToNowLine: () => void) => void;
@@ -41,7 +41,7 @@ export const Agenda = ({ onScrollToNowLineReady }: AgendaProps) => {
   return (
     <section
       aria-label="calendar-agenda"
-      className="bg-darkBlue-400 flex h-full min-w-xs flex-col"
+      className="bg-darkBlue-400 flex h-full min-w-xs flex-1 flex-col"
     >
       <AllDayAgendaEvents allDayEvents={allDayEvents} />
       <div

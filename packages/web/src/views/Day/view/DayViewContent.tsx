@@ -1,8 +1,6 @@
 import { useCallback, useRef } from "react";
 import dayjs from "@core/util/date/dayjs";
-import { ID_MAIN } from "@web/common/constants/web.constants";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
-import { FlexDirections } from "@web/components/Flex/styled";
 import { ShortcutsOverlay } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
 import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
@@ -122,15 +120,11 @@ export const DayViewContent = () => {
   return (
     <>
       <DayCmdPalette onGoToToday={handleGoToToday} />
-      <StyledCalendar
-        direction={FlexDirections.COLUMN}
-        id={ID_MAIN}
-        className="flex-column flex overflow-hidden"
-      >
+      <StyledCalendar>
         <Header />
 
         <div
-          className={`flex flex-1 gap-8 self-center overflow-hidden px-6 py-8`}
+          className={`flex max-w-4/7 min-w-4/7 flex-1 justify-center gap-8 self-center overflow-hidden`}
         >
           <TaskList />
 
