@@ -1,4 +1,5 @@
 import { Schema_Event } from "@core/types/event.types";
+import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { MINUTES_PER_SLOT, SLOT_HEIGHT } from "../../constants/day.constants";
 
 export const getAgendaEventTitle = (event: Schema_Event) =>
@@ -26,4 +27,25 @@ export const getNowLinePosition = (date: Date) => {
   const hours = date.getHours();
   const minutes = date.getMinutes();
   return (hours * 4 + minutes / MINUTES_PER_SLOT) * SLOT_HEIGHT;
+};
+
+// Get time (Date) from Y position on the agenda grid, snapped to 15-minute slots
+export const getTimeFromPosition = (
+  yPosition: number,
+  dateInView: Dayjs,
+): Date => {
+  // Calculate which slot the position corresponds to
+  const slot = Math.floor(yPosition / SLOT_HEIGHT);
+  const hours = Math.floor(slot / 4);
+  const minutes = (slot % 4) * MINUTES_PER_SLOT;
+
+  // Clamp hours to valid range (0-23)
+  const clampedHours = Math.max(0, Math.min(23, hours));
+  const clampedMinutes = clampedHours === 23 ? Math.min(45, minutes) : minutes;
+
+  return dateInView
+    .startOf("day")
+    .hour(clampedHours)
+    .minute(clampedMinutes)
+    .toDate();
 };
