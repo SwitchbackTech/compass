@@ -101,11 +101,11 @@ describe("DraggableTask", () => {
 
     renderDraggableTask(mockTask, 0, tasksProps);
 
-    const dragHandle = screen.queryByRole("button", {
+    const dragHandle = screen.getByRole("button", {
       name: /Reorder Test Task/i,
     });
 
-    expect(dragHandle).not.toBeInTheDocument();
+    expect(dragHandle).toHaveClass("hidden");
   });
 
   it("should have accessible description", () => {
@@ -116,9 +116,10 @@ describe("DraggableTask", () => {
     const descriptionId = dragHandle.getAttribute("aria-describedby");
     expect(descriptionId).toBe(`description-${mockTask.id}`);
 
-    const description = document.getElementById(descriptionId!);
-    expect(description).toHaveTextContent(
+    const description = screen.getByText(
       "Press space to start dragging this task.",
     );
+    expect(description).toBeInTheDocument();
+    expect(description.id).toBe(descriptionId);
   });
 });
