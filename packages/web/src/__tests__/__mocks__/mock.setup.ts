@@ -1,6 +1,28 @@
 import { createElement } from "react";
 import { mockModule } from "@core/__tests__/mock.setup";
 
+export function mockUserAgent(userAgent: string) {
+  return jest
+    .spyOn(window.navigator, "userAgent", "get")
+    .mockReturnValue(userAgent);
+}
+
+export function mockWindowsUserAgent() {
+  return mockUserAgent(
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+  );
+}
+
+export function mockMacOSUserAgent() {
+  return mockUserAgent(
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+  );
+}
+
+export function mockLinuxUserAgent() {
+  return mockUserAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36");
+}
+
 export function mockUseGoogleLogin() {
   mockModule("@web/components/oauth/google/useGoogleLogin", () => ({
     useGoogleLogin: jest.fn(),

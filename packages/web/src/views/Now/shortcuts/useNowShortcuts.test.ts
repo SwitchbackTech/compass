@@ -1,9 +1,11 @@
 import { act } from "react";
 import { useNavigate } from "react-router-dom";
-import { fireEvent } from "@testing-library/react";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import { Task } from "@web/common/types/task.types";
-import { keyPressed } from "@web/common/utils/dom-events/event-emitter.util";
+import {
+  keyPressed,
+  pressKey,
+} from "@web/common/utils/dom-events/event-emitter.util";
 import { useNowShortcuts } from "@web/views/Now/shortcuts/useNowShortcuts";
 
 // Mock react-router-dom
@@ -53,8 +55,7 @@ describe("useNowShortcuts", () => {
     it("should navigate to Day when 'Escape' is pressed", async () => {
       await act(() => renderHook(useNowShortcuts));
 
-      fireEvent.keyDown(window, { key: "Escape" });
-      // Escape is useKeyDownEvent
+      pressKey("Escape");
 
       expect(mockNavigate).toHaveBeenCalledWith("/day");
     });
@@ -62,8 +63,7 @@ describe("useNowShortcuts", () => {
     it("should not handle unknown keys", async () => {
       await act(() => renderHook(useNowShortcuts));
 
-      fireEvent.keyDown(window, { key: "x" });
-      fireEvent.keyUp(window, { key: "x" });
+      pressKey("x");
 
       expect(mockNavigate).not.toHaveBeenCalled();
     });
@@ -79,100 +79,79 @@ describe("useNowShortcuts", () => {
     };
 
     it("should call onPreviousTask when 'j' is pressed", () => {
-      const props = { ...defaultProps };
-      renderHook(() => useNowShortcuts(props));
+      renderHook(() => useNowShortcuts(defaultProps));
 
-      fireEvent.keyDown(window, { key: "j" });
-      fireEvent.keyUp(window, { key: "j" });
+      pressKey("j");
 
-      expect(props.onPreviousTask).toHaveBeenCalled();
+      expect(defaultProps.onPreviousTask).toHaveBeenCalled();
     });
 
     it("should call onNextTask when 'k' is pressed", () => {
-      const props = { ...defaultProps };
-      renderHook(() => useNowShortcuts(props));
+      renderHook(() => useNowShortcuts(defaultProps));
 
-      fireEvent.keyDown(window, { key: "k" });
-      fireEvent.keyUp(window, { key: "k" });
+      pressKey("k");
 
-      expect(props.onNextTask).toHaveBeenCalled();
+      expect(defaultProps.onNextTask).toHaveBeenCalled();
     });
 
     it("should handle case-insensitive key matching for 'j'", () => {
-      const props = { ...defaultProps };
-      renderHook(() => useNowShortcuts(props));
+      renderHook(() => useNowShortcuts(defaultProps));
 
-      fireEvent.keyDown(window, { key: "J" });
-      fireEvent.keyUp(window, { key: "J" });
+      pressKey("J");
 
-      expect(props.onPreviousTask).toHaveBeenCalled();
+      expect(defaultProps.onPreviousTask).toHaveBeenCalled();
     });
 
     it("should handle case-insensitive key matching for 'k'", () => {
-      const props = { ...defaultProps };
-      renderHook(() => useNowShortcuts(props));
+      renderHook(() => useNowShortcuts(defaultProps));
 
-      fireEvent.keyDown(window, { key: "K" });
-      fireEvent.keyUp(window, { key: "K" });
+      pressKey("K");
 
-      expect(props.onNextTask).toHaveBeenCalled();
+      expect(defaultProps.onNextTask).toHaveBeenCalled();
     });
 
     it("should not handle task shortcuts when there is no focused task", () => {
-      const props = {
-        ...defaultProps,
-        focusedTask: null,
-      };
+      const props = { ...defaultProps, focusedTask: null };
+
       renderHook(() => useNowShortcuts(props));
 
-      fireEvent.keyDown(window, { key: "j" });
-      fireEvent.keyUp(window, { key: "j" });
+      pressKey("j");
 
       expect(props.onPreviousTask).not.toHaveBeenCalled();
     });
 
     it("should not handle task shortcuts when there are no available tasks", () => {
-      const props = {
-        ...defaultProps,
-        availableTasks: [],
-      };
+      const props = { ...defaultProps, availableTasks: [] };
+
       renderHook(() => useNowShortcuts(props));
 
-      fireEvent.keyDown(window, { key: "k" });
-      fireEvent.keyUp(window, { key: "k" });
+      pressKey("k");
 
       expect(props.onNextTask).not.toHaveBeenCalled();
     });
 
     it("should handle task shortcuts when focusedTask exists and availableTasks has items", () => {
-      const props = { ...defaultProps };
-      renderHook(() => useNowShortcuts(props));
+      renderHook(() => useNowShortcuts(defaultProps));
 
-      fireEvent.keyDown(window, { key: "j" });
-      fireEvent.keyUp(window, { key: "j" });
+      pressKey("j");
 
-      expect(props.onPreviousTask).toHaveBeenCalled();
+      expect(defaultProps.onPreviousTask).toHaveBeenCalled();
     });
 
     it("should call onCompleteTask when 'Enter' is pressed", () => {
-      const props = { ...defaultProps };
-      renderHook(() => useNowShortcuts(props));
+      renderHook(() => useNowShortcuts(defaultProps));
 
-      fireEvent.keyDown(window, { key: "Enter" });
-      fireEvent.keyUp(window, { key: "Enter" });
+      pressKey("Enter");
 
-      expect(props.onCompleteTask).toHaveBeenCalled();
+      expect(defaultProps.onCompleteTask).toHaveBeenCalled();
     });
 
     it("should not handle Enter shortcut when there is no focused task", () => {
-      const props = {
-        ...defaultProps,
-        focusedTask: null,
-      };
+      const props = { ...defaultProps, focusedTask: null };
+
       renderHook(() => useNowShortcuts(props));
 
-      fireEvent.keyDown(window, { key: "Enter" });
-      fireEvent.keyUp(window, { key: "Enter" });
+      pressKey("Enter");
 
       expect(props.onCompleteTask).not.toHaveBeenCalled();
     });
@@ -188,43 +167,53 @@ describe("useNowShortcuts", () => {
     };
 
     it("should not handle shortcuts when typing in input elements", () => {
-      const props = { ...defaultProps };
-      renderHook(() => useNowShortcuts(props));
+      renderHook(() => useNowShortcuts(defaultProps));
 
       mockIsEditable.mockReturnValue(true);
 
       const input = document.createElement("input");
-      fireEvent.keyDown(input, { key: "j" });
-      fireEvent.keyUp(input, { key: "j" });
 
-      expect(props.onPreviousTask).not.toHaveBeenCalled();
+      document.body.appendChild(input);
+
+      input.focus();
+
+      pressKey("j");
+
+      expect(defaultProps.onPreviousTask).not.toHaveBeenCalled();
     });
 
     it("should not handle shortcuts when typing in textarea elements", () => {
-      const props = { ...defaultProps };
-      renderHook(() => useNowShortcuts(props));
+      renderHook(() => useNowShortcuts(defaultProps));
 
       mockIsEditable.mockReturnValue(true);
 
       const textarea = document.createElement("textarea");
-      fireEvent.keyDown(textarea, { key: "k" });
-      fireEvent.keyUp(textarea, { key: "k" });
 
-      expect(props.onNextTask).not.toHaveBeenCalled();
+      document.body.appendChild(textarea);
+
+      textarea.focus();
+
+      pressKey("k");
+
+      expect(defaultProps.onNextTask).not.toHaveBeenCalled();
     });
 
     it("should not handle shortcuts when typing in contenteditable elements", () => {
-      const props = { ...defaultProps };
-      renderHook(() => useNowShortcuts(props));
+      renderHook(() => useNowShortcuts(defaultProps));
 
       mockIsEditable.mockReturnValue(true);
 
       const div = document.createElement("div");
-      div.setAttribute("contenteditable", "true");
-      fireEvent.keyDown(div, { key: "j" });
-      fireEvent.keyUp(div, { key: "j" });
 
-      expect(props.onPreviousTask).not.toHaveBeenCalled();
+      div.setAttribute("contenteditable", "true");
+
+      document.body.appendChild(div);
+
+      div.focus();
+
+      pressKey("j");
+
+      expect(defaultProps.onPreviousTask).not.toHaveBeenCalled();
     });
   });
 });

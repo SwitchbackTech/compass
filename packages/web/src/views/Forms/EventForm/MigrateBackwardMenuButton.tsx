@@ -1,13 +1,13 @@
 import React from "react";
 import styled from "styled-components";
-import { ArrowLeft } from "@phosphor-icons/react";
-import { getMetaKey } from "@web/common/utils/shortcut/shortcut.util";
+import { ArrowLeftIcon } from "@phosphor-icons/react";
+import { getMetaKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
 import { Text } from "@web/components/Text";
-import MenuItem from "../ActionsMenu/MenuItem";
+import MenuItem from "@web/views/Forms/ActionsMenu/MenuItem";
 
-const StyledArrowLeft = styled(ArrowLeft)`
-  width: 16px;
-  height: 16px;
+const StyledArrowLeft = styled(ArrowLeftIcon)`
+  width: 14px;
+  height: 14px;
 `;
 
 interface Props {
@@ -28,11 +28,11 @@ export const MigrateBackwardMenuButton: React.FC<Props> = ({
       bgColor={bgColor}
       tooltipContent={
         <Text size="s" style={{ display: "flex", alignItems: "center" }}>
-          CTRL + {getMetaKey()} + <StyledArrowLeft />
+          CTRL + {getMetaKeyIcon({ size: 14 })} + <StyledArrowLeft />
         </Text>
       }
     >
-      <ArrowLeft size={16} />
+      <ArrowLeftIcon size={14} />
       <span>{tooltipText}</span>
     </MenuItem>
   );

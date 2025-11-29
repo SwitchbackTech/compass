@@ -1,31 +1,27 @@
-import { DesktopOS, getDesktopOS } from "./device.util";
-
-// Mock window.navigator.userAgent
-const mockUserAgent = (userAgent: string) => {
-  Object.defineProperty(window.navigator, "userAgent", {
-    writable: true,
-    value: userAgent,
-  });
-};
+import {
+  mockLinuxUserAgent,
+  mockMacOSUserAgent,
+  mockUserAgent,
+  mockWindowsUserAgent,
+} from "@web/__tests__/__mocks__/mock.setup";
+import { DesktopOS, getDesktopOS } from "@web/common/utils/device/device.util";
 
 describe("device.util", () => {
+  beforeEach(() => jest.restoreAllMocks());
+
   describe("getDesktopOS", () => {
     it("should return Windows for Windows user agent", () => {
-      mockUserAgent(
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-      );
+      mockWindowsUserAgent();
       expect(getDesktopOS()).toBe(DesktopOS.Windows);
     });
 
     it("should return MacOS for Mac user agent", () => {
-      mockUserAgent(
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-      );
+      mockMacOSUserAgent();
       expect(getDesktopOS()).toBe(DesktopOS.MacOS);
     });
 
     it("should return Linux for Linux user agent", () => {
-      mockUserAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36");
+      mockLinuxUserAgent();
       expect(getDesktopOS()).toBe(DesktopOS.Linux);
     });
 
@@ -40,16 +36,12 @@ describe("device.util", () => {
     });
 
     it("should prioritize Windows over other matches", () => {
-      mockUserAgent(
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Mac OS X 10_15_7",
-      );
+      mockWindowsUserAgent();
       expect(getDesktopOS()).toBe(DesktopOS.Windows);
     });
 
     it("should prioritize MacOS over Linux", () => {
-      mockUserAgent(
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Linux x86_64",
-      );
+      mockMacOSUserAgent();
       expect(getDesktopOS()).toBe(DesktopOS.MacOS);
     });
   });

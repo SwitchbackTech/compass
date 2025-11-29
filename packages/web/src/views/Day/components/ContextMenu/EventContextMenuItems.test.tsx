@@ -8,15 +8,8 @@ import {
   Schema_Event,
 } from "@core/types/event.types";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
-import { EventContextMenuProvider } from "./EventContextMenuContext";
-import { EventContextMenuItems } from "./EventContextMenuItems";
-
-// Mock toast
-jest.mock("react-toastify", () => ({
-  toast: {
-    dismiss: jest.fn(),
-  },
-}));
+import { EventContextMenuProvider } from "@web/views/Day/components/ContextMenu/EventContextMenuContext";
+import { EventContextMenuItems } from "@web/views/Day/components/ContextMenu/EventContextMenuItems";
 
 const mockEvent: Schema_Event = {
   _id: "event-1",

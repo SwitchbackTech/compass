@@ -1,9 +1,18 @@
+import { act } from "react";
 import { useNavigate } from "react-router-dom";
 import { configureStore } from "@reduxjs/toolkit";
 import { fireEvent } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
+import {
+  mockLinuxUserAgent,
+  mockMacOSUserAgent,
+  mockWindowsUserAgent,
+} from "@web/__tests__/__mocks__/mock.setup";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { sagaMiddleware } from "@web/common/store/middlewares";
+import { pressKey } from "@web/common/utils/dom-events/event-emitter.util";
+import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { reducers } from "@web/store/reducers";
@@ -36,29 +45,25 @@ describe("useGlobalShortcuts", () => {
 
   it("should navigate to NOW when '1' is pressed", () => {
     renderHook(() => useGlobalShortcuts());
-    fireEvent.keyDown(window, { key: "1" });
-    fireEvent.keyUp(window, { key: "1" });
+    pressKey("1");
     expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.NOW);
   });
 
   it("should navigate to DAY when '2' is pressed", () => {
     renderHook(() => useGlobalShortcuts());
-    fireEvent.keyDown(window, { key: "2" });
-    fireEvent.keyUp(window, { key: "2" });
+    pressKey("2");
     expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
   });
 
   it("should navigate to ROOT when '3' is pressed", () => {
     renderHook(() => useGlobalShortcuts());
-    fireEvent.keyDown(window, { key: "3" });
-    fireEvent.keyUp(window, { key: "3" });
+    pressKey("3");
     expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.ROOT);
   });
 
   it("should navigate to LOGOUT when 'z' is pressed", () => {
     renderHook(() => useGlobalShortcuts());
-    fireEvent.keyDown(window, { key: "z" });
-    fireEvent.keyUp(window, { key: "z" });
+    pressKey("z");
     expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.LOGOUT);
   });
 
@@ -69,35 +74,58 @@ describe("useGlobalShortcuts", () => {
 
     renderHook(() => useGlobalShortcuts(), { store });
 
-    fireEvent.keyDown(window, { key: "r" });
-    fireEvent.keyUp(window, { key: "r" });
+    pressKey("r");
 
     expect(dispatchSpy).toHaveBeenCalledWith(
       viewSlice.actions.updateReminder(true),
     );
   });
 
-  it("should toggle command palette when 'Meta+k' is pressed", () => {
-    const store = createTestStore();
-    const dispatchSpy = jest.spyOn(store, "dispatch");
+  it.each([
+    { os: "Windows", mockFn: mockWindowsUserAgent, modifier: "Control" },
+    { os: "Linux", mockFn: mockLinuxUserAgent, modifier: "Control" },
+    { os: "MacOS", mockFn: mockMacOSUserAgent, modifier: "Meta" },
+  ])(
+    `should toggle command palette when '$modifier+k' is pressed - $os`,
+    async ({ mockFn }) => {
+      const osSpy = mockFn();
+      const store = createTestStore();
+      const dispatchSpy = jest.spyOn(store, "dispatch");
 
-    renderHook(() => useGlobalShortcuts(), { store });
+      act(() => renderHook(() => useGlobalShortcuts(), { store }));
 
-    fireEvent.keyDown(window, { key: "Meta" });
-    fireEvent.keyDown(window, { key: "k", metaKey: true });
+      await act(async () => {
+        await userEvent.keyboard(`{${getModifierKey()}>}{k}`);
+      });
 
-    expect(dispatchSpy).toHaveBeenCalledWith(
-      settingsSlice.actions.toggleCmdPalette(),
-    );
-  });
+      expect(dispatchSpy).toHaveBeenCalledWith(
+        settingsSlice.actions.toggleCmdPalette(),
+      );
+
+      osSpy.mockRestore();
+    },
+  );
 
   it("should close command palette when 'Escape' is pressed", () => {
     const store = createTestStore();
     const dispatchSpy = jest.spyOn(store, "dispatch");
 
-    renderHook(() => useGlobalShortcuts(), { store });
+    act(() => renderHook(() => useGlobalShortcuts(), { store }));
 
-    fireEvent.keyDown(window, { key: "Escape" });
+    const modifierKey = getModifierKey();
+    const isMetaKey = modifierKey === "Meta";
+    const modifierProps = isMetaKey ? { metaKey: true } : { ctrlKey: true };
+
+    act(() => {
+      fireEvent.keyDown(window, { key: modifierKey, ...modifierProps });
+      fireEvent.keyDown(window, { key: "k", ...modifierProps });
+    });
+
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      settingsSlice.actions.toggleCmdPalette(),
+    );
+
+    act(() => pressKey("Escape"));
 
     expect(dispatchSpy).toHaveBeenCalledWith(
       settingsSlice.actions.closeCmdPalette(),

@@ -1,5 +1,5 @@
 import { DependencyList, useCallback, useEffect, useMemo } from "react";
-import { filter } from "rxjs/operators";
+import { filter, map } from "rxjs/operators";
 import {
   KeyCombination,
   globalOnKeyPressHandler,
@@ -69,12 +69,19 @@ export function useKeyboardEvent({
     [listenWhileEditing],
   );
 
+  const preventDefault = useCallback((combination: KeyCombination) => {
+    combination.event.preventDefault();
+
+    return combination;
+  }, []);
+
   useEffect(() => {
     if (!handler) return;
 
     const subscription = $event
       .pipe(filter(combinationFilter))
       .pipe(filter(listenFilter))
+      .pipe(map(preventDefault))
       .subscribe(handler);
 
     return () => subscription.unsubscribe();
@@ -82,6 +89,7 @@ export function useKeyboardEvent({
     $event,
     combinationFilter,
     listenFilter,
+    preventDefault,
     handler,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     ...(deps ?? []),
@@ -90,11 +98,8 @@ export function useKeyboardEvent({
 
 export function useSetupKeyEvents() {
   useEffect(() => {
-    window.addEventListener("keydown", globalOnKeyPressHandler, {
-      passive: true,
-    });
-
-    window.addEventListener("keyup", globalOnKeyUpHandler, { passive: true });
+    window.addEventListener("keydown", globalOnKeyPressHandler);
+    window.addEventListener("keyup", globalOnKeyUpHandler);
 
     return () => {
       window.removeEventListener("keydown", globalOnKeyPressHandler);

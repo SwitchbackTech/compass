@@ -3,6 +3,7 @@ import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { keyPressed } from "@web/common/utils/dom-events/event-emitter.util";
+import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
@@ -96,7 +97,9 @@ describe("DayCmdPalette", () => {
     );
 
     // Simulate CMD+k key press to open
-    await act(() => user.keyboard("{Meta>}k{/Meta}"));
+    await act(() =>
+      user.keyboard(`{${getModifierKey()}>}k{/${getModifierKey()}}`),
+    );
 
     expect(screen.getByText("Navigation")).toBeInTheDocument();
 
