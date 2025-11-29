@@ -63,11 +63,12 @@ export function pressKey(
     keyUpInit = {},
     keyDownInit = {},
   }: { keyUpInit?: KeyboardEventInit; keyDownInit?: KeyboardEventInit } = {},
+  target: Element | Node | Window | Document = window,
 ) {
-  window.dispatchEvent(
+  target.dispatchEvent(
     new KeyboardEvent("keydown", { ...keyDownInit, key, composed: true }),
   );
-  window.dispatchEvent(
+  target.dispatchEvent(
     new KeyboardEvent("keyup", { ...keyUpInit, key, composed: true }),
   );
 }

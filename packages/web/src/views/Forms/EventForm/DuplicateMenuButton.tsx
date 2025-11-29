@@ -1,8 +1,8 @@
 import React from "react";
 import { Copy } from "@phosphor-icons/react";
-import { getMetaKey } from "@web/common/utils/shortcut/shortcut.util";
+import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
 import { Text } from "@web/components/Text";
-import MenuItem from "../ActionsMenu/MenuItem";
+import MenuItem from "@web/views/Forms/ActionsMenu/MenuItem";
 
 interface Props {
   onClick: () => void;
@@ -22,7 +22,7 @@ export const DuplicateMenuButton: React.FC<Props> = ({
       bgColor={bgColor}
       tooltipContent={
         <Text size="s" style={{ display: "flex", alignItems: "center" }}>
-          {getMetaKey()} + D
+          {getModifierKeyIcon()} + D
         </Text>
       }
     >

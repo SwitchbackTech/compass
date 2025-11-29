@@ -1,13 +1,13 @@
 import React from "react";
 import styled from "styled-components";
-import { ArrowDown } from "@phosphor-icons/react";
-import { getMetaKey } from "@web/common/utils/shortcut/shortcut.util";
+import { ArrowDownIcon } from "@phosphor-icons/react";
+import { getMetaKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
 import { Text } from "@web/components/Text";
-import MenuItem from "../ActionsMenu/MenuItem";
+import MenuItem from "@web/views/Forms/ActionsMenu/MenuItem";
 
-const StyledArrowDown = styled(ArrowDown)`
-  width: 16px;
-  height: 16px;
+const StyledArrowDown = styled(ArrowDownIcon)`
+  width: 14px;
+  height: 14px;
 `;
 
 interface Props {
@@ -28,11 +28,11 @@ export const MigrateBelowMenuButton: React.FC<Props> = ({
       bgColor={bgColor}
       tooltipContent={
         <Text size="s" style={{ display: "flex", alignItems: "center" }}>
-          CTRL + {getMetaKey()} + <StyledArrowDown />
+          CTRL + {getMetaKeyIcon({ size: 14 })} + <StyledArrowDown />
         </Text>
       }
     >
-      <ArrowDown size={16} />
+      <ArrowDownIcon size={14} />
       <span>{tooltipText}</span>
     </MenuItem>
   );

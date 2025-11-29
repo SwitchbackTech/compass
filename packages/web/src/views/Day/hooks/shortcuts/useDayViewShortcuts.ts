@@ -4,6 +4,7 @@ import {
   useKeyDownEvent,
   useKeyUpEvent,
 } from "@web/common/hooks/useKeyboardEvent";
+import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import {
   getFocusedTaskId,
   isFocusedOnTaskCheckbox,
@@ -129,9 +130,10 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
 
   useKeyUpEvent({ combination: ["Enter"], handler: handleEnterKey });
 
-  useKeyUpEvent({ combination: ["Control", "z"], handler: handleRestore });
-
-  useKeyUpEvent({ combination: ["Meta", "z"], handler: handleRestore });
+  useKeyUpEvent({
+    combination: [getModifierKey(), "z"],
+    handler: handleRestore,
+  });
 
   useKeyDownEvent({
     combination: ["Escape"],
@@ -140,20 +142,16 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   });
 
   useKeyDownEvent({
-    combination: ["Esc"],
-    listenWhileEditing: true,
-    handler: onEscape,
-  });
-
-  useKeyDownEvent({
-    combination: ["Meta", "Control", "ArrowRight"],
+    combination: ["Control", "Meta", "ArrowRight"],
     exactMatch: false,
+    listenWhileEditing: true,
     handler: handleMigrationNavigation("forward"),
   });
 
   useKeyDownEvent({
-    combination: ["Meta", "Control", "ArrowLeft"],
+    combination: ["Control", "Meta", "ArrowLeft"],
     exactMatch: false,
+    listenWhileEditing: true,
     handler: handleMigrationNavigation("backward"),
   });
 

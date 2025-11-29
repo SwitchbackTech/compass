@@ -10,6 +10,7 @@ import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom-events/event-emitter.util";
+import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 
 interface Props {
   focusedTask?: Task | null;
@@ -50,7 +51,7 @@ export function useNowShortcuts(props?: Props) {
   });
 
   useKeyDownEvent({
-    combination: ["Meta", "Enter"],
+    combination: [getModifierKey(), "Enter"],
     listenWhileEditing: true,
     handler: () =>
       compassEventEmitter.emit(CompassDOMEvents.SAVE_TASK_DESCRIPTION),
