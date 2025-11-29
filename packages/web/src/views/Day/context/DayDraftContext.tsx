@@ -9,7 +9,7 @@ import {
   useFloating,
 } from "@floating-ui/react";
 import { Priorities } from "@core/constants/core.constants";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/auth.util";
 import { createEventSlice } from "@web/ducks/events/slices/event.slice";
@@ -129,22 +129,10 @@ export const DayDraftProvider = ({
 
   const submitDraft = useCallback(
     (event: Schema_Event) => {
-      dispatch(
-        createEventSlice.actions.request({
-          ...event,
-          recurrence: undefined,
-        }),
-      );
+      dispatch(createEventSlice.actions.request(event));
       closeForm();
     },
     [dispatch, closeForm],
-  );
-
-  const getFloatingProps = useCallback(
-    (props?: React.HTMLProps<HTMLElement>) => {
-      return { ...props };
-    },
-    [],
   );
 
   const value: DayDraftContextValue = {
@@ -156,7 +144,7 @@ export const DayDraftProvider = ({
       y,
       strategy,
       context,
-      getFloatingProps,
+      getFloatingProps: (props) => props ?? {},
     },
     openFormAtPosition,
     closeForm,
