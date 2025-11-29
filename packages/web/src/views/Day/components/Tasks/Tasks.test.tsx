@@ -52,9 +52,7 @@ describe("Tasks Keyboard Drag and Drop", () => {
 
     // Verify drag handles are rendered (the DotsSixVerticalIcon button)
     // The drag handle is an IconButton containing the DotsSixVerticalIcon
-    const dragHandles = document.querySelectorAll(
-      "[data-rfd-drag-handle-draggable-id]",
-    );
+    const dragHandles = screen.getAllByRole("button", { name: /Reorder/i });
     expect(dragHandles.length).toBe(2);
   });
 
@@ -65,9 +63,7 @@ describe("Tasks Keyboard Drag and Drop", () => {
     await addTasks(user, ["Single task"]);
 
     // Verify no drag handles are rendered
-    const dragHandles = document.querySelectorAll(
-      "[data-rfd-drag-handle-draggable-id]",
-    );
+    const dragHandles = screen.queryAllByRole("button", { name: /Reorder/i });
     expect(dragHandles.length).toBe(0);
   });
 
@@ -78,13 +74,11 @@ describe("Tasks Keyboard Drag and Drop", () => {
     await addTasks(user, ["First task", "Second task"]);
 
     // Find drag handles
-    const dragHandles = document.querySelectorAll(
-      "[data-rfd-drag-handle-draggable-id]",
-    );
+    const dragHandles = screen.getAllByRole("button", { name: /Reorder/i });
     expect(dragHandles.length).toBe(2);
 
     // Verify the first drag handle can receive focus
-    const firstDragHandle = dragHandles[0] as HTMLElement;
+    const firstDragHandle = dragHandles[0];
     await act(async () => {
       firstDragHandle.focus();
     });
@@ -104,10 +98,8 @@ describe("Tasks Keyboard Drag and Drop", () => {
     expect(checkboxes[2]).toHaveAttribute("aria-label", "Toggle Third task");
 
     // Find drag handles
-    const dragHandles = document.querySelectorAll(
-      "[data-rfd-drag-handle-draggable-id]",
-    );
-    const firstDragHandle = dragHandles[0] as HTMLElement;
+    const dragHandles = screen.getAllByRole("button", { name: /Reorder/i });
+    const firstDragHandle = dragHandles[0];
 
     // Verify drag handle has proper keyboard attributes for accessibility
     expect(firstDragHandle).toHaveAttribute("tabindex", "0");
@@ -141,10 +133,8 @@ describe("Tasks Keyboard Drag and Drop", () => {
     expect(checkboxes[1]).toHaveAttribute("aria-label", "Toggle Second task");
 
     // Find drag handles
-    const dragHandles = document.querySelectorAll(
-      "[data-rfd-drag-handle-draggable-id]",
-    );
-    const firstDragHandle = dragHandles[0] as HTMLElement;
+    const dragHandles = screen.getAllByRole("button", { name: /Reorder/i });
+    const firstDragHandle = dragHandles[0];
 
     // Verify drag handle has proper keyboard attributes
     expect(firstDragHandle).toHaveAttribute("tabindex", "0");
@@ -162,10 +152,8 @@ describe("Tasks Keyboard Drag and Drop", () => {
     await addTasks(user, ["First task", "Second task"]);
 
     // Find drag handles
-    const dragHandles = document.querySelectorAll(
-      "[data-rfd-drag-handle-draggable-id]",
-    );
-    const firstDragHandle = dragHandles[0] as HTMLElement;
+    const dragHandles = screen.getAllByRole("button", { name: /Reorder/i });
+    const firstDragHandle = dragHandles[0];
 
     // Verify drag handle has aria-describedby
     const describedById = firstDragHandle.getAttribute("aria-describedby");
