@@ -4,6 +4,11 @@ import { configureStore } from "@reduxjs/toolkit";
 import { fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
+import {
+  mockLinuxUserAgent,
+  mockMacOSUserAgent,
+  mockWindowsUserAgent,
+} from "@web/__tests__/__mocks__/mock.setup";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { pressKey } from "@web/common/utils/dom-events/event-emitter.util";
@@ -13,11 +18,6 @@ import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { reducers } from "@web/store/reducers";
 import { sagas } from "@web/store/sagas";
 import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
-import {
-  mockLinuxUserAgent,
-  mockMacOSUserAgent,
-  mockWindowsUserAgent,
-} from "../../../../__tests__/__mocks__/mock.setup";
 
 // Mock react-router-dom
 jest.mock("react-router-dom", () => ({
@@ -82,11 +82,11 @@ describe("useGlobalShortcuts", () => {
   });
 
   it.each([
-    { os: "Windows", mockFn: mockWindowsUserAgent },
-    { os: "Linux", mockFn: mockLinuxUserAgent },
-    { os: "MacOS", mockFn: mockMacOSUserAgent },
+    { os: "Windows", mockFn: mockWindowsUserAgent, modifier: "Control" },
+    { os: "Linux", mockFn: mockLinuxUserAgent, modifier: "Control" },
+    { os: "MacOS", mockFn: mockMacOSUserAgent, modifier: "Meta" },
   ])(
-    `should toggle command palette when '${getModifierKey()}+k' is pressed - $os`,
+    `should toggle command palette when '$modifier+k' is pressed - $os`,
     async ({ mockFn }) => {
       const osSpy = mockFn();
       const store = createTestStore();
