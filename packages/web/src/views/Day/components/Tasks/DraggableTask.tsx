@@ -40,7 +40,6 @@ export function DraggableTask({
 
   return (
     <Draggable
-      key={task.id}
       draggableId={task.id}
       index={index}
       isDragDisabled={tasks.length === 1}
