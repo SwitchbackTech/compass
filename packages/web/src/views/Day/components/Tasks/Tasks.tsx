@@ -29,7 +29,7 @@ export const Tasks = () => {
       onDragStart={onDragStart}
       onDragUpdate={onDragUpdate}
       onDragEnd={onDragEnd}
-      dragHandleUsageInstructions="use arrow keys to move, space to drop, or escape to cancel. Ensure your screen reader is in focus mode or forms mode"
+      dragHandleUsageInstructions="use arrow keys to move, space to drop, or escape to cancel"
     >
       <Droppable droppableId="task-list">
         {(droppableProvider, droppableSnapshot) => (
