@@ -87,13 +87,11 @@ export const Task = ({
       </div>
       <div className="ml-auto flex gap-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
         <ArrowButton
-          tabIndex={0}
           direction="left"
           label="Move task to previous day"
           onClick={() => onMigrate(task.id, "backward")}
         />
         <ArrowButton
-          tabIndex={0}
           direction="right"
           label="Move task to next day"
           onClick={() => onMigrate(task.id, "forward")}
