@@ -51,7 +51,7 @@ export function DNDTasksProvider({ children }: PropsWithChildren) {
         `Dropped task "${task.title}" at ${at} position${metaSuffix}.`,
       );
     },
-    [tasks, reorderTasks],
+    [tasks],
   );
 
   const onDragEnd = useCallback(
