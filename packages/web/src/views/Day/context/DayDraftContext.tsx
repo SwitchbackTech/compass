@@ -8,7 +8,7 @@ import {
   useDismiss,
   useFloating,
 } from "@floating-ui/react";
-import { Priorities } from "@core/constants/core.constants";
+import { Origin, Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/auth.util";
@@ -104,6 +104,7 @@ export const DayDraftProvider = ({
         isSomeday: false,
         user: userId,
         priority: Priorities.UNASSIGNED,
+        origin: Origin.COMPASS,
       };
 
       // Set the virtual reference element where the user clicked
