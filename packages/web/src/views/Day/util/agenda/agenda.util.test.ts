@@ -1,5 +1,6 @@
+import dayjs from "@core/util/date/dayjs";
 import { MINUTES_PER_SLOT, SLOT_HEIGHT } from "../../constants/day.constants";
-import { getNowLinePosition } from "./agenda.util";
+import { getNowLinePosition, getTimeFromPosition } from "./agenda.util";
 
 describe("agenda.util", () => {
   describe("getNowLinePosition", () => {
@@ -145,6 +146,71 @@ describe("agenda.util", () => {
       // 26 minutes / 60 minutes = 0.4333... ≈ 43%
       expect(percentage).toBeCloseTo(26 / 60, 2);
       expect(percentage).toBeCloseTo(0.4333, 2);
+    });
+  });
+
+  describe("getTimeFromPosition", () => {
+    const dateInView = dayjs("2024-01-15");
+
+    it("should calculate time at midnight (position 0)", () => {
+      const result = getTimeFromPosition(0, dateInView);
+      expect(result.getHours()).toBe(0);
+      expect(result.getMinutes()).toBe(0);
+    });
+
+    it("should calculate time at 1am (position 80px)", () => {
+      // 1 hour = 4 slots = 80px
+      const result = getTimeFromPosition(80, dateInView);
+      expect(result.getHours()).toBe(1);
+      expect(result.getMinutes()).toBe(0);
+    });
+
+    it("should calculate time at 12pm (position 960px)", () => {
+      // 12 hours = 48 slots = 960px
+      const result = getTimeFromPosition(960, dateInView);
+      expect(result.getHours()).toBe(12);
+      expect(result.getMinutes()).toBe(0);
+    });
+
+    it("should calculate time at 3:15pm (position 1220px)", () => {
+      // 15:15 = 61 slots = 1220px
+      const result = getTimeFromPosition(1220, dateInView);
+      expect(result.getHours()).toBe(15);
+      expect(result.getMinutes()).toBe(15);
+    });
+
+    it("should snap to 15-minute slots", () => {
+      // Position 1230 is between 15:15 (1220) and 15:30 (1240)
+      // Should snap to 15:15
+      const result = getTimeFromPosition(1230, dateInView);
+      expect(result.getHours()).toBe(15);
+      expect(result.getMinutes()).toBe(15);
+    });
+
+    it("should clamp to 23:45 at extreme positions", () => {
+      // Very large position should clamp to 23:45
+      const result = getTimeFromPosition(9999, dateInView);
+      expect(result.getHours()).toBe(23);
+      expect(result.getMinutes()).toBe(45);
+    });
+
+    it("should use the dateInView for the date portion", () => {
+      const specificDate = dayjs("2024-06-20");
+      const result = getTimeFromPosition(480, specificDate);
+      expect(result.getFullYear()).toBe(2024);
+      expect(result.getMonth()).toBe(5); // June (0-indexed)
+      expect(result.getDate()).toBe(20);
+    });
+
+    it("should be inverse of getAgendaEventPosition for slot-aligned times", () => {
+      // Test round-trip: position -> time -> position
+      const testPositions = [0, 80, 240, 480, 960, 1200, 1280, 1800];
+
+      for (const position of testPositions) {
+        const time = getTimeFromPosition(position, dateInView);
+        const resultPosition = getNowLinePosition(time);
+        expect(resultPosition).toBe(position);
+      }
     });
   });
 });
