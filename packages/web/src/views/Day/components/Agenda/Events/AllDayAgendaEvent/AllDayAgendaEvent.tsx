@@ -21,7 +21,7 @@ export const AllDayAgendaEvent = ({ event }: { event: Schema_Event }) => {
     <AgendaEventMenu>
       <AgendaEventMenuTrigger asChild>
         <div
-          className={`flex items-center rounded px-2 py-1 text-xs focus:ring-2 focus:ring-yellow-200 focus:outline-none ${
+          className={`flex items-center rounded px-2 py-1 text-xs last:mb-8 focus:ring-2 focus:ring-yellow-200 focus:outline-none ${
             shouldUseLightText ? "text-text-lighter" : "text-text-dark"
           } ${isPast ? "opacity-60" : ""}`}
           style={{ backgroundColor }}
