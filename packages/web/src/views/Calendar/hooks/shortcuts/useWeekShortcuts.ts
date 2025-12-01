@@ -1,15 +1,14 @@
-import { useEffect } from "react";
-import { useHotkeys } from "react-hotkeys-hook";
-import { useNavigate } from "react-router-dom";
-import { Key } from "ts-keycode-enum";
+import { useCallback } from "react";
 import {
   SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { Dayjs } from "@core/util/date/dayjs";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { ID_REMINDER_INPUT } from "@web/common/constants/web.constants";
+import {
+  useKeyDownEvent,
+  useKeyUpEvent,
+} from "@web/common/hooks/useKeyboardEvent";
 import {
   createAlldayDraft,
   createTimedDraft,
@@ -42,8 +41,6 @@ export interface ShortcutProps {
 }
 
 export const useWeekShortcuts = ({
-  today,
-  dateCalcs,
   isCurrentWeek,
   startOfView,
   endOfView,
@@ -52,22 +49,16 @@ export const useWeekShortcuts = ({
 }: ShortcutProps) => {
   const dispatch = useAppDispatch();
   const context = useSidebarContext(true);
-  const navigate = useNavigate();
 
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
   const tab = useAppSelector(selectSidebarTab);
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
+  const { decrementWeek, incrementWeek, goToToday } = util;
+  const { scrollToNow } = scrollUtil;
 
-  useHotkeys("shift+1", () => {
-    dispatch(viewSlice.actions.updateSidebarTab("tasks"));
-  });
-  useHotkeys("shift+2", () => {
-    dispatch(viewSlice.actions.updateSidebarTab("monthWidget"));
-  });
-
-  useEffect(() => {
-    const _createSomedayDraft = async (
+  const _createSomedayDraft = useCallback(
+    async (
       category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
     ) => {
       if (category === Categories_Event.SOMEDAY_WEEK && isAtWeeklyLimit) {
@@ -89,86 +80,73 @@ export const useWeekShortcuts = ({
       if (tab !== "tasks") {
         dispatch(viewSlice.actions.updateSidebarTab("tasks"));
       }
-    };
+    },
+    [context, isAtMonthlyLimit, isAtWeeklyLimit, isSidebarOpen, tab, dispatch],
+  );
 
-    const _discardDraft = () => {
-      if (isEventFormOpen()) {
-        dispatch(draftSlice.actions.discard(undefined));
-      }
-    };
+  const _discardDraft = useCallback(() => {
+    if (isEventFormOpen()) {
+      dispatch(draftSlice.actions.discard(undefined));
+    }
+  }, [dispatch]);
 
-    const keyDownHandler = (e: KeyboardEvent) => {
-      // Prevent shortcuts from triggering unexpectedly
-      if (isEventFormOpen()) return;
+  const openTasks = useCallback(() => {
+    dispatch(viewSlice.actions.updateSidebarTab("tasks"));
+  }, [dispatch]);
 
-      const isEditingHeader =
-        document.getElementById(ID_REMINDER_INPUT) !== null;
-      if (isEditingHeader) return;
+  const openMonthWidget = useCallback(() => {
+    dispatch(viewSlice.actions.updateSidebarTab("monthWidget"));
+  }, [dispatch]);
 
-      const isCmdPaletteOpen =
-        document.getElementById("headlessui-portal-root") !== null;
-      if (isCmdPaletteOpen) return;
+  const goToPreviousWeek = useCallback(() => {
+    _discardDraft();
+    decrementWeek();
+  }, [decrementWeek, _discardDraft]);
 
-      if (e.metaKey) return;
+  const toToday = useCallback(() => {
+    scrollToNow();
+    _discardDraft();
+    goToToday();
+  }, [scrollToNow, _discardDraft, goToToday]);
 
-      // map shortcuts to handler
-      const handlersByKey = {
-        [Key.OpenBracket]: () => dispatch(viewSlice.actions.toggleSidebar()),
-        [Key.C]: () =>
-          createTimedDraft(
-            isCurrentWeek,
-            startOfView,
-            "createShortcut",
-            dispatch,
-          ),
-        [Key.A]: () => {
-          createAlldayDraft(startOfView, endOfView, "createShortcut", dispatch);
-        },
-        [Key.T]: () => {
-          scrollUtil.scrollToNow();
-          _discardDraft();
-          util.goToToday();
-        },
-        [Key.J]: () => {
-          _discardDraft();
-          util.decrementWeek();
-        },
-        [Key.K]: () => {
-          _discardDraft();
-          util.incrementWeek();
-        },
-        [Key.M]: () => _createSomedayDraft(Categories_Event.SOMEDAY_MONTH),
-        [Key.W]: () => _createSomedayDraft(Categories_Event.SOMEDAY_WEEK),
-        [Key.Z]: () => {
-          navigate(ROOT_ROUTES.LOGOUT);
-        },
-      } as { [key: number]: () => void };
+  const gotToNextWeek = useCallback(() => {
+    _discardDraft();
+    incrementWeek();
+  }, [incrementWeek, _discardDraft]);
 
-      const handler = handlersByKey[e.which];
-      if (!handler) return;
+  const openSidebar = useCallback(
+    () => dispatch(viewSlice.actions.toggleSidebar()),
+    [dispatch],
+  );
 
-      setTimeout(handler);
-    };
+  const createAllDayDraftEvent = useCallback(() => {
+    createAlldayDraft(startOfView, endOfView, "createShortcut", dispatch);
+  }, [dispatch, startOfView, endOfView]);
 
-    document.addEventListener("keydown", keyDownHandler);
+  const createTimedDraftEvent = useCallback(
+    () =>
+      createTimedDraft(isCurrentWeek, startOfView, "createShortcut", dispatch),
+    [isCurrentWeek, startOfView, dispatch],
+  );
 
-    return () => {
-      document.removeEventListener("keydown", keyDownHandler);
-    };
-  }, [
-    dateCalcs,
-    dispatch,
-    today,
-    isAtMonthlyLimit,
-    isAtWeeklyLimit,
-    isCurrentWeek,
-    navigate,
-    startOfView,
-    endOfView,
-    scrollUtil,
-    util,
-    tab,
-    context,
-    isSidebarOpen,
-  ]);
+  const createSomedayMonthDraft = useCallback(() => {
+    _createSomedayDraft(Categories_Event.SOMEDAY_MONTH);
+  }, [_createSomedayDraft]);
+
+  const createSomedayWeekDraft = useCallback(() => {
+    _createSomedayDraft(Categories_Event.SOMEDAY_WEEK);
+  }, [_createSomedayDraft]);
+
+  useKeyDownEvent({ combination: ["Shift", "1"], handler: openTasks });
+  useKeyDownEvent({ combination: ["Shift", "2"], handler: openMonthWidget });
+  useKeyDownEvent({ combination: ["Shift", "!"], handler: openTasks });
+  useKeyDownEvent({ combination: ["Shift", "@"], handler: openMonthWidget });
+  useKeyUpEvent({ combination: ["["], handler: openSidebar });
+  useKeyUpEvent({ combination: ["j"], handler: goToPreviousWeek });
+  useKeyUpEvent({ combination: ["k"], handler: gotToNextWeek });
+  useKeyUpEvent({ combination: ["t"], handler: toToday });
+  useKeyUpEvent({ combination: ["a"], handler: createAllDayDraftEvent });
+  useKeyUpEvent({ combination: ["c"], handler: createTimedDraftEvent });
+  useKeyUpEvent({ combination: ["m"], handler: createSomedayMonthDraft });
+  useKeyUpEvent({ combination: ["w"], handler: createSomedayWeekDraft });
 };
