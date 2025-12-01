@@ -34,7 +34,11 @@ const extractor = postcss([
 
 const webSrcDirectory = join(__dirname, "../../../src");
 
+let cachedCss: string | null = null;
+
 export async function getTailwindCss(): Promise<string> {
+  if (cachedCss) return cachedCss;
+
   const result = await extractor.process(
     `
     @layer theme, base, components, utilities;
@@ -44,6 +48,8 @@ export async function getTailwindCss(): Promise<string> {
   `,
     { from: webSrcDirectory },
   );
+
+  cachedCss = result.css;
 
   return result.css;
 }
