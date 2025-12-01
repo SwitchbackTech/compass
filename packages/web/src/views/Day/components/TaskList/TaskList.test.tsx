@@ -366,6 +366,11 @@ describe("TaskList", () => {
       await user.clear(taskInput);
     });
 
+    // Verify input is cleared before pressing Enter
+    await waitFor(() => {
+      expect(taskInput).toHaveValue("");
+    });
+
     // Press Enter
     await act(async () => {
       await user.keyboard("{Enter}");
@@ -387,11 +392,8 @@ describe("TaskList", () => {
     it("should complete the correct task when pressing Space on second duplicate task", async () => {
       const { user } = renderWithDayProviders(<TaskList />);
 
-      // Add first task
-      await addTasks(user, ["Buy milk"]);
-
-      // Add second task with same name
-      await addTasks(user, ["Buy milk"]);
+      // Add two tasks with same name
+      await addTasks(user, ["Buy milk", "Buy milk"]);
 
       // Get both checkboxes and identify them by their data-task-id
       const checkboxes = screen.getAllByRole("checkbox", {
@@ -424,16 +426,13 @@ describe("TaskList", () => {
 
       // Verify the first task is still incomplete
       expect(checkboxes[0]).toHaveAttribute("aria-checked", "false");
-    }, 10000);
+    });
 
     it("should edit the correct task when pressing E on second duplicate task", async () => {
       const { user } = renderWithDayProviders(<TaskList />);
 
-      // Add first task
-      await addTasks(user, ["Buy milk"]);
-
-      // Add second task with same name
-      await addTasks(user, ["Buy milk"]);
+      // Add two tasks with same name
+      await addTasks(user, ["Buy milk", "Buy milk"]);
 
       // Get both checkboxes and identify them by their data-task-id
       const checkboxes = screen.getAllByRole("checkbox", {
@@ -481,6 +480,6 @@ describe("TaskList", () => {
 
       // The first input should NOT be in edit mode
       expect(firstInput).toHaveClass("border-transparent");
-    }, 10000);
+    });
   });
 });
