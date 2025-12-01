@@ -64,6 +64,7 @@
     "autoprefixer": "^10.4.21",
     "babel-jest": "^29.3.1",
     "babel-plugin-styled-components": "^2.0.2",
+    "canvas": "^3.2.0",
     "eslint-plugin-jest-dom": "^4.0.3",
     "eslint-plugin-jsx-a11y": "^6.5.1",
     "eslint-plugin-react": "^7.28.0",

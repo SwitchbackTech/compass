@@ -19,26 +19,6 @@ class MockObserver<T> implements IntersectionObserver, ResizeObserver {
   takeRecords = (): IntersectionObserverEntry[] => [];
 }
 
-class MockOffscreenCanvas implements OffscreenCanvas {
-  constructor(
-    readonly width: number,
-    readonly height: number,
-  ) {}
-
-  oncontextlost = (...args: unknown[]): unknown => args;
-  oncontextrestored = (...args: unknown[]): unknown => args;
-  transferToImageBitmap = (): ImageBitmap => new globalThis.ImageBitmap();
-  addEventListener = (...args: unknown[]): unknown => args;
-  removeEventListener = (...args: unknown[]): unknown => args;
-  dispatchEvent = (...args: unknown[]): boolean => !!args;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  getContext = (..._args: unknown[]): null => null;
-
-  convertToBlob(options?: ImageEncodeOptions): Promise<Blob> {
-    return Promise.resolve(new globalThis.Blob([], options));
-  }
-}
-
 class MediaQuery implements MediaQueryList {
   matches: boolean;
   media: string;
@@ -125,9 +105,6 @@ export default class WASMEnvironment extends TestEnvironment {
     this.global.URL.revokeObjectURL = globalThis.URL.revokeObjectURL.bind(
       this.global.URL,
     );
-
-    this.global.HTMLCanvasElement.prototype.transferControlToOffscreen =
-      (): MockOffscreenCanvas => new MockOffscreenCanvas(0, 0);
 
     this.global.IntersectionObserver =
       MockObserver<IntersectionObserverCallback>;
