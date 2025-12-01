@@ -87,7 +87,9 @@ export const Task = ({
           onKeyDownCapture={(e) => {
             if (e.key !== "Tab") return;
             // this will focus the checkbox
-            // then immediately focus the move to previous btn - default browser tab order
+            // then immediately focus the move to previous btn
+            // the - default browser tab order
+            // this accommodates the hidden migration buttons during editing
             checkboxRef.current?.focus();
           }}
           onKeyDown={(e) =>
