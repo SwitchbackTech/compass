@@ -32,6 +32,7 @@ export function DraggableTask({
     setSelectedTaskIndex,
     onCheckboxKeyDown,
     onInputBlur,
+    focusOnInput,
     onInputClick,
     onInputKeyDown,
     onTitleChange,
@@ -69,6 +70,7 @@ export function DraggableTask({
               style={floatingStyles}
               aria-label={`Reorder ${task.title}`}
               aria-describedby={`description-${task.id}`}
+              onFocus={() => setSelectedTaskIndex(index)}
               className={classNames(
                 "opacity-0",
                 "hover:bg-border-primary hover:cursor-grab",
