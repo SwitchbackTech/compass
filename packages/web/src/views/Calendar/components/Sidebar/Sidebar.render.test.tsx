@@ -8,6 +8,12 @@ import { CalendarView } from "@web/views/Calendar";
 
 beforeAll(() => {
   window.HTMLElement.prototype.scroll = jest.fn();
+  jest.useFakeTimers();
+  jest.setSystemTime(new Date("2025-12-10"));
+});
+
+afterAll(() => {
+  jest.useRealTimers();
 });
 
 const router = createMemoryRouter([{ index: true, Component: CalendarView }], {
