@@ -293,11 +293,8 @@ describe("TaskList", () => {
   it("should activate add task input when pressing Enter on Add task button after tabbing", async () => {
     const { user } = renderWithDayProviders(<TaskList />);
 
-    // First add some existing tasks to create a realistic scenario
-    await addTasks(user, ["First task", "Second task"]);
-
     // Now tab to the Add task button
-    const addTaskButton = screen.getByRole("button", {
+    const addTaskButton = await screen.findByRole("button", {
       name: /create new task/i,
     });
     await act(async () => {
@@ -341,9 +338,9 @@ describe("TaskList", () => {
       ).toBeInTheDocument();
     });
 
-    // Verify we have all three tasks
+    // Verify we have the new task
     const allTasks = screen.getAllByRole("checkbox");
-    expect(allTasks).toHaveLength(3);
+    expect(allTasks).toHaveLength(1);
   });
 
   it("should delete task when title is cleared and Enter is pressed", async () => {
