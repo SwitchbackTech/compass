@@ -48,10 +48,11 @@ export function globalOnKeyUpHandler(e: KeyboardEvent) {
   const { event, sequence = [] } = keyPressed.getValue() ?? {};
 
   if (event) {
-    const meta = sequence[0];
-    const key = StringV4Schema.safeParse(e.key).data;
+    const firstKeyInSequence = sequence[0];
+    const releasedKey = StringV4Schema.safeParse(e.key).data;
+    const firstKeyReleased = releasedKey === firstKeyInSequence;
 
-    if (key === meta) keyPressed.next(null);
+    if (firstKeyReleased) keyPressed.next(null);
   }
 
   keyReleased.next({ event: e, sequence });
