@@ -109,7 +109,7 @@ export const useWeekShortcuts = ({
     goToToday();
   }, [scrollToNow, _discardDraft, goToToday]);
 
-  const gotToNextWeek = useCallback(() => {
+  const goToNextWeek = useCallback(() => {
     _discardDraft();
     incrementWeek();
   }, [incrementWeek, _discardDraft]);
@@ -143,7 +143,7 @@ export const useWeekShortcuts = ({
   useKeyDownEvent({ combination: ["Shift", "@"], handler: openMonthWidget });
   useKeyUpEvent({ combination: ["["], handler: openSidebar });
   useKeyUpEvent({ combination: ["j"], handler: goToPreviousWeek });
-  useKeyUpEvent({ combination: ["k"], handler: gotToNextWeek });
+  useKeyUpEvent({ combination: ["k"], handler: goToNextWeek });
   useKeyUpEvent({ combination: ["t"], handler: toToday });
   useKeyUpEvent({ combination: ["a"], handler: createAllDayDraftEvent });
   useKeyUpEvent({ combination: ["c"], handler: createTimedDraftEvent });
