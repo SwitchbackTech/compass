@@ -1,6 +1,10 @@
 import { EventEmitter2, ListenerFn } from "eventemitter2";
 import { TestEnvironment } from "jest-environment-jsdom";
 import fetch, { Request } from "node-fetch";
+import {
+  appendTailwindCss,
+  getTailwindCss,
+} from "./__mocks__/mock.tailwindcss";
 
 class MockObserver<T> implements IntersectionObserver, ResizeObserver {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -77,7 +81,14 @@ class MediaQuery implements MediaQueryList {
 
 export default class WASMEnvironment extends TestEnvironment {
   override async setup(): Promise<void> {
+    const css = await getTailwindCss();
     await super.setup();
+
+    // Append Tailwind CSS to the JSDOM document
+    // this ensures we're writing correct and compilable tailwind CSS
+    // if JSDOM does not throw errors, our CSS is valid.
+    // It also ensures that tests actually have the tailwind styles applied.
+    appendTailwindCss(this.global.document, css);
 
     this.global.window.HTMLElement.prototype.scroll = () => {};
     this.global.window.HTMLElement.prototype.scrollIntoView = () => {};

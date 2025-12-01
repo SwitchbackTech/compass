@@ -13,9 +13,12 @@ describe("NowView", () => {
   it("renders the shortcuts overlay", async () => {
     await renderWithMemoryRouter(<NowView />);
 
-    expect(
-      screen.getByRole("complementary", { name: "Shortcut overlay" }),
-    ).toBeInTheDocument();
+    // jest cannot actively determine applied pseudo-classes
+    // a browser environment should be used for this test
+    // move to playwright
+    const overlay = screen.getByRole("complementary", { hidden: true });
+    expect(overlay).toBeInTheDocument();
+    expect(overlay).toHaveAttribute("aria-label", "Shortcut overlay");
     expect(screen.getByText("Shortcuts")).toBeInTheDocument();
   });
 

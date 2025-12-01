@@ -21,6 +21,7 @@ export function DraggableTask({
     whileElementsMounted: autoUpdate,
     strategy: "fixed",
     placement: "left",
+    transform: false,
     middleware: [offset(8), inline({})],
   });
 
@@ -61,27 +62,32 @@ export function DraggableTask({
             update();
           }}
         >
-          <button
-            {...draggableProvider.dragHandleProps}
-            ref={refs.setFloating}
-            style={floatingStyles}
-            aria-label={`Reorder ${task.title}`}
-            aria-describedby={`description-${task.id}`}
-            className={classNames(
-              "hover:bg-border-primary hover:cursor-grab hover:opacity-100",
-              "rounded-xs py-2 transition-colors disabled:opacity-0",
-              "opacity-100 group-hover:opacity-100 focus:opacity-100",
-              "max-w-48 text-white",
-              "focus:bg-white/20 focus:opacity-100 focus:ring-2",
-              "focus:ring-white/50 focus:outline-none",
-              {
-                hidden: tasks.length === 1,
-                "opacity-100": draggableSnapshot.isDragging,
-              },
-            )}
-          >
-            <DotsSixVerticalIcon size={24} />
-          </button>
+          {tasks.length > 1 ? (
+            <button
+              {...draggableProvider.dragHandleProps}
+              ref={refs.setFloating}
+              style={floatingStyles}
+              aria-label={`Reorder ${task.title}`}
+              aria-describedby={`description-${task.id}`}
+              className={classNames(
+                "opacity-0",
+                "hover:bg-border-primary hover:cursor-grab",
+                "rounded-xs py-2 transition-colors",
+                "group-hover:opacity-100 hover:opacity-100 focus:opacity-100",
+                "max-w-48 text-white",
+                "focus:bg-white/20 focus:ring-2 focus:ring-white/50",
+                "focus:outline-none disabled:cursor-default disabled:opacity-0",
+                {
+                  hidden: tasks.length === 1,
+                  "opacity-100":
+                    draggableSnapshot.isDragging ||
+                    draggableSnapshot.isDropAnimating,
+                },
+              )}
+            >
+              <DotsSixVerticalIcon size={24} />
+            </button>
+          ) : null}
 
           <Task
             task={task}

@@ -1,24 +1,10 @@
-import React from "react";
+import React, { act } from "react";
 import { DragDropContext, Droppable } from "@hello-pangea/dnd";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
+import { render } from "@web/__tests__/__mocks__/mock.render";
 import { Task } from "@web/common/types/task.types";
-import { DraggableTask } from "@web/views/Day/components/Tasks/DraggableTask";
+import { DraggableTask } from "@web/views/Day/components/Task/DraggableTask";
 import { TaskContext } from "@web/views/Day/context/TaskProvider";
-
-// Mock useFloating hook
-jest.mock("@floating-ui/react", () => ({
-  useFloating: () => ({
-    refs: {
-      setReference: jest.fn(),
-      setFloating: jest.fn(),
-    },
-    floatingStyles: {},
-    update: jest.fn(),
-  }),
-  autoUpdate: jest.fn(),
-  offset: jest.fn(),
-  inline: jest.fn(),
-}));
 
 const mockTask: Task = {
   id: "task-1",
@@ -29,7 +15,7 @@ const mockTask: Task = {
 };
 
 const defaultTasksProps: NonNullable<React.ContextType<typeof TaskContext>> = {
-  tasks: [mockTask, { ...mockTask, id: "task-2" }],
+  tasks: [mockTask, { ...mockTask, id: "task-2", title: "Another Task" }],
   editingTaskId: null,
   editingTitle: "",
   setSelectedTaskIndex: jest.fn(),
@@ -65,17 +51,23 @@ const renderDraggableTask = (
   index = 0,
   tasksProps = defaultTasksProps,
 ) => {
-  return render(
-    <DragDropContext onDragEnd={jest.fn()}>
-      <Droppable droppableId="test-droppable">
-        {(provided) => (
-          <div ref={provided.innerRef} {...provided.droppableProps}>
-            <DraggableTask task={task} index={index} tasksProps={tasksProps} />
-            {provided.placeholder}
-          </div>
-        )}
-      </Droppable>
-    </DragDropContext>,
+  return act(() =>
+    render(
+      <DragDropContext onDragEnd={jest.fn()}>
+        <Droppable droppableId="test-droppable">
+          {(provided) => (
+            <div ref={provided.innerRef} {...provided.droppableProps}>
+              <DraggableTask
+                task={task}
+                index={index}
+                tasksProps={tasksProps}
+              />
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>,
+    ),
   );
 };
 
@@ -87,9 +79,11 @@ describe("DraggableTask", () => {
 
   it("should render drag handle when there are multiple tasks", () => {
     renderDraggableTask();
+
     const dragHandle = screen.getByRole("button", {
       name: /Reorder Test Task/i,
     });
+
     expect(dragHandle).toBeInTheDocument();
   });
 
@@ -101,11 +95,11 @@ describe("DraggableTask", () => {
 
     renderDraggableTask(mockTask, 0, tasksProps);
 
-    const dragHandle = screen.getByRole("button", {
+    const dragHandle = screen.queryByRole("button", {
       name: /Reorder Test Task/i,
     });
 
-    expect(dragHandle).toHaveClass("hidden");
+    expect(dragHandle).not.toBeInTheDocument();
   });
 
   it("should have accessible description", () => {
@@ -121,5 +115,44 @@ describe("DraggableTask", () => {
     );
     expect(description).toBeInTheDocument();
     expect(description.id).toBe(descriptionId);
+  });
+
+  it("should be hidden by default", () => {
+    renderDraggableTask();
+    const dragHandle = screen.getByRole("button", {
+      name: /Reorder Test Task/i,
+    });
+
+    // Hidden by default
+    expect(dragHandle).toHaveClass("opacity-0");
+
+    // Visible on hover (button)
+    expect(dragHandle).toHaveClass("hover:opacity-100");
+
+    // Visible on group hover (parent)
+    expect(dragHandle).toHaveClass("group-hover:opacity-100");
+
+    // Visible on focus
+    expect(dragHandle).toHaveClass("focus:opacity-100");
+  });
+
+  test("drag handle should be visible when dragging the handler button", () => {
+    const draggingTask = { ...mockTask, id: "task-dragging" };
+
+    renderDraggableTask(draggingTask);
+
+    const dragHandle = screen.getByRole("button", {
+      name: /Reorder Test Task/i,
+    });
+
+    expect(dragHandle).toHaveClass("opacity-0");
+
+    act(() => {
+      fireEvent.mouseOver(dragHandle);
+      fireEvent.mouseDown(dragHandle, { bubbles: true });
+      fireEvent.mouseMove(dragHandle, { clientY: 100 });
+    });
+
+    expect(dragHandle).toHaveClass("opacity-100");
   });
 });

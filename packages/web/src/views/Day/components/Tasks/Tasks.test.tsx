@@ -63,9 +63,9 @@ describe("Tasks Keyboard Drag and Drop", () => {
     await addTasks(user, ["Single task"]);
 
     // Verify drag handles are rendered but hidden
-    const dragHandles = screen.getAllByRole("button", { name: /Reorder/i });
-    expect(dragHandles.length).toBe(1);
-    expect(dragHandles[0]).toHaveClass("hidden");
+    const dragHandle = screen.queryByRole("button", { name: /Reorder/i });
+
+    expect(dragHandle).not.toBeInTheDocument();
   });
 
   it("should have focusable drag handles for keyboard navigation", async () => {
