@@ -1,7 +1,8 @@
-import React from "react";
+import classNames from "classnames";
+import React, { useRef } from "react";
 import { DATA_TASK_ELEMENT_ID } from "@web/common/constants/web.constants";
+import { Task as TaskType } from "@web/common/types/task.types";
 import { ArrowButton } from "@web/components/Button/ArrowButton";
-import { Task as TaskType } from "../../../../common/types/task.types";
 import { TaskCircleIcon } from "../Icons/TaskCircleIcon";
 
 export interface TaskProps {
@@ -42,14 +43,18 @@ export const Task = ({
   onTitleChange,
   onMigrate,
 }: TaskProps) => {
+  const checkboxRef = useRef<HTMLButtonElement>(null);
+
   return (
     <div
       key={task.id}
       {...{ [DATA_TASK_ELEMENT_ID]: task.id }}
+      data-testid={task.id}
       className={`group flex items-start gap-3 rounded border p-2 transition-colors duration-200 focus-within:border-blue-200/50 focus-within:ring-1 focus-within:ring-blue-200/30 ${task.status === "completed" ? "opacity-50" : ""}`}
     >
       <button
         role="checkbox"
+        ref={checkboxRef}
         aria-checked={task.status === "completed"}
         aria-label={`Toggle ${task.title}`}
         tabIndex={0}
@@ -70,22 +75,35 @@ export const Task = ({
           data-task-id={task.id}
           id={`task-input-${task.id}`}
           name={`task-title-${task.id}`}
-          className={`text-white-100 w-full bg-transparent text-sm outline-none ${
-            isEditing
-              ? "border-b border-white/20"
-              : "border-b border-transparent"
-          }`}
+          className={classNames(
+            "text-white-100 w-full text-sm outline-none",
+            "border-b border-transparent bg-transparent",
+            { "border-white/20": isEditing },
+          )}
           type="text"
           value={title}
           onClick={() => onInputClick(task.id)}
           onBlur={() => onInputBlur(task.id)}
+          onKeyDownCapture={(e) => {
+            if (e.key !== "Tab") return;
+            // this will focus the checkbox
+            // then immediately focus the move to previous btn
+            // the - default browser tab order
+            // this accommodates the hidden migration buttons during editing
+            checkboxRef.current?.focus();
+          }}
           onKeyDown={(e) =>
             onInputKeyDown(e, task.id, index, e.currentTarget.value)
           }
           onChange={(e) => onTitleChange(e.target.value)}
         />
       </div>
-      <div className="ml-auto flex gap-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
+
+      <div
+        className={classNames("ml-auto hidden gap-1", {
+          "group-focus-within:flex group-hover:flex": !isEditing,
+        })}
+      >
         <ArrowButton
           direction="left"
           label="Move task to previous day"

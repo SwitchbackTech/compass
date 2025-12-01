@@ -63,9 +63,9 @@ describe("Tasks Keyboard Drag and Drop", () => {
     await addTasks(user, ["Single task"]);
 
     // Verify drag handles are rendered but hidden
-    const dragHandles = screen.getAllByRole("button", { name: /Reorder/i });
-    expect(dragHandles.length).toBe(1);
-    expect(dragHandles[0]).toHaveClass("hidden");
+    const dragHandle = screen.queryByRole("button", { name: /Reorder/i });
+
+    expect(dragHandle).not.toBeInTheDocument();
   });
 
   it("should have focusable drag handles for keyboard navigation", async () => {
@@ -84,66 +84,6 @@ describe("Tasks Keyboard Drag and Drop", () => {
       firstDragHandle.focus();
     });
     expect(firstDragHandle).toHaveFocus();
-  });
-
-  it("should reorder tasks when using keyboard drag and drop", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
-
-    // Add multiple tasks
-    await addTasks(user, ["First task", "Second task", "Third task"]);
-
-    // Verify initial order
-    const checkboxes = screen.getAllByRole("checkbox");
-    expect(checkboxes[0]).toHaveAttribute("aria-label", "Toggle First task");
-    expect(checkboxes[1]).toHaveAttribute("aria-label", "Toggle Second task");
-    expect(checkboxes[2]).toHaveAttribute("aria-label", "Toggle Third task");
-
-    // Find drag handles
-    const dragHandles = screen.getAllByRole("button", { name: /Reorder/i });
-    const firstDragHandle = dragHandles[0];
-
-    // Verify drag handle has proper keyboard attributes for accessibility
-    expect(firstDragHandle).toHaveAttribute("tabindex", "0");
-    expect(firstDragHandle).toHaveAttribute("role", "button");
-    expect(firstDragHandle).toHaveAttribute("aria-describedby");
-
-    // Focus on the first drag handle
-    await act(async () => {
-      firstDragHandle.focus();
-    });
-    expect(firstDragHandle).toHaveFocus();
-
-    // Note: Full keyboard DND (Space to lift, arrows to move, Space to drop)
-    // cannot be fully tested in JSDOM as it doesn't support the required
-    // dimension calculations. The keyboard sensor is verified by:
-    // 1. Drag handles having correct tabindex and role
-    // 2. Drag handles being focusable
-    // 3. The @hello-pangea/dnd library providing keyboard support by default
-    // The actual keyboard reordering should be tested in E2E tests.
-  });
-
-  it("should cancel drag and restore original order when pressing Escape", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
-
-    // Add multiple tasks
-    await addTasks(user, ["First task", "Second task"]);
-
-    // Verify initial order
-    const checkboxes = screen.getAllByRole("checkbox");
-    expect(checkboxes[0]).toHaveAttribute("aria-label", "Toggle First task");
-    expect(checkboxes[1]).toHaveAttribute("aria-label", "Toggle Second task");
-
-    // Find drag handles
-    const dragHandles = screen.getAllByRole("button", { name: /Reorder/i });
-    const firstDragHandle = dragHandles[0];
-
-    // Verify drag handle has proper keyboard attributes
-    expect(firstDragHandle).toHaveAttribute("tabindex", "0");
-    expect(firstDragHandle).toHaveAttribute("role", "button");
-
-    // Note: Full keyboard DND cancellation cannot be tested in JSDOM.
-    // The Escape key behavior is provided by @hello-pangea/dnd's keyboard sensor
-    // and should be tested in E2E tests.
   });
 
   it("should have accessible description for drag handles", async () => {

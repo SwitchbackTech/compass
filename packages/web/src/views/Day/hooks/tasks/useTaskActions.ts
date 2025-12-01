@@ -54,6 +54,7 @@ export function useTaskActions({
       id: `task-${uuidv4()}`,
       title,
       status: "todo",
+      order: tasks.length,
       createdAt: new Date().toISOString(),
     };
 
@@ -181,7 +182,10 @@ export function useTaskActions({
       `input[data-task-id="${taskId}"]`,
     ) as HTMLInputElement;
     if (input) {
+      const length = input.value.length;
+
       input.focus();
+      input.setSelectionRange(length, length);
     }
   };
 

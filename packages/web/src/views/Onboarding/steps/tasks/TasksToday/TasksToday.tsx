@@ -59,10 +59,10 @@ export const TasksToday: React.FC<OnboardingStepProps> = ({
       <div className="z-[5] m-5 flex max-w-[800px] flex-1 gap-5 border border-[#333] bg-[#12151b]">
         <div className="flex w-[350px] flex-col gap-5 bg-[#23262f] p-5">
           <div className="flex flex-col gap-3">
-            <h2 className="m-0 mb-0.5 font-['Rubik'] text-2xl text-white">
+            <h2 className="m-0 mb-0.5 font-[Rubik] text-2xl text-white">
               {dateHeader}
             </h2>
-            <p className="m-0 font-['Rubik'] text-base text-[hsl(47_7_73)]">
+            <p className="m-0 font-[Rubik] text-base text-[hsl(47_7_73)]">
               {dateSubheader}
             </p>
             {tasks.length < MAX_TASKS && (
@@ -80,14 +80,14 @@ export const TasksToday: React.FC<OnboardingStepProps> = ({
                     handleAddTask();
                   }
                 }}
-                className="w-full rounded border-2 border-[hsl(202_100_67)] bg-white px-3 py-2 font-['Rubik'] text-sm text-black shadow-[0_0_8px_rgba(96,165,250,0.3)] placeholder:text-[#666] focus:border-[hsl(202_100_67)] focus:shadow-[0_0_12px_rgba(96,165,250,0.5)] focus:outline-none"
+                className="w-full rounded border-2 border-[hsl(202_100_67)] bg-white px-3 py-2 font-[Rubik] text-sm text-black shadow-[0_0_8px_rgba(96,165,250,0.3)] placeholder:text-[#666] focus:border-[hsl(202_100_67)] focus:shadow-[0_0_12px_rgba(96,165,250,0.5)] focus:outline-none"
               />
             )}
             <div className="m-0 flex w-full list-none flex-col gap-2 p-0">
               {tasks.map((task) => (
                 <div
                   key={task.id}
-                  className="w-full rounded bg-white px-3 py-2 font-['Rubik'] text-sm text-black"
+                  className="w-full rounded bg-white px-3 py-2 font-[Rubik] text-sm text-black"
                 >
                   {task.title}
                 </div>
@@ -96,7 +96,7 @@ export const TasksToday: React.FC<OnboardingStepProps> = ({
           </div>
         </div>
         <div className="flex w-[350px] flex-1 flex-col bg-[#23262f] p-5">
-          <h3 className="m-0 mb-2 font-['Rubik'] text-lg text-white">Agenda</h3>
+          <h3 className="m-0 mb-2 font-[Rubik] text-lg text-white">Agenda</h3>
           <StaticAgenda />
         </div>
       </div>
