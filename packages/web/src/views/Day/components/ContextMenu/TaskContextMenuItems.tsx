@@ -16,12 +16,12 @@ export function TaskContextMenuItems({ task, close }: Props) {
   };
 
   return (
-    <li className="border-b border-gray-600 last:border-b-0">
+    <li className="border-bg-secondary bg-bg-primary text-text-light hover:bg-bg-secondary hover:text-text-lighter border-b last:border-b-0">
       <button
         onClick={handleDelete}
-        className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-sm text-gray-200 hover:bg-gray-700"
+        className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-3 py-2.5 text-left text-sm"
       >
-        <TrashIcon size={16} className="text-gray-300" />
+        <TrashIcon size={16} />
         <span>Delete Task</span>
       </button>
     </li>
