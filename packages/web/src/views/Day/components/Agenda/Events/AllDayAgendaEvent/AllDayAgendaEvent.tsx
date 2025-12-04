@@ -1,10 +1,15 @@
+import classNames from "classnames";
 import { Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { darken, isDark } from "@core/util/color.utils";
+import {
+  CLASS_ALL_DAY_CALENDAR_EVENT,
+  DATA_EVENT_ELEMENT_ID,
+} from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
-import { AgendaEventMenu } from "../AgendaEventMenu/AgendaEventMenu";
-import { AgendaEventMenuContent } from "../AgendaEventMenu/AgendaEventMenuContent";
-import { AgendaEventMenuTrigger } from "../AgendaEventMenu/AgendaEventMenuTrigger";
+import { AgendaEventMenu } from "@web/views/Day/components/Agenda/Events/AgendaEventMenu/AgendaEventMenu";
+import { AgendaEventMenuContent } from "@web/views/Day/components/Agenda/Events/AgendaEventMenu/AgendaEventMenuContent";
+import { AgendaEventMenuTrigger } from "@web/views/Day/components/Agenda/Events/AgendaEventMenu/AgendaEventMenuTrigger";
 
 export const AllDayAgendaEvent = ({ event }: { event: Schema_Event }) => {
   if (!event.title) return null;
@@ -21,9 +26,17 @@ export const AllDayAgendaEvent = ({ event }: { event: Schema_Event }) => {
     <AgendaEventMenu>
       <AgendaEventMenuTrigger asChild>
         <div
-          className={`flex items-center rounded px-2 py-1 text-xs focus:ring-2 focus:ring-yellow-200 focus:outline-none ${
-            shouldUseLightText ? "text-text-lighter" : "text-text-dark"
-          } ${isPast ? "opacity-60" : ""}`}
+          className={classNames(
+            CLASS_ALL_DAY_CALENDAR_EVENT,
+            "cursor-pointer",
+            "flex items-center rounded px-2 py-1 text-xs last:mb-8",
+            "focus:ring-2 focus:ring-yellow-200 focus:outline-none",
+            {
+              "opacity-60": isPast,
+              "text-text-lighter": shouldUseLightText,
+              "text-text-dark": !shouldUseLightText,
+            },
+          )}
           style={{ backgroundColor }}
           title={event.title}
           tabIndex={0}

@@ -7,6 +7,16 @@ export interface KeyCombination {
   sequence: string[];
 }
 
+export interface DomMovement {
+  event: MouseEvent | TouchEvent;
+  x: number;
+  y: number;
+  mousedown: boolean;
+  element: Element | null;
+  caret: CaretPosition | null;
+  selectionStart: Pick<MouseEvent, "clientX" | "clientY"> | null;
+}
+
 export enum CompassDOMEvents {
   FOCUS_TASK_DESCRIPTION = "FOCUS_TASK_DESCRIPTION",
   SAVE_TASK_DESCRIPTION = "SAVE_TASK_DESCRIPTION",
@@ -21,6 +31,10 @@ export const compassEventEmitter = new EventEmitter2({
 export const keyPressed = new BehaviorSubject<KeyCombination | null>(null);
 
 export const keyReleased = new Subject<KeyCombination>();
+
+export const domMovement = new Subject<DomMovement>();
+
+export const mouseDown$ = new BehaviorSubject<boolean>(false);
 
 export function globalOnKeyPressHandler(e: KeyboardEvent) {
   const { event, sequence = [] } = keyPressed.getValue() ?? {};
@@ -56,6 +70,77 @@ export function globalOnKeyUpHandler(e: KeyboardEvent) {
   }
 
   keyReleased.next({ event: e, sequence });
+}
+
+function processPosition({
+  clientX,
+  clientY,
+}: Pick<MouseEvent, "clientX" | "clientY">) {
+  const element = document.elementFromPoint(clientX, clientY);
+  const caret = document.caretPositionFromPoint(clientX, clientY);
+
+  return { element, caret };
+}
+
+function checkMouseDown(
+  event: Pick<MouseEvent | TouchEvent, "target" | "type"> &
+    Pick<MouseEvent, "clientX" | "clientY">,
+): {
+  mousedown: boolean;
+  selectionStart: Pick<MouseEvent, "clientX" | "clientY"> | null;
+} {
+  const isElement = event.target instanceof Element;
+  const isMousedownEvent = event.type === "mousedown";
+  const isMouseupEvent = event.type === "mouseup";
+  const { clientX, clientY } = event;
+
+  if (isElement && isMousedownEvent) mouseDown$.next(true);
+
+  const mousedown = isElement && mouseDown$.getValue();
+  const selectionStart = mousedown ? { clientX, clientY } : null;
+
+  if (isElement && isMouseupEvent) mouseDown$.next(false);
+
+  return {
+    mousedown: isElement && mouseDown$.getValue(),
+    selectionStart,
+  };
+}
+
+function processMovement(
+  e: Pick<MouseEvent, "clientX" | "clientY" | "target" | "type">,
+) {
+  const mousedown = checkMouseDown(e);
+  const { element: elem, caret } = processPosition(e);
+  const element = elem ?? (e.target instanceof Element ? e.target : null);
+
+  const x = e.clientX;
+  const y = e.clientY;
+
+  return { x, y, element, caret, ...mousedown };
+}
+
+function processMouseEvent(event: MouseEvent): DomMovement {
+  const movement = processMovement(event);
+
+  return { event, ...movement };
+}
+
+function processTouchEvent(event: TouchEvent): DomMovement {
+  const clientX = event.changedTouches[0]?.clientX ?? 0;
+  const clientY = event.changedTouches[0]?.clientY ?? 0;
+  const type = event.type;
+  const target = event.target;
+  const movement = processMovement({ type, target, clientX, clientY });
+
+  return { event, ...movement };
+}
+
+export function globalMovementHandler(e: MouseEvent | TouchEvent) {
+  const isMouseEvent = e instanceof MouseEvent;
+  const movement = isMouseEvent ? processMouseEvent(e) : processTouchEvent(e);
+
+  domMovement.next(movement);
 }
 
 export function pressKey(

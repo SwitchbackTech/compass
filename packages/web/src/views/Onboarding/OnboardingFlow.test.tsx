@@ -133,7 +133,7 @@ describe("OnboardingFlow", () => {
       const { container } = render(<OnboardingFlow />);
 
       // Should render nothing while loading
-      expect(container.firstChild).toBeNull();
+      expect(container.firstChild).toBeEmptyDOMElement();
     });
   });
 

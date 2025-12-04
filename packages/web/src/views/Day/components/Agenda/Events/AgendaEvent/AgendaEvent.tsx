@@ -1,6 +1,8 @@
+import classNames from "classnames";
 import { Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { darken, isDark } from "@core/util/color.utils";
+import { CLASS_TIMED_CALENDAR_EVENT } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getOverlappingStyles } from "@web/common/utils/overlap/overlap";
@@ -27,6 +29,7 @@ export const AgendaEvent = ({
   if (canvasContext) {
     canvasContext.font = "0.75rem sans-serif";
   }
+
   const textMeasure = canvasContext?.measureText(event.title ?? "");
   const textWidth = textMeasure?.width ?? 0;
 
@@ -54,25 +57,21 @@ export const AgendaEvent = ({
     textWidth,
   );
 
-  // Build className based on event properties
-  const getEventClassName = () => {
-    const baseClasses =
-      "absolute flex items-center rounded px-2 text-xs focus:ring-2 focus:ring-yellow-200 focus:outline-none";
-    const textColorClass = isBackgroundDark
-      ? "text-text-light"
-      : "text-text-dark";
-    const overlappingClass = event.position.isOverlapping
-      ? "border border-border-transparent shadow-md hover:!z-40 focus:!z-40"
-      : "";
-
-    return `${baseClasses} ${textColorClass} ${overlappingClass}`.trim();
-  };
-
   return (
     <AgendaEventMenu>
       <AgendaEventMenuTrigger asChild>
         <div
-          className={getEventClassName()}
+          className={classNames(
+            CLASS_TIMED_CALENDAR_EVENT,
+            "absolute flex cursor-pointer items-center rounded px-2 text-xs",
+            "focus:ring-2 focus:ring-yellow-200 focus:outline-none",
+            {
+              "text-text-light": isBackgroundDark,
+              "text-text-dark": !isBackgroundDark,
+              "border-border-transparent border": event.position.isOverlapping,
+              "shadow-md hover:!z-40 focus:!z-40": event.position.isOverlapping,
+            },
+          )}
           style={{
             height: `${renderedHeight}px`,
             top: `${startPosition}px`,

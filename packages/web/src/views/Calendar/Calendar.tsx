@@ -1,3 +1,4 @@
+import { MousePositionProvider } from "@web/common/context/mouse-position";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
@@ -13,6 +14,7 @@ import { Sidebar } from "@web/views/Calendar/components/Sidebar/Sidebar";
 import { useDateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { useGridLayout } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { useScroll } from "@web/views/Calendar/hooks/grid/useScroll";
+import { useRefetch } from "@web/views/Calendar/hooks/useRefetch";
 import { useToday } from "@web/views/Calendar/hooks/useToday";
 import { useWeek } from "@web/views/Calendar/hooks/useWeek";
 import { Styled, StyledCalendar } from "@web/views/Calendar/styled";
@@ -20,6 +22,8 @@ import { CmdPalette } from "@web/views/CmdPalette";
 import { RecurringEventUpdateScopeDialog } from "@web/views/Forms/EventForm/RecurringEventUpdateScopeDialog";
 
 export const CalendarView = () => {
+  useRefetch();
+
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
 
   const { today } = useToday();
@@ -53,56 +57,58 @@ export const CalendarView = () => {
   };
 
   return (
-    <Styled id="cal">
-      <CmdPalette {...shortcutProps} />
-      <Dedication />
+    <MousePositionProvider>
+      <Styled id="cal">
+        <CmdPalette {...shortcutProps} />
+        <Dedication />
 
-      <DraftProvider
-        dateCalcs={dateCalcs}
-        weekProps={weekProps}
-        isSidebarOpen={isSidebarOpen}
-      >
-        <SidebarDraftProvider
+        <DraftProvider
           dateCalcs={dateCalcs}
-          measurements={measurements}
           weekProps={weekProps}
+          isSidebarOpen={isSidebarOpen}
         >
-          <Shortcuts shortcutsProps={shortcutProps}>
-            <ContextMenuWrapper id="sidebar-context-menu">
-              <Draft measurements={measurements} weekProps={weekProps} />
-              {isSidebarOpen && (
-                <Sidebar
-                  dateCalcs={dateCalcs}
-                  measurements={measurements}
-                  weekProps={weekProps}
-                  gridRefs={gridRefs}
-                />
-              )}
-            </ContextMenuWrapper>
-            <StyledCalendar>
-              <Header
-                rootProps={rootProps}
-                scrollUtil={scrollUtil}
-                today={today}
-                weekProps={weekProps}
-              />
-
-              <ContextMenuWrapper id="grid-context-menu">
-                <Grid
-                  dateCalcs={dateCalcs}
-                  isSidebarOpen={isSidebarOpen}
-                  gridRefs={gridRefs}
-                  measurements={measurements}
+          <SidebarDraftProvider
+            dateCalcs={dateCalcs}
+            measurements={measurements}
+            weekProps={weekProps}
+          >
+            <Shortcuts shortcutsProps={shortcutProps}>
+              <ContextMenuWrapper id="sidebar-context-menu">
+                <Draft measurements={measurements} weekProps={weekProps} />
+                {isSidebarOpen && (
+                  <Sidebar
+                    dateCalcs={dateCalcs}
+                    measurements={measurements}
+                    weekProps={weekProps}
+                    gridRefs={gridRefs}
+                  />
+                )}
+              </ContextMenuWrapper>
+              <StyledCalendar>
+                <Header
+                  rootProps={rootProps}
+                  scrollUtil={scrollUtil}
                   today={today}
                   weekProps={weekProps}
                 />
-              </ContextMenuWrapper>
-            </StyledCalendar>
-          </Shortcuts>
 
-          <RecurringEventUpdateScopeDialog />
-        </SidebarDraftProvider>
-      </DraftProvider>
-    </Styled>
+                <ContextMenuWrapper id="grid-context-menu">
+                  <Grid
+                    dateCalcs={dateCalcs}
+                    isSidebarOpen={isSidebarOpen}
+                    gridRefs={gridRefs}
+                    measurements={measurements}
+                    today={today}
+                    weekProps={weekProps}
+                  />
+                </ContextMenuWrapper>
+              </StyledCalendar>
+            </Shortcuts>
+
+            <RecurringEventUpdateScopeDialog />
+          </SidebarDraftProvider>
+        </DraftProvider>
+      </Styled>
+    </MousePositionProvider>
   );
 };

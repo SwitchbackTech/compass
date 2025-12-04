@@ -1,5 +1,7 @@
+import deepEqual from "fast-deep-equal";
 import React, {
   KeyboardEvent,
+  memo,
   useCallback,
   useEffect,
   useRef,
@@ -38,316 +40,326 @@ const hotkeysOptions: OptionsOrDependencyArray = {
   enableOnFormTags: ["input"],
 };
 
-export const EventForm: React.FC<FormProps> = ({
-  event,
-  onClose: _onClose,
-  onConvert,
-  onDelete,
-  onSubmit,
-  onDuplicate,
-  setEvent,
-  ...props
-}) => {
-  const { title } = event || {};
-  const priority = event.priority || Priorities.UNASSIGNED;
-  const priorityColor = colorByPriority[priority];
-  const category = getCategory(event);
-  const isDraft = !event._id;
+export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
+  ({
+    event,
+    onClose: _onClose,
+    onConvert,
+    onDelete,
+    onSubmit,
+    onDuplicate,
+    setEvent,
+    ...props
+  }) => {
+    const { title } = event || {};
+    const priority = event.priority || Priorities.UNASSIGNED;
+    const priorityColor = colorByPriority[priority];
+    const category = getCategory(event);
+    const isDraft = !event._id;
 
-  /********
-   * State
-   ********/
-  const [endTime, setEndTime] = useState<SelectOption<string>>({
-    label: "1 AM",
-    value: "01:00 AM",
-  });
-  const [_isShiftKeyPressed, setIsShiftKeyPressed] = useState(false);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
-  const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
-  const [startTime, setStartTime] = useState<SelectOption<string>>({
-    label: "12 AM",
-    value: "12:00 AM",
-  });
-  const [selectedStartDate, setSelectedStartDate] = useState(new Date());
-  const [selectedEndDate, setSelectedEndDate] = useState(new Date());
-  const [displayEndDate, setDisplayEndDate] = useState(selectedStartDate);
+    /********
+     * State
+     ********/
+    const [endTime, setEndTime] = useState<SelectOption<string>>({
+      label: "1 AM",
+      value: "01:00 AM",
+    });
+    const [_isShiftKeyPressed, setIsShiftKeyPressed] = useState(false);
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
+    const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
+    const [startTime, setStartTime] = useState<SelectOption<string>>({
+      label: "12 AM",
+      value: "12:00 AM",
+    });
+    const [selectedStartDate, setSelectedStartDate] = useState(new Date());
+    const [selectedEndDate, setSelectedEndDate] = useState(new Date());
+    const [displayEndDate, setDisplayEndDate] = useState(selectedStartDate);
 
-  const descriptionRef = useRef<HTMLTextAreaElement>(null);
+    const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
-  /*********
-   * Effects
-   *********/
+    /*********
+     * Effects
+     *********/
 
-  const keyDownHandler = useCallback(
-    (e: globalThis.KeyboardEvent) => {
+    const keyDownHandler = useCallback(
+      (e: globalThis.KeyboardEvent) => {
+        if (e.key === Key.Shift) {
+          setIsShiftKeyPressed(true);
+        }
+      },
+      [_onClose],
+    );
+
+    const keyUpHandler = useCallback((e: globalThis.KeyboardEvent) => {
       if (e.key === Key.Shift) {
-        setIsShiftKeyPressed(true);
+        setIsShiftKeyPressed(false);
       }
-    },
-    [_onClose],
-  );
+    }, []);
 
-  const keyUpHandler = useCallback((e: globalThis.KeyboardEvent) => {
-    if (e.key === Key.Shift) {
-      setIsShiftKeyPressed(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener("keydown", keyDownHandler);
-    window.addEventListener("keyup", keyUpHandler);
-
-    return () => {
-      window.removeEventListener("keydown", keyDownHandler);
+    useEffect(() => {
+      window.addEventListener("keydown", keyDownHandler);
       window.addEventListener("keyup", keyUpHandler);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
-  useEffect(() => {
-    setEvent(event || {});
+      return () => {
+        window.removeEventListener("keydown", keyDownHandler);
+        window.removeEventListener("keyup", keyUpHandler);
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-    const dt = getFormDates(event.startDate as string, event.endDate as string);
-    setStartTime(dt.startTime);
-    setSelectedStartDate(dt.startDate);
-    setDisplayEndDate(dayjs(dt.displayEndDate).toDate());
-    setEndTime(dt.endTime);
-    setSelectedEndDate(dt.endDate);
+    useEffect(() => {
+      setEvent(event || {});
 
-    setIsFormOpen(true);
-  }, [event, setEvent]);
+      const dt = getFormDates(
+        event.startDate as string,
+        event.endDate as string,
+      );
+      setStartTime(dt.startTime);
+      setSelectedStartDate(dt.startDate);
+      setDisplayEndDate(dayjs(dt.displayEndDate).toDate());
+      setEndTime(dt.endTime);
+      setSelectedEndDate(dt.endDate);
 
-  /***********
-   * Handlers
-   **********/
-  const onChangeEventTextField =
-    (fieldName: "title" | "description") =>
-    <T extends HTMLInputElement | HTMLTextAreaElement = HTMLTextAreaElement>(
-      e: React.ChangeEvent<T>,
-    ) => {
-      onSetEventField({ [fieldName]: e.target.value });
-    };
+      setIsFormOpen(true);
+    }, [event, setEvent]);
 
-  const onClose = () => {
-    setIsFormOpen(false);
+    /***********
+     * Handlers
+     **********/
+    const onChangeEventTextField =
+      (fieldName: "title" | "description") =>
+      <T extends HTMLInputElement | HTMLTextAreaElement = HTMLTextAreaElement>(
+        e: React.ChangeEvent<T>,
+      ) => {
+        onSetEventField({ [fieldName]: e.target.value });
+      };
 
-    setTimeout(() => {
-      _onClose();
-    }, 1);
-  };
+    const onClose = () => {
+      setIsFormOpen(false);
 
-  const onDuplicateEvent = useCallback(() => {
-    onDuplicate?.(event);
-    onClose();
-  }, [onDuplicate, onClose]);
-
-  const handleIgnoredKeys = (e: KeyboardEvent) => {
-    // Ignores certain keys and key combinations to prevent default behavior.
-    // Allows some of them to be used as hotkeys
-
-    if (e.key === Key.Backspace) {
-      e.stopPropagation();
-    }
-
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "<") {
-      e.preventDefault();
-    }
-
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d") {
-      e.preventDefault();
-    }
-
-    if (e.metaKey && e.key === Key.Enter) {
-      e.preventDefault();
-      onSubmitForm();
-    }
-  };
-
-  const onSubmitForm = () => {
-    const selectedDateTimes = {
-      startDate: selectedStartDate,
-      startTime,
-      endDate: selectedEndDate,
-      endTime,
-      isAllDay: event.isAllDay || false,
+      setTimeout(() => {
+        _onClose();
+      }, 1);
     };
 
-    const { startDate, endDate } = mapToBackend(selectedDateTimes);
-
-    if (dayjs(startDate).isAfter(dayjs(endDate))) {
-      alert("uff-dah, looks like you got the start & end times mixed up");
-      return;
-    }
-
-    const finalEvent = {
-      ...event,
-      priority: event.priority || Priorities.UNASSIGNED,
-      startDate,
-      endDate,
-    };
-
-    onSubmit(finalEvent);
-  };
-
-  const onSetEventField: SetEventFormField = (field) => {
-    setEvent({ ...event, ...field });
-  };
-
-  const dateTimeSectionProps = {
-    bgColor: priorityColor,
-    displayEndDate,
-    event,
-    category,
-    endTime,
-    inputColor: hoverColorByPriority[priority],
-    isEndDatePickerOpen,
-    isStartDatePickerOpen,
-    onSetEventField,
-    selectedEndDate,
-    selectedStartDate,
-    setEndTime,
-    setSelectedEndDate,
-    setSelectedStartDate,
-    setStartTime,
-    startTime,
-    setDisplayEndDate,
-    setIsEndDatePickerOpen,
-    setIsStartDatePickerOpen,
-    setEvent,
-  };
-
-  const recurrenceSectionProps = {
-    bgColor: priorityColor,
-    event,
-    setEvent,
-  };
-
-  useHotkeys(
-    "delete",
-    () => {
-      if (isDraft) {
-        onClose();
-        return;
-      }
-
-      onDelete();
-    },
-    hotkeysOptions,
-    [onDelete],
-  );
-
-  useHotkeys(
-    "enter",
-    (keyboardEvent) => {
-      if (isComboboxInteraction(keyboardEvent)) {
-        return;
-      }
-
-      onSubmitForm();
-    },
-    hotkeysOptions,
-    [onSubmitForm],
-  );
-
-  useHotkeys(
-    "meta+d",
-    () => {
+    const onDuplicateEvent = useCallback(() => {
       onDuplicate?.(event);
-    },
-    hotkeysOptions,
-  );
+      onClose();
+    }, [onDuplicate, onClose]);
 
-  useHotkeys(
-    "meta+enter",
-    (e) => {
-      e.preventDefault();
-      onSubmitForm();
-    },
-    {
-      enabled: isFormOpen,
-      enableOnFormTags: true,
-    },
-    [isFormOpen, onSubmitForm],
-  );
+    const handleIgnoredKeys = (e: KeyboardEvent) => {
+      // Ignores certain keys and key combinations to prevent default behavior.
+      // Allows some of them to be used as hotkeys
 
-  useHotkeys(
-    "ctrl+meta+left",
-    () => {
-      if (isDraft) {
+      if (e.key === Key.Backspace) {
+        e.stopPropagation();
+      }
+
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "<") {
+        e.preventDefault();
+      }
+
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d") {
+        e.preventDefault();
+      }
+
+      if (e.metaKey && e.key === Key.Enter) {
+        e.preventDefault();
+        onSubmitForm();
+      }
+    };
+
+    const onSubmitForm = () => {
+      const selectedDateTimes = {
+        startDate: selectedStartDate,
+        startTime,
+        endDate: selectedEndDate,
+        endTime,
+        isAllDay: event.isAllDay || false,
+      };
+
+      const { startDate, endDate } = mapToBackend(selectedDateTimes);
+
+      if (dayjs(startDate).isAfter(dayjs(endDate))) {
+        alert("uff-dah, looks like you got the start & end times mixed up");
         return;
       }
 
-      onConvert?.();
-    },
-    {
-      enabled: isFormOpen,
-      enableOnFormTags: true,
-    },
-    [isFormOpen],
-  );
-  return (
-    <StyledEventForm
-      {...props}
-      isOpen={isFormOpen}
-      name={ID_EVENT_FORM}
-      onMouseUp={() => {
-        if (isStartDatePickerOpen) {
-          setIsStartDatePickerOpen(false);
+      const finalEvent = {
+        ...event,
+        priority: event.priority || Priorities.UNASSIGNED,
+        startDate,
+        endDate,
+      };
+
+      onSubmit(finalEvent);
+    };
+
+    const onSetEventField: SetEventFormField = (field) => {
+      setEvent({ ...event, ...field });
+    };
+
+    const dateTimeSectionProps = {
+      bgColor: priorityColor,
+      displayEndDate,
+      event,
+      category,
+      endTime,
+      inputColor: hoverColorByPriority[priority],
+      isEndDatePickerOpen,
+      isStartDatePickerOpen,
+      onSetEventField,
+      selectedEndDate,
+      selectedStartDate,
+      setEndTime,
+      setSelectedEndDate,
+      setSelectedStartDate,
+      setStartTime,
+      startTime,
+      setDisplayEndDate,
+      setIsEndDatePickerOpen,
+      setIsStartDatePickerOpen,
+      setEvent,
+    };
+
+    const recurrenceSectionProps = {
+      bgColor: priorityColor,
+      event,
+      setEvent,
+    };
+
+    useHotkeys(
+      "delete",
+      () => {
+        if (isDraft) {
+          onClose();
+          return;
         }
 
-        if (isEndDatePickerOpen) {
-          setIsEndDatePickerOpen(false);
+        onDelete();
+      },
+      hotkeysOptions,
+      [onDelete],
+    );
+
+    useHotkeys(
+      "enter",
+      (keyboardEvent) => {
+        if (isComboboxInteraction(keyboardEvent)) {
+          return;
         }
-      }}
-      onMouseDown={(e) => {
-        e.stopPropagation();
-      }}
-      priority={priority}
-      role="form"
-    >
-      <StyledIconRow>
-        <EventActionMenu
-          bgColor={darken(priorityColor)}
-          isDraft={isDraft}
-          onConvert={() => {
-            onConvert?.();
-          }}
-          onDuplicate={onDuplicateEvent}
-          onDelete={onDelete}
+
+        onSubmitForm();
+      },
+      hotkeysOptions,
+      [onSubmitForm],
+    );
+
+    useHotkeys(
+      "meta+d",
+      () => {
+        onDuplicate?.(event);
+      },
+      hotkeysOptions,
+    );
+
+    useHotkeys(
+      "meta+enter",
+      (e) => {
+        e.preventDefault();
+        onSubmitForm();
+      },
+      {
+        enabled: isFormOpen,
+        enableOnFormTags: true,
+      },
+      [isFormOpen, onSubmitForm],
+    );
+
+    useHotkeys(
+      "ctrl+meta+left",
+      () => {
+        if (isDraft) {
+          return;
+        }
+
+        onConvert?.();
+      },
+      {
+        enabled: isFormOpen,
+        enableOnFormTags: true,
+      },
+      [isFormOpen],
+    );
+    return (
+      <StyledEventForm
+        {...props}
+        isOpen={isFormOpen}
+        name={ID_EVENT_FORM}
+        onMouseUp={() => {
+          if (isStartDatePickerOpen) {
+            setIsStartDatePickerOpen(false);
+          }
+
+          if (isEndDatePickerOpen) {
+            setIsEndDatePickerOpen(false);
+          }
+        }}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+        }}
+        priority={priority}
+        role="form"
+        className="z-40"
+      >
+        <StyledIconRow>
+          <EventActionMenu
+            bgColor={darken(priorityColor)}
+            isDraft={isDraft}
+            onConvert={() => {
+              onConvert?.();
+            }}
+            onDuplicate={onDuplicateEvent}
+            onDelete={onDelete}
+          />
+        </StyledIconRow>
+
+        <StyledTitle
+          autoFocus
+          onChange={onChangeEventTextField("title")}
+          onKeyDown={handleIgnoredKeys}
+          placeholder="Title"
+          role="textarea"
+          name="Event Title"
+          underlineColor={priorityColor}
+          value={title}
         />
-      </StyledIconRow>
 
-      <StyledTitle
-        autoFocus
-        onChange={onChangeEventTextField("title")}
-        onKeyDown={handleIgnoredKeys}
-        placeholder="Title"
-        role="textarea"
-        name="Event Title"
-        underlineColor={priorityColor}
-        value={title}
-      />
+        <PrioritySection
+          onSetEventField={onSetEventField}
+          priority={priority}
+        />
 
-      <PrioritySection onSetEventField={onSetEventField} priority={priority} />
+        <DateControlsSection
+          dateTimeSectionProps={dateTimeSectionProps}
+          eventCategory={category}
+        />
 
-      <DateControlsSection
-        dateTimeSectionProps={dateTimeSectionProps}
-        eventCategory={category}
-      />
+        <RecurrenceSection {...recurrenceSectionProps} />
 
-      <RecurrenceSection {...recurrenceSectionProps} />
+        <StyledDescription
+          underlineColor={priorityColor}
+          onChange={onChangeEventTextField("description")}
+          onKeyDown={handleIgnoredKeys}
+          placeholder="Description"
+          ref={descriptionRef}
+          value={event.description || ""}
+        />
 
-      <StyledDescription
-        underlineColor={priorityColor}
-        onChange={onChangeEventTextField("description")}
-        onKeyDown={handleIgnoredKeys}
-        placeholder="Description"
-        ref={descriptionRef}
-        value={event.description || ""}
-      />
-
-      <SaveSection priority={priority} onSubmit={onSubmitForm} />
-    </StyledEventForm>
-  );
-};
+        <SaveSection priority={priority} onSubmit={onSubmitForm} />
+      </StyledEventForm>
+    );
+  },
+  deepEqual,
+);
