@@ -1,9 +1,14 @@
 import { useCallback, useRef } from "react";
 import dayjs from "@core/util/date/dayjs";
+import { MousePositionProvider } from "@web/common/context/mouse-position";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
+import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
 import { ShortcutsOverlay } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
 import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
+import { Dedication } from "@web/views/Calendar/components/Dedication";
+import { DraftProviderV2 } from "@web/views/Calendar/components/Draft/context/DraftProviderV2";
+import { useRefetch } from "@web/views/Calendar/hooks/useRefetch";
 import { StyledCalendar } from "@web/views/Calendar/styled";
 import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
@@ -23,6 +28,8 @@ import {
 } from "@web/views/Day/util/day.shortcut.util";
 
 export const DayViewContent = () => {
+  useRefetch();
+
   const {
     tasks,
     selectedTaskIndex,
@@ -118,30 +125,36 @@ export const DayViewContent = () => {
   });
 
   return (
-    <>
-      <DayCmdPalette onGoToToday={handleGoToToday} />
-      <StyledCalendar>
-        <Header />
+    <MousePositionProvider>
+      <DraftProviderV2>
+        <DayCmdPalette onGoToToday={handleGoToToday} />
+        <Dedication />
 
-        <div
-          className={`flex max-w-4/7 min-w-4/7 flex-1 justify-center gap-8 self-center overflow-hidden`}
-        >
-          <TaskList />
+        <StyledCalendar>
+          <Header />
 
-          <Agenda onScrollToNowLineReady={handleScrollToNowLineReady} />
-        </div>
-      </StyledCalendar>
+          <div
+            className={`flex max-w-4/7 min-w-4/7 flex-1 justify-center gap-8 self-center overflow-hidden`}
+          >
+            <TaskList />
 
-      <StorageInfoModal isOpen={isModalOpen} onClose={closeModal} />
+            <Agenda onScrollToNowLineReady={handleScrollToNowLineReady} />
+          </div>
+        </StyledCalendar>
 
-      <ShortcutsOverlay
-        sections={[
-          { title: "Home", shortcuts: shortcuts.homeShortcuts },
-          { title: "Tasks", shortcuts: shortcuts.dayTaskShortcuts },
-          { title: "Calendar", shortcuts: shortcuts.dayAgendaShortcuts },
-          { title: "Global", shortcuts: shortcuts.globalShortcuts },
-        ]}
-      />
-    </>
+        <StorageInfoModal isOpen={isModalOpen} onClose={closeModal} />
+
+        <ShortcutsOverlay
+          sections={[
+            { title: "Home", shortcuts: shortcuts.homeShortcuts },
+            { title: "Tasks", shortcuts: shortcuts.dayTaskShortcuts },
+            { title: "Calendar", shortcuts: shortcuts.dayAgendaShortcuts },
+            { title: "Global", shortcuts: shortcuts.globalShortcuts },
+          ]}
+        />
+
+        <FloatingEventForm />
+      </DraftProviderV2>
+    </MousePositionProvider>
   );
 };

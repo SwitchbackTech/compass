@@ -12,7 +12,9 @@ import {
   render,
   renderHook,
 } from "@testing-library/react";
-import { useSetupKeyEvents } from "@web/common/hooks/useKeyboardEvent";
+import { ID_ROOT } from "@web/common/constants/web.constants";
+import { useSetupKeyboardEvents } from "@web/common/hooks/useKeyboardEvent";
+import { useSetupMovementEvents } from "@web/common/hooks/useMovementEvent";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
@@ -36,13 +38,16 @@ const TestProviders = (props?: {
   store?: typeof compassStore;
 }) => {
   return function TestProvidersWrapper({ children }: PropsWithChildren) {
-    useSetupKeyEvents();
+    useSetupKeyboardEvents();
+    useSetupMovementEvents();
 
     if (!props?.router) {
       return (
-        <CompassRequiredProviders {...props}>
-          {children}
-        </CompassRequiredProviders>
+        <div id={ID_ROOT} data-testid={ID_ROOT}>
+          <CompassRequiredProviders {...props}>
+            {children}
+          </CompassRequiredProviders>
+        </div>
       );
     }
 
@@ -53,15 +58,17 @@ const TestProviders = (props?: {
     }
 
     return (
-      <CompassRequiredProviders store={props?.store}>
-        <RouterProvider
-          router={props.router}
-          fallbackElement={<AbsoluteOverflowLoader />}
-          future={{
-            v7_startTransition: true,
-          }}
-        />
-      </CompassRequiredProviders>
+      <div id={ID_ROOT} data-testid={ID_ROOT}>
+        <CompassRequiredProviders store={props?.store}>
+          <RouterProvider
+            router={props.router}
+            fallbackElement={<AbsoluteOverflowLoader />}
+            future={{
+              v7_startTransition: true,
+            }}
+          />
+        </CompassRequiredProviders>
+      </div>
     );
   };
 };
@@ -112,7 +119,8 @@ const customRenderHook = <ReturnType, Props>(
   const BaseProviders = TestProviders({ store, router });
 
   const Wrapper = (props: PropsWithChildren) => {
-    useSetupKeyEvents();
+    useSetupKeyboardEvents();
+    useSetupMovementEvents();
 
     if (!WrapperComponent) return <BaseProviders {...props} />;
 

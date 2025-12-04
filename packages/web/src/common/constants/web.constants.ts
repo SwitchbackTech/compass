@@ -3,11 +3,13 @@ export const COLUMN_MONTH = "monthEvents";
 
 export const GOOGLE = "google";
 
+export const ID_ROOT = "root";
 export const ID_ALLDAY_COLUMNS = "allDayColumns";
 export const ID_EVENT_FORM = "Event Form";
 export const ID_GRID_ALLDAY_ROW = "allDayRow";
 export const ID_GRID_EVENTS_ALLDAY = "allDayEvents";
 export const ID_GRID_EVENTS_TIMED = "timedEvents";
+export const ID_SOMEDAY_WEEK_COLUMN = "somedayWeekColumn";
 export const ID_GRID_MAIN = "mainGrid";
 export const ID_REMINDER_INPUT = "reminderInput";
 export const ID_MAIN = "mainSection";
@@ -22,6 +24,10 @@ export const DATA_EVENT_ELEMENT_ID = "data-event-id";
 export const DATA_TASK_ELEMENT_ID = "data-task-id";
 export const ID_CONTEXT_MENU_ITEMS = "context-menu-items";
 export const ID_ADD_TASK_BUTTON = "add-task-button";
+export const CLASS_ALL_DAY_CALENDAR_EVENT = "all-day-calendar-event";
+export const CLASS_TIMED_CALENDAR_EVENT = "timed-calendar-event";
+export const CLASS_WEEK_SOMEDAY_EVENT = "week-someday-event";
+export const CLASS_MONTH_SOMEDAY_EVENT = "month-someday-event";
 
 export enum ZIndex {
   LAYER_1 = 1,

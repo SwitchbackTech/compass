@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { Schema_Event } from "@core/types/event.types";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
+import { useMousePosition } from "@web/common/hooks/useMousePosition";
 import { selectIsDNDing } from "@web/ducks/events/selectors/draft.selectors";
 import { selectCategorizedEvents } from "@web/ducks/events/selectors/someday.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
-import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { useMousePosition } from "./useMousePosition";
 
-export const useSidebarState = (measurements: Measurements_Grid) => {
+export const useSidebarState = () => {
   const categorizedEvents = useAppSelector(selectCategorizedEvents);
   const [somedayEvents, setSomedayEvents] = useState(categorizedEvents);
 
@@ -23,8 +22,9 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
   const [isSomedayFormOpen, setIsSomedayFormOpen] = useState(false);
 
   const isDragging = isDrafting && draft !== null; // TODO: Probably not a good way to determine if we are dragging, consider refactoring or removing this comment.
-  const { isOverAllDayRow, isOverGrid, isOverMainGrid, mouseCoords } =
-    useMousePosition(isDNDing, isSomedayFormOpen, measurements);
+  const mousePosition = useMousePosition();
+  const { isOverAllDayRow, isOverGrid, isOverMainGrid } = mousePosition;
+  const { mouseCoords, toggleMouseMovementTracking } = mousePosition;
 
   const somedayWeekIds = somedayEvents.columns[COLUMN_WEEK]
     .eventIds as string[];
@@ -33,9 +33,15 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
   const somedayIds = [...somedayWeekIds, ...somedayMonthIds];
 
   const isDraftingNew =
-    isDrafting && !isDraftingExisting && !somedayIds.includes(draft?._id);
+    isDrafting &&
+    !isDraftingExisting &&
+    !somedayIds.includes(draft?._id as string);
 
   const shouldPreviewOnGrid = isDNDing && isOverGrid;
+
+  useEffect(() => {
+    toggleMouseMovementTracking(!isDNDing);
+  }, [isDNDing, toggleMouseMovementTracking]);
 
   const state = {
     draft,

@@ -1,13 +1,10 @@
-import { useContext } from "react";
+import { useContext, useMemo } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { DateNavigationContext } from "@web/views/Day/context/DateNavigationProvider";
 
 export function useDateInView(): dayjs.Dayjs {
   const context = useContext(DateNavigationContext);
+  const dateInView = context?.dateInView;
 
-  if (!context) {
-    return dayjs();
-  }
-
-  return context.dateInView;
+  return useMemo(() => dateInView ?? dayjs(), [dateInView]);
 }

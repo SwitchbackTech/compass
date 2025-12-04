@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { AgendaEvents } from "@web/views/Day/components/Agenda/Events/AgendaEvent/AgendaEvents";
@@ -12,8 +12,8 @@ interface AgendaProps {
 
 export const Agenda = ({ onScrollToNowLineReady }: AgendaProps) => {
   const nowLineRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
   const events = useAppSelector(selectDayEvents);
+  const [height, setHeight] = useState<number | undefined>(undefined);
 
   // Separate all-day events from timed events
   const allDayEvents = events.filter((event) => event.isAllDay);
@@ -25,6 +25,11 @@ export const Agenda = ({ onScrollToNowLineReady }: AgendaProps) => {
       behavior: "smooth",
     });
   }, []);
+
+  const setHeightRef = useCallback(
+    (e: HTMLDivElement | null) => setHeight(e?.scrollHeight),
+    [setHeight],
+  );
 
   // Provide the scroll function to parent component
   useEffect(() => {
@@ -44,8 +49,9 @@ export const Agenda = ({ onScrollToNowLineReady }: AgendaProps) => {
       className="bg-darkBlue-400 flex h-full min-w-xs flex-1 flex-col"
     >
       <AllDayAgendaEvents allDayEvents={allDayEvents} />
+
       <div
-        ref={scrollRef}
+        ref={setHeightRef}
         className="relative z-5 flex flex-1 overflow-x-hidden overflow-y-auto"
         data-testid="calendar-scroll"
         style={{
@@ -57,7 +63,7 @@ export const Agenda = ({ onScrollToNowLineReady }: AgendaProps) => {
 
         <NowLine nowLineRef={nowLineRef} />
 
-        <AgendaEvents />
+        <AgendaEvents height={height} />
       </div>
     </section>
   );
