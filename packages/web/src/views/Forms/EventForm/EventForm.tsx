@@ -1,3 +1,4 @@
+import deepEqual from "fast-deep-equal";
 import React, {
   KeyboardEvent,
   memo,
@@ -360,9 +361,5 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       </StyledEventForm>
     );
   },
-  (prev, next) => {
-    // naive re-rendering fix
-    // fix by checking component tree for rogue re-renders
-    return JSON.stringify(prev) === JSON.stringify(next);
-  },
+  deepEqual,
 );

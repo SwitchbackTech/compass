@@ -60,12 +60,6 @@ export function useMovementEvent({
     selectors,
   );
 
-  const preventDefault = useCallback((movement: DomMovement) => {
-    movement.event.preventDefault();
-
-    return movement;
-  }, []);
-
   const pause = useMemo(() => new BehaviorSubject<boolean>(false), []);
 
   const toggleMouseMovementTracking = useCallback(
@@ -81,7 +75,6 @@ export function useMovementEvent({
           domMovement.pipe(
             filter(typeFilter),
             filter(elementsFilter),
-            map(preventDefault),
             map(handle),
           ),
           EMPTY,
@@ -100,7 +93,6 @@ export function useMovementEvent({
     elementsFilter,
     handler,
     pause,
-    preventDefault,
     typeFilter,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     ...(deps ?? []),

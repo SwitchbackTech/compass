@@ -34,6 +34,8 @@ export const keyReleased = new Subject<KeyCombination>();
 
 export const domMovement = new Subject<DomMovement>();
 
+export const mouseDown$ = new BehaviorSubject<boolean>(false);
+
 export function globalOnKeyPressHandler(e: KeyboardEvent) {
   const { event, sequence = [] } = keyPressed.getValue() ?? {};
   const lastKey = sequence[sequence.length - 1];
@@ -92,15 +94,15 @@ function checkMouseDown(
   const isMouseupEvent = event.type === "mouseup";
   const { clientX, clientY } = event;
 
-  if (isElement && isMousedownEvent) event.target.classList.add("mousedown");
+  if (isElement && isMousedownEvent) mouseDown$.next(true);
 
-  const mousedown = isElement && event.target.classList.contains("mousedown");
+  const mousedown = isElement && mouseDown$.getValue();
   const selectionStart = mousedown ? { clientX, clientY } : null;
 
-  if (isElement && isMouseupEvent) event.target.classList.remove("mousedown");
+  if (isElement && isMouseupEvent) mouseDown$.next(false);
 
   return {
-    mousedown: isElement && event.target.classList.contains("mousedown"),
+    mousedown: isElement && mouseDown$.getValue(),
     selectionStart,
   };
 }
@@ -125,8 +127,8 @@ function processMouseEvent(event: MouseEvent): DomMovement {
 }
 
 function processTouchEvent(event: TouchEvent): DomMovement {
-  const clientX = event.touches[0]?.clientX ?? 0;
-  const clientY = event.touches[0]?.clientY ?? 0;
+  const clientX = event.changedTouches[0]?.clientX ?? 0;
+  const clientY = event.changedTouches[0]?.clientY ?? 0;
   const type = event.type;
   const target = event.target;
   const movement = processMovement({ type, target, clientX, clientY });

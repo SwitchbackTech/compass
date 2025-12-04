@@ -2,7 +2,10 @@ import classNames from "classnames";
 import { Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { darken, isDark } from "@core/util/color.utils";
-import { CLASS_ALL_DAY_CALENDAR_EVENT } from "@web/common/constants/web.constants";
+import {
+  CLASS_ALL_DAY_CALENDAR_EVENT,
+  DATA_EVENT_ELEMENT_ID,
+} from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { AgendaEventMenu } from "@web/views/Day/components/Agenda/Events/AgendaEventMenu/AgendaEventMenu";
 import { AgendaEventMenuContent } from "@web/views/Day/components/Agenda/Events/AgendaEventMenu/AgendaEventMenuContent";
