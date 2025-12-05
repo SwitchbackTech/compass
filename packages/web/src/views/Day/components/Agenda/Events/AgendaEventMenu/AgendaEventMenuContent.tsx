@@ -1,17 +1,17 @@
 import { forwardRef } from "react";
 import { FloatingPortal, useMergeRefs } from "@floating-ui/react";
 import { Priorities } from "@core/constants/core.constants";
-import { Schema_Event } from "@core/types/event.types";
 import { darken, isDark } from "@core/util/color.utils";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getAgendaEventTime } from "@web/views/Day/util/agenda/agenda.util";
 import { useAgendaEventMenu } from "./context/useAgendaEventMenu";
 
 export const AgendaEventMenuContent = forwardRef<
   HTMLDivElement,
   React.HTMLProps<HTMLDivElement> & {
-    event: Schema_Event;
+    event: Schema_GridEvent;
     style?: React.CSSProperties;
   }
 >(function AgendaEventMenuContent({ event, ...props }, propRef) {

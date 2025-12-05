@@ -89,22 +89,17 @@ function checkMouseDown(
   mousedown: boolean;
   selectionStart: Pick<MouseEvent, "clientX" | "clientY"> | null;
 } {
-  const isElement = event.target instanceof Element;
   const isMousedownEvent = event.type === "mousedown";
   const isMouseupEvent = event.type === "mouseup";
   const { clientX, clientY } = event;
 
-  if (isElement && isMousedownEvent) mouseDown$.next(true);
+  if (isMousedownEvent) mouseDown$.next(true);
+  if (isMouseupEvent) mouseDown$.next(false);
 
-  const mousedown = isElement && mouseDown$.getValue();
+  const mousedown = mouseDown$.getValue();
   const selectionStart = mousedown ? { clientX, clientY } : null;
 
-  if (isElement && isMouseupEvent) mouseDown$.next(false);
-
-  return {
-    mousedown: isElement && mouseDown$.getValue(),
-    selectionStart,
-  };
+  return { mousedown, selectionStart };
 }
 
 function processMovement(
