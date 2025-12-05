@@ -3,13 +3,13 @@ import { createPortal } from "react-dom";
 import { DragOverlay, useDraggable } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { Categories_Event } from "@core/types/event.types";
-import { DNDData } from "@web/components/DND/Draggable";
+import { DraggableDNDData } from "@web/components/DND/Draggable";
 import { AgendaEvent } from "@web/views/Day/components/Agenda/Events/AgendaEvent/AgendaEvent";
 import { AllDayAgendaEvent } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/AllDayAgendaEvent";
 
 export function DNDOverlay({ children }: PropsWithChildren) {
-  const { active } = useDraggable({ id: "overlay-item" });
-  const data = (active?.data?.current ?? {}) as DNDData;
+  const { active, over } = useDraggable({ id: "overlay-item" });
+  const data = (active?.data?.current ?? {}) as DraggableDNDData;
   const { type, view, event, ...props } = data;
 
   const modifiers = useMemo(() => {
@@ -29,14 +29,22 @@ export function DNDOverlay({ children }: PropsWithChildren) {
             canvasContext={props.canvasContext}
             containerWidth={props.containerWidth}
             event={event!}
+            over={over}
+            isDragging={!!active?.id}
           />
         );
       case Categories_Event.ALLDAY:
-        return <AllDayAgendaEvent event={event!} />;
+        return (
+          <AllDayAgendaEvent
+            event={event!}
+            over={over}
+            isDragging={!!active?.id}
+          />
+        );
       default:
         return children;
     }
-  }, [children, type, event, props]);
+  }, [children, type, event, props, active?.id]);
 
   return createPortal(
     <DragOverlay

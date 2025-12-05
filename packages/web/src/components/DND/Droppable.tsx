@@ -16,10 +16,17 @@ import {
   useDroppable,
 } from "@dnd-kit/core";
 
+export interface DroppableDNDData {
+  containerWidth?: number;
+}
+
 function CompassDroppable(
   props: DetailedHTMLProps<
     {
-      dndProps: Omit<UseDraggableArguments, "id"> & { id?: UniqueIdentifier };
+      dndProps: Omit<UseDraggableArguments, "id" | "data"> & {
+        id?: UniqueIdentifier;
+        data: DroppableDNDData;
+      };
       as: keyof ReactHTML;
     } & HTMLAttributes<HTMLElement>,
     HTMLElement
@@ -68,6 +75,7 @@ function CompassDroppable(
 
   return createElement(as ?? "div", {
     ...elementProps,
+    style: { ...props.style, ...(active?.id ? { overflowY: "hidden" } : {}) },
     ref: setRef,
   });
 }

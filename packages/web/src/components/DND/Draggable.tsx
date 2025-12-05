@@ -20,7 +20,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Categories_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
-export interface DNDData {
+export interface DraggableDNDData {
   type: Categories_Event;
   event: Schema_GridEvent | null;
   view: "day" | "week" | "now";
@@ -32,7 +32,7 @@ function CompassDraggable(
     {
       dndProps: Omit<UseDraggableArguments, "id" | "data"> & {
         id?: UniqueIdentifier;
-        data: DNDData;
+        data: DraggableDNDData;
       };
       as: keyof ReactHTML;
     } & HTMLAttributes<HTMLElement>,
@@ -46,7 +46,7 @@ function CompassDraggable(
       >
   >,
 ) {
-  const { dndProps, as, style, ...elementProps } = props;
+  const { dndProps, as, style, onContextMenu, ...elementProps } = props;
 
   const {
     attributes,
@@ -107,6 +107,7 @@ function CompassDraggable(
     ...elementProps,
     ...listeners,
     ...attributes,
+    onContextMenu: isDragging ? undefined : onContextMenu,
     style: {
       ...style,
       ...dndStyle,
