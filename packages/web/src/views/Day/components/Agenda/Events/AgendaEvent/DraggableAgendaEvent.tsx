@@ -1,3 +1,4 @@
+import classNames from "classnames";
 import fastDeepEqual from "fast-deep-equal/react";
 import { memo } from "react";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
@@ -10,6 +11,7 @@ import { AgendaEventMenuContent } from "@web/views/Day/components/Agenda/Events/
 import { AgendaEventMenuTrigger } from "@web/views/Day/components/Agenda/Events/AgendaEventMenu/AgendaEventMenuTrigger";
 import { useEventContextMenu } from "@web/views/Day/components/ContextMenu/EventContextMenuContext";
 import { getAgendaEventPosition } from "@web/views/Day/util/agenda/agenda.util";
+import { CLASS_TIMED_CALENDAR_EVENT } from "../../../../../../common/constants/web.constants";
 
 export const DraggableAgendaEvent = memo(
   ({
@@ -62,7 +64,10 @@ export const DraggableAgendaEvent = memo(
               },
             }}
             as="div"
-            className="absolute touch-none"
+            className={classNames(
+              CLASS_TIMED_CALENDAR_EVENT,
+              "absolute touch-none",
+            )}
             style={{
               top: `${startPosition}px`,
               ...overlappingStyles,
