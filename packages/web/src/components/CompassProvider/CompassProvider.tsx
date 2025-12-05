@@ -3,11 +3,11 @@ import { PropsWithChildren } from "react";
 import { Provider } from "react-redux";
 import { ToastContainer } from "react-toastify";
 import { ThemeProvider } from "styled-components";
-import { DndContext } from "@dnd-kit/core";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { SessionProvider } from "@web/auth/SessionProvider";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { theme } from "@web/common/styles/theme";
+import { DNDContext } from "@web/components/DND/DNDContext";
 import { DNDOverlay } from "@web/components/DND/DNDOverlay";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
 import { store } from "@web/store";
@@ -23,7 +23,7 @@ export const CompassRequiredProviders = (
     <Provider store={props?.store ?? store}>
       <GoogleOAuthProvider clientId={ENV_WEB.GOOGLE_CLIENT_ID || ""}>
         <ThemeProvider theme={theme}>
-          <DndContext>
+          <DNDContext>
             <IconProvider>{props.children}</IconProvider>
 
             <ToastContainer
@@ -41,7 +41,7 @@ export const CompassRequiredProviders = (
             />
 
             <DNDOverlay />
-          </DndContext>
+          </DNDContext>
         </ThemeProvider>
       </GoogleOAuthProvider>
     </Provider>

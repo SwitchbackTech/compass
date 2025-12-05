@@ -1,6 +1,6 @@
 import { PropsWithChildren, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { DragOverlay, useDraggable } from "@dnd-kit/core";
+import { DragOverlay, useDndContext } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { Categories_Event } from "@core/types/event.types";
 import { DraggableDNDData } from "@web/components/DND/Draggable";
@@ -8,7 +8,7 @@ import { AgendaEvent } from "@web/views/Day/components/Agenda/Events/AgendaEvent
 import { AllDayAgendaEvent } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/AllDayAgendaEvent";
 
 export function DNDOverlay({ children }: PropsWithChildren) {
-  const { active, over } = useDraggable({ id: "overlay-item" });
+  const { active, over } = useDndContext();
   const data = (active?.data?.current ?? {}) as DraggableDNDData;
   const { type, view, event, ...props } = data;
 

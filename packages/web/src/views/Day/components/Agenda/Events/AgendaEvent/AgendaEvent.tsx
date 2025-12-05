@@ -4,7 +4,6 @@ import { memo } from "react";
 import { Over } from "@dnd-kit/core";
 import { Priorities } from "@core/constants/core.constants";
 import { darken, isDark } from "@core/util/color.utils";
-import { CLASS_TIMED_CALENDAR_EVENT } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getAgendaEventPosition } from "@web/views/Day/util/agenda/agenda.util";
@@ -41,7 +40,6 @@ export const AgendaEvent = memo(
     return (
       <div
         className={classNames(
-          CLASS_TIMED_CALENDAR_EVENT,
           "flex cursor-pointer items-center rounded px-2 text-xs",
           "focus:ring-2 focus:ring-yellow-200 focus:outline-none",
           {
