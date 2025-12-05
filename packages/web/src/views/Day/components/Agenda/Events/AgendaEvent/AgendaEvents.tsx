@@ -9,8 +9,8 @@ import {
 import { useAppSelector } from "@web/store/store.hooks";
 import { useDraftContextV2 } from "@web/views/Calendar/components/Draft/context/useDraftContextV2";
 import { AgendaSkeleton } from "@web/views/Day/components/Agenda/AgendaSkeleton/AgendaSkeleton";
+import { DraggableAgendaEvent } from "@web/views/Day/components/Agenda/Events/AgendaEvent/DraggableAgendaEvent";
 import { EventContextMenuProvider } from "@web/views/Day/components/ContextMenu/EventContextMenuContext";
-import { DraggableAgendaEvent } from "./DraggableAgendaEvent";
 
 const canvas = document.createElement("canvas");
 const canvasContext = canvas.getContext("2d");
@@ -25,7 +25,10 @@ export const AgendaEvents = ({ height }: { height?: number }) => {
     <EventContextMenuProvider>
       <Droppable
         as="div"
-        dndProps={{ id: ID_GRID_MAIN }}
+        dndProps={{
+          id: ID_GRID_MAIN,
+          data: { containerWidth: ref?.clientWidth },
+        }}
         ref={setRef}
         data-testid="calendar-surface"
         id={ID_GRID_MAIN}
