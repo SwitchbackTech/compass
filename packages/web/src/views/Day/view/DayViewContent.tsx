@@ -118,55 +118,63 @@ const DayViewContentInner = () => {
   const { setOpenAtMousePosition, floating } = mousePosition;
 
   const handleCreateEvent = useCallback(async () => {
-    const user = await getUserId();
-    if (!user) return;
+    try {
+      const user = await getUserId();
+      if (!user) return;
 
-    // Create a new event starting at the current time (or next hour)
-    const now = dayjs();
-    const startTime = dateInView
-      .hour(now.hour())
-      .minute(0)
-      .second(0)
-      .millisecond(0);
-    const endTime = startTime.add(1, "hour");
+      // Create a new event starting at the current hour
+      const now = dayjs();
+      const startTime = dateInView
+        .hour(now.hour())
+        .minute(0)
+        .second(0)
+        .millisecond(0);
+      const endTime = startTime.add(1, "hour");
 
-    const draftEvent = {
-      title: "",
-      description: "",
-      startDate: startTime.toISOString(),
-      endDate: endTime.toISOString(),
-      isAllDay: false,
-      isSomeday: false,
-      user,
-      priority: Priorities.UNASSIGNED,
-      origin: Origin.COMPASS,
-    };
+      const draftEvent = {
+        title: "",
+        description: "",
+        startDate: startTime.toISOString(),
+        endDate: endTime.toISOString(),
+        isAllDay: false,
+        isSomeday: false,
+        user,
+        priority: Priorities.UNASSIGNED,
+        origin: Origin.COMPASS,
+      };
 
-    // Get the center of the screen for positioning the form
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2;
+      // Get the center of the screen for positioning the form
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
 
-    // Create a virtual reference point at the center of the screen
-    const virtualRef = {
-      getBoundingClientRect: () => ({
-        width: 0,
-        height: 0,
-        x: centerX,
-        y: centerY,
-        top: centerY,
-        left: centerX,
-        right: centerX,
-        bottom: centerY,
-        toJSON: () => ({}),
-      }),
-    };
+      // Create a virtual reference point at the center of the screen
+      const virtualRef = {
+        getBoundingClientRect: () => ({
+          width: 0,
+          height: 0,
+          x: centerX,
+          y: centerY,
+          top: centerY,
+          left: centerX,
+          right: centerX,
+          bottom: centerY,
+          toJSON: () => ({}),
+        }),
+      };
 
-    // Set the reference for the floating UI
-    floating?.refs?.setReference?.(virtualRef);
+      // Set the reference for the floating UI if available
+      if (floating?.refs?.setReference) {
+        floating.refs.setReference(virtualRef);
+      }
 
-    // Set the draft and open the form at the mouse position
-    setDraft(draftEvent);
-    setOpenAtMousePosition(true);
+      // Set the draft and open the form at the mouse position
+      setDraft(draftEvent);
+      setOpenAtMousePosition(true);
+    } catch (error) {
+      // Silently fail if user authentication fails
+      // The user will already be redirected to login if not authenticated
+      console.error("Failed to create event:", error);
+    }
   }, [dateInView, setDraft, setOpenAtMousePosition, floating]);
 
   useDayViewShortcuts({
