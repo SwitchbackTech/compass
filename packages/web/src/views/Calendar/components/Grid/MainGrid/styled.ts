@@ -1,12 +1,10 @@
 import styled from "styled-components";
-import { brighten } from "@core/util/color.utils";
 import { Flex } from "@web/components/Flex";
 import {
+  DIVIDER_GRID,
+  GRID_MARGIN_LEFT,
   GRID_PADDING_BOTTOM,
-  SCROLLBAR_WIDTH,
 } from "@web/views/Calendar/layout.constants";
-import { GRID_MARGIN_LEFT } from "@web/views/Calendar/layout.constants";
-import { DIVIDER_GRID } from "@web/views/Calendar/layout.constants";
 
 export const StyledGridRow = styled(Flex)`
   height: calc(100% / 11);
@@ -35,26 +33,4 @@ export const StyledMainGrid = styled.div`
   position: relative;
   overflow-y: auto;
   overflow-x: hidden;
-
-  /* Always reserve scrollbar space */
-  &::-webkit-scrollbar {
-    width: ${SCROLLBAR_WIDTH}px;
-  }
-
-  /* Hide the scrollbar thumb by default (transparent) */
-  &::-webkit-scrollbar-thumb {
-    background-color: transparent;
-    border-radius: 7px;
-    transition: background-color 0.3s ease;
-  }
-
-  /* On hover, make the scrollbar thumb visible */
-  &:hover::-webkit-scrollbar-thumb {
-    background-color: ${({ theme }) => brighten(theme.color.bg.primary, 10)};
-  }
-
-  /* Optional: even more visible on hover of the thumb itself */
-  &:hover::-webkit-scrollbar-thumb:hover {
-    background-color: ${({ theme }) => brighten(theme.color.bg.primary, 20)};
-  }
 `;

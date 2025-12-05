@@ -355,6 +355,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
           placeholder="Description"
           ref={descriptionRef}
           value={event.description || ""}
+          className="overflow-y-auto"
         />
 
         <SaveSection priority={priority} onSubmit={onSubmitForm} />

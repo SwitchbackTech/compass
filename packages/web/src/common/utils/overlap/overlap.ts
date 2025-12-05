@@ -85,8 +85,8 @@ export const getOverlappingStyles = (
   const offset = spread * (index + 1);
 
   return {
-    left: `${maxContainerWidth - Math.max(width, offset) - borderRingSpace}px`,
-    width: `${width}px`,
+    left: `${maxContainerWidth - Math.max(width, offset) + borderRingSpace}px`,
+    width: `${width - borderRingSpace}px`,
     zIndex: order,
   };
 };

@@ -1,6 +1,8 @@
 import {
   Dispatch,
+  MouseEvent,
   PropsWithChildren,
+  TouchEvent,
   createContext,
   useCallback,
   useState,
@@ -13,7 +15,7 @@ import { useSaveEventForm } from "@web/views/Forms/hooks/useSaveEventForm";
 interface DraftProviderV2Props {
   draft: Schema_Event | null;
   setDraft: Dispatch<React.SetStateAction<Schema_Event | null>>;
-  openEventForm: () => void;
+  openEventForm: (e: MouseEvent<HTMLElement> | TouchEvent<HTMLElement>) => void;
   closeEventForm: () => void;
   onDelete: () => void;
   onSave: (draft: Schema_Event | null) => void;
@@ -29,12 +31,21 @@ export function DraftProviderV2({ children }: PropsWithChildren) {
   const onSave = useSaveEventForm({ existing, closeEventForm });
   const onDelete = useCallback(() => {}, []);
 
+  const openForm = useCallback(
+    (e: MouseEvent<HTMLElement> | TouchEvent<HTMLElement>) => {
+      if (e.detail > 1) return; // Prevent opening form on double click
+
+      openEventForm();
+    },
+    [openEventForm],
+  );
+
   return (
     <DraftContextV2.Provider
       value={{
         draft,
         setDraft,
-        openEventForm,
+        openEventForm: openForm,
         closeEventForm,
         onDelete,
         onSave,
