@@ -20,7 +20,8 @@ export function getDateKey(date: Date): string {
 }
 
 export function getTodayDateKey(): string {
-  const todayUTC = dayjs().startOf("day").utc();
+  // Get today's date in local timezone, preserve calendar date when converting to UTC
+  const todayUTC = dayjs().startOf("day").utc(true);
   return getDateKey(todayUTC.toDate());
 }
 

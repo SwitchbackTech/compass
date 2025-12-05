@@ -33,7 +33,7 @@ describe("shortcuts.data", () => {
     });
 
     it("should show 'Scroll to now' when currentDate is today", () => {
-      const todayUTC = dayjs().startOf("day").utc();
+      const todayUTC = dayjs().startOf("day").utc(true);
 
       const shortcuts = getShortcuts({
         isToday: true,
@@ -46,7 +46,7 @@ describe("shortcuts.data", () => {
     });
 
     it("should show 'Go to today' when currentDate is not today", () => {
-      const yesterdayUTC = dayjs().subtract(1, "day").startOf("day").utc();
+      const yesterdayUTC = dayjs().subtract(1, "day").startOf("day").utc(true);
 
       const shortcuts = getShortcuts({
         isToday: true,
@@ -59,7 +59,7 @@ describe("shortcuts.data", () => {
     });
 
     it("should show 'Go to today' when currentDate is tomorrow", () => {
-      const tomorrowUTC = dayjs().add(1, "day").startOf("day").utc();
+      const tomorrowUTC = dayjs().add(1, "day").startOf("day").utc(true);
 
       const shortcuts = getShortcuts({
         isToday: true,
@@ -84,7 +84,7 @@ describe("shortcuts.data", () => {
 
     it("should handle timezone edge cases correctly", () => {
       // Test with a specific date that we know is today
-      const todayUTC = dayjs().startOf("day").utc();
+      const todayUTC = dayjs().startOf("day").utc(true);
 
       const shortcuts = getShortcuts({
         isToday: true,
