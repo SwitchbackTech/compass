@@ -1,6 +1,5 @@
 import { useEffect, useMemo } from "react";
 import dayjs from "@core/util/date/dayjs";
-import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { Day_AsyncStateContextReason } from "@web/ducks/events/context/day.context";
 import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
