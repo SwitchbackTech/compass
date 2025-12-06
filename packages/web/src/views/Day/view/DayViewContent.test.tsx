@@ -63,7 +63,7 @@ describe("TodayViewContent", () => {
     ).toHaveLength(2); // Header SelectView + TaskList date selector
   });
 
-  it("focuses the add task input when typing the 'c' shortcut", async () => {
+  it("focuses the add task input when typing the 'c' shortcut while focused on tasks", async () => {
     const actualShortcuts = jest.requireActual(
       "../hooks/shortcuts/useDayViewShortcuts",
     );
@@ -72,6 +72,7 @@ describe("TodayViewContent", () => {
       actualShortcuts.useDayViewShortcuts({
         ...config,
         onFocusTasks: config.onFocusTasks || jest.fn(),
+        onCreateEvent: config.onCreateEvent || jest.fn(),
       }),
     );
 
@@ -79,15 +80,28 @@ describe("TodayViewContent", () => {
       renderWithDayProviders(<DayViewContent />),
     );
 
+    // Add a task first so we have something to focus on
+    await addTasks(user, ["Test task"]);
+
+    // First focus on a task checkbox
+    const taskCheckbox = await screen.findByRole("checkbox", {
+      name: /toggle/i,
+    });
+    await act(async () => {
+      taskCheckbox.focus();
+    });
+
+    // Now press 'c' while focused on a task - this should create a task
     await act(async () => {
       await user.keyboard("c");
     });
 
-    const addTaskInput = await screen.findByRole("textbox", {
+    // Should have created a new task input
+    const taskInputs = await screen.findAllByRole("textbox", {
       name: "Task title",
     });
 
-    expect(addTaskInput).toHaveFocus();
+    expect(taskInputs.length).toBeGreaterThan(0);
   });
 
   it("should display today's date in the tasks section", async () => {

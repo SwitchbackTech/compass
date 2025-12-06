@@ -37,6 +37,9 @@ interface KeyboardShortcutsConfig {
   // Agenda navigation
   onFocusAgenda?: () => void;
 
+  // Event management
+  onCreateEvent?: () => void;
+
   // Event undo
   onRestoreEvent?: () => void;
 
@@ -65,11 +68,22 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     onPrevDay,
     onGoToToday,
     onFocusAgenda,
+    onCreateEvent,
     isEditingTask,
     hasFocusedTask,
     undoToastId,
     eventUndoToastId,
   } = config;
+
+  const handleCreateShortcut = useCallback(() => {
+    // If focused on task area, create a task
+    if (isFocusedWithinTask()) {
+      onAddTask?.();
+    } else {
+      // Otherwise, create an event
+      onCreateEvent?.();
+    }
+  }, [onAddTask, onCreateEvent]);
 
   const handleDeleteTask = useCallback(() => {
     if (isFocusedOnTaskCheckbox()) {
@@ -120,7 +134,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   // Tasks shortcuts
   useKeyUpEvent({ combination: ["u"], handler: onFocusTasks });
 
-  useKeyUpEvent({ combination: ["c"], handler: onAddTask });
+  useKeyUpEvent({ combination: ["c"], handler: handleCreateShortcut });
 
   useKeyUpEvent({ combination: ["e"], handler: onEditTask });
 

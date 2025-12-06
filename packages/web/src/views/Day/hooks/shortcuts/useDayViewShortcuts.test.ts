@@ -49,6 +49,7 @@ describe.each([
 
   const defaultConfig = {
     onAddTask: jest.fn(),
+    onCreateEvent: jest.fn(),
     onEditTask: jest.fn(),
     onCompleteTask: jest.fn(),
     onDeleteTask: jest.fn(),
@@ -67,13 +68,28 @@ describe.each([
     expect(config.onFocusTasks).toHaveBeenCalled();
   });
 
-  it("should call onAddTask when 'c' is pressed", async () => {
+  it("should call onCreateEvent when 'c' is pressed and not focused in task", async () => {
     const config = { ...defaultConfig };
     await act(() => renderHook(() => useDayViewShortcuts(config)));
+
+    isFocusedWithinTask.mockReturnValue(false);
+
+    pressKey("c");
+
+    expect(config.onCreateEvent).toHaveBeenCalled();
+    expect(config.onAddTask).not.toHaveBeenCalled();
+  });
+
+  it("should call onAddTask when 'c' is pressed and focused within task", async () => {
+    const config = { ...defaultConfig };
+    await act(() => renderHook(() => useDayViewShortcuts(config)));
+
+    isFocusedWithinTask.mockReturnValue(true);
 
     pressKey("c");
 
     expect(config.onAddTask).toHaveBeenCalled();
+    expect(config.onCreateEvent).not.toHaveBeenCalled();
   });
 
   it("should call onEditTask when 'e' is pressed", async () => {
@@ -181,6 +197,7 @@ describe.each([
     pressKey("c", {}, textarea);
 
     expect(config.onAddTask).not.toHaveBeenCalled();
+    expect(config.onCreateEvent).not.toHaveBeenCalled();
   });
 
   it("should not handle shortcuts when typing in contenteditable elements", async () => {
