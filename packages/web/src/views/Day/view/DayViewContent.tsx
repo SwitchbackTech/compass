@@ -99,7 +99,7 @@ export const DayViewContent = () => {
 
   const handleGoToToday = () => {
     // Compare dates in the same timezone to avoid timezone issues
-    // Get today's date in local timezone, preserve calendar date when converting to UTC
+    // Both dates are in local timezone, ensuring accurate day comparison
     const today = dayjs().startOf("day");
     const isViewingToday = dateInView.isSame(today, "day");
 
