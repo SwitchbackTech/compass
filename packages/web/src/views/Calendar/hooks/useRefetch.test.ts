@@ -33,21 +33,6 @@ jest.mock("@web/views/Day/hooks/navigation/useDateInView", () => ({
   useDateInView: () => mockUseDateInView(),
 }));
 
-// Mock date utility
-jest.mock("@web/views/Day/util/date-route.util", () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const mockDayjs = require("@core/util/date/dayjs").default;
-  return {
-    getValidDateFromUrl: jest.fn((date?: string) => {
-      if (!date) {
-        const todayLocal = mockDayjs().format("YYYY-MM-DD");
-        return mockDayjs.utc(todayLocal);
-      }
-      return mockDayjs.utc(date);
-    }),
-  };
-});
-
 describe("useRefetch", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -190,8 +175,8 @@ describe("useRefetch", () => {
       renderHook(() => useRefetch());
 
       const expectedDate = dayjs.utc(testDate);
-      const expectedStart = toUTCOffset(expectedDate.startOf("day").format());
-      const expectedEnd = toUTCOffset(expectedDate.endOf("day").format());
+      const expectedStart = expectedDate.startOf("day").format();
+      const expectedEnd = expectedDate.endOf("day").format();
 
       expect(mockDispatch).toHaveBeenCalledWith(
         getDayEventsSlice.actions.request({
@@ -229,8 +214,8 @@ describe("useRefetch", () => {
 
       // Should use today's date when no date param
       const expectedDate = dayjs.utc("2024-01-15");
-      const expectedStart = toUTCOffset(expectedDate.startOf("day").format());
-      const expectedEnd = toUTCOffset(expectedDate.endOf("day").format());
+      const expectedStart = expectedDate.startOf("day").format();
+      const expectedEnd = expectedDate.endOf("day").format();
 
       expect(mockDispatch).toHaveBeenCalledWith(
         getDayEventsSlice.actions.request({
@@ -267,8 +252,8 @@ describe("useRefetch", () => {
       renderHook(() => useRefetch());
 
       const expectedDate = dayjs.utc(testDate);
-      const expectedStart = toUTCOffset(expectedDate.startOf("day").format());
-      const expectedEnd = toUTCOffset(expectedDate.endOf("day").format());
+      const expectedStart = expectedDate.startOf("day").format();
+      const expectedEnd = expectedDate.endOf("day").format();
 
       expect(mockDispatch).toHaveBeenCalledWith(
         getDayEventsSlice.actions.request({
@@ -375,8 +360,8 @@ describe("useRefetch", () => {
 
       // Should use day date range, not week date range
       const expectedDate = dayjs.utc("2024-01-15");
-      const expectedStart = toUTCOffset(expectedDate.startOf("day").format());
-      const expectedEnd = toUTCOffset(expectedDate.endOf("day").format());
+      const expectedStart = expectedDate.startOf("day").format();
+      const expectedEnd = expectedDate.endOf("day").format();
 
       expect(mockDispatch).toHaveBeenCalledWith(
         getDayEventsSlice.actions.request({
@@ -414,8 +399,8 @@ describe("useRefetch", () => {
       renderHook(() => useRefetch());
 
       // Should use the date from URL params, not Redux state
-      const expectedStart = "2024-01-20T00:00:00+00:00";
-      const expectedEnd = "2024-01-20T23:59:59+00:00";
+      const expectedStart = "2024-01-20T00:00:00Z";
+      const expectedEnd = "2024-01-20T23:59:59Z";
 
       expect(mockDispatch).toHaveBeenCalledWith(
         getDayEventsSlice.actions.request({

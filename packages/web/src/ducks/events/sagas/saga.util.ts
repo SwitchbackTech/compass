@@ -133,7 +133,7 @@ export const EventDateUtils = {
    * Adjusts start and end dates for event queries
    */
   adjustStartEndDate: (payload: Params_Events) => {
-    if (payload.someday) return payload;
+    if (payload.someday || payload.dontAdjustDates) return payload;
 
     // Make start date 1 day before the start date
     const startDate = dayjs(payload.startDate).subtract(1, "day").format();

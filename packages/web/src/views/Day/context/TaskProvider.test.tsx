@@ -136,8 +136,8 @@ describe("TaskProvider", () => {
     });
 
     // Check localStorage
-    const today = dayjs().utc();
-    const dateKey = today.format("YYYY-MM-DD");
+    const today = dayjs();
+    const dateKey = today.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
     const storageKey = `${TODAY_TASKS_STORAGE_KEY_PREFIX}.${dateKey}`;
     const stored = localStorage.getItem(storageKey);
 
@@ -149,8 +149,8 @@ describe("TaskProvider", () => {
 
   it("should load tasks from localStorage on mount", () => {
     // Pre-populate localStorage
-    const today = dayjs().utc();
-    const dateKey = today.format("YYYY-MM-DD");
+    const today = dayjs();
+    const dateKey = today.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
     const storageKey = `${TODAY_TASKS_STORAGE_KEY_PREFIX}.${dateKey}`;
     const mockTasks: Task[] = [
       {
@@ -171,8 +171,8 @@ describe("TaskProvider", () => {
 
   it("should sort tasks on load when there are mixed statuses", () => {
     // Pre-populate localStorage with mixed statuses
-    const today = dayjs().utc();
-    const dateKey = today.format("YYYY-MM-DD");
+    const today = dayjs();
+    const dateKey = today.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
     const storageKey = `${TODAY_TASKS_STORAGE_KEY_PREFIX}.${dateKey}`;
     const mockTasks: Task[] = [
       {

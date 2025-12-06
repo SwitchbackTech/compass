@@ -15,14 +15,8 @@ export interface CompassTasksSavedEventDetail {
 
 export type CompassTasksSavedEvent = CustomEvent<CompassTasksSavedEventDetail>;
 
-export function getDateKey(date: Date): string {
-  return dayjs(date).utc().format("YYYY-MM-DD");
-}
-
-export function getTodayDateKey(): string {
-  // Get today's date in local timezone, preserve calendar date when converting to UTC
-  const todayUTC = dayjs().startOf("day").utc(true);
-  return getDateKey(todayUTC.toDate());
+export function getDateKey(date: Date = new Date()): string {
+  return dayjs(date).format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
 }
 
 export function getStorageKey(dateKey: string): string {
@@ -72,7 +66,7 @@ export function saveTasksToStorage(dateKey: string, tasks: Task[]): void {
 }
 
 export function loadTodayTasks(): Task[] {
-  const dateKey = getTodayDateKey();
+  const dateKey = getDateKey();
   return loadTasksFromStorage(dateKey);
 }
 
@@ -86,7 +80,7 @@ export function updateTasksForDate(
 }
 
 export function updateTodayTasks(updater: (tasks: Task[]) => Task[]): Task[] {
-  const dateKey = getTodayDateKey();
+  const dateKey = getDateKey();
   return updateTasksForDate(dateKey, updater);
 }
 

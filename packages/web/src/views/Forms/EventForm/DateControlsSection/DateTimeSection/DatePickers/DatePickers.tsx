@@ -170,10 +170,9 @@ export const DatePickers: FC<Props> = ({
         endDate: formatDate(compliment),
       });
     } else {
-      const newEndDate = dayjs(end)
-        .add(1, "day")
-        .format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
-      onSetEventField({ endDate: newEndDate });
+      onSetEventField({
+        endDate: formatDate(dayjs(end).add(1, "day").toDate()),
+      });
     }
   };
 

@@ -36,8 +36,8 @@ export const useRefetch = () => {
   const dateRange = useMemo(() => {
     if (isDayView) {
       return {
-        start: dateInView.startOf("day").format(),
-        end: dateInView.endOf("day").format(),
+        start: dateInView.startOf("day").utc(true).format(),
+        end: dateInView.endOf("day").utc(true).format(),
       };
     }
     // For week view, use dates from Redux state
@@ -64,8 +64,8 @@ export const useRefetch = () => {
         );
       } else {
         const payload = {
-          startDate: toUTCOffset(dateRange.start),
-          endDate: toUTCOffset(dateRange.end),
+          startDate: isDayView ? dateRange.start : toUTCOffset(dateRange.start),
+          endDate: isDayView ? dateRange.end : toUTCOffset(dateRange.end),
           __context: { reason: _reason },
         };
 

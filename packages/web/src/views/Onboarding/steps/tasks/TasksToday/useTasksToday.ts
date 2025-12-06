@@ -50,12 +50,14 @@ const getInitialTasks = (dateKey: string): Task[] => {
       title: "Review project proposal",
       status: "todo",
       createdAt: new Date().toISOString(),
+      order: 0,
     },
     {
       id: uuidv4(),
       title: "Write weekly report",
       status: "todo",
       createdAt: new Date().toISOString(),
+      order: 0,
     },
   ];
 
@@ -88,8 +90,7 @@ export const useTasksToday = ({
   onNext,
   onNavigationControlChange,
 }: UseTasksTodayProps): UseTasksTodayReturn => {
-  // Get today's date key (using local time to avoid timezone issues)
-  const dateKey = dayjs().startOf("day").format("YYYY-MM-DD");
+  const dateKey = dayjs().format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
 
   // Initialize tasks and check if user has already created a task
   // getInitialTasks loads from storage, so we use its result directly
@@ -122,6 +123,7 @@ export const useTasksToday = ({
         title: newTask.trim(),
         status: "todo",
         createdAt: new Date().toISOString(),
+        order: 0,
       };
 
       const updatedTasks = [...tasks, newTaskObj];

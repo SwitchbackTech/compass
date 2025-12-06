@@ -10,8 +10,8 @@ export function useDayEvents(dateInView: dayjs.Dayjs) {
 
   const { startDateUtc, endDateUtc } = useMemo(() => {
     return {
-      startDateUtc: toUTCOffset(dateInView.startOf("day")),
-      endDateUtc: toUTCOffset(dateInView.endOf("day")),
+      startDateUtc: toUTCOffset(dateInView.startOf("day").utc(true)),
+      endDateUtc: toUTCOffset(dateInView.endOf("day").utc(true)),
     };
   }, [dateInView]);
 

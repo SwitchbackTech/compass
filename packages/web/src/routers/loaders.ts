@@ -71,9 +71,7 @@ export async function loadLoggedInData() {
 }
 
 export function loadTodayData(): DayLoaderData {
-  // Get today's date in local timezone, then convert to UTC while preserving the calendar date
-  // This ensures the date is correct regardless of the user's timezone
-  const dateInView = dayjs().startOf("day").utc(true);
+  const dateInView = dayjs();
   const dateFormat = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
 
   return { dateInView, dateString: dateInView.format(dateFormat) };
