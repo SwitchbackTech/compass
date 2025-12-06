@@ -29,7 +29,8 @@ export const DraggableAllDayAgendaEvent = memo(
             as="div"
             className={classNames(
               CLASS_ALL_DAY_CALENDAR_EVENT,
-              "touch-none last:mb-8",
+              "mx-2 cursor-move touch-none rounded first:mt-2 last:mb-8",
+              "focus:ring-2 focus:ring-yellow-200 focus:outline-none",
             )}
             title={event.title}
             tabIndex={0}

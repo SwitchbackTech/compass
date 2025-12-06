@@ -12,6 +12,7 @@ export const AgendaEvent = memo(
   ({
     event,
     canvasContext,
+    isDragging,
   }: {
     event: Schema_GridEvent;
     containerWidth: number;
@@ -39,21 +40,17 @@ export const AgendaEvent = memo(
 
     return (
       <div
-        className={classNames(
-          "flex cursor-pointer items-center rounded px-2 text-xs",
-          "focus:ring-2 focus:ring-yellow-200 focus:outline-none",
-          {
-            "text-text-light": isBackgroundDark,
-            "text-text-dark": !isBackgroundDark,
-            "border-border-transparent border": event.position.isOverlapping,
-            "shadow-md hover:!z-40 focus:!z-40": event.position.isOverlapping,
-          },
-        )}
+        className={classNames("flex items-center rounded px-2 text-xs", {
+          "cursor-grabbing": isDragging,
+          "text-text-light": isBackgroundDark,
+          "text-text-dark": !isBackgroundDark,
+        })}
         style={{
           height: `${renderedHeight}px`,
-          backgroundColor: isPast
-            ? darken(backgroundColor, 25)
-            : backgroundColor,
+          backgroundColor:
+            isPast && !isDragging
+              ? darken(backgroundColor, 25)
+              : backgroundColor,
         }}
       >
         <span className="flex-1 truncate">{event.title || "Untitled"}</span>
