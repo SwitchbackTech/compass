@@ -71,7 +71,7 @@ export async function loadLoggedInData() {
 }
 
 export function loadTodayData(): DayLoaderData {
-  const dateInView = dayjs().utc();
+  const dateInView = dayjs();
   const dateFormat = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
 
   return { dateInView, dateString: dateInView.format(dateFormat) };

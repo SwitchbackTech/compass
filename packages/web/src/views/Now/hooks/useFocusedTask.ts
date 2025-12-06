@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Task } from "@web/common/types/task.types";
 import {
-  getTodayDateKey,
+  getDateKey,
   loadTasksFromStorage,
 } from "@web/common/utils/storage/storage.util";
 
@@ -21,7 +21,7 @@ export function useFocusedTask({
     }
 
     // Find the task to ensure it exists (today only)
-    const dateKey = getTodayDateKey();
+    const dateKey = getDateKey();
     const tasks = loadTasksFromStorage(dateKey);
     const task = tasks.find((t) => t.id === taskId);
     if (task) {
