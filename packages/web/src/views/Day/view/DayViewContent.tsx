@@ -102,9 +102,10 @@ const DayViewContentInner = () => {
   );
 
   const handleGoToToday = () => {
-    // Compare dates in the same timezone (UTC) to avoid timezone issues
-    const todayUTC = dayjs().startOf("day").utc();
-    const isViewingToday = dateInView.isSame(todayUTC, "day");
+    // Compare dates in the same timezone to avoid timezone issues
+    // Both dates are in local timezone, ensuring accurate day comparison
+    const today = dayjs().startOf("day");
+    const isViewingToday = dateInView.isSame(today, "day");
 
     if (isViewingToday && scrollToNowLineRef.current) {
       scrollToNowLineRef.current();

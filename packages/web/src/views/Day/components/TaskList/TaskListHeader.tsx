@@ -5,24 +5,22 @@ import { InfoIcon } from "@web/components/Icons/Info";
 import { SelectView } from "@web/components/SelectView/SelectView";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { TodayButton } from "@web/views/Calendar/components/TodayButton/TodayButton";
-import { useStorageInfoModal } from "../../context/StorageInfoModalContext";
-import { useDateInView } from "../../hooks/navigation/useDateInView";
-import { useDateNavigation } from "../../hooks/navigation/useDateNavigation";
+import { useStorageInfoModal } from "@web/views/Day/context/StorageInfoModalContext";
+import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
+import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 
 export const DAY_HEADING_FORMAT = "dddd";
 export const DAY_SUBHEADING_FORMAT = "MMMM D";
 
 export const TaskListHeader = () => {
-  const { navigateToPreviousDay, navigateToNextDay, navigateToToday } =
-    useDateNavigation();
+  const dateNav = useDateNavigation();
+  const dateInView = useDateInView();
   const { openModal } = useStorageInfoModal();
 
-  const dateInView = useDateInView();
-  const localDate = dateInView.local();
-  const header = localDate.locale("en").format(DAY_HEADING_FORMAT);
-  const subheader = localDate.locale("en").format(DAY_SUBHEADING_FORMAT);
-  const isToday =
-    localDate.format("YYYY-MM-DD") === dayjs().format("YYYY-MM-DD");
+  const { navigateToPreviousDay, navigateToNextDay, navigateToToday } = dateNav;
+  const header = dateInView.locale("en").format(DAY_HEADING_FORMAT);
+  const subheader = dateInView.locale("en").format(DAY_SUBHEADING_FORMAT);
+  const isToday = dateInView.isSame(dayjs(), "day");
 
   return (
     <div className="border-b border-gray-400/20 p-4">

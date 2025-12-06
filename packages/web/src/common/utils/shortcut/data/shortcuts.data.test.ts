@@ -37,11 +37,9 @@ describe("shortcuts.data", () => {
     });
 
     it("should show 'Scroll to now' when currentDate is today", () => {
-      const todayUTC = dayjs().startOf("day").utc();
-
       const shortcuts = getShortcuts({
         isToday: true,
-        currentDate: todayUTC,
+        currentDate: dayjs(),
       });
 
       const tShortcut = shortcuts.dayAgendaShortcuts.find((s) => s.k === "t");
@@ -50,11 +48,11 @@ describe("shortcuts.data", () => {
     });
 
     it("should show 'Go to today' when currentDate is not today", () => {
-      const yesterdayUTC = dayjs().subtract(1, "day").startOf("day").utc();
+      const yesterday = dayjs().subtract(1, "day");
 
       const shortcuts = getShortcuts({
         isToday: true,
-        currentDate: yesterdayUTC,
+        currentDate: yesterday,
       });
 
       const tShortcut = shortcuts.dayAgendaShortcuts.find((s) => s.k === "t");
@@ -63,11 +61,11 @@ describe("shortcuts.data", () => {
     });
 
     it("should show 'Go to today' when currentDate is tomorrow", () => {
-      const tomorrowUTC = dayjs().add(1, "day").startOf("day").utc();
+      const tomorrow = dayjs().add(1, "day");
 
       const shortcuts = getShortcuts({
         isToday: true,
-        currentDate: tomorrowUTC,
+        currentDate: tomorrow,
       });
 
       const tShortcut = shortcuts.dayAgendaShortcuts.find((s) => s.k === "t");
@@ -84,20 +82,6 @@ describe("shortcuts.data", () => {
       const tShortcut = shortcuts.dayAgendaShortcuts.find((s) => s.k === "t");
       expect(tShortcut).toBeDefined();
       expect(tShortcut?.label).toBe("Go to today");
-    });
-
-    it("should handle timezone edge cases correctly", () => {
-      // Test with a specific date that we know is today
-      const todayUTC = dayjs().startOf("day").utc();
-
-      const shortcuts = getShortcuts({
-        isToday: true,
-        currentDate: todayUTC,
-      });
-
-      const tShortcut = shortcuts.dayAgendaShortcuts.find((s) => s.k === "t");
-      expect(tShortcut).toBeDefined();
-      expect(tShortcut?.label).toBe("Scroll to now");
     });
 
     it("should return home shortcuts when isHome is true", () => {
