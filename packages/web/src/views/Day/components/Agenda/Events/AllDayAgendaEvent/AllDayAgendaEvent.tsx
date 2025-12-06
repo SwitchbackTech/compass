@@ -28,16 +28,12 @@ export const AllDayAgendaEvent = memo(
 
     return (
       <div
-        className={classNames(
-          "cursor-pointer",
-          "flex items-center rounded px-2 py-1 text-xs",
-          "focus:ring-2 focus:ring-yellow-200 focus:outline-none",
-          {
-            "opacity-60": isPast && !isDragging,
-            "text-text-lighter": shouldUseLightText,
-            "text-text-dark": !shouldUseLightText,
-          },
-        )}
+        className={classNames("flex items-center rounded px-2 py-1 text-xs", {
+          "cursor-grabbing": isDragging,
+          "opacity-60": isPast && !isDragging,
+          "text-text-lighter": shouldUseLightText,
+          "text-text-dark": !shouldUseLightText,
+        })}
         style={{
           backgroundColor,
           ...(containerWidth && over?.id === ID_GRID_MAIN

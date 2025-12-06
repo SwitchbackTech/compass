@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { Droppable } from "@web/components/DND/Droppable";
 import {
@@ -20,6 +20,13 @@ export const AgendaEvents = ({ height }: { height?: number }) => {
   const isLoading = useAppSelector(selectIsDayEventsProcessing);
   const { openEventForm } = useDraftContextV2();
   const [ref, setRef] = useState<HTMLElement | null>(null);
+  const [loadingCount, setLoadingCount] = useState<number>(0);
+
+  useEffect(() => {
+    if (isLoading) setLoadingCount((count) => count + 1);
+  }, [isLoading]);
+
+  // revert drag offline or http failure
 
   return (
     <EventContextMenuProvider>
@@ -40,7 +47,7 @@ export const AgendaEvents = ({ height }: { height?: number }) => {
         onClick={openEventForm}
       >
         {/* Event blocks */}
-        {isLoading || ref === null ? (
+        {loadingCount < 1 || ref === null ? (
           <AgendaSkeleton />
         ) : (
           events.map((event) => (

@@ -11,7 +11,7 @@ import { editEventSlice } from "@web/ducks/events/slices/event.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { getSnappedMinutes } from "../../views/Day/util/agenda/agenda.util";
 
-export function useEventDNDMonitor() {
+export function useEventDNDActions() {
   const dispatch = useAppDispatch();
 
   const updateEvent = useCallback(
@@ -73,8 +73,8 @@ export function useEventDNDMonitor() {
       updateEvent({
         ...event,
         isAllDay: true,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
+        startDate: startDate.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
+        endDate: endDate.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
       });
     },
     [updateEvent],

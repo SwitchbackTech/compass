@@ -66,7 +66,14 @@ export const DraggableAgendaEvent = memo(
             as="div"
             className={classNames(
               CLASS_TIMED_CALENDAR_EVENT,
-              "absolute touch-none",
+              "absolute cursor-move touch-none rounded",
+              "focus:ring-2 focus:ring-yellow-200 focus:outline-none",
+              {
+                "border-border-transparent border":
+                  event.position.isOverlapping,
+                "shadow-md hover:!z-40 focus:!z-40":
+                  event.position.isOverlapping,
+              },
             )}
             style={{
               top: `${startPosition}px`,
