@@ -46,7 +46,7 @@ export const Agenda = ({ onScrollToNowLineReady }: AgendaProps) => {
   return (
     <section
       aria-label="calendar-agenda"
-      className="bg-darkBlue-400 flex h-full min-w-xs flex-1 flex-col"
+      className="bg-darkBlue-400 flex h-full min-w-xs flex-1 flex-col gap-2"
     >
       <AllDayAgendaEvents allDayEvents={allDayEvents} />
 

@@ -7,6 +7,8 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { SessionProvider } from "@web/auth/SessionProvider";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { theme } from "@web/common/styles/theme";
+import { DNDContext } from "@web/components/DND/DNDContext";
+import { DNDOverlay } from "@web/components/DND/DNDOverlay";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
 import { store } from "@web/store";
 
@@ -21,20 +23,25 @@ export const CompassRequiredProviders = (
     <Provider store={props?.store ?? store}>
       <GoogleOAuthProvider clientId={ENV_WEB.GOOGLE_CLIENT_ID || ""}>
         <ThemeProvider theme={theme}>
-          <IconProvider>{props.children}</IconProvider>
-          <ToastContainer
-            position="bottom-left"
-            autoClose={5000}
-            hideProgressBar={false}
-            newestOnTop={false}
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-            theme="dark"
-            limit={1}
-          />
+          <DNDContext>
+            <IconProvider>{props.children}</IconProvider>
+
+            <ToastContainer
+              position="bottom-left"
+              autoClose={5000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="dark"
+              limit={1}
+            />
+
+            <DNDOverlay />
+          </DNDContext>
         </ThemeProvider>
       </GoogleOAuthProvider>
     </Provider>

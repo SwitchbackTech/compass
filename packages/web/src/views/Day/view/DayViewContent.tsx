@@ -1,6 +1,7 @@
 import { useCallback, useRef } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { MousePositionProvider } from "@web/common/context/mouse-position";
+import { useEventDNDActions } from "@web/common/hooks/useEventDNDActions";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
 import { ShortcutsOverlay } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
@@ -29,6 +30,7 @@ import {
 
 export const DayViewContent = () => {
   useRefetch();
+  useEventDNDActions();
 
   const {
     tasks,

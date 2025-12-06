@@ -169,6 +169,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         placeholder="Description"
         underlineColor={colorByPriority[priority]}
         value={event.description || ""}
+        className="overflow-y-auto"
       />
 
       <SaveSection priority={priority} onSubmit={_onSubmit} />
