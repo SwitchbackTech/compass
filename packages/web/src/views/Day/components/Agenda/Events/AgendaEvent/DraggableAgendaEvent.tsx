@@ -1,6 +1,6 @@
 import classNames from "classnames";
 import fastDeepEqual from "fast-deep-equal/react";
-import { memo } from "react";
+import { memo, useCallback } from "react";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { CLASS_TIMED_CALENDAR_EVENT } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -27,7 +27,7 @@ export const DraggableAgendaEvent = memo(
     event: Schema_GridEvent;
     containerWidth: number;
   }) => {
-    const { openContextMenu } = useEventContextMenu();
+    const { openContextMenu, isOpen } = useEventContextMenu();
 
     if (!event.startDate || !event.endDate || event.isAllDay) return null;
 
@@ -37,10 +37,13 @@ export const DraggableAgendaEvent = memo(
     const startDate = new Date(event.startDate);
     const startPosition = getAgendaEventPosition(startDate);
 
-    const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      openContextMenu(event as Schema_Event, { x: e.clientX, y: e.clientY });
-    };
+    const handleContextMenu = useCallback(
+      (e: React.MouseEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        openContextMenu(event as Schema_Event, { x: e.clientX, y: e.clientY });
+      },
+      [event, openContextMenu],
+    );
 
     const overlappingStyles = getOverlappingStyles(
       event,
@@ -91,7 +94,8 @@ export const DraggableAgendaEvent = memo(
             />
           </Draggable>
         </AgendaEventMenuTrigger>
-        <AgendaEventMenuContent event={event} />
+
+        {isOpen ? null : <AgendaEventMenuContent event={event} />}
       </AgendaEventMenu>
     );
   },
