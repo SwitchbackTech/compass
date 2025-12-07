@@ -52,7 +52,7 @@ export const getEventTimeFromPosition = (
 
   // Clamp hours to valid range (0-23)
   const clampedHours = Math.max(0, Math.min(23, hours));
-  const clampedMinutes = clampedHours === 23 ? Math.min(45, minutes) : minutes;
+  const clampedMinutes = hours > 23 ? 45 : hours < 0 ? 0 : minutes;
 
   return dateInView.startOf("day").hour(clampedHours).minute(clampedMinutes);
 };
