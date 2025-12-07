@@ -81,7 +81,7 @@ export const MainGrid: FC<Props> = ({
       id={ID_GRID_MAIN}
       ref={mainGridRef}
       tabIndex={-1}
-      className="overflow-y-auto"
+      className="overflow-y-auto focus:outline-none"
     >
       <MainGridColumns
         isCurrentWeek={isCurrentWeek}

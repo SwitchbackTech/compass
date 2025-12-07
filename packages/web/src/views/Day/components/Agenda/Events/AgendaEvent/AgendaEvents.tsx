@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { Droppable } from "@web/components/DND/Droppable";
 import {
@@ -12,21 +12,11 @@ import { AgendaSkeleton } from "@web/views/Day/components/Agenda/AgendaSkeleton/
 import { DraggableAgendaEvent } from "@web/views/Day/components/Agenda/Events/AgendaEvent/DraggableAgendaEvent";
 import { EventContextMenuProvider } from "@web/views/Day/components/ContextMenu/EventContextMenuContext";
 
-const canvas = document.createElement("canvas");
-const canvasContext = canvas.getContext("2d");
-
 export const AgendaEvents = ({ height }: { height?: number }) => {
   const events = useAppSelector(selectTimedDayEvents);
   const isLoading = useAppSelector(selectIsDayEventsProcessing);
   const { openEventForm } = useDraftContextV2();
   const [ref, setRef] = useState<HTMLElement | null>(null);
-  const [loadingCount, setLoadingCount] = useState<number>(0);
-
-  useEffect(() => {
-    if (isLoading) setLoadingCount((count) => count + 1);
-  }, [isLoading]);
-
-  // revert drag offline or http failure
 
   return (
     <EventContextMenuProvider>
@@ -47,7 +37,7 @@ export const AgendaEvents = ({ height }: { height?: number }) => {
         onClick={openEventForm}
       >
         {/* Event blocks */}
-        {loadingCount < 1 || ref === null ? (
+        {isLoading || ref === null ? (
           <AgendaSkeleton />
         ) : (
           events.map((event) => (
@@ -55,7 +45,6 @@ export const AgendaEvents = ({ height }: { height?: number }) => {
               key={event._id}
               event={event}
               containerWidth={ref.clientWidth}
-              canvasContext={canvasContext}
             />
           ))
         )}

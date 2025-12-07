@@ -12,7 +12,7 @@ import { AllDayAgendaEvent } from "@web/views/Day/components/Agenda/Events/AllDa
 
 export const DraggableAllDayAgendaEvent = memo(
   ({ event }: { event: Schema_GridEvent }) => {
-    if (!event.title) return null;
+    if (!event.startDate || !event.endDate || !event.isAllDay) return null;
 
     return (
       <AgendaEventMenu>

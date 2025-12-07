@@ -11,20 +11,13 @@ import { getAgendaEventPosition } from "@web/views/Day/util/agenda/agenda.util";
 export const AgendaEvent = memo(
   ({
     event,
-    canvasContext,
     isDragging,
   }: {
     event: Schema_GridEvent;
     containerWidth: number;
-    canvasContext: CanvasRenderingContext2D | null;
-    over: Over | null;
+    over?: Over | null;
     isDragging?: boolean;
   }) => {
-    // Set canvas font to match 'text-xs' Tailwind class (0.75rem = 12px)
-    if (canvasContext) {
-      canvasContext.font = "0.75rem sans-serif";
-    }
-
     const startDate = new Date(event.startDate);
     const endDate = new Date(event.endDate);
     const startPosition = getAgendaEventPosition(startDate);
@@ -40,6 +33,7 @@ export const AgendaEvent = memo(
 
     return (
       <div
+        data-testid="agenda-event"
         className={classNames("flex items-center rounded px-2 text-xs", {
           "cursor-grabbing": isDragging,
           "text-text-light": isBackgroundDark,

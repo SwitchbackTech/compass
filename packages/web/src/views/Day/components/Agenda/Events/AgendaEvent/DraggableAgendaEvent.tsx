@@ -2,6 +2,7 @@ import classNames from "classnames";
 import fastDeepEqual from "fast-deep-equal/react";
 import { memo } from "react";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import { CLASS_TIMED_CALENDAR_EVENT } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getOverlappingStyles } from "@web/common/utils/overlap/overlap";
 import { Draggable } from "@web/components/DND/Draggable";
@@ -11,26 +12,24 @@ import { AgendaEventMenuContent } from "@web/views/Day/components/Agenda/Events/
 import { AgendaEventMenuTrigger } from "@web/views/Day/components/Agenda/Events/AgendaEventMenu/AgendaEventMenuTrigger";
 import { useEventContextMenu } from "@web/views/Day/components/ContextMenu/EventContextMenuContext";
 import { getAgendaEventPosition } from "@web/views/Day/util/agenda/agenda.util";
-import { CLASS_TIMED_CALENDAR_EVENT } from "../../../../../../common/constants/web.constants";
+
+const canvas = document.createElement("canvas");
+const canvasContext = canvas.getContext("2d");
+
+// Set canvas font to match 'text-xs' Tailwind class (0.75rem = 12px)
+if (canvasContext) canvasContext.font = "0.75rem Rubik";
 
 export const DraggableAgendaEvent = memo(
   ({
     event,
     containerWidth,
-    canvasContext,
   }: {
     event: Schema_GridEvent;
     containerWidth: number;
-    canvasContext: CanvasRenderingContext2D | null;
   }) => {
     const { openContextMenu } = useEventContextMenu();
 
-    if (!event.startDate || !event.endDate) return null;
-
-    // Set canvas font to match 'text-xs' Tailwind class (0.75rem = 12px)
-    if (canvasContext) {
-      canvasContext.font = "0.75rem sans-serif";
-    }
+    if (!event.startDate || !event.endDate || event.isAllDay) return null;
 
     const textMeasure = canvasContext?.measureText(event.title ?? "");
     const textWidth = textMeasure?.width ?? 0;
@@ -87,7 +86,6 @@ export const DraggableAgendaEvent = memo(
           >
             <AgendaEvent
               event={event}
-              canvasContext={canvasContext}
               containerWidth={containerWidth}
               over={null}
             />

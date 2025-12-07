@@ -1,6 +1,6 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
-import { screen, waitFor } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { Schema_Event } from "@core/types/event.types";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import { renderWithDayProviders } from "../../util/day.test-util";
@@ -67,10 +67,8 @@ describe("CalendarAgenda", () => {
   it("should show skeleton during loading", async () => {
     renderAgenda([], { isProcessing: true });
 
-    await waitFor(() => {
-      const skeletonElements = document.querySelectorAll(".animate-pulse");
-      expect(skeletonElements.length).toBeGreaterThan(0);
-    });
+    const skeleton = await screen.findByTestId("agenda-skeleton");
+    expect(skeleton).toBeInTheDocument();
   });
 
   it("should not show skeleton or error when events are loaded", async () => {

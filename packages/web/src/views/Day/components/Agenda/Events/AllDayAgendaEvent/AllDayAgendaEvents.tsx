@@ -32,7 +32,7 @@ export const AllDayAgendaEvents = ({
       id={ID_GRID_ALLDAY_ROW}
       aria-label="all day events section"
       className={classNames(
-        "max-h-36 min-h-8 cursor-cell space-y-1",
+        "group max-h-36 min-h-8 cursor-cell space-y-1",
         "overflow-x-hidden overflow-y-auto",
         "border-t border-b border-gray-400/20",
       )}
@@ -46,7 +46,8 @@ export const AllDayAgendaEvents = ({
         <div
           className={classNames(
             "flex flex-1 items-center justify-center py-2",
-            "text-text-light text-sm",
+            "group-hover:text-white-100 group-focus:text-white-100",
+            "text-sm text-gray-200 transition-colors",
           )}
         >
           Click to add all day events{" "}

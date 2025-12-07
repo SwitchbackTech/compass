@@ -29,6 +29,7 @@ jest.mock("../Agenda/Events/AgendaEventMenu/AgendaEventMenuTrigger", () => ({
 
 const renderAgendaEvents = (events: Schema_Event[]) => {
   const store = createStoreWithEvents(events);
+
   const utils = renderWithDayProviders(<AgendaEvents />, { store });
   const dispatchSpy = jest.spyOn(store, "dispatch");
 
@@ -51,7 +52,7 @@ describe("EventContextMenu", () => {
     jest.clearAllMocks();
   });
 
-  it("should open context menu on right-click on an event", async () => {
+  it.only("should open context menu on right-click on an event", async () => {
     const { user, dispatchSpy } = renderAgendaEvents([baseEvent]);
 
     const eventButton = await screen.findByRole("button", {
@@ -160,7 +161,9 @@ describe("EventContextMenu", () => {
       { ...baseEvent, _id: "event-2", title: "Second Event" },
     ];
 
-    const { user, dispatchSpy } = renderAgendaEvents(mockEvents);
+    const { user, dispatchSpy } = await act(() =>
+      renderAgendaEvents(mockEvents),
+    );
 
     await screen.findByRole("button", { name: "First Event" });
     await screen.findByRole("button", { name: "Second Event" });

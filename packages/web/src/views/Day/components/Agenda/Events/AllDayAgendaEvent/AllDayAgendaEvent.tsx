@@ -16,7 +16,7 @@ export const AllDayAgendaEvent = memo(
   }: {
     event: Schema_GridEvent;
     isDragging?: boolean;
-    over: Over | null;
+    over?: Over | null;
   }) => {
     const isPast = event.endDate ? new Date(event.endDate) < new Date() : false;
     const priority = event.priority || Priorities.UNASSIGNED;
@@ -42,7 +42,7 @@ export const AllDayAgendaEvent = memo(
           marginLeft: over?.id === ID_GRID_MAIN ? "71px" : "0%",
         }}
       >
-        <span className="flex-1 truncate">{event.title}</span>
+        <span className="flex-1 truncate">{event.title || "Untitled"}</span>
       </div>
     );
   },
