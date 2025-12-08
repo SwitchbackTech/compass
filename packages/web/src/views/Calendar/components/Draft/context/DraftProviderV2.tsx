@@ -13,7 +13,7 @@ import { useSaveEventForm } from "@web/views/Forms/hooks/useSaveEventForm";
 interface DraftProviderV2Props {
   draft: Schema_Event | null;
   setDraft: Dispatch<React.SetStateAction<Schema_Event | null>>;
-  openEventForm: () => void;
+  openEventForm: (create?: boolean) => void;
   closeEventForm: () => void;
   onDelete: () => void;
   onSave: (draft: Schema_Event | null) => void;

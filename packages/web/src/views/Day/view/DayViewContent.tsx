@@ -113,6 +113,10 @@ const DayViewContentInner = () => {
 
   const { openEventForm } = useDraftContextV2();
 
+  const onCreateEvent = useCallback(() => {
+    openEventForm(true);
+  }, [openEventForm]);
+
   useDayViewShortcuts({
     onAddTask: focusOnAddTaskInput,
     onEditTask: handleEditTask,
@@ -121,7 +125,7 @@ const DayViewContentInner = () => {
     onMigrateTask: migrateTask,
     onFocusTasks: focusOnFirstTask,
     onFocusAgenda: handleFocusAgenda,
-    onCreateEvent: openEventForm,
+    onCreateEvent: onCreateEvent,
     onNextDay: navigateToNextDay,
     onPrevDay: navigateToPreviousDay,
     onGoToToday: handleGoToToday,
