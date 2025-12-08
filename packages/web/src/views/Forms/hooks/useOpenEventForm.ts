@@ -48,74 +48,77 @@ export function useOpenEventForm({
     }
   }, [isOverAllDayRow, isOverSomedayWeek, isOverSomedayMonth, isOverMainGrid]);
 
-  const openEventForm = useCallback(async () => {
-    const user = await getUserId();
+  const openEventForm = useCallback(
+    async (create?: boolean) => {
+      const user = await getUserId();
 
-    if (!user) return;
+      if (!user) return;
 
-    const event = element?.closest(`.${eventClass}`);
-    const existingEventId = event?.getAttribute(DATA_EVENT_ELEMENT_ID);
+      const event = element?.closest(`.${eventClass}`);
+      const existingEventId = event?.getAttribute(DATA_EVENT_ELEMENT_ID);
 
-    let draftEvent: Schema_Event;
+      let draftEvent: Schema_Event;
 
-    if (existingEventId) {
-      draftEvent = selectEventById(store.getState(), existingEventId);
-      setExisting(true);
-    } else {
-      let startTime: Dayjs = dayjs();
-      let endTime: Dayjs = dayjs().add(15, "minutes");
+      if (existingEventId && !create) {
+        draftEvent = selectEventById(store.getState(), existingEventId);
+        setExisting(true);
+      } else {
+        let startTime: Dayjs = dayjs();
+        let endTime: Dayjs = dayjs().add(15, "minutes");
 
-      if (isOverAllDayRow) {
-        const date = dateInView.startOf("day");
-        startTime = date;
-        endTime = date.add(1, "day");
-      } else if (isOverSomedayWeek || isOverSomedayMonth) {
-        const now = dayjs();
-        const date = dateInView.hour(now.hour()).minute(now.minute());
-        startTime = date;
-        endTime = date.add(15, "minutes");
-      } else if (isOverMainGrid) {
-        const boundingRect = mousePointRef?.getBoundingClientRect();
-        const startTimeY = boundingRect?.top ?? 0;
-        const endTimeY = startTimeY + SLOT_HEIGHT;
-        startTime = getEventTimeFromPosition(startTimeY, dateInView);
-        endTime = getEventTimeFromPosition(endTimeY, dateInView);
+        if (isOverAllDayRow) {
+          const date = dateInView.startOf("day");
+          startTime = date;
+          endTime = date.add(1, "day");
+        } else if (isOverSomedayWeek || isOverSomedayMonth) {
+          const now = dayjs();
+          const date = dateInView.hour(now.hour()).minute(now.minute());
+          startTime = date;
+          endTime = date.add(15, "minutes");
+        } else if (isOverMainGrid) {
+          const boundingRect = mousePointRef?.getBoundingClientRect();
+          const startTimeY = boundingRect?.top ?? 0;
+          const endTimeY = startTimeY + SLOT_HEIGHT;
+          startTime = getEventTimeFromPosition(startTimeY, dateInView);
+          endTime = getEventTimeFromPosition(endTimeY, dateInView);
+        }
+
+        draftEvent = {
+          title: "",
+          description: "",
+          startDate: startTime.toISOString(),
+          endDate: endTime.toISOString(),
+          isAllDay: isOverAllDayRow,
+          isSomeday: isOverSidebar,
+          user,
+          priority: Priorities.UNASSIGNED,
+          origin: Origin.COMPASS,
+        };
+
+        setExisting(false);
       }
 
-      draftEvent = {
-        title: "",
-        description: "",
-        startDate: startTime.toISOString(),
-        endDate: endTime.toISOString(),
-        isAllDay: isOverAllDayRow,
-        isSomeday: isOverSidebar,
-        user,
-        priority: Priorities.UNASSIGNED,
-        origin: Origin.COMPASS,
-      };
+      setReference?.(mousePointRef);
 
-      setExisting(false);
-    }
-
-    setReference?.(mousePointRef);
-
-    setDraft(draftEvent);
-    setOpenAtMousePosition(true);
-  }, [
-    element,
-    eventClass,
-    setReference,
-    mousePointRef,
-    setDraft,
-    setExisting,
-    setOpenAtMousePosition,
-    isOverAllDayRow,
-    isOverSomedayWeek,
-    isOverSomedayMonth,
-    isOverMainGrid,
-    isOverSidebar,
-    dateInView,
-  ]);
+      setDraft(draftEvent);
+      setOpenAtMousePosition(true);
+    },
+    [
+      element,
+      eventClass,
+      setReference,
+      mousePointRef,
+      setDraft,
+      setExisting,
+      setOpenAtMousePosition,
+      isOverAllDayRow,
+      isOverSomedayWeek,
+      isOverSomedayMonth,
+      isOverMainGrid,
+      isOverSidebar,
+      dateInView,
+    ],
+  );
 
   return openEventForm;
 }

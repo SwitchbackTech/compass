@@ -8,6 +8,7 @@ import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { Dedication } from "@web/views/Calendar/components/Dedication";
 import { DraftProviderV2 } from "@web/views/Calendar/components/Draft/context/DraftProviderV2";
+import { useDraftContextV2 } from "@web/views/Calendar/components/Draft/context/useDraftContextV2";
 import { useRefetch } from "@web/views/Calendar/hooks/useRefetch";
 import { StyledCalendar } from "@web/views/Calendar/styled";
 import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
@@ -27,7 +28,7 @@ import {
   focusOnFirstTask,
 } from "@web/views/Day/util/day.shortcut.util";
 
-export const DayViewContent = () => {
+const DayViewContentInner = () => {
   useRefetch();
 
   const {
@@ -110,6 +111,12 @@ export const DayViewContent = () => {
     }
   };
 
+  const { openEventForm } = useDraftContextV2();
+
+  const onCreateEvent = useCallback(() => {
+    openEventForm(true);
+  }, [openEventForm]);
+
   useDayViewShortcuts({
     onAddTask: focusOnAddTaskInput,
     onEditTask: handleEditTask,
@@ -118,6 +125,7 @@ export const DayViewContent = () => {
     onMigrateTask: migrateTask,
     onFocusTasks: focusOnFirstTask,
     onFocusAgenda: handleFocusAgenda,
+    onCreateEvent: onCreateEvent,
     onNextDay: navigateToNextDay,
     onPrevDay: navigateToPreviousDay,
     onGoToToday: handleGoToToday,
@@ -126,35 +134,43 @@ export const DayViewContent = () => {
   });
 
   return (
+    <>
+      <DayCmdPalette onGoToToday={handleGoToToday} />
+      <Dedication />
+
+      <StyledCalendar>
+        <Header />
+
+        <div
+          className={`flex max-w-4/7 min-w-4/7 flex-1 justify-center gap-8 self-center overflow-hidden`}
+        >
+          <TaskList />
+
+          <Agenda onScrollToNowLineReady={handleScrollToNowLineReady} />
+        </div>
+      </StyledCalendar>
+
+      <StorageInfoModal isOpen={isModalOpen} onClose={closeModal} />
+
+      <ShortcutsOverlay
+        sections={[
+          { title: "Day", shortcuts: shortcuts.dayShortcuts },
+          { title: "Tasks", shortcuts: shortcuts.dayTaskShortcuts },
+          { title: "Calendar", shortcuts: shortcuts.dayAgendaShortcuts },
+          { title: "Global", shortcuts: shortcuts.globalShortcuts },
+        ]}
+      />
+
+      <FloatingEventForm />
+    </>
+  );
+};
+
+export const DayViewContent = () => {
+  return (
     <MousePositionProvider>
       <DraftProviderV2>
-        <DayCmdPalette onGoToToday={handleGoToToday} />
-        <Dedication />
-
-        <StyledCalendar>
-          <Header />
-
-          <div
-            className={`flex max-w-4/7 min-w-4/7 flex-1 justify-center gap-8 self-center overflow-hidden`}
-          >
-            <TaskList />
-
-            <Agenda onScrollToNowLineReady={handleScrollToNowLineReady} />
-          </div>
-        </StyledCalendar>
-
-        <StorageInfoModal isOpen={isModalOpen} onClose={closeModal} />
-
-        <ShortcutsOverlay
-          sections={[
-            { title: "Home", shortcuts: shortcuts.homeShortcuts },
-            { title: "Tasks", shortcuts: shortcuts.dayTaskShortcuts },
-            { title: "Calendar", shortcuts: shortcuts.dayAgendaShortcuts },
-            { title: "Global", shortcuts: shortcuts.globalShortcuts },
-          ]}
-        />
-
-        <FloatingEventForm />
+        <DayViewContentInner />
       </DraftProviderV2>
     </MousePositionProvider>
   );
