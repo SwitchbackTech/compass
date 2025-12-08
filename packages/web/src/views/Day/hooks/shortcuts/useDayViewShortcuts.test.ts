@@ -68,23 +68,19 @@ describe.each([
     expect(config.onFocusTasks).toHaveBeenCalled();
   });
 
-  it("should call onCreateEvent when 'c' is pressed and not focused in task", async () => {
+  it("should call onCreateEvent when 'n' is pressed", async () => {
     const config = { ...defaultConfig };
     await act(() => renderHook(() => useDayViewShortcuts(config)));
 
-    isFocusedWithinTask.mockReturnValue(false);
-
-    pressKey("c");
+    pressKey("n");
 
     expect(config.onCreateEvent).toHaveBeenCalled();
     expect(config.onAddTask).not.toHaveBeenCalled();
   });
 
-  it("should call onAddTask when 'c' is pressed and focused within task", async () => {
+  it("should call onAddTask when 'c' is pressed", async () => {
     const config = { ...defaultConfig };
     await act(() => renderHook(() => useDayViewShortcuts(config)));
-
-    isFocusedWithinTask.mockReturnValue(true);
 
     pressKey("c");
 

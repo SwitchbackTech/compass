@@ -21,16 +21,18 @@ describe("shortcuts.data", () => {
         label: "Command Palette",
       });
 
-      expect(shortcuts.dayAgendaShortcuts).toHaveLength(3);
+      expect(shortcuts.dayAgendaShortcuts).toHaveLength(2);
       expect(shortcuts.dayAgendaShortcuts[0]).toEqual({
         k: "i",
         label: "Focus on calendar",
       });
       expect(shortcuts.dayAgendaShortcuts[1]).toEqual({
-        k: "c",
+        k: "n",
         label: "Create event",
       });
-      expect(shortcuts.dayAgendaShortcuts[2]).toEqual({
+
+      expect(shortcuts.dayShortcuts).toHaveLength(3);
+      expect(shortcuts.dayShortcuts[2]).toEqual({
         k: "t",
         label: "Go to today",
       });
@@ -42,7 +44,7 @@ describe("shortcuts.data", () => {
         currentDate: dayjs(),
       });
 
-      const tShortcut = shortcuts.dayAgendaShortcuts.find((s) => s.k === "t");
+      const tShortcut = shortcuts.dayShortcuts.find((s) => s.k === "t");
       expect(tShortcut).toBeDefined();
       expect(tShortcut?.label).toBe("Scroll to now");
     });
@@ -55,7 +57,7 @@ describe("shortcuts.data", () => {
         currentDate: yesterday,
       });
 
-      const tShortcut = shortcuts.dayAgendaShortcuts.find((s) => s.k === "t");
+      const tShortcut = shortcuts.dayShortcuts.find((s) => s.k === "t");
       expect(tShortcut).toBeDefined();
       expect(tShortcut?.label).toBe("Go to today");
     });
@@ -68,7 +70,7 @@ describe("shortcuts.data", () => {
         currentDate: tomorrow,
       });
 
-      const tShortcut = shortcuts.dayAgendaShortcuts.find((s) => s.k === "t");
+      const tShortcut = shortcuts.dayShortcuts.find((s) => s.k === "t");
       expect(tShortcut).toBeDefined();
       expect(tShortcut?.label).toBe("Go to today");
     });
@@ -79,7 +81,7 @@ describe("shortcuts.data", () => {
         currentDate: undefined,
       });
 
-      const tShortcut = shortcuts.dayAgendaShortcuts.find((s) => s.k === "t");
+      const tShortcut = shortcuts.dayShortcuts.find((s) => s.k === "t");
       expect(tShortcut).toBeDefined();
       expect(tShortcut?.label).toBe("Go to today");
     });

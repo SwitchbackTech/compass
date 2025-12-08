@@ -1,9 +1,6 @@
 import { useCallback, useRef } from "react";
-import { Origin, Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
-import { getUserId } from "@web/auth/auth.util";
 import { MousePositionProvider } from "@web/common/context/mouse-position";
-import { useMousePosition } from "@web/common/hooks/useMousePosition";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
 import { ShortcutsOverlay } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
@@ -114,69 +111,7 @@ const DayViewContentInner = () => {
     }
   };
 
-  const { setDraft } = useDraftContextV2();
-  const mousePosition = useMousePosition();
-  const { setOpenAtMousePosition, floating } = mousePosition;
-
-  const handleCreateEvent = useCallback(async () => {
-    try {
-      const user = await getUserId();
-      if (!user) return;
-
-      // Create a new event starting at the current hour
-      const now = dayjs();
-      const startTime = dateInView
-        .hour(now.hour())
-        .minute(0)
-        .second(0)
-        .millisecond(0);
-      const endTime = startTime.add(1, "hour");
-
-      const draftEvent = {
-        title: "",
-        description: "",
-        startDate: startTime.toISOString(),
-        endDate: endTime.toISOString(),
-        isAllDay: false,
-        isSomeday: false,
-        user,
-        priority: Priorities.UNASSIGNED,
-        origin: Origin.COMPASS,
-      };
-
-      // Get the center of the screen for positioning the form
-      const centerX = window.innerWidth / 2;
-      const centerY = window.innerHeight / 2;
-
-      // Create a virtual reference point at the center of the screen
-      const virtualRef = {
-        getBoundingClientRect: () => ({
-          width: 0,
-          height: 0,
-          x: centerX,
-          y: centerY,
-          top: centerY,
-          left: centerX,
-          right: centerX,
-          bottom: centerY,
-          toJSON: () => ({}),
-        }),
-      };
-
-      // Set the reference for the floating UI if available
-      if (floating?.refs?.setReference) {
-        floating.refs.setReference(virtualRef);
-      }
-
-      // Set the draft and open the form at the mouse position
-      setDraft(draftEvent);
-      setOpenAtMousePosition(true);
-    } catch (error) {
-      // Silently fail if user authentication fails
-      // The user will already be redirected to login if not authenticated
-      console.error("Failed to create event:", error);
-    }
-  }, [dateInView, setDraft, setOpenAtMousePosition, floating]);
+  const { openEventForm } = useDraftContextV2();
 
   useDayViewShortcuts({
     onAddTask: focusOnAddTaskInput,
@@ -186,7 +121,7 @@ const DayViewContentInner = () => {
     onMigrateTask: migrateTask,
     onFocusTasks: focusOnFirstTask,
     onFocusAgenda: handleFocusAgenda,
-    onCreateEvent: handleCreateEvent,
+    onCreateEvent: openEventForm,
     onNextDay: navigateToNextDay,
     onPrevDay: navigateToPreviousDay,
     onGoToToday: handleGoToToday,
@@ -215,7 +150,7 @@ const DayViewContentInner = () => {
 
       <ShortcutsOverlay
         sections={[
-          { title: "Home", shortcuts: shortcuts.homeShortcuts },
+          { title: "Day", shortcuts: shortcuts.dayShortcuts },
           { title: "Tasks", shortcuts: shortcuts.dayTaskShortcuts },
           { title: "Calendar", shortcuts: shortcuts.dayAgendaShortcuts },
           { title: "Global", shortcuts: shortcuts.globalShortcuts },

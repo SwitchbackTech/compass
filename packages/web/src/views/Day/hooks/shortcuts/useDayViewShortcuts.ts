@@ -75,16 +75,6 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     eventUndoToastId,
   } = config;
 
-  const handleCreateShortcut = useCallback(() => {
-    // If focused on task area, create a task
-    if (isFocusedWithinTask()) {
-      onAddTask?.();
-    } else {
-      // Otherwise, create an event
-      onCreateEvent?.();
-    }
-  }, [onAddTask, onCreateEvent]);
-
   const handleDeleteTask = useCallback(() => {
     if (isFocusedOnTaskCheckbox()) {
       onDeleteTask?.();
@@ -134,9 +124,11 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   // Tasks shortcuts
   useKeyUpEvent({ combination: ["u"], handler: onFocusTasks });
 
-  useKeyUpEvent({ combination: ["c"], handler: handleCreateShortcut });
+  useKeyUpEvent({ combination: ["c"], handler: onAddTask });
 
   useKeyUpEvent({ combination: ["e"], handler: onEditTask });
+
+  useKeyUpEvent({ combination: ["n"], handler: onCreateEvent });
 
   useKeyUpEvent({ combination: ["Delete"], handler: handleDeleteTask });
 

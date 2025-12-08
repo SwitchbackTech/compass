@@ -22,6 +22,7 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
   ];
 
   let homeShortcuts: Shortcut[] = [];
+  let dayShortcuts: Shortcut[] = [];
   let dayTaskShortcuts: Shortcut[] = [];
   let dayAgendaShortcuts: Shortcut[] = [];
   let nowShortcuts: Shortcut[] = [];
@@ -35,15 +36,9 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
   }
 
   if (isToday) {
-    dayTaskShortcuts = [
-      { k: "u", label: "Focus on tasks" },
-      { k: "c", label: "Create task" },
-      { k: "e", label: "Edit task" },
-      { k: "Delete", label: "Delete task" },
-    ];
-    dayAgendaShortcuts = [
-      { k: "i", label: "Focus on calendar" },
-      { k: "c", label: "Create event" },
+    dayShortcuts = [
+      { k: "j", label: "Previous day" },
+      { k: "k", label: "Next day" },
       {
         k: "t",
         label: (() => {
@@ -54,6 +49,17 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
             : "Go to today";
         })(),
       },
+    ];
+
+    dayTaskShortcuts = [
+      { k: "u", label: "Focus on tasks" },
+      { k: "c", label: "Create task" },
+      { k: "e", label: "Edit task" },
+      { k: "Delete", label: "Delete task" },
+    ];
+    dayAgendaShortcuts = [
+      { k: "i", label: "Focus on calendar" },
+      { k: "n", label: "Create event" },
     ];
   }
   if (isNow) {
@@ -70,6 +76,7 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
   return {
     globalShortcuts,
     homeShortcuts,
+    dayShortcuts,
     dayTaskShortcuts,
     dayAgendaShortcuts,
     nowShortcuts,
