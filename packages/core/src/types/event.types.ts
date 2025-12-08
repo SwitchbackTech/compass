@@ -64,6 +64,7 @@ export interface Params_Events {
   startDate: string;
   endDate: string;
   someday: boolean;
+  dontAdjustDates?: boolean;
 }
 
 export interface Payload_Order {

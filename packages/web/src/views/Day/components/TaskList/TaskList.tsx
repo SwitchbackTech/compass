@@ -1,12 +1,12 @@
 import React, { useRef, useState } from "react";
+import { AddTaskActiveButton } from "@web/views/Day/components/AddTask/AddTaskActiveButton";
+import { AddTaskPreviewButton } from "@web/views/Day/components/AddTask/AddTaskPreviewButton";
+import { TaskContextMenuWrapper } from "@web/views/Day/components/ContextMenu/TaskContextMenuWrapper";
+import { TaskListHeader } from "@web/views/Day/components/TaskList/TaskListHeader";
+import { Tasks } from "@web/views/Day/components/Tasks/Tasks";
+import { useTaskListInputFocus } from "@web/views/Day/components/Tasks/useTaskListInputFocus";
 import { DNDTasksProvider } from "@web/views/Day/context/DNDTasksProvider";
-import { useTasks } from "../../hooks/tasks/useTasks";
-import { AddTaskActiveButton } from "../AddTask/AddTaskActiveButton";
-import { AddTaskPreviewButton } from "../AddTask/AddTaskPreviewButton";
-import { TaskContextMenuWrapper } from "../ContextMenu/TaskContextMenuWrapper";
-import { Tasks } from "../Tasks/Tasks";
-import { useTaskListInputFocus } from "../Tasks/useTaskListInputFocus";
-import { TaskListHeader } from "./TaskListHeader";
+import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
 
 export function TaskList() {
   const { addTask, isAddingTask, setIsAddingTask } = useTasks();
@@ -55,14 +55,13 @@ export function TaskList() {
   return (
     <section
       aria-label="daily-tasks"
-      className="bg-darkBlue-400 flex h-full min-w-xs flex-col border-r border-gray-400/20 text-white"
+      className="bg-darkBlue-400 flex h-full min-w-xs flex-1 flex-col border-r border-gray-400/20 text-white"
     >
       <TaskListHeader />
 
       <div
         ref={tasksScrollRef}
-        className="flex flex-1 flex-col gap-2 overflow-y-auto p-4"
-        style={{ overscrollBehavior: "contain" }}
+        className="flex flex-1 flex-col gap-2 overflow-hidden p-4"
       >
         <TaskContextMenuWrapper>
           <DNDTasksProvider>
@@ -70,23 +69,25 @@ export function TaskList() {
           </DNDTasksProvider>
         </TaskContextMenuWrapper>
 
-        {isAddingTask ? (
-          <AddTaskActiveButton
-            newTaskTitle={newTaskTitle}
-            setNewTaskTitle={setNewTaskTitle}
-            addTaskInputRef={addTaskInputRef}
-            onAddTask={handleAddTask}
-            onAddTaskKeyDown={handleAddTaskKeyDown}
-            onBlur={handleAddTaskBlur}
-          />
-        ) : (
-          <AddTaskPreviewButton
-            onBeginAddingTask={beginAddingTask}
-            isHoveringAddBlock={isHoveringAddBlock}
-            onMouseEnter={() => setIsHoveringAddBlock(true)}
-            onMouseLeave={() => setIsHoveringAddBlock(false)}
-          />
-        )}
+        <div className="mr-4 ml-2">
+          {isAddingTask ? (
+            <AddTaskActiveButton
+              newTaskTitle={newTaskTitle}
+              setNewTaskTitle={setNewTaskTitle}
+              addTaskInputRef={addTaskInputRef}
+              onAddTask={handleAddTask}
+              onAddTaskKeyDown={handleAddTaskKeyDown}
+              onBlur={handleAddTaskBlur}
+            />
+          ) : (
+            <AddTaskPreviewButton
+              onBeginAddingTask={beginAddingTask}
+              isHoveringAddBlock={isHoveringAddBlock}
+              onMouseEnter={() => setIsHoveringAddBlock(true)}
+              onMouseLeave={() => setIsHoveringAddBlock(false)}
+            />
+          )}
+        </div>
       </div>
     </section>
   );

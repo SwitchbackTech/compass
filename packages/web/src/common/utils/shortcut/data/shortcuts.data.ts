@@ -1,6 +1,6 @@
 import dayjs from "@core/util/date/dayjs";
 import { Shortcut } from "@web/common/types/global.shortcut.types";
-import { getMetaKeyText } from "@web/common/utils/shortcut/shortcut.util";
+import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 
 interface ShortcutsConfig {
   isHome?: boolean;
@@ -18,10 +18,11 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
     { k: "3", label: "Week" },
     { k: "r", label: "Edit reminder" },
     { k: "z", label: "Logout" },
-    { k: `${getMetaKeyText()}K`, label: "Command Palette" },
+    { k: `${getModifierKey()}+k`, label: "Command Palette" },
   ];
 
   let homeShortcuts: Shortcut[] = [];
+  let dayShortcuts: Shortcut[] = [];
   let dayTaskShortcuts: Shortcut[] = [];
   let dayAgendaShortcuts: Shortcut[] = [];
   let nowShortcuts: Shortcut[] = [];
@@ -35,6 +36,21 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
   }
 
   if (isToday) {
+    dayShortcuts = [
+      { k: "j", label: "Previous day" },
+      { k: "k", label: "Next day" },
+      {
+        k: "t",
+        label: (() => {
+          if (!currentDate) return "Go to today";
+
+          return currentDate.isSame(dayjs(), "day")
+            ? "Scroll to now"
+            : "Go to today";
+        })(),
+      },
+    ];
+
     dayTaskShortcuts = [
       { k: "u", label: "Focus on tasks" },
       { k: "c", label: "Create task" },
@@ -43,23 +59,13 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
     ];
     dayAgendaShortcuts = [
       { k: "i", label: "Focus on calendar" },
-      {
-        k: "t",
-        label: (() => {
-          if (!currentDate) return "Go to today";
-          // Compare dates in the same timezone (UTC) to avoid timezone issues
-          const todayUTC = dayjs().startOf("day").utc();
-          return currentDate.isSame(todayUTC, "day")
-            ? "Scroll to now"
-            : "Go to today";
-        })(),
-      },
+      { k: "n", label: "Create event" },
     ];
   }
   if (isNow) {
     nowShortcuts = [
       { k: "d", label: "Edit description" },
-      { k: `${getMetaKeyText()}Enter`, label: "Save description" },
+      { k: `${getModifierKey()}+Enter`, label: "Save description" },
       { k: "j", label: "Previous task" },
       { k: "k", label: "Next task" },
       { k: "Enter", label: "Mark complete" },
@@ -70,6 +76,7 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
   return {
     globalShortcuts,
     homeShortcuts,
+    dayShortcuts,
     dayTaskShortcuts,
     dayAgendaShortcuts,
     nowShortcuts,

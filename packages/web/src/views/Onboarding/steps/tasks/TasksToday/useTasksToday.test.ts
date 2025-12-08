@@ -51,18 +51,21 @@ describe("useTasksToday", () => {
         title: "Existing task 1",
         status: "todo",
         createdAt: new Date().toISOString(),
+        order: 0,
       },
       {
         id: "task-2",
         title: "Existing task 2",
         status: "todo",
         createdAt: new Date().toISOString(),
+        order: 0,
       },
       {
         id: "task-3",
         title: "Existing task 3",
         status: "todo",
         createdAt: new Date().toISOString(),
+        order: 0,
       },
     ];
     (loadTasksFromStorage as jest.Mock).mockReturnValue(existingTasks);
@@ -124,6 +127,7 @@ describe("useTasksToday", () => {
       title: `Task ${i}`,
       status: "todo" as const,
       createdAt: new Date().toISOString(),
+      order: 0,
     }));
     (loadTasksFromStorage as jest.Mock).mockReturnValue(existingTasks);
 
@@ -283,8 +287,11 @@ describe("useTasksToday", () => {
 
   it("should use today's date key for storage", () => {
     (loadTasksFromStorage as jest.Mock).mockReturnValue([]);
-    const today = dayjs().startOf("day");
-    const expectedDateKey = today.format("YYYY-MM-DD");
+    const today = dayjs();
+
+    const expectedDateKey = today.format(
+      dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+    );
 
     renderHook(() => useTasksToday(defaultProps));
 

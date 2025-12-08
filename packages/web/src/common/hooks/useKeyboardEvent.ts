@@ -1,5 +1,5 @@
 import { DependencyList, useCallback, useEffect, useMemo } from "react";
-import { filter } from "rxjs/operators";
+import { filter, map } from "rxjs/operators";
 import {
   KeyCombination,
   globalOnKeyPressHandler,
@@ -64,10 +64,45 @@ export function useKeyboardEvent({
   );
 
   const listenFilter = useCallback(
-    ({ event }: KeyCombination) =>
-      listenWhileEditing ? true : !isEditable(event.target),
+    ({ event }: KeyCombination) => {
+      const targetElement = event.target as HTMLElement;
+      const activeElement = document.activeElement as HTMLElement;
+      const activeElementEditable = isEditable(activeElement);
+      const eventTargetEditable = isEditable(targetElement);
+      const isInsideEditable = activeElementEditable || eventTargetEditable;
+
+      if (listenWhileEditing && isInsideEditable) {
+        if (activeElement) {
+          activeElement?.blur?.();
+        } else if (targetElement) {
+          targetElement?.blur?.();
+        }
+      }
+
+      return listenWhileEditing ? true : !isInsideEditable;
+    },
     [listenWhileEditing],
   );
+
+  const preventDefault = useCallback((combination: KeyCombination) => {
+    combination.event.preventDefault();
+
+    return combination;
+  }, []);
+
+  const resetSequence = useCallback((combination: KeyCombination) => {
+    const { event, sequence } = combination;
+    const metaKeys = ["Meta", "Control", "Alt", "Shift"];
+    const nextSequence = sequence.filter((key) => metaKeys.includes(key));
+
+    if (nextSequence.length === 0) {
+      keyPressed.next(null);
+    } else {
+      keyPressed.next({ event, sequence: nextSequence });
+    }
+
+    return combination;
+  }, []);
 
   useEffect(() => {
     if (!handler) return;
@@ -75,6 +110,8 @@ export function useKeyboardEvent({
     const subscription = $event
       .pipe(filter(combinationFilter))
       .pipe(filter(listenFilter))
+      .pipe(map(preventDefault))
+      .pipe(map(resetSequence))
       .subscribe(handler);
 
     return () => subscription.unsubscribe();
@@ -82,19 +119,24 @@ export function useKeyboardEvent({
     $event,
     combinationFilter,
     listenFilter,
+    preventDefault,
+    resetSequence,
     handler,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     ...(deps ?? []),
   ]);
 }
 
-export function useSetupKeyEvents() {
+/**
+ * useSetupKeyboardEvents
+ *
+ * hook to setup global key event listeners
+ * should only be ideally called once in the app root component
+ */
+export function useSetupKeyboardEvents() {
   useEffect(() => {
-    window.addEventListener("keydown", globalOnKeyPressHandler, {
-      passive: true,
-    });
-
-    window.addEventListener("keyup", globalOnKeyUpHandler, { passive: true });
+    window.addEventListener("keydown", globalOnKeyPressHandler);
+    window.addEventListener("keyup", globalOnKeyUpHandler);
 
     return () => {
       window.removeEventListener("keydown", globalOnKeyPressHandler);

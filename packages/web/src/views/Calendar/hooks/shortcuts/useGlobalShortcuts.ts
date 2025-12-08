@@ -4,6 +4,7 @@ import {
   useKeyDownEvent,
   useKeyUpEvent,
 } from "@web/common/hooks/useKeyboardEvent";
+import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
@@ -46,7 +47,7 @@ export function useGlobalShortcuts() {
   });
 
   useKeyDownEvent({
-    combination: ["Meta", "k"],
+    combination: [getModifierKey(), "k"],
     deps: [dispatch],
     listenWhileEditing: true,
     handler: () => dispatch(settingsSlice.actions.toggleCmdPalette()),
@@ -54,14 +55,6 @@ export function useGlobalShortcuts() {
 
   useKeyDownEvent({
     combination: ["Escape"],
-    deps: [dispatch],
-    listenWhileEditing: true,
-    handler: () => dispatch(settingsSlice.actions.closeCmdPalette()),
-  });
-
-  // firefox 36 and below uses 'Esc' instead of 'Escape'
-  useKeyDownEvent({
-    combination: ["Esc"],
     deps: [dispatch],
     listenWhileEditing: true,
     handler: () => dispatch(settingsSlice.actions.closeCmdPalette()),

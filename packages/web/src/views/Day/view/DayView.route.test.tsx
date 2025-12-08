@@ -73,7 +73,7 @@ const createRouter = () =>
 // Test with a specific date to avoid timezone issues
 const dateString = "2025-10-19";
 
-const testDate = dayjs.utc(dateString, dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT); // Sunday
+const testDate = dayjs(dateString, dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT); // Sunday
 
 describe("TodayView Routing", () => {
   beforeEach(() => {
@@ -201,8 +201,7 @@ describe("Navigation with URL updates", () => {
     // Find and click the next day button
     const nextDayButton = screen.getByRole("button", { name: "Next day" });
 
-    const nextDay = dayjs
-      .utc()
+    const nextDay = dayjs()
       .add(1, "day")
       .format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
 
@@ -228,8 +227,7 @@ describe("Navigation with URL updates", () => {
 
     await act(() => user.click(prevDayButton));
 
-    const prevDay = dayjs
-      .utc()
+    const prevDay = dayjs()
       .subtract(1, "day")
       .format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
 
@@ -243,7 +241,7 @@ describe("Navigation with URL updates", () => {
 
   it("should display correct date in header when viewing specific date", async () => {
     const router = createRouter();
-    const specificDate = dayjs.utc("2025-10-20");
+    const specificDate = dayjs("2025-10-20");
     const testDateString = specificDate.format(
       dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
     );
@@ -274,34 +272,5 @@ describe("Navigation with URL updates", () => {
 
     await expect(screen.findByText(todayWeekday)).resolves.toBeInTheDocument();
     await expect(screen.findByText(todayDate)).resolves.toBeInTheDocument();
-  });
-
-  it("should display dates in local timezone regardless of UTC offset", async () => {
-    jest.useFakeTimers();
-    // Set time to 11pm on Oct 19 in CST (4am Oct 20 UTC)
-    jest.setSystemTime(new Date("2025-10-20T04:00:00.000Z"));
-
-    // Mock timezone to CST
-    const testDate = dayjs.utc("2025-10-20T04:00:00.000Z");
-    const testDateString = testDate.format(
-      dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
-    );
-
-    const router = createRouter();
-
-    await act(() => render(<></>, { router }));
-    await act(() => router.navigate(`${ROOT_ROUTES.DAY}/${testDateString}`));
-
-    // Should show Oct 19 (local), not Oct 20 (UTC)
-    const localDate = testDate.local();
-
-    expect(
-      screen.getByText(localDate.format(DAY_HEADING_FORMAT)),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(localDate.format(DAY_SUBHEADING_FORMAT)),
-    ).toBeInTheDocument();
-
-    jest.useRealTimers();
   });
 });

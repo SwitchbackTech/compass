@@ -4,6 +4,7 @@ import {
   useKeyDownEvent,
   useKeyUpEvent,
 } from "@web/common/hooks/useKeyboardEvent";
+import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import {
   getFocusedTaskId,
   isFocusedOnTaskCheckbox,
@@ -36,6 +37,9 @@ interface KeyboardShortcutsConfig {
   // Agenda navigation
   onFocusAgenda?: () => void;
 
+  // Event management
+  onCreateEvent?: () => void;
+
   // Event undo
   onRestoreEvent?: () => void;
 
@@ -64,6 +68,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     onPrevDay,
     onGoToToday,
     onFocusAgenda,
+    onCreateEvent,
     isEditingTask,
     hasFocusedTask,
     undoToastId,
@@ -123,15 +128,18 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
 
   useKeyUpEvent({ combination: ["e"], handler: onEditTask });
 
+  useKeyUpEvent({ combination: ["n"], handler: onCreateEvent });
+
   useKeyUpEvent({ combination: ["Delete"], handler: handleDeleteTask });
 
   useKeyUpEvent({ combination: ["Backspace"], handler: handleDeleteTask });
 
   useKeyUpEvent({ combination: ["Enter"], handler: handleEnterKey });
 
-  useKeyUpEvent({ combination: ["Control", "z"], handler: handleRestore });
-
-  useKeyUpEvent({ combination: ["Meta", "z"], handler: handleRestore });
+  useKeyUpEvent({
+    combination: [getModifierKey(), "z"],
+    handler: handleRestore,
+  });
 
   useKeyDownEvent({
     combination: ["Escape"],
@@ -140,20 +148,16 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   });
 
   useKeyDownEvent({
-    combination: ["Esc"],
-    listenWhileEditing: true,
-    handler: onEscape,
-  });
-
-  useKeyDownEvent({
-    combination: ["Meta", "Control", "ArrowRight"],
+    combination: ["Control", "Meta", "ArrowRight"],
     exactMatch: false,
+    listenWhileEditing: true,
     handler: handleMigrationNavigation("forward"),
   });
 
   useKeyDownEvent({
-    combination: ["Meta", "Control", "ArrowLeft"],
+    combination: ["Control", "Meta", "ArrowLeft"],
     exactMatch: false,
+    listenWhileEditing: true,
     handler: handleMigrationNavigation("backward"),
   });
 

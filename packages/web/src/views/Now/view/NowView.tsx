@@ -1,6 +1,4 @@
-import { ID_MAIN } from "@web/common/constants/web.constants";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
-import { FlexDirections } from "@web/components/Flex/styled";
 import { ShortcutsOverlay } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
 import { StyledCalendar } from "@web/views/Calendar/styled";
 import { Header } from "@web/views/Day/components/Header/Header";
@@ -16,15 +14,11 @@ export const NowView = () => {
   return (
     <NowViewProvider>
       <NowCmdPalette />
-      <StyledCalendar
-        direction={FlexDirections.COLUMN}
-        id={ID_MAIN}
-        className="flex-column flex h-screen overflow-hidden"
-      >
+      <StyledCalendar>
         <Header />
 
         <div
-          className={`from-bg-bg-primary via-bg-bg-secondary to-bg-bg-primary flex max-w-3/4 min-w-3/4 flex-1 justify-center gap-8 self-center overflow-hidden bg-gradient-to-b px-6 py-8`}
+          className={`from-bg-bg-primary via-bg-bg-secondary to-bg-bg-primary flex max-w-3/4 min-w-3/4 flex-1 justify-center gap-8 self-center overflow-hidden bg-gradient-to-b`}
         >
           <NowViewContent />
         </div>

@@ -30,8 +30,10 @@ function renderWithMenuProvider(ui: React.ReactElement) {
 }
 
 describe("AgendaEvent", () => {
-  const canvas = document.createElement("canvas");
-  const canvasContext = canvas.getContext("2d");
+  const canvasContext = {
+    font: "",
+    measureText: jest.fn().mockReturnValue({ width: 0 }),
+  } as unknown as CanvasRenderingContext2D;
 
   const baseEvent: Schema_GridEvent = {
     _id: new ObjectId().toString(),

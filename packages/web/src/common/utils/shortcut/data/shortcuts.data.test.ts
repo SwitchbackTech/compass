@@ -1,6 +1,6 @@
 import dayjs from "@core/util/date/dayjs";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
-import { getMetaKeyText } from "@web/common/utils/shortcut/shortcut.util";
+import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 
 describe("shortcuts.data", () => {
   describe("getShortcuts", () => {
@@ -17,7 +17,7 @@ describe("shortcuts.data", () => {
       });
       expect(shortcuts.globalShortcuts[4]).toEqual({ k: "z", label: "Logout" });
       expect(shortcuts.globalShortcuts[5]).toEqual({
-        k: `${getMetaKeyText()}K`,
+        k: `${getModifierKey()}+k`,
         label: "Command Palette",
       });
 
@@ -27,46 +27,50 @@ describe("shortcuts.data", () => {
         label: "Focus on calendar",
       });
       expect(shortcuts.dayAgendaShortcuts[1]).toEqual({
+        k: "n",
+        label: "Create event",
+      });
+
+      expect(shortcuts.dayShortcuts).toHaveLength(3);
+      expect(shortcuts.dayShortcuts[2]).toEqual({
         k: "t",
         label: "Go to today",
       });
     });
 
     it("should show 'Scroll to now' when currentDate is today", () => {
-      const todayUTC = dayjs().startOf("day").utc();
-
       const shortcuts = getShortcuts({
         isToday: true,
-        currentDate: todayUTC,
+        currentDate: dayjs(),
       });
 
-      const tShortcut = shortcuts.dayAgendaShortcuts.find((s) => s.k === "t");
+      const tShortcut = shortcuts.dayShortcuts.find((s) => s.k === "t");
       expect(tShortcut).toBeDefined();
       expect(tShortcut?.label).toBe("Scroll to now");
     });
 
     it("should show 'Go to today' when currentDate is not today", () => {
-      const yesterdayUTC = dayjs().subtract(1, "day").startOf("day").utc();
+      const yesterday = dayjs().subtract(1, "day");
 
       const shortcuts = getShortcuts({
         isToday: true,
-        currentDate: yesterdayUTC,
+        currentDate: yesterday,
       });
 
-      const tShortcut = shortcuts.dayAgendaShortcuts.find((s) => s.k === "t");
+      const tShortcut = shortcuts.dayShortcuts.find((s) => s.k === "t");
       expect(tShortcut).toBeDefined();
       expect(tShortcut?.label).toBe("Go to today");
     });
 
     it("should show 'Go to today' when currentDate is tomorrow", () => {
-      const tomorrowUTC = dayjs().add(1, "day").startOf("day").utc();
+      const tomorrow = dayjs().add(1, "day");
 
       const shortcuts = getShortcuts({
         isToday: true,
-        currentDate: tomorrowUTC,
+        currentDate: tomorrow,
       });
 
-      const tShortcut = shortcuts.dayAgendaShortcuts.find((s) => s.k === "t");
+      const tShortcut = shortcuts.dayShortcuts.find((s) => s.k === "t");
       expect(tShortcut).toBeDefined();
       expect(tShortcut?.label).toBe("Go to today");
     });
@@ -77,23 +81,9 @@ describe("shortcuts.data", () => {
         currentDate: undefined,
       });
 
-      const tShortcut = shortcuts.dayAgendaShortcuts.find((s) => s.k === "t");
+      const tShortcut = shortcuts.dayShortcuts.find((s) => s.k === "t");
       expect(tShortcut).toBeDefined();
       expect(tShortcut?.label).toBe("Go to today");
-    });
-
-    it("should handle timezone edge cases correctly", () => {
-      // Test with a specific date that we know is today
-      const todayUTC = dayjs().startOf("day").utc();
-
-      const shortcuts = getShortcuts({
-        isToday: true,
-        currentDate: todayUTC,
-      });
-
-      const tShortcut = shortcuts.dayAgendaShortcuts.find((s) => s.k === "t");
-      expect(tShortcut).toBeDefined();
-      expect(tShortcut?.label).toBe("Scroll to now");
     });
 
     it("should return home shortcuts when isHome is true", () => {
@@ -131,7 +121,7 @@ describe("shortcuts.data", () => {
         label: "Edit description",
       });
       expect(shortcuts.nowShortcuts[1]).toEqual({
-        k: `${getMetaKeyText()}Enter`,
+        k: `${getModifierKey()}+Enter`,
         label: "Save description",
       });
       expect(shortcuts.nowShortcuts[2]).toEqual({

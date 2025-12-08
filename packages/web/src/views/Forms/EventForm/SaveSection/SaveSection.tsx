@@ -1,10 +1,10 @@
 import React, { useCallback } from "react";
 import { Priority } from "@core/constants/core.constants";
-import { getMetaKey } from "@web/common/utils/shortcut/shortcut.util";
+import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
 import { Btn, StyledSaveBtn } from "@web/components/Button/styled";
 import { Text } from "@web/components/Text";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { StyledSubmitRow } from "../styled";
+import { StyledSubmitRow } from "@web/views/Forms/EventForm/styled";
 
 interface Props {
   saveText?: string;
@@ -42,7 +42,7 @@ export const SaveSection: React.FC<Props> = ({
         onClick={onSave}
         shortcut={
           <Text size="s" style={{ display: "flex", alignItems: "center" }}>
-            {getMetaKey()} + Enter
+            {getModifierKeyIcon()} + Enter
           </Text>
         }
       >

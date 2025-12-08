@@ -12,11 +12,11 @@ export const StaticAgenda: React.FC = () => {
     <div className="flex h-full max-w-[330px] flex-col overflow-y-auto">
       {staticEvents.map((event) => (
         <div key={`${event.time}-${event.title}`}>
-          <div className="border-b border-[#333] px-2 py-1 font-['Rubik'] text-xs text-[hsl(47_7_73)]">
+          <div className="border-b border-[#333] px-2 py-1 font-[Rubik] text-xs text-[hsl(47_7_73)]">
             {event.time}
           </div>
           <div
-            className="my-1 rounded px-3 py-2 font-['Rubik'] text-sm text-white"
+            className="my-1 rounded px-3 py-2 font-[Rubik] text-sm text-white"
             style={{ backgroundColor: event.color }}
           >
             {event.title}

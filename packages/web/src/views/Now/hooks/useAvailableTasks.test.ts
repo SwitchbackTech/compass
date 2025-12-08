@@ -9,7 +9,6 @@ jest.mock("@web/common/utils/storage/storage.util", () => ({
   ...jest.requireActual("@web/common/utils/storage/storage.util"),
   loadTasksFromStorage: jest.fn(),
   getDateKey: jest.fn(),
-  getTodayDateKey: jest.fn(),
 }));
 
 describe("useAvailableTasks", () => {
@@ -19,7 +18,6 @@ describe("useAvailableTasks", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (storageUtil.getDateKey as jest.Mock).mockReturnValue(mockDateKey);
-    (storageUtil.getTodayDateKey as jest.Mock).mockReturnValue(mockDateKey);
     (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue([]);
 
     // Use fake timers to control the current time
@@ -40,12 +38,14 @@ describe("useAvailableTasks", () => {
         title: "Task 1",
         status: "todo",
         createdAt: "2025-11-15T10:00:00Z",
+        order: 0,
       },
       {
         id: "task-2",
         title: "Task 2",
         status: "todo",
         createdAt: "2025-11-15T11:00:00Z",
+        order: 0,
       },
     ];
 
@@ -53,7 +53,7 @@ describe("useAvailableTasks", () => {
 
     const { result } = renderHook(() => useAvailableTasks());
 
-    expect(storageUtil.getTodayDateKey).toHaveBeenCalled();
+    expect(storageUtil.getDateKey).toHaveBeenCalled();
     expect(storageUtil.loadTasksFromStorage).toHaveBeenCalledWith(mockDateKey);
     expect(storageUtil.loadTasksFromStorage).toHaveBeenCalledTimes(1);
 
@@ -74,18 +74,21 @@ describe("useAvailableTasks", () => {
         title: "Task 1",
         status: "todo",
         createdAt: "2025-11-15T10:00:00Z",
+        order: 0,
       },
       {
         id: "task-2",
         title: "Task 2",
         status: "completed",
         createdAt: "2025-11-15T11:00:00Z",
+        order: 0,
       },
       {
         id: "task-3",
         title: "Task 3",
         status: "todo",
         createdAt: "2025-11-15T12:00:00Z",
+        order: 0,
       },
     ];
 
@@ -112,18 +115,21 @@ describe("useAvailableTasks", () => {
         title: "Task 1",
         status: "todo",
         createdAt: "2025-11-15T10:00:00Z",
+        order: 0,
       },
       {
         id: "task-2",
         title: "Task 2",
         status: "todo",
         createdAt: "2025-11-15T12:00:00Z",
+        order: 0,
       },
       {
         id: "task-3",
         title: "Task 3",
         status: "todo",
         createdAt: "2025-11-15T11:00:00Z",
+        order: 0,
       },
     ];
 
@@ -158,6 +164,7 @@ describe("useAvailableTasks", () => {
         title: "Task 1",
         status: "todo",
         createdAt: "2025-11-15T10:00:00Z",
+        order: 0,
       },
     ];
 
@@ -167,12 +174,14 @@ describe("useAvailableTasks", () => {
         title: "Task 1",
         status: "todo",
         createdAt: "2025-11-15T10:00:00Z",
+        order: 0,
       },
       {
         id: "task-2",
         title: "Task 2",
         status: "todo",
         createdAt: "2025-11-15T11:00:00Z",
+        order: 0,
       },
     ];
 
@@ -204,6 +213,7 @@ describe("useAvailableTasks", () => {
         title: "Task 1",
         status: "todo",
         createdAt: "2025-11-15T10:00:00Z",
+        order: 0,
       },
     ];
 
@@ -233,6 +243,7 @@ describe("useAvailableTasks", () => {
         title: "Task 1",
         status: "todo",
         createdAt: "2025-11-15T10:00:00Z",
+        order: 0,
       },
     ];
 
@@ -264,12 +275,14 @@ describe("useAvailableTasks", () => {
         title: "Task 1",
         status: "completed",
         createdAt: "2025-11-15T10:00:00Z",
+        order: 0,
       },
       {
         id: "task-2",
         title: "Task 2",
         status: "completed",
         createdAt: "2025-11-15T11:00:00Z",
+        order: 0,
       },
     ];
 

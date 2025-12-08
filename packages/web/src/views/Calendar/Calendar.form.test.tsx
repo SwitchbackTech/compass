@@ -7,6 +7,7 @@ import { CLIMB, EUROPE_TRIP } from "@core/__mocks__/v1/events/events.misc";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
 import { findAndUpdateEventInPreloadedState } from "@web/__tests__/utils/state/store.test.util";
+import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { CalendarView } from "@web/views/Calendar";
 import { AuthenticatedLayout } from "../../components/AuthenticatedLayout/AuthenticatedLayout";
 import { freshenEventStartEndDate } from "./calendar.render.test.utils";
@@ -171,7 +172,7 @@ describe("Event Form", () => {
       ).toBeInTheDocument();
 
       await act(async () => {
-        await user.keyboard("{Meta>}k{/Meta}");
+        await user.keyboard(`{${getModifierKey()}>}k{/${getModifierKey()}}`);
       });
 
       const cmdPaletteEditBtn = await screen.findByRole("button", {

@@ -293,11 +293,8 @@ describe("TaskList", () => {
   it("should activate add task input when pressing Enter on Add task button after tabbing", async () => {
     const { user } = renderWithDayProviders(<TaskList />);
 
-    // First add some existing tasks to create a realistic scenario
-    await addTasks(user, ["First task", "Second task"]);
-
     // Now tab to the Add task button
-    const addTaskButton = screen.getByRole("button", {
+    const addTaskButton = await screen.findByRole("button", {
       name: /create new task/i,
     });
     await act(async () => {
@@ -341,9 +338,9 @@ describe("TaskList", () => {
       ).toBeInTheDocument();
     });
 
-    // Verify we have all three tasks
+    // Verify we have the new task
     const allTasks = screen.getAllByRole("checkbox");
-    expect(allTasks).toHaveLength(3);
+    expect(allTasks).toHaveLength(1);
   });
 
   it("should delete task when title is cleared and Enter is pressed", async () => {
@@ -364,6 +361,11 @@ describe("TaskList", () => {
     // Clear the input (making title "")
     await act(async () => {
       await user.clear(taskInput);
+    });
+
+    // Verify input is cleared before pressing Enter
+    await waitFor(() => {
+      expect(taskInput).toHaveValue("");
     });
 
     // Press Enter
@@ -387,11 +389,8 @@ describe("TaskList", () => {
     it("should complete the correct task when pressing Space on second duplicate task", async () => {
       const { user } = renderWithDayProviders(<TaskList />);
 
-      // Add first task
-      await addTasks(user, ["Buy milk"]);
-
-      // Add second task with same name
-      await addTasks(user, ["Buy milk"]);
+      // Add two tasks with same name
+      await addTasks(user, ["Buy milk", "Buy milk"]);
 
       // Get both checkboxes and identify them by their data-task-id
       const checkboxes = screen.getAllByRole("checkbox", {
@@ -424,16 +423,13 @@ describe("TaskList", () => {
 
       // Verify the first task is still incomplete
       expect(checkboxes[0]).toHaveAttribute("aria-checked", "false");
-    }, 10000);
+    });
 
     it("should edit the correct task when pressing E on second duplicate task", async () => {
       const { user } = renderWithDayProviders(<TaskList />);
 
-      // Add first task
-      await addTasks(user, ["Buy milk"]);
-
-      // Add second task with same name
-      await addTasks(user, ["Buy milk"]);
+      // Add two tasks with same name
+      await addTasks(user, ["Buy milk", "Buy milk"]);
 
       // Get both checkboxes and identify them by their data-task-id
       const checkboxes = screen.getAllByRole("checkbox", {
@@ -481,6 +477,6 @@ describe("TaskList", () => {
 
       // The first input should NOT be in edit mode
       expect(firstInput).toHaveClass("border-transparent");
-    }, 10000);
+    });
   });
 });

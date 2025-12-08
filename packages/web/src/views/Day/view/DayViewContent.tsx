@@ -1,11 +1,15 @@
 import { useCallback, useRef } from "react";
 import dayjs from "@core/util/date/dayjs";
-import { ID_MAIN } from "@web/common/constants/web.constants";
+import { MousePositionProvider } from "@web/common/context/mouse-position";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
-import { FlexDirections } from "@web/components/Flex/styled";
+import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
 import { ShortcutsOverlay } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
 import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
+import { Dedication } from "@web/views/Calendar/components/Dedication";
+import { DraftProviderV2 } from "@web/views/Calendar/components/Draft/context/DraftProviderV2";
+import { useDraftContextV2 } from "@web/views/Calendar/components/Draft/context/useDraftContextV2";
+import { useRefetch } from "@web/views/Calendar/hooks/useRefetch";
 import { StyledCalendar } from "@web/views/Calendar/styled";
 import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
@@ -24,7 +28,9 @@ import {
   focusOnFirstTask,
 } from "@web/views/Day/util/day.shortcut.util";
 
-export const DayViewContent = () => {
+const DayViewContentInner = () => {
+  useRefetch();
+
   const {
     tasks,
     selectedTaskIndex,
@@ -93,9 +99,10 @@ export const DayViewContent = () => {
   );
 
   const handleGoToToday = () => {
-    // Compare dates in the same timezone (UTC) to avoid timezone issues
-    const todayUTC = dayjs().startOf("day").utc();
-    const isViewingToday = dateInView.isSame(todayUTC, "day");
+    // Compare dates in the same timezone to avoid timezone issues
+    // Both dates are in local timezone, ensuring accurate day comparison
+    const today = dayjs().startOf("day");
+    const isViewingToday = dateInView.isSame(today, "day");
 
     if (isViewingToday && scrollToNowLineRef.current) {
       scrollToNowLineRef.current();
@@ -103,6 +110,12 @@ export const DayViewContent = () => {
       navigateToToday();
     }
   };
+
+  const { openEventForm } = useDraftContextV2();
+
+  const onCreateEvent = useCallback(() => {
+    openEventForm(true);
+  }, [openEventForm]);
 
   useDayViewShortcuts({
     onAddTask: focusOnAddTaskInput,
@@ -112,6 +125,7 @@ export const DayViewContent = () => {
     onMigrateTask: migrateTask,
     onFocusTasks: focusOnFirstTask,
     onFocusAgenda: handleFocusAgenda,
+    onCreateEvent: onCreateEvent,
     onNextDay: navigateToNextDay,
     onPrevDay: navigateToPreviousDay,
     onGoToToday: handleGoToToday,
@@ -122,15 +136,13 @@ export const DayViewContent = () => {
   return (
     <>
       <DayCmdPalette onGoToToday={handleGoToToday} />
-      <StyledCalendar
-        direction={FlexDirections.COLUMN}
-        id={ID_MAIN}
-        className="flex-column flex overflow-hidden"
-      >
+      <Dedication />
+
+      <StyledCalendar>
         <Header />
 
         <div
-          className={`flex flex-1 gap-8 self-center overflow-hidden px-6 py-8`}
+          className={`flex max-w-4/7 min-w-4/7 flex-1 justify-center gap-8 self-center overflow-hidden`}
         >
           <TaskList />
 
@@ -142,12 +154,24 @@ export const DayViewContent = () => {
 
       <ShortcutsOverlay
         sections={[
-          { title: "Home", shortcuts: shortcuts.homeShortcuts },
+          { title: "Day", shortcuts: shortcuts.dayShortcuts },
           { title: "Tasks", shortcuts: shortcuts.dayTaskShortcuts },
           { title: "Calendar", shortcuts: shortcuts.dayAgendaShortcuts },
           { title: "Global", shortcuts: shortcuts.globalShortcuts },
         ]}
       />
+
+      <FloatingEventForm />
     </>
+  );
+};
+
+export const DayViewContent = () => {
+  return (
+    <MousePositionProvider>
+      <DraftProviderV2>
+        <DayViewContentInner />
+      </DraftProviderV2>
+    </MousePositionProvider>
   );
 };

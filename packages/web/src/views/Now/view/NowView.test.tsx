@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import { renderWithMemoryRouter } from "@web/__tests__/utils/providers/MemoryRouter";
-import { getMetaKeyText } from "@web/common/utils/shortcut/shortcut.util";
+import { getModifierKeyTestId } from "@web/common/utils/shortcut/shortcut.util";
 import { NowView } from "@web/views/Now/view/NowView";
 
 // Mock the useNowShortcuts hook
@@ -13,9 +13,12 @@ describe("NowView", () => {
   it("renders the shortcuts overlay", async () => {
     await renderWithMemoryRouter(<NowView />);
 
-    expect(
-      screen.getByRole("complementary", { name: "Shortcut overlay" }),
-    ).toBeInTheDocument();
+    // jest cannot actively determine applied pseudo-classes
+    // a browser environment should be used for this test
+    // move to playwright
+    const overlay = screen.getByRole("complementary", { hidden: true });
+    expect(overlay).toBeInTheDocument();
+    expect(overlay).toHaveAttribute("aria-label", "Shortcut overlay");
     expect(screen.getByText("Shortcuts")).toBeInTheDocument();
   });
 
@@ -52,7 +55,10 @@ describe("NowView", () => {
 
     // Check that CMD+K shortcut is displayed
     expect(screen.getByText("Global")).toBeInTheDocument();
-    expect(screen.getByText(`${getMetaKeyText()}K`)).toBeInTheDocument();
+    expect(
+      screen.getAllByTestId(getModifierKeyTestId())[0],
+    ).toBeInTheDocument();
+    expect(screen.getAllByTestId("k-icon")[0]).toBeInTheDocument();
     expect(screen.getByText("Command Palette")).toBeInTheDocument();
   });
 
@@ -63,10 +69,15 @@ describe("NowView", () => {
     const mainElement = document.getElementById("mainSection");
     expect(mainElement).toBeInTheDocument();
     expect(mainElement).toHaveClass(
-      "flex-column",
+      "bg-bg-primary",
       "flex",
       "h-screen",
       "overflow-hidden",
+      "flex-1",
+      "flex-col",
+      "items-center",
+      "justify-center",
+      "p-8",
     );
   });
 });

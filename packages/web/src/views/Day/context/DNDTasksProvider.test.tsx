@@ -140,8 +140,83 @@ describe("DNDTasksProvider", () => {
     );
 
     expect(mockReorderTasks).toHaveBeenCalledWith(0, 1);
+    expect(mockAnnounce).toHaveBeenCalledWith("");
+  });
+
+  it("should announce on drag update", () => {
+    const mockAnnounce = jest.fn();
+
+    let capturedContext: any = null;
+
+    const TestComponent = () => {
+      capturedContext = useDNDTasksContext();
+
+      React.useEffect(() => {
+        if (capturedContext) {
+          capturedContext.onDragUpdate(
+            {
+              draggableId: "task-1",
+              type: "task",
+              source: { droppableId: "task-list", index: 0 },
+              destination: { droppableId: "task-list", index: 1 },
+              combine: null,
+              mode: "FLUID",
+            },
+            { announce: mockAnnounce } as any,
+          );
+        }
+      }, [capturedContext]);
+
+      return <div>Test</div>;
+    };
+
+    render(
+      <DNDTasksProvider>
+        <TestComponent />
+      </DNDTasksProvider>,
+    );
+
     expect(mockAnnounce).toHaveBeenCalledWith(
-      'Dropped task "Task 1" at new position below "Task 2".',
+      'Dropped task "Task 1" at new position below Task 2.',
+    );
+  });
+
+  it("should announce cancellation on drag end", () => {
+    const mockAnnounce = jest.fn();
+
+    let capturedContext: any = null;
+
+    const TestComponent = () => {
+      capturedContext = useDNDTasksContext();
+
+      React.useEffect(() => {
+        if (capturedContext) {
+          capturedContext.onDragEnd(
+            {
+              draggableId: "task-1",
+              type: "task",
+              source: { droppableId: "task-list", index: 0 },
+              destination: null,
+              reason: "CANCEL",
+              combine: null,
+              mode: "FLUID",
+            },
+            { announce: mockAnnounce } as any,
+          );
+        }
+      }, [capturedContext]);
+
+      return <div>Test</div>;
+    };
+
+    render(
+      <DNDTasksProvider>
+        <TestComponent />
+      </DNDTasksProvider>,
+    );
+
+    expect(mockAnnounce).toHaveBeenCalledWith(
+      "Reordering cancelled. Task 1 returned to its original position.",
     );
   });
 

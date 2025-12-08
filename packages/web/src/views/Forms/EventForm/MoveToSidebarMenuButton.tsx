@@ -1,9 +1,9 @@
 import React from "react";
 import styled from "styled-components";
-import { ArrowLeft } from "@phosphor-icons/react";
-import { getMetaKey } from "@web/common/utils/shortcut/shortcut.util";
+import { ArrowLeftIcon } from "@phosphor-icons/react";
+import { getMetaKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
 import { Text } from "@web/components/Text";
-import MenuItem from "../ActionsMenu/MenuItem";
+import MenuItem from "@web/views/Forms/ActionsMenu/MenuItem";
 
 interface Props {
   onClick: () => void;
@@ -11,9 +11,9 @@ interface Props {
   bgColor: string;
 }
 
-const StyledArrowLeft = styled(ArrowLeft)`
-  width: 15px;
-  height: 15px;
+const StyledArrowLeft = styled(ArrowLeftIcon)`
+  width: 14px;
+  height: 14px;
 `;
 
 export const MoveToSidebarMenuButton: React.FC<Props> = ({
@@ -28,11 +28,11 @@ export const MoveToSidebarMenuButton: React.FC<Props> = ({
       aria-label={label}
       tooltipContent={
         <Text size="s" style={{ display: "flex", alignItems: "center" }}>
-          CTRL + {getMetaKey()} + <StyledArrowLeft />
+          CTRL + {getMetaKeyIcon({ size: 14 })} + <StyledArrowLeft />
         </Text>
       }
     >
-      <ArrowLeft size={16} />
+      <ArrowLeftIcon size={14} />
       <span>{label}</span>
     </MenuItem>
   );

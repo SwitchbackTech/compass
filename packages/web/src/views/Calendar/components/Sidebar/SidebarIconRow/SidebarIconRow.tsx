@@ -1,5 +1,5 @@
 import { theme } from "@web/common/styles/theme";
-import { getMetaKey } from "@web/common/utils/shortcut/shortcut.util";
+import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
 import { CalendarIcon } from "@web/components/Icons/Calendar";
 import { CommandIcon } from "@web/components/Icons/Command";
 import { SpinnerIcon } from "@web/components/Icons/Spinner";
@@ -12,7 +12,10 @@ import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { IconRow, LeftIconGroup } from "../styled";
+import {
+  IconRow,
+  LeftIconGroup,
+} from "@web/views/Calendar/components/Sidebar/styled";
 
 export const SidebarIconRow = () => {
   const dispatch = useAppDispatch();
@@ -31,7 +34,7 @@ export const SidebarIconRow = () => {
   const getCommandPaletteShortcut = () => {
     return (
       <Text size="s" style={{ display: "flex", alignItems: "center" }}>
-        {getMetaKey()} + K
+        {getModifierKeyIcon()} + K
       </Text>
     );
   };

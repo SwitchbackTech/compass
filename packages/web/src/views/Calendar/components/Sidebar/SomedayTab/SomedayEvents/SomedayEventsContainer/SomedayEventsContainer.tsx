@@ -11,17 +11,22 @@ import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors
 import { useAppSelector } from "@web/store/store.hooks";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
 import { State_Sidebar } from "@web/views/Calendar/components/Draft/sidebar/hooks/useSidebarState";
-import { DraggableSomedayEvent } from "../DraggableSomedayEvent/DraggableSomedayEvent";
-import { DraggableSomedayEvents } from "../DraggableSomedayEvent/DraggableSomedayEvents";
-import { AddSomedayEvent } from "./AddSomedayEvent";
-import { DropZone } from "./Dropzone";
+import { DraggableSomedayEvent } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/DraggableSomedayEvent/DraggableSomedayEvent";
+import { DraggableSomedayEvents } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/DraggableSomedayEvent/DraggableSomedayEvents";
+import { AddSomedayEvent } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventsContainer/AddSomedayEvent";
+import { DropZone } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventsContainer/Dropzone";
+
+const getColName = (category: Categories_Event) => {
+  return category === Categories_Event.SOMEDAY_WEEK
+    ? COLUMN_WEEK
+    : COLUMN_MONTH;
+};
 
 const getSomedayEvents = (
   category: Categories_Event,
   somedayEvents: State_Sidebar["somedayEvents"],
 ) => {
-  const colName =
-    category === Categories_Event.SOMEDAY_WEEK ? COLUMN_WEEK : COLUMN_MONTH;
+  const colName = getColName(category);
   const column = somedayEvents.columns[colName];
 
   return column.eventIds.map(
@@ -42,6 +47,7 @@ export const SomedayEventsContainer: FC<Props> = ({
   column,
   isDraftingNew,
 }) => {
+  const colName = getColName(category);
   const context = useSidebarContext();
   const draftCategory = useAppSelector(selectDraftCategory);
 
@@ -75,7 +81,7 @@ export const SomedayEventsContainer: FC<Props> = ({
         {(provided, snapshot) => {
           return (
             <DropZone
-              id="somedayColumn"
+              id={colName}
               ref={provided.innerRef}
               isActive={
                 snapshot.isDraggingOver ||
