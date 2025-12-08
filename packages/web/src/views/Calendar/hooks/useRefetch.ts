@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
@@ -14,15 +14,15 @@ import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { resetIsFetchNeeded } from "@web/ducks/events/slices/sync.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { getValidDateFromUrl } from "@web/views/Day/util/date-route.util";
+import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 
 export const useRefetch = () => {
   const dispatch = useAppDispatch();
   const location = useLocation();
-  const params = useParams<{ date?: string }>();
   const importState = useAppSelector(selectImportLatestState);
   const { isFetchNeeded, reason: _reason } = importState;
   const { start, end } = useAppSelector(selectDatesInView);
+  const dateInView = useDateInView();
 
   // Detect if we're on day view
   const isDayView = useMemo(() => {
@@ -35,16 +35,14 @@ export const useRefetch = () => {
   // Get date range based on current view
   const dateRange = useMemo(() => {
     if (isDayView) {
-      // For day view, get date from URL params
-      const date = getValidDateFromUrl(params.date);
       return {
-        start: date.startOf("day").format(),
-        end: date.endOf("day").format(),
+        start: dateInView.startOf("day").utc(true).format(),
+        end: dateInView.endOf("day").utc(true).format(),
       };
     }
     // For week view, use dates from Redux state
     return { start, end };
-  }, [isDayView, params.date, start, end]);
+  }, [isDayView, start, end, dateInView]);
 
   useEffect(() => {
     if (isFetchNeeded) {
@@ -66,8 +64,8 @@ export const useRefetch = () => {
         );
       } else {
         const payload = {
-          startDate: toUTCOffset(dateRange.start),
-          endDate: toUTCOffset(dateRange.end),
+          startDate: isDayView ? dateRange.start : toUTCOffset(dateRange.start),
+          endDate: isDayView ? dateRange.end : toUTCOffset(dateRange.end),
           __context: { reason: _reason },
         };
 

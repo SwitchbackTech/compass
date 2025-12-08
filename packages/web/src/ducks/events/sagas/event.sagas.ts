@@ -198,7 +198,11 @@ export function* getWeekEvents({ payload }: Action_GetEvents) {
 
 export function* getDayEvents({ payload }: Action_GetEvents) {
   try {
-    const data = (yield call(getEvents, payload)) as Response_GetEventsSaga;
+    const data = (yield call(getEvents, {
+      ...payload,
+      dontAdjustDates: true,
+    })) as Response_GetEventsSaga;
+
     yield put(getDayEventsSlice.actions.success(data));
   } catch (error) {
     yield put(getDayEventsSlice.actions.error({}));

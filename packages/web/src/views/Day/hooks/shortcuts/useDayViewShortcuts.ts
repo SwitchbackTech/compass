@@ -37,6 +37,9 @@ interface KeyboardShortcutsConfig {
   // Agenda navigation
   onFocusAgenda?: () => void;
 
+  // Event management
+  onCreateEvent?: () => void;
+
   // Event undo
   onRestoreEvent?: () => void;
 
@@ -65,6 +68,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     onPrevDay,
     onGoToToday,
     onFocusAgenda,
+    onCreateEvent,
     isEditingTask,
     hasFocusedTask,
     undoToastId,
@@ -123,6 +127,8 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   useKeyUpEvent({ combination: ["c"], handler: onAddTask });
 
   useKeyUpEvent({ combination: ["e"], handler: onEditTask });
+
+  useKeyUpEvent({ combination: ["n"], handler: onCreateEvent });
 
   useKeyUpEvent({ combination: ["Delete"], handler: handleDeleteTask });
 

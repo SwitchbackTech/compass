@@ -30,7 +30,7 @@ export const ShortcutsOverlay = ({
     <aside
       aria-label={ariaLabel}
       role="complementary"
-      className={`bg-bg-secondary border-border-primary fixed top-24 left-3 z-30 hidden w-[240px] rounded-lg border p-3 shadow-lg backdrop-blur-sm md:block ${className}`}
+      className={`bg-bg-secondary border-border-primary fixed top-24 left-3 z-20 hidden w-[240px] rounded-lg border p-3 shadow-lg backdrop-blur-sm md:block ${className}`}
     >
       {heading && (
         <div className="text-text-lighter mb-2 text-xs font-medium">

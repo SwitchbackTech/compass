@@ -9,8 +9,10 @@ export const TodayButton = ({
   navigateToToday: () => void;
   isToday: boolean;
 }) => {
+  if (isToday) return null;
+
   return (
-    <div aria-hidden={isToday} className={isToday ? "invisible" : "visible"}>
+    <div>
       <TooltipWrapper
         description={dayjs().locale("en").format("dddd, MMMM D")}
         onClick={navigateToToday}

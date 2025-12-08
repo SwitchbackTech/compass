@@ -6,7 +6,6 @@ import {
   CompassTasksSavedEvent,
   TODAY_TASKS_STORAGE_KEY_PREFIX,
   getDateKey,
-  getTodayDateKey,
   loadTasksFromStorage,
 } from "@web/common/utils/storage/storage.util";
 import { getIncompleteTasksSorted } from "@web/common/utils/task/sort.task";
@@ -18,7 +17,7 @@ export function useAvailableTasks() {
   const hasTaskContext = taskContext !== undefined;
 
   const loadStoredTasks = useCallback(() => {
-    const dateKey = getTodayDateKey();
+    const dateKey = getDateKey();
     const tasks = loadTasksFromStorage(dateKey);
     setStoredTasks(tasks);
   }, []);
@@ -39,7 +38,7 @@ export function useAvailableTasks() {
 
     // Listen for custom event (same-tab synchronization)
     const handleTasksSaved = (event: CompassTasksSavedEvent) => {
-      if (event.detail.dateKey === getTodayDateKey()) {
+      if (event.detail.dateKey === getDateKey()) {
         loadStoredTasks();
       }
     };
@@ -63,7 +62,7 @@ export function useAvailableTasks() {
       return null;
     }
 
-    const todayKey = getTodayDateKey();
+    const todayKey = getDateKey();
     return taskContext.tasks.filter((task) => {
       const taskDate = dayjs(task.createdAt).utc();
       const taskDateKey = getDateKey(taskDate.toDate());

@@ -127,7 +127,13 @@ export function useKeyboardEvent({
   ]);
 }
 
-export function useSetupKeyEvents() {
+/**
+ * useSetupKeyboardEvents
+ *
+ * hook to setup global key event listeners
+ * should only be ideally called once in the app root component
+ */
+export function useSetupKeyboardEvents() {
   useEffect(() => {
     window.addEventListener("keydown", globalOnKeyPressHandler);
     window.addEventListener("keyup", globalOnKeyUpHandler);

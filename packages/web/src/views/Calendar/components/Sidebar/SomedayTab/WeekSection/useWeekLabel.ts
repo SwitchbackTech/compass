@@ -1,5 +1,5 @@
-import dayjs, { Dayjs } from "dayjs";
 import { useMemo } from "react";
+import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { getWeekRangeLabel } from "@web/common/utils/datetime/web.date.util";
 import { useToday } from "@web/views/Calendar/hooks/useToday";
 

@@ -9,7 +9,7 @@ import { DAY_HEADING_FORMAT, DAY_SUBHEADING_FORMAT } from "./TaskListHeader";
 
 const renderTaskList = (props = {}, currentDate?: Date) => {
   const user = userEvent.setup();
-  const initialDate = currentDate ? dayjs(currentDate).utc() : dayjs().utc();
+  const initialDate = currentDate ? dayjs(currentDate) : dayjs();
   const result = renderWithDayProviders(<TaskList {...props} />, {
     initialDate,
   });
@@ -174,13 +174,11 @@ describe("TaskListHeader", () => {
   it("should not show go to today button when viewing today", async () => {
     renderTaskList();
 
-    const goToTodayButton = await screen.findByLabelText("Go to today");
-    expect(goToTodayButton).toBeInTheDocument();
+    const goToTodayButton = screen.queryByRole("button", {
+      name: "Go to today",
+    });
 
-    // Check that the wrapper div has the invisible class
-    // The invisible class is on the parent div that wraps the TooltipWrapper
-    const wrapperDiv = goToTodayButton?.parentElement?.parentElement;
-    expect(wrapperDiv).toHaveClass("invisible");
+    expect(goToTodayButton).not.toBeInTheDocument();
   });
 
   it("should navigate to today when clicking go to today button", async () => {
@@ -210,7 +208,7 @@ describe("TaskListHeader", () => {
     });
   });
 
-  it("should hide go to today button after navigating to today from a different day", async () => {
+  it("should remove the go to today button after navigating to today from a different day", async () => {
     const testDate = createUtcDate("2025-01-15T12:00:00Z");
     const { user } = renderTaskList({}, testDate);
 
@@ -218,11 +216,8 @@ describe("TaskListHeader", () => {
     const goToTodayButton = await screen.findByRole("button", {
       name: "Go to today",
     });
-    expect(goToTodayButton).toBeInTheDocument();
 
-    // Check that the wrapper div does NOT have the invisible class initially
-    const wrapperDiv = goToTodayButton?.parentElement?.parentElement;
-    expect(wrapperDiv).not.toHaveClass("invisible");
+    expect(goToTodayButton).toBeInTheDocument();
 
     // Click the go to today button
     await act(async () => {
@@ -231,9 +226,10 @@ describe("TaskListHeader", () => {
 
     // Wait for the navigation to complete and state to update
     await waitFor(() => {
-      // The button should now be invisible (has invisible class on wrapper div)
-      const updatedWrapperDiv = goToTodayButton?.parentElement?.parentElement;
-      expect(updatedWrapperDiv).toHaveClass("invisible");
+      // The button should no longer be in the view
+      expect(
+        screen.queryByRole("button", { name: "Go to today" }),
+      ).not.toBeInTheDocument();
     });
   });
 });
@@ -270,10 +266,10 @@ describe("TaskListHeader - Timezone Handling", () => {
 
     renderTaskList({}, todayUtc.toDate());
 
-    // "Go to today" button should be invisible because we're viewing today
-    const goToTodayButton = await screen.findByLabelText("Go to today");
-    const wrapperDiv = goToTodayButton?.parentElement?.parentElement;
-    expect(wrapperDiv).toHaveClass("invisible");
+    // "Go to today" button should not be present because we're viewing today
+    const goToTodayButton = screen.queryByLabelText("Go to today");
+
+    expect(goToTodayButton).not.toBeInTheDocument();
 
     jest.useRealTimers();
   });

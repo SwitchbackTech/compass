@@ -1,6 +1,5 @@
 import { useEffect, useMemo } from "react";
 import dayjs from "@core/util/date/dayjs";
-import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { Day_AsyncStateContextReason } from "@web/ducks/events/context/day.context";
 import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
@@ -10,8 +9,8 @@ export function useDayEvents(dateInView: dayjs.Dayjs) {
 
   const { startDateUtc, endDateUtc } = useMemo(() => {
     return {
-      startDateUtc: toUTCOffset(dateInView.startOf("day")),
-      endDateUtc: toUTCOffset(dateInView.endOf("day")),
+      startDateUtc: dateInView.startOf("day").utc(true).format(),
+      endDateUtc: dateInView.endOf("day").utc(true).format(),
     };
   }, [dateInView]);
 
