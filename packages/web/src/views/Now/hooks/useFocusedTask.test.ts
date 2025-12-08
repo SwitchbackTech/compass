@@ -8,7 +8,6 @@ jest.mock("@web/common/utils/storage/storage.util", () => ({
   ...jest.requireActual("@web/common/utils/storage/storage.util"),
   loadTasksFromStorage: jest.fn(),
   getDateKey: jest.fn(),
-  getTodayDateKey: jest.fn(),
 }));
 
 describe("useFocusedTask", () => {
@@ -19,19 +18,20 @@ describe("useFocusedTask", () => {
     title: "Test Task",
     status: "todo",
     createdAt: "2025-11-15T10:00:00Z",
+    order: 0,
   };
   const secondTask: Task = {
     id: "task-2",
     title: "Another Task",
     status: "todo",
     createdAt: "2025-11-15T11:00:00Z",
+    order: 0,
   };
   const mockTasks: Task[] = [mockTask, secondTask];
 
   beforeEach(() => {
     jest.clearAllMocks();
     (storageUtil.getDateKey as jest.Mock).mockReturnValue(mockDateKey);
-    (storageUtil.getTodayDateKey as jest.Mock).mockReturnValue(mockDateKey);
     (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue([]);
 
     // Use fake timers to control the current time
@@ -70,7 +70,7 @@ describe("useFocusedTask", () => {
 
       await waitFor(() => {
         expect(result.current.focusedTask).toEqual(mockTask);
-        expect(storageUtil.getTodayDateKey).toHaveBeenCalledTimes(1);
+        expect(storageUtil.getDateKey).toHaveBeenCalledTimes(1);
         expect(storageUtil.loadTasksFromStorage).toHaveBeenCalledWith(
           mockDateKey,
         );
@@ -83,6 +83,7 @@ describe("useFocusedTask", () => {
         title: "Completed Task",
         status: "completed",
         createdAt: "2025-11-15T10:00:00Z",
+        order: 0,
       };
 
       (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue([
@@ -260,6 +261,7 @@ describe("useFocusedTask", () => {
           title: "Third Task",
           status: "todo",
           createdAt: "2025-11-15T12:00:00Z",
+          order: 0,
         },
       ];
 

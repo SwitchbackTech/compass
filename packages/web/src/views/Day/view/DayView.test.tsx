@@ -31,7 +31,7 @@ describe("DayView", () => {
     // Check that CMD+K shortcut is displayed in the shortcuts overlay
     expect(await screen.findByText("Global")).toBeInTheDocument();
     expect(screen.getByTestId(getModifierKeyTestId())).toBeInTheDocument();
-    expect(screen.getByTestId("k-icon")).toBeInTheDocument();
+    expect(screen.getAllByTestId("k-icon").length).toBeGreaterThan(1);
     expect(screen.getByText("Command Palette")).toBeInTheDocument();
   });
 });

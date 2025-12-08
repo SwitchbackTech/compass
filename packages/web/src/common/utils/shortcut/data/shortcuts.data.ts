@@ -22,6 +22,7 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
   ];
 
   let homeShortcuts: Shortcut[] = [];
+  let dayShortcuts: Shortcut[] = [];
   let dayTaskShortcuts: Shortcut[] = [];
   let dayAgendaShortcuts: Shortcut[] = [];
   let nowShortcuts: Shortcut[] = [];
@@ -35,6 +36,21 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
   }
 
   if (isToday) {
+    dayShortcuts = [
+      { k: "j", label: "Previous day" },
+      { k: "k", label: "Next day" },
+      {
+        k: "t",
+        label: (() => {
+          if (!currentDate) return "Go to today";
+
+          return currentDate.isSame(dayjs(), "day")
+            ? "Scroll to now"
+            : "Go to today";
+        })(),
+      },
+    ];
+
     dayTaskShortcuts = [
       { k: "u", label: "Focus on tasks" },
       { k: "c", label: "Create task" },
@@ -43,17 +59,7 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
     ];
     dayAgendaShortcuts = [
       { k: "i", label: "Focus on calendar" },
-      {
-        k: "t",
-        label: (() => {
-          if (!currentDate) return "Go to today";
-          // Compare dates in the same timezone (UTC) to avoid timezone issues
-          const todayUTC = dayjs().startOf("day").utc();
-          return currentDate.isSame(todayUTC, "day")
-            ? "Scroll to now"
-            : "Go to today";
-        })(),
-      },
+      { k: "n", label: "Create event" },
     ];
   }
   if (isNow) {
@@ -70,6 +76,7 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
   return {
     globalShortcuts,
     homeShortcuts,
+    dayShortcuts,
     dayTaskShortcuts,
     dayAgendaShortcuts,
     nowShortcuts,
