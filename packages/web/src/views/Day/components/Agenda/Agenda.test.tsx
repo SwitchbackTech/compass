@@ -3,8 +3,8 @@ import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import { Schema_Event } from "@core/types/event.types";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
-import { renderWithDayProviders } from "../../util/day.test-util";
-import { Agenda } from "./Agenda";
+import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
+import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
 
 const renderAgenda = (
   events: Schema_Event[] = [],

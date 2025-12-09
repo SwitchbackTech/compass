@@ -9,7 +9,7 @@ import {
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { editEventSlice } from "@web/ducks/events/slices/event.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
-import { getSnappedMinutes } from "../../views/Day/util/agenda/agenda.util";
+import { getSnappedMinutes } from "@web/views/Day/util/agenda/agenda.util";
 
 export function useEventDNDActions() {
   const dispatch = useAppDispatch();

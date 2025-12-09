@@ -1,5 +1,4 @@
 import classNames from "classnames";
-import { useState } from "react";
 import { Schema_Event } from "@core/types/event.types";
 import { ID_GRID_ALLDAY_ROW } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -14,7 +13,6 @@ export const AllDayAgendaEvents = ({
   allDayEvents: Schema_Event[];
 }) => {
   const { openEventForm } = useDraftContextV2();
-  const [ref, setRef] = useState<HTMLElement | null>(null);
 
   // Sort all-day events by title for consistent TAB order
   const sortedAllDayEvents = [...allDayEvents].sort((a, b) =>
@@ -25,11 +23,7 @@ export const AllDayAgendaEvents = ({
     <EventContextMenuProvider>
       <Droppable
         as="div"
-        ref={setRef}
-        dndProps={{
-          id: ID_GRID_ALLDAY_ROW,
-          data: { containerWidth: ref?.clientWidth },
-        }}
+        dndProps={{ id: ID_GRID_ALLDAY_ROW }}
         data-id="all-day-agendas"
         id={ID_GRID_ALLDAY_ROW}
         aria-label="all day events section"
@@ -42,7 +36,7 @@ export const AllDayAgendaEvents = ({
           overscrollBehavior: "contain",
           scrollbarGutter: "stable both-edges",
         }}
-        onClick={openEventForm}
+        onClick={() => openEventForm()}
       >
         {sortedAllDayEvents.length === 0 ? (
           <div
@@ -52,7 +46,7 @@ export const AllDayAgendaEvents = ({
               "text-sm text-gray-200 transition-colors",
             )}
           >
-            Click to add all day events{" "}
+            Click to add all day events
           </div>
         ) : (
           sortedAllDayEvents.map((event) => (

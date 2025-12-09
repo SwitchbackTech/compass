@@ -1,6 +1,7 @@
 import classNames from "classnames";
 import { useState } from "react";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
+import { useGridOrganization } from "@web/common/hooks/useGridOrganization";
 import { Droppable } from "@web/components/DND/Droppable";
 import {
   selectIsDayEventsProcessing,
@@ -18,14 +19,13 @@ export const AgendaEvents = ({ height }: { height?: number }) => {
   const { openEventForm } = useDraftContextV2();
   const [ref, setRef] = useState<HTMLElement | null>(null);
 
+  useGridOrganization(ref);
+
   return (
     <EventContextMenuProvider>
       <Droppable
         as="div"
-        dndProps={{
-          id: ID_GRID_MAIN,
-          data: { containerWidth: ref?.clientWidth },
-        }}
+        dndProps={{ id: ID_GRID_MAIN }}
         ref={setRef}
         data-testid="calendar-surface"
         id={ID_GRID_MAIN}
@@ -34,18 +34,14 @@ export const AgendaEvents = ({ height }: { height?: number }) => {
           { isOver: "bg-gray-400/20" },
         )}
         style={{ height }}
-        onClick={openEventForm}
+        onClick={() => openEventForm()}
       >
         {/* Event blocks */}
         {isLoading || ref === null ? (
           <AgendaSkeleton />
         ) : (
           events.map((event) => (
-            <DraggableAgendaEvent
-              key={event._id}
-              event={event}
-              containerWidth={ref.clientWidth}
-            />
+            <DraggableAgendaEvent key={event._id} event={event} />
           ))
         )}
       </Droppable>

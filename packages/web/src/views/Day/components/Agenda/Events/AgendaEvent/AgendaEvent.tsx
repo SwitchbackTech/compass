@@ -14,7 +14,6 @@ export const AgendaEvent = memo(
     isDragging,
   }: {
     event: Schema_GridEvent;
-    containerWidth: number;
     over?: Over | null;
     isDragging?: boolean;
   }) => {

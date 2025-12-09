@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { DNDContext } from "./DNDContext";
+import { DNDContext } from "@web/components/DND/DNDContext";
 
 jest.mock("@dnd-kit/core", () => ({
   DndContext: jest.fn(({ children }) => (

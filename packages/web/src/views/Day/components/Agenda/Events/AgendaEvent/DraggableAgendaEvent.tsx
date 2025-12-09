@@ -4,7 +4,6 @@ import { memo, useCallback } from "react";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { CLASS_TIMED_CALENDAR_EVENT } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { getOverlappingStyles } from "@web/common/utils/overlap/overlap";
 import { Draggable } from "@web/components/DND/Draggable";
 import { AgendaEvent } from "@web/views/Day/components/Agenda/Events/AgendaEvent/AgendaEvent";
 import { AgendaEventMenu } from "@web/views/Day/components/Agenda/Events/AgendaEventMenu/AgendaEventMenu";
@@ -13,26 +12,11 @@ import { AgendaEventMenuTrigger } from "@web/views/Day/components/Agenda/Events/
 import { useEventContextMenu } from "@web/views/Day/components/ContextMenu/EventContextMenuContext";
 import { getAgendaEventPosition } from "@web/views/Day/util/agenda/agenda.util";
 
-const canvas = document.createElement("canvas");
-const canvasContext = canvas.getContext("2d");
-
-// Set canvas font to match 'text-xs' Tailwind class (0.75rem = 12px)
-if (canvasContext) canvasContext.font = "0.75rem Rubik";
-
 export const DraggableAgendaEvent = memo(
-  ({
-    event,
-    containerWidth,
-  }: {
-    event: Schema_GridEvent;
-    containerWidth: number;
-  }) => {
+  ({ event }: { event: Schema_GridEvent }) => {
     const { openContextMenu, isOpen } = useEventContextMenu();
 
     if (!event.startDate || !event.endDate || event.isAllDay) return null;
-
-    const textMeasure = canvasContext?.measureText(event.title ?? "");
-    const textWidth = textMeasure?.width ?? 0;
 
     const startDate = new Date(event.startDate);
     const startPosition = getAgendaEventPosition(startDate);
@@ -45,12 +29,6 @@ export const DraggableAgendaEvent = memo(
       [event, openContextMenu],
     );
 
-    const overlappingStyles = getOverlappingStyles(
-      event,
-      containerWidth,
-      textWidth,
-    );
-
     return (
       <AgendaEventMenu>
         <AgendaEventMenuTrigger asChild>
@@ -61,8 +39,6 @@ export const DraggableAgendaEvent = memo(
                 event,
                 type: Categories_Event.TIMED,
                 view: "day",
-                containerWidth,
-                textWidth,
               },
             }}
             as="div"
@@ -77,21 +53,14 @@ export const DraggableAgendaEvent = memo(
                   event.position.isOverlapping,
               },
             )}
-            style={{
-              top: `${startPosition}px`,
-              ...overlappingStyles,
-            }}
+            style={{ top: `${startPosition}px` }}
             tabIndex={0}
             role="button"
             data-event-id={event._id}
             aria-label={event.title || "Untitled event"}
             onContextMenu={handleContextMenu}
           >
-            <AgendaEvent
-              event={event}
-              containerWidth={containerWidth}
-              over={null}
-            />
+            <AgendaEvent event={event} />
           </Draggable>
         </AgendaEventMenuTrigger>
 

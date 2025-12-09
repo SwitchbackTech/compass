@@ -1,6 +1,6 @@
 import { useDroppable } from "@dnd-kit/core";
 import { render, screen } from "@testing-library/react";
-import { Droppable } from "./Droppable";
+import { Droppable } from "@web/components/DND/Droppable";
 
 jest.mock("@dnd-kit/core", () => ({
   useDroppable: jest.fn(),

@@ -1,8 +1,8 @@
 import React from "react";
 import { FloatingContext } from "@floating-ui/react";
 import { Schema_Event } from "@core/types/event.types";
-import { BaseContextMenu } from "./BaseContextMenu";
-import { EventContextMenuItems } from "./EventContextMenuItems";
+import { BaseContextMenu } from "@web/views/Day/components/ContextMenu/BaseContextMenu";
+import { EventContextMenuItems } from "@web/views/Day/components/ContextMenu/EventContextMenuItems";
 
 interface EventContextMenuProps {
   event: Schema_Event;

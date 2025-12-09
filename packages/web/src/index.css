@@ -131,7 +131,7 @@
       transition: background-color 0.3s ease;
     }
 
-    /* Show scrollbar when hovering over the command palette container */
+    /* Make scrollbar thumb visible on hover/focus/active of scrollable area */
     &:hover::-webkit-scrollbar-thumb,
     &:focus::-webkit-scrollbar-thumb,
     &:active::-webkit-scrollbar-thumb {

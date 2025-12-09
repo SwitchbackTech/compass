@@ -50,7 +50,7 @@ export const DraggableAllDayAgendaEvent = memo(
             data-event-id={event._id}
             onContextMenu={handleContextMenu}
           >
-            <AllDayAgendaEvent event={event} over={null} />
+            <AllDayAgendaEvent event={event} />
           </Draggable>
         </AgendaEventMenuTrigger>
         {isOpen ? null : <AgendaEventMenuContent event={event} />}

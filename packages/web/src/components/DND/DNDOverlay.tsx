@@ -25,13 +25,7 @@ export function DNDOverlay({ children }: PropsWithChildren) {
     switch (type) {
       case Categories_Event.TIMED:
         return (
-          <AgendaEvent
-            canvasContext={props.canvasContext}
-            containerWidth={props.containerWidth}
-            event={event!}
-            over={over}
-            isDragging={!!active?.id}
-          />
+          <AgendaEvent event={event!} over={over} isDragging={!!active?.id} />
         );
       case Categories_Event.ALLDAY:
         return (

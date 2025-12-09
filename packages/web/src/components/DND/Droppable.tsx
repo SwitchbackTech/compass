@@ -1,5 +1,4 @@
 import { ObjectId } from "bson";
-import mergeWith from "lodash.mergewith";
 import {
   DetailedHTMLProps,
   ForwardedRef,
@@ -8,7 +7,6 @@ import {
   createElement,
   forwardRef,
   useCallback,
-  useImperativeHandle,
 } from "react";
 import {
   UniqueIdentifier,
@@ -16,45 +14,24 @@ import {
   useDroppable,
 } from "@dnd-kit/core";
 
-export interface DroppableDNDData {
-  containerWidth?: number;
-}
-
 function CompassDroppable(
   props: DetailedHTMLProps<
     {
       dndProps: Omit<UseDraggableArguments, "id" | "data"> & {
         id?: UniqueIdentifier;
-        data: DroppableDNDData;
       };
       as: keyof ReactHTML;
     } & HTMLAttributes<HTMLElement>,
     HTMLElement
   >,
-  ref: ForwardedRef<
-    HTMLElement & Omit<ReturnType<typeof useDroppable>, "setNodeRef" | "node">
-  >,
+  ref: ForwardedRef<HTMLElement | null>,
 ) {
   const { dndProps, as, ...elementProps } = props;
 
-  const { setNodeRef, active, isOver, node, over, rect } = useDroppable({
+  const { setNodeRef, active } = useDroppable({
     ...props.dndProps,
     id: props.dndProps.id ?? new ObjectId().toString(),
   });
-
-  const dndHandles = {
-    active,
-    isOver,
-    node,
-    over,
-    rect,
-  };
-
-  useImperativeHandle(
-    node,
-    () => (node.current ? mergeWith(node.current, dndHandles) : null),
-    [dndHandles, node],
-  );
 
   const setRef = useCallback(
     (element: HTMLElement | null) => {
@@ -62,15 +39,13 @@ function CompassDroppable(
 
       if (!ref) return;
 
-      const handles = element !== null ? mergeWith(element, dndHandles) : null;
-
       if (typeof ref === "function") {
-        ref(handles);
+        ref(element);
       } else if (typeof ref !== "string") {
-        ref.current = handles;
+        ref.current = element;
       }
     },
-    [ref, setNodeRef, dndHandles],
+    [ref, setNodeRef],
   );
 
   return createElement(as ?? "div", {

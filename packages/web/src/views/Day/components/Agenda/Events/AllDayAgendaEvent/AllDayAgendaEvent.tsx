@@ -37,7 +37,7 @@ export const AllDayAgendaEvent = memo(
         style={{
           backgroundColor,
           ...(containerWidth && over?.id === ID_GRID_MAIN
-            ? { width: over?.data.current?.containerWidth - 12 }
+            ? { width: containerWidth - 12 }
             : {}),
           marginLeft: over?.id === ID_GRID_MAIN ? "71px" : "0%",
         }}

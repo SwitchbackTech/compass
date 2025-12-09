@@ -1,5 +1,4 @@
 import { ObjectId } from "bson";
-import mergeWith from "lodash.mergewith";
 import {
   DetailedHTMLProps,
   ForwardedRef,
@@ -8,7 +7,6 @@ import {
   createElement,
   forwardRef,
   useCallback,
-  useImperativeHandle,
   useMemo,
 } from "react";
 import {
@@ -24,7 +22,6 @@ export interface DraggableDNDData {
   type: Categories_Event;
   event: Schema_GridEvent | null;
   view: "day" | "week" | "now";
-  [key: string]: any;
 }
 
 function CompassDraggable(
@@ -38,47 +35,15 @@ function CompassDraggable(
     } & HTMLAttributes<HTMLElement>,
     HTMLElement
   >,
-  ref: ForwardedRef<
-    HTMLElement &
-      Omit<
-        ReturnType<typeof useDraggable>,
-        "setNodeRef" | "attributes" | "listeners" | "transform" | "node"
-      >
-  >,
+  ref: ForwardedRef<HTMLElement | null>,
 ) {
   const { dndProps, as, style, onContextMenu, ...elementProps } = props;
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    activatorEvent,
-    active,
-    activeNodeRect,
-    isDragging,
-    node,
-    over,
-    setActivatorNodeRef,
-  } = useDraggable({
-    ...props.dndProps,
-    id: props.dndProps.id ?? new ObjectId().toString(),
-  });
-
-  const dndHandles = {
-    activatorEvent,
-    active,
-    activeNodeRect,
-    isDragging,
-    over,
-    setActivatorNodeRef,
-  };
-
-  useImperativeHandle(
-    node,
-    () => (node.current ? mergeWith(node.current, dndHandles) : null),
-    [dndHandles, node],
-  );
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      ...props.dndProps,
+      id: props.dndProps.id ?? new ObjectId().toString(),
+    });
 
   const setRef = useCallback(
     (element: HTMLElement | null) => {
@@ -86,15 +51,13 @@ function CompassDraggable(
 
       if (!ref) return;
 
-      const handles = element !== null ? mergeWith(element, dndHandles) : null;
-
       if (typeof ref === "function") {
-        ref(handles);
+        ref(element);
       } else if (typeof ref !== "string") {
-        ref.current = handles;
+        ref.current = element;
       }
     },
-    [ref, setNodeRef, dndHandles],
+    [ref, setNodeRef],
   );
 
   const dndStyle = useMemo(() => {

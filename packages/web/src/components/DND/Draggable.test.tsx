@@ -1,7 +1,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import { render, screen } from "@testing-library/react";
 import { Categories_Event } from "@core/types/event.types";
-import { Draggable } from "./Draggable";
+import { Draggable } from "@web/components/DND/Draggable";
 
 jest.mock("@dnd-kit/core", () => ({
   useDraggable: jest.fn(),

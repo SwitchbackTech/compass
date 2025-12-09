@@ -1,7 +1,10 @@
 import { Active, Over } from "@dnd-kit/core";
 import { Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { MINUTES_PER_SLOT, SLOT_HEIGHT } from "../../constants/day.constants";
+import {
+  MINUTES_PER_SLOT,
+  SLOT_HEIGHT,
+} from "@web/views/Day/constants/day.constants";
 import {
   getAgendaEventPosition,
   getAgendaEventTime,
@@ -9,7 +12,7 @@ import {
   getEventTimeFromPosition,
   getNowLinePosition,
   getSnappedMinutes,
-} from "./agenda.util";
+} from "@web/views/Day/util/agenda/agenda.util";
 
 describe("agenda.util", () => {
   describe("getNowLinePosition", () => {
