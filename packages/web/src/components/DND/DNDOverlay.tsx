@@ -38,7 +38,7 @@ export function DNDOverlay({ children }: PropsWithChildren) {
       default:
         return children;
     }
-  }, [children, type, event, props, active?.id]);
+  }, [children, type, event, props, active?.id, over]);
 
   return createPortal(
     <DragOverlay
