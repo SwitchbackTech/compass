@@ -161,9 +161,7 @@ describe("EventContextMenu", () => {
       { ...baseEvent, _id: "event-2", title: "Second Event" },
     ];
 
-    const { user, dispatchSpy } = await act(() =>
-      renderAgendaEvents(mockEvents),
-    );
+    const { user, dispatchSpy } = renderAgendaEvents(mockEvents);
 
     await screen.findByRole("button", { name: "First Event" });
     await screen.findByRole("button", { name: "Second Event" });

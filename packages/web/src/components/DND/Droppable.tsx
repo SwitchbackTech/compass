@@ -28,7 +28,7 @@ function CompassDroppable(
 ) {
   const { dndProps, as, ...elementProps } = props;
 
-  const { setNodeRef, active } = useDroppable({
+  const { setNodeRef } = useDroppable({
     ...props.dndProps,
     id: props.dndProps.id ?? new ObjectId().toString(),
   });
@@ -48,11 +48,7 @@ function CompassDroppable(
     [ref, setNodeRef],
   );
 
-  return createElement(as ?? "div", {
-    ...elementProps,
-    style: { ...props.style, ...(active?.id ? { overflowY: "hidden" } : {}) },
-    ref: setRef,
-  });
+  return createElement(as ?? "div", { ...elementProps, ref: setRef });
 }
 
 export const Droppable = forwardRef(CompassDroppable);
