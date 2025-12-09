@@ -117,7 +117,7 @@ const DayViewContentInner = () => {
     }
   };
 
-  const { openEventForm } = useDraftContextV2();
+  const { openEventForm, setDraft } = useDraftContextV2();
 
   const onCreateEvent = useCallback(() => {
     openEventForm(true);
@@ -125,28 +125,22 @@ const DayViewContentInner = () => {
 
   const handleEditEvent = useCallback(() => {
     // First check if an event is currently focused
-    const focusedEventId = getFocusedAgendaEventId();
-    if (focusedEventId) {
-      // Open the form for the focused event
-      openEventForm(false);
-      return;
-    }
+    let eventIdToEdit = getFocusedAgendaEventId();
 
     // If no event is focused, get the first event
-    const firstEventId = getFirstAgendaEventId(events);
-    if (firstEventId) {
-      // Focus the event first
-      const element = document.querySelector(
-        `[data-event-id="${firstEventId}"]`,
-      ) as HTMLElement;
-      if (element) {
-        element.focus();
-        // Then open the form
-        openEventForm(false);
+    if (!eventIdToEdit) {
+      eventIdToEdit = getFirstAgendaEventId(events);
+    }
+
+    // If we have an event ID, open it for editing
+    if (eventIdToEdit) {
+      const event = events.find((e) => e._id === eventIdToEdit);
+      if (event) {
+        setDraft(event);
       }
     }
     // If there are no events, do nothing
-  }, [openEventForm, events]);
+  }, [setDraft, events]);
 
   useDayViewShortcuts({
     onAddTask: focusOnAddTaskInput,
