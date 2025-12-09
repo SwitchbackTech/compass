@@ -1,5 +1,9 @@
 import { Schema_Event } from "@core/types/event.types";
-import { focusFirstAgendaEvent } from "./focus.util";
+import {
+  focusFirstAgendaEvent,
+  getFirstAgendaEventId,
+  getFocusedAgendaEventId,
+} from "./focus.util";
 
 // Mock document.querySelector
 const mockQuerySelector = jest.fn();
@@ -254,5 +258,141 @@ describe("focusFirstAgendaEvent", () => {
       '[data-event-id="all-day-1"]',
     );
     expect(mockElement.focus).toHaveBeenCalled();
+  });
+});
+
+describe("getFirstAgendaEventId", () => {
+  it("should return null when no events", () => {
+    const eventId = getFirstAgendaEventId([]);
+    expect(eventId).toBeNull();
+  });
+
+  it("should return first all-day event ID (alphabetically sorted)", () => {
+    const events: Schema_Event[] = [
+      {
+        _id: "all-day-2",
+        title: "Zebra Event",
+        startDate: "2024-01-15T00:00:00Z",
+        endDate: "2024-01-15T23:59:59Z",
+        isAllDay: true,
+      },
+      {
+        _id: "all-day-1",
+        title: "Apple Event",
+        startDate: "2024-01-15T00:00:00Z",
+        endDate: "2024-01-15T23:59:59Z",
+        isAllDay: true,
+      },
+    ];
+
+    const eventId = getFirstAgendaEventId(events);
+    expect(eventId).toBe("all-day-1");
+  });
+
+  it("should return current timed event ID when no all-day events", () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2024-01-15T10:30:00Z"));
+
+    const events: Schema_Event[] = [
+      {
+        _id: "timed-1",
+        title: "Current Event",
+        startDate: "2024-01-15T10:00:00Z",
+        endDate: "2024-01-15T11:00:00Z",
+        isAllDay: false,
+      },
+    ];
+
+    const eventId = getFirstAgendaEventId(events);
+    expect(eventId).toBe("timed-1");
+
+    jest.useRealTimers();
+  });
+
+  it("should return next future event ID", () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2024-01-15T11:30:00Z"));
+
+    const events: Schema_Event[] = [
+      {
+        _id: "timed-1",
+        title: "Past Event",
+        startDate: "2024-01-15T09:00:00Z",
+        endDate: "2024-01-15T10:00:00Z",
+        isAllDay: false,
+      },
+      {
+        _id: "timed-2",
+        title: "Future Event",
+        startDate: "2024-01-15T14:00:00Z",
+        endDate: "2024-01-15T15:00:00Z",
+        isAllDay: false,
+      },
+    ];
+
+    const eventId = getFirstAgendaEventId(events);
+    expect(eventId).toBe("timed-2");
+
+    jest.useRealTimers();
+  });
+
+  it("should return first timed event ID as fallback", () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2024-01-15T17:00:00Z"));
+
+    const events: Schema_Event[] = [
+      {
+        _id: "timed-1",
+        title: "Morning Event",
+        startDate: "2024-01-15T09:00:00Z",
+        endDate: "2024-01-15T10:00:00Z",
+        isAllDay: false,
+      },
+      {
+        _id: "timed-2",
+        title: "Afternoon Event",
+        startDate: "2024-01-15T14:00:00Z",
+        endDate: "2024-01-15T15:00:00Z",
+        isAllDay: false,
+      },
+    ];
+
+    const eventId = getFirstAgendaEventId(events);
+    expect(eventId).toBe("timed-1");
+
+    jest.useRealTimers();
+  });
+});
+
+describe("getFocusedAgendaEventId", () => {
+  it("should return event ID when event is focused", () => {
+    const mockElement = document.createElement("div");
+    mockElement.setAttribute("data-event-id", "event-123");
+    mockElement.tabIndex = 0;
+    document.body.appendChild(mockElement);
+    mockElement.focus();
+
+    const eventId = getFocusedAgendaEventId();
+    expect(eventId).toBe("event-123");
+
+    document.body.removeChild(mockElement);
+  });
+
+  it("should return null when no element is focused", () => {
+    document.body.focus();
+    const eventId = getFocusedAgendaEventId();
+    expect(eventId).toBeNull();
+  });
+
+  it("should return null when focused element is not an event", () => {
+    const mockElement = document.createElement("div");
+    mockElement.tabIndex = 0;
+    document.body.appendChild(mockElement);
+    mockElement.focus();
+
+    const eventId = getFocusedAgendaEventId();
+    expect(eventId).toBeNull();
+
+    document.body.removeChild(mockElement);
   });
 });

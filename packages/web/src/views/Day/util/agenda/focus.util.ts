@@ -14,16 +14,16 @@ function focusEventById(eventId: string): void {
 }
 
 /**
- * Focuses the first relevant agenda event based on current time
+ * Gets the ID of the first relevant agenda event based on current time
  * Priority order:
  * 1. First all-day event (if any exist)
  * 2. Current timed event (happening now)
  * 3. Next future timed event
  * 4. First timed event (fallback for past events)
  */
-export function focusFirstAgendaEvent(events: Schema_Event[]): void {
+export function getFirstAgendaEventId(events: Schema_Event[]): string | null {
   if (events.length === 0) {
-    return;
+    return null;
   }
 
   // Separate all-day and timed events with consistent sorting
@@ -40,8 +40,7 @@ export function focusFirstAgendaEvent(events: Schema_Event[]): void {
 
   // Priority 1: All-day events
   if (allDayEvents.length > 0 && allDayEvents[0]._id) {
-    focusEventById(allDayEvents[0]._id);
-    return;
+    return allDayEvents[0]._id;
   }
 
   // Priority 2: Current event (happening now)
@@ -54,8 +53,7 @@ export function focusFirstAgendaEvent(events: Schema_Event[]): void {
   });
 
   if (currentEvent && currentEvent._id) {
-    focusEventById(currentEvent._id);
-    return;
+    return currentEvent._id;
   }
 
   // Priority 3: Next future event
@@ -66,12 +64,45 @@ export function focusFirstAgendaEvent(events: Schema_Event[]): void {
   });
 
   if (nextEvent && nextEvent._id) {
-    focusEventById(nextEvent._id);
-    return;
+    return nextEvent._id;
   }
 
   // Priority 4: First timed event (fallback for past events)
   if (timedEvents.length > 0 && timedEvents[0]._id) {
-    focusEventById(timedEvents[0]._id);
+    return timedEvents[0]._id;
   }
+
+  return null;
+}
+
+/**
+ * Focuses the first relevant agenda event based on current time
+ * Priority order:
+ * 1. First all-day event (if any exist)
+ * 2. Current timed event (happening now)
+ * 3. Next future timed event
+ * 4. First timed event (fallback for past events)
+ */
+export function focusFirstAgendaEvent(events: Schema_Event[]): void {
+  const eventId = getFirstAgendaEventId(events);
+  if (eventId) {
+    focusEventById(eventId);
+  }
+}
+
+/**
+ * Gets the focused event ID from the currently focused element
+ * Returns the event ID if an agenda event is focused, null otherwise
+ */
+export function getFocusedAgendaEventId(): string | null {
+  const activeElement = document.activeElement as HTMLElement | null;
+  if (!activeElement) return null;
+
+  // Check if focused on an event element
+  const eventId = activeElement.getAttribute("data-event-id");
+  if (eventId) {
+    return eventId;
+  }
+
+  return null;
 }

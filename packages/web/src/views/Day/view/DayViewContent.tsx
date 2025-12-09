@@ -23,7 +23,11 @@ import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
-import { focusFirstAgendaEvent } from "@web/views/Day/util/agenda/focus.util";
+import {
+  focusFirstAgendaEvent,
+  getFirstAgendaEventId,
+  getFocusedAgendaEventId,
+} from "@web/views/Day/util/agenda/focus.util";
 import {
   focusOnAddTaskInput,
   focusOnFirstTask,
@@ -119,6 +123,31 @@ const DayViewContentInner = () => {
     openEventForm(true);
   }, [openEventForm]);
 
+  const handleEditEvent = useCallback(() => {
+    // First check if an event is currently focused
+    const focusedEventId = getFocusedAgendaEventId();
+    if (focusedEventId) {
+      // Open the form for the focused event
+      openEventForm(false);
+      return;
+    }
+
+    // If no event is focused, get the first event
+    const firstEventId = getFirstAgendaEventId(events);
+    if (firstEventId) {
+      // Focus the event first
+      const element = document.querySelector(
+        `[data-event-id="${firstEventId}"]`,
+      ) as HTMLElement;
+      if (element) {
+        element.focus();
+        // Then open the form
+        openEventForm(false);
+      }
+    }
+    // If there are no events, do nothing
+  }, [openEventForm, events]);
+
   useDayViewShortcuts({
     onAddTask: focusOnAddTaskInput,
     onEditTask: handleEditTask,
@@ -128,6 +157,7 @@ const DayViewContentInner = () => {
     onFocusTasks: focusOnFirstTask,
     onFocusAgenda: handleFocusAgenda,
     onCreateEvent: onCreateEvent,
+    onEditEvent: handleEditEvent,
     onNextDay: navigateToNextDay,
     onPrevDay: navigateToPreviousDay,
     onGoToToday: handleGoToToday,
