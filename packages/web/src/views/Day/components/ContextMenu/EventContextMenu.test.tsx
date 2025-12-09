@@ -52,7 +52,7 @@ describe("EventContextMenu", () => {
     jest.clearAllMocks();
   });
 
-  it.only("should open context menu on right-click on an event", async () => {
+  it("should open context menu on right-click on an event", async () => {
     const { user, dispatchSpy } = renderAgendaEvents([baseEvent]);
 
     const eventButton = await screen.findByRole("button", {
