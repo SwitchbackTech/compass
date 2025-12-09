@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import { FC } from "react";
 import { Dayjs } from "@core/util/date/dayjs";
 import { AllDayRow } from "@web/views/Calendar/components/Grid/AllDayRow";
 import { MainGrid } from "@web/views/Calendar/components/Grid/MainGrid";
@@ -10,6 +10,7 @@ import {
   Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { GRID_PADDING_BOTTOM } from "../../layout.constants";
 
 interface Props {
   dateCalcs: DateCalcs;
@@ -34,7 +35,14 @@ export const Grid: FC<Props> = ({
   const dragEdgeState = useDragEdgeNavigation(mainGridRef, weekProps);
 
   return (
-    <div style={{ height: "100%", width: "100%", position: "relative" }}>
+    <div
+      style={{
+        height: "100%",
+        width: "100%",
+        position: "relative",
+        paddingBottom: GRID_PADDING_BOTTOM,
+      }}
+    >
       <AllDayRow
         allDayRef={allDayRef}
         dateCalcs={dateCalcs}

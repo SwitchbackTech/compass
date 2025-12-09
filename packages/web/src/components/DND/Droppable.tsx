@@ -10,14 +10,14 @@ import {
 } from "react";
 import {
   UniqueIdentifier,
-  UseDraggableArguments,
+  UseDroppableArguments,
   useDroppable,
 } from "@dnd-kit/core";
 
 function CompassDroppable(
   props: DetailedHTMLProps<
     {
-      dndProps: Omit<UseDraggableArguments, "id" | "data"> & {
+      dndProps: Omit<UseDroppableArguments, "id" | "data"> & {
         id?: UniqueIdentifier;
       };
       as: keyof ReactHTML;

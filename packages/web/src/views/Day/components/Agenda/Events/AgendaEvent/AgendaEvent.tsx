@@ -1,7 +1,6 @@
 import classNames from "classnames";
 import fastDeepEqual from "fast-deep-equal";
 import { memo } from "react";
-import { Over } from "@dnd-kit/core";
 import { Priorities } from "@core/constants/core.constants";
 import { darken, isDark } from "@core/util/color.utils";
 import { colorByPriority } from "@web/common/styles/theme.util";
@@ -14,7 +13,6 @@ export const AgendaEvent = memo(
     isDragging,
   }: {
     event: Schema_GridEvent;
-    over?: Over | null;
     isDragging?: boolean;
   }) => {
     const startDate = new Date(event.startDate);

@@ -52,7 +52,12 @@ export const getEventTimeFromPosition = (
 
   // Clamp hours to valid range (0-23)
   const clampedHours = Math.max(0, Math.min(23, hours));
-  const clampedMinutes = hours > 23 ? 45 : hours < 0 ? 0 : minutes;
+  const clampedMinutes =
+    hours > 23
+      ? 45
+      : clampedHours === 23
+        ? Math.min(45, minutes)
+        : Math.max(0, minutes);
 
   return dateInView.startOf("day").hour(clampedHours).minute(clampedMinutes);
 };
@@ -66,8 +71,13 @@ export const getSnappedMinutes = (active: Active, over: Over) => {
   const relativeY = activeRect.top - overRect.top;
   const gridHeight = overRect.height;
   const minutesFromMidnight = (relativeY / gridHeight) * 24 * 60;
-  const snappedMinutes =
-    Math.round(minutesFromMidnight / MINUTES_PER_SLOT) * MINUTES_PER_SLOT;
+  const timeSlots = Math.round(minutesFromMidnight / MINUTES_PER_SLOT);
+  const adjustedMinsFromMidnight = timeSlots * MINUTES_PER_SLOT;
+  const snappedMinutes = Math.max(0, Math.min(1439, adjustedMinsFromMidnight));
 
   return snappedMinutes;
+};
+
+export const toNearestFifteenMinutes = (minutes: number) => {
+  return Math.min(45, Math.round(minutes / 15) * 15);
 };

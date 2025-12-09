@@ -26,9 +26,8 @@ describe("useOpenEventForm", () => {
     "@web/views/Day/hooks/navigation/useDateInView",
   );
 
-  const { getEventTimeFromPosition } = jest.requireMock(
-    "@web/views/Day/util/agenda/agenda.util",
-  );
+  const { getEventTimeFromPosition, toNearestFifteenMinutes } =
+    jest.requireMock("@web/views/Day/util/agenda/agenda.util");
 
   const { selectEventById } = jest.requireMock(
     "@web/ducks/events/selectors/event.selectors",
@@ -57,6 +56,7 @@ describe("useOpenEventForm", () => {
     useDateInView.mockReturnValue(mockDateInView);
     getUserId.mockResolvedValue("user-123");
     useMousePosition.mockReturnValue(defaultMousePosition);
+    toNearestFifteenMinutes.mockReturnValue(0);
   });
 
   it("should open form for new timed event when over main grid", async () => {

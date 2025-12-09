@@ -91,7 +91,7 @@ export const MainGrid: FC<Props> = ({
       />
 
       <StyledGridWithTimeLabels>
-        {getHourLabels().map((dayTime, index) => (
+        {getHourLabels(true).map((dayTime, index) => (
           <StyledGridRow
             key={`${dayTime}-${index}:dayTimes`}
             onMouseDown={onMouseDown}

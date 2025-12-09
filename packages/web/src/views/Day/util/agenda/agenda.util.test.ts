@@ -12,6 +12,7 @@ import {
   getEventTimeFromPosition,
   getNowLinePosition,
   getSnappedMinutes,
+  toNearestFifteenMinutes,
 } from "@web/views/Day/util/agenda/agenda.util";
 
 describe("agenda.util", () => {
@@ -284,6 +285,22 @@ describe("agenda.util", () => {
       } as unknown as Active;
       const over = { rect: null } as unknown as Over;
       expect(getSnappedMinutes(active, over)).toBeNull();
+    });
+  });
+
+  describe("toNearestFifteenMinutes", () => {
+    it("should round to nearest 15 minutes", () => {
+      expect(toNearestFifteenMinutes(0)).toBe(0);
+      expect(toNearestFifteenMinutes(7)).toBe(0); // 7 -> 0
+      expect(toNearestFifteenMinutes(8)).toBe(15); // 8 -> 15
+      expect(toNearestFifteenMinutes(22)).toBe(15); // 22 -> 15
+      expect(toNearestFifteenMinutes(23)).toBe(30); // 23 -> 30
+    });
+
+    it("should clamp to 45 minutes", () => {
+      expect(toNearestFifteenMinutes(45)).toBe(45);
+      expect(toNearestFifteenMinutes(50)).toBe(45);
+      expect(toNearestFifteenMinutes(60)).toBe(45);
     });
   });
 });
