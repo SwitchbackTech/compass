@@ -198,6 +198,7 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
             placeholder="Add a description..."
             maxLength={MAX_DESCRIPTION_LENGTH}
             id={TASK_DESCRIPTION_ID}
+            className="overflow-y-auto"
           />
           <CharacterCount isNearLimit={isNearLimit}>
             {value.length}/{MAX_DESCRIPTION_LENGTH}

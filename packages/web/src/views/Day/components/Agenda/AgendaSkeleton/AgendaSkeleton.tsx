@@ -46,7 +46,10 @@ export function AgendaSkeleton() {
   ];
 
   return (
-    <div className="pointer-events-none absolute inset-0">
+    <div
+      data-testid="agenda-skeleton"
+      className="pointer-events-none absolute inset-0"
+    >
       {skeletonBars.map((bar, index) => (
         <div
           key={index}

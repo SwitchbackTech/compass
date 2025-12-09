@@ -1,4 +1,4 @@
-import React, { FC, MouseEvent, MutableRefObject } from "react";
+import { FC, MouseEvent, MutableRefObject } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { Dayjs } from "@core/util/date/dayjs";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
@@ -48,7 +48,7 @@ export const MainGrid: FC<Props> = ({
 
   const onMouseDown = async (e: MouseEvent) => {
     if (isDrafting) {
-      dispatch(draftSlice.actions.discard());
+      dispatch(draftSlice.actions.discard(undefined));
       return;
     }
 
@@ -77,7 +77,12 @@ export const MainGrid: FC<Props> = ({
   };
 
   return (
-    <StyledMainGrid id={ID_GRID_MAIN} ref={mainGridRef} tabIndex={-1}>
+    <StyledMainGrid
+      id={ID_GRID_MAIN}
+      ref={mainGridRef}
+      tabIndex={-1}
+      className="overflow-y-auto focus:outline-none"
+    >
       <MainGridColumns
         isCurrentWeek={isCurrentWeek}
         today={today}
@@ -86,7 +91,7 @@ export const MainGrid: FC<Props> = ({
       />
 
       <StyledGridWithTimeLabels>
-        {getHourLabels().map((dayTime, index) => (
+        {getHourLabels(true).map((dayTime, index) => (
           <StyledGridRow
             key={`${dayTime}-${index}:dayTimes`}
             onMouseDown={onMouseDown}

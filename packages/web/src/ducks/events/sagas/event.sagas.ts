@@ -118,6 +118,10 @@ export function* deleteEvent({ payload }: Action_DeleteEvent) {
 }
 
 export function* editEvent({ payload }: Action_EditEvent) {
+  const _event = (yield select((state: RootState) =>
+    selectEventById(state, payload._id),
+  )) as Schema_GridEvent;
+
   const { _id, applyTo, event, shouldRemove } = payload;
 
   try {
@@ -127,6 +131,7 @@ export function* editEvent({ payload }: Action_EditEvent) {
     yield call(EventApi.edit, _id, event, { applyTo });
     yield put(editEventSlice.actions.success());
   } catch (error) {
+    yield put(eventsEntitiesSlice.actions.edit({ ...payload, event: _event }));
     yield put(editEventSlice.actions.error());
     handleError(error as Error);
   }

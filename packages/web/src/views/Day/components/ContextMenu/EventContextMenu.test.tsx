@@ -5,8 +5,8 @@ import { screen, waitFor } from "@testing-library/react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
-import { renderWithDayProviders } from "../../util/day.test-util";
-import { AgendaEvents } from "../Agenda/Events/AgendaEvent/AgendaEvents";
+import { AgendaEvents } from "@web/views/Day/components/Agenda/Events/AgendaEvent/AgendaEvents";
+import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
 
 jest.mock("../Agenda/Events/AgendaEventMenu/AgendaEventMenu", () => ({
   AgendaEventMenu: ({ children }: { children: React.ReactNode }) => (
@@ -29,6 +29,7 @@ jest.mock("../Agenda/Events/AgendaEventMenu/AgendaEventMenuTrigger", () => ({
 
 const renderAgendaEvents = (events: Schema_Event[]) => {
   const store = createStoreWithEvents(events);
+
   const utils = renderWithDayProviders(<AgendaEvents />, { store });
   const dispatchSpy = jest.spyOn(store, "dispatch");
 

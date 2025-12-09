@@ -156,11 +156,12 @@ export const EventDateUtils = {
     endDate: string,
   ) => {
     return events.filter((event) => {
+      const eventStart = dayjs(event.startDate).utc(true); // use local time - until we use actual dates
+      const eventEnd = dayjs(event.endDate).utc(true); // This is exclusive, so the event ends at the very start of the end date
+
       if (event.isAllDay) {
         // For all-day events with exclusive end dates (e.g., Mon event: start="2025-09-08", end="2025-09-09")
         // Check if the event overlaps with the requested date range
-        const eventStart = dayjs(event.startDate);
-        const eventEnd = dayjs(event.endDate); // This is exclusive, so the event ends at the very start of the end date
         const rangeStart = dayjs(startDate);
         const rangeEnd = dayjs(endDate);
 
@@ -172,8 +173,7 @@ export const EventDateUtils = {
       }
 
       return (
-        dayjs(event.startDate).isSameOrAfter(startDate) &&
-        dayjs(event.endDate).isSameOrBefore(endDate)
+        eventStart.isSameOrAfter(startDate) && eventEnd.isSameOrBefore(endDate)
       );
     });
   },

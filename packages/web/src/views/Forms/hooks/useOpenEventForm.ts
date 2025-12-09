@@ -13,9 +13,11 @@ import {
 import { useMousePosition } from "@web/common/hooks/useMousePosition";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { store } from "@web/store";
-import { SLOT_HEIGHT } from "@web/views/Day/constants/day.constants";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
-import { getEventTimeFromPosition } from "@web/views/Day/util/agenda/agenda.util";
+import {
+  getEventTimeFromPosition,
+  toNearestFifteenMinutes,
+} from "@web/views/Day/util/agenda/agenda.util";
 
 export function useOpenEventForm({
   setDraft,
@@ -63,8 +65,20 @@ export function useOpenEventForm({
         draftEvent = selectEventById(store.getState(), existingEventId);
         setExisting(true);
       } else {
-        let startTime: Dayjs = dayjs();
-        let endTime: Dayjs = dayjs().add(15, "minutes");
+        const now = dayjs();
+
+        // we default to the nearest 15-minute event
+        // until the week view is able to support arbitrary event durations
+        let startTime: Dayjs = dayjs().minute(
+          toNearestFifteenMinutes(now.minute()),
+        );
+
+        // make sure the clampedTime is in the future
+        if (startTime.isBefore(now)) {
+          startTime = startTime.add(15, "minutes");
+        }
+
+        let endTime: Dayjs = startTime.add(15, "minutes");
 
         if (isOverAllDayRow) {
           const date = dateInView.startOf("day");
@@ -78,9 +92,8 @@ export function useOpenEventForm({
         } else if (isOverMainGrid) {
           const boundingRect = mousePointRef?.getBoundingClientRect();
           const startTimeY = boundingRect?.top ?? 0;
-          const endTimeY = startTimeY + SLOT_HEIGHT;
           startTime = getEventTimeFromPosition(startTimeY, dateInView);
-          endTime = getEventTimeFromPosition(endTimeY, dateInView);
+          endTime = startTime.add(15, "minutes");
         }
 
         draftEvent = {

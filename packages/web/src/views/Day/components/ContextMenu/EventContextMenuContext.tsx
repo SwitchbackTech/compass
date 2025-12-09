@@ -10,6 +10,7 @@ import { Schema_Event } from "@core/types/event.types";
 import { EventContextMenu } from "./EventContextMenu";
 
 interface EventContextMenuContextValue {
+  isOpen: boolean;
   openContextMenu: (
     event: Schema_Event,
     position: { x: number; y: number },
@@ -80,7 +81,7 @@ export const EventContextMenuProvider = ({
   };
 
   return (
-    <EventContextMenuContext.Provider value={{ openContextMenu }}>
+    <EventContextMenuContext.Provider value={{ openContextMenu, isOpen }}>
       {children}
       {isOpen && selectedEvent && (
         <EventContextMenu

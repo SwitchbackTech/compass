@@ -11,7 +11,10 @@ import { useMousePosition } from "@web/common/hooks/useMousePosition";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { SLOT_HEIGHT } from "@web/views/Day/constants/day.constants";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
-import { getEventTimeFromPosition } from "@web/views/Day/util/agenda/agenda.util";
+import {
+  getEventTimeFromPosition,
+  toNearestFifteenMinutes,
+} from "@web/views/Day/util/agenda/agenda.util";
 import { useOpenEventForm } from "../useOpenEventForm";
 
 jest.mock("@web/common/hooks/useMousePosition");
@@ -36,6 +39,7 @@ describe("useOpenEventForm", () => {
     jest.clearAllMocks();
     (useDateInView as jest.Mock).mockReturnValue(mockDateInView);
     (getUserId as jest.Mock).mockResolvedValue("user-123");
+    (toNearestFifteenMinutes as jest.Mock).mockReturnValue(0);
     (useMousePosition as jest.Mock).mockReturnValue({
       element: null,
       mousePointRef: { getBoundingClientRect: jest.fn(() => ({ top: 100 })) },

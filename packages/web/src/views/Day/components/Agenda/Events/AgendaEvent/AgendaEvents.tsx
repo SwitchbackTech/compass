@@ -1,5 +1,8 @@
+import classNames from "classnames";
 import { useState } from "react";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
+import { useGridOrganization } from "@web/common/hooks/useGridOrganization";
+import { Droppable } from "@web/components/DND/Droppable";
 import {
   selectIsDayEventsProcessing,
   selectTimedDayEvents,
@@ -7,42 +10,41 @@ import {
 import { useAppSelector } from "@web/store/store.hooks";
 import { useDraftContextV2 } from "@web/views/Calendar/components/Draft/context/useDraftContextV2";
 import { AgendaSkeleton } from "@web/views/Day/components/Agenda/AgendaSkeleton/AgendaSkeleton";
-import { AgendaEvent } from "@web/views/Day/components/Agenda/Events/AgendaEvent/AgendaEvent";
+import { DraggableAgendaEvent } from "@web/views/Day/components/Agenda/Events/AgendaEvent/DraggableAgendaEvent";
 import { EventContextMenuProvider } from "@web/views/Day/components/ContextMenu/EventContextMenuContext";
-
-const canvas = document.createElement("canvas");
-const canvasContext = canvas.getContext("2d");
 
 export const AgendaEvents = ({ height }: { height?: number }) => {
   const events = useAppSelector(selectTimedDayEvents);
   const isLoading = useAppSelector(selectIsDayEventsProcessing);
   const { openEventForm } = useDraftContextV2();
-  const [agendaRef, setAgendaRef] = useState<HTMLDivElement | null>(null);
+  const [ref, setRef] = useState<HTMLElement | null>(null);
+
+  useGridOrganization(ref);
 
   return (
     <EventContextMenuProvider>
-      <div
+      <Droppable
+        as="div"
+        dndProps={{ id: ID_GRID_MAIN }}
+        ref={setRef}
         data-testid="calendar-surface"
         id={ID_GRID_MAIN}
-        className="relative ml-1 flex-1 cursor-cell"
+        className={classNames(
+          "relative ml-1 flex-1 cursor-cell overflow-hidden",
+          { isOver: "bg-gray-400/20" },
+        )}
         style={{ height }}
-        ref={setAgendaRef}
-        onClick={openEventForm}
+        onClick={() => openEventForm()}
       >
         {/* Event blocks */}
-        {isLoading || agendaRef === null ? (
+        {isLoading || ref === null ? (
           <AgendaSkeleton />
         ) : (
           events.map((event) => (
-            <AgendaEvent
-              key={event._id}
-              event={event}
-              containerWidth={agendaRef.clientWidth}
-              canvasContext={canvasContext}
-            />
+            <DraggableAgendaEvent key={event._id} event={event} />
           ))
         )}
-      </div>
+      </Droppable>
     </EventContextMenuProvider>
   );
 };
