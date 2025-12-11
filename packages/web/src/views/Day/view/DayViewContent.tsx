@@ -1,6 +1,13 @@
 import { useCallback, useRef } from "react";
 import dayjs from "@core/util/date/dayjs";
-import { MousePositionProvider } from "@web/common/context/mouse-position";
+import {
+  CLASS_TIMED_CALENDAR_EVENT,
+  ID_GRID_EVENTS_TIMED,
+} from "@web/common/constants/web.constants";
+import {
+  MousePositionProvider,
+  isElementInViewport,
+} from "@web/common/context/mouse-position";
 import { useEventDNDActions } from "@web/common/hooks/useEventDNDActions";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
@@ -23,7 +30,12 @@ import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
-import { focusFirstAgendaEvent } from "@web/views/Day/util/agenda/focus.util";
+import {
+  focusElement,
+  focusFirstAgendaEvent,
+  getElementMidFocalPoint,
+  getFocusedEvent,
+} from "@web/views/Day/util/agenda/focus.util";
 import {
   focusOnAddTaskInput,
   focusOnFirstTask,
@@ -89,10 +101,6 @@ const DayViewContentInner = () => {
     }
   };
 
-  const handleFocusAgenda = () => {
-    focusFirstAgendaEvent(events);
-  };
-
   const handleScrollToNowLineReady = useCallback(
     (scrollToNowLine: () => void) => {
       scrollToNowLineRef.current = scrollToNowLine;
@@ -119,6 +127,33 @@ const DayViewContentInner = () => {
     openEventForm(true);
   }, [openEventForm]);
 
+  const handleEditEvent = useCallback(() => {
+    const event = getFocusedEvent();
+
+    if (!event) return;
+
+    const isTimedEvent = event.classList.contains(CLASS_TIMED_CALENDAR_EVENT);
+
+    if (isTimedEvent) {
+      const timedSurface = document.getElementById(ID_GRID_EVENTS_TIMED);
+      const willScroll = !isElementInViewport(event);
+
+      if (!willScroll) {
+        return openEventForm(false, getElementMidFocalPoint(event));
+      }
+
+      focusElement(event);
+
+      return timedSurface?.addEventListener(
+        "scrollend",
+        () => openEventForm(false, getElementMidFocalPoint(event)),
+        { once: true },
+      );
+    }
+
+    openEventForm(false, getElementMidFocalPoint(event));
+  }, [openEventForm]);
+
   useDayViewShortcuts({
     onAddTask: focusOnAddTaskInput,
     onEditTask: handleEditTask,
@@ -126,8 +161,9 @@ const DayViewContentInner = () => {
     onRestoreTask: restoreTask,
     onMigrateTask: migrateTask,
     onFocusTasks: focusOnFirstTask,
-    onFocusAgenda: handleFocusAgenda,
+    onFocusAgenda: focusFirstAgendaEvent,
     onCreateEvent: onCreateEvent,
+    onEditEvent: handleEditEvent,
     onNextDay: navigateToNextDay,
     onPrevDay: navigateToPreviousDay,
     onGoToToday: handleGoToToday,

@@ -1,7 +1,8 @@
-import React, { FC, memo } from "react";
+import { FC, memo, useCallback, useMemo } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { DAY_COMPACT, DAY_HOUR_MIN_M } from "@core/constants/date.constants";
 import { Schema_Event } from "@core/types/event.types";
+import { useCursorCoordinates } from "@web/common/hooks/useMousePosition";
 import { getWidthBuffer } from "@web/common/utils/grid/grid.util";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexWrap } from "@web/components/Flex/styled";
@@ -10,6 +11,12 @@ import { Text } from "@web/components/Text";
 import { selectRowCount } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { snapToGrid } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/snap.grid";
+import {
+  StyledGridEventPreview,
+  getItemStyles,
+  layerStyles,
+} from "@web/views/Calendar/components/Event/Grid/GridEventPreview/styled";
+import { SOMEDAY_EVENT_HEIGHT } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEvent/styled";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import {
   Measurements_Grid,
@@ -19,41 +26,48 @@ import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import {
   EVENT_ALLDAY_GAP,
   EVENT_ALLDAY_HEIGHT,
+  GRID_X_START,
+  SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
-import { SOMEDAY_EVENT_HEIGHT } from "../../../Sidebar/SomedayTab/SomedayEvents/SomedayEvent/styled";
-import { StyledGridEventPreview, getItemStyles, layerStyles } from "./styled";
 
 interface Props {
   dateCalcs: DateCalcs;
-  dayIndex: number;
   event: Schema_Event;
   isOverAllDayRow: boolean;
   isOverMainGrid: boolean;
   measurements: Measurements_Grid;
-  mouseCoords: { x: number; y: number };
   startOfView: WeekProps["component"]["startOfView"];
   mainGridRef: Refs_Grid["mainGridRef"];
 }
 
 const _GridEventPreview: FC<Props> = ({
   dateCalcs,
-  dayIndex,
   event,
   isOverAllDayRow,
   isOverMainGrid,
   measurements,
-  mouseCoords,
   startOfView,
   mainGridRef,
 }) => {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const allDayRowCount = useAppSelector(selectRowCount);
-
+  const { getDayNumberByX, getMinuteByY } = dateCalcs;
   const { colWidths } = measurements;
-  const { x, y } = mouseCoords;
+  const { x: clientX, y: clientY } = useCursorCoordinates();
+  const gridX = clientX - (SIDEBAR_OPEN_WIDTH + GRID_X_START);
+  const dayIndex = getDayNumberByX(gridX);
 
   /* Helpers */
-  const getHeight = () => {
+  const width = useMemo(() => {
+    if (isOverMainGrid) {
+      const buffer = getWidthBuffer(dayIndex) + 20;
+      return measurements.colWidths[dayIndex] - buffer;
+    }
+    // allday
+    return colWidths[dayIndex] - 15;
+  }, [colWidths, dayIndex, isOverMainGrid, measurements.colWidths]);
+
+  const height = useMemo(() => {
     if (isOverAllDayRow) return EVENT_ALLDAY_HEIGHT;
 
     const height = isOverMainGrid
@@ -61,34 +75,23 @@ const _GridEventPreview: FC<Props> = ({
       : SOMEDAY_EVENT_HEIGHT;
 
     return height;
-  };
+  }, [isOverAllDayRow, isOverMainGrid, measurements.hourHeight]);
 
-  const getTimePreview = () => {
-    const minutes = dateCalcs.getMinuteByY(y);
+  const previewTime = useMemo(() => {
+    const minutes = getMinuteByY(clientY);
     const format = isOverAllDayRow ? DAY_COMPACT : DAY_HOUR_MIN_M;
     const timePreview = startOfView
       .add(dayIndex, "day")
       .add(minutes, "minutes")
       .format(format);
     return timePreview;
-  };
-
-  const getWidth = () => {
-    if (isOverMainGrid) {
-      const buffer = getWidthBuffer(dayIndex) + 20;
-      return measurements.colWidths[dayIndex] - buffer;
-    }
-    // allday
-    return colWidths[dayIndex] - 15;
-  };
+  }, [getMinuteByY, isOverAllDayRow, startOfView, dayIndex, clientY]);
 
   /* Size */
-  const height = getHeight();
-  const width = getWidth();
 
   const { x: snappedX, y: snappedY } = snapToGrid(
-    x,
-    y,
+    clientX,
+    clientY,
     measurements,
     mainGridRef.current?.scrollTop || 0,
   );
@@ -100,7 +103,7 @@ const _GridEventPreview: FC<Props> = ({
    * real all-day events) and multiplying it by the number of rows that already
    * exist, then offsetting from the top of the all-day row element.
    */
-  const getSnappedYForAllDay = (): number => {
+  const getSnappedYForAllDay = useCallback((): number => {
     if (!measurements.allDayRow) return snappedY;
 
     // The top offset each row uses when rendered (see getAllDayEventPosition)
@@ -110,7 +113,7 @@ const _GridEventPreview: FC<Props> = ({
     const nextRowIndex = allDayRowCount + 1;
 
     return measurements.allDayRow.top + ROW_HEIGHT * nextRowIndex;
-  };
+  }, [allDayRowCount, measurements.allDayRow, snappedY]);
 
   const finalY = isOverAllDayRow ? getSnappedYForAllDay() : snappedY;
 
@@ -134,7 +137,7 @@ const _GridEventPreview: FC<Props> = ({
             {isOverMainGrid && (
               <>
                 <SpaceCharacter />
-                <Text size="s">{getTimePreview()}</Text>
+                <Text size="s">{previewTime}</Text>
               </>
             )}
           </Flex>

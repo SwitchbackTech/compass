@@ -1,13 +1,96 @@
 import {
+  domMovement,
+  getElementAtPoint,
+  globalMovementHandler,
   globalOnKeyPressHandler,
   globalOnKeyUpHandler,
   keyPressed,
   keyReleased,
-} from "./event-emitter.util";
+  pressKey,
+} from "@web/common/utils/dom-events/event-emitter.util";
 
 describe("event-emitter.util", () => {
   beforeEach(() => {
     keyPressed.next(null);
+    jest.clearAllMocks();
+  });
+
+  describe("getElementAtPoint", () => {
+    it("should return element and caret position", () => {
+      const mockElement = document.createElement("div");
+      const mockCaret = { offsetNode: mockElement, offset: 0 };
+
+      document.elementFromPoint = jest.fn().mockReturnValue(mockElement);
+      document.caretPositionFromPoint = jest.fn().mockReturnValue(mockCaret);
+
+      const result = getElementAtPoint({ clientX: 10, clientY: 10 });
+
+      expect(document.elementFromPoint).toHaveBeenCalledWith(10, 10);
+      expect(document.caretPositionFromPoint).toHaveBeenCalledWith(10, 10);
+      expect(result.element).toBe(mockElement);
+      expect(result.caret).toBe(mockCaret);
+    });
+  });
+
+  describe("globalMovementHandler", () => {
+    it("should emit mouse movement events", (done) => {
+      const mockElement = document.createElement("div");
+      document.elementFromPoint = jest.fn().mockReturnValue(mockElement);
+      document.caretPositionFromPoint = jest.fn().mockReturnValue(null);
+
+      const event = new MouseEvent("mousemove", { clientX: 100, clientY: 100 });
+
+      const subscription = domMovement.subscribe((val) => {
+        expect(val.x).toBe(100);
+        expect(val.y).toBe(100);
+        expect(val.element).toBe(mockElement);
+        expect(val.event).toBe(event);
+        subscription.unsubscribe();
+        done();
+      });
+
+      globalMovementHandler(event);
+    });
+
+    it("should emit touch movement events", (done) => {
+      const mockElement = document.createElement("div");
+      document.elementFromPoint = jest.fn().mockReturnValue(mockElement);
+      document.caretPositionFromPoint = jest.fn().mockReturnValue(null);
+
+      const touch = { clientX: 50, clientY: 50 } as unknown as Touch;
+      const event = new TouchEvent("touchmove", {
+        changedTouches: [touch],
+      });
+
+      const subscription = domMovement.subscribe((val) => {
+        expect(val.x).toBe(50);
+        expect(val.y).toBe(50);
+        expect(val.element).toBe(mockElement);
+        expect(val.event).toBe(event);
+        subscription.unsubscribe();
+        done();
+      });
+
+      globalMovementHandler(event);
+    });
+  });
+
+  describe("pressKey", () => {
+    it("should dispatch keydown and keyup events", () => {
+      const target = document.createElement("div");
+      const keydownSpy = jest.fn();
+      const keyupSpy = jest.fn();
+
+      target.addEventListener("keydown", keydownSpy);
+      target.addEventListener("keyup", keyupSpy);
+
+      pressKey("Enter", {}, target);
+
+      expect(keydownSpy).toHaveBeenCalledTimes(1);
+      expect(keyupSpy).toHaveBeenCalledTimes(1);
+      expect(keydownSpy.mock.calls[0][0].key).toBe("Enter");
+      expect(keyupSpy.mock.calls[0][0].key).toBe("Enter");
+    });
   });
 
   describe("globalOnKeyPressHandler", () => {

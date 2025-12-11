@@ -9,6 +9,7 @@ import { MousePositionProvider } from "@web/common/context/mouse-position";
 import { loadSpecificDayData, loadTodayData } from "@web/routers/loaders";
 import { store as defaultStore } from "@web/store";
 import { DraftProviderV2 } from "@web/views/Calendar/components/Draft/context/DraftProviderV2";
+import { EventContextMenuProvider } from "@web/views/Day/components/ContextMenu/EventContextMenuContext";
 import { DateNavigationProvider } from "@web/views/Day/context/DateNavigationProvider";
 import { StorageInfoModalProvider } from "@web/views/Day/context/StorageInfoModalContext";
 import { TaskProvider } from "@web/views/Day/context/TaskProvider";
@@ -17,11 +18,13 @@ export const TaskProviderWrapper = ({ children }: PropsWithChildren) => {
   return (
     <MousePositionProvider>
       <DraftProviderV2>
-        <StorageInfoModalProvider>
-          <DateNavigationProvider>
-            <TaskProvider>{children}</TaskProvider>
-          </DateNavigationProvider>
-        </StorageInfoModalProvider>
+        <EventContextMenuProvider>
+          <StorageInfoModalProvider>
+            <DateNavigationProvider>
+              <TaskProvider>{children}</TaskProvider>
+            </DateNavigationProvider>
+          </StorageInfoModalProvider>
+        </EventContextMenuProvider>
       </DraftProviderV2>
     </MousePositionProvider>
   );

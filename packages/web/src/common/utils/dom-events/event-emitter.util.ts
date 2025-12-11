@@ -72,7 +72,7 @@ export function globalOnKeyUpHandler(e: KeyboardEvent) {
   keyReleased.next({ event: e, sequence });
 }
 
-function processPosition({
+export function getElementAtPoint({
   clientX,
   clientY,
 }: Pick<MouseEvent, "clientX" | "clientY">) {
@@ -106,7 +106,7 @@ function processMovement(
   e: Pick<MouseEvent, "clientX" | "clientY" | "target" | "type">,
 ) {
   const mousedown = checkMouseDown(e);
-  const { element: elem, caret } = processPosition(e);
+  const { element: elem, caret } = getElementAtPoint(e);
   const element = elem ?? (e.target instanceof Element ? e.target : null);
 
   const x = e.clientX;

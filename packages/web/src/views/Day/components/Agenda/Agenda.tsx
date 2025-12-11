@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { AgendaEvents } from "@web/views/Day/components/Agenda/Events/AgendaEvent/AgendaEvents";
 import { AllDayAgendaEvents } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/AllDayAgendaEvents";
 import { NowLine } from "@web/views/Day/components/Agenda/NowLine/NowLine";
 import { TimeLabels } from "@web/views/Day/components/Agenda/TimeLabels/TimeLabels";
+import { EventContextMenuProvider } from "@web/views/Day/components/ContextMenu/EventContextMenuContext";
 
 interface AgendaProps {
   onScrollToNowLineReady?: (scrollToNowLine: () => void) => void;
@@ -44,27 +46,30 @@ export const Agenda = ({ onScrollToNowLineReady }: AgendaProps) => {
   }, [scrollToNowLine]);
 
   return (
-    <section
-      aria-label="calendar-agenda"
-      className="bg-darkBlue-400 flex h-full min-w-xs flex-1 flex-col gap-2"
-    >
-      <AllDayAgendaEvents allDayEvents={allDayEvents} />
-
-      <div
-        ref={setHeightRef}
-        className="relative z-5 flex flex-1 overflow-x-hidden overflow-y-auto"
-        data-testid="calendar-scroll"
-        style={{
-          overscrollBehavior: "contain",
-          scrollbarGutter: "stable both-edges",
-        }}
+    <EventContextMenuProvider>
+      <section
+        aria-label="calendar-agenda"
+        className="bg-darkBlue-400 flex h-full min-w-xs flex-1 flex-col gap-2"
       >
-        <TimeLabels />
+        <AllDayAgendaEvents allDayEvents={allDayEvents} />
 
-        <NowLine nowLineRef={nowLineRef} />
+        <div
+          id={ID_GRID_EVENTS_TIMED}
+          ref={setHeightRef}
+          className="relative flex flex-1 overflow-x-hidden overflow-y-auto"
+          data-testid="calendar-scroll"
+          style={{
+            overscrollBehavior: "contain",
+            scrollbarGutter: "stable both-edges",
+          }}
+        >
+          <TimeLabels />
 
-        <AgendaEvents height={height} />
-      </div>
-    </section>
+          <NowLine nowLineRef={nowLineRef} />
+
+          <AgendaEvents height={height} />
+        </div>
+      </section>
+    </EventContextMenuProvider>
   );
 };

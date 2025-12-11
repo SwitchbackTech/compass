@@ -1,6 +1,9 @@
 import { act } from "react";
 import { renderHook } from "@testing-library/react";
-import { CLASS_TIMED_CALENDAR_EVENT } from "@web/common/constants/web.constants";
+import {
+  CLASS_TIMED_CALENDAR_EVENT,
+  DATA_EVENT_ELEMENT_ORDER,
+} from "@web/common/constants/web.constants";
 import {
   checkAABBCollision,
   collisionDetector,
@@ -13,7 +16,7 @@ import {
   resetPosition,
   sortByOrderAndWidthAttribute,
   useGridOrganization,
-} from "@web/common/hooks/useGridOrganization";
+} from "./useGridOrganization";
 
 describe("useGridOrganization", () => {
   const rectMap = new Map<HTMLElement, DOMRect>();
@@ -131,16 +134,29 @@ describe("useGridOrganization", () => {
   });
 
   describe("collisionWidth", () => {
-    it("should calculate width correctly", () => {
-      const containerWidth = 1000;
-      const width = 100;
-      const collisions = [document.createElement("div")]; // 1 collision
+    it("should return container width when no collisions", () => {
+      const width = collisionWidth([], 1000, 200);
+      expect(width).toBe(1000);
+    });
 
-      // 1 collision + 1 self = 2 colliding
-      // minWidth = 1000 / 2 = 500
-      // maxWidth = 1000 / 2 = 500 (hasCollisions is true)
-      // result = min(500, max(500, 100)) = 500
-      expect(collisionWidth(collisions, containerWidth, width)).toBe(500);
+    it("should return a max width - half container width - when collisions exist", () => {
+      const node = document.createElement("div");
+      const width = collisionWidth([node], 1000, 200);
+      expect(width).toBe(500);
+    });
+
+    it("should respect min width based on collision count", () => {
+      const node1 = document.createElement("div");
+      const node2 = document.createElement("div");
+      const node3 = document.createElement("div");
+      // 4 items total (1 current + 3 colliding)
+      // minWidth = 1000 / 4 = 250
+      // maxWidth = 500
+      // width passed = 200
+      // max(250, 200) = 250
+      // min(500, 250) = 250
+      const width = collisionWidth([node1, node2, node3], 1000, 200);
+      expect(width).toBe(250);
     });
   });
 
@@ -176,9 +192,9 @@ describe("useGridOrganization", () => {
         width,
       );
 
-      expect(placement).toHaveProperty("left");
-      expect(placement).toHaveProperty("width", "500px");
-      expect(placement).toHaveProperty("zIndex");
+      expect(placement.style).toHaveProperty("left");
+      expect(placement.style).toHaveProperty("width", "500px");
+      expect(placement.style).toHaveProperty("zIndex");
     });
   });
 
@@ -262,7 +278,7 @@ describe("useGridOrganization", () => {
   describe("getOrder", () => {
     it("should return the order attribute as a number", () => {
       const node = document.createElement("div");
-      node.setAttribute("data-order", "5");
+      node.setAttribute(DATA_EVENT_ELEMENT_ORDER, "5");
       expect(getOrder(node)).toBe(5);
     });
 

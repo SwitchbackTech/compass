@@ -23,6 +23,10 @@ jest.mock("../AgendaEventMenu/AgendaEventMenuTrigger", () => ({
   ),
 }));
 
+function renderWithMenuProvider(ui: React.ReactElement) {
+  return render(<EventContextMenuProvider>{ui}</EventContextMenuProvider>);
+}
+
 describe("DraggableAllDayAgendaEvent", () => {
   const standaloneEvent = createMockStandaloneEvent({}, true);
 
@@ -37,21 +41,13 @@ describe("DraggableAllDayAgendaEvent", () => {
   };
 
   it("renders the event title", () => {
-    render(
-      <EventContextMenuProvider>
-        <DraggableAllDayAgendaEvent event={event} />
-      </EventContextMenuProvider>,
-    );
+    renderWithMenuProvider(<DraggableAllDayAgendaEvent event={event} />);
 
     expect(screen.getByText(event.title!)).toBeInTheDocument();
   });
 
   it("has the correct aria-label and data-event-id", () => {
-    render(
-      <EventContextMenuProvider>
-        <DraggableAllDayAgendaEvent event={event} />
-      </EventContextMenuProvider>,
-    );
+    renderWithMenuProvider(<DraggableAllDayAgendaEvent event={event} />);
 
     const eventButton = screen.getByRole("button");
 

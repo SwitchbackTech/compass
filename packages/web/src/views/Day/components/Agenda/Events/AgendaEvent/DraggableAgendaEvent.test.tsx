@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
+import { useDraftContextV2 } from "@web/views/Calendar/components/Draft/context/useDraftContextV2";
 import { DraggableAgendaEvent } from "@web/views/Day/components/Agenda/Events/AgendaEvent/DraggableAgendaEvent";
 import { EventContextMenuProvider } from "@web/views/Day/components/ContextMenu/EventContextMenuContext";
 
@@ -23,6 +24,8 @@ jest.mock("../AgendaEventMenu/AgendaEventMenuTrigger", () => ({
   ),
 }));
 
+jest.mock("@web/views/Calendar/components/Draft/context/useDraftContextV2");
+
 function renderWithMenuProvider(ui: React.ReactElement) {
   return render(<EventContextMenuProvider>{ui}</EventContextMenuProvider>);
 }
@@ -39,6 +42,12 @@ describe("AgendaEvent", () => {
     user: standaloneEvent.user!,
     position: gridEventDefaultPosition,
   };
+
+  beforeEach(() => {
+    (useDraftContextV2 as jest.Mock).mockReturnValue({
+      maxAgendaZIndex: 10,
+    });
+  });
 
   it("should not render when startDate is missing", () => {
     const event: Partial<Schema_GridEvent> = {

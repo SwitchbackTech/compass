@@ -2,13 +2,17 @@ import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ID_EVENT_FORM_ACTION_MENU } from "@web/common/constants/web.constants";
-import { ActionsMenu } from "./ActionsMenu";
-import MenuItem from "./MenuItem";
+import { ActionsMenu } from "@web/views/Forms/ActionsMenu/ActionsMenu";
+import MenuItem from "@web/views/Forms/ActionsMenu/MenuItem";
 
 // Mock dependencies that require complex setup
 let mockOpen = false;
 let mockActiveIndex: number | null = null;
 let mockListRef = { current: [] as HTMLElement[] };
+
+jest.mock("@phosphor-icons/react", () => ({
+  DotsThreeVerticalIcon: () => <div data-testid="dots-icon" />,
+}));
 
 jest.mock("@floating-ui/react", () => ({
   FloatingFocusManager: ({ children }: any) => <div>{children}</div>,
@@ -95,10 +99,6 @@ jest.mock("@web/components/IconButton/IconButton", () => {
     return <button {...props}>{children}</button>;
   };
 });
-
-jest.mock("@phosphor-icons/react", () => ({
-  DotsThreeVertical: () => <span>⋮</span>,
-}));
 
 describe("ActionsMenu", () => {
   let mockAction1: jest.Mock;

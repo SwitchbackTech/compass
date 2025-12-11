@@ -1,77 +1,98 @@
-import { Schema_Event } from "@core/types/event.types";
+import {
+  CLASS_ALL_DAY_CALENDAR_EVENT,
+  CLASS_MONTH_SOMEDAY_EVENT,
+  CLASS_TIMED_CALENDAR_EVENT,
+  CLASS_WEEK_SOMEDAY_EVENT,
+  DATA_EVENT_ELEMENT_ID,
+  ID_GRID_ALLDAY_ROW,
+  ID_GRID_MAIN,
+} from "@web/common/constants/web.constants";
+import {
+  getElementAtCursor,
+  isOverAllDayRow,
+  isOverMainGrid,
+  isOverSomedayMonth,
+  isOverSomedayWeek,
+} from "@web/common/context/mouse-position";
 
-/**
- * Focuses an event element by its ID and scrolls it into view
- */
-function focusEventById(eventId: string): void {
-  const element = document.querySelector(
-    `[data-event-id="${eventId}"]`,
-  ) as HTMLElement;
-  if (element) {
-    element.focus();
-    element.scrollIntoView({ behavior: "smooth", block: "nearest" });
+export function focusElement(element: HTMLElement): void {
+  element.scrollIntoView({ behavior: "smooth", block: "start" });
+  element.focus({ preventScroll: true });
+}
+
+export function getElementMidFocalPoint(
+  event: HTMLElement,
+): Pick<MouseEvent, "clientX" | "clientY"> {
+  const { top, left, width, height } = event.getBoundingClientRect();
+  const clientX = left + width / 2;
+  const clientY = top + height / 2;
+
+  return { clientX, clientY };
+}
+
+export function getEventClass(element: Element | null) {
+  switch (true) {
+    case isOverSomedayWeek(element):
+      return CLASS_WEEK_SOMEDAY_EVENT;
+    case isOverSomedayMonth(element):
+      return CLASS_MONTH_SOMEDAY_EVENT;
+    case isOverAllDayRow(element):
+      return CLASS_ALL_DAY_CALENDAR_EVENT;
+    case isOverMainGrid(element):
+      return CLASS_TIMED_CALENDAR_EVENT;
+    default:
+      return null;
   }
 }
 
-/**
- * Focuses the first relevant agenda event based on current time
- * Priority order:
- * 1. First all-day event (if any exist)
- * 2. Current timed event (happening now)
- * 3. Next future timed event
- * 4. First timed event (fallback for past events)
- */
-export function focusFirstAgendaEvent(events: Schema_Event[]): void {
-  if (events.length === 0) {
-    return;
-  }
+export function getFirstAgendaEvent(): HTMLElement | null {
+  const allDaySelector = `.${CLASS_ALL_DAY_CALENDAR_EVENT}`;
+  const allDayGrid = document.getElementById(ID_GRID_ALLDAY_ROW);
+  const allDayEvent = allDayGrid?.querySelector<HTMLElement>(allDaySelector);
+  const allDayEventId = allDayEvent?.getAttribute(DATA_EVENT_ELEMENT_ID);
 
-  // Separate all-day and timed events with consistent sorting
-  const allDayEvents = events
-    .filter((event) => event.isAllDay)
-    .sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+  if (allDayEventId && allDayEvent) return allDayEvent;
 
-  const timedEvents = events
-    .filter((event) => !event.isAllDay && event.startDate)
-    .sort(
-      (a, b) =>
-        new Date(a.startDate!).getTime() - new Date(b.startDate!).getTime(),
-    );
+  const mainGrid = document.getElementById(ID_GRID_MAIN);
+  const timedEventSelector = `.${CLASS_TIMED_CALENDAR_EVENT}`;
+  const timedEvent = mainGrid?.querySelector<HTMLElement>(timedEventSelector);
+  const timedEventId = timedEvent?.getAttribute(DATA_EVENT_ELEMENT_ID);
 
-  // Priority 1: All-day events
-  if (allDayEvents.length > 0 && allDayEvents[0]._id) {
-    focusEventById(allDayEvents[0]._id);
-    return;
-  }
+  if (timedEventId && timedEvent) return timedEvent;
 
-  // Priority 2: Current event (happening now)
-  const now = new Date();
-  const currentEvent = timedEvents.find((event) => {
-    if (!event.startDate || !event.endDate) return false;
-    const startDate = new Date(event.startDate);
-    const endDate = new Date(event.endDate);
-    return startDate <= now && now < endDate;
-  });
+  return null;
+}
 
-  if (currentEvent && currentEvent._id) {
-    focusEventById(currentEvent._id);
-    return;
-  }
+export function focusFirstAgendaEvent(): void {
+  const event = getFirstAgendaEvent();
 
-  // Priority 3: Next future event
-  const nextEvent = timedEvents.find((event) => {
-    if (!event.startDate) return false;
-    const startDate = new Date(event.startDate);
-    return startDate > now;
-  });
+  if (!event) return;
 
-  if (nextEvent && nextEvent._id) {
-    focusEventById(nextEvent._id);
-    return;
-  }
+  focusElement(event);
+}
 
-  // Priority 4: First timed event (fallback for past events)
-  if (timedEvents.length > 0 && timedEvents[0]._id) {
-    focusEventById(timedEvents[0]._id);
-  }
+export function getActiveEvent(): HTMLElement | null {
+  const active = document.activeElement;
+
+  if (!active) return null;
+
+  const eventId = active.getAttribute(DATA_EVENT_ELEMENT_ID);
+
+  return eventId && active instanceof HTMLElement ? active : null;
+}
+
+export function getEventAtCursor(): HTMLElement | null {
+  const { element } = getElementAtCursor();
+  const eventClass = getEventClass(element);
+  const event = element?.closest(`.${eventClass}`);
+
+  if (!event) return null;
+
+  const eventId = event.getAttribute(DATA_EVENT_ELEMENT_ID);
+
+  return eventId && event instanceof HTMLElement ? event : null;
+}
+
+export function getFocusedEvent(): HTMLElement | null {
+  return getActiveEvent() ?? getEventAtCursor() ?? getFirstAgendaEvent();
 }

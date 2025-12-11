@@ -1,13 +1,18 @@
 import { CSSProperties, useEffect } from "react";
 import { Subject, debounceTime } from "rxjs";
-import { CLASS_TIMED_CALENDAR_EVENT } from "@web/common/constants/web.constants";
+import {
+  CLASS_TIMED_CALENDAR_EVENT,
+  DATA_EVENT_ELEMENT_ORDER,
+  DATA_EVENT_ELEMENT_OVERLAPPING,
+  DATA_EVENT_ELEMENT_Z_INDEX,
+} from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
+import { maxAgendaZIndex$ } from "@web/views/Day/util/agenda/agenda.util";
 
 const themeSpacing = parseInt(theme.spacing.s);
 const canvas = document.createElement("canvas");
 const canvasContext = canvas.getContext("2d");
 const selector = `.${CLASS_TIMED_CALENDAR_EVENT}`;
-const ORDER_ATTRIBUTE = "data-order";
 
 // Set canvas font to match 'text-xs' Tailwind class (0.75rem = 12px)
 if (canvasContext) canvasContext.font = "0.75rem Rubik";
@@ -33,7 +38,7 @@ export const isTimedEventNode = (node: Element): boolean =>
   node.classList.contains(CLASS_TIMED_CALENDAR_EVENT);
 
 export const getOrder = (node: HTMLElement): number => {
-  return parseInt(node.getAttribute(ORDER_ATTRIBUTE) || "0");
+  return parseInt(node.getAttribute(DATA_EVENT_ELEMENT_ORDER) || "0");
 };
 
 export const sortByOrderAndWidthAttribute = (
@@ -74,14 +79,22 @@ export const findOptimalPlacement = (
   collidingNodes: HTMLElement[],
   containerWidth: number,
   _width: number,
-): CSSProperties => {
+): { isOverlapping: boolean; style: CSSProperties } => {
   const borderRingSpace = 2;
   const width = `${_width}px`;
   const collisionLength = collidingNodes.length;
   const isOverlapping = collisionLength > 0;
 
   if (!isOverlapping) {
-    return { left: `${borderRingSpace}px`, width, zIndex: getOrder(node) };
+    return {
+      isOverlapping,
+      style: {
+        marginTop: `${borderRingSpace}px`,
+        left: `${borderRingSpace}px`,
+        width,
+        zIndex: 1,
+      },
+    };
   }
 
   const totalNodes = collisionLength + 1;
@@ -89,21 +102,30 @@ export const findOptimalPlacement = (
   const orders = [...nodes].sort(sortByOrderAndWidthAttribute);
   const zOrder = [...nodes].sort((a, b) => b.offsetHeight - a.offsetHeight);
   const index = orders.indexOf(node);
-  const zIndex = `${zOrder.indexOf(node) + index}`;
+  const _zIndex = zOrder.indexOf(node) + index + 1;
+  const zIndex = _zIndex.toString();
   const columns = containerWidth / totalNodes;
   const offset = columns * index + borderRingSpace;
   const adjustedWidth = offset + _width;
   const overflow = Math.max(0, adjustedWidth - containerWidth);
   const left = offset - overflow;
 
-  return { left: `${left}px`, width, zIndex };
+  return {
+    isOverlapping,
+    style: {
+      marginTop: `${borderRingSpace}px`,
+      left: `${left}px`,
+      width,
+      zIndex,
+    },
+  };
 };
 
 export function processNode(
   node: HTMLElement,
   nodes: HTMLElement[],
   gridRect: DOMRect,
-): CSSProperties {
+): { isOverlapping: boolean; style: CSSProperties } {
   const containerWidth = gridRect.width - themeSpacing;
   const textMeasure = canvasContext?.measureText(node.innerText ?? "");
   const textWidth = textMeasure?.width ?? 0;
@@ -133,7 +155,7 @@ export function reorderGrid(mainGrid: HTMLElement) {
 
   nodes.forEach((node, index) => {
     resetPosition(node);
-    node.setAttribute(ORDER_ATTRIBUTE, index.toString());
+    node.setAttribute(DATA_EVENT_ELEMENT_ORDER, index.toString());
   });
 
   const placements = nodes.map((node) =>
@@ -144,9 +166,20 @@ export function reorderGrid(mainGrid: HTMLElement) {
     ),
   );
 
-  placements.forEach((placement, index) =>
-    Object.assign(nodes[index].style, placement),
-  );
+  let maxZIndex = 1;
+
+  placements.forEach(({ isOverlapping, style }, index) => {
+    const node = nodes[index];
+    const zIndex = style.zIndex?.toString() ?? "1";
+
+    maxZIndex = Math.max(maxZIndex, parseInt(zIndex, 10));
+
+    node.setAttribute(DATA_EVENT_ELEMENT_Z_INDEX, zIndex.toString());
+    node.setAttribute(DATA_EVENT_ELEMENT_OVERLAPPING, isOverlapping.toString());
+    Object.assign(node.style, style);
+  });
+
+  maxAgendaZIndex$.next(maxZIndex);
 }
 
 function observeGridEvents(mutations: MutationRecord[]): void {

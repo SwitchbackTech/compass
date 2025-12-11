@@ -19,7 +19,7 @@ export const TimeLabels = () => {
         return (
           <div
             key={`time-${i}`}
-            className="pointer-events-none absolute z-20 flex items-center text-xs text-gray-200"
+            className="pointer-events-none absolute flex items-center text-xs text-gray-200"
             style={{
               top: `${i * SLOT_HEIGHT}px`,
               left: "0px",
