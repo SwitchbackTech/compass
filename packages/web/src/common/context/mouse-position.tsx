@@ -89,27 +89,27 @@ export function isElementInViewport(element: HTMLElement) {
   );
 }
 
-export function isOverSidebar(element = getElementAtCursor().element) {
+export function isOverSidebar(element = getElementAtCursor()) {
   return !!element?.closest(`#${ID_SIDEBAR}`);
 }
 
-export function isOverSomedayWeek(element = getElementAtCursor().element) {
+export function isOverSomedayWeek(element = getElementAtCursor()) {
   return !!element?.closest(`#${COLUMN_WEEK}`);
 }
 
-export function isOverSomedayMonth(element = getElementAtCursor().element) {
+export function isOverSomedayMonth(element = getElementAtCursor()) {
   return !!element?.closest(`#${COLUMN_MONTH}`);
 }
 
-export function isOverAllDayRow(element = getElementAtCursor().element) {
+export function isOverAllDayRow(element = getElementAtCursor()) {
   return !!element?.closest(`#${ID_GRID_ALLDAY_ROW}`);
 }
 
-export function isOverMainGrid(element = getElementAtCursor().element) {
+export function isOverMainGrid(element = getElementAtCursor()) {
   return !!element?.closest(`#${ID_GRID_MAIN}`);
 }
 
-export function isOverCalendarGrid(element = getElementAtCursor().element) {
+export function isOverCalendarGrid(element = getElementAtCursor()) {
   return isOverAllDayRow(element) || isOverMainGrid(element);
 }
 

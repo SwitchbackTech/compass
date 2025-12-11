@@ -25,8 +25,8 @@ export const AgendaEvents = ({ height }: { height?: number }) => {
       as="div"
       dndProps={{ id: ID_GRID_MAIN }}
       ref={setRef}
-      data-testid="calendar-surface"
       id={ID_GRID_MAIN}
+      data-testid="timed-agendas"
       className={classNames(
         "relative ml-1 flex-1 cursor-cell overflow-hidden",
         { isOver: "bg-gray-400/20" },

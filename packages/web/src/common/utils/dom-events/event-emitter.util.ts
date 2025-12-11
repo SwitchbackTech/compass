@@ -13,7 +13,6 @@ export interface DomMovement {
   y: number;
   mousedown: boolean;
   element: Element | null;
-  caret: CaretPosition | null;
   selectionStart: Pick<MouseEvent, "clientX" | "clientY"> | null;
 }
 
@@ -75,11 +74,10 @@ export function globalOnKeyUpHandler(e: KeyboardEvent) {
 export function getElementAtPoint({
   clientX,
   clientY,
-}: Pick<MouseEvent, "clientX" | "clientY">) {
+}: Pick<MouseEvent, "clientX" | "clientY">): Element | null {
   const element = document.elementFromPoint(clientX, clientY);
-  const caret = document.caretPositionFromPoint(clientX, clientY);
 
-  return { element, caret };
+  return element;
 }
 
 function checkMouseDown(
@@ -106,13 +104,13 @@ function processMovement(
   e: Pick<MouseEvent, "clientX" | "clientY" | "target" | "type">,
 ) {
   const mousedown = checkMouseDown(e);
-  const { element: elem, caret } = getElementAtPoint(e);
+  const elem = getElementAtPoint(e);
   const element = elem ?? (e.target instanceof Element ? e.target : null);
 
   const x = e.clientX;
   const y = e.clientY;
 
-  return { x, y, element, caret, ...mousedown };
+  return { x, y, element, ...mousedown };
 }
 
 function processMouseEvent(event: MouseEvent): DomMovement {

@@ -43,7 +43,7 @@ export function useOpenEventForm({
 
       if (!user) return;
 
-      const { element } = getElementAtPoint(cursor);
+      const element = getElementAtPoint(cursor);
       const eventClass = getEventClass(element);
       const event = element?.closest(`.${eventClass}`);
       const existingEventId = event?.getAttribute(DATA_EVENT_ELEMENT_ID);

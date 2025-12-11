@@ -103,9 +103,10 @@ describe("EventContextMenu", () => {
       expect(screen.getByText("Delete Event")).toBeInTheDocument();
     });
 
-    const calendarSurface = screen.getByTestId("calendar-surface");
+    const timedAgendas = screen.getByTestId("timed-agendas");
+
     await act(async () => {
-      await user.click(calendarSurface);
+      await user.click(timedAgendas);
     });
 
     await waitFor(() => {
@@ -145,9 +146,10 @@ describe("EventContextMenu", () => {
 
     await screen.findByRole("button", { name: "Test Event" });
 
-    const calendarSurface = screen.getByTestId("calendar-surface");
+    const timedAgendas = screen.getByTestId("timed-agendas");
+
     await act(async () => {
-      await user.pointer({ target: calendarSurface, keys: "[MouseRight]" });
+      await user.pointer({ target: timedAgendas, keys: "[MouseRight]" });
     });
 
     expect(screen.queryByText("Delete Event")).not.toBeInTheDocument();

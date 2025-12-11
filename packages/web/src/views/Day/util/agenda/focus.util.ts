@@ -82,7 +82,7 @@ export function getActiveEvent(): HTMLElement | null {
 }
 
 export function getEventAtCursor(): HTMLElement | null {
-  const { element } = getElementAtCursor();
+  const element = getElementAtCursor();
   const eventClass = getEventClass(element);
   const event = element?.closest(`.${eventClass}`);
 
