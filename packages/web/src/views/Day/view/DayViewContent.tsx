@@ -1,6 +1,13 @@
 import { useCallback, useRef } from "react";
 import dayjs from "@core/util/date/dayjs";
-import { MousePositionProvider } from "@web/common/context/mouse-position";
+import {
+  CLASS_TIMED_CALENDAR_EVENT,
+  ID_GRID_EVENTS_TIMED,
+} from "@web/common/constants/web.constants";
+import {
+  MousePositionProvider,
+  isElementInViewport,
+} from "@web/common/context/mouse-position";
 import { useEventDNDActions } from "@web/common/hooks/useEventDNDActions";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
@@ -24,9 +31,10 @@ import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNaviga
 import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
 import {
+  focusElement,
   focusFirstAgendaEvent,
-  getFirstAgendaEventId,
-  getFocusedAgendaEventId,
+  getElementMidFocalPoint,
+  getFocusedEvent,
 } from "@web/views/Day/util/agenda/focus.util";
 import {
   focusOnAddTaskInput,
@@ -93,10 +101,6 @@ const DayViewContentInner = () => {
     }
   };
 
-  const handleFocusAgenda = () => {
-    focusFirstAgendaEvent(events);
-  };
-
   const handleScrollToNowLineReady = useCallback(
     (scrollToNowLine: () => void) => {
       scrollToNowLineRef.current = scrollToNowLine;
@@ -117,30 +121,38 @@ const DayViewContentInner = () => {
     }
   };
 
-  const { openEventForm, setDraft } = useDraftContextV2();
+  const { openEventForm } = useDraftContextV2();
 
   const onCreateEvent = useCallback(() => {
     openEventForm(true);
   }, [openEventForm]);
 
   const handleEditEvent = useCallback(() => {
-    // First check if an event is currently focused
-    let eventIdToEdit = getFocusedAgendaEventId();
+    const event = getFocusedEvent();
 
-    // If no event is focused, get the first event
-    if (!eventIdToEdit) {
-      eventIdToEdit = getFirstAgendaEventId(events);
-    }
+    if (!event) return;
 
-    // If we have an event ID, open it for editing
-    if (eventIdToEdit) {
-      const event = events.find((e) => e._id === eventIdToEdit);
-      if (event) {
-        setDraft(event);
+    const isTimedEvent = event.classList.contains(CLASS_TIMED_CALENDAR_EVENT);
+
+    if (isTimedEvent) {
+      const timedSurface = document.getElementById(ID_GRID_EVENTS_TIMED);
+      const willScroll = !isElementInViewport(event);
+
+      if (!willScroll) {
+        return openEventForm(false, getElementMidFocalPoint(event));
       }
+
+      focusElement(event);
+
+      return timedSurface?.addEventListener(
+        "scrollend",
+        () => openEventForm(false, getElementMidFocalPoint(event)),
+        { once: true },
+      );
     }
-    // If there are no events, do nothing
-  }, [setDraft, events]);
+
+    openEventForm(false, getElementMidFocalPoint(event));
+  }, [openEventForm]);
 
   useDayViewShortcuts({
     onAddTask: focusOnAddTaskInput,
@@ -149,7 +161,7 @@ const DayViewContentInner = () => {
     onRestoreTask: restoreTask,
     onMigrateTask: migrateTask,
     onFocusTasks: focusOnFirstTask,
-    onFocusAgenda: handleFocusAgenda,
+    onFocusAgenda: focusFirstAgendaEvent,
     onCreateEvent: onCreateEvent,
     onEditEvent: handleEditEvent,
     onNextDay: navigateToNextDay,

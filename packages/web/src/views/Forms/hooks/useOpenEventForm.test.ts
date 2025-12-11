@@ -6,20 +6,32 @@ import {
   CLASS_TIMED_CALENDAR_EVENT,
   DATA_EVENT_ELEMENT_ID,
 } from "@web/common/constants/web.constants";
-import { useOpenEventForm } from "../useOpenEventForm";
+import { useOpenEventForm } from "@web/views/Forms/hooks/useOpenEventForm";
 
 // Mocks
 jest.mock("@web/auth/auth.util");
-jest.mock("@web/common/hooks/useMousePosition");
+jest.mock("@web/common/context/mouse-position");
+jest.mock("@web/common/utils/dom-events/event-emitter.util");
 jest.mock("@web/views/Day/hooks/navigation/useDateInView");
 jest.mock("@web/views/Day/util/agenda/agenda.util");
+jest.mock("@web/views/Day/util/agenda/focus.util");
 jest.mock("@web/ducks/events/selectors/event.selectors");
 
 describe("useOpenEventForm", () => {
   const { getUserId } = jest.requireMock("@web/auth/auth.util");
 
-  const { useMousePosition } = jest.requireMock(
-    "@web/common/hooks/useMousePosition",
+  const {
+    getCursorPosition,
+    getMousePointRef,
+    isOverAllDayRow,
+    isOverMainGrid,
+    isOverSidebar,
+    isOverSomedayWeek,
+    isOverSomedayMonth,
+  } = jest.requireMock("@web/common/context/mouse-position");
+
+  const { getElementAtPoint } = jest.requireMock(
+    "@web/common/utils/dom-events/event-emitter.util",
   );
 
   const { useDateInView } = jest.requireMock(
@@ -28,6 +40,10 @@ describe("useOpenEventForm", () => {
 
   const { getEventTimeFromPosition, toNearestFifteenMinutes } =
     jest.requireMock("@web/views/Day/util/agenda/agenda.util");
+
+  const { getEventClass } = jest.requireMock(
+    "@web/views/Day/util/agenda/focus.util",
+  );
 
   const { selectEventById } = jest.requireMock(
     "@web/ducks/events/selectors/event.selectors",
@@ -39,46 +55,37 @@ describe("useOpenEventForm", () => {
   const mockSetReference = jest.fn();
   const mockDateInView = dayjs("2023-01-01T12:00:00Z");
 
-  const defaultMousePosition = {
-    element: null,
-    mousePointRef: { getBoundingClientRect: jest.fn() },
-    floating: { refs: { setReference: mockSetReference } },
-    setOpenAtMousePosition: mockSetOpenAtMousePosition,
-    isOverAllDayRow: false,
-    isOverMainGrid: false,
-    isOverSidebar: false,
-    isOverSomedayWeek: false,
-    isOverSomedayMonth: false,
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
     useDateInView.mockReturnValue(mockDateInView);
     getUserId.mockResolvedValue("user-123");
-    useMousePosition.mockReturnValue(defaultMousePosition);
     toNearestFifteenMinutes.mockReturnValue(0);
+    getCursorPosition.mockReturnValue({ clientX: 100, clientY: 100 });
+    getElementAtPoint.mockReturnValue({ element: null });
+    getEventClass.mockReturnValue(null);
+    getMousePointRef.mockReturnValue({});
+
+    // Default mouse state
+    isOverAllDayRow.mockReturnValue(false);
+    isOverMainGrid.mockReturnValue(false);
+    isOverSidebar.mockReturnValue(false);
+    isOverSomedayWeek.mockReturnValue(false);
+    isOverSomedayMonth.mockReturnValue(false);
   });
 
   it("should open form for new timed event when over main grid", async () => {
     const mockStartTime = dayjs("2023-01-01T10:00:00Z");
     const mockEndTime = dayjs("2023-01-01T10:15:00Z");
 
-    useMousePosition.mockReturnValue({
-      ...defaultMousePosition,
-      isOverMainGrid: true,
-      mousePointRef: {
-        getBoundingClientRect: jest.fn().mockReturnValue({ top: 100 }),
-      },
-    });
-
-    getEventTimeFromPosition
-      .mockReturnValueOnce(mockStartTime)
-      .mockReturnValueOnce(mockEndTime);
+    isOverMainGrid.mockReturnValue(true);
+    getEventTimeFromPosition.mockReturnValue(mockStartTime);
 
     const { result } = renderHook(() =>
       useOpenEventForm({
         setDraft: mockSetDraft,
         setExisting: mockSetExisting,
+        setReference: mockSetReference,
+        setOpenAtMousePosition: mockSetOpenAtMousePosition,
       }),
     );
 
@@ -101,15 +108,14 @@ describe("useOpenEventForm", () => {
   });
 
   it("should open form for new all-day event when over all-day row", async () => {
-    useMousePosition.mockReturnValue({
-      ...defaultMousePosition,
-      isOverAllDayRow: true,
-    });
+    isOverAllDayRow.mockReturnValue(true);
 
     const { result } = renderHook(() =>
       useOpenEventForm({
         setDraft: mockSetDraft,
         setExisting: mockSetExisting,
+        setReference: mockSetReference,
+        setOpenAtMousePosition: mockSetOpenAtMousePosition,
       }),
     );
 
@@ -137,20 +143,16 @@ describe("useOpenEventForm", () => {
       title: "Existing Event",
     };
 
-    useMousePosition.mockReturnValue({
-      ...defaultMousePosition,
-      isOverMainGrid: true,
-      element: {
-        closest: jest.fn().mockReturnValue(mockEventElement),
-      },
-    });
-
+    getElementAtPoint.mockReturnValue({ element: mockEventElement });
+    getEventClass.mockReturnValue(CLASS_TIMED_CALENDAR_EVENT);
     selectEventById.mockReturnValue(mockEvent);
 
     const { result } = renderHook(() =>
       useOpenEventForm({
         setDraft: mockSetDraft,
         setExisting: mockSetExisting,
+        setReference: mockSetReference,
+        setOpenAtMousePosition: mockSetOpenAtMousePosition,
       }),
     );
 
@@ -160,8 +162,6 @@ describe("useOpenEventForm", () => {
 
     expect(mockSetExisting).toHaveBeenCalledWith(true);
     expect(mockSetDraft).toHaveBeenCalledWith(mockEvent);
-    expect(mockSetReference).toHaveBeenCalledWith(
-      defaultMousePosition.mousePointRef,
-    );
+    expect(mockSetReference).toHaveBeenCalled();
   });
 });

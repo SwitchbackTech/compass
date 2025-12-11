@@ -1,11 +1,11 @@
 import { renderHook } from "@testing-library/react";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
+import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import {
   createEventSlice,
   editEventSlice,
 } from "@web/ducks/events/slices/event.slice";
-import { createMockStandaloneEvent } from "../../../../../../core/src/util/test/ccal.event.factory";
-import { useSaveEventForm } from "../useSaveEventForm";
+import { useSaveEventForm } from "@web/views/Forms/hooks/useSaveEventForm";
 
 jest.mock("@web/store/store.hooks");
 jest.mock("@web/ducks/events/slices/event.slice", () => ({

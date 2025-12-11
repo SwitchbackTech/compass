@@ -7,14 +7,15 @@ import {
   useFloating,
 } from "@floating-ui/react";
 import { Schema_Event } from "@core/types/event.types";
-import { EventContextMenu } from "./EventContextMenu";
+import {
+  getCursorPosition,
+  getMousePointRef,
+} from "@web/common/context/mouse-position";
+import { EventContextMenu } from "@web/views/Day/components/ContextMenu/EventContextMenu";
 
 interface EventContextMenuContextValue {
   isOpen: boolean;
-  openContextMenu: (
-    event: Schema_Event,
-    position: { x: number; y: number },
-  ) => void;
+  openContextMenu: (event: Schema_Event) => void;
 }
 
 const EventContextMenuContext = createContext<
@@ -52,24 +53,9 @@ export const EventContextMenuProvider = ({
     whileElementsMounted: autoUpdate,
   });
 
-  const openContextMenu = (
-    event: Schema_Event,
-    position: { x: number; y: number },
-  ) => {
+  const openContextMenu = (event: Schema_Event) => {
     // Create a virtual element where the user clicked
-    refs.setReference({
-      getBoundingClientRect: () => ({
-        x: position.x,
-        y: position.y,
-        top: position.y,
-        left: position.x,
-        bottom: position.y,
-        right: position.x,
-        width: 0,
-        height: 0,
-        toJSON: () => ({}),
-      }),
-    });
+    refs.setReference(getMousePointRef(getCursorPosition()));
 
     setSelectedEvent(event);
     setIsOpen(true);

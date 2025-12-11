@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import fastDeepEqual from "fast-deep-equal";
+import fastDeepEqual from "fast-deep-equal/react";
 import { memo } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { darken, isDark } from "@core/util/color.utils";

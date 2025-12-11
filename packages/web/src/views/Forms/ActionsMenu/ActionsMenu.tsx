@@ -20,11 +20,13 @@ import {
   useListNavigation,
   useRole,
 } from "@floating-ui/react";
-// @ts-expect-error - Icon name might not be present in type definitions but does exist at runtime
-import { DotsThreeVertical } from "@phosphor-icons/react";
+import { DotsThreeVerticalIcon } from "@phosphor-icons/react";
 import { ID_EVENT_FORM_ACTION_MENU } from "@web/common/constants/web.constants";
 import IconButton from "@web/components/IconButton/IconButton";
-import { StyledMenu, TriggerWrapper } from "./styled";
+import {
+  StyledMenu,
+  TriggerWrapper,
+} from "@web/views/Forms/ActionsMenu/styled";
 
 interface MenuContextValue {
   getItemProps: (
@@ -113,7 +115,10 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
     listRef: denseListRef,
     activeIndex: compactActiveIndex,
     onNavigate: (compactIndex) => {
-      const sparseIndex = compactToSparseMap.current.get(compactIndex) ?? null;
+      const sparseIndex =
+        compactIndex !== null && compactIndex !== undefined
+          ? (compactToSparseMap.current.get(compactIndex) ?? null)
+          : null;
       if (sparseIndex !== null) {
         setActiveIndex(sparseIndex);
       }
@@ -155,7 +160,7 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
           aria-expanded={open}
           aria-controls={open ? menuId : undefined}
         >
-          <DotsThreeVertical />
+          <DotsThreeVerticalIcon />
         </IconButton>
       </TriggerWrapper>
       {open && (

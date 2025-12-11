@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import fastDeepEqual from "fast-deep-equal";
+import fastDeepEqual from "fast-deep-equal/react";
 import { memo, useCallback } from "react";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { CLASS_ALL_DAY_CALENDAR_EVENT } from "@web/common/constants/web.constants";
@@ -18,7 +18,7 @@ export const DraggableAllDayAgendaEvent = memo(
     const handleContextMenu = useCallback(
       (e: React.MouseEvent<HTMLDivElement>) => {
         e.preventDefault();
-        openContextMenu(event as Schema_Event, { x: e.clientX, y: e.clientY });
+        openContextMenu(event as Schema_Event);
       },
       [event, openContextMenu],
     );

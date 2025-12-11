@@ -1,4 +1,4 @@
-import deepEqual from "fast-deep-equal";
+import deepEqual from "fast-deep-equal/react";
 import React, {
   KeyboardEvent,
   memo,
@@ -311,7 +311,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         }}
         priority={priority}
         role="form"
-        className="z-40"
+        className="!z-[999]"
       >
         <StyledIconRow>
           <EventActionMenu
