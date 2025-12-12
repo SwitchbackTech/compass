@@ -73,8 +73,8 @@ export const Agenda = ({ onScrollToNowLineReady }: AgendaProps) => {
           ref={setHeightRef}
           className={classNames(
             "relative flex flex-1 overflow-x-hidden overflow-y-auto",
-            "focus:rounded focus:ring-2 focus:ring-yellow-200",
-            "focus:outline-none",
+            "focus-visible:rounded focus-visible:ring-2 focus-visible:outline-none",
+            "focus:outline-none focus-visible:ring-yellow-200",
           )}
           data-testid="calendar-scroll"
           tabIndex={0}

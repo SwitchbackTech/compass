@@ -44,7 +44,8 @@ export const AllDayAgendaEvents = ({
         "group max-h-36 min-h-8 cursor-cell space-y-1",
         "overflow-x-hidden overflow-y-auto",
         "border-t border-b border-gray-400/20",
-        "focus:rounded focus:ring-2 focus:ring-yellow-200 focus:outline-none",
+        "focus-visible:rounded focus-visible:ring-2 focus-visible:outline-none",
+        "focus:outline-none focus-visible:ring-yellow-200",
       )}
       style={{
         overscrollBehavior: "contain",
