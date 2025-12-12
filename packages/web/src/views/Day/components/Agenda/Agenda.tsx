@@ -79,7 +79,6 @@ export const Agenda = ({ onScrollToNowLineReady }: AgendaProps) => {
           data-testid="calendar-scroll"
           tabIndex={0}
           aria-label="Timed events section"
-          aria-description="Press enter to create a timed event"
           {...(events.length > 0
             ? {}
             : { title: "Timed calendar events section" })}

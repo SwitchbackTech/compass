@@ -39,7 +39,6 @@ export const AllDayAgendaEvents = ({
       id={ID_GRID_ALLDAY_ROW}
       tabIndex={0}
       aria-label="All-day events section"
-      aria-description="Press enter to create an all-day event"
       {...(allDayEvents.length > 0 ? {} : { title: "All-day events section" })}
       className={classNames(
         "group max-h-36 min-h-8 cursor-cell space-y-1",
