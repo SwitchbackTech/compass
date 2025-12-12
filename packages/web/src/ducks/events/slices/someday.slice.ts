@@ -32,7 +32,7 @@ export const cancel = (
   state: AsyncState<Response_HttpPaginatedSuccess<string[]>, unknown>,
   action: Action_DeleteEvent,
 ): void => {
-  const data = (state.value?.data ?? []).filter(
+  const data = state.value?.data.filter(
     (i: string) => i !== action.payload._id,
   );
 
