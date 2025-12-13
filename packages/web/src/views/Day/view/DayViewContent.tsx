@@ -8,22 +8,24 @@ import {
   MousePositionProvider,
   isElementInViewport,
 } from "@web/common/context/mouse-position";
+import { OpenAtCursorProvider } from "@web/common/context/open-at-cursor";
 import { useEventDNDActions } from "@web/common/hooks/useEventDNDActions";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
 import { ShortcutsOverlay } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
-import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
 import { Dedication } from "@web/views/Calendar/components/Dedication";
 import { DraftProviderV2 } from "@web/views/Calendar/components/Draft/context/DraftProviderV2";
 import { useDraftContextV2 } from "@web/views/Calendar/components/Draft/context/useDraftContextV2";
 import { useRefetch } from "@web/views/Calendar/hooks/useRefetch";
 import { StyledCalendar } from "@web/views/Calendar/styled";
 import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
+import { AgendaEventPreview } from "@web/views/Day/components/Agenda/Events/AgendaEventPreview/AgendaEventPreview";
+import { EventContextMenu } from "@web/views/Day/components/ContextMenu/EventContextMenu";
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
 import { Header } from "@web/views/Day/components/Header/Header";
 import { StorageInfoModal } from "@web/views/Day/components/StorageInfoModal/StorageInfoModal";
 import { TaskList } from "@web/views/Day/components/TaskList/TaskList";
+import { MaxAgendaEventZIndexProvider } from "@web/views/Day/context/MaxAgendaZIndexContext";
 import { useStorageInfoModal } from "@web/views/Day/context/StorageInfoModalContext";
 import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
@@ -60,8 +62,7 @@ const DayViewContentInner = () => {
   const { isOpen: isModalOpen, closeModal } = useStorageInfoModal();
   const dateInView = useDateInView();
   const shortcuts = getShortcuts({ currentDate: dateInView });
-  const events = useAppSelector(selectDayEvents);
-  const scrollToNowLineRef = useRef<() => void>();
+  const agendaRef = useRef<{ scrollToNow: () => void } | null>(null);
 
   useDayEvents(dateInView);
 
@@ -71,16 +72,16 @@ const DayViewContentInner = () => {
   const hasFocusedTask =
     selectedTaskIndex >= 0 && selectedTaskIndex < tasks.length;
 
-  const getTaskIndexToEdit = () => {
+  const getTaskIndexToEdit = useCallback(() => {
     if (hasFocusedTask) {
       return selectedTaskIndex;
     } else if (tasks.length > 0) {
       return 0;
     }
     return -1;
-  };
+  }, [hasFocusedTask, selectedTaskIndex, tasks.length]);
 
-  const handleEditTask = () => {
+  const handleEditTask = useCallback(() => {
     const taskIndexToEdit = getTaskIndexToEdit();
     if (taskIndexToEdit >= 0) {
       const taskId = tasks[taskIndexToEdit].id;
@@ -89,9 +90,16 @@ const DayViewContentInner = () => {
       setSelectedTaskIndex(taskIndexToEdit);
       focusOnInput(taskId);
     }
-  };
+  }, [
+    tasks,
+    getTaskIndexToEdit,
+    setEditingTaskId,
+    setEditingTitle,
+    setSelectedTaskIndex,
+    focusOnInput,
+  ]);
 
-  const handleDeleteTask = () => {
+  const handleDeleteTask = useCallback(() => {
     // Get the task ID directly from the active element
     const activeElement = document.activeElement as HTMLElement | null;
     const taskId = activeElement?.dataset?.taskId;
@@ -99,27 +107,20 @@ const DayViewContentInner = () => {
     if (taskId) {
       deleteTask(taskId);
     }
-  };
+  }, [deleteTask]);
 
-  const handleScrollToNowLineReady = useCallback(
-    (scrollToNowLine: () => void) => {
-      scrollToNowLineRef.current = scrollToNowLine;
-    },
-    [],
-  );
-
-  const handleGoToToday = () => {
+  const handleGoToToday = useCallback(() => {
     // Compare dates in the same timezone to avoid timezone issues
     // Both dates are in local timezone, ensuring accurate day comparison
     const today = dayjs().startOf("day");
     const isViewingToday = dateInView.isSame(today, "day");
 
-    if (isViewingToday && scrollToNowLineRef.current) {
-      scrollToNowLineRef.current();
+    if (isViewingToday) {
+      agendaRef.current?.scrollToNow();
     } else {
       navigateToToday();
     }
-  };
+  }, [dateInView, navigateToToday]);
 
   const { openEventForm } = useDraftContextV2();
 
@@ -184,7 +185,7 @@ const DayViewContentInner = () => {
         >
           <TaskList />
 
-          <Agenda onScrollToNowLineReady={handleScrollToNowLineReady} />
+          <Agenda ref={agendaRef} />
         </div>
       </StyledCalendar>
 
@@ -200,6 +201,8 @@ const DayViewContentInner = () => {
       />
 
       <FloatingEventForm />
+      <AgendaEventPreview />
+      <EventContextMenu />
     </>
   );
 };
@@ -207,9 +210,13 @@ const DayViewContentInner = () => {
 export const DayViewContent = () => {
   return (
     <MousePositionProvider>
-      <DraftProviderV2>
-        <DayViewContentInner />
-      </DraftProviderV2>
+      <MaxAgendaEventZIndexProvider>
+        <OpenAtCursorProvider>
+          <DraftProviderV2>
+            <DayViewContentInner />
+          </DraftProviderV2>
+        </OpenAtCursorProvider>
+      </MaxAgendaEventZIndexProvider>
     </MousePositionProvider>
   );
 };

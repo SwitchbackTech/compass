@@ -9,7 +9,7 @@ import { Task } from "@web/common/types/task.types";
 import {
   CompassDOMEvents,
   compassEventEmitter,
-} from "@web/common/utils/dom-events/event-emitter.util";
+} from "@web/common/utils/dom/event-emitter.util";
 import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 
 interface Props {

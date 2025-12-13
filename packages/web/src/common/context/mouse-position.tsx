@@ -12,7 +12,7 @@ import { useMovementEvent } from "@web/common/hooks/useMovementEvent";
 import {
   DomMovement,
   getElementAtPoint,
-} from "@web/common/utils/dom-events/event-emitter.util";
+} from "@web/common/utils/dom/event-emitter.util";
 
 export interface MouseState {
   mousedown: boolean;

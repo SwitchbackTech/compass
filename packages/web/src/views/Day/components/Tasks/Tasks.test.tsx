@@ -2,7 +2,7 @@ import { act } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import { addTasks } from "@web/__tests__/utils/tasks/task.test.util";
-import { DNDTasksProvider } from "../../context/DNDTasksProvider";
+import { DNDTasksProvider } from "../../context/DNDTasksContext";
 import { renderWithDayProviders } from "../../util/day.test-util";
 import { TaskList } from "../TaskList/TaskList";
 import { Tasks } from "./Tasks";

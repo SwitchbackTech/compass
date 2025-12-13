@@ -2,7 +2,7 @@ import React, { act } from "react";
 import { render, screen } from "@testing-library/react";
 import { useDNDTasksContext } from "@web/views/Day/hooks/tasks/useDNDTasks";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
-import { DNDTasksProvider } from "./DNDTasksProvider";
+import { DNDTasksProvider } from "../DNDTasksContext";
 
 // Mock the useTasks hook
 jest.mock("@web/views/Day/hooks/tasks/useTasks", () => ({

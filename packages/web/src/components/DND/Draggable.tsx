@@ -6,7 +6,6 @@ import {
   ReactHTML,
   createElement,
   forwardRef,
-  useCallback,
   useMemo,
 } from "react";
 import {
@@ -15,6 +14,7 @@ import {
   useDraggable,
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
+import { useMergeRefs } from "@floating-ui/react";
 import { Categories_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
@@ -35,7 +35,7 @@ function CompassDraggable(
     } & HTMLAttributes<HTMLElement>,
     HTMLElement
   >,
-  ref: ForwardedRef<HTMLElement | null>,
+  _ref: ForwardedRef<HTMLElement | null>,
 ) {
   const { dndProps, as, style, onContextMenu, ...elementProps } = props;
 
@@ -45,20 +45,7 @@ function CompassDraggable(
       id: props.dndProps.id ?? new ObjectId().toString(),
     });
 
-  const setRef = useCallback(
-    (element: HTMLElement | null) => {
-      setNodeRef(element);
-
-      if (!ref) return;
-
-      if (typeof ref === "function") {
-        ref(element);
-      } else if (typeof ref !== "string") {
-        ref.current = element;
-      }
-    },
-    [ref, setNodeRef],
-  );
+  const ref = useMergeRefs([_ref, setNodeRef]);
 
   const dndStyle = useMemo(() => {
     if (!transform) return {};
@@ -76,7 +63,7 @@ function CompassDraggable(
       ...dndStyle,
       ...(isDragging ? { opacity: 0 } : {}),
     },
-    ref: setRef,
+    ref,
   });
 }
 

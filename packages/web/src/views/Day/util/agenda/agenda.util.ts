@@ -1,4 +1,3 @@
-import { BehaviorSubject } from "rxjs";
 import { Active, Over } from "@dnd-kit/core";
 import { Schema_Event } from "@core/types/event.types";
 import { Dayjs } from "@core/util/date/dayjs";
@@ -7,8 +6,6 @@ import {
   MINUTES_PER_SLOT,
   SLOT_HEIGHT,
 } from "@web/views/Day/constants/day.constants";
-
-export const maxAgendaZIndex$ = new BehaviorSubject<number>(0);
 
 export const getAgendaEventTitle = (event: Schema_Event) =>
   `${event.title}\n${getAgendaEventTime(event.startDate as string)} - ${getAgendaEventTime(event.endDate as string)}`;

@@ -311,7 +311,6 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         }}
         priority={priority}
         role="form"
-        className="!z-[999]"
       >
         <StyledIconRow>
           <EventActionMenu

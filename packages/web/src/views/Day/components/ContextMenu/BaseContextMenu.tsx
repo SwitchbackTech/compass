@@ -1,4 +1,10 @@
-import React from "react";
+import classNames from "classnames";
+import React, {
+  DetailedHTMLProps,
+  HTMLAttributes,
+  createElement,
+  forwardRef,
+} from "react";
 import {
   FloatingContext,
   useClick,
@@ -9,39 +15,40 @@ import {
 
 interface BaseContextMenuProps {
   onOutsideClick: () => void;
-  style: React.CSSProperties;
   context: FloatingContext;
   children: React.ReactNode;
 }
 
-export const BaseContextMenu = React.forwardRef<
-  HTMLUListElement,
-  BaseContextMenuProps
->(({ onOutsideClick, style, context, children }, ref) => {
-  const dismiss = useDismiss(context, {
-    outsidePress: (event) => {
-      event.preventDefault(); // Prevents clicking another UI element when dismissing
-      onOutsideClick();
-      return true;
-    },
-  });
+type Props = DetailedHTMLProps<
+  BaseContextMenuProps & HTMLAttributes<HTMLUListElement>,
+  HTMLUListElement
+>;
 
-  const click = useClick(context, { enabled: true });
+export const BaseContextMenu = forwardRef<HTMLUListElement, Props>(
+  ({ onOutsideClick, context, ...props }, ref) => {
+    const dismiss = useDismiss(context, {
+      outsidePress: (event) => {
+        event.preventDefault(); // Prevents clicking another UI element when dismissing
+        onOutsideClick();
+        return true;
+      },
+    });
 
-  const role = useRole(context, { role: "menu" });
+    const click = useClick(context, { enabled: true });
 
-  const { getFloatingProps } = useInteractions([dismiss, click, role]);
+    const role = useRole(context, { role: "menu" });
 
-  return (
-    <ul
-      ref={ref}
-      style={style}
-      {...getFloatingProps()}
-      className="bg-bg-secondary absolute z-[1000] min-w-[160px] list-none rounded border border-gray-600 shadow-md"
-    >
-      {children}
-    </ul>
-  );
-});
+    const { getFloatingProps } = useInteractions([dismiss, click, role]);
+
+    return createElement("ul", {
+      ...getFloatingProps(props),
+      className: classNames(
+        "bg-bg-secondary absolute z-[1000] min-w-[160px] list-none rounded",
+        "border border-gray-600 shadow-md",
+      ),
+      ref,
+    });
+  },
+);
 
 BaseContextMenu.displayName = "BaseContextMenu";

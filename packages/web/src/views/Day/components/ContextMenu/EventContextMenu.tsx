@@ -1,31 +1,35 @@
-import React from "react";
-import { FloatingContext } from "@floating-ui/react";
-import { Schema_Event } from "@core/types/event.types";
+import { FloatingPortal } from "@floating-ui/react";
+import { CursorItem } from "@web/common/context/open-at-cursor";
+import { useOpenAtCursor } from "@web/common/hooks/useOpenAtCursor";
+import { useDraftContextV2 } from "@web/views/Calendar/components/Draft/context/useDraftContextV2";
 import { BaseContextMenu } from "@web/views/Day/components/ContextMenu/BaseContextMenu";
 import { EventContextMenuItems } from "@web/views/Day/components/ContextMenu/EventContextMenuItems";
+import { useMaxAgendaZIndex } from "@web/views/Day/hooks/events/useMaxAgendaZIndex";
 
-interface EventContextMenuProps {
-  event: Schema_Event;
-  onOutsideClick: () => void;
-  close: () => void;
-  style: React.CSSProperties;
-  context: FloatingContext;
-}
+export function EventContextMenu() {
+  const context = useDraftContextV2();
+  const zIndex = useMaxAgendaZIndex() + 2;
+  const openAtCursor = useOpenAtCursor();
+  const { draft, setNodeId } = context;
+  const { nodeId, floating, interactions } = openAtCursor;
+  const isOpenAtCursor = nodeId === CursorItem.EventContextMenu;
 
-export const EventContextMenu = React.forwardRef<
-  HTMLUListElement,
-  EventContextMenuProps
->(({ event, onOutsideClick, close, style, context }, ref) => {
+  if (!isOpenAtCursor || !draft) return null;
+
   return (
-    <BaseContextMenu
-      ref={ref}
-      onOutsideClick={onOutsideClick}
-      style={style}
-      context={context}
-    >
-      <EventContextMenuItems event={event} close={close} />
-    </BaseContextMenu>
+    <FloatingPortal>
+      <BaseContextMenu
+        ref={floating.refs.setFloating}
+        onOutsideClick={() => setNodeId(null)}
+        {...interactions.getFloatingProps()}
+        context={floating.context}
+        style={{
+          ...floating.context.floatingStyles,
+          zIndex,
+        }}
+      >
+        <EventContextMenuItems />
+      </BaseContextMenu>
+    </FloatingPortal>
   );
-});
-
-EventContextMenu.displayName = "EventContextMenu";
+}

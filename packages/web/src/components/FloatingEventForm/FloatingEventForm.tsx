@@ -1,32 +1,34 @@
 import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
-import { ZIndex } from "@web/common/constants/web.constants";
+import { CursorItem } from "@web/common/context/open-at-cursor";
+import { useOpenAtCursor } from "@web/common/hooks/useOpenAtCursor";
 import { useDraftContextV2 } from "@web/views/Calendar/components/Draft/context/useDraftContextV2";
+import { useMaxAgendaZIndex } from "@web/views/Day/hooks/events/useMaxAgendaZIndex";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 
 export function FloatingEventForm() {
   const context = useDraftContextV2();
-  const { isOpenAtMouse, setFloating, getFloatingProps } = context;
-  const { strategy, x, y } = context;
-  const { draft, closeEventForm, onDelete, onSave, setDraft } = context;
+  const zIndex = useMaxAgendaZIndex() + 2;
+  const openAtCursor = useOpenAtCursor();
+  const { nodeId, floating, interactions } = openAtCursor;
+  const isOpenAtCursor = nodeId === CursorItem.EventForm;
+  const { draft, setNodeId, onDelete, onSave, setDraft } = context;
 
-  if (!isOpenAtMouse || !draft) return null;
+  if (!isOpenAtCursor || !draft) return null;
 
   return (
     <FloatingPortal>
-      <FloatingFocusManager context={context.floatingContext}>
+      <FloatingFocusManager context={floating.context}>
         <div
-          ref={setFloating}
+          ref={floating.refs.setFloating}
+          {...interactions.getFloatingProps()}
           style={{
-            position: strategy,
-            top: y ?? 0,
-            left: x ?? 0,
-            zIndex: ZIndex.MAX,
+            ...floating.context.floatingStyles,
+            zIndex,
           }}
-          {...getFloatingProps()}
         >
           <EventForm
             event={draft}
-            onClose={closeEventForm}
+            onClose={() => setNodeId(null)}
             onDelete={onDelete}
             onSubmit={onSave}
             setEvent={setDraft}

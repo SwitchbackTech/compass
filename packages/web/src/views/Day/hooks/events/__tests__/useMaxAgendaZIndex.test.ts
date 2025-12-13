@@ -1,7 +1,7 @@
 import { act } from "react";
 import { renderHook } from "@testing-library/react";
+import { maxAgendaZIndex$ } from "@web/views/Day/context/MaxAgendaZIndexContext";
 import { useMaxAgendaZIndex } from "@web/views/Day/hooks/events/useMaxAgendaZIndex";
-import { maxAgendaZIndex$ } from "@web/views/Day/util/agenda/agenda.util";
 
 describe("useMaxAgendaZIndex", () => {
   it("should return the initial max z-index", () => {

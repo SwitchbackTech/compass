@@ -19,7 +19,7 @@ Always reference these instructions first and fallback to search or bash command
 
 - **CRITICAL**: The backend requires external service credentials (Google OAuth, Supertokens, MongoDB) to run properly
 - **Web Development** (RECOMMENDED for coding):
-  - `yarn dev:web` - Takes ~10 seconds to build. Serves on http://localhost:9080/
+  - `yarn dev:web` - Takes ~10 seconds to build. Serves on <http://localhost:9080/>
   - Frontend works standalone without backend services
 - **Backend Development** (requires full setup):
   - `yarn dev:backend` - Fails without proper .env configuration
@@ -31,6 +31,8 @@ Always reference these instructions first and fallback to search or bash command
 
 - Write tests the way a user would use the application by using the DOM and user interactions with `@testing-library/user-event` rather than internal implementation details of React components.
 - Do NOT use `data-` attributes or CSS selectors to locate elements. Use semantic locators and roles instead.
+- When writing tests, avoid mocking as much as possible.
+- Where mocking is inevitable, use spies to sub out specific module functions before attempting to mock the whole module.
 
 #### Running Tests
 
@@ -141,7 +143,7 @@ TZ=Etc/UTC
 1. **Start Development**: `yarn dev:web` (frontend only, always works)
 2. **Run Tests**: `yarn test:core && yarn test:web` (skips problematic backend tests)
 3. **Check Code Style**: `yarn prettier . --write`
-4. **Manual Validation**: Open http://localhost:9080/ and verify login page loads
+4. **Manual Validation**: Open <http://localhost:9080/> and verify login page loads
 
 ### Styling
 

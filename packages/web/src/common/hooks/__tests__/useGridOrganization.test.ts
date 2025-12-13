@@ -16,7 +16,7 @@ import {
   resetPosition,
   sortByOrderAndWidthAttribute,
   useGridOrganization,
-} from "./useGridOrganization";
+} from "../useGridOrganization";
 
 describe("useGridOrganization", () => {
   const rectMap = new Map<HTMLElement, DOMRect>();
