@@ -16,19 +16,15 @@ describe("event-emitter.util", () => {
   });
 
   describe("getElementAtPoint", () => {
-    it("should return element and caret position", () => {
+    it("should return element at position", () => {
       const mockElement = document.createElement("div");
-      const mockCaret = { offsetNode: mockElement, offset: 0 };
 
       document.elementFromPoint = jest.fn().mockReturnValue(mockElement);
-      document.caretPositionFromPoint = jest.fn().mockReturnValue(mockCaret);
 
-      const result = getElementAtPoint({ clientX: 10, clientY: 10 });
+      const element = getElementAtPoint({ clientX: 10, clientY: 10 });
 
       expect(document.elementFromPoint).toHaveBeenCalledWith(10, 10);
-      expect(document.caretPositionFromPoint).toHaveBeenCalledWith(10, 10);
-      expect(result.element).toBe(mockElement);
-      expect(result.caret).toBe(mockCaret);
+      expect(element).toBe(mockElement);
     });
   });
 
@@ -36,7 +32,6 @@ describe("event-emitter.util", () => {
     it("should emit mouse movement events", (done) => {
       const mockElement = document.createElement("div");
       document.elementFromPoint = jest.fn().mockReturnValue(mockElement);
-      document.caretPositionFromPoint = jest.fn().mockReturnValue(null);
 
       const event = new MouseEvent("mousemove", { clientX: 100, clientY: 100 });
 
@@ -55,7 +50,6 @@ describe("event-emitter.util", () => {
     it("should emit touch movement events", (done) => {
       const mockElement = document.createElement("div");
       document.elementFromPoint = jest.fn().mockReturnValue(mockElement);
-      document.caretPositionFromPoint = jest.fn().mockReturnValue(null);
 
       const touch = { clientX: 50, clientY: 50 } as unknown as Touch;
       const event = new TouchEvent("touchmove", {

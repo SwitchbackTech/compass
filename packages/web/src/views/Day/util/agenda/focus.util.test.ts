@@ -13,7 +13,7 @@ import {
 
 // Mocks
 jest.mock("@web/common/context/mouse-position", () => ({
-  getElementAtCursor: jest.fn(() => ({ element: null })),
+  getElementAtCursor: jest.fn(() => null),
   isOverAllDayRow: jest.fn(() => false),
   isOverMainGrid: jest.fn(() => false),
   isOverSomedayMonth: jest.fn(() => false),

@@ -1,7 +1,10 @@
+import classNames from "classnames";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Key } from "ts-key-enum";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
+import { useDraftContextV2 } from "@web/views/Calendar/components/Draft/context/useDraftContextV2";
 import { AgendaEvents } from "@web/views/Day/components/Agenda/Events/AgendaEvent/AgendaEvents";
 import { AllDayAgendaEvents } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/AllDayAgendaEvents";
 import { NowLine } from "@web/views/Day/components/Agenda/NowLine/NowLine";
@@ -13,6 +16,7 @@ interface AgendaProps {
 }
 
 export const Agenda = ({ onScrollToNowLineReady }: AgendaProps) => {
+  const { openEventForm } = useDraftContextV2();
   const nowLineRef = useRef<HTMLDivElement>(null);
   const events = useAppSelector(selectDayEvents);
   const [height, setHeight] = useState<number | undefined>(undefined);
@@ -33,6 +37,17 @@ export const Agenda = ({ onScrollToNowLineReady }: AgendaProps) => {
     [setHeight],
   );
 
+  const onEnterKey = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === Key.Enter) {
+        e.preventDefault();
+        e.stopPropagation();
+        openEventForm();
+      }
+    },
+    [openEventForm],
+  );
+
   // Provide the scroll function to parent component
   useEffect(() => {
     if (onScrollToNowLineReady) {
@@ -49,15 +64,25 @@ export const Agenda = ({ onScrollToNowLineReady }: AgendaProps) => {
     <EventContextMenuProvider>
       <section
         aria-label="calendar-agenda"
-        className="bg-darkBlue-400 flex h-full min-w-xs flex-1 flex-col gap-2"
+        className="bg-darkBlue-400 flex h-full min-w-xs flex-1 flex-col gap-2 p-0.5"
       >
         <AllDayAgendaEvents allDayEvents={allDayEvents} />
 
         <div
           id={ID_GRID_EVENTS_TIMED}
           ref={setHeightRef}
-          className="relative flex flex-1 overflow-x-hidden overflow-y-auto"
+          className={classNames(
+            "relative flex flex-1 overflow-x-hidden overflow-y-auto",
+            "focus-visible:rounded focus-visible:ring-2 focus-visible:outline-none",
+            "focus:outline-none focus-visible:ring-yellow-200",
+          )}
           data-testid="calendar-scroll"
+          tabIndex={0}
+          aria-label="Timed events section"
+          {...(events.length > 0
+            ? {}
+            : { title: "Timed calendar events section" })}
+          onKeyDown={onEnterKey}
           style={{
             overscrollBehavior: "contain",
             scrollbarGutter: "stable both-edges",

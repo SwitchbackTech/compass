@@ -61,7 +61,7 @@ describe("useOpenEventForm", () => {
     getUserId.mockResolvedValue("user-123");
     toNearestFifteenMinutes.mockReturnValue(0);
     getCursorPosition.mockReturnValue({ clientX: 100, clientY: 100 });
-    getElementAtPoint.mockReturnValue({ element: null });
+    getElementAtPoint.mockReturnValue(null);
     getEventClass.mockReturnValue(null);
     getMousePointRef.mockReturnValue({});
 
@@ -143,7 +143,7 @@ describe("useOpenEventForm", () => {
       title: "Existing Event",
     };
 
-    getElementAtPoint.mockReturnValue({ element: mockEventElement });
+    getElementAtPoint.mockReturnValue(mockEventElement);
     getEventClass.mockReturnValue(CLASS_TIMED_CALENDAR_EVENT);
     selectEventById.mockReturnValue(mockEvent);
 

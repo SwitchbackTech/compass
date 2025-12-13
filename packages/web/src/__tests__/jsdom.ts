@@ -73,7 +73,6 @@ export default class WASMEnvironment extends TestEnvironment {
     this.global.window.HTMLElement.prototype.scroll = () => {};
     this.global.window.HTMLElement.prototype.scrollIntoView = () => {};
     this.global.window.document.elementFromPoint = () => null;
-    this.global.window.document.caretPositionFromPoint = () => null;
 
     this.global.fetch = fetch as unknown as typeof globalThis.fetch;
     this.global.Blob = globalThis.Blob;

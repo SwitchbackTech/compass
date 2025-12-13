@@ -1,4 +1,6 @@
 import classNames from "classnames";
+import { useCallback } from "react";
+import { Key } from "ts-key-enum";
 import { Schema_Event } from "@core/types/event.types";
 import { ID_GRID_ALLDAY_ROW } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -18,42 +20,46 @@ export const AllDayAgendaEvents = ({
     (a.title || "").localeCompare(b.title || ""),
   );
 
+  const onEnterKey = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === Key.Enter) {
+        e.preventDefault();
+        e.stopPropagation();
+        openEventForm();
+      }
+    },
+    [openEventForm],
+  );
+
   return (
     <Droppable
       as="div"
       dndProps={{ id: ID_GRID_ALLDAY_ROW }}
       data-id="all-day-agendas"
       id={ID_GRID_ALLDAY_ROW}
-      aria-label="all day events section"
+      tabIndex={0}
+      aria-label="All-day events section"
+      {...(allDayEvents.length > 0 ? {} : { title: "All-day events section" })}
       className={classNames(
         "group max-h-36 min-h-8 cursor-cell space-y-1",
         "overflow-x-hidden overflow-y-auto",
         "border-t border-b border-gray-400/20",
+        "focus-visible:rounded focus-visible:ring-2 focus-visible:outline-none",
+        "focus:outline-none focus-visible:ring-yellow-200",
       )}
       style={{
         overscrollBehavior: "contain",
         scrollbarGutter: "stable both-edges",
       }}
       onClick={() => openEventForm()}
+      onKeyDown={onEnterKey}
     >
-      {sortedAllDayEvents.length === 0 ? (
-        <div
-          className={classNames(
-            "flex flex-1 items-center justify-center py-2",
-            "group-hover:text-white-100 group-focus:text-white-100",
-            "text-sm text-gray-200 transition-colors",
-          )}
-        >
-          Click to add all day events
-        </div>
-      ) : (
-        sortedAllDayEvents.map((event) => (
-          <DraggableAllDayAgendaEvent
-            key={event._id}
-            event={event as Schema_GridEvent}
-          />
-        ))
-      )}
+      {sortedAllDayEvents.map((event) => (
+        <DraggableAllDayAgendaEvent
+          key={event._id}
+          event={event as Schema_GridEvent}
+        />
+      ))}
     </Droppable>
   );
 };
