@@ -93,8 +93,6 @@ describe("useOpenEventForm", () => {
       useOpenEventForm({
         setDraft: mockSetDraft,
         setExisting: mockSetExisting,
-        setReference: mockSetReference,
-        setOpenAtMousePosition: mockSetOpenAtMousePosition,
       }),
     );
 
@@ -123,8 +121,6 @@ describe("useOpenEventForm", () => {
       useOpenEventForm({
         setDraft: mockSetDraft,
         setExisting: mockSetExisting,
-        setReference: mockSetReference,
-        setOpenAtMousePosition: mockSetOpenAtMousePosition,
       }),
     );
 
@@ -163,8 +159,6 @@ describe("useOpenEventForm", () => {
       useOpenEventForm({
         setDraft: mockSetDraft,
         setExisting: mockSetExisting,
-        setReference: mockSetReference,
-        setOpenAtMousePosition: mockSetOpenAtMousePosition,
       }),
     );
 
