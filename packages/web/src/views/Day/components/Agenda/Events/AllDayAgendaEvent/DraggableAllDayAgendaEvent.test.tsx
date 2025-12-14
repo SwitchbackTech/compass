@@ -1,30 +1,22 @@
+import { Provider } from "react-redux";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
+import { OpenAtCursorProvider } from "@web/common/context/open-at-cursor";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
+import { store } from "@web/store";
+import { DraftProviderV2 } from "@web/views/Calendar/components/Draft/context/DraftProviderV2";
 import { DraggableAllDayAgendaEvent } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/DraggableAllDayAgendaEvent";
-import { EventContextMenuProvider } from "@web/views/Day/components/ContextMenu/EventContextMenuContext";
-
-// Mock the AgendaEventMenu components to simplify testing
-jest.mock("../AgendaEventMenu/AgendaEventMenu", () => ({
-  AgendaEventMenu: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-}));
-
-jest.mock("../AgendaEventMenu/AgendaEventMenuContent", () => ({
-  AgendaEventMenuContent: () => null,
-}));
-
-jest.mock("../AgendaEventMenu/AgendaEventMenuTrigger", () => ({
-  AgendaEventMenuTrigger: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-}));
 
 function renderWithMenuProvider(ui: React.ReactElement) {
-  return render(<EventContextMenuProvider>{ui}</EventContextMenuProvider>);
+  return render(
+    <Provider store={store}>
+      <OpenAtCursorProvider>
+        <DraftProviderV2>{ui}</DraftProviderV2>
+      </OpenAtCursorProvider>
+    </Provider>,
+  );
 }
 
 describe("DraggableAllDayAgendaEvent", () => {

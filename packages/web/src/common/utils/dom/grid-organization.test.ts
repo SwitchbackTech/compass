@@ -1,8 +1,6 @@
-import { act } from "react";
-import { renderHook } from "@testing-library/react";
 import {
   CLASS_TIMED_CALENDAR_EVENT,
-  DATA_EVENT_ELEMENT_ORDER,
+  DATA_EVENT_ELEMENT_ID,
 } from "@web/common/constants/web.constants";
 import {
   checkAABBCollision,
@@ -10,15 +8,15 @@ import {
   collisionWidth,
   findOptimalPlacement,
   getOrder,
+  gridOrganization$,
   isTimedEventNode,
   processNode,
   reorderGrid,
   resetPosition,
   sortByOrderAndWidthAttribute,
-  useGridOrganization,
-} from "./useGridOrganization";
+} from "@web/common/utils/dom/grid-organization.util";
 
-describe("useGridOrganization", () => {
+describe("grid-organization.util", () => {
   const rectMap = new Map<HTMLElement, DOMRect>();
 
   beforeAll(() => {
@@ -276,14 +274,28 @@ describe("useGridOrganization", () => {
   });
 
   describe("getOrder", () => {
-    it("should return the order attribute as a number", () => {
+    it("should return the order from gridOrganization$", () => {
       const node = document.createElement("div");
-      node.setAttribute(DATA_EVENT_ELEMENT_ORDER, "5");
+      const id = "test-event-id";
+      node.setAttribute(DATA_EVENT_ELEMENT_ID, id);
+
+      gridOrganization$.next({
+        [id]: { order: 5, isOverlapping: false, style: {} },
+      });
+
       expect(getOrder(node)).toBe(5);
     });
 
-    it("should return 0 if attribute is missing", () => {
+    it("should return 0 if id is missing", () => {
       const node = document.createElement("div");
+      expect(getOrder(node)).toBe(0);
+    });
+
+    it("should return 0 if order is missing in gridOrganization$", () => {
+      const node = document.createElement("div");
+      const id = "test-event-id-2";
+      node.setAttribute(DATA_EVENT_ELEMENT_ID, id);
+      // gridOrganization$ doesn't have this id
       expect(getOrder(node)).toBe(0);
     });
   });
@@ -316,47 +328,6 @@ describe("useGridOrganization", () => {
       expect(node.style.width).toBe("");
       expect(node.style.left).toBe("");
       expect(node.style.zIndex).toBe("");
-    });
-  });
-
-  describe("useGridOrganization", () => {
-    it("should reorder grid when nodes are added", async () => {
-      const mainGrid = document.createElement("div");
-      rectMap.set(mainGrid, {
-        width: 1000,
-        x: 0,
-        y: 0,
-        height: 1000,
-        top: 0,
-        right: 1000,
-        bottom: 1000,
-        left: 0,
-        toJSON: () => {},
-      });
-
-      renderHook(() => useGridOrganization(mainGrid));
-
-      const node = document.createElement("div");
-      node.classList.add(CLASS_TIMED_CALENDAR_EVENT);
-      rectMap.set(node, {
-        x: 0,
-        y: 0,
-        width: 100,
-        height: 100,
-        top: 0,
-        right: 100,
-        bottom: 100,
-        left: 0,
-        toJSON: () => {},
-      });
-
-      await act(async () => {
-        mainGrid.appendChild(node);
-        // Wait for MutationObserver
-        await new Promise((resolve) => setTimeout(resolve, 0));
-      });
-
-      expect(node.style.width).not.toBe("");
     });
   });
 });

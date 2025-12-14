@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { useGridOrganization } from "@web/common/hooks/useGridOrganization";
 import { Droppable } from "@web/components/DND/Droppable";
@@ -10,9 +10,9 @@ import {
 import { useAppSelector } from "@web/store/store.hooks";
 import { useDraftContextV2 } from "@web/views/Calendar/components/Draft/context/useDraftContextV2";
 import { AgendaSkeleton } from "@web/views/Day/components/Agenda/AgendaSkeleton/AgendaSkeleton";
-import { DraggableAgendaEvent } from "@web/views/Day/components/Agenda/Events/AgendaEvent/DraggableAgendaEvent";
+import { DraggableTimedAgendaEvent } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/DraggableTimedAgendaEvent";
 
-export const AgendaEvents = ({ height }: { height?: number }) => {
+export const TimedAgendaEvents = memo(({ height }: { height?: number }) => {
   const events = useAppSelector(selectTimedDayEvents);
   const isLoading = useAppSelector(selectIsDayEventsProcessing);
   const { openEventForm } = useDraftContextV2();
@@ -39,9 +39,11 @@ export const AgendaEvents = ({ height }: { height?: number }) => {
         <AgendaSkeleton />
       ) : (
         events.map((event) => (
-          <DraggableAgendaEvent key={event._id} event={event} />
+          <DraggableTimedAgendaEvent key={event._id} event={event} />
         ))
       )}
     </Droppable>
   );
-};
+});
+
+TimedAgendaEvents.displayName = "TimedAgendaEvents";

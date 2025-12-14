@@ -15,9 +15,9 @@ jest.mock("@dnd-kit/modifiers", () => ({
 }));
 
 jest.mock(
-  "@web/views/Day/components/Agenda/Events/AgendaEvent/AgendaEvent",
+  "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/TimedAgendaEvent",
   () => ({
-    AgendaEvent: () => <div data-testid="agenda-event">Agenda Event</div>,
+    TimedAgendaEvent: () => <div data-testid="agenda-event">Agenda Event</div>,
   }),
 );
 

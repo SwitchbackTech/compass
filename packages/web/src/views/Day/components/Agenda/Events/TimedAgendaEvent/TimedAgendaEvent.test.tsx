@@ -6,9 +6,9 @@ import { render } from "@web/__tests__/__mocks__/mock.render";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
-import { AgendaEvent } from "@web/views/Day/components/Agenda/Events/AgendaEvent/AgendaEvent";
+import { TimedAgendaEvent } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/TimedAgendaEvent";
 
-describe("AgendaEvent", () => {
+describe("TimedAgendaEvent", () => {
   const standaloneEvent = createMockStandaloneEvent();
 
   const baseEvent: Schema_GridEvent = {
@@ -27,7 +27,7 @@ describe("AgendaEvent", () => {
       priority: Priorities.UNASSIGNED,
     };
 
-    render(<AgendaEvent over={null} event={event} containerWidth={236} />);
+    render(<TimedAgendaEvent event={event} />);
 
     const eventElement = screen.getByTestId("agenda-event");
     expect(eventElement).toHaveStyle({
@@ -41,7 +41,7 @@ describe("AgendaEvent", () => {
       priority: Priorities.WORK,
     };
 
-    render(<AgendaEvent event={event} containerWidth={236} />);
+    render(<TimedAgendaEvent event={event} />);
 
     const eventElement = screen.getByTestId("agenda-event");
     expect(eventElement).toHaveStyle({
@@ -55,7 +55,7 @@ describe("AgendaEvent", () => {
       priority: Priorities.RELATIONS,
     };
 
-    render(<AgendaEvent event={event} containerWidth={236} />);
+    render(<TimedAgendaEvent event={event} />);
 
     const eventElement = screen.getByTestId("agenda-event");
 
@@ -70,7 +70,7 @@ describe("AgendaEvent", () => {
       priority: Priorities.SELF,
     };
 
-    render(<AgendaEvent event={event} containerWidth={236} />);
+    render(<TimedAgendaEvent event={event} />);
 
     const eventElement = screen.getByTestId("agenda-event");
 
@@ -85,9 +85,7 @@ describe("AgendaEvent", () => {
       priority: undefined,
     };
 
-    render(
-      <AgendaEvent event={event as Schema_GridEvent} containerWidth={236} />,
-    );
+    render(<TimedAgendaEvent event={event as Schema_GridEvent} />);
 
     const eventElement = screen.getByTestId("agenda-event");
 

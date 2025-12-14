@@ -4,8 +4,8 @@ import { DragOverlay, useDndContext } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { Categories_Event } from "@core/types/event.types";
 import { DraggableDNDData } from "@web/components/DND/Draggable";
-import { AgendaEvent } from "@web/views/Day/components/Agenda/Events/AgendaEvent/AgendaEvent";
 import { AllDayAgendaEvent } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/AllDayAgendaEvent";
+import { TimedAgendaEvent } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/TimedAgendaEvent";
 
 export function DNDOverlay({ children }: PropsWithChildren) {
   const { active, over } = useDndContext();
@@ -26,7 +26,7 @@ export function DNDOverlay({ children }: PropsWithChildren) {
 
     switch (type) {
       case Categories_Event.TIMED:
-        return <AgendaEvent event={event!} isDragging={!!active?.id} />;
+        return <TimedAgendaEvent event={event!} isDragging={!!active?.id} />;
       case Categories_Event.ALLDAY:
         return (
           <AllDayAgendaEvent

@@ -1,4 +1,6 @@
+import classNames from "classnames";
 import { Shortcut } from "@web/common/types/global.shortcut.types";
+import { maxAgendaZIndex$ } from "@web/common/utils/dom/grid-organization.util";
 import { ShortcutSection } from "./ShortcutSection";
 
 export interface ShortcutOverlaySection {
@@ -30,7 +32,12 @@ export const ShortcutsOverlay = ({
     <aside
       aria-label={ariaLabel}
       role="complementary"
-      className={`bg-bg-secondary border-border-primary fixed top-24 left-3 z-20 hidden w-[240px] rounded-lg border p-3 shadow-lg backdrop-blur-sm md:block ${className}`}
+      className={classNames(
+        "bg-bg-secondary border-border-primary fixed top-24 left-3",
+        "border p-3 shadow-lg backdrop-blur-sm md:block",
+        `hidden w-[240px] rounded-lg ${className}`,
+      )}
+      style={{ zIndex: maxAgendaZIndex$.getValue() }}
     >
       {heading && (
         <div className="text-text-lighter mb-2 text-xs font-medium">

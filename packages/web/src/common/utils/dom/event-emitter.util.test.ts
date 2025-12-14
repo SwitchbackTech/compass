@@ -7,7 +7,7 @@ import {
   keyPressed,
   keyReleased,
   pressKey,
-} from "@web/common/utils/dom-events/event-emitter.util";
+} from "@web/common/utils/dom/event-emitter.util";
 
 describe("event-emitter.util", () => {
   beforeEach(() => {

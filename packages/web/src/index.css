@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Dynamic z-index css to support up to 100 overlapping agenda events */
+@source inline("{hover:,focus:,}z-{{0..100..1}}");
+
 @theme {
   /* Font families */
   --font-sans:

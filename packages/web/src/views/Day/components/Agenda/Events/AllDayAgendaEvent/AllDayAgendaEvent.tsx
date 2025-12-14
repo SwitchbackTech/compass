@@ -48,3 +48,5 @@ export const AllDayAgendaEvent = memo(
   },
   fastDeepEqual,
 );
+
+AllDayAgendaEvent.displayName = "AllDayAgendaEvent";

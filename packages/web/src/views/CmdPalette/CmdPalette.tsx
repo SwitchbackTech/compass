@@ -8,8 +8,8 @@ import {
 import { Categories_Event } from "@core/types/event.types";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { pressKey } from "@web/common/utils/dom-events/event-emitter.util";
-import { onEventTargetVisibility } from "@web/common/utils/dom-events/event-target-visibility.util";
+import { pressKey } from "@web/common/utils/dom/event-emitter.util";
+import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
 import {
   createAlldayDraft,
   createTimedDraft,

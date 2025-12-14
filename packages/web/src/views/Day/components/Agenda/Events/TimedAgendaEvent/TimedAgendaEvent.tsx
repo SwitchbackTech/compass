@@ -7,7 +7,7 @@ import { colorByPriority } from "@web/common/styles/theme.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getAgendaEventPosition } from "@web/views/Day/util/agenda/agenda.util";
 
-export const AgendaEvent = memo(
+export const TimedAgendaEvent = memo(
   ({
     event,
     isDragging,
@@ -50,3 +50,5 @@ export const AgendaEvent = memo(
   },
   fastDeepEqual,
 );
+
+TimedAgendaEvent.displayName = "TimedAgendaEvent";
