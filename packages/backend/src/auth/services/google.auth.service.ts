@@ -61,7 +61,7 @@ export const getGcalClient = async (userId: string): Promise<gCalendar> => {
 
     // throw gaxios error here to trigger specific session invalidation
     // see error.express.handler.ts
-    throw new GaxiosError(
+    const error = new GaxiosError(
       "invalid_grant",
       {},
       {
@@ -73,6 +73,8 @@ export const getGcalClient = async (userId: string): Promise<gCalendar> => {
         request: { responseURL: "" },
       },
     );
+    error.code = "400";
+    throw error;
   }
 
   const gAuthClient = await getGAuthClientForUser(user);

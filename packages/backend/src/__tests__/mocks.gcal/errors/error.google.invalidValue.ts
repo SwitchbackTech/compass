@@ -1,6 +1,6 @@
 import { GaxiosError } from "gaxios";
 
-export const invalidValueError = new GaxiosError(
+const error = new GaxiosError(
   "Invalid Value",
   {
     url: "https://www.googleapis.com/calendar/v3/calendars/foo%40gmail.com/events/watch?syncToken=x",
@@ -106,3 +106,8 @@ export const invalidValueError = new GaxiosError(
     },
   },
 );
+
+// Set the code property to match the HTTP status
+error.code = "400";
+
+export const invalidValueError = error;
