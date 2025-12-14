@@ -1,10 +1,7 @@
 import type { GaxiosPromise } from "gaxios";
-import type { calendar_v3 } from "googleapis";
-import { GoogleApis } from "googleapis";
-import type {
-  MethodOptions,
-  StreamMethodOptions,
-} from "googleapis/build/src/apis/calendar";
+import { calendar } from "@googleapis/calendar";
+import type { calendar_v3 } from "@googleapis/calendar";
+import type { MethodOptions, StreamMethodOptions } from "@googleapis/calendar";
 import { Status } from "@core/errors/status.codes";
 import type {
   WithGcalId,
@@ -58,7 +55,6 @@ interface Config_MockGcal {
   nextSyncToken?: string;
   calendarList?: Partial<gSchema$CalendarListEntry>[];
   calendarListNextSyncToken?: string;
-  googleapis: GoogleApis;
 }
 /**
  * Generates a mock Google Calendar API response.
@@ -70,14 +66,13 @@ export const mockGcal = ({
   pageSize = 3,
   nextSyncToken = "final-sync-token",
   calendarListNextSyncToken = "calendar-li,st-sync-token",
-  googleapis,
 }: Config_MockGcal) => {
-  const calendar = googleapis.calendar("v3");
+  const calendarClient = calendar({ version: "v3" });
 
   return jest.fn(() => ({
-    ...calendar,
+    ...calendarClient,
     events: {
-      ...calendar.events,
+      ...calendarClient.events,
       get: jest.fn(async (params: calendar_v3.Params$Resource$Events$Get) => {
         const { eventId } = params;
         const testState = compassTestState();
@@ -353,7 +348,7 @@ export const mockGcal = ({
       ),
     },
     calendarList: {
-      ...calendar.calendarList,
+      ...calendarClient.calendarList,
       list: jest.fn(
         async (
           params: calendar_v3.Params$Resource$Events$Watch = {},
@@ -395,7 +390,7 @@ export const mockGcal = ({
       ),
     },
     channels: {
-      ...calendar.channels,
+      ...calendarClient.channels,
       stop: jest.fn(
         async (
           params: calendar_v3.Params$Resource$Channels$Stop,

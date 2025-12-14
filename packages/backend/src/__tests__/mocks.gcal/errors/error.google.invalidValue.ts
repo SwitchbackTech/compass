@@ -1,4 +1,4 @@
-import { GaxiosError } from "googleapis-common";
+import { GaxiosError } from "gaxios";
 
 export const invalidValueError = new GaxiosError(
   "Invalid Value",

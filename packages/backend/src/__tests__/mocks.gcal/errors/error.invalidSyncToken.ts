@@ -1,4 +1,4 @@
-import { GaxiosError } from "googleapis-common";
+import { GaxiosError } from "gaxios";
 import qs from "qs";
 
 export const invalidSyncTokenError = new GaxiosError(

@@ -1,4 +1,4 @@
-import { GaxiosError } from "googleapis-common";
+import { GaxiosError } from "gaxios";
 
 export const invalidGrant400Error = new GaxiosError(
   "invalid_grant",

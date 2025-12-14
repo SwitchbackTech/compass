@@ -1,7 +1,7 @@
+import { GaxiosError } from "gaxios";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
-import { google } from "googleapis";
-import { GaxiosError } from "googleapis-common";
 import { WithId } from "mongodb";
+import { calendar } from "@googleapis/calendar";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
@@ -77,12 +77,12 @@ export const getGcalClient = async (userId: string): Promise<gCalendar> => {
 
   const gAuthClient = await getGAuthClientForUser(user);
 
-  const calendar = google.calendar({
+  const calendarClient = calendar({
     version: "v3",
     auth: gAuthClient.oauthClient,
   });
 
-  return calendar;
+  return calendarClient;
 };
 
 class GoogleAuthService {
@@ -97,7 +97,7 @@ class GoogleAuthService {
   }
 
   getGcalClient(): gCalendar {
-    const gcal = google.calendar({
+    const gcal = calendar({
       version: "v3",
       auth: this.oauthClient,
     });

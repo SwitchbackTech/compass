@@ -1,5 +1,5 @@
 import { Request } from "express";
-import { GaxiosError } from "googleapis-common";
+import { GaxiosError } from "gaxios";
 import { SessionRequest } from "supertokens-node/framework/express";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";

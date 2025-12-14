@@ -1,4 +1,4 @@
-import { GaxiosError } from "googleapis-common";
+import { GaxiosError } from "gaxios";
 import { gSchema$Event } from "@core/types/gcal";
 
 const cancelled = (e: gSchema$Event) => {

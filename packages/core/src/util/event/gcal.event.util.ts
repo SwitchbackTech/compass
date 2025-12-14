@@ -1,4 +1,4 @@
-import { calendar_v3 } from "googleapis";
+import type { calendar_v3 } from "@googleapis/calendar";
 import { gSchema$Event } from "@core/types/gcal";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 
