@@ -21,7 +21,7 @@ describe("shortcuts.data", () => {
         label: "Command Palette",
       });
 
-      expect(shortcuts.dayAgendaShortcuts).toHaveLength(2);
+      expect(shortcuts.dayAgendaShortcuts).toHaveLength(3);
       expect(shortcuts.dayAgendaShortcuts[0]).toEqual({
         k: "i",
         label: "Focus on calendar",
@@ -29,6 +29,10 @@ describe("shortcuts.data", () => {
       expect(shortcuts.dayAgendaShortcuts[1]).toEqual({
         k: "n",
         label: "Create event",
+      });
+      expect(shortcuts.dayAgendaShortcuts[2]).toEqual({
+        k: "m",
+        label: "Edit event",
       });
 
       expect(shortcuts.dayShortcuts).toHaveLength(3);

@@ -1,13 +1,30 @@
 import { useContext } from "react";
 import { render, screen } from "@testing-library/react";
-import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
+import { useOpenAtCursor } from "@web/common/hooks/useOpenAtCursor";
+import {
+  DraftContextV2,
+  DraftProviderV2,
+} from "@web/views/Calendar/components/Draft/context/DraftProviderV2";
 import { useOpenEventForm } from "@web/views/Forms/hooks/useOpenEventForm";
 import { useSaveEventForm } from "@web/views/Forms/hooks/useSaveEventForm";
-import { DraftContextV2, DraftProviderV2 } from "../DraftProviderV2";
 
+jest.mock("@web/common/hooks/useOpenAtCursor");
 jest.mock("@web/views/Forms/hooks/useOpenEventForm");
-jest.mock("@web/views/Forms/hooks/useCloseEventForm");
 jest.mock("@web/views/Forms/hooks/useSaveEventForm");
+jest.mock("@web/views/Day/hooks/events/useOpenAgendaEventPreview");
+jest.mock("@web/views/Day/hooks/events/useOpenEventContextMenu");
+
+const mockSetOpenAtMousePosition = jest.fn();
+const mockOpenEventForm = jest.fn();
+const mockOnSave = jest.fn();
+const mockCloseOpenAtCursor = jest.fn();
+
+(useOpenAtCursor as jest.Mock).mockReturnValue({
+  setOpenAtMousePosition: mockSetOpenAtMousePosition,
+  closeOpenAtCursor: mockCloseOpenAtCursor,
+});
+(useOpenEventForm as jest.Mock).mockReturnValue(mockOpenEventForm);
+(useSaveEventForm as jest.Mock).mockReturnValue(mockOnSave);
 
 const TestComponent = () => {
   const context = useContext(DraftContextV2);
@@ -18,21 +35,15 @@ const TestComponent = () => {
         {context.draft ? "Draft Exists" : "No Draft"}
       </div>
       <button onClick={() => context.openEventForm()}>Open</button>
-      <button onClick={context.closeEventForm}>Close</button>
+      <button onClick={context.handleCloseOpenAtCursor}>Close</button>
       <button onClick={() => context.onSave(null)}>Save</button>
     </div>
   );
 };
 
 describe("DraftProviderV2", () => {
-  const mockOpenEventForm = jest.fn();
-  const mockCloseEventForm = jest.fn();
-  const mockOnSave = jest.fn();
-
   beforeEach(() => {
-    (useOpenEventForm as jest.Mock).mockReturnValue(mockOpenEventForm);
-    (useCloseEventForm as jest.Mock).mockReturnValue(mockCloseEventForm);
-    (useSaveEventForm as jest.Mock).mockReturnValue(mockOnSave);
+    jest.clearAllMocks();
   });
 
   it("should provide draft context values", () => {
@@ -48,7 +59,7 @@ describe("DraftProviderV2", () => {
     expect(mockOpenEventForm).toHaveBeenCalled();
 
     screen.getByText("Close").click();
-    expect(mockCloseEventForm).toHaveBeenCalled();
+    expect(mockCloseOpenAtCursor).toHaveBeenCalled();
 
     screen.getByText("Save").click();
     expect(mockOnSave).toHaveBeenCalled();

@@ -1,15 +1,15 @@
 import { fireEvent, screen } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
-import { pressKey } from "@web/common/utils/dom-events/event-emitter.util";
+import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { NowCmdPalette } from "@web/views/Now/components/NowCmdPalette";
 
 // Mock pressKey
-jest.mock("@web/common/utils/dom-events/event-emitter.util", () => ({
+jest.mock("@web/common/utils/dom/event-emitter.util", () => ({
   pressKey: jest.fn(),
 }));
 
 // Mock onEventTargetVisibility
-jest.mock("@web/common/utils/dom-events/event-target-visibility.util", () => ({
+jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
   onEventTargetVisibility: (cb: () => void) => () => cb(),
 }));
 

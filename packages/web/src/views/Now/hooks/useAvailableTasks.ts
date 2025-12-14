@@ -9,7 +9,7 @@ import {
   loadTasksFromStorage,
 } from "@web/common/utils/storage/storage.util";
 import { getIncompleteTasksSorted } from "@web/common/utils/task/sort.task";
-import { TaskContext } from "@web/views/Day/context/TaskProvider";
+import { TaskContext } from "@web/views/Day/context/TaskContext";
 
 export function useAvailableTasks() {
   const [storedTasks, setStoredTasks] = useState<Task[]>([]);

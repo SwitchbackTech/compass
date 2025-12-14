@@ -6,23 +6,26 @@ import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { MousePositionProvider } from "@web/common/context/mouse-position";
+import { OpenAtCursorProvider } from "@web/common/context/open-at-cursor";
 import { loadSpecificDayData, loadTodayData } from "@web/routers/loaders";
 import { store as defaultStore } from "@web/store";
 import { DraftProviderV2 } from "@web/views/Calendar/components/Draft/context/DraftProviderV2";
-import { DateNavigationProvider } from "@web/views/Day/context/DateNavigationProvider";
+import { DateNavigationProvider } from "@web/views/Day/context/DateNavigationContext";
 import { StorageInfoModalProvider } from "@web/views/Day/context/StorageInfoModalContext";
-import { TaskProvider } from "@web/views/Day/context/TaskProvider";
+import { TaskProvider } from "@web/views/Day/context/TaskContext";
 
 export const TaskProviderWrapper = ({ children }: PropsWithChildren) => {
   return (
     <MousePositionProvider>
-      <DraftProviderV2>
-        <StorageInfoModalProvider>
-          <DateNavigationProvider>
-            <TaskProvider>{children}</TaskProvider>
-          </DateNavigationProvider>
-        </StorageInfoModalProvider>
-      </DraftProviderV2>
+      <OpenAtCursorProvider>
+        <DraftProviderV2>
+          <StorageInfoModalProvider>
+            <DateNavigationProvider>
+              <TaskProvider>{children}</TaskProvider>
+            </DateNavigationProvider>
+          </StorageInfoModalProvider>
+        </DraftProviderV2>
+      </OpenAtCursorProvider>
     </MousePositionProvider>
   );
 };

@@ -1,3 +1,4 @@
+import { Active, Over } from "@dnd-kit/core";
 import { Schema_Event } from "@core/types/event.types";
 import { Dayjs } from "@core/util/date/dayjs";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
@@ -51,7 +52,32 @@ export const getEventTimeFromPosition = (
 
   // Clamp hours to valid range (0-23)
   const clampedHours = Math.max(0, Math.min(23, hours));
-  const clampedMinutes = clampedHours === 23 ? Math.min(45, minutes) : minutes;
+  const clampedMinutes =
+    hours > 23
+      ? 45
+      : clampedHours === 23
+        ? Math.min(45, minutes)
+        : Math.max(0, minutes);
 
   return dateInView.startOf("day").hour(clampedHours).minute(clampedMinutes);
+};
+
+export const getSnappedMinutes = (active: Active, over: Over) => {
+  const activeRect = active.rect.current.translated;
+  const overRect = over.rect;
+
+  if (!activeRect || !overRect) return null;
+
+  const relativeY = activeRect.top - overRect.top;
+  const gridHeight = overRect.height;
+  const minutesFromMidnight = (relativeY / gridHeight) * 24 * 60;
+  const timeSlots = Math.round(minutesFromMidnight / MINUTES_PER_SLOT);
+  const adjustedMinsFromMidnight = timeSlots * MINUTES_PER_SLOT;
+  const snappedMinutes = Math.max(0, Math.min(1439, adjustedMinsFromMidnight));
+
+  return snappedMinutes;
+};
+
+export const toNearestFifteenMinutes = (minutes: number) => {
+  return Math.min(45, Math.round(minutes / 15) * 15);
 };

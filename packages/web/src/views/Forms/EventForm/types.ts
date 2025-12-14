@@ -20,7 +20,7 @@ export interface FormProps {
     category: Categories_Event,
     direction: Direction_Migrate,
   ) => void;
-  onSubmit: (event?: Schema_Event) => void;
+  onSubmit: (event: Schema_Event | null) => void;
   onSubmitEventForm?: (event: Schema_Event) => void;
   priority?: Priority;
   setEvent: Dispatch<SetStateAction<Schema_Event | null>>;

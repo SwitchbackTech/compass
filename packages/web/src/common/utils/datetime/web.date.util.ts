@@ -95,14 +95,12 @@ export const getEndTimeOptions = (): Option_Time[] => {
   return options;
 };
 
-export const getHourLabels = () => {
-  const day = dayjs();
+export const getHourLabels = (includeMidnight = false) => {
+  const day = dayjs().startOf("day");
+  const hours = includeMidnight ? 24 : 23;
 
-  return [...(new Array(23) as number[])].map((_, index) => {
-    return day
-      .startOf("day")
-      .add(index + 1, "hour")
-      .format(HOURS_AM_SHORT_FORMAT);
+  return [...(new Array(hours) as number[])].map((_, index) => {
+    return day.add(index + 1, "hour").format(HOURS_AM_SHORT_FORMAT);
   });
 };
 

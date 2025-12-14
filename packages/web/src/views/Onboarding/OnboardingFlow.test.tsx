@@ -130,10 +130,20 @@ describe("OnboardingFlow", () => {
         markSignupCompleted: jest.fn(),
       });
 
-      const { container } = render(<OnboardingFlow />);
+      const { rerender } = render(<OnboardingFlow />);
 
       // Should render nothing while loading
-      expect(container.firstChild).toBeEmptyDOMElement();
+      expect(screen.queryByTestId("onboarding")).not.toBeInTheDocument();
+
+      mockUseHasCompletedSignup.mockReturnValue({
+        hasCompletedSignup: true,
+        markSignupCompleted: jest.fn(),
+      });
+
+      rerender(<OnboardingFlow />);
+
+      // Now onboarding should be rendered
+      expect(screen.getByTestId("onboarding")).toBeInTheDocument();
     });
   });
 
