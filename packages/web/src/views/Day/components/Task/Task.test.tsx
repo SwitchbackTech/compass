@@ -2,8 +2,8 @@ import { act } from "react";
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Task as TaskType } from "../../../../common/types/task.types";
-import { Task, TaskProps } from "./Task";
+import { Task as TaskType } from "@web/common/types/task.types";
+import { Task, TaskProps } from "@web/views/Day/components/Task/Task";
 
 describe("Task - migration", () => {
   const mockTask: TaskType = {

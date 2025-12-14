@@ -4,7 +4,7 @@ import { Pencil } from "@phosphor-icons/react";
 import {
   CompassDOMEvents,
   compassEventEmitter,
-} from "@web/common/utils/dom-events/event-emitter.util";
+} from "@web/common/utils/dom/event-emitter.util";
 import { Textarea } from "@web/components/Textarea";
 
 const MAX_DESCRIPTION_LENGTH = 255;

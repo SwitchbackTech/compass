@@ -3,11 +3,12 @@ import { rest } from "msw";
 import { usePostHog } from "posthog-js/react";
 import { act } from "react";
 import "@testing-library/jest-dom";
-import { render, waitFor } from "@testing-library/react";
-import { Status } from "../../../core/src/errors/status.codes";
-import { server } from "../__tests__/__mocks__/server/mock.server";
-import { ENV_WEB } from "../common/constants/env.constants";
-import { UserProvider } from "./UserProvider";
+import { render, screen, waitFor } from "@testing-library/react";
+import { Status } from "@core/errors/status.codes";
+import { server } from "@web/__tests__/__mocks__/server/mock.server";
+import { UserProvider } from "@web/auth/UserProvider";
+import { UserApi } from "@web/common/apis/user.api";
+import { ENV_WEB } from "@web/common/constants/env.constants";
 
 // Mock PostHog
 jest.mock("posthog-js/react");
@@ -35,15 +36,17 @@ describe("UserProvider", () => {
         identify: mockIdentify,
       } as any);
 
-      await act(() =>
-        render(
-          <UserProvider>
-            <div>Test Child</div>
-          </UserProvider>,
-        ),
+      render(
+        <UserProvider>
+          <div>Test Child</div>
+        </UserProvider>,
       );
 
       // Wait for async data fetch and PostHog identify to be called
+      await waitFor(() => {
+        expect(screen.getByText("Test Child")).toBeInTheDocument();
+      });
+
       expect(mockIdentify).toHaveBeenCalledWith(testEmail, {
         email: testEmail,
         userId: testUserId,
@@ -57,13 +60,15 @@ describe("UserProvider", () => {
       // Mock PostHog as disabled (returns undefined/null)
       mockUsePostHog.mockReturnValue(undefined as any);
 
-      await act(() =>
-        render(
-          <UserProvider>
-            <div>Test Child</div>
-          </UserProvider>,
-        ),
+      render(
+        <UserProvider>
+          <div>Test Child</div>
+        </UserProvider>,
       );
+
+      await waitFor(() => {
+        expect(screen.getByText("Test Child")).toBeInTheDocument();
+      });
 
       // Verify identify was never called
       expect(mockIdentify).not.toHaveBeenCalled();
@@ -84,19 +89,22 @@ describe("UserProvider", () => {
         identify: mockIdentify,
       } as any);
 
-      await act(() =>
-        render(
-          <UserProvider>
-            <div>Test Child</div>
-          </UserProvider>,
-        ),
+      render(
+        <UserProvider>
+          <div>Test Child</div>
+        </UserProvider>,
       );
+
+      await waitFor(() => {
+        expect(screen.getByText("Test Child")).toBeInTheDocument();
+      });
 
       // Verify identify was not called because email is missing
       expect(mockIdentify).not.toHaveBeenCalled();
     });
 
     it("should NOT call posthog.identify when userId is missing", async () => {
+      const getProfileSpy = jest.spyOn(UserApi, "getProfile");
       server.use(
         rest.get(`${ENV_WEB.API_BASEURL}/user/profile`, (_req, res, ctx) => {
           return res(
@@ -111,14 +119,19 @@ describe("UserProvider", () => {
         identify: mockIdentify,
       } as any);
 
-      await act(() =>
-        render(
-          <UserProvider>
-            <div>Test Child</div>
-          </UserProvider>,
-        ),
+      render(
+        <UserProvider>
+          <div>Test Child</div>
+        </UserProvider>,
       );
+
+      await waitFor(() => expect(getProfileSpy).toHaveBeenCalled());
+      await act(async () => {
+        await getProfileSpy.mock.results[0].value;
+      });
+
       expect(mockIdentify).not.toHaveBeenCalled();
+      getProfileSpy.mockRestore();
     });
 
     it("should handle posthog.identify not being a function gracefully", async () => {
@@ -135,6 +148,10 @@ describe("UserProvider", () => {
           </UserProvider>,
         );
       }).not.toThrow();
+
+      await waitFor(() => {
+        expect(screen.getByText("Test Child")).toBeInTheDocument();
+      });
 
       // Verify identify was not called
       expect(mockIdentify).not.toHaveBeenCalled();
@@ -161,24 +178,23 @@ describe("UserProvider", () => {
         identify: mockIdentify,
       } as any);
 
-      const { getByText } = await act(() =>
-        render(
-          <UserProvider>
-            <div>Test Child Content</div>
-          </UserProvider>,
-        ),
+      render(
+        <UserProvider>
+          <div>Test Child Content</div>
+        </UserProvider>,
       );
 
       // Initially should show loading
-      expect(getByText("Loading...")).toBeInTheDocument();
+      expect(screen.getByText("Loading...")).toBeInTheDocument();
 
       // After data loads, should show children
       await waitFor(() => {
-        expect(getByText("Test Child Content")).toBeInTheDocument();
+        expect(screen.getByText("Test Child Content")).toBeInTheDocument();
       });
     });
 
     it("should handle session fetch errors gracefully", async () => {
+      const getProfileSpy = jest.spyOn(UserApi, "getProfile");
       server.use(
         rest.get(`${ENV_WEB.API_BASEURL}/user/profile`, (_req, res, ctx) => {
           return res(ctx.status(Status.UNAUTHORIZED));
@@ -193,13 +209,20 @@ describe("UserProvider", () => {
         identify: mockIdentify,
       } as any);
 
-      await act(() =>
-        render(
-          <UserProvider>
-            <div>Test Child</div>
-          </UserProvider>,
-        ),
+      render(
+        <UserProvider>
+          <div>Test Child</div>
+        </UserProvider>,
       );
+
+      await waitFor(() => expect(getProfileSpy).toHaveBeenCalled());
+      await act(async () => {
+        try {
+          await getProfileSpy.mock.results[0].value;
+        } catch (e) {
+          // Ignore error
+        }
+      });
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         new AxiosError("Request failed with status code 401"),
@@ -209,6 +232,7 @@ describe("UserProvider", () => {
       expect(mockIdentify).not.toHaveBeenCalled();
 
       consoleErrorSpy.mockRestore();
+      getProfileSpy.mockRestore();
     });
   });
 });

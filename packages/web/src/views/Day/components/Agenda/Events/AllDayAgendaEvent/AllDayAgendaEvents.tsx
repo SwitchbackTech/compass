@@ -41,10 +41,10 @@ export const AllDayAgendaEvents = ({
       aria-label="All-day events section"
       {...(allDayEvents.length > 0 ? {} : { title: "All-day events section" })}
       className={classNames(
-        "group max-h-36 min-h-8 cursor-cell space-y-1",
+        "group flex max-h-36 min-h-8 cursor-cell flex-col gap-1 pt-2",
         "overflow-x-hidden overflow-y-auto",
-        "border-t border-b border-gray-400/20",
-        "focus-visible:rounded focus-visible:ring-2 focus-visible:outline-none",
+        "border-t border-gray-400/20",
+        "focus-visible:rounded focus-visible:ring-2",
         "focus:outline-none focus-visible:ring-yellow-200",
       )}
       style={{

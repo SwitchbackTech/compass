@@ -3,7 +3,7 @@ import React, { useRef } from "react";
 import { DATA_TASK_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { Task as TaskType } from "@web/common/types/task.types";
 import { ArrowButton } from "@web/components/Button/ArrowButton";
-import { TaskCircleIcon } from "../Icons/TaskCircleIcon";
+import { TaskCircleIcon } from "@web/views/Day/components/Icons/TaskCircleIcon";
 
 export interface TaskProps {
   task: TaskType;

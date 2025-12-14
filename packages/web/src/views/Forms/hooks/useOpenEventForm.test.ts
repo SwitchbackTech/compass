@@ -6,16 +6,18 @@ import {
   CLASS_TIMED_CALENDAR_EVENT,
   DATA_EVENT_ELEMENT_ID,
 } from "@web/common/constants/web.constants";
+import { useOpenAtCursor } from "@web/common/hooks/useOpenAtCursor";
 import { useOpenEventForm } from "@web/views/Forms/hooks/useOpenEventForm";
 
 // Mocks
 jest.mock("@web/auth/auth.util");
 jest.mock("@web/common/context/mouse-position");
-jest.mock("@web/common/utils/dom-events/event-emitter.util");
+jest.mock("@web/common/utils/dom/event-emitter.util");
 jest.mock("@web/views/Day/hooks/navigation/useDateInView");
 jest.mock("@web/views/Day/util/agenda/agenda.util");
 jest.mock("@web/views/Day/util/agenda/focus.util");
 jest.mock("@web/ducks/events/selectors/event.selectors");
+jest.mock("@web/common/hooks/useOpenAtCursor");
 
 describe("useOpenEventForm", () => {
   const { getUserId } = jest.requireMock("@web/auth/auth.util");
@@ -31,7 +33,7 @@ describe("useOpenEventForm", () => {
   } = jest.requireMock("@web/common/context/mouse-position");
 
   const { getElementAtPoint } = jest.requireMock(
-    "@web/common/utils/dom-events/event-emitter.util",
+    "@web/common/utils/dom/event-emitter.util",
   );
 
   const { useDateInView } = jest.requireMock(
@@ -57,6 +59,13 @@ describe("useOpenEventForm", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (useOpenAtCursor as jest.Mock).mockReturnValue({
+      setOpen: mockSetOpenAtMousePosition,
+      setNodeId: jest.fn(),
+      setPlacement: jest.fn(),
+      setReference: mockSetReference,
+      floating: { refs: { setReference: jest.fn() } },
+    });
     useDateInView.mockReturnValue(mockDateInView);
     getUserId.mockResolvedValue("user-123");
     toNearestFifteenMinutes.mockReturnValue(0);
@@ -126,8 +135,11 @@ describe("useOpenEventForm", () => {
     expect(mockSetExisting).toHaveBeenCalledWith(false);
     expect(mockSetDraft).toHaveBeenCalledWith(
       expect.objectContaining({
-        startDate: mockDateInView.startOf("day").toISOString(),
-        endDate: mockDateInView.startOf("day").add(1, "day").toISOString(),
+        startDate: mockDateInView.startOf("day").format("YYYY-MM-DD"),
+        endDate: mockDateInView
+          .startOf("day")
+          .add(1, "day")
+          .format("YYYY-MM-DD"),
         isAllDay: true,
       }),
     );

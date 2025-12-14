@@ -2,7 +2,7 @@ import { FC, memo, useCallback, useMemo } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { DAY_COMPACT, DAY_HOUR_MIN_M } from "@core/constants/date.constants";
 import { Schema_Event } from "@core/types/event.types";
-import { useCursorCoordinates } from "@web/common/hooks/useMousePosition";
+import { useCursorCoordinates } from "@web/common/hooks/useCursorCoordinates";
 import { getWidthBuffer } from "@web/common/utils/grid/grid.util";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexWrap } from "@web/components/Flex/styled";

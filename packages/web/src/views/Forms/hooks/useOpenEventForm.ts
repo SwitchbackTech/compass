@@ -1,5 +1,4 @@
-import { Dispatch, useCallback } from "react";
-import { ReferenceType } from "@floating-ui/react";
+import { Dispatch, SetStateAction, useCallback } from "react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
@@ -14,7 +13,9 @@ import {
   isOverSomedayMonth,
   isOverSomedayWeek,
 } from "@web/common/context/mouse-position";
-import { getElementAtPoint } from "@web/common/utils/dom-events/event-emitter.util";
+import { CursorItem } from "@web/common/context/open-at-cursor";
+import { useOpenAtCursor } from "@web/common/hooks/useOpenAtCursor";
+import { getElementAtPoint } from "@web/common/utils/dom/event-emitter.util";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { store } from "@web/store";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
@@ -24,18 +25,19 @@ import {
 } from "@web/views/Day/util/agenda/agenda.util";
 import { getEventClass } from "@web/views/Day/util/agenda/focus.util";
 
+const YMD = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
+
 export function useOpenEventForm({
   setDraft,
   setExisting,
-  setReference,
-  setOpenAtMousePosition,
 }: {
-  setReference: (node: ReferenceType | null) => void;
-  setExisting: Dispatch<React.SetStateAction<boolean>>;
-  setDraft: Dispatch<React.SetStateAction<Schema_Event | null>>;
-  setOpenAtMousePosition: Dispatch<React.SetStateAction<boolean>>;
+  setExisting: Dispatch<SetStateAction<boolean>>;
+  setDraft: Dispatch<SetStateAction<Schema_Event | null>>;
 }) {
   const dateInView = useDateInView();
+  const openAtCursor = useOpenAtCursor();
+  const { setOpen, setNodeId, setPlacement, setReference } = openAtCursor;
+  const { refs } = openAtCursor.floating;
 
   const openEventForm = useCallback(
     async (create = false, cursor = getCursorPosition()) => {
@@ -43,9 +45,12 @@ export function useOpenEventForm({
 
       if (!user) return;
 
+      const active = document.activeElement;
       const element = getElementAtPoint(cursor);
       const eventClass = getEventClass(element);
-      const event = element?.closest(`.${eventClass}`);
+      const activeClass = getEventClass(active);
+      const cursorEvent = element?.closest(`.${eventClass}`);
+      const event = cursorEvent ?? active?.closest(`.${activeClass}`);
       const existingEventId = event?.getAttribute(DATA_EVENT_ELEMENT_ID);
 
       let draftEvent: Schema_Event;
@@ -69,16 +74,21 @@ export function useOpenEventForm({
 
         let endTime: Dayjs = startTime.add(15, "minutes");
 
-        if (isOverAllDayRow()) {
+        const isAllDay = isOverAllDayRow() || isOverAllDayRow(active);
+        const somedayCursor = isOverSomedayWeek() || isOverSomedayMonth();
+        const somedayActive = isOverSidebar() || isOverSidebar(active);
+        const isSomeday = somedayCursor || somedayActive;
+
+        if (isAllDay) {
           const date = dateInView.startOf("day");
           startTime = date;
           endTime = date.add(1, "day");
-        } else if (isOverSomedayWeek() || isOverSomedayMonth()) {
+        } else if (isSomeday) {
           const now = dayjs();
           const date = dateInView.hour(now.hour()).minute(now.minute());
           startTime = date;
           endTime = date.add(15, "minutes");
-        } else if (isOverMainGrid()) {
+        } else if (isOverMainGrid() || isOverMainGrid(active)) {
           const startTimeY = cursor.clientY;
           startTime = getEventTimeFromPosition(startTimeY, dateInView);
           endTime = startTime.add(15, "minutes");
@@ -87,10 +97,10 @@ export function useOpenEventForm({
         draftEvent = {
           title: "",
           description: "",
-          startDate: startTime.toISOString(),
-          endDate: endTime.toISOString(),
-          isAllDay: isOverAllDayRow(),
-          isSomeday: isOverSidebar(),
+          startDate: isAllDay ? startTime.format(YMD) : startTime.toISOString(),
+          endDate: isAllDay ? endTime.format(YMD) : endTime.toISOString(),
+          isAllDay,
+          isSomeday,
           user,
           priority: Priorities.UNASSIGNED,
           origin: Origin.COMPASS,
@@ -99,12 +109,23 @@ export function useOpenEventForm({
         setExisting(false);
       }
 
-      setReference?.(getMousePointRef(cursor));
-
+      setPlacement("left-start");
+      setReference(null);
+      refs.setReference(getMousePointRef(cursor));
       setDraft(draftEvent);
-      setOpenAtMousePosition(true);
+      setNodeId(CursorItem.EventForm);
+      setOpen(true);
     },
-    [setReference, setDraft, setOpenAtMousePosition, setExisting, dateInView],
+    [
+      setPlacement,
+      setReference,
+      refs,
+      setDraft,
+      setNodeId,
+      setOpen,
+      setExisting,
+      dateInView,
+    ],
   );
 
   return openEventForm;

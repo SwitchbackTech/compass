@@ -1,33 +1,16 @@
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
+import { OpenAtCursorProvider } from "@web/common/context/open-at-cursor";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { useDraftContextV2 } from "@web/views/Calendar/components/Draft/context/useDraftContextV2";
-import { DraggableAgendaEvent } from "@web/views/Day/components/Agenda/Events/AgendaEvent/DraggableAgendaEvent";
-import { EventContextMenuProvider } from "@web/views/Day/components/ContextMenu/EventContextMenuContext";
-
-// Mock the AgendaEventMenu components to simplify testing
-jest.mock("../AgendaEventMenu/AgendaEventMenu", () => ({
-  AgendaEventMenu: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-}));
-
-jest.mock("../AgendaEventMenu/AgendaEventMenuContent", () => ({
-  AgendaEventMenuContent: () => null,
-}));
-
-jest.mock("../AgendaEventMenu/AgendaEventMenuTrigger", () => ({
-  AgendaEventMenuTrigger: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-}));
+import { DraggableTimedAgendaEvent } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/DraggableTimedAgendaEvent";
 
 jest.mock("@web/views/Calendar/components/Draft/context/useDraftContextV2");
 
 function renderWithMenuProvider(ui: React.ReactElement) {
-  return render(<EventContextMenuProvider>{ui}</EventContextMenuProvider>);
+  return render(<OpenAtCursorProvider>{ui}</OpenAtCursorProvider>);
 }
 
 describe("AgendaEvent", () => {
@@ -56,7 +39,7 @@ describe("AgendaEvent", () => {
     };
 
     const { container } = renderWithMenuProvider(
-      <DraggableAgendaEvent event={event as Schema_GridEvent} />,
+      <DraggableTimedAgendaEvent event={event as Schema_GridEvent} />,
     );
     expect(container.firstChild).toBeNull();
   });
@@ -68,13 +51,13 @@ describe("AgendaEvent", () => {
     };
 
     const { container } = renderWithMenuProvider(
-      <DraggableAgendaEvent event={event as Schema_GridEvent} />,
+      <DraggableTimedAgendaEvent event={event as Schema_GridEvent} />,
     );
     expect(container.firstChild).toBeNull();
   });
 
   it("has the correct aria-label and data-event-id", () => {
-    renderWithMenuProvider(<DraggableAgendaEvent event={baseEvent} />);
+    renderWithMenuProvider(<DraggableTimedAgendaEvent event={baseEvent} />);
 
     const eventButton = screen.getByRole("button");
 

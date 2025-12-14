@@ -9,7 +9,9 @@ import {
 } from "@dnd-kit/core";
 
 export function DNDContext({ children }: PropsWithChildren) {
-  const keyboardSensor = useSensor(KeyboardSensor);
+  const keyboardSensor = useSensor(KeyboardSensor, {
+    keyboardCodes: { start: ["Space"], cancel: ["Escape"], end: ["Space"] },
+  });
 
   const touchSensor = useSensor(TouchSensor, {
     activationConstraint: { delay: 250, tolerance: 5 },

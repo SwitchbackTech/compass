@@ -5,32 +5,20 @@ import { screen, waitFor } from "@testing-library/react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
-import { AgendaEvents } from "@web/views/Day/components/Agenda/Events/AgendaEvent/AgendaEvents";
+import { TimedAgendaEvents } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/TimedAgendaEvents";
+import { EventContextMenu } from "@web/views/Day/components/ContextMenu/EventContextMenu";
 import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
-
-jest.mock("../Agenda/Events/AgendaEventMenu/AgendaEventMenu", () => ({
-  AgendaEventMenu: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-}));
-
-jest.mock("../Agenda/Events/AgendaEventMenu/AgendaEventMenuContent", () => ({
-  AgendaEventMenuContent: () => null,
-}));
-
-jest.mock("../Agenda/Events/AgendaEventMenu/AgendaEventMenuTrigger", () => ({
-  AgendaEventMenuTrigger: ({
-    children,
-  }: {
-    children: React.ReactNode;
-    asChild?: boolean;
-  }) => <>{children}</>,
-}));
 
 const renderAgendaEvents = (events: Schema_Event[]) => {
   const store = createStoreWithEvents(events);
 
-  const utils = renderWithDayProviders(<AgendaEvents />, { store });
+  const utils = renderWithDayProviders(
+    <>
+      <TimedAgendaEvents />
+      <EventContextMenu />
+    </>,
+    { store },
+  );
   const dispatchSpy = jest.spyOn(store, "dispatch");
 
   return { store, dispatchSpy, ...utils };

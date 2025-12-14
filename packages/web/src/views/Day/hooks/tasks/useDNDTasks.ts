@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { DNDTasksContext } from "@web/views/Day/context/DNDTasksProvider";
+import { DNDTasksContext } from "@web/views/Day/context/DNDTasksContext";
 
 export function useDNDTasksContext() {
   const context = useContext(DNDTasksContext);

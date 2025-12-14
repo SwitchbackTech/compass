@@ -6,7 +6,7 @@ import {
   globalOnKeyUpHandler,
   keyPressed,
   keyReleased,
-} from "@web/common/utils/dom-events/event-emitter.util";
+} from "@web/common/utils/dom/event-emitter.util";
 import { isEditable } from "@web/views/Day/util/day.shortcut.util";
 
 interface Options {

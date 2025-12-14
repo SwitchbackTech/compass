@@ -2,7 +2,7 @@ import { act } from "react";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
-import { keyPressed } from "@web/common/utils/dom-events/event-emitter.util";
+import { keyPressed } from "@web/common/utils/dom/event-emitter.util";
 import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
@@ -33,7 +33,7 @@ global.window.open = mockWindowOpen;
 const mockDispatch = jest.fn();
 
 // Mock onEventTargetVisibility
-jest.mock("@web/common/utils/dom-events/event-target-visibility.util", () => ({
+jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
   onEventTargetVisibility: (callback: () => void) => callback,
 }));
 

@@ -5,7 +5,7 @@ import {
   DomMovement,
   domMovement,
   globalMovementHandler,
-} from "@web/common/utils/dom-events/event-emitter.util";
+} from "@web/common/utils/dom/event-emitter.util";
 
 interface Options {
   handler?: (e: DomMovement) => void;

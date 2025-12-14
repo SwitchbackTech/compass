@@ -13,6 +13,7 @@ import {
   UseDroppableArguments,
   useDroppable,
 } from "@dnd-kit/core";
+import { useMergeRefs } from "@floating-ui/react";
 
 function CompassDroppable(
   props: DetailedHTMLProps<
@@ -24,7 +25,7 @@ function CompassDroppable(
     } & HTMLAttributes<HTMLElement>,
     HTMLElement
   >,
-  ref: ForwardedRef<HTMLElement | null>,
+  _ref: ForwardedRef<HTMLElement | null>,
 ) {
   const { dndProps, as, ...elementProps } = props;
 
@@ -33,22 +34,9 @@ function CompassDroppable(
     id: props.dndProps.id ?? new ObjectId().toString(),
   });
 
-  const setRef = useCallback(
-    (element: HTMLElement | null) => {
-      setNodeRef(element);
+  const ref = useMergeRefs([_ref, setNodeRef]);
 
-      if (!ref) return;
-
-      if (typeof ref === "function") {
-        ref(element);
-      } else if (typeof ref !== "string") {
-        ref.current = element;
-      }
-    },
-    [ref, setNodeRef],
-  );
-
-  return createElement(as ?? "div", { ...elementProps, ref: setRef });
+  return createElement(as ?? "div", { ...elementProps, ref });
 }
 
 export const Droppable = forwardRef(CompassDroppable);

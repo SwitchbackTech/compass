@@ -1,67 +1,62 @@
 import classNames from "classnames";
-import { useCallback, useEffect, useRef, useState } from "react";
+import fastDeepEqual from "fast-deep-equal/react";
+import {
+  ForwardedRef,
+  forwardRef,
+  memo,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+} from "react";
+import { useLocation } from "react-router-dom";
 import { Key } from "ts-key-enum";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { useDraftContextV2 } from "@web/views/Calendar/components/Draft/context/useDraftContextV2";
-import { AgendaEvents } from "@web/views/Day/components/Agenda/Events/AgendaEvent/AgendaEvents";
 import { AllDayAgendaEvents } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/AllDayAgendaEvents";
+import { TimedAgendaEvents } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/TimedAgendaEvents";
 import { NowLine } from "@web/views/Day/components/Agenda/NowLine/NowLine";
 import { TimeLabels } from "@web/views/Day/components/Agenda/TimeLabels/TimeLabels";
-import { EventContextMenuProvider } from "@web/views/Day/components/ContextMenu/EventContextMenuContext";
 
-interface AgendaProps {
-  onScrollToNowLineReady?: (scrollToNowLine: () => void) => void;
-}
+export const Agenda = memo(
+  forwardRef((_: {}, ref: ForwardedRef<{ scrollToNow: () => void }>) => {
+    const { pathname } = useLocation();
+    const { openEventForm } = useDraftContextV2();
+    const nowLineRef = useRef<HTMLDivElement>(null);
+    const events = useAppSelector(selectDayEvents);
+    const height = useRef<number>(0);
 
-export const Agenda = ({ onScrollToNowLineReady }: AgendaProps) => {
-  const { openEventForm } = useDraftContextV2();
-  const nowLineRef = useRef<HTMLDivElement>(null);
-  const events = useAppSelector(selectDayEvents);
-  const [height, setHeight] = useState<number | undefined>(undefined);
+    // Separate all-day events from timed events
+    const allDayEvents = events.filter((event) => event.isAllDay);
 
-  // Separate all-day events from timed events
-  const allDayEvents = events.filter((event) => event.isAllDay);
+    const scrollToNow = useCallback(() => {
+      nowLineRef.current?.scrollIntoView({
+        block: "center",
+        inline: "nearest",
+        behavior: "smooth",
+      });
+    }, []);
 
-  const scrollToNowLine = useCallback(() => {
-    nowLineRef.current?.scrollIntoView({
-      block: "center",
-      inline: "nearest",
-      behavior: "smooth",
-    });
-  }, []);
+    const onEnterKey = useCallback(
+      (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === Key.Enter) {
+          e.preventDefault();
+          e.stopPropagation();
+          openEventForm();
+        }
+      },
+      [openEventForm],
+    );
 
-  const setHeightRef = useCallback(
-    (e: HTMLDivElement | null) => setHeight(e?.scrollHeight),
-    [setHeight],
-  );
+    // Provide the scroll function to parent component
+    useImperativeHandle(ref, () => ({ scrollToNow }), [scrollToNow]);
 
-  const onEnterKey = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (e.key === Key.Enter) {
-        e.preventDefault();
-        e.stopPropagation();
-        openEventForm();
-      }
-    },
-    [openEventForm],
-  );
+    // Center the calendar around the current time when the view mounts
+    useEffect(() => scrollToNow(), [scrollToNow, pathname]);
 
-  // Provide the scroll function to parent component
-  useEffect(() => {
-    if (onScrollToNowLineReady) {
-      onScrollToNowLineReady(scrollToNowLine);
-    }
-  }, [onScrollToNowLineReady, scrollToNowLine]);
-
-  // Center the calendar around the current time when the view mounts
-  useEffect(() => {
-    scrollToNowLine();
-  }, [scrollToNowLine]);
-
-  return (
-    <EventContextMenuProvider>
+    return (
       <section
         aria-label="calendar-agenda"
         className="bg-darkBlue-400 flex h-full min-w-xs flex-1 flex-col gap-2 p-0.5"
@@ -70,11 +65,16 @@ export const Agenda = ({ onScrollToNowLineReady }: AgendaProps) => {
 
         <div
           id={ID_GRID_EVENTS_TIMED}
-          ref={setHeightRef}
+          ref={(e) => {
+            if (e && !height.current) {
+              height.current = e.scrollHeight;
+            }
+          }}
           className={classNames(
             "relative flex flex-1 overflow-x-hidden overflow-y-auto",
             "focus-visible:rounded focus-visible:ring-2 focus-visible:outline-none",
             "focus:outline-none focus-visible:ring-yellow-200",
+            "border-t border-gray-400/20 pt-1",
           )}
           data-testid="calendar-scroll"
           tabIndex={0}
@@ -90,11 +90,14 @@ export const Agenda = ({ onScrollToNowLineReady }: AgendaProps) => {
         >
           <TimeLabels />
 
-          <NowLine nowLineRef={nowLineRef} />
+          <NowLine ref={nowLineRef} />
 
-          <AgendaEvents height={height} />
+          <TimedAgendaEvents height={height.current} />
         </div>
       </section>
-    </EventContextMenuProvider>
-  );
-};
+    );
+  }),
+  fastDeepEqual,
+);
+
+Agenda.displayName = "Agenda";
