@@ -4,7 +4,7 @@ import { fireEvent, screen } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { Task } from "@web/common/types/task.types";
 import { DraggableTask } from "@web/views/Day/components/Task/DraggableTask";
-import { TaskContext } from "@web/views/Day/context/TaskProvider";
+import { TaskContext } from "@web/views/Day/context/TaskContext";
 
 const mockTask: Task = {
   id: "task-1",

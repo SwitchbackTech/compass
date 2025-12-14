@@ -1,4 +1,4 @@
-import deepEqual from "fast-deep-equal";
+import fastDeepEqual from "fast-deep-equal/react";
 import React, {
   KeyboardEvent,
   memo,
@@ -311,7 +311,6 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         }}
         priority={priority}
         role="form"
-        className="z-40"
       >
         <StyledIconRow>
           <EventActionMenu
@@ -355,11 +354,14 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
           placeholder="Description"
           ref={descriptionRef}
           value={event.description || ""}
+          className="overflow-y-auto"
         />
 
         <SaveSection priority={priority} onSubmit={onSubmitForm} />
       </StyledEventForm>
     );
   },
-  deepEqual,
+  fastDeepEqual,
 );
+
+EventForm.displayName = "EventForm";

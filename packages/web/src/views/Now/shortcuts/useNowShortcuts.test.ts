@@ -2,10 +2,7 @@ import { act } from "react";
 import { useNavigate } from "react-router-dom";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import { Task } from "@web/common/types/task.types";
-import {
-  keyPressed,
-  pressKey,
-} from "@web/common/utils/dom-events/event-emitter.util";
+import { keyPressed, pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { useNowShortcuts } from "@web/views/Now/shortcuts/useNowShortcuts";
 
 // Mock react-router-dom

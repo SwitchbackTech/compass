@@ -19,8 +19,8 @@ import {
   COLUMN_WEEK,
   ID_SOMEDAY_DRAFT,
 } from "@web/common/constants/web.constants";
+import { getCursorPosition } from "@web/common/context/mouse-position";
 import { DirtyParser } from "@web/common/parsers/dirty.parser";
-import { Coordinates } from "@web/common/types/util.types";
 import { Schema_WebEvent } from "@web/common/types/web.event.types";
 import {
   computeCurrentEventDateRange,
@@ -144,7 +144,7 @@ export const useSidebarActions = (
     setDraft(somedayDefault);
     setIsSomedayFormOpen(true);
     setIsDrafting(true);
-  }, [setDraft]);
+  }, [setDraft, setIsDrafting, setIsSomedayFormOpen]);
 
   const discard = useCallback(() => {
     if (state.draft) {
@@ -154,14 +154,12 @@ export const useSidebarActions = (
     if (reduxDraft) {
       dispatch(draftSlice.actions.discard());
     }
-  }, [dispatch, state.draft, reduxDraft]);
+  }, [state.draft, reduxDraft, setDraft, dispatch]);
 
-  const getDatesAfterDroppingOn = (
-    target: "mainGrid" | "alldayRow",
-    mouseCoords: Coordinates,
-  ) => {
-    const x = getX(mouseCoords.x, true);
-    const y = mouseCoords.y;
+  const getDatesAfterDroppingOn = (target: "mainGrid" | "alldayRow") => {
+    const cursor = getCursorPosition();
+    const x = getX(cursor.clientX, true);
+    const y = cursor.clientY;
 
     if (target === "mainGrid") {
       const _start = dateCalcs.getDateByXY(x, y, viewStart);
@@ -235,7 +233,7 @@ export const useSidebarActions = (
       reorder(result);
     } else {
       const grid = state.isOverMainGrid ? "mainGrid" : "alldayRow";
-      const dates = getDatesAfterDroppingOn(grid, state.mouseCoords);
+      const dates = getDatesAfterDroppingOn(grid);
 
       convertSomedayToCalendarEvent(draggableId, {
         ...dates,

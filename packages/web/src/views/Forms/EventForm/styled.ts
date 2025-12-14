@@ -1,5 +1,4 @@
 import styled from "styled-components";
-import { darken } from "@core/util/color.utils";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
 import { PriorityButton } from "@web/components/Button/styled";
@@ -15,7 +14,8 @@ interface SomedayFormProps extends StyledFormProps {
 }
 
 export const StyledEventForm = styled.form<SomedayFormProps>`
-  background: ${({ priority }) => hoverColorByPriority[priority]};
+  background: ${({ priority }) =>
+    priority ? hoverColorByPriority[priority] : undefined};
   border-radius: ${({ theme }) => theme.shape.borderRadius};
   box-shadow: 0px 5px 5px ${({ theme }) => theme.color.shadow.default};
   font-size: 20px;
@@ -37,30 +37,6 @@ export const StyledDescription = styled(Textarea)`
   &:hover {
     filter: brightness(90%);
     background-color: ${({ theme }) => theme.color.border.primary};
-  }
-
-  &::-webkit-scrollbar {
-    cursor: default;
-    width: 6px;
-  }
-
-  &::-webkit-scrollbar-track {
-    cursor: default;
-    background: transparent;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    cursor: default;
-    background: ${({ theme }) => theme.color.border.primaryDark};
-    border-radius: 999px;
-  }
-
-  @-moz-document url-prefix() {
-    & {
-      scrollbar-width: thin;
-      scrollbar-color: ${({ theme }) => theme.color.border.primaryDark}
-        transparent;
-    }
   }
 `;
 

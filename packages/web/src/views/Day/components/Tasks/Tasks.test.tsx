@@ -2,10 +2,10 @@ import { act } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import { addTasks } from "@web/__tests__/utils/tasks/task.test.util";
-import { DNDTasksProvider } from "../../context/DNDTasksProvider";
-import { renderWithDayProviders } from "../../util/day.test-util";
-import { TaskList } from "../TaskList/TaskList";
-import { Tasks } from "./Tasks";
+import { TaskList } from "@web/views/Day/components/TaskList/TaskList";
+import { Tasks } from "@web/views/Day/components/Tasks/Tasks";
+import { DNDTasksProvider } from "@web/views/Day/context/DNDTasksContext";
+import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
 
 describe("Tasks Tab Navigation", () => {
   beforeEach(() => {

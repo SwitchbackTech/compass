@@ -1,5 +1,19 @@
-import { MINUTES_PER_SLOT, SLOT_HEIGHT } from "../../constants/day.constants";
-import { getNowLinePosition } from "./agenda.util";
+import { Active, Over } from "@dnd-kit/core";
+import { Schema_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
+import {
+  MINUTES_PER_SLOT,
+  SLOT_HEIGHT,
+} from "@web/views/Day/constants/day.constants";
+import {
+  getAgendaEventPosition,
+  getAgendaEventTime,
+  getAgendaEventTitle,
+  getEventTimeFromPosition,
+  getNowLinePosition,
+  getSnappedMinutes,
+  toNearestFifteenMinutes,
+} from "@web/views/Day/util/agenda/agenda.util";
 
 describe("agenda.util", () => {
   describe("getNowLinePosition", () => {
@@ -145,6 +159,148 @@ describe("agenda.util", () => {
       // 26 minutes / 60 minutes = 0.4333... ≈ 43%
       expect(percentage).toBeCloseTo(26 / 60, 2);
       expect(percentage).toBeCloseTo(0.4333, 2);
+    });
+  });
+
+  describe("getAgendaEventTitle", () => {
+    it("should format title correctly", () => {
+      const event = {
+        title: "Meeting",
+        startDate: "2023-01-01T10:00:00.000Z",
+        endDate: "2023-01-01T11:30:00.000Z",
+      };
+      // Note: getAgendaEventTime uses local time.
+      // We'll mock the date to ensure consistent timezone in tests if needed,
+      // or just rely on the implementation which uses Date object.
+      // For simplicity, let's check the structure.
+      const title = getAgendaEventTitle(event as unknown as Schema_Event);
+      expect(title).toContain("Meeting");
+      expect(title).toContain("-");
+    });
+  });
+
+  describe("getAgendaEventTime", () => {
+    it("should format time correctly for AM", () => {
+      const date = new Date("2023-01-01T10:00:00");
+      const time = getAgendaEventTime(date);
+      // Depending on local time, this might vary.
+      // Let's force a specific time by mocking Date or just checking the logic.
+      // The function uses dateObj.getHours(), which is local time.
+      // We can construct a date where we know the local time.
+      const hours = date.getHours();
+      const minutes = date.getMinutes();
+      const ampm = hours >= 12 ? "pm" : "am";
+      const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+      const expected = `${displayHours}:${minutes.toString().padStart(2, "0")}${ampm}`;
+      expect(time).toBe(expected);
+    });
+
+    it("should format time correctly for PM", () => {
+      const date = new Date("2023-01-01T14:30:00");
+      const time = getAgendaEventTime(date);
+      const hours = date.getHours();
+      const minutes = date.getMinutes();
+      const ampm = hours >= 12 ? "pm" : "am";
+      const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+      const expected = `${displayHours}:${minutes.toString().padStart(2, "0")}${ampm}`;
+      expect(time).toBe(expected);
+    });
+  });
+
+  describe("getAgendaEventPosition", () => {
+    it("should calculate position correctly", () => {
+      const date = new Date("2023-01-01T10:15:00");
+      const position = getAgendaEventPosition(date);
+      const hours = date.getHours();
+      const minutes = date.getMinutes();
+      const slot = hours * 4 + Math.floor(minutes / MINUTES_PER_SLOT);
+      const expected = slot * SLOT_HEIGHT;
+      expect(position).toBe(expected);
+    });
+  });
+
+  describe("getEventTimeFromPosition", () => {
+    beforeEach(() => {
+      // Mock document.getElementById
+      const mockElement = {
+        getBoundingClientRect: jest.fn(() => ({
+          top: 100,
+        })),
+      };
+      jest
+        .spyOn(document, "getElementById")
+        .mockReturnValue(mockElement as unknown as HTMLElement);
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it("should calculate time from position", () => {
+      const dateInView = dayjs("2023-01-01");
+      const yPosition = 100 + 10 * SLOT_HEIGHT; // 10 slots down from top
+      // 10 slots = 2.5 hours = 2:30 AM
+      const time = getEventTimeFromPosition(yPosition, dateInView);
+      expect(time.hour()).toBe(2);
+      expect(time.minute()).toBe(30);
+    });
+
+    it("should clamp time to end of day", () => {
+      const dateInView = dayjs("2023-01-01");
+      const yPosition = 100 + 100 * SLOT_HEIGHT; // Way past end of day
+      const time = getEventTimeFromPosition(yPosition, dateInView);
+      expect(time.hour()).toBe(23);
+      expect(time.minute()).toBe(45);
+    });
+  });
+
+  describe("getSnappedMinutes", () => {
+    it("should calculate snapped minutes", () => {
+      const active = {
+        rect: {
+          current: {
+            translated: { top: 200 },
+          },
+        },
+      } as unknown as Active;
+
+      const over = {
+        rect: { top: 100, height: 1000 },
+      } as unknown as Over;
+
+      // relativeY = 100
+      // minutesFromMidnight = (100 / 1000) * 24 * 60 = 0.1 * 1440 = 144
+      // snappedMinutes = round(144 / 15) * 15 = 10 * 15 = 150
+      const minutes = getSnappedMinutes(active, over);
+      expect(minutes).toBe(150);
+    });
+
+    it("should return null if rects are missing", () => {
+      const active = {
+        rect: {
+          current: {
+            translated: null,
+          },
+        },
+      } as unknown as Active;
+      const over = { rect: null } as unknown as Over;
+      expect(getSnappedMinutes(active, over)).toBeNull();
+    });
+  });
+
+  describe("toNearestFifteenMinutes", () => {
+    it("should round to nearest 15 minutes", () => {
+      expect(toNearestFifteenMinutes(0)).toBe(0);
+      expect(toNearestFifteenMinutes(7)).toBe(0); // 7 -> 0
+      expect(toNearestFifteenMinutes(8)).toBe(15); // 8 -> 15
+      expect(toNearestFifteenMinutes(22)).toBe(15); // 22 -> 15
+      expect(toNearestFifteenMinutes(23)).toBe(30); // 23 -> 30
+    });
+
+    it("should clamp to 45 minutes", () => {
+      expect(toNearestFifteenMinutes(45)).toBe(45);
+      expect(toNearestFifteenMinutes(50)).toBe(45);
+      expect(toNearestFifteenMinutes(60)).toBe(45);
     });
   });
 });
