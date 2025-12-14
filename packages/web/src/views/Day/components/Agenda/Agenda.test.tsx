@@ -1,20 +1,34 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
-import { screen, waitFor } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { Schema_Event } from "@core/types/event.types";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
-import { renderWithDayProviders } from "../../util/day.test-util";
-import { Agenda } from "./Agenda";
+import { useDraftContextV2 } from "@web/views/Calendar/components/Draft/context/useDraftContextV2";
+import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
+import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
+
+jest.mock("@web/auth/auth.util", () => ({
+  getUserId: jest.fn().mockResolvedValue("user-123"),
+}));
+
+jest.mock("@web/views/Calendar/components/Draft/context/useDraftContextV2");
 
 const renderAgenda = (
   events: Schema_Event[] = [],
   options?: { isProcessing?: boolean },
 ) => {
   const store = createStoreWithEvents(events, options);
-  return renderWithDayProviders(<Agenda />, { store });
+  const utils = renderWithDayProviders(<Agenda />, { store });
+  return { ...utils, store };
 };
 
 describe("CalendarAgenda", () => {
+  beforeEach(() => {
+    (useDraftContextV2 as jest.Mock).mockReturnValue({
+      openEventForm: jest.fn(),
+    });
+  });
+
   it("should render time labels", async () => {
     renderAgenda();
 
@@ -67,10 +81,8 @@ describe("CalendarAgenda", () => {
   it("should show skeleton during loading", async () => {
     renderAgenda([], { isProcessing: true });
 
-    await waitFor(() => {
-      const skeletonElements = document.querySelectorAll(".animate-pulse");
-      expect(skeletonElements.length).toBeGreaterThan(0);
-    });
+    const skeleton = await screen.findByTestId("agenda-skeleton");
+    expect(skeleton).toBeInTheDocument();
   });
 
   it("should not show skeleton or error when events are loaded", async () => {
@@ -160,6 +172,15 @@ describe("CalendarAgenda", () => {
 
     const { user } = await act(() => renderAgenda(mockEvents));
 
+    // Focus all-day section
+    await act(async () => {
+      await user.tab();
+    });
+    expect(document.activeElement).toHaveAttribute(
+      "aria-label",
+      "All-day events section",
+    );
+
     await act(async () => {
       await user.tab();
     });
@@ -172,6 +193,15 @@ describe("CalendarAgenda", () => {
 
     expect(document.activeElement).toHaveTextContent("Zebra Event");
 
+    // Focus timed section
+    await act(async () => {
+      await user.tab();
+    });
+    expect(document.activeElement).toHaveAttribute(
+      "aria-label",
+      "Timed events section",
+    );
+
     await act(async () => {
       await user.tab();
     });
@@ -183,6 +213,40 @@ describe("CalendarAgenda", () => {
     });
 
     expect(document.activeElement).toHaveTextContent("Lunch Event");
+  });
+
+  it("should open event form when pressing Enter on timed events section", async () => {
+    const openEventFormMock = jest.fn();
+    (useDraftContextV2 as jest.Mock).mockReturnValue({
+      openEventForm: openEventFormMock,
+    });
+
+    const { user } = await act(() => renderAgenda());
+
+    const timedSection = screen.getByLabelText("Timed events section");
+    await act(async () => {
+      timedSection.focus();
+      await user.keyboard("{Enter}");
+    });
+
+    expect(openEventFormMock).toHaveBeenCalled();
+  });
+
+  it("should open event form when pressing Enter on all-day events section", async () => {
+    const openEventFormMock = jest.fn();
+    (useDraftContextV2 as jest.Mock).mockReturnValue({
+      openEventForm: openEventFormMock,
+    });
+
+    const { user } = await act(() => renderAgenda());
+
+    const allDaySection = screen.getByLabelText("All-day events section");
+    await act(async () => {
+      allDaySection.focus();
+      await user.keyboard("{Enter}");
+    });
+
+    expect(openEventFormMock).toHaveBeenCalled();
   });
 
   it("should filter out deleted events immediately", async () => {

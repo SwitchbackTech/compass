@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { TaskContext } from "../../context/TaskProvider";
+import { TaskContext } from "@web/views/Day/context/TaskContext";
 
 export function useTasks() {
   const context = useContext(TaskContext);

@@ -4,7 +4,7 @@ import { Pencil } from "@phosphor-icons/react";
 import {
   CompassDOMEvents,
   compassEventEmitter,
-} from "@web/common/utils/dom-events/event-emitter.util";
+} from "@web/common/utils/dom/event-emitter.util";
 import { Textarea } from "@web/components/Textarea";
 
 const MAX_DESCRIPTION_LENGTH = 255;
@@ -198,6 +198,7 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
             placeholder="Add a description..."
             maxLength={MAX_DESCRIPTION_LENGTH}
             id={TASK_DESCRIPTION_ID}
+            className="overflow-y-auto"
           />
           <CharacterCount isNearLimit={isNearLimit}>
             {value.length}/{MAX_DESCRIPTION_LENGTH}

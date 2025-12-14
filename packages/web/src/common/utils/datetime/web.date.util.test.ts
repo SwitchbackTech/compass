@@ -252,10 +252,73 @@ const getColorTotals = (colors: string[]) => {
 };
 
 describe("getHourLabels", () => {
-  it("has 23 intervals)", () => {
-    // 23 to prevent duplicates from 11pm-midnight
+  it("has 23 intervals by default (excludes midnight)", () => {
     const dayTimes = getHourLabels();
     expect(dayTimes).toHaveLength(23);
+    expect(dayTimes[0]).toBe("1 AM");
+    expect(dayTimes[dayTimes.length - 1]).toBe("11 PM");
+
+    const expected = [
+      "1 AM",
+      "2 AM",
+      "3 AM",
+      "4 AM",
+      "5 AM",
+      "6 AM",
+      "7 AM",
+      "8 AM",
+      "9 AM",
+      "10 AM",
+      "11 AM",
+      "12 PM",
+      "1 PM",
+      "2 PM",
+      "3 PM",
+      "4 PM",
+      "5 PM",
+      "6 PM",
+      "7 PM",
+      "8 PM",
+      "9 PM",
+      "10 PM",
+      "11 PM",
+    ];
+    expect(dayTimes).toEqual(expected);
+  });
+
+  it("has 24 intervals when includeMidnight is true", () => {
+    const dayTimes = getHourLabels(true);
+    expect(dayTimes).toHaveLength(24);
+    expect(dayTimes[0]).toBe("1 AM");
+    expect(dayTimes[dayTimes.length - 1]).toBe("12 AM");
+
+    const expected = [
+      "1 AM",
+      "2 AM",
+      "3 AM",
+      "4 AM",
+      "5 AM",
+      "6 AM",
+      "7 AM",
+      "8 AM",
+      "9 AM",
+      "10 AM",
+      "11 AM",
+      "12 PM",
+      "1 PM",
+      "2 PM",
+      "3 PM",
+      "4 PM",
+      "5 PM",
+      "6 PM",
+      "7 PM",
+      "8 PM",
+      "9 PM",
+      "10 PM",
+      "11 PM",
+      "12 AM",
+    ];
+    expect(dayTimes).toEqual(expected);
   });
 });
 

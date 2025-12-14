@@ -60,6 +60,7 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
     dayAgendaShortcuts = [
       { k: "i", label: "Focus on calendar" },
       { k: "n", label: "Create event" },
+      { k: "m", label: "Edit event" },
     ];
   }
   if (isNow) {

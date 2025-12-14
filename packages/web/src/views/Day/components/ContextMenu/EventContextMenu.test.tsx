@@ -5,31 +5,20 @@ import { screen, waitFor } from "@testing-library/react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
-import { renderWithDayProviders } from "../../util/day.test-util";
-import { AgendaEvents } from "../Agenda/Events/AgendaEvent/AgendaEvents";
-
-jest.mock("../Agenda/Events/AgendaEventMenu/AgendaEventMenu", () => ({
-  AgendaEventMenu: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-}));
-
-jest.mock("../Agenda/Events/AgendaEventMenu/AgendaEventMenuContent", () => ({
-  AgendaEventMenuContent: () => null,
-}));
-
-jest.mock("../Agenda/Events/AgendaEventMenu/AgendaEventMenuTrigger", () => ({
-  AgendaEventMenuTrigger: ({
-    children,
-  }: {
-    children: React.ReactNode;
-    asChild?: boolean;
-  }) => <>{children}</>,
-}));
+import { TimedAgendaEvents } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/TimedAgendaEvents";
+import { EventContextMenu } from "@web/views/Day/components/ContextMenu/EventContextMenu";
+import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
 
 const renderAgendaEvents = (events: Schema_Event[]) => {
   const store = createStoreWithEvents(events);
-  const utils = renderWithDayProviders(<AgendaEvents />, { store });
+
+  const utils = renderWithDayProviders(
+    <>
+      <TimedAgendaEvents />
+      <EventContextMenu />
+    </>,
+    { store },
+  );
   const dispatchSpy = jest.spyOn(store, "dispatch");
 
   return { store, dispatchSpy, ...utils };
@@ -102,9 +91,10 @@ describe("EventContextMenu", () => {
       expect(screen.getByText("Delete Event")).toBeInTheDocument();
     });
 
-    const calendarSurface = screen.getByTestId("calendar-surface");
+    const timedAgendas = screen.getByTestId("timed-agendas");
+
     await act(async () => {
-      await user.click(calendarSurface);
+      await user.click(timedAgendas);
     });
 
     await waitFor(() => {
@@ -144,9 +134,10 @@ describe("EventContextMenu", () => {
 
     await screen.findByRole("button", { name: "Test Event" });
 
-    const calendarSurface = screen.getByTestId("calendar-surface");
+    const timedAgendas = screen.getByTestId("timed-agendas");
+
     await act(async () => {
-      await user.pointer({ target: calendarSurface, keys: "[MouseRight]" });
+      await user.pointer({ target: timedAgendas, keys: "[MouseRight]" });
     });
 
     expect(screen.queryByText("Delete Event")).not.toBeInTheDocument();

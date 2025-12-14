@@ -11,7 +11,7 @@ import {
 } from "@web/__tests__/__mocks__/mock.setup";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { sagaMiddleware } from "@web/common/store/middlewares";
-import { pressKey } from "@web/common/utils/dom-events/event-emitter.util";
+import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";

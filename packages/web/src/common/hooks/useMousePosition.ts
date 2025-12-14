@@ -1,4 +1,6 @@
-import { useContext } from "react";
 import { MousePositionContext } from "@web/common/context/mouse-position";
+import { useMetaContext } from "@web/common/hooks/useMetaContext";
 
-export const useMousePosition = () => useContext(MousePositionContext);
+export function useMousePosition() {
+  return useMetaContext(MousePositionContext, "useMousePosition");
+}

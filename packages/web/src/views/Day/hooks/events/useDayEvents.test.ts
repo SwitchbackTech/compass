@@ -3,7 +3,7 @@ import dayjs from "@core/util/date/dayjs";
 import { Day_AsyncStateContextReason } from "@web/ducks/events/context/day.context";
 import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
-import { useDayEvents } from "./useDayEvents";
+import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
 
 jest.mock("@web/store/store.hooks", () => ({
   useAppDispatch: jest.fn(),

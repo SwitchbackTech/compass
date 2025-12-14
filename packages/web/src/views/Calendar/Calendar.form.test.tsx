@@ -36,7 +36,7 @@ jest.mock("@web/views/Calendar/hooks/mouse/useEventListener", () => ({
   useEventListener: jest.fn(),
 }));
 
-jest.mock("@web/common/utils/dom-events/event-target-visibility.util", () => ({
+jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
   onEventTargetVisibility:
     (callback: () => void, visible = false) =>
     (event: SyntheticEvent<Element, Event>) => {

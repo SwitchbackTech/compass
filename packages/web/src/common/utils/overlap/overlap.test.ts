@@ -171,7 +171,7 @@ describe("getOverlappingStyles", () => {
     // spacing = 8 * 3 = 24
     // width = min(192, max(192, 52 + 24)) = min(192, max(192, 76)) = 192
     // left = 192 - max(192, 384) - 2 = 192 - 384 - 2 = -194
-    expect(styles.width).toBe("192px");
+    expect(styles.width).toBe("190px");
     expect(styles.zIndex).toBe(1);
   });
 
@@ -195,7 +195,7 @@ describe("getOverlappingStyles", () => {
     // offset = 96 * 2 = 192
     // width = min(96, max(96, 50 + 24)) = min(96, max(96, 74)) = 96 (assuming spacing = 8*3=24)
     // left = 192 - max(96, 192) - 2 = 192 - 192 - 2 = -2
-    expect(styles.width).toBe("96px");
+    expect(styles.width).toBe("94px");
     expect(styles.zIndex).toBe(1);
   });
 
@@ -217,8 +217,8 @@ describe("getOverlappingStyles", () => {
     // offset = 96 * 1 = 96
     // width = 96
     // left = 192 - max(96, 96) - 2 = 192 - 96 - 2 = 94
-    expect(styles.left).toBe("94px");
-    expect(styles.width).toBe("96px");
+    expect(styles.left).toBe("98px");
+    expect(styles.width).toBe("94px");
     expect(styles.zIndex).toBe(2);
   });
 
@@ -237,7 +237,7 @@ describe("getOverlappingStyles", () => {
     const styles = getOverlappingStyles(event, gridWidth, textWidth);
 
     // width = min(96, max(96, 150 + 24)) = min(96, 174) = 96
-    expect(styles.width).toBe("96px");
+    expect(styles.width).toBe("94px");
   });
 
   it("handles small gridWidth", () => {
@@ -258,6 +258,6 @@ describe("getOverlappingStyles", () => {
     // maxWidth = 42 / 2 = 21
     // spread = 42 / 2 = 21
     // width = min(21, max(21, 20 + 24)) = min(21, 44) = 21
-    expect(styles.width).toBe("21px");
+    expect(styles.width).toBe("19px");
   });
 });

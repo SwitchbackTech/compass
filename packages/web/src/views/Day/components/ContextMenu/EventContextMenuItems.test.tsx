@@ -8,8 +8,10 @@ import {
   Schema_Event,
 } from "@core/types/event.types";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
-import { EventContextMenuProvider } from "@web/views/Day/components/ContextMenu/EventContextMenuContext";
+import { useDraftContextV2 } from "@web/views/Calendar/components/Draft/context/useDraftContextV2";
 import { EventContextMenuItems } from "@web/views/Day/components/ContextMenu/EventContextMenuItems";
+
+jest.mock("@web/views/Calendar/components/Draft/context/useDraftContextV2");
 
 const mockEvent: Schema_Event = {
   _id: "event-1",
@@ -36,11 +38,13 @@ describe("EventContextMenuItems", () => {
 
   const renderWithProvider = (event: Schema_Event) => {
     const store = createMockStore();
+    (useDraftContextV2 as jest.Mock).mockReturnValue({
+      draft: event,
+      closeOpenAtCursor: mockClose,
+    });
     return render(
       <Provider store={store}>
-        <EventContextMenuProvider>
-          <EventContextMenuItems event={event} close={mockClose} />
-        </EventContextMenuProvider>
+        <EventContextMenuItems />
       </Provider>,
     );
   };
@@ -56,11 +60,14 @@ describe("EventContextMenuItems", () => {
     const store = createMockStore();
     const dispatchSpy = jest.spyOn(store, "dispatch");
 
+    (useDraftContextV2 as jest.Mock).mockReturnValue({
+      draft: mockEvent,
+      closeOpenAtCursor: mockClose,
+    });
+
     render(
       <Provider store={store}>
-        <EventContextMenuProvider>
-          <EventContextMenuItems event={mockEvent} close={mockClose} />
-        </EventContextMenuProvider>
+        <EventContextMenuItems />
       </Provider>,
     );
 
@@ -80,11 +87,14 @@ describe("EventContextMenuItems", () => {
     const store = createMockStore();
     const dispatchSpy = jest.spyOn(store, "dispatch");
 
+    (useDraftContextV2 as jest.Mock).mockReturnValue({
+      draft: mockEvent,
+      closeOpenAtCursor: mockClose,
+    });
+
     render(
       <Provider store={store}>
-        <EventContextMenuProvider>
-          <EventContextMenuItems event={mockEvent} close={mockClose} />
-        </EventContextMenuProvider>
+        <EventContextMenuItems />
       </Provider>,
     );
 
@@ -104,11 +114,14 @@ describe("EventContextMenuItems", () => {
     const store = createMockStore();
     const dispatchSpy = jest.spyOn(store, "dispatch");
 
+    (useDraftContextV2 as jest.Mock).mockReturnValue({
+      draft: mockEvent,
+      closeOpenAtCursor: mockClose,
+    });
+
     render(
       <Provider store={store}>
-        <EventContextMenuProvider>
-          <EventContextMenuItems event={mockEvent} close={mockClose} />
-        </EventContextMenuProvider>
+        <EventContextMenuItems />
       </Provider>,
     );
 
@@ -128,11 +141,14 @@ describe("EventContextMenuItems", () => {
 
     const eventWithoutId = { ...mockEvent, _id: undefined };
 
+    (useDraftContextV2 as jest.Mock).mockReturnValue({
+      draft: eventWithoutId,
+      closeOpenAtCursor: mockClose,
+    });
+
     render(
       <Provider store={store}>
-        <EventContextMenuProvider>
-          <EventContextMenuItems event={eventWithoutId} close={mockClose} />
-        </EventContextMenuProvider>
+        <EventContextMenuItems />
       </Provider>,
     );
 
