@@ -1,7 +1,7 @@
 import { GaxiosError } from "gaxios";
 import qs from "qs";
 
-export const invalidSyncTokenError = new GaxiosError(
+const error = new GaxiosError(
   "Sync token is no longer valid, a full sync is required.",
   {
     url: "https://www.googleapis.com/calendar/v3/calendars/foo%40gmail.com/events/watch?syncToken=1CKj765-V8_wCEKj765-V8_wCGAUghfra8AE%3D",
@@ -126,3 +126,8 @@ export const invalidSyncTokenError = new GaxiosError(
     },
   },
 );
+
+// Set the code property to match the HTTP status
+error.code = "410";
+
+export const invalidSyncTokenError = error;

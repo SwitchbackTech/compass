@@ -1,6 +1,6 @@
 import { GaxiosError } from "gaxios";
 
-export const invalidGrant400Error = new GaxiosError(
+const error = new GaxiosError(
   "invalid_grant",
   {},
   {
@@ -23,3 +23,8 @@ export const invalidGrant400Error = new GaxiosError(
     },
   },
 );
+
+// Set the code property to match the HTTP status
+error.code = "400";
+
+export const invalidGrant400Error = error;
