@@ -27,7 +27,10 @@ export function Resizable({
 
   return (
     <ReResizable {...props}>
-      {cloneElement(children, { ...children.props, ...dndProps })}
+      {cloneElement(children, {
+        ...children.props,
+        ...(dndProps ? { dndProps } : {}),
+      })}
     </ReResizable>
   );
 }
