@@ -16,8 +16,8 @@ import {
 } from "@web/common/context/mouse-position";
 
 export function focusElement(element: HTMLElement): void {
-  element.focus({ preventScroll: true });
   element.scrollIntoView({ behavior: "smooth", block: "start" });
+  element.focus({ preventScroll: true });
 }
 
 export function getElementMidFocalPoint(

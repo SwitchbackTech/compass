@@ -25,7 +25,10 @@ export const AllDayAgendaEvents = memo(
     const openEventForm = useOpenEventForm();
 
     // Sort all-day events by title for consistent TAB order
-    const sortedAllDayEvents = [...allDayEvents].sort(compareEventsByTitle);
+    const sortedAllDayEvents = useMemo(
+      () => [...allDayEvents].sort(compareEventsByTitle),
+      [allDayEvents],
+    );
 
     const events = useMemo(() => {
       if (!draft || !StringV4Schema.safeParse(draft._id).success) {
