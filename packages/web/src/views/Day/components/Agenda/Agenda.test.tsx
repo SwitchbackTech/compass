@@ -3,15 +3,15 @@ import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import { Schema_Event } from "@core/types/event.types";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
-import { useDraftContextV2 } from "@web/views/Calendar/components/Draft/context/useDraftContextV2";
 import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
 import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
+import { useOpenEventForm } from "@web/views/Forms/hooks/useOpenEventForm";
 
 jest.mock("@web/auth/auth.util", () => ({
   getUserId: jest.fn().mockResolvedValue("user-123"),
 }));
 
-jest.mock("@web/views/Calendar/components/Draft/context/useDraftContextV2");
+jest.mock("@web/views/Forms/hooks/useOpenEventForm");
 
 const renderAgenda = (
   events: Schema_Event[] = [],
@@ -24,9 +24,7 @@ const renderAgenda = (
 
 describe("CalendarAgenda", () => {
   beforeEach(() => {
-    (useDraftContextV2 as jest.Mock).mockReturnValue({
-      openEventForm: jest.fn(),
-    });
+    (useOpenEventForm as jest.Mock).mockReturnValue(jest.fn());
   });
 
   it("should render time labels", async () => {
@@ -217,9 +215,7 @@ describe("CalendarAgenda", () => {
 
   it("should open event form when pressing Enter on timed events section", async () => {
     const openEventFormMock = jest.fn();
-    (useDraftContextV2 as jest.Mock).mockReturnValue({
-      openEventForm: openEventFormMock,
-    });
+    (useOpenEventForm as jest.Mock).mockReturnValue(openEventFormMock);
 
     const { user } = await act(() => renderAgenda());
 
@@ -234,9 +230,7 @@ describe("CalendarAgenda", () => {
 
   it("should open event form when pressing Enter on all-day events section", async () => {
     const openEventFormMock = jest.fn();
-    (useDraftContextV2 as jest.Mock).mockReturnValue({
-      openEventForm: openEventFormMock,
-    });
+    (useOpenEventForm as jest.Mock).mockReturnValue(openEventFormMock);
 
     const { user } = await act(() => renderAgenda());
 

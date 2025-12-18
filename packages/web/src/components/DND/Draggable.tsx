@@ -4,9 +4,11 @@ import {
   ForwardedRef,
   HTMLAttributes,
   ReactHTML,
+  cloneElement,
   createElement,
   forwardRef,
-  useMemo,
+  isValidElement,
+  useState,
 } from "react";
 import {
   UniqueIdentifier,
@@ -32,38 +34,56 @@ function CompassDraggable(
         data: DraggableDNDData;
       };
       as: keyof ReactHTML;
+      asChild?: boolean;
     } & HTMLAttributes<HTMLElement>,
     HTMLElement
   >,
   _ref: ForwardedRef<HTMLElement | null>,
 ) {
-  const { dndProps, as, style, onContextMenu, ...elementProps } = props;
+  const [disabled, setDisabled] = useState(!!props.dndProps.disabled);
 
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
+  const {
+    dndProps,
+    as,
+    asChild,
+    style,
+    onContextMenu,
+    children,
+    ...elementProps
+  } = props;
+
+  const { setNodeRef, attributes, listeners, transform, isDragging, over } =
     useDraggable({
       ...props.dndProps,
       id: props.dndProps.id ?? new ObjectId().toString(),
+      disabled,
     });
 
   const ref = useMergeRefs([_ref, setNodeRef]);
-
-  const dndStyle = useMemo(() => {
-    if (!transform) return {};
-
-    return { transform: CSS.Translate.toString(transform) };
-  }, [transform]);
+  const useChild = asChild && isValidElement(children);
 
   return createElement(as ?? "div", {
     ...elementProps,
-    ...listeners,
     ...attributes,
+    ...(!useChild ? listeners : {}),
     onContextMenu: isDragging ? undefined : onContextMenu,
     style: {
       ...style,
-      ...dndStyle,
+      transform: CSS.Translate.toString(transform),
       ...(isDragging ? { opacity: 0 } : {}),
     },
     ref,
+    children: useChild
+      ? cloneElement(children, {
+          ...children.props,
+          dndProps: {
+            over,
+            listeners,
+            isDragging,
+            setDisabled,
+          },
+        })
+      : props.children,
   });
 }
 

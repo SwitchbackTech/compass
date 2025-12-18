@@ -5,20 +5,32 @@ import { screen, waitFor } from "@testing-library/react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
+import { useFloatingAtCursor } from "@web/common/hooks/useFloatingAtCursor";
+import { setDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
 import { TimedAgendaEvents } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/TimedAgendaEvents";
 import { EventContextMenu } from "@web/views/Day/components/ContextMenu/EventContextMenu";
+import { useAgendaInteractionsAtCursor } from "@web/views/Day/hooks/events/useAgendaInteractionsAtCursor";
 import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
+
+const TestWrapper = () => {
+  const openChange = (open: boolean) => {
+    if (!open) setDraft(null);
+  };
+  const floating = useFloatingAtCursor(openChange);
+  const interactions = useAgendaInteractionsAtCursor(floating);
+
+  return (
+    <>
+      <TimedAgendaEvents interactions={interactions} />
+      <EventContextMenu floating={floating} interactions={interactions} />
+    </>
+  );
+};
 
 const renderAgendaEvents = (events: Schema_Event[]) => {
   const store = createStoreWithEvents(events);
 
-  const utils = renderWithDayProviders(
-    <>
-      <TimedAgendaEvents />
-      <EventContextMenu />
-    </>,
-    { store },
-  );
+  const utils = renderWithDayProviders(<TestWrapper />, { store });
   const dispatchSpy = jest.spyOn(store, "dispatch");
 
   return { store, dispatchSpy, ...utils };

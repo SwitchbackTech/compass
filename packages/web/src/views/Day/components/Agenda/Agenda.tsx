@@ -1,67 +1,52 @@
 import classNames from "classnames";
-import fastDeepEqual from "fast-deep-equal/react";
-import {
-  ForwardedRef,
-  forwardRef,
-  memo,
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-} from "react";
-import { useLocation } from "react-router-dom";
+import { memo, useCallback, useRef } from "react";
 import { Key } from "ts-key-enum";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
+import { useFloatingAtCursor } from "@web/common/hooks/useFloatingAtCursor";
+import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
 import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
-import { useDraftContextV2 } from "@web/views/Calendar/components/Draft/context/useDraftContextV2";
+import { setDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
+import { AgendaEventPreview } from "@web/views/Day/components/Agenda/Events/AgendaEventPreview/AgendaEventPreview";
 import { AllDayAgendaEvents } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/AllDayAgendaEvents";
 import { TimedAgendaEvents } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/TimedAgendaEvents";
 import { NowLine } from "@web/views/Day/components/Agenda/NowLine/NowLine";
 import { TimeLabels } from "@web/views/Day/components/Agenda/TimeLabels/TimeLabels";
+import { EventContextMenu } from "@web/views/Day/components/ContextMenu/EventContextMenu";
+import { useAgendaInteractionsAtCursor } from "@web/views/Day/hooks/events/useAgendaInteractionsAtCursor";
 
-export const Agenda = memo(
-  forwardRef((_: {}, ref: ForwardedRef<{ scrollToNow: () => void }>) => {
-    const { pathname } = useLocation();
-    const { openEventForm } = useDraftContextV2();
-    const nowLineRef = useRef<HTMLDivElement>(null);
-    const events = useAppSelector(selectDayEvents);
-    const height = useRef<number>(0);
+const openChange = (open: boolean) => {
+  if (!open) setDraft(null);
+};
 
-    // Separate all-day events from timed events
-    const allDayEvents = events.filter((event) => event.isAllDay);
+export const Agenda = memo(function Agenda() {
+  const events = useAppSelector(selectDayEvents);
+  const height = useRef<number>(0);
+  const floating = useFloatingAtCursor(openChange);
+  const interactions = useAgendaInteractionsAtCursor(floating);
+  const timedAgendaRef = useRef<HTMLElement | null>(null);
 
-    const scrollToNow = useCallback(() => {
-      nowLineRef.current?.scrollIntoView({
-        block: "center",
-        inline: "nearest",
-        behavior: "smooth",
-      });
-    }, []);
+  // Separate all-day events from timed events
+  const allDayEvents = events.filter((event) => event.isAllDay);
 
-    const onEnterKey = useCallback(
-      (e: React.KeyboardEvent<HTMLDivElement>) => {
-        if (e.key === Key.Enter) {
-          e.preventDefault();
-          e.stopPropagation();
-          openEventForm();
-        }
-      },
-      [openEventForm],
-    );
+  const onEnterKey = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === Key.Enter) {
+      e.preventDefault();
+      e.stopPropagation();
+      timedAgendaRef.current?.click();
+    }
+  }, []);
 
-    // Provide the scroll function to parent component
-    useImperativeHandle(ref, () => ({ scrollToNow }), [scrollToNow]);
-
-    // Center the calendar around the current time when the view mounts
-    useEffect(() => scrollToNow(), [scrollToNow, pathname]);
-
-    return (
+  return (
+    <>
       <section
-        aria-label="calendar-agenda"
+        aria-label="Calendar agenda"
         className="bg-darkBlue-400 flex h-full min-w-xs flex-1 flex-col gap-2 p-0.5"
       >
-        <AllDayAgendaEvents allDayEvents={allDayEvents} />
+        <AllDayAgendaEvents
+          allDayEvents={allDayEvents}
+          interactions={interactions}
+        />
 
         <div
           id={ID_GRID_EVENTS_TIMED}
@@ -79,10 +64,10 @@ export const Agenda = memo(
           data-testid="calendar-scroll"
           tabIndex={0}
           aria-label="Timed events section"
+          onKeyDown={onEnterKey}
           {...(events.length > 0
             ? {}
             : { title: "Timed calendar events section" })}
-          onKeyDown={onEnterKey}
           style={{
             overscrollBehavior: "contain",
             scrollbarGutter: "stable both-edges",
@@ -90,14 +75,21 @@ export const Agenda = memo(
         >
           <TimeLabels />
 
-          <NowLine ref={nowLineRef} />
+          <NowLine />
 
-          <TimedAgendaEvents height={height.current} />
+          <TimedAgendaEvents
+            height={height.current}
+            interactions={interactions}
+            ref={timedAgendaRef}
+          />
         </div>
       </section>
-    );
-  }),
-  fastDeepEqual,
-);
+
+      <FloatingEventForm floating={floating} interactions={interactions} />
+      <AgendaEventPreview floating={floating} interactions={interactions} />
+      <EventContextMenu floating={floating} interactions={interactions} />
+    </>
+  );
+});
 
 Agenda.displayName = "Agenda";

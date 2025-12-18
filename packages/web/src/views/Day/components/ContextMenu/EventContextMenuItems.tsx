@@ -1,13 +1,14 @@
 import React, { useCallback } from "react";
-import { useDispatch } from "react-redux";
 import { TrashIcon } from "@phosphor-icons/react";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
+import { closeFloatingAtCursor } from "@web/common/hooks/useOpenAtCursor";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
-import { useDraftContextV2 } from "@web/views/Calendar/components/Draft/context/useDraftContextV2";
+import { useAppDispatch } from "@web/store/store.hooks";
+import { useDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
 
 export function EventContextMenuItems() {
-  const { draft, closeOpenAtCursor } = useDraftContextV2();
-  const dispatch = useDispatch();
+  const draft = useDraft();
+  const dispatch = useAppDispatch();
 
   const handleDelete = useCallback(() => {
     if (!draft?._id) return;
@@ -20,8 +21,8 @@ export function EventContextMenuItems() {
       }),
     );
 
-    closeOpenAtCursor();
-  }, [dispatch, draft?._id, closeOpenAtCursor]);
+    closeFloatingAtCursor();
+  }, [dispatch, draft?._id]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {

@@ -14,13 +14,24 @@ import {
 } from "@core/types/event.types";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/auth.util";
-import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
+import {
+  CLASS_TIMED_CALENDAR_EVENT,
+  DATA_EVENT_ELEMENT_ID,
+  ID_GRID_ALLDAY_ROW,
+  ID_GRID_EVENTS_TIMED,
+  ID_GRID_MAIN,
+} from "@web/common/constants/web.constants";
+import { isElementInViewport } from "@web/common/context/mouse-position";
 import { PartialMouseEvent } from "@web/common/types/util.types";
 import {
   Schema_GridEvent,
   Schema_OptimisticEvent,
   Schema_WebEvent,
 } from "@web/common/types/web.event.types";
+import {
+  focusElement,
+  getFocusedEvent,
+} from "@web/views/Day/util/agenda/focus.util";
 
 export const gridEventDefaultPosition: Schema_GridEvent["position"] = {
   isOverlapping: false,
@@ -131,6 +142,63 @@ export const getCalendarEventIdFromElement = (element: HTMLElement) => {
   return eventElement ? eventElement.getAttribute(DATA_EVENT_ELEMENT_ID) : null;
 };
 
+export const getCalendarEventElementFromGrid = (
+  eventId: string,
+): Element | null => {
+  const selector = `[${DATA_EVENT_ELEMENT_ID}="${eventId}"]`;
+  const allDaySection = document.getElementById(ID_GRID_ALLDAY_ROW);
+  const timedSection = document.getElementById(ID_GRID_MAIN);
+  const timedEvent = timedSection?.querySelector(selector);
+
+  return timedEvent ?? allDaySection?.querySelector(selector) ?? null;
+};
+
+export function openEventFormCreateEvent() {
+  const domEvent = new CustomEvent("click", {
+    bubbles: true,
+    detail: { create: true },
+  });
+
+  const calendarSurface = document.getElementById(ID_GRID_MAIN);
+
+  if (!calendarSurface) return;
+
+  calendarSurface.dispatchEvent(domEvent);
+}
+
+export function openEventFormEditEvent() {
+  const event = getFocusedEvent();
+
+  if (!event) return;
+
+  const id = event.getAttribute(DATA_EVENT_ELEMENT_ID);
+
+  const domEvent = new CustomEvent("click", {
+    bubbles: true,
+    detail: { create: false, id },
+  });
+
+  const isTimedEvent = event.classList.contains(CLASS_TIMED_CALENDAR_EVENT);
+
+  if (isTimedEvent) {
+    const timedSurface = document.getElementById(ID_GRID_EVENTS_TIMED);
+    const willScroll = !isElementInViewport(event);
+
+    if (!willScroll) return event.dispatchEvent(domEvent);
+    focusElement(event);
+
+    return timedSurface?.addEventListener(
+      "scrollend",
+      () => event.dispatchEvent(domEvent),
+      {
+        once: true,
+      },
+    );
+  }
+
+  event.dispatchEvent(domEvent);
+}
+
 export const getMonthListLabel = (start: Dayjs) => {
   return start.format("MMMM");
 };
@@ -235,3 +303,7 @@ const _assembleBaseEvent = (
 
   return baseEvent;
 };
+
+export function compareEventsByTitle(a: Schema_Event, b: Schema_Event) {
+  return (a.title ?? "").localeCompare(b.title ?? "");
+}

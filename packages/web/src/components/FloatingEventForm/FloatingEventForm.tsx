@@ -1,36 +1,62 @@
-import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
-import { CursorItem } from "@web/common/context/open-at-cursor";
-import { useOpenAtCursor } from "@web/common/hooks/useOpenAtCursor";
-import { maxAgendaZIndex$ } from "@web/common/utils/dom/grid-organization.util";
-import { useDraftContextV2 } from "@web/views/Calendar/components/Draft/context/useDraftContextV2";
+import {
+  FloatingFocusManager,
+  FloatingPortal,
+  UseInteractionsReturn,
+  useFloating,
+} from "@floating-ui/react";
+import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
+import {
+  CursorItem,
+  useFloatingNodeIdAtCursor,
+} from "@web/common/hooks/useOpenAtCursor";
+import {
+  setDraft,
+  useDraft,
+} from "@web/views/Calendar/components/Draft/context/useDraft";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
+import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
+import { useSaveEventForm } from "@web/views/Forms/hooks/useSaveEventForm";
 
-export function FloatingEventForm() {
-  const context = useDraftContextV2();
-  const zIndex = maxAgendaZIndex$.getValue() + 1;
-  const openAtCursor = useOpenAtCursor();
-  const { nodeId, floating, interactions, closeOpenAtCursor } = openAtCursor;
+export function FloatingEventForm({
+  floating,
+  interactions,
+}: {
+  floating: ReturnType<typeof useFloating>;
+  interactions: UseInteractionsReturn;
+}) {
+  const draft = useDraft();
+  const nodeId = useFloatingNodeIdAtCursor();
+  const floatingContextOpen = floating.context.open;
+  const onSave = useSaveEventForm();
+  const onClose = useCloseEventForm();
+  const maxZIndex = useGridMaxZIndex();
   const isOpenAtCursor = nodeId === CursorItem.EventForm;
-  const { draft, onDelete, onSave, setDraft } = context;
+  const open = floatingContextOpen && isOpenAtCursor && !!draft;
 
-  if (!isOpenAtCursor || !draft) return null;
+  if (!open) return null;
 
   return (
     <FloatingPortal>
-      <FloatingFocusManager context={floating.context}>
+      <FloatingFocusManager
+        context={floating.context}
+        closeOnFocusOut={false}
+        outsideElementsInert
+        modal
+        returnFocus={false}
+      >
         <div
           {...interactions.getFloatingProps()}
           ref={floating.refs.setFloating}
           className="floating-event-form"
           style={{
             ...floating.context.floatingStyles,
-            zIndex,
+            zIndex: maxZIndex + 1,
           }}
         >
           <EventForm
             event={draft}
-            onClose={closeOpenAtCursor}
-            onDelete={onDelete}
+            onClose={onClose}
+            onDelete={() => {}}
             onSubmit={onSave}
             setEvent={setDraft}
           />

@@ -1,6 +1,6 @@
 import classNames from "classnames";
+import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import { Shortcut } from "@web/common/types/global.shortcut.types";
-import { maxAgendaZIndex$ } from "@web/common/utils/dom/grid-organization.util";
 import { ShortcutSection } from "./ShortcutSection";
 
 export interface ShortcutOverlaySection {
@@ -22,6 +22,8 @@ export const ShortcutsOverlay = ({
   ariaLabel = "Shortcut overlay",
   className = "",
 }: ShortcutsOverlayProps) => {
+  const maxZIndex = useGridMaxZIndex();
+
   const visibleSections = sections.filter(
     (section) => section.shortcuts.length > 0,
   );
@@ -37,7 +39,7 @@ export const ShortcutsOverlay = ({
         "border p-3 shadow-lg backdrop-blur-sm md:block",
         `hidden w-[240px] rounded-lg ${className}`,
       )}
-      style={{ zIndex: maxAgendaZIndex$.getValue() }}
+      style={{ zIndex: maxZIndex }}
     >
       {heading && (
         <div className="text-text-lighter mb-2 text-xs font-medium">
