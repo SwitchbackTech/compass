@@ -12,14 +12,13 @@ jest.mock("@web/common/utils/dom/grid-organization.util", () => {
   const { BehaviorSubject } = require("rxjs");
   return {
     maxAgendaZIndex$: new BehaviorSubject(10),
+    maxGridZIndex$: new BehaviorSubject(10),
   };
 });
 jest.mock("@web/views/Day/util/agenda/agenda.util");
 jest.mock("@web/views/Day/util/time/time.util");
 
 describe("NowLine", () => {
-  const mockNowLineRef = { current: null };
-
   beforeEach(() => {
     jest.clearAllMocks();
 
@@ -31,14 +30,14 @@ describe("NowLine", () => {
   });
 
   it("renders correctly", () => {
-    render(<NowLine ref={mockNowLineRef} />);
+    render(<NowLine />);
 
     const nowLine = screen.getByText("10:00 AM");
     expect(nowLine).toBeInTheDocument();
   });
 
   it("sets the correct position style", () => {
-    const { container } = render(<NowLine ref={mockNowLineRef} />);
+    const { container } = render(<NowLine />);
 
     // The main div has data-now-marker="true"
     const nowLineElement = container.querySelector('[data-now-marker="true"]');
@@ -46,7 +45,7 @@ describe("NowLine", () => {
   });
 
   it("sets the correct z-index", () => {
-    const { container } = render(<NowLine ref={mockNowLineRef} />);
+    const { container } = render(<NowLine />);
 
     const nowLineElement = container.querySelector('[data-now-marker="true"]');
     expect(nowLineElement).toHaveStyle({ zIndex: "10" });
@@ -59,7 +58,7 @@ describe("NowLine", () => {
       return jest.fn();
     });
 
-    render(<NowLine ref={mockNowLineRef} />);
+    render(<NowLine />);
 
     // Initial render
     expect(getNowLinePosition).toHaveBeenCalledTimes(1);
@@ -79,7 +78,7 @@ describe("NowLine", () => {
     const cleanupMock = jest.fn();
     (setupMinuteSync as jest.Mock).mockReturnValue(cleanupMock);
 
-    const { unmount } = render(<NowLine ref={mockNowLineRef} />);
+    const { unmount } = render(<NowLine />);
 
     unmount();
 

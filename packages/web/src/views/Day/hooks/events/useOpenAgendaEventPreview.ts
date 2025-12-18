@@ -1,25 +1,15 @@
-import {
-  Dispatch,
-  FocusEvent,
-  MouseEvent,
-  SetStateAction,
-  useCallback,
-} from "react";
-import { Schema_Event } from "@core/types/event.types";
+import { FocusEvent, MouseEvent, useCallback } from "react";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
-import { CursorItem } from "@web/common/context/open-at-cursor";
-import { useOpenAtCursor } from "@web/common/hooks/useOpenAtCursor";
+import {
+  CursorItem,
+  openFloatingAtCursor,
+} from "@web/common/hooks/useOpenAtCursor";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { store } from "@web/store";
+import { setDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
 import { getEventClass } from "@web/views/Day/util/agenda/focus.util";
 
-export function useOpenAgendaEventPreview({
-  setDraft,
-}: {
-  setDraft: Dispatch<SetStateAction<Schema_Event | null>>;
-}) {
-  const { setNodeId, setPlacement, setReference } = useOpenAtCursor();
-
+export function useOpenAgendaEventPreview() {
   const openAgendaEventPreview = useCallback(
     (e: MouseEvent<Element> | FocusEvent<Element>) => {
       e.preventDefault();
@@ -27,19 +17,18 @@ export function useOpenAgendaEventPreview({
 
       const element = e.currentTarget;
       const eventClass = getEventClass(element);
-      const event = element?.closest(`.${eventClass}`);
-      const eventId = event?.getAttribute(DATA_EVENT_ELEMENT_ID);
+      const reference = element?.closest(`.${eventClass}`);
+      const eventId = reference?.getAttribute(DATA_EVENT_ELEMENT_ID);
+      const nodeId = CursorItem.EventPreview;
 
-      if (!eventId) return;
+      if (!eventId || !reference) return;
 
       const draftEvent = selectEventById(store.getState(), eventId);
 
-      setPlacement("right-start");
-      setReference(event);
       setDraft(draftEvent);
-      setNodeId(CursorItem.EventPreview);
+      openFloatingAtCursor({ nodeId, placement: "right", reference });
     },
-    [setPlacement, setReference, setDraft, setNodeId],
+    [],
   );
 
   return openAgendaEventPreview;

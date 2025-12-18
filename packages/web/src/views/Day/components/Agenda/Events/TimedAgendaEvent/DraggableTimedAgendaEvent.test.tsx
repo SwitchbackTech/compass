@@ -1,17 +1,12 @@
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
-import { OpenAtCursorProvider } from "@web/common/context/open-at-cursor";
+import { render } from "@web/__tests__/__mocks__/mock.render";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
-import { useDraftContextV2 } from "@web/views/Calendar/components/Draft/context/useDraftContextV2";
 import { DraggableTimedAgendaEvent } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/DraggableTimedAgendaEvent";
 
-jest.mock("@web/views/Calendar/components/Draft/context/useDraftContextV2");
-
-function renderWithMenuProvider(ui: React.ReactElement) {
-  return render(<OpenAtCursorProvider>{ui}</OpenAtCursorProvider>);
-}
+jest.mock("@web/views/Calendar/components/Draft/context/useDraft");
 
 describe("AgendaEvent", () => {
   const standaloneEvent = createMockStandaloneEvent();
@@ -26,11 +21,16 @@ describe("AgendaEvent", () => {
     position: gridEventDefaultPosition,
   };
 
-  beforeEach(() => {
-    (useDraftContextV2 as jest.Mock).mockReturnValue({
-      maxAgendaZIndex: 10,
-    });
-  });
+  const defaultProps = {
+    bounds: document.createElement("div"),
+    interactions: {
+      getReferenceProps: jest.fn(),
+      getFloatingProps: jest.fn(),
+      getItemProps: jest.fn(),
+    } as any,
+    isDraftEvent: false,
+    isNewDraftEvent: false,
+  };
 
   it("should not render when startDate is missing", () => {
     const event: Partial<Schema_GridEvent> = {
@@ -38,10 +38,13 @@ describe("AgendaEvent", () => {
       startDate: undefined,
     };
 
-    const { container } = renderWithMenuProvider(
-      <DraggableTimedAgendaEvent event={event as Schema_GridEvent} />,
+    render(
+      <DraggableTimedAgendaEvent
+        event={event as Schema_GridEvent}
+        {...defaultProps}
+      />,
     );
-    expect(container.firstChild).toBeNull();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
   it("should not render when endDate is missing", () => {
@@ -50,14 +53,17 @@ describe("AgendaEvent", () => {
       endDate: undefined,
     };
 
-    const { container } = renderWithMenuProvider(
-      <DraggableTimedAgendaEvent event={event as Schema_GridEvent} />,
+    render(
+      <DraggableTimedAgendaEvent
+        event={event as Schema_GridEvent}
+        {...defaultProps}
+      />,
     );
-    expect(container.firstChild).toBeNull();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
   it("has the correct aria-label and data-event-id", () => {
-    renderWithMenuProvider(<DraggableTimedAgendaEvent event={baseEvent} />);
+    render(<DraggableTimedAgendaEvent event={baseEvent} {...defaultProps} />);
 
     const eventButton = screen.getByRole("button");
 

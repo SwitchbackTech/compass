@@ -1,26 +1,21 @@
-import { useCallback, useRef } from "react";
+import { memo, useCallback } from "react";
 import dayjs from "@core/util/date/dayjs";
-import {
-  CLASS_TIMED_CALENDAR_EVENT,
-  ID_GRID_EVENTS_TIMED,
-} from "@web/common/constants/web.constants";
-import {
-  MousePositionProvider,
-  isElementInViewport,
-} from "@web/common/context/mouse-position";
-import { OpenAtCursorProvider } from "@web/common/context/open-at-cursor";
+import { MousePositionProvider } from "@web/common/context/mouse-position";
 import { useEventDNDActions } from "@web/common/hooks/useEventDNDActions";
+import {
+  CompassDOMEvents,
+  compassEventEmitter,
+} from "@web/common/utils/dom/event-emitter.util";
+import {
+  openEventFormCreateEvent,
+  openEventFormEditEvent,
+} from "@web/common/utils/event/event.util";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
-import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
 import { ShortcutsOverlay } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
 import { Dedication } from "@web/views/Calendar/components/Dedication";
-import { DraftProviderV2 } from "@web/views/Calendar/components/Draft/context/DraftProviderV2";
-import { useDraftContextV2 } from "@web/views/Calendar/components/Draft/context/useDraftContextV2";
 import { useRefetch } from "@web/views/Calendar/hooks/useRefetch";
 import { StyledCalendar } from "@web/views/Calendar/styled";
 import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
-import { AgendaEventPreview } from "@web/views/Day/components/Agenda/Events/AgendaEventPreview/AgendaEventPreview";
-import { EventContextMenu } from "@web/views/Day/components/ContextMenu/EventContextMenu";
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
 import { Header } from "@web/views/Day/components/Header/Header";
 import { StorageInfoModal } from "@web/views/Day/components/StorageInfoModal/StorageInfoModal";
@@ -31,18 +26,13 @@ import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
-import {
-  focusElement,
-  focusFirstAgendaEvent,
-  getElementMidFocalPoint,
-  getFocusedEvent,
-} from "@web/views/Day/util/agenda/focus.util";
+import { focusFirstAgendaEvent } from "@web/views/Day/util/agenda/focus.util";
 import {
   focusOnAddTaskInput,
   focusOnFirstTask,
 } from "@web/views/Day/util/day.shortcut.util";
 
-const DayViewContentInner = () => {
+const DayViewContentInner = memo(() => {
   useRefetch();
   useEventDNDActions();
 
@@ -61,7 +51,6 @@ const DayViewContentInner = () => {
   const { isOpen: isModalOpen, closeModal } = useStorageInfoModal();
   const dateInView = useDateInView();
   const shortcuts = getShortcuts({ currentDate: dateInView });
-  const agendaRef = useRef<{ scrollToNow: () => void } | null>(null);
 
   useDayEvents(dateInView);
 
@@ -115,44 +104,11 @@ const DayViewContentInner = () => {
     const isViewingToday = dateInView.isSame(today, "day");
 
     if (isViewingToday) {
-      agendaRef.current?.scrollToNow();
+      compassEventEmitter.emit(CompassDOMEvents.SCROLL_TO_NOW_LINE);
     } else {
       navigateToToday();
     }
   }, [dateInView, navigateToToday]);
-
-  const { openEventForm } = useDraftContextV2();
-
-  const onCreateEvent = useCallback(() => {
-    openEventForm(true);
-  }, [openEventForm]);
-
-  const handleEditEvent = useCallback(() => {
-    const event = getFocusedEvent();
-
-    if (!event) return;
-
-    const isTimedEvent = event.classList.contains(CLASS_TIMED_CALENDAR_EVENT);
-
-    if (isTimedEvent) {
-      const timedSurface = document.getElementById(ID_GRID_EVENTS_TIMED);
-      const willScroll = !isElementInViewport(event);
-
-      if (!willScroll) {
-        return openEventForm(false, getElementMidFocalPoint(event));
-      }
-
-      focusElement(event);
-
-      return timedSurface?.addEventListener(
-        "scrollend",
-        () => openEventForm(false, getElementMidFocalPoint(event)),
-        { once: true },
-      );
-    }
-
-    openEventForm(false, getElementMidFocalPoint(event));
-  }, [openEventForm]);
 
   useDayViewShortcuts({
     onAddTask: focusOnAddTaskInput,
@@ -162,8 +118,8 @@ const DayViewContentInner = () => {
     onMigrateTask: migrateTask,
     onFocusTasks: focusOnFirstTask,
     onFocusAgenda: focusFirstAgendaEvent,
-    onCreateEvent: onCreateEvent,
-    onEditEvent: handleEditEvent,
+    onCreateEvent: openEventFormCreateEvent,
+    onEditEvent: openEventFormEditEvent,
     onNextDay: navigateToNextDay,
     onPrevDay: navigateToPreviousDay,
     onGoToToday: handleGoToToday,
@@ -184,7 +140,7 @@ const DayViewContentInner = () => {
         >
           <TaskList />
 
-          <Agenda ref={agendaRef} />
+          <Agenda />
         </div>
       </StyledCalendar>
 
@@ -198,22 +154,14 @@ const DayViewContentInner = () => {
           { title: "Global", shortcuts: shortcuts.globalShortcuts },
         ]}
       />
-
-      <FloatingEventForm />
-      <AgendaEventPreview />
-      <EventContextMenu />
     </>
   );
-};
+});
 
 export const DayViewContent = () => {
   return (
     <MousePositionProvider>
-      <OpenAtCursorProvider>
-        <DraftProviderV2>
-          <DayViewContentInner />
-        </DraftProviderV2>
-      </OpenAtCursorProvider>
+      <DayViewContentInner />
     </MousePositionProvider>
   );
 };

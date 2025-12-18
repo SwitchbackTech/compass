@@ -1,21 +1,32 @@
-import { FloatingPortal } from "@floating-ui/react";
+import {
+  FloatingPortal,
+  UseInteractionsReturn,
+  useFloating,
+} from "@floating-ui/react";
 import { Priorities } from "@core/constants/core.constants";
 import { darken, isDark } from "@core/util/color.utils";
-import { CursorItem } from "@web/common/context/open-at-cursor";
-import { useOpenAtCursor } from "@web/common/hooks/useOpenAtCursor";
+import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
+import {
+  CursorItem,
+  useFloatingNodeIdAtCursor,
+} from "@web/common/hooks/useOpenAtCursor";
 import { colorByPriority } from "@web/common/styles/theme.util";
-import { maxAgendaZIndex$ } from "@web/common/utils/dom/grid-organization.util";
-import { useDraftContextV2 } from "@web/views/Calendar/components/Draft/context/useDraftContextV2";
+import { useDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
 import { getAgendaEventTime } from "@web/views/Day/util/agenda/agenda.util";
 
-export function AgendaEventPreview() {
-  const context = useDraftContextV2();
-  const zIndex = maxAgendaZIndex$.getValue() + 1;
-  const openAtCursor = useOpenAtCursor();
-  const { draft } = context;
-  const { nodeId, floating, interactions } = openAtCursor;
+export function AgendaEventPreview({
+  floating,
+  interactions,
+}: {
+  floating: ReturnType<typeof useFloating>;
+  interactions: UseInteractionsReturn;
+}) {
+  const draft = useDraft();
+  const nodeId = useFloatingNodeIdAtCursor();
+  const floatingContextOpen = floating.context.open;
+  const maxZIndex = useGridMaxZIndex();
   const isOpenAtCursor = nodeId === CursorItem.EventPreview;
-
+  const open = floatingContextOpen && isOpenAtCursor && !!draft;
   const priority = draft?.priority || Priorities.UNASSIGNED;
   const priorityColor = colorByPriority[priority];
   const darkPriorityColor = darken(priorityColor);
@@ -26,7 +37,7 @@ export function AgendaEventPreview() {
       ? `${getAgendaEventTime(draft.startDate)} - ${getAgendaEventTime(draft.endDate)}`
       : "";
 
-  if (!isOpenAtCursor || !draft) return null;
+  if (!open) return null;
 
   return (
     <FloatingPortal>
@@ -40,7 +51,7 @@ export function AgendaEventPreview() {
         style={{
           ...floating.context.floatingStyles,
           backgroundColor: darkPriorityColor,
-          zIndex,
+          zIndex: maxZIndex + 1,
         }}
       >
         <div className="space-y-2">

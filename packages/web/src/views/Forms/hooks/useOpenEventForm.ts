@@ -1,63 +1,71 @@
-import { Dispatch, SetStateAction, useCallback } from "react";
+import { ObjectId } from "bson";
+import { PointerEvent, useCallback } from "react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/auth.util";
-import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
+import {
+  DATA_EVENT_ELEMENT_ID,
+  ID_GRID_EVENTS_TIMED,
+} from "@web/common/constants/web.constants";
 import {
   getCursorPosition,
-  getMousePointRef,
+  isElementInViewport,
   isOverAllDayRow,
   isOverMainGrid,
   isOverSidebar,
   isOverSomedayMonth,
   isOverSomedayWeek,
 } from "@web/common/context/mouse-position";
-import { CursorItem } from "@web/common/context/open-at-cursor";
-import { useOpenAtCursor } from "@web/common/hooks/useOpenAtCursor";
+import {
+  CursorItem,
+  openFloatingAtCursor,
+} from "@web/common/hooks/useOpenAtCursor";
 import { getElementAtPoint } from "@web/common/utils/dom/event-emitter.util";
+import { getCalendarEventElementFromGrid } from "@web/common/utils/event/event.util";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { store } from "@web/store";
+import { setDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import {
   getEventTimeFromPosition,
   toNearestFifteenMinutes,
 } from "@web/views/Day/util/agenda/agenda.util";
-import { getEventClass } from "@web/views/Day/util/agenda/focus.util";
+import {
+  focusElement,
+  getEventClass,
+} from "@web/views/Day/util/agenda/focus.util";
 
 const YMD = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
 
-export function useOpenEventForm({
-  setDraft,
-  setExisting,
-}: {
-  setExisting: Dispatch<SetStateAction<boolean>>;
-  setDraft: Dispatch<SetStateAction<Schema_Event | null>>;
-}) {
+export function useOpenEventForm() {
   const dateInView = useDateInView();
-  const openAtCursor = useOpenAtCursor();
-  const { setOpen, setNodeId, setPlacement, setReference } = openAtCursor;
-  const { refs } = openAtCursor.floating;
 
   const openEventForm = useCallback(
-    async (create = false, cursor = getCursorPosition()) => {
+    async ({ detail }: PointerEvent<HTMLElement>) => {
+      const defaultDetails = { id: undefined, create: false };
+      const details = typeof detail === "object" ? detail : defaultDetails;
+      const create = details?.create ?? false;
+      const cursor = getCursorPosition();
       const user = await getUserId();
 
       if (!user) return;
 
       const active = document.activeElement;
       const element = getElementAtPoint(cursor);
-      const eventClass = getEventClass(element);
-      const activeClass = getEventClass(active);
-      const cursorEvent = element?.closest(`.${eventClass}`);
-      const event = cursorEvent ?? active?.closest(`.${activeClass}`);
-      const existingEventId = event?.getAttribute(DATA_EVENT_ELEMENT_ID);
+      const eventClass = `.${getEventClass(element)}`;
+      const activeClass = `.${getEventClass(active)}`;
+      const cursorEvent = element?.closest(eventClass);
+      const event = cursorEvent ?? active?.closest(activeClass);
+      const id = details?.id;
+      const existingEventId = id ?? event?.getAttribute(DATA_EVENT_ELEMENT_ID);
+      const draftId = new ObjectId().toString();
+      const _id = create ? draftId : (existingEventId ?? draftId);
 
       let draftEvent: Schema_Event;
 
       if (existingEventId && !create) {
         draftEvent = selectEventById(store.getState(), existingEventId);
-        setExisting(true);
       } else {
         const now = dayjs();
 
@@ -95,6 +103,7 @@ export function useOpenEventForm({
         }
 
         draftEvent = {
+          _id,
           title: "",
           description: "",
           startDate: isAllDay ? startTime.format(YMD) : startTime.toISOString(),
@@ -105,27 +114,37 @@ export function useOpenEventForm({
           priority: Priorities.UNASSIGNED,
           origin: Origin.COMPASS,
         };
-
-        setExisting(false);
       }
 
-      setPlacement("left-start");
-      setReference(null);
-      refs.setReference(getMousePointRef(cursor));
-      setDraft(draftEvent);
-      setNodeId(CursorItem.EventForm);
-      setOpen(true);
+      setDraft(draftEvent); // preview will now be available on calendar surface
+
+      queueMicrotask(() => {
+        const reference = getCalendarEventElementFromGrid(_id);
+
+        if (reference) {
+          const willScroll = !isElementInViewport(reference);
+
+          if (willScroll) {
+            const timedSurface = document.getElementById(ID_GRID_EVENTS_TIMED);
+
+            focusElement(reference as HTMLElement);
+
+            return timedSurface?.addEventListener(
+              "scrollend",
+              () =>
+                openFloatingAtCursor({
+                  reference,
+                  nodeId: CursorItem.EventForm,
+                }),
+              { once: true },
+            );
+          } else {
+            openFloatingAtCursor({ reference, nodeId: CursorItem.EventForm });
+          }
+        }
+      });
     },
-    [
-      setPlacement,
-      setReference,
-      refs,
-      setDraft,
-      setNodeId,
-      setOpen,
-      setExisting,
-      dateInView,
-    ],
+    [dateInView],
   );
 
   return openEventForm;

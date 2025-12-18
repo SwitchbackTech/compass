@@ -46,21 +46,26 @@ export function getEventClass(element: Element | null) {
 }
 
 export function getFirstAgendaEvent(): HTMLElement | null {
+  const cursorElement = getElementAtCursor();
+  const overMainGrid = isOverMainGrid(cursorElement);
+  const overAllDayRow = isOverAllDayRow(cursorElement);
+  const isOutsideGrid = !overMainGrid && !overAllDayRow;
   const allDaySelector = `.${CLASS_ALL_DAY_CALENDAR_EVENT}`;
   const allDayGrid = document.getElementById(ID_GRID_ALLDAY_ROW);
   const allDayEvent = allDayGrid?.querySelector<HTMLElement>(allDaySelector);
   const allDayEventId = allDayEvent?.getAttribute(DATA_EVENT_ELEMENT_ID);
 
-  if (allDayEventId && allDayEvent) return allDayEvent;
+  if (isOutsideGrid && allDayEventId && allDayEvent) return allDayEvent;
+  if (overAllDayRow && allDayEventId && allDayEvent) return allDayEvent;
 
   const mainGrid = document.getElementById(ID_GRID_MAIN);
   const timedEventSelector = `.${CLASS_TIMED_CALENDAR_EVENT}`;
   const timedEvent = mainGrid?.querySelector<HTMLElement>(timedEventSelector);
   const timedEventId = timedEvent?.getAttribute(DATA_EVENT_ELEMENT_ID);
 
-  if (timedEventId && timedEvent) return timedEvent;
+  if (overMainGrid && timedEventId && timedEvent) return timedEvent;
 
-  return null;
+  return allDayEvent ?? timedEvent ?? null;
 }
 
 export function focusFirstAgendaEvent(): void {

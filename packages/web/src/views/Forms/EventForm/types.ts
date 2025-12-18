@@ -23,7 +23,9 @@ export interface FormProps {
   onSubmit: (event: Schema_Event | null) => void;
   onSubmitEventForm?: (event: Schema_Event) => void;
   priority?: Priority;
-  setEvent: Dispatch<SetStateAction<Schema_Event | null>>;
+  setEvent:
+    | Dispatch<SetStateAction<Schema_Event | null>>
+    | ((event: Schema_Event | null) => void);
 }
 
 type EventField =

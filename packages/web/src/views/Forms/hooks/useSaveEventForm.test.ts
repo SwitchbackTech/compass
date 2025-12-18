@@ -1,13 +1,18 @@
-import { renderHook } from "@testing-library/react";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
+import { renderHook } from "@web/__tests__/__mocks__/mock.render";
+import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import {
   createEventSlice,
   editEventSlice,
 } from "@web/ducks/events/slices/event.slice";
+import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 import { useSaveEventForm } from "@web/views/Forms/hooks/useSaveEventForm";
 
 jest.mock("@web/store/store.hooks");
+jest.mock("@web/views/Forms/hooks/useCloseEventForm");
+jest.mock("@web/ducks/events/selectors/event.selectors");
+
 jest.mock("@web/ducks/events/slices/event.slice", () => ({
   createEventSlice: {
     actions: {
@@ -19,6 +24,18 @@ jest.mock("@web/ducks/events/slices/event.slice", () => ({
       request: jest.fn(),
     },
   },
+  deleteEventSlice: {
+    actions: {
+      request: jest.fn(),
+    },
+  },
+  eventsEntitiesSlice: {
+    reducer: jest.fn(() => ({})),
+  },
+  getCurrentMonthEventsSlice: { reducer: jest.fn(() => ({})) },
+  getSomedayEventsSlice: { reducer: jest.fn(() => ({})) },
+  getWeekEventsSlice: { reducer: jest.fn(() => ({})) },
+  getDayEventsSlice: { reducer: jest.fn(() => ({})) },
 }));
 
 describe("useSaveEventForm", () => {
@@ -29,12 +46,12 @@ describe("useSaveEventForm", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     useAppDispatch.mockReturnValue(mockDispatch);
+    (useCloseEventForm as jest.Mock).mockReturnValue(mockCloseEventForm);
   });
 
   it("should dispatch createEventSlice.actions.request when not existing", () => {
-    const { result } = renderHook(() =>
-      useSaveEventForm({ existing: false, closeEventForm: mockCloseEventForm }),
-    );
+    (selectEventById as jest.Mock).mockReturnValue(null);
+    const { result } = renderHook(() => useSaveEventForm());
 
     const event = createMockStandaloneEvent();
 
@@ -48,9 +65,8 @@ describe("useSaveEventForm", () => {
   });
 
   it("should dispatch editEventSlice.actions.request when existing", () => {
-    const { result } = renderHook(() =>
-      useSaveEventForm({ existing: true, closeEventForm: mockCloseEventForm }),
-    );
+    (selectEventById as jest.Mock).mockReturnValue({});
+    const { result } = renderHook(() => useSaveEventForm());
 
     const event = createMockStandaloneEvent();
 
@@ -66,9 +82,7 @@ describe("useSaveEventForm", () => {
   });
 
   it("should close form without saving if draft is null", () => {
-    const { result } = renderHook(() =>
-      useSaveEventForm({ existing: false, closeEventForm: mockCloseEventForm }),
-    );
+    const { result } = renderHook(() => useSaveEventForm());
 
     result.current(null);
 
