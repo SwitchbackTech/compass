@@ -94,32 +94,36 @@ export const DraggableTimedAgendaEvent = memo(
           bounds={bounds}
           onResize={(_, direction, _ref, delta) => {
             const { height } = delta;
-            const slot = Math.ceil(height / SLOT_HEIGHT);
+            const slot = Math.abs(Math.ceil(height / SLOT_HEIGHT));
             const minutesToAdd = slot * MINUTES_PER_SLOT;
+
+            // Helper to normalize recurrence for Schema_Event compatibility
+            const normalizeRecurrence = () =>
+              event.recurrence?.rule === null ? undefined : event.recurrence;
 
             if (direction === "top") {
               const oldStartDate = parseCompassEventDate(event.startDate);
-              const startDate = oldStartDate.subtract(minutesToAdd, "minute");
+              const startDate =
+                height >= 0
+                  ? oldStartDate.subtract(minutesToAdd, "minute")
+                  : oldStartDate.add(minutesToAdd, "minute");
 
               setDraft({
                 ...event,
                 startDate: startDate.toISOString(),
-                recurrence:
-                  event.recurrence?.rule === null
-                    ? undefined
-                    : event.recurrence,
+                recurrence: normalizeRecurrence(),
               } as Schema_Event);
             } else if (direction === "bottom") {
               const oldEndDate = parseCompassEventDate(event.endDate);
-              const endDate = oldEndDate.add(minutesToAdd, "minute");
+              const endDate =
+                height >= 0
+                  ? oldEndDate.add(minutesToAdd, "minute")
+                  : oldEndDate.subtract(minutesToAdd, "minute");
 
               setDraft({
                 ...event,
                 endDate: endDate.toISOString(),
-                recurrence:
-                  event.recurrence?.rule === null
-                    ? undefined
-                    : event.recurrence,
+                recurrence: normalizeRecurrence(),
               } as Schema_Event);
             }
           }}
