@@ -77,7 +77,9 @@ export function getElementAtCursor() {
   return getElementAtPoint(getCursorPosition());
 }
 
-export function isElementInViewport(element: HTMLElement) {
+export function isElementInViewport(
+  element: Pick<Element, "getBoundingClientRect">,
+) {
   const rect = element.getBoundingClientRect();
 
   return (

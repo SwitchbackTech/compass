@@ -19,6 +19,7 @@ export interface DomMovement {
 export enum CompassDOMEvents {
   FOCUS_TASK_DESCRIPTION = "FOCUS_TASK_DESCRIPTION",
   SAVE_TASK_DESCRIPTION = "SAVE_TASK_DESCRIPTION",
+  SCROLL_TO_NOW_LINE = "SCROLL_TO_NOW_LINE",
 }
 
 export const compassEventEmitter = new EventEmitter2({

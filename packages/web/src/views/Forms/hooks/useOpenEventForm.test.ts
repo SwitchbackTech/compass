@@ -6,7 +6,10 @@ import {
   CLASS_TIMED_CALENDAR_EVENT,
   DATA_EVENT_ELEMENT_ID,
 } from "@web/common/constants/web.constants";
-import { useOpenAtCursor } from "@web/common/hooks/useOpenAtCursor";
+import { isElementInViewport } from "@web/common/context/mouse-position";
+import { openFloatingAtCursor } from "@web/common/hooks/useOpenAtCursor";
+import { getCalendarEventElementFromGrid } from "@web/common/utils/event/event.util";
+import { setDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
 import { useOpenEventForm } from "@web/views/Forms/hooks/useOpenEventForm";
 
 // Mocks
@@ -17,9 +20,23 @@ jest.mock("@web/views/Day/hooks/navigation/useDateInView");
 jest.mock("@web/views/Day/util/agenda/agenda.util");
 jest.mock("@web/views/Day/util/agenda/focus.util");
 jest.mock("@web/ducks/events/selectors/event.selectors");
-jest.mock("@web/common/hooks/useOpenAtCursor");
+jest.mock("@web/common/hooks/useOpenAtCursor", () => ({
+  openFloatingAtCursor: jest.fn(),
+  CursorItem: { EventForm: "EventForm" },
+}));
+jest.mock("@web/views/Calendar/components/Draft/context/useDraft");
+jest.mock("@web/common/utils/event/event.util", () => ({
+  getCalendarEventElementFromGrid: jest.fn(),
+}));
 
 describe("useOpenEventForm", () => {
+  beforeAll(() => {
+    (getCalendarEventElementFromGrid as jest.Mock).mockImplementation(() => {
+      return document.createElement("div");
+    });
+    (isElementInViewport as jest.Mock).mockReturnValue(true);
+  });
+
   const { getUserId } = jest.requireMock("@web/auth/auth.util");
 
   const {
@@ -52,20 +69,15 @@ describe("useOpenEventForm", () => {
   );
 
   const mockSetDraft = jest.fn();
-  const mockSetExisting = jest.fn();
   const mockSetOpenAtMousePosition = jest.fn();
-  const mockSetReference = jest.fn();
   const mockDateInView = dayjs("2023-01-01T12:00:00Z");
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useOpenAtCursor as jest.Mock).mockReturnValue({
-      setOpen: mockSetOpenAtMousePosition,
-      setNodeId: jest.fn(),
-      setPlacement: jest.fn(),
-      setReference: mockSetReference,
-      floating: { refs: { setReference: jest.fn() } },
-    });
+    (setDraft as jest.Mock).mockImplementation(mockSetDraft);
+    (openFloatingAtCursor as jest.Mock).mockImplementation(
+      mockSetOpenAtMousePosition,
+    );
     useDateInView.mockReturnValue(mockDateInView);
     getUserId.mockResolvedValue("user-123");
     toNearestFifteenMinutes.mockReturnValue(0);
@@ -89,18 +101,18 @@ describe("useOpenEventForm", () => {
     isOverMainGrid.mockReturnValue(true);
     getEventTimeFromPosition.mockReturnValue(mockStartTime);
 
-    const { result } = renderHook(() =>
-      useOpenEventForm({
-        setDraft: mockSetDraft,
-        setExisting: mockSetExisting,
-      }),
-    );
+    const { result } = renderHook(() => useOpenEventForm());
 
     await act(async () => {
-      await result.current();
+      result.current(
+        new CustomEvent("click", {
+          detail: { create: true },
+        }) as unknown as React.PointerEvent<HTMLElement>,
+      );
+      await Promise.resolve();
     });
 
-    expect(mockSetExisting).toHaveBeenCalledWith(false);
+    expect(getCalendarEventElementFromGrid).toHaveBeenCalled();
     expect(mockSetDraft).toHaveBeenCalledWith(
       expect.objectContaining({
         startDate: mockStartTime.toISOString(),
@@ -111,24 +123,21 @@ describe("useOpenEventForm", () => {
         origin: Origin.COMPASS,
       }),
     );
-    expect(mockSetOpenAtMousePosition).toHaveBeenCalledWith(true);
+    expect(openFloatingAtCursor).toHaveBeenCalled();
   });
 
   it("should open form for new all-day event when over all-day row", async () => {
     isOverAllDayRow.mockReturnValue(true);
 
-    const { result } = renderHook(() =>
-      useOpenEventForm({
-        setDraft: mockSetDraft,
-        setExisting: mockSetExisting,
-      }),
-    );
+    const { result } = renderHook(() => useOpenEventForm());
 
     await act(async () => {
-      await result.current();
+      await result.current({
+        detail: { create: true },
+        nativeEvent: new Event("click"),
+      } as unknown as React.PointerEvent<HTMLElement>);
     });
 
-    expect(mockSetExisting).toHaveBeenCalledWith(false);
     expect(mockSetDraft).toHaveBeenCalledWith(
       expect.objectContaining({
         startDate: mockDateInView.startOf("day").format("YYYY-MM-DD"),
@@ -155,19 +164,15 @@ describe("useOpenEventForm", () => {
     getEventClass.mockReturnValue(CLASS_TIMED_CALENDAR_EVENT);
     selectEventById.mockReturnValue(mockEvent);
 
-    const { result } = renderHook(() =>
-      useOpenEventForm({
-        setDraft: mockSetDraft,
-        setExisting: mockSetExisting,
-      }),
-    );
+    const { result } = renderHook(() => useOpenEventForm());
 
     await act(async () => {
-      await result.current();
+      await result.current({
+        detail: { create: false },
+        nativeEvent: new Event("click"),
+      } as unknown as React.PointerEvent<HTMLElement>);
     });
 
-    expect(mockSetExisting).toHaveBeenCalledWith(true);
     expect(mockSetDraft).toHaveBeenCalledWith(mockEvent);
-    expect(mockSetReference).toHaveBeenCalled();
   });
 });

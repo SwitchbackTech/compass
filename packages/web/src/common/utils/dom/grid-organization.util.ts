@@ -19,8 +19,9 @@ export const gridOrganization$ = new BehaviorSubject<Record<string, GridData>>(
   {},
 );
 
-export const maxAgendaZIndex$ = new BehaviorSubject<number>(0);
+export const maxGridZIndex$ = new BehaviorSubject<number>(0);
 
+const borderRingSpace = 2;
 const themeSpacing = parseInt(theme.spacing.s);
 const canvas = document.createElement("canvas");
 const canvasContext = canvas.getContext("2d");
@@ -39,7 +40,10 @@ export const checkAABBCollision = (rectA: DOMRect, rectB: DOMRect): boolean => {
   }
 
   // Check if there is no overlap on the Y-axis
-  if (rectA.y + rectA.height <= rectB.y || rectB.y + rectB.height <= rectA.y) {
+  if (
+    rectA.y + rectA.height - borderRingSpace <= rectB.y ||
+    rectB.y + rectB.height - borderRingSpace <= rectA.y
+  ) {
     return false; // No collision
   }
 
@@ -102,7 +106,6 @@ export const findOptimalPlacement = (
   containerWidth: number,
   _width: number,
 ): Placement => {
-  const borderRingSpace = 2;
   const width = `${_width}px`;
   const collisionLength = collidingNodes.length;
   const isOverlapping = collisionLength > 0;
@@ -193,7 +196,7 @@ function updatePlacements(
     const { zIndex, ...styles } = placement.style;
     // overlaps should typically not exceed 10 events.
     // support for up to 100 z-index overlap classes has been added in index.css
-    const zClass = `z-${zIndex}`;
+    const zClass = `z-${zIndex ?? 0}`;
     const zMaxClass = `z-${maxZIndex}`;
     const classLists = Array.from(node.classList.values());
     const overlapClasses = ["border", "shadow-md"];
@@ -238,7 +241,7 @@ export function reorderGrid(mainGrid: HTMLElement) {
 
   const maxZIndex = Math.max(...zIndexes) + 1;
 
-  maxAgendaZIndex$.next(maxZIndex);
+  maxGridZIndex$.next(maxZIndex);
 
   const organization = updatePlacements(nodes, placements, maxZIndex);
 

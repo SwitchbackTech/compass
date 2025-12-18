@@ -1,25 +1,25 @@
 import { useCallback } from "react";
+import { useStore } from "react-redux";
 import {
   Recurrence,
   RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import {
   createEventSlice,
   editEventSlice,
 } from "@web/ducks/events/slices/event.slice";
+import { RootState } from "@web/store";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { OnSubmitParser } from "@web/views/Calendar/components/Draft/hooks/actions/submit.parser";
+import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 
-export function useSaveEventForm({
-  existing,
-  closeEventForm,
-}: {
-  existing: boolean;
-  closeEventForm: () => void;
-}) {
+export function useSaveEventForm() {
   const dispatch = useAppDispatch();
+  const store = useStore<RootState>();
+  const closeEventForm = useCloseEventForm();
 
   const onCreate = useCallback(
     (draft: Schema_GridEvent) => {
@@ -59,6 +59,10 @@ export function useSaveEventForm({
     ) => {
       if (!draft) return closeEventForm();
 
+      const existing = draft._id
+        ? !!selectEventById(store.getState(), draft._id)
+        : null;
+
       if (existing) {
         onEdit(draft as Schema_GridEvent, applyTo);
       } else {
@@ -67,7 +71,7 @@ export function useSaveEventForm({
 
       closeEventForm();
     },
-    [existing, onCreate, onEdit, closeEventForm],
+    [onCreate, onEdit, closeEventForm],
   );
 
   return saveEventForm;

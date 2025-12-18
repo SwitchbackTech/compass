@@ -1,23 +1,9 @@
-import { Provider } from "react-redux";
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
-import { OpenAtCursorProvider } from "@web/common/context/open-at-cursor";
+import { render, screen } from "@web/__tests__/__mocks__/mock.render";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
-import { store } from "@web/store";
-import { DraftProviderV2 } from "@web/views/Calendar/components/Draft/context/DraftProviderV2";
 import { DraggableAllDayAgendaEvent } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/DraggableAllDayAgendaEvent";
-
-function renderWithMenuProvider(ui: React.ReactElement) {
-  return render(
-    <Provider store={store}>
-      <OpenAtCursorProvider>
-        <DraftProviderV2>{ui}</DraftProviderV2>
-      </OpenAtCursorProvider>
-    </Provider>,
-  );
-}
 
 describe("DraggableAllDayAgendaEvent", () => {
   const standaloneEvent = createMockStandaloneEvent({}, true);
@@ -33,13 +19,13 @@ describe("DraggableAllDayAgendaEvent", () => {
   };
 
   it("renders the event title", () => {
-    renderWithMenuProvider(<DraggableAllDayAgendaEvent event={event} />);
+    render(<DraggableAllDayAgendaEvent event={event} />);
 
     expect(screen.getByText(event.title!)).toBeInTheDocument();
   });
 
   it("has the correct aria-label and data-event-id", () => {
-    renderWithMenuProvider(<DraggableAllDayAgendaEvent event={event} />);
+    render(<DraggableAllDayAgendaEvent event={event} />);
 
     const eventButton = screen.getByRole("button");
 
