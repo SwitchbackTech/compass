@@ -18,14 +18,34 @@ describe("DraggableAllDayAgendaEvent", () => {
     position: gridEventDefaultPosition,
   };
 
+  const mockInteractions = {
+    getReferenceProps: jest.fn(() => ({})),
+    getFloatingProps: jest.fn(() => ({})),
+    getItemProps: jest.fn(() => ({})),
+  } as any;
+
   it("renders the event title", () => {
-    render(<DraggableAllDayAgendaEvent event={event} />);
+    render(
+      <DraggableAllDayAgendaEvent
+        event={event}
+        interactions={mockInteractions}
+        isDraftEvent={false}
+        isNewDraftEvent={false}
+      />,
+    );
 
     expect(screen.getByText(event.title!)).toBeInTheDocument();
   });
 
   it("has the correct aria-label and data-event-id", () => {
-    render(<DraggableAllDayAgendaEvent event={event} />);
+    render(
+      <DraggableAllDayAgendaEvent
+        event={event}
+        interactions={mockInteractions}
+        isDraftEvent={false}
+        isNewDraftEvent={false}
+      />,
+    );
 
     const eventButton = screen.getByRole("button");
 

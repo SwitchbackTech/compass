@@ -59,7 +59,7 @@ export function useSaveEventForm() {
 
       const existing = draft._id
         ? !!selectEventById(store.getState(), draft._id)
-        : null;
+        : false;
 
       if (existing) {
         onEdit(draft as Schema_GridEvent, applyTo);
