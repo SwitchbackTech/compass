@@ -53,7 +53,7 @@ describe("AgendaEvent", () => {
       endDate: undefined,
     };
 
-    const { container } = render(
+    render(
       <DraggableTimedAgendaEvent
         event={event as Schema_GridEvent}
         {...defaultProps}

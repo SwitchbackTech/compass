@@ -1,4 +1,3 @@
-import { useStore } from "react-redux";
 import { renderHook } from "@testing-library/react";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import {
@@ -10,8 +9,10 @@ import { setDraft } from "@web/views/Calendar/components/Draft/context/useDraft"
 import { useOpenAgendaEventPreview } from "@web/views/Day/hooks/events/useOpenAgendaEventPreview";
 import { getEventClass } from "@web/views/Day/util/agenda/focus.util";
 
-jest.mock("react-redux", () => ({
-  useStore: jest.fn(),
+jest.mock("@web/store", () => ({
+  store: {
+    getState: jest.fn(),
+  },
 }));
 
 jest.mock("@web/common/hooks/useOpenAtCursor", () => ({
@@ -32,13 +33,10 @@ jest.mock("@web/views/Day/util/agenda/focus.util", () => ({
 }));
 
 describe("useOpenAgendaEventPreview", () => {
-  const mockStore = {
-    getState: jest.fn(),
-  };
+  const mockStore = jest.requireMock("@web/store").store;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useStore as jest.Mock).mockReturnValue(mockStore);
   });
 
   it("should open event preview when event id and reference exist", () => {

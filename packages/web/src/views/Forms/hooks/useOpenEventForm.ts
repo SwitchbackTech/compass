@@ -1,6 +1,5 @@
 import { ObjectId } from "bson";
 import { PointerEvent, useCallback } from "react";
-import { useStore } from "react-redux";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
@@ -25,7 +24,7 @@ import {
 import { getElementAtPoint } from "@web/common/utils/dom/event-emitter.util";
 import { getCalendarEventElementFromGrid } from "@web/common/utils/event/event.util";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
-import { RootState } from "@web/store";
+import { store } from "@web/store";
 import { setDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import {
@@ -41,7 +40,6 @@ const YMD = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
 
 export function useOpenEventForm() {
   const dateInView = useDateInView();
-  const store = useStore<RootState>();
 
   const openEventForm = useCallback(
     async ({ detail }: PointerEvent<HTMLElement>) => {
@@ -146,7 +144,7 @@ export function useOpenEventForm() {
         }
       });
     },
-    [dateInView, store],
+    [dateInView],
   );
 
   return openEventForm;

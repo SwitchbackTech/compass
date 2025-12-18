@@ -14,7 +14,6 @@ import { NowLine } from "@web/views/Day/components/Agenda/NowLine/NowLine";
 import { TimeLabels } from "@web/views/Day/components/Agenda/TimeLabels/TimeLabels";
 import { EventContextMenu } from "@web/views/Day/components/ContextMenu/EventContextMenu";
 import { useAgendaInteractionsAtCursor } from "@web/views/Day/hooks/events/useAgendaInteractionsAtCursor";
-import { useOpenEventForm } from "../../../Forms/hooks/useOpenEventForm";
 
 const openChange = (open: boolean) => {
   if (!open) setDraft(null);
@@ -24,28 +23,24 @@ export const Agenda = memo(function Agenda() {
   const events = useAppSelector(selectDayEvents);
   const height = useRef<number>(0);
   const floating = useFloatingAtCursor(openChange);
-  const openEventForm = useOpenEventForm();
   const interactions = useAgendaInteractionsAtCursor(floating);
   const timedAgendaRef = useRef<HTMLElement | null>(null);
 
   // Separate all-day events from timed events
   const allDayEvents = events.filter((event) => event.isAllDay);
 
-  const onEnterKey = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (e.key === Key.Enter) {
-        e.preventDefault();
-        e.stopPropagation();
-        timedAgendaRef.current?.click();
-      }
-    },
-    [openEventForm],
-  );
+  const onEnterKey = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === Key.Enter) {
+      e.preventDefault();
+      e.stopPropagation();
+      timedAgendaRef.current?.click();
+    }
+  }, []);
 
   return (
     <>
       <section
-        aria-label="calendar agenda"
+        aria-label="Calendar agenda"
         className="bg-darkBlue-400 flex h-full min-w-xs flex-1 flex-col gap-2 p-0.5"
       >
         <AllDayAgendaEvents

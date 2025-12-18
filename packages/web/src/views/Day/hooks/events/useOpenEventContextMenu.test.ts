@@ -1,4 +1,5 @@
-import { useStore } from "react-redux";
+import React from "react";
+import { Provider } from "react-redux";
 import { renderHook } from "@testing-library/react";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import {
@@ -9,10 +10,6 @@ import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { setDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
 import { useOpenEventContextMenu } from "@web/views/Day/hooks/events/useOpenEventContextMenu";
 import { getEventClass } from "@web/views/Day/util/agenda/focus.util";
-
-jest.mock("react-redux", () => ({
-  useStore: jest.fn(),
-}));
 
 jest.mock("@web/common/hooks/useOpenAtCursor", () => ({
   CursorItem: { EventContextMenu: "event-context-menu" },
@@ -32,13 +29,18 @@ jest.mock("@web/views/Day/util/agenda/focus.util", () => ({
 }));
 
 describe("useOpenEventContextMenu", () => {
+  const mockState = { events: {} };
   const mockStore = {
-    getState: jest.fn(),
+    getState: jest.fn(() => mockState),
+    subscribe: jest.fn(),
+    dispatch: jest.fn(),
   };
+
+  const wrapper = ({ children }: { children: React.ReactNode }) =>
+    React.createElement(Provider, { store: mockStore as any, children });
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useStore as jest.Mock).mockReturnValue(mockStore);
   });
 
   it("should open event context menu when event id and reference exist", () => {
@@ -60,7 +62,7 @@ describe("useOpenEventContextMenu", () => {
     (getEventClass as jest.Mock).mockReturnValue(eventClass);
     (selectEventById as jest.Mock).mockReturnValue(mockEvent);
 
-    const { result } = renderHook(() => useOpenEventContextMenu());
+    const { result } = renderHook(() => useOpenEventContextMenu(), { wrapper });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     result.current(mockEventObj as any);
@@ -72,7 +74,7 @@ describe("useOpenEventContextMenu", () => {
     expect(mockReference.getAttribute).toHaveBeenCalledWith(
       DATA_EVENT_ELEMENT_ID,
     );
-    expect(selectEventById).toHaveBeenCalledWith(mockStore.getState(), eventId);
+    expect(selectEventById).toHaveBeenCalledWith(mockState, eventId);
     expect(setDraft).toHaveBeenCalledWith(mockEvent);
     expect(openFloatingAtCursor).toHaveBeenCalledWith({
       nodeId: CursorItem.EventContextMenu,
@@ -97,7 +99,7 @@ describe("useOpenEventContextMenu", () => {
 
     (getEventClass as jest.Mock).mockReturnValue(eventClass);
 
-    const { result } = renderHook(() => useOpenEventContextMenu());
+    const { result } = renderHook(() => useOpenEventContextMenu(), { wrapper });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     result.current(mockEventObj as any);
@@ -119,7 +121,7 @@ describe("useOpenEventContextMenu", () => {
 
     (getEventClass as jest.Mock).mockReturnValue(eventClass);
 
-    const { result } = renderHook(() => useOpenEventContextMenu());
+    const { result } = renderHook(() => useOpenEventContextMenu(), { wrapper });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     result.current(mockEventObj as any);

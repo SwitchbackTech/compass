@@ -1,5 +1,4 @@
 import { useCallback } from "react";
-import { useStore } from "react-redux";
 import {
   Recurrence,
   RecurringEventUpdateScope,
@@ -11,14 +10,13 @@ import {
   createEventSlice,
   editEventSlice,
 } from "@web/ducks/events/slices/event.slice";
-import { RootState } from "@web/store";
+import { store } from "@web/store";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { OnSubmitParser } from "@web/views/Calendar/components/Draft/hooks/actions/submit.parser";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 
 export function useSaveEventForm() {
   const dispatch = useAppDispatch();
-  const store = useStore<RootState>();
   const closeEventForm = useCloseEventForm();
 
   const onCreate = useCallback(
@@ -71,7 +69,7 @@ export function useSaveEventForm() {
 
       closeEventForm();
     },
-    [onCreate, onEdit, closeEventForm],
+    [closeEventForm, onEdit, onCreate],
   );
 
   return saveEventForm;
