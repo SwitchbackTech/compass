@@ -2,14 +2,19 @@ import classNames from "classnames";
 import fastDeepEqual from "fast-deep-equal/react";
 import { memo } from "react";
 import { UseInteractionsReturn } from "@floating-ui/react";
-import { Categories_Event } from "@core/types/event.types";
+import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import { parseCompassEventDate } from "@core/util/event/event.util";
 import { CLASS_TIMED_CALENDAR_EVENT } from "@web/common/constants/web.constants";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Draggable } from "@web/components/DND/Draggable";
 import { Resizable } from "@web/components/DND/Resizable";
+import { setDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
 import { TimedAgendaEvent } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/TimedAgendaEvent";
-import { SLOT_HEIGHT } from "@web/views/Day/constants/day.constants";
+import {
+  MINUTES_PER_SLOT,
+  SLOT_HEIGHT,
+} from "@web/views/Day/constants/day.constants";
 import { useOpenAgendaEventPreview } from "@web/views/Day/hooks/events/useOpenAgendaEventPreview";
 import { useOpenEventContextMenu } from "@web/views/Day/hooks/events/useOpenEventContextMenu";
 import { getAgendaEventPosition } from "@web/views/Day/util/agenda/agenda.util";
@@ -73,8 +78,8 @@ export const DraggableTimedAgendaEvent = memo(
       >
         <Resizable
           enable={{
-            top: false, // all handles temporary disables until full implementation
-            bottom: false,
+            top: true,
+            bottom: true,
             right: false,
             left: false,
             topRight: false,
@@ -87,6 +92,37 @@ export const DraggableTimedAgendaEvent = memo(
           maxWidth="100%"
           defaultSize={{ width: "100%" }}
           bounds={bounds}
+          onResize={(_, direction, _ref, delta) => {
+            const { height } = delta;
+            const slot = Math.ceil(height / SLOT_HEIGHT);
+            const minutesToAdd = slot * MINUTES_PER_SLOT;
+
+            if (direction === "top") {
+              const oldStartDate = parseCompassEventDate(event.startDate);
+              const startDate = oldStartDate.subtract(minutesToAdd, "minute");
+
+              setDraft({
+                ...event,
+                startDate: startDate.toISOString(),
+                recurrence:
+                  event.recurrence?.rule === null
+                    ? undefined
+                    : event.recurrence,
+              } as Schema_Event);
+            } else if (direction === "bottom") {
+              const oldEndDate = parseCompassEventDate(event.endDate);
+              const endDate = oldEndDate.add(minutesToAdd, "minute");
+
+              setDraft({
+                ...event,
+                endDate: endDate.toISOString(),
+                recurrence:
+                  event.recurrence?.rule === null
+                    ? undefined
+                    : event.recurrence,
+              } as Schema_Event);
+            }
+          }}
         >
           <TimedAgendaEvent event={event} />
         </Resizable>
