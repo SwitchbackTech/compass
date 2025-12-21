@@ -26,7 +26,7 @@ export const moreCommandPaletteItems: Array<{
       {
         id: "share-feedback",
         children: "Share Feedback",
-        icon: "EnvelopeOpenIcon",
+        icon: "ChatBubbleLeftRightIcon",
         href: "https://github.com/SwitchbackTech/compass/discussions",
         target: "_blank",
       },
