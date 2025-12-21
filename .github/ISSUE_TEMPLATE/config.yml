@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
-  - name: 💬 Discord Community
-    url: https://www.discord.gg/H3DVMnKmUd
-    about: Join our Discord for general questions and discussion
+  - name: 💬 GitHub Discussions
+    url: https://github.com/SwitchbackTech/compass/discussions
+    about: Start a GitHub Discussion for general questions and feedback
   - name: 📚 Documentation
     url: https://docs.compasscalendar.com
     about: Check our documentation for setup guides, API reference, and contributing guidelines
