@@ -27,14 +27,7 @@ export const moreCommandPaletteItems: Array<{
         id: "share-feedback",
         children: "Share Feedback",
         icon: "EnvelopeOpenIcon",
-        href: "mailto:tyler@switchback.tech",
-        target: "_blank",
-      },
-      {
-        id: "discord",
-        children: "Join Discord",
-        icon: "ChatBubbleLeftRightIcon",
-        href: "https://www.discord.gg/H3DVMnKmUd",
+        href: "https://github.com/SwitchbackTech/compass/discussions",
         target: "_blank",
       },
       {
