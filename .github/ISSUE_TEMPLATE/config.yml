@@ -1,6 +1,6 @@
 blank_issues_enabled: true
 contact_links:
-  - name: 💬 GitHub Discussion
+  - name: 💬 GitHub Discussions
     url: https://github.com/SwitchbackTech/compass/discussions
     about: Start a GitHub discussion for general questions and feedback
   - name: 📚 Documentation
