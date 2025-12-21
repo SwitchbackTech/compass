@@ -1,6 +1,10 @@
 # 🧭 Compass Calendar
 
-_A focused workspace for organizing your day and staying on track; All your events & tasks in one place_
+_A minimal task manager for engineers._
+
+_All your tasks & events in one place_
+
+_Organize your day and stay on track_
 
 https://github.com/user-attachments/assets/ba7b91b9-1984-49f2-afc6-7fcda1100b31
 
@@ -69,7 +73,7 @@ Features we don't support yet:
 
 - 📘 [Read the handbook](https://compasscalendar.notion.site/?utm_source=github&utm_medium=referral&utm_campaign=readme): Why Compass exists and how it fits into our loooooong-term vision.
 
-- 👀 Stay in touch: [Discord](https://www.discord.gg/H3DVMnKmUd), [X (Twitter)](https://x.com/CompassCalendar), [YouTube](https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=jssXj_g9kln8Iz_w), [LinkedIn](https://www.linkedin.com/company/compass-calendar)
+- 👀 Stay in touch: [GitHub Discussions](https://github.com/SwitchbackTech/compass/discussions), [X (Twitter)](https://x.com/CompassCalendar), [YouTube](https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=jssXj_g9kln8Iz_w), [LinkedIn](https://www.linkedin.com/company/compass-calendar)
 
 ## Tech Stack
 
