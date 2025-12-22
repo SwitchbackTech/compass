@@ -1,33 +1,38 @@
 ---
 name: accessibility-change-audit
-description: Use when reviewing UI diffs or modifying UI components to catch accessibility regressions, improve semantic structure, and increase test reliability with role-based selectors.
+description: Use when reviewing UI diffs, accessibility audits, or flaky UI tests to catch a11y regressions, semantic issues, keyboard/focus problems, and to recommend minimal fixes plus role-based test selectors.
 ---
 
 # Accessibility Change Audit
 
+Brief purpose: review UI changes for accessibility regressions and missing improvements, then propose minimal fixes tied to the diff.
+
 ## Overview
 
-Audit UI changes for accessibility regressions and missing improvements. Focus on semantics, keyboard access, focus management, ARIA correctness, contrast, and testability. Tie findings to the diff and propose minimal fixes.
+This skill audits UI diffs for semantics, keyboard access, focus management, ARIA correctness, contrast, and testability. It is diff-first: only evaluate changed lines and their immediate context.
 
-## When to Use
+## Prerequisites
 
-- Reviewing a PR or diff that changes markup, styles, or interaction logic.
-- Adding or modifying UI components, forms, dialogs, or navigation.
-- Tests are flaky due to unstable selectors or missing accessible names.
+- A diff, PR, or change list that includes relevant UI files.
+- Optional: a screenshot or description of the changed UI state.
 
-## When Not to Use
+## Instructions
 
-- Non-UI changes with no impact on rendered output or interaction.
-- No access to the diff or relevant UI context.
+### Step 1: Scope the audit to the diff
 
-## Quick Reference
+Identify changed UI elements, interactions, and styles. Ignore unrelated files.
 
-- **Diff-first:** Only assess changed lines and immediate context.
-- **Keyboard:** Everything interactive must be focusable and operable.
-- **Semantics:** Prefer native elements over ARIA.
-- **Names:** Every control needs an accessible name.
-- **State:** aria-\* reflects real state and updates.
-- **Tests:** Target by role/name, not classes or data attributes.
+### Step 2: Run the diff-first checklist
+
+Focus on changes that alter semantics, interaction, or visual affordances.
+
+### Step 3: Produce findings and minimal fixes
+
+Tie each issue to a specific change and propose the smallest reasonable fix.
+
+### Step 4: Improve test reliability
+
+Recommend role- and name-based queries for tests instead of data or class selectors.
 
 ## Audit Checklist (Diff-First)
 
@@ -94,7 +99,7 @@ Testing reliability
 
 - Use role="dialog", aria-modal, label by heading, and return focus on close.
 
-## Output Format (for review)
+## Output Format
 
 Findings (ordered by severity):
 
