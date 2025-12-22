@@ -4,4 +4,4 @@ description: Use when reviewing UI diffs, accessibility audits, or flaky UI test
 ---
 
 This skill is shared. Read the canonical skill at:
-../../../skills/accessibility-change-audit/SKILL.md
+../../../skills/a11y-audit/SKILL.md
