@@ -4,7 +4,10 @@ import { memo } from "react";
 import { UseInteractionsReturn } from "@floating-ui/react";
 import { Categories_Event } from "@core/types/event.types";
 import { CLASS_ALL_DAY_CALENDAR_EVENT } from "@web/common/constants/web.constants";
-import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
+import {
+  CursorItem,
+  useFloatingNodeIdAtCursor,
+} from "@web/common/hooks/useOpenAtCursor";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Draggable } from "@web/components/DND/Draggable";
 import { AllDayAgendaEvent } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/AllDayAgendaEvent";
@@ -25,16 +28,17 @@ export const DraggableAllDayAgendaEvent = memo(
   }) => {
     const openAgendaEventPreview = useOpenAgendaEventPreview();
     const openEventContextMenu = useOpenEventContextMenu();
-    const maxZIndex = useGridMaxZIndex();
+    const nodeId = useFloatingNodeIdAtCursor();
+    const eventFormOpen = nodeId === CursorItem.EventForm;
 
     if (!event.startDate || !event.endDate || !event.isAllDay) return null;
 
     return (
       <Draggable
         {...interactions?.getReferenceProps({
-          onContextMenu: isNewDraftEvent ? undefined : openEventContextMenu,
-          onFocus: isNewDraftEvent ? undefined : openAgendaEventPreview,
-          onPointerEnter: isNewDraftEvent ? undefined : openAgendaEventPreview,
+          onContextMenu: eventFormOpen ? undefined : openEventContextMenu,
+          onFocus: eventFormOpen ? undefined : openAgendaEventPreview,
+          onPointerEnter: eventFormOpen ? undefined : openAgendaEventPreview,
         })}
         dndProps={{
           id: event._id,
@@ -47,13 +51,10 @@ export const DraggableAllDayAgendaEvent = memo(
         as="div"
         className={classNames(
           CLASS_ALL_DAY_CALENDAR_EVENT,
-          "mx-2 cursor-move touch-none rounded",
+          "mx-2 cursor-move touch-none rounded last:mb-0.5",
           "focus-visible:ring-2",
           "focus:outline-none focus-visible:ring-yellow-200",
         )}
-        style={{
-          zIndex: isDraftEvent ? maxZIndex + 3 : undefined,
-        }}
         title={event.title}
         tabIndex={0}
         role="button"

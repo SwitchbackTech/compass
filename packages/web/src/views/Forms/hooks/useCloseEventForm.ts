@@ -1,11 +1,12 @@
 import { useCallback } from "react";
 import { closeFloatingAtCursor } from "@web/common/hooks/useOpenAtCursor";
-import { setDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
+import { resetActiveEvent, resetDraft } from "@web/store/events";
 
 export function useCloseEventForm() {
   const closeEventForm = useCallback(() => {
+    resetDraft();
+    resetActiveEvent();
     closeFloatingAtCursor();
-    setDraft(null);
   }, []);
 
   return closeEventForm;

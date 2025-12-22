@@ -307,3 +307,7 @@ const _assembleBaseEvent = (
 export function compareEventsByTitle(a: Schema_Event, b: Schema_Event) {
   return (a.title ?? "").localeCompare(b.title ?? "");
 }
+
+export function compareEventsById(prev: Schema_Event, next: Schema_Event) {
+  return prev._id?.localeCompare(next._id ?? "") ?? 0;
+}

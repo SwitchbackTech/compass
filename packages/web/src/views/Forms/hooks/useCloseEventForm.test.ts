@@ -1,10 +1,13 @@
 import { renderHook } from "@testing-library/react";
 import { closeFloatingAtCursor } from "@web/common/hooks/useOpenAtCursor";
-import { setDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
+import { resetActiveEvent, resetDraft } from "@web/store/events";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 
 jest.mock("@web/common/hooks/useOpenAtCursor");
-jest.mock("@web/views/Calendar/components/Draft/context/useDraft");
+jest.mock("@web/store/events", () => ({
+  resetDraft: jest.fn(),
+  resetActiveEvent: jest.fn(),
+}));
 
 describe("useCloseEventForm", () => {
   beforeEach(() => {
@@ -17,6 +20,7 @@ describe("useCloseEventForm", () => {
     result.current();
 
     expect(closeFloatingAtCursor).toHaveBeenCalled();
-    expect(setDraft).toHaveBeenCalledWith(null);
+    expect(resetDraft).toHaveBeenCalled();
+    expect(resetActiveEvent).toHaveBeenCalled();
   });
 });

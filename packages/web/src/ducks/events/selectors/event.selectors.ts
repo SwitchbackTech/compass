@@ -1,6 +1,5 @@
 import { createSelector } from "@reduxjs/toolkit";
 import { Schema_Event } from "@core/types/event.types";
-import dayjs from "@core/util/date/dayjs";
 import { isProcessing } from "@web/common/store/helpers";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
@@ -27,8 +26,10 @@ export const selectAllDayEvents = createSelector(
   },
 );
 
-export const selectEventById = (state: RootState, id: string): Schema_Event =>
-  selectEventEntities(state)[id] || {};
+export const selectEventById = (
+  state: RootState,
+  id: string,
+): Schema_Event | null => selectEventEntities(state)[id] ?? null;
 
 export const selectEventEntities = (state: RootState) =>
   state.events.entities.value || {};

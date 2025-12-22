@@ -1,3 +1,4 @@
+import { produce } from "immer";
 import {
   ActionCreatorWithPayload,
   PayloadAction,
@@ -193,3 +194,11 @@ export const isSuccess = <SuccessPayload, ErrorPayload>(
 ) => !asyncState.isProcessing && asyncState.isSuccess;
 
 export const pure = <T>(state: T) => state;
+
+export function write<S>(updater: (state: S) => void): (state: S) => S {
+  return function (state) {
+    return produce(state, (draft) => {
+      updater(draft as S);
+    });
+  };
+}

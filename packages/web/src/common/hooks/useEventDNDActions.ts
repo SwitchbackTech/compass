@@ -6,22 +6,21 @@ import {
   ID_GRID_ALLDAY_ROW,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
+import { CursorItem, nodeId$, open$ } from "@web/common/hooks/useOpenAtCursor";
+import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { editEventSlice } from "@web/ducks/events/slices/event.slice";
-import { useAppDispatch } from "@web/store/store.hooks";
 import { getSnappedMinutes } from "@web/views/Day/util/agenda/agenda.util";
 
 export function useEventDNDActions() {
-  const dispatch = useAppDispatch();
+  const updateEvent = useUpdateEvent();
 
-  const updateEvent = useCallback(
-    (event: Schema_GridEvent) => {
-      if (!event._id) return;
+  const saveImmediate = () => {
+    const eventFormOpen = nodeId$.getValue() === CursorItem.EventForm;
+    const openAtCursor = open$.getValue();
+    const saveDraftOnly = eventFormOpen && openAtCursor;
 
-      dispatch(editEventSlice.actions.request({ _id: event._id, event }));
-    },
-    [dispatch],
-  );
+    return !saveDraftOnly;
+  };
 
   const moveTimedAroundMainGridDayView = useCallback(
     (event: Schema_GridEvent, active: Active, over: Over) => {
@@ -32,14 +31,24 @@ export function useEventDNDActions() {
       const start = dayjs(event.startDate);
       const end = dayjs(event.endDate);
       const durationMinutes = end.diff(start, "minute");
-      const startDate = start.startOf("day").add(snappedMinutes, "minute");
-      const newEndDate = startDate.add(durationMinutes, "minute");
+      const newStartDate = start.startOf("day").add(snappedMinutes, "minute");
+      const newEndDate = newStartDate.add(durationMinutes, "minute");
 
-      updateEvent({
-        ...event,
-        startDate: startDate.toISOString(),
-        endDate: newEndDate.toISOString(),
-      });
+      const startChanged = !newStartDate.isSame(start);
+      const endChanged = !newEndDate.isSame(end);
+
+      if (!startChanged && !endChanged) return;
+
+      updateEvent(
+        {
+          event: {
+            ...event,
+            startDate: newStartDate.toISOString(),
+            endDate: newEndDate.toISOString(),
+          },
+        },
+        saveImmediate(),
+      );
     },
     [updateEvent],
   );
@@ -54,12 +63,17 @@ export function useEventDNDActions() {
       const startDate = start.add(snappedMinutes, "minute");
       const endDate = startDate.add(15, "minutes"); // Default 15 mins
 
-      updateEvent({
-        ...event,
-        isAllDay: false,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-      });
+      updateEvent(
+        {
+          event: {
+            ...event,
+            isAllDay: false,
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          },
+        },
+        saveImmediate(),
+      );
     },
     [updateEvent],
   );
@@ -70,12 +84,17 @@ export function useEventDNDActions() {
       const startDate = dayjs(event.startDate).startOf("day");
       const endDate = dayjs(event.endDate).startOf("day").add(1, "day");
 
-      updateEvent({
-        ...event,
-        isAllDay: true,
-        startDate: startDate.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
-        endDate: endDate.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
-      });
+      updateEvent(
+        {
+          event: {
+            ...event,
+            isAllDay: true,
+            startDate: startDate.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
+            endDate: endDate.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
+          },
+        },
+        saveImmediate(),
+      );
     },
     [updateEvent],
   );

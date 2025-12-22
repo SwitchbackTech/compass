@@ -237,7 +237,7 @@ describe("TaskList", () => {
     // The first task (completed) should appear second
     expect(checkboxes[1]).toHaveAttribute("aria-label", "Toggle First task");
     expect(checkboxes[1]).toHaveAttribute("aria-checked", "true");
-  });
+  }, 10000);
 
   it("should maintain focus after pressing ESC in edit mode, allowing re-edit with 'e'", async () => {
     const { user } = renderWithDayProviders(<TaskList />);

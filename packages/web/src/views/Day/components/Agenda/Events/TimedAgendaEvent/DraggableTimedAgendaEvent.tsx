@@ -2,22 +2,30 @@ import classNames from "classnames";
 import fastDeepEqual from "fast-deep-equal/react";
 import { memo } from "react";
 import { UseInteractionsReturn } from "@floating-ui/react";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
-import { parseCompassEventDate } from "@core/util/event/event.util";
+import {
+  Categories_Event,
+  Schema_Event,
+  WithCompassId,
+} from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import { CLASS_TIMED_CALENDAR_EVENT } from "@web/common/constants/web.constants";
-import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
+import { useEventResizeActions } from "@web/common/hooks/useEventResizeActions";
+import {
+  CursorItem,
+  useFloatingNodeIdAtCursor,
+} from "@web/common/hooks/useOpenAtCursor";
+import { theme } from "@web/common/styles/theme";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Draggable } from "@web/components/DND/Draggable";
 import { Resizable } from "@web/components/DND/Resizable";
-import { setDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
 import { TimedAgendaEvent } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/TimedAgendaEvent";
-import {
-  MINUTES_PER_SLOT,
-  SLOT_HEIGHT,
-} from "@web/views/Day/constants/day.constants";
+import { SLOT_HEIGHT } from "@web/views/Day/constants/day.constants";
 import { useOpenAgendaEventPreview } from "@web/views/Day/hooks/events/useOpenAgendaEventPreview";
 import { useOpenEventContextMenu } from "@web/views/Day/hooks/events/useOpenEventContextMenu";
-import { getAgendaEventPosition } from "@web/views/Day/util/agenda/agenda.util";
+import {
+  getAgendaEventPosition,
+  getEventHeight,
+} from "@web/views/Day/util/agenda/agenda.util";
 
 export const DraggableTimedAgendaEvent = memo(
   ({
@@ -35,24 +43,29 @@ export const DraggableTimedAgendaEvent = memo(
   }) => {
     const openAgendaEventPreview = useOpenAgendaEventPreview();
     const openEventContextMenu = useOpenEventContextMenu();
-    const maxZIndex = useGridMaxZIndex();
+    const nodeId = useFloatingNodeIdAtCursor();
+    const eventFormOpen = nodeId === CursorItem.EventForm;
+    const startDate = dayjs(event.startDate);
+    const startPosition = getAgendaEventPosition(startDate.toDate());
+    const height = getEventHeight(event);
+
+    const { onResize, onResizeStart, onResizeStop } = useEventResizeActions(
+      event as WithCompassId<Schema_Event>,
+    );
 
     if (!event.startDate || !event.endDate || event.isAllDay) return null;
-
-    const startDate = new Date(event.startDate);
-    const startPosition = getAgendaEventPosition(startDate);
 
     return (
       <Draggable
         {...interactions?.getReferenceProps({
-          onContextMenu: isNewDraftEvent ? undefined : openEventContextMenu,
-          onFocus: isNewDraftEvent ? undefined : openAgendaEventPreview,
-          onPointerEnter: isNewDraftEvent ? undefined : openAgendaEventPreview,
+          onContextMenu: eventFormOpen ? undefined : openEventContextMenu,
+          onFocus: eventFormOpen ? undefined : openAgendaEventPreview,
+          onPointerEnter: eventFormOpen ? undefined : openAgendaEventPreview,
         })}
         dndProps={{
           id: event._id,
           data: {
-            event,
+            event: event,
             type: Categories_Event.TIMED,
             view: "day",
           },
@@ -65,10 +78,7 @@ export const DraggableTimedAgendaEvent = memo(
           "focus-visible:rounded focus-visible:ring-2",
           "focus:outline-none focus-visible:ring-yellow-200",
         )}
-        style={{
-          top: `${startPosition}px`,
-          zIndex: isDraftEvent ? maxZIndex + 3 : undefined,
-        }}
+        style={{ top: startPosition, height }}
         tabIndex={0}
         role="button"
         data-draft-event={isDraftEvent}
@@ -87,48 +97,19 @@ export const DraggableTimedAgendaEvent = memo(
             bottomLeft: false,
             topLeft: false,
           }}
-          minHeight={SLOT_HEIGHT}
+          size={{ height }}
           minWidth="100%"
           maxWidth="100%"
-          defaultSize={{ width: "100%" }}
+          minHeight={SLOT_HEIGHT - 2}
+          maxHeight={bounds.offsetHeight - parseInt(theme.spacing.m, 10)}
           bounds={bounds}
-          onResize={(_, direction, _ref, delta) => {
-            const { height } = delta;
-            const slot = Math.abs(Math.ceil(height / SLOT_HEIGHT));
-            const minutesToAdd = slot * MINUTES_PER_SLOT;
-
-            // Helper to normalize recurrence for Schema_Event compatibility
-            const normalizeRecurrence = () =>
-              event.recurrence?.rule === null ? undefined : event.recurrence;
-
-            if (direction === "top") {
-              const oldStartDate = parseCompassEventDate(event.startDate);
-              const startDate =
-                height >= 0
-                  ? oldStartDate.subtract(minutesToAdd, "minute")
-                  : oldStartDate.add(minutesToAdd, "minute");
-
-              setDraft({
-                ...event,
-                startDate: startDate.toISOString(),
-                recurrence: normalizeRecurrence(),
-              } as Schema_Event);
-            } else if (direction === "bottom") {
-              const oldEndDate = parseCompassEventDate(event.endDate);
-              const endDate =
-                height >= 0
-                  ? oldEndDate.add(minutesToAdd, "minute")
-                  : oldEndDate.subtract(minutesToAdd, "minute");
-
-              setDraft({
-                ...event,
-                endDate: endDate.toISOString(),
-                recurrence: normalizeRecurrence(),
-              } as Schema_Event);
-            }
-          }}
+          className="rounded"
+          style={{ boxSizing: "content-box" }}
+          onResizeStart={onResizeStart}
+          onResizeStop={onResizeStop}
+          onResize={onResize}
         >
-          <TimedAgendaEvent event={event} />
+          <TimedAgendaEvent event={event} height={height - 2} />
         </Resizable>
       </Draggable>
     );

@@ -9,7 +9,7 @@ import {
 import { isElementInViewport } from "@web/common/context/mouse-position";
 import { openFloatingAtCursor } from "@web/common/hooks/useOpenAtCursor";
 import { getCalendarEventElementFromGrid } from "@web/common/utils/event/event.util";
-import { setDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
+import { eventsStore, setDraft } from "@web/store/events";
 import { useOpenEventForm } from "@web/views/Forms/hooks/useOpenEventForm";
 
 // Mocks
@@ -19,12 +19,17 @@ jest.mock("@web/common/utils/dom/event-emitter.util");
 jest.mock("@web/views/Day/hooks/navigation/useDateInView");
 jest.mock("@web/views/Day/util/agenda/agenda.util");
 jest.mock("@web/views/Day/util/agenda/focus.util");
-jest.mock("@web/ducks/events/selectors/event.selectors");
 jest.mock("@web/common/hooks/useOpenAtCursor", () => ({
   openFloatingAtCursor: jest.fn(),
   CursorItem: { EventForm: "EventForm" },
 }));
-jest.mock("@web/views/Calendar/components/Draft/context/useDraft");
+jest.mock("@web/store/events", () => ({
+  eventsStore: {
+    query: jest.fn(),
+  },
+  getDraft: jest.fn(),
+  setDraft: jest.fn(),
+}));
 jest.mock("@web/common/utils/event/event.util", () => ({
   getCalendarEventElementFromGrid: jest.fn(),
 }));
@@ -57,15 +62,11 @@ describe("useOpenEventForm", () => {
     "@web/views/Day/hooks/navigation/useDateInView",
   );
 
-  const { getEventTimeFromPosition, toNearestFifteenMinutes } =
+  const { getEventTimeFromPosition, roundToNearestFifteenWithinHour } =
     jest.requireMock("@web/views/Day/util/agenda/agenda.util");
 
   const { getEventClass } = jest.requireMock(
     "@web/views/Day/util/agenda/focus.util",
-  );
-
-  const { selectEventById } = jest.requireMock(
-    "@web/ducks/events/selectors/event.selectors",
   );
 
   const mockSetDraft = jest.fn();
@@ -80,7 +81,7 @@ describe("useOpenEventForm", () => {
     );
     useDateInView.mockReturnValue(mockDateInView);
     getUserId.mockResolvedValue("user-123");
-    toNearestFifteenMinutes.mockReturnValue(0);
+    roundToNearestFifteenWithinHour.mockReturnValue(0);
     getCursorPosition.mockReturnValue({ clientX: 100, clientY: 100 });
     getElementAtPoint.mockReturnValue(null);
     getEventClass.mockReturnValue(null);
@@ -162,7 +163,7 @@ describe("useOpenEventForm", () => {
 
     getElementAtPoint.mockReturnValue(mockEventElement);
     getEventClass.mockReturnValue(CLASS_TIMED_CALENDAR_EVENT);
-    selectEventById.mockReturnValue(mockEvent);
+    (eventsStore.query as jest.Mock).mockReturnValue(mockEvent);
 
     const { result } = renderHook(() => useOpenEventForm());
 

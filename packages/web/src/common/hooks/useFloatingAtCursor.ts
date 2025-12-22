@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import {
   OpenChangeReason,
   Placement,
@@ -11,12 +11,20 @@ import {
 } from "@floating-ui/react";
 import {
   closeFloatingAtCursor,
+  nodeId$,
+  open$,
+  openFloatingAtCursor,
+  placement$,
+  reference$,
+  strategy$,
   useFloatingNodeIdAtCursor,
+  useFloatingOpenAtCursor,
   useFloatingPlacementAtCursor,
   useFloatingReferenceAtCursor,
   useFloatingStrategyAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
 import { theme } from "@web/common/styles/theme";
+import { DATA_FULL_WIDTH, DATA_OVERLAPPING } from "../constants/web.constants";
 
 const themeSpacing = parseInt(theme.spacing.xs);
 
@@ -30,19 +38,33 @@ const placements: Placement[] = [
 export function useFloatingAtCursor(
   onOpenChange?: UseFloatingOptions<ReferenceType>["onOpenChange"],
 ): ReturnType<typeof useFloating> {
-  const [open, setOpen] = useState(false);
+  const open = useFloatingOpenAtCursor();
   const nodeId = useFloatingNodeIdAtCursor() ?? undefined;
   const placement = useFloatingPlacementAtCursor();
   const strategy = useFloatingStrategyAtCursor();
   const reference = useFloatingReferenceAtCursor();
 
   const handleOpenChange = useCallback(
-    (open: boolean, event?: Event, reason?: OpenChangeReason) => {
-      onOpenChange?.(open, event, reason);
+    (stateOpen: boolean, event?: Event, reason?: OpenChangeReason) => {
+      const alreadyOpen = open$.getValue();
+      const stateMismatch = stateOpen && alreadyOpen;
 
-      if (!open) closeFloatingAtCursor();
+      if (!stateOpen) {
+        onOpenChange?.(stateOpen, event, reason);
 
-      setOpen(open);
+        return closeFloatingAtCursor();
+      }
+
+      if (stateMismatch) {
+        openFloatingAtCursor({
+          nodeId: nodeId$.getValue()!,
+          reference: reference$.getValue()!,
+          placement: placement$.getValue(),
+          strategy: strategy$.getValue(),
+        });
+      }
+
+      onOpenChange?.(stateOpen, event, reason);
     },
     [onOpenChange],
   );
@@ -54,11 +76,21 @@ export function useFloatingAtCursor(
     strategy,
     elements: { reference },
     middleware: [
-      offset(({ rects, placement }) => {
+      offset(({ rects, placement, elements }) => {
         switch (placement) {
           case "bottom":
-          case "top":
-            return -rects.reference.height / 2 - rects.floating.height / 2;
+          case "top": {
+            const top = -rects.reference.height / 2 - rects.floating.height / 2;
+            const ref = elements.reference as HTMLDivElement;
+            const isFullWidth = ref.getAttribute(DATA_FULL_WIDTH) === "true";
+            const isOverlapping = ref.getAttribute(DATA_OVERLAPPING) === "true";
+
+            if (isFullWidth && isOverlapping) {
+              return top - rects.reference.height / 2;
+            }
+
+            return top;
+          }
           default:
             return themeSpacing;
         }
