@@ -19,7 +19,7 @@ packages/**/yarn.lock
 # DIRS #
 ########
 # root
-.claude/
+.claude/settings.local.json
 .cursor/
 .idea/
 .mcp.json
