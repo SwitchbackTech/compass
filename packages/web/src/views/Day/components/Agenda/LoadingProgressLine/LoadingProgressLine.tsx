@@ -1,5 +1,5 @@
 /**
- * Loading progress line component that shows at the top of the mainGrid
+ * Loading progress line component that shows at the top of the timedEvents section (ID_GRID_EVENTS_TIMED)
  * during subsequent event reloads. Displays an animated color-transitioning
  * line that indicates loading state without obstructing the user's view.
  */

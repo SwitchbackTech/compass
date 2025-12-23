@@ -15,6 +15,7 @@ import { CursorItem, nodeId$ } from "@web/common/hooks/useOpenAtCursor";
 import { compareEventsByStartDate } from "@web/common/utils/event/event.util";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
 import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
+import { selectIsDayEventsProcessing } from "@web/ducks/events/selectors/event.selectors";
 import {
   allDayEvents$,
   eventsStore,
@@ -26,6 +27,7 @@ import { useAppSelector } from "@web/store/store.hooks";
 import { AgendaEventPreview } from "@web/views/Day/components/Agenda/Events/AgendaEventPreview/AgendaEventPreview";
 import { AllDayAgendaEvents } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/AllDayAgendaEvents";
 import { TimedAgendaEvents } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/TimedAgendaEvents";
+import { LoadingProgressLine } from "@web/views/Day/components/Agenda/LoadingProgressLine/LoadingProgressLine";
 import { NowLine } from "@web/views/Day/components/Agenda/NowLine/NowLine";
 import { TimeLabels } from "@web/views/Day/components/Agenda/TimeLabels/TimeLabels";
 import { EventContextMenu } from "@web/views/Day/components/ContextMenu/EventContextMenu";
@@ -38,6 +40,8 @@ export function Agenda() {
   const [timedEvents] = useObservable(timedEvents$);
   const height = useRef<number>(0);
   const timedAgendaRef = useRef<HTMLElement | null>(null);
+  const isLoading = useAppSelector(selectIsDayEventsProcessing);
+  const hasLoadedOnce = useRef(false);
 
   const floating = useFloatingAtCursor((open, _e, reason) => {
     const dismissed = reason === "escape-key" || reason === "outside-press";
@@ -80,6 +84,15 @@ export function Agenda() {
     );
   }, [reduxEvents]);
 
+  // Track when we've successfully loaded events for the first time
+  useEffect(() => {
+    if (!isLoading && timedEvents.length >= 0) {
+      hasLoadedOnce.current = true;
+    }
+  }, [isLoading, timedEvents]);
+
+  const showProgressLine = isLoading && hasLoadedOnce.current;
+
   return (
     <>
       <section
@@ -113,6 +126,7 @@ export function Agenda() {
             scrollbarGutter: "stable both-edges",
           }}
         >
+          {showProgressLine && <LoadingProgressLine />}
           <TimeLabels />
 
           <NowLine />

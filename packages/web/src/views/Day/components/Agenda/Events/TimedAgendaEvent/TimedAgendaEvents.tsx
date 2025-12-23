@@ -20,7 +20,6 @@ import { useAppSelector } from "@web/store/store.hooks";
 import { useDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
 import { AgendaSkeleton } from "@web/views/Day/components/Agenda/AgendaSkeleton/AgendaSkeleton";
 import { DraggableTimedAgendaEvent } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/DraggableTimedAgendaEvent";
-import { LoadingProgressLine } from "@web/views/Day/components/Agenda/LoadingProgressLine/LoadingProgressLine";
 import { useOpenEventForm } from "@web/views/Forms/hooks/useOpenEventForm";
 
 export const TimedAgendaEvents = memo(
@@ -62,7 +61,6 @@ export const TimedAgendaEvents = memo(
 
       const showSkeleton =
         (isLoading || ref === null) && !hasLoadedOnce.current;
-      const showProgressLine = isLoading && hasLoadedOnce.current;
 
       return (
         <Droppable
@@ -77,7 +75,6 @@ export const TimedAgendaEvents = memo(
           })}
           style={{ height }}
         >
-          {showProgressLine && <LoadingProgressLine />}
           {/* Event blocks */}
           {showSkeleton ? (
             <AgendaSkeleton />
