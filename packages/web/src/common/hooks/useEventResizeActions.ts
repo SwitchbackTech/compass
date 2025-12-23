@@ -25,7 +25,7 @@ export function useEventResizeActions(event: WithCompassId<Schema_Event>) {
     setResizing(true);
     setDraft(event);
     originalEvent.current = event;
-  }, [setResizing, event]);
+  }, [event]);
 
   const onResize: ResizeCallback = useCallback(
     (_e, direction, _ref, delta) => {
