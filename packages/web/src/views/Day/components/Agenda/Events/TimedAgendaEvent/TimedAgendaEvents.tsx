@@ -65,39 +65,35 @@ export const TimedAgendaEvents = memo(
       const showProgressLine = isLoading && hasLoadedOnce.current;
 
       return (
-        <>
+        <Droppable
+          {...interactions?.getReferenceProps({ onClick: openEventForm })}
+          as="div"
+          dndProps={{ id: ID_GRID_MAIN }}
+          ref={mergedRef}
+          id={ID_GRID_MAIN}
+          data-testid="timed-agendas"
+          className={classNames("relative ml-1 flex-1 overflow-hidden", {
+            isOver: "bg-gray-400/20",
+          })}
+          style={{ height }}
+        >
           {showProgressLine && <LoadingProgressLine />}
-          <Droppable
-            {...interactions?.getReferenceProps({ onClick: openEventForm })}
-            as="div"
-            dndProps={{ id: ID_GRID_MAIN }}
-            ref={mergedRef}
-            id={ID_GRID_MAIN}
-            data-testid="timed-agendas"
-            className={classNames("relative ml-1 flex-1 overflow-hidden", {
-              isOver: "bg-gray-400/20",
-            })}
-            style={{ height }}
-          >
-            {/* Event blocks */}
-            {showSkeleton ? (
-              <AgendaSkeleton />
-            ) : (
-              events.map((event) => (
-                <DraggableTimedAgendaEvent
-                  key={event._id}
-                  event={event as Schema_GridEvent}
-                  bounds={ref}
-                  interactions={interactions}
-                  isDraftEvent={draft?._id === event._id}
-                  isNewDraftEvent={
-                    !timedEvents.find((e) => e._id === event._id)
-                  }
-                />
-              ))
-            )}
-          </Droppable>
-        </>
+          {/* Event blocks */}
+          {showSkeleton ? (
+            <AgendaSkeleton />
+          ) : (
+            events.map((event) => (
+              <DraggableTimedAgendaEvent
+                key={event._id}
+                event={event as Schema_GridEvent}
+                bounds={ref}
+                interactions={interactions}
+                isDraftEvent={draft?._id === event._id}
+                isNewDraftEvent={!timedEvents.find((e) => e._id === event._id)}
+              />
+            ))
+          )}
+        </Droppable>
       );
     },
   ),

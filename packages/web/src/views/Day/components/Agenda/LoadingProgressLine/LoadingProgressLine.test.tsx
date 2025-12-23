@@ -10,11 +10,11 @@ describe("LoadingProgressLine", () => {
     expect(progressLine).toBeInTheDocument();
   });
 
-  it("should have fixed positioning at top", () => {
+  it("should have absolute positioning at top", () => {
     render(<LoadingProgressLine />);
 
     const progressLine = screen.getByTestId("loading-progress-line");
-    expect(progressLine).toHaveClass("fixed", "top-0");
+    expect(progressLine).toHaveClass("absolute", "top-0");
   });
 
   it("should span full width", () => {
