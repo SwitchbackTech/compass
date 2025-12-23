@@ -40,6 +40,7 @@ export function useAgendaSelection() {
   const handlePointerDown = useCallback(
     async (e: React.PointerEvent<HTMLElement>) => {
       // Track clicks for double-click detection
+      // Using a 300ms window which is standard for double-click timing
       clickCount.current += 1;
 
       if (clickTimer.current) {
@@ -149,13 +150,16 @@ export function useAgendaSelection() {
     // Release pointer capture
     (e.target as HTMLElement).releasePointerCapture(e.pointerId);
 
-    // Open event form
+    // Open event form with a slight delay to ensure DOM is ready
     if (draftId) {
-      queueMicrotask(() => {
-        const reference = getCalendarEventElementFromGrid(draftId);
-        if (reference) {
-          openFloatingAtCursor({ reference, nodeId: CursorItem.EventForm });
-        }
+      // Using requestAnimationFrame + queueMicrotask for more reliable timing
+      requestAnimationFrame(() => {
+        queueMicrotask(() => {
+          const reference = getCalendarEventElementFromGrid(draftId);
+          if (reference) {
+            openFloatingAtCursor({ reference, nodeId: CursorItem.EventForm });
+          }
+        });
       });
     }
   }, []);

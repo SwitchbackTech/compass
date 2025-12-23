@@ -1,9 +1,12 @@
 import { useMemo } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
+import { SLOT_HEIGHT } from "@web/views/Day/constants/day.constants";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { getAgendaEventPosition } from "@web/views/Day/util/agenda/agenda.util";
 import { getEventTimeFromPosition } from "@web/views/Day/util/agenda/agenda.util";
+
+const MIN_SELECTION_HEIGHT = SLOT_HEIGHT; // Minimum height for selection preview
 
 interface AgendaSelectionPreviewProps {
   startY: number;
@@ -25,11 +28,11 @@ export function AgendaSelectionPreview({
 
     const startPosition = getAgendaEventPosition(startTime.toDate());
     const endPosition = getAgendaEventPosition(endTime.toDate());
-    const height = Math.max(20, endPosition - startPosition);
+    const height = Math.max(MIN_SELECTION_HEIGHT, endPosition - startPosition);
 
-    const formatTime = (date: Date) => {
-      const hours = date.getHours();
-      const minutes = date.getMinutes();
+    const formatTime = (time: Date) => {
+      const hours = time.getHours();
+      const minutes = time.getMinutes();
       const ampm = hours >= 12 ? "pm" : "am";
       const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
       return `${displayHours}:${minutes.toString().padStart(2, "0")}${ampm}`;
