@@ -56,8 +56,12 @@ export const TimedAgendaEvents = memo(
 
       return (
         <Droppable
-          {...interactions?.getReferenceProps({ onClick: openEventForm })}
-          {...handlers}
+          {...interactions?.getReferenceProps({
+            onClick: openEventForm,
+            onPointerDown: handlers.onPointerDown,
+            onPointerMove: handlers.onPointerMove,
+            onPointerUp: handlers.onPointerUp,
+          })}
           as="div"
           dndProps={{ id: ID_GRID_MAIN }}
           ref={mergedRef}
