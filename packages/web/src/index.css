@@ -75,6 +75,18 @@
   --color-gray-300: hsl(219 8 46 / 90.2%);
   --color-gray-200: hsl(208 13 71 / 54.9%);
   --color-white-100: hsl(0 0 100);
+
+  /* Animations */
+  --animate-progress-slide: progressSlide 2s ease-out infinite;
+
+  @keyframes progressSlide {
+    0% {
+      width: 0%;
+    }
+    100% {
+      width: 600%;
+    }
+  }
 }
 
 @layer base {

@@ -4,6 +4,8 @@ import { screen } from "@testing-library/react";
 import { Schema_Event } from "@core/types/event.types";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import { compareEventsByStartDate } from "@web/common/utils/event/event.util";
+import { selectIsDayEventsProcessing } from "@web/ducks/events/selectors/event.selectors";
+import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
 import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
 import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
 import { useOpenEventForm } from "@web/views/Forms/hooks/useOpenEventForm";
@@ -14,10 +16,23 @@ jest.mock("@web/auth/auth.util", () => ({
 
 jest.mock("@web/views/Forms/hooks/useOpenEventForm");
 
+jest.mock("@web/ducks/events/selectors/event.selectors", () => {
+  const actual = jest.requireActual(
+    "@web/ducks/events/selectors/event.selectors",
+  );
+  return {
+    ...actual,
+    selectIsDayEventsProcessing: jest.fn(),
+  };
+});
+
 const renderAgenda = (
   events: Schema_Event[] = [],
   options?: { isProcessing?: boolean },
 ) => {
+  (selectIsDayEventsProcessing as jest.Mock).mockReturnValue(
+    options?.isProcessing ?? false,
+  );
   const store = createStoreWithEvents(events, options);
   const utils = renderWithDayProviders(<Agenda />, { store });
   return { ...utils, store };
@@ -82,6 +97,54 @@ describe("CalendarAgenda", () => {
 
     const skeleton = await screen.findByTestId("agenda-skeleton");
     expect(skeleton).toBeInTheDocument();
+  });
+
+  it("should show progress line on subsequent loads after first load", async () => {
+    const mockEvents: Schema_Event[] = [
+      {
+        _id: "event-1",
+        title: "Test Event",
+        startDate: "2024-01-15T10:00:00Z",
+        endDate: "2024-01-15T11:00:00Z",
+        isAllDay: false,
+      },
+    ];
+
+    // First render with events loaded (not processing)
+    const { store } = renderAgenda(mockEvents, { isProcessing: false });
+
+    // Verify initial load shows events, not skeleton or progress line
+    expect(await screen.findByText("Test Event")).toBeInTheDocument();
+    expect(screen.queryByTestId("agenda-skeleton")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("loading-progress-line"),
+    ).not.toBeInTheDocument();
+
+    // Dispatch request action to simulate reload
+    act(() => {
+      (selectIsDayEventsProcessing as jest.Mock).mockReturnValue(true);
+      store.dispatch(
+        eventsEntitiesSlice.actions.edit({
+          _id: "event-1",
+          event: {
+            ...mockEvents[0],
+            title: "Updated Title",
+            startDate: mockEvents[0].startDate!,
+            endDate: mockEvents[0].endDate!,
+            user: "user-123",
+            priority: "high",
+            origin: "google",
+          } as any,
+        }),
+      );
+    });
+
+    // On subsequent load after component has loaded once,
+    // should show progress line not skeleton
+    expect(
+      await screen.findByTestId("loading-progress-line"),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("agenda-skeleton")).not.toBeInTheDocument();
   });
 
   it("should not show skeleton or error when events are loaded", async () => {
