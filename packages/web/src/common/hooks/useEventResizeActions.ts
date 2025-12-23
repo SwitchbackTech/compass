@@ -40,8 +40,6 @@ export function useEventResizeActions(
         return;
       }
 
-      console.log("Resizing...", direction, clientY, boundsRect.bottom);
-
       const slotMinute = MINUTES_PER_SLOT / SLOT_HEIGHT;
       const minutes = roundMinutesToNearestFifteen(delta.height * slotMinute);
       const start = dayjs(originalEvent.current?.startDate);
