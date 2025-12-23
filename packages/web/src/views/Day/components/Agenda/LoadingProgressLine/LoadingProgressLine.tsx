@@ -1,6 +1,7 @@
 /**
- * Loading progress line component that shows at the top of the mainGrid
- * Animated color-transitioning line that indicates loading state
+ * Loading progress line component that shows at the top of the viewport
+ * during subsequent event reloads. Displays an animated color-transitioning
+ * line that indicates loading state without obstructing the user's view.
  */
 export function LoadingProgressLine() {
   return (
