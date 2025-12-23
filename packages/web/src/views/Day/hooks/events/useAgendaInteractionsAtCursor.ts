@@ -7,22 +7,31 @@ import {
   useHover,
   useInteractions,
 } from "@floating-ui/react";
+import { CursorItem } from "@web/common/hooks/useOpenAtCursor";
 
 export function useAgendaInteractionsAtCursor(
   floating: ReturnType<typeof useFloating>,
+  { enabled }: { enabled?: boolean } = {},
 ) {
+  const eventFormOpen = floating.context.nodeId === CursorItem.EventForm;
+
   const click = useClick(floating.context, {
-    toggle: false,
+    toggle: true,
     stickIfOpen: true,
+    enabled,
   });
 
   const hover = useHover(floating.context, {
-    handleClose: safePolygon({ blockPointerEvents: true, buffer: -Infinity }),
+    handleClose: safePolygon({ buffer: -Infinity }),
+    enabled: enabled && !eventFormOpen,
   });
 
-  const focus = useFocus(floating.context, { visibleOnly: true });
+  const focus = useFocus(floating.context, {
+    visibleOnly: true,
+    enabled: enabled && !eventFormOpen,
+  });
 
-  const dismiss = useDismiss(floating.context, { outsidePress: false });
+  const dismiss = useDismiss(floating.context, { enabled });
 
   const interactions = useInteractions([click, focus, hover, dismiss]);
 

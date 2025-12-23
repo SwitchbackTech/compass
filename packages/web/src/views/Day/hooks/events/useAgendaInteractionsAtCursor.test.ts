@@ -45,7 +45,7 @@ describe("useAgendaInteractionsAtCursor", () => {
     );
 
     expect(useClick).toHaveBeenCalledWith(mockFloating.context, {
-      toggle: false,
+      toggle: true,
       stickIfOpen: true,
     });
 
@@ -58,7 +58,7 @@ describe("useAgendaInteractionsAtCursor", () => {
     });
 
     expect(useDismiss).toHaveBeenCalledWith(mockFloating.context, {
-      outsidePress: false,
+      enabled: undefined,
     });
 
     expect(useInteractions).toHaveBeenCalledWith([

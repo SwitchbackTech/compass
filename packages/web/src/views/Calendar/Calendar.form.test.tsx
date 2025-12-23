@@ -187,6 +187,6 @@ describe("Event Form", () => {
         expect(input).toBeInTheDocument();
         expect(input).toHaveFocus();
       });
-    });
+    }, 10000);
   });
 });

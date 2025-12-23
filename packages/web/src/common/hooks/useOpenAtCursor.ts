@@ -8,10 +8,13 @@ export enum CursorItem {
   EventContextMenu = "EventContextMenu",
 }
 
-const nodeId$ = new BehaviorSubject<CursorItem | null>(null);
-const placement$ = new BehaviorSubject<Placement>("right-start");
-const strategy$ = new BehaviorSubject<Strategy>("absolute");
-const reference$ = new BehaviorSubject<Element | null>(null);
+export const open$ = new BehaviorSubject<boolean>(false);
+export const nodeId$ = new BehaviorSubject<CursorItem | null>(null);
+export const placement$ = new BehaviorSubject<Placement>("right-start");
+export const strategy$ = new BehaviorSubject<Strategy>("absolute");
+export const reference$ = new BehaviorSubject<Element | null>(null);
+
+const $open = open$.pipe(distinctUntilChanged(), share());
 const $nodeId = nodeId$.pipe(distinctUntilChanged(), share());
 const $placement = placement$.pipe(distinctUntilChanged(), share());
 const $strategy = strategy$.pipe(distinctUntilChanged(), share());
@@ -34,6 +37,10 @@ function useValue<T>(
   return value;
 }
 
+export function useFloatingOpenAtCursor(): boolean {
+  return useValue<boolean>(open$, $open);
+}
+
 export function useFloatingNodeIdAtCursor(): CursorItem | null {
   return useValue<CursorItem | null>(nodeId$, $nodeId);
 }
@@ -48,6 +55,10 @@ export function useFloatingStrategyAtCursor(): Strategy {
 
 export function useFloatingReferenceAtCursor(): Element | null {
   return useValue<Element | null>(reference$, $reference);
+}
+
+export function setFloatingOpenAtCursor(open: boolean) {
+  open$.next(open);
 }
 
 export function setFloatingNodeIdAtCursor(nodeId: CursorItem | null) {
@@ -77,14 +88,29 @@ export function openFloatingAtCursor({
   placement?: Placement;
   strategy?: Strategy;
 }) {
-  setFloatingNodeIdAtCursor(nodeId);
-  setFloatingPlacementAtCursor(placement);
-  setFloatingStrategyAtCursor(strategy);
-  setFloatingReferenceAtCursor(reference);
+  if (open$.getValue()) closeFloatingAtCursor();
+
+  const timeout = setTimeout(() => {
+    setFloatingNodeIdAtCursor(nodeId);
+    setFloatingPlacementAtCursor(placement);
+    setFloatingStrategyAtCursor(strategy);
+    setFloatingReferenceAtCursor(reference);
+    setFloatingOpenAtCursor(true);
+    clearTimeout(timeout);
+  }, 10);
 }
 
 export function closeFloatingAtCursor() {
   setFloatingNodeIdAtCursor(null);
   setFloatingPlacementAtCursor("right-start");
   setFloatingReferenceAtCursor(null);
+  setFloatingOpenAtCursor(false);
+}
+
+export function isOpenAtCursor(item: CursorItem): boolean {
+  const eventFormOpen = nodeId$.getValue() === item;
+  const openAtCursor = open$.getValue();
+  const open = eventFormOpen && openAtCursor;
+
+  return open;
 }

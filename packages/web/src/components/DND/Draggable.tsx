@@ -26,6 +26,14 @@ export interface DraggableDNDData {
   view: "day" | "week" | "now";
 }
 
+export interface DNDChildProps
+  extends Pick<
+    ReturnType<typeof useDraggable>,
+    "over" | "listeners" | "isDragging"
+  > {
+  setDisabled?: (disabled: boolean) => void;
+}
+
 function CompassDraggable(
   props: DetailedHTMLProps<
     {
@@ -63,14 +71,15 @@ function CompassDraggable(
   const useChild = asChild && isValidElement(children);
 
   return createElement(as ?? "div", {
-    ...elementProps,
     ...attributes,
+    ...elementProps,
     ...(!useChild ? listeners : {}),
     onContextMenu: isDragging ? undefined : onContextMenu,
     style: {
       ...style,
-      transform: CSS.Translate.toString(transform),
-      ...(isDragging ? { opacity: 0 } : {}),
+      ...(isDragging
+        ? { opacity: 0, transform: CSS.Translate.toString(transform) }
+        : {}),
     },
     ref,
     children: useChild

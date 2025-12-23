@@ -1,26 +1,12 @@
 import { Resizable as ReResizable, ResizableProps } from "re-resizable";
-import {
-  Dispatch,
-  PropsWithChildren,
-  SetStateAction,
-  cloneElement,
-  isValidElement,
-} from "react";
-import { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
+import { PropsWithChildren, cloneElement, isValidElement } from "react";
+import { DNDChildProps } from "@web/components/DND/Draggable";
 
 export function Resizable({
   children,
   dndProps,
   ...props
-}: PropsWithChildren<
-  ResizableProps & {
-    dndProps?: {
-      listeners?: SyntheticListenerMap;
-      setDisabled: Dispatch<SetStateAction<boolean>>;
-      isDragging: boolean;
-    };
-  }
->) {
+}: PropsWithChildren<ResizableProps & { dndProps?: DNDChildProps }>) {
   const isValidChildren = isValidElement(children);
 
   if (!isValidChildren) return null;

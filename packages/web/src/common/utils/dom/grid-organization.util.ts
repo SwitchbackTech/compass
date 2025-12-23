@@ -3,11 +3,15 @@ import { BehaviorSubject } from "rxjs";
 import {
   CLASS_TIMED_CALENDAR_EVENT,
   DATA_EVENT_ELEMENT_ID,
+  DATA_FULL_WIDTH,
+  DATA_OVERLAPPING,
+  ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 
 interface Placement {
   isOverlapping: boolean;
+  fullWidth: boolean;
   style: CSSProperties;
 }
 
@@ -22,11 +26,17 @@ export const gridOrganization$ = new BehaviorSubject<Record<string, GridData>>(
 export const maxGridZIndex$ = new BehaviorSubject<number>(0);
 
 const borderRingSpace = 2;
+const fullWidthFactorThreshold = 1.75;
 const themeSpacing = parseInt(theme.spacing.s);
 const canvas = document.createElement("canvas");
 const canvasContext = canvas.getContext("2d");
 const selector = `.${CLASS_TIMED_CALENDAR_EVENT}`;
-const defaultGridData: GridData = { isOverlapping: false, style: {}, order: 0 };
+const defaultGridData: GridData = {
+  isOverlapping: false,
+  style: {},
+  order: 0,
+  fullWidth: false,
+};
 
 // Set canvas font to match 'text-xs' Tailwind class (0.75rem = 12px)
 if (canvasContext) canvasContext.font = "0.75rem Rubik";
@@ -106,31 +116,47 @@ export const findOptimalPlacement = (
   containerWidth: number,
   _width: number,
 ): Placement => {
-  const width = `${_width}px`;
+  const width = `${_width - borderRingSpace}px`;
   const collisionLength = collidingNodes.length;
   const isOverlapping = collisionLength > 0;
   const marginTop = `${borderRingSpace}px`;
 
   if (!isOverlapping) {
-    return { isOverlapping, style: { marginTop, left: marginTop, width } };
+    return {
+      isOverlapping,
+      style: { marginTop, left: marginTop, width },
+      fullWidth: true,
+    };
   }
 
   const totalNodes = collisionLength + 1;
   const nodes = [node, ...collidingNodes];
-  const orders = [...nodes].sort(sortByOrderAndWidthAttribute);
-  const zOrder = [...nodes].sort((a, b) => b.offsetHeight - a.offsetHeight);
+  const orders = nodes.sort(sortByOrderAndWidthAttribute);
+  const heightOrder = nodes.sort((a, b) => b.offsetHeight - a.offsetHeight);
   const index = orders.indexOf(node);
-  const _zIndex = zOrder.indexOf(node) + index;
+  const _zIndex = heightOrder.indexOf(node);
   const zIndex = _zIndex.toString();
   const columns = containerWidth / totalNodes;
   const offset = columns * index + borderRingSpace;
+  const tallest = _zIndex === 0;
+  const heightNode = heightOrder[_zIndex].offsetHeight;
+  const nextHeightNode = heightOrder[_zIndex + 1]?.offsetHeight;
+  const tallFactor = nextHeightNode ? heightNode / nextHeightNode : 0;
   const adjustedWidth = offset + _width;
   const overflow = Math.max(0, adjustedWidth - containerWidth);
-  const left = offset - overflow;
+  const fullWidth = tallest && tallFactor >= fullWidthFactorThreshold;
 
   return {
     isOverlapping,
-    style: { marginTop, left: `${left}px`, width, zIndex },
+    fullWidth,
+    style: {
+      marginTop,
+      left: `${offset}px`,
+      width: fullWidth
+        ? `${containerWidth - offset}px`
+        : `${_width - overflow - borderRingSpace}px`,
+      zIndex,
+    },
   };
 };
 
@@ -188,6 +214,7 @@ function updatePlacements(
   placements.forEach((placement, index) => {
     const node = nodes[index];
     const id = getNodeId(node);
+    const { fullWidth } = placement;
 
     if (!id) return;
 
@@ -200,7 +227,9 @@ function updatePlacements(
     const zMaxClass = `z-${maxZIndex}`;
     const classLists = Array.from(node.classList.values());
     const overlapClasses = ["border", "shadow-md"];
-    const newClasses = [zClass, `hover:${zMaxClass}`, `focus:${zMaxClass}`];
+    const hoverClasses = [zClass, `hover:${zMaxClass}`, `focus:${zMaxClass}`];
+    const widthClasses = ["grid-fullwidth"];
+    const newClasses = fullWidth ? widthClasses : hoverClasses;
     const oldClasses = classLists.filter((cls) => cls.includes("z-"));
 
     oldClasses.push(...overlapClasses);
@@ -210,13 +239,19 @@ function updatePlacements(
     // Mutate DOM classes+styles here to prevent react re-renders
     node.classList.remove(...oldClasses);
     node.classList.add(...newClasses);
+    node.setAttribute(DATA_OVERLAPPING, String(placement.isOverlapping));
+    node.setAttribute(DATA_FULL_WIDTH, String(fullWidth));
     Object.assign(node.style, styles);
   });
 
   return organization;
 }
 
-export function reorderGrid(mainGrid: HTMLElement) {
+export function reorderGrid(
+  mainGrid: HTMLElement | null = document.getElementById(ID_GRID_MAIN),
+) {
+  if (!mainGrid) return;
+
   const gridRect = mainGrid.getBoundingClientRect();
   const nodes = Array.from(mainGrid.querySelectorAll<HTMLElement>(selector));
 

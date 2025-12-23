@@ -332,7 +332,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
           role="textarea"
           name="Event Title"
           underlineColor={priorityColor}
-          value={title}
+          value={title ?? ""}
         />
 
         <PrioritySection

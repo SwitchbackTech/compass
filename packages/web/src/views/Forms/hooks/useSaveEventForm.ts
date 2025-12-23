@@ -4,12 +4,10 @@ import {
   RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
+import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
-import {
-  createEventSlice,
-  editEventSlice,
-} from "@web/ducks/events/slices/event.slice";
+import { createEventSlice } from "@web/ducks/events/slices/event.slice";
 import { store } from "@web/store";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { OnSubmitParser } from "@web/views/Calendar/components/Draft/hooks/actions/submit.parser";
@@ -18,6 +16,7 @@ import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 export function useSaveEventForm() {
   const dispatch = useAppDispatch();
   const closeEventForm = useCloseEventForm();
+  const updateEvent = useUpdateEvent();
 
   const onCreate = useCallback(
     (draft: Schema_GridEvent) => {
@@ -39,15 +38,9 @@ export function useSaveEventForm() {
     ) => {
       const event = new OnSubmitParser(draft).parse();
 
-      dispatch(
-        editEventSlice.actions.request({
-          _id: event._id!,
-          event,
-          applyTo,
-        }),
-      );
+      updateEvent({ event, applyTo });
     },
-    [dispatch],
+    [updateEvent],
   );
 
   const saveEventForm = useCallback(

@@ -9,10 +9,11 @@ import {
   getAgendaEventPosition,
   getAgendaEventTime,
   getAgendaEventTitle,
+  getEventHeight,
   getEventTimeFromPosition,
   getNowLinePosition,
   getSnappedMinutes,
-  toNearestFifteenMinutes,
+  roundToNearestFifteenWithinHour,
 } from "@web/views/Day/util/agenda/agenda.util";
 
 describe("agenda.util", () => {
@@ -290,17 +291,45 @@ describe("agenda.util", () => {
 
   describe("toNearestFifteenMinutes", () => {
     it("should round to nearest 15 minutes", () => {
-      expect(toNearestFifteenMinutes(0)).toBe(0);
-      expect(toNearestFifteenMinutes(7)).toBe(0); // 7 -> 0
-      expect(toNearestFifteenMinutes(8)).toBe(15); // 8 -> 15
-      expect(toNearestFifteenMinutes(22)).toBe(15); // 22 -> 15
-      expect(toNearestFifteenMinutes(23)).toBe(30); // 23 -> 30
+      expect(roundToNearestFifteenWithinHour(0)).toBe(0);
+      expect(roundToNearestFifteenWithinHour(7)).toBe(0); // 7 -> 0
+      expect(roundToNearestFifteenWithinHour(8)).toBe(15); // 8 -> 15
+      expect(roundToNearestFifteenWithinHour(22)).toBe(15); // 22 -> 15
+      expect(roundToNearestFifteenWithinHour(23)).toBe(30); // 23 -> 30
     });
 
     it("should clamp to 45 minutes", () => {
-      expect(toNearestFifteenMinutes(45)).toBe(45);
-      expect(toNearestFifteenMinutes(50)).toBe(45);
-      expect(toNearestFifteenMinutes(60)).toBe(45);
+      expect(roundToNearestFifteenWithinHour(45)).toBe(45);
+      expect(roundToNearestFifteenWithinHour(50)).toBe(45);
+      expect(roundToNearestFifteenWithinHour(60)).toBe(45);
+    });
+  });
+
+  describe("getEventHeight", () => {
+    it("should calculate height based on start and end date", () => {
+      const event = {
+        startDate: "2023-01-01T10:00:00",
+        endDate: "2023-01-01T11:00:00",
+      };
+      // 1 hour = 60 mins. 15 mins = SLOT_HEIGHT (20px).
+      // 60 / 15 = 4 slots.
+      // 4 * 20 = 80px.
+      // GAP_PX = 2.
+      // Expected: 80 - 2 = 78.
+      const height = getEventHeight(event);
+      expect(height).toBe(78);
+    });
+
+    it("should return minimum height of 4px", () => {
+      const event = {
+        startDate: "2023-01-01T10:00:00",
+        endDate: "2023-01-01T10:01:00",
+      };
+      // 1 min diff.
+      // Position diff will be small.
+      // Should clamp to 4.
+      const height = getEventHeight(event);
+      expect(height).toBe(4);
     });
   });
 });

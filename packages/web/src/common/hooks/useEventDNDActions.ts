@@ -6,22 +6,30 @@ import {
   ID_GRID_ALLDAY_ROW,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
+import {
+  CursorItem,
+  isOpenAtCursor,
+  setFloatingReferenceAtCursor,
+} from "@web/common/hooks/useOpenAtCursor";
+import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { editEventSlice } from "@web/ducks/events/slices/event.slice";
-import { useAppDispatch } from "@web/store/store.hooks";
+import { reorderGrid } from "@web/common/utils/dom/grid-organization.util";
+import { getCalendarEventElementFromGrid } from "@web/common/utils/event/event.util";
 import { getSnappedMinutes } from "@web/views/Day/util/agenda/agenda.util";
 
+const shouldSaveImmediately = () => !isOpenAtCursor(CursorItem.EventForm);
+
+const resetFloatingReference = (eventId: string) => {
+  queueMicrotask(() => {
+    const reference = getCalendarEventElementFromGrid(eventId);
+
+    setFloatingReferenceAtCursor(reference);
+    reorderGrid();
+  });
+};
+
 export function useEventDNDActions() {
-  const dispatch = useAppDispatch();
-
-  const updateEvent = useCallback(
-    (event: Schema_GridEvent) => {
-      if (!event._id) return;
-
-      dispatch(editEventSlice.actions.request({ _id: event._id, event }));
-    },
-    [dispatch],
-  );
+  const updateEvent = useUpdateEvent();
 
   const moveTimedAroundMainGridDayView = useCallback(
     (event: Schema_GridEvent, active: Active, over: Over) => {
@@ -32,14 +40,26 @@ export function useEventDNDActions() {
       const start = dayjs(event.startDate);
       const end = dayjs(event.endDate);
       const durationMinutes = end.diff(start, "minute");
-      const startDate = start.startOf("day").add(snappedMinutes, "minute");
-      const newEndDate = startDate.add(durationMinutes, "minute");
+      const newStartDate = start.startOf("day").add(snappedMinutes, "minute");
+      const newEndDate = newStartDate.add(durationMinutes, "minute");
 
-      updateEvent({
-        ...event,
-        startDate: startDate.toISOString(),
-        endDate: newEndDate.toISOString(),
-      });
+      const startChanged = !newStartDate.isSame(start);
+      const endChanged = !newEndDate.isSame(end);
+
+      if (!startChanged && !endChanged) return;
+
+      updateEvent(
+        {
+          event: {
+            ...event,
+            startDate: newStartDate.toISOString(),
+            endDate: newEndDate.toISOString(),
+          },
+        },
+        shouldSaveImmediately(),
+      );
+
+      resetFloatingReference(event._id);
     },
     [updateEvent],
   );
@@ -54,12 +74,19 @@ export function useEventDNDActions() {
       const startDate = start.add(snappedMinutes, "minute");
       const endDate = startDate.add(15, "minutes"); // Default 15 mins
 
-      updateEvent({
-        ...event,
-        isAllDay: false,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-      });
+      updateEvent(
+        {
+          event: {
+            ...event,
+            isAllDay: false,
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          },
+        },
+        shouldSaveImmediately(),
+      );
+
+      resetFloatingReference(event._id);
     },
     [updateEvent],
   );
@@ -70,12 +97,19 @@ export function useEventDNDActions() {
       const startDate = dayjs(event.startDate).startOf("day");
       const endDate = dayjs(event.endDate).startOf("day").add(1, "day");
 
-      updateEvent({
-        ...event,
-        isAllDay: true,
-        startDate: startDate.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
-        endDate: endDate.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
-      });
+      updateEvent(
+        {
+          event: {
+            ...event,
+            isAllDay: true,
+            startDate: startDate.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
+            endDate: endDate.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
+          },
+        },
+        shouldSaveImmediately(),
+      );
+
+      resetFloatingReference(event._id);
     },
     [updateEvent],
   );

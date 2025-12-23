@@ -1960,6 +1960,21 @@
     "@emnapi/runtime" "^1.5.0"
     "@tybys/wasm-util" "^0.10.1"
 
+"@ngneat/elf-entities@^5.0.2":
+  version "5.0.2"
+  resolved "https://registry.yarnpkg.com/@ngneat/elf-entities/-/elf-entities-5.0.2.tgz#832c4f07934d7cdd7384cb794c1f4399c4926430"
+  integrity sha512-G4ag51lvM3tOSgpxVVFYAgsh/bOL5BkNb4Z0VtosaM/CTWTHoNrf8UdvcaeJ3+sP1RS3bmEdZ9xUE8ifnVxssA==
+
+"@ngneat/elf@^2.5.1":
+  version "2.5.1"
+  resolved "https://registry.yarnpkg.com/@ngneat/elf/-/elf-2.5.1.tgz#bf87146ab4ee9bd9364f03b5cfad6ce180cfb343"
+  integrity sha512-13BItNZFgHglTiXuP9XhisNczwQ5QSzH+imAv9nAPsdbCq/3ortqkIYRnlxB8DGPVcuIjLujQ4OcZa+9QWgZtw==
+
+"@ngneat/use-observable@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@ngneat/use-observable/-/use-observable-1.0.0.tgz#e94ca47a79f05a26b8f4d821c8928da22f8ffa71"
+  integrity sha512-r8AwH3hI5zNI/nV1/X6XzCfmVQ0NPF+WDRbc6xQ0ZVhwsbaMPYsiKxr7wEDzWUMIN5iIMsScBs2g7oQRL0Xg3A==
+
 "@ngrok/ngrok-android-arm64@1.5.2":
   version "1.5.2"
   resolved "https://registry.yarnpkg.com/@ngrok/ngrok-android-arm64/-/ngrok-android-arm64-1.5.2.tgz#da8c7ca95ac86feba2def353348084e368a4ef76"

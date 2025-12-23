@@ -1,27 +1,47 @@
 import { ObjectId } from "bson";
 import { act } from "react";
-import "@testing-library/jest-dom";
+import { setEntities } from "@ngneat/elf-entities";
 import { screen, waitFor } from "@testing-library/react";
 import { Origin, Priorities } from "@core/constants/core.constants";
-import { Schema_Event } from "@core/types/event.types";
+import { Schema_Event, WithCompassId } from "@core/types/event.types";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import { useFloatingAtCursor } from "@web/common/hooks/useFloatingAtCursor";
-import { setDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
+import { store as globalStore } from "@web/store";
+import { eventsStore, resetActiveEvent, resetDraft } from "@web/store/events";
 import { TimedAgendaEvents } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/TimedAgendaEvents";
 import { EventContextMenu } from "@web/views/Day/components/ContextMenu/EventContextMenu";
 import { useAgendaInteractionsAtCursor } from "@web/views/Day/hooks/events/useAgendaInteractionsAtCursor";
 import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
+import { CursorItem, nodeId$ } from "../../../../common/hooks/useOpenAtCursor";
 
-const TestWrapper = () => {
-  const openChange = (open: boolean) => {
-    if (!open) setDraft(null);
-  };
-  const floating = useFloatingAtCursor(openChange);
+// Mock the global store
+jest.mock("@web/store", () => ({
+  store: {
+    getState: jest.fn(),
+    dispatch: jest.fn(),
+    subscribe: jest.fn(),
+  },
+}));
+
+const TestWrapper = ({ events }: { events: Schema_Event[] }) => {
+  const floating = useFloatingAtCursor((open: boolean, _e, reason) => {
+    const dismissed = reason === "escape-key" || reason === "outside-press";
+
+    if (!open && dismissed) {
+      const nodeId = nodeId$.getValue();
+
+      if (nodeId === CursorItem.EventForm) {
+        resetDraft();
+      } else {
+        resetActiveEvent();
+      }
+    }
+  });
   const interactions = useAgendaInteractionsAtCursor(floating);
 
   return (
     <>
-      <TimedAgendaEvents interactions={interactions} />
+      <TimedAgendaEvents events={events} interactions={interactions} />
       <EventContextMenu floating={floating} interactions={interactions} />
     </>
   );
@@ -29,8 +49,19 @@ const TestWrapper = () => {
 
 const renderAgendaEvents = (events: Schema_Event[]) => {
   const store = createStoreWithEvents(events);
+  eventsStore.update(setEntities(events as WithCompassId<Schema_Event>[]));
 
-  const utils = renderWithDayProviders(<TestWrapper />, { store });
+  // Link global store mock to local test store
+  (globalStore.getState as jest.Mock).mockImplementation(() =>
+    store.getState(),
+  );
+  (globalStore.dispatch as jest.Mock).mockImplementation((action) =>
+    store.dispatch(action),
+  );
+
+  const utils = renderWithDayProviders(<TestWrapper events={events} />, {
+    store,
+  });
   const dispatchSpy = jest.spyOn(store, "dispatch");
 
   return { store, dispatchSpy, ...utils };

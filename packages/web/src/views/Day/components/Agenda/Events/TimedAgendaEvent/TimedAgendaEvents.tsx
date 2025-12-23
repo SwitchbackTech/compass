@@ -1,9 +1,9 @@
 import classNames from "classnames";
 import fastDeepEqual from "fast-deep-equal/react";
-import { Ref, forwardRef, memo, useEffect, useMemo, useState } from "react";
+import { Ref, forwardRef, memo, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { UseInteractionsReturn, useMergeRefs } from "@floating-ui/react";
-import { StringV4Schema } from "@core/types/type.utils";
+import { Schema_Event } from "@core/types/event.types";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { useGridOrganization } from "@web/common/hooks/useGridOrganization";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -28,8 +28,10 @@ export const TimedAgendaEvents = memo(
       {
         height,
         interactions,
+        events,
       }: {
         height?: number;
+        events: Schema_Event[];
         interactions: UseInteractionsReturn;
       },
       _ref: Ref<HTMLElement>,
@@ -41,20 +43,6 @@ export const TimedAgendaEvents = memo(
       const openEventForm = useOpenEventForm();
       const [ref, setRef] = useState<HTMLElement | null>(null);
       const mergedRef = useMergeRefs([setRef, _ref]);
-
-      const events = useMemo(() => {
-        if (!draft || !StringV4Schema.safeParse(draft._id).success) {
-          return timedEvents;
-        }
-
-        const existing = timedEvents.find((event) => event._id === draft?._id);
-
-        if (existing) return timedEvents;
-
-        const allEvents = [draft, ...timedEvents];
-
-        return allEvents;
-      }, [timedEvents, draft]);
 
       useGridOrganization(ref);
 
@@ -71,10 +59,9 @@ export const TimedAgendaEvents = memo(
           ref={mergedRef}
           id={ID_GRID_MAIN}
           data-testid="timed-agendas"
-          className={classNames(
-            "relative ml-1 flex-1 cursor-cell overflow-hidden",
-            { isOver: "bg-gray-400/20" },
-          )}
+          className={classNames("relative ml-1 flex-1 overflow-hidden", {
+            isOver: "bg-gray-400/20",
+          })}
           style={{ height }}
         >
           {/* Event blocks */}

@@ -1,4 +1,5 @@
 import { Provider } from "react-redux";
+import { BehaviorSubject } from "rxjs";
 import { configureStore } from "@reduxjs/toolkit";
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
@@ -9,10 +10,15 @@ import {
 } from "@core/types/event.types";
 import { closeFloatingAtCursor } from "@web/common/hooks/useOpenAtCursor";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
-import { useDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
+import { activeEvent$ } from "@web/store/events";
 import { EventContextMenuItems } from "@web/views/Day/components/ContextMenu/EventContextMenuItems";
 
-jest.mock("@web/views/Calendar/components/Draft/context/useDraft");
+jest.mock("@web/store/events", () => {
+  const { BehaviorSubject } = require("rxjs");
+  return {
+    activeEvent$: new BehaviorSubject(null),
+  };
+});
 jest.mock("@web/common/hooks/useOpenAtCursor");
 
 const mockEvent: Schema_Event = {
@@ -41,7 +47,7 @@ describe("EventContextMenuItems", () => {
 
   const renderWithProvider = (event: Schema_Event) => {
     const store = createMockStore();
-    (useDraft as jest.Mock).mockReturnValue(event);
+    (activeEvent$ as BehaviorSubject<Schema_Event | null>).next(event);
     return render(
       <Provider store={store}>
         <EventContextMenuItems />
@@ -60,7 +66,7 @@ describe("EventContextMenuItems", () => {
     const store = createMockStore();
     const dispatchSpy = jest.spyOn(store, "dispatch");
 
-    (useDraft as jest.Mock).mockReturnValue(mockEvent);
+    (activeEvent$ as BehaviorSubject<Schema_Event | null>).next(mockEvent);
 
     render(
       <Provider store={store}>
@@ -84,7 +90,7 @@ describe("EventContextMenuItems", () => {
     const store = createMockStore();
     const dispatchSpy = jest.spyOn(store, "dispatch");
 
-    (useDraft as jest.Mock).mockReturnValue(mockEvent);
+    (activeEvent$ as BehaviorSubject<Schema_Event | null>).next(mockEvent);
 
     render(
       <Provider store={store}>
@@ -108,7 +114,7 @@ describe("EventContextMenuItems", () => {
     const store = createMockStore();
     const dispatchSpy = jest.spyOn(store, "dispatch");
 
-    (useDraft as jest.Mock).mockReturnValue(mockEvent);
+    (activeEvent$ as BehaviorSubject<Schema_Event | null>).next(mockEvent);
 
     render(
       <Provider store={store}>
@@ -121,7 +127,9 @@ describe("EventContextMenuItems", () => {
 
     fireEvent.keyDown(deleteButton, { key: " ", code: "Space" });
 
-    expect(dispatchSpy).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(dispatchSpy).toHaveBeenCalled();
+    });
     expect(mockClose).toHaveBeenCalled();
   });
 
@@ -132,7 +140,7 @@ describe("EventContextMenuItems", () => {
 
     const eventWithoutId = { ...mockEvent, _id: undefined };
 
-    (useDraft as jest.Mock).mockReturnValue(eventWithoutId);
+    (activeEvent$ as unknown as BehaviorSubject<any>).next(eventWithoutId);
 
     render(
       <Provider store={store}>

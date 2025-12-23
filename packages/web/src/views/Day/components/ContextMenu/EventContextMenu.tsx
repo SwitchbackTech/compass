@@ -4,12 +4,13 @@ import {
   UseInteractionsReturn,
   useFloating,
 } from "@floating-ui/react";
+import { useObservable } from "@ngneat/use-observable";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import {
   CursorItem,
   useFloatingNodeIdAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
-import { useDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
+import { activeEvent$ } from "@web/store/events";
 import { EventContextMenuItems } from "@web/views/Day/components/ContextMenu/EventContextMenuItems";
 
 export function EventContextMenu({
@@ -19,12 +20,12 @@ export function EventContextMenu({
   floating: ReturnType<typeof useFloating>;
   interactions: UseInteractionsReturn;
 }) {
-  const draft = useDraft();
+  const [activeEvent] = useObservable(activeEvent$);
   const nodeId = useFloatingNodeIdAtCursor();
   const floatingContextOpen = floating.context.open;
   const maxZIndex = useGridMaxZIndex();
   const isOpenAtCursor = nodeId === CursorItem.EventContextMenu;
-  const open = floatingContextOpen && isOpenAtCursor && !!draft;
+  const open = floatingContextOpen && isOpenAtCursor && !!activeEvent;
 
   if (!open) return null;
 

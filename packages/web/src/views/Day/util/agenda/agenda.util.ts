@@ -2,6 +2,7 @@ import { Active, Over } from "@dnd-kit/core";
 import { Schema_Event } from "@core/types/event.types";
 import { Dayjs } from "@core/util/date/dayjs";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   MINUTES_PER_SLOT,
   SLOT_HEIGHT,
@@ -78,6 +79,28 @@ export const getSnappedMinutes = (active: Active, over: Over) => {
   return snappedMinutes;
 };
 
-export const toNearestFifteenMinutes = (minutes: number) => {
-  return Math.min(45, Math.round(minutes / 15) * 15);
+export const roundMinutesToNearestFifteen = (minutes: number) => {
+  return Math.round(minutes / 15) * 15;
+};
+
+/**
+ * roundToNearestFifteenWithinHour
+ * between 0 and 45 minutes, rounds to the nearest 15-minute increment
+ */
+export const roundToNearestFifteenWithinHour = (minutes: number) => {
+  return Math.min(45, roundMinutesToNearestFifteen(minutes));
+};
+
+export const getEventHeight = (
+  event: Pick<Schema_GridEvent, "startDate" | "endDate">,
+) => {
+  const startDate = new Date(event.startDate);
+  const endDate = new Date(event.endDate);
+  const startPosition = getAgendaEventPosition(startDate);
+  const endPosition = getAgendaEventPosition(endDate);
+  const blockHeight = endPosition - startPosition;
+  const GAP_PX = 2;
+  const renderedHeight = Math.max(4, blockHeight - GAP_PX);
+
+  return renderedHeight;
 };

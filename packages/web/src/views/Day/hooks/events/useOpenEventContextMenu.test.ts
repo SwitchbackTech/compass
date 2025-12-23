@@ -1,13 +1,10 @@
-import React from "react";
-import { Provider } from "react-redux";
 import { renderHook } from "@testing-library/react";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import {
   CursorItem,
   openFloatingAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
-import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
-import { setDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
+import { eventsStore, setActiveEvent } from "@web/store/events";
 import { useOpenEventContextMenu } from "@web/views/Day/hooks/events/useOpenEventContextMenu";
 import { getEventClass } from "@web/views/Day/util/agenda/focus.util";
 
@@ -16,12 +13,11 @@ jest.mock("@web/common/hooks/useOpenAtCursor", () => ({
   openFloatingAtCursor: jest.fn(),
 }));
 
-jest.mock("@web/ducks/events/selectors/event.selectors", () => ({
-  selectEventById: jest.fn(),
-}));
-
-jest.mock("@web/views/Calendar/components/Draft/context/useDraft", () => ({
-  setDraft: jest.fn(),
+jest.mock("@web/store/events", () => ({
+  eventsStore: {
+    query: jest.fn(),
+  },
+  setActiveEvent: jest.fn(),
 }));
 
 jest.mock("@web/views/Day/util/agenda/focus.util", () => ({
@@ -29,16 +25,6 @@ jest.mock("@web/views/Day/util/agenda/focus.util", () => ({
 }));
 
 describe("useOpenEventContextMenu", () => {
-  const mockState = { events: {} };
-  const mockStore = {
-    getState: jest.fn(() => mockState),
-    subscribe: jest.fn(),
-    dispatch: jest.fn(),
-  };
-
-  const wrapper = ({ children }: { children: React.ReactNode }) =>
-    React.createElement(Provider, { store: mockStore as any, children });
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -60,9 +46,9 @@ describe("useOpenEventContextMenu", () => {
     };
 
     (getEventClass as jest.Mock).mockReturnValue(eventClass);
-    (selectEventById as jest.Mock).mockReturnValue(mockEvent);
+    (eventsStore.query as jest.Mock).mockReturnValue(mockEvent);
 
-    const { result } = renderHook(() => useOpenEventContextMenu(), { wrapper });
+    const { result } = renderHook(() => useOpenEventContextMenu());
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     result.current(mockEventObj as any);
@@ -74,8 +60,8 @@ describe("useOpenEventContextMenu", () => {
     expect(mockReference.getAttribute).toHaveBeenCalledWith(
       DATA_EVENT_ELEMENT_ID,
     );
-    expect(selectEventById).toHaveBeenCalledWith(mockState, eventId);
-    expect(setDraft).toHaveBeenCalledWith(mockEvent);
+    expect(eventsStore.query).toHaveBeenCalled();
+    expect(setActiveEvent).toHaveBeenCalledWith(mockEvent._id);
     expect(openFloatingAtCursor).toHaveBeenCalledWith({
       nodeId: CursorItem.EventContextMenu,
       placement: "bottom",
@@ -99,12 +85,12 @@ describe("useOpenEventContextMenu", () => {
 
     (getEventClass as jest.Mock).mockReturnValue(eventClass);
 
-    const { result } = renderHook(() => useOpenEventContextMenu(), { wrapper });
+    const { result } = renderHook(() => useOpenEventContextMenu());
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     result.current(mockEventObj as any);
 
-    expect(setDraft).not.toHaveBeenCalled();
+    expect(setActiveEvent).not.toHaveBeenCalled();
     expect(openFloatingAtCursor).not.toHaveBeenCalled();
   });
 
@@ -121,12 +107,12 @@ describe("useOpenEventContextMenu", () => {
 
     (getEventClass as jest.Mock).mockReturnValue(eventClass);
 
-    const { result } = renderHook(() => useOpenEventContextMenu(), { wrapper });
+    const { result } = renderHook(() => useOpenEventContextMenu());
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     result.current(mockEventObj as any);
 
-    expect(setDraft).not.toHaveBeenCalled();
+    expect(setActiveEvent).not.toHaveBeenCalled();
     expect(openFloatingAtCursor).not.toHaveBeenCalled();
   });
 });

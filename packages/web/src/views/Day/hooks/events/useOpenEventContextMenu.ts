@@ -1,18 +1,14 @@
 import { FocusEvent, MouseEvent, useCallback } from "react";
-import { useStore } from "react-redux";
+import { getEntity } from "@ngneat/elf-entities";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import {
   CursorItem,
   openFloatingAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
-import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
-import { RootState } from "@web/store";
-import { setDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
+import { eventsStore, setActiveEvent } from "@web/store/events";
 import { getEventClass } from "@web/views/Day/util/agenda/focus.util";
 
 export function useOpenEventContextMenu() {
-  const store = useStore<RootState>();
-
   const openEventContextMenu = useCallback(
     (e: MouseEvent<Element> | FocusEvent<Element>) => {
       e.preventDefault();
@@ -26,12 +22,14 @@ export function useOpenEventContextMenu() {
 
       if (!eventId || !reference) return;
 
-      const draftEvent = selectEventById(store.getState(), eventId);
+      const draftEvent = eventsStore.query(getEntity(eventId));
 
-      setDraft(draftEvent);
+      if (!draftEvent) return;
+
+      setActiveEvent(draftEvent._id);
       openFloatingAtCursor({ nodeId, placement: "bottom", reference });
     },
-    [store],
+    [],
   );
 
   return openEventContextMenu;

@@ -191,7 +191,7 @@ describe("grid-organization.util", () => {
       );
 
       expect(placement.style).toHaveProperty("left");
-      expect(placement.style).toHaveProperty("width", "500px");
+      expect(placement.style).toHaveProperty("width", "498px");
       expect(placement.style).toHaveProperty("zIndex");
     });
   });
@@ -280,7 +280,7 @@ describe("grid-organization.util", () => {
       node.setAttribute(DATA_EVENT_ELEMENT_ID, id);
 
       gridOrganization$.next({
-        [id]: { order: 5, isOverlapping: false, style: {} },
+        [id]: { order: 5, isOverlapping: false, style: {}, fullWidth: false },
       });
 
       expect(getOrder(node)).toBe(5);
