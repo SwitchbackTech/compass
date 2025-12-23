@@ -14,8 +14,10 @@ import { useFloatingAtCursor } from "@web/common/hooks/useFloatingAtCursor";
 import { CursorItem, nodeId$ } from "@web/common/hooks/useOpenAtCursor";
 import { compareEventsByStartDate } from "@web/common/utils/event/event.util";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
-import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
-import { selectIsDayEventsProcessing } from "@web/ducks/events/selectors/event.selectors";
+import {
+  selectDayEvents,
+  selectIsDayEventsProcessing,
+} from "@web/ducks/events/selectors/event.selectors";
 import {
   allDayEvents$,
   eventsStore,
@@ -101,6 +103,12 @@ export function Agenda() {
       >
         <AllDayAgendaEvents events={allDayEvents} interactions={interactions} />
 
+        {showProgressLine ? (
+          <LoadingProgressLine />
+        ) : (
+          <div className="h-0.5 border-t border-gray-400/20" />
+        )}
+
         <div
           id={ID_GRID_EVENTS_TIMED}
           ref={(e) => {
@@ -111,8 +119,7 @@ export function Agenda() {
           className={classNames(
             "relative flex flex-1 overflow-x-hidden overflow-y-auto",
             "focus-visible:rounded focus-visible:ring-2 focus-visible:outline-none",
-            "focus:outline-none focus-visible:ring-yellow-200",
-            "border-t border-gray-400/20 pt-2",
+            "mt-1 focus:outline-none focus-visible:ring-yellow-200",
           )}
           data-testid="calendar-scroll"
           tabIndex={0}
@@ -126,7 +133,6 @@ export function Agenda() {
             scrollbarGutter: "stable both-edges",
           }}
         >
-          {showProgressLine && <LoadingProgressLine />}
           <TimeLabels />
 
           <NowLine />

@@ -1,3 +1,5 @@
+import classNames from "classnames";
+
 /**
  * Loading progress line component that shows at the top of the timedEvents section (ID_GRID_EVENTS_TIMED)
  * during subsequent event reloads. Displays an animated color-transitioning
@@ -7,27 +9,11 @@ export function LoadingProgressLine() {
   return (
     <div
       data-testid="loading-progress-line"
-      className="absolute top-0 right-0 left-0 z-50 h-1"
-      style={{
-        background:
-          "linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899, #3b82f6)",
-        backgroundSize: "200% 100%",
-        animation: "progressSlide 2s ease-in-out infinite",
-      }}
-    >
-      <style>{`
-        @keyframes progressSlide {
-          0% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-          100% {
-            background-position: 0% 50%;
-          }
-        }
-      `}</style>
-    </div>
+      className={classNames(
+        "h-0.5 w-full",
+        "bg-linear-to-r/longer from-gray-500 to-gray-300",
+        "motion-safe:animate-progress-slide",
+      )}
+    />
   );
 }
