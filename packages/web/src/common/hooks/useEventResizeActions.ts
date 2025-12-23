@@ -22,7 +22,6 @@ export function useEventResizeActions(
   const updateReduxEvent = useUpdateEvent();
   const [resizing, setResizing] = useState<boolean>(false);
   const originalEvent = useRef<WithCompassId<Schema_Event> | null>(event);
-  const _id = event._id;
 
   const onResizeStart: ResizeStartCallback = useCallback(() => {
     setResizing(true);
@@ -31,35 +30,43 @@ export function useEventResizeActions(
   }, [event]);
 
   const onResize: ResizeCallback = useCallback(
-    (e, direction, _ref, delta) => {
+    (_e, direction, _ref, delta) => {
+      if (!originalEvent.current) return;
+
       const boundsRect = bounds.getBoundingClientRect();
-      const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
-
-      if (direction === "top" && clientY < boundsRect.top) return;
-      if (direction === "bottom" && clientY > boundsRect.bottom - SLOT_HEIGHT) {
-        return;
-      }
-
       const slotMinute = MINUTES_PER_SLOT / SLOT_HEIGHT;
-      const minutes = roundMinutesToNearestFifteen(delta.height * slotMinute);
-      const start = dayjs(originalEvent.current?.startDate);
-      const end = dayjs(originalEvent.current?.endDate);
+
+      const originalStart = dayjs(originalEvent.current.startDate);
+      const originalEnd = dayjs(originalEvent.current.endDate);
+      const dayStart = originalStart.startOf("day");
+
+      const startDiffMinutes = originalStart.diff(dayStart, "minutes");
+      const endDiffMinutes = originalEnd.diff(dayStart, "minutes");
+
+      const originalTopPx = (startDiffMinutes / MINUTES_PER_SLOT) * SLOT_HEIGHT;
+      const originalBottomPx =
+        (endDiffMinutes / MINUTES_PER_SLOT) * SLOT_HEIGHT;
 
       if (direction === "top") {
+        const clampedDelta = Math.min(delta.height, originalTopPx);
+        const minutes = roundMinutesToNearestFifteen(clampedDelta * slotMinute);
+
         setDraft({
-          _id,
           ...originalEvent.current,
-          startDate: start.subtract(minutes, "minutes").format(),
+          startDate: originalStart.subtract(minutes, "minutes").format(),
         });
       } else {
+        const maxGrowthPx = boundsRect.height - originalBottomPx;
+        const clampedDelta = Math.min(delta.height, maxGrowthPx);
+        const minutes = roundMinutesToNearestFifteen(clampedDelta * slotMinute);
+
         setDraft({
-          _id,
           ...originalEvent.current,
-          endDate: end.add(minutes, "minutes").format(),
+          endDate: originalEnd.add(minutes, "minutes").format(),
         });
       }
     },
-    [_id, bounds],
+    [bounds],
   );
 
   const onResizeStop: ResizeCallback = useCallback(() => {
