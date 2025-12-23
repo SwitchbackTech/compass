@@ -4,15 +4,15 @@ import {
   CursorItem,
   openFloatingAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
-import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
-import { setDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
+import { eventsStore, setActiveEvent } from "@web/store/events";
 import { useOpenAgendaEventPreview } from "@web/views/Day/hooks/events/useOpenAgendaEventPreview";
 import { getEventClass } from "@web/views/Day/util/agenda/focus.util";
 
-jest.mock("@web/store", () => ({
-  store: {
-    getState: jest.fn(),
+jest.mock("@web/store/events", () => ({
+  eventsStore: {
+    query: jest.fn(),
   },
+  setActiveEvent: jest.fn(),
 }));
 
 jest.mock("@web/common/hooks/useOpenAtCursor", () => ({
@@ -20,21 +20,11 @@ jest.mock("@web/common/hooks/useOpenAtCursor", () => ({
   openFloatingAtCursor: jest.fn(),
 }));
 
-jest.mock("@web/ducks/events/selectors/event.selectors", () => ({
-  selectEventById: jest.fn(),
-}));
-
-jest.mock("@web/views/Calendar/components/Draft/context/useDraft", () => ({
-  setDraft: jest.fn(),
-}));
-
 jest.mock("@web/views/Day/util/agenda/focus.util", () => ({
   getEventClass: jest.fn(),
 }));
 
 describe("useOpenAgendaEventPreview", () => {
-  const mockStore = jest.requireMock("@web/store").store;
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -56,7 +46,7 @@ describe("useOpenAgendaEventPreview", () => {
     };
 
     (getEventClass as jest.Mock).mockReturnValue(eventClass);
-    (selectEventById as jest.Mock).mockReturnValue(mockEvent);
+    (eventsStore.query as jest.Mock).mockReturnValue(mockEvent);
 
     const { result } = renderHook(() => useOpenAgendaEventPreview());
 
@@ -70,8 +60,8 @@ describe("useOpenAgendaEventPreview", () => {
     expect(mockReference.getAttribute).toHaveBeenCalledWith(
       DATA_EVENT_ELEMENT_ID,
     );
-    expect(selectEventById).toHaveBeenCalledWith(mockStore.getState(), eventId);
-    expect(setDraft).toHaveBeenCalledWith(mockEvent);
+    expect(eventsStore.query).toHaveBeenCalled();
+    expect(setActiveEvent).toHaveBeenCalledWith(mockEvent._id);
     expect(openFloatingAtCursor).toHaveBeenCalledWith({
       nodeId: CursorItem.EventPreview,
       placement: "right",
@@ -100,7 +90,7 @@ describe("useOpenAgendaEventPreview", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     result.current(mockEventObj as any);
 
-    expect(setDraft).not.toHaveBeenCalled();
+    expect(setActiveEvent).not.toHaveBeenCalled();
     expect(openFloatingAtCursor).not.toHaveBeenCalled();
   });
 
@@ -122,7 +112,7 @@ describe("useOpenAgendaEventPreview", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     result.current(mockEventObj as any);
 
-    expect(setDraft).not.toHaveBeenCalled();
+    expect(setActiveEvent).not.toHaveBeenCalled();
     expect(openFloatingAtCursor).not.toHaveBeenCalled();
   });
 });

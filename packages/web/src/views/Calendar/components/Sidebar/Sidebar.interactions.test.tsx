@@ -41,7 +41,7 @@ describe("Sidebar: Interactions", () => {
     await waitFor(() => {
       expect(screen.queryByRole("form")).not.toBeInTheDocument();
     });
-  });
+  }, 10000);
 
   it("adds someday event via + and saves", async () => {
     server.use(

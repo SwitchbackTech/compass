@@ -11,6 +11,10 @@ export function DNDOverlay({ children }: PropsWithChildren) {
   const { active, over } = useDndContext();
   const data = (active?.data?.current ?? {}) as DraggableDNDData;
   const { type, view, event } = data;
+  const dndProps = useMemo(
+    () => ({ isDragging: !!active?.id, over, listeners: {} }),
+    [active, over],
+  );
 
   const modifiers = useMemo(() => {
     switch (view) {
@@ -26,19 +30,13 @@ export function DNDOverlay({ children }: PropsWithChildren) {
 
     switch (type) {
       case Categories_Event.TIMED:
-        return <TimedAgendaEvent event={event!} isDragging={!!active?.id} />;
+        return <TimedAgendaEvent event={event!} dndProps={dndProps} />;
       case Categories_Event.ALLDAY:
-        return (
-          <AllDayAgendaEvent
-            event={event}
-            over={over}
-            isDragging={!!active?.id}
-          />
-        );
+        return <AllDayAgendaEvent event={event} dndProps={dndProps} />;
       default:
         return children;
     }
-  }, [children, type, event, active?.id, over]);
+  }, [children, type, event, dndProps]);
 
   return createPortal(
     <DragOverlay

@@ -1,5 +1,6 @@
 import { PreloadedState, configureStore } from "@reduxjs/toolkit";
 import { Schema_Event } from "@core/types/event.types";
+import { sagaMiddleware } from "@web/common/store/middlewares";
 import { RootState } from "@web/store";
 import { reducers } from "@web/store/reducers";
 
@@ -157,7 +158,7 @@ export const createStoreWithEvents = (
     return acc;
   }, {});
 
-  preloadedState.events.entities.value = entities;
+  preloadedState.events.entities!.value = entities;
   preloadedState.events.getDayEvents = {
     value: {
       data: events
@@ -182,7 +183,7 @@ export const createStoreWithEvents = (
         thunk: false,
         serializableCheck: false,
         immutableCheck: false,
-      }),
+      }).concat(sagaMiddleware),
   });
 };
 

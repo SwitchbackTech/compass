@@ -1,12 +1,28 @@
 import classNames from "classnames";
-import { memo, useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Key } from "ts-key-enum";
+import { useDndContext } from "@dnd-kit/core";
+import {
+  UIEntitiesRef,
+  setEntities,
+  updateEntities,
+} from "@ngneat/elf-entities";
+import { useObservable } from "@ngneat/use-observable";
+import { Schema_Event, WithCompassId } from "@core/types/event.types";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { useFloatingAtCursor } from "@web/common/hooks/useFloatingAtCursor";
+import { CursorItem, nodeId$ } from "@web/common/hooks/useOpenAtCursor";
+import { compareEventsByStartDate } from "@web/common/utils/event/event.util";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
 import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
+import {
+  allDayEvents$,
+  eventsStore,
+  resetActiveEvent,
+  resetDraft,
+  timedEvents$,
+} from "@web/store/events";
 import { useAppSelector } from "@web/store/store.hooks";
-import { setDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
 import { AgendaEventPreview } from "@web/views/Day/components/Agenda/Events/AgendaEventPreview/AgendaEventPreview";
 import { AllDayAgendaEvents } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/AllDayAgendaEvents";
 import { TimedAgendaEvents } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/TimedAgendaEvents";
@@ -15,19 +31,31 @@ import { TimeLabels } from "@web/views/Day/components/Agenda/TimeLabels/TimeLabe
 import { EventContextMenu } from "@web/views/Day/components/ContextMenu/EventContextMenu";
 import { useAgendaInteractionsAtCursor } from "@web/views/Day/hooks/events/useAgendaInteractionsAtCursor";
 
-const openChange = (open: boolean) => {
-  if (!open) setDraft(null);
-};
-
-export const Agenda = memo(function Agenda() {
-  const events = useAppSelector(selectDayEvents);
+export function Agenda() {
+  const { active } = useDndContext();
+  const reduxEvents = useAppSelector(selectDayEvents);
+  const [allDayEvents] = useObservable(allDayEvents$);
+  const [timedEvents] = useObservable(timedEvents$);
   const height = useRef<number>(0);
-  const floating = useFloatingAtCursor(openChange);
-  const interactions = useAgendaInteractionsAtCursor(floating);
   const timedAgendaRef = useRef<HTMLElement | null>(null);
 
-  // Separate all-day events from timed events
-  const allDayEvents = events.filter((event) => event.isAllDay);
+  const floating = useFloatingAtCursor((open, _e, reason) => {
+    const dismissed = reason === "escape-key" || reason === "outside-press";
+
+    if (!open && dismissed) {
+      const nodeId = nodeId$.getValue();
+
+      if (nodeId === CursorItem.EventForm) {
+        resetDraft();
+      } else {
+        resetActiveEvent();
+      }
+    }
+  });
+
+  const interactions = useAgendaInteractionsAtCursor(floating, {
+    enabled: !active,
+  });
 
   const onEnterKey = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === Key.Enter) {
@@ -37,16 +65,28 @@ export const Agenda = memo(function Agenda() {
     }
   }, []);
 
+  useEffect(() => {
+    eventsStore.update(
+      setEntities(
+        [...reduxEvents].sort(
+          compareEventsByStartDate,
+        ) as WithCompassId<Schema_Event>[],
+      ),
+      updateEntities(
+        reduxEvents.map((e) => e._id!),
+        {},
+        { ref: UIEntitiesRef },
+      ),
+    );
+  }, [reduxEvents]);
+
   return (
     <>
       <section
         aria-label="Calendar agenda"
-        className="bg-darkBlue-400 flex h-full min-w-xs flex-1 flex-col gap-2 p-0.5"
+        className="bg-bg-primary flex h-full min-w-xs flex-1 flex-col gap-2 p-0.5"
       >
-        <AllDayAgendaEvents
-          allDayEvents={allDayEvents}
-          interactions={interactions}
-        />
+        <AllDayAgendaEvents events={allDayEvents} interactions={interactions} />
 
         <div
           id={ID_GRID_EVENTS_TIMED}
@@ -59,13 +99,13 @@ export const Agenda = memo(function Agenda() {
             "relative flex flex-1 overflow-x-hidden overflow-y-auto",
             "focus-visible:rounded focus-visible:ring-2 focus-visible:outline-none",
             "focus:outline-none focus-visible:ring-yellow-200",
-            "border-t border-gray-400/20 pt-1",
+            "border-t border-gray-400/20 pt-2",
           )}
           data-testid="calendar-scroll"
           tabIndex={0}
           aria-label="Timed events section"
           onKeyDown={onEnterKey}
-          {...(events.length > 0
+          {...(timedEvents.length > 0
             ? {}
             : { title: "Timed calendar events section" })}
           style={{
@@ -78,6 +118,7 @@ export const Agenda = memo(function Agenda() {
           <NowLine />
 
           <TimedAgendaEvents
+            events={timedEvents}
             height={height.current}
             interactions={interactions}
             ref={timedAgendaRef}
@@ -90,6 +131,4 @@ export const Agenda = memo(function Agenda() {
       <EventContextMenu floating={floating} interactions={interactions} />
     </>
   );
-});
-
-Agenda.displayName = "Agenda";
+}

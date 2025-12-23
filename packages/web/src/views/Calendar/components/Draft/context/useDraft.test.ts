@@ -1,24 +1,18 @@
 import { act } from "react";
 import { renderHook } from "@testing-library/react";
-import { Schema_Event } from "@core/types/event.types";
-import {
-  draft$,
-  setDraft,
-  useDraft,
-} from "@web/views/Calendar/components/Draft/context/useDraft";
+import { Schema_Event, WithCompassId } from "@core/types/event.types";
+import { resetDraft, setDraft } from "@web/store/events";
+import { useDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
 
 describe("useDraft", () => {
-  const mockEvent: Schema_Event = {
+  const mockEvent: WithCompassId<Schema_Event> = {
     _id: "123",
     title: "Test Event",
     startDate: "2023-01-01",
     endDate: "2023-01-01",
   };
 
-  beforeEach(() => {
-    // Reset the subject before each test
-    draft$.next(null);
-  });
+  beforeEach(resetDraft);
 
   it("should return null initially", () => {
     const { result } = renderHook(() => useDraft());
@@ -39,7 +33,7 @@ describe("useDraft", () => {
     const { result } = renderHook(() => useDraft());
 
     act(() => {
-      draft$.next(mockEvent);
+      setDraft(mockEvent);
     });
 
     expect(result.current).toEqual(mockEvent);
@@ -51,11 +45,13 @@ describe("useDraft", () => {
     act(() => {
       setDraft(mockEvent);
     });
+
     expect(result.current).toEqual(mockEvent);
 
     act(() => {
-      setDraft(null);
+      resetDraft();
     });
+
     expect(result.current).toBeNull();
   });
 });

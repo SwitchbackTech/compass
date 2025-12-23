@@ -1,28 +1,29 @@
 import React, { useCallback } from "react";
+import { useObservable } from "@ngneat/use-observable";
 import { TrashIcon } from "@phosphor-icons/react";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { closeFloatingAtCursor } from "@web/common/hooks/useOpenAtCursor";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
+import { activeEvent$ } from "@web/store/events";
 import { useAppDispatch } from "@web/store/store.hooks";
-import { useDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
 
 export function EventContextMenuItems() {
-  const draft = useDraft();
+  const [activeEvent] = useObservable(activeEvent$);
   const dispatch = useAppDispatch();
 
   const handleDelete = useCallback(() => {
-    if (!draft?._id) return;
+    if (!activeEvent?._id) return;
 
     // Dispatch delete action
     dispatch(
       deleteEventSlice.actions.request({
-        _id: draft?._id,
+        _id: activeEvent?._id,
         applyTo: RecurringEventUpdateScope.THIS_EVENT,
       }),
     );
 
     closeFloatingAtCursor();
-  }, [dispatch, draft?._id]);
+  }, [dispatch, activeEvent?._id]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {

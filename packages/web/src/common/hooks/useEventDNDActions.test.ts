@@ -6,13 +6,17 @@ import {
   ID_GRID_ALLDAY_ROW,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
-import { editEventSlice } from "@web/ducks/events/slices/event.slice";
+import { useEventDNDActions } from "@web/common/hooks/useEventDNDActions";
+import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { getSnappedMinutes } from "@web/views/Day/util/agenda/agenda.util";
-import { useEventDNDActions } from "../useEventDNDActions";
 
 jest.mock("@dnd-kit/core", () => ({
   useDndMonitor: jest.fn(),
+}));
+
+jest.mock("@web/common/hooks/useUpdateEvent", () => ({
+  useUpdateEvent: jest.fn(),
 }));
 
 jest.mock("@web/store/store.hooks", () => ({
@@ -25,6 +29,7 @@ jest.mock("@web/views/Day/util/agenda/agenda.util", () => ({
 
 describe("useEventDNDActions", () => {
   const mockDispatch = jest.fn();
+  const mockUpdateEvent = jest.fn();
   const mockEvent = {
     _id: "event-1",
     startDate: "2023-01-01T10:00:00.000Z",
@@ -35,6 +40,7 @@ describe("useEventDNDActions", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (useAppDispatch as jest.Mock).mockReturnValue(mockDispatch);
+    (useUpdateEvent as jest.Mock).mockReturnValue(mockUpdateEvent);
   });
 
   it("should register dnd monitor", () => {
@@ -79,14 +85,15 @@ describe("useEventDNDActions", () => {
         .add(60, "minute")
         .toISOString();
 
-      expect(mockDispatch).toHaveBeenCalledWith(
-        editEventSlice.actions.request({
-          _id: mockEvent._id,
+      expect(mockUpdateEvent).toHaveBeenCalledWith(
+        {
           event: expect.objectContaining({
+            ...mockEvent,
             startDate: expectedStartDate,
             endDate: expectedEndDate,
           }),
-        }),
+        },
+        true,
       );
     });
 
@@ -115,15 +122,16 @@ describe("useEventDNDActions", () => {
         .add(15, "minute")
         .toISOString();
 
-      expect(mockDispatch).toHaveBeenCalledWith(
-        editEventSlice.actions.request({
-          _id: allDayEvent._id,
+      expect(mockUpdateEvent).toHaveBeenCalledWith(
+        {
           event: expect.objectContaining({
+            ...allDayEvent,
             isAllDay: false,
             startDate: expectedStartDate,
             endDate: expectedEndDate,
           }),
-        }),
+        },
+        true,
       );
     });
 
@@ -149,15 +157,16 @@ describe("useEventDNDActions", () => {
         .add(1, "day")
         .format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
 
-      expect(mockDispatch).toHaveBeenCalledWith(
-        editEventSlice.actions.request({
-          _id: mockEvent._id,
+      expect(mockUpdateEvent).toHaveBeenCalledWith(
+        {
           event: expect.objectContaining({
+            ...mockEvent,
             isAllDay: true,
             startDate: expectedStartDate,
             endDate: expectedEndDate,
           }),
-        }),
+        },
+        true,
       );
     });
 
@@ -167,7 +176,7 @@ describe("useEventDNDActions", () => {
 
       onDragEnd({ active, over });
 
-      expect(mockDispatch).not.toHaveBeenCalled();
+      expect(mockUpdateEvent).not.toHaveBeenCalled();
     });
   });
 });

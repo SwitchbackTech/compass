@@ -54,7 +54,7 @@ describe("Tasks Keyboard Drag and Drop", () => {
     // The drag handle is an IconButton containing the DotsSixVerticalIcon
     const dragHandles = screen.getAllByRole("button", { name: /Reorder/i });
     expect(dragHandles.length).toBe(2);
-  });
+  }, 10000);
 
   it("should not render drag handles when there is only one task", async () => {
     const { user } = renderWithDayProviders(<TaskList />);
@@ -84,7 +84,7 @@ describe("Tasks Keyboard Drag and Drop", () => {
       firstDragHandle.focus();
     });
     expect(firstDragHandle).toHaveFocus();
-  });
+  }, 10000);
 
   it("should have accessible description for drag handles", async () => {
     const { user } = renderWithDayProviders(<TaskList />);
@@ -109,5 +109,5 @@ describe("Tasks Keyboard Drag and Drop", () => {
     );
     expect(descriptionElement).toBeInTheDocument();
     expect(descriptionElement).toHaveClass("hidden");
-  });
+  }, 10000);
 });

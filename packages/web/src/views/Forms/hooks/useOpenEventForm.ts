@@ -1,7 +1,8 @@
 import { ObjectId } from "bson";
 import { PointerEvent, useCallback } from "react";
+import { getEntity } from "@ngneat/elf-entities";
 import { Origin, Priorities } from "@core/constants/core.constants";
-import { Schema_Event } from "@core/types/event.types";
+import { Schema_Event, WithCompassId } from "@core/types/event.types";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/auth.util";
 import {
@@ -23,13 +24,11 @@ import {
 } from "@web/common/hooks/useOpenAtCursor";
 import { getElementAtPoint } from "@web/common/utils/dom/event-emitter.util";
 import { getCalendarEventElementFromGrid } from "@web/common/utils/event/event.util";
-import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
-import { store } from "@web/store";
-import { setDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
+import { eventsStore, getDraft, setDraft } from "@web/store/events";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import {
   getEventTimeFromPosition,
-  toNearestFifteenMinutes,
+  roundToNearestFifteenWithinHour,
 } from "@web/views/Day/util/agenda/agenda.util";
 import {
   focusElement,
@@ -42,7 +41,11 @@ export function useOpenEventForm() {
   const dateInView = useDateInView();
 
   const openEventForm = useCallback(
-    async ({ detail }: PointerEvent<HTMLElement>) => {
+    async (e: PointerEvent<HTMLElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const { detail } = e;
       const defaultDetails = { id: undefined, create: false };
       const details = typeof detail === "object" ? detail : defaultDetails;
       const create = details?.create ?? false;
@@ -51,6 +54,7 @@ export function useOpenEventForm() {
 
       if (!user) return;
 
+      const previousDraft = eventsStore.query((s) => getDraft(s));
       const active = document.activeElement;
       const element = getElementAtPoint(cursor);
       const eventClass = `.${getEventClass(element)}`;
@@ -61,18 +65,21 @@ export function useOpenEventForm() {
       const existingEventId = id ?? event?.getAttribute(DATA_EVENT_ELEMENT_ID);
       const draftId = new ObjectId().toString();
       const _id = create ? draftId : (existingEventId ?? draftId);
+      const sameDraft = previousDraft?._id === _id;
 
-      let draftEvent: Schema_Event;
+      let draftEvent: WithCompassId<Schema_Event> | undefined = undefined;
 
       if (existingEventId && !create) {
-        draftEvent = selectEventById(store.getState(), existingEventId);
-      } else {
+        draftEvent = eventsStore.query(getEntity(existingEventId));
+      }
+
+      if (!draftEvent) {
         const now = dayjs();
 
         // we default to the nearest 15-minute event
         // until the week view is able to support arbitrary event durations
         let startTime: Dayjs = dayjs().minute(
-          toNearestFifteenMinutes(now.minute()),
+          roundToNearestFifteenWithinHour(now.minute()),
         );
 
         // make sure the clampedTime is in the future
@@ -102,16 +109,24 @@ export function useOpenEventForm() {
           endTime = startTime.add(15, "minutes");
         }
 
+        if (!isAllDay && sameDraft) {
+          startTime = dayjs(previousDraft?.startDate);
+          endTime = dayjs(previousDraft?.endDate);
+        }
+
+        const update = sameDraft ? previousDraft : null;
+
         draftEvent = {
+          ...update,
           _id,
-          title: "",
-          description: "",
-          startDate: isAllDay ? startTime.format(YMD) : startTime.toISOString(),
-          endDate: isAllDay ? endTime.format(YMD) : endTime.toISOString(),
+          title: update?.title || "",
+          description: update?.description || "",
+          startDate: isAllDay ? startTime.format(YMD) : startTime.format(),
+          endDate: isAllDay ? endTime.format(YMD) : endTime.format(),
           isAllDay,
           isSomeday,
           user,
-          priority: Priorities.UNASSIGNED,
+          priority: update?.priority || Priorities.UNASSIGNED,
           origin: Origin.COMPASS,
         };
       }
