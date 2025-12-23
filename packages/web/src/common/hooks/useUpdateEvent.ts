@@ -3,7 +3,7 @@ import { Schema_Event, WithCompassId } from "@core/types/event.types";
 import { SliceStateContext } from "@web/common/store/helpers";
 import { Payload_EditEvent } from "@web/ducks/events/event.types";
 import { editEventSlice } from "@web/ducks/events/slices/event.slice";
-import { updateEvent } from "@web/store/events";
+import { setDraft } from "@web/store/events";
 import { useAppDispatch } from "@web/store/store.hooks";
 
 export function useUpdateEvent() {
@@ -18,7 +18,7 @@ export function useUpdateEvent() {
 
       if (!event._id) return;
 
-      updateEvent(payload.event as WithCompassId<Schema_Event>);
+      setDraft(payload.event as WithCompassId<Schema_Event>);
 
       if (!saveImmediate) return;
 

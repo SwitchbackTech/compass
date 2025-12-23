@@ -6,11 +6,10 @@ import {
   ID_GRID_ALLDAY_ROW,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
+import { useEventDNDActions } from "@web/common/hooks/useEventDNDActions";
 import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
-import { getEventFromStore } from "@web/common/utils/event/event.util";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { getSnappedMinutes } from "@web/views/Day/util/agenda/agenda.util";
-import { useEventDNDActions } from "./useEventDNDActions";
 
 jest.mock("@dnd-kit/core", () => ({
   useDndMonitor: jest.fn(),
@@ -28,10 +27,6 @@ jest.mock("@web/views/Day/util/agenda/agenda.util", () => ({
   getSnappedMinutes: jest.fn(),
 }));
 
-jest.mock("@web/common/utils/event/event.util", () => ({
-  getEventFromStore: jest.fn(),
-}));
-
 describe("useEventDNDActions", () => {
   const mockDispatch = jest.fn();
   const mockUpdateEvent = jest.fn();
@@ -45,7 +40,6 @@ describe("useEventDNDActions", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (useAppDispatch as jest.Mock).mockReturnValue(mockDispatch);
-    (getEventFromStore as jest.Mock).mockReturnValue(mockEvent);
     (useUpdateEvent as jest.Mock).mockReturnValue(mockUpdateEvent);
   });
 

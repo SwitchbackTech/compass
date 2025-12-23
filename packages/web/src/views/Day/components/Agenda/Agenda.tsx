@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import { memo, useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Key } from "ts-key-enum";
 import { useDndContext } from "@dnd-kit/core";
 import {
@@ -12,7 +12,7 @@ import { Schema_Event, WithCompassId } from "@core/types/event.types";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { useFloatingAtCursor } from "@web/common/hooks/useFloatingAtCursor";
 import { CursorItem, nodeId$ } from "@web/common/hooks/useOpenAtCursor";
-import { compareEventsByTitle } from "@web/common/utils/event/event.util";
+import { compareEventsByStartDate } from "@web/common/utils/event/event.util";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
 import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import {
@@ -31,7 +31,7 @@ import { TimeLabels } from "@web/views/Day/components/Agenda/TimeLabels/TimeLabe
 import { EventContextMenu } from "@web/views/Day/components/ContextMenu/EventContextMenu";
 import { useAgendaInteractionsAtCursor } from "@web/views/Day/hooks/events/useAgendaInteractionsAtCursor";
 
-export const Agenda = memo(function Agenda() {
+export function Agenda() {
   const { active } = useDndContext();
   const reduxEvents = useAppSelector(selectDayEvents);
   const [allDayEvents] = useObservable(allDayEvents$);
@@ -69,7 +69,7 @@ export const Agenda = memo(function Agenda() {
     eventsStore.update(
       setEntities(
         [...reduxEvents].sort(
-          compareEventsByTitle,
+          compareEventsByStartDate,
         ) as WithCompassId<Schema_Event>[],
       ),
       updateEntities(
@@ -131,6 +131,4 @@ export const Agenda = memo(function Agenda() {
       <EventContextMenu floating={floating} interactions={interactions} />
     </>
   );
-});
-
-Agenda.displayName = "Agenda";
+}

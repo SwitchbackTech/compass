@@ -71,8 +71,8 @@ function CompassDraggable(
   const useChild = asChild && isValidElement(children);
 
   return createElement(as ?? "div", {
-    ...elementProps,
     ...attributes,
+    ...elementProps,
     ...(!useChild ? listeners : {}),
     onContextMenu: isDragging ? undefined : onContextMenu,
     style: {

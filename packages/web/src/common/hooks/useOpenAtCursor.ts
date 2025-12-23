@@ -108,3 +108,11 @@ export function closeFloatingAtCursor() {
   setFloatingReferenceAtCursor(null);
   setFloatingOpenAtCursor(false);
 }
+
+export function isOpenAtCursor(item: CursorItem): boolean {
+  const eventFormOpen = nodeId$.getValue() === item;
+  const openAtCursor = open$.getValue();
+  const open = eventFormOpen && openAtCursor;
+
+  return open;
+}

@@ -102,7 +102,6 @@ export const DraggableTimedAgendaEvent = memo(
           maxWidth="100%"
           minHeight={SLOT_HEIGHT - 2}
           maxHeight={bounds.offsetHeight - parseInt(theme.spacing.m, 10)}
-          bounds={bounds}
           className="rounded"
           style={{ boxSizing: "content-box" }}
           onResizeStart={onResizeStart}

@@ -20,7 +20,6 @@ import {
   withUIEntities,
 } from "@ngneat/elf-entities";
 import { Schema_Event, WithCompassId } from "@core/types/event.types";
-import { compareEventsById } from "../common/utils/event/event.util";
 
 export interface EventUIState {
   _id: string;
@@ -68,10 +67,17 @@ export const events$ = eventsStore
       combineLatestWith(
         draft$.pipe(map((draft) => (draft === null ? [] : [draft]))),
       ),
-      map(([entities, draft]) => [
-        ...draft,
-        ...entities.filter((e) => e._id !== draft[0]?._id),
-      ]),
+      map(([entities, [draft]]) => {
+        if (!draft) return entities;
+
+        const events = [...entities];
+        const draftIndex = events.findIndex((e) => e._id === draft._id);
+        const index = draftIndex >= 0 ? draftIndex : 0;
+
+        events.splice(index, draftIndex >= 0 ? 1 : 0, draft);
+
+        return events;
+      }),
     ),
     UIEntities: eventsStore.pipe(selectEntities({ ref: UIEntitiesRef })),
   })
@@ -84,7 +90,7 @@ export const allDayEvents$ = events$.pipe(
 );
 
 export const timedEvents$ = events$.pipe(
-  map((events) => events.filter((e) => !e.isAllDay).sort(compareEventsById)),
+  map((events) => events.filter((e) => !e.isAllDay)),
   shareReplay(),
   distinctUntilArrayItemChanged(),
 );

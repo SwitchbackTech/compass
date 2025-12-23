@@ -311,3 +311,17 @@ export function compareEventsByTitle(a: Schema_Event, b: Schema_Event) {
 export function compareEventsById(prev: Schema_Event, next: Schema_Event) {
   return prev._id?.localeCompare(next._id ?? "") ?? 0;
 }
+
+export function compareEventsByStartDate(
+  prev: Schema_Event,
+  next: Schema_Event,
+) {
+  const prevStart = dayjs(prev.startDate);
+  const nextStart = dayjs(next.startDate);
+  const before = prevStart.isBefore(nextStart);
+  const after = prevStart.isAfter(nextStart);
+
+  if (before) return -1;
+  if (after) return 1;
+  return 0;
+}

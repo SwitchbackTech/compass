@@ -116,8 +116,8 @@ describe("useOpenEventForm", () => {
     expect(getCalendarEventElementFromGrid).toHaveBeenCalled();
     expect(mockSetDraft).toHaveBeenCalledWith(
       expect.objectContaining({
-        startDate: mockStartTime.toISOString(),
-        endDate: mockEndTime.toISOString(),
+        startDate: mockStartTime.format(),
+        endDate: mockEndTime.format(),
         isAllDay: false,
         user: "user-123",
         priority: Priorities.UNASSIGNED,
@@ -133,10 +133,12 @@ describe("useOpenEventForm", () => {
     const { result } = renderHook(() => useOpenEventForm());
 
     await act(async () => {
-      await result.current({
-        detail: { create: true },
-        nativeEvent: new Event("click"),
-      } as unknown as React.PointerEvent<HTMLElement>);
+      await result.current(
+        new CustomEvent("click", {
+          bubbles: true,
+          detail: { create: true },
+        }) as unknown as React.PointerEvent<HTMLElement>,
+      );
     });
 
     expect(mockSetDraft).toHaveBeenCalledWith(
@@ -168,10 +170,12 @@ describe("useOpenEventForm", () => {
     const { result } = renderHook(() => useOpenEventForm());
 
     await act(async () => {
-      await result.current({
-        detail: { create: false },
-        nativeEvent: new Event("click"),
-      } as unknown as React.PointerEvent<HTMLElement>);
+      await result.current(
+        new CustomEvent("click", {
+          bubbles: true,
+          detail: { create: false, id: mockEvent._id },
+        }) as unknown as React.PointerEvent<HTMLElement>,
+      );
     });
 
     expect(mockSetDraft).toHaveBeenCalledWith(mockEvent);

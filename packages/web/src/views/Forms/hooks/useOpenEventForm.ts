@@ -41,7 +41,11 @@ export function useOpenEventForm() {
   const dateInView = useDateInView();
 
   const openEventForm = useCallback(
-    async ({ detail }: PointerEvent<HTMLElement>) => {
+    async (e: PointerEvent<HTMLElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const { detail } = e;
       const defaultDetails = { id: undefined, create: false };
       const details = typeof detail === "object" ? detail : defaultDetails;
       const create = details?.create ?? false;
@@ -50,6 +54,7 @@ export function useOpenEventForm() {
 
       if (!user) return;
 
+      const previousDraft = eventsStore.query((s) => getDraft(s));
       const active = document.activeElement;
       const element = getElementAtPoint(cursor);
       const eventClass = `.${getEventClass(element)}`;
@@ -60,6 +65,7 @@ export function useOpenEventForm() {
       const existingEventId = id ?? event?.getAttribute(DATA_EVENT_ELEMENT_ID);
       const draftId = new ObjectId().toString();
       const _id = create ? draftId : (existingEventId ?? draftId);
+      const sameDraft = previousDraft?._id === _id;
 
       let draftEvent: WithCompassId<Schema_Event> | undefined = undefined;
 
@@ -103,18 +109,24 @@ export function useOpenEventForm() {
           endTime = startTime.add(15, "minutes");
         }
 
-        const previousDraft = eventsStore.query((s) => getDraft(s));
+        if (!isAllDay && sameDraft) {
+          startTime = dayjs(previousDraft?.startDate);
+          endTime = dayjs(previousDraft?.endDate);
+        }
+
+        const update = sameDraft ? previousDraft : null;
 
         draftEvent = {
+          ...update,
           _id,
-          title: previousDraft?.title || "",
-          description: previousDraft?.description || "",
-          startDate: isAllDay ? startTime.format(YMD) : startTime.toISOString(),
-          endDate: isAllDay ? endTime.format(YMD) : endTime.toISOString(),
+          title: update?.title || "",
+          description: update?.description || "",
+          startDate: isAllDay ? startTime.format(YMD) : startTime.format(),
+          endDate: isAllDay ? endTime.format(YMD) : endTime.format(),
           isAllDay,
           isSomeday,
           user,
-          priority: previousDraft?.priority || Priorities.UNASSIGNED,
+          priority: update?.priority || Priorities.UNASSIGNED,
           origin: Origin.COMPASS,
         };
       }

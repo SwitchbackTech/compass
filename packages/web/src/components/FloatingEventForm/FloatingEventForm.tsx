@@ -1,10 +1,11 @@
+import { useCallback } from "react";
 import {
   FloatingFocusManager,
   FloatingPortal,
   UseInteractionsReturn,
   useFloating,
 } from "@floating-ui/react";
-import { Schema_Event } from "@core/types/event.types";
+import { Schema_Event, WithCompassId } from "@core/types/event.types";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import {
   CursorItem,
@@ -33,6 +34,19 @@ export function FloatingEventForm({
   const isOpenAtCursor = nodeId === CursorItem.EventForm;
   const open = floatingOpenAtCursor && isOpenAtCursor && !!draft;
 
+  const setEvent = useCallback(
+    (
+      cb:
+        | ((event: Schema_Event | null) => Schema_Event | null)
+        | Schema_Event
+        | null,
+    ) => {
+      const update = typeof cb === "function" ? cb(draft) : cb;
+      setDraft(update as WithCompassId<Schema_Event>);
+    },
+    [draft],
+  );
+
   if (!open) return null;
 
   return (
@@ -56,7 +70,7 @@ export function FloatingEventForm({
             onClose={onClose}
             onDelete={() => {}}
             onSubmit={onSave}
-            setEvent={setDraft as (event: Schema_Event | null) => void}
+            setEvent={setEvent}
           />
         </div>
       </FloatingFocusManager>

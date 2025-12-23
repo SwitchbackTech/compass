@@ -5,6 +5,7 @@ import {
   DATA_EVENT_ELEMENT_ID,
   DATA_FULL_WIDTH,
   DATA_OVERLAPPING,
+  ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 
@@ -246,7 +247,11 @@ function updatePlacements(
   return organization;
 }
 
-export function reorderGrid(mainGrid: HTMLElement) {
+export function reorderGrid(
+  mainGrid: HTMLElement | null = document.getElementById(ID_GRID_MAIN),
+) {
+  if (!mainGrid) return;
+
   const gridRect = mainGrid.getBoundingClientRect();
   const nodes = Array.from(mainGrid.querySelectorAll<HTMLElement>(selector));
 

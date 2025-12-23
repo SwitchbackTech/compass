@@ -6,21 +6,30 @@ import {
   ID_GRID_ALLDAY_ROW,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
-import { CursorItem, nodeId$, open$ } from "@web/common/hooks/useOpenAtCursor";
+import {
+  CursorItem,
+  isOpenAtCursor,
+  setFloatingReferenceAtCursor,
+} from "@web/common/hooks/useOpenAtCursor";
 import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { reorderGrid } from "@web/common/utils/dom/grid-organization.util";
+import { getCalendarEventElementFromGrid } from "@web/common/utils/event/event.util";
 import { getSnappedMinutes } from "@web/views/Day/util/agenda/agenda.util";
+
+const shouldSaveImmediately = () => !isOpenAtCursor(CursorItem.EventForm);
+
+const resetFloatingReference = (eventId: string) => {
+  queueMicrotask(() => {
+    const reference = getCalendarEventElementFromGrid(eventId);
+
+    setFloatingReferenceAtCursor(reference);
+    reorderGrid();
+  });
+};
 
 export function useEventDNDActions() {
   const updateEvent = useUpdateEvent();
-
-  const saveImmediate = () => {
-    const eventFormOpen = nodeId$.getValue() === CursorItem.EventForm;
-    const openAtCursor = open$.getValue();
-    const saveDraftOnly = eventFormOpen && openAtCursor;
-
-    return !saveDraftOnly;
-  };
 
   const moveTimedAroundMainGridDayView = useCallback(
     (event: Schema_GridEvent, active: Active, over: Over) => {
@@ -47,8 +56,10 @@ export function useEventDNDActions() {
             endDate: newEndDate.toISOString(),
           },
         },
-        saveImmediate(),
+        shouldSaveImmediately(),
       );
+
+      resetFloatingReference(event._id);
     },
     [updateEvent],
   );
@@ -72,8 +83,10 @@ export function useEventDNDActions() {
             endDate: endDate.toISOString(),
           },
         },
-        saveImmediate(),
+        shouldSaveImmediately(),
       );
+
+      resetFloatingReference(event._id);
     },
     [updateEvent],
   );
@@ -93,8 +106,10 @@ export function useEventDNDActions() {
             endDate: endDate.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
           },
         },
-        saveImmediate(),
+        shouldSaveImmediately(),
       );
+
+      resetFloatingReference(event._id);
     },
     [updateEvent],
   );

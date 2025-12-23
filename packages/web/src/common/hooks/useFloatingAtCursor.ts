@@ -6,9 +6,15 @@ import {
   UseFloatingOptions,
   autoUpdate,
   flip,
+  hide,
   offset,
+  shift,
   useFloating,
 } from "@floating-ui/react";
+import {
+  DATA_FULL_WIDTH,
+  DATA_OVERLAPPING,
+} from "@web/common/constants/web.constants";
 import {
   closeFloatingAtCursor,
   nodeId$,
@@ -24,7 +30,6 @@ import {
   useFloatingStrategyAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
 import { theme } from "@web/common/styles/theme";
-import { DATA_FULL_WIDTH, DATA_OVERLAPPING } from "../constants/web.constants";
 
 const themeSpacing = parseInt(theme.spacing.xs);
 
@@ -103,6 +108,9 @@ export function useFloatingAtCursor(
           crossAxis: placement.includes("-"),
         };
       }),
+      shift(),
+      hide({ strategy: "referenceHidden" }),
+      hide({ strategy: "escaped" }),
     ],
     onOpenChange: handleOpenChange,
     whileElementsMounted: autoUpdate,

@@ -1,8 +1,9 @@
 import { renderHook } from "@testing-library/react";
 import { Schema_Event, WithCompassId } from "@core/types/event.types";
 import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
+import { Schema_WebEvent } from "@web/common/types/web.event.types";
 import { editEventSlice } from "@web/ducks/events/slices/event.slice";
-import { updateEvent } from "@web/store/events";
+import { setDraft } from "@web/store/events";
 import { useAppDispatch } from "@web/store/store.hooks";
 
 jest.mock("@web/store/store.hooks", () => ({
@@ -10,6 +11,7 @@ jest.mock("@web/store/store.hooks", () => ({
 }));
 
 jest.mock("@web/store/events", () => ({
+  setDraft: jest.fn(),
   updateEvent: jest.fn(),
 }));
 
@@ -37,11 +39,11 @@ describe("useUpdateEvent", () => {
 
   it("should update event in store and dispatch request when saveImmediate is true", () => {
     const { result } = renderHook(() => useUpdateEvent());
-    const payload = { event: mockEvent };
+    const payload = { event: mockEvent as Schema_WebEvent };
 
     result.current(payload);
 
-    expect(updateEvent).toHaveBeenCalledWith(mockEvent);
+    expect(setDraft).toHaveBeenCalledWith(mockEvent);
     expect(editEventSlice.actions.request).toHaveBeenCalledWith({
       ...payload,
       _id: mockEvent._id,
@@ -51,23 +53,27 @@ describe("useUpdateEvent", () => {
 
   it("should update event in store but NOT dispatch request when saveImmediate is false", () => {
     const { result } = renderHook(() => useUpdateEvent());
-    const payload = { event: mockEvent };
+    const payload = { event: mockEvent as Schema_WebEvent };
 
     result.current(payload, false);
 
-    expect(updateEvent).toHaveBeenCalledWith(mockEvent);
+    expect(setDraft).toHaveBeenCalledWith(mockEvent);
     expect(editEventSlice.actions.request).not.toHaveBeenCalled();
     expect(mockDispatch).not.toHaveBeenCalled();
   });
 
   it("should not do anything if event has no _id", () => {
     const { result } = renderHook(() => useUpdateEvent());
-    const payload = { event: { ...mockEvent, _id: undefined } };
+    const payload = {
+      event: {
+        ...mockEvent,
+        _id: undefined,
+      } as unknown as Schema_WebEvent,
+    };
 
-    // @ts-ignore
     result.current(payload);
 
-    expect(updateEvent).not.toHaveBeenCalled();
+    expect(setDraft).not.toHaveBeenCalled();
     expect(editEventSlice.actions.request).not.toHaveBeenCalled();
     expect(mockDispatch).not.toHaveBeenCalled();
   });

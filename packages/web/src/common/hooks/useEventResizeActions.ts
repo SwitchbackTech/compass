@@ -53,7 +53,6 @@ export function useEventResizeActions(event: WithCompassId<Schema_Event>) {
 
   const onResizeStop: ResizeCallback = useCallback(() => {
     setResizing(false);
-    originalEvent.current = null;
 
     const start = dayjs(event.startDate);
     const end = dayjs(event.endDate);
@@ -66,6 +65,13 @@ export function useEventResizeActions(event: WithCompassId<Schema_Event>) {
     const eventFormOpen = nodeId$.getValue() === CursorItem.EventForm;
     const openAtCursor = open$.getValue();
     const saveDraftOnly = eventFormOpen && openAtCursor;
+
+    const originalStart = dayjs(originalEvent.current?.startDate);
+    const originalEnd = dayjs(originalEvent.current?.endDate);
+    const startChanged = !snappedStart.isSame(originalStart);
+    const endChanged = !snappedEnd.isSame(originalEnd);
+
+    if (!startChanged && !endChanged) return;
 
     setDraft({
       ...event,
@@ -82,6 +88,8 @@ export function useEventResizeActions(event: WithCompassId<Schema_Event>) {
         endDate: snappedEnd.format(),
       } as Schema_GridEvent,
     });
+
+    originalEvent.current = null;
   }, [event, updateReduxEvent]);
 
   return { onResizeStart, onResize, onResizeStop, resizing };

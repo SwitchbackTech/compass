@@ -3,6 +3,7 @@ import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import { Schema_Event } from "@core/types/event.types";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
+import { compareEventsByStartDate } from "@web/common/utils/event/event.util";
 import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
 import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
 import { useOpenEventForm } from "@web/views/Forms/hooks/useOpenEventForm";
@@ -168,6 +169,18 @@ describe("CalendarAgenda", () => {
       },
     ];
 
+    const mockEventsByStartDate = [...mockEvents].sort(
+      compareEventsByStartDate,
+    );
+
+    const mockAllDayEventsByStartDate = mockEventsByStartDate.filter(
+      (e) => e.isAllDay,
+    );
+
+    const mockTimedEventsByStartDate = mockEventsByStartDate.filter(
+      (e) => !e.isAllDay,
+    );
+
     const { user } = await act(() => renderAgenda(mockEvents));
 
     // Focus all-day section
@@ -183,13 +196,17 @@ describe("CalendarAgenda", () => {
       await user.tab();
     });
 
-    expect(document.activeElement).toHaveTextContent("Apple Event");
+    expect(document.activeElement).toHaveTextContent(
+      mockAllDayEventsByStartDate[0].title!,
+    );
 
     await act(async () => {
       await user.tab();
     });
 
-    expect(document.activeElement).toHaveTextContent("Zebra Event");
+    expect(document.activeElement).toHaveTextContent(
+      mockAllDayEventsByStartDate[1].title!,
+    );
 
     // Focus timed section
     await act(async () => {
@@ -204,13 +221,17 @@ describe("CalendarAgenda", () => {
       await user.tab();
     });
 
-    expect(document.activeElement).toHaveTextContent("Breakfast Event");
+    expect(document.activeElement).toHaveTextContent(
+      mockTimedEventsByStartDate[0].title!,
+    );
 
     await act(async () => {
       await user.tab();
     });
 
-    expect(document.activeElement).toHaveTextContent("Lunch Event");
+    expect(document.activeElement).toHaveTextContent(
+      mockTimedEventsByStartDate[1].title!,
+    );
   });
 
   it("should open event form when pressing Enter on timed events section", async () => {
