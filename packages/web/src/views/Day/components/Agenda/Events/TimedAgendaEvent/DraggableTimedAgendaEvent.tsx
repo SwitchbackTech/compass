@@ -51,6 +51,7 @@ export const DraggableTimedAgendaEvent = memo(
 
     const { onResize, onResizeStart, onResizeStop } = useEventResizeActions(
       event as WithCompassId<Schema_Event>,
+      bounds,
     );
 
     if (!event.startDate || !event.endDate || event.isAllDay) return null;
@@ -103,7 +104,6 @@ export const DraggableTimedAgendaEvent = memo(
           minHeight={SLOT_HEIGHT - 2}
           maxHeight={bounds.offsetHeight - parseInt(theme.spacing.m, 10)}
           className="rounded"
-          style={{ boxSizing: "content-box" }}
           onResizeStart={onResizeStart}
           onResizeStop={onResizeStop}
           onResize={onResize}

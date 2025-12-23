@@ -81,17 +81,17 @@ export const events$ = eventsStore
     ),
     UIEntities: eventsStore.pipe(selectEntities({ ref: UIEntitiesRef })),
   })
-  .pipe(unionEntities("_id"), shareReplay());
+  .pipe(unionEntities("_id"), shareReplay({ bufferSize: 1, refCount: true }));
 
 export const allDayEvents$ = events$.pipe(
   map((events) => events.filter((e) => e.isAllDay)),
-  shareReplay(),
+  shareReplay({ bufferSize: 1, refCount: true }),
   distinctUntilArrayItemChanged(),
 );
 
 export const timedEvents$ = events$.pipe(
   map((events) => events.filter((e) => !e.isAllDay)),
-  shareReplay(),
+  shareReplay({ bufferSize: 1, refCount: true }),
   distinctUntilArrayItemChanged(),
 );
 

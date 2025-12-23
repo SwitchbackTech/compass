@@ -90,16 +90,14 @@ export function openFloatingAtCursor({
 }) {
   if (open$.getValue()) closeFloatingAtCursor();
 
-  queueMicrotask(() => {
-    const timeout = setTimeout(() => {
-      setFloatingNodeIdAtCursor(nodeId);
-      setFloatingPlacementAtCursor(placement);
-      setFloatingStrategyAtCursor(strategy);
-      setFloatingReferenceAtCursor(reference);
-      setFloatingOpenAtCursor(true);
-      clearTimeout(timeout);
-    }, 10);
-  });
+  const timeout = setTimeout(() => {
+    setFloatingNodeIdAtCursor(nodeId);
+    setFloatingPlacementAtCursor(placement);
+    setFloatingStrategyAtCursor(strategy);
+    setFloatingReferenceAtCursor(reference);
+    setFloatingOpenAtCursor(true);
+    clearTimeout(timeout);
+  }, 10);
 }
 
 export function closeFloatingAtCursor() {

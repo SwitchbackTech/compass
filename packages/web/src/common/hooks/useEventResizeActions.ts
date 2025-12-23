@@ -15,7 +15,10 @@ import {
   roundToNearestFifteenWithinHour,
 } from "@web/views/Day/util/agenda/agenda.util";
 
-export function useEventResizeActions(event: WithCompassId<Schema_Event>) {
+export function useEventResizeActions(
+  event: WithCompassId<Schema_Event>,
+  bounds: HTMLElement,
+) {
   const updateReduxEvent = useUpdateEvent();
   const [resizing, setResizing] = useState<boolean>(false);
   const originalEvent = useRef<WithCompassId<Schema_Event> | null>(event);
@@ -28,7 +31,17 @@ export function useEventResizeActions(event: WithCompassId<Schema_Event>) {
   }, [event]);
 
   const onResize: ResizeCallback = useCallback(
-    (_e, direction, _ref, delta) => {
+    (e, direction, _ref, delta) => {
+      const boundsRect = bounds.getBoundingClientRect();
+      const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+
+      if (direction === "top" && clientY < boundsRect.top) return;
+      if (direction === "bottom" && clientY > boundsRect.bottom - SLOT_HEIGHT) {
+        return;
+      }
+
+      console.log("Resizing...", direction, clientY, boundsRect.bottom);
+
       const slotMinute = MINUTES_PER_SLOT / SLOT_HEIGHT;
       const minutes = roundMinutesToNearestFifteen(delta.height * slotMinute);
       const start = dayjs(originalEvent.current?.startDate);
@@ -48,7 +61,7 @@ export function useEventResizeActions(event: WithCompassId<Schema_Event>) {
         });
       }
     },
-    [_id],
+    [_id, bounds],
   );
 
   const onResizeStop: ResizeCallback = useCallback(() => {
