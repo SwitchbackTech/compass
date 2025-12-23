@@ -37,6 +37,14 @@ jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
   onEventTargetVisibility: (callback: () => void) => callback,
 }));
 
+// Mock event utility functions
+const mockOpenEventFormCreateEvent = jest.fn();
+const mockOpenEventFormEditEvent = jest.fn();
+jest.mock("@web/common/utils/event/event.util", () => ({
+  openEventFormCreateEvent: mockOpenEventFormCreateEvent,
+  openEventFormEditEvent: mockOpenEventFormEditEvent,
+}));
+
 jest.mock("@web/store/store.hooks", () => ({
   useAppDispatch: () => mockDispatch,
   useAppSelector: jest.requireActual("@web/store/store.hooks").useAppSelector,
@@ -54,6 +62,8 @@ describe("DayCmdPalette", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     keyPressed.next(null);
+    mockOpenEventFormCreateEvent.mockClear();
+    mockOpenEventFormEditEvent.mockClear();
 
     (require("react-router-dom").useNavigate as jest.Mock).mockReturnValue(
       mockNavigate,
@@ -70,6 +80,8 @@ describe("DayCmdPalette", () => {
     expect(screen.getByText("Navigation")).toBeInTheDocument();
     expect(screen.getByText("Go to Now [1]")).toBeInTheDocument();
     expect(screen.getByText("Go to Week [3]")).toBeInTheDocument();
+    expect(screen.getByText("Create event [n]")).toBeInTheDocument();
+    expect(screen.getByText("Edit event [m]")).toBeInTheDocument();
     expect(screen.getByText("Edit Reminder [r]")).toBeInTheDocument();
     expect(
       screen.getByText("Go to Today (Monday, November 24) [t]"),
@@ -199,6 +211,42 @@ describe("DayCmdPalette", () => {
     await act(() => user.click(screen.getByText("Log Out [z]")));
 
     expect(mockNavigate).toHaveBeenCalledWith("/logout");
+  });
+
+  it("calls openEventFormEditEvent when Edit event is clicked", async () => {
+    const user = userEvent.setup();
+
+    await act(() =>
+      render(<Component />, {
+        state: { settings: { isCmdPaletteOpen: true } },
+      }),
+    );
+
+    const editEventBtn = await screen.findByRole("button", {
+      name: /edit event \[m\]/i,
+    });
+
+    await act(() => user.click(editEventBtn));
+
+    expect(mockOpenEventFormEditEvent).toHaveBeenCalled();
+  });
+
+  it("calls openEventFormCreateEvent when Create event is clicked", async () => {
+    const user = userEvent.setup();
+
+    await act(() =>
+      render(<Component />, {
+        state: { settings: { isCmdPaletteOpen: true } },
+      }),
+    );
+
+    const createEventBtn = await screen.findByRole("button", {
+      name: /create event \[n\]/i,
+    });
+
+    await act(() => user.click(createEventBtn));
+
+    expect(mockOpenEventFormCreateEvent).toHaveBeenCalled();
   });
 
   it("filters items based on search input", async () => {
