@@ -11,10 +11,14 @@ import { useObservable } from "@ngneat/use-observable";
 import { Schema_Event, WithCompassId } from "@core/types/event.types";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { useFloatingAtCursor } from "@web/common/hooks/useFloatingAtCursor";
+import { useHasLoadedOnce } from "@web/common/hooks/useHasLoadedOnce";
 import { CursorItem, nodeId$ } from "@web/common/hooks/useOpenAtCursor";
 import { compareEventsByStartDate } from "@web/common/utils/event/event.util";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
-import { selectDayEvents } from "@web/ducks/events/selectors/event.selectors";
+import {
+  selectDayEvents,
+  selectIsDayEventsProcessing,
+} from "@web/ducks/events/selectors/event.selectors";
 import {
   allDayEvents$,
   eventsStore,
@@ -26,6 +30,7 @@ import { useAppSelector } from "@web/store/store.hooks";
 import { AgendaEventPreview } from "@web/views/Day/components/Agenda/Events/AgendaEventPreview/AgendaEventPreview";
 import { AllDayAgendaEvents } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/AllDayAgendaEvents";
 import { TimedAgendaEvents } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/TimedAgendaEvents";
+import { LoadingProgressLine } from "@web/views/Day/components/Agenda/LoadingProgressLine/LoadingProgressLine";
 import { NowLine } from "@web/views/Day/components/Agenda/NowLine/NowLine";
 import { TimeLabels } from "@web/views/Day/components/Agenda/TimeLabels/TimeLabels";
 import { EventContextMenu } from "@web/views/Day/components/ContextMenu/EventContextMenu";
@@ -38,6 +43,8 @@ export function Agenda() {
   const [timedEvents] = useObservable(timedEvents$);
   const height = useRef<number>(0);
   const timedAgendaRef = useRef<HTMLElement | null>(null);
+  const isLoading = useAppSelector(selectIsDayEventsProcessing);
+  const hasLoadedOnce = useHasLoadedOnce(!!isLoading, timedEvents.length >= 0);
 
   const floating = useFloatingAtCursor((open, _e, reason) => {
     const dismissed = reason === "escape-key" || reason === "outside-press";
@@ -80,6 +87,8 @@ export function Agenda() {
     );
   }, [reduxEvents]);
 
+  const showProgressLine = isLoading && hasLoadedOnce.current;
+
   return (
     <>
       <section
@@ -87,6 +96,12 @@ export function Agenda() {
         className="bg-bg-primary flex h-full min-w-xs flex-1 flex-col gap-2 p-0.5"
       >
         <AllDayAgendaEvents events={allDayEvents} interactions={interactions} />
+
+        {showProgressLine ? (
+          <LoadingProgressLine />
+        ) : (
+          <div className="h-0.5 border-t border-gray-400/20" />
+        )}
 
         <div
           id={ID_GRID_EVENTS_TIMED}
@@ -98,8 +113,7 @@ export function Agenda() {
           className={classNames(
             "relative flex flex-1 overflow-x-hidden overflow-y-auto",
             "focus-visible:rounded focus-visible:ring-2 focus-visible:outline-none",
-            "focus:outline-none focus-visible:ring-yellow-200",
-            "border-t border-gray-400/20 pt-2",
+            "mt-1 focus:outline-none focus-visible:ring-yellow-200",
           )}
           data-testid="calendar-scroll"
           tabIndex={0}
