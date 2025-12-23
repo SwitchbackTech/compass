@@ -3,6 +3,7 @@ import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { keyPressed } from "@web/common/utils/dom/event-emitter.util";
+import * as eventUtil from "@web/common/utils/event/event.util";
 import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
@@ -10,9 +11,10 @@ import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGloba
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
 
 // Mock react-router-dom
+const mockNavigate = jest.fn();
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
-  useNavigate: jest.fn(),
+  useNavigate: () => mockNavigate,
 }));
 
 // Mock dayjs
@@ -38,12 +40,7 @@ jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
 }));
 
 // Mock event utility functions
-const mockOpenEventFormCreateEvent = jest.fn();
-const mockOpenEventFormEditEvent = jest.fn();
-jest.mock("@web/common/utils/event/event.util", () => ({
-  openEventFormCreateEvent: mockOpenEventFormCreateEvent,
-  openEventFormEditEvent: mockOpenEventFormEditEvent,
-}));
+jest.mock("@web/common/utils/event/event.util");
 
 jest.mock("@web/store/store.hooks", () => ({
   useAppDispatch: () => mockDispatch,
@@ -57,17 +54,18 @@ function Component() {
 }
 
 describe("DayCmdPalette", () => {
-  const mockNavigate = jest.fn();
+  const mockOpenEventFormCreateEvent = jest.spyOn(
+    eventUtil,
+    "openEventFormCreateEvent",
+  );
+  const mockOpenEventFormEditEvent = jest.spyOn(
+    eventUtil,
+    "openEventFormEditEvent",
+  );
 
   beforeEach(() => {
     jest.clearAllMocks();
     keyPressed.next(null);
-    mockOpenEventFormCreateEvent.mockClear();
-    mockOpenEventFormEditEvent.mockClear();
-
-    (require("react-router-dom").useNavigate as jest.Mock).mockReturnValue(
-      mockNavigate,
-    );
   });
 
   it("renders navigation items when open", async () => {
