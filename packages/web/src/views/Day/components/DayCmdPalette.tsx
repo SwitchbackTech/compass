@@ -47,13 +47,13 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
             id: "create-event",
             children: "Create event [n]",
             icon: "PlusIcon",
-            onClick: onEventTargetVisibility(() => openEventFormCreateEvent()),
+            onClick: () => openEventFormCreateEvent(),
           },
           {
             id: "edit-event",
             children: "Edit event [m]",
             icon: "PencilSquareIcon",
-            onClick: onEventTargetVisibility(() => openEventFormEditEvent()),
+            onClick: () => openEventFormEditEvent(),
           },
           {
             id: "edit-reminder",
