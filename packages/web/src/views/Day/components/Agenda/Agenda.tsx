@@ -11,6 +11,7 @@ import { useObservable } from "@ngneat/use-observable";
 import { Schema_Event, WithCompassId } from "@core/types/event.types";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { useFloatingAtCursor } from "@web/common/hooks/useFloatingAtCursor";
+import { useHasLoadedOnce } from "@web/common/hooks/useHasLoadedOnce";
 import { CursorItem, nodeId$ } from "@web/common/hooks/useOpenAtCursor";
 import { compareEventsByStartDate } from "@web/common/utils/event/event.util";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
@@ -43,7 +44,7 @@ export function Agenda() {
   const height = useRef<number>(0);
   const timedAgendaRef = useRef<HTMLElement | null>(null);
   const isLoading = useAppSelector(selectIsDayEventsProcessing);
-  const hasLoadedOnce = useRef(false);
+  const hasLoadedOnce = useHasLoadedOnce(!!isLoading, timedEvents.length >= 0);
 
   const floating = useFloatingAtCursor((open, _e, reason) => {
     const dismissed = reason === "escape-key" || reason === "outside-press";
@@ -85,13 +86,6 @@ export function Agenda() {
       ),
     );
   }, [reduxEvents]);
-
-  // Track when we've successfully loaded events for the first time
-  useEffect(() => {
-    if (!isLoading && timedEvents.length >= 0) {
-      hasLoadedOnce.current = true;
-    }
-  }, [isLoading, timedEvents]);
 
   const showProgressLine = isLoading && hasLoadedOnce.current;
 

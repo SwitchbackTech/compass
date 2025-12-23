@@ -1,11 +1,12 @@
 import classNames from "classnames";
 import fastDeepEqual from "fast-deep-equal/react";
-import { Ref, forwardRef, memo, useEffect, useRef, useState } from "react";
+import { Ref, forwardRef, memo, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { UseInteractionsReturn, useMergeRefs } from "@floating-ui/react";
 import { Schema_Event } from "@core/types/event.types";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { useGridOrganization } from "@web/common/hooks/useGridOrganization";
+import { useHasLoadedOnce } from "@web/common/hooks/useHasLoadedOnce";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   CompassDOMEvents,
@@ -43,16 +44,9 @@ export const TimedAgendaEvents = memo(
       const openEventForm = useOpenEventForm();
       const [ref, setRef] = useState<HTMLElement | null>(null);
       const mergedRef = useMergeRefs([setRef, _ref]);
-      const hasLoadedOnce = useRef(false);
+      const hasLoadedOnce = useHasLoadedOnce(!!isLoading, ref !== null);
 
       useGridOrganization(ref);
-
-      // Track when we've successfully loaded events for the first time
-      useEffect(() => {
-        if (!isLoading && ref !== null) {
-          hasLoadedOnce.current = true;
-        }
-      }, [isLoading, ref]);
 
       // Center the calendar around the current time when the view mounts
       useEffect(() => {
@@ -83,7 +77,7 @@ export const TimedAgendaEvents = memo(
               <DraggableTimedAgendaEvent
                 key={event._id}
                 event={event as Schema_GridEvent}
-                bounds={ref}
+                bounds={ref!}
                 interactions={interactions}
                 isDraftEvent={draft?._id === event._id}
                 isNewDraftEvent={!timedEvents.find((e) => e._id === event._id)}

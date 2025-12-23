@@ -96,7 +96,7 @@ describe("CalendarAgenda", () => {
     ];
 
     // First render with events loaded (not processing)
-    const { unmount } = renderAgenda(mockEvents, { isProcessing: false });
+    const { rerender } = renderAgenda(mockEvents, { isProcessing: false });
 
     // Verify initial load shows events, not skeleton or progress line
     expect(await screen.findByText("Test Event")).toBeInTheDocument();
@@ -105,18 +105,20 @@ describe("CalendarAgenda", () => {
       screen.queryByTestId("loading-progress-line"),
     ).not.toBeInTheDocument();
 
-    // Unmount and re-render with processing state to simulate reload
-    unmount();
+    // Rerender with processing state to simulate reload
+    // We use rerender instead of unmount/render to preserve the useRef state (hasLoadedOnce)
+    const store = createStoreWithEvents(mockEvents, { isProcessing: true });
 
-    // Second render simulates subsequent load with isProcessing true
-    renderAgenda(mockEvents, { isProcessing: true });
+    rerender(
+      renderWithDayProviders(<Agenda />, { store })
+        .container as unknown as React.ReactElement,
+    );
 
     // On subsequent load after component has loaded once, should show progress line not skeleton
-    // Note: This test verifies the component behavior but due to the way hasLoadedOnce.current
-    // works with useRef, it resets on unmount. The actual app behavior is tested in integration tests.
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    });
+    expect(
+      await screen.findByTestId("loading-progress-line"),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("agenda-skeleton")).not.toBeInTheDocument();
   });
 
   it("should not show skeleton or error when events are loaded", async () => {
