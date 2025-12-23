@@ -4,6 +4,8 @@ import { screen } from "@testing-library/react";
 import { Schema_Event } from "@core/types/event.types";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import { compareEventsByStartDate } from "@web/common/utils/event/event.util";
+import { selectIsDayEventsProcessing } from "@web/ducks/events/selectors/event.selectors";
+import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
 import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
 import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
 import { useOpenEventForm } from "@web/views/Forms/hooks/useOpenEventForm";
@@ -14,10 +16,23 @@ jest.mock("@web/auth/auth.util", () => ({
 
 jest.mock("@web/views/Forms/hooks/useOpenEventForm");
 
+jest.mock("@web/ducks/events/selectors/event.selectors", () => {
+  const actual = jest.requireActual(
+    "@web/ducks/events/selectors/event.selectors",
+  );
+  return {
+    ...actual,
+    selectIsDayEventsProcessing: jest.fn(),
+  };
+});
+
 const renderAgenda = (
   events: Schema_Event[] = [],
   options?: { isProcessing?: boolean },
 ) => {
+  (selectIsDayEventsProcessing as jest.Mock).mockReturnValue(
+    options?.isProcessing ?? false,
+  );
   const store = createStoreWithEvents(events, options);
   const utils = renderWithDayProviders(<Agenda />, { store });
   return { ...utils, store };
@@ -96,7 +111,7 @@ describe("CalendarAgenda", () => {
     ];
 
     // First render with events loaded (not processing)
-    const { rerender } = renderAgenda(mockEvents, { isProcessing: false });
+    const { store } = renderAgenda(mockEvents, { isProcessing: false });
 
     // Verify initial load shows events, not skeleton or progress line
     expect(await screen.findByText("Test Event")).toBeInTheDocument();
@@ -105,16 +120,27 @@ describe("CalendarAgenda", () => {
       screen.queryByTestId("loading-progress-line"),
     ).not.toBeInTheDocument();
 
-    // Rerender with processing state to simulate reload
-    // We use rerender instead of unmount/render to preserve the useRef state (hasLoadedOnce)
-    const store = createStoreWithEvents(mockEvents, { isProcessing: true });
+    // Dispatch request action to simulate reload
+    act(() => {
+      (selectIsDayEventsProcessing as jest.Mock).mockReturnValue(true);
+      store.dispatch(
+        eventsEntitiesSlice.actions.edit({
+          _id: "event-1",
+          event: {
+            ...mockEvents[0],
+            title: "Updated Title",
+            startDate: mockEvents[0].startDate!,
+            endDate: mockEvents[0].endDate!,
+            user: "user-123",
+            priority: "high",
+            origin: "google",
+          } as any,
+        }),
+      );
+    });
 
-    rerender(
-      renderWithDayProviders(<Agenda />, { store })
-        .container as unknown as React.ReactElement,
-    );
-
-    // On subsequent load after component has loaded once, should show progress line not skeleton
+    // On subsequent load after component has loaded once,
+    // should show progress line not skeleton
     expect(
       await screen.findByTestId("loading-progress-line"),
     ).toBeInTheDocument();
