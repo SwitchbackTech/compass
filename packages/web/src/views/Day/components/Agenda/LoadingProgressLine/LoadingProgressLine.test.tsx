@@ -10,17 +10,10 @@ describe("LoadingProgressLine", () => {
     expect(progressLine).toBeInTheDocument();
   });
 
-  it("should have absolute positioning at top", () => {
-    render(<LoadingProgressLine />);
-
-    const progressLine = screen.getByTestId("loading-progress-line");
-    expect(progressLine).toHaveClass("absolute", "top-0");
-  });
-
   it("should span full width", () => {
     render(<LoadingProgressLine />);
 
     const progressLine = screen.getByTestId("loading-progress-line");
-    expect(progressLine).toHaveClass("left-0", "right-0");
+    expect(progressLine).toHaveClass("w-full");
   });
 });
