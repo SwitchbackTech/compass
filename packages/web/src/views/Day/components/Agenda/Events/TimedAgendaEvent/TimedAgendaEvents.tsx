@@ -19,7 +19,9 @@ import {
 import { useAppSelector } from "@web/store/store.hooks";
 import { useDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
 import { AgendaSkeleton } from "@web/views/Day/components/Agenda/AgendaSkeleton/AgendaSkeleton";
+import { AgendaSelectionPreview } from "@web/views/Day/components/Agenda/Events/AgendaSelectionPreview/AgendaSelectionPreview";
 import { DraggableTimedAgendaEvent } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/DraggableTimedAgendaEvent";
+import { useAgendaSelection } from "@web/views/Day/hooks/events/useAgendaSelection";
 import { useOpenEventForm } from "@web/views/Forms/hooks/useOpenEventForm";
 
 export const TimedAgendaEvents = memo(
@@ -43,6 +45,7 @@ export const TimedAgendaEvents = memo(
       const openEventForm = useOpenEventForm();
       const [ref, setRef] = useState<HTMLElement | null>(null);
       const mergedRef = useMergeRefs([setRef, _ref]);
+      const { selection, handlers } = useAgendaSelection();
 
       useGridOrganization(ref);
 
@@ -54,6 +57,7 @@ export const TimedAgendaEvents = memo(
       return (
         <Droppable
           {...interactions?.getReferenceProps({ onClick: openEventForm })}
+          {...handlers}
           as="div"
           dndProps={{ id: ID_GRID_MAIN }}
           ref={mergedRef}
@@ -62,22 +66,35 @@ export const TimedAgendaEvents = memo(
           className={classNames("relative ml-1 flex-1 overflow-hidden", {
             isOver: "bg-gray-400/20",
           })}
-          style={{ height }}
+          style={{
+            height,
+            cursor: selection.isSelecting ? "ns-resize" : "default",
+          }}
         >
           {/* Event blocks */}
           {isLoading || ref === null ? (
             <AgendaSkeleton />
           ) : (
-            events.map((event) => (
-              <DraggableTimedAgendaEvent
-                key={event._id}
-                event={event as Schema_GridEvent}
-                bounds={ref}
-                interactions={interactions}
-                isDraftEvent={draft?._id === event._id}
-                isNewDraftEvent={!timedEvents.find((e) => e._id === event._id)}
-              />
-            ))
+            <>
+              {events.map((event) => (
+                <DraggableTimedAgendaEvent
+                  key={event._id}
+                  event={event as Schema_GridEvent}
+                  bounds={ref}
+                  interactions={interactions}
+                  isDraftEvent={draft?._id === event._id}
+                  isNewDraftEvent={
+                    !timedEvents.find((e) => e._id === event._id)
+                  }
+                />
+              ))}
+              {selection.isSelecting && (
+                <AgendaSelectionPreview
+                  startY={selection.startY}
+                  currentY={selection.currentY}
+                />
+              )}
+            </>
           )}
         </Droppable>
       );
