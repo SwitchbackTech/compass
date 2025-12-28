@@ -1,6 +1,6 @@
 import { act } from "react";
 import { renderHook } from "@testing-library/react";
-import { cursor$ } from "@web/common/context/mouse-position";
+import { cursor$ } from "@web/common/context/pointer-position";
 import { useCursorCoordinates } from "./useCursorCoordinates";
 
 describe("useCursorCoordinates", () => {

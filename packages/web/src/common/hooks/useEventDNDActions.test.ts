@@ -8,6 +8,7 @@ import {
 } from "@web/common/constants/web.constants";
 import { useEventDNDActions } from "@web/common/hooks/useEventDNDActions";
 import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
+import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { getSnappedMinutes } from "@web/views/Day/util/agenda/agenda.util";
 
@@ -27,6 +28,22 @@ jest.mock("@web/views/Day/util/agenda/agenda.util", () => ({
   getSnappedMinutes: jest.fn(),
 }));
 
+jest.mock("@web/ducks/events/selectors/event.selectors", () => ({
+  selectEventById: jest.fn(),
+}));
+
+jest.mock("@web/store", () => ({
+  store: {
+    getState: jest.fn(),
+  },
+}));
+
+jest.mock("@web/common/hooks/useOpenAtCursor", () => ({
+  isOpenAtCursor: jest.fn().mockReturnValue(false),
+  setFloatingReferenceAtCursor: jest.fn(),
+  CursorItem: { EventForm: "EventForm" },
+}));
+
 describe("useEventDNDActions", () => {
   const mockDispatch = jest.fn();
   const mockUpdateEvent = jest.fn();
@@ -41,6 +58,7 @@ describe("useEventDNDActions", () => {
     jest.clearAllMocks();
     (useAppDispatch as jest.Mock).mockReturnValue(mockDispatch);
     (useUpdateEvent as jest.Mock).mockReturnValue(mockUpdateEvent);
+    (selectEventById as jest.Mock).mockReturnValue(mockEvent);
   });
 
   it("should register dnd monitor", () => {

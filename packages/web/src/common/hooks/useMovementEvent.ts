@@ -1,9 +1,15 @@
-import { DependencyList, useCallback, useEffect, useMemo } from "react";
+import {
+  DependencyList,
+  PointerEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+} from "react";
 import { BehaviorSubject, EMPTY, NEVER, fromEvent, iif, merge, of } from "rxjs";
 import { filter, map, switchMap } from "rxjs/operators";
 import {
   DomMovement,
-  domMovement,
+  domMovement$,
   globalMovementHandler,
 } from "@web/common/utils/dom/event-emitter.util";
 
@@ -11,15 +17,7 @@ interface Options {
   handler?: (e: DomMovement) => void;
   selectors?: Array<keyof HTMLElementTagNameMap | string>; // css selectors
   deps?: DependencyList;
-  eventTypes?: Array<
-    | "mousedown"
-    | "mouseup"
-    | "mousemove"
-    | "touchstart"
-    | "touchend"
-    | "touchmove"
-    | "touchcancel"
-  >;
+  eventTypes?: Array<"pointerup" | "pointerdown" | "pointermove">;
 }
 
 /**
@@ -30,9 +28,9 @@ interface Options {
  * Leverages a single root event listener for touch or mouse events.
  * Make sure to memoize the handler function to avoid unnecessary subscriptions.
  *
- * Call `toggleMouseMovementTracking()` to toggle (pause/resume) event tracking,
+ * Call `togglePointerMovementTracking()` to toggle (pause/resume) event tracking,
  * or pass a boolean to explicitly pause (`true`) or resume (`false`) tracking.
- * Example: `const { toggleMouseMovementTracking } = useMovementEvent(...);`
+ * Example: `const { togglePointerMovementTracking } = useMovementEvent(...);`
  */
 export function useMovementEvent({
   handler,
@@ -62,17 +60,17 @@ export function useMovementEvent({
 
   const pause = useMemo(() => new BehaviorSubject<boolean>(false), []);
 
-  const toggleMouseMovementTracking = useCallback(
+  const togglePointerMovementTracking = useCallback(
     (pauseTracking?: boolean) => pause.next(pauseTracking ?? !pause.getValue()),
     [pause],
   );
 
   useEffect(() => {
-    const domMovement$ = of(handler).pipe(
+    const pointerMovement$ = of(handler).pipe(
       switchMap((handle = () => {}) =>
         iif(
           () => !!handler,
-          domMovement.pipe(
+          domMovement$.pipe(
             filter(typeFilter),
             filter(elementsFilter),
             map(handle),
@@ -83,7 +81,7 @@ export function useMovementEvent({
     );
 
     const movement$ = pause.pipe(
-      switchMap((paused) => iif(() => paused, NEVER, domMovement$)),
+      switchMap((paused) => iif(() => paused, NEVER, pointerMovement$)),
     );
 
     const subscription = movement$.subscribe();
@@ -98,7 +96,7 @@ export function useMovementEvent({
     ...(deps ?? []),
   ]);
 
-  return { toggleMouseMovementTracking };
+  return { togglePointerMovementTracking };
 }
 
 /**
@@ -109,42 +107,25 @@ export function useMovementEvent({
  */
 export function useSetupMovementEvents() {
   useEffect(() => {
-    const mousedown = fromEvent<MouseEvent>(window, "mousedown");
-    const mouseup = fromEvent<MouseEvent>(window, "mouseup");
-    const mousemove = fromEvent<MouseEvent>(window, "mousemove");
-    const mouse = merge(mousedown, mouseup, mousemove);
+    const pointerdown = fromEvent<PointerEvent>(window, "pointerdown");
+    const pointerup = fromEvent<PointerEvent>(window, "pointerup");
+    const pointermove = fromEvent<PointerEvent>(window, "pointermove");
+    const pointer = merge(pointerdown, pointerup, pointermove);
 
-    const touchstart = fromEvent<TouchEvent>(window, "touchstart");
-    const touchend = fromEvent<TouchEvent>(window, "touchend");
-    const touchmove = fromEvent<TouchEvent>(window, "touchmove");
-    const touch = merge(touchstart, touchend, touchmove);
-
-    const events = merge(mouse, touch).subscribe(globalMovementHandler);
+    const events = pointer.subscribe(globalMovementHandler);
 
     return () => events.unsubscribe();
   }, []);
 }
 
-export function useMouseUpEvent(options: Omit<Options, "eventTypes">) {
-  return useMovementEvent({ ...options, eventTypes: ["mouseup"] });
+export function usePointerUpEvent(options: Omit<Options, "eventTypes">) {
+  return useMovementEvent({ ...options, eventTypes: ["pointerup"] });
 }
 
-export function useMouseDownEvent(options: Omit<Options, "eventTypes">) {
-  return useMovementEvent({ ...options, eventTypes: ["mousedown"] });
+export function usePointerDownEvent(options: Omit<Options, "eventTypes">) {
+  return useMovementEvent({ ...options, eventTypes: ["pointerdown"] });
 }
 
-export function useMouseMoveEvent(options: Omit<Options, "eventTypes">) {
-  return useMovementEvent({ ...options, eventTypes: ["mousemove"] });
-}
-
-export function useTouchStartEvent(options: Omit<Options, "eventTypes">) {
-  return useMovementEvent({ ...options, eventTypes: ["touchstart"] });
-}
-
-export function useTouchEndEvent(options: Omit<Options, "eventTypes">) {
-  return useMovementEvent({ ...options, eventTypes: ["touchend"] });
-}
-
-export function useTouchMoveEvent(options: Omit<Options, "eventTypes">) {
-  return useMovementEvent({ ...options, eventTypes: ["touchmove"] });
+export function usePointerMoveEvent(options: Omit<Options, "eventTypes">) {
+  return useMovementEvent({ ...options, eventTypes: ["pointermove"] });
 }

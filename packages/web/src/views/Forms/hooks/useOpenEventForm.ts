@@ -1,5 +1,5 @@
 import { ObjectId } from "bson";
-import { PointerEvent, useCallback } from "react";
+import { MouseEvent, PointerEvent, useCallback } from "react";
 import { getEntity } from "@ngneat/elf-entities";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Schema_Event, WithCompassId } from "@core/types/event.types";
@@ -10,14 +10,14 @@ import {
   ID_GRID_EVENTS_TIMED,
 } from "@web/common/constants/web.constants";
 import {
-  getCursorPosition,
+  getPointerPosition,
   isElementInViewport,
   isOverAllDayRow,
   isOverMainGrid,
   isOverSidebar,
   isOverSomedayMonth,
   isOverSomedayWeek,
-} from "@web/common/context/mouse-position";
+} from "@web/common/context/pointer-position";
 import {
   CursorItem,
   openFloatingAtCursor,
@@ -41,15 +41,17 @@ export function useOpenEventForm() {
   const dateInView = useDateInView();
 
   const openEventForm = useCallback(
-    async (e: PointerEvent<HTMLElement>) => {
-      e.preventDefault();
-      e.stopPropagation();
+    async <E extends Element = HTMLElement>(
+      e?: PointerEvent<E> | MouseEvent<E>,
+    ) => {
+      e?.preventDefault();
+      e?.stopPropagation();
 
-      const { detail } = e;
+      const { detail } = e ?? {};
       const defaultDetails = { id: undefined, create: false };
       const details = typeof detail === "object" ? detail : defaultDetails;
       const create = details?.create ?? false;
-      const cursor = getCursorPosition();
+      const cursor = getPointerPosition();
       const user = await getUserId();
 
       if (!user) return;

@@ -12,8 +12,8 @@ import {
 } from "@web/views/Day/util/agenda/focus.util";
 
 // Mocks
-jest.mock("@web/common/context/mouse-position", () => ({
-  getElementAtCursor: jest.fn(() => null),
+jest.mock("@web/common/context/pointer-position", () => ({
+  getElementAtPointer: jest.fn(() => null),
   isOverAllDayRow: jest.fn(() => false),
   isOverMainGrid: jest.fn(() => false),
   isOverSomedayMonth: jest.fn(() => false),

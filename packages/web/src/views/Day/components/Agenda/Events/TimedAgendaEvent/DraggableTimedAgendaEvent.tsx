@@ -9,11 +9,18 @@ import {
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { CLASS_TIMED_CALENDAR_EVENT } from "@web/common/constants/web.constants";
+import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
 import { useEventResizeActions } from "@web/common/hooks/useEventResizeActions";
+import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
+import { useIsDraggingEvent } from "@web/common/hooks/useIsDraggingEvent";
+import { useMainGridSelectionId } from "@web/common/hooks/useMainGridSelectionId";
+import { useMainGridSelectionState } from "@web/common/hooks/useMainGridSelectionState";
 import {
   CursorItem,
   useFloatingNodeIdAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
+import { useResizeId } from "@web/common/hooks/useResizeId";
+import { useResizing } from "@web/common/hooks/useResizing";
 import { theme } from "@web/common/styles/theme";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Draggable } from "@web/components/DND/Draggable";
@@ -30,28 +37,37 @@ import {
 export const DraggableTimedAgendaEvent = memo(
   ({
     event,
-    bounds,
     interactions,
     isDraftEvent,
     isNewDraftEvent,
   }: {
     event: Schema_GridEvent;
-    bounds: HTMLElement;
     interactions: UseInteractionsReturn;
     isDraftEvent: boolean;
     isNewDraftEvent: boolean;
   }) => {
+    const { timedEventsGridRef } = useCompassRefs();
     const openAgendaEventPreview = useOpenAgendaEventPreview();
     const openEventContextMenu = useOpenEventContextMenu();
     const nodeId = useFloatingNodeIdAtCursor();
+    const maxZIndex = useGridMaxZIndex();
+    const mainGrid = timedEventsGridRef.current;
     const eventFormOpen = nodeId === CursorItem.EventForm;
     const startDate = dayjs(event.startDate);
     const startPosition = getAgendaEventPosition(startDate.toDate());
     const height = getEventHeight(event);
+    const { selecting } = useMainGridSelectionState();
+    const resizing = useResizing();
+    const resizeId = useResizeId();
+    const dragging = useIsDraggingEvent();
+    const selectionId = useMainGridSelectionId();
+    const isBeingSelected = selectionId === event._id;
+    const isBeingResized = resizeId === event._id;
+    const enableInteractions = !resizing && !selecting && !eventFormOpen;
+    const mainGridHeight = mainGrid?.offsetHeight ?? 0;
 
     const { onResize, onResizeStart, onResizeStop } = useEventResizeActions(
       event as WithCompassId<Schema_Event>,
-      bounds,
     );
 
     if (!event.startDate || !event.endDate || event.isAllDay) return null;
@@ -59,12 +75,14 @@ export const DraggableTimedAgendaEvent = memo(
     return (
       <Draggable
         {...interactions?.getReferenceProps({
-          onContextMenu: eventFormOpen ? undefined : openEventContextMenu,
-          onFocus: eventFormOpen ? undefined : openAgendaEventPreview,
-          onPointerEnter: eventFormOpen ? undefined : openAgendaEventPreview,
+          onContextMenu: enableInteractions ? openEventContextMenu : undefined,
+          onFocus: enableInteractions ? openAgendaEventPreview : undefined,
+          onPointerEnter: enableInteractions
+            ? openAgendaEventPreview
+            : undefined,
         })}
         dndProps={{
-          id: event._id,
+          id: event._id!,
           data: {
             event: event,
             type: Categories_Event.TIMED,
@@ -78,6 +96,7 @@ export const DraggableTimedAgendaEvent = memo(
           "absolute cursor-move touch-none rounded focus:outline-none",
           "focus-visible:rounded focus-visible:ring-2",
           "focus:outline-none focus-visible:ring-yellow-200",
+          { "pointer-events-none": isBeingSelected },
         )}
         style={{ top: startPosition, height }}
         tabIndex={0}
@@ -88,9 +107,10 @@ export const DraggableTimedAgendaEvent = memo(
         aria-label={event.title || "Untitled event"}
       >
         <Resizable
+          id={event._id!}
           enable={{
-            top: true,
-            bottom: true,
+            top: !dragging,
+            bottom: !dragging,
             right: false,
             left: false,
             topRight: false,
@@ -102,7 +122,10 @@ export const DraggableTimedAgendaEvent = memo(
           minWidth="100%"
           maxWidth="100%"
           minHeight={SLOT_HEIGHT - 2}
-          maxHeight={bounds.offsetHeight - parseInt(theme.spacing.m, 10)}
+          maxHeight={mainGridHeight - parseInt(theme.spacing.m, 10)}
+          style={
+            isBeingResized || isBeingSelected ? { zIndex: maxZIndex + 2 } : {}
+          }
           className="rounded"
           onResizeStart={onResizeStart}
           onResizeStop={onResizeStop}

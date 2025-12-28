@@ -1,12 +1,12 @@
 import { act } from "react";
+import { renderHook } from "@testing-library/react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
-import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import {
   CLASS_TIMED_CALENDAR_EVENT,
   DATA_EVENT_ELEMENT_ID,
 } from "@web/common/constants/web.constants";
-import { isElementInViewport } from "@web/common/context/mouse-position";
+import { isElementInViewport } from "@web/common/context/pointer-position";
 import { openFloatingAtCursor } from "@web/common/hooks/useOpenAtCursor";
 import { getCalendarEventElementFromGrid } from "@web/common/utils/event/event.util";
 import { eventsStore, setDraft } from "@web/store/events";
@@ -14,7 +14,7 @@ import { useOpenEventForm } from "@web/views/Forms/hooks/useOpenEventForm";
 
 // Mocks
 jest.mock("@web/auth/auth.util");
-jest.mock("@web/common/context/mouse-position");
+jest.mock("@web/common/context/pointer-position");
 jest.mock("@web/common/utils/dom/event-emitter.util");
 jest.mock("@web/views/Day/hooks/navigation/useDateInView");
 jest.mock("@web/views/Day/util/agenda/agenda.util");
@@ -45,14 +45,14 @@ describe("useOpenEventForm", () => {
   const { getUserId } = jest.requireMock("@web/auth/auth.util");
 
   const {
-    getCursorPosition,
-    getMousePointRef,
+    getPointerPosition,
+    getPointerRef,
     isOverAllDayRow,
     isOverMainGrid,
     isOverSidebar,
     isOverSomedayWeek,
     isOverSomedayMonth,
-  } = jest.requireMock("@web/common/context/mouse-position");
+  } = jest.requireMock("@web/common/context/pointer-position");
 
   const { getElementAtPoint } = jest.requireMock(
     "@web/common/utils/dom/event-emitter.util",
@@ -82,10 +82,10 @@ describe("useOpenEventForm", () => {
     useDateInView.mockReturnValue(mockDateInView);
     getUserId.mockResolvedValue("user-123");
     roundToNearestFifteenWithinHour.mockReturnValue(0);
-    getCursorPosition.mockReturnValue({ clientX: 100, clientY: 100 });
+    getPointerPosition.mockReturnValue({ clientX: 100, clientY: 100 });
     getElementAtPoint.mockReturnValue(null);
     getEventClass.mockReturnValue(null);
-    getMousePointRef.mockReturnValue({});
+    getPointerRef.mockReturnValue({});
 
     // Default mouse state
     isOverAllDayRow.mockReturnValue(false);
@@ -130,7 +130,7 @@ describe("useOpenEventForm", () => {
   it("should open form for new all-day event when over all-day row", async () => {
     isOverAllDayRow.mockReturnValue(true);
 
-    const { result } = renderHook(() => useOpenEventForm());
+    const { result } = renderHook(useOpenEventForm);
 
     await act(async () => {
       await result.current(
@@ -167,7 +167,7 @@ describe("useOpenEventForm", () => {
     getEventClass.mockReturnValue(CLASS_TIMED_CALENDAR_EVENT);
     (eventsStore.query as jest.Mock).mockReturnValue(mockEvent);
 
-    const { result } = renderHook(() => useOpenEventForm());
+    const { result } = renderHook(useOpenEventForm);
 
     await act(async () => {
       await result.current(

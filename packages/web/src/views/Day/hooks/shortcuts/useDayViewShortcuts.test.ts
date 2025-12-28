@@ -7,7 +7,10 @@ import {
   mockMacOSUserAgent,
   mockWindowsUserAgent,
 } from "@web/__tests__/__mocks__/mock.setup";
-import { keyPressed, pressKey } from "@web/common/utils/dom/event-emitter.util";
+import {
+  keyPressed$,
+  pressKey,
+} from "@web/common/utils/dom/event-emitter.util";
 import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
 
@@ -31,7 +34,7 @@ describe.each([
 
   beforeEach(() => {
     jest.clearAllMocks();
-    keyPressed.next(null);
+    keyPressed$.next(null);
 
     // Set default mock implementations
     isEditable.mockReturnValue(false);

@@ -5,7 +5,6 @@ import userEvent from "@testing-library/user-event";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { MousePositionProvider } from "@web/common/context/mouse-position";
 import { loadSpecificDayData, loadTodayData } from "@web/routers/loaders";
 import { store as defaultStore } from "@web/store";
 import { DateNavigationProvider } from "@web/views/Day/context/DateNavigationContext";
@@ -14,13 +13,11 @@ import { TaskProvider } from "@web/views/Day/context/TaskContext";
 
 export const TaskProviderWrapper = ({ children }: PropsWithChildren) => {
   return (
-    <MousePositionProvider>
-      <StorageInfoModalProvider>
-        <DateNavigationProvider>
-          <TaskProvider>{children}</TaskProvider>
-        </DateNavigationProvider>
-      </StorageInfoModalProvider>
-    </MousePositionProvider>
+    <StorageInfoModalProvider>
+      <DateNavigationProvider>
+        <TaskProvider>{children}</TaskProvider>
+      </DateNavigationProvider>
+    </StorageInfoModalProvider>
   );
 };
 

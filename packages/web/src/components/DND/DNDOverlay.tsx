@@ -11,9 +11,11 @@ export function DNDOverlay({ children }: PropsWithChildren) {
   const { active, over } = useDndContext();
   const data = (active?.data?.current ?? {}) as DraggableDNDData;
   const { type, view, event } = data;
+  const isDragging = !!active?.id && active?.id === event?._id;
+  const id = active?.id ?? event?._id ?? "unknown";
   const dndProps = useMemo(
-    () => ({ isDragging: !!active?.id, over, listeners: {} }),
-    [active, over],
+    () => ({ isDragging, over, listeners: {}, id }),
+    [over, isDragging, id],
   );
 
   const modifiers = useMemo(() => {

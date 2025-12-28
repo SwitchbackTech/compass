@@ -1,19 +1,26 @@
 import { useEffect, useState } from "react";
-import { MouseState, mouseState$ } from "@web/common/context/mouse-position";
+import {
+  PointerState,
+  pointerState$,
+} from "@web/common/context/pointer-position";
 
-export function useMouseState(): MouseState {
-  const state = mouseState$.getValue();
-  const [mousedown, setMousedown] = useState<boolean>(state.mousedown);
+export function usePointerState(): PointerState {
+  const state = pointerState$.getValue();
+  const [pointerdown, setPointerdown] = useState<boolean>(state.pointerdown);
   const [isOverGrid, setIsOverGrid] = useState<boolean>(state.isOverGrid);
   const [isOverSidebar, setOverSide] = useState<boolean>(state.isOverSidebar);
   const [isOverMainGrid, setOverGrid] = useState<boolean>(state.isOverMainGrid);
   const [isOverWeek, setWeek] = useState<boolean>(state.isOverSomedayWeek);
   const [isOverMonth, setMonth] = useState<boolean>(state.isOverSomedayMonth);
   const [isOverAllDayRow, setDay] = useState<boolean>(state.isOverAllDayRow);
+  const [selectionStart, setSelectionStart] = useState<
+    PointerState["selectionStart"]
+  >(state.selectionStart);
 
   useEffect(() => {
-    const subscription = mouseState$.subscribe((value) => {
-      setMousedown(value.mousedown);
+    const subscription = pointerState$.subscribe((value) => {
+      setPointerdown(value.pointerdown);
+      setSelectionStart(value.selectionStart);
       setIsOverGrid(value.isOverGrid);
       setOverSide(value.isOverSidebar);
       setOverGrid(value.isOverMainGrid);
@@ -26,7 +33,8 @@ export function useMouseState(): MouseState {
   }, []);
 
   return {
-    mousedown,
+    pointerdown,
+    selectionStart,
     isOverGrid,
     isOverSidebar,
     isOverMainGrid,

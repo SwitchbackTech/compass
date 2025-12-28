@@ -1,45 +1,20 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { Schema_Event } from "@core/types/event.types";
-import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
+import {
+  renderAgenda,
+  selectIsDayEventsProcessingSpy,
+} from "@web/__tests__/utils/agenda/agenda.test.util";
 import { compareEventsByStartDate } from "@web/common/utils/event/event.util";
-import { selectIsDayEventsProcessing } from "@web/ducks/events/selectors/event.selectors";
 import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
-import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
-import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
 import { useOpenEventForm } from "@web/views/Forms/hooks/useOpenEventForm";
-
-jest.mock("@web/auth/auth.util", () => ({
-  getUserId: jest.fn().mockResolvedValue("user-123"),
-}));
 
 jest.mock("@web/views/Forms/hooks/useOpenEventForm");
 
-jest.mock("@web/ducks/events/selectors/event.selectors", () => {
-  const actual = jest.requireActual(
-    "@web/ducks/events/selectors/event.selectors",
-  );
-  return {
-    ...actual,
-    selectIsDayEventsProcessing: jest.fn(),
-  };
-});
-
-const renderAgenda = (
-  events: Schema_Event[] = [],
-  options?: { isProcessing?: boolean },
-) => {
-  (selectIsDayEventsProcessing as jest.Mock).mockReturnValue(
-    options?.isProcessing ?? false,
-  );
-  const store = createStoreWithEvents(events, options);
-  const utils = renderWithDayProviders(<Agenda />, { store });
-  return { ...utils, store };
-};
-
 describe("CalendarAgenda", () => {
   beforeEach(() => {
+    jest.clearAllMocks();
     (useOpenEventForm as jest.Mock).mockReturnValue(jest.fn());
   });
 
@@ -70,10 +45,12 @@ describe("CalendarAgenda", () => {
       },
     ];
 
-    renderAgenda(mockEvents);
+    const screen = renderAgenda(mockEvents);
 
-    expect(await screen.findByText("Event 1")).toBeInTheDocument();
-    expect(await screen.findByText("Event 2")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Event 1")).toBeInTheDocument();
+      expect(screen.getByText("Event 2")).toBeInTheDocument();
+    });
   });
 
   it("should render all-day events", async () => {
@@ -122,7 +99,8 @@ describe("CalendarAgenda", () => {
 
     // Dispatch request action to simulate reload
     act(() => {
-      (selectIsDayEventsProcessing as jest.Mock).mockReturnValue(true);
+      selectIsDayEventsProcessingSpy.mockReturnValue(true);
+
       store.dispatch(
         eventsEntitiesSlice.actions.edit({
           _id: "event-1",

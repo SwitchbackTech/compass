@@ -19,7 +19,7 @@ import {
   COLUMN_WEEK,
   ID_SOMEDAY_DRAFT,
 } from "@web/common/constants/web.constants";
-import { getCursorPosition } from "@web/common/context/mouse-position";
+import { getPointerPosition } from "@web/common/context/pointer-position";
 import { DirtyParser } from "@web/common/parsers/dirty.parser";
 import { Schema_WebEvent } from "@web/common/types/web.event.types";
 import {
@@ -157,7 +157,7 @@ export const useSidebarActions = (
   }, [state.draft, reduxDraft, setDraft, dispatch]);
 
   const getDatesAfterDroppingOn = (target: "mainGrid" | "alldayRow") => {
-    const cursor = getCursorPosition();
+    const cursor = getPointerPosition();
     const x = getX(cursor.clientX, true);
     const y = cursor.clientY;
 

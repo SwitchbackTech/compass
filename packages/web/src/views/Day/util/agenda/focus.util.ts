@@ -8,12 +8,12 @@ import {
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import {
-  getElementAtCursor,
+  getElementAtPointer,
   isOverAllDayRow,
   isOverMainGrid,
   isOverSomedayMonth,
   isOverSomedayWeek,
-} from "@web/common/context/mouse-position";
+} from "@web/common/context/pointer-position";
 
 export function focusElement(element: HTMLElement): void {
   element.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -46,7 +46,7 @@ export function getEventClass(element: Element | null) {
 }
 
 export function getFirstAgendaEvent(): HTMLElement | null {
-  const cursorElement = getElementAtCursor();
+  const cursorElement = getElementAtPointer();
   const overMainGrid = isOverMainGrid(cursorElement);
   const overAllDayRow = isOverAllDayRow(cursorElement);
   const isOutsideGrid = !overMainGrid && !overAllDayRow;
@@ -87,7 +87,7 @@ export function getActiveEvent(): HTMLElement | null {
 }
 
 export function getEventAtCursor(): HTMLElement | null {
-  const element = getElementAtCursor();
+  const element = getElementAtPointer();
   const eventClass = getEventClass(element);
   const event = element?.closest(`.${eventClass}`);
 

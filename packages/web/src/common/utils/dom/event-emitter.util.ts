@@ -1,4 +1,5 @@
 import { EventEmitter2 } from "eventemitter2";
+import { PointerEvent } from "react";
 import { BehaviorSubject, Subject } from "rxjs";
 import { StringV4Schema } from "@core/types/type.utils";
 
@@ -8,12 +9,12 @@ export interface KeyCombination {
 }
 
 export interface DomMovement {
-  event: MouseEvent | TouchEvent;
+  event: PointerEvent;
   x: number;
   y: number;
-  mousedown: boolean;
+  pointerdown: boolean;
   element: Element | null;
-  selectionStart: Pick<MouseEvent, "clientX" | "clientY"> | null;
+  selectionStart: Pick<PointerEvent, "clientX" | "clientY"> | null;
 }
 
 export enum CompassDOMEvents {
@@ -28,16 +29,20 @@ export const compassEventEmitter = new EventEmitter2({
   verboseMemoryLeak: true,
 });
 
-export const keyPressed = new BehaviorSubject<KeyCombination | null>(null);
+export const keyPressed$ = new BehaviorSubject<KeyCombination | null>(null);
 
-export const keyReleased = new Subject<KeyCombination>();
+export const keyReleased$ = new Subject<KeyCombination>();
 
-export const domMovement = new Subject<DomMovement>();
+export const domMovement$ = new Subject<DomMovement>();
 
-export const mouseDown$ = new BehaviorSubject<boolean>(false);
+export const pointerdown$ = new BehaviorSubject<boolean>(false);
+
+export const selectionStart$ = new BehaviorSubject<
+  DomMovement["selectionStart"]
+>(null);
 
 export function globalOnKeyPressHandler(e: KeyboardEvent) {
-  const { event, sequence = [] } = keyPressed.getValue() ?? {};
+  const { event, sequence = [] } = keyPressed$.getValue() ?? {};
   const lastKey = sequence[sequence.length - 1];
   const repeat = e.key === lastKey || e.repeat;
   const nextSequence = repeat ? sequence : [...sequence, e.key];
@@ -52,89 +57,78 @@ export function globalOnKeyPressHandler(e: KeyboardEvent) {
   const reset = resetMeta || resetCtrl || resetAlt || resetShift;
 
   if (event) {
-    keyPressed.next({ event: e, sequence: reset ? [e.key] : nextSequence });
+    keyPressed$.next({ event: e, sequence: reset ? [e.key] : nextSequence });
   } else {
-    keyPressed.next({ event: e, sequence: [e.key] });
+    keyPressed$.next({ event: e, sequence: [e.key] });
   }
 }
 
 export function globalOnKeyUpHandler(e: KeyboardEvent) {
-  const { event, sequence = [] } = keyPressed.getValue() ?? {};
+  const { event, sequence = [] } = keyPressed$.getValue() ?? {};
 
   if (event) {
     const firstKeyInSequence = sequence[0];
     const releasedKey = StringV4Schema.safeParse(e.key).data;
     const firstKeyReleased = releasedKey === firstKeyInSequence;
 
-    if (firstKeyReleased) keyPressed.next(null);
+    if (firstKeyReleased) keyPressed$.next(null);
   }
 
-  keyReleased.next({ event: e, sequence });
+  keyReleased$.next({ event: e, sequence });
 }
 
 export function getElementAtPoint({
   clientX,
   clientY,
-}: Pick<MouseEvent, "clientX" | "clientY">): Element | null {
+}: Pick<PointerEvent, "clientX" | "clientY">): Element | null {
   const element = document.elementFromPoint(clientX, clientY);
 
   return element;
 }
 
-function checkMouseDown(
-  event: Pick<MouseEvent | TouchEvent, "target" | "type"> &
-    Pick<MouseEvent, "clientX" | "clientY">,
+function checkPointerDown(
+  event: Pick<PointerEvent, "target" | "type" | "clientX" | "clientY">,
 ): {
-  mousedown: boolean;
-  selectionStart: Pick<MouseEvent, "clientX" | "clientY"> | null;
+  pointerdown: boolean;
+  selectionStart: DomMovement["selectionStart"];
 } {
-  const isMousedownEvent = event.type === "mousedown";
-  const isMouseupEvent = event.type === "mouseup";
+  const isPointerDownEvent = event.type === "pointerdown";
+  const isPointerUpEvent = event.type === "pointerup";
   const { clientX, clientY } = event;
 
-  if (isMousedownEvent) mouseDown$.next(true);
-  if (isMouseupEvent) mouseDown$.next(false);
+  if (isPointerDownEvent) {
+    pointerdown$.next(true);
+    selectionStart$.next({ clientX, clientY });
+  }
 
-  const mousedown = mouseDown$.getValue();
-  const selectionStart = mousedown ? { clientX, clientY } : null;
+  if (isPointerUpEvent) {
+    pointerdown$.next(false);
+    selectionStart$.next(null);
+  }
 
-  return { mousedown, selectionStart };
+  const isPointerDown = pointerdown$.getValue();
+  const selectionStart = selectionStart$.getValue();
+
+  return { pointerdown: isPointerDown, selectionStart };
 }
 
 function processMovement(
-  e: Pick<MouseEvent, "clientX" | "clientY" | "target" | "type">,
+  e: Pick<PointerEvent, "clientX" | "clientY" | "target" | "type">,
 ) {
-  const mousedown = checkMouseDown(e);
+  const pointerdown = checkPointerDown(e);
   const elem = getElementAtPoint(e);
   const element = elem ?? (e.target instanceof Element ? e.target : null);
 
   const x = e.clientX;
   const y = e.clientY;
 
-  return { x, y, element, ...mousedown };
+  return { x, y, element, ...pointerdown };
 }
 
-function processMouseEvent(event: MouseEvent): DomMovement {
+export function globalMovementHandler(event: PointerEvent) {
   const movement = processMovement(event);
 
-  return { event, ...movement };
-}
-
-function processTouchEvent(event: TouchEvent): DomMovement {
-  const clientX = event.changedTouches[0]?.clientX ?? 0;
-  const clientY = event.changedTouches[0]?.clientY ?? 0;
-  const type = event.type;
-  const target = event.target;
-  const movement = processMovement({ type, target, clientX, clientY });
-
-  return { event, ...movement };
-}
-
-export function globalMovementHandler(e: MouseEvent | TouchEvent) {
-  const isMouseEvent = e instanceof MouseEvent;
-  const movement = isMouseEvent ? processMouseEvent(e) : processTouchEvent(e);
-
-  domMovement.next(movement);
+  domMovement$.next({ event, ...movement });
 }
 
 export function pressKey(
@@ -148,6 +142,7 @@ export function pressKey(
   target.dispatchEvent(
     new KeyboardEvent("keydown", { ...keyDownInit, key, composed: true }),
   );
+
   target.dispatchEvent(
     new KeyboardEvent("keyup", { ...keyUpInit, key, composed: true }),
   );

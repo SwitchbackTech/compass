@@ -21,7 +21,7 @@ import {
   ID_GRID_EVENTS_TIMED,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
-import { isElementInViewport } from "@web/common/context/mouse-position";
+import { isElementInViewport } from "@web/common/context/pointer-position";
 import { PartialMouseEvent } from "@web/common/types/util.types";
 import {
   Schema_GridEvent,

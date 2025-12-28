@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { usePointerPosition } from "@web/common/hooks/usePointerPosition";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
 import { ShortcutsOverlay } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
 import { StyledCalendar } from "@web/views/Calendar/styled";
@@ -7,9 +9,16 @@ import { NowViewProvider } from "@web/views/Now/context/NowViewProvider";
 import { NowViewContent } from "@web/views/Now/view/NowViewContent";
 
 export const NowView = () => {
+  const { togglePointerMovementTracking } = usePointerPosition();
   const { globalShortcuts, nowShortcuts } = getShortcuts({
     isNow: true,
   });
+
+  useEffect(() => {
+    togglePointerMovementTracking(true);
+
+    return () => togglePointerMovementTracking(false);
+  }, [togglePointerMovementTracking]);
 
   return (
     <NowViewProvider>
