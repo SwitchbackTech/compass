@@ -24,6 +24,8 @@ export const insert = (
       data: [action.payload],
     };
   } else {
+    if (!state.value.data) state.value.data = [];
+
     state.value.data.push(action.payload);
   }
 };

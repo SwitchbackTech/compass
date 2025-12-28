@@ -6,6 +6,8 @@ import { ThemeProvider } from "styled-components";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { SessionProvider } from "@web/auth/SessionProvider";
 import { ENV_WEB } from "@web/common/constants/env.constants";
+import { CompassRefsProvider } from "@web/common/context/compass-refs";
+import { PointerPositionProvider } from "@web/common/context/pointer-position";
 import { theme } from "@web/common/styles/theme";
 import { DNDContext } from "@web/components/DND/DNDContext";
 import { DNDOverlay } from "@web/components/DND/DNDOverlay";
@@ -19,33 +21,37 @@ function isPosthogEnabled() {
 export const CompassRequiredProviders = (
   props: PropsWithChildren<{ store?: typeof store }>,
 ) => (
-  <SessionProvider>
-    <Provider store={props?.store ?? store}>
-      <GoogleOAuthProvider clientId={ENV_WEB.GOOGLE_CLIENT_ID || ""}>
-        <ThemeProvider theme={theme}>
-          <DNDContext>
-            <IconProvider>{props.children}</IconProvider>
+  <CompassRefsProvider>
+    <SessionProvider>
+      <Provider store={props?.store ?? store}>
+        <GoogleOAuthProvider clientId={ENV_WEB.GOOGLE_CLIENT_ID || ""}>
+          <ThemeProvider theme={theme}>
+            <PointerPositionProvider>
+              <DNDContext>
+                <IconProvider>{props.children}</IconProvider>
 
-            <ToastContainer
-              position="bottom-left"
-              autoClose={5000}
-              hideProgressBar={false}
-              newestOnTop={false}
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              theme="dark"
-              limit={1}
-            />
+                <ToastContainer
+                  position="bottom-left"
+                  autoClose={5000}
+                  hideProgressBar={false}
+                  newestOnTop={false}
+                  closeOnClick
+                  rtl={false}
+                  pauseOnFocusLoss
+                  draggable
+                  pauseOnHover
+                  theme="dark"
+                  limit={1}
+                />
 
-            <DNDOverlay />
-          </DNDContext>
-        </ThemeProvider>
-      </GoogleOAuthProvider>
-    </Provider>
-  </SessionProvider>
+                <DNDOverlay />
+              </DNDContext>
+            </PointerPositionProvider>
+          </ThemeProvider>
+        </GoogleOAuthProvider>
+      </Provider>
+    </SessionProvider>
+  </CompassRefsProvider>
 );
 
 export const CompassOptionalProviders = ({ children }: PropsWithChildren) => {

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Schema_Event } from "@core/types/event.types";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
-import { useMousePosition } from "@web/common/hooks/useMousePosition";
-import { useMouseState } from "@web/common/hooks/useMouseState";
+import { usePointerPosition } from "@web/common/hooks/usePointerPosition";
+import { usePointerState } from "@web/common/hooks/usePointerState";
 import { selectIsDNDing } from "@web/ducks/events/selectors/draft.selectors";
 import { selectCategorizedEvents } from "@web/ducks/events/selectors/someday.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
@@ -23,8 +23,8 @@ export const useSidebarState = () => {
   const [isSomedayFormOpen, setIsSomedayFormOpen] = useState(false);
 
   const isDragging = isDrafting && draft !== null; // TODO: Probably not a good way to determine if we are dragging, consider refactoring or removing this comment.
-  const { toggleMouseMovementTracking } = useMousePosition();
-  const { isOverAllDayRow, isOverGrid, isOverMainGrid } = useMouseState();
+  const { togglePointerMovementTracking } = usePointerPosition();
+  const { isOverAllDayRow, isOverGrid, isOverMainGrid } = usePointerState();
 
   const somedayWeekIds = somedayEvents.columns[COLUMN_WEEK]
     .eventIds as string[];
@@ -40,10 +40,10 @@ export const useSidebarState = () => {
   const shouldPreviewOnGrid = isDNDing && isOverGrid;
 
   useEffect(() => {
-    toggleMouseMovementTracking(!isDNDing);
+    togglePointerMovementTracking(!isDNDing);
 
-    return () => toggleMouseMovementTracking(false);
-  }, [isDNDing, toggleMouseMovementTracking]);
+    return () => togglePointerMovementTracking(false);
+  }, [isDNDing, togglePointerMovementTracking]);
 
   const state = {
     draft,

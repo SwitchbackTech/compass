@@ -1,11 +1,11 @@
 import React from "react";
 import { renderHook } from "@testing-library/react";
 import {
-  MousePositionContext,
+  PointerPositionContext,
   cursor$,
-  mouseState$,
-} from "@web/common/context/mouse-position";
-import { useMousePosition } from "@web/common/hooks/useMousePosition";
+  pointerState$,
+} from "@web/common/context/pointer-position";
+import { usePointerPosition } from "@web/common/hooks/usePointerPosition";
 
 // Mock @floating-ui/react
 jest.mock("@floating-ui/react", () => ({
@@ -30,11 +30,12 @@ jest.mock("@floating-ui/react", () => ({
   shift: jest.fn(),
 }));
 
-describe("useMousePosition hooks", () => {
+describe("usePointerPosition hooks", () => {
   beforeEach(() => {
     // Reset subjects
-    mouseState$.next({
-      mousedown: false,
+    pointerState$.next({
+      pointerdown: false,
+      selectionStart: null,
       isOverGrid: false,
       isOverSidebar: false,
       isOverMainGrid: false,
@@ -45,7 +46,7 @@ describe("useMousePosition hooks", () => {
     cursor$.next({ x: 0, y: 0 });
   });
 
-  describe("useMousePosition", () => {
+  describe("usePointerPosition", () => {
     it("should throw error when used outside provider", () => {
       // Suppress console.error for the expected error
       const consoleSpy = jest
@@ -53,23 +54,23 @@ describe("useMousePosition hooks", () => {
         .mockImplementation(() => {});
 
       expect(() => {
-        renderHook(() => useMousePosition());
+        renderHook(() => usePointerPosition());
       }).toThrow(
-        "useMousePosition must be used within Provider and be defined.",
+        "usePointerPosition must be used within Provider and be defined.",
       );
 
       consoleSpy.mockRestore();
     });
 
     it("should return context value when used within provider", () => {
-      const mockContext = { toggleMouseMovementTracking: jest.fn() };
+      const mockContext = { togglePointerMovementTracking: jest.fn() };
       const wrapper = ({ children }: { children: React.ReactNode }) => (
-        <MousePositionContext.Provider value={mockContext}>
+        <PointerPositionContext.Provider value={mockContext}>
           {children}
-        </MousePositionContext.Provider>
+        </PointerPositionContext.Provider>
       );
 
-      const { result } = renderHook(() => useMousePosition(), { wrapper });
+      const { result } = renderHook(() => usePointerPosition(), { wrapper });
       expect(result.current).toBe(mockContext);
     });
   });

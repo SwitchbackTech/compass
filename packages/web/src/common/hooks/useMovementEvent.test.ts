@@ -18,14 +18,14 @@ describe("useMovementEvent", () => {
     renderHook(() =>
       useMovementEvent({
         handler: mockHandler,
-        eventTypes: ["mousedown"],
+        eventTypes: ["pointerdown"],
         selectors: [`div#${ID_ROOT}`],
       }),
     );
 
     const rootDiv = screen.getByTestId(ID_ROOT);
 
-    act(() => fireEvent.mouseDown(rootDiv));
+    act(() => fireEvent.pointerDown(rootDiv));
 
     expect(mockHandler).toHaveBeenCalled();
   });
@@ -34,14 +34,14 @@ describe("useMovementEvent", () => {
     renderHook(() =>
       useMovementEvent({
         handler: mockHandler,
-        eventTypes: ["mouseup"],
+        eventTypes: ["pointerup"],
         selectors: [`div#${ID_ROOT}`],
       }),
     );
 
     const rootDiv = screen.getByTestId(ID_ROOT);
 
-    act(() => fireEvent.mouseDown(rootDiv));
+    act(() => fireEvent.pointerDown(rootDiv));
 
     expect(mockHandler).not.toHaveBeenCalled();
   });
@@ -54,7 +54,7 @@ describe("useMovementEvent", () => {
     renderHook(() =>
       useMovementEvent({
         handler: mockHandler,
-        eventTypes: ["mousedown"],
+        eventTypes: ["pointerdown"],
         selectors: [`div#${ID_MAIN}`],
       }),
     );
@@ -63,32 +63,32 @@ describe("useMovementEvent", () => {
 
     rootDiv.appendChild(mainDiv);
 
-    act(() => fireEvent.mouseDown(rootDiv));
+    act(() => fireEvent.pointerDown(rootDiv));
 
     expect(mockHandler).not.toHaveBeenCalled();
   });
 
-  it("should toggle tracking when toggleMouseMovementTracking is called", () => {
+  it("should toggle tracking when togglePointerMovementTracking is called", () => {
     const { result } = renderHook(() =>
       useMovementEvent({
         handler: mockHandler,
-        eventTypes: ["mousedown"],
+        eventTypes: ["pointerdown"],
       }),
     );
 
     const rootDiv = screen.getByTestId(ID_ROOT);
 
     // Pause tracking
-    result.current.toggleMouseMovementTracking(true);
+    result.current.togglePointerMovementTracking(true);
 
-    act(() => fireEvent.mouseDown(rootDiv));
+    act(() => fireEvent.pointerDown(rootDiv));
 
     expect(mockHandler).not.toHaveBeenCalled();
 
     // Resume tracking
-    result.current.toggleMouseMovementTracking(false);
+    result.current.togglePointerMovementTracking(false);
 
-    act(() => fireEvent.mouseDown(rootDiv));
+    act(() => fireEvent.pointerDown(rootDiv));
 
     expect(mockHandler).toHaveBeenCalled();
   });

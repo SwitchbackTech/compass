@@ -59,6 +59,49 @@ class MediaQuery implements MediaQueryList {
   }
 }
 
+function getPointerEvent(mouseEvent: typeof globalThis.MouseEvent) {
+  class PointerEvent extends mouseEvent implements globalThis.PointerEvent {
+    altitudeAngle: number;
+    azimuthAngle: number;
+    height: number;
+    isPrimary: boolean;
+    pointerId: number;
+    pointerType: string;
+    pressure: number;
+    tangentialPressure: number;
+    tiltX: number;
+    tiltY: number;
+    twist: number;
+    width: number;
+
+    constructor(type: string, eventInitDict?: PointerEventInit) {
+      super(type, eventInitDict);
+      this.altitudeAngle = eventInitDict?.altitudeAngle ?? 0;
+      this.azimuthAngle = eventInitDict?.azimuthAngle ?? 0;
+      this.height = eventInitDict?.height ?? 1;
+      this.isPrimary = eventInitDict?.isPrimary ?? false;
+      this.pointerId = eventInitDict?.pointerId ?? 0;
+      this.pointerType = eventInitDict?.pointerType ?? "";
+      this.pressure = eventInitDict?.pressure ?? 0;
+      this.tangentialPressure = eventInitDict?.tangentialPressure ?? 0;
+      this.tiltX = eventInitDict?.tiltX ?? 0;
+      this.tiltY = eventInitDict?.tiltY ?? 0;
+      this.twist = eventInitDict?.twist ?? 0;
+      this.width = eventInitDict?.width ?? 1;
+    }
+
+    getCoalescedEvents(): globalThis.PointerEvent[] {
+      throw new Error("Method not implemented.");
+    }
+
+    getPredictedEvents(): globalThis.PointerEvent[] {
+      throw new Error("Method not implemented.");
+    }
+  }
+
+  return PointerEvent;
+}
+
 export default class WASMEnvironment extends TestEnvironment {
   override async setup(): Promise<void> {
     const css = await getTailwindCss();
@@ -73,6 +116,7 @@ export default class WASMEnvironment extends TestEnvironment {
     this.global.window.HTMLElement.prototype.scroll = () => {};
     this.global.window.HTMLElement.prototype.scrollIntoView = () => {};
     this.global.window.document.elementFromPoint = () => null;
+    this.global.PointerEvent = getPointerEvent(this.global.MouseEvent);
 
     this.global.fetch = fetch as unknown as typeof globalThis.fetch;
     this.global.Blob = globalThis.Blob;

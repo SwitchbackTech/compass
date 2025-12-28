@@ -1,4 +1,3 @@
-import { MousePositionProvider } from "@web/common/context/mouse-position";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
@@ -57,58 +56,56 @@ export const CalendarView = () => {
   };
 
   return (
-    <MousePositionProvider>
-      <Styled id="cal">
-        <CmdPalette {...shortcutProps} />
-        <Dedication />
+    <Styled id="cal">
+      <CmdPalette {...shortcutProps} />
+      <Dedication />
 
-        <DraftProvider
+      <DraftProvider
+        dateCalcs={dateCalcs}
+        weekProps={weekProps}
+        isSidebarOpen={isSidebarOpen}
+      >
+        <SidebarDraftProvider
           dateCalcs={dateCalcs}
+          measurements={measurements}
           weekProps={weekProps}
-          isSidebarOpen={isSidebarOpen}
         >
-          <SidebarDraftProvider
-            dateCalcs={dateCalcs}
-            measurements={measurements}
-            weekProps={weekProps}
-          >
-            <Shortcuts shortcutsProps={shortcutProps}>
-              <ContextMenuWrapper id="sidebar-context-menu">
-                <Draft measurements={measurements} weekProps={weekProps} />
-                {isSidebarOpen && (
-                  <Sidebar
-                    dateCalcs={dateCalcs}
-                    measurements={measurements}
-                    weekProps={weekProps}
-                    gridRefs={gridRefs}
-                  />
-                )}
-              </ContextMenuWrapper>
-              <StyledCalendar>
-                <Header
-                  rootProps={rootProps}
-                  scrollUtil={scrollUtil}
+          <Shortcuts shortcutsProps={shortcutProps}>
+            <ContextMenuWrapper id="sidebar-context-menu">
+              <Draft measurements={measurements} weekProps={weekProps} />
+              {isSidebarOpen && (
+                <Sidebar
+                  dateCalcs={dateCalcs}
+                  measurements={measurements}
+                  weekProps={weekProps}
+                  gridRefs={gridRefs}
+                />
+              )}
+            </ContextMenuWrapper>
+            <StyledCalendar>
+              <Header
+                rootProps={rootProps}
+                scrollUtil={scrollUtil}
+                today={today}
+                weekProps={weekProps}
+              />
+
+              <ContextMenuWrapper id="grid-context-menu">
+                <Grid
+                  dateCalcs={dateCalcs}
+                  isSidebarOpen={isSidebarOpen}
+                  gridRefs={gridRefs}
+                  measurements={measurements}
                   today={today}
                   weekProps={weekProps}
                 />
+              </ContextMenuWrapper>
+            </StyledCalendar>
+          </Shortcuts>
 
-                <ContextMenuWrapper id="grid-context-menu">
-                  <Grid
-                    dateCalcs={dateCalcs}
-                    isSidebarOpen={isSidebarOpen}
-                    gridRefs={gridRefs}
-                    measurements={measurements}
-                    today={today}
-                    weekProps={weekProps}
-                  />
-                </ContextMenuWrapper>
-              </StyledCalendar>
-            </Shortcuts>
-
-            <RecurringEventUpdateScopeDialog />
-          </SidebarDraftProvider>
-        </DraftProvider>
-      </Styled>
-    </MousePositionProvider>
+          <RecurringEventUpdateScopeDialog />
+        </SidebarDraftProvider>
+      </DraftProvider>
+    </Styled>
   );
 };
