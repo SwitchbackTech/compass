@@ -3,6 +3,7 @@ import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { keyPressed$ } from "@web/common/utils/dom/event-emitter.util";
+import * as eventUtil from "@web/common/utils/event/event.util";
 import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
@@ -13,7 +14,7 @@ import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
 const mockNavigate = jest.fn();
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
-  useNavigate: () => mockNavigate,
+  useNavigate: jest.fn(),
 }));
 
 // Mock dayjs
