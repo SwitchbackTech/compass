@@ -1,30 +1,20 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { Schema_Event } from "@core/types/event.types";
-import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
+import {
+  renderAgenda,
+  selectIsDayEventsProcessingSpy,
+} from "@web/__tests__/utils/agenda/agenda.test.util";
 import { compareEventsByStartDate } from "@web/common/utils/event/event.util";
-import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
-import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
+import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
 import { useOpenEventForm } from "@web/views/Forms/hooks/useOpenEventForm";
-
-jest.mock("@web/auth/auth.util", () => ({
-  getUserId: jest.fn().mockResolvedValue("user-123"),
-}));
 
 jest.mock("@web/views/Forms/hooks/useOpenEventForm");
 
-const renderAgenda = (
-  events: Schema_Event[] = [],
-  options?: { isProcessing?: boolean },
-) => {
-  const store = createStoreWithEvents(events, options);
-  const utils = renderWithDayProviders(<Agenda />, { store });
-  return { ...utils, store };
-};
-
 describe("CalendarAgenda", () => {
   beforeEach(() => {
+    jest.clearAllMocks();
     (useOpenEventForm as jest.Mock).mockReturnValue(jest.fn());
   });
 
@@ -55,10 +45,12 @@ describe("CalendarAgenda", () => {
       },
     ];
 
-    renderAgenda(mockEvents);
+    const screen = renderAgenda(mockEvents);
 
-    expect(await screen.findByText("Event 1")).toBeInTheDocument();
-    expect(await screen.findByText("Event 2")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Event 1")).toBeInTheDocument();
+      expect(screen.getByText("Event 2")).toBeInTheDocument();
+    });
   });
 
   it("should render all-day events", async () => {
@@ -82,6 +74,55 @@ describe("CalendarAgenda", () => {
 
     const skeleton = await screen.findByTestId("agenda-skeleton");
     expect(skeleton).toBeInTheDocument();
+  });
+
+  it("should show progress line on subsequent loads after first load", async () => {
+    const mockEvents: Schema_Event[] = [
+      {
+        _id: "event-1",
+        title: "Test Event",
+        startDate: "2024-01-15T10:00:00Z",
+        endDate: "2024-01-15T11:00:00Z",
+        isAllDay: false,
+      },
+    ];
+
+    // First render with events loaded (not processing)
+    const { store } = renderAgenda(mockEvents, { isProcessing: false });
+
+    // Verify initial load shows events, not skeleton or progress line
+    expect(await screen.findByText("Test Event")).toBeInTheDocument();
+    expect(screen.queryByTestId("agenda-skeleton")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("loading-progress-line"),
+    ).not.toBeInTheDocument();
+
+    // Dispatch request action to simulate reload
+    act(() => {
+      selectIsDayEventsProcessingSpy.mockReturnValue(true);
+
+      store.dispatch(
+        eventsEntitiesSlice.actions.edit({
+          _id: "event-1",
+          event: {
+            ...mockEvents[0],
+            title: "Updated Title",
+            startDate: mockEvents[0].startDate!,
+            endDate: mockEvents[0].endDate!,
+            user: "user-123",
+            priority: "high",
+            origin: "google",
+          } as any,
+        }),
+      );
+    });
+
+    // On subsequent load after component has loaded once,
+    // should show progress line not skeleton
+    expect(
+      await screen.findByTestId("loading-progress-line"),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("agenda-skeleton")).not.toBeInTheDocument();
   });
 
   it("should not show skeleton or error when events are loaded", async () => {

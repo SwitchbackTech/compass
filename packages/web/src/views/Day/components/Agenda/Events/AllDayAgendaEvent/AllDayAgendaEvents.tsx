@@ -1,24 +1,22 @@
 import classNames from "classnames";
 import fastDeepEqual from "fast-deep-equal/react";
-import { PointerEvent, memo, useCallback } from "react";
+import { memo, useCallback } from "react";
 import { Key } from "ts-key-enum";
 import { UseInteractionsReturn } from "@floating-ui/react";
-import { Schema_Event } from "@core/types/event.types";
+import { useObservable } from "@ngneat/use-observable";
 import { ID_GRID_ALLDAY_ROW } from "@web/common/constants/web.constants";
+import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Droppable } from "@web/components/DND/Droppable";
+import { allDayEvents$ } from "@web/store/events";
 import { useDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
 import { DraggableAllDayAgendaEvent } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/DraggableAllDayAgendaEvent";
 import { useOpenEventForm } from "@web/views/Forms/hooks/useOpenEventForm";
 
 export const AllDayAgendaEvents = memo(
-  ({
-    events,
-    interactions,
-  }: {
-    events: Schema_Event[];
-    interactions: UseInteractionsReturn;
-  }) => {
+  ({ interactions }: { interactions: UseInteractionsReturn }) => {
+    const [events] = useObservable(allDayEvents$);
+    const { allDayEventsGridRef } = useCompassRefs();
     const draft = useDraft();
     const openEventForm = useOpenEventForm();
 
@@ -27,7 +25,7 @@ export const AllDayAgendaEvents = memo(
         if (e.key === Key.Enter) {
           e.preventDefault();
           e.stopPropagation();
-          openEventForm(e as unknown as PointerEvent<HTMLElement>);
+          openEventForm();
         }
       },
       [openEventForm],
@@ -40,6 +38,7 @@ export const AllDayAgendaEvents = memo(
           onKeyDown: onEnterKey,
         })}
         as="div"
+        ref={allDayEventsGridRef}
         dndProps={{ id: ID_GRID_ALLDAY_ROW }}
         data-id="all-day-agendas"
         id={ID_GRID_ALLDAY_ROW}

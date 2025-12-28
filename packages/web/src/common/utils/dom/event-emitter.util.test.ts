@@ -1,17 +1,17 @@
 import {
-  domMovement,
+  domMovement$,
   getElementAtPoint,
   globalMovementHandler,
   globalOnKeyPressHandler,
   globalOnKeyUpHandler,
-  keyPressed,
-  keyReleased,
+  keyPressed$,
+  keyReleased$,
   pressKey,
 } from "@web/common/utils/dom/event-emitter.util";
 
 describe("event-emitter.util", () => {
   beforeEach(() => {
-    keyPressed.next(null);
+    keyPressed$.next(null);
     jest.clearAllMocks();
   });
 
@@ -29,36 +29,18 @@ describe("event-emitter.util", () => {
   });
 
   describe("globalMovementHandler", () => {
-    it("should emit mouse movement events", (done) => {
+    it("should handle pointer movement events", (done) => {
       const mockElement = document.createElement("div");
       document.elementFromPoint = jest.fn().mockReturnValue(mockElement);
 
-      const event = new MouseEvent("mousemove", { clientX: 100, clientY: 100 });
+      const event = new PointerEvent("pointermove", {
+        clientX: 100,
+        clientY: 100,
+      });
 
-      const subscription = domMovement.subscribe((val) => {
+      const subscription = domMovement$.subscribe((val) => {
         expect(val.x).toBe(100);
         expect(val.y).toBe(100);
-        expect(val.element).toBe(mockElement);
-        expect(val.event).toBe(event);
-        subscription.unsubscribe();
-        done();
-      });
-
-      globalMovementHandler(event);
-    });
-
-    it("should emit touch movement events", (done) => {
-      const mockElement = document.createElement("div");
-      document.elementFromPoint = jest.fn().mockReturnValue(mockElement);
-
-      const touch = { clientX: 50, clientY: 50 } as unknown as Touch;
-      const event = new TouchEvent("touchmove", {
-        changedTouches: [touch],
-      });
-
-      const subscription = domMovement.subscribe((val) => {
-        expect(val.x).toBe(50);
-        expect(val.y).toBe(50);
         expect(val.element).toBe(mockElement);
         expect(val.event).toBe(event);
         subscription.unsubscribe();
@@ -92,7 +74,7 @@ describe("event-emitter.util", () => {
       const event = new KeyboardEvent("keydown", { key: "a" });
       globalOnKeyPressHandler(event);
 
-      const value = keyPressed.getValue();
+      const value = keyPressed$.getValue();
       expect(value?.sequence).toEqual(["a"]);
       expect(value?.event.key).toBe("a");
     });
@@ -107,7 +89,7 @@ describe("event-emitter.util", () => {
       const event2 = new KeyboardEvent("keydown", { key: "k", metaKey: true });
       globalOnKeyPressHandler(event2);
 
-      const value = keyPressed.getValue();
+      const value = keyPressed$.getValue();
       expect(value?.sequence).toEqual(["Meta", "k"]);
       expect(value?.event.key).toBe("k");
     });
@@ -119,7 +101,7 @@ describe("event-emitter.util", () => {
       const event2 = new KeyboardEvent("keydown", { key: "a", repeat: true });
       globalOnKeyPressHandler(event2);
 
-      const value = keyPressed.getValue();
+      const value = keyPressed$.getValue();
       expect(value?.sequence).toEqual(["a"]);
       expect(value?.event.key).toBe("a");
     });
@@ -130,12 +112,12 @@ describe("event-emitter.util", () => {
       const event = new KeyboardEvent("keyup", { key: "a" });
 
       // Setup initial state as if 'a' was pressed
-      keyPressed.next({
+      keyPressed$.next({
         event: new KeyboardEvent("keydown", { key: "a" }),
         sequence: ["a"],
       });
 
-      const subscription = keyReleased.subscribe((val) => {
+      const subscription = keyReleased$.subscribe((val) => {
         expect(val.sequence).toEqual(["a"]);
         expect(val.event.key).toBe("a");
         subscription.unsubscribe();
@@ -147,23 +129,23 @@ describe("event-emitter.util", () => {
 
     it("should reset keyPressed if the first key in sequence is released", () => {
       const eventDown = new KeyboardEvent("keydown", { key: "Meta" });
-      keyPressed.next({ event: eventDown, sequence: ["Meta", "k"] });
+      keyPressed$.next({ event: eventDown, sequence: ["Meta", "k"] });
 
       const eventUp = new KeyboardEvent("keyup", { key: "Meta" });
       globalOnKeyUpHandler(eventUp);
 
-      expect(keyPressed.getValue()).toBeNull();
+      expect(keyPressed$.getValue()).toBeNull();
     });
 
     it("should not reset keyPressed if a non-first key is released", () => {
       const eventDown = new KeyboardEvent("keydown", { key: "k" });
-      keyPressed.next({ event: eventDown, sequence: ["Meta", "k"] });
+      keyPressed$.next({ event: eventDown, sequence: ["Meta", "k"] });
 
       const eventUp = new KeyboardEvent("keyup", { key: "k" });
       globalOnKeyUpHandler(eventUp);
 
-      expect(keyPressed.getValue()).not.toBeNull();
-      expect(keyPressed.getValue()?.sequence).toEqual(["Meta", "k"]);
+      expect(keyPressed$.getValue()).not.toBeNull();
+      expect(keyPressed$.getValue()?.sequence).toEqual(["Meta", "k"]);
     });
   });
 });

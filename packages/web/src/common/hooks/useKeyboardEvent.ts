@@ -4,8 +4,8 @@ import {
   KeyCombination,
   globalOnKeyPressHandler,
   globalOnKeyUpHandler,
-  keyPressed,
-  keyReleased,
+  keyPressed$,
+  keyReleased$,
 } from "@web/common/utils/dom/event-emitter.util";
 import { isEditable } from "@web/views/Day/util/day.shortcut.util";
 
@@ -36,8 +36,8 @@ export function useKeyboardEvent({
   const $event = useMemo(
     () =>
       eventType === "keydown"
-        ? keyPressed.pipe(filter((keyCombination) => keyCombination !== null))
-        : keyReleased,
+        ? keyPressed$.pipe(filter((keyCombination) => keyCombination !== null))
+        : keyReleased$,
     [eventType],
   );
 
@@ -96,9 +96,9 @@ export function useKeyboardEvent({
     const nextSequence = sequence.filter((key) => metaKeys.includes(key));
 
     if (nextSequence.length === 0) {
-      keyPressed.next(null);
+      keyPressed$.next(null);
     } else {
-      keyPressed.next({ event, sequence: nextSequence });
+      keyPressed$.next({ event, sequence: nextSequence });
     }
 
     return combination;

@@ -30,6 +30,7 @@ const {
   selectDraft,
   setDraft: _setDraft,
   resetDraft: _resetDraft,
+  updateDraft: _updateDraft,
   getDraft,
 } = propsFactory<
   WithCompassId<Schema_Event> | null,
@@ -115,6 +116,10 @@ export function setEventUIState(event: WithCompassId<Partial<EventUIState>>) {
 
 export function setDraft(event: WithCompassId<Schema_Event>) {
   eventsStore.update(_setDraft(event));
+}
+
+export function updateDraft(event: Partial<WithCompassId<Schema_Event>>) {
+  eventsStore.update(_updateDraft(event));
 }
 
 export function resetDraft() {

@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
+import { render, screen } from "@web/__tests__/__mocks__/mock.render";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { AllDayAgendaEvent } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/AllDayAgendaEvent";

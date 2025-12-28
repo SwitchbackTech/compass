@@ -31,6 +31,7 @@ export interface DNDChildProps
     ReturnType<typeof useDraggable>,
     "over" | "listeners" | "isDragging"
   > {
+  id: UniqueIdentifier;
   setDisabled?: (disabled: boolean) => void;
 }
 
@@ -38,7 +39,7 @@ function CompassDraggable(
   props: DetailedHTMLProps<
     {
       dndProps: Omit<UseDraggableArguments, "id" | "data"> & {
-        id?: UniqueIdentifier;
+        id: UniqueIdentifier;
         data: DraggableDNDData;
       };
       as: keyof ReactHTML;
@@ -87,6 +88,7 @@ function CompassDraggable(
           ...children.props,
           dndProps: {
             over,
+            id: props.dndProps.id,
             listeners,
             isDragging,
             setDisabled,

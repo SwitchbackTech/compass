@@ -15,16 +15,22 @@ import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { reorderGrid } from "@web/common/utils/dom/grid-organization.util";
 import { getCalendarEventElementFromGrid } from "@web/common/utils/event/event.util";
+import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
+import { store } from "@web/store";
 import { getSnappedMinutes } from "@web/views/Day/util/agenda/agenda.util";
 
-const shouldSaveImmediately = () => !isOpenAtCursor(CursorItem.EventForm);
+const shouldSaveImmediately = (_id: string) => {
+  const storeEvent = selectEventById(store.getState(), _id);
 
-const resetFloatingReference = (eventId: string) => {
+  return !!storeEvent && !isOpenAtCursor(CursorItem.EventForm);
+};
+
+const setReference = (_id: string) => {
+  // Run inside a microtask to ensure the DOM has updated after drag end
   queueMicrotask(() => {
-    const reference = getCalendarEventElementFromGrid(eventId);
+    const reference = getCalendarEventElementFromGrid(_id);
 
-    setFloatingReferenceAtCursor(reference);
-    reorderGrid();
+    if (reference) setFloatingReferenceAtCursor(reference);
   });
 };
 
@@ -56,10 +62,10 @@ export function useEventDNDActions() {
             endDate: newEndDate.toISOString(),
           },
         },
-        shouldSaveImmediately(),
+        shouldSaveImmediately(event._id),
       );
 
-      resetFloatingReference(event._id);
+      reorderGrid();
     },
     [updateEvent],
   );
@@ -83,10 +89,11 @@ export function useEventDNDActions() {
             endDate: endDate.toISOString(),
           },
         },
-        shouldSaveImmediately(),
+        shouldSaveImmediately(event._id),
       );
 
-      resetFloatingReference(event._id);
+      reorderGrid();
+      setReference(event._id);
     },
     [updateEvent],
   );
@@ -106,10 +113,11 @@ export function useEventDNDActions() {
             endDate: endDate.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
           },
         },
-        shouldSaveImmediately(),
+        shouldSaveImmediately(event._id),
       );
 
-      resetFloatingReference(event._id);
+      reorderGrid();
+      setReference(event._id);
     },
     [updateEvent],
   );
@@ -126,13 +134,14 @@ export function useEventDNDActions() {
 
       switch (switchCase) {
         case `day-${Categories_Event.ALLDAY}-to-${ID_GRID_MAIN}`:
-          return moveAllDayToMainGridDayView(event, active, over);
+          moveAllDayToMainGridDayView(event, active, over);
+          break;
         case `day-${Categories_Event.TIMED}-to-${ID_GRID_MAIN}`:
-          return moveTimedAroundMainGridDayView(event, active, over);
+          moveTimedAroundMainGridDayView(event, active, over);
+          break;
         case `day-${Categories_Event.TIMED}-to-${ID_GRID_ALLDAY_ROW}`:
-          return moveTimedToAllDayGridDayView(event);
-        default:
-          return;
+          moveTimedToAllDayGridDayView(event);
+          break;
       }
     },
     [

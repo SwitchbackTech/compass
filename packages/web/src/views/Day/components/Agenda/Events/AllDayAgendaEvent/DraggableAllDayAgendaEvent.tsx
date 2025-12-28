@@ -4,6 +4,7 @@ import { memo } from "react";
 import { UseInteractionsReturn } from "@floating-ui/react";
 import { Categories_Event } from "@core/types/event.types";
 import { CLASS_ALL_DAY_CALENDAR_EVENT } from "@web/common/constants/web.constants";
+import { useMainGridSelectionState } from "@web/common/hooks/useMainGridSelectionState";
 import {
   CursorItem,
   useFloatingNodeIdAtCursor,
@@ -29,6 +30,7 @@ export const DraggableAllDayAgendaEvent = memo(
     const openAgendaEventPreview = useOpenAgendaEventPreview();
     const openEventContextMenu = useOpenEventContextMenu();
     const nodeId = useFloatingNodeIdAtCursor();
+    const { selecting } = useMainGridSelectionState();
     const eventFormOpen = nodeId === CursorItem.EventForm;
 
     if (!event.startDate || !event.endDate || !event.isAllDay) return null;
@@ -41,7 +43,7 @@ export const DraggableAllDayAgendaEvent = memo(
           onPointerEnter: eventFormOpen ? undefined : openAgendaEventPreview,
         })}
         dndProps={{
-          id: event._id,
+          id: event._id!,
           data: {
             event,
             type: Categories_Event.ALLDAY,
@@ -54,6 +56,7 @@ export const DraggableAllDayAgendaEvent = memo(
           "mx-2 cursor-move touch-none rounded last:mb-0.5",
           "focus-visible:ring-2",
           "focus:outline-none focus-visible:ring-yellow-200",
+          { "pointer-events-none": selecting },
         )}
         title={event.title}
         tabIndex={0}

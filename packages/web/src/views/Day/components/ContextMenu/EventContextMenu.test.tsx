@@ -1,71 +1,11 @@
 import { ObjectId } from "bson";
 import { act } from "react";
-import { setEntities } from "@ngneat/elf-entities";
 import { screen, waitFor } from "@testing-library/react";
 import { Origin, Priorities } from "@core/constants/core.constants";
-import { Schema_Event, WithCompassId } from "@core/types/event.types";
-import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
-import { useFloatingAtCursor } from "@web/common/hooks/useFloatingAtCursor";
-import { store as globalStore } from "@web/store";
-import { eventsStore, resetActiveEvent, resetDraft } from "@web/store/events";
-import { TimedAgendaEvents } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/TimedAgendaEvents";
-import { EventContextMenu } from "@web/views/Day/components/ContextMenu/EventContextMenu";
-import { useAgendaInteractionsAtCursor } from "@web/views/Day/hooks/events/useAgendaInteractionsAtCursor";
-import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
-import { CursorItem, nodeId$ } from "../../../../common/hooks/useOpenAtCursor";
-
-// Mock the global store
-jest.mock("@web/store", () => ({
-  store: {
-    getState: jest.fn(),
-    dispatch: jest.fn(),
-    subscribe: jest.fn(),
-  },
-}));
-
-const TestWrapper = ({ events }: { events: Schema_Event[] }) => {
-  const floating = useFloatingAtCursor((open: boolean, _e, reason) => {
-    const dismissed = reason === "escape-key" || reason === "outside-press";
-
-    if (!open && dismissed) {
-      const nodeId = nodeId$.getValue();
-
-      if (nodeId === CursorItem.EventForm) {
-        resetDraft();
-      } else {
-        resetActiveEvent();
-      }
-    }
-  });
-  const interactions = useAgendaInteractionsAtCursor(floating);
-
-  return (
-    <>
-      <TimedAgendaEvents events={events} interactions={interactions} />
-      <EventContextMenu floating={floating} interactions={interactions} />
-    </>
-  );
-};
-
-const renderAgendaEvents = (events: Schema_Event[]) => {
-  const store = createStoreWithEvents(events);
-  eventsStore.update(setEntities(events as WithCompassId<Schema_Event>[]));
-
-  // Link global store mock to local test store
-  (globalStore.getState as jest.Mock).mockImplementation(() =>
-    store.getState(),
-  );
-  (globalStore.dispatch as jest.Mock).mockImplementation((action) =>
-    store.dispatch(action),
-  );
-
-  const utils = renderWithDayProviders(<TestWrapper events={events} />, {
-    store,
-  });
-  const dispatchSpy = jest.spyOn(store, "dispatch");
-
-  return { store, dispatchSpy, ...utils };
-};
+import { Schema_Event } from "@core/types/event.types";
+import { renderAgenda } from "@web/__tests__/utils/agenda/agenda.test.util";
+import { AppDispatch } from "@web/store";
+import * as reduxHooks from "@web/store/store.hooks";
 
 describe("EventContextMenu", () => {
   const baseEvent: Schema_Event = {
@@ -84,7 +24,7 @@ describe("EventContextMenu", () => {
   });
 
   it("should open context menu on right-click on an event", async () => {
-    const { user, dispatchSpy } = renderAgendaEvents([baseEvent]);
+    const { user } = renderAgenda([baseEvent]);
 
     const eventButton = await screen.findByRole("button", {
       name: "Test Event",
@@ -97,12 +37,10 @@ describe("EventContextMenu", () => {
     await waitFor(() => {
       expect(screen.getByText("Delete Event")).toBeInTheDocument();
     });
-
-    dispatchSpy.mockRestore();
   });
 
   it("should show Delete Event menu item when menu is open", async () => {
-    const { user, dispatchSpy } = renderAgendaEvents([baseEvent]);
+    const { user } = renderAgenda([baseEvent]);
 
     const eventButton = await screen.findByRole("button", {
       name: "Test Event",
@@ -116,13 +54,10 @@ describe("EventContextMenu", () => {
       expect(deleteMenuItem).toBeInTheDocument();
       expect(deleteMenuItem.closest("li")).toHaveClass("cursor-pointer");
     });
-
-    dispatchSpy.mockRestore();
   });
 
   it("should close menu when clicking outside", async () => {
-    const { user, dispatchSpy } = renderAgendaEvents([baseEvent]);
-
+    const { user } = renderAgenda([baseEvent]);
     const eventButton = await screen.findByRole("button", {
       name: "Test Event",
     });
@@ -143,12 +78,10 @@ describe("EventContextMenu", () => {
     await waitFor(() => {
       expect(screen.queryByText("Delete Event")).not.toBeInTheDocument();
     });
-
-    dispatchSpy.mockRestore();
   });
 
   it("should close menu when pressing Escape key", async () => {
-    const { user, dispatchSpy } = renderAgendaEvents([baseEvent]);
+    const { user } = renderAgenda([baseEvent]);
 
     const eventButton = await screen.findByRole("button", {
       name: "Test Event",
@@ -168,12 +101,10 @@ describe("EventContextMenu", () => {
     await waitFor(() => {
       expect(screen.queryByText("Delete Event")).not.toBeInTheDocument();
     });
-
-    dispatchSpy.mockRestore();
   });
 
   it("should not open context menu when right-clicking on non-event elements", async () => {
-    const { user, dispatchSpy } = renderAgendaEvents([baseEvent]);
+    const { user } = renderAgenda([baseEvent]);
 
     await screen.findByRole("button", { name: "Test Event" });
 
@@ -184,8 +115,6 @@ describe("EventContextMenu", () => {
     });
 
     expect(screen.queryByText("Delete Event")).not.toBeInTheDocument();
-
-    dispatchSpy.mockRestore();
   });
 
   it("should work with multiple events", async () => {
@@ -194,7 +123,12 @@ describe("EventContextMenu", () => {
       { ...baseEvent, _id: "event-2", title: "Second Event" },
     ];
 
-    const { user, dispatchSpy } = renderAgendaEvents(mockEvents);
+    const useDispatchSpy = jest.spyOn(reduxHooks, "useAppDispatch");
+    const mockDispatchFn = jest.fn(() => Promise.resolve());
+
+    useDispatchSpy.mockReturnValue(mockDispatchFn as unknown as AppDispatch);
+
+    const { user } = renderAgenda(mockEvents);
 
     await screen.findByRole("button", { name: "First Event" });
     await screen.findByRole("button", { name: "Second Event" });
@@ -202,6 +136,7 @@ describe("EventContextMenu", () => {
     const firstEventButton = screen.getByRole("button", {
       name: "First Event",
     });
+
     await act(async () => {
       await user.pointer({ target: firstEventButton, keys: "[MouseRight]" });
     });
@@ -211,11 +146,12 @@ describe("EventContextMenu", () => {
     });
 
     const deleteButton = screen.getByText("Delete Event");
+
     await act(async () => {
       await user.click(deleteButton);
     });
 
-    expect(dispatchSpy).toHaveBeenCalledWith(
+    expect(mockDispatchFn).toHaveBeenCalledWith(
       expect.objectContaining({
         type: expect.stringContaining("deleteEvent/request"),
         payload: expect.objectContaining({
@@ -223,7 +159,5 @@ describe("EventContextMenu", () => {
         }),
       }),
     );
-
-    dispatchSpy.mockRestore();
   });
 });
