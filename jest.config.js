@@ -166,6 +166,7 @@ const config = {
         "<rootDir>/packages/core/src/__tests__/core.test.init.ts",
         "<rootDir>/packages/core/src/__tests__/core.test.start.ts",
         "<rootDir>/packages/web/src/__tests__/web.test.init.ts",
+        "jest-canvas-mock",
       ],
       setupFilesAfterEnv: [
         "<rootDir>/packages/web/src/__tests__/web.test.start.ts",

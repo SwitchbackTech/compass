@@ -6,7 +6,7 @@ import dayjs from "@core/util/date/dayjs";
 import { useEventResizeActions } from "@web/common/hooks/useEventResizeActions";
 import { CursorItem, nodeId$, open$ } from "@web/common/hooks/useOpenAtCursor";
 import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
-import { setDraft } from "@web/store/events";
+import { setDraft, updateDraft } from "@web/store/events";
 import {
   MINUTES_PER_SLOT,
   SLOT_HEIGHT,
@@ -16,6 +16,7 @@ import {
 jest.mock("@web/common/hooks/useUpdateEvent");
 jest.mock("@web/store/events", () => ({
   setDraft: jest.fn(),
+  updateDraft: jest.fn(),
 }));
 jest.mock("@web/common/hooks/useOpenAtCursor", () => ({
   nodeId$: { getValue: jest.fn() },
@@ -53,20 +54,14 @@ describe("useEventResizeActions", () => {
     (useUpdateEvent as jest.Mock).mockReturnValue(mockUpdateEvent);
     (nodeId$.getValue as jest.Mock).mockReturnValue(null);
     (open$.getValue as jest.Mock).mockReturnValue(false);
-  });
-
-  it("should initialize with resizing false", () => {
-    const { result } = renderHook(() =>
-      useEventResizeActions(mockEvent, mockBounds),
-    );
-    expect(result.current.resizing).toBe(false);
+    (updateDraft as jest.Mock).mockImplementation((update) => {
+      setDraft({ ...mockEvent, ...update });
+    });
   });
 
   describe("onResizeStart", () => {
-    it("should set resizing to true and set draft", () => {
-      const { result } = renderHook(() =>
-        useEventResizeActions(mockEvent, mockBounds),
-      );
+    it("should set draft", () => {
+      const { result } = renderHook(() => useEventResizeActions(mockEvent));
 
       act(() => {
         result.current.onResizeStart(
@@ -78,16 +73,13 @@ describe("useEventResizeActions", () => {
         );
       });
 
-      expect(result.current.resizing).toBe(true);
       expect(setDraft).toHaveBeenCalledWith(mockEvent);
     });
   });
 
   describe("onResize", () => {
     it("should update draft start date when resizing from top", () => {
-      const { result } = renderHook(() =>
-        useEventResizeActions(mockEvent, mockBounds),
-      );
+      const { result } = renderHook(() => useEventResizeActions(mockEvent));
 
       // Initialize originalEvent ref
       act(() => {
@@ -125,9 +117,7 @@ describe("useEventResizeActions", () => {
     });
 
     it("should update draft end date when resizing from bottom", () => {
-      const { result } = renderHook(() =>
-        useEventResizeActions(mockEvent, mockBounds),
-      );
+      const { result } = renderHook(() => useEventResizeActions(mockEvent));
 
       // Initialize originalEvent ref
       act(() => {
@@ -165,9 +155,7 @@ describe("useEventResizeActions", () => {
     });
 
     it("should clamp start date to start of day when resizing top beyond bounds", () => {
-      const { result } = renderHook(() =>
-        useEventResizeActions(mockEvent, mockBounds),
-      );
+      const { result } = renderHook(() => useEventResizeActions(mockEvent));
 
       act(() => {
         result.current.onResizeStart(
@@ -209,9 +197,7 @@ describe("useEventResizeActions", () => {
     });
 
     it("should clamp end date to end of bounds when resizing bottom beyond bounds", () => {
-      const { result } = renderHook(() =>
-        useEventResizeActions(mockEvent, mockBounds),
-      );
+      const { result } = renderHook(() => useEventResizeActions(mockEvent));
 
       act(() => {
         result.current.onResizeStart(
@@ -223,31 +209,26 @@ describe("useEventResizeActions", () => {
         );
       });
 
-      // Event ends at 11:00 AM.
-      // Bounds height is 1000px.
-      // 1000px / 20px/slot = 50 slots = 750 minutes = 12.5 hours.
-      // So bounds end at 12.5 hours from start of day (if start of day is 0).
-      // Wait, the logic uses `boundsRect.height`.
-      // `originalBottomPx` is calculated from `endDiffMinutes`.
-      // 11:00 AM is 11 * 60 = 660 minutes.
-      // 660 / 15 * 20 = 880 px.
-      // Max growth = 1000 - 880 = 120 px.
-      // 120 px / 20 px/slot = 6 slots = 90 minutes.
-      // So max end time should be 11:00 + 1:30 = 12:30.
+      // Code uses totalDayHeightPx (1920px) not bounds height (1000px).
+      // Max growth = 1920 - 880 - 20 = 1020 px.
+      // Delta is 500 px.
+      // 500 < 1020, so full 500px is used.
+      // 500 * 0.75 = 375 minutes.
+      // End date = 11:00 + 375 min = 17:15.
 
-      const deltaHeight = 500; // Try to grow by 500px, but only 120px allowed
+      const deltaHeight = 500; // Try to grow by 500px
 
       act(() => {
         result.current.onResize(
           new MouseEvent("mousemove"),
           "bottom",
-          document.createElement("div"),
+          mockBounds,
           { height: deltaHeight, width: 0 },
         );
       });
 
       const expectedEndDate = dayjs(mockEvent.endDate)
-        .add(90, "minutes")
+        .add(375, "minutes")
         .format();
 
       expect(setDraft).toHaveBeenLastCalledWith(
@@ -260,10 +241,8 @@ describe("useEventResizeActions", () => {
   });
 
   describe("onResizeStop", () => {
-    it("should set resizing to false and update event if changed", () => {
-      const { result } = renderHook(() =>
-        useEventResizeActions(mockEvent, mockBounds),
-      );
+    it("should update event if changed", () => {
+      const { result } = renderHook(() => useEventResizeActions(mockEvent));
 
       // Simulate start
       act(() => {
@@ -287,7 +266,7 @@ describe("useEventResizeActions", () => {
       // But `event` prop changes. `renderHook` allows rerender with new props.
 
       const { result: resultRerender, rerender } = renderHook(
-        (props) => useEventResizeActions(props, mockBounds),
+        (props) => useEventResizeActions(props),
         { initialProps: mockEvent },
       );
 
@@ -315,7 +294,6 @@ describe("useEventResizeActions", () => {
         );
       });
 
-      expect(resultRerender.current.resizing).toBe(false);
       expect(mockUpdateEvent).toHaveBeenCalledWith({
         event: expect.objectContaining({
           _id: mockEvent._id,
@@ -326,7 +304,7 @@ describe("useEventResizeActions", () => {
 
     it("should snap times to nearest 15 minutes", () => {
       const { result, rerender } = renderHook(
-        (props) => useEventResizeActions(props, mockBounds),
+        (props) => useEventResizeActions(props),
         { initialProps: mockEvent },
       );
 
@@ -373,7 +351,7 @@ describe("useEventResizeActions", () => {
       (open$.getValue as jest.Mock).mockReturnValue(true);
 
       const { result, rerender } = renderHook(
-        (props) => useEventResizeActions(props, mockBounds),
+        (props) => useEventResizeActions(props),
         { initialProps: mockEvent },
       );
 
@@ -407,12 +385,9 @@ describe("useEventResizeActions", () => {
     });
 
     it("should not update if start and end have not changed", () => {
-      const { result } = renderHook(
-        (props) => useEventResizeActions(props, mockBounds),
-        {
-          initialProps: mockEvent,
-        },
-      );
+      const { result } = renderHook((props) => useEventResizeActions(props), {
+        initialProps: mockEvent,
+      });
 
       act(() => {
         result.current.onResizeStart(

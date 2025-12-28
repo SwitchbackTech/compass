@@ -1,11 +1,15 @@
 import { act } from "react";
 import { renderHook } from "@testing-library/react";
-import { mouseState$ } from "@web/common/context/mouse-position";
-import { useMouseState } from "./useMouseState";
+import {
+  PointerState,
+  pointerState$,
+} from "@web/common/context/pointer-position";
+import { usePointerState } from "@web/common/hooks/usePointerState";
 
-describe("useMouseState", () => {
-  const initialState = {
-    mousedown: false,
+describe("usePointerState", () => {
+  const initialState: PointerState = {
+    pointerdown: false,
+    selectionStart: null,
     isOverGrid: false,
     isOverSidebar: false,
     isOverMainGrid: false,
@@ -17,36 +21,37 @@ describe("useMouseState", () => {
   beforeEach(() => {
     // Reset the subject to initial state before each test
     act(() => {
-      mouseState$.next(initialState);
+      pointerState$.next(initialState);
     });
   });
 
   it("should return the initial state", () => {
-    const { result } = renderHook(() => useMouseState());
+    const { result } = renderHook(() => usePointerState());
     expect(result.current).toEqual(initialState);
   });
 
   it("should update when mouseState$ emits new values", () => {
-    const { result } = renderHook(() => useMouseState());
+    const { result } = renderHook(() => usePointerState());
 
     const newState = {
       ...initialState,
-      mousedown: true,
+      pointerdown: true,
       isOverGrid: true,
     };
 
     act(() => {
-      mouseState$.next(newState);
+      pointerState$.next(newState);
     });
 
     expect(result.current).toEqual(newState);
   });
 
   it("should handle updates to all properties", () => {
-    const { result } = renderHook(() => useMouseState());
+    const { result } = renderHook(() => usePointerState());
 
-    const allTrueState = {
-      mousedown: true,
+    const allTrueState: PointerState = {
+      pointerdown: true,
+      selectionStart: { clientX: 100, clientY: 200 },
       isOverGrid: true,
       isOverSidebar: true,
       isOverMainGrid: true,
@@ -56,7 +61,7 @@ describe("useMouseState", () => {
     };
 
     act(() => {
-      mouseState$.next(allTrueState);
+      pointerState$.next(allTrueState);
     });
 
     expect(result.current).toEqual(allTrueState);

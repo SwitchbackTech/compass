@@ -1,7 +1,10 @@
 import { memo, useCallback } from "react";
 import dayjs from "@core/util/date/dayjs";
-import { MousePositionProvider } from "@web/common/context/mouse-position";
+import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
 import { useEventDNDActions } from "@web/common/hooks/useEventDNDActions";
+import { useGridOrganization } from "@web/common/hooks/useGridOrganization";
+import { useMainGridSelection } from "@web/common/hooks/useMainGridSelection";
+import { useMainGridSelectionActions } from "@web/common/hooks/useMainGridSelectionActions";
 import {
   CompassDOMEvents,
   compassEventEmitter,
@@ -32,9 +35,15 @@ import {
   focusOnFirstTask,
 } from "@web/views/Day/util/day.shortcut.util";
 
-const DayViewContentInner = memo(() => {
+export const DayViewContent = memo(() => {
+  const selectionActions = useMainGridSelectionActions();
+  const { timedEventsGridRef } = useCompassRefs();
+  const grid = timedEventsGridRef.current;
+
   useRefetch();
   useEventDNDActions();
+  useMainGridSelection(selectionActions);
+  useGridOrganization(grid);
 
   const {
     tasks,
@@ -157,11 +166,3 @@ const DayViewContentInner = memo(() => {
     </>
   );
 });
-
-export const DayViewContent = () => {
-  return (
-    <MousePositionProvider>
-      <DayViewContentInner />
-    </MousePositionProvider>
-  );
-};

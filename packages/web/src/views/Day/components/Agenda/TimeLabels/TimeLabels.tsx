@@ -1,11 +1,17 @@
+import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
 import {
   MINUTES_PER_SLOT,
   SLOT_HEIGHT,
 } from "@web/views/Day/constants/day.constants";
 
 export const TimeLabels = () => {
+  const { nowLineRef } = useCompassRefs();
+
   return (
-    <div className="bg-darkBlue-400 relative w-16 flex-shrink-0">
+    <div
+      ref={nowLineRef}
+      className="bg-darkBlue-400 relative w-16 flex-shrink-0"
+    >
       {Array.from({ length: 96 }, (_, i) => {
         const hour = Math.floor(i / 4);
         const minute = (i % 4) * MINUTES_PER_SLOT;
@@ -19,7 +25,7 @@ export const TimeLabels = () => {
         return (
           <div
             key={`time-${i}`}
-            className="pointer-events-none absolute flex items-center text-xs text-gray-200"
+            className="pointer-events-none absolute flex items-center text-xs text-gray-200 select-none"
             style={{
               top: `${i * SLOT_HEIGHT}px`,
               left: "0px",
