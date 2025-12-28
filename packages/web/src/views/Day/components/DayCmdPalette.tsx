@@ -6,6 +6,10 @@ import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constant
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
+import {
+  openEventFormCreateEvent,
+  openEventFormEditEvent,
+} from "@web/common/utils/event/event.util";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
@@ -38,6 +42,18 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
             children: "Go to Week [3]",
             icon: "CalendarIcon",
             onClick: () => pressKey("3"),
+          },
+          {
+            id: "create-event",
+            children: "Create event [n]",
+            icon: "PlusIcon",
+            onClick: () => queueMicrotask(openEventFormCreateEvent),
+          },
+          {
+            id: "edit-event",
+            children: "Edit event [m]",
+            icon: "PencilSquareIcon",
+            onClick: () => queueMicrotask(openEventFormEditEvent),
           },
           {
             id: "edit-reminder",

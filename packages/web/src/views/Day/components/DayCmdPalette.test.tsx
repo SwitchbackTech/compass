@@ -3,6 +3,7 @@ import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { keyPressed$ } from "@web/common/utils/dom/event-emitter.util";
+import * as eventUtil from "@web/common/utils/event/event.util";
 import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
@@ -10,6 +11,7 @@ import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGloba
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
 
 // Mock react-router-dom
+const mockNavigate = jest.fn();
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
   useNavigate: jest.fn(),
@@ -37,6 +39,9 @@ jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
   onEventTargetVisibility: (callback: () => void) => callback,
 }));
 
+// Mock event utility functions
+jest.mock("@web/common/utils/event/event.util");
+
 jest.mock("@web/store/store.hooks", () => ({
   useAppDispatch: () => mockDispatch,
   useAppSelector: jest.requireActual("@web/store/store.hooks").useAppSelector,
@@ -49,7 +54,14 @@ function Component() {
 }
 
 describe("DayCmdPalette", () => {
-  const mockNavigate = jest.fn();
+  const mockOpenEventFormCreateEvent = jest.spyOn(
+    eventUtil,
+    "openEventFormCreateEvent",
+  );
+  const mockOpenEventFormEditEvent = jest.spyOn(
+    eventUtil,
+    "openEventFormEditEvent",
+  );
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -70,6 +82,8 @@ describe("DayCmdPalette", () => {
     expect(screen.getByText("Navigation")).toBeInTheDocument();
     expect(screen.getByText("Go to Now [1]")).toBeInTheDocument();
     expect(screen.getByText("Go to Week [3]")).toBeInTheDocument();
+    expect(screen.getByText("Create event [n]")).toBeInTheDocument();
+    expect(screen.getByText("Edit event [m]")).toBeInTheDocument();
     expect(screen.getByText("Edit Reminder [r]")).toBeInTheDocument();
     expect(
       screen.getByText("Go to Today (Monday, November 24) [t]"),
@@ -199,6 +213,42 @@ describe("DayCmdPalette", () => {
     await act(() => user.click(screen.getByText("Log Out [z]")));
 
     expect(mockNavigate).toHaveBeenCalledWith("/logout");
+  });
+
+  it("calls openEventFormEditEvent when Edit event is clicked", async () => {
+    const user = userEvent.setup();
+
+    await act(() =>
+      render(<Component />, {
+        state: { settings: { isCmdPaletteOpen: true } },
+      }),
+    );
+
+    const editEventBtn = await screen.findByRole("button", {
+      name: /edit event \[m\]/i,
+    });
+
+    await act(() => user.click(editEventBtn));
+
+    expect(mockOpenEventFormEditEvent).toHaveBeenCalled();
+  });
+
+  it("calls openEventFormCreateEvent when Create event is clicked", async () => {
+    const user = userEvent.setup();
+
+    await act(() =>
+      render(<Component />, {
+        state: { settings: { isCmdPaletteOpen: true } },
+      }),
+    );
+
+    const createEventBtn = await screen.findByRole("button", {
+      name: /create event \[n\]/i,
+    });
+
+    await act(() => user.click(createEventBtn));
+
+    expect(mockOpenEventFormCreateEvent).toHaveBeenCalled();
   });
 
   it("filters items based on search input", async () => {
