@@ -20,6 +20,7 @@ class UserController {
     } catch (e) {
       if (e instanceof BaseError) {
         res.status(e.statusCode).send();
+        return;
       }
       res.status(Status.INTERNAL_SERVER).send();
     }
@@ -38,6 +39,7 @@ class UserController {
     } catch (e) {
       if (e instanceof BaseError) {
         res.status(e.statusCode).send();
+        return;
       }
       res.status(Status.INTERNAL_SERVER).send();
     }
@@ -59,6 +61,7 @@ class UserController {
     } catch (e) {
       if (e instanceof BaseError) {
         res.status(e.statusCode).send();
+        return;
       }
       res.status(Status.INTERNAL_SERVER).send();
     }
