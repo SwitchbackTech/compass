@@ -1,7 +1,6 @@
-import type { GaxiosPromise } from "gaxios";
-import { calendar_v3, google } from "googleapis";
 import { ObjectId, WithoutId } from "mongodb";
 import { Options } from "rrule";
+import { calendar } from "@googleapis/calendar";
 import { Origin } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
 import { Schema_Event, WithCompassId } from "@core/types/event.types";
@@ -34,8 +33,8 @@ export interface State_AfterGcalImport {
  */
 export const simulateGoogleCalendarEventCreation = async (
   event: gSchema$Event,
-): GaxiosPromise<calendar_v3.Schema$Event> => {
-  return google.calendar("v3").events.insert({ requestBody: event });
+) => {
+  return calendar({ version: "v3" }).events.insert({ requestBody: event });
 };
 
 /**

@@ -41,10 +41,18 @@ CompassApi.interceptors.response.use(
   },
   async (error: AxiosError) => {
     const status = error?.response?.status;
+    const requestUrl = error?.config?.url;
 
     if (status === Status.REDUX_REFRESH_NEEDED) {
       window.location.reload();
       return Promise.resolve();
+    }
+
+    const isUserNotFound =
+      status === Status.NOT_FOUND && requestUrl?.includes("/user/profile");
+    if (isUserNotFound) {
+      window.location.assign(ROOT_ROUTES.ONBOARDING);
+      return Promise.reject(error);
     }
 
     if (status === Status.GONE || status === Status.NOT_FOUND) {

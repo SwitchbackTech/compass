@@ -135,10 +135,7 @@ export const StorageInfoModal = ({
             Day tasks are saved in your browser&apos;s local storage. Clearing
             your browser data will remove them.
           </p>
-          <p>
-            Think of day tasks as simple ways to stay focused on today.
-            We&apos;ll add cloud backup for tasks soon.
-          </p>
+          <p>Think of day tasks as simple ways to stay focused on today.</p>
           <p>
             <strong>Your calendar events are safely backed up</strong> and not
             stored in your browser.

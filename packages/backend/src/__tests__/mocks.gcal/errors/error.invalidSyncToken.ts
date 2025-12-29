@@ -1,10 +1,48 @@
-import { GaxiosError } from "googleapis-common";
+import { GaxiosError } from "gaxios";
 import qs from "qs";
 
-export const invalidSyncTokenError = new GaxiosError(
+const requestHeaders = new Headers();
+requestHeaders.set(
+  "x-goog-api-client",
+  "gdcl/6.0.4 gl-node/16.17.0 auth/8.7.0",
+);
+requestHeaders.set("Accept-Encoding", "gzip");
+requestHeaders.set("User-Agent", "google-api-nodejs-client/6.0.4 (gzip)");
+requestHeaders.set(
+  "Authorization",
+  "Bearer ya29.a0AVvZVsp98H_YLg9KeAZArECvxgVIMnVOQR_LIqkUMmTDi9qp8GBELy3GiDS0GhMo1mFDwsfJLsC4Ufup_AFi3eIrAPjU8d3FiX5M3wdOBeqXaG6miwlvOJDFd49QPi21nTIzKZojhi17TBhKNDiqLcHTWZl4aCgYKAecSARASFQGbdwaIncVRWWWmV5_XAYKqCOPaPg0163",
+);
+requestHeaders.set("Content-Type", "application/json");
+requestHeaders.set("Accept", "application/json");
+
+const responseHeaders = new Headers();
+responseHeaders.set(
+  "alt-svc",
+  'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000',
+);
+responseHeaders.set(
+  "cache-control",
+  "no-cache, no-store, max-age=0, must-revalidate",
+);
+responseHeaders.set("connection", "close");
+responseHeaders.set("content-encoding", "gzip");
+responseHeaders.set("content-type", "application/json; charset=UTF-8");
+responseHeaders.set("date", "Thu, 02 Feb 2023 03:04:13 GMT");
+responseHeaders.set("expires", "Mon, 01 Jan 1990 00:00:00 GMT");
+responseHeaders.set("pragma", "no-cache");
+responseHeaders.set("server", "ESF");
+responseHeaders.set("transfer-encoding", "chunked");
+responseHeaders.set("vary", "Origin, X-Origin, Referer");
+responseHeaders.set("x-content-type-options", "nosniff");
+responseHeaders.set("x-frame-options", "SAMEORIGIN");
+responseHeaders.set("x-xss-protection", "0");
+
+const error = new GaxiosError(
   "Sync token is no longer valid, a full sync is required.",
   {
-    url: "https://www.googleapis.com/calendar/v3/calendars/foo%40gmail.com/events/watch?syncToken=1CKj765-V8_wCEKj765-V8_wCGAUghfra8AE%3D",
+    url: new URL(
+      "https://www.googleapis.com/calendar/v3/calendars/foo%40gmail.com/events/watch?syncToken=1CKj765-V8_wCEKj765-V8_wCGAUghfra8AE%3D",
+    ),
     method: "POST",
     paramsSerializer: (params) => {
       return qs.stringify(params, { arrayFormat: "repeat" });
@@ -16,15 +54,7 @@ export const invalidSyncTokenError = new GaxiosError(
       token: "secret",
       type: "web_hook",
     },
-    headers: {
-      "x-goog-api-client": "gdcl/6.0.4 gl-node/16.17.0 auth/8.7.0",
-      "Accept-Encoding": "gzip",
-      "User-Agent": "google-api-nodejs-client/6.0.4 (gzip)",
-      Authorization:
-        "Bearer ya29.a0AVvZVsp98H_YLg9KeAZArECvxgVIMnVOQR_LIqkUMmTDi9qp8GBELy3GiDS0GhMo1mFDwsfJLsC4Ufup_AFi3eIrAPjU8d3FiX5M3wdOBeqXaG6miwlvOJDFd49QPi21nTIzKZojhi17TBhKNDiqLcHTWZl4aCgYKAecSARASFQGbdwaIncVRWWWmV5_XAYKqCOPaPg0163",
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
+    headers: requestHeaders,
     params: {
       syncToken: "1CKj765-V8_wCEKj765-V8_wCGAUghfra8AE=",
     },
@@ -48,7 +78,9 @@ export const invalidSyncTokenError = new GaxiosError(
   },
   {
     config: {
-      url: "https://www.googleapis.com/calendar/v3/calendars/foo%40gmail.com/events/watch?syncToken=1CKj765-V8_wCEKj765-V8_wCGAUghfra8AE%3D",
+      url: new URL(
+        "https://www.googleapis.com/calendar/v3/calendars/foo%40gmail.com/events/watch?syncToken=1CKj765-V8_wCEKj765-V8_wCGAUghfra8AE%3D",
+      ),
       method: "POST",
       data: {
         address: "https://foo.yourdomain.app/api/sync/gcal/notifications",
@@ -57,15 +89,7 @@ export const invalidSyncTokenError = new GaxiosError(
         token: "secret",
         type: "web_hook",
       },
-      headers: {
-        "x-goog-api-client": "gdcl/6.0.4 gl-node/16.17.0 auth/8.7.0",
-        "Accept-Encoding": "gzip",
-        "User-Agent": "google-api-nodejs-client/6.0.4 (gzip)",
-        Authorization:
-          "Bearer ya29.a0AVvZVsp98H_YLg9KeAZArECvxgVIMnVOQR_LIqkUMmTDi9qp8GBELy3GiDS0GhMo1mFDwsfJLsC4Ufup_AFi3eIrAPjU8d3FiX5M3wdOBeqXaG6miwlvOJDFd49QPi21nTIzKZojhi17TBhKNDiqLcHTWZl4aCgYKAecSARASFQGbdwaIncVRWWWmV5_XAYKqCOPaPg0163",
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
+      headers: requestHeaders,
       params: {
         syncToken: "1CKj765-V8_wCEKj765-V8_wCGAUghfra8AE=",
       },
@@ -102,27 +126,52 @@ export const invalidSyncTokenError = new GaxiosError(
         message: "Sync token is no longer valid, a full sync is required.",
       },
     },
-    headers: {
-      "alt-svc": 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000',
-      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
-      connection: "close",
-      "content-encoding": "gzip",
-      "content-type": "application/json; charset=UTF-8",
-      date: "Thu, 02 Feb 2023 03:04:13 GMT",
-      expires: "Mon, 01 Jan 1990 00:00:00 GMT",
-      pragma: "no-cache",
-      server: "ESF",
-      "transfer-encoding": "chunked",
-      vary: "Origin, X-Origin, Referer",
-      "x-content-type-options": "nosniff",
-      "x-frame-options": "SAMEORIGIN",
-      "x-xss-protection": "0",
-    },
+    headers: responseHeaders,
     status: 410,
     statusText: "Gone",
-    request: {
-      responseURL:
-        "https://www.googleapis.com/calendar/v3/calendars/foo%40gmail.com/events/watch?syncToken=1CKj765-V8_wCEKj765-V8_wCGAUghfra8AE%3D",
+    ok: false,
+    redirected: false,
+    type: "error" as ResponseType,
+    url: "https://www.googleapis.com/calendar/v3/calendars/foo%40gmail.com/events/watch?syncToken=1CKj765-V8_wCEKj765-V8_wCGAUghfra8AE%3D",
+    body: null,
+    bodyUsed: false,
+    clone: () => {
+      throw new Error("Not implemented");
+    },
+    arrayBuffer: async () => {
+      throw new Error("Not implemented");
+    },
+    blob: async () => {
+      throw new Error("Not implemented");
+    },
+    formData: async () => {
+      throw new Error("Not implemented");
+    },
+    json: async () => ({
+      error: {
+        errors: [
+          {
+            domain: "calendar",
+            reason: "fullSyncRequired",
+            message: "Sync token is no longer valid, a full sync is required.",
+            locationType: "parameter",
+            location: "syncToken",
+          },
+        ],
+        code: 410,
+        message: "Sync token is no longer valid, a full sync is required.",
+      },
+    }),
+    text: async () => {
+      throw new Error("Not implemented");
+    },
+    bytes: async () => {
+      throw new Error("Not implemented");
     },
   },
 );
+
+// Set the code property to match the HTTP status
+error.code = "410";
+
+export const invalidSyncTokenError = error;
