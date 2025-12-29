@@ -28,26 +28,40 @@ class UserController {
     req: Request<never, UserMetadata, never, never>,
     res: Response<UserMetadata>,
   ) => {
-    const user = zObjectId.parse(req.session?.getUserId());
-    const metadata = await userMetadataService.fetchUserMetadata(
-      user.toString(),
-    );
+    try {
+      const user = zObjectId.parse(req.session?.getUserId());
+      const metadata = await userMetadataService.fetchUserMetadata(
+        user.toString(),
+      );
 
-    res.status(Status.OK).json(metadata);
+      res.status(Status.OK).json(metadata);
+    } catch (e) {
+      if (e instanceof BaseError) {
+        res.status(e.statusCode).send();
+      }
+      res.status(Status.INTERNAL_SERVER).send();
+    }
   };
 
   updateMetadata = async (
     req: SReqBody<UserMetadata>,
     res: Response<UserMetadata>,
   ) => {
-    const user = zObjectId.parse(req.session?.getUserId());
+    try {
+      const user = zObjectId.parse(req.session?.getUserId());
 
-    const metadata = await userMetadataService.updateUserMetadata({
-      userId: user.toString(),
-      data: req.body,
-    });
+      const metadata = await userMetadataService.updateUserMetadata({
+        userId: user.toString(),
+        data: req.body,
+      });
 
-    res.status(Status.OK).json(metadata);
+      res.status(Status.OK).json(metadata);
+    } catch (e) {
+      if (e instanceof BaseError) {
+        res.status(e.statusCode).send();
+      }
+      res.status(Status.INTERNAL_SERVER).send();
+    }
   };
 }
 
