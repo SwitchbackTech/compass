@@ -1,5 +1,5 @@
 import { Request } from "express";
-import { GaxiosError } from "googleapis-common";
+import { GaxiosError } from "gaxios";
 import { SessionRequest } from "supertokens-node/framework/express";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
@@ -51,7 +51,7 @@ const parseUserId = async (res: SessionResponse, e: Error) => {
       }
 
       if (e.config.url) {
-        const email = getEmailFromUrl(e.config.url);
+        const email = getEmailFromUrl(e.config.url.toString());
         if (email) {
           const user = await findCompassUserBy("email", email);
           if (user) {

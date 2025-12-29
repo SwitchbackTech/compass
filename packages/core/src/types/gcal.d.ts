@@ -1,5 +1,4 @@
-import { calendar_v3 } from "googleapis";
-import calendar from "googleapis/build/src/apis/calendar";
+import type { calendar_v3 } from "@googleapis/calendar";
 
 export declare type WithGcalId<T> = T & {
   id: string;
@@ -17,8 +16,8 @@ export declare type gCalendar = calendar_v3.Calendar;
 export declare type gSchema$CalendarList = calendar_v3.Schema$CalendarList;
 export declare type gSchema$CalendarListEntry =
   calendar_v3.Schema$CalendarListEntry;
-export declare type gSchema$Channel = calendar.calendar_v3.Schema$Channel;
-export declare type gSchema$Event = calendar.calendar_v3.Schema$Event;
+export declare type gSchema$Channel = calendar_v3.Schema$Channel;
+export declare type gSchema$Event = calendar_v3.Schema$Event;
 export declare type gSchema$EventBase = WithGcalId<
   WithRecurrenceRule<gSchema$Event>
 >;
@@ -26,11 +25,10 @@ export declare type gSchema$EventInstance = WithGcalId<
   WithRecurrencePointer<gSchema$Event>
 >;
 
-export declare type gSchema$Events = calendar.calendar_v3.Schema$Events;
+export declare type gSchema$Events = calendar_v3.Schema$Events;
 export declare type gSchema$Events$Union = gSchema$Events | gSchema$Events[];
 
-export declare type gParamsEventsList =
-  calendar.calendar_v3.Params$Resource$Events$List;
+export declare type gParamsEventsList = calendar_v3.Params$Resource$Events$List;
 
 /**
  * Params for importing all events from a calendar, excluding those

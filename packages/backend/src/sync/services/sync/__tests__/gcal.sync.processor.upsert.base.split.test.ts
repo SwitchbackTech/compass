@@ -1,4 +1,4 @@
-import { google } from "googleapis";
+import { calendar } from "@googleapis/calendar";
 import { Categories_Recurrence, Schema_Event } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
 import { isInstance } from "@core/util/event/event.util";
@@ -36,7 +36,7 @@ describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
       updateBasePayloadToExpireOneDayAfterFirstInstance(gcalEvents);
 
     // simulate event update in Google Calendar
-    await google.calendar("v3").events.patch({
+    await calendar({ version: "v3" }).events.patch({
       eventId: gBaseWithUntil.id,
       requestBody: gBaseWithUntil,
     });

@@ -35,12 +35,12 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         profile.current = userProfile;
       })
       .catch((e) => {
-        console.error("Failed to get user profile because:", e);
+        console.error("Failed to get user profile", e);
       })
       .finally(() => {
         setIsLoadingUser(false);
       });
-  }, [profile.current]);
+  }, []);
 
   // Identify user in PostHog when userId and email are available
   // Only runs if PostHog is enabled (POSTHOG_HOST and POSTHOG_KEY are set)

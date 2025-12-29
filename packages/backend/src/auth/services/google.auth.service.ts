@@ -1,7 +1,7 @@
+import { GaxiosError } from "gaxios";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
-import { google } from "googleapis";
-import { GaxiosError } from "googleapis-common";
 import { WithId } from "mongodb";
+import { calendar } from "@googleapis/calendar";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
@@ -33,14 +33,14 @@ export const getGAuthClientForUser = async (
 
     if (!userId) {
       logger.error(`Expected to either get a user or a userId.`);
-      throw error(UserError.InvalidValue, "User not found");
+      throw error(UserError.InvalidValue, "Auth client not initialized");
     }
 
     const _user = await findCompassUserBy("_id", userId);
 
     if (!_user) {
       logger.error(`Couldn't find user with this id: ${userId}`);
-      throw error(UserError.UserNotFound, "User not found");
+      throw error(UserError.UserNotFound, "Auth client not initialized");
     }
 
     gRefreshToken = _user.google.gRefreshToken;
@@ -61,28 +61,58 @@ export const getGcalClient = async (userId: string): Promise<gCalendar> => {
 
     // throw gaxios error here to trigger specific session invalidation
     // see error.express.handler.ts
-    throw new GaxiosError(
+    const error = new GaxiosError(
       "invalid_grant",
-      {},
+      {
+        headers: new Headers(),
+        url: new URL("https://www.googleapis.com/calendar/v3"),
+      },
       {
         status: Status.BAD_REQUEST,
         data: { userId },
-        config: {},
+        config: {
+          headers: new Headers(),
+          url: new URL("https://www.googleapis.com/calendar/v3"),
+        },
         statusText: "BAD_REQUEST Cannot initialize Gcal client",
-        headers: {},
-        request: { responseURL: "" },
+        headers: new Headers(),
+        ok: false,
+        redirected: false,
+        type: "error" as ResponseType,
+        url: "https://www.googleapis.com/calendar/v3",
+        body: null,
+        bodyUsed: false,
+        clone: () => {
+          throw new Error("Not implemented");
+        },
+        arrayBuffer: async () => {
+          throw new Error("Not implemented");
+        },
+        blob: async () => {
+          throw new Error("Not implemented");
+        },
+        formData: async () => {
+          throw new Error("Not implemented");
+        },
+        json: async () => ({ userId }),
+        text: async () => JSON.stringify({ userId }),
+        bytes: async () => {
+          throw new Error("Not implemented");
+        },
       },
     );
+    error.code = "400";
+    throw error;
   }
 
   const gAuthClient = await getGAuthClientForUser(user);
 
-  const calendar = google.calendar({
+  const calendarClient = calendar({
     version: "v3",
     auth: gAuthClient.oauthClient,
   });
 
-  return calendar;
+  return calendarClient;
 };
 
 class GoogleAuthService {
@@ -97,7 +127,7 @@ class GoogleAuthService {
   }
 
   getGcalClient(): gCalendar {
-    const gcal = google.calendar({
+    const gcal = calendar({
       version: "v3",
       auth: this.oauthClient,
     });

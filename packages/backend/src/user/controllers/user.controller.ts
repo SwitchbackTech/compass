@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { zObjectId } from "@core/types/type.utils";
 import { UserMetadata, UserProfile } from "@core/types/user.types";
@@ -11,35 +12,59 @@ class UserController {
     req: Request<never, UserProfile, never, never>,
     res: Response<UserProfile>,
   ) => {
-    const user = zObjectId.parse(req.session?.getUserId());
-    const profile = await userService.getProfile(user);
+    try {
+      const user = zObjectId.parse(req.session?.getUserId());
+      const profile = await userService.getProfile(user);
 
-    res.status(Status.OK).json(profile);
+      res.status(Status.OK).json(profile);
+    } catch (e) {
+      if (e instanceof BaseError) {
+        res.status(e.statusCode).send();
+        return;
+      }
+      res.status(Status.INTERNAL_SERVER).send();
+    }
   };
   getMetadata = async (
     req: Request<never, UserMetadata, never, never>,
     res: Response<UserMetadata>,
   ) => {
-    const user = zObjectId.parse(req.session?.getUserId());
-    const metadata = await userMetadataService.fetchUserMetadata(
-      user.toString(),
-    );
+    try {
+      const user = zObjectId.parse(req.session?.getUserId());
+      const metadata = await userMetadataService.fetchUserMetadata(
+        user.toString(),
+      );
 
-    res.status(Status.OK).json(metadata);
+      res.status(Status.OK).json(metadata);
+    } catch (e) {
+      if (e instanceof BaseError) {
+        res.status(e.statusCode).send();
+        return;
+      }
+      res.status(Status.INTERNAL_SERVER).send();
+    }
   };
 
   updateMetadata = async (
     req: SReqBody<UserMetadata>,
     res: Response<UserMetadata>,
   ) => {
-    const user = zObjectId.parse(req.session?.getUserId());
+    try {
+      const user = zObjectId.parse(req.session?.getUserId());
 
-    const metadata = await userMetadataService.updateUserMetadata({
-      userId: user.toString(),
-      data: req.body,
-    });
+      const metadata = await userMetadataService.updateUserMetadata({
+        userId: user.toString(),
+        data: req.body,
+      });
 
-    res.status(Status.OK).json(metadata);
+      res.status(Status.OK).json(metadata);
+    } catch (e) {
+      if (e instanceof BaseError) {
+        res.status(e.statusCode).send();
+        return;
+      }
+      res.status(Status.INTERNAL_SERVER).send();
+    }
   };
 }
 

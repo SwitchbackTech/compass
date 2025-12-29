@@ -1,5 +1,4 @@
 import { Handler, NextFunction, Response } from "express";
-import { GoogleApis } from "googleapis";
 import mergeWith from "lodash.mergewith";
 import { randomUUID } from "node:crypto";
 import { SessionRequest } from "supertokens-node/framework/express";
@@ -44,16 +43,15 @@ export function compassTestState(): CompassTestState {
 }
 
 function mockGoogleapis() {
-  mockModule("googleapis", (googleapis: { google: GoogleApis }) => {
-    return {
-      google: {
-        ...googleapis.google,
-        calendar: mockGcal({
-          googleapis: googleapis.google,
-        }),
-      },
-    };
-  });
+  mockModule(
+    "@googleapis/calendar",
+    (calendarModule: typeof import("@googleapis/calendar")) => {
+      return {
+        ...calendarModule,
+        calendar: mockGcal({}),
+      };
+    },
+  );
 }
 
 function mockSuperTokens() {

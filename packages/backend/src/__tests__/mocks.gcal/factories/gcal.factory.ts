@@ -1,10 +1,7 @@
-import type { GaxiosPromise } from "gaxios";
-import type { calendar_v3 } from "googleapis";
-import { GoogleApis } from "googleapis";
-import type {
-  MethodOptions,
-  StreamMethodOptions,
-} from "googleapis/build/src/apis/calendar";
+import type { GaxiosPromise, GaxiosResponse } from "gaxios";
+import { calendar } from "@googleapis/calendar";
+import type { calendar_v3 } from "@googleapis/calendar";
+import type { MethodOptions, StreamMethodOptions } from "@googleapis/calendar";
 import { Status } from "@core/errors/status.codes";
 import type {
   WithGcalId,
@@ -24,6 +21,51 @@ import {
 import { compassTestState } from "@backend/__tests__/helpers/mock.setup";
 import { generateGcalId } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { GcalEventRRule } from "@backend/event/classes/gcal.event.rrule";
+
+/**
+ * Creates a mock GaxiosResponse object with all required Response properties
+ */
+const createMockGaxiosResponse = <T>(
+  data: T,
+  config: MethodOptions | StreamMethodOptions,
+  status = 200,
+  statusText = "OK",
+  responseURL = "",
+): GaxiosResponse<T> => {
+  const headers = new Headers(config.headers as HeadersInit);
+  const url = responseURL || (config.url?.toString() ?? "");
+
+  return {
+    config: config as any,
+    data,
+    status,
+    statusText,
+    headers,
+    ok: status >= 200 && status < 300,
+    redirected: false,
+    type: "default" as ResponseType,
+    url,
+    body: null,
+    bodyUsed: false,
+    clone: () => {
+      throw new Error("Not implemented");
+    },
+    arrayBuffer: async () => {
+      throw new Error("Not implemented");
+    },
+    blob: async () => {
+      throw new Error("Not implemented");
+    },
+    formData: async () => {
+      throw new Error("Not implemented");
+    },
+    json: async () => data as any,
+    text: async () => JSON.stringify(data),
+    bytes: async () => {
+      throw new Error("Not implemented");
+    },
+  } as GaxiosResponse<T>;
+};
 
 /**
  * Generates a paginated items for the Google Calendar API.
@@ -58,7 +100,6 @@ interface Config_MockGcal {
   nextSyncToken?: string;
   calendarList?: Partial<gSchema$CalendarListEntry>[];
   calendarListNextSyncToken?: string;
-  googleapis: GoogleApis;
 }
 /**
  * Generates a mock Google Calendar API response.
@@ -70,14 +111,13 @@ export const mockGcal = ({
   pageSize = 3,
   nextSyncToken = "final-sync-token",
   calendarListNextSyncToken = "calendar-li,st-sync-token",
-  googleapis,
 }: Config_MockGcal) => {
-  const calendar = googleapis.calendar("v3");
+  const calendarClient = calendar({ version: "v3" });
 
   return jest.fn(() => ({
-    ...calendar,
+    ...calendarClient,
     events: {
-      ...calendar.events,
+      ...calendarClient.events,
       get: jest.fn(async (params: calendar_v3.Params$Resource$Events$Get) => {
         const { eventId } = params;
         const testState = compassTestState();
@@ -86,11 +126,20 @@ export const mockGcal = ({
 
         if (!event) throw new Error(`Event with id ${eventId} not found`);
 
-        return Promise.resolve({
-          statusText: "OK",
-          status: 200,
-          data: event,
-        });
+        return Promise.resolve(
+          createMockGaxiosResponse(
+            event,
+            {
+              headers: new Headers(),
+              url: new URL(
+                "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+              ),
+            },
+            200,
+            "OK",
+            event.id ?? "",
+          ),
+        );
       }),
       insert: jest.fn(
         async (
@@ -108,14 +157,15 @@ export const mockGcal = ({
 
           events.push(...newEvents);
 
-          return Promise.resolve({
-            config: options,
-            statusText: "OK",
-            status: 200,
-            data: params.requestBody as gSchema$Event,
-            headers: options.headers!,
-            request: { responseURL: params.requestBody!.id! },
-          });
+          return Promise.resolve(
+            createMockGaxiosResponse(
+              params.requestBody as gSchema$Event,
+              options,
+              200,
+              "OK",
+              params.requestBody!.id!,
+            ),
+          );
         },
       ),
       patch: jest.fn(
@@ -157,14 +207,15 @@ export const mockGcal = ({
             updatedEvent as WithGcalId<gSchema$Event>,
           );
 
-          return Promise.resolve({
-            config: options,
-            statusText: "OK",
-            status: 200,
-            data: updatedEvent,
-            headers: options.headers!,
-            request: { responseURL: updatedEvent.id! },
-          });
+          return Promise.resolve(
+            createMockGaxiosResponse(
+              updatedEvent,
+              options,
+              200,
+              "OK",
+              updatedEvent.id!,
+            ),
+          );
         },
       ),
       update: jest.fn(
@@ -219,14 +270,15 @@ export const mockGcal = ({
             }
           });
 
-          return Promise.resolve({
-            config: options,
-            statusText: "OK",
-            status: 200,
-            data: updatedEvent,
-            headers: options.headers!,
-            request: { responseURL: updatedEvent.id! },
-          });
+          return Promise.resolve(
+            createMockGaxiosResponse(
+              updatedEvent,
+              options,
+              200,
+              "OK",
+              updatedEvent.id!,
+            ),
+          );
         },
       ),
       delete: jest.fn(
@@ -339,21 +391,22 @@ export const mockGcal = ({
           params: calendar_v3.Params$Resource$Events$Watch,
           options: MethodOptions = {},
         ): GaxiosPromise<gSchema$Channel> =>
-          Promise.resolve({
-            config: options,
-            statusText: "OK",
-            status: 200,
-            data: {
-              ...params.requestBody,
-              resourceId: params.calendarId,
-            },
-            headers: options.headers!,
-            request: { responseURL: params.requestBody!.address! },
-          }),
+          Promise.resolve(
+            createMockGaxiosResponse<gSchema$Channel>(
+              {
+                ...params.requestBody,
+                resourceId: params.calendarId,
+              },
+              options,
+              200,
+              "OK",
+              params.requestBody!.address!,
+            ),
+          ),
       ),
     },
     calendarList: {
-      ...calendar.calendarList,
+      ...calendarClient.calendarList,
       list: jest.fn(
         async (
           params: calendar_v3.Params$Resource$Events$Watch = {},
@@ -361,19 +414,20 @@ export const mockGcal = ({
         ): GaxiosPromise<gSchema$CalendarList> => {
           const { calendarlist } = compassTestState();
 
-          return Promise.resolve({
-            config: options,
-            statusText: "OK",
-            status: 200,
-            headers: options.headers!,
-            request: { responseURL: params.requestBody?.address ?? "" },
-            data: generatePaginatedGcalItems(
-              calendarlist,
-              calendarListNextSyncToken,
-              params.maxResults ?? pageSize,
-              params.pageToken,
+          return Promise.resolve(
+            createMockGaxiosResponse<gSchema$CalendarList>(
+              generatePaginatedGcalItems(
+                calendarlist,
+                calendarListNextSyncToken,
+                params.maxResults ?? pageSize,
+                params.pageToken,
+              ),
+              options,
+              200,
+              "OK",
+              params.requestBody?.address ?? "",
             ),
-          });
+          );
         },
       ),
       watch: jest.fn(
@@ -381,34 +435,36 @@ export const mockGcal = ({
           params: calendar_v3.Params$Resource$Calendarlist$Watch,
           options: MethodOptions = {},
         ): GaxiosPromise<gSchema$Channel> =>
-          Promise.resolve({
-            config: options,
-            statusText: "OK",
-            status: 200,
-            data: {
-              ...params.requestBody,
-              resourceId: Resource_Sync.CALENDAR,
-            },
-            headers: options.headers!,
-            request: { responseURL: params.requestBody!.address! },
-          }),
+          Promise.resolve(
+            createMockGaxiosResponse<gSchema$Channel>(
+              {
+                ...params.requestBody,
+                resourceId: Resource_Sync.CALENDAR,
+              },
+              options,
+              200,
+              "OK",
+              params.requestBody!.address!,
+            ),
+          ),
       ),
     },
     channels: {
-      ...calendar.channels,
+      ...calendarClient.channels,
       stop: jest.fn(
         async (
           params: calendar_v3.Params$Resource$Channels$Stop,
           options: MethodOptions = {},
         ): GaxiosPromise<gSchema$Channel> =>
-          Promise.resolve({
-            config: options,
-            statusText: "OK",
-            status: Status.NO_CONTENT,
-            data: params.requestBody as gSchema$Channel,
-            headers: options.headers!,
-            request: { responseURL: params.requestBody!.address! },
-          }),
+          Promise.resolve(
+            createMockGaxiosResponse<gSchema$Channel>(
+              params.requestBody as gSchema$Channel,
+              options,
+              Status.NO_CONTENT,
+              "OK",
+              params.requestBody!.address!,
+            ),
+          ),
       ),
     },
   }));
