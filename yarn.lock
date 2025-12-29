@@ -6471,7 +6471,7 @@ functions-have-names@^1.2.3:
   resolved "https://registry.yarnpkg.com/functions-have-names/-/functions-have-names-1.2.3.tgz#0404fe4ee2ba2f607f0e0ec3c80bae994133b834"
   integrity sha512-xckBUXyTIqT97tq2x2AMb+g163b5JFysYk0x4qxNFwbfQkmNZoiRHb6sPzI9/QV33WeuvVYBUIiD4NzNIyqaRQ==
 
-gaxios@^7.0.0, gaxios@^7.0.0-rc.4, gaxios@^7.1.3:
+gaxios@^7.0.0, gaxios@^7.0.0-rc.4:
   version "7.1.3"
   resolved "https://registry.yarnpkg.com/gaxios/-/gaxios-7.1.3.tgz#c5312f4254abc1b8ab53aef30c22c5229b80b1e1"
   integrity sha512-YGGyuEdVIjqxkxVH1pUTMY/XtmmsApXrCVv5EU25iX6inEPbV+VakJfLealkBtJN69AQmh1eGOdCl9Sm1UP6XQ==
