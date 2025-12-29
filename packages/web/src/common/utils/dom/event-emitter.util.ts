@@ -2,6 +2,7 @@ import { EventEmitter2 } from "eventemitter2";
 import { PointerEvent } from "react";
 import { BehaviorSubject, Subject } from "rxjs";
 import { StringV4Schema } from "@core/types/type.utils";
+import { isLeftClick } from "../mouse/mouse.util";
 
 export interface KeyCombination {
   event: KeyboardEvent;
@@ -86,9 +87,7 @@ export function getElementAtPoint({
   return element;
 }
 
-function checkPointerDown(
-  event: Pick<PointerEvent, "target" | "type" | "clientX" | "clientY">,
-): {
+function checkPointerDown(event: PointerEvent): {
   pointerdown: boolean;
   selectionStart: DomMovement["selectionStart"];
 } {
@@ -96,7 +95,10 @@ function checkPointerDown(
   const isPointerUpEvent = event.type === "pointerup";
   const { clientX, clientY } = event;
 
-  if (isPointerDownEvent) {
+  // Only treat primary-button pointerdown as the start of a drag/selection.
+  // This avoids incorrectly entering pointerdown state for right-clicks or
+  // other non-primary button interactions (e.g. context menu).
+  if (isPointerDownEvent && isLeftClick(event)) {
     pointerdown$.next(true);
     selectionStart$.next({ clientX, clientY });
   }
@@ -112,9 +114,7 @@ function checkPointerDown(
   return { pointerdown: isPointerDown, selectionStart };
 }
 
-function processMovement(
-  e: Pick<PointerEvent, "clientX" | "clientY" | "target" | "type">,
-) {
+function processMovement(e: PointerEvent) {
   const pointerdown = checkPointerDown(e);
   const elem = getElementAtPoint(e);
   const element = elem ?? (e.target instanceof Element ? e.target : null);

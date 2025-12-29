@@ -7,6 +7,7 @@ import {
 } from "react";
 import { FloatingPortal, useMergeRefs } from "@floating-ui/react";
 import { ZIndex } from "@web/common/constants/web.constants";
+import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import { TooltipOptions } from "./tooltip.types";
 import { TooltipContext, useTooltip, useTooltipContext } from "./useTooltip";
 
@@ -63,6 +64,7 @@ export const TooltipContent = forwardRef<
   HTMLProps<HTMLDivElement>
 >(function TooltipContent({ children, style, ...props }, propRef) {
   const context = useTooltipContext();
+  const maxZIndex = useGridMaxZIndex();
   const ref = useMergeRefs([context.refs.setFloating, propRef]);
 
   return (
@@ -75,7 +77,7 @@ export const TooltipContent = forwardRef<
             position: context.strategy,
             top: context.y ?? 0,
             visibility: context.x == null ? "hidden" : "visible",
-            zIndex: ZIndex.LAYER_3,
+            zIndex: maxZIndex + ZIndex.LAYER_3,
             ...style,
           }}
           {...context.getFloatingProps(props)}

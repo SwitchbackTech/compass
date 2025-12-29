@@ -20,7 +20,7 @@ import {
   getElementAtPoint,
   selectionStart$,
 } from "@web/common/utils/dom/event-emitter.util";
-import { SLOT_HEIGHT } from "../../views/Day/constants/day.constants";
+import { SLOT_HEIGHT } from "@web/views/Day/constants/day.constants";
 
 const selection$ = combineLatest([
   pointerState$,

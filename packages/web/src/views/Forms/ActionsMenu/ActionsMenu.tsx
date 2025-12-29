@@ -21,7 +21,11 @@ import {
   useRole,
 } from "@floating-ui/react";
 import { DotsThreeVerticalIcon } from "@phosphor-icons/react";
-import { ID_EVENT_FORM_ACTION_MENU } from "@web/common/constants/web.constants";
+import {
+  ID_EVENT_FORM_ACTION_MENU,
+  ZIndex,
+} from "@web/common/constants/web.constants";
+import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import IconButton from "@web/components/IconButton/IconButton";
 import {
   StyledMenu,
@@ -54,6 +58,7 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
   id,
   bgColor,
 }) => {
+  const maxZIndex = useGridMaxZIndex();
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const openedByMouseRef = useRef(false);
@@ -62,7 +67,7 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
   const menuId = id || ID_EVENT_FORM_ACTION_MENU;
   const triggerId = `${menuId}-trigger`;
 
-  const { x, y, refs, strategy, context } = useFloating({
+  const { refs, context } = useFloating({
     open,
     onOpenChange: (open) => {
       setOpen(open);
@@ -173,7 +178,10 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
           >
             <StyledMenu
               ref={refs.setFloating}
-              style={{ position: strategy, top: y ?? 0, left: x ?? 0 }}
+              style={{
+                ...context.floatingStyles,
+                zIndex: maxZIndex + ZIndex.LAYER_3,
+              }}
               {...getFloatingProps()}
               id={menuId}
               role="menu"
