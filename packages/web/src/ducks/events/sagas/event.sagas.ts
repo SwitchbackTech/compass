@@ -72,6 +72,7 @@ export function* convertCalendarToSomedayEvent({
     }
 
     yield put(getWeekEventsSlice.actions.insert(payload.event._id!));
+    yield put(getDayEventsSlice.actions.insert(payload.event._id!));
     yield put(editEventSlice.actions.error());
 
     handleError(error as Error);
@@ -103,6 +104,7 @@ export function* deleteEvent({ payload }: Action_DeleteEvent) {
 
   try {
     yield put(getWeekEventsSlice.actions.delete(payload));
+    yield put(getDayEventsSlice.actions.delete(payload));
     yield put(eventsEntitiesSlice.actions.delete(payload));
 
     const isInDb = !event?._id?.startsWith(ID_OPTIMISTIC_PREFIX);

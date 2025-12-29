@@ -19,6 +19,7 @@ import { validateGridEvent } from "@web/common/validators/grid.event.validator";
 import { EventApi } from "@web/ducks/events/event.api";
 import { Payload_ConvertEvent } from "@web/ducks/events/event.types";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
+import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
 import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
@@ -53,6 +54,7 @@ export function* insertOptimisticEvent(
     yield put(getSomedayEventsSlice.actions.insert(event._id!));
   } else {
     yield put(getWeekEventsSlice.actions.insert(event._id!));
+    yield put(getDayEventsSlice.actions.insert(event._id!));
   }
   yield put(
     eventsEntitiesSlice.actions.insert(
@@ -109,6 +111,12 @@ export function* replaceOptimisticId(optimisticId: string, isSomeday: boolean) {
       getWeekEventsSlice.actions.replace({
         oldWeekId: optimisticId,
         newWeekId: _id,
+      }),
+    );
+    yield put(
+      getDayEventsSlice.actions.replace({
+        oldDayId: optimisticId,
+        newDayId: _id,
       }),
     );
   }
