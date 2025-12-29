@@ -36,10 +36,10 @@ export function useDeleteEvent(_id: string) {
             applyTo,
           }),
         );
-      }
 
-      resetDraft();
-      closeFloatingAtCursor();
+        resetDraft();
+        closeFloatingAtCursor();
+      }
     },
     [dispatch, _id],
   );
