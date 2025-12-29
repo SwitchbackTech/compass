@@ -75,7 +75,6 @@ export const handleExpressError = async (
   res.header("Content-Type", "application/json");
 
   errorHandler.log(e);
-  console.log("in express error handler", e);
   if (e instanceof BaseError) {
     res.status(e.statusCode).send(e);
   } else {
