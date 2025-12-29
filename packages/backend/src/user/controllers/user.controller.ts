@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { zObjectId } from "@core/types/type.utils";
 import { UserMetadata, UserProfile } from "@core/types/user.types";
@@ -11,10 +12,17 @@ class UserController {
     req: Request<never, UserProfile, never, never>,
     res: Response<UserProfile>,
   ) => {
-    const user = zObjectId.parse(req.session?.getUserId());
-    const profile = await userService.getProfile(user);
+    try {
+      const user = zObjectId.parse(req.session?.getUserId());
+      const profile = await userService.getProfile(user);
 
-    res.status(Status.OK).json(profile);
+      res.status(Status.OK).json(profile);
+    } catch (e) {
+      if (e instanceof BaseError) {
+        res.status(e.statusCode).send();
+      }
+      res.status(Status.INTERNAL_SERVER).send();
+    }
   };
   getMetadata = async (
     req: Request<never, UserMetadata, never, never>,

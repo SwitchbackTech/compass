@@ -69,7 +69,9 @@ class UserService {
       },
     );
 
-    if (!user) throw error(UserError.UserNotFound, "Failed to find user");
+    console.log("user", user);
+    if (!user)
+      throw error(UserError.UserNotFound, "Failed to return user profile");
 
     return user as unknown as UserProfile;
   };

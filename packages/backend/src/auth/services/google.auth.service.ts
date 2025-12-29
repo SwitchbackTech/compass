@@ -33,14 +33,14 @@ export const getGAuthClientForUser = async (
 
     if (!userId) {
       logger.error(`Expected to either get a user or a userId.`);
-      throw error(UserError.InvalidValue, "User not found");
+      throw error(UserError.InvalidValue, "Auth client not initialized");
     }
 
     const _user = await findCompassUserBy("_id", userId);
 
     if (!_user) {
       logger.error(`Couldn't find user with this id: ${userId}`);
-      throw error(UserError.UserNotFound, "User not found");
+      throw error(UserError.UserNotFound, "Auth client not initialized");
     }
 
     gRefreshToken = _user.google.gRefreshToken;
