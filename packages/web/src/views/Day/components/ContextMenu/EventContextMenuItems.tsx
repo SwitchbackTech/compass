@@ -1,43 +1,23 @@
 import React, { useCallback } from "react";
-import { useObservable } from "@ngneat/use-observable";
 import { TrashIcon } from "@phosphor-icons/react";
-import { RecurringEventUpdateScope } from "@core/types/event.types";
-import { closeFloatingAtCursor } from "@web/common/hooks/useOpenAtCursor";
-import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
-import { activeEvent$ } from "@web/store/events";
-import { useAppDispatch } from "@web/store/store.hooks";
+import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 
-export function EventContextMenuItems() {
-  const [activeEvent] = useObservable(activeEvent$);
-  const dispatch = useAppDispatch();
-
-  const handleDelete = useCallback(() => {
-    if (!activeEvent?._id) return;
-
-    // Dispatch delete action
-    dispatch(
-      deleteEventSlice.actions.request({
-        _id: activeEvent?._id,
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
-      }),
-    );
-
-    closeFloatingAtCursor();
-  }, [dispatch, activeEvent?._id]);
+export function EventContextMenuItems({ id }: { id: string }) {
+  const deleteEvent = useDeleteEvent(id);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        handleDelete();
+        deleteEvent();
       }
     },
-    [handleDelete],
+    [deleteEvent],
   );
 
   return (
     <li
-      onClick={handleDelete}
+      onClick={() => deleteEvent()}
       onKeyDown={handleKeyDown}
       role="menuitem"
       tabIndex={0}

@@ -44,7 +44,7 @@ export function EventContextMenu({
           zIndex: maxZIndex + 3,
         }}
       >
-        <EventContextMenuItems />
+        <EventContextMenuItems id={activeEvent._id} />
       </ul>
     </FloatingPortal>
   );

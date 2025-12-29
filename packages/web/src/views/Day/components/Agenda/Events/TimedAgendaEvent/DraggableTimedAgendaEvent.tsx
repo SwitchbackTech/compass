@@ -65,12 +65,13 @@ export const DraggableTimedAgendaEvent = memo(
     const isBeingResized = resizeId === event._id;
     const enableInteractions = !resizing && !selecting && !eventFormOpen;
     const mainGridHeight = mainGrid?.offsetHeight ?? 0;
+    const { _id, endDate, isAllDay } = event;
 
     const { onResize, onResizeStart, onResizeStop } = useEventResizeActions(
       event as WithCompassId<Schema_Event>,
     );
 
-    if (!event.startDate || !event.endDate || event.isAllDay) return null;
+    if (!_id || !event.startDate || !endDate || isAllDay) return null;
 
     return (
       <Draggable
@@ -82,7 +83,7 @@ export const DraggableTimedAgendaEvent = memo(
             : undefined,
         })}
         dndProps={{
-          id: event._id!,
+          id: _id,
           data: {
             event: event,
             type: Categories_Event.TIMED,

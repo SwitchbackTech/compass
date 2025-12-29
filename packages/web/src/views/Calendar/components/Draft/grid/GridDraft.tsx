@@ -1,7 +1,7 @@
-import React, { FC, MouseEvent, useMemo } from "react";
+import { FC, MouseEvent } from "react";
 import { FloatingFocusManager } from "@floating-ui/react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { Categories_Event } from "@core/types/event.types";
+import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { PartialMouseEvent } from "@web/common/types/util.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getEventDragOffset } from "@web/common/utils/event/event.util";
@@ -105,11 +105,13 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
               {...getFloatingProps()}
             >
               <EventForm
-                event={draft}
+                event={draft as Schema_Event}
                 onClose={discard}
                 onConvert={onConvert}
                 onDelete={onDelete}
                 onDuplicate={duplicateEvent}
+                isDraft={!draft._id}
+                isExistingEvent={!!draft._id}
                 onSubmit={onSubmit}
                 setEvent={setDraft}
               />

@@ -49,13 +49,14 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     onSubmit,
     onDuplicate,
     setEvent,
+    isDraft,
+    isExistingEvent,
     ...props
   }) => {
     const { title } = event || {};
     const priority = event.priority || Priorities.UNASSIGNED;
     const priorityColor = colorByPriority[priority];
     const category = getCategory(event);
-    const isDraft = !event._id;
 
     /********
      * State
@@ -292,6 +293,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       },
       [isFormOpen],
     );
+
     return (
       <StyledEventForm
         {...props}
@@ -316,6 +318,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
           <EventActionMenu
             bgColor={darken(priorityColor)}
             isDraft={isDraft}
+            isExistingEvent={isExistingEvent}
             onConvert={() => {
               onConvert?.();
             }}

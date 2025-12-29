@@ -118,6 +118,8 @@ describe("EventContextMenu", () => {
   });
 
   it("should work with multiple events", async () => {
+    jest.spyOn(window, "confirm").mockImplementation(() => true);
+
     const mockEvents = [
       { ...baseEvent, _id: "event-1", title: "First Event" },
       { ...baseEvent, _id: "event-2", title: "Second Event" },
