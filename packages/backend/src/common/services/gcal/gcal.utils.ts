@@ -55,8 +55,11 @@ export const isGoogleError = (e: unknown) => {
 };
 
 export const isFullSyncRequired = (e: GaxiosError | Error) => {
-  if (isGoogleError(e) && e.code && parseInt(e?.code) === 410) {
-    return true;
+  if (isGoogleError(e) && e.code) {
+    const codeStr = typeof e.code === "string" ? e.code : String(e.code);
+    if (parseInt(codeStr) === 410) {
+      return true;
+    }
   }
 
   return false;

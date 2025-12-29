@@ -51,7 +51,7 @@ const parseUserId = async (res: SessionResponse, e: Error) => {
       }
 
       if (e.config.url) {
-        const email = getEmailFromUrl(e.config.url);
+        const email = getEmailFromUrl(e.config.url.toString());
         if (email) {
           const user = await findCompassUserBy("email", email);
           if (user) {

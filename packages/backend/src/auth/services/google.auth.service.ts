@@ -63,14 +63,42 @@ export const getGcalClient = async (userId: string): Promise<gCalendar> => {
     // see error.express.handler.ts
     const error = new GaxiosError(
       "invalid_grant",
-      {},
+      {
+        headers: new Headers(),
+        url: new URL("https://www.googleapis.com/calendar/v3"),
+      },
       {
         status: Status.BAD_REQUEST,
         data: { userId },
-        config: {},
+        config: {
+          headers: new Headers(),
+          url: new URL("https://www.googleapis.com/calendar/v3"),
+        },
         statusText: "BAD_REQUEST Cannot initialize Gcal client",
-        headers: {},
-        request: { responseURL: "" },
+        headers: new Headers(),
+        ok: false,
+        redirected: false,
+        type: "error" as ResponseType,
+        url: "https://www.googleapis.com/calendar/v3",
+        body: null,
+        bodyUsed: false,
+        clone: () => {
+          throw new Error("Not implemented");
+        },
+        arrayBuffer: async () => {
+          throw new Error("Not implemented");
+        },
+        blob: async () => {
+          throw new Error("Not implemented");
+        },
+        formData: async () => {
+          throw new Error("Not implemented");
+        },
+        json: async () => ({ userId }),
+        text: async () => JSON.stringify({ userId }),
+        bytes: async () => {
+          throw new Error("Not implemented");
+        },
       },
     );
     error.code = "400";

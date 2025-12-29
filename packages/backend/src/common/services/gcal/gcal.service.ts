@@ -20,14 +20,14 @@ import { encodeChannelToken } from "@backend/sync/util/watch.util";
 
 class GCalService {
   private validateGCalResponse<T>(
-    response: GaxiosResponse<T>,
+    response: GaxiosResponse<T> | { status: number; data: T },
     message = "Gcal request failed.",
   ) {
     const { status } = response;
 
     if (status >= 400) throw error(GcalError.Unsure, message);
 
-    return response;
+    return response as GaxiosResponse<T>;
   }
 
   async getEvent(
