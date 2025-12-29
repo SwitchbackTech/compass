@@ -1,5 +1,6 @@
 import { AxiosResponse } from "axios";
 import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
+import { Schema_Event } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import { sagaMiddleware } from "@web/common/store/middlewares";
@@ -10,12 +11,13 @@ import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { createEventSlice } from "@web/ducks/events/slices/event.slice";
 import { RootState } from "@web/store";
 import { sagas } from "@web/store/sagas";
+import { OnSubmitParser } from "@web/views/Calendar/components/Draft/hooks/actions/submit.parser";
 
 jest.mock("@web/ducks/events/event.api");
 
 describe("createEvent saga - optimistic rendering", () => {
   let store: ReturnType<typeof createStoreWithEvents>;
-  let mockCreateApi: jest.Mock;
+  let mockCreateApi: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -30,7 +32,8 @@ describe("createEvent saga - optimistic rendering", () => {
   });
 
   it("should immediately add event with optimistic ID when created", () => {
-    const event = createMockStandaloneEvent() as Schema_GridEvent;
+    const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+    const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
     const action = createEventSlice.actions.request(event);
 
     store.dispatch(action);
@@ -68,7 +71,8 @@ describe("createEvent saga - optimistic rendering", () => {
 
     mockCreateApi.mockImplementation(() => apiPromise);
 
-    const event = createMockStandaloneEvent() as Schema_GridEvent;
+    const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+    const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
     const action = createEventSlice.actions.request(event);
 
     store.dispatch(action);
@@ -124,7 +128,8 @@ describe("createEvent saga - optimistic rendering", () => {
   });
 
   it("should replace optimistic ID with real ID after successful API call", async () => {
-    const event = createMockStandaloneEvent() as Schema_GridEvent;
+    const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+    const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
 
     // Mock API to return success
     mockCreateApi.mockResolvedValue({
@@ -166,7 +171,8 @@ describe("createEvent saga - optimistic rendering", () => {
   });
 
   it("should never remove event from state after being added", async () => {
-    const event = createMockStandaloneEvent() as Schema_GridEvent;
+    const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+    const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
     const action = createEventSlice.actions.request(event);
 
     store.dispatch(action);
@@ -214,7 +220,8 @@ describe("createEvent saga - optimistic rendering", () => {
   });
 
   it("should maintain event in week and day event lists throughout creation process", async () => {
-    const event = createMockStandaloneEvent() as Schema_GridEvent;
+    const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+    const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
     const action = createEventSlice.actions.request(event);
 
     store.dispatch(action);
