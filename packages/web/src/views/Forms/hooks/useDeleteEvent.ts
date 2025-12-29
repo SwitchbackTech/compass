@@ -29,13 +29,15 @@ export function useDeleteEvent(_id: string) {
 
       const confirmed = window.confirm(`Delete ${prefix}${title}?`);
 
-      if (confirmed && event?._id && !!existingEvent) {
-        dispatch(
-          deleteEventSlice.actions.request({
-            _id: event._id,
-            applyTo,
-          }),
-        );
+      if (confirmed) {
+        if (event?._id && !!existingEvent) {
+          dispatch(
+            deleteEventSlice.actions.request({
+              _id: event._id,
+              applyTo,
+            }),
+          );
+        }
 
         resetDraft();
         closeFloatingAtCursor();
