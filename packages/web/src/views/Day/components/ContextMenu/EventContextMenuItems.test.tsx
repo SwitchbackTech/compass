@@ -10,13 +10,18 @@ import {
 } from "@core/types/event.types";
 import { closeFloatingAtCursor } from "@web/common/hooks/useOpenAtCursor";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
-import { activeEvent$ } from "@web/store/events";
+import { activeEvent$, eventsStore } from "@web/store/events";
 import { EventContextMenuItems } from "@web/views/Day/components/ContextMenu/EventContextMenuItems";
 
 jest.mock("@web/store/events", () => {
   const { BehaviorSubject } = require("rxjs");
   return {
     activeEvent$: new BehaviorSubject(null),
+    eventsStore: {
+      query: jest.fn(),
+    },
+    getDraft: jest.fn(),
+    resetDraft: jest.fn(),
   };
 });
 jest.mock("@web/common/hooks/useOpenAtCursor");
@@ -43,6 +48,8 @@ describe("EventContextMenuItems", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (closeFloatingAtCursor as jest.Mock).mockImplementation(mockClose);
+    global.confirm = jest.fn(() => true);
+    (eventsStore.query as jest.Mock).mockReturnValue(mockEvent);
   });
 
   const renderWithProvider = (event: Schema_Event) => {
@@ -50,7 +57,7 @@ describe("EventContextMenuItems", () => {
     (activeEvent$ as BehaviorSubject<Schema_Event | null>).next(event);
     return render(
       <Provider store={store}>
-        <EventContextMenuItems />
+        <EventContextMenuItems id={event._id!} />
       </Provider>,
     );
   };
@@ -70,7 +77,7 @@ describe("EventContextMenuItems", () => {
 
     render(
       <Provider store={store}>
-        <EventContextMenuItems />
+        <EventContextMenuItems id={mockEvent._id!} />
       </Provider>,
     );
 
@@ -94,7 +101,7 @@ describe("EventContextMenuItems", () => {
 
     render(
       <Provider store={store}>
-        <EventContextMenuItems />
+        <EventContextMenuItems id={mockEvent._id!} />
       </Provider>,
     );
 
@@ -118,7 +125,7 @@ describe("EventContextMenuItems", () => {
 
     render(
       <Provider store={store}>
-        <EventContextMenuItems />
+        <EventContextMenuItems id={mockEvent._id!} />
       </Provider>,
     );
 
@@ -131,26 +138,5 @@ describe("EventContextMenuItems", () => {
       expect(dispatchSpy).toHaveBeenCalled();
     });
     expect(mockClose).toHaveBeenCalled();
-  });
-
-  it("should not delete if event has no _id", async () => {
-    const user = userEvent.setup();
-    const store = createMockStore();
-    const dispatchSpy = jest.spyOn(store, "dispatch");
-
-    const eventWithoutId = { ...mockEvent, _id: undefined };
-
-    (activeEvent$ as unknown as BehaviorSubject<any>).next(eventWithoutId);
-
-    render(
-      <Provider store={store}>
-        <EventContextMenuItems />
-      </Provider>,
-    );
-
-    const deleteButton = screen.getByText("Delete Event");
-    await user.click(deleteButton);
-
-    expect(dispatchSpy).not.toHaveBeenCalled();
   });
 });

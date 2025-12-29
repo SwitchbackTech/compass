@@ -1,10 +1,11 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import {
   FloatingFocusManager,
   FloatingPortal,
   UseInteractionsReturn,
   useFloating,
 } from "@floating-ui/react";
+import { getEntity } from "@ngneat/elf-entities";
 import { Schema_Event, WithCompassId } from "@core/types/event.types";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import {
@@ -12,10 +13,12 @@ import {
   useFloatingNodeIdAtCursor,
   useFloatingOpenAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
-import { setDraft } from "@web/store/events";
+import { eventsStore, setDraft } from "@web/store/events";
 import { useDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
+import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
+import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
 import { useSaveEventForm } from "@web/views/Forms/hooks/useSaveEventForm";
 
 export function FloatingEventForm({
@@ -26,13 +29,20 @@ export function FloatingEventForm({
   interactions: UseInteractionsReturn;
 }) {
   const draft = useDraft();
+  const _id = draft?._id;
   const nodeId = useFloatingNodeIdAtCursor();
   const floatingOpenAtCursor = useFloatingOpenAtCursor();
   const onSave = useSaveEventForm();
+  const onDelete = useDeleteEvent(draft?._id as string);
+  const onDuplicate = useDuplicateEvent(draft?._id as string);
   const onClose = useCloseEventForm();
   const maxZIndex = useGridMaxZIndex();
   const isOpenAtCursor = nodeId === CursorItem.EventForm;
   const open = floatingOpenAtCursor && isOpenAtCursor && !!draft;
+  const existing = useMemo(
+    () => !!_id && !!eventsStore.query(getEntity(_id)),
+    [_id],
+  );
 
   const setEvent = useCallback(
     (
@@ -67,8 +77,11 @@ export function FloatingEventForm({
         >
           <EventForm
             event={draft}
+            isDraft={true}
+            isExistingEvent={existing}
             onClose={onClose}
-            onDelete={() => {}}
+            onDelete={onDelete}
+            onDuplicate={onDuplicate}
             onSubmit={onSave}
             setEvent={setEvent}
           />

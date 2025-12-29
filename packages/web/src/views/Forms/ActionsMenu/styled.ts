@@ -40,7 +40,8 @@ export const StyledMenuItem = styled.button<StyledMenuItemProps>`
   text-align: left;
 
   &:hover {
-    font-weight: ${({ theme }) => theme.text.weight.medium};
+    text-shadow: ${({ theme }) => `0 0 0.5px ${theme.color.text.dark},
+      0 0 0.5px ${theme.color.text.dark}`};
   }
 
   &:focus {
@@ -48,6 +49,7 @@ export const StyledMenuItem = styled.button<StyledMenuItemProps>`
   }
 
   &:focus-visible {
-    font-weight: ${({ theme }) => theme.text.weight.medium};
+    text-shadow: ${({ theme }) => `0 0 0.5px ${theme.color.text.dark},
+      0 0 0.5px ${theme.color.text.dark}`};
   }
 `;
