@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { Active, DragEndEvent, Over, useDndMonitor } from "@dnd-kit/core";
 import { Categories_Event } from "@core/types/event.types";
-import dayjs, { Dayjs } from "@core/util/date/dayjs";
+import dayjs from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/auth.util";
 import {
   ID_GRID_ALLDAY_ROW,
@@ -21,6 +21,7 @@ import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { createEventSlice } from "@web/ducks/events/slices/event.slice";
 import { store } from "@web/store";
 import { useAppDispatch } from "@web/store/store.hooks";
+import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { getSnappedMinutes } from "@web/views/Day/util/agenda/agenda.util";
 import { convertTaskToEvent } from "@web/views/Day/util/task/convertTaskToEvent";
 
@@ -39,9 +40,10 @@ const setReference = (_id: string) => {
   });
 };
 
-export function useEventDNDActions(dateInView?: Dayjs) {
+export function useEventDNDActions() {
   const updateEvent = useUpdateEvent();
   const dispatch = useAppDispatch();
+  const dateInView = useDateInView();
 
   const convertTaskToEventOnAgenda = useCallback(
     async (task: Task, active: Active, over: Over, deleteTask: () => void) => {
@@ -52,10 +54,7 @@ export function useEventDNDActions(dateInView?: Dayjs) {
       const userId = await getUserId();
       if (!userId) return;
 
-      const currentDate = dateInView || dayjs();
-      const startTime = currentDate
-        .startOf("day")
-        .add(snappedMinutes, "minute");
+      const startTime = dateInView.startOf("day").add(snappedMinutes, "minute");
 
       // Convert task to event
       const event = convertTaskToEvent(task, startTime, 15, userId);

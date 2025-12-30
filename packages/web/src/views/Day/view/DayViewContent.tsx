@@ -41,7 +41,7 @@ export const DayViewContent = memo(() => {
   const grid = timedEventsGridRef.current;
 
   useRefetch();
-  useEventDNDActions(dateInView);
+  useEventDNDActions();
   useMainGridSelection(selectionActions);
   useGridOrganization(grid);
 

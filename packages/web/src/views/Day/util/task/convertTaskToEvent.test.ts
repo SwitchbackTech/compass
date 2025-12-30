@@ -1,18 +1,15 @@
 import { Origin, Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
-import { Task } from "@web/common/types/task.types";
+import { createMockTask } from "@web/__tests__/utils/tasks/task.mock.util";
 import { convertTaskToEvent } from "./convertTaskToEvent";
 
 describe("convertTaskToEvent", () => {
   const mockUserId = "user123";
-  const mockTask: Task = {
+  const mockTask = createMockTask({
     id: "task1",
     title: "Test Task",
-    status: "todo",
-    order: 0,
-    createdAt: "2025-01-01T00:00:00.000Z",
     description: "Test description",
-  };
+  });
 
   it("should convert a task to an event with default duration", () => {
     const startTime = dayjs("2025-01-01T10:00:00.000Z");
@@ -43,10 +40,9 @@ describe("convertTaskToEvent", () => {
   });
 
   it("should handle task without description", () => {
-    const taskWithoutDescription: Task = {
-      ...mockTask,
+    const taskWithoutDescription = createMockTask({
       description: undefined,
-    };
+    });
     const startTime = dayjs("2025-01-01T10:00:00.000Z");
     const event = convertTaskToEvent(
       taskWithoutDescription,
