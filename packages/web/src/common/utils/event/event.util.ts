@@ -1,10 +1,6 @@
 import { ObjectId } from "bson";
 import { DropResult } from "@hello-pangea/dnd";
-import {
-  ID_OPTIMISTIC_PREFIX,
-  Origin,
-  Priorities,
-} from "@core/constants/core.constants";
+import { Origin, Priorities } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@core/constants/date.constants";
 import { Status } from "@core/errors/status.codes";
 import {
@@ -256,11 +252,6 @@ export const isEventInRange = (
   );
 
   return isStartDateInRange || isEndDateInRange;
-};
-
-export const isOptimisticEvent = (event: Schema_Event | Schema_GridEvent) => {
-  const isOptimistic = event._id?.startsWith(ID_OPTIMISTIC_PREFIX) || false;
-  return isOptimistic;
 };
 
 export const getEventCursorStyle = (

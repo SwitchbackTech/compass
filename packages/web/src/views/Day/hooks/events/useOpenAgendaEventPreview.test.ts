@@ -1,6 +1,5 @@
 import { ObjectId } from "bson";
 import { renderHook } from "@testing-library/react";
-import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import {
   CursorItem,
@@ -24,6 +23,21 @@ jest.mock("@web/common/hooks/useOpenAtCursor", () => ({
 
 jest.mock("@web/views/Day/util/agenda/focus.util", () => ({
   getEventClass: jest.fn(),
+}));
+jest.mock("@web/store/store.hooks", () => ({
+  useAppSelector: jest.fn((selector) => {
+    // Mock pending events - return empty Set by default
+    if (typeof selector === "function") {
+      return selector({
+        events: {
+          pendingEvents: {
+            eventIds: new Set<string>(),
+          },
+        },
+      });
+    }
+    return selector;
+  }),
 }));
 
 describe("useOpenAgendaEventPreview", () => {
@@ -118,12 +132,30 @@ describe("useOpenAgendaEventPreview", () => {
     expect(openFloatingAtCursor).not.toHaveBeenCalled();
   });
 
-  it("should not open event preview if event is optimistic", () => {
-    const optimisticId = `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`;
+  it("should not open event preview if event is pending", () => {
+    const { useAppSelector } = jest.requireMock("@web/store/store.hooks");
+    const pendingEventId = new ObjectId().toString();
+    const pendingEventIds = new Set([pendingEventId]);
+
+    useAppSelector.mockImplementation(
+      (selector: (state: unknown) => unknown) => {
+        if (typeof selector === "function") {
+          return selector({
+            events: {
+              pendingEvents: {
+                eventIds: pendingEventIds,
+              },
+            },
+          });
+        }
+        return selector;
+      },
+    );
+
     const eventClass = "event-class";
-    const mockEvent = { _id: optimisticId, title: "Optimistic Event" };
+    const mockEvent = { _id: pendingEventId, title: "Pending Event" };
     const mockReference = {
-      getAttribute: jest.fn().mockReturnValue(optimisticId),
+      getAttribute: jest.fn().mockReturnValue(pendingEventId),
     };
     const mockElement = {
       closest: jest.fn().mockReturnValue(mockReference),

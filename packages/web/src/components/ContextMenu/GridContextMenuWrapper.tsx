@@ -10,7 +10,6 @@ import { Categories_Event } from "@core/types/event.types";
 import {
   assembleGridEvent,
   getCalendarEventIdFromElement,
-  isOptimisticEvent,
 } from "@web/common/utils/event/event.util";
 import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
 import {
@@ -86,7 +85,7 @@ export const ContextMenuWrapper = ({
 
       const event = getSelectedEvent(eventId);
       const isPending = pendingEventIds.has(eventId);
-      if (isOptimisticEvent(event) || isPending) return;
+      if (isPending) return;
 
       // Create a virtual element where the user clicked
       refs.setReference({

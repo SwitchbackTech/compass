@@ -1,4 +1,3 @@
-import React from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { PartialMouseEvent } from "@web/common/types/util.types";
@@ -29,11 +28,17 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     selectIsGetWeekEventsProcessingWithReason,
   );
   const draftId = useAppSelector(selectDraftId);
+  const pendingEventIds = useAppSelector(
+    (state) => state.events.pendingEvents.eventIds,
+  );
 
   const adjustedEvents = adjustOverlappingEvents(timedEvents);
   const category = Categories_Event.TIMED;
 
   const handleClick = (event: Schema_GridEvent) => {
+    // Prevent opening form for pending events (being created)
+    if (pendingEventIds.has(event._id!)) return;
+
     dispatch(
       draftSlice.actions.start({
         activity: "gridClick",

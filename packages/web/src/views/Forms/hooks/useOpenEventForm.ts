@@ -23,11 +23,9 @@ import {
   openFloatingAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
 import { getElementAtPoint } from "@web/common/utils/dom/event-emitter.util";
-import {
-  getCalendarEventElementFromGrid,
-  isOptimisticEvent,
-} from "@web/common/utils/event/event.util";
+import { getCalendarEventElementFromGrid } from "@web/common/utils/event/event.util";
 import { eventsStore, getDraft, setDraft } from "@web/store/events";
+import { useAppSelector } from "@web/store/store.hooks";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import {
   getEventTimeFromPosition,
@@ -42,6 +40,9 @@ const YMD = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
 
 export function useOpenEventForm() {
   const dateInView = useDateInView();
+  const pendingEventIds = useAppSelector(
+    (state) => state.events.pendingEvents.eventIds,
+  );
 
   const openEventForm = useCallback(
     async <E extends Element = HTMLElement>(
@@ -76,7 +77,7 @@ export function useOpenEventForm() {
 
       if (existingEventId && !create) {
         draftEvent = eventsStore.query(getEntity(existingEventId));
-        if (draftEvent && isOptimisticEvent(draftEvent)) {
+        if (draftEvent && pendingEventIds.has(existingEventId)) {
           return;
         }
       }
@@ -167,7 +168,7 @@ export function useOpenEventForm() {
         }
       });
     },
-    [dateInView],
+    [dateInView, pendingEventIds],
   );
 
   return openEventForm;

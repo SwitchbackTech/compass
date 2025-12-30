@@ -1,7 +1,6 @@
 import { ObjectId } from "bson";
 import { MouseEvent, useCallback } from "react";
 import {
-  ID_OPTIMISTIC_PREFIX,
   Priorities,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
@@ -27,7 +26,6 @@ import {
 import {
   addId,
   assembleDefaultEvent,
-  isOptimisticEvent,
 } from "@web/common/utils/event/event.util";
 import { getX } from "@web/common/utils/grid/grid.util";
 import { Payload_EditEvent } from "@web/ducks/events/event.types";
@@ -70,6 +68,9 @@ export const useDraftActions = (
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
   const somedayWeekCount = useAppSelector(selectSomedayWeekCount);
   const reduxDraft = useAppSelector(selectDraft);
+  const pendingEventIds = useAppSelector(
+    (state) => state.events.pendingEvents.eventIds,
+  );
   const currentWeekEvents = useAppSelector((state) =>
     selectPaginatedEventsBySectionType(state, "week"),
   );
@@ -238,7 +239,8 @@ export const useDraftActions = (
 
   const determineSubmitAction = useCallback(
     (draft: Schema_WebEvent) => {
-      const isExisting = draft._id && !isOptimisticEvent(draft);
+      const isPending = draft._id ? pendingEventIds.has(draft._id) : false;
+      const isExisting = draft._id && !isPending;
       if (!isExisting) return "CREATE";
 
       if (isExisting) {
@@ -255,7 +257,7 @@ export const useDraftActions = (
       }
       return "UPDATE";
     },
-    [reduxDraft, isFormOpenBeforeDragging],
+    [reduxDraft, isFormOpenBeforeDragging, pendingEventIds],
   );
 
   const getEditSlicePayload = useCallback(
@@ -323,7 +325,8 @@ export const useDraftActions = (
           return;
         }
         case "UPDATE": {
-          const isExisting = draft._id && !isOptimisticEvent(draft);
+          const isPending = draft._id ? pendingEventIds.has(draft._id) : false;
+          const isExisting = draft._id && !isPending;
 
           if (isExisting) {
             const event = new OnSubmitParser(draft).parse();
@@ -355,6 +358,7 @@ export const useDraftActions = (
       getEditSlicePayload,
       isFormOpenBeforeDragging,
       openForm,
+      pendingEventIds,
       shouldAddToView,
     ],
   );

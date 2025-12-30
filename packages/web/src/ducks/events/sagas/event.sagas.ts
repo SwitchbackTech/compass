@@ -1,6 +1,5 @@
 import { normalize } from "normalizr";
 import { call, put, select } from "@redux-saga/core/effects";
-import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import {
   Params_Events,
@@ -115,17 +114,17 @@ export function* createEvent({ payload }: Action_CreateEvent) {
 }
 
 export function* deleteEvent({ payload }: Action_DeleteEvent) {
-  const event = (yield select((state: RootState) =>
-    selectEventById(state, payload._id),
-  )) as Schema_GridEvent;
-
   try {
     yield put(getWeekEventsSlice.actions.delete(payload));
     yield put(getDayEventsSlice.actions.delete(payload));
     yield put(eventsEntitiesSlice.actions.delete(payload));
 
-    const isInDb = !event?._id?.startsWith(ID_OPTIMISTIC_PREFIX);
-    if (isInDb) {
+    const pendingEventIds = (yield select(
+      (state: RootState) => state.events.pendingEvents.eventIds,
+    )) as Set<string>;
+    const isPending = pendingEventIds.has(payload._id);
+    // Only call delete API if event is not pending (i.e., exists in DB)
+    if (!isPending) {
       yield call(EventApi.delete, payload._id, payload.applyTo);
     }
 
