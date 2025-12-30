@@ -24,7 +24,7 @@ import { useResizing } from "@web/common/hooks/useResizing";
 import { theme } from "@web/common/styles/theme";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
-  getEventCursorStyle,
+  getEventCursorClass,
   isOptimisticEvent,
 } from "@web/common/utils/event/event.util";
 import { Draggable } from "@web/components/DND/Draggable";
@@ -75,14 +75,8 @@ export const DraggableTimedAgendaEvent = memo(
       event as WithCompassId<Schema_Event>,
     );
 
-    const isOptimistic = isOptimisticEvent(event);
-    const cursorStyle = getEventCursorStyle(!!dragging, isOptimistic);
-    const cursorClass =
-      cursorStyle === "move"
-        ? "cursor-move"
-        : cursorStyle === "wait"
-          ? "cursor-wait"
-          : "cursor-pointer";
+    const isOptimistic = isOptimisticEvent(event as Schema_Event);
+    const cursorClass = getEventCursorClass(dragging, isOptimistic);
 
     if (!_id || !event.startDate || !endDate || isAllDay) return null;
 

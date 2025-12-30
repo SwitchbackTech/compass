@@ -262,6 +262,15 @@ export const getEventCursorStyle = (
   return "pointer";
 };
 
+export const getEventCursorClass = (
+  isDragging: boolean,
+  isOptimistic: boolean,
+): string => {
+  if (isDragging) return "cursor-move";
+  if (isOptimistic) return "cursor-wait";
+  return "cursor-pointer";
+};
+
 export const prepEvtAfterDraftDrop = (
   category: Categories_Event,
   dropItem: DropResult & Schema_Event,
