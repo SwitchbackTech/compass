@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { Active, DragEndEvent, Over, useDndMonitor } from "@dnd-kit/core";
 import { Categories_Event } from "@core/types/event.types";
-import dayjs from "@core/util/date/dayjs";
+import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/auth.util";
 import {
   ID_GRID_ALLDAY_ROW,
@@ -39,7 +39,7 @@ const setReference = (_id: string) => {
   });
 };
 
-export function useEventDNDActions() {
+export function useEventDNDActions(dateInView?: Dayjs) {
   const updateEvent = useUpdateEvent();
   const dispatch = useAppDispatch();
 
@@ -52,8 +52,10 @@ export function useEventDNDActions() {
       const userId = await getUserId();
       if (!userId) return;
 
-      const dateInView = dayjs().startOf("day");
-      const startTime = dateInView.add(snappedMinutes, "minute");
+      const currentDate = dateInView || dayjs();
+      const startTime = currentDate
+        .startOf("day")
+        .add(snappedMinutes, "minute");
 
       // Convert task to event
       const event = convertTaskToEvent(task, startTime, 15, userId);
@@ -67,7 +69,7 @@ export function useEventDNDActions() {
       reorderGrid();
       setReference(event._id!);
     },
-    [dispatch],
+    [dispatch, dateInView],
   );
 
   const moveTimedAroundMainGridDayView = useCallback(
