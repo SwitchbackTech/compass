@@ -44,6 +44,7 @@ import {
   eventsEntitiesSlice,
   getCurrentMonthEventsSlice,
 } from "@web/ducks/events/slices/event.slice";
+import { pendingEventsSlice } from "@web/ducks/events/slices/pending.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { RootState } from "@web/store";
 
@@ -89,6 +90,8 @@ export function* convertCalendarToSomedayEvent({
 export function* createEvent({ payload }: Action_CreateEvent) {
   const event = yield* _createOptimisticGridEvent(payload, payload.isSomeday);
 
+  yield put(pendingEventsSlice.actions.add(event._id));
+
   try {
     yield call(EventApi.create, event);
 
@@ -99,8 +102,10 @@ export function* createEvent({ payload }: Action_CreateEvent) {
       }),
     );
 
+    yield put(pendingEventsSlice.actions.remove(event._id));
     yield put(createEventSlice.actions.success());
   } catch (error) {
+    yield put(pendingEventsSlice.actions.remove(event._id));
     yield put(createEventSlice.actions.error());
     yield call(deleteEvent, {
       payload: { _id: event._id },

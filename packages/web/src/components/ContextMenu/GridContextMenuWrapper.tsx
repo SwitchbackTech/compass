@@ -33,6 +33,9 @@ export const ContextMenuWrapper = ({
   const timedEvents = useAppSelector(selectGridEvents);
   const allDayEvents = useAppSelector(selectAllDayEvents);
   const somedayEvents = useAppSelector(selectSomedayEvents);
+  const pendingEventIds = useAppSelector(
+    (state) => state.events.pendingEvents.eventIds,
+  );
 
   const draftEvent = useAppSelector(selectDraft);
 
@@ -82,7 +85,8 @@ export const ContextMenuWrapper = ({
       e.preventDefault();
 
       const event = getSelectedEvent(eventId);
-      if (isOptimisticEvent(event)) return;
+      const isPending = pendingEventIds.has(eventId);
+      if (isOptimisticEvent(event) || isPending) return;
 
       // Create a virtual element where the user clicked
       refs.setReference({

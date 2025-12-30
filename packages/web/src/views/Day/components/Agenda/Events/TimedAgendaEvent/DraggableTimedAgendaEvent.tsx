@@ -23,12 +23,11 @@ import { useResizeId } from "@web/common/hooks/useResizeId";
 import { useResizing } from "@web/common/hooks/useResizing";
 import { theme } from "@web/common/styles/theme";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import {
-  getEventCursorClass,
-  isOptimisticEvent,
-} from "@web/common/utils/event/event.util";
+import { getEventCursorClass } from "@web/common/utils/event/event.util";
 import { Draggable } from "@web/components/DND/Draggable";
 import { Resizable } from "@web/components/DND/Resizable";
+import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
 import { TimedAgendaEvent } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/TimedAgendaEvent";
 import { SLOT_HEIGHT } from "@web/views/Day/constants/day.constants";
 import { useOpenAgendaEventPreview } from "@web/views/Day/hooks/events/useOpenAgendaEventPreview";
@@ -75,8 +74,10 @@ export const DraggableTimedAgendaEvent = memo(
       event as WithCompassId<Schema_Event>,
     );
 
-    const isOptimistic = isOptimisticEvent(event as Schema_Event);
-    const cursorClass = getEventCursorClass(dragging, isOptimistic);
+    const isPending = useAppSelector((state) =>
+      selectIsEventPending(state, event._id!),
+    );
+    const cursorClass = getEventCursorClass(dragging, isPending);
 
     if (!_id || !event.startDate || !endDate || isAllDay) return null;
 

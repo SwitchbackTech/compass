@@ -265,19 +265,19 @@ export const isOptimisticEvent = (event: Schema_Event | Schema_GridEvent) => {
 
 export const getEventCursorStyle = (
   isDragging: boolean,
-  isOptimistic: boolean,
+  isPending = false,
 ): string => {
   if (isDragging) return "move";
-  if (isOptimistic) return "wait";
+  if (isPending) return "wait";
   return "pointer";
 };
 
 export const getEventCursorClass = (
   isDragging: boolean,
-  isOptimistic: boolean,
+  isPending = false,
 ): string => {
   if (isDragging) return "cursor-move";
-  if (isOptimistic) return "cursor-wait";
+  if (isPending) return "cursor-wait";
   return "cursor-pointer";
 };
 
