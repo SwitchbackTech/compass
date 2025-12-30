@@ -17,7 +17,6 @@ import {
   _editEvent,
   getEventById,
   normalizedEventsSchema,
-  replaceOptimisticId,
 } from "@web/ducks/events/sagas/saga.util";
 import {
   editEventSlice,
@@ -39,7 +38,17 @@ export function* convertSomedayToCalendarEvent({
     optimisticEvent = yield* _createOptimisticGridEvent(gridEvent);
 
     yield* _editEvent(gridEvent);
-    yield* replaceOptimisticId(optimisticEvent._id, false);
+
+    yield put(
+      eventsEntitiesSlice.actions.edit({
+        _id: optimisticEvent._id,
+        event: {
+          ...optimisticEvent,
+          isOptimistic: false,
+        } as unknown as Schema_Event,
+      }),
+    );
+
     yield put(editEventSlice.actions.success());
   } catch (error) {
     if (optimisticEvent) {

@@ -79,3 +79,9 @@ export interface Schema_SomedayEventsColumn {
     [key: string]: Schema_Event;
   };
 }
+
+/**
+ * Adds an _id property to an object shape
+ * @template TSchema - The base type to add _id to.
+ */
+export type WithId<TSchema> = TSchema & { _id: string };

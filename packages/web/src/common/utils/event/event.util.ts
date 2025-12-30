@@ -25,8 +25,8 @@ import { isElementInViewport } from "@web/common/context/pointer-position";
 import { PartialMouseEvent } from "@web/common/types/util.types";
 import {
   Schema_GridEvent,
-  Schema_OptimisticEvent,
   Schema_WebEvent,
+  WithId,
 } from "@web/common/types/web.event.types";
 import {
   focusElement,
@@ -41,6 +41,16 @@ export const gridEventDefaultPosition: Schema_GridEvent["position"] = {
   initialX: null,
   initialY: null,
   dragOffset: { x: 0, y: 0 },
+};
+
+export const addId = (event: Schema_GridEvent): WithId<Schema_GridEvent> => {
+  const _event = {
+    ...event,
+    _id: new ObjectId().toString(),
+    isOptimistic: true,
+  } as WithId<Schema_GridEvent>;
+
+  return _event;
 };
 
 export const assembleDefaultEvent = async (
@@ -248,7 +258,7 @@ export const isEventInRange = (
   return isStartDateInRange || isEndDateInRange;
 };
 
-export const isOptimisticEvent = (event: Schema_Event) => {
+export const isOptimisticEvent = (event: Schema_Event | Schema_GridEvent) => {
   const isOptimistic = event._id?.startsWith(ID_OPTIMISTIC_PREFIX) || false;
   return isOptimistic;
 };
@@ -289,17 +299,6 @@ export const prepEvtAfterDraftDrop = (
   };
 
   return event;
-};
-
-export const replaceIdWithOptimisticId = (
-  event: Schema_GridEvent,
-): Schema_OptimisticEvent => {
-  const _event = {
-    ...event,
-    _id: `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`,
-  };
-
-  return _event;
 };
 
 const _assembleBaseEvent = (

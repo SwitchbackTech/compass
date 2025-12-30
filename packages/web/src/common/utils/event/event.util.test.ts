@@ -3,7 +3,7 @@ import {
   Schema_GridEvent,
   Schema_WebEvent,
 } from "@web/common/types/web.event.types";
-import { isEventInRange } from "@web/common/utils/event/event.util";
+import { addId, isEventInRange } from "@web/common/utils/event/event.util";
 import { _assembleGridEvent } from "@web/ducks/events/sagas/saga.util";
 
 describe("isEventInRange", () => {
@@ -51,5 +51,16 @@ describe("_assembleGridEvent", () => {
     expect(result.position.isOverlapping).toBe(false);
     expect(result.position.widthMultiplier).toBe(1);
     expect(result.position.horizontalOrder).toBe(1);
+  });
+});
+
+describe("addId", () => {
+  it("should add a raw MongoID and set isOptimistic flag", () => {
+    const event = createMockStandaloneEvent() as Schema_GridEvent;
+    const result = addId(event);
+
+    expect(result._id).toBeDefined();
+    expect(result._id).not.toMatch(/^optimistic-/);
+    expect((result as any).isOptimistic).toBe(true);
   });
 });

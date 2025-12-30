@@ -25,8 +25,9 @@ import {
   Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import {
+  addId,
   assembleDefaultEvent,
-  replaceIdWithOptimisticId,
+  isOptimisticEvent,
 } from "@web/common/utils/event/event.util";
 import { getX } from "@web/common/utils/grid/grid.util";
 import { Payload_EditEvent } from "@web/ducks/events/event.types";
@@ -237,8 +238,7 @@ export const useDraftActions = (
 
   const determineSubmitAction = useCallback(
     (draft: Schema_WebEvent) => {
-      const isExisting =
-        draft._id && !draft._id?.startsWith(ID_OPTIMISTIC_PREFIX);
+      const isExisting = draft._id && !isOptimisticEvent(draft);
       if (!isExisting) return "CREATE";
 
       if (isExisting) {
@@ -323,8 +323,7 @@ export const useDraftActions = (
           return;
         }
         case "UPDATE": {
-          const isExisting =
-            draft._id && !draft._id.startsWith(ID_OPTIMISTIC_PREFIX);
+          const isExisting = draft._id && !isOptimisticEvent(draft);
 
           if (isExisting) {
             const event = new OnSubmitParser(draft).parse();
@@ -365,7 +364,7 @@ export const useDraftActions = (
       ...(reduxDraft as Schema_Event),
     }) as Schema_GridEvent;
 
-    submit(replaceIdWithOptimisticId(draft));
+    submit(addId(draft));
     discard();
   }, [reduxDraft, submit, discard]);
 

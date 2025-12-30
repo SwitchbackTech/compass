@@ -13,6 +13,7 @@ import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import {
   Schema_GridEvent,
   Schema_OptimisticEvent,
+  Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import { handleError } from "@web/common/utils/event/event.util";
 import { EventApi } from "@web/ducks/events/event.api";
@@ -33,7 +34,6 @@ import {
   _createOptimisticGridEvent,
   _editEvent,
   normalizedEventsSchema,
-  replaceOptimisticId,
 } from "@web/ducks/events/sagas/saga.util";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
@@ -58,11 +58,18 @@ export function* convertCalendarToSomedayEvent({
     const { ALL_EVENTS, THIS_EVENT } = RecurringEventUpdateScope;
     const applyTo = isInstance ? ALL_EVENTS : THIS_EVENT;
 
-    // optimistic event will have an entirely new ID that will not match that eventually saved
+    // optimistic event will have the same ID as that eventually saved
     optimisticEvent = yield* _createOptimisticGridEvent(gridEvent, true);
 
     yield* _editEvent(gridEvent, { applyTo });
-    yield* replaceOptimisticId(optimisticEvent._id, false);
+
+    yield put(
+      eventsEntitiesSlice.actions.edit({
+        _id: optimisticEvent._id,
+        event: { ...optimisticEvent, isOptimistic: false } as Schema_WebEvent,
+      }),
+    );
+
     yield put(editEventSlice.actions.success());
   } catch (error) {
     if (optimisticEvent) {
@@ -81,17 +88,22 @@ export function* convertCalendarToSomedayEvent({
 
 export function* createEvent({ payload }: Action_CreateEvent) {
   const event = yield* _createOptimisticGridEvent(payload, payload.isSomeday);
-  const optimisticId = event._id;
 
   try {
-    yield call(EventApi.create, payload);
-    yield* replaceOptimisticId(optimisticId, payload.isSomeday!);
+    yield call(EventApi.create, event);
+
+    yield put(
+      eventsEntitiesSlice.actions.edit({
+        _id: event._id,
+        event: { ...event, isOptimistic: false } as Schema_WebEvent,
+      }),
+    );
 
     yield put(createEventSlice.actions.success());
   } catch (error) {
     yield put(createEventSlice.actions.error());
     yield call(deleteEvent, {
-      payload: { _id: optimisticId },
+      payload: { _id: event._id },
     } as Action_DeleteEvent);
     handleError(error as Error);
   }
