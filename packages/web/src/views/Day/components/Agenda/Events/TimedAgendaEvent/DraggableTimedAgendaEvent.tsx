@@ -26,8 +26,6 @@ import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getEventCursorClass } from "@web/common/utils/event/event.util";
 import { Draggable } from "@web/components/DND/Draggable";
 import { Resizable } from "@web/components/DND/Resizable";
-import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
 import { TimedAgendaEvent } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/TimedAgendaEvent";
 import { SLOT_HEIGHT } from "@web/views/Day/constants/day.constants";
 import { useOpenAgendaEventPreview } from "@web/views/Day/hooks/events/useOpenAgendaEventPreview";
@@ -43,11 +41,13 @@ export const DraggableTimedAgendaEvent = memo(
     interactions,
     isDraftEvent,
     isNewDraftEvent,
+    isDisabled,
   }: {
     event: Schema_GridEvent;
     interactions: UseInteractionsReturn;
     isDraftEvent: boolean;
     isNewDraftEvent: boolean;
+    isDisabled: boolean;
   }) => {
     const { timedEventsGridRef } = useCompassRefs();
     const openAgendaEventPreview = useOpenAgendaEventPreview();
@@ -74,10 +74,7 @@ export const DraggableTimedAgendaEvent = memo(
       event as WithCompassId<Schema_Event>,
     );
 
-    const isPending = useAppSelector((state) =>
-      selectIsEventPending(state, event._id!),
-    );
-    const cursorClass = getEventCursorClass(dragging, isPending);
+    const cursorClass = getEventCursorClass(dragging, isDisabled);
 
     if (!_id || !event.startDate || !endDate || isAllDay) return null;
 
@@ -97,6 +94,7 @@ export const DraggableTimedAgendaEvent = memo(
             type: Categories_Event.TIMED,
             view: "day",
           },
+          disabled: isDisabled,
         }}
         as="div"
         asChild

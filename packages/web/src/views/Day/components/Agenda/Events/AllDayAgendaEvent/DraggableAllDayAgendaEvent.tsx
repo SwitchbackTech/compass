@@ -13,8 +13,6 @@ import {
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getEventCursorClass } from "@web/common/utils/event/event.util";
 import { Draggable } from "@web/components/DND/Draggable";
-import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
 import { AllDayAgendaEvent } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/AllDayAgendaEvent";
 import { useOpenAgendaEventPreview } from "@web/views/Day/hooks/events/useOpenAgendaEventPreview";
 import { useOpenEventContextMenu } from "@web/views/Day/hooks/events/useOpenEventContextMenu";
@@ -25,11 +23,13 @@ export const DraggableAllDayAgendaEvent = memo(
     interactions,
     isDraftEvent,
     isNewDraftEvent,
+    isDisabled,
   }: {
     event: Schema_GridEvent;
     interactions: UseInteractionsReturn;
     isDraftEvent: boolean;
     isNewDraftEvent: boolean;
+    isDisabled: boolean;
   }) => {
     const openAgendaEventPreview = useOpenAgendaEventPreview();
     const openEventContextMenu = useOpenEventContextMenu();
@@ -37,10 +37,7 @@ export const DraggableAllDayAgendaEvent = memo(
     const { selecting } = useMainGridSelectionState();
     const eventFormOpen = nodeId === CursorItem.EventForm;
     const dragging = useIsDraggingEvent();
-    const isPending = useAppSelector((state) =>
-      selectIsEventPending(state, event._id!),
-    );
-    const cursorClass = getEventCursorClass(dragging, isPending);
+    const cursorClass = getEventCursorClass(dragging, isDisabled);
 
     if (!event.startDate || !event.endDate || !event.isAllDay) return null;
 
@@ -58,6 +55,7 @@ export const DraggableAllDayAgendaEvent = memo(
             type: Categories_Event.ALLDAY,
             view: "day",
           },
+          disabled: isDisabled,
         }}
         as="div"
         className={classNames(

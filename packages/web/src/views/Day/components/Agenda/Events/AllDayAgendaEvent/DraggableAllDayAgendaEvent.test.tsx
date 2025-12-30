@@ -3,10 +3,8 @@ import { UseInteractionsReturn } from "@floating-ui/react";
 import "@testing-library/jest-dom";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { render, screen } from "@web/__tests__/__mocks__/mock.render";
-import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
-import { RootState } from "@web/store";
 import { DraggableAllDayAgendaEvent } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/DraggableAllDayAgendaEvent";
 
 describe("DraggableAllDayAgendaEvent", () => {
@@ -35,6 +33,7 @@ describe("DraggableAllDayAgendaEvent", () => {
         interactions={mockInteractions}
         isDraftEvent={false}
         isNewDraftEvent={false}
+        isDisabled={false}
       />,
     );
 
@@ -48,6 +47,7 @@ describe("DraggableAllDayAgendaEvent", () => {
         interactions={mockInteractions}
         isDraftEvent={false}
         isNewDraftEvent={false}
+        isDisabled={false}
       />,
     );
 
@@ -64,22 +64,14 @@ describe("DraggableAllDayAgendaEvent", () => {
       _id: eventId,
     };
 
-    const initialState = createInitialState({
-      events: {
-        pendingEvents: {
-          eventIds: [eventId],
-        },
-      } as unknown as Partial<RootState>["events"],
-    });
-
     render(
       <DraggableAllDayAgendaEvent
         event={pendingEvent}
         interactions={mockInteractions}
         isDraftEvent={false}
         isNewDraftEvent={false}
+        isDisabled={true}
       />,
-      { state: initialState },
     );
 
     const eventButton = screen.getByRole("button");
@@ -94,22 +86,14 @@ describe("DraggableAllDayAgendaEvent", () => {
       _id: eventId,
     };
 
-    const initialState = createInitialState({
-      events: {
-        pendingEvents: {
-          eventIds: [],
-        },
-      } as unknown as Partial<RootState>["events"],
-    });
-
     render(
       <DraggableAllDayAgendaEvent
         event={nonPendingEvent}
         interactions={mockInteractions}
         isDraftEvent={false}
         isNewDraftEvent={false}
+        isDisabled={false}
       />,
-      { state: initialState },
     );
 
     const eventButton = screen.getByRole("button");
