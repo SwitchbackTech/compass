@@ -61,6 +61,9 @@ export function* convertCalendarToSomedayEvent({
     // optimistic event will have the same ID as that eventually saved
     optimisticEvent = yield* _createOptimisticGridEvent(gridEvent, true);
 
+    // Mark event as pending when edit starts
+    yield put(pendingEventsSlice.actions.add(optimisticEvent._id));
+
     yield* _editEvent(gridEvent, { applyTo });
 
     yield put(
@@ -70,9 +73,13 @@ export function* convertCalendarToSomedayEvent({
       }),
     );
 
+    // Remove from pending on success
+    yield put(pendingEventsSlice.actions.remove(optimisticEvent._id));
     yield put(editEventSlice.actions.success());
   } catch (error) {
+    // Remove from pending on error
     if (optimisticEvent) {
+      yield put(pendingEventsSlice.actions.remove(optimisticEvent._id));
       yield put(
         eventsEntitiesSlice.actions.delete({ _id: optimisticEvent._id }),
       );
@@ -121,8 +128,8 @@ export function* deleteEvent({ payload }: Action_DeleteEvent) {
 
     const pendingEventIds = (yield select(
       (state: RootState) => state.events.pendingEvents.eventIds,
-    )) as Set<string>;
-    const isPending = pendingEventIds.has(payload._id);
+    )) as string[];
+    const isPending = pendingEventIds.includes(payload._id);
     // Only call delete API if event is not pending (i.e., exists in DB)
     if (!isPending) {
       yield call(EventApi.delete, payload._id, payload.applyTo);
@@ -142,13 +149,21 @@ export function* editEvent({ payload }: Action_EditEvent) {
 
   const { _id, applyTo, event, shouldRemove } = payload;
 
+  // Mark event as pending when edit starts
+  yield put(pendingEventsSlice.actions.add(_id));
+
   try {
     if (shouldRemove) yield put(eventsEntitiesSlice.actions.delete({ _id }));
     else yield put(eventsEntitiesSlice.actions.edit(payload));
 
     yield call(EventApi.edit, _id, event, { applyTo });
+
+    // Remove from pending on success
+    yield put(pendingEventsSlice.actions.remove(_id));
     yield put(editEventSlice.actions.success());
   } catch (error) {
+    // Remove from pending on error
+    yield put(pendingEventsSlice.actions.remove(_id));
     yield put(eventsEntitiesSlice.actions.edit({ ...payload, event: _event }));
     yield put(editEventSlice.actions.error());
     handleError(error as Error);

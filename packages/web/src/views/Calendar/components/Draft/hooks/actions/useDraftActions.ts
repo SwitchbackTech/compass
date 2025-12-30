@@ -239,11 +239,19 @@ export const useDraftActions = (
 
   const determineSubmitAction = useCallback(
     (draft: Schema_WebEvent) => {
-      const isPending = draft._id ? pendingEventIds.has(draft._id) : false;
-      const isExisting = draft._id && !isPending;
+      const isExisting = !!draft._id;
       if (!isExisting) return "CREATE";
 
       if (isExisting) {
+        // Prevent updates if event is pending (waiting for backend confirmation)
+        const isPending = draft._id
+          ? pendingEventIds.includes(draft._id)
+          : false;
+        if (isPending) {
+          // Event is pending, discard the change and return to original position
+          return "DISCARD";
+        }
+
         if (isFormOpenBeforeDragging) {
           return "OPEN_FORM";
         }
@@ -325,19 +333,17 @@ export const useDraftActions = (
           return;
         }
         case "UPDATE": {
-          const isPending = draft._id ? pendingEventIds.has(draft._id) : false;
-          const isExisting = draft._id && !isPending;
+          if (!draft._id) {
+            discard();
+            return;
+          }
 
-          if (isExisting) {
-            const event = new OnSubmitParser(draft).parse();
-            const payload = getEditSlicePayload(event, applyTo);
-            dispatch(
-              editEventSlice.actions.request(payload as unknown as void),
-            );
+          const event = new OnSubmitParser(draft).parse();
+          const payload = getEditSlicePayload(event, applyTo);
+          dispatch(editEventSlice.actions.request(payload as unknown as void));
 
-            if (shouldAddToView(event)) {
-              dispatch(getWeekEventsSlice.actions.insert(event._id!));
-            }
+          if (shouldAddToView(event)) {
+            dispatch(getWeekEventsSlice.actions.insert(event._id!));
           }
 
           if (isFormOpenBeforeDragging) {
@@ -358,7 +364,6 @@ export const useDraftActions = (
       getEditSlicePayload,
       isFormOpenBeforeDragging,
       openForm,
-      pendingEventIds,
       shouldAddToView,
     ],
   );

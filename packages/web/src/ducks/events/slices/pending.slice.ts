@@ -1,11 +1,11 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 
 interface PendingEventsState {
-  eventIds: Set<string>;
+  eventIds: string[];
 }
 
 const initialState: PendingEventsState = {
-  eventIds: new Set<string>(),
+  eventIds: [],
 };
 
 export const pendingEventsSlice = createSlice({
@@ -13,13 +13,18 @@ export const pendingEventsSlice = createSlice({
   initialState,
   reducers: {
     add: (state, action: PayloadAction<string>) => {
-      state.eventIds.add(action.payload);
+      if (!state.eventIds.includes(action.payload)) {
+        state.eventIds.push(action.payload);
+      }
     },
     remove: (state, action: PayloadAction<string>) => {
-      state.eventIds.delete(action.payload);
+      const index = state.eventIds.indexOf(action.payload);
+      if (index > -1) {
+        state.eventIds.splice(index, 1);
+      }
     },
     clear: (state) => {
-      state.eventIds.clear();
+      state.eventIds = [];
     },
   },
 });

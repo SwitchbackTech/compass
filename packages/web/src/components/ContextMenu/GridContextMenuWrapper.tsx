@@ -84,7 +84,7 @@ export const ContextMenuWrapper = ({
       e.preventDefault();
 
       const event = getSelectedEvent(eventId);
-      const isPending = pendingEventIds.has(eventId);
+      const isPending = pendingEventIds.includes(eventId);
       if (isPending) return;
 
       // Create a virtual element where the user clicked

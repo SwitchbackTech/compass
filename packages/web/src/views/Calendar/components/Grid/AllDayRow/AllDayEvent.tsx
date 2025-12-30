@@ -66,6 +66,10 @@ const AllDayEvent = ({
     left: position.left,
     lineClamp: 1,
     onMouseDown: (e: MouseEvent) => {
+      // Prevent drag/resize if event is pending (waiting for backend confirmation)
+      if (isPending) {
+        return;
+      }
       onMouseDown(e, event);
     },
     priority: event.priority || Priorities.UNASSIGNED,

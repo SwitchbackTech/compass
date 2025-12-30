@@ -77,7 +77,7 @@ export function useOpenEventForm() {
 
       if (existingEventId && !create) {
         draftEvent = eventsStore.query(getEntity(existingEventId));
-        if (draftEvent && pendingEventIds.has(existingEventId)) {
+        if (draftEvent && pendingEventIds.includes(existingEventId)) {
           return;
         }
       }

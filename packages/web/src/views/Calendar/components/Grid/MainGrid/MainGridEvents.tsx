@@ -37,7 +37,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
 
   const handleClick = (event: Schema_GridEvent) => {
     // Prevent opening form for pending events (being created)
-    if (pendingEventIds.has(event._id!)) return;
+    if (pendingEventIds.includes(event._id!)) return;
 
     dispatch(
       draftSlice.actions.start({
@@ -52,6 +52,11 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     event: Schema_GridEvent,
     moveEvent: PartialMouseEvent,
   ) => {
+    // Prevent dragging if event is pending (waiting for backend confirmation)
+    if (pendingEventIds.includes(event._id!)) {
+      return;
+    }
+
     dispatch(
       draftSlice.actions.startDragging({
         category,

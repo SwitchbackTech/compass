@@ -22,6 +22,7 @@ import {
   editEventSlice,
   eventsEntitiesSlice,
 } from "@web/ducks/events/slices/event.slice";
+import { pendingEventsSlice } from "@web/ducks/events/slices/pending.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { Action_Someday_Reorder } from "@web/ducks/events/slices/someday.slice.types";
 
@@ -37,6 +38,9 @@ export function* convertSomedayToCalendarEvent({
 
     optimisticEvent = yield* _createOptimisticGridEvent(gridEvent);
 
+    // Mark event as pending when edit starts
+    yield put(pendingEventsSlice.actions.add(optimisticEvent._id));
+
     yield* _editEvent(gridEvent);
 
     yield put(
@@ -49,9 +53,13 @@ export function* convertSomedayToCalendarEvent({
       }),
     );
 
+    // Remove from pending on success
+    yield put(pendingEventsSlice.actions.remove(optimisticEvent._id));
     yield put(editEventSlice.actions.success());
   } catch (error) {
+    // Remove from pending on error
     if (optimisticEvent) {
+      yield put(pendingEventsSlice.actions.remove(optimisticEvent._id));
       yield put(
         eventsEntitiesSlice.actions.delete({ _id: optimisticEvent._id }),
       );

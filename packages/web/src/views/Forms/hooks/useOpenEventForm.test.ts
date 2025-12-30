@@ -41,7 +41,7 @@ jest.mock("@web/store/store.hooks", () => ({
       return selector({
         events: {
           pendingEvents: {
-            eventIds: new Set<string>(),
+            eventIds: [],
           },
         },
       });
@@ -200,7 +200,7 @@ describe("useOpenEventForm", () => {
   it("should not open event form for editing if event is pending", async () => {
     const { useAppSelector } = jest.requireMock("@web/store/store.hooks");
     const pendingEventId = new ObjectId().toString();
-    const pendingEventIds = new Set([pendingEventId]);
+    const pendingEventIds = [pendingEventId];
 
     useAppSelector.mockImplementation(
       (selector: (state: unknown) => unknown) => {

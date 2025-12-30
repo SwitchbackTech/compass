@@ -64,7 +64,7 @@ const _GridEvent = (
   const pendingEventIds = useAppSelector(
     (state) => state.events.pendingEvents.eventIds,
   );
-  const isPending = event._id ? pendingEventIds.has(event._id) : false;
+  const isPending = event._id ? pendingEventIds.includes(event._id) : false;
   const isRecurring = event.recurrence && event.recurrence?.eventId !== null;
 
   const position = getEventPosition(
@@ -99,8 +99,11 @@ const _GridEvent = (
         return;
       }
 
-      // Allow drag/resize to start - we'll prevent the click action in handleClick
-      // if the event is pending, but allow drag/resize to proceed
+      // Prevent drag/resize if event is pending (waiting for backend confirmation)
+      if (isPending) {
+        return;
+      }
+
       onEventMouseDown(event, e);
     },
 

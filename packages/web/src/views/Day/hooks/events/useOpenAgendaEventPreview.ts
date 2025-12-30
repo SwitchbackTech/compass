@@ -31,7 +31,7 @@ export function useOpenAgendaEventPreview() {
 
       if (!draftEvent) return;
 
-      if (pendingEventIds.has(eventId)) return;
+      if (pendingEventIds.includes(eventId)) return;
 
       setActiveEvent(draftEvent._id);
       openFloatingAtCursor({ nodeId, placement: "right", reference });

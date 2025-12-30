@@ -1,4 +1,3 @@
-import React from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
 import { PartialMouseEvent } from "@web/common/types/util.types";
@@ -45,10 +44,19 @@ export const AllDayEvents = ({
     );
   };
 
+  const pendingEventIds = useAppSelector(
+    (state) => state.events.pendingEvents.eventIds,
+  );
+
   const handleDrag = (
     event: Schema_GridEvent,
     moveEvent: PartialMouseEvent,
   ) => {
+    // Prevent dragging if event is pending (waiting for backend confirmation)
+    if (pendingEventIds.includes(event._id!)) {
+      return;
+    }
+
     dispatch(
       draftSlice.actions.startDragging({
         category: Categories_Event.ALLDAY,

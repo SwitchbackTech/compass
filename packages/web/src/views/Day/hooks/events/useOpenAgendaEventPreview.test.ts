@@ -31,7 +31,7 @@ jest.mock("@web/store/store.hooks", () => ({
       return selector({
         events: {
           pendingEvents: {
-            eventIds: new Set<string>(),
+            eventIds: [],
           },
         },
       });
@@ -135,7 +135,7 @@ describe("useOpenAgendaEventPreview", () => {
   it("should not open event preview if event is pending", () => {
     const { useAppSelector } = jest.requireMock("@web/store/store.hooks");
     const pendingEventId = new ObjectId().toString();
-    const pendingEventIds = new Set([pendingEventId]);
+    const pendingEventIds = [pendingEventId];
 
     useAppSelector.mockImplementation(
       (selector: (state: unknown) => unknown) => {
