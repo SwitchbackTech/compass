@@ -17,6 +17,7 @@ import {
   selectIsDayEventsProcessing,
   selectTimedDayEvents,
 } from "@web/ducks/events/selectors/event.selectors";
+import { selectPendingEventIds } from "@web/ducks/events/selectors/pending.selectors";
 import { timedEvents$ } from "@web/store/events";
 import { useAppSelector } from "@web/store/store.hooks";
 import { useDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
@@ -34,6 +35,7 @@ export const TimedAgendaEvents = memo(
     const isLoading = useAppSelector(selectIsDayEventsProcessing);
     const { selecting } = useMainGridSelectionState();
     const draft = useDraft();
+    const pendingEventIds = useAppSelector(selectPendingEventIds);
     const grid = timedEventsGridRef.current;
     const height = timedEventsContainerRef.current?.scrollHeight ?? 0;
     const hasLoadedOnce = useHasLoadedOnce(!!isLoading, grid !== null);
@@ -76,6 +78,7 @@ export const TimedAgendaEvents = memo(
               interactions={interactions}
               isDraftEvent={draft?._id === event._id}
               isNewDraftEvent={!timedEvents.find((e) => e._id === event._id)}
+              isDisabled={pendingEventIds.includes(event._id!)}
             />
           ))
         )}
