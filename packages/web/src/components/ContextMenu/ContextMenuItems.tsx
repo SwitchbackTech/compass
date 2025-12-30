@@ -144,7 +144,12 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
         <MenuItem
           key={item.id}
           onClick={() => {
-            if (isPending && (item.id === "edit" || item.id === "duplicate")) {
+            if (
+              isPending &&
+              (item.id === "edit" ||
+                item.id === "duplicate" ||
+                item.id === "delete")
+            ) {
               return;
             }
             item.onClick();
@@ -152,11 +157,17 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
           }}
           style={{
             opacity:
-              isPending && (item.id === "edit" || item.id === "duplicate")
+              isPending &&
+              (item.id === "edit" ||
+                item.id === "duplicate" ||
+                item.id === "delete")
                 ? 0.5
                 : 1,
             cursor:
-              isPending && (item.id === "edit" || item.id === "duplicate")
+              isPending &&
+              (item.id === "edit" ||
+                item.id === "duplicate" ||
+                item.id === "delete")
                 ? "wait"
                 : "pointer",
           }}

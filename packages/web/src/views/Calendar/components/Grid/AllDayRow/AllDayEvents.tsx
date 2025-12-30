@@ -1,3 +1,4 @@
+import { useStore } from "react-redux";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
 import { PartialMouseEvent } from "@web/common/types/util.types";
@@ -7,6 +8,7 @@ import { isLeftClick } from "@web/common/utils/mouse/mouse.util";
 import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
 import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
 import { selectAllDayEvents } from "@web/ducks/events/selectors/event.selectors";
+import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
 import { selectIsGetWeekEventsProcessingWithReason } from "@web/ducks/events/selectors/util.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
@@ -33,8 +35,13 @@ export const AllDayEvents = ({
 
   const draftId = useAppSelector(selectDraftId);
   const dispatch = useAppDispatch();
+  const store = useStore();
 
   const handleClick = (event: Schema_GridEvent) => {
+    // Prevent opening form for pending events (being created)
+    const state = store.getState();
+    if (selectIsEventPending(state, event._id!)) return;
+
     dispatch(
       draftSlice.actions.start({
         activity: "gridClick",
@@ -44,16 +51,13 @@ export const AllDayEvents = ({
     );
   };
 
-  const pendingEventIds = useAppSelector(
-    (state) => state.events.pendingEvents.eventIds,
-  );
-
   const handleDrag = (
     event: Schema_GridEvent,
     moveEvent: PartialMouseEvent,
   ) => {
     // Prevent dragging if event is pending (waiting for backend confirmation)
-    if (pendingEventIds.includes(event._id!)) {
+    const state = store.getState();
+    if (selectIsEventPending(state, event._id!)) {
       return;
     }
 

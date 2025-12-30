@@ -1,3 +1,4 @@
+import { useStore } from "react-redux";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { PartialMouseEvent } from "@web/common/types/util.types";
@@ -7,6 +8,7 @@ import { adjustOverlappingEvents } from "@web/common/utils/overlap/overlap";
 import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
 import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
 import { selectGridEvents } from "@web/ducks/events/selectors/event.selectors";
+import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
 import { selectIsGetWeekEventsProcessingWithReason } from "@web/ducks/events/selectors/util.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
@@ -22,22 +24,21 @@ interface Props {
 
 export const MainGridEvents = ({ measurements, weekProps }: Props) => {
   const dispatch = useAppDispatch();
+  const store = useStore();
 
   const timedEvents = useAppSelector(selectGridEvents);
   const { isProcessing, reason } = useAppSelector(
     selectIsGetWeekEventsProcessingWithReason,
   );
   const draftId = useAppSelector(selectDraftId);
-  const pendingEventIds = useAppSelector(
-    (state) => state.events.pendingEvents.eventIds,
-  );
 
   const adjustedEvents = adjustOverlappingEvents(timedEvents);
   const category = Categories_Event.TIMED;
 
   const handleClick = (event: Schema_GridEvent) => {
     // Prevent opening form for pending events (being created)
-    if (pendingEventIds.includes(event._id!)) return;
+    const state = store.getState();
+    if (selectIsEventPending(state, event._id!)) return;
 
     dispatch(
       draftSlice.actions.start({
@@ -53,7 +54,8 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     moveEvent: PartialMouseEvent,
   ) => {
     // Prevent dragging if event is pending (waiting for backend confirmation)
-    if (pendingEventIds.includes(event._id!)) {
+    const state = store.getState();
+    if (selectIsEventPending(state, event._id!)) {
       return;
     }
 

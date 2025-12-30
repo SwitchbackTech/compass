@@ -17,6 +17,7 @@ import {
   FlexWrap,
 } from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";
+import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import {
   StyledEvent,
@@ -61,10 +62,9 @@ const _GridEvent = (
 
   const isInPast = dayjs().isAfter(dayjs(_event.endDate));
   const event = _event;
-  const pendingEventIds = useAppSelector(
-    (state) => state.events.pendingEvents.eventIds,
+  const isPending = useAppSelector((state) =>
+    event._id ? selectIsEventPending(state, event._id) : false,
   );
-  const isPending = event._id ? pendingEventIds.includes(event._id) : false;
   const isRecurring = event.recurrence && event.recurrence?.eventId !== null;
 
   const position = getEventPosition(
