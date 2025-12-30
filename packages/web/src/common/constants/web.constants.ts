@@ -11,6 +11,7 @@ export const ID_GRID_EVENTS_ALLDAY = "allDayEvents";
 export const ID_GRID_EVENTS_TIMED = "timedEvents";
 export const ID_SOMEDAY_WEEK_COLUMN = "somedayWeekColumn";
 export const ID_GRID_MAIN = "mainGrid";
+export const ID_DROPPABLE_TASKS = "task-list";
 export const ID_REMINDER_INPUT = "reminderInput";
 export const ID_MAIN = "mainSection";
 export const ID_DATEPICKER_SIDEBAR = "sidebarDatePicker";

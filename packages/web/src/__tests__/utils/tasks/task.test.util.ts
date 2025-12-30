@@ -1,8 +1,25 @@
 import { act } from "react";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Task } from "@web/common/types/task.types";
 
 type User = ReturnType<typeof userEvent.setup>;
+
+/**
+ * Creates a mock task with optional overrides
+ * @param overrides - Partial task properties to override defaults
+ * @returns A complete Task object
+ */
+export function createMockTask(overrides: Partial<Task> = {}): Task {
+  return {
+    id: "task-1",
+    title: "Test Task",
+    status: "todo",
+    order: 0,
+    createdAt: "2025-01-01T00:00:00.000Z",
+    ...overrides,
+  };
+}
 
 export const addTasks = async (user: User, taskTitles: string[]) => {
   for (const title of taskTitles) {

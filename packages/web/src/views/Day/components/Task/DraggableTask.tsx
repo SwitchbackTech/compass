@@ -3,9 +3,9 @@ import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { autoUpdate, inline, offset, useFloating } from "@floating-ui/react";
 import { DotsSixVerticalIcon } from "@phosphor-icons/react";
-import { Task as ITask } from "@web/common/types/task.types";
+import { Task } from "@web/common/types/task.types";
 import { DNDChildProps, Draggable } from "@web/components/DND/Draggable";
-import { Task } from "@web/views/Day/components/Task/Task";
+import { Task as TaskComponent } from "@web/views/Day/components/Task/Task";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
 
 export function DraggableTask({
@@ -13,7 +13,7 @@ export function DraggableTask({
   index,
   tasksProps,
 }: {
-  task: ITask;
+  task: Task;
   index: number;
   tasksProps: ReturnType<typeof useTasks>;
 }) {
@@ -102,9 +102,9 @@ function DraggableTaskInner({
   floatingStyles,
   dndProps,
 }: {
-  task: ITask;
+  task: Task;
   index: number;
-  tasks: ITask[];
+  tasks: Task[];
   editingTaskId: string | null;
   editingTitle: string;
   setSelectedTaskIndex: (index: number) => void;
@@ -153,7 +153,7 @@ function DraggableTaskInner({
         </button>
       ) : null}
 
-      <Task
+      <TaskComponent
         task={task}
         index={index}
         isEditing={editingTaskId === task.id}

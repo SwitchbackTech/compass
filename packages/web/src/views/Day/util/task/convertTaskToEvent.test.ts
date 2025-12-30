@@ -1,6 +1,6 @@
 import { Origin, Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
-import { createMockTask } from "@web/__tests__/utils/tasks/task.mock.util";
+import { createMockTask } from "@web/__tests__/utils/tasks/task.test.util";
 import { convertTaskToEvent } from "./convertTaskToEvent";
 
 describe("convertTaskToEvent", () => {
@@ -13,13 +13,13 @@ describe("convertTaskToEvent", () => {
 
   it("should convert a task to an event with default duration", () => {
     const startTime = dayjs("2025-01-01T10:00:00.000Z");
-    const event = convertTaskToEvent(mockTask, startTime, 15, mockUserId);
+    const event = convertTaskToEvent(mockTask, startTime, 30, mockUserId);
 
     expect(event).toMatchObject({
       title: "Test Task",
       description: "Test description",
       startDate: "2025-01-01T10:00:00.000Z",
-      endDate: "2025-01-01T10:15:00.000Z",
+      endDate: "2025-01-01T10:30:00.000Z",
       isAllDay: false,
       isSomeday: false,
       user: mockUserId,
@@ -47,7 +47,7 @@ describe("convertTaskToEvent", () => {
     const event = convertTaskToEvent(
       taskWithoutDescription,
       startTime,
-      15,
+      30,
       mockUserId,
     );
 
@@ -56,9 +56,25 @@ describe("convertTaskToEvent", () => {
 
   it("should generate a unique ObjectId for each conversion", () => {
     const startTime = dayjs("2025-01-01T10:00:00.000Z");
-    const event1 = convertTaskToEvent(mockTask, startTime, 15, mockUserId);
-    const event2 = convertTaskToEvent(mockTask, startTime, 15, mockUserId);
+    const event1 = convertTaskToEvent(mockTask, startTime, 30, mockUserId);
+    const event2 = convertTaskToEvent(mockTask, startTime, 30, mockUserId);
 
     expect(event1._id).not.toBe(event2._id);
+  });
+
+  it("should create an all-day event when isAllDay is true", () => {
+    const startTime = dayjs("2025-01-01T00:00:00.000Z");
+    const event = convertTaskToEvent(mockTask, startTime, 30, mockUserId, true);
+
+    expect(event.isAllDay).toBe(true);
+    expect(event).toMatchObject({
+      title: "Test Task",
+      description: "Test description",
+      startDate: "2025-01-01T00:00:00.000Z",
+      endDate: "2025-01-01T00:30:00.000Z",
+      user: mockUserId,
+      priority: Priorities.UNASSIGNED,
+      origin: Origin.COMPASS,
+    });
   });
 });

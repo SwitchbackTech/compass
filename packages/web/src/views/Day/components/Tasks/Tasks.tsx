@@ -1,16 +1,15 @@
+import { ID_DROPPABLE_TASKS } from "@web/common/constants/web.constants";
 import { Droppable } from "@web/components/DND/Droppable";
 import { DropZone } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventsContainer/Dropzone";
 import { DraggableTask } from "@web/views/Day/components/Task/DraggableTask";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
-
-const TASK_LIST_DROPPABLE_ID = "task-list";
 
 export const Tasks = () => {
   const tasksProps = useTasks();
 
   return (
     <Droppable
-      dndProps={{ id: TASK_LIST_DROPPABLE_ID }}
+      dndProps={{ id: ID_DROPPABLE_TASKS }}
       as="div"
       className="flex flex-col gap-2 overflow-y-auto overscroll-contain"
       style={{ scrollbarGutter: "stable both-edges" }}

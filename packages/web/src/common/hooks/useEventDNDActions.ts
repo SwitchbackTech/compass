@@ -46,18 +46,30 @@ export function useEventDNDActions() {
   const dateInView = useDateInView();
 
   const convertTaskToEventOnAgenda = useCallback(
-    async (task: Task, active: Active, over: Over, deleteTask: () => void) => {
-      const snappedMinutes = getSnappedMinutes(active, over);
-
-      if (snappedMinutes === null) return;
-
+    async (
+      task: Task,
+      active: Active,
+      over: Over,
+      deleteTask: () => void,
+      isAllDay: boolean = false,
+    ) => {
       const userId = await getUserId();
       if (!userId) return;
 
-      const startTime = dateInView.startOf("day").add(snappedMinutes, "minute");
+      let startTime: dayjs.Dayjs;
 
-      // Convert task to event
-      const event = convertTaskToEvent(task, startTime, 15, userId);
+      if (isAllDay) {
+        // For all-day events, use the start of the day
+        startTime = dateInView.startOf("day");
+      } else {
+        // For timed events, snap to grid
+        const snappedMinutes = getSnappedMinutes(active, over);
+        if (snappedMinutes === null) return;
+        startTime = dateInView.startOf("day").add(snappedMinutes, "minute");
+      }
+
+      // Convert task to event (default duration is now 30 minutes)
+      const event = convertTaskToEvent(task, startTime, 30, userId, isAllDay);
 
       // Delete the task
       deleteTask();
@@ -169,7 +181,12 @@ export function useEventDNDActions() {
       switch (switchCase) {
         case `day-task-to-${ID_GRID_MAIN}`:
           if (task && deleteTask) {
-            convertTaskToEventOnAgenda(task, active, over, deleteTask);
+            convertTaskToEventOnAgenda(task, active, over, deleteTask, false);
+          }
+          break;
+        case `day-task-to-${ID_GRID_ALLDAY_ROW}`:
+          if (task && deleteTask) {
+            convertTaskToEventOnAgenda(task, active, over, deleteTask, true);
           }
           break;
         case `day-${Categories_Event.ALLDAY}-to-${ID_GRID_MAIN}`:
