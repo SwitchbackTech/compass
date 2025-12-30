@@ -23,6 +23,10 @@ import { useResizeId } from "@web/common/hooks/useResizeId";
 import { useResizing } from "@web/common/hooks/useResizing";
 import { theme } from "@web/common/styles/theme";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  getEventCursorClass,
+  isOptimisticEvent,
+} from "@web/common/utils/event/event.util";
 import { Draggable } from "@web/components/DND/Draggable";
 import { Resizable } from "@web/components/DND/Resizable";
 import { TimedAgendaEvent } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/TimedAgendaEvent";
@@ -71,6 +75,9 @@ export const DraggableTimedAgendaEvent = memo(
       event as WithCompassId<Schema_Event>,
     );
 
+    const isOptimistic = isOptimisticEvent(event as Schema_Event);
+    const cursorClass = getEventCursorClass(dragging, isOptimistic);
+
     if (!_id || !event.startDate || !endDate || isAllDay) return null;
 
     return (
@@ -94,9 +101,10 @@ export const DraggableTimedAgendaEvent = memo(
         asChild
         className={classNames(
           CLASS_TIMED_CALENDAR_EVENT,
-          "absolute cursor-move touch-none rounded focus:outline-none",
+          "absolute touch-none rounded focus:outline-none",
           "focus-visible:rounded focus-visible:ring-2",
           "focus:outline-none focus-visible:ring-yellow-200",
+          cursorClass,
           { "pointer-events-none": isBeingSelected },
         )}
         style={{ top: startPosition, height }}

@@ -1,4 +1,4 @@
-import React, { MouseEvent, memo } from "react";
+import { MouseEvent, memo } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import {

@@ -1,6 +1,11 @@
+import { ObjectId } from "bson";
 import { act } from "react";
 import { renderHook } from "@testing-library/react";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import {
+  ID_OPTIMISTIC_PREFIX,
+  Origin,
+  Priorities,
+} from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import {
   CLASS_TIMED_CALENDAR_EVENT,
@@ -32,6 +37,9 @@ jest.mock("@web/store/events", () => ({
 }));
 jest.mock("@web/common/utils/event/event.util", () => ({
   getCalendarEventElementFromGrid: jest.fn(),
+  isOptimisticEvent: jest.fn((event) => {
+    return event._id?.startsWith("optimistic-") || false;
+  }),
 }));
 
 describe("useOpenEventForm", () => {
@@ -179,5 +187,36 @@ describe("useOpenEventForm", () => {
     });
 
     expect(mockSetDraft).toHaveBeenCalledWith(mockEvent);
+  });
+
+  it("should not open event form for editing if event is optimistic", async () => {
+    const optimisticId = `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`;
+    const mockEventElement = document.createElement("div");
+    mockEventElement.classList.add(CLASS_TIMED_CALENDAR_EVENT);
+    mockEventElement.setAttribute(DATA_EVENT_ELEMENT_ID, optimisticId);
+
+    const mockEvent = {
+      _id: optimisticId,
+      title: "Optimistic Event",
+    };
+
+    getElementAtPoint.mockReturnValue(mockEventElement);
+    getEventClass.mockReturnValue(CLASS_TIMED_CALENDAR_EVENT);
+    (eventsStore.query as jest.Mock).mockReturnValue(mockEvent);
+
+    const { result } = renderHook(useOpenEventForm);
+
+    await act(async () => {
+      await result.current(
+        new CustomEvent("click", {
+          bubbles: true,
+          detail: { create: false, id: optimisticId },
+        }) as unknown as React.PointerEvent<HTMLElement>,
+      );
+    });
+
+    expect(eventsStore.query).toHaveBeenCalled();
+    expect(mockSetDraft).not.toHaveBeenCalled();
+    expect(openFloatingAtCursor).not.toHaveBeenCalled();
   });
 });

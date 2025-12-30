@@ -23,7 +23,10 @@ import {
   openFloatingAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
 import { getElementAtPoint } from "@web/common/utils/dom/event-emitter.util";
-import { getCalendarEventElementFromGrid } from "@web/common/utils/event/event.util";
+import {
+  getCalendarEventElementFromGrid,
+  isOptimisticEvent,
+} from "@web/common/utils/event/event.util";
 import { eventsStore, getDraft, setDraft } from "@web/store/events";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import {
@@ -73,6 +76,9 @@ export function useOpenEventForm() {
 
       if (existingEventId && !create) {
         draftEvent = eventsStore.query(getEntity(existingEventId));
+        if (draftEvent && isOptimisticEvent(draftEvent)) {
+          return;
+        }
       }
 
       if (!draftEvent) {

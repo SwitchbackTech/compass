@@ -5,6 +5,7 @@ import {
   CursorItem,
   openFloatingAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
+import { isOptimisticEvent } from "@web/common/utils/event/event.util";
 import { eventsStore, setActiveEvent } from "@web/store/events";
 import { getEventClass } from "@web/views/Day/util/agenda/focus.util";
 
@@ -25,6 +26,8 @@ export function useOpenAgendaEventPreview() {
       const draftEvent = eventsStore.query(getEntity(eventId));
 
       if (!draftEvent) return;
+
+      if (isOptimisticEvent(draftEvent)) return;
 
       setActiveEvent(draftEvent._id);
       openFloatingAtCursor({ nodeId, placement: "right", reference });
