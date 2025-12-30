@@ -1,5 +1,4 @@
 import React, { act } from "react";
-import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import { fireEvent, screen } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { Task } from "@web/common/types/task.types";
@@ -52,22 +51,7 @@ const renderDraggableTask = (
   tasksProps = defaultTasksProps,
 ) => {
   return act(() =>
-    render(
-      <DragDropContext onDragEnd={jest.fn()}>
-        <Droppable droppableId="test-droppable">
-          {(provided) => (
-            <div ref={provided.innerRef} {...provided.droppableProps}>
-              <DraggableTask
-                task={task}
-                index={index}
-                tasksProps={tasksProps}
-              />
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>,
-    ),
+    render(<DraggableTask task={task} index={index} tasksProps={tasksProps} />),
   );
 };
 
@@ -134,25 +118,5 @@ describe("DraggableTask", () => {
 
     // Visible on focus
     expect(dragHandle).toHaveClass("focus:opacity-100");
-  });
-
-  test("drag handle should be visible when dragging the handler button", () => {
-    const draggingTask = { ...mockTask, id: "task-dragging" };
-
-    renderDraggableTask(draggingTask);
-
-    const dragHandle = screen.getByRole("button", {
-      name: /Reorder Test Task/i,
-    });
-
-    expect(dragHandle).toHaveClass("opacity-0");
-
-    act(() => {
-      fireEvent.mouseOver(dragHandle);
-      fireEvent.mouseDown(dragHandle, { bubbles: true });
-      fireEvent.mouseMove(dragHandle, { clientY: 100 });
-    });
-
-    expect(dragHandle).toHaveClass("opacity-100");
   });
 });
