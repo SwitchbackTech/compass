@@ -1,13 +1,5 @@
 import { faker } from "@faker-js/faker";
-
-export type Task = {
-  id: string;
-  title: string;
-  status: "todo" | "completed";
-  order: number;
-  createdAt: string;
-  description?: string;
-};
+import { Task } from "@web/common/types/task.types";
 
 /**
  * Creates a mock task with optional overrides

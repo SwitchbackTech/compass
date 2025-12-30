@@ -49,32 +49,35 @@ export function useEventDNDActions() {
   // Map to track pending task deletions: optimistic event ID -> deleteTask callback
   const pendingTaskDeletions = useRef<Map<string, () => void>>(new Map());
 
-  // Track the last requested event ID for cleanup
-  const lastRequestedEventId = useRef<string | null>(null);
+  // Track the currently processing event ID to avoid race conditions
+  const processingEventId = useRef<string | null>(null);
 
   // Listen to createEvent slice state for success/error
   const createEventState = useSelector((state: RootState) => state.createEvent);
 
   // Handle task deletion on successful event creation or cleanup on error
   useEffect(() => {
-    const eventId = lastRequestedEventId.current;
+    const eventId = processingEventId.current;
     if (!eventId) return;
 
-    if (createEventState.isSuccess && !createEventState.isProcessing) {
+    // Check if we've transitioned from processing to a final state
+    if (!createEventState.isProcessing) {
       const deleteTask = pendingTaskDeletions.current.get(eventId);
 
-      if (deleteTask) {
+      if (createEventState.isSuccess && deleteTask) {
         // Event was created successfully, delete the task
         deleteTask();
-        pendingTaskDeletions.current.delete(eventId);
-        lastRequestedEventId.current = null;
       }
-    } else if (createEventState.error && !createEventState.isProcessing) {
-      // Event creation failed, don't delete the task, just clean up the mapping
+
+      // Clean up regardless of success or error to prevent memory leaks
       pendingTaskDeletions.current.delete(eventId);
-      lastRequestedEventId.current = null;
+      processingEventId.current = null;
     }
-  }, [createEventState]);
+  }, [
+    createEventState.isProcessing,
+    createEventState.isSuccess,
+    createEventState.error,
+  ]);
 
   const convertTaskToEventOnAgenda = useCallback(
     async (
@@ -104,7 +107,7 @@ export function useEventDNDActions() {
 
       // Store the task deletion callback to be executed on successful event creation
       pendingTaskDeletions.current.set(event._id!, deleteTask);
-      lastRequestedEventId.current = event._id!;
+      processingEventId.current = event._id!;
 
       // Create the event optimistically
       dispatch(createEventSlice.actions.request(event));
