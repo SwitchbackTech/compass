@@ -1,6 +1,6 @@
+import { createMockTask } from "@core/__tests__/helpers/task.factory";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
-import { createMockTask } from "@web/__tests__/utils/tasks/task.test.util";
 import { convertTaskToEvent } from "./convertTaskToEvent";
 
 describe("convertTaskToEvent", () => {

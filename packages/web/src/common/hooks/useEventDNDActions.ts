@@ -1,4 +1,5 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { useSelector } from "react-redux";
 import { Active, DragEndEvent, Over, useDndMonitor } from "@dnd-kit/core";
 import { Categories_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
@@ -19,7 +20,7 @@ import { reorderGrid } from "@web/common/utils/dom/grid-organization.util";
 import { getCalendarEventElementFromGrid } from "@web/common/utils/event/event.util";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { createEventSlice } from "@web/ducks/events/slices/event.slice";
-import { store } from "@web/store";
+import { RootState, store } from "@web/store";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { getSnappedMinutes } from "@web/views/Day/util/agenda/agenda.util";
@@ -44,6 +45,36 @@ export function useEventDNDActions() {
   const updateEvent = useUpdateEvent();
   const dispatch = useAppDispatch();
   const dateInView = useDateInView();
+
+  // Map to track pending task deletions: optimistic event ID -> deleteTask callback
+  const pendingTaskDeletions = useRef<Map<string, () => void>>(new Map());
+
+  // Track the last requested event ID for cleanup
+  const lastRequestedEventId = useRef<string | null>(null);
+
+  // Listen to createEvent slice state for success/error
+  const createEventState = useSelector((state: RootState) => state.createEvent);
+
+  // Handle task deletion on successful event creation or cleanup on error
+  useEffect(() => {
+    const eventId = lastRequestedEventId.current;
+    if (!eventId) return;
+
+    if (createEventState.isSuccess && !createEventState.isProcessing) {
+      const deleteTask = pendingTaskDeletions.current.get(eventId);
+
+      if (deleteTask) {
+        // Event was created successfully, delete the task
+        deleteTask();
+        pendingTaskDeletions.current.delete(eventId);
+        lastRequestedEventId.current = null;
+      }
+    } else if (createEventState.error && !createEventState.isProcessing) {
+      // Event creation failed, don't delete the task, just clean up the mapping
+      pendingTaskDeletions.current.delete(eventId);
+      lastRequestedEventId.current = null;
+    }
+  }, [createEventState]);
 
   const convertTaskToEventOnAgenda = useCallback(
     async (
@@ -71,8 +102,9 @@ export function useEventDNDActions() {
       // Convert task to event (default duration is now 30 minutes)
       const event = convertTaskToEvent(task, startTime, 30, userId, isAllDay);
 
-      // Delete the task
-      deleteTask();
+      // Store the task deletion callback to be executed on successful event creation
+      pendingTaskDeletions.current.set(event._id!, deleteTask);
+      lastRequestedEventId.current = event._id!;
 
       // Create the event optimistically
       dispatch(createEventSlice.actions.request(event));
