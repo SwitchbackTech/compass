@@ -2,7 +2,10 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { render } from "@web/__tests__/__mocks__/mock.render";
-import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
+import {
+  InitialReduxState,
+  createInitialState,
+} from "@web/__tests__/utils/state/store.test.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { ContextMenuItems } from "./ContextMenuItems";
@@ -51,6 +54,21 @@ const createMockGridEvent = (
   } as Schema_GridEvent;
 };
 
+const createStateWithPendingEvents = (
+  pendingEventIds: string[] = [],
+): InitialReduxState => {
+  const baseState = createInitialState();
+  return {
+    ...baseState,
+    events: {
+      ...baseState.events!,
+      pendingEvents: {
+        eventIds: pendingEventIds,
+      },
+    },
+  };
+};
+
 describe("ContextMenuItems", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -68,16 +86,8 @@ describe("ContextMenuItems", () => {
       title: "Test Event",
     });
 
-    const initialState = createInitialState({
-      events: {
-        pendingEvents: {
-          eventIds: [],
-        },
-      },
-    });
-
     render(<ContextMenuItems event={event} close={mockClose} />, {
-      state: initialState,
+      state: createStateWithPendingEvents(),
     });
 
     expect(screen.getByText("Edit")).toBeInTheDocument();
@@ -92,16 +102,8 @@ describe("ContextMenuItems", () => {
       title: "Test Event",
     });
 
-    const initialState = createInitialState({
-      events: {
-        pendingEvents: {
-          eventIds: [],
-        },
-      },
-    });
-
     render(<ContextMenuItems event={event} close={mockClose} />, {
-      state: initialState,
+      state: createStateWithPendingEvents(),
     });
 
     const editButton = screen.getByText("Edit");
@@ -119,16 +121,8 @@ describe("ContextMenuItems", () => {
       title: "Pending Event",
     });
 
-    const initialState = createInitialState({
-      events: {
-        pendingEvents: {
-          eventIds: [event._id!],
-        },
-      },
-    });
-
     render(<ContextMenuItems event={event} close={mockClose} />, {
-      state: initialState,
+      state: createStateWithPendingEvents([event._id!]),
     });
 
     const deleteButton = screen.getByText("Delete");
@@ -146,16 +140,8 @@ describe("ContextMenuItems", () => {
       title: "Pending Event",
     });
 
-    const initialState = createInitialState({
-      events: {
-        pendingEvents: {
-          eventIds: [event._id!],
-        },
-      },
-    });
-
     render(<ContextMenuItems event={event} close={mockClose} />, {
-      state: initialState,
+      state: createStateWithPendingEvents([event._id!]),
     });
 
     const editButton = screen.getByText("Edit");
@@ -174,16 +160,8 @@ describe("ContextMenuItems", () => {
       title: "Pending Event",
     });
 
-    const initialState = createInitialState({
-      events: {
-        pendingEvents: {
-          eventIds: [event._id!],
-        },
-      },
-    });
-
     render(<ContextMenuItems event={event} close={mockClose} />, {
-      state: initialState,
+      state: createStateWithPendingEvents([event._id!]),
     });
 
     const duplicateButton = screen.getByText("Duplicate");
@@ -200,16 +178,8 @@ describe("ContextMenuItems", () => {
       title: "Pending Event",
     });
 
-    const initialState = createInitialState({
-      events: {
-        pendingEvents: {
-          eventIds: [event._id!],
-        },
-      },
-    });
-
     render(<ContextMenuItems event={event} close={mockClose} />, {
-      state: initialState,
+      state: createStateWithPendingEvents([event._id!]),
     });
 
     const deleteButton = screen.getByText("Delete").closest("li");
@@ -223,16 +193,8 @@ describe("ContextMenuItems", () => {
       title: "Normal Event",
     });
 
-    const initialState = createInitialState({
-      events: {
-        pendingEvents: {
-          eventIds: ["other-pending-event"],
-        },
-      },
-    });
-
     render(<ContextMenuItems event={event} close={mockClose} />, {
-      state: initialState,
+      state: createStateWithPendingEvents(["other-pending-event"]),
     });
 
     const deleteButton = screen.getByText("Delete");
