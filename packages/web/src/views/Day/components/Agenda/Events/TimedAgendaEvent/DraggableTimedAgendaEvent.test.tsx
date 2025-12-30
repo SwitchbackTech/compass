@@ -1,8 +1,10 @@
 import { ObjectId } from "bson";
+import { UseInteractionsReturn } from "@floating-ui/react";
 import "@testing-library/jest-dom";
 import { fireEvent, screen } from "@testing-library/react";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { render } from "@web/__tests__/__mocks__/mock.render";
+import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { useEventResizeActions } from "@web/common/hooks/useEventResizeActions";
 import {
   CursorItem,
@@ -10,6 +12,7 @@ import {
 } from "@web/common/hooks/useOpenAtCursor";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
+import { RootState } from "@web/store";
 import { DraggableTimedAgendaEvent } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/DraggableTimedAgendaEvent";
 import { useOpenAgendaEventPreview } from "@web/views/Day/hooks/events/useOpenAgendaEventPreview";
 import { useOpenEventContextMenu } from "@web/views/Day/hooks/events/useOpenEventContextMenu";
@@ -30,8 +33,8 @@ describe("DraggableTimedAgendaEvent", () => {
 
   const baseEvent: Schema_GridEvent = {
     ...standaloneEvent,
-    startDate: new Date("2023-01-01T10:00:00Z"),
-    endDate: new Date("2023-01-01T11:00:00Z"),
+    startDate: "2023-01-01T10:00:00Z",
+    endDate: "2023-01-01T11:00:00Z",
     origin: standaloneEvent.origin!,
     priority: standaloneEvent.priority!,
     user: standaloneEvent.user!,
@@ -44,7 +47,7 @@ describe("DraggableTimedAgendaEvent", () => {
       getReferenceProps: jest.fn((props) => props),
       getFloatingProps: jest.fn(),
       getItemProps: jest.fn(),
-    } as any,
+    } as unknown as UseInteractionsReturn,
     isDraftEvent: false,
     isNewDraftEvent: false,
   };
@@ -155,5 +158,54 @@ describe("DraggableTimedAgendaEvent", () => {
     const eventElement = screen.getByRole("button");
     expect(eventElement).toBeInTheDocument();
     expect(eventElement).toHaveAttribute("data-event-id", eventId);
+  });
+
+  it("should disable dragging when event is pending", () => {
+    const eventId = new ObjectId().toString();
+    const event: Schema_GridEvent = {
+      ...baseEvent,
+      _id: eventId,
+    };
+
+    const initialState = createInitialState({
+      events: {
+        pendingEvents: {
+          eventIds: [eventId],
+        },
+      } as unknown as Partial<RootState>["events"],
+    });
+
+    render(<DraggableTimedAgendaEvent event={event} {...defaultProps} />, {
+      state: initialState,
+    });
+
+    const eventElement = screen.getByRole("button");
+    expect(eventElement).toBeInTheDocument();
+    expect(eventElement).toHaveClass("cursor-wait");
+  });
+
+  it("should not disable dragging when event is not pending", () => {
+    const eventId = new ObjectId().toString();
+    const event: Schema_GridEvent = {
+      ...baseEvent,
+      _id: eventId,
+    };
+
+    const initialState = createInitialState({
+      events: {
+        pendingEvents: {
+          eventIds: [],
+        },
+      } as unknown as Partial<RootState>["events"],
+    });
+
+    render(<DraggableTimedAgendaEvent event={event} {...defaultProps} />, {
+      state: initialState,
+    });
+
+    const eventElement = screen.getByRole("button");
+    expect(eventElement).toBeInTheDocument();
+    expect(eventElement).toHaveClass("cursor-pointer");
+    expect(eventElement).not.toHaveClass("cursor-wait");
   });
 });
