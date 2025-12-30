@@ -161,7 +161,7 @@ export function useEventDNDActions(dateInView?: Dayjs) {
     (e: DragEndEvent) => {
       const { active, over } = e;
       const { data } = active;
-      const { view, type, event, task } = data.current ?? {};
+      const { view, type, event, task, deleteTask } = data.current ?? {};
 
       if (!over?.id) return;
 
@@ -169,13 +169,8 @@ export function useEventDNDActions(dateInView?: Dayjs) {
 
       switch (switchCase) {
         case `day-task-to-${ID_GRID_MAIN}`:
-          if (task) {
-            // We need access to deleteTask function from TaskContext
-            // This will be handled by passing it through the data
-            const { deleteTask } = data.current ?? {};
-            if (deleteTask) {
-              convertTaskToEventOnAgenda(task, active, over, deleteTask);
-            }
+          if (task && deleteTask) {
+            convertTaskToEventOnAgenda(task, active, over, deleteTask);
           }
           break;
         case `day-${Categories_Event.ALLDAY}-to-${ID_GRID_MAIN}`:
