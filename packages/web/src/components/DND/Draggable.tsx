@@ -18,11 +18,15 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useMergeRefs } from "@floating-ui/react";
 import { Categories_Event } from "@core/types/event.types";
+import { Task } from "@web/common/types/task.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
+export type DraggableDataType = Categories_Event | "task";
+
 export interface DraggableDNDData {
-  type: Categories_Event;
-  event: Schema_GridEvent | null;
+  type: DraggableDataType;
+  event?: Schema_GridEvent | null;
+  task?: Task | null;
   view: "day" | "week" | "now";
 }
 

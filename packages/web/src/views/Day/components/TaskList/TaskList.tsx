@@ -5,7 +5,6 @@ import { TaskContextMenuWrapper } from "@web/views/Day/components/ContextMenu/Ta
 import { TaskListHeader } from "@web/views/Day/components/TaskList/TaskListHeader";
 import { Tasks } from "@web/views/Day/components/Tasks/Tasks";
 import { useTaskListInputFocus } from "@web/views/Day/components/Tasks/useTaskListInputFocus";
-import { DNDTasksProvider } from "@web/views/Day/context/DNDTasksContext";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
 
 export function TaskList() {
@@ -64,9 +63,7 @@ export function TaskList() {
         className="flex flex-1 flex-col gap-2 overflow-hidden p-4"
       >
         <TaskContextMenuWrapper>
-          <DNDTasksProvider>
-            <Tasks />
-          </DNDTasksProvider>
+          <Tasks />
         </TaskContextMenuWrapper>
 
         <div className="mr-4 ml-2">

@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { Active, DragEndEvent, Over, useDndMonitor } from "@dnd-kit/core";
 import { Categories_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
+import { getUserId } from "@web/auth/auth.util";
 import {
   ID_GRID_ALLDAY_ROW,
   ID_GRID_MAIN,
@@ -12,12 +13,16 @@ import {
   setFloatingReferenceAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
 import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
+import { Task } from "@web/common/types/task.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { reorderGrid } from "@web/common/utils/dom/grid-organization.util";
 import { getCalendarEventElementFromGrid } from "@web/common/utils/event/event.util";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
+import { createEventSlice } from "@web/ducks/events/slices/event.slice";
 import { store } from "@web/store";
+import { useAppDispatch } from "@web/store/store.hooks";
 import { getSnappedMinutes } from "@web/views/Day/util/agenda/agenda.util";
+import { convertTaskToEvent } from "@web/views/Day/util/task/convertTaskToEvent";
 
 const shouldSaveImmediately = (_id: string) => {
   const storeEvent = selectEventById(store.getState(), _id);
@@ -36,6 +41,34 @@ const setReference = (_id: string) => {
 
 export function useEventDNDActions() {
   const updateEvent = useUpdateEvent();
+  const dispatch = useAppDispatch();
+
+  const convertTaskToEventOnAgenda = useCallback(
+    async (task: Task, active: Active, over: Over, deleteTask: () => void) => {
+      const snappedMinutes = getSnappedMinutes(active, over);
+
+      if (snappedMinutes === null) return;
+
+      const userId = await getUserId();
+      if (!userId) return;
+
+      const dateInView = dayjs().startOf("day");
+      const startTime = dateInView.add(snappedMinutes, "minute");
+
+      // Convert task to event
+      const event = convertTaskToEvent(task, startTime, 15, userId);
+
+      // Delete the task
+      deleteTask();
+
+      // Create the event optimistically
+      dispatch(createEventSlice.actions.request(event));
+
+      reorderGrid();
+      setReference(event._id!);
+    },
+    [dispatch],
+  );
 
   const moveTimedAroundMainGridDayView = useCallback(
     (event: Schema_GridEvent, active: Active, over: Over) => {
@@ -126,25 +159,42 @@ export function useEventDNDActions() {
     (e: DragEndEvent) => {
       const { active, over } = e;
       const { data } = active;
-      const { view, type, event } = data.current ?? {};
+      const { view, type, event, task } = data.current ?? {};
 
-      if (!over?.id || !event) return;
+      if (!over?.id) return;
 
       const switchCase = `${view}-${type}-to-${over.id}`;
 
       switch (switchCase) {
+        case `day-task-to-${ID_GRID_MAIN}`:
+          if (task) {
+            // We need access to deleteTask function from TaskContext
+            // This will be handled by passing it through the data
+            const { deleteTask } = data.current ?? {};
+            if (deleteTask) {
+              convertTaskToEventOnAgenda(task, active, over, deleteTask);
+            }
+          }
+          break;
         case `day-${Categories_Event.ALLDAY}-to-${ID_GRID_MAIN}`:
-          moveAllDayToMainGridDayView(event, active, over);
+          if (event) {
+            moveAllDayToMainGridDayView(event, active, over);
+          }
           break;
         case `day-${Categories_Event.TIMED}-to-${ID_GRID_MAIN}`:
-          moveTimedAroundMainGridDayView(event, active, over);
+          if (event) {
+            moveTimedAroundMainGridDayView(event, active, over);
+          }
           break;
         case `day-${Categories_Event.TIMED}-to-${ID_GRID_ALLDAY_ROW}`:
-          moveTimedToAllDayGridDayView(event);
+          if (event) {
+            moveTimedToAllDayGridDayView(event);
+          }
           break;
       }
     },
     [
+      convertTaskToEventOnAgenda,
       moveAllDayToMainGridDayView,
       moveTimedAroundMainGridDayView,
       moveTimedToAllDayGridDayView,

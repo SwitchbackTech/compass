@@ -1,45 +1,31 @@
-import { DragDropContext, Droppable } from "@hello-pangea/dnd";
+import { Droppable } from "@web/components/DND/Droppable";
 import { DropZone } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventsContainer/Dropzone";
 import { DraggableTask } from "@web/views/Day/components/Task/DraggableTask";
-import { useDNDTasksContext } from "@web/views/Day/hooks/tasks/useDNDTasks";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
+
+const TASK_LIST_DROPPABLE_ID = "task-list";
 
 export const Tasks = () => {
   const tasksProps = useTasks();
-  const { onDragStart, onDragUpdate, onDragEnd } = useDNDTasksContext();
 
   return (
-    <DragDropContext
-      onDragStart={onDragStart}
-      onDragUpdate={onDragUpdate}
-      onDragEnd={onDragEnd}
-      dragHandleUsageInstructions="use arrow keys to move, space to drop, or escape to cancel"
+    <Droppable
+      dndProps={{ id: TASK_LIST_DROPPABLE_ID }}
+      as="div"
+      className="flex flex-col gap-2 overflow-y-auto overscroll-contain"
+      style={{ scrollbarGutter: "stable both-edges" }}
+      role="list"
+      aria-label="Task list"
+      id="task-list-drop-zone"
     >
-      <Droppable droppableId="task-list">
-        {(droppableProvider, droppableSnapshot) => (
-          <DropZone
-            id="task-list-drop-zone"
-            role="list"
-            aria-label="Task list"
-            className="flex flex-col gap-2 overflow-y-auto overscroll-contain"
-            ref={droppableProvider.innerRef}
-            isActive={droppableSnapshot.isDraggingOver}
-            {...droppableProvider.droppableProps}
-            style={{ scrollbarGutter: "stable both-edges" }}
-          >
-            {tasksProps.tasks.map((task, index) => (
-              <DraggableTask
-                key={task.id}
-                task={task}
-                index={index}
-                tasksProps={tasksProps}
-              />
-            ))}
-
-            {droppableProvider.placeholder}
-          </DropZone>
-        )}
-      </Droppable>
-    </DragDropContext>
+      {tasksProps.tasks.map((task, index) => (
+        <DraggableTask
+          key={task.id}
+          task={task}
+          index={index}
+          tasksProps={tasksProps}
+        />
+      ))}
+    </Droppable>
   );
 };
