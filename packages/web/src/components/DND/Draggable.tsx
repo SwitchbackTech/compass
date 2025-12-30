@@ -23,14 +23,6 @@ import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 export type DraggableDataType = Categories_Event | "task";
 
-/**
- * Data structure for draggable items in the application
- * @property type - The type of item being dragged (event category or "task")
- * @property event - The event data (required when type is a Categories_Event)
- * @property task - The task data (required when type is "task")
- * @property view - The view where the drag originated ("day" | "week" | "now")
- * @property deleteTask - Optional function to delete a task (used when converting task to event)
- */
 export interface DraggableDNDData {
   type: DraggableDataType;
   event?: Schema_GridEvent | null;

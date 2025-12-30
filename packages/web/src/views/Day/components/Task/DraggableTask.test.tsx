@@ -119,4 +119,24 @@ describe("DraggableTask", () => {
     // Visible on focus
     expect(dragHandle).toHaveClass("focus:opacity-100");
   });
+
+  test("drag handle should be visible when dragging the handler button", () => {
+    const draggingTask = { ...mockTask, id: "task-dragging" };
+
+    renderDraggableTask(draggingTask);
+
+    const dragHandle = screen.getByRole("button", {
+      name: /Reorder Test Task/i,
+    });
+
+    expect(dragHandle).toHaveClass("opacity-0");
+
+    act(() => {
+      fireEvent.mouseOver(dragHandle);
+      fireEvent.mouseDown(dragHandle, { bubbles: true });
+      fireEvent.mouseMove(dragHandle, { clientY: 100 });
+    });
+
+    expect(dragHandle).toHaveClass("opacity-100");
+  });
 });

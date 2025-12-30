@@ -1,6 +1,6 @@
 import { ObjectId } from "bson";
 import { Origin, Priorities } from "@core/constants/core.constants";
-import { Schema_Event } from "@core/types/event.types";
+import { Schema_Event_Regular } from "@core/types/event.types";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { Task } from "@web/common/types/task.types";
 
@@ -10,14 +10,14 @@ import { Task } from "@web/common/types/task.types";
  * @param startTime - The start time for the event (should be snapped to the grid)
  * @param durationMinutes - The duration of the event in minutes (default: 15)
  * @param userId - The user ID
- * @returns A new event schema
+ * @returns A new regular event schema (non-recurring)
  */
 export function convertTaskToEvent(
   task: Task,
   startTime: Dayjs,
   durationMinutes: number = 15,
   userId: string,
-): Schema_Event {
+): Schema_Event_Regular {
   const endTime = startTime.add(durationMinutes, "minute");
 
   return {
