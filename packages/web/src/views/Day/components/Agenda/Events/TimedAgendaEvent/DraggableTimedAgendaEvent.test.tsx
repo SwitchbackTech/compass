@@ -1,5 +1,7 @@
+import { ObjectId } from "bson";
 import "@testing-library/jest-dom";
 import { fireEvent, screen } from "@testing-library/react";
+import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { useEventResizeActions } from "@web/common/hooks/useEventResizeActions";
@@ -140,5 +142,21 @@ describe("DraggableTimedAgendaEvent", () => {
 
     fireEvent.contextMenu(eventElement);
     expect(mockOpenEventContextMenu).not.toHaveBeenCalled();
+  });
+
+  it("should render correctly with optimistic event", () => {
+    const optimisticId = `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`;
+    const optimisticEvent: Schema_GridEvent = {
+      ...baseEvent,
+      _id: optimisticId,
+    };
+
+    render(
+      <DraggableTimedAgendaEvent event={optimisticEvent} {...defaultProps} />,
+    );
+
+    const eventElement = screen.getByRole("button");
+    expect(eventElement).toBeInTheDocument();
+    expect(eventElement).toHaveAttribute("data-event-id", optimisticId);
   });
 });

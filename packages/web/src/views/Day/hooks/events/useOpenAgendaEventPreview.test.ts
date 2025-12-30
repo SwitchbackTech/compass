@@ -1,4 +1,6 @@
+import { ObjectId } from "bson";
 import { renderHook } from "@testing-library/react";
+import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import {
   CursorItem,
@@ -112,6 +114,37 @@ describe("useOpenAgendaEventPreview", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     result.current(mockEventObj as any);
 
+    expect(setActiveEvent).not.toHaveBeenCalled();
+    expect(openFloatingAtCursor).not.toHaveBeenCalled();
+  });
+
+  it("should not open event preview if event is optimistic", () => {
+    const optimisticId = `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`;
+    const eventClass = "event-class";
+    const mockEvent = { _id: optimisticId, title: "Optimistic Event" };
+    const mockReference = {
+      getAttribute: jest.fn().mockReturnValue(optimisticId),
+    };
+    const mockElement = {
+      closest: jest.fn().mockReturnValue(mockReference),
+    };
+    const mockEventObj = {
+      preventDefault: jest.fn(),
+      stopPropagation: jest.fn(),
+      currentTarget: mockElement,
+    };
+
+    (getEventClass as jest.Mock).mockReturnValue(eventClass);
+    (eventsStore.query as jest.Mock).mockReturnValue(mockEvent);
+
+    const { result } = renderHook(() => useOpenAgendaEventPreview());
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    result.current(mockEventObj as any);
+
+    expect(mockEventObj.preventDefault).toHaveBeenCalled();
+    expect(mockEventObj.stopPropagation).toHaveBeenCalled();
+    expect(eventsStore.query).toHaveBeenCalled();
     expect(setActiveEvent).not.toHaveBeenCalled();
     expect(openFloatingAtCursor).not.toHaveBeenCalled();
   });
