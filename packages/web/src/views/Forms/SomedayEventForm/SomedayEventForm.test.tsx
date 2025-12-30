@@ -109,15 +109,13 @@ describe("SomedayEventForm Hotkeys", () => {
     expect(mockConfirm).not.toHaveBeenCalled();
   });
 
-  it.skip("should trigger delete flow when delete keyboard shortcut is used and confirmed", async () => {
+  it("should trigger delete flow when delete keyboard shortcut is used and confirmed", async () => {
     // Explicitly confirm deletion
     mockConfirm.mockReturnValue(true);
 
-    const { dispatch } = setupDraftState(sampleSomedayEvent as Schema_WebEvent);
-    const deleteSpy = jest.spyOn(dispatch, "deleteEventSlice.actions.request");
-
-    const { weekProps, dateCalcs, deleteEvent } = setupDraftState(
+    const { weekProps, dateCalcs, deleteEvent, dispatchSpy } = setupDraftState(
       sampleSomedayEvent as Schema_WebEvent,
+      { spyOnDispatch: true },
     );
 
     render(
@@ -147,10 +145,14 @@ describe("SomedayEventForm Hotkeys", () => {
     expect(mockConfirm).toHaveBeenCalledWith(
       `Delete ${sampleSomedayEvent.title}?`,
     );
-    expect(deleteSpy).toHaveBeenCalledWith(
+    expect(dispatchSpy).toBeDefined();
+    expect(dispatchSpy!).toHaveBeenCalledWith(
       expect.objectContaining({
-        _id: sampleSomedayEvent._id!,
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+        type: deleteEventSlice.actionNames.request,
+        payload: expect.objectContaining({
+          _id: sampleSomedayEvent._id!,
+          applyTo: RecurringEventUpdateScope.THIS_EVENT,
+        }),
       }),
     );
 
