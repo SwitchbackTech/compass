@@ -16,6 +16,7 @@ import { setupDraftState } from "@web/__tests__/utils/state/draft.test.util";
 import { Schema_WebEvent } from "@web/common/types/web.event.types";
 import { EventApi } from "@web/ducks/events/event.api";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
+import * as storeHooks from "@web/store/store.hooks";
 import { DraftProvider } from "@web/views/Calendar/components/Draft/context/DraftProvider";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm/SomedayEventForm";
 
@@ -31,11 +32,14 @@ const mockSetEvent = jest.fn();
 const mockDuplicateEvent = jest.fn();
 const isDraft = true;
 const isExistingEvent = true;
+let dispatchSpy: jest.Mock;
 
 describe("SomedayEventForm Hotkeys", () => {
   beforeEach(() => {
     jest.resetAllMocks();
     jest.spyOn(window, "alert");
+    dispatchSpy = jest.fn();
+    jest.spyOn(storeHooks, "useAppDispatch").mockReturnValue(dispatchSpy);
 
     jest
       .spyOn(EventApi, "delete")
@@ -113,9 +117,8 @@ describe("SomedayEventForm Hotkeys", () => {
     // Explicitly confirm deletion
     mockConfirm.mockReturnValue(true);
 
-    const { weekProps, dateCalcs, deleteEvent, dispatchSpy } = setupDraftState(
+    const { weekProps, dateCalcs, deleteEvent } = setupDraftState(
       sampleSomedayEvent as Schema_WebEvent,
-      { spyOnDispatch: true },
     );
 
     render(
@@ -145,8 +148,7 @@ describe("SomedayEventForm Hotkeys", () => {
     expect(mockConfirm).toHaveBeenCalledWith(
       `Delete ${sampleSomedayEvent.title}?`,
     );
-    expect(dispatchSpy).toBeDefined();
-    expect(dispatchSpy!).toHaveBeenCalledWith(
+    expect(dispatchSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         type: deleteEventSlice.actionNames.request,
         payload: expect.objectContaining({
