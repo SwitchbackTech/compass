@@ -253,6 +253,15 @@ export const isOptimisticEvent = (event: Schema_Event) => {
   return isOptimistic;
 };
 
+export const getEventCursorStyle = (
+  isDragging: boolean,
+  isOptimistic: boolean,
+): string => {
+  if (isDragging) return "move";
+  if (isOptimistic) return "wait";
+  return "pointer";
+};
+
 export const prepEvtAfterDraftDrop = (
   category: Categories_Event,
   dropItem: DropResult & Schema_Event,

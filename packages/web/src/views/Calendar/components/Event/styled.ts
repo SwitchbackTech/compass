@@ -6,6 +6,7 @@ import {
   colorByPriority,
   hoverColorByPriority,
 } from "@web/common/styles/theme.util";
+import { getEventCursorStyle } from "@web/common/utils/event/event.util";
 import { Text } from "@web/components/Text";
 
 interface StyledEventProps {
@@ -84,7 +85,7 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
       !isResizing &&
       `
       background-color: ${isOptimistic && backgroundColor ? darken(backgroundColor) : hoverColor};
-      cursor: ${isDragging ? "move" : isOptimistic ? "wait" : "pointer"};
+      cursor: ${getEventCursorStyle(isDragging, isOptimistic)};
       drop-shadow(2px 4px 4px ${theme.color.shadow.default});
      `};
   }
