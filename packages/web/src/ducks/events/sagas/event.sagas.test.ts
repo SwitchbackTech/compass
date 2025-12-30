@@ -3,10 +3,17 @@ import { Schema_Event } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import { sagaMiddleware } from "@web/common/store/middlewares";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  Schema_GridEvent,
+  Schema_WebEvent,
+} from "@web/common/types/web.event.types";
 import { EventApi } from "@web/ducks/events/event.api";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
-import { createEventSlice } from "@web/ducks/events/slices/event.slice";
+import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
+import {
+  createEventSlice,
+  editEventSlice,
+} from "@web/ducks/events/slices/event.slice";
 import { RootState } from "@web/store";
 import { sagas } from "@web/store/sagas";
 import { OnSubmitParser } from "@web/views/Calendar/components/Draft/hooks/actions/submit.parser";
@@ -235,5 +242,209 @@ describe("createEvent saga - optimistic rendering", () => {
     // Should have exactly one event in each list
     expect(finalWeekIds).toHaveLength(1);
     expect(finalDayIds).toHaveLength(1);
+  });
+});
+
+describe("pending events state management", () => {
+  let store: ReturnType<typeof createStoreWithEvents>;
+  let mockCreateApi: jest.SpyInstance;
+  let mockEditApi: jest.SpyInstance;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    store = createStoreWithEvents([]);
+    sagaMiddleware.run(sagas);
+
+    mockCreateApi = jest.spyOn(EventApi, "create").mockImplementation(() => {
+      return Promise.resolve({
+        status: 200,
+      } as unknown as AxiosResponse<void>);
+    });
+
+    mockEditApi = jest.spyOn(EventApi, "edit").mockImplementation(() => {
+      return Promise.resolve({
+        status: 200,
+      } as unknown as AxiosResponse<void>);
+    });
+  });
+
+  describe("createEvent saga", () => {
+    it("should add event to pending when creation starts", () => {
+      const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+      const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
+      const action = createEventSlice.actions.request(event);
+
+      store.dispatch(action);
+
+      const state = store.getState();
+      const eventEntities = state.events.entities.value || {};
+      const eventIds = Object.keys(eventEntities);
+      const eventId = eventIds[0];
+
+      const isPending = selectIsEventPending(state as RootState, eventId);
+      expect(isPending).toBe(true);
+      expect(state.events.pendingEvents.eventIds).toContain(eventId);
+    });
+
+    it("should remove event from pending on successful creation", async () => {
+      const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+      const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
+      const action = createEventSlice.actions.request(event);
+
+      store.dispatch(action);
+
+      const initialState = store.getState();
+      const eventEntities = initialState.events.entities.value || {};
+      const eventIds = Object.keys(eventEntities);
+      const eventId = eventIds[0];
+
+      // Wait for saga to complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const finalState = store.getState();
+      const isPending = selectIsEventPending(finalState as RootState, eventId);
+      expect(isPending).toBe(false);
+      expect(finalState.events.pendingEvents.eventIds).not.toContain(eventId);
+    });
+
+    it("should remove event from pending on creation error", async () => {
+      const error = new Error("API Error");
+      mockCreateApi.mockRejectedValue(error);
+
+      const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+      const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
+      const action = createEventSlice.actions.request(event);
+
+      store.dispatch(action);
+
+      // Wait for saga to complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const state = store.getState();
+      // Event should be removed from pending even on error
+      expect(state.events.pendingEvents.eventIds).toHaveLength(0);
+    });
+  });
+
+  describe("editEvent saga", () => {
+    it("should add event to pending when edit starts", async () => {
+      // First create an event
+      const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+      const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
+      const createAction = createEventSlice.actions.request(event);
+
+      store.dispatch(createAction);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const stateAfterCreate = store.getState();
+      const eventEntities = stateAfterCreate.events.entities.value || {};
+      const eventIds = Object.keys(eventEntities);
+      const eventId = eventIds[0];
+
+      // Now edit the event - get the actual event from store
+      const existingEvent = selectEventById(
+        stateAfterCreate as RootState,
+        eventId,
+      ) as Schema_GridEvent;
+      const updatedEvent = {
+        ...existingEvent,
+        title: "Updated Title",
+      } as Schema_WebEvent;
+      const editAction = editEventSlice.actions.request({
+        _id: eventId,
+        event: updatedEvent,
+      });
+
+      store.dispatch(editAction);
+
+      const stateAfterEdit = store.getState();
+      const isPending = selectIsEventPending(
+        stateAfterEdit as RootState,
+        eventId,
+      );
+      expect(isPending).toBe(true);
+      expect(stateAfterEdit.events.pendingEvents.eventIds).toContain(eventId);
+    });
+
+    it("should remove event from pending on successful edit", async () => {
+      // First create an event
+      const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+      const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
+      const createAction = createEventSlice.actions.request(event);
+
+      store.dispatch(createAction);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const stateAfterCreate = store.getState();
+      const eventEntities = stateAfterCreate.events.entities.value || {};
+      const eventIds = Object.keys(eventEntities);
+      const eventId = eventIds[0];
+
+      // Now edit the event - get the actual event from store
+      const existingEvent = selectEventById(
+        stateAfterCreate as RootState,
+        eventId,
+      ) as Schema_GridEvent;
+      const updatedEvent = {
+        ...existingEvent,
+        title: "Updated Title",
+      } as Schema_WebEvent;
+      const editAction = editEventSlice.actions.request({
+        _id: eventId,
+        event: updatedEvent,
+      });
+
+      store.dispatch(editAction);
+
+      // Wait for edit saga to complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const finalState = store.getState();
+      const isPending = selectIsEventPending(finalState as RootState, eventId);
+      expect(isPending).toBe(false);
+      expect(finalState.events.pendingEvents.eventIds).not.toContain(eventId);
+    });
+
+    it("should remove event from pending on edit error", async () => {
+      // First create an event
+      const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+      const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
+      const createAction = createEventSlice.actions.request(event);
+
+      store.dispatch(createAction);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const stateAfterCreate = store.getState();
+      const eventEntities = stateAfterCreate.events.entities.value || {};
+      const eventIds = Object.keys(eventEntities);
+      const eventId = eventIds[0];
+
+      // Mock edit API to fail
+      const error = new Error("Edit API Error");
+      mockEditApi.mockRejectedValue(error);
+
+      // Now edit the event - get the actual event from store
+      const existingEvent = selectEventById(
+        stateAfterCreate as RootState,
+        eventId,
+      ) as Schema_GridEvent;
+      const updatedEvent = {
+        ...existingEvent,
+        title: "Updated Title",
+      } as Schema_WebEvent;
+      const editAction = editEventSlice.actions.request({
+        _id: eventId,
+        event: updatedEvent,
+      });
+
+      store.dispatch(editAction);
+
+      // Wait for edit saga to complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const finalState = store.getState();
+      // Event should be removed from pending even on error
+      expect(finalState.events.pendingEvents.eventIds).not.toContain(eventId);
+    });
   });
 });
