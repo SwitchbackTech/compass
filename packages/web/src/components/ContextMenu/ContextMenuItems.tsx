@@ -89,6 +89,10 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
 
   const { onDelete } = confirmation;
 
+  const isActionDisabled = (itemId: string) =>
+    isPending &&
+    (itemId === "edit" || itemId === "duplicate" || itemId === "delete");
+
   const menuActions: ContextMenuAction[] = [
     {
       id: "edit",
@@ -140,42 +144,28 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
           </TooltipWrapper>
         ))}
       </PriorityContainer>
-      {menuActions.map((item) => (
-        <MenuItem
-          key={item.id}
-          onClick={() => {
-            if (
-              isPending &&
-              (item.id === "edit" ||
-                item.id === "duplicate" ||
-                item.id === "delete")
-            ) {
-              return;
-            }
-            item.onClick();
-            close();
-          }}
-          style={{
-            opacity:
-              isPending &&
-              (item.id === "edit" ||
-                item.id === "duplicate" ||
-                item.id === "delete")
-                ? 0.5
-                : 1,
-            cursor:
-              isPending &&
-              (item.id === "edit" ||
-                item.id === "duplicate" ||
-                item.id === "delete")
-                ? "wait"
-                : "pointer",
-          }}
-        >
-          {item.icon}
-          <MenuItemLabel>{item.label}</MenuItemLabel>
-        </MenuItem>
-      ))}
+      {menuActions.map((item) => {
+        const disabled = isActionDisabled(item.id);
+        return (
+          <MenuItem
+            key={item.id}
+            onClick={() => {
+              if (disabled) {
+                return;
+              }
+              item.onClick();
+              close();
+            }}
+            style={{
+              opacity: disabled ? 0.5 : 1,
+              cursor: disabled ? "wait" : "pointer",
+            }}
+          >
+            {item.icon}
+            <MenuItemLabel>{item.label}</MenuItemLabel>
+          </MenuItem>
+        );
+      })}
     </div>
   );
 }
