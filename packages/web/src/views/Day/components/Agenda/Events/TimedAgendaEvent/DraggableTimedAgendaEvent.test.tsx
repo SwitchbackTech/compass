@@ -1,7 +1,7 @@
 import { ObjectId } from "bson";
+import { UseInteractionsReturn } from "@floating-ui/react";
 import "@testing-library/jest-dom";
 import { fireEvent, screen } from "@testing-library/react";
-import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { useEventResizeActions } from "@web/common/hooks/useEventResizeActions";
@@ -31,8 +31,8 @@ describe("DraggableTimedAgendaEvent", () => {
 
   const baseEvent: Schema_GridEvent = {
     ...standaloneEvent,
-    startDate: new Date("2023-01-01T10:00:00Z"),
-    endDate: new Date("2023-01-01T11:00:00Z"),
+    startDate: "2023-01-01T10:00:00Z",
+    endDate: "2023-01-01T11:00:00Z",
     origin: standaloneEvent.origin!,
     priority: standaloneEvent.priority!,
     user: standaloneEvent.user!,
@@ -45,9 +45,10 @@ describe("DraggableTimedAgendaEvent", () => {
       getReferenceProps: jest.fn((props) => props),
       getFloatingProps: jest.fn(),
       getItemProps: jest.fn(),
-    } as any,
+    } as unknown as UseInteractionsReturn,
     isDraftEvent: false,
     isNewDraftEvent: false,
+    isDisabled: false,
   };
 
   const mockOpenAgendaEventPreview = jest.fn();
@@ -144,19 +145,58 @@ describe("DraggableTimedAgendaEvent", () => {
     expect(mockOpenEventContextMenu).not.toHaveBeenCalled();
   });
 
-  it("should render correctly with optimistic event", () => {
-    const optimisticId = `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`;
-    const optimisticEvent: Schema_GridEvent = {
+  it("should render correctly with event", () => {
+    const eventId = new ObjectId().toString();
+    const event: Schema_GridEvent = {
       ...baseEvent,
-      _id: optimisticId,
+      _id: eventId,
+    };
+
+    render(<DraggableTimedAgendaEvent event={event} {...defaultProps} />);
+
+    const eventElement = screen.getByRole("button");
+    expect(eventElement).toBeInTheDocument();
+    expect(eventElement).toHaveAttribute("data-event-id", eventId);
+  });
+
+  it("should disable dragging when event is pending", () => {
+    const eventId = new ObjectId().toString();
+    const event: Schema_GridEvent = {
+      ...baseEvent,
+      _id: eventId,
     };
 
     render(
-      <DraggableTimedAgendaEvent event={optimisticEvent} {...defaultProps} />,
+      <DraggableTimedAgendaEvent
+        event={event}
+        {...defaultProps}
+        isDisabled={true}
+      />,
     );
 
     const eventElement = screen.getByRole("button");
     expect(eventElement).toBeInTheDocument();
-    expect(eventElement).toHaveAttribute("data-event-id", optimisticId);
+    expect(eventElement).toHaveClass("cursor-wait");
+  });
+
+  it("should not disable dragging when event is not pending", () => {
+    const eventId = new ObjectId().toString();
+    const event: Schema_GridEvent = {
+      ...baseEvent,
+      _id: eventId,
+    };
+
+    render(
+      <DraggableTimedAgendaEvent
+        event={event}
+        {...defaultProps}
+        isDisabled={false}
+      />,
+    );
+
+    const eventElement = screen.getByRole("button");
+    expect(eventElement).toBeInTheDocument();
+    expect(eventElement).toHaveClass("cursor-pointer");
+    expect(eventElement).not.toHaveClass("cursor-wait");
   });
 });

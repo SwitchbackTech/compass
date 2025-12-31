@@ -1,0 +1,202 @@
+import { screen } from "@testing-library/react";
+import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
+import { render } from "@web/__tests__/__mocks__/mock.render";
+import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
+import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { MainGridEvents } from "./MainGridEvents";
+
+jest.mock(
+  "@web/views/Calendar/components/Event/Grid/GridEvent/GridEvent",
+  () => ({
+    GridEventMemo: ({ event }: any) => (
+      <div data-testid={`grid-event-${event._id}`} data-event-id={event._id}>
+        {event.title}
+      </div>
+    ),
+  }),
+);
+
+const createMockGridEvent = (
+  overrides: Partial<Schema_GridEvent> = {},
+): Schema_GridEvent => {
+  const standaloneEvent = createMockStandaloneEvent();
+  return {
+    ...standaloneEvent,
+    position: gridEventDefaultPosition,
+    ...overrides,
+  } as Schema_GridEvent;
+};
+
+const mockMeasurements: Measurements_Grid = {
+  mainGrid: {
+    top: 0,
+    left: 0,
+    height: 1000,
+    width: 1000,
+    x: 0,
+    y: 0,
+    bottom: 1000,
+    right: 1000,
+    toJSON: () => ({}),
+  },
+  hourHeight: 60,
+  colWidths: Array(7).fill(100),
+  allDayRow: null,
+  remeasure: jest.fn(),
+};
+
+const mockWeekProps: WeekProps = {
+  component: {
+    startOfView: "2024-01-15T00:00:00Z",
+    endOfView: "2024-01-21T23:59:59Z",
+  },
+  hooks: {} as any,
+};
+
+describe("MainGridEvents", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("should render timed events", () => {
+    const event1 = createMockGridEvent({
+      _id: "event-1",
+      title: "Event 1",
+    });
+    const event2 = createMockGridEvent({
+      _id: "event-2",
+      title: "Event 2",
+    });
+
+    const initialState = createInitialState({
+      events: {
+        entities: {
+          value: {
+            [event1._id!]: event1,
+            [event2._id!]: event2,
+          },
+        },
+        getWeekEvents: {
+          value: {
+            data: [event1._id!, event2._id!],
+            count: 2,
+            pageSize: 2,
+          },
+          isProcessing: false,
+          isSuccess: true,
+          error: null,
+          reason: null,
+        },
+        pendingEvents: {
+          eventIds: [],
+        },
+      },
+    });
+
+    render(
+      <MainGridEvents
+        measurements={mockMeasurements}
+        weekProps={mockWeekProps}
+      />,
+      { state: initialState },
+    );
+
+    expect(screen.getByTestId("grid-event-event-1")).toBeInTheDocument();
+    expect(screen.getByTestId("grid-event-event-2")).toBeInTheDocument();
+  });
+
+  it("should render pending events", () => {
+    const pendingEvent = createMockGridEvent({
+      _id: "pending-event-1",
+      title: "Pending Event",
+    });
+
+    const initialState = createInitialState({
+      events: {
+        entities: {
+          value: {
+            [pendingEvent._id!]: pendingEvent,
+          },
+        },
+        getWeekEvents: {
+          value: {
+            data: [pendingEvent._id!],
+            count: 1,
+            pageSize: 1,
+          },
+          isProcessing: false,
+          isSuccess: true,
+          error: null,
+          reason: null,
+        },
+        pendingEvents: {
+          eventIds: [pendingEvent._id!],
+        },
+      },
+    });
+
+    render(
+      <MainGridEvents
+        measurements={mockMeasurements}
+        weekProps={mockWeekProps}
+      />,
+      { state: initialState },
+    );
+
+    expect(
+      screen.getByTestId("grid-event-pending-event-1"),
+    ).toBeInTheDocument();
+  });
+
+  it("should render both pending and non-pending events", () => {
+    const pendingEvent = createMockGridEvent({
+      _id: "pending-event-1",
+      title: "Pending Event",
+    });
+    const normalEvent = createMockGridEvent({
+      _id: "normal-event-1",
+      title: "Normal Event",
+    });
+
+    const initialState = createInitialState({
+      events: {
+        entities: {
+          value: {
+            [pendingEvent._id!]: pendingEvent,
+            [normalEvent._id!]: normalEvent,
+          },
+        },
+        getWeekEvents: {
+          value: {
+            data: [pendingEvent._id!, normalEvent._id!],
+            count: 2,
+            pageSize: 2,
+          },
+          isProcessing: false,
+          isSuccess: true,
+          error: null,
+          reason: null,
+        },
+        pendingEvents: {
+          eventIds: [pendingEvent._id!],
+        },
+      },
+    });
+
+    render(
+      <MainGridEvents
+        measurements={mockMeasurements}
+        weekProps={mockWeekProps}
+      />,
+      { state: initialState },
+    );
+
+    expect(
+      screen.getByTestId("grid-event-pending-event-1"),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("grid-event-normal-event-1")).toBeInTheDocument();
+  });
+});

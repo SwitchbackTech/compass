@@ -18,7 +18,7 @@ interface StyledEventProps {
   isInPast: boolean;
   isResizing: boolean;
   isPlaceholder: boolean;
-  isOptimistic: boolean;
+  isPending: boolean;
   left: number;
   lineClamp: number;
   opacity?: number;
@@ -74,7 +74,7 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
 
     ${({
       backgroundColor,
-      isOptimistic,
+      isPending,
       isPlaceholder,
       isDragging,
       isResizing,
@@ -84,8 +84,8 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
       !isPlaceholder &&
       !isResizing &&
       `
-      background-color: ${isOptimistic && backgroundColor ? darken(backgroundColor) : hoverColor};
-      cursor: ${getEventCursorStyle(isDragging, isOptimistic)};
+      background-color: ${isPending && backgroundColor ? darken(backgroundColor) : hoverColor};
+      cursor: ${getEventCursorStyle(isDragging, isPending)};
       drop-shadow(2px 4px 4px ${theme.color.shadow.default});
      `};
   }

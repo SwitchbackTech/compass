@@ -1,6 +1,5 @@
 import { normalize } from "normalizr";
 import { call, put, select } from "@redux-saga/core/effects";
-import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import {
   Params_Events,
@@ -13,6 +12,7 @@ import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import {
   Schema_GridEvent,
   Schema_OptimisticEvent,
+  Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import { handleError } from "@web/common/utils/event/event.util";
 import { EventApi } from "@web/ducks/events/event.api";
@@ -33,7 +33,6 @@ import {
   _createOptimisticGridEvent,
   _editEvent,
   normalizedEventsSchema,
-  replaceOptimisticId,
 } from "@web/ducks/events/sagas/saga.util";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
@@ -44,6 +43,7 @@ import {
   eventsEntitiesSlice,
   getCurrentMonthEventsSlice,
 } from "@web/ducks/events/slices/event.slice";
+import { pendingEventsSlice } from "@web/ducks/events/slices/pending.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { RootState } from "@web/store";
 
@@ -58,14 +58,28 @@ export function* convertCalendarToSomedayEvent({
     const { ALL_EVENTS, THIS_EVENT } = RecurringEventUpdateScope;
     const applyTo = isInstance ? ALL_EVENTS : THIS_EVENT;
 
-    // optimistic event will have an entirely new ID that will not match that eventually saved
+    // optimistic event will have the same ID as that eventually saved
     optimisticEvent = yield* _createOptimisticGridEvent(gridEvent, true);
 
+    // Mark event as pending when edit starts
+    yield put(pendingEventsSlice.actions.add(optimisticEvent._id));
+
     yield* _editEvent(gridEvent, { applyTo });
-    yield* replaceOptimisticId(optimisticEvent._id, false);
+
+    yield put(
+      eventsEntitiesSlice.actions.edit({
+        _id: optimisticEvent._id,
+        event: { ...optimisticEvent, isOptimistic: false } as Schema_WebEvent,
+      }),
+    );
+
+    // Remove from pending on success
+    yield put(pendingEventsSlice.actions.remove(optimisticEvent._id));
     yield put(editEventSlice.actions.success());
   } catch (error) {
+    // Remove from pending on error
     if (optimisticEvent) {
+      yield put(pendingEventsSlice.actions.remove(optimisticEvent._id));
       yield put(
         eventsEntitiesSlice.actions.delete({ _id: optimisticEvent._id }),
       );
@@ -81,34 +95,43 @@ export function* convertCalendarToSomedayEvent({
 
 export function* createEvent({ payload }: Action_CreateEvent) {
   const event = yield* _createOptimisticGridEvent(payload, payload.isSomeday);
-  const optimisticId = event._id;
+
+  yield put(pendingEventsSlice.actions.add(event._id));
 
   try {
-    yield call(EventApi.create, payload);
-    yield* replaceOptimisticId(optimisticId, payload.isSomeday!);
+    yield call(EventApi.create, event);
 
+    yield put(
+      eventsEntitiesSlice.actions.edit({
+        _id: event._id,
+        event: { ...event, isOptimistic: false } as Schema_WebEvent,
+      }),
+    );
+
+    yield put(pendingEventsSlice.actions.remove(event._id));
     yield put(createEventSlice.actions.success());
   } catch (error) {
+    yield put(pendingEventsSlice.actions.remove(event._id));
     yield put(createEventSlice.actions.error());
     yield call(deleteEvent, {
-      payload: { _id: optimisticId },
+      payload: { _id: event._id },
     } as Action_DeleteEvent);
     handleError(error as Error);
   }
 }
 
 export function* deleteEvent({ payload }: Action_DeleteEvent) {
-  const event = (yield select((state: RootState) =>
-    selectEventById(state, payload._id),
-  )) as Schema_GridEvent;
-
   try {
     yield put(getWeekEventsSlice.actions.delete(payload));
     yield put(getDayEventsSlice.actions.delete(payload));
     yield put(eventsEntitiesSlice.actions.delete(payload));
 
-    const isInDb = !event?._id?.startsWith(ID_OPTIMISTIC_PREFIX);
-    if (isInDb) {
+    const pendingEventIds = (yield select(
+      (state: RootState) => state.events.pendingEvents.eventIds,
+    )) as string[];
+    const isPending = pendingEventIds.includes(payload._id);
+    // Only call delete API if event is not pending (i.e., exists in DB)
+    if (!isPending) {
       yield call(EventApi.delete, payload._id, payload.applyTo);
     }
 
@@ -126,13 +149,21 @@ export function* editEvent({ payload }: Action_EditEvent) {
 
   const { _id, applyTo, event, shouldRemove } = payload;
 
+  // Mark event as pending when edit starts
+  yield put(pendingEventsSlice.actions.add(_id));
+
   try {
     if (shouldRemove) yield put(eventsEntitiesSlice.actions.delete({ _id }));
     else yield put(eventsEntitiesSlice.actions.edit(payload));
 
     yield call(EventApi.edit, _id, event, { applyTo });
+
+    // Remove from pending on success
+    yield put(pendingEventsSlice.actions.remove(_id));
     yield put(editEventSlice.actions.success());
   } catch (error) {
+    // Remove from pending on error
+    yield put(pendingEventsSlice.actions.remove(_id));
     yield put(eventsEntitiesSlice.actions.edit({ ...payload, event: _event }));
     yield put(editEventSlice.actions.error());
     handleError(error as Error);

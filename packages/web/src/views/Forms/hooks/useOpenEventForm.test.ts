@@ -1,11 +1,7 @@
 import { ObjectId } from "bson";
 import { act } from "react";
 import { renderHook } from "@testing-library/react";
-import {
-  ID_OPTIMISTIC_PREFIX,
-  Origin,
-  Priorities,
-} from "@core/constants/core.constants";
+import { Origin, Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import {
   CLASS_TIMED_CALENDAR_EVENT,
@@ -37,8 +33,20 @@ jest.mock("@web/store/events", () => ({
 }));
 jest.mock("@web/common/utils/event/event.util", () => ({
   getCalendarEventElementFromGrid: jest.fn(),
-  isOptimisticEvent: jest.fn((event) => {
-    return event._id?.startsWith("optimistic-") || false;
+}));
+jest.mock("@web/store/store.hooks", () => ({
+  useAppSelector: jest.fn((selector) => {
+    // Mock pending events - return empty Set by default
+    if (typeof selector === "function") {
+      return selector({
+        events: {
+          pendingEvents: {
+            eventIds: [],
+          },
+        },
+      });
+    }
+    return selector;
   }),
 }));
 
@@ -189,15 +197,33 @@ describe("useOpenEventForm", () => {
     expect(mockSetDraft).toHaveBeenCalledWith(mockEvent);
   });
 
-  it("should not open event form for editing if event is optimistic", async () => {
-    const optimisticId = `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`;
+  it("should not open event form for editing if event is pending", async () => {
+    const { useAppSelector } = jest.requireMock("@web/store/store.hooks");
+    const pendingEventId = new ObjectId().toString();
+    const pendingEventIds = [pendingEventId];
+
+    useAppSelector.mockImplementation(
+      (selector: (state: unknown) => unknown) => {
+        if (typeof selector === "function") {
+          return selector({
+            events: {
+              pendingEvents: {
+                eventIds: pendingEventIds,
+              },
+            },
+          });
+        }
+        return selector;
+      },
+    );
+
     const mockEventElement = document.createElement("div");
     mockEventElement.classList.add(CLASS_TIMED_CALENDAR_EVENT);
-    mockEventElement.setAttribute(DATA_EVENT_ELEMENT_ID, optimisticId);
+    mockEventElement.setAttribute(DATA_EVENT_ELEMENT_ID, pendingEventId);
 
     const mockEvent = {
-      _id: optimisticId,
-      title: "Optimistic Event",
+      _id: pendingEventId,
+      title: "Pending Event",
     };
 
     getElementAtPoint.mockReturnValue(mockEventElement);
@@ -210,7 +236,7 @@ describe("useOpenEventForm", () => {
       await result.current(
         new CustomEvent("click", {
           bubbles: true,
-          detail: { create: false, id: optimisticId },
+          detail: { create: false, id: pendingEventId },
         }) as unknown as React.PointerEvent<HTMLElement>,
       );
     });

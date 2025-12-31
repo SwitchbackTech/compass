@@ -2,7 +2,7 @@ import classNames from "classnames";
 import fastDeepEqual from "fast-deep-equal/react";
 import { memo } from "react";
 import { UseInteractionsReturn } from "@floating-ui/react";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import { Categories_Event } from "@core/types/event.types";
 import { CLASS_ALL_DAY_CALENDAR_EVENT } from "@web/common/constants/web.constants";
 import { useIsDraggingEvent } from "@web/common/hooks/useIsDraggingEvent";
 import { useMainGridSelectionState } from "@web/common/hooks/useMainGridSelectionState";
@@ -11,10 +11,7 @@ import {
   useFloatingNodeIdAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import {
-  getEventCursorClass,
-  isOptimisticEvent,
-} from "@web/common/utils/event/event.util";
+import { getEventCursorClass } from "@web/common/utils/event/event.util";
 import { Draggable } from "@web/components/DND/Draggable";
 import { AllDayAgendaEvent } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/AllDayAgendaEvent";
 import { useOpenAgendaEventPreview } from "@web/views/Day/hooks/events/useOpenAgendaEventPreview";
@@ -26,11 +23,13 @@ export const DraggableAllDayAgendaEvent = memo(
     interactions,
     isDraftEvent,
     isNewDraftEvent,
+    isDisabled,
   }: {
     event: Schema_GridEvent;
     interactions: UseInteractionsReturn;
     isDraftEvent: boolean;
     isNewDraftEvent: boolean;
+    isDisabled: boolean;
   }) => {
     const openAgendaEventPreview = useOpenAgendaEventPreview();
     const openEventContextMenu = useOpenEventContextMenu();
@@ -38,8 +37,7 @@ export const DraggableAllDayAgendaEvent = memo(
     const { selecting } = useMainGridSelectionState();
     const eventFormOpen = nodeId === CursorItem.EventForm;
     const dragging = useIsDraggingEvent();
-    const isOptimistic = isOptimisticEvent(event as Schema_Event);
-    const cursorClass = getEventCursorClass(dragging, isOptimistic);
+    const cursorClass = getEventCursorClass(dragging, isDisabled);
 
     if (!event.startDate || !event.endDate || !event.isAllDay) return null;
 
@@ -57,6 +55,7 @@ export const DraggableAllDayAgendaEvent = memo(
             type: Categories_Event.ALLDAY,
             view: "day",
           },
+          disabled: isDisabled,
         }}
         as="div"
         className={classNames(

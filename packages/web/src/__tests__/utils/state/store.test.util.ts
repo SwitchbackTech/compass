@@ -119,6 +119,9 @@ export const createInitialState = (
           dateToResize: null,
         },
       },
+      pendingEvents: {
+        eventIds: [],
+      },
     },
     view: {
       dates: {

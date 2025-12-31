@@ -1,6 +1,5 @@
 import { normalize, schema } from "normalizr";
 import { SelectEffect, call, put, select } from "redux-saga/effects";
-import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
 import {
   Params_Events,
   RecurringEventUpdateScope,
@@ -10,11 +9,9 @@ import dayjs from "@core/util/date/dayjs";
 import {
   Schema_GridEvent,
   Schema_WebEvent,
+  WithId,
 } from "@web/common/types/web.event.types";
-import {
-  assembleGridEvent,
-  replaceIdWithOptimisticId,
-} from "@web/common/utils/event/event.util";
+import { addId, assembleGridEvent } from "@web/common/utils/event/event.util";
 import { validateGridEvent } from "@web/common/validators/grid.event.validator";
 import { EventApi } from "@web/ducks/events/event.api";
 import { Payload_ConvertEvent } from "@web/ducks/events/event.types";
@@ -47,14 +44,14 @@ export function* _editEvent(
 }
 
 export function* insertOptimisticEvent(
-  event: Schema_GridEvent,
+  event: WithId<Schema_GridEvent>,
   isSomeday: boolean,
 ) {
   if (isSomeday) {
-    yield put(getSomedayEventsSlice.actions.insert(event._id!));
+    yield put(getSomedayEventsSlice.actions.insert(event._id));
   } else {
-    yield put(getWeekEventsSlice.actions.insert(event._id!));
-    yield put(getDayEventsSlice.actions.insert(event._id!));
+    yield put(getWeekEventsSlice.actions.insert(event._id));
+    yield put(getDayEventsSlice.actions.insert(event._id));
   }
   yield put(
     eventsEntitiesSlice.actions.insert(
@@ -89,44 +86,11 @@ export function* _createOptimisticGridEvent(
   gridEvent: Schema_GridEvent,
   isSomeday = false,
 ) {
-  const optimisticGridEvent = replaceIdWithOptimisticId(gridEvent);
+  const optimisticGridEvent = addId(gridEvent);
 
   yield* insertOptimisticEvent(optimisticGridEvent, isSomeday);
 
   return optimisticGridEvent;
-}
-
-export function* replaceOptimisticId(optimisticId: string, isSomeday: boolean) {
-  const _id = optimisticId.replace(`${ID_OPTIMISTIC_PREFIX}-`, "");
-
-  if (isSomeday) {
-    yield put(
-      getSomedayEventsSlice.actions.replace({
-        oldSomedayId: optimisticId,
-        newSomedayId: _id,
-      }),
-    );
-  } else {
-    yield put(
-      getWeekEventsSlice.actions.replace({
-        oldWeekId: optimisticId,
-        newWeekId: _id,
-      }),
-    );
-    yield put(
-      getDayEventsSlice.actions.replace({
-        oldDayId: optimisticId,
-        newDayId: _id,
-      }),
-    );
-  }
-
-  yield put(
-    eventsEntitiesSlice.actions.replace({
-      oldEventId: optimisticId,
-      newEventId: _id,
-    }),
-  );
 }
 
 export const normalizedEventsSchema = () =>

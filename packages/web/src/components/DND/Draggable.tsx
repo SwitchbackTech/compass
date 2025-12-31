@@ -8,7 +8,6 @@ import {
   createElement,
   forwardRef,
   isValidElement,
-  useState,
 } from "react";
 import {
   UniqueIdentifier,
@@ -54,29 +53,20 @@ function CompassDraggable(
   >,
   _ref: ForwardedRef<HTMLElement | null>,
 ) {
-  const [disabled, setDisabled] = useState(!!props.dndProps.disabled);
-
-  const {
-    dndProps,
-    as,
-    asChild,
-    style,
-    onContextMenu,
-    children,
-    ...elementProps
-  } = props;
+  const { as, asChild, style, onContextMenu, children, ...elementProps } =
+    props;
 
   const { setNodeRef, attributes, listeners, transform, isDragging, over } =
     useDraggable({
       ...props.dndProps,
       id: props.dndProps.id ?? new ObjectId().toString(),
-      disabled,
+      disabled: props.dndProps.disabled ?? false,
     });
 
   const ref = useMergeRefs([_ref, setNodeRef]);
   const useChild = asChild && isValidElement(children);
 
-  return createElement(as ?? "div", {
+  const elementPropsWithAttributes = {
     ...attributes,
     ...elementProps,
     ...(!useChild ? listeners : {}),
@@ -88,19 +78,26 @@ function CompassDraggable(
         : {}),
     },
     ref,
-    children: useChild
-      ? cloneElement(children, {
-          ...children.props,
-          dndProps: {
-            over,
-            id: props.dndProps.id,
-            listeners,
-            isDragging,
-            setDisabled,
-          },
-        })
-      : props.children,
-  });
+  };
+
+  if (useChild) {
+    return createElement(
+      as ?? "div",
+      elementPropsWithAttributes,
+      cloneElement(children, {
+        ...children.props,
+        dndProps: {
+          over,
+          id: props.dndProps.id,
+          listeners,
+          isDragging,
+          setDisabled: undefined,
+        },
+      }),
+    );
+  }
+
+  return createElement(as ?? "div", elementPropsWithAttributes, children);
 }
 
 export const Draggable = forwardRef(CompassDraggable);

@@ -1,14 +1,19 @@
 import { AxiosResponse } from "axios";
-import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import { sagaMiddleware } from "@web/common/store/middlewares";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { isOptimisticEvent } from "@web/common/utils/event/event.util";
+import {
+  Schema_GridEvent,
+  Schema_WebEvent,
+} from "@web/common/types/web.event.types";
 import { EventApi } from "@web/ducks/events/event.api";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
-import { createEventSlice } from "@web/ducks/events/slices/event.slice";
+import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
+import {
+  createEventSlice,
+  editEventSlice,
+} from "@web/ducks/events/slices/event.slice";
 import { RootState } from "@web/store";
 import { sagas } from "@web/store/sagas";
 import { OnSubmitParser } from "@web/views/Calendar/components/Draft/hooks/actions/submit.parser";
@@ -49,10 +54,8 @@ describe("createEvent saga - optimistic rendering", () => {
     const optimisticId = eventIds[0];
     const optimisticEvent = eventEntities[optimisticId];
 
-    // Event should have optimistic ID prefix
-    expect(optimisticId).toMatch(new RegExp(`^${ID_OPTIMISTIC_PREFIX}-`));
+    // Event should have a valid ID and be optimistic
     expect(optimisticEvent._id).toBe(optimisticId);
-    expect(isOptimisticEvent(optimisticEvent)).toBe(true);
 
     // Event should be in week and day event lists
     const weekEventIds = state.events.getWeekEvents.value?.data || [];
@@ -94,7 +97,6 @@ describe("createEvent saga - optimistic rendering", () => {
 
     expect(eventDuringApiCall).not.toBeNull();
     expect(eventDuringApiCall?._id).toBe(optimisticId);
-    expect(isOptimisticEvent(eventDuringApiCall!)).toBe(true);
 
     // Verify event is still in week and day lists
     const weekEventIdsDuringCall =
@@ -113,21 +115,19 @@ describe("createEvent saga - optimistic rendering", () => {
     // Wait for saga to complete
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    // Verify event is still in state after API call completes
-    // The optimistic ID should be replaced with real ID
-    const realEventId = optimisticId.replace(`${ID_OPTIMISTIC_PREFIX}-`, "");
+    // Verify event is still in state after API call completes with the SAME ID
     const stateAfterApiCall = store.getState();
     const eventAfterApiCall = selectEventById(
       stateAfterApiCall as RootState,
-      realEventId,
+      optimisticId,
     );
 
-    // Event should still exist with real ID
+    // Event should still exist with same ID
     expect(eventAfterApiCall).not.toBeNull();
-    expect(eventAfterApiCall?._id).toBe(realEventId);
+    expect(eventAfterApiCall?._id).toBe(optimisticId);
   });
 
-  it("should replace optimistic ID with real ID after successful API call", async () => {
+  it("should confirm optimistic event after successful API call", async () => {
     const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
     const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
 
@@ -139,15 +139,12 @@ describe("createEvent saga - optimistic rendering", () => {
     const action = createEventSlice.actions.request(event);
     store.dispatch(action);
 
-    // Get optimistic ID immediately
+    // Get ID immediately
     const initialState = store.getState();
     const initialEventEntities = initialState.events.entities.value || {};
     const optimisticIds = Object.keys(initialEventEntities);
     expect(optimisticIds).toHaveLength(1);
-    const optimisticId = optimisticIds[0];
-
-    // The real ID is the optimistic ID without the prefix
-    const realEventId = optimisticId.replace(`${ID_OPTIMISTIC_PREFIX}-`, "");
+    const eventId = optimisticIds[0];
 
     // Wait for saga to complete
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -159,15 +156,13 @@ describe("createEvent saga - optimistic rendering", () => {
     // Should still have exactly one event
     expect(eventIds).toHaveLength(1);
 
-    // The event should have the real ID (without optimistic prefix)
-    expect(eventIds[0]).toBe(realEventId);
-    expect(eventIds[0]).not.toMatch(new RegExp(`^${ID_OPTIMISTIC_PREFIX}-`));
+    // The event should have the same ID
+    expect(eventIds[0]).toBe(eventId);
 
-    // Verify the event is accessible by real ID
-    const finalEvent = selectEventById(finalState as RootState, realEventId);
+    // Verify the event is confirmed (not optimistic anymore)
+    const finalEvent = selectEventById(finalState as RootState, eventId);
     expect(finalEvent).not.toBeNull();
-    expect(finalEvent?._id).toBe(realEventId);
-    expect(isOptimisticEvent(finalEvent!)).toBe(false);
+    expect(finalEvent?._id).toBe(eventId);
   });
 
   it("should never remove event from state after being added", async () => {
@@ -182,40 +177,34 @@ describe("createEvent saga - optimistic rendering", () => {
     const initialEventEntities = initialState.events.entities.value || {};
     const optimisticIds = Object.keys(initialEventEntities);
     expect(optimisticIds).toHaveLength(1);
-    const optimisticId = optimisticIds[0];
-    const realEventId = optimisticId.replace(`${ID_OPTIMISTIC_PREFIX}-`, "");
+    const eventId = optimisticIds[0];
 
-    // Check 1: Immediately after dispatch (should have optimistic ID)
+    // Check 1: Immediately after dispatch (should be optimistic)
     const check1 = store.getState();
-    const event1 = selectEventById(check1 as RootState, optimisticId);
+    const event1 = selectEventById(check1 as RootState, eventId);
     expect(event1).not.toBeNull();
-    expect(event1?._id).toBe(optimisticId);
+    expect(event1?._id).toBe(eventId);
 
     // Wait for API call to complete
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    // Check 2: After API call completes (should have real ID, not optimistic)
+    // Check 2: After API call completes (should still have same ID but not optimistic)
     const check2 = store.getState();
-    const event2Optimistic = selectEventById(check2 as RootState, optimisticId);
-    const event2Real = selectEventById(check2 as RootState, realEventId);
+    const event2 = selectEventById(check2 as RootState, eventId);
 
-    // Event should no longer be accessible by optimistic ID
-    expect(event2Optimistic).toBeNull();
-    // But should be accessible by real ID
-    expect(event2Real).not.toBeNull();
-    expect(event2Real?._id).toBe(realEventId);
+    expect(event2).not.toBeNull();
+    expect(event2?._id).toBe(eventId);
 
-    // Final verification: event should exist with real ID
+    // Final verification: event should exist with same ID
     const finalState = store.getState();
     const finalEventEntities = finalState.events.entities.value || {};
     const finalEventCount = Object.keys(finalEventEntities).length;
 
     // Should have exactly one event
     expect(finalEventCount).toBe(1);
-    expect(finalEventEntities[realEventId]).toBeDefined();
+    expect(finalEventEntities[eventId]).toBeDefined();
 
     // Verify event count never dropped to zero
-    // The event should transition from optimistic ID to real ID without disappearing
     expect(finalEventCount).toBeGreaterThanOrEqual(1);
   });
 
@@ -231,33 +220,231 @@ describe("createEvent saga - optimistic rendering", () => {
     const initialEventEntities = initialState.events.entities.value || {};
     const optimisticIds = Object.keys(initialEventEntities);
     expect(optimisticIds).toHaveLength(1);
-    const optimisticId = optimisticIds[0];
-    const realEventId = optimisticId.replace(`${ID_OPTIMISTIC_PREFIX}-`, "");
+    const eventId = optimisticIds[0];
 
-    // Verify in lists immediately with optimistic ID
+    // Verify in lists immediately
     const initialWeekIds = initialState.events.getWeekEvents.value?.data || [];
     const initialDayIds = initialState.events.getDayEvents.value?.data || [];
-    expect(initialWeekIds).toContain(optimisticId);
-    expect(initialDayIds).toContain(optimisticId);
+    expect(initialWeekIds).toContain(eventId);
+    expect(initialDayIds).toContain(eventId);
 
     // Wait for API call to complete
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    // Verify still in lists but with real ID (replaced)
+    // Verify still in lists with SAME ID
     const finalState = store.getState();
     const finalWeekIds = finalState.events.getWeekEvents.value?.data || [];
     const finalDayIds = finalState.events.getDayEvents.value?.data || [];
 
-    // Should no longer have optimistic ID
-    expect(finalWeekIds).not.toContain(optimisticId);
-    expect(finalDayIds).not.toContain(optimisticId);
-
-    // Should have real ID in both lists
-    expect(finalWeekIds).toContain(realEventId);
-    expect(finalDayIds).toContain(realEventId);
+    expect(finalWeekIds).toContain(eventId);
+    expect(finalDayIds).toContain(eventId);
 
     // Should have exactly one event in each list
     expect(finalWeekIds).toHaveLength(1);
     expect(finalDayIds).toHaveLength(1);
+  });
+});
+
+describe("pending events state management", () => {
+  let store: ReturnType<typeof createStoreWithEvents>;
+  let mockCreateApi: jest.SpyInstance;
+  let mockEditApi: jest.SpyInstance;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    store = createStoreWithEvents([]);
+    sagaMiddleware.run(sagas);
+
+    mockCreateApi = jest.spyOn(EventApi, "create").mockImplementation(() => {
+      return Promise.resolve({
+        status: 200,
+      } as unknown as AxiosResponse<void>);
+    });
+
+    mockEditApi = jest.spyOn(EventApi, "edit").mockImplementation(() => {
+      return Promise.resolve({
+        status: 200,
+      } as unknown as AxiosResponse<void>);
+    });
+  });
+
+  describe("createEvent saga", () => {
+    it("should add event to pending when creation starts", () => {
+      const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+      const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
+      const action = createEventSlice.actions.request(event);
+
+      store.dispatch(action);
+
+      const state = store.getState();
+      const eventEntities = state.events.entities.value || {};
+      const eventIds = Object.keys(eventEntities);
+      const eventId = eventIds[0];
+
+      const isPending = selectIsEventPending(state as RootState, eventId);
+      expect(isPending).toBe(true);
+      expect(state.events.pendingEvents.eventIds).toContain(eventId);
+    });
+
+    it("should remove event from pending on successful creation", async () => {
+      const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+      const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
+      const action = createEventSlice.actions.request(event);
+
+      store.dispatch(action);
+
+      const initialState = store.getState();
+      const eventEntities = initialState.events.entities.value || {};
+      const eventIds = Object.keys(eventEntities);
+      const eventId = eventIds[0];
+
+      // Wait for saga to complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const finalState = store.getState();
+      const isPending = selectIsEventPending(finalState as RootState, eventId);
+      expect(isPending).toBe(false);
+      expect(finalState.events.pendingEvents.eventIds).not.toContain(eventId);
+    });
+
+    it("should remove event from pending on creation error", async () => {
+      const error = new Error("API Error");
+      mockCreateApi.mockRejectedValue(error);
+
+      const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+      const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
+      const action = createEventSlice.actions.request(event);
+
+      store.dispatch(action);
+
+      // Wait for saga to complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const state = store.getState();
+      // Event should be removed from pending even on error
+      expect(state.events.pendingEvents.eventIds).toHaveLength(0);
+    });
+  });
+
+  describe("editEvent saga", () => {
+    it("should add event to pending when edit starts", async () => {
+      // First create an event
+      const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+      const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
+      const createAction = createEventSlice.actions.request(event);
+
+      store.dispatch(createAction);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const stateAfterCreate = store.getState();
+      const eventEntities = stateAfterCreate.events.entities.value || {};
+      const eventIds = Object.keys(eventEntities);
+      const eventId = eventIds[0];
+
+      // Now edit the event - get the actual event from store
+      const existingEvent = selectEventById(
+        stateAfterCreate as RootState,
+        eventId,
+      ) as Schema_GridEvent;
+      const updatedEvent = {
+        ...existingEvent,
+        title: "Updated Title",
+      } as Schema_WebEvent;
+      const editAction = editEventSlice.actions.request({
+        _id: eventId,
+        event: updatedEvent,
+      });
+
+      store.dispatch(editAction);
+
+      const stateAfterEdit = store.getState();
+      const isPending = selectIsEventPending(
+        stateAfterEdit as RootState,
+        eventId,
+      );
+      expect(isPending).toBe(true);
+      expect(stateAfterEdit.events.pendingEvents.eventIds).toContain(eventId);
+    });
+
+    it("should remove event from pending on successful edit", async () => {
+      // First create an event
+      const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+      const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
+      const createAction = createEventSlice.actions.request(event);
+
+      store.dispatch(createAction);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const stateAfterCreate = store.getState();
+      const eventEntities = stateAfterCreate.events.entities.value || {};
+      const eventIds = Object.keys(eventEntities);
+      const eventId = eventIds[0];
+
+      // Now edit the event - get the actual event from store
+      const existingEvent = selectEventById(
+        stateAfterCreate as RootState,
+        eventId,
+      ) as Schema_GridEvent;
+      const updatedEvent = {
+        ...existingEvent,
+        title: "Updated Title",
+      } as Schema_WebEvent;
+      const editAction = editEventSlice.actions.request({
+        _id: eventId,
+        event: updatedEvent,
+      });
+
+      store.dispatch(editAction);
+
+      // Wait for edit saga to complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const finalState = store.getState();
+      const isPending = selectIsEventPending(finalState as RootState, eventId);
+      expect(isPending).toBe(false);
+      expect(finalState.events.pendingEvents.eventIds).not.toContain(eventId);
+    });
+
+    it("should remove event from pending on edit error", async () => {
+      // First create an event
+      const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+      const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
+      const createAction = createEventSlice.actions.request(event);
+
+      store.dispatch(createAction);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const stateAfterCreate = store.getState();
+      const eventEntities = stateAfterCreate.events.entities.value || {};
+      const eventIds = Object.keys(eventEntities);
+      const eventId = eventIds[0];
+
+      // Mock edit API to fail
+      const error = new Error("Edit API Error");
+      mockEditApi.mockRejectedValue(error);
+
+      // Now edit the event - get the actual event from store
+      const existingEvent = selectEventById(
+        stateAfterCreate as RootState,
+        eventId,
+      ) as Schema_GridEvent;
+      const updatedEvent = {
+        ...existingEvent,
+        title: "Updated Title",
+      } as Schema_WebEvent;
+      const editAction = editEventSlice.actions.request({
+        _id: eventId,
+        event: updatedEvent,
+      });
+
+      store.dispatch(editAction);
+
+      // Wait for edit saga to complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const finalState = store.getState();
+      // Event should be removed from pending even on error
+      expect(finalState.events.pendingEvents.eventIds).not.toContain(eventId);
+    });
   });
 });

@@ -23,10 +23,7 @@ import { useResizeId } from "@web/common/hooks/useResizeId";
 import { useResizing } from "@web/common/hooks/useResizing";
 import { theme } from "@web/common/styles/theme";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import {
-  getEventCursorClass,
-  isOptimisticEvent,
-} from "@web/common/utils/event/event.util";
+import { getEventCursorClass } from "@web/common/utils/event/event.util";
 import { Draggable } from "@web/components/DND/Draggable";
 import { Resizable } from "@web/components/DND/Resizable";
 import { TimedAgendaEvent } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/TimedAgendaEvent";
@@ -44,11 +41,13 @@ export const DraggableTimedAgendaEvent = memo(
     interactions,
     isDraftEvent,
     isNewDraftEvent,
+    isDisabled,
   }: {
     event: Schema_GridEvent;
     interactions: UseInteractionsReturn;
     isDraftEvent: boolean;
     isNewDraftEvent: boolean;
+    isDisabled: boolean;
   }) => {
     const { timedEventsGridRef } = useCompassRefs();
     const openAgendaEventPreview = useOpenAgendaEventPreview();
@@ -75,8 +74,7 @@ export const DraggableTimedAgendaEvent = memo(
       event as WithCompassId<Schema_Event>,
     );
 
-    const isOptimistic = isOptimisticEvent(event as Schema_Event);
-    const cursorClass = getEventCursorClass(dragging, isOptimistic);
+    const cursorClass = getEventCursorClass(dragging, isDisabled);
 
     if (!_id || !event.startDate || !endDate || isAllDay) return null;
 
@@ -96,6 +94,7 @@ export const DraggableTimedAgendaEvent = memo(
             type: Categories_Event.TIMED,
             view: "day",
           },
+          disabled: isDisabled,
         }}
         as="div"
         asChild

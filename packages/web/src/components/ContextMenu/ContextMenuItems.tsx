@@ -15,6 +15,8 @@ import {
   TooltipWrapper,
 } from "@web/components/ContextMenu/styled";
 import IconButton from "@web/components/IconButton/IconButton";
+import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
 
@@ -36,6 +38,9 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
   const { setDraft } = setters;
 
   const sidebarContext = useSidebarContext(true);
+  const isPending = useAppSelector((state) =>
+    selectIsEventPending(state, event._id!),
+  );
 
   const [selectedPriority, setSelectedPriority] = useState(event.priority);
 
@@ -61,12 +66,14 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
   ];
 
   const handleEditPriority = (priority: Priorities) => {
+    if (isPending) return;
     setSelectedPriority(priority);
     submit({ ...event, priority });
     close();
   };
 
   const handleEdit = () => {
+    if (isPending) return;
     if (!event.isSomeday) {
       setDraft(assembleGridEvent(event));
       openForm();
@@ -81,6 +88,10 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
   };
 
   const { onDelete } = confirmation;
+
+  const isActionDisabled = (itemId: string) =>
+    isPending &&
+    (itemId === "edit" || itemId === "duplicate" || itemId === "delete");
 
   const menuActions: ContextMenuAction[] = [
     {
@@ -124,23 +135,37 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
               color={priority.color}
               selected={selectedPriority === priority.value}
               onClick={() => handleEditPriority(priority.value)}
+              style={{
+                opacity: isPending ? 0.5 : 1,
+                cursor: isPending ? "wait" : "pointer",
+              }}
             />
             <TooltipText>{priority.label}</TooltipText>
           </TooltipWrapper>
         ))}
       </PriorityContainer>
-      {menuActions.map((item) => (
-        <MenuItem
-          key={item.id}
-          onClick={() => {
-            item.onClick();
-            close();
-          }}
-        >
-          {item.icon}
-          <MenuItemLabel>{item.label}</MenuItemLabel>
-        </MenuItem>
-      ))}
+      {menuActions.map((item) => {
+        const disabled = isActionDisabled(item.id);
+        return (
+          <MenuItem
+            key={item.id}
+            onClick={() => {
+              if (disabled) {
+                return;
+              }
+              item.onClick();
+              close();
+            }}
+            style={{
+              opacity: disabled ? 0.5 : 1,
+              cursor: disabled ? "wait" : "pointer",
+            }}
+          >
+            {item.icon}
+            <MenuItemLabel>{item.label}</MenuItemLabel>
+          </MenuItem>
+        );
+      })}
     </div>
   );
 }

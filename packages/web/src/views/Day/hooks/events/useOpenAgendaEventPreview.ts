@@ -5,11 +5,15 @@ import {
   CursorItem,
   openFloatingAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
-import { isOptimisticEvent } from "@web/common/utils/event/event.util";
 import { eventsStore, setActiveEvent } from "@web/store/events";
+import { useAppSelector } from "@web/store/store.hooks";
 import { getEventClass } from "@web/views/Day/util/agenda/focus.util";
 
 export function useOpenAgendaEventPreview() {
+  const pendingEventIds = useAppSelector(
+    (state) => state.events.pendingEvents.eventIds,
+  );
+
   const openAgendaEventPreview = useCallback(
     (e: MouseEvent<Element> | FocusEvent<Element>) => {
       e.preventDefault();
@@ -27,12 +31,12 @@ export function useOpenAgendaEventPreview() {
 
       if (!draftEvent) return;
 
-      if (isOptimisticEvent(draftEvent)) return;
+      if (pendingEventIds.includes(eventId)) return;
 
       setActiveEvent(draftEvent._id);
       openFloatingAtCursor({ nodeId, placement: "right", reference });
     },
-    [],
+    [pendingEventIds],
   );
 
   return openAgendaEventPreview;

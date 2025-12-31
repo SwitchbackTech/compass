@@ -3,7 +3,7 @@ import { AsyncState, createAsyncSlice } from "@web/common/store/helpers";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import { Payload_GetEvents } from "@web/ducks/events/event.types";
-import { cancel, convert, insert } from "./someday.slice";
+import { cancel, convert, insert } from "./event.slice.util";
 
 const replace = (
   state: AsyncState<Response_HttpPaginatedSuccess<string[]>, unknown>,
