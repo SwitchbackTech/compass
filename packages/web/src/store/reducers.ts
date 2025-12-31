@@ -8,6 +8,7 @@ import {
   eventsEntitiesSlice,
   getCurrentMonthEventsSlice,
 } from "@web/ducks/events/slices/event.slice";
+import { pendingEventsSlice } from "@web/ducks/events/slices/pending.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import {
   importGCalSlice,
@@ -27,6 +28,7 @@ const eventsReducer = combineReducers({
   getSomedayEvents: getSomedayEventsSlice.reducer,
   getWeekEvents: getWeekEventsSlice.reducer,
   getDayEvents: getDayEventsSlice.reducer,
+  pendingEvents: pendingEventsSlice.reducer,
 });
 
 const syncReducer = combineReducers({

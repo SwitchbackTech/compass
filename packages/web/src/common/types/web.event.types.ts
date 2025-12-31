@@ -1,6 +1,4 @@
-import { ObjectId } from "bson";
 import { z } from "zod";
-import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
 import {
   CompassCoreEventSchema,
   CompassEventRecurrence,
@@ -9,14 +7,6 @@ import {
 import { IDSchema } from "@core/types/type.utils";
 import { SelectOption } from "@web/common/types/component.types";
 
-export const optimisticIdSchema = z
-  .string()
-  .refine(
-    (id) =>
-      id.startsWith(`${ID_OPTIMISTIC_PREFIX}-`) &&
-      ObjectId.isValid(id.replace(`${ID_OPTIMISTIC_PREFIX}-`, "")),
-  );
-
 const WebEventRecurrence = z.union([
   z.undefined(),
   CompassEventRecurrence.omit({ rule: true }).extend({ rule: z.null() }),
@@ -24,7 +14,7 @@ const WebEventRecurrence = z.union([
 ]);
 
 const WebCoreEventSchema = CompassCoreEventSchema.extend({
-  _id: z.union([IDSchema, optimisticIdSchema]).optional(),
+  _id: IDSchema.optional(),
   recurrence: WebEventRecurrence,
   order: z.number().optional(),
 });
@@ -79,3 +69,9 @@ export interface Schema_SomedayEventsColumn {
     [key: string]: Schema_Event;
   };
 }
+
+/**
+ * Adds an _id property to an object shape
+ * @template TSchema - The base type to add _id to.
+ */
+export type WithId<TSchema> = TSchema & { _id: string };

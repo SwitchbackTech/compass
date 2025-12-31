@@ -1,7 +1,6 @@
 import { ObjectId } from "bson";
 import { MouseEvent, useCallback } from "react";
 import {
-  ID_OPTIMISTIC_PREFIX,
   Priorities,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
@@ -25,8 +24,8 @@ import {
   Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import {
+  addId,
   assembleDefaultEvent,
-  replaceIdWithOptimisticId,
 } from "@web/common/utils/event/event.util";
 import { getX } from "@web/common/utils/grid/grid.util";
 import { Payload_EditEvent } from "@web/ducks/events/event.types";
@@ -69,6 +68,9 @@ export const useDraftActions = (
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
   const somedayWeekCount = useAppSelector(selectSomedayWeekCount);
   const reduxDraft = useAppSelector(selectDraft);
+  const pendingEventIds = useAppSelector(
+    (state) => state.events.pendingEvents.eventIds,
+  );
   const currentWeekEvents = useAppSelector((state) =>
     selectPaginatedEventsBySectionType(state, "week"),
   );
@@ -237,11 +239,19 @@ export const useDraftActions = (
 
   const determineSubmitAction = useCallback(
     (draft: Schema_WebEvent) => {
-      const isExisting =
-        draft._id && !draft._id?.startsWith(ID_OPTIMISTIC_PREFIX);
+      const isExisting = !!draft._id;
       if (!isExisting) return "CREATE";
 
       if (isExisting) {
+        // Prevent updates if event is pending (waiting for backend confirmation)
+        const isPending = draft._id
+          ? pendingEventIds.includes(draft._id)
+          : false;
+        if (isPending) {
+          // Event is pending, discard the change and return to original position
+          return "DISCARD";
+        }
+
         if (isFormOpenBeforeDragging) {
           return "OPEN_FORM";
         }
@@ -255,7 +265,7 @@ export const useDraftActions = (
       }
       return "UPDATE";
     },
-    [reduxDraft, isFormOpenBeforeDragging],
+    [reduxDraft, isFormOpenBeforeDragging, pendingEventIds],
   );
 
   const getEditSlicePayload = useCallback(
@@ -323,19 +333,17 @@ export const useDraftActions = (
           return;
         }
         case "UPDATE": {
-          const isExisting =
-            draft._id && !draft._id.startsWith(ID_OPTIMISTIC_PREFIX);
+          if (!draft._id) {
+            discard();
+            return;
+          }
 
-          if (isExisting) {
-            const event = new OnSubmitParser(draft).parse();
-            const payload = getEditSlicePayload(event, applyTo);
-            dispatch(
-              editEventSlice.actions.request(payload as unknown as void),
-            );
+          const event = new OnSubmitParser(draft).parse();
+          const payload = getEditSlicePayload(event, applyTo);
+          dispatch(editEventSlice.actions.request(payload as unknown as void));
 
-            if (shouldAddToView(event)) {
-              dispatch(getWeekEventsSlice.actions.insert(event._id!));
-            }
+          if (shouldAddToView(event)) {
+            dispatch(getWeekEventsSlice.actions.insert(event._id!));
           }
 
           if (isFormOpenBeforeDragging) {
@@ -365,7 +373,7 @@ export const useDraftActions = (
       ...(reduxDraft as Schema_Event),
     }) as Schema_GridEvent;
 
-    submit(replaceIdWithOptimisticId(draft));
+    submit(addId(draft));
     discard();
   }, [reduxDraft, submit, discard]);
 

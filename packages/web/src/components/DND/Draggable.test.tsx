@@ -74,4 +74,48 @@ describe("Draggable", () => {
     const element = screen.getByTestId("draggable");
     expect(element).toHaveStyle("transform: translate3d(10px, 20px, 0)");
   });
+
+  it("updates disabled prop correctly when it changes", () => {
+    const mockUseDraggable = useDraggable as jest.Mock;
+    mockUseDraggable.mockClear();
+
+    // Initial render with disabled: true (simulating pending event)
+    const { rerender } = render(
+      <Draggable
+        dndProps={{ ...mockDndProps, disabled: true }}
+        as="div"
+        data-testid="draggable"
+      >
+        <div>Child Content</div>
+      </Draggable>,
+    );
+
+    // Verify useDraggable was called with disabled: true
+    expect(mockUseDraggable).toHaveBeenCalledWith(
+      expect.objectContaining({
+        disabled: true,
+      }),
+    );
+
+    // Rerender with disabled: false (simulating event no longer pending)
+    rerender(
+      <Draggable
+        dndProps={{ ...mockDndProps, disabled: false }}
+        as="div"
+        data-testid="draggable"
+      >
+        <div>Child Content</div>
+      </Draggable>,
+    );
+
+    // Verify useDraggable was called again with disabled: false
+    expect(mockUseDraggable).toHaveBeenCalledWith(
+      expect.objectContaining({
+        disabled: false,
+      }),
+    );
+
+    // Verify it was called multiple times (initial + rerender)
+    expect(mockUseDraggable.mock.calls.length).toBeGreaterThan(1);
+  });
 });

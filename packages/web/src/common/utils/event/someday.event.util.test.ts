@@ -1,7 +1,6 @@
 import { ObjectId } from "bson";
 import { faker } from "@faker-js/faker";
 import {
-  ID_OPTIMISTIC_PREFIX,
   Origin,
   Priorities,
   RRULE,
@@ -333,14 +332,14 @@ describe("computeRelativeEventDateRange", () => {
     jest.useRealTimers();
   });
 
-  describe("Optimistic Event IDs", () => {
-    it("should handle events with optimistic IDs", () => {
-      const optimisticId = `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`;
+  describe("Event IDs", () => {
+    it("should handle events with IDs", () => {
+      const eventId = new ObjectId().toString();
       // Add all required properties for Schema_SomedayEvent
       const events = {
-        [optimisticId]: {
+        [eventId]: {
           ...baseEvent,
-          _id: optimisticId,
+          _id: eventId,
           startDate: "2024-03-19",
           endDate: "2024-03-20",
           isSomeday: true,
@@ -358,20 +357,20 @@ describe("computeRelativeEventDateRange", () => {
 
       const result = categorizeSomedayEvents(events, weekDates);
 
-      expect(result.columns[COLUMN_WEEK].eventIds).toContain(optimisticId);
-      expect(result.columns[COLUMN_MONTH].eventIds).not.toContain(optimisticId);
+      expect(result.columns[COLUMN_WEEK].eventIds).toContain(eventId);
+      expect(result.columns[COLUMN_MONTH].eventIds).not.toContain(eventId);
       expect(result.columnOrder).toEqual([COLUMN_WEEK, COLUMN_MONTH]);
     });
 
-    it("should maintain order for events with optimistic IDs", () => {
-      const optimisticIdA = `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`;
-      const optimisticIdB = `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`;
+    it("should maintain order for events with IDs", () => {
+      const eventIdA = new ObjectId().toString();
+      const eventIdB = new ObjectId().toString();
 
       // Add all required properties for Schema_SomedayEvent
       const events = {
-        [optimisticIdA]: {
+        [eventIdA]: {
           ...baseEvent,
-          _id: optimisticIdA,
+          _id: eventIdA,
           startDate: "2024-03-19",
           endDate: "2024-03-20",
           order: 2,
@@ -380,9 +379,9 @@ describe("computeRelativeEventDateRange", () => {
           priority: Priorities.UNASSIGNED,
           user: "test-user",
         },
-        [optimisticIdB]: {
+        [eventIdB]: {
           ...baseEvent,
-          _id: optimisticIdB,
+          _id: eventIdB,
           startDate: "2024-03-19",
           endDate: "2024-03-20",
           order: 1,
@@ -401,19 +400,19 @@ describe("computeRelativeEventDateRange", () => {
       const result = categorizeSomedayEvents(events, weekDates);
 
       expect(result.columns[COLUMN_WEEK].eventIds).toEqual([
-        optimisticIdB,
-        optimisticIdA,
+        eventIdB,
+        eventIdA,
       ]);
     });
 
-    it("should assign sequential orders for optimistic events without order", () => {
-      const optimisticIdA = `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`;
-      const optimisticIdB = `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`;
+    it("should assign sequential orders for events without order", () => {
+      const eventIdA = new ObjectId().toString();
+      const eventIdB = new ObjectId().toString();
       // Add all required properties for Schema_Event
       const events = [
         {
           ...baseEvent,
-          _id: optimisticIdA,
+          _id: eventIdA,
           isSomeday: true,
           origin: Origin.COMPASS,
           priority: Priorities.UNASSIGNED,
@@ -421,7 +420,7 @@ describe("computeRelativeEventDateRange", () => {
         },
         {
           ...baseEvent,
-          _id: optimisticIdB,
+          _id: eventIdB,
           isSomeday: true,
           origin: Origin.COMPASS,
           priority: Priorities.UNASSIGNED,
@@ -437,15 +436,15 @@ describe("computeRelativeEventDateRange", () => {
       ]);
     });
 
-    it("should fill gaps in order sequence for optimistic events", () => {
-      const optimisticIdA = `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`;
-      const optimisticIdB = `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`;
-      const optimisticIdC = `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`;
+    it("should fill gaps in order sequence for events", () => {
+      const eventIdA = new ObjectId().toString();
+      const eventIdB = new ObjectId().toString();
+      const eventIdC = new ObjectId().toString();
       // Add all required properties for Schema_Event
       const events = [
         {
           ...baseEvent,
-          _id: optimisticIdA,
+          _id: eventIdA,
           order: 0,
           isSomeday: true,
           origin: Origin.COMPASS,
@@ -454,7 +453,7 @@ describe("computeRelativeEventDateRange", () => {
         },
         {
           ...baseEvent,
-          _id: optimisticIdB,
+          _id: eventIdB,
           isSomeday: true,
           origin: Origin.COMPASS,
           priority: Priorities.UNASSIGNED,
@@ -462,7 +461,7 @@ describe("computeRelativeEventDateRange", () => {
         }, // Should get order 1
         {
           ...baseEvent,
-          _id: optimisticIdC,
+          _id: eventIdC,
           order: 3,
           isSomeday: true,
           origin: Origin.COMPASS,

@@ -1,10 +1,4 @@
-import React, {
-  ForwardedRef,
-  MouseEvent,
-  forwardRef,
-  memo,
-  useMemo,
-} from "react";
+import { ForwardedRef, MouseEvent, forwardRef, memo, useMemo } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import {
@@ -13,7 +7,6 @@ import {
 } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
-import { isOptimisticEvent } from "@web/common/utils/event/event.util";
 import { getLineClamp } from "@web/common/utils/grid/grid.util";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
 import { getEventPosition } from "@web/common/utils/position/position.util";
@@ -24,6 +17,8 @@ import {
   FlexWrap,
 } from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";
+import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
 import {
   StyledEvent,
   StyledEventScaler,
@@ -67,7 +62,9 @@ const _GridEvent = (
 
   const isInPast = dayjs().isAfter(dayjs(_event.endDate));
   const event = _event;
-  const isOptimistic = isOptimisticEvent(event);
+  const isPending = useAppSelector((state) =>
+    event._id ? selectIsEventPending(state, event._id) : false,
+  );
   const isRecurring = event.recurrence && event.recurrence?.eventId !== null;
 
   const position = getEventPosition(
@@ -92,16 +89,20 @@ const _GridEvent = (
     isDragging,
     isInPast,
     isPlaceholder,
-    isOptimistic,
+    isPending,
     isResizing,
     left: position.left,
     lineClamp,
     onMouseDown: (e: MouseEvent) => {
-      if (
-        isOptimistic || // Event is in the process of being created, don't allow any interactions until it's completely saved
-        isRightClick(e) // Ignores right click here so it can pass through to context menu
-      )
+      if (isRightClick(e)) {
+        // Ignores right click here so it can pass through to context menu
         return;
+      }
+
+      // Prevent drag/resize if event is pending (waiting for backend confirmation)
+      if (isPending) {
+        return;
+      }
 
       onEventMouseDown(event, e);
     },
@@ -137,7 +138,7 @@ const _GridEvent = (
             <>
               <StyledEventScaler
                 showResizeCursor={
-                  !isPlaceholder && !isResizing && !isDragging && !isOptimistic
+                  !isPlaceholder && !isResizing && !isDragging && !isPending
                 }
                 onMouseDown={(e) => {
                   onScalerMouseDown(event, e, "startDate");
@@ -149,7 +150,7 @@ const _GridEvent = (
               <StyledEventScaler
                 bottom="-0.25px"
                 showResizeCursor={
-                  !isPlaceholder && !isResizing && !isDragging && !isOptimistic
+                  !isPlaceholder && !isResizing && !isDragging && !isPending
                 }
                 onMouseDown={(e) => {
                   onScalerMouseDown(event, e, "endDate");

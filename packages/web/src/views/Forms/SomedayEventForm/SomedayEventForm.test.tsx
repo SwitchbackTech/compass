@@ -16,8 +16,11 @@ import { setupDraftState } from "@web/__tests__/utils/state/draft.test.util";
 import { Schema_WebEvent } from "@web/common/types/web.event.types";
 import { EventApi } from "@web/ducks/events/event.api";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
+import * as storeHooks from "@web/store/store.hooks";
 import { DraftProvider } from "@web/views/Calendar/components/Draft/context/DraftProvider";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm/SomedayEventForm";
+
+jest.mock("@web/ducks/events/event.api");
 
 const mockDispatch = jest.fn();
 const mockConfirm = jest.spyOn(window, "confirm");
@@ -27,28 +30,53 @@ const mockOnSubmit = jest.fn();
 const mockOnDelete = jest.fn();
 const mockSetEvent = jest.fn();
 const mockDuplicateEvent = jest.fn();
+const isDraft = true;
+const isExistingEvent = true;
+let dispatchSpy: jest.Mock;
 
 describe("SomedayEventForm Hotkeys", () => {
-  beforeEach(() => jest.resetAllMocks());
+  beforeEach(() => {
+    jest.resetAllMocks();
+    jest.spyOn(window, "alert");
+    dispatchSpy = jest.fn();
+    jest.spyOn(storeHooks, "useAppDispatch").mockReturnValue(dispatchSpy);
 
-  jest.spyOn(window, "alert");
+    jest
+      .spyOn(EventApi, "delete")
+      .mockImplementation(() =>
+        Promise.resolve({ status: 200 } as unknown as AxiosResponse<void>),
+      );
 
-  jest
-    .spyOn(EventApi, "delete")
-    .mockImplementation(() =>
-      Promise.resolve({ status: 200 } as unknown as AxiosResponse<void>),
+    jest
+      .spyOn(EventApi, "create")
+      .mockImplementation(() =>
+        Promise.resolve({ status: 200 } as unknown as AxiosResponse<void>),
+      );
+
+    jest
+      .spyOn(EventApi, "edit")
+      .mockImplementation(() =>
+        Promise.resolve({ status: 200 } as unknown as AxiosResponse<void>),
+      );
+
+    jest.spyOn(EventApi, "get").mockImplementation(() =>
+      Promise.resolve({
+        status: 200,
+        data: [],
+      } as AxiosResponse<Schema_Event[]>),
     );
 
-  const sampleSomedayEvent = createMockStandaloneEvent({
-    isSomeday: true,
-  }) as Schema_Event;
+    jest.spyOn(window, "alert").mockImplementation(() => {});
+  });
 
   const now = dayjs();
-  const startDate = now.startOf("week").toISOString();
-  const endDate = now.endOf("week").toISOString();
+  const sampleSomedayEvent = createMockStandaloneEvent({
+    isSomeday: true,
+    updatedAt: now.toISOString(),
+  }) as Schema_Event;
   const defaultCategory = Categories_Event.SOMEDAY_WEEK;
 
-  test("should call onSubmit when enter keyboard shortcut is used", async () => {
+  it("should call onSubmit when enter keyboard shortcut is used", async () => {
     const state = setupDraftState(sampleSomedayEvent as Schema_WebEvent);
     const { weekProps, dateCalcs, deleteEvent } = state;
 
@@ -59,6 +87,8 @@ describe("SomedayEventForm Hotkeys", () => {
           onClose={mockOnClose}
           onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
+          isDraft={isDraft}
+          isExistingEvent={isExistingEvent}
           onDelete={deleteEvent}
           setEvent={mockSetEvent}
           category={defaultCategory}
@@ -83,11 +113,9 @@ describe("SomedayEventForm Hotkeys", () => {
     expect(mockConfirm).not.toHaveBeenCalled();
   });
 
-  test("should trigger delete flow when delete keyboard shortcut is used and confirmed", async () => {
+  it("should trigger delete flow when delete keyboard shortcut is used and confirmed", async () => {
     // Explicitly confirm deletion
     mockConfirm.mockReturnValue(true);
-
-    const deleteSpy = jest.spyOn(deleteEventSlice.actions, "request");
 
     const { weekProps, dateCalcs, deleteEvent } = setupDraftState(
       sampleSomedayEvent as Schema_WebEvent,
@@ -100,6 +128,8 @@ describe("SomedayEventForm Hotkeys", () => {
           onClose={mockOnClose}
           onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
+          isDraft={isDraft}
+          isExistingEvent={isExistingEvent}
           onDelete={deleteEvent}
           setEvent={mockSetEvent}
           category={defaultCategory}
@@ -118,17 +148,20 @@ describe("SomedayEventForm Hotkeys", () => {
     expect(mockConfirm).toHaveBeenCalledWith(
       `Delete ${sampleSomedayEvent.title}?`,
     );
-    expect(deleteSpy).toHaveBeenCalledWith(
+    expect(dispatchSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        _id: sampleSomedayEvent._id!,
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+        type: deleteEventSlice.actionNames.request,
+        payload: expect.objectContaining({
+          _id: sampleSomedayEvent._id!,
+          applyTo: RecurringEventUpdateScope.THIS_EVENT,
+        }),
       }),
     );
 
     expect(mockOnSubmit).not.toHaveBeenCalled();
   });
 
-  test("should not trigger delete flow when delete keyboard shortcut is used and cancelled", async () => {
+  it("should not trigger delete flow when delete keyboard shortcut is used and cancelled", async () => {
     // Explicitly refuse deletion
     mockConfirm.mockReturnValue(false);
 
@@ -143,6 +176,8 @@ describe("SomedayEventForm Hotkeys", () => {
           onClose={mockOnClose}
           onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
+          isDraft={isDraft}
+          isExistingEvent={isExistingEvent}
           onDelete={deleteEvent}
           setEvent={mockSetEvent}
           category={defaultCategory}
@@ -165,7 +200,7 @@ describe("SomedayEventForm Hotkeys", () => {
     expect(mockOnSubmit).not.toHaveBeenCalled();
   });
 
-  test("should call duplicateEvent when duplicate icon btn is clicked", async () => {
+  it("should call duplicateEvent when duplicate icon btn is clicked", async () => {
     const user = userEvent.setup();
 
     const { weekProps, dateCalcs, deleteEvent } = setupDraftState(
@@ -180,6 +215,8 @@ describe("SomedayEventForm Hotkeys", () => {
           onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
           onDuplicate={mockDuplicateEvent}
+          isDraft={isDraft}
+          isExistingEvent={isExistingEvent}
           onDelete={deleteEvent}
           setEvent={mockSetEvent}
           category={defaultCategory}
@@ -199,7 +236,9 @@ describe("SomedayEventForm Hotkeys", () => {
     await waitFor(() => {
       expect(screen.getByText("Duplicate Event")).toBeInTheDocument();
     });
-    await user.click(screen.getByText("Duplicate Event"));
+    await act(async () => {
+      await user.click(screen.getByText("Duplicate Event"));
+    });
 
     expect(mockDuplicateEvent).toHaveBeenCalledTimes(1);
 
@@ -208,7 +247,7 @@ describe("SomedayEventForm Hotkeys", () => {
     expect(mockConfirm).not.toHaveBeenCalled();
   });
 
-  test("should call onMigrate when migrate backward icon btn is clicked", async () => {
+  it("should call onMigrate when migrate backward icon btn is clicked", async () => {
     const user = userEvent.setup();
     render(
       <SomedayEventForm
@@ -217,6 +256,8 @@ describe("SomedayEventForm Hotkeys", () => {
         onMigrate={mockOnMigrate}
         onSubmit={mockOnSubmit}
         onDuplicate={mockDuplicateEvent}
+        isDraft={isDraft}
+        isExistingEvent={isExistingEvent}
         onDelete={mockOnDelete}
         setEvent={mockSetEvent}
         category={defaultCategory}
@@ -234,7 +275,9 @@ describe("SomedayEventForm Hotkeys", () => {
     await waitFor(() => {
       expect(screen.getByText("Migrate to previous week")).toBeInTheDocument();
     });
-    await user.click(screen.getByText("Migrate to previous week"));
+    await act(async () => {
+      await user.click(screen.getByText("Migrate to previous week"));
+    });
 
     expect(mockOnMigrate).toHaveBeenCalledTimes(1);
     expect(mockOnMigrate).toHaveBeenCalledWith(
@@ -244,7 +287,7 @@ describe("SomedayEventForm Hotkeys", () => {
     );
   });
 
-  test("should call onMigrate when migrate forward icon btn is clicked", async () => {
+  it("should call onMigrate when migrate forward icon btn is clicked", async () => {
     const user = userEvent.setup();
 
     render(
@@ -254,6 +297,8 @@ describe("SomedayEventForm Hotkeys", () => {
         onMigrate={mockOnMigrate}
         onSubmit={mockOnSubmit}
         onDuplicate={mockDuplicateEvent}
+        isDraft={isDraft}
+        isExistingEvent={isExistingEvent}
         onDelete={mockOnDelete}
         setEvent={mockSetEvent}
         category={defaultCategory}
@@ -271,7 +316,9 @@ describe("SomedayEventForm Hotkeys", () => {
     await waitFor(() => {
       expect(screen.getByText("Migrate to next week")).toBeInTheDocument();
     });
-    await user.click(screen.getByText("Migrate to next week"));
+    await act(async () => {
+      await user.click(screen.getByText("Migrate to next week"));
+    });
 
     expect(mockOnMigrate).toHaveBeenCalledTimes(1);
     expect(mockOnMigrate).toHaveBeenCalledWith(
@@ -284,7 +331,7 @@ describe("SomedayEventForm Hotkeys", () => {
   /**
    * Test validates that the duplicate shortcut is now implemented
    */
-  test("should call duplicateEvent when meta+d keyboard shortcut is used", async () => {
+  it("should call duplicateEvent when meta+d keyboard shortcut is used", async () => {
     render(
       <SomedayEventForm
         event={sampleSomedayEvent}
@@ -292,6 +339,8 @@ describe("SomedayEventForm Hotkeys", () => {
         onMigrate={mockOnMigrate}
         onSubmit={mockOnSubmit}
         onDuplicate={mockDuplicateEvent}
+        isDraft={isDraft}
+        isExistingEvent={isExistingEvent}
         onDelete={mockOnDelete}
         setEvent={mockSetEvent}
         category={defaultCategory}
@@ -312,7 +361,7 @@ describe("SomedayEventForm Hotkeys", () => {
     expect(mockConfirm).not.toHaveBeenCalled();
   });
 
-  test("should call onMigrate when ctrl+meta+left keyboard shortcut is used while ActionsMenu is open", async () => {
+  it("should call onMigrate when ctrl+meta+left keyboard shortcut is used while ActionsMenu is open", async () => {
     const user = userEvent.setup();
     render(
       <div>
@@ -322,6 +371,8 @@ describe("SomedayEventForm Hotkeys", () => {
           onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
           onDuplicate={mockDuplicateEvent}
+          isDraft={isDraft}
+          isExistingEvent={isExistingEvent}
           onDelete={mockOnDelete}
           setEvent={mockSetEvent}
           category={defaultCategory}
@@ -356,7 +407,7 @@ describe("SomedayEventForm Hotkeys", () => {
     );
   });
 
-  test("should call duplicateEvent when meta+d keyboard shortcut is used while ActionsMenu is open", async () => {
+  it("should call duplicateEvent when meta+d keyboard shortcut is used while ActionsMenu is open", async () => {
     const user = userEvent.setup();
     render(
       <div>
@@ -366,6 +417,8 @@ describe("SomedayEventForm Hotkeys", () => {
           onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
           onDuplicate={mockDuplicateEvent}
+          isDraft={isDraft}
+          isExistingEvent={isExistingEvent}
           onDelete={mockOnDelete}
           setEvent={mockSetEvent}
           category={defaultCategory}
@@ -396,7 +449,7 @@ describe("SomedayEventForm Hotkeys", () => {
     expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
 
-  test("should call onMigrate when ctrl+meta+right keyboard shortcut is used while ActionsMenu is open", async () => {
+  it("should call onMigrate when ctrl+meta+right keyboard shortcut is used while ActionsMenu is open", async () => {
     const user = userEvent.setup();
     render(
       <div>
@@ -406,6 +459,8 @@ describe("SomedayEventForm Hotkeys", () => {
           onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
           onDuplicate={mockDuplicateEvent}
+          isDraft={isDraft}
+          isExistingEvent={isExistingEvent}
           onDelete={mockOnDelete}
           setEvent={mockSetEvent}
           category={defaultCategory}
@@ -440,7 +495,7 @@ describe("SomedayEventForm Hotkeys", () => {
     );
   });
 
-  test("should call onMigrate when ctrl+meta+up keyboard shortcut is used while ActionsMenu is open", async () => {
+  it("should call onMigrate when ctrl+meta+up keyboard shortcut is used while ActionsMenu is open", async () => {
     const user = userEvent.setup();
 
     render(
@@ -451,6 +506,8 @@ describe("SomedayEventForm Hotkeys", () => {
           onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
           onDuplicate={mockDuplicateEvent}
+          isDraft={isDraft}
+          isExistingEvent={isExistingEvent}
           onDelete={mockOnDelete}
           setEvent={mockSetEvent}
           category={Categories_Event.SOMEDAY_MONTH}
@@ -491,7 +548,7 @@ describe("SomedayEventForm Hotkeys", () => {
     );
   });
 
-  test("should call onMigrate when ctrl+meta+down keyboard shortcut is used while ActionsMenu is open", async () => {
+  it("should call onMigrate when ctrl+meta+down keyboard shortcut is used while ActionsMenu is open", async () => {
     const user = userEvent.setup();
 
     render(
@@ -502,6 +559,8 @@ describe("SomedayEventForm Hotkeys", () => {
           onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
           onDuplicate={mockDuplicateEvent}
+          isDraft={isDraft}
+          isExistingEvent={isExistingEvent}
           onDelete={mockOnDelete}
           setEvent={mockSetEvent}
           category={Categories_Event.SOMEDAY_WEEK}
@@ -542,7 +601,7 @@ describe("SomedayEventForm Hotkeys", () => {
     );
   });
 
-  test("should call onDelete when delete keyboard shortcut is used while ActionsMenu is open", async () => {
+  it("should call onDelete when delete keyboard shortcut is used while ActionsMenu is open", async () => {
     const user = userEvent.setup();
     mockConfirm.mockReturnValue(true);
 
@@ -553,6 +612,8 @@ describe("SomedayEventForm Hotkeys", () => {
           onClose={mockOnClose}
           onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
+          isDraft={isDraft}
+          isExistingEvent={isExistingEvent}
           onDelete={mockOnDelete}
           setEvent={mockSetEvent}
           category={defaultCategory}
@@ -585,7 +646,7 @@ describe("SomedayEventForm Hotkeys", () => {
     expect(toast).not.toHaveBeenCalled();
   });
 
-  test("should activate delete menu item with enter without submitting form", async () => {
+  it("should activate delete menu item with enter without submitting form", async () => {
     const user = userEvent.setup();
 
     render(
@@ -595,6 +656,8 @@ describe("SomedayEventForm Hotkeys", () => {
         onMigrate={mockOnMigrate}
         onSubmit={mockOnSubmit}
         onDuplicate={mockDuplicateEvent}
+        isDraft={isDraft}
+        isExistingEvent={isExistingEvent}
         onDelete={mockOnDelete}
         setEvent={mockSetEvent}
         category={defaultCategory}
@@ -621,7 +684,9 @@ describe("SomedayEventForm Hotkeys", () => {
     });
 
     const deleteMenuItem = screen.getByRole("menuitem", { name: /delete/i });
-    deleteMenuItem.focus();
+    await act(async () => {
+      deleteMenuItem.focus();
+    });
 
     await act(async () => {
       await user.keyboard("{Enter}");

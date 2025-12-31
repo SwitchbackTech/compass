@@ -6,12 +6,13 @@ import {
   ZIndex,
 } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { isOptimisticEvent } from "@web/common/utils/event/event.util";
 import { getEventPosition } from "@web/common/utils/position/position.util";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
+import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { StyledEvent, StyledEventHorizontalScaler } from "../../Event/styled";
@@ -47,7 +48,9 @@ const AllDayEvent = ({
     false,
   );
 
-  const isOptimistic = isOptimisticEvent(event);
+  const isPending = useAppSelector((state) =>
+    selectIsEventPending(state, event._id!),
+  );
   const isRecurring = event.recurrence && event.recurrence?.eventId !== null;
 
   const styledEventProps = {
@@ -57,12 +60,16 @@ const AllDayEvent = ({
     isDragging: false,
     isInPast: dayjs().isAfter(dayjs(event.endDate)),
     isPlaceholder,
-    isOptimistic,
+    isPending,
     isRecurring,
     isResizing: false,
     left: position.left,
     lineClamp: 1,
     onMouseDown: (e: MouseEvent) => {
+      // Prevent drag/resize if event is pending (waiting for backend confirmation)
+      if (isPending) {
+        return;
+      }
       onMouseDown(e, event);
     },
     priority: event.priority || Priorities.UNASSIGNED,
@@ -85,7 +92,7 @@ const AllDayEvent = ({
       {onScalerMouseDown && (
         <>
           <StyledEventHorizontalScaler
-            showResizeCursor={!isPlaceholder && !isOptimistic}
+            showResizeCursor={!isPlaceholder && !isPending}
             onMouseDown={(e) => {
               e.stopPropagation();
               onScalerMouseDown(event, e, "startDate");
@@ -97,7 +104,7 @@ const AllDayEvent = ({
 
           <StyledEventHorizontalScaler
             right="-0.25px"
-            showResizeCursor={!isPlaceholder && !isOptimistic}
+            showResizeCursor={!isPlaceholder && !isPending}
             onMouseDown={(e) => {
               e.stopPropagation();
               onScalerMouseDown(event, e, "endDate");
