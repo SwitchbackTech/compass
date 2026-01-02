@@ -6,6 +6,7 @@ import {
   loadTasksFromStorage,
   saveTasksToStorage,
 } from "@web/common/utils/storage/storage.util";
+import { markStepCompleted } from "../utils/onboardingStorage.util";
 import { useStep1Detection } from "./useStep1Detection";
 
 describe("useStep1Detection", () => {
@@ -196,6 +197,44 @@ describe("useStep1Detection", () => {
       );
     });
 
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(onStepComplete).not.toHaveBeenCalled();
+  });
+
+  it("should skip detection if step 1 is already completed", async () => {
+    const onStepComplete = jest.fn();
+    const dateKey = getDateKey();
+
+    // Mark step 1 as completed
+    markStepCompleted(1);
+
+    renderHook(() =>
+      useStep1Detection({
+        currentStep: 1,
+        onStepComplete,
+      }),
+    );
+
+    // Create a new task
+    const newTask: Task = {
+      id: "task-1",
+      title: "New task",
+      status: "todo",
+      order: 0,
+      createdAt: new Date().toISOString(),
+    };
+    saveTasksToStorage(dateKey, [newTask]);
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent(COMPASS_TASKS_SAVED_EVENT_NAME, {
+          detail: { dateKey },
+        }),
+      );
+    });
+
+    // Wait a bit to ensure no call happens
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     expect(onStepComplete).not.toHaveBeenCalled();

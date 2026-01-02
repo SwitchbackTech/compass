@@ -5,6 +5,7 @@ import {
   getDateKey,
   loadTasksFromStorage,
 } from "@web/common/utils/storage/storage.util";
+import { isStepCompleted } from "../utils/onboardingStorage.util";
 
 interface UseStep1DetectionProps {
   currentStep: number | null;
@@ -14,6 +15,7 @@ interface UseStep1DetectionProps {
 /**
  * Hook to detect step 1 completion: creating a task with 'c'
  * Monitors task count changes in localStorage
+ * Skips detection if step is already completed
  */
 export function useStep1Detection({
   currentStep,
@@ -27,6 +29,11 @@ export function useStep1Detection({
       // Reset when not on step 1
       hasCompletedRef.current = false;
       initialTaskCountRef.current = null;
+      return;
+    }
+
+    // Skip detection if step is already completed
+    if (isStepCompleted(1)) {
       return;
     }
 

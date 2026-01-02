@@ -6,6 +6,7 @@ import {
   loadTasksFromStorage,
   saveTasksToStorage,
 } from "@web/common/utils/storage/storage.util";
+import { markStepCompleted } from "../utils/onboardingStorage.util";
 import { useStep3Detection } from "./useStep3Detection";
 
 describe("useStep3Detection", () => {
@@ -291,6 +292,58 @@ describe("useStep3Detection", () => {
       );
     });
 
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(onStepComplete).not.toHaveBeenCalled();
+  });
+
+  it("should skip detection if step 3 is already completed", async () => {
+    const onStepComplete = jest.fn();
+    const dateKey = getDateKey();
+
+    // Mark step 3 as completed
+    markStepCompleted(3);
+
+    // Initialize with a task without description
+    const existingTask: Task = {
+      id: "task-1",
+      title: "Test task",
+      status: "todo",
+      order: 0,
+      createdAt: new Date().toISOString(),
+      description: "",
+    };
+    saveTasksToStorage(dateKey, [existingTask]);
+
+    renderHook(() =>
+      useStep3Detection({
+        currentStep: 3,
+        onStepComplete,
+      }),
+    );
+
+    // Wait for hook to initialize
+    await waitFor(() => {
+      expect(loadTasksFromStorage(dateKey).length).toBe(1);
+    });
+
+    // Update task description
+    const updatedTask: Task = {
+      ...existingTask,
+      description: "This is a note-to-self",
+    };
+    saveTasksToStorage(dateKey, [updatedTask]);
+
+    // Dispatch the event
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent(COMPASS_TASKS_SAVED_EVENT_NAME, {
+          detail: { dateKey },
+        }),
+      );
+    });
+
+    // Wait a bit to ensure no call happens
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     expect(onStepComplete).not.toHaveBeenCalled();

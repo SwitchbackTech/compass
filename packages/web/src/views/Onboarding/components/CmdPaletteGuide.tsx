@@ -1,17 +1,12 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { useSession } from "@web/common/hooks/useSession";
-import {
-  COMPASS_TASKS_SAVED_EVENT_NAME,
-  CompassTasksSavedEvent,
-  getDateKey,
-  loadTasksFromStorage,
-} from "@web/common/utils/storage/storage.util";
 import { useCmdPaletteGuide } from "../hooks/useCmdPaletteGuide";
 import { useStep1Detection } from "../hooks/useStep1Detection";
 import { useStep2Detection } from "../hooks/useStep2Detection";
 import { useStep3Detection } from "../hooks/useStep3Detection";
+import { isStepCompleted } from "../utils/onboardingStorage.util";
 
 export const CmdPaletteGuide: React.FC = () => {
   const location = useLocation();
@@ -19,50 +14,6 @@ export const CmdPaletteGuide: React.FC = () => {
   const { currentStep, isGuideActive, completeStep, skipGuide } =
     useCmdPaletteGuide();
   const step2CompletionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Check if step 1 was actually completed (task exists)
-  // Use state that updates when tasks are saved
-  const [hasCompletedStep1, setHasCompletedStep1] = useState(() => {
-    if (typeof window === "undefined") return false;
-    const dateKey = getDateKey();
-    const tasks = loadTasksFromStorage(dateKey);
-    return tasks.length > 0;
-  });
-
-  // Listen for task save events to update step 1 completion status
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const handleTasksSaved = (event: CompassTasksSavedEvent) => {
-      const dateKey = getDateKey();
-      if (event.detail.dateKey !== dateKey) return;
-
-      const tasks = loadTasksFromStorage(dateKey);
-      setHasCompletedStep1(tasks.length > 0);
-    };
-
-    window.addEventListener(
-      COMPASS_TASKS_SAVED_EVENT_NAME,
-      handleTasksSaved as EventListener,
-    );
-
-    return () => {
-      if (typeof window !== "undefined") {
-        window.removeEventListener(
-          COMPASS_TASKS_SAVED_EVENT_NAME,
-          handleTasksSaved as EventListener,
-        );
-      }
-    };
-  }, []);
-
-  // Also re-check when route changes
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const dateKey = getDateKey();
-    const tasks = loadTasksFromStorage(dateKey);
-    setHasCompletedStep1(tasks.length > 0);
-  }, [location.pathname]);
 
   // Step detection hooks - always call them, they check currentStep internally
   useStep1Detection({
@@ -111,11 +62,11 @@ export const CmdPaletteGuide: React.FC = () => {
   const actualStep = React.useMemo(() => {
     if (currentStep === null) return null;
     // If we're on step 2 but step 1 wasn't completed, stay on step 1
-    if (currentStep === 2 && !hasCompletedStep1) {
+    if (currentStep === 2 && !isStepCompleted(1)) {
       return 1;
     }
     return currentStep;
-  }, [currentStep, hasCompletedStep1]);
+  }, [currentStep]);
 
   // Determine if we should show the overlay
   // Show step 1 on any view if it's not completed
@@ -182,7 +133,7 @@ export const CmdPaletteGuide: React.FC = () => {
               <div className="flex items-center gap-2">
                 {[1, 2, 3].map((step) => {
                   const isCompleted =
-                    step < actualStep! || (step === 1 && hasCompletedStep1);
+                    step < actualStep! || isStepCompleted(step);
                   const isCurrent = step === actualStep;
                   return (
                     <div
@@ -247,7 +198,7 @@ export const CmdPaletteGuide: React.FC = () => {
               <div className="flex items-center gap-2">
                 {[1, 2, 3].map((step) => {
                   const isCompleted =
-                    step < actualStep! || (step === 1 && hasCompletedStep1);
+                    step < actualStep! || isStepCompleted(step);
                   const isCurrent = step === actualStep;
                   return (
                     <div

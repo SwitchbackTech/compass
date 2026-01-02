@@ -5,6 +5,7 @@ import {
   getDateKey,
   loadTasksFromStorage,
 } from "@web/common/utils/storage/storage.util";
+import { isStepCompleted } from "../utils/onboardingStorage.util";
 
 interface UseStep3DetectionProps {
   currentStep: number | null;
@@ -14,6 +15,7 @@ interface UseStep3DetectionProps {
 /**
  * Hook to detect step 3 completion: customizing note-to-self (task description)
  * Monitors task description changes in localStorage
+ * Skips detection if step is already completed
  */
 export function useStep3Detection({
   currentStep,
@@ -27,6 +29,11 @@ export function useStep3Detection({
       // Reset when not on step 3
       hasCompletedRef.current = false;
       initialDescriptionsRef.current.clear();
+      return;
+    }
+
+    // Skip detection if step is already completed
+    if (isStepCompleted(3)) {
       return;
     }
 

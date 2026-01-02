@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { isStepCompleted } from "../utils/onboardingStorage.util";
 
 interface UseStep2DetectionProps {
   currentStep: number | null;
@@ -10,6 +11,7 @@ interface UseStep2DetectionProps {
 /**
  * Hook to detect step 2 completion: navigating to /now view
  * Monitors route changes
+ * Skips detection if step is already completed
  */
 export function useStep2Detection({
   currentStep,
@@ -18,6 +20,11 @@ export function useStep2Detection({
   const location = useLocation();
 
   useEffect(() => {
+    // Skip detection if step is already completed
+    if (isStepCompleted(2)) {
+      return;
+    }
+
     if (currentStep === 2 && location.pathname === ROOT_ROUTES.NOW) {
       onStepComplete();
     }

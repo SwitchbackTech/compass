@@ -2,6 +2,7 @@ import React from "react";
 import { MemoryRouter } from "react-router-dom";
 import { renderHook } from "@testing-library/react";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { markStepCompleted } from "../utils/onboardingStorage.util";
 import { useStep2Detection } from "./useStep2Detection";
 
 describe("useStep2Detection", () => {
@@ -107,6 +108,30 @@ describe("useStep2Detection", () => {
       {
         wrapper: ({ children }) => (
           <MemoryRouter initialEntries={[ROOT_ROUTES.DAY]}>
+            {children}
+          </MemoryRouter>
+        ),
+      },
+    );
+
+    expect(onStepComplete).not.toHaveBeenCalled();
+  });
+
+  it("should skip detection if step 2 is already completed", () => {
+    const onStepComplete = jest.fn();
+
+    // Mark step 2 as completed
+    markStepCompleted(2);
+
+    renderHook(
+      () =>
+        useStep2Detection({
+          currentStep: 2,
+          onStepComplete,
+        }),
+      {
+        wrapper: ({ children }) => (
+          <MemoryRouter initialEntries={[ROOT_ROUTES.NOW]}>
             {children}
           </MemoryRouter>
         ),
