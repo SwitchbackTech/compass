@@ -1,10 +1,51 @@
 import { act } from "react";
-import { createMemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
 import { screen, waitFor, within } from "@testing-library/react";
+import dayjs from "@core/util/date/dayjs";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
-import { CalendarView } from "@web/views/Calendar";
+import { DraftProvider } from "@web/views/Calendar/components/Draft/context/DraftProvider";
+import { SidebarDraftProvider } from "@web/views/Calendar/components/Draft/sidebar/context/SidebarDraftProvider";
+import { Sidebar } from "./Sidebar";
+
+const mockProps = {
+  dateCalcs: {} as any,
+  measurements: {} as any,
+  weekProps: {
+    component: {
+      startOfView: dayjs("2025-12-07"),
+      endOfView: dayjs("2025-12-13"),
+      isCurrentWeek: true,
+    },
+    state: {
+      setStartOfView: jest.fn(),
+    },
+    util: {
+      decrementWeek: jest.fn(),
+      incrementWeek: jest.fn(),
+      goToToday: jest.fn(),
+      getLastNavigationSource: jest.fn(() => "manual"),
+    },
+  } as any,
+  gridRefs: {
+    mainGridRef: { current: null },
+  } as any,
+};
+
+const SidebarTestProviders = ({ children }: { children: React.ReactNode }) => (
+  <DraftProvider
+    dateCalcs={mockProps.dateCalcs}
+    weekProps={mockProps.weekProps}
+    isSidebarOpen={true}
+  >
+    <SidebarDraftProvider
+      dateCalcs={mockProps.dateCalcs}
+      weekProps={mockProps.weekProps}
+    >
+      {children}
+    </SidebarDraftProvider>
+  </DraftProvider>
+);
 
 beforeAll(() => {
   window.HTMLElement.prototype.scroll = jest.fn();
@@ -16,13 +57,14 @@ afterAll(() => {
   jest.useRealTimers();
 });
 
-const router = createMemoryRouter([{ index: true, Component: CalendarView }], {
-  initialEntries: ["/"],
-});
-
 describe("Sidebar: Display without State", () => {
   it("renders sidebar with sections and icons when no events exist", async () => {
-    await act(() => render(<></>, { state: {}, router }));
+    await act(() =>
+      render(<Sidebar {...mockProps} />, {
+        state: {},
+        wrapper: SidebarTestProviders,
+      }),
+    );
 
     expect(
       screen.getByRole("heading", { name: /this week/i }),
@@ -44,7 +86,12 @@ describe("Sidebar: Display without State", () => {
 
 describe("Sidebar: Display with State", () => {
   it("displays pre-existing someday event", async () => {
-    await act(() => render(<></>, { state: preloadedState, router }));
+    await act(() =>
+      render(<Sidebar {...mockProps} />, {
+        state: preloadedState,
+        wrapper: SidebarTestProviders,
+      }),
+    );
 
     await waitFor(() => {
       expect(

@@ -7,44 +7,51 @@ import { reducers } from "@web/store/reducers";
 // Type for the simplified test state that matches our mock
 type TestState = {
   events: {
-    getSomedayEvents?: {
-      value: {
-        data: string[];
-        count: number;
-        pageSize: number;
-        offset?: number;
-        page?: number;
-        [key: string]: unknown;
-      } | null;
-      isProcessing: boolean;
-      isSuccess: boolean;
-      error: unknown;
-      reason: string | null;
-    };
-    getWeekEvents?: {
-      value: {
-        data: string[];
-        count: number;
-        pageSize: number;
-        offset?: number;
-        page?: number;
-        [key: string]: unknown;
-      } | null;
-      isProcessing: boolean;
-      isSuccess: boolean;
-      error: unknown;
-      reason: string | null;
-    };
-    getDayEvents?: {
-      value: null;
-      isProcessing: boolean;
-      isSuccess: boolean;
-      error: unknown;
-      reason: string | null;
-    };
+    getSomedayEvents?:
+      | {
+          value: {
+            data: string[];
+            count: number;
+            pageSize: number;
+            offset?: number;
+            page?: number;
+            [key: string]: unknown;
+          } | null;
+          isProcessing: boolean;
+          isSuccess: boolean;
+          error: unknown;
+          reason: string | null;
+        }
+      | any;
+    getWeekEvents?:
+      | {
+          value: {
+            data: string[];
+            count: number;
+            pageSize: number;
+            offset?: number;
+            page?: number;
+            [key: string]: unknown;
+          } | null;
+          isProcessing: boolean;
+          isSuccess: boolean;
+          error: unknown;
+          reason: string | null;
+        }
+      | any;
+    getDayEvents?:
+      | {
+          value: null;
+          isProcessing: boolean;
+          isSuccess: boolean;
+          error: unknown;
+          reason: string | null;
+        }
+      | any;
     entities?: {
       value: Record<string, unknown>;
     };
+    [key: string]: any;
   };
 };
 // Type for the initial state that can be passed to PreloadedState

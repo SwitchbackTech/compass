@@ -7,19 +7,19 @@ import {
   MULTI_WEEK,
   TY_TIM,
 } from "@core/__mocks__/v1/events/events.misc";
-import { InitialReduxState } from "@web/views/Calendar/calendar.render.test.utils";
+import { InitialReduxState } from "@web/__tests__/utils/state/store.test.util";
 
 export const preloadedState: InitialReduxState = {
   events: {
     getSomedayEvents: {
       value: {
         data: [EUROPE_TRIP._id as string],
-        count: 0,
-        pageSize: 0,
+        count: 1,
+        pageSize: 10,
       },
       isProcessing: false,
-      isSuccess: false,
-      error: undefined,
+      isSuccess: true,
+      error: null,
       reason: null,
     },
     getWeekEvents: {
@@ -32,19 +32,26 @@ export const preloadedState: InitialReduxState = {
           MULTI_WEEK._id as string,
           TY_TIM._id as string,
         ],
-        count: 0,
-        pageSize: 0,
+        count: 6,
+        pageSize: 10,
       },
       isProcessing: false,
-      isSuccess: false,
-      error: undefined,
+      isSuccess: true,
+      error: null,
       reason: null,
     },
     getDayEvents: {
       value: null,
       isProcessing: false,
-      isSuccess: false,
-      error: undefined,
+      isSuccess: true,
+      error: null,
+      reason: null,
+    },
+    getCurrentMonthEvents: {
+      value: null,
+      isProcessing: false,
+      isSuccess: true,
+      error: null,
       reason: null,
     },
     entities: {
@@ -58,6 +65,39 @@ export const preloadedState: InitialReduxState = {
         [TY_TIM._id as string]: TY_TIM,
       },
     },
+    createEvent: {
+      isProcessing: false,
+      error: null,
+      value: null,
+      isSuccess: false,
+      reason: null,
+    },
+    editEvent: {
+      isProcessing: false,
+      error: null,
+      value: null,
+      isSuccess: false,
+      reason: null,
+    },
+    deleteEvent: {
+      isProcessing: false,
+      error: null,
+      value: null,
+      isSuccess: false,
+      reason: null,
+    },
+    draft: {
+      event: null,
+      status: {
+        activity: null,
+        isDrafting: false,
+        eventType: null,
+        dateToResize: null,
+      },
+    },
+    pendingEvents: {
+      eventIds: [],
+    },
   },
   settings: {
     isCmdPaletteOpen: false,
@@ -70,8 +110,8 @@ export const preloadedState: InitialReduxState = {
   },
   view: {
     dates: {
-      start: "",
-      end: "",
+      start: "2025-12-07T00:00:00Z",
+      end: "2025-12-13T23:59:59Z",
     },
     sidebar: {
       tab: "tasks",
