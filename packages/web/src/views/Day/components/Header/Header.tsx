@@ -1,4 +1,4 @@
-import { FC, useRef } from "react";
+import { FC, useCallback, useRef } from "react";
 import { AlignItems } from "@web/components/Flex/styled";
 import { SelectView } from "@web/components/SelectView/SelectView";
 import { Reminder } from "@web/views/Calendar/components/Header/Reminder/Reminder";
@@ -15,11 +15,13 @@ interface Props {
 export const Header: FC<Props> = ({ showReminder = false }) => {
   const reminderRef = useRef<HTMLDivElement>(null);
 
-  useReminderHotkey(
-    () => reminderRef.current?.focus(),
-    [reminderRef],
-    showReminder,
-  );
+  const handleFocusReminder = useCallback(() => {
+    if (showReminder) {
+      reminderRef.current?.focus();
+    }
+  }, [showReminder]);
+
+  useReminderHotkey(handleFocusReminder, [handleFocusReminder], showReminder);
 
   return (
     <StyledHeaderRow alignItems={AlignItems.BASELINE}>
