@@ -11,7 +11,6 @@ interface UseAuthPromptProps {
   tasks: Array<{ id: string }>;
   hasNavigatedDates: boolean;
   showOnboardingOverlay: boolean;
-  showCmdPaletteTutorial: boolean;
 }
 
 interface UseAuthPromptReturn {
@@ -28,7 +27,6 @@ export function useAuthPrompt({
   tasks,
   hasNavigatedDates,
   showOnboardingOverlay,
-  showCmdPaletteTutorial,
 }: UseAuthPromptProps): UseAuthPromptReturn {
   const { authenticated } = useSession();
   const isCmdPaletteOpen = useAppSelector(selectIsCmdPaletteOpen);
@@ -48,7 +46,7 @@ export function useAuthPrompt({
     const shouldShow =
       tasks.length >= 2 || hasNavigatedDates || isCmdPaletteOpen;
 
-    if (shouldShow && !showOnboardingOverlay && !showCmdPaletteTutorial) {
+    if (shouldShow && !showOnboardingOverlay) {
       // Delay showing auth prompt to avoid overwhelming user
       const timer = setTimeout(() => {
         setShowAuthPrompt(true);
@@ -62,7 +60,6 @@ export function useAuthPrompt({
     hasNavigatedDates,
     isCmdPaletteOpen,
     showOnboardingOverlay,
-    showCmdPaletteTutorial,
   ]);
 
   const dismissAuthPrompt = () => {

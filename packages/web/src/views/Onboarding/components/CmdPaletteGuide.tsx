@@ -2,12 +2,15 @@ import React, { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { useSession } from "@web/common/hooks/useSession";
+import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { ONBOARDING_STEPS } from "../constants/onboarding.constants";
 import { useCmdPaletteGuide } from "../hooks/useCmdPaletteGuide";
 import { useStep1Detection } from "../hooks/useStep1Detection";
 import { useStep2Detection } from "../hooks/useStep2Detection";
 import { useStep3Detection } from "../hooks/useStep3Detection";
 import { useStep4Detection } from "../hooks/useStep4Detection";
+import { useStep5Detection } from "../hooks/useStep5Detection";
+import { useStep6Detection } from "../hooks/useStep6Detection";
 import { isStepCompleted } from "../utils/onboardingStorage.util";
 
 export const CmdPaletteGuide: React.FC = () => {
@@ -45,6 +48,16 @@ export const CmdPaletteGuide: React.FC = () => {
   useStep4Detection({
     currentStep,
     onStepComplete: () => completeStep(ONBOARDING_STEPS.EDIT_REMINDER),
+  });
+
+  useStep5Detection({
+    currentStep,
+    onStepComplete: () => completeStep(ONBOARDING_STEPS.CMD_PALETTE_INFO),
+  });
+
+  useStep6Detection({
+    currentStep,
+    onStepComplete: () => completeStep(ONBOARDING_STEPS.NAVIGATE_TO_WEEK),
   });
 
   // Cleanup timeout on unmount
@@ -91,7 +104,8 @@ export const CmdPaletteGuide: React.FC = () => {
 
   // Determine if we should show the overlay
   // Show step 1 on any view if it's not completed
-  // Show step 2/3/4 on Now view, step 1/2 on Day view
+  // Show step 2/3/4/5 on Now view, step 1/2 on Day view
+  // Show step 6 on any view (week view)
   const shouldShowOverlay =
     isGuideActive &&
     actualStep !== null &&
@@ -102,11 +116,16 @@ export const CmdPaletteGuide: React.FC = () => {
       (isNowView &&
         (actualStep === ONBOARDING_STEPS.NAVIGATE_TO_NOW ||
           actualStep === ONBOARDING_STEPS.EDIT_DESCRIPTION ||
-          actualStep === ONBOARDING_STEPS.EDIT_REMINDER)));
+          actualStep === ONBOARDING_STEPS.EDIT_REMINDER ||
+          actualStep === ONBOARDING_STEPS.CMD_PALETTE_INFO)) ||
+      actualStep === ONBOARDING_STEPS.NAVIGATE_TO_WEEK);
 
   if (!shouldShowOverlay) {
     return null;
   }
+
+  const modifierKey = getModifierKey();
+  const modifierKeyDisplay = modifierKey === "Meta" ? "⌘" : "Ctrl";
 
   // Step instructions with JSX for keyboard shortcuts
   const stepInstructions = {
@@ -137,6 +156,15 @@ export const CmdPaletteGuide: React.FC = () => {
         to edit the description
       </>
     ),
+    [ONBOARDING_STEPS.CMD_PALETTE_INFO]: (
+      <>
+        If you ever forget a shortcut, just type{" "}
+        <kbd className="bg-bg-secondary text-text-light border-border-primary rounded border px-1.5 py-0.5 font-mono text-xs">
+          {modifierKeyDisplay} + K
+        </kbd>{" "}
+        to open the command palette
+      </>
+    ),
     [ONBOARDING_STEPS.EDIT_REMINDER]: (
       <>
         Press{" "}
@@ -144,6 +172,15 @@ export const CmdPaletteGuide: React.FC = () => {
           r
         </kbd>{" "}
         to edit the reminder
+      </>
+    ),
+    [ONBOARDING_STEPS.NAVIGATE_TO_WEEK]: (
+      <>
+        Type{" "}
+        <kbd className="bg-bg-secondary text-text-light border-border-primary rounded border px-1.5 py-0.5 font-mono text-xs">
+          3
+        </kbd>{" "}
+        to go to the week view
       </>
     ),
   };
@@ -175,12 +212,16 @@ export const CmdPaletteGuide: React.FC = () => {
                   ONBOARDING_STEPS.NAVIGATE_TO_NOW,
                   ONBOARDING_STEPS.EDIT_DESCRIPTION,
                   ONBOARDING_STEPS.EDIT_REMINDER,
+                  ONBOARDING_STEPS.CMD_PALETTE_INFO,
+                  ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
                 ].map((step) => {
                   const stepOrder = [
                     ONBOARDING_STEPS.CREATE_TASK,
                     ONBOARDING_STEPS.NAVIGATE_TO_NOW,
                     ONBOARDING_STEPS.EDIT_DESCRIPTION,
                     ONBOARDING_STEPS.EDIT_REMINDER,
+                    ONBOARDING_STEPS.CMD_PALETTE_INFO,
+                    ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
                   ];
                   const stepIndex = stepOrder.indexOf(step);
                   const actualStepIndex = actualStep
@@ -210,9 +251,11 @@ export const CmdPaletteGuide: React.FC = () => {
                         ONBOARDING_STEPS.NAVIGATE_TO_NOW,
                         ONBOARDING_STEPS.EDIT_DESCRIPTION,
                         ONBOARDING_STEPS.EDIT_REMINDER,
+                        ONBOARDING_STEPS.CMD_PALETTE_INFO,
+                        ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
                       ].indexOf(actualStep) + 1
                     : 0}{" "}
-                  of 4
+                  of 6
                 </span>
               </div>
             </div>
@@ -246,7 +289,8 @@ export const CmdPaletteGuide: React.FC = () => {
     isNowView &&
     (actualStep === ONBOARDING_STEPS.NAVIGATE_TO_NOW ||
       actualStep === ONBOARDING_STEPS.EDIT_DESCRIPTION ||
-      actualStep === ONBOARDING_STEPS.EDIT_REMINDER)
+      actualStep === ONBOARDING_STEPS.EDIT_REMINDER ||
+      actualStep === ONBOARDING_STEPS.CMD_PALETTE_INFO)
   ) {
     return (
       <div
@@ -269,12 +313,16 @@ export const CmdPaletteGuide: React.FC = () => {
                   ONBOARDING_STEPS.NAVIGATE_TO_NOW,
                   ONBOARDING_STEPS.EDIT_DESCRIPTION,
                   ONBOARDING_STEPS.EDIT_REMINDER,
+                  ONBOARDING_STEPS.CMD_PALETTE_INFO,
+                  ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
                 ].map((step) => {
                   const stepOrder = [
                     ONBOARDING_STEPS.CREATE_TASK,
                     ONBOARDING_STEPS.NAVIGATE_TO_NOW,
                     ONBOARDING_STEPS.EDIT_DESCRIPTION,
                     ONBOARDING_STEPS.EDIT_REMINDER,
+                    ONBOARDING_STEPS.CMD_PALETTE_INFO,
+                    ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
                   ];
                   const stepIndex = stepOrder.indexOf(step);
                   const actualStepIndex = actualStep
@@ -304,9 +352,11 @@ export const CmdPaletteGuide: React.FC = () => {
                         ONBOARDING_STEPS.NAVIGATE_TO_NOW,
                         ONBOARDING_STEPS.EDIT_DESCRIPTION,
                         ONBOARDING_STEPS.EDIT_REMINDER,
+                        ONBOARDING_STEPS.CMD_PALETTE_INFO,
+                        ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
                       ].indexOf(actualStep) + 1
                     : 0}{" "}
-                  of 4
+                  of 6
                 </span>
               </div>
             </div>
@@ -316,6 +366,95 @@ export const CmdPaletteGuide: React.FC = () => {
               aria-label="Skip guide"
             >
               Skip
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Week view: show step 6 overlay
+  if (actualStep === ONBOARDING_STEPS.NAVIGATE_TO_WEEK) {
+    return (
+      <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 transform">
+        <div className="bg-bg-primary border-border-primary mx-4 max-w-md rounded-lg border p-4 shadow-lg">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <h3 className="text-text-light mb-2 text-lg font-semibold">
+                Welcome to Compass
+              </h3>
+              <p className="text-text-light/80 mb-3 text-sm">{instruction}</p>
+              <div className="flex items-center gap-2">
+                {[
+                  ONBOARDING_STEPS.CREATE_TASK,
+                  ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+                  ONBOARDING_STEPS.EDIT_DESCRIPTION,
+                  ONBOARDING_STEPS.EDIT_REMINDER,
+                  ONBOARDING_STEPS.CMD_PALETTE_INFO,
+                  ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
+                ].map((step) => {
+                  const stepOrder = [
+                    ONBOARDING_STEPS.CREATE_TASK,
+                    ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+                    ONBOARDING_STEPS.EDIT_DESCRIPTION,
+                    ONBOARDING_STEPS.EDIT_REMINDER,
+                    ONBOARDING_STEPS.CMD_PALETTE_INFO,
+                    ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
+                  ];
+                  const stepIndex = stepOrder.indexOf(step);
+                  const actualStepIndex = actualStep
+                    ? stepOrder.indexOf(actualStep)
+                    : -1;
+                  const isCompleted =
+                    stepIndex < actualStepIndex || isStepCompleted(step);
+                  const isCurrent = step === actualStep;
+                  return (
+                    <div
+                      key={step}
+                      className={`h-2 w-2 rounded-full ${
+                        isCompleted
+                          ? "bg-accent-primary"
+                          : isCurrent
+                            ? "bg-accent-primary opacity-50"
+                            : "bg-border-primary"
+                      }`}
+                    />
+                  );
+                })}
+                <span className="text-text-lighter ml-2 text-xs">
+                  Step{" "}
+                  {actualStep
+                    ? [
+                        ONBOARDING_STEPS.CREATE_TASK,
+                        ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+                        ONBOARDING_STEPS.EDIT_DESCRIPTION,
+                        ONBOARDING_STEPS.EDIT_REMINDER,
+                        ONBOARDING_STEPS.CMD_PALETTE_INFO,
+                        ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
+                      ].indexOf(actualStep) + 1
+                    : 0}{" "}
+                  of 6
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={skipGuide}
+              className="text-text-light/60 hover:text-text-light flex-shrink-0 transition-colors"
+              aria-label="Skip guide"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
             </button>
           </div>
         </div>

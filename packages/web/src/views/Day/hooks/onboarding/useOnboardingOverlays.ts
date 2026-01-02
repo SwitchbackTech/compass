@@ -1,6 +1,5 @@
 import type { OnboardingStepName } from "@web/views/Onboarding/constants/onboarding.constants";
 import { useAuthPrompt } from "./useAuthPrompt";
-import { useCmdPaletteTutorial } from "./useCmdPaletteTutorial";
 import { useOnboardingOverlay } from "./useOnboardingOverlay";
 
 interface UseOnboardingOverlaysProps {
@@ -11,17 +10,14 @@ interface UseOnboardingOverlaysProps {
 interface UseOnboardingOverlaysReturn {
   showOnboardingOverlay: boolean;
   currentStep: OnboardingStepName | null;
-  showCmdPaletteTutorial: boolean;
   showAuthPrompt: boolean;
   dismissOnboardingOverlay: () => void;
-  dismissCmdPaletteTutorial: () => void;
   dismissAuthPrompt: () => void;
-  markCmdPaletteUsed: () => void;
 }
 
 /**
  * Composes multiple onboarding overlay hooks into a single hook
- * Manages the display logic for onboarding overlay, cmd palette tutorial, and auth prompt
+ * Manages the display logic for onboarding overlay and auth prompt
  */
 export function useOnboardingOverlays({
   tasks,
@@ -30,29 +26,17 @@ export function useOnboardingOverlays({
   const { showOnboardingOverlay, currentStep, dismissOnboardingOverlay } =
     useOnboardingOverlay();
 
-  const {
-    showCmdPaletteTutorial,
-    dismissCmdPaletteTutorial,
-    markCmdPaletteUsed,
-  } = useCmdPaletteTutorial({
-    showOnboardingOverlay,
-  });
-
   const { showAuthPrompt, dismissAuthPrompt } = useAuthPrompt({
     tasks,
     hasNavigatedDates,
     showOnboardingOverlay,
-    showCmdPaletteTutorial,
   });
 
   return {
     showOnboardingOverlay,
     currentStep,
-    showCmdPaletteTutorial,
     showAuthPrompt,
     dismissOnboardingOverlay,
-    dismissCmdPaletteTutorial,
     dismissAuthPrompt,
-    markCmdPaletteUsed,
   };
 }

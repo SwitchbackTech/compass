@@ -152,7 +152,7 @@ describe("CmdPaletteGuide", () => {
       screen.getByText(/Press.*to go to the \/now view/i),
     ).toBeInTheDocument();
     expect(screen.getByText("1")).toBeInTheDocument(); // The kbd element
-    expect(screen.getByText("Step 2 of 4")).toBeInTheDocument();
+    expect(screen.getByText("Step 2 of 6")).toBeInTheDocument();
   });
 
   it("should show step 1 instructions on Now view when step 1 is not completed", () => {
@@ -173,7 +173,7 @@ describe("CmdPaletteGuide", () => {
     expect(screen.getByText("Welcome to the Now View")).toBeInTheDocument();
     expect(screen.getByText(/Type.*to create a task/i)).toBeInTheDocument();
     expect(screen.getByText("c")).toBeInTheDocument();
-    expect(screen.getByText("Step 1 of 4")).toBeInTheDocument();
+    expect(screen.getByText("Step 1 of 6")).toBeInTheDocument();
   });
 
   it("should render step 2 instructions on Day view when step 1 is completed", () => {
@@ -222,7 +222,7 @@ describe("CmdPaletteGuide", () => {
     expect(screen.getByText("Welcome to the Day View")).toBeInTheDocument();
     expect(screen.getByText(/Type.*to create a task/i)).toBeInTheDocument();
     expect(screen.getByText("c")).toBeInTheDocument();
-    expect(screen.getByText("Step 1 of 4")).toBeInTheDocument();
+    expect(screen.getByText("Step 1 of 6")).toBeInTheDocument();
   });
 
   it("should render step 3 instructions on Now view", () => {
@@ -242,7 +242,7 @@ describe("CmdPaletteGuide", () => {
       screen.getByText(/Press.*to edit the description/i),
     ).toBeInTheDocument();
     expect(screen.getByText("d")).toBeInTheDocument(); // The kbd element
-    expect(screen.getByText("Step 3 of 4")).toBeInTheDocument();
+    expect(screen.getByText("Step 3 of 6")).toBeInTheDocument();
   });
 
   it("should render step 4 instructions on Now view", () => {
@@ -265,7 +265,30 @@ describe("CmdPaletteGuide", () => {
       screen.getByText(/Press.*to edit the reminder/i),
     ).toBeInTheDocument();
     expect(screen.getByText("r")).toBeInTheDocument(); // The kbd element
-    expect(screen.getByText("Step 4 of 4")).toBeInTheDocument();
+    expect(screen.getByText("Step 4 of 6")).toBeInTheDocument();
+  });
+
+  it("should render step 5 instructions on Now view", () => {
+    mockUseLocation.mockReturnValue({ pathname: "/now" } as any);
+    markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
+    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
+    markStepCompleted(ONBOARDING_STEPS.EDIT_DESCRIPTION);
+    markStepCompleted(ONBOARDING_STEPS.EDIT_REMINDER);
+    mockUseCmdPaletteGuide.mockReturnValue({
+      currentStep: ONBOARDING_STEPS.CMD_PALETTE_INFO,
+      isGuideActive: true,
+      completeStep: jest.fn(),
+      skipGuide: jest.fn(),
+      completeGuide: jest.fn(),
+    });
+
+    render(<CmdPaletteGuide />);
+
+    expect(screen.getByText("Welcome to the Now View")).toBeInTheDocument();
+    expect(
+      screen.getByText(/If you ever forget a shortcut/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Step 5 of 6")).toBeInTheDocument();
   });
 
   it("should not render step 3 on Day view", () => {
@@ -385,9 +408,9 @@ describe("CmdPaletteGuide", () => {
 
     // Check that progress dots are rendered
     const progressDots = screen
-      .getByText("Step 2 of 4")
+      .getByText("Step 2 of 6")
       .parentElement?.querySelectorAll("div[class*='rounded-full']");
-    expect(progressDots).toHaveLength(4);
+    expect(progressDots).toHaveLength(6);
   });
 
   it("should show progress indicators on Day view", () => {
@@ -402,12 +425,12 @@ describe("CmdPaletteGuide", () => {
 
     render(<CmdPaletteGuide />);
 
-    expect(screen.getByText("Step 1 of 4")).toBeInTheDocument();
+    expect(screen.getByText("Step 1 of 6")).toBeInTheDocument();
     // Check that progress dots are rendered
     const progressDots = screen
-      .getByText("Step 1 of 4")
+      .getByText("Step 1 of 6")
       .parentElement?.querySelectorAll("div[class*='rounded-full']");
-    expect(progressDots).toHaveLength(4);
+    expect(progressDots).toHaveLength(6);
   });
 
   it("should not render step 4 on Day view", () => {

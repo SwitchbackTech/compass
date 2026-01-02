@@ -10,7 +10,9 @@ const CompletedStepsSchema = z
     createTask: z.boolean().default(false),
     navigateToNow: z.boolean().default(false),
     editDescription: z.boolean().default(false),
+    cmdPaletteInfo: z.boolean().default(false),
     editReminder: z.boolean().default(false),
+    navigateToWeek: z.boolean().default(false),
   })
   .default({});
 
@@ -39,7 +41,9 @@ const DEFAULT_ONBOARDING_PROGRESS: OnboardingProgress = {
     createTask: false,
     navigateToNow: false,
     editDescription: false,
+    cmdPaletteInfo: false,
     editReminder: false,
+    navigateToWeek: false,
   },
   isSeen: false,
   isAuthDismissed: false,
@@ -115,8 +119,14 @@ export function loadCompletedSteps(): OnboardingStepName[] {
   if (progress.completedSteps.editDescription) {
     completed.push(ONBOARDING_STEPS.EDIT_DESCRIPTION);
   }
+  if (progress.completedSteps.cmdPaletteInfo) {
+    completed.push(ONBOARDING_STEPS.CMD_PALETTE_INFO);
+  }
   if (progress.completedSteps.editReminder) {
     completed.push(ONBOARDING_STEPS.EDIT_REMINDER);
+  }
+  if (progress.completedSteps.navigateToWeek) {
+    completed.push(ONBOARDING_STEPS.NAVIGATE_TO_WEEK);
   }
   return completed;
 }
@@ -130,7 +140,9 @@ export function saveCompletedSteps(steps: OnboardingStepName[]): void {
       createTask: steps.includes(ONBOARDING_STEPS.CREATE_TASK),
       navigateToNow: steps.includes(ONBOARDING_STEPS.NAVIGATE_TO_NOW),
       editDescription: steps.includes(ONBOARDING_STEPS.EDIT_DESCRIPTION),
+      cmdPaletteInfo: steps.includes(ONBOARDING_STEPS.CMD_PALETTE_INFO),
       editReminder: steps.includes(ONBOARDING_STEPS.EDIT_REMINDER),
+      navigateToWeek: steps.includes(ONBOARDING_STEPS.NAVIGATE_TO_WEEK),
     },
   });
 }
@@ -147,8 +159,12 @@ export function isStepCompleted(step: OnboardingStepName): boolean {
       return progress.completedSteps.navigateToNow;
     case ONBOARDING_STEPS.EDIT_DESCRIPTION:
       return progress.completedSteps.editDescription;
+    case ONBOARDING_STEPS.CMD_PALETTE_INFO:
+      return progress.completedSteps.cmdPaletteInfo;
     case ONBOARDING_STEPS.EDIT_REMINDER:
       return progress.completedSteps.editReminder;
+    case ONBOARDING_STEPS.NAVIGATE_TO_WEEK:
+      return progress.completedSteps.navigateToWeek;
     default:
       return false;
   }
@@ -170,8 +186,14 @@ export function markStepCompleted(step: OnboardingStepName): void {
     case ONBOARDING_STEPS.EDIT_DESCRIPTION:
       updated.editDescription = true;
       break;
+    case ONBOARDING_STEPS.CMD_PALETTE_INFO:
+      updated.cmdPaletteInfo = true;
+      break;
     case ONBOARDING_STEPS.EDIT_REMINDER:
       updated.editReminder = true;
+      break;
+    case ONBOARDING_STEPS.NAVIGATE_TO_WEEK:
+      updated.navigateToWeek = true;
       break;
   }
   updateOnboardingProgress({ completedSteps: updated });
@@ -186,7 +208,9 @@ export function clearCompletedSteps(): void {
       createTask: false,
       navigateToNow: false,
       editDescription: false,
+      cmdPaletteInfo: false,
       editReminder: false,
+      navigateToWeek: false,
     },
   });
 }

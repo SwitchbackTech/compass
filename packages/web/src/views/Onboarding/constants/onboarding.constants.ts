@@ -51,11 +51,15 @@ export const ONBOARDING_STEPS = {
   CREATE_TASK: "createTask",
   NAVIGATE_TO_NOW: "navigateToNow",
   EDIT_DESCRIPTION: "editDescription",
+  CMD_PALETTE_INFO: "cmdPaletteInfo",
   EDIT_REMINDER: "editReminder",
+  NAVIGATE_TO_WEEK: "navigateToWeek",
 } as const;
 
 export type OnboardingStepName =
   | "createTask"
   | "navigateToNow"
   | "editDescription"
-  | "editReminder";
+  | "cmdPaletteInfo"
+  | "editReminder"
+  | "navigateToWeek";

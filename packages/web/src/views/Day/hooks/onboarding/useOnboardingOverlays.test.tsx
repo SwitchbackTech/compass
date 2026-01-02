@@ -72,51 +72,6 @@ describe("useOnboardingOverlays", () => {
     expect(result.current.showOnboardingOverlay).toBe(false);
   });
 
-  it("should show cmd palette tutorial after onboarding overlay is dismissed", async () => {
-    updateOnboardingProgress({ isCompleted: true });
-    const store = createTestStore();
-
-    const { result } = renderHook(
-      () =>
-        useOnboardingOverlays({
-          tasks: [],
-          hasNavigatedDates: false,
-        }),
-      {
-        wrapper: ({ children }) => (
-          <Provider store={store}>{children}</Provider>
-        ),
-      },
-    );
-
-    await waitFor(
-      () => {
-        expect(result.current.showCmdPaletteTutorial).toBe(true);
-      },
-      { timeout: 2000 },
-    );
-  });
-
-  it("should not show cmd palette tutorial if already seen", () => {
-    updateOnboardingProgress({ isSeen: true, isCompleted: true });
-    const store = createTestStore();
-
-    const { result } = renderHook(
-      () =>
-        useOnboardingOverlays({
-          tasks: [],
-          hasNavigatedDates: false,
-        }),
-      {
-        wrapper: ({ children }) => (
-          <Provider store={store}>{children}</Provider>
-        ),
-      },
-    );
-
-    expect(result.current.showCmdPaletteTutorial).toBe(false);
-  });
-
   it("should show auth prompt after user creates 2+ tasks", async () => {
     updateOnboardingProgress({ isCompleted: true, isSeen: true });
     const store = createTestStore();
@@ -189,34 +144,6 @@ describe("useOnboardingOverlays", () => {
     );
 
     expect(result.current.showAuthPrompt).toBe(false);
-  });
-
-  it("should mark cmd palette as used when opened", async () => {
-    updateOnboardingProgress({ isCompleted: true });
-    const store = createTestStore(true); // cmd palette is open
-
-    const { result } = renderHook(
-      () =>
-        useOnboardingOverlays({
-          tasks: [],
-          hasNavigatedDates: false,
-        }),
-      {
-        wrapper: ({ children }) => (
-          <Provider store={store}>{children}</Provider>
-        ),
-      },
-    );
-
-    // Wait for the effect to run and mark tutorial as seen
-    await waitFor(
-      () => {
-        const progress = getOnboardingProgress();
-        expect(progress.isSeen).toBe(true);
-        expect(result.current.showCmdPaletteTutorial).toBe(false);
-      },
-      { timeout: 3000 },
-    );
   });
 
   it("should dismiss onboarding overlay and skip guide", async () => {

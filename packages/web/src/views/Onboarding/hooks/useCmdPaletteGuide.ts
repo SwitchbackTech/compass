@@ -54,6 +54,10 @@ export function useCmdPaletteGuide(): UseCmdPaletteGuideReturn {
       nextStep = ONBOARDING_STEPS.EDIT_DESCRIPTION;
     } else if (!completedSteps.editReminder) {
       nextStep = ONBOARDING_STEPS.EDIT_REMINDER;
+    } else if (!completedSteps.cmdPaletteInfo) {
+      nextStep = ONBOARDING_STEPS.CMD_PALETTE_INFO;
+    } else if (!completedSteps.navigateToWeek) {
+      nextStep = ONBOARDING_STEPS.NAVIGATE_TO_WEEK;
     }
 
     if (nextStep !== null) {
@@ -71,7 +75,7 @@ export function useCmdPaletteGuide(): UseCmdPaletteGuideReturn {
     // Mark step as completed in onboarding progress
     markStepCompleted(step);
 
-    if (step === ONBOARDING_STEPS.EDIT_REMINDER) {
+    if (step === ONBOARDING_STEPS.NAVIGATE_TO_WEEK) {
       // All steps completed
       if (typeof window !== "undefined") {
         updateOnboardingProgress({ isCompleted: true });
@@ -85,6 +89,8 @@ export function useCmdPaletteGuide(): UseCmdPaletteGuideReturn {
         ONBOARDING_STEPS.NAVIGATE_TO_NOW,
         ONBOARDING_STEPS.EDIT_DESCRIPTION,
         ONBOARDING_STEPS.EDIT_REMINDER,
+        ONBOARDING_STEPS.CMD_PALETTE_INFO,
+        ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
       ];
       const currentIndex = stepOrder.indexOf(step);
       if (currentIndex !== -1 && currentIndex < stepOrder.length - 1) {
@@ -110,6 +116,8 @@ export function useCmdPaletteGuide(): UseCmdPaletteGuideReturn {
       markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
       markStepCompleted(ONBOARDING_STEPS.EDIT_DESCRIPTION);
       markStepCompleted(ONBOARDING_STEPS.EDIT_REMINDER);
+      markStepCompleted(ONBOARDING_STEPS.CMD_PALETTE_INFO);
+      markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_WEEK);
     }
     setCurrentStep(null);
     setIsGuideActive(false);

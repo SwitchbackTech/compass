@@ -23,7 +23,9 @@ describe("onboardingStorage.util", () => {
           createTask: false,
           navigateToNow: false,
           editDescription: false,
+          cmdPaletteInfo: false,
           editReminder: false,
+          navigateToWeek: false,
         },
         isSeen: false,
         isAuthDismissed: false,
@@ -38,7 +40,9 @@ describe("onboardingStorage.util", () => {
           createTask: true,
           navigateToNow: true,
           editDescription: false,
+          cmdPaletteInfo: false,
           editReminder: false,
+          navigateToWeek: false,
         },
         isSeen: true,
         isAuthDismissed: true,
@@ -61,7 +65,9 @@ describe("onboardingStorage.util", () => {
           createTask: false,
           navigateToNow: false,
           editDescription: false,
+          cmdPaletteInfo: false,
           editReminder: false,
+          navigateToWeek: false,
         },
         isSeen: false,
         isAuthDismissed: false,
@@ -87,7 +93,9 @@ describe("onboardingStorage.util", () => {
         createTask: false,
         navigateToNow: false,
         editDescription: false,
+        cmdPaletteInfo: false,
         editReminder: false,
+        navigateToWeek: false,
       });
     });
   });
@@ -113,7 +121,9 @@ describe("onboardingStorage.util", () => {
           createTask: true,
           navigateToNow: true,
           editDescription: false,
+          cmdPaletteInfo: false,
           editReminder: false,
+          navigateToWeek: false,
         },
       });
       const progress = getOnboardingProgress();
@@ -121,7 +131,9 @@ describe("onboardingStorage.util", () => {
         createTask: true,
         navigateToNow: true,
         editDescription: false,
+        cmdPaletteInfo: false,
         editReminder: false,
+        navigateToWeek: false,
       });
     });
   });
@@ -175,7 +187,9 @@ describe("onboardingStorage.util", () => {
         createTask: true,
         navigateToNow: true,
         editDescription: false,
+        cmdPaletteInfo: false,
         editReminder: false,
+        navigateToWeek: false,
       });
     });
 
@@ -191,7 +205,9 @@ describe("onboardingStorage.util", () => {
         createTask: true,
         navigateToNow: true,
         editDescription: true,
+        cmdPaletteInfo: false,
         editReminder: true,
+        navigateToWeek: false,
       });
     });
   });

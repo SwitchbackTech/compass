@@ -20,7 +20,6 @@ import { useRefetch } from "@web/views/Calendar/hooks/useRefetch";
 import { StyledCalendar } from "@web/views/Calendar/styled";
 import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
 import { AuthPrompt } from "@web/views/Day/components/AuthPrompt/AuthPrompt";
-import { CmdPaletteTutorial } from "@web/views/Day/components/CmdPaletteTutorial/CmdPaletteTutorial";
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
 import { Header } from "@web/views/Day/components/Header/Header";
 import { StorageInfoModal } from "@web/views/Day/components/StorageInfoModal/StorageInfoModal";
@@ -77,13 +76,7 @@ export const DayViewContent = memo(() => {
   }, [dateInView]);
 
   // Onboarding overlays
-  const {
-    showCmdPaletteTutorial,
-    showAuthPrompt,
-    dismissCmdPaletteTutorial,
-    dismissAuthPrompt,
-    markCmdPaletteUsed,
-  } = useOnboardingOverlays({
+  const { showAuthPrompt, dismissAuthPrompt } = useOnboardingOverlays({
     tasks,
     hasNavigatedDates,
   });
@@ -184,14 +177,6 @@ export const DayViewContent = memo(() => {
 
       {/* Onboarding overlays */}
       <CmdPaletteGuide />
-      {showCmdPaletteTutorial && (
-        <CmdPaletteTutorial
-          onDismiss={() => {
-            dismissCmdPaletteTutorial();
-            markCmdPaletteUsed();
-          }}
-        />
-      )}
       {showAuthPrompt && <AuthPrompt onDismiss={dismissAuthPrompt} />}
 
       <ShortcutsOverlay
