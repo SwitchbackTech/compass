@@ -106,7 +106,7 @@ export const DayViewContent = memo(() => {
     }
   }, [deleteTask]);
 
-  const handleGoToToday = useCallback((): void => {
+  const handleGoToToday = useCallback(() => {
     // Compare dates in the same timezone to avoid timezone issues
     // Both dates are in local timezone, ensuring accurate day comparison
     const today = dayjs().startOf("day");
