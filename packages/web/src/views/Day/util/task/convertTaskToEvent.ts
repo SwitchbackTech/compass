@@ -1,6 +1,6 @@
 import { ObjectId } from "bson";
 import { Origin, Priorities } from "@core/constants/core.constants";
-import { Schema_Event } from "@core/types/event.types";
+import { Schema_Event_Core } from "@core/types/event.types";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { Task } from "@web/common/types/task.types";
 
@@ -19,7 +19,7 @@ export function convertTaskToEvent(
   durationMinutes: number = 30,
   userId: string,
   isAllDay: boolean = false,
-): Schema_Event {
+): Schema_Event_Core {
   const endTime = startTime.add(durationMinutes, "minute");
 
   return {

@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
-import { useSelector } from "react-redux";
+import { useCallback } from "react";
 import { Active, DragEndEvent, Over, useDndMonitor } from "@dnd-kit/core";
 import { Categories_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
@@ -20,11 +19,11 @@ import { reorderGrid } from "@web/common/utils/dom/grid-organization.util";
 import { getCalendarEventElementFromGrid } from "@web/common/utils/event/event.util";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { createEventSlice } from "@web/ducks/events/slices/event.slice";
-import { RootState, store } from "@web/store";
+import { pendingEventsSlice } from "@web/ducks/events/slices/pending.slice";
+import { store } from "@web/store";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
-import { getSnappedMinutes } from "@web/views/Day/util/agenda/agenda.util";
-import { convertTaskToEvent } from "@web/views/Day/util/task/convertTaskToEvent";
+import { handleTaskToEventConversion } from "@web/views/Day/util/task/handleTaskToEventConversion";
 
 const shouldSaveImmediately = (_id: string) => {
   const storeEvent = selectEventById(store.getState(), _id);
@@ -46,39 +45,6 @@ export function useEventDNDActions() {
   const dispatch = useAppDispatch();
   const dateInView = useDateInView();
 
-  // Map to track pending task deletions: optimistic event ID -> deleteTask callback
-  const pendingTaskDeletions = useRef<Map<string, () => void>>(new Map());
-
-  // Track the currently processing event ID to avoid race conditions
-  const processingEventId = useRef<string | null>(null);
-
-  // Listen to createEvent slice state for success/error
-  const createEventState = useSelector((state: RootState) => state.createEvent);
-
-  // Handle task deletion on successful event creation or cleanup on error
-  useEffect(() => {
-    const eventId = processingEventId.current;
-    if (!eventId) return;
-
-    // Check if we've transitioned from processing to a final state
-    if (!createEventState.isProcessing) {
-      const deleteTask = pendingTaskDeletions.current.get(eventId);
-
-      if (createEventState.isSuccess && deleteTask) {
-        // Event was created successfully, delete the task
-        deleteTask();
-      }
-
-      // Clean up regardless of success or error to prevent memory leaks
-      pendingTaskDeletions.current.delete(eventId);
-      processingEventId.current = null;
-    }
-  }, [
-    createEventState.isProcessing,
-    createEventState.isSuccess,
-    createEventState.error,
-  ]);
-
   const convertTaskToEventOnAgenda = useCallback(
     async (
       task: Task,
@@ -90,27 +56,26 @@ export function useEventDNDActions() {
       const userId = await getUserId();
       if (!userId) return;
 
-      let startTime: dayjs.Dayjs;
+      const event = handleTaskToEventConversion(
+        task,
+        active,
+        over,
+        dateInView,
+        userId,
+        isAllDay,
+      );
 
-      if (isAllDay) {
-        // For all-day events, use the start of the day
-        startTime = dateInView.startOf("day");
-      } else {
-        // For timed events, snap to grid
-        const snappedMinutes = getSnappedMinutes(active, over);
-        if (snappedMinutes === null) return;
-        startTime = dateInView.startOf("day").add(snappedMinutes, "minute");
-      }
+      if (!event) return;
 
-      // Convert task to event (default duration is now 30 minutes)
-      const event = convertTaskToEvent(task, startTime, 30, userId, isAllDay);
-
-      // Store the task deletion callback to be executed on successful event creation
-      pendingTaskDeletions.current.set(event._id!, deleteTask);
-      processingEventId.current = event._id!;
+      // Add to pending events slice for tracking
+      dispatch(pendingEventsSlice.actions.add(event._id!));
 
       // Create the event optimistically
       dispatch(createEventSlice.actions.request(event));
+
+      // TODO: Listen to createEvent saga success/error and delete task on success
+      // For now, we delete immediately for the MVP
+      deleteTask();
 
       reorderGrid();
       setReference(event._id!);

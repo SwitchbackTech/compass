@@ -5,6 +5,7 @@ import { autoUpdate, inline, offset, useFloating } from "@floating-ui/react";
 import { DotsSixVerticalIcon } from "@phosphor-icons/react";
 import { Task } from "@web/common/types/task.types";
 import { DNDChildProps, Draggable } from "@web/components/DND/Draggable";
+import { DraggableTaskHandle } from "@web/views/Day/components/Task/DraggableTaskHandle";
 import { Task as TaskComponent } from "@web/views/Day/components/Task/Task";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
 
@@ -127,31 +128,16 @@ function DraggableTaskInner({
 
   return (
     <div>
-      {tasks.length > 1 ? (
-        <button
-          {...(dndProps?.listeners ?? {})}
-          ref={refs.setFloating}
-          style={floatingStyles}
-          aria-label={`Reorder ${task.title}`}
-          aria-describedby={`description-${task.id}`}
-          onFocus={() => setSelectedTaskIndex(index)}
-          className={classNames(
-            "opacity-0",
-            "hover:bg-border-primary hover:cursor-grab",
-            "rounded-xs py-2 transition-colors",
-            "group-hover:opacity-100 hover:opacity-100 focus:opacity-100",
-            "max-w-48 text-white",
-            "focus:bg-white/20 focus:ring-2 focus:ring-white/50",
-            "focus:outline-none disabled:cursor-default disabled:opacity-0",
-            {
-              hidden: tasks.length === 1,
-              "opacity-100": isDragging,
-            },
-          )}
-        >
-          <DotsSixVerticalIcon size={24} />
-        </button>
-      ) : null}
+      <DraggableTaskHandle
+        task={task}
+        index={index}
+        tasksLength={tasks.length}
+        isDragging={isDragging}
+        listeners={dndProps?.listeners ?? {}}
+        refs={refs}
+        floatingStyles={floatingStyles}
+        onFocus={setSelectedTaskIndex}
+      />
 
       <TaskComponent
         task={task}
