@@ -7,7 +7,6 @@ import type {
   CompassSocket,
   CompassSocketServer,
 } from "@core/types/websocket.types";
-import type { Timer } from "@core/util/timer";
 
 export async function waitUntilEvent<
   Payload extends unknown[],
@@ -20,8 +19,7 @@ export async function waitUntilEvent<
     | Server
     | CompassSocketServer
     | EventEmitter
-    | EventEmitter2
-    | Timer,
+    | EventEmitter2,
     "once"
   >,
   event: Parameters<(typeof emitter)["once"]>["0"],
