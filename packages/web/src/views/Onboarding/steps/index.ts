@@ -5,8 +5,6 @@ export * from "./welcome/WelcomeNoteTwo";
 export * from "./oauth/SignInWithGooglePrelude";
 export * from "./oauth/SignInWithGoogle";
 export * from "./oauth/SignInWithGoogleSuccess";
-export * from "./reminder/SetReminder";
-export * from "./reminder/SetReminderSuccess";
 export * from "./tasks/DayTasksIntro/DayTasksIntro";
 export * from "./tasks/TasksIntro/TasksIntro";
 export * from "./outro/OutroTwo";

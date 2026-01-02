@@ -8,7 +8,11 @@ import {
 } from "@web/views/Calendar/components/Header/styled";
 import { useReminderHotkey } from "@web/views/Calendar/hooks/shortcuts/useFocusHotkey";
 
-export const Header: FC = () => {
+interface HeaderProps {
+  showReminder?: boolean;
+}
+
+export const Header: FC<HeaderProps> = ({ showReminder = false }) => {
   const reminderRef = useRef<HTMLDivElement>(null);
 
   useReminderHotkey(() => reminderRef.current?.focus(), [reminderRef]);
@@ -17,7 +21,7 @@ export const Header: FC = () => {
     <StyledHeaderRow alignItems={AlignItems.BASELINE}>
       <StyledLeftGroup />
 
-      <Reminder ref={reminderRef} />
+      {showReminder && <Reminder ref={reminderRef} />}
 
       <SelectView />
     </StyledHeaderRow>

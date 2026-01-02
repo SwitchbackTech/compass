@@ -23,8 +23,6 @@ import {
   DayTasksIntro,
   OutroQuote,
   OutroTwo,
-  SetReminder,
-  SetReminderSuccess,
   SignInWithGoogle,
   SignInWithGooglePrelude,
   TasksIntro,
@@ -39,8 +37,6 @@ import { SomedayEventsIntro } from "@web/views/Onboarding/steps/events/SomedayEv
 import { SomedaySandbox } from "@web/views/Onboarding/steps/events/SomedaySandbox/SomedaySandbox";
 import { MobileSignIn } from "@web/views/Onboarding/steps/mobile/MobileSignIn";
 import { MobileWarning } from "@web/views/Onboarding/steps/mobile/MobileWarning";
-import { ReminderIntroOne } from "@web/views/Onboarding/steps/reminder/ReminderIntroOne";
-import { ReminderIntroTwo } from "@web/views/Onboarding/steps/reminder/ReminderIntroTwo";
 import { TasksToday } from "@web/views/Onboarding/steps/tasks/TasksToday/TasksToday";
 
 const loginSteps: OnboardingStepType[] = [
@@ -89,29 +85,11 @@ const onboardingSteps: OnboardingStepType[] = [
     component: (props: OnboardingStepProps) => <SignInWithGoogle {...props} />,
     handlesKeyboardEvents: true,
   },
-  {
-    id: ONBOARDING_STEP_IDS.REMINDER_INTRO_ONE,
-    component: (props: OnboardingStepProps) => <ReminderIntroOne {...props} />,
-    disablePrevious: true,
-  },
-  {
-    id: ONBOARDING_STEP_IDS.REMINDER_INTRO_TWO,
-    component: (props: OnboardingStepProps) => <ReminderIntroTwo {...props} />,
-  },
-  {
-    id: ONBOARDING_STEP_IDS.SET_REMINDER,
-    component: (props: OnboardingStepProps) => <SetReminder {...props} />,
-  },
-  {
-    id: ONBOARDING_STEP_IDS.SET_REMINDER_SUCCESS,
-    component: (props: OnboardingStepProps) => (
-      <SetReminderSuccess {...props} />
-    ),
-  },
 
   {
     id: ONBOARDING_STEP_IDS.SET_SOMEDAY_EVENTS_ONE,
     component: (props: OnboardingStepProps) => <DayTasksIntro {...props} />,
+    disablePrevious: true,
   },
   {
     id: ONBOARDING_STEP_IDS.TASKS_INTRO,
