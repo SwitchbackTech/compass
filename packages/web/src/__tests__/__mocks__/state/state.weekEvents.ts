@@ -47,13 +47,6 @@ export const preloadedState: InitialReduxState = {
       error: null,
       reason: null,
     },
-    getCurrentMonthEvents: {
-      value: null,
-      isProcessing: false,
-      isSuccess: true,
-      error: null,
-      reason: null,
-    },
     entities: {
       value: {
         [CLIMB._id as string]: CLIMB,
@@ -64,27 +57,6 @@ export const preloadedState: InitialReduxState = {
         [MULTI_WEEK._id as string]: MULTI_WEEK,
         [TY_TIM._id as string]: TY_TIM,
       },
-    },
-    createEvent: {
-      isProcessing: false,
-      error: null,
-      value: null,
-      isSuccess: false,
-      reason: null,
-    },
-    editEvent: {
-      isProcessing: false,
-      error: null,
-      value: null,
-      isSuccess: false,
-      reason: null,
-    },
-    deleteEvent: {
-      isProcessing: false,
-      error: null,
-      value: null,
-      isSuccess: false,
-      reason: null,
     },
     draft: {
       event: null,
@@ -103,6 +75,9 @@ export const preloadedState: InitialReduxState = {
     isCmdPaletteOpen: false,
   },
   sync: {
+    importGCal: {
+      importing: false,
+    },
     importLatest: {
       isFetchNeeded: false,
       reason: null,

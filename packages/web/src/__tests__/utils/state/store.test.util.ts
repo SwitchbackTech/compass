@@ -7,51 +7,46 @@ import { reducers } from "@web/store/reducers";
 // Type for the simplified test state that matches our mock
 type TestState = {
   events: {
-    getSomedayEvents?:
-      | {
-          value: {
-            data: string[];
-            count: number;
-            pageSize: number;
-            offset?: number;
-            page?: number;
-            [key: string]: unknown;
-          } | null;
-          isProcessing: boolean;
-          isSuccess: boolean;
-          error: unknown;
-          reason: string | null;
-        }
-      | any;
-    getWeekEvents?:
-      | {
-          value: {
-            data: string[];
-            count: number;
-            pageSize: number;
-            offset?: number;
-            page?: number;
-            [key: string]: unknown;
-          } | null;
-          isProcessing: boolean;
-          isSuccess: boolean;
-          error: unknown;
-          reason: string | null;
-        }
-      | any;
-    getDayEvents?:
-      | {
-          value: null;
-          isProcessing: boolean;
-          isSuccess: boolean;
-          error: unknown;
-          reason: string | null;
-        }
-      | any;
+    getSomedayEvents?: {
+      value: {
+        data: string[];
+        count: number;
+        pageSize: number;
+        offset?: number;
+        page?: number;
+        [key: string]: unknown;
+      } | null;
+      isProcessing: boolean;
+      isSuccess: boolean;
+      error: unknown;
+      reason: string | null;
+    };
+
+    getWeekEvents?: {
+      value: {
+        data: string[];
+        count: number;
+        pageSize: number;
+        offset?: number;
+        page?: number;
+        [key: string]: unknown;
+      } | null;
+      isProcessing: boolean;
+      isSuccess: boolean;
+      error: unknown;
+      reason: string | null;
+    };
+    getDayEvents?: {
+      value: null;
+      isProcessing: boolean;
+      isSuccess: boolean;
+      error: unknown;
+      reason: string | null;
+    };
     entities?: {
       value: Record<string, unknown>;
     };
-    [key: string]: any;
+    [key: string]: unknown;
   };
 };
 // Type for the initial state that can be passed to PreloadedState
@@ -89,34 +84,6 @@ export const createInitialState = (
         isSuccess: false,
         reason: null,
       },
-      getCurrentMonthEvents: {
-        value: null,
-        isProcessing: false,
-        error: null,
-        isSuccess: false,
-        reason: null,
-      },
-      createEvent: {
-        isProcessing: false,
-        error: null,
-        value: null,
-        isSuccess: false,
-        reason: null,
-      },
-      editEvent: {
-        isProcessing: false,
-        error: null,
-        value: null,
-        isSuccess: false,
-        reason: null,
-      },
-      deleteEvent: {
-        isProcessing: false,
-        error: null,
-        value: null,
-        isSuccess: false,
-        reason: null,
-      },
       draft: {
         event: null,
         status: {
@@ -147,6 +114,9 @@ export const createInitialState = (
       isCmdPaletteOpen: false,
     },
     sync: {
+      importGCal: {
+        importing: false,
+      },
       importLatest: {
         isFetchNeeded: false,
         reason: null,

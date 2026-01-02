@@ -1,4 +1,5 @@
 import { act } from "react";
+import type { PropsWithChildren } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor, within } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
@@ -6,11 +7,13 @@ import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
 import { DraftProvider } from "@web/views/Calendar/components/Draft/context/DraftProvider";
 import { SidebarDraftProvider } from "@web/views/Calendar/components/Draft/sidebar/context/SidebarDraftProvider";
+import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { Sidebar } from "./Sidebar";
 
 const mockProps = {
-  dateCalcs: {} as any,
-  measurements: {} as any,
+  dateCalcs: {} as DateCalcs,
+  measurements: {} as Measurements_Grid,
   weekProps: {
     component: {
       startOfView: dayjs("2025-12-07"),
@@ -32,7 +35,7 @@ const mockProps = {
   } as any,
 };
 
-const SidebarTestProviders = ({ children }: { children: React.ReactNode }) => (
+const SidebarTestProviders = ({ children }: PropsWithChildren) => (
   <DraftProvider
     dateCalcs={mockProps.dateCalcs}
     weekProps={mockProps.weekProps}
