@@ -5,7 +5,6 @@ import dayjs from "@core/util/date/dayjs";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
-import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
 import {
   openEventFormCreateEvent,
   openEventFormEditEvent,
@@ -54,12 +53,6 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
             children: "Edit event [m]",
             icon: "PencilSquareIcon",
             onClick: () => queueMicrotask(openEventFormEditEvent),
-          },
-          {
-            id: "edit-reminder",
-            children: `Edit Reminder [r]`,
-            icon: "PencilSquareIcon",
-            onClick: onEventTargetVisibility(() => pressKey("r")),
           },
           {
             id: "today",

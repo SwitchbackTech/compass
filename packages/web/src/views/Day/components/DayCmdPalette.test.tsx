@@ -1,11 +1,10 @@
 import { act } from "react";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { keyPressed$ } from "@web/common/utils/dom/event-emitter.util";
 import * as eventUtil from "@web/common/utils/event/event.util";
 import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
-import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
@@ -84,7 +83,6 @@ describe("DayCmdPalette", () => {
     expect(screen.getByText("Go to Week [3]")).toBeInTheDocument();
     expect(screen.getByText("Create event [n]")).toBeInTheDocument();
     expect(screen.getByText("Edit event [m]")).toBeInTheDocument();
-    expect(screen.getByText("Edit Reminder [r]")).toBeInTheDocument();
     expect(
       screen.getByText("Go to Today (Monday, November 24) [t]"),
     ).toBeInTheDocument();
@@ -149,28 +147,6 @@ describe("DayCmdPalette", () => {
     await act(() => user.click(screen.getByText("Go to Week [3]")));
 
     expect(mockNavigate).toHaveBeenCalledWith("/");
-  });
-
-  it("dispatches updateReminder when Edit Reminder is clicked", async () => {
-    const user = userEvent.setup();
-
-    await act(() =>
-      render(<Component />, {
-        state: { settings: { isCmdPaletteOpen: true } },
-      }),
-    );
-
-    const cmdPaletteEditBtn = await screen.findByRole("button", {
-      name: /edit reminder \[r\]/i,
-    });
-
-    await act(() => user.click(cmdPaletteEditBtn));
-
-    await waitFor(() => {
-      expect(mockDispatch).toHaveBeenCalledWith(
-        viewSlice.actions.updateReminder(true),
-      );
-    });
   });
 
   it("calls onGoToToday when Go to Today is clicked", async () => {

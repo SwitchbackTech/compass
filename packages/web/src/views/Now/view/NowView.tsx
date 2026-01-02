@@ -24,7 +24,7 @@ export const NowView = () => {
     <NowViewProvider>
       <NowCmdPalette />
       <StyledCalendar>
-        <Header />
+        <Header showReminder={true} />
 
         <div
           className={`from-bg-bg-primary via-bg-bg-secondary to-bg-bg-primary flex max-w-3/4 min-w-3/4 flex-1 justify-center gap-8 self-center overflow-hidden bg-gradient-to-b`}

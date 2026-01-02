@@ -84,16 +84,28 @@ const customRender = (
       reducer: reducers,
       preloadedState: state,
     }),
+    wrapper: CustomWrapper,
     ...renderOptions
-  }: Omit<CustomRenderOptions, "wrapper"> = {},
+  }: CustomRenderOptions = {},
 ) => {
   sagaMiddleware.run(sagas);
 
   const options: RenderOptions = { ...renderOptions };
+  const BaseProviders = TestProviders({ store, router });
+
+  const Wrapper = ({ children }: PropsWithChildren) => {
+    if (!CustomWrapper) return <BaseProviders>{children}</BaseProviders>;
+
+    return (
+      <BaseProviders>
+        <CustomWrapper>{children}</CustomWrapper>
+      </BaseProviders>
+    );
+  };
 
   // wraps test component with providers
   return render(ui, {
-    wrapper: TestProviders({ store, router }),
+    wrapper: Wrapper,
     ...options,
   });
 };

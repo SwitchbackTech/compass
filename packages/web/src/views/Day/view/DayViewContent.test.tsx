@@ -51,15 +51,17 @@ describe("TodayViewContent", () => {
     expect(await screen.findByText("Calendar Content")).toBeInTheDocument();
   });
 
-  it("should render the header with reminder and view selector", async () => {
+  it("should render the header without reminder and with view selector", async () => {
     renderWithDayProviders(<DayViewContent />);
 
-    // Check that Header components are rendered
+    // Check that Reminder component is NOT rendered
     expect(
-      await screen.findByText("Click to add your reminder"),
-    ).toBeInTheDocument();
+      screen.queryByText("Click to add your reminder"),
+    ).not.toBeInTheDocument();
+
+    // Check that SelectView component is rendered
     expect(
-      screen.getAllByRole("button", { name: /select view/i }),
+      await screen.findAllByRole("button", { name: /select view/i }),
     ).toHaveLength(2); // Header SelectView + TaskList date selector
   });
 

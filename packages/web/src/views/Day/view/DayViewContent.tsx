@@ -142,7 +142,7 @@ export const DayViewContent = memo(() => {
       <Dedication />
 
       <StyledCalendar>
-        <Header />
+        <Header showReminder={false} />
 
         <div
           className={`flex max-w-4/7 min-w-4/7 flex-1 justify-center gap-8 self-center overflow-hidden`}
