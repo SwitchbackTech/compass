@@ -2,7 +2,7 @@ import { Active, Over } from "@dnd-kit/core";
 import { createMockTask } from "@core/__tests__/helpers/task.factory";
 import dayjs from "@core/util/date/dayjs";
 import * as agendaUtil from "@web/views/Day/util/agenda/agenda.util";
-import { handleTaskToEventConversion } from "./handleTaskToEventConversion";
+import { handleTaskToEventConversion } from "./task.util";
 
 jest.mock("@web/views/Day/util/agenda/agenda.util");
 
