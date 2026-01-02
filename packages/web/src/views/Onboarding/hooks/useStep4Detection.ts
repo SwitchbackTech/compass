@@ -1,9 +1,11 @@
 import { useEffect, useRef } from "react";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import { ONBOARDING_STEPS } from "../constants/onboarding.constants";
+import type { OnboardingStepName } from "../constants/onboarding.constants";
 import { isStepCompleted } from "../utils/onboardingStorage.util";
 
 interface UseStep4DetectionProps {
-  currentStep: number | null;
+  currentStep: OnboardingStepName | null;
   onStepComplete: () => void;
 }
 
@@ -21,7 +23,7 @@ export function useStep4Detection({
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (currentStep !== 4) {
+    if (currentStep !== ONBOARDING_STEPS.EDIT_REMINDER) {
       // Reset when not on step 4
       hasCompletedRef.current = false;
       initialReminderRef.current = null;
@@ -33,7 +35,7 @@ export function useStep4Detection({
     }
 
     // Skip detection if step is already completed
-    if (isStepCompleted(4)) {
+    if (isStepCompleted(ONBOARDING_STEPS.EDIT_REMINDER)) {
       return;
     }
 

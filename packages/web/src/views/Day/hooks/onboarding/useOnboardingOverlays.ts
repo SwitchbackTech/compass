@@ -1,3 +1,4 @@
+import type { OnboardingStepName } from "@web/views/Onboarding/constants/onboarding.constants";
 import { useAuthPrompt } from "./useAuthPrompt";
 import { useCmdPaletteTutorial } from "./useCmdPaletteTutorial";
 import { useOnboardingOverlay } from "./useOnboardingOverlay";
@@ -9,7 +10,7 @@ interface UseOnboardingOverlaysProps {
 
 interface UseOnboardingOverlaysReturn {
   showOnboardingOverlay: boolean;
-  currentStep: number | null;
+  currentStep: OnboardingStepName | null;
   showCmdPaletteTutorial: boolean;
   showAuthPrompt: boolean;
   dismissOnboardingOverlay: () => void;

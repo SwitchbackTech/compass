@@ -1,4 +1,5 @@
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import { ONBOARDING_STEPS } from "../constants/onboarding.constants";
 import {
   clearCompletedSteps,
   getOnboardingProgress,
@@ -18,7 +19,12 @@ describe("onboardingStorage.util", () => {
     it("should return default progress when no data exists", () => {
       const progress = getOnboardingProgress();
       expect(progress).toEqual({
-        completedSteps: [],
+        completedSteps: {
+          createTask: false,
+          navigateToNow: false,
+          editDescription: false,
+          editReminder: false,
+        },
         isSeen: false,
         isAuthDismissed: false,
         isCompleted: false,
@@ -28,7 +34,12 @@ describe("onboardingStorage.util", () => {
 
     it("should return stored progress from consolidated key", () => {
       const testProgress = {
-        completedSteps: [1, 2],
+        completedSteps: {
+          createTask: true,
+          navigateToNow: true,
+          editDescription: false,
+          editReminder: false,
+        },
         isSeen: true,
         isAuthDismissed: true,
         isCompleted: false,
@@ -46,7 +57,12 @@ describe("onboardingStorage.util", () => {
       localStorage.setItem(STORAGE_KEYS.ONBOARDING_PROGRESS, "invalid json");
       const progress = getOnboardingProgress();
       expect(progress).toEqual({
-        completedSteps: [],
+        completedSteps: {
+          createTask: false,
+          navigateToNow: false,
+          editDescription: false,
+          editReminder: false,
+        },
         isSeen: false,
         isAuthDismissed: false,
         isCompleted: false,
@@ -54,8 +70,8 @@ describe("onboardingStorage.util", () => {
       });
     });
 
-    it("should filter out invalid steps from stored progress", () => {
-      const invalidProgress = {
+    it("should handle old array format gracefully", () => {
+      const oldFormatProgress = {
         completedSteps: [1, 2, 4, 5, 0, -1, "invalid"],
         isSeen: false,
         isAuthDismissed: false,
@@ -64,10 +80,15 @@ describe("onboardingStorage.util", () => {
       };
       localStorage.setItem(
         STORAGE_KEYS.ONBOARDING_PROGRESS,
-        JSON.stringify(invalidProgress),
+        JSON.stringify(oldFormatProgress),
       );
       const progress = getOnboardingProgress();
-      expect(progress.completedSteps).toEqual([1, 2, 4]);
+      expect(progress.completedSteps).toEqual({
+        createTask: false,
+        navigateToNow: false,
+        editDescription: false,
+        editReminder: false,
+      });
     });
   });
 
@@ -87,15 +108,21 @@ describe("onboardingStorage.util", () => {
     });
 
     it("should update completed steps", () => {
-      updateOnboardingProgress({ completedSteps: [1, 2] });
+      updateOnboardingProgress({
+        completedSteps: {
+          createTask: true,
+          navigateToNow: true,
+          editDescription: false,
+          editReminder: false,
+        },
+      });
       const progress = getOnboardingProgress();
-      expect(progress.completedSteps).toEqual([1, 2]);
-    });
-
-    it("should filter out invalid steps when updating", () => {
-      updateOnboardingProgress({ completedSteps: [1, 2, 4, 5, 0, -1] });
-      const progress = getOnboardingProgress();
-      expect(progress.completedSteps).toEqual([1, 2, 4]);
+      expect(progress.completedSteps).toEqual({
+        createTask: true,
+        navigateToNow: true,
+        editDescription: false,
+        editReminder: false,
+      });
     });
   });
 
@@ -105,65 +132,115 @@ describe("onboardingStorage.util", () => {
     });
 
     it("should return completed steps from onboarding progress", () => {
-      updateOnboardingProgress({ completedSteps: [1, 2] });
-      expect(loadCompletedSteps()).toEqual([1, 2]);
+      updateOnboardingProgress({
+        completedSteps: {
+          createTask: true,
+          navigateToNow: true,
+          editDescription: false,
+          editReminder: false,
+        },
+      });
+      expect(loadCompletedSteps()).toEqual([
+        ONBOARDING_STEPS.CREATE_TASK,
+        ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+      ]);
     });
 
-    it("should filter out invalid steps", () => {
-      updateOnboardingProgress({ completedSteps: [1, 2, 4, 5, 0, -1] });
-      expect(loadCompletedSteps()).toEqual([1, 2, 4]);
+    it("should return all completed steps", () => {
+      updateOnboardingProgress({
+        completedSteps: {
+          createTask: true,
+          navigateToNow: true,
+          editDescription: true,
+          editReminder: true,
+        },
+      });
+      expect(loadCompletedSteps()).toEqual([
+        ONBOARDING_STEPS.CREATE_TASK,
+        ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+        ONBOARDING_STEPS.EDIT_DESCRIPTION,
+        ONBOARDING_STEPS.EDIT_REMINDER,
+      ]);
     });
   });
 
   describe("saveCompletedSteps", () => {
     it("should save completed steps to onboarding progress", () => {
-      saveCompletedSteps([1, 2]);
+      saveCompletedSteps([
+        ONBOARDING_STEPS.CREATE_TASK,
+        ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+      ]);
       const progress = getOnboardingProgress();
-      expect(progress.completedSteps).toEqual([1, 2]);
+      expect(progress.completedSteps).toEqual({
+        createTask: true,
+        navigateToNow: true,
+        editDescription: false,
+        editReminder: false,
+      });
     });
 
-    it("should filter out invalid steps before saving", () => {
-      saveCompletedSteps([1, 2, 4, 5, 0, -1]);
+    it("should save all steps correctly", () => {
+      saveCompletedSteps([
+        ONBOARDING_STEPS.CREATE_TASK,
+        ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+        ONBOARDING_STEPS.EDIT_DESCRIPTION,
+        ONBOARDING_STEPS.EDIT_REMINDER,
+      ]);
       const progress = getOnboardingProgress();
-      expect(progress.completedSteps).toEqual([1, 2, 4]);
+      expect(progress.completedSteps).toEqual({
+        createTask: true,
+        navigateToNow: true,
+        editDescription: true,
+        editReminder: true,
+      });
     });
   });
 
   describe("isStepCompleted", () => {
     it("should return false when step is not completed", () => {
-      expect(isStepCompleted(1)).toBe(false);
+      expect(isStepCompleted(ONBOARDING_STEPS.CREATE_TASK)).toBe(false);
     });
 
     it("should return true when step is completed", () => {
-      saveCompletedSteps([1, 2]);
-      expect(isStepCompleted(1)).toBe(true);
-      expect(isStepCompleted(2)).toBe(true);
-      expect(isStepCompleted(3)).toBe(false);
+      saveCompletedSteps([
+        ONBOARDING_STEPS.CREATE_TASK,
+        ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+      ]);
+      expect(isStepCompleted(ONBOARDING_STEPS.CREATE_TASK)).toBe(true);
+      expect(isStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_NOW)).toBe(true);
+      expect(isStepCompleted(ONBOARDING_STEPS.EDIT_DESCRIPTION)).toBe(false);
     });
   });
 
   describe("markStepCompleted", () => {
     it("should add step to completed steps", () => {
-      markStepCompleted(1);
-      expect(isStepCompleted(1)).toBe(true);
+      markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
+      expect(isStepCompleted(ONBOARDING_STEPS.CREATE_TASK)).toBe(true);
     });
 
     it("should not duplicate steps", () => {
-      markStepCompleted(1);
-      markStepCompleted(1);
-      expect(loadCompletedSteps()).toEqual([1]);
+      markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
+      markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
+      expect(loadCompletedSteps()).toEqual([ONBOARDING_STEPS.CREATE_TASK]);
     });
 
     it("should preserve existing completed steps", () => {
-      saveCompletedSteps([1]);
-      markStepCompleted(2);
-      expect(loadCompletedSteps()).toEqual([1, 2]);
+      saveCompletedSteps([ONBOARDING_STEPS.CREATE_TASK]);
+      markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
+      expect(loadCompletedSteps()).toEqual([
+        ONBOARDING_STEPS.CREATE_TASK,
+        ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+      ]);
     });
   });
 
   describe("clearCompletedSteps", () => {
     it("should remove completed steps from localStorage", () => {
-      saveCompletedSteps([1, 2, 3]);
+      saveCompletedSteps([
+        ONBOARDING_STEPS.CREATE_TASK,
+        ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+        ONBOARDING_STEPS.EDIT_DESCRIPTION,
+      ]);
       clearCompletedSteps();
       expect(loadCompletedSteps()).toEqual([]);
     });

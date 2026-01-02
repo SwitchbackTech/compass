@@ -6,6 +6,7 @@ import {
   loadTasksFromStorage,
   saveTasksToStorage,
 } from "@web/common/utils/storage/storage.util";
+import { ONBOARDING_STEPS } from "../constants/onboarding.constants";
 import { markStepCompleted } from "../utils/onboardingStorage.util";
 import { useStep1Detection } from "./useStep1Detection";
 
@@ -32,7 +33,7 @@ describe("useStep1Detection", () => {
 
     renderHook(() =>
       useStep1Detection({
-        currentStep: 1,
+        currentStep: ONBOARDING_STEPS.CREATE_TASK,
         onStepComplete,
       }),
     );
@@ -73,7 +74,7 @@ describe("useStep1Detection", () => {
 
     renderHook(() =>
       useStep1Detection({
-        currentStep: 2,
+        currentStep: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
         onStepComplete,
       }),
     );
@@ -108,7 +109,7 @@ describe("useStep1Detection", () => {
 
     renderHook(() =>
       useStep1Detection({
-        currentStep: 1,
+        currentStep: ONBOARDING_STEPS.CREATE_TASK,
         onStepComplete,
       }),
     );
@@ -146,7 +147,7 @@ describe("useStep1Detection", () => {
           onStepComplete,
         }),
       {
-        initialProps: { currentStep: 1 },
+        initialProps: { currentStep: ONBOARDING_STEPS.CREATE_TASK },
       },
     );
 
@@ -173,7 +174,7 @@ describe("useStep1Detection", () => {
     });
 
     // Change to step 2
-    rerender({ currentStep: 2 });
+    rerender({ currentStep: ONBOARDING_STEPS.NAVIGATE_TO_NOW });
 
     // Reset mock
     onStepComplete.mockClear();
@@ -207,11 +208,11 @@ describe("useStep1Detection", () => {
     const dateKey = getDateKey();
 
     // Mark step 1 as completed
-    markStepCompleted(1);
+    markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
 
     renderHook(() =>
       useStep1Detection({
-        currentStep: 1,
+        currentStep: ONBOARDING_STEPS.CREATE_TASK,
         onStepComplete,
       }),
     );
@@ -248,7 +249,7 @@ describe("useStep1Detection", () => {
     expect(() => {
       renderHook(() =>
         useStep1Detection({
-          currentStep: 1,
+          currentStep: ONBOARDING_STEPS.CREATE_TASK,
           onStepComplete,
         }),
       );

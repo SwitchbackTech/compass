@@ -1,17 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  ONBOARDING_STEPS,
+  type OnboardingStepName,
+} from "../constants/onboarding.constants";
+import {
   clearCompletedSteps,
   getOnboardingProgress,
   markStepCompleted,
   updateOnboardingProgress,
 } from "../utils/onboardingStorage.util";
 
-export type GuideStep = 1 | 2 | 3 | 4 | null;
+export type GuideStep = OnboardingStepName | null;
 
 interface UseCmdPaletteGuideReturn {
   currentStep: GuideStep;
   isGuideActive: boolean;
-  completeStep: (step: 1 | 2 | 3 | 4) => void;
+  completeStep: (step: OnboardingStepName) => void;
   skipGuide: () => void;
   completeGuide: () => void;
 }
@@ -42,14 +46,14 @@ export function useCmdPaletteGuide(): UseCmdPaletteGuideReturn {
     // Determine current step based on completed steps
     // Find the first incomplete step, or null if all are completed
     let nextStep: GuideStep = null;
-    if (!completedSteps.includes(1)) {
-      nextStep = 1;
-    } else if (!completedSteps.includes(2)) {
-      nextStep = 2;
-    } else if (!completedSteps.includes(3)) {
-      nextStep = 3;
-    } else if (!completedSteps.includes(4)) {
-      nextStep = 4;
+    if (!completedSteps.createTask) {
+      nextStep = ONBOARDING_STEPS.CREATE_TASK;
+    } else if (!completedSteps.navigateToNow) {
+      nextStep = ONBOARDING_STEPS.NAVIGATE_TO_NOW;
+    } else if (!completedSteps.editDescription) {
+      nextStep = ONBOARDING_STEPS.EDIT_DESCRIPTION;
+    } else if (!completedSteps.editReminder) {
+      nextStep = ONBOARDING_STEPS.EDIT_REMINDER;
     }
 
     if (nextStep !== null) {
@@ -63,11 +67,11 @@ export function useCmdPaletteGuide(): UseCmdPaletteGuideReturn {
     }
   }, []);
 
-  const completeStep = useCallback((step: 1 | 2 | 3 | 4) => {
+  const completeStep = useCallback((step: OnboardingStepName) => {
     // Mark step as completed in onboarding progress
     markStepCompleted(step);
 
-    if (step === 4) {
+    if (step === ONBOARDING_STEPS.EDIT_REMINDER) {
       // All steps completed
       if (typeof window !== "undefined") {
         updateOnboardingProgress({ isCompleted: true });
@@ -76,7 +80,16 @@ export function useCmdPaletteGuide(): UseCmdPaletteGuideReturn {
       setIsGuideActive(false);
     } else {
       // Move to next step
-      setCurrentStep((step + 1) as GuideStep);
+      const stepOrder = [
+        ONBOARDING_STEPS.CREATE_TASK,
+        ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+        ONBOARDING_STEPS.EDIT_DESCRIPTION,
+        ONBOARDING_STEPS.EDIT_REMINDER,
+      ];
+      const currentIndex = stepOrder.indexOf(step);
+      if (currentIndex !== -1 && currentIndex < stepOrder.length - 1) {
+        setCurrentStep(stepOrder[currentIndex + 1]);
+      }
     }
   }, []);
 
@@ -93,10 +106,10 @@ export function useCmdPaletteGuide(): UseCmdPaletteGuideReturn {
     if (typeof window !== "undefined") {
       updateOnboardingProgress({ isCompleted: true });
       // Mark all steps as completed
-      markStepCompleted(1);
-      markStepCompleted(2);
-      markStepCompleted(3);
-      markStepCompleted(4);
+      markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
+      markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
+      markStepCompleted(ONBOARDING_STEPS.EDIT_DESCRIPTION);
+      markStepCompleted(ONBOARDING_STEPS.EDIT_REMINDER);
     }
     setCurrentStep(null);
     setIsGuideActive(false);

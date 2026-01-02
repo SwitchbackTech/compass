@@ -1,10 +1,12 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { ONBOARDING_STEPS } from "../constants/onboarding.constants";
+import type { OnboardingStepName } from "../constants/onboarding.constants";
 import { isStepCompleted } from "../utils/onboardingStorage.util";
 
 interface UseStep2DetectionProps {
-  currentStep: number | null;
+  currentStep: OnboardingStepName | null;
   onStepComplete: () => void;
 }
 
@@ -21,11 +23,14 @@ export function useStep2Detection({
 
   useEffect(() => {
     // Skip detection if step is already completed
-    if (isStepCompleted(2)) {
+    if (isStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_NOW)) {
       return;
     }
 
-    if (currentStep === 2 && location.pathname === ROOT_ROUTES.NOW) {
+    if (
+      currentStep === ONBOARDING_STEPS.NAVIGATE_TO_NOW &&
+      location.pathname === ROOT_ROUTES.NOW
+    ) {
       onStepComplete();
     }
   }, [currentStep, location.pathname, onStepComplete]);

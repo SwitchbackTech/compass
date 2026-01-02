@@ -42,3 +42,20 @@ export const SKIPPED_STEPS_FOR_AUTHENTICATED_USERS: readonly string[] = [
   ONBOARDING_STEP_IDS.MIGRATION_INTRO,
   ONBOARDING_STEP_IDS.SOMEDAY_MIGRATION,
 ];
+
+/**
+ * Command palette guide step names
+ * Used for tracking completion of the interactive command palette guide
+ */
+export const ONBOARDING_STEPS = {
+  CREATE_TASK: "createTask",
+  NAVIGATE_TO_NOW: "navigateToNow",
+  EDIT_DESCRIPTION: "editDescription",
+  EDIT_REMINDER: "editReminder",
+} as const;
+
+export type OnboardingStepName =
+  | "createTask"
+  | "navigateToNow"
+  | "editDescription"
+  | "editReminder";

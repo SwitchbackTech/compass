@@ -6,6 +6,7 @@ import {
   loadTasksFromStorage,
   saveTasksToStorage,
 } from "@web/common/utils/storage/storage.util";
+import { ONBOARDING_STEPS } from "../constants/onboarding.constants";
 import { markStepCompleted } from "../utils/onboardingStorage.util";
 import { useStep3Detection } from "./useStep3Detection";
 
@@ -31,7 +32,7 @@ describe("useStep3Detection", () => {
 
     renderHook(() =>
       useStep3Detection({
-        currentStep: 3,
+        currentStep: ONBOARDING_STEPS.EDIT_DESCRIPTION,
         onStepComplete,
       }),
     );
@@ -78,7 +79,7 @@ describe("useStep3Detection", () => {
 
     renderHook(() =>
       useStep3Detection({
-        currentStep: 3,
+        currentStep: ONBOARDING_STEPS.EDIT_DESCRIPTION,
         onStepComplete,
       }),
     );
@@ -123,7 +124,7 @@ describe("useStep3Detection", () => {
 
     renderHook(() =>
       useStep3Detection({
-        currentStep: 3,
+        currentStep: ONBOARDING_STEPS.EDIT_DESCRIPTION,
         onStepComplete,
       }),
     );
@@ -168,7 +169,7 @@ describe("useStep3Detection", () => {
 
     renderHook(() =>
       useStep3Detection({
-        currentStep: 2,
+        currentStep: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
         onStepComplete,
       }),
     );
@@ -199,7 +200,7 @@ describe("useStep3Detection", () => {
 
     renderHook(() =>
       useStep3Detection({
-        currentStep: 3,
+        currentStep: ONBOARDING_STEPS.EDIT_DESCRIPTION,
         onStepComplete,
       }),
     );
@@ -248,7 +249,7 @@ describe("useStep3Detection", () => {
           onStepComplete,
         }),
       {
-        initialProps: { currentStep: 3 },
+        initialProps: { currentStep: ONBOARDING_STEPS.EDIT_DESCRIPTION },
       },
     );
 
@@ -272,7 +273,7 @@ describe("useStep3Detection", () => {
     });
 
     // Change to step 1
-    rerender({ currentStep: 1 });
+    rerender({ currentStep: ONBOARDING_STEPS.CREATE_TASK });
 
     // Reset mock
     onStepComplete.mockClear();
@@ -302,7 +303,7 @@ describe("useStep3Detection", () => {
     const dateKey = getDateKey();
 
     // Mark step 3 as completed
-    markStepCompleted(3);
+    markStepCompleted(ONBOARDING_STEPS.EDIT_DESCRIPTION);
 
     // Initialize with a task without description
     const existingTask: Task = {
@@ -317,7 +318,7 @@ describe("useStep3Detection", () => {
 
     renderHook(() =>
       useStep3Detection({
-        currentStep: 3,
+        currentStep: ONBOARDING_STEPS.EDIT_DESCRIPTION,
         onStepComplete,
       }),
     );
@@ -357,7 +358,7 @@ describe("useStep3Detection", () => {
     expect(() => {
       renderHook(() =>
         useStep3Detection({
-          currentStep: 3,
+          currentStep: ONBOARDING_STEPS.EDIT_DESCRIPTION,
           onStepComplete,
         }),
       );

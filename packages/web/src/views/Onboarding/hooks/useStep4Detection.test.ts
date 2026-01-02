@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import { ONBOARDING_STEPS } from "../constants/onboarding.constants";
 import { markStepCompleted } from "../utils/onboardingStorage.util";
 import { useStep4Detection } from "./useStep4Detection";
 
@@ -22,7 +23,7 @@ describe("useStep4Detection", () => {
 
     renderHook(() =>
       useStep4Detection({
-        currentStep: 4,
+        currentStep: ONBOARDING_STEPS.EDIT_REMINDER,
         onStepComplete,
       }),
     );
@@ -57,7 +58,7 @@ describe("useStep4Detection", () => {
 
     renderHook(() =>
       useStep4Detection({
-        currentStep: 4,
+        currentStep: ONBOARDING_STEPS.EDIT_REMINDER,
         onStepComplete,
       }),
     );
@@ -88,7 +89,7 @@ describe("useStep4Detection", () => {
 
     renderHook(() =>
       useStep4Detection({
-        currentStep: 4,
+        currentStep: ONBOARDING_STEPS.EDIT_REMINDER,
         onStepComplete,
       }),
     );
@@ -127,7 +128,7 @@ describe("useStep4Detection", () => {
 
     renderHook(() =>
       useStep4Detection({
-        currentStep: 3,
+        currentStep: ONBOARDING_STEPS.EDIT_DESCRIPTION,
         onStepComplete,
       }),
     );
@@ -153,12 +154,12 @@ describe("useStep4Detection", () => {
   it("should not trigger when step is already completed", async () => {
     const onStepComplete = jest.fn();
 
-    markStepCompleted(4);
+    markStepCompleted(ONBOARDING_STEPS.EDIT_REMINDER);
     localStorage.setItem(STORAGE_KEYS.REMINDER, "Initial reminder");
 
     renderHook(() =>
       useStep4Detection({
-        currentStep: 4,
+        currentStep: ONBOARDING_STEPS.EDIT_REMINDER,
         onStepComplete,
       }),
     );
@@ -193,12 +194,12 @@ describe("useStep4Detection", () => {
           onStepComplete,
         }),
       {
-        initialProps: { currentStep: 3 },
+        initialProps: { currentStep: ONBOARDING_STEPS.EDIT_DESCRIPTION },
       },
     );
 
     // Change to step 4
-    rerender({ currentStep: 4 });
+    rerender({ currentStep: ONBOARDING_STEPS.EDIT_REMINDER });
 
     await waitFor(() => {
       expect(localStorage.getItem(STORAGE_KEYS.REMINDER)).toBe(
@@ -233,7 +234,7 @@ describe("useStep4Detection", () => {
           onStepComplete,
         }),
       {
-        initialProps: { currentStep: 4 },
+        initialProps: { currentStep: ONBOARDING_STEPS.EDIT_REMINDER },
       },
     );
 
@@ -244,7 +245,7 @@ describe("useStep4Detection", () => {
     });
 
     // Switch away from step 4
-    rerender({ currentStep: 3 });
+    rerender({ currentStep: ONBOARDING_STEPS.EDIT_DESCRIPTION });
 
     // Update reminder (should not trigger since we're not on step 4)
     act(() => {
@@ -271,7 +272,7 @@ describe("useStep4Detection", () => {
 
     renderHook(() =>
       useStep4Detection({
-        currentStep: 4,
+        currentStep: ONBOARDING_STEPS.EDIT_REMINDER,
         onStepComplete,
       }),
     );

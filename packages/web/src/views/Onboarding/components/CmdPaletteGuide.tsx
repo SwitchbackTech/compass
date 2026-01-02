@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { useSession } from "@web/common/hooks/useSession";
+import { ONBOARDING_STEPS } from "../constants/onboarding.constants";
 import { useCmdPaletteGuide } from "../hooks/useCmdPaletteGuide";
 import { useStep1Detection } from "../hooks/useStep1Detection";
 import { useStep2Detection } from "../hooks/useStep2Detection";
@@ -19,7 +20,7 @@ export const CmdPaletteGuide: React.FC = () => {
   // Step detection hooks - always call them, they check currentStep internally
   useStep1Detection({
     currentStep,
-    onStepComplete: () => completeStep(1),
+    onStepComplete: () => completeStep(ONBOARDING_STEPS.CREATE_TASK),
   });
 
   // Delay step 2 completion to show instructions on Now view first
@@ -31,19 +32,19 @@ export const CmdPaletteGuide: React.FC = () => {
         clearTimeout(step2CompletionTimeoutRef.current);
       }
       step2CompletionTimeoutRef.current = setTimeout(() => {
-        completeStep(2);
+        completeStep(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
       }, 1500); // Show step 2 instructions for 1.5 seconds
     },
   });
 
   useStep3Detection({
     currentStep,
-    onStepComplete: () => completeStep(3),
+    onStepComplete: () => completeStep(ONBOARDING_STEPS.EDIT_DESCRIPTION),
   });
 
   useStep4Detection({
     currentStep,
-    onStepComplete: () => completeStep(4),
+    onStepComplete: () => completeStep(ONBOARDING_STEPS.EDIT_REMINDER),
   });
 
   // Cleanup timeout on unmount
@@ -68,8 +69,11 @@ export const CmdPaletteGuide: React.FC = () => {
   const actualStep = React.useMemo(() => {
     if (currentStep === null) return null;
     // If we're on step 2 but step 1 wasn't completed, stay on step 1
-    if (currentStep === 2 && !isStepCompleted(1)) {
-      return 1;
+    if (
+      currentStep === ONBOARDING_STEPS.NAVIGATE_TO_NOW &&
+      !isStepCompleted(ONBOARDING_STEPS.CREATE_TASK)
+    ) {
+      return ONBOARDING_STEPS.CREATE_TASK;
     }
     return currentStep;
   }, [currentStep]);
@@ -91,10 +95,14 @@ export const CmdPaletteGuide: React.FC = () => {
   const shouldShowOverlay =
     isGuideActive &&
     actualStep !== null &&
-    ((actualStep === 1 && !authenticated) ||
-      (isDayView && actualStep === 2 && !authenticated) ||
+    ((actualStep === ONBOARDING_STEPS.CREATE_TASK && !authenticated) ||
+      (isDayView &&
+        actualStep === ONBOARDING_STEPS.NAVIGATE_TO_NOW &&
+        !authenticated) ||
       (isNowView &&
-        (actualStep === 2 || actualStep === 3 || actualStep === 4)));
+        (actualStep === ONBOARDING_STEPS.NAVIGATE_TO_NOW ||
+          actualStep === ONBOARDING_STEPS.EDIT_DESCRIPTION ||
+          actualStep === ONBOARDING_STEPS.EDIT_REMINDER)));
 
   if (!shouldShowOverlay) {
     return null;
@@ -102,7 +110,7 @@ export const CmdPaletteGuide: React.FC = () => {
 
   // Step instructions with JSX for keyboard shortcuts
   const stepInstructions = {
-    1: (
+    [ONBOARDING_STEPS.CREATE_TASK]: (
       <>
         Type{" "}
         <kbd className="bg-bg-secondary text-text-light border-border-primary rounded border px-1.5 py-0.5 font-mono text-xs">
@@ -111,7 +119,7 @@ export const CmdPaletteGuide: React.FC = () => {
         to create a task
       </>
     ),
-    2: (
+    [ONBOARDING_STEPS.NAVIGATE_TO_NOW]: (
       <>
         Press{" "}
         <kbd className="bg-bg-secondary text-text-light border-border-primary rounded border px-1.5 py-0.5 font-mono text-xs">
@@ -120,7 +128,7 @@ export const CmdPaletteGuide: React.FC = () => {
         to go to the /now view
       </>
     ),
-    3: (
+    [ONBOARDING_STEPS.EDIT_DESCRIPTION]: (
       <>
         Press{" "}
         <kbd className="bg-bg-secondary text-text-light border-border-primary rounded border px-1.5 py-0.5 font-mono text-xs">
@@ -129,7 +137,7 @@ export const CmdPaletteGuide: React.FC = () => {
         to edit the description
       </>
     ),
-    4: (
+    [ONBOARDING_STEPS.EDIT_REMINDER]: (
       <>
         Press{" "}
         <kbd className="bg-bg-secondary text-text-light border-border-primary rounded border px-1.5 py-0.5 font-mono text-xs">
@@ -141,12 +149,16 @@ export const CmdPaletteGuide: React.FC = () => {
   };
 
   const instruction =
-    stepInstructions[actualStep as keyof typeof stepInstructions];
+    actualStep !== null
+      ? stepInstructions[actualStep as keyof typeof stepInstructions]
+      : null;
 
   // Day view or step 1: centered overlay with progress indicators
   if (
-    (isDayView && (actualStep === 1 || actualStep === 2)) ||
-    actualStep === 1
+    (isDayView &&
+      (actualStep === ONBOARDING_STEPS.CREATE_TASK ||
+        actualStep === ONBOARDING_STEPS.NAVIGATE_TO_NOW)) ||
+    actualStep === ONBOARDING_STEPS.CREATE_TASK
   ) {
     return (
       <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 transform">
@@ -158,9 +170,24 @@ export const CmdPaletteGuide: React.FC = () => {
               </h3>
               <p className="text-text-light/80 mb-3 text-sm">{instruction}</p>
               <div className="flex items-center gap-2">
-                {[1, 2, 3, 4].map((step) => {
+                {[
+                  ONBOARDING_STEPS.CREATE_TASK,
+                  ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+                  ONBOARDING_STEPS.EDIT_DESCRIPTION,
+                  ONBOARDING_STEPS.EDIT_REMINDER,
+                ].map((step) => {
+                  const stepOrder = [
+                    ONBOARDING_STEPS.CREATE_TASK,
+                    ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+                    ONBOARDING_STEPS.EDIT_DESCRIPTION,
+                    ONBOARDING_STEPS.EDIT_REMINDER,
+                  ];
+                  const stepIndex = stepOrder.indexOf(step);
+                  const actualStepIndex = actualStep
+                    ? stepOrder.indexOf(actualStep)
+                    : -1;
                   const isCompleted =
-                    step < actualStep! || isStepCompleted(step);
+                    stepIndex < actualStepIndex || isStepCompleted(step);
                   const isCurrent = step === actualStep;
                   return (
                     <div
@@ -176,7 +203,16 @@ export const CmdPaletteGuide: React.FC = () => {
                   );
                 })}
                 <span className="text-text-lighter ml-2 text-xs">
-                  Step {actualStep} of 4
+                  Step{" "}
+                  {actualStep
+                    ? [
+                        ONBOARDING_STEPS.CREATE_TASK,
+                        ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+                        ONBOARDING_STEPS.EDIT_DESCRIPTION,
+                        ONBOARDING_STEPS.EDIT_REMINDER,
+                      ].indexOf(actualStep) + 1
+                    : 0}{" "}
+                  of 4
                 </span>
               </div>
             </div>
@@ -206,7 +242,12 @@ export const CmdPaletteGuide: React.FC = () => {
   }
 
   // Now view: right-aligned overlay with step indicators
-  if (isNowView && (actualStep === 2 || actualStep === 3 || actualStep === 4)) {
+  if (
+    isNowView &&
+    (actualStep === ONBOARDING_STEPS.NAVIGATE_TO_NOW ||
+      actualStep === ONBOARDING_STEPS.EDIT_DESCRIPTION ||
+      actualStep === ONBOARDING_STEPS.EDIT_REMINDER)
+  ) {
     return (
       <div
         className="pointer-events-none fixed inset-0 z-50"
@@ -223,9 +264,24 @@ export const CmdPaletteGuide: React.FC = () => {
               </h3>
               <p className="text-text-light mb-3 text-sm">{instruction}</p>
               <div className="flex items-center gap-2">
-                {[1, 2, 3, 4].map((step) => {
+                {[
+                  ONBOARDING_STEPS.CREATE_TASK,
+                  ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+                  ONBOARDING_STEPS.EDIT_DESCRIPTION,
+                  ONBOARDING_STEPS.EDIT_REMINDER,
+                ].map((step) => {
+                  const stepOrder = [
+                    ONBOARDING_STEPS.CREATE_TASK,
+                    ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+                    ONBOARDING_STEPS.EDIT_DESCRIPTION,
+                    ONBOARDING_STEPS.EDIT_REMINDER,
+                  ];
+                  const stepIndex = stepOrder.indexOf(step);
+                  const actualStepIndex = actualStep
+                    ? stepOrder.indexOf(actualStep)
+                    : -1;
                   const isCompleted =
-                    step < actualStep! || isStepCompleted(step);
+                    stepIndex < actualStepIndex || isStepCompleted(step);
                   const isCurrent = step === actualStep;
                   return (
                     <div
@@ -241,7 +297,16 @@ export const CmdPaletteGuide: React.FC = () => {
                   );
                 })}
                 <span className="text-text-lighter ml-2 text-xs">
-                  Step {actualStep} of 4
+                  Step{" "}
+                  {actualStep
+                    ? [
+                        ONBOARDING_STEPS.CREATE_TASK,
+                        ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+                        ONBOARDING_STEPS.EDIT_DESCRIPTION,
+                        ONBOARDING_STEPS.EDIT_REMINDER,
+                      ].indexOf(actualStep) + 1
+                    : 0}{" "}
+                  of 4
                 </span>
               </div>
             </div>

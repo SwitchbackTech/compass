@@ -2,6 +2,7 @@ import React from "react";
 import { MemoryRouter } from "react-router-dom";
 import { renderHook } from "@testing-library/react";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { ONBOARDING_STEPS } from "../constants/onboarding.constants";
 import { markStepCompleted } from "../utils/onboardingStorage.util";
 import { useStep2Detection } from "./useStep2Detection";
 
@@ -12,7 +13,7 @@ describe("useStep2Detection", () => {
     renderHook(
       () =>
         useStep2Detection({
-          currentStep: 2,
+          currentStep: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
           onStepComplete,
         }),
       {
@@ -33,7 +34,7 @@ describe("useStep2Detection", () => {
     renderHook(
       () =>
         useStep2Detection({
-          currentStep: 1,
+          currentStep: ONBOARDING_STEPS.CREATE_TASK,
           onStepComplete,
         }),
       {
@@ -54,7 +55,7 @@ describe("useStep2Detection", () => {
     renderHook(
       () =>
         useStep2Detection({
-          currentStep: 3,
+          currentStep: ONBOARDING_STEPS.EDIT_DESCRIPTION,
           onStepComplete,
         }),
       {
@@ -79,7 +80,7 @@ describe("useStep2Detection", () => {
           onStepComplete,
         }),
       {
-        initialProps: { currentStep: 1 },
+        initialProps: { currentStep: ONBOARDING_STEPS.CREATE_TASK },
         wrapper: ({ children }) => (
           <MemoryRouter initialEntries={[ROOT_ROUTES.NOW]}>
             {children}
@@ -91,7 +92,7 @@ describe("useStep2Detection", () => {
     expect(onStepComplete).not.toHaveBeenCalled();
 
     // Change to step 2 while already on /now route
-    rerender({ currentStep: 2 });
+    rerender({ currentStep: ONBOARDING_STEPS.NAVIGATE_TO_NOW });
 
     expect(onStepComplete).toHaveBeenCalledTimes(1);
   });
@@ -102,7 +103,7 @@ describe("useStep2Detection", () => {
     renderHook(
       () =>
         useStep2Detection({
-          currentStep: 2,
+          currentStep: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
           onStepComplete,
         }),
       {
@@ -121,12 +122,12 @@ describe("useStep2Detection", () => {
     const onStepComplete = jest.fn();
 
     // Mark step 2 as completed
-    markStepCompleted(2);
+    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
 
     renderHook(
       () =>
         useStep2Detection({
-          currentStep: 2,
+          currentStep: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
           onStepComplete,
         }),
       {

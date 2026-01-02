@@ -1,9 +1,11 @@
 import { useSession } from "@web/common/hooks/useSession";
+import { ONBOARDING_STEPS } from "@web/views/Onboarding/constants/onboarding.constants";
+import type { OnboardingStepName } from "@web/views/Onboarding/constants/onboarding.constants";
 import { useCmdPaletteGuide } from "@web/views/Onboarding/hooks/useCmdPaletteGuide";
 
 interface UseOnboardingOverlayReturn {
   showOnboardingOverlay: boolean;
-  currentStep: number | null;
+  currentStep: OnboardingStepName | null;
   dismissOnboardingOverlay: () => void;
 }
 
@@ -21,7 +23,8 @@ export function useOnboardingOverlay(): UseOnboardingOverlayReturn {
   const showOnboardingOverlay =
     isGuideActive &&
     currentStep !== null &&
-    (currentStep === 1 || currentStep === 2) &&
+    (currentStep === ONBOARDING_STEPS.CREATE_TASK ||
+      currentStep === ONBOARDING_STEPS.NAVIGATE_TO_NOW) &&
     !authenticated;
 
   const dismissOnboardingOverlay = () => {

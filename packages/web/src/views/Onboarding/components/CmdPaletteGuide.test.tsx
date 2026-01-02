@@ -7,6 +7,7 @@ import {
   getDateKey,
   loadTasksFromStorage,
 } from "@web/common/utils/storage/storage.util";
+import { ONBOARDING_STEPS } from "../constants/onboarding.constants";
 import { useCmdPaletteGuide } from "../hooks/useCmdPaletteGuide";
 import { useStep1Detection } from "../hooks/useStep1Detection";
 import { useStep2Detection } from "../hooks/useStep2Detection";
@@ -91,7 +92,7 @@ describe("CmdPaletteGuide", () => {
     mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
     mockLoadTasksFromStorage.mockReturnValue([]); // No tasks yet
     mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: 1,
+      currentStep: ONBOARDING_STEPS.CREATE_TASK,
       isGuideActive: true,
       completeStep: jest.fn(),
       skipGuide: jest.fn(),
@@ -110,7 +111,7 @@ describe("CmdPaletteGuide", () => {
     mockUseLocation.mockReturnValue({ pathname: "/now" } as any);
     mockLoadTasksFromStorage.mockReturnValue([]); // Step 1 not completed
     mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: 1,
+      currentStep: ONBOARDING_STEPS.CREATE_TASK,
       isGuideActive: true,
       completeStep: jest.fn(),
       skipGuide: jest.fn(),
@@ -135,9 +136,9 @@ describe("CmdPaletteGuide", () => {
         createdAt: new Date().toISOString(),
       },
     ] as any); // Step 1 completed
-    markStepCompleted(1); // Mark step 1 as completed in onboarding progress
+    markStepCompleted(ONBOARDING_STEPS.CREATE_TASK); // Mark step 1 as completed in onboarding progress
     mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: 2,
+      currentStep: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
       isGuideActive: true,
       completeStep: jest.fn(),
       skipGuide: jest.fn(),
@@ -158,7 +159,7 @@ describe("CmdPaletteGuide", () => {
     mockUseLocation.mockReturnValue({ pathname: "/now" } as any);
     mockLoadTasksFromStorage.mockReturnValue([]); // Step 1 not completed
     mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: 2,
+      currentStep: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
       isGuideActive: true,
       completeStep: jest.fn(),
       skipGuide: jest.fn(),
@@ -186,9 +187,9 @@ describe("CmdPaletteGuide", () => {
         createdAt: new Date().toISOString(),
       },
     ] as any); // Step 1 completed
-    markStepCompleted(1); // Mark step 1 as completed in onboarding progress
+    markStepCompleted(ONBOARDING_STEPS.CREATE_TASK); // Mark step 1 as completed in onboarding progress
     mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: 2,
+      currentStep: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
       isGuideActive: true,
       completeStep: jest.fn(),
       skipGuide: jest.fn(),
@@ -208,7 +209,7 @@ describe("CmdPaletteGuide", () => {
     mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
     mockLoadTasksFromStorage.mockReturnValue([]); // Step 1 not completed
     mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: 2,
+      currentStep: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
       isGuideActive: true,
       completeStep: jest.fn(),
       skipGuide: jest.fn(),
@@ -227,7 +228,7 @@ describe("CmdPaletteGuide", () => {
   it("should render step 3 instructions on Now view", () => {
     mockUseLocation.mockReturnValue({ pathname: "/now" } as any);
     mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: 3,
+      currentStep: ONBOARDING_STEPS.EDIT_DESCRIPTION,
       isGuideActive: true,
       completeStep: jest.fn(),
       skipGuide: jest.fn(),
@@ -246,11 +247,11 @@ describe("CmdPaletteGuide", () => {
 
   it("should render step 4 instructions on Now view", () => {
     mockUseLocation.mockReturnValue({ pathname: "/now" } as any);
-    markStepCompleted(1);
-    markStepCompleted(2);
-    markStepCompleted(3);
+    markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
+    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
+    markStepCompleted(ONBOARDING_STEPS.EDIT_DESCRIPTION);
     mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: 4,
+      currentStep: ONBOARDING_STEPS.EDIT_REMINDER,
       isGuideActive: true,
       completeStep: jest.fn(),
       skipGuide: jest.fn(),
@@ -270,7 +271,7 @@ describe("CmdPaletteGuide", () => {
   it("should not render step 3 on Day view", () => {
     mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
     mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: 3,
+      currentStep: ONBOARDING_STEPS.EDIT_DESCRIPTION,
       isGuideActive: true,
       completeStep: jest.fn(),
       skipGuide: jest.fn(),
@@ -292,7 +293,7 @@ describe("CmdPaletteGuide", () => {
     mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
     mockUseSession.mockReturnValue({ authenticated: true });
     mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: 1,
+      currentStep: ONBOARDING_STEPS.CREATE_TASK,
       isGuideActive: true,
       completeStep: jest.fn(),
       skipGuide: jest.fn(),
@@ -315,7 +316,7 @@ describe("CmdPaletteGuide", () => {
     const skipGuide = jest.fn();
     mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
     mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: 1,
+      currentStep: ONBOARDING_STEPS.CREATE_TASK,
       isGuideActive: true,
       completeStep: jest.fn(),
       skipGuide,
@@ -343,9 +344,9 @@ describe("CmdPaletteGuide", () => {
         createdAt: new Date().toISOString(),
       },
     ] as any); // Step 1 completed
-    markStepCompleted(1); // Mark step 1 as completed in onboarding progress
+    markStepCompleted(ONBOARDING_STEPS.CREATE_TASK); // Mark step 1 as completed in onboarding progress
     mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: 2,
+      currentStep: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
       isGuideActive: true,
       completeStep: jest.fn(),
       skipGuide,
@@ -371,9 +372,9 @@ describe("CmdPaletteGuide", () => {
         createdAt: new Date().toISOString(),
       },
     ] as any); // Step 1 completed
-    markStepCompleted(1); // Mark step 1 as completed in onboarding progress
+    markStepCompleted(ONBOARDING_STEPS.CREATE_TASK); // Mark step 1 as completed in onboarding progress
     mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: 2,
+      currentStep: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
       isGuideActive: true,
       completeStep: jest.fn(),
       skipGuide: jest.fn(),
@@ -392,7 +393,7 @@ describe("CmdPaletteGuide", () => {
   it("should show progress indicators on Day view", () => {
     mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
     mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: 1,
+      currentStep: ONBOARDING_STEPS.CREATE_TASK,
       isGuideActive: true,
       completeStep: jest.fn(),
       skipGuide: jest.fn(),
@@ -412,7 +413,7 @@ describe("CmdPaletteGuide", () => {
   it("should not render step 4 on Day view", () => {
     mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
     mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: 4,
+      currentStep: ONBOARDING_STEPS.EDIT_REMINDER,
       isGuideActive: true,
       completeStep: jest.fn(),
       skipGuide: jest.fn(),
@@ -433,7 +434,7 @@ describe("CmdPaletteGuide", () => {
   it("should call all step detection hooks", () => {
     mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
     mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: 1,
+      currentStep: ONBOARDING_STEPS.CREATE_TASK,
       isGuideActive: true,
       completeStep: jest.fn(),
       skipGuide: jest.fn(),
@@ -452,7 +453,7 @@ describe("CmdPaletteGuide", () => {
     const completeStep = jest.fn();
     mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
     mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: 1,
+      currentStep: ONBOARDING_STEPS.CREATE_TASK,
       isGuideActive: true,
       completeStep,
       skipGuide: jest.fn(),
@@ -462,22 +463,22 @@ describe("CmdPaletteGuide", () => {
     render(<CmdPaletteGuide />);
 
     expect(mockUseStep1Detection).toHaveBeenCalledWith({
-      currentStep: 1,
+      currentStep: ONBOARDING_STEPS.CREATE_TASK,
       onStepComplete: expect.any(Function),
     });
 
     expect(mockUseStep2Detection).toHaveBeenCalledWith({
-      currentStep: 1,
+      currentStep: ONBOARDING_STEPS.CREATE_TASK,
       onStepComplete: expect.any(Function),
     });
 
     expect(mockUseStep3Detection).toHaveBeenCalledWith({
-      currentStep: 1,
+      currentStep: ONBOARDING_STEPS.CREATE_TASK,
       onStepComplete: expect.any(Function),
     });
 
     expect(mockUseStep4Detection).toHaveBeenCalledWith({
-      currentStep: 1,
+      currentStep: ONBOARDING_STEPS.CREATE_TASK,
       onStepComplete: expect.any(Function),
     });
   });

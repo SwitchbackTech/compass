@@ -1,4 +1,5 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { ONBOARDING_STEPS } from "@web/views/Onboarding/constants/onboarding.constants";
 import {
   getOnboardingProgress,
   updateOnboardingProgress,
@@ -26,7 +27,7 @@ describe("useOnboardingOverlay", () => {
       const progress = getOnboardingProgress();
       const isCompleted = progress.isCompleted;
       return {
-        currentStep: isCompleted ? null : 1,
+        currentStep: isCompleted ? null : ONBOARDING_STEPS.CREATE_TASK,
         isGuideActive: !isCompleted,
         skipGuide: jest.fn(() => {
           updateOnboardingProgress({ isCompleted: true });
@@ -41,12 +42,12 @@ describe("useOnboardingOverlay", () => {
     const { result } = renderHook(() => useOnboardingOverlay());
 
     expect(result.current.showOnboardingOverlay).toBe(true);
-    expect(result.current.currentStep).toBe(1);
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.CREATE_TASK);
   });
 
   it("should show onboarding overlay when guide is active on step 2 for unauthenticated users", () => {
     mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: 2,
+      currentStep: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
       isGuideActive: true,
       skipGuide: jest.fn(),
       completeStep: jest.fn(),
@@ -55,13 +56,13 @@ describe("useOnboardingOverlay", () => {
 
     const { result } = renderHook(() => useOnboardingOverlay());
 
-    expect(result.current.currentStep).toBe(2);
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
     expect(result.current.showOnboardingOverlay).toBe(true);
   });
 
   it("should not show onboarding overlay when guide is on step 3 (Now view step)", () => {
     mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: 3,
+      currentStep: ONBOARDING_STEPS.EDIT_DESCRIPTION,
       isGuideActive: true,
       skipGuide: jest.fn(),
       completeStep: jest.fn(),
@@ -71,7 +72,7 @@ describe("useOnboardingOverlay", () => {
     const { result } = renderHook(() => useOnboardingOverlay());
 
     // Overlay should not show on step 3 (it's for Now view, not Day view)
-    expect(result.current.currentStep).toBe(3);
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.EDIT_DESCRIPTION);
     expect(result.current.showOnboardingOverlay).toBe(false);
   });
 
@@ -131,7 +132,7 @@ describe("useOnboardingOverlay", () => {
     });
 
     mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: 1,
+      currentStep: ONBOARDING_STEPS.CREATE_TASK,
       isGuideActive: true,
       skipGuide: skipGuideFn,
       completeStep: jest.fn(),

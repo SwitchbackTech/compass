@@ -5,10 +5,12 @@ import {
   getDateKey,
   loadTasksFromStorage,
 } from "@web/common/utils/storage/storage.util";
+import { ONBOARDING_STEPS } from "../constants/onboarding.constants";
+import type { OnboardingStepName } from "../constants/onboarding.constants";
 import { isStepCompleted } from "../utils/onboardingStorage.util";
 
 interface UseStep1DetectionProps {
-  currentStep: number | null;
+  currentStep: OnboardingStepName | null;
   onStepComplete: () => void;
 }
 
@@ -25,7 +27,7 @@ export function useStep1Detection({
   const hasCompletedRef = useRef(false);
 
   useEffect(() => {
-    if (currentStep !== 1) {
+    if (currentStep !== ONBOARDING_STEPS.CREATE_TASK) {
       // Reset when not on step 1
       hasCompletedRef.current = false;
       initialTaskCountRef.current = null;
@@ -33,7 +35,7 @@ export function useStep1Detection({
     }
 
     // Skip detection if step is already completed
-    if (isStepCompleted(1)) {
+    if (isStepCompleted(ONBOARDING_STEPS.CREATE_TASK)) {
       return;
     }
 
