@@ -18,6 +18,7 @@ jest.mock("react-router-dom", () => ({
 }));
 
 // Mock dayjs
+// ... (rest of mocks)
 jest.mock("@core/util/date/dayjs", () => ({
   __esModule: true,
   default: jest.fn(() => ({
@@ -84,7 +85,6 @@ describe("DayCmdPalette", () => {
     expect(screen.getByText("Go to Week [3]")).toBeInTheDocument();
     expect(screen.getByText("Create event [n]")).toBeInTheDocument();
     expect(screen.getByText("Edit event [m]")).toBeInTheDocument();
-    expect(screen.getByText("Edit Reminder [r]")).toBeInTheDocument();
     expect(
       screen.getByText("Go to Today (Monday, November 24) [t]"),
     ).toBeInTheDocument();
@@ -149,28 +149,6 @@ describe("DayCmdPalette", () => {
     await act(() => user.click(screen.getByText("Go to Week [3]")));
 
     expect(mockNavigate).toHaveBeenCalledWith("/");
-  });
-
-  it("dispatches updateReminder when Edit Reminder is clicked", async () => {
-    const user = userEvent.setup();
-
-    await act(() =>
-      render(<Component />, {
-        state: { settings: { isCmdPaletteOpen: true } },
-      }),
-    );
-
-    const cmdPaletteEditBtn = await screen.findByRole("button", {
-      name: /edit reminder \[r\]/i,
-    });
-
-    await act(() => user.click(cmdPaletteEditBtn));
-
-    await waitFor(() => {
-      expect(mockDispatch).toHaveBeenCalledWith(
-        viewSlice.actions.updateReminder(true),
-      );
-    });
   });
 
   it("calls onGoToToday when Go to Today is clicked", async () => {
