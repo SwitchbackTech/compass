@@ -67,14 +67,15 @@ export function useEventDNDActions() {
 
       if (!event) return;
 
-      // Add to pending events slice for tracking
+      // Add event to pending events and create optimistically
       dispatch(pendingEventsSlice.actions.add(event._id!));
-
-      // Create the event optimistically
       dispatch(createEventSlice.actions.request(event));
 
-      // TODO: Listen to createEvent saga success/error and delete task on success
-      // For now, we delete immediately for the MVP
+      // Note: Task deletion happens immediately for simplicity. The event saga
+      // will remove the optimistic event if creation fails, but the task cannot
+      // be restored because tasks are not in Redux (only local state + localStorage).
+      // Proper error handling would require: (1) moving tasks to Redux, (2) storing
+      // task-to-event mappings, and (3) dispatching deleteTask actions from the saga.
       deleteTask();
 
       reorderGrid();

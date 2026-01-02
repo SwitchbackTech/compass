@@ -5,16 +5,6 @@ import { Task } from "@web/common/types/task.types";
 import { getSnappedMinutes } from "@web/views/Day/util/agenda/agenda.util";
 import { convertTaskToEvent } from "@web/views/Day/util/task/convertTaskToEvent";
 
-/**
- * Handles the conversion of a task to an event when dropped on the agenda
- * @param task - The task to convert
- * @param active - The active drag item from dnd-kit
- * @param over - The drop target from dnd-kit
- * @param dateInView - The current date being viewed
- * @param userId - The user ID
- * @param isAllDay - Whether the event should be all-day
- * @returns The created event or null if conversion failed
- */
 export function handleTaskToEventConversion(
   task: Task,
   active: Active,
