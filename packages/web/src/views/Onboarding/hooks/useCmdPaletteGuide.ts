@@ -12,7 +12,7 @@ interface UseCmdPaletteGuideReturn {
 }
 
 /**
- * Hook to manage the command palette guide state
+ * Hook to manage the Onboarding Guide state
  * Tracks current step and handles completion/skip
  */
 export function useCmdPaletteGuide(): UseCmdPaletteGuideReturn {

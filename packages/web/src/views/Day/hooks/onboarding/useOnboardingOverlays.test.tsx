@@ -28,7 +28,7 @@ describe("useOnboardingOverlays", () => {
     localStorage.clear();
   });
 
-  it("should show onboarding overlay for unauthenticated users who haven't seen it", async () => {
+  it("should show onboarding overlay for unauthenticated users when guide is active on step 1", async () => {
     const store = createTestStore();
 
     const { result } = renderHook(
@@ -49,8 +49,8 @@ describe("useOnboardingOverlays", () => {
     });
   });
 
-  it("should not show onboarding overlay if already seen", () => {
-    localStorage.setItem(STORAGE_KEYS.ONBOARDING_OVERLAY_SEEN, "true");
+  it("should not show onboarding overlay if guide is completed", () => {
+    localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED, "true");
     const store = createTestStore();
 
     const { result } = renderHook(
@@ -70,7 +70,7 @@ describe("useOnboardingOverlays", () => {
   });
 
   it("should show cmd palette tutorial after onboarding overlay is dismissed", async () => {
-    localStorage.setItem(STORAGE_KEYS.ONBOARDING_OVERLAY_SEEN, "true");
+    localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED, "true");
     const store = createTestStore();
 
     const { result } = renderHook(
@@ -96,7 +96,7 @@ describe("useOnboardingOverlays", () => {
 
   it("should not show cmd palette tutorial if already seen", () => {
     localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_TUTORIAL_SEEN, "true");
-    localStorage.setItem(STORAGE_KEYS.ONBOARDING_OVERLAY_SEEN, "true");
+    localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED, "true");
     const store = createTestStore();
 
     const { result } = renderHook(
@@ -116,7 +116,7 @@ describe("useOnboardingOverlays", () => {
   });
 
   it("should show auth prompt after user creates 2+ tasks", async () => {
-    localStorage.setItem(STORAGE_KEYS.ONBOARDING_OVERLAY_SEEN, "true");
+    localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED, "true");
     localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_TUTORIAL_SEEN, "true");
     const store = createTestStore();
 
@@ -142,7 +142,7 @@ describe("useOnboardingOverlays", () => {
   });
 
   it("should show auth prompt after user navigates dates", async () => {
-    localStorage.setItem(STORAGE_KEYS.ONBOARDING_OVERLAY_SEEN, "true");
+    localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED, "true");
     localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_TUTORIAL_SEEN, "true");
     const store = createTestStore();
 
@@ -169,7 +169,7 @@ describe("useOnboardingOverlays", () => {
 
   it("should not show auth prompt if dismissed", () => {
     localStorage.setItem(STORAGE_KEYS.AUTH_PROMPT_DISMISSED, "true");
-    localStorage.setItem(STORAGE_KEYS.ONBOARDING_OVERLAY_SEEN, "true");
+    localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED, "true");
     localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_TUTORIAL_SEEN, "true");
     const store = createTestStore();
 
@@ -190,7 +190,7 @@ describe("useOnboardingOverlays", () => {
   });
 
   it("should mark cmd palette as used when opened", async () => {
-    localStorage.setItem(STORAGE_KEYS.ONBOARDING_OVERLAY_SEEN, "true");
+    localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED, "true");
     const store = createTestStore(true); // cmd palette is open
 
     const { result } = renderHook(
@@ -219,7 +219,7 @@ describe("useOnboardingOverlays", () => {
     );
   });
 
-  it("should dismiss onboarding overlay", async () => {
+  it("should dismiss onboarding overlay and skip guide", async () => {
     const store = createTestStore();
 
     const { result } = renderHook(
@@ -244,6 +244,9 @@ describe("useOnboardingOverlays", () => {
 
     await waitFor(() => {
       expect(result.current.showOnboardingOverlay).toBe(false);
+      expect(
+        localStorage.getItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED),
+      ).toBe("true");
     });
   });
 });

@@ -23,7 +23,6 @@ import { AuthPrompt } from "@web/views/Day/components/AuthPrompt/AuthPrompt";
 import { CmdPaletteTutorial } from "@web/views/Day/components/CmdPaletteTutorial/CmdPaletteTutorial";
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
 import { Header } from "@web/views/Day/components/Header/Header";
-import { OnboardingOverlay } from "@web/views/Day/components/OnboardingOverlay/OnboardingOverlay";
 import { StorageInfoModal } from "@web/views/Day/components/StorageInfoModal/StorageInfoModal";
 import { TaskList } from "@web/views/Day/components/TaskList/TaskList";
 import { useStorageInfoModal } from "@web/views/Day/context/StorageInfoModalContext";
@@ -79,10 +78,8 @@ export const DayViewContent = memo(() => {
 
   // Onboarding overlays
   const {
-    showOnboardingOverlay,
     showCmdPaletteTutorial,
     showAuthPrompt,
-    dismissOnboardingOverlay,
     dismissCmdPaletteTutorial,
     dismissAuthPrompt,
     markCmdPaletteUsed,
@@ -186,10 +183,7 @@ export const DayViewContent = memo(() => {
       <StorageInfoModal isOpen={isModalOpen} onClose={closeModal} />
 
       {/* Onboarding overlays */}
-      <CmdPaletteGuide showOnDayView={true} />
-      {showOnboardingOverlay && (
-        <OnboardingOverlay onDismiss={dismissOnboardingOverlay} />
-      )}
+      <CmdPaletteGuide />
       {showCmdPaletteTutorial && (
         <CmdPaletteTutorial
           onDismiss={() => {

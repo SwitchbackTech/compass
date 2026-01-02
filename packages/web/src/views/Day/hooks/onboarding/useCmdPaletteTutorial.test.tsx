@@ -29,7 +29,6 @@ describe("useCmdPaletteTutorial", () => {
   });
 
   it("should show cmd palette tutorial after onboarding overlay is dismissed", async () => {
-    localStorage.setItem(STORAGE_KEYS.ONBOARDING_OVERLAY_SEEN, "true");
     const store = createTestStore();
 
     const { result } = renderHook(
@@ -98,7 +97,6 @@ describe("useCmdPaletteTutorial", () => {
   });
 
   it("should mark cmd palette as used when opened", async () => {
-    localStorage.setItem(STORAGE_KEYS.ONBOARDING_OVERLAY_SEEN, "true");
     // Reset mock to ensure authenticated is false
     const { useSession } = require("@web/common/hooks/useSession");
     useSession.mockReturnValue({ authenticated: false });

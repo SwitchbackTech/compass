@@ -24,7 +24,7 @@ export const NowView = () => {
   return (
     <NowViewProvider>
       <NowCmdPalette />
-      <CmdPaletteGuide showOnNowView={true} />
+      <CmdPaletteGuide />
       <StyledCalendar>
         <Header showReminder={true} />
 

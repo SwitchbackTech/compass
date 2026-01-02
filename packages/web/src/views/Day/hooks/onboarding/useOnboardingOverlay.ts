@@ -1,39 +1,37 @@
-import { useEffect, useState } from "react";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { useSession } from "@web/common/hooks/useSession";
+import { useCmdPaletteGuide } from "@web/views/Onboarding/hooks/useCmdPaletteGuide";
 
 interface UseOnboardingOverlayReturn {
   showOnboardingOverlay: boolean;
+  currentStep: number | null;
   dismissOnboardingOverlay: () => void;
 }
 
 /**
  * Hook to manage the onboarding overlay visibility
- * Shows overlay for unauthenticated users who haven't seen it before
+ * Shows overlay when the cmd palette guide is active (for steps 1 and 2 on Day view)
+ * The overlay stays visible and updates its content based on the current step
  */
 export function useOnboardingOverlay(): UseOnboardingOverlayReturn {
   const { authenticated } = useSession();
-  const [showOnboardingOverlay, setShowOnboardingOverlay] = useState(false);
+  const { currentStep, isGuideActive, skipGuide } = useCmdPaletteGuide();
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const hasSeenOverlay =
-      localStorage.getItem(STORAGE_KEYS.ONBOARDING_OVERLAY_SEEN) === "true";
-
-    // Show overlay for unauthenticated users who haven't seen it
-    if (!hasSeenOverlay && !authenticated) {
-      setShowOnboardingOverlay(true);
-    }
-  }, [authenticated]);
+  // Show overlay when guide is active, on steps 1 or 2 (Day view steps), and user is not authenticated
+  // Step 3 is for Now view, so overlay won't show for that step
+  const showOnboardingOverlay =
+    isGuideActive &&
+    currentStep !== null &&
+    (currentStep === 1 || currentStep === 2) &&
+    !authenticated;
 
   const dismissOnboardingOverlay = () => {
-    localStorage.setItem(STORAGE_KEYS.ONBOARDING_OVERLAY_SEEN, "true");
-    setShowOnboardingOverlay(false);
+    // Dismissing the overlay should skip the guide
+    skipGuide();
   };
 
   return {
     showOnboardingOverlay,
+    currentStep,
     dismissOnboardingOverlay,
   };
 }

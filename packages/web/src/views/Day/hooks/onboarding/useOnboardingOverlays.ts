@@ -9,6 +9,7 @@ interface UseOnboardingOverlaysProps {
 
 interface UseOnboardingOverlaysReturn {
   showOnboardingOverlay: boolean;
+  currentStep: number | null;
   showCmdPaletteTutorial: boolean;
   showAuthPrompt: boolean;
   dismissOnboardingOverlay: () => void;
@@ -25,7 +26,7 @@ export function useOnboardingOverlays({
   tasks,
   hasNavigatedDates,
 }: UseOnboardingOverlaysProps): UseOnboardingOverlaysReturn {
-  const { showOnboardingOverlay, dismissOnboardingOverlay } =
+  const { showOnboardingOverlay, currentStep, dismissOnboardingOverlay } =
     useOnboardingOverlay();
 
   const {
@@ -45,6 +46,7 @@ export function useOnboardingOverlays({
 
   return {
     showOnboardingOverlay,
+    currentStep,
     showCmdPaletteTutorial,
     showAuthPrompt,
     dismissOnboardingOverlay,
