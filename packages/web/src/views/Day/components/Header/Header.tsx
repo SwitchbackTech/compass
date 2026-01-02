@@ -15,7 +15,10 @@ interface HeaderProps {
 export const Header: FC<HeaderProps> = ({ showReminder = false }) => {
   const reminderRef = useRef<HTMLDivElement>(null);
 
-  useReminderHotkey(() => reminderRef.current?.focus(), [reminderRef]);
+  useReminderHotkey(
+    showReminder ? () => reminderRef.current?.focus() : () => {},
+    [reminderRef, showReminder],
+  );
 
   return (
     <StyledHeaderRow alignItems={AlignItems.BASELINE}>
