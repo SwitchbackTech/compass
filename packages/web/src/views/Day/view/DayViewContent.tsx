@@ -211,3 +211,5 @@ export const DayViewContent = memo(() => {
     </>
   );
 });
+
+DayViewContent.displayName = "DayViewContent";
