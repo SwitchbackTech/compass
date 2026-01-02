@@ -5,4 +5,5 @@ export const STORAGE_KEYS = {
   CMD_PALETTE_TUTORIAL_SEEN: "compass.cmd-palette-tutorial-seen",
   ONBOARDING_OVERLAY_SEEN: "compass.onboarding-overlay-seen",
   AUTH_PROMPT_DISMISSED: "compass.auth-prompt-dismissed",
+  CMD_PALETTE_GUIDE_COMPLETED: "compass.cmd-palette-guide-completed",
 };

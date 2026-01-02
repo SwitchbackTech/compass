@@ -80,7 +80,7 @@ export const router = createBrowserRouter(
         import(
           /* webpackChunkName: "onboarding" */ "@web/views/Onboarding/OnboardingFlow"
         ).then((module) => ({
-          Component: module.OnboardingFlow,
+          Component: module.default || module.OnboardingFlow,
         })),
     },
     {
@@ -90,7 +90,7 @@ export const router = createBrowserRouter(
         import(
           /* webpackChunkName: "onboarding" */ "@web/views/Onboarding/OnboardingFlow"
         ).then((module) => ({
-          Component: module.OnboardingFlow,
+          Component: module.default || module.OnboardingFlow,
         })),
     },
     {

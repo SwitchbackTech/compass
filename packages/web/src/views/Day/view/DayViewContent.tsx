@@ -38,6 +38,7 @@ import {
   focusOnAddTaskInput,
   focusOnFirstTask,
 } from "@web/views/Day/util/day.shortcut.util";
+import { CmdPaletteGuide } from "@web/views/Onboarding/components/CmdPaletteGuide";
 
 export const DayViewContent = memo(() => {
   const selectionActions = useMainGridSelectionActions();
@@ -185,6 +186,7 @@ export const DayViewContent = memo(() => {
       <StorageInfoModal isOpen={isModalOpen} onClose={closeModal} />
 
       {/* Onboarding overlays */}
+      <CmdPaletteGuide showOnDayView={true} />
       {showOnboardingOverlay && (
         <OnboardingOverlay onDismiss={dismissOnboardingOverlay} />
       )}
