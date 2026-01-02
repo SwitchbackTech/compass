@@ -92,7 +92,9 @@ export const DraggableTimedAgendaEvent = memo(
           data: {
             event: event,
             type: Categories_Event.TIMED,
+            task: null,
             view: "day",
+            deleteTask: null,
           },
           disabled: isDisabled,
         }}

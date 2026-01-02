@@ -181,29 +181,24 @@ export function useEventDNDActions() {
 
       switch (switchCase) {
         case `day-task-to-${ID_GRID_MAIN}`:
-          if (task && deleteTask) {
-            convertTaskToEventOnAgenda(task, active, over, deleteTask, false);
-          }
+          if (!task || !deleteTask) break;
+          convertTaskToEventOnAgenda(task, active, over, deleteTask, false);
           break;
         case `day-task-to-${ID_GRID_ALLDAY_ROW}`:
-          if (task && deleteTask) {
-            convertTaskToEventOnAgenda(task, active, over, deleteTask, true);
-          }
+          if (!task || !deleteTask) break;
+          convertTaskToEventOnAgenda(task, active, over, deleteTask, true);
           break;
         case `day-${Categories_Event.ALLDAY}-to-${ID_GRID_MAIN}`:
-          if (event) {
-            moveAllDayToMainGridDayView(event, active, over);
-          }
+          if (!event) break;
+          moveAllDayToMainGridDayView(event, active, over);
           break;
         case `day-${Categories_Event.TIMED}-to-${ID_GRID_MAIN}`:
-          if (event) {
-            moveTimedAroundMainGridDayView(event, active, over);
-          }
+          if (!event) break;
+          moveTimedAroundMainGridDayView(event, active, over);
           break;
         case `day-${Categories_Event.TIMED}-to-${ID_GRID_ALLDAY_ROW}`:
-          if (event) {
-            moveTimedToAllDayGridDayView(event);
-          }
+          if (!event) break;
+          moveTimedToAllDayGridDayView(event);
           break;
       }
     },

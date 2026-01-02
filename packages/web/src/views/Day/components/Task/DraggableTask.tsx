@@ -49,6 +49,7 @@ export function DraggableTask({
         id: task.id,
         data: {
           type: "task",
+          event: null,
           task,
           view: "day",
           deleteTask: () => deleteTask(task.id),

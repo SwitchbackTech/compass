@@ -53,7 +53,9 @@ export const DraggableAllDayAgendaEvent = memo(
           data: {
             event,
             type: Categories_Event.ALLDAY,
+            task: null,
             view: "day",
+            deleteTask: null,
           },
           disabled: isDisabled,
         }}

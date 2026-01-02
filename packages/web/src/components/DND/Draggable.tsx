@@ -24,10 +24,10 @@ export type DraggableDataType = Categories_Event | "task";
 
 export interface DraggableDNDData {
   type: DraggableDataType;
-  event?: Schema_GridEvent | null;
-  task?: Task | null;
+  event: Schema_GridEvent | null;
+  task: Task | null;
   view: "day" | "week" | "now";
-  deleteTask?: () => void;
+  deleteTask: (() => void) | null;
 }
 
 export interface DNDChildProps

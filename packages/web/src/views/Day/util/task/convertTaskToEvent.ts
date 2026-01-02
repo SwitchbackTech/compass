@@ -4,15 +4,6 @@ import { Schema_Event_Core } from "@core/types/event.types";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { Task } from "@web/common/types/task.types";
 
-/**
- * Converts a task to an event
- * @param task - The task to convert
- * @param startTime - The start time for the event (should be snapped to the grid)
- * @param durationMinutes - The duration of the event in minutes (default: 30)
- * @param userId - The user ID
- * @param isAllDay - Whether the event is an all-day event (default: false)
- * @returns A new event schema
- */
 export function convertTaskToEvent(
   task: Task,
   startTime: Dayjs,
