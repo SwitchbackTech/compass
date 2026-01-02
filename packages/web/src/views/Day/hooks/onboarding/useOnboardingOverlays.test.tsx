@@ -206,15 +206,20 @@ describe("useOnboardingOverlays", () => {
       },
     );
 
-    await waitFor(() => {
-      expect(result.current.showCmdPaletteTutorial).toBe(false);
-      expect(localStorage.getItem(STORAGE_KEYS.CMD_PALETTE_TUTORIAL_SEEN)).toBe(
-        "true",
-      );
-    });
+    // Wait for the effect to run and mark tutorial as seen
+    await waitFor(
+      () => {
+        const tutorialSeen = localStorage.getItem(
+          STORAGE_KEYS.CMD_PALETTE_TUTORIAL_SEEN,
+        );
+        expect(tutorialSeen).toBe("true");
+        expect(result.current.showCmdPaletteTutorial).toBe(false);
+      },
+      { timeout: 3000 },
+    );
   });
 
-  it("should dismiss onboarding overlay", () => {
+  it("should dismiss onboarding overlay", async () => {
     const store = createTestStore();
 
     const { result } = renderHook(
@@ -230,7 +235,15 @@ describe("useOnboardingOverlays", () => {
       },
     );
 
+    // Wait for overlay to show first
+    await waitFor(() => {
+      expect(result.current.showOnboardingOverlay).toBe(true);
+    });
+
     result.current.dismissOnboardingOverlay();
-    expect(result.current.showOnboardingOverlay).toBe(false);
+
+    await waitFor(() => {
+      expect(result.current.showOnboardingOverlay).toBe(false);
+    });
   });
 });

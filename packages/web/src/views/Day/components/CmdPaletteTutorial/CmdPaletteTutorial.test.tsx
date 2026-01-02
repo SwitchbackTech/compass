@@ -94,18 +94,29 @@ describe("CmdPaletteTutorial", () => {
 
     // Simulate cmd+k (Meta+k on Mac, Ctrl+k on Windows)
     const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
-    const modifierKey = isMac ? "Meta" : "Control";
+
+    // Create event with proper modifier key properties
+    const eventProps = isMac
+      ? { metaKey: true, ctrlKey: false }
+      : { metaKey: false, ctrlKey: true };
+
     const keyEvent = new KeyboardEvent("keydown", {
       key: "k",
-      [modifierKey.toLowerCase() + "Key"]: true,
+      code: "KeyK",
       bubbles: true,
+      cancelable: true,
+      ...eventProps,
     });
 
+    // Dispatch to window (component listens on window)
     window.dispatchEvent(keyEvent);
 
-    await waitFor(() => {
-      expect(onDismiss).toHaveBeenCalled();
-    });
+    await waitFor(
+      () => {
+        expect(onDismiss).toHaveBeenCalled();
+      },
+      { timeout: 1000 },
+    );
 
     expect(localStorage.getItem(STORAGE_KEYS.CMD_PALETTE_TUTORIAL_SEEN)).toBe(
       "true",
