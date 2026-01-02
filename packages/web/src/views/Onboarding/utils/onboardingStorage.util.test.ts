@@ -56,7 +56,7 @@ describe("onboardingStorage.util", () => {
 
     it("should filter out invalid steps from stored progress", () => {
       const invalidProgress = {
-        completedSteps: [1, 2, 4, 0, -1, "invalid"],
+        completedSteps: [1, 2, 4, 5, 0, -1, "invalid"],
         isSeen: false,
         isAuthDismissed: false,
         isCompleted: false,
@@ -67,7 +67,7 @@ describe("onboardingStorage.util", () => {
         JSON.stringify(invalidProgress),
       );
       const progress = getOnboardingProgress();
-      expect(progress.completedSteps).toEqual([1, 2]);
+      expect(progress.completedSteps).toEqual([1, 2, 4]);
     });
   });
 
@@ -93,9 +93,9 @@ describe("onboardingStorage.util", () => {
     });
 
     it("should filter out invalid steps when updating", () => {
-      updateOnboardingProgress({ completedSteps: [1, 2, 4, 0, -1] });
+      updateOnboardingProgress({ completedSteps: [1, 2, 4, 5, 0, -1] });
       const progress = getOnboardingProgress();
-      expect(progress.completedSteps).toEqual([1, 2]);
+      expect(progress.completedSteps).toEqual([1, 2, 4]);
     });
   });
 
@@ -110,8 +110,8 @@ describe("onboardingStorage.util", () => {
     });
 
     it("should filter out invalid steps", () => {
-      updateOnboardingProgress({ completedSteps: [1, 2, 4, 0, -1] });
-      expect(loadCompletedSteps()).toEqual([1, 2]);
+      updateOnboardingProgress({ completedSteps: [1, 2, 4, 5, 0, -1] });
+      expect(loadCompletedSteps()).toEqual([1, 2, 4]);
     });
   });
 
@@ -123,9 +123,9 @@ describe("onboardingStorage.util", () => {
     });
 
     it("should filter out invalid steps before saving", () => {
-      saveCompletedSteps([1, 2, 4, 0, -1]);
+      saveCompletedSteps([1, 2, 4, 5, 0, -1]);
       const progress = getOnboardingProgress();
-      expect(progress.completedSteps).toEqual([1, 2]);
+      expect(progress.completedSteps).toEqual([1, 2, 4]);
     });
   });
 

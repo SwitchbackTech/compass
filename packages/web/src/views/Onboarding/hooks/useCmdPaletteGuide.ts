@@ -6,12 +6,12 @@ import {
   updateOnboardingProgress,
 } from "../utils/onboardingStorage.util";
 
-export type GuideStep = 1 | 2 | 3 | null;
+export type GuideStep = 1 | 2 | 3 | 4 | null;
 
 interface UseCmdPaletteGuideReturn {
   currentStep: GuideStep;
   isGuideActive: boolean;
-  completeStep: (step: 1 | 2 | 3) => void;
+  completeStep: (step: 1 | 2 | 3 | 4) => void;
   skipGuide: () => void;
   completeGuide: () => void;
 }
@@ -48,6 +48,8 @@ export function useCmdPaletteGuide(): UseCmdPaletteGuideReturn {
       nextStep = 2;
     } else if (!completedSteps.includes(3)) {
       nextStep = 3;
+    } else if (!completedSteps.includes(4)) {
+      nextStep = 4;
     }
 
     if (nextStep !== null) {
@@ -61,11 +63,11 @@ export function useCmdPaletteGuide(): UseCmdPaletteGuideReturn {
     }
   }, []);
 
-  const completeStep = useCallback((step: 1 | 2 | 3) => {
+  const completeStep = useCallback((step: 1 | 2 | 3 | 4) => {
     // Mark step as completed in onboarding progress
     markStepCompleted(step);
 
-    if (step === 3) {
+    if (step === 4) {
       // All steps completed
       if (typeof window !== "undefined") {
         updateOnboardingProgress({ isCompleted: true });
@@ -94,6 +96,7 @@ export function useCmdPaletteGuide(): UseCmdPaletteGuideReturn {
       markStepCompleted(1);
       markStepCompleted(2);
       markStepCompleted(3);
+      markStepCompleted(4);
     }
     setCurrentStep(null);
     setIsGuideActive(false);

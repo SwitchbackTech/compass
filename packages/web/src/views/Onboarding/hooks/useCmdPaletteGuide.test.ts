@@ -74,7 +74,7 @@ describe("useCmdPaletteGuide", () => {
     expect(loadCompletedSteps()).toContain(2);
   });
 
-  it("should complete guide when step 3 is completed", () => {
+  it("should advance to step 4 when step 3 is completed", () => {
     const { result } = renderHook(() => useCmdPaletteGuide());
 
     act(() => {
@@ -91,11 +91,37 @@ describe("useCmdPaletteGuide", () => {
       result.current.completeStep(3);
     });
 
+    expect(result.current.currentStep).toBe(4);
+    expect(result.current.isGuideActive).toBe(true);
+    expect(loadCompletedSteps()).toContain(3);
+  });
+
+  it("should complete guide when step 4 is completed", () => {
+    const { result } = renderHook(() => useCmdPaletteGuide());
+
+    act(() => {
+      result.current.completeStep(1);
+    });
+
+    act(() => {
+      result.current.completeStep(2);
+    });
+
+    act(() => {
+      result.current.completeStep(3);
+    });
+
+    expect(result.current.currentStep).toBe(4);
+
+    act(() => {
+      result.current.completeStep(4);
+    });
+
     expect(result.current.currentStep).toBe(null);
     expect(result.current.isGuideActive).toBe(false);
     const progress = getOnboardingProgress();
     expect(progress.isCompleted).toBe(true);
-    expect(loadCompletedSteps()).toContain(3);
+    expect(loadCompletedSteps()).toContain(4);
   });
 
   it("should skip guide and clear completed steps", () => {
@@ -134,7 +160,7 @@ describe("useCmdPaletteGuide", () => {
     expect(result.current.isGuideActive).toBe(false);
     const progress = getOnboardingProgress();
     expect(progress.isCompleted).toBe(true);
-    expect(loadCompletedSteps()).toEqual([1, 2, 3]);
+    expect(loadCompletedSteps()).toEqual([1, 2, 3, 4]);
   });
 
   it("should resume from last completed step on remount", () => {

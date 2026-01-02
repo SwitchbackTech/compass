@@ -6,6 +6,7 @@ import { useCmdPaletteGuide } from "../hooks/useCmdPaletteGuide";
 import { useStep1Detection } from "../hooks/useStep1Detection";
 import { useStep2Detection } from "../hooks/useStep2Detection";
 import { useStep3Detection } from "../hooks/useStep3Detection";
+import { useStep4Detection } from "../hooks/useStep4Detection";
 import { isStepCompleted } from "../utils/onboardingStorage.util";
 
 export const CmdPaletteGuide: React.FC = () => {
@@ -38,6 +39,11 @@ export const CmdPaletteGuide: React.FC = () => {
   useStep3Detection({
     currentStep,
     onStepComplete: () => completeStep(3),
+  });
+
+  useStep4Detection({
+    currentStep,
+    onStepComplete: () => completeStep(4),
   });
 
   // Cleanup timeout on unmount
@@ -81,13 +87,14 @@ export const CmdPaletteGuide: React.FC = () => {
 
   // Determine if we should show the overlay
   // Show step 1 on any view if it's not completed
-  // Show step 2/3 on Now view, step 1/2 on Day view
+  // Show step 2/3/4 on Now view, step 1/2 on Day view
   const shouldShowOverlay =
     isGuideActive &&
     actualStep !== null &&
     ((actualStep === 1 && !authenticated) ||
       (isDayView && actualStep === 2 && !authenticated) ||
-      (isNowView && (actualStep === 2 || actualStep === 3)));
+      (isNowView &&
+        (actualStep === 2 || actualStep === 3 || actualStep === 4)));
 
   if (!shouldShowOverlay) {
     return null;
@@ -115,11 +122,20 @@ export const CmdPaletteGuide: React.FC = () => {
     ),
     3: (
       <>
-        Click the description area or press{" "}
+        Press{" "}
         <kbd className="bg-bg-secondary text-text-light border-border-primary rounded border px-1.5 py-0.5 font-mono text-xs">
           d
         </kbd>{" "}
-        to customize your note-to-self
+        to edit the description
+      </>
+    ),
+    4: (
+      <>
+        Press{" "}
+        <kbd className="bg-bg-secondary text-text-light border-border-primary rounded border px-1.5 py-0.5 font-mono text-xs">
+          r
+        </kbd>{" "}
+        to edit the reminder
       </>
     ),
   };
@@ -142,7 +158,7 @@ export const CmdPaletteGuide: React.FC = () => {
               </h3>
               <p className="text-text-light/80 mb-3 text-sm">{instruction}</p>
               <div className="flex items-center gap-2">
-                {[1, 2, 3].map((step) => {
+                {[1, 2, 3, 4].map((step) => {
                   const isCompleted =
                     step < actualStep! || isStepCompleted(step);
                   const isCurrent = step === actualStep;
@@ -160,7 +176,7 @@ export const CmdPaletteGuide: React.FC = () => {
                   );
                 })}
                 <span className="text-text-lighter ml-2 text-xs">
-                  Step {actualStep} of 3
+                  Step {actualStep} of 4
                 </span>
               </div>
             </div>
@@ -190,7 +206,7 @@ export const CmdPaletteGuide: React.FC = () => {
   }
 
   // Now view: right-aligned overlay with step indicators
-  if (isNowView && (actualStep === 2 || actualStep === 3)) {
+  if (isNowView && (actualStep === 2 || actualStep === 3 || actualStep === 4)) {
     return (
       <div
         className="pointer-events-none fixed inset-0 z-50"
@@ -207,7 +223,7 @@ export const CmdPaletteGuide: React.FC = () => {
               </h3>
               <p className="text-text-light mb-3 text-sm">{instruction}</p>
               <div className="flex items-center gap-2">
-                {[1, 2, 3].map((step) => {
+                {[1, 2, 3, 4].map((step) => {
                   const isCompleted =
                     step < actualStep! || isStepCompleted(step);
                   const isCurrent = step === actualStep;
@@ -225,7 +241,7 @@ export const CmdPaletteGuide: React.FC = () => {
                   );
                 })}
                 <span className="text-text-lighter ml-2 text-xs">
-                  Step {actualStep} of 3
+                  Step {actualStep} of 4
                 </span>
               </div>
             </div>

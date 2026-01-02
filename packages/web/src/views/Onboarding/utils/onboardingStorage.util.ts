@@ -10,10 +10,10 @@ export const OnboardingProgressSchema = z.object({
           typeof step === "number" &&
           Number.isInteger(step) &&
           step >= 1 &&
-          step <= 3,
+          step <= 4,
       );
     },
-    z.array(z.number().int().min(1).max(3)).default([]),
+    z.array(z.number().int().min(1).max(4)).default([]),
   ),
   isSeen: z.boolean().default(false),
   isAuthDismissed: z.boolean().default(false),
