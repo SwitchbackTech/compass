@@ -1,8 +1,8 @@
 import React, { useEffect } from "react";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
+import { updateOnboardingProgress } from "@web/views/Onboarding/utils/onboardingStorage.util";
 
 interface CmdPaletteTutorialProps {
   onDismiss: () => void;
@@ -23,7 +23,7 @@ export const CmdPaletteTutorial: React.FC<CmdPaletteTutorialProps> = ({
 
       if (isModifierPressed && e.key === "k") {
         // Mark tutorial as seen when user opens cmd+k
-        localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_TUTORIAL_SEEN, "true");
+        updateOnboardingProgress({ isSeen: true });
         dispatch(settingsSlice.actions.toggleCmdPalette());
         onDismiss();
       }
@@ -34,7 +34,7 @@ export const CmdPaletteTutorial: React.FC<CmdPaletteTutorialProps> = ({
   }, [dispatch, modifierKey, onDismiss]);
 
   const handleGotIt = () => {
-    localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_TUTORIAL_SEEN, "true");
+    updateOnboardingProgress({ isSeen: true });
     onDismiss();
   };
 

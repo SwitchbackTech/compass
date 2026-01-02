@@ -1,5 +1,8 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import {
+  getOnboardingProgress,
+  updateOnboardingProgress,
+} from "@web/views/Onboarding/utils/onboardingStorage.util";
 import { useOnboardingOverlay } from "./useOnboardingOverlay";
 
 // Mock useSession
@@ -18,19 +21,15 @@ describe("useOnboardingOverlay", () => {
     localStorage.clear();
     jest.clearAllMocks();
     // Default mock - guide active on step 1
-    // The mock checks localStorage to determine if guide is completed
+    // The mock checks onboarding progress to determine if guide is completed
     mockUseCmdPaletteGuide.mockImplementation(() => {
-      const isCompleted =
-        localStorage.getItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED) ===
-        "true";
+      const progress = getOnboardingProgress();
+      const isCompleted = progress.isCompleted;
       return {
         currentStep: isCompleted ? null : 1,
         isGuideActive: !isCompleted,
         skipGuide: jest.fn(() => {
-          localStorage.setItem(
-            STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED,
-            "true",
-          );
+          updateOnboardingProgress({ isCompleted: true });
         }),
         completeStep: jest.fn(),
         completeGuide: jest.fn(),
@@ -77,7 +76,7 @@ describe("useOnboardingOverlay", () => {
   });
 
   it("should not show onboarding overlay if guide is completed", () => {
-    localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED, "true");
+    updateOnboardingProgress({ isCompleted: true });
     // Mock should reflect completed state
     mockUseCmdPaletteGuide.mockReturnValue({
       currentStep: null,
@@ -106,7 +105,7 @@ describe("useOnboardingOverlay", () => {
     useSession.mockReturnValue({ authenticated: false });
 
     // Set guide as completed
-    localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED, "true");
+    updateOnboardingProgress({ isCompleted: true });
     // Mock should reflect completed state
     mockUseCmdPaletteGuide.mockReturnValue({
       currentStep: null,
@@ -128,7 +127,7 @@ describe("useOnboardingOverlay", () => {
     useSession.mockReturnValue({ authenticated: false });
 
     const skipGuideFn = jest.fn(() => {
-      localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED, "true");
+      updateOnboardingProgress({ isCompleted: true });
     });
 
     mockUseCmdPaletteGuide.mockReturnValue({
@@ -147,10 +146,9 @@ describe("useOnboardingOverlay", () => {
       result.current.dismissOnboardingOverlay();
     });
 
-    // Verify skipGuide was called and localStorage was set
+    // Verify skipGuide was called and onboarding progress was updated
     expect(skipGuideFn).toHaveBeenCalled();
-    expect(localStorage.getItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED)).toBe(
-      "true",
-    );
+    const progress = getOnboardingProgress();
+    expect(progress.isCompleted).toBe(true);
   });
 });

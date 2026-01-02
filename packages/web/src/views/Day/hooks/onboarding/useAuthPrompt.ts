@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { useSession } from "@web/common/hooks/useSession";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
+import {
+  getOnboardingProgress,
+  updateOnboardingProgress,
+} from "@web/views/Onboarding/utils/onboardingStorage.util";
 
 interface UseAuthPromptProps {
   tasks: Array<{ id: string }>;
@@ -35,10 +38,8 @@ export function useAuthPrompt({
     if (typeof window === "undefined") return;
     if (authenticated) return;
 
-    const authPromptDismissed =
-      localStorage.getItem(STORAGE_KEYS.AUTH_PROMPT_DISMISSED) === "true";
-
-    if (authPromptDismissed) return;
+    const progress = getOnboardingProgress();
+    if (progress.isAuthDismissed) return;
 
     // Show auth prompt if user has:
     // - Created 2+ tasks, OR
@@ -65,6 +66,7 @@ export function useAuthPrompt({
   ]);
 
   const dismissAuthPrompt = () => {
+    updateOnboardingProgress({ isAuthDismissed: true });
     setShowAuthPrompt(false);
   };
 

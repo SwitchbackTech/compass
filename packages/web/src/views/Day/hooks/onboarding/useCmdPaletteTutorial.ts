@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { useSession } from "@web/common/hooks/useSession";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
+import {
+  getOnboardingProgress,
+  updateOnboardingProgress,
+} from "@web/views/Onboarding/utils/onboardingStorage.util";
 
 interface UseCmdPaletteTutorialProps {
   showOnboardingOverlay: boolean;
@@ -27,7 +30,7 @@ export function useCmdPaletteTutorial({
   const [showCmdPaletteTutorial, setShowCmdPaletteTutorial] = useState(false);
 
   const markCmdPaletteUsed = useCallback(() => {
-    localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_TUTORIAL_SEEN, "true");
+    updateOnboardingProgress({ isSeen: true });
     setShowCmdPaletteTutorial(false);
   }, []);
 
@@ -35,8 +38,8 @@ export function useCmdPaletteTutorial({
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const hasSeenTutorial =
-      localStorage.getItem(STORAGE_KEYS.CMD_PALETTE_TUTORIAL_SEEN) === "true";
+    const progress = getOnboardingProgress();
+    const hasSeenTutorial = progress.isSeen;
 
     // Show tutorial after onboarding overlay is dismissed, for unauthenticated users
     if (!hasSeenTutorial && !authenticated && !showOnboardingOverlay) {

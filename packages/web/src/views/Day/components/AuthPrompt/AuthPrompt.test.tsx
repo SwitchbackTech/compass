@@ -1,7 +1,7 @@
 import { BrowserRouter } from "react-router-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import { getOnboardingProgress } from "@web/views/Onboarding/utils/onboardingStorage.util";
 import { AuthPrompt } from "./AuthPrompt";
 
 const renderWithRouter = (component: React.ReactElement) => {
@@ -35,9 +35,8 @@ describe("AuthPrompt", () => {
     await userEvent.click(laterButton);
 
     expect(onDismiss).toHaveBeenCalled();
-    expect(localStorage.getItem(STORAGE_KEYS.AUTH_PROMPT_DISMISSED)).toBe(
-      "true",
-    );
+    const progress = getOnboardingProgress();
+    expect(progress.isAuthDismissed).toBe(true);
   });
 
   it("should navigate to login when 'Sign in' button is clicked", async () => {

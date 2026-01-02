@@ -1,11 +1,12 @@
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import {
   clearCompletedSteps,
+  getOnboardingProgress,
   isStepCompleted,
   loadCompletedSteps,
   markStepCompleted,
-  migrateCompletedSteps,
   saveCompletedSteps,
+  updateOnboardingProgress,
 } from "./onboardingStorage.util";
 
 describe("onboardingStorage.util", () => {
@@ -13,51 +14,118 @@ describe("onboardingStorage.util", () => {
     localStorage.clear();
   });
 
+  describe("getOnboardingProgress", () => {
+    it("should return default progress when no data exists", () => {
+      const progress = getOnboardingProgress();
+      expect(progress).toEqual({
+        completedSteps: [],
+        isSeen: false,
+        isAuthDismissed: false,
+        isCompleted: false,
+        isStorageWarningSeen: false,
+      });
+    });
+
+    it("should return stored progress from consolidated key", () => {
+      const testProgress = {
+        completedSteps: [1, 2],
+        isSeen: true,
+        isAuthDismissed: true,
+        isCompleted: false,
+        isStorageWarningSeen: true,
+      };
+      localStorage.setItem(
+        STORAGE_KEYS.ONBOARDING_PROGRESS,
+        JSON.stringify(testProgress),
+      );
+      const progress = getOnboardingProgress();
+      expect(progress).toEqual(testProgress);
+    });
+
+    it("should handle invalid JSON gracefully", () => {
+      localStorage.setItem(STORAGE_KEYS.ONBOARDING_PROGRESS, "invalid json");
+      const progress = getOnboardingProgress();
+      expect(progress).toEqual({
+        completedSteps: [],
+        isSeen: false,
+        isAuthDismissed: false,
+        isCompleted: false,
+        isStorageWarningSeen: false,
+      });
+    });
+
+    it("should filter out invalid steps from stored progress", () => {
+      const invalidProgress = {
+        completedSteps: [1, 2, 4, 0, -1, "invalid"],
+        isSeen: false,
+        isAuthDismissed: false,
+        isCompleted: false,
+        isStorageWarningSeen: false,
+      };
+      localStorage.setItem(
+        STORAGE_KEYS.ONBOARDING_PROGRESS,
+        JSON.stringify(invalidProgress),
+      );
+      const progress = getOnboardingProgress();
+      expect(progress.completedSteps).toEqual([1, 2]);
+    });
+  });
+
+  describe("updateOnboardingProgress", () => {
+    it("should update onboarding progress", () => {
+      updateOnboardingProgress({ isSeen: true });
+      const progress = getOnboardingProgress();
+      expect(progress.isSeen).toBe(true);
+    });
+
+    it("should merge partial updates", () => {
+      updateOnboardingProgress({ isSeen: true });
+      updateOnboardingProgress({ isAuthDismissed: true });
+      const progress = getOnboardingProgress();
+      expect(progress.isSeen).toBe(true);
+      expect(progress.isAuthDismissed).toBe(true);
+    });
+
+    it("should update completed steps", () => {
+      updateOnboardingProgress({ completedSteps: [1, 2] });
+      const progress = getOnboardingProgress();
+      expect(progress.completedSteps).toEqual([1, 2]);
+    });
+
+    it("should filter out invalid steps when updating", () => {
+      updateOnboardingProgress({ completedSteps: [1, 2, 4, 0, -1] });
+      const progress = getOnboardingProgress();
+      expect(progress.completedSteps).toEqual([1, 2]);
+    });
+  });
+
   describe("loadCompletedSteps", () => {
     it("should return empty array when no steps are stored", () => {
       expect(loadCompletedSteps()).toEqual([]);
     });
 
-    it("should return completed steps from localStorage", () => {
-      localStorage.setItem(
-        STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED_STEPS,
-        JSON.stringify([1, 2]),
-      );
+    it("should return completed steps from onboarding progress", () => {
+      updateOnboardingProgress({ completedSteps: [1, 2] });
       expect(loadCompletedSteps()).toEqual([1, 2]);
     });
 
     it("should filter out invalid steps", () => {
-      localStorage.setItem(
-        STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED_STEPS,
-        JSON.stringify([1, 2, 4, 0, -1, "invalid"]),
-      );
+      updateOnboardingProgress({ completedSteps: [1, 2, 4, 0, -1] });
       expect(loadCompletedSteps()).toEqual([1, 2]);
-    });
-
-    it("should return empty array for invalid JSON", () => {
-      localStorage.setItem(
-        STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED_STEPS,
-        "invalid json",
-      );
-      expect(loadCompletedSteps()).toEqual([]);
     });
   });
 
   describe("saveCompletedSteps", () => {
-    it("should save completed steps to localStorage", () => {
+    it("should save completed steps to onboarding progress", () => {
       saveCompletedSteps([1, 2]);
-      const stored = localStorage.getItem(
-        STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED_STEPS,
-      );
-      expect(JSON.parse(stored!)).toEqual([1, 2]);
+      const progress = getOnboardingProgress();
+      expect(progress.completedSteps).toEqual([1, 2]);
     });
 
     it("should filter out invalid steps before saving", () => {
       saveCompletedSteps([1, 2, 4, 0, -1]);
-      const stored = localStorage.getItem(
-        STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED_STEPS,
-      );
-      expect(JSON.parse(stored!)).toEqual([1, 2]);
+      const progress = getOnboardingProgress();
+      expect(progress.completedSteps).toEqual([1, 2]);
     });
   });
 
@@ -97,27 +165,6 @@ describe("onboardingStorage.util", () => {
     it("should remove completed steps from localStorage", () => {
       saveCompletedSteps([1, 2, 3]);
       clearCompletedSteps();
-      expect(loadCompletedSteps()).toEqual([]);
-    });
-  });
-
-  describe("migrateCompletedSteps", () => {
-    it("should migrate existing CMD_PALETTE_GUIDE_COMPLETED flag to completed steps", () => {
-      localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED, "true");
-      migrateCompletedSteps();
-      expect(loadCompletedSteps()).toEqual([1, 2, 3]);
-    });
-
-    it("should not overwrite existing completed steps", () => {
-      localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED, "true");
-      saveCompletedSteps([1, 2]);
-      migrateCompletedSteps();
-      expect(loadCompletedSteps()).toEqual([1, 2]);
-    });
-
-    it("should not migrate if guide is not completed", () => {
-      localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED, "false");
-      migrateCompletedSteps();
       expect(loadCompletedSteps()).toEqual([]);
     });
   });

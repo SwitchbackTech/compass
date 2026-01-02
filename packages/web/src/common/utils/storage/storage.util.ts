@@ -1,8 +1,11 @@
 import dayjs from "@core/util/date/dayjs";
 import { Task, isTask } from "@web/common/types/task.types";
+import {
+  getOnboardingProgress,
+  updateOnboardingProgress,
+} from "@web/views/Onboarding/utils/onboardingStorage.util";
 
 export const TODAY_TASKS_STORAGE_KEY_PREFIX = "compass.today.tasks";
-const STORAGE_INFO_SEEN_KEY = "compass.day.storage-info-seen";
 export const COMPASS_TASKS_SAVED_EVENT_NAME = "compass.tasks.saved" as const;
 
 /**
@@ -104,12 +107,12 @@ export function hasSeenStorageInfo(): boolean {
   if (typeof window === "undefined") {
     return true;
   }
-  return localStorage.getItem(STORAGE_INFO_SEEN_KEY) === "true";
+  return getOnboardingProgress().isStorageWarningSeen;
 }
 
 export function markStorageInfoAsSeen(): void {
   if (typeof window === "undefined") {
     return;
   }
-  localStorage.setItem(STORAGE_INFO_SEEN_KEY, "true");
+  updateOnboardingProgress({ isStorageWarningSeen: true });
 }

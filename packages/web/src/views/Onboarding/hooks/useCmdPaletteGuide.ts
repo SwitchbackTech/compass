@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import {
   clearCompletedSteps,
-  loadCompletedSteps,
+  getOnboardingProgress,
   markStepCompleted,
-  migrateCompletedSteps,
+  updateOnboardingProgress,
 } from "../utils/onboardingStorage.util";
 
 export type GuideStep = 1 | 2 | 3 | null;
@@ -29,20 +28,16 @@ export function useCmdPaletteGuide(): UseCmdPaletteGuideReturn {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Migrate existing CMD_PALETTE_GUIDE_COMPLETED flag to completed steps
-    migrateCompletedSteps();
+    const progress = getOnboardingProgress();
 
-    const hasCompletedGuide =
-      localStorage.getItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED) === "true";
-
-    if (hasCompletedGuide) {
+    if (progress.isCompleted) {
       setIsGuideActive(false);
       setCurrentStep(null);
       return;
     }
 
-    // Load completed steps from localStorage
-    const completedSteps = loadCompletedSteps();
+    // Load completed steps from onboarding progress
+    const completedSteps = progress.completedSteps;
 
     // Determine current step based on completed steps
     // Find the first incomplete step, or null if all are completed
@@ -60,20 +55,20 @@ export function useCmdPaletteGuide(): UseCmdPaletteGuideReturn {
       setCurrentStep(nextStep);
     } else {
       // All steps completed, mark guide as completed
-      localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED, "true");
+      updateOnboardingProgress({ isCompleted: true });
       setIsGuideActive(false);
       setCurrentStep(null);
     }
   }, []);
 
   const completeStep = useCallback((step: 1 | 2 | 3) => {
-    // Mark step as completed in localStorage
+    // Mark step as completed in onboarding progress
     markStepCompleted(step);
 
     if (step === 3) {
       // All steps completed
       if (typeof window !== "undefined") {
-        localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED, "true");
+        updateOnboardingProgress({ isCompleted: true });
       }
       setCurrentStep(null);
       setIsGuideActive(false);
@@ -85,7 +80,7 @@ export function useCmdPaletteGuide(): UseCmdPaletteGuideReturn {
 
   const skipGuide = useCallback(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED, "true");
+      updateOnboardingProgress({ isCompleted: true });
       clearCompletedSteps();
     }
     setCurrentStep(null);
@@ -94,7 +89,7 @@ export function useCmdPaletteGuide(): UseCmdPaletteGuideReturn {
 
   const completeGuide = useCallback(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED, "true");
+      updateOnboardingProgress({ isCompleted: true });
       // Mark all steps as completed
       markStepCompleted(1);
       markStepCompleted(2);

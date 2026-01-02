@@ -11,6 +11,7 @@ import { useCmdPaletteGuide } from "../hooks/useCmdPaletteGuide";
 import { useStep1Detection } from "../hooks/useStep1Detection";
 import { useStep2Detection } from "../hooks/useStep2Detection";
 import { useStep3Detection } from "../hooks/useStep3Detection";
+import { markStepCompleted } from "../utils/onboardingStorage.util";
 import { CmdPaletteGuide } from "./CmdPaletteGuide";
 
 // Mock the hooks before importing the component
@@ -122,6 +123,7 @@ describe("CmdPaletteGuide", () => {
         createdAt: new Date().toISOString(),
       },
     ] as any); // Step 1 completed
+    markStepCompleted(1); // Mark step 1 as completed in onboarding progress
     mockUseCmdPaletteGuide.mockReturnValue({
       currentStep: 2,
       isGuideActive: true,
@@ -172,6 +174,7 @@ describe("CmdPaletteGuide", () => {
         createdAt: new Date().toISOString(),
       },
     ] as any); // Step 1 completed
+    markStepCompleted(1); // Mark step 1 as completed in onboarding progress
     mockUseCmdPaletteGuide.mockReturnValue({
       currentStep: 2,
       isGuideActive: true,
@@ -295,6 +298,7 @@ describe("CmdPaletteGuide", () => {
         createdAt: new Date().toISOString(),
       },
     ] as any); // Step 1 completed
+    markStepCompleted(1); // Mark step 1 as completed in onboarding progress
     mockUseCmdPaletteGuide.mockReturnValue({
       currentStep: 2,
       isGuideActive: true,
@@ -322,6 +326,7 @@ describe("CmdPaletteGuide", () => {
         createdAt: new Date().toISOString(),
       },
     ] as any); // Step 1 completed
+    markStepCompleted(1); // Mark step 1 as completed in onboarding progress
     mockUseCmdPaletteGuide.mockReturnValue({
       currentStep: 2,
       isGuideActive: true,

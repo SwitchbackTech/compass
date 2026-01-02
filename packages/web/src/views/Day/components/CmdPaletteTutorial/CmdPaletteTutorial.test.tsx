@@ -2,8 +2,8 @@ import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
+import { getOnboardingProgress } from "@web/views/Onboarding/utils/onboardingStorage.util";
 import { CmdPaletteTutorial } from "./CmdPaletteTutorial";
 
 const createTestStore = (isCmdPaletteOpen = false) => {
@@ -54,9 +54,8 @@ describe("CmdPaletteTutorial", () => {
     await userEvent.click(gotItButton);
 
     expect(onDismiss).toHaveBeenCalled();
-    expect(localStorage.getItem(STORAGE_KEYS.CMD_PALETTE_TUTORIAL_SEEN)).toBe(
-      "true",
-    );
+    const progress = getOnboardingProgress();
+    expect(progress.isSeen).toBe(true);
   });
 
   it("should open cmd palette and dismiss when 'Open it now' button is clicked", async () => {
@@ -77,9 +76,8 @@ describe("CmdPaletteTutorial", () => {
     });
 
     expect(onDismiss).toHaveBeenCalled();
-    expect(localStorage.getItem(STORAGE_KEYS.CMD_PALETTE_TUTORIAL_SEEN)).toBe(
-      "true",
-    );
+    const progress = getOnboardingProgress();
+    expect(progress.isSeen).toBe(true);
   });
 
   it("should dismiss when cmd+k is pressed", async () => {
@@ -118,8 +116,7 @@ describe("CmdPaletteTutorial", () => {
       { timeout: 1000 },
     );
 
-    expect(localStorage.getItem(STORAGE_KEYS.CMD_PALETTE_TUTORIAL_SEEN)).toBe(
-      "true",
-    );
+    const progress = getOnboardingProgress();
+    expect(progress.isSeen).toBe(true);
   });
 });

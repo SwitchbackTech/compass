@@ -1,8 +1,11 @@
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
+import {
+  getOnboardingProgress,
+  updateOnboardingProgress,
+} from "@web/views/Onboarding/utils/onboardingStorage.util";
 import { useCmdPaletteTutorial } from "./useCmdPaletteTutorial";
 
 // Mock useSession
@@ -64,7 +67,7 @@ describe("useCmdPaletteTutorial", () => {
   });
 
   it("should not show cmd palette tutorial if already seen", () => {
-    localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_TUTORIAL_SEEN, "true");
+    updateOnboardingProgress({ isSeen: true });
     const store = createTestStore();
 
     const { result } = renderHook(
@@ -130,9 +133,8 @@ describe("useCmdPaletteTutorial", () => {
     // Wait for the effect to run and mark tutorial as seen
     await waitFor(
       () => {
-        expect(
-          localStorage.getItem(STORAGE_KEYS.CMD_PALETTE_TUTORIAL_SEEN),
-        ).toBe("true");
+        const progress = getOnboardingProgress();
+        expect(progress.isSeen).toBe(true);
         expect(result.current.showCmdPaletteTutorial).toBe(false);
       },
       { timeout: 1000 },
@@ -169,9 +171,8 @@ describe("useCmdPaletteTutorial", () => {
 
     result.current.markCmdPaletteUsed();
 
-    expect(localStorage.getItem(STORAGE_KEYS.CMD_PALETTE_TUTORIAL_SEEN)).toBe(
-      "true",
-    );
+    const progress = getOnboardingProgress();
+    expect(progress.isSeen).toBe(true);
     expect(result.current.showCmdPaletteTutorial).toBe(false);
   });
 });

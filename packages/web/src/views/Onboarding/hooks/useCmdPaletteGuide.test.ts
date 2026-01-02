@@ -1,6 +1,9 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
-import { loadCompletedSteps } from "../utils/onboardingStorage.util";
+import {
+  getOnboardingProgress,
+  loadCompletedSteps,
+  updateOnboardingProgress,
+} from "../utils/onboardingStorage.util";
 import { useCmdPaletteGuide } from "./useCmdPaletteGuide";
 
 describe("useCmdPaletteGuide", () => {
@@ -16,12 +19,14 @@ describe("useCmdPaletteGuide", () => {
   });
 
   it("should not initialize guide if already completed", () => {
-    localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED, "true");
+    updateOnboardingProgress({ isCompleted: true });
 
     const { result } = renderHook(() => useCmdPaletteGuide());
 
     expect(result.current.isGuideActive).toBe(false);
     expect(result.current.currentStep).toBe(null);
+    const progress = getOnboardingProgress();
+    expect(progress.isCompleted).toBe(true);
   });
 
   it("should persist step 1 completion to localStorage", () => {
@@ -88,9 +93,8 @@ describe("useCmdPaletteGuide", () => {
 
     expect(result.current.currentStep).toBe(null);
     expect(result.current.isGuideActive).toBe(false);
-    expect(localStorage.getItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED)).toBe(
-      "true",
-    );
+    const progress = getOnboardingProgress();
+    expect(progress.isCompleted).toBe(true);
     expect(loadCompletedSteps()).toContain(3);
   });
 
@@ -114,9 +118,8 @@ describe("useCmdPaletteGuide", () => {
 
     expect(result.current.currentStep).toBe(null);
     expect(result.current.isGuideActive).toBe(false);
-    expect(localStorage.getItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED)).toBe(
-      "true",
-    );
+    const progress = getOnboardingProgress();
+    expect(progress.isCompleted).toBe(true);
     expect(loadCompletedSteps()).toEqual([]);
   });
 
@@ -129,9 +132,8 @@ describe("useCmdPaletteGuide", () => {
 
     expect(result.current.currentStep).toBe(null);
     expect(result.current.isGuideActive).toBe(false);
-    expect(localStorage.getItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED)).toBe(
-      "true",
-    );
+    const progress = getOnboardingProgress();
+    expect(progress.isCompleted).toBe(true);
     expect(loadCompletedSteps()).toEqual([1, 2, 3]);
   });
 
@@ -153,16 +155,6 @@ describe("useCmdPaletteGuide", () => {
     // Should resume at step 2 (next incomplete step)
     expect(secondRender.current.currentStep).toBe(2);
     expect(secondRender.current.isGuideActive).toBe(true);
-  });
-
-  it("should migrate existing CMD_PALETTE_GUIDE_COMPLETED flag", () => {
-    localStorage.setItem(STORAGE_KEYS.CMD_PALETTE_GUIDE_COMPLETED, "true");
-
-    const { result } = renderHook(() => useCmdPaletteGuide());
-
-    expect(result.current.isGuideActive).toBe(false);
-    expect(result.current.currentStep).toBe(null);
-    expect(loadCompletedSteps()).toEqual([1, 2, 3]);
   });
 
   it("should handle window being undefined gracefully", () => {
