@@ -21,6 +21,7 @@ type TestState = {
       error: unknown;
       reason: string | null;
     };
+
     getWeekEvents?: {
       value: {
         data: string[];
@@ -45,6 +46,7 @@ type TestState = {
     entities?: {
       value: Record<string, unknown>;
     };
+    [key: string]: unknown;
   };
 };
 // Type for the initial state that can be passed to PreloadedState
@@ -82,34 +84,6 @@ export const createInitialState = (
         isSuccess: false,
         reason: null,
       },
-      getCurrentMonthEvents: {
-        value: null,
-        isProcessing: false,
-        error: null,
-        isSuccess: false,
-        reason: null,
-      },
-      createEvent: {
-        isProcessing: false,
-        error: null,
-        value: null,
-        isSuccess: false,
-        reason: null,
-      },
-      editEvent: {
-        isProcessing: false,
-        error: null,
-        value: null,
-        isSuccess: false,
-        reason: null,
-      },
-      deleteEvent: {
-        isProcessing: false,
-        error: null,
-        value: null,
-        isSuccess: false,
-        reason: null,
-      },
       draft: {
         event: null,
         status: {
@@ -140,6 +114,9 @@ export const createInitialState = (
       isCmdPaletteOpen: false,
     },
     sync: {
+      importGCal: {
+        importing: false,
+      },
       importLatest: {
         isFetchNeeded: false,
         reason: null,

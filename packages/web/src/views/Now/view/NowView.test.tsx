@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import { renderWithMemoryRouter } from "@web/__tests__/utils/providers/MemoryRouter";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { getModifierKeyTestId } from "@web/common/utils/shortcut/shortcut.util";
 import { NowView } from "@web/views/Now/view/NowView";
 
@@ -11,7 +12,7 @@ jest.mock("../shortcuts/useNowShortcuts", () => ({
 
 describe("NowView", () => {
   it("renders the shortcuts overlay", async () => {
-    await renderWithMemoryRouter(<NowView />);
+    await renderWithMemoryRouter(<NowView />, [ROOT_ROUTES.NOW]);
 
     // jest cannot actively determine applied pseudo-classes
     // a browser environment should be used for this test
@@ -23,7 +24,7 @@ describe("NowView", () => {
   });
 
   it("renders the header with reminder and view selector", async () => {
-    await renderWithMemoryRouter(<NowView />);
+    await renderWithMemoryRouter(<NowView />, [ROOT_ROUTES.NOW]);
 
     // Check that Header components are rendered
     expect(screen.getByText("Click to add your reminder")).toBeInTheDocument();
@@ -33,16 +34,16 @@ describe("NowView", () => {
   });
 
   it("renders global shortcuts", async () => {
-    await renderWithMemoryRouter(<NowView />);
+    await renderWithMemoryRouter(<NowView />, [ROOT_ROUTES.NOW]);
 
     expect(screen.getByText("Global")).toBeInTheDocument();
-    expect(screen.getAllByText("Now")).toHaveLength(2);
+    expect(screen.getAllByText("Now")).toHaveLength(3);
     expect(screen.getByText("Day")).toBeInTheDocument();
-    expect(screen.getAllByText("Week")).toHaveLength(2);
+    expect(screen.getAllByText("Week")).toHaveLength(1);
   });
 
   it("renders shortcut keys correctly", async () => {
-    await renderWithMemoryRouter(<NowView />);
+    await renderWithMemoryRouter(<NowView />, [ROOT_ROUTES.NOW]);
 
     // Check that shortcut keys are rendered
     expect(screen.getByText("1")).toBeInTheDocument();
@@ -51,7 +52,7 @@ describe("NowView", () => {
   });
 
   it("renders command palette shortcut", async () => {
-    await renderWithMemoryRouter(<NowView />);
+    await renderWithMemoryRouter(<NowView />, [ROOT_ROUTES.NOW]);
 
     // Check that CMD+K shortcut is displayed
     expect(screen.getByText("Global")).toBeInTheDocument();
@@ -63,7 +64,7 @@ describe("NowView", () => {
   });
 
   it("renders the main layout structure", async () => {
-    await renderWithMemoryRouter(<NowView />);
+    await renderWithMemoryRouter(<NowView />, [ROOT_ROUTES.NOW]);
 
     // Check that the main calendar container is rendered
     const mainElement = document.getElementById("mainSection");

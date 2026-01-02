@@ -117,12 +117,6 @@ const CmdPalette = ({
             ),
           },
           {
-            id: "edit-reminder",
-            children: `Edit Reminder [r]`,
-            icon: "PencilSquareIcon",
-            onClick: onEventTargetVisibility(() => pressKey("r")),
-          },
-          {
             id: "today",
             children: `Go to Today (${today.format("dddd, MMMM D")}) [t]`,
             icon: "ArrowUturnDownIcon",
