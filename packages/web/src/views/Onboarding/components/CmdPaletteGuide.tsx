@@ -68,6 +68,17 @@ export const CmdPaletteGuide: React.FC = () => {
     return currentStep;
   }, [currentStep]);
 
+  // Determine contextual welcome message based on current view
+  const welcomeMessage = React.useMemo(() => {
+    if (isNowView) {
+      return "Welcome to the Now View";
+    }
+    if (isDayView) {
+      return "Welcome to the Day View";
+    }
+    return "Welcome to Compass";
+  }, [isDayView, isNowView]);
+
   // Determine if we should show the overlay
   // Show step 1 on any view if it's not completed
   // Show step 2/3 on Now view, step 1/2 on Day view
@@ -127,7 +138,7 @@ export const CmdPaletteGuide: React.FC = () => {
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <h3 className="text-text-light mb-2 text-lg font-semibold">
-                Welcome to Compass
+                {welcomeMessage}
               </h3>
               <p className="text-text-light/80 mb-3 text-sm">{instruction}</p>
               <div className="flex items-center gap-2">
@@ -192,7 +203,7 @@ export const CmdPaletteGuide: React.FC = () => {
           <div className="mb-4 flex items-start justify-between">
             <div className="flex-1">
               <h3 className="text-text-light mb-2 text-lg font-semibold">
-                Welcome to Compass
+                {welcomeMessage}
               </h3>
               <p className="text-text-light mb-3 text-sm">{instruction}</p>
               <div className="flex items-center gap-2">

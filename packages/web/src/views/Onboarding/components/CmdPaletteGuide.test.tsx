@@ -73,6 +73,12 @@ describe("CmdPaletteGuide", () => {
     const { container } = render(<CmdPaletteGuide />);
 
     expect(screen.queryByText("Welcome to Compass")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Welcome to the Day View"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Welcome to the Now View"),
+    ).not.toBeInTheDocument();
   });
 
   it("should render step 1 instructions on Day view", () => {
@@ -88,7 +94,7 @@ describe("CmdPaletteGuide", () => {
 
     render(<CmdPaletteGuide />);
 
-    expect(screen.getByText("Welcome to Compass")).toBeInTheDocument();
+    expect(screen.getByText("Welcome to the Day View")).toBeInTheDocument();
     expect(screen.getByText(/Type.*to create a task/i)).toBeInTheDocument();
     expect(screen.getByText("c")).toBeInTheDocument(); // The kbd element
     expect(screen.getByLabelText("Skip guide")).toBeInTheDocument();
@@ -108,7 +114,7 @@ describe("CmdPaletteGuide", () => {
     render(<CmdPaletteGuide />);
 
     // Step 1 should show on any view if not completed
-    expect(screen.getByText("Welcome to Compass")).toBeInTheDocument();
+    expect(screen.getByText("Welcome to the Now View")).toBeInTheDocument();
     expect(screen.getByText(/Type.*to create a task/i)).toBeInTheDocument();
   });
 
@@ -134,7 +140,7 @@ describe("CmdPaletteGuide", () => {
 
     render(<CmdPaletteGuide />);
 
-    expect(screen.getByText("Welcome to Compass")).toBeInTheDocument();
+    expect(screen.getByText("Welcome to the Now View")).toBeInTheDocument();
     expect(
       screen.getByText(/Press.*to go to the \/now view/i),
     ).toBeInTheDocument();
@@ -157,7 +163,7 @@ describe("CmdPaletteGuide", () => {
 
     // Should show step 1 instructions instead since step 1 wasn't completed
     // Step 1 shows on any view if not completed
-    expect(screen.getByText("Welcome to Compass")).toBeInTheDocument();
+    expect(screen.getByText("Welcome to the Now View")).toBeInTheDocument();
     expect(screen.getByText(/Type.*to create a task/i)).toBeInTheDocument();
     expect(screen.getByText("c")).toBeInTheDocument();
     expect(screen.getByText("Step 1 of 3")).toBeInTheDocument();
@@ -185,7 +191,7 @@ describe("CmdPaletteGuide", () => {
 
     render(<CmdPaletteGuide />);
 
-    expect(screen.getByText("Welcome to Compass")).toBeInTheDocument();
+    expect(screen.getByText("Welcome to the Day View")).toBeInTheDocument();
     expect(
       screen.getByText(/Press.*to go to the \/now view/i),
     ).toBeInTheDocument();
@@ -206,7 +212,7 @@ describe("CmdPaletteGuide", () => {
     render(<CmdPaletteGuide />);
 
     // Should show step 1 instructions instead since step 1 wasn't completed
-    expect(screen.getByText("Welcome to Compass")).toBeInTheDocument();
+    expect(screen.getByText("Welcome to the Day View")).toBeInTheDocument();
     expect(screen.getByText(/Type.*to create a task/i)).toBeInTheDocument();
     expect(screen.getByText("c")).toBeInTheDocument();
     expect(screen.getByText("Step 1 of 3")).toBeInTheDocument();
@@ -224,7 +230,7 @@ describe("CmdPaletteGuide", () => {
 
     render(<CmdPaletteGuide />);
 
-    expect(screen.getByText("Welcome to Compass")).toBeInTheDocument();
+    expect(screen.getByText("Welcome to the Now View")).toBeInTheDocument();
     expect(
       screen.getByText(
         /Click the description area or press.*to customize your note-to-self/i,
@@ -247,6 +253,12 @@ describe("CmdPaletteGuide", () => {
     render(<CmdPaletteGuide />);
 
     expect(screen.queryByText("Welcome to Compass")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Welcome to the Day View"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Welcome to the Now View"),
+    ).not.toBeInTheDocument();
   });
 
   it("should not render on Day view when authenticated", () => {
@@ -263,6 +275,12 @@ describe("CmdPaletteGuide", () => {
     render(<CmdPaletteGuide />);
 
     expect(screen.queryByText("Welcome to Compass")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Welcome to the Day View"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Welcome to the Now View"),
+    ).not.toBeInTheDocument();
   });
 
   it("should call skipGuide when skip button is clicked on Day view", async () => {
