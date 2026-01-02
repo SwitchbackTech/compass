@@ -110,10 +110,13 @@ export async function loadSpecificDayData({
   if (!success) return redirect(ROOT_ROUTES.DAY);
 
   // Seed initial tasks for this date if none exist (works for both authenticated and unauthenticated users)
-  const { seedInitialTasks } = await import(
-    "@web/common/utils/storage/task-seeding.util"
-  );
-  seedInitialTasks(dateString);
+  // Skip seeding in test environment to avoid interfering with tests
+  if (typeof process !== "undefined" && process.env.NODE_ENV !== "test") {
+    const { seedInitialTasks } = await import(
+      "@web/common/utils/storage/task-seeding.util"
+    );
+    seedInitialTasks(dateString);
+  }
 
   return Promise.resolve({
     dateString,
