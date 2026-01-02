@@ -14,9 +14,7 @@ describe("OnboardingOverlay", () => {
     render(<OnboardingOverlay onDismiss={onDismiss} />);
 
     expect(screen.getByText("Welcome to Compass")).toBeInTheDocument();
-    expect(
-      screen.getByText(/You're all set! Try creating a task/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Type.*to create a task/i)).toBeInTheDocument();
   });
 
   it("should dismiss when close button is clicked", async () => {
@@ -33,11 +31,14 @@ describe("OnboardingOverlay", () => {
     );
   });
 
-  it("should show cmd+k shortcut hint", () => {
+  it("should show keyboard shortcut hint", () => {
     const onDismiss = jest.fn();
 
     render(<OnboardingOverlay onDismiss={onDismiss} />);
 
-    expect(screen.getByText(/⌘ \+ K/i)).toBeInTheDocument();
+    // Text is split across elements, so check for parts
+    expect(screen.getByText(/Type/i)).toBeInTheDocument();
+    expect(screen.getByText(/to create a task/i)).toBeInTheDocument();
+    expect(screen.getByText("c")).toBeInTheDocument(); // The kbd element contains "c"
   });
 });

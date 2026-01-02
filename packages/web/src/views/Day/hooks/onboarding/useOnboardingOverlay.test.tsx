@@ -38,6 +38,10 @@ describe("useOnboardingOverlay", () => {
   });
 
   it("should dismiss onboarding overlay", async () => {
+    // Reset mock to ensure authenticated is false
+    const { useSession } = require("@web/common/hooks/useSession");
+    useSession.mockReturnValue({ authenticated: false });
+
     const { result } = renderHook(() => useOnboardingOverlay());
 
     // Wait for overlay to show first

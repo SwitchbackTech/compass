@@ -16,17 +16,18 @@ export const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({
   return (
     <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 transform">
       <div className="bg-bg-primary border-border-primary mx-4 max-w-md rounded-lg border p-4 shadow-lg">
+        // TODO turn this into its own componenet for onboardin
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
             <h3 className="text-text-light mb-2 text-lg font-semibold">
               Welcome to Compass
             </h3>
             <p className="text-text-light/80 text-sm">
-              You&apos;re all set! Try creating a task or press{" "}
+              Type{" "}
               <kbd className="bg-bg-secondary text-text-light border-border-primary rounded border px-1.5 py-0.5 font-mono text-xs">
-                ⌘ + K
+                c
               </kbd>{" "}
-              to explore commands.
+              to create a task
             </p>
           </div>
           <button

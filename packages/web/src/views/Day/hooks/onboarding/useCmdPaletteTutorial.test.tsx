@@ -98,28 +98,31 @@ describe("useCmdPaletteTutorial", () => {
   });
 
   it("should mark cmd palette as used when opened", async () => {
-    jest.useFakeTimers();
     localStorage.setItem(STORAGE_KEYS.ONBOARDING_OVERLAY_SEEN, "true");
+    // Reset mock to ensure authenticated is false
+    const { useSession } = require("@web/common/hooks/useSession");
+    useSession.mockReturnValue({ authenticated: false });
+
     const store = createTestStore(false); // cmd palette starts closed
 
-    const { result } = renderHook(
-      () => useCmdPaletteTutorial({ showOnboardingOverlay: false }),
+    const { result, rerender } = renderHook(
+      ({ showOnboardingOverlay }) =>
+        useCmdPaletteTutorial({ showOnboardingOverlay }),
       {
+        initialProps: { showOnboardingOverlay: false },
         wrapper: ({ children }) => (
           <Provider store={store}>{children}</Provider>
         ),
       },
     );
 
-    // Fast-forward time to show tutorial (1 second delay)
-    act(() => {
-      jest.advanceTimersByTime(1000);
-    });
-
-    // Wait for tutorial to show
-    await waitFor(() => {
-      expect(result.current.showCmdPaletteTutorial).toBe(true);
-    });
+    // Wait for tutorial to show (has 1 second delay)
+    await waitFor(
+      () => {
+        expect(result.current.showCmdPaletteTutorial).toBe(true);
+      },
+      { timeout: 2500 },
+    );
 
     // Now open cmd palette
     act(() => {
@@ -127,15 +130,15 @@ describe("useCmdPaletteTutorial", () => {
     });
 
     // Wait for the effect to run and mark tutorial as seen
-    await waitFor(() => {
-      const tutorialSeen = localStorage.getItem(
-        STORAGE_KEYS.CMD_PALETTE_TUTORIAL_SEEN,
-      );
-      expect(tutorialSeen).toBe("true");
-      expect(result.current.showCmdPaletteTutorial).toBe(false);
-    });
-
-    jest.useRealTimers();
+    await waitFor(
+      () => {
+        expect(
+          localStorage.getItem(STORAGE_KEYS.CMD_PALETTE_TUTORIAL_SEEN),
+        ).toBe("true");
+        expect(result.current.showCmdPaletteTutorial).toBe(false);
+      },
+      { timeout: 1000 },
+    );
   });
 
   it("should dismiss cmd palette tutorial", () => {
