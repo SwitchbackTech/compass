@@ -43,15 +43,22 @@ export async function loadLogoutData() {
 export async function loadLoginData() {
   const { authenticated } = await loadAuthenticated();
   const { skipOnboarding } = loadOnboardingData();
+  const { hasCompletedSignup } = loadHasCompletedSignup();
 
   if (authenticated) {
     return redirect(skipOnboarding ? ROOT_ROUTES.ROOT : ROOT_ROUTES.ONBOARDING);
   }
 
+  // For new users (no signup completed), redirect to day view immediately
+  if (!hasCompletedSignup) {
+    const { dateString } = loadTodayData();
+    return redirect(`${ROOT_ROUTES.DAY}/${dateString}`);
+  }
+
   return { authenticated, skipOnboarding };
 }
 
-export async function loadLoggedInData() {
+export async function loadLoggedInData({ request }: LoaderFunctionArgs) {
   const { authenticated } = await loadAuthenticated();
   const { skipOnboarding } = loadOnboardingData();
   const { hasCompletedSignup } = loadHasCompletedSignup();
@@ -59,7 +66,18 @@ export async function loadLoggedInData() {
   const { USER_SESSION_EXPIRED } = AUTH_FAILURE_REASONS;
   const loginRoute = `${ROOT_ROUTES.LOGIN}?reason=${USER_SESSION_EXPIRED}`;
 
+  // Allow unauthenticated access to day view for new users
+  // Check if we're accessing the day route
+  const url = new URL(request.url);
+  const pathname = url.pathname;
+  const isDayRoute = pathname.startsWith(ROOT_ROUTES.DAY);
+
   if (!authenticated) {
+    // Allow unauthenticated access to day view for new users
+    if (isDayRoute && !hasCompletedSignup) {
+      return { authenticated: false, skipOnboarding, hasCompletedSignup };
+    }
+
     return redirect(
       skipOnboarding || hasCompletedSignup
         ? loginRoute
@@ -90,6 +108,12 @@ export async function loadSpecificDayData({
   const { success, data: dateString } = parsedDate;
 
   if (!success) return redirect(ROOT_ROUTES.DAY);
+
+  // Seed initial tasks for this date if none exist (works for both authenticated and unauthenticated users)
+  const { seedInitialTasks } = await import(
+    "@web/common/utils/storage/task-seeding.util"
+  );
+  seedInitialTasks(dateString);
 
   return Promise.resolve({
     dateString,

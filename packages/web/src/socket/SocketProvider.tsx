@@ -66,6 +66,29 @@ socket.on("error", onError);
 const SocketProvider = ({ children }: { children: ReactNode }) => {
   const dispatch = useDispatch();
 
+  // Only connect socket if user is authenticated
+  useEffect(() => {
+    const checkAuthAndConnect = async () => {
+      try {
+        const { session } = await import("@web/common/classes/Session");
+        const authenticated = await session.doesSessionExist();
+
+        if (authenticated && !socket.connected) {
+          socket.connect();
+        } else if (!authenticated && socket.connected) {
+          socket.disconnect();
+        }
+      } catch (error) {
+        // If session check fails, assume unauthenticated
+        if (socket.connected) {
+          socket.disconnect();
+        }
+      }
+    };
+
+    checkAuthAndConnect();
+  }, []);
+
   const onImportStart = useCallback(
     (importing = true) => {
       dispatch(importGCalSlice.actions.importing(importing));
