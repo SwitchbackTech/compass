@@ -76,10 +76,29 @@ export class GcalEventRRule extends RRule {
       index < GCAL_MAX_RECURRENCES,
   ): Date[] {
     const dates = super.all(iterator);
+
+    // If no dates were generated, return empty array
+    if (dates.length === 0) {
+      return [];
+    }
+
     const firstInstance = dates[0];
     const firstInstanceStartDate = dayjs(firstInstance).tz(this.#timezone);
-    const includesDtStart = this.#startDate.isSame(firstInstanceStartDate);
-    const rDates = includesDtStart ? [] : [this.#startDate.toDate()];
+
+    // Check if dtstart is already included in the generated dates
+    // Use a more lenient comparison to handle timezone precision issues
+    const includesDtStart =
+      this.#startDate.isSame(firstInstanceStartDate, "minute") ||
+      dates.some((date) => {
+        const dateInTz = dayjs(date).tz(this.#timezone);
+        return this.#startDate.isSame(dateInTz, "minute");
+      });
+
+    // Only add dtstart if it's not already included and COUNT is not specified
+    // When COUNT is specified, RRule already includes dtstart in the generated dates
+    const hasCount = this.options.count !== undefined;
+    const rDates =
+      includesDtStart || hasCount ? [] : [this.#startDate.toDate()];
 
     return rDates.concat(dates);
   }
