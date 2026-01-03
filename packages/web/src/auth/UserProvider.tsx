@@ -57,10 +57,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   }, [userId, email, posthog]);
 
   // Allow unauthenticated users to proceed without blocking
-  // Only show loader briefly while checking auth status
+  // Show a loading state while checking auth status
   // Unauthenticated users will have profile.current === null, which is fine
   if (isLoadingUser && profile.current === null) {
-    // Brief loading state - but don't block indefinitely
+    // Loading state while user profile is being fetched
     // The route loader handles auth redirects
     return <AbsoluteOverflowLoader />;
   }
