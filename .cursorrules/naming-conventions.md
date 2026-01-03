@@ -1,3 +1,8 @@
+---
+description: Naming standards for files and variables - hooks use camelCase, TypeScript files use periods, booleans use 'is' prefix
+alwaysApply: true
+---
+
 # Naming Conventions
 
 This rule defines naming standards for files and variables in the Compass codebase.

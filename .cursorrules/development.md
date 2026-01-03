@@ -1,3 +1,8 @@
+---
+description: Development workflow - setup commands, dev servers, testing, formatting, and environment requirements
+alwaysApply: false
+---
+
 # Development Workflow
 
 This rule defines development commands, setup, and workflow for the Compass codebase.

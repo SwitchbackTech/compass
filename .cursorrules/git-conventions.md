@@ -1,3 +1,8 @@
+---
+description: Branch naming (feature/, bug/, etc.) and commit message conventions (conventional commits format)
+alwaysApply: false
+---
+
 # Git Conventions
 
 This rule defines branch naming and commit message standards for the Compass codebase.

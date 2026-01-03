@@ -1,3 +1,10 @@
+---
+description: Validation patterns - use Zod for all validation, define schemas and export inferred types
+globs:
+  - "packages/backend/**/*.ts"
+  - "packages/core/src/validators/**/*.ts"
+---
+
 # Validation Standards
 
 This rule enforces validation patterns using Zod for the Compass codebase.

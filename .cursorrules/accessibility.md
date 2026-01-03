@@ -1,3 +1,9 @@
+---
+description: Accessibility standards - semantic HTML, keyboard navigation, ARIA labels, refer to skills/a11y-audit/SKILL.md for comprehensive checklist
+globs:
+  - "packages/web/**/*.{ts,tsx}"
+---
+
 # Accessibility Standards
 
 This rule defines accessibility requirements for the Compass codebase, especially for `packages/web`.

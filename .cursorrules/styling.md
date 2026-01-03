@@ -1,3 +1,10 @@
+---
+description: Frontend styling standards - use Tailwind semantic tokens (bg-bg-primary) not raw colors, module aliased imports
+globs:
+  - "packages/web/**/*.{ts,tsx,css}"
+  - "packages/web/src/**/*.{ts,tsx,css}"
+---
+
 # Styling and Component Standards
 
 This rule defines styling conventions for frontend components in `packages/web`.

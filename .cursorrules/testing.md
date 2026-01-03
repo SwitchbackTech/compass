@@ -1,3 +1,8 @@
+---
+description: Testing requirements per package (web/backend/core) and best practices for writing tests with semantic queries
+alwaysApply: true
+---
+
 # Testing Standards
 
 This rule defines testing requirements and best practices for the Compass codebase.

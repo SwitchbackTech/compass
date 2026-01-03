@@ -1,3 +1,8 @@
+---
+description: Main overview of Compass development rules and project structure
+alwaysApply: true
+---
+
 # Compass Calendar Development Rules
 
 You are an expert full-stack developer working on Compass, a calendar application built with React, TypeScript, Node.js, and MongoDB.
