@@ -27,7 +27,9 @@ export const getEventsFromIndexedDB = async (
 
   // Filter by isSomeday
   if (someday !== undefined) {
-    query = compassLocalDB.events.where("isSomeday").equals(someday ? 1 : 0);
+    query = compassLocalDB.events
+      .where("isSomeday")
+      .equals(someday ? true : false);
   }
 
   // Get all matching events
@@ -67,7 +69,7 @@ export const updateEventInIndexedDB = async (
 ): Promise<void> => {
   const existing = await compassLocalDB.events.get(_id);
   if (!existing) {
-    throw new Error(`Event with id ${_id} not found in IndexedDB`);
+    throw new Error(`Event with id "${_id}" not found in IndexedDB for update`);
   }
 
   await compassLocalDB.events.put({
