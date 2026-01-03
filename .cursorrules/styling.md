@@ -15,7 +15,7 @@ Use semantic color tokens defined in `packages/web/src/index.css` with the `@the
 - ✅ `bg-bg-primary` - Primary background color
 - ✅ `text-text-light` - Light text color
 - ✅ `border-border-primary` - Primary border color
-- ✅ `bg-bg-secondary`, `text-text-primary`
+- ✅ `text-text-lighter`, `bg-bg-secondary`
 
 **DON'T:**
 
@@ -29,9 +29,15 @@ Use semantic color tokens defined in `packages/web/src/index.css` with the `@the
 
 Reference these tokens from `packages/web/src/index.css`:
 
-- Background: `bg-primary`, `bg-secondary`, `bg-tertiary`
-- Text: `text-primary`, `text-secondary`, `text-light`, `text-dark`
-- Border: `border-primary`, `border-secondary`
+- Accent: `accent-primary`
+- Background: `bg-primary`, `bg-secondary`
+- Border: `border-primary`, `border-primary-dark`, `border-secondary`
+- Foreground: `fg-primary`, `fg-primary-dark`
+- Text: `text-light`, `text-lighter`, `text-light-inactive`, `text-dark`, `text-dark-placeholder`
+- Status: `status-success`, `status-error`, `status-warning`, `status-info`
+- Tags: `tag-one`, `tag-two`, `tag-three`
+- Panel: `panel-bg`, `panel-scrollbar`, `panel-scrollbar-active`, `panel-shadow`, `panel-text`
+- Grid: `grid-line-primary`
 
 ## Component Best Practices
 

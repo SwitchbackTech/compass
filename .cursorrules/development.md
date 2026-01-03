@@ -73,11 +73,11 @@ yarn cli --help     # Shows all available CLI commands
 
 ```bash
 BASEURL=http://localhost:3000/api
-GOOGLE_CLIENT_ID=your_oauth_client_id
-GOOGLE_CLIENT_SECRET=your_oauth_secret
-SUPERTOKENS_URI=your_supertokens_url
-SUPERTOKENS_KEY=your_supertokens_key
-MONGO_URI=your_mongodb_connection
+GOOGLE_CLIENT_ID=your_google_oauth_client_id_here
+GOOGLE_CLIENT_SECRET=your_google_oauth_secret_here
+SUPERTOKENS_URI=your_supertokens_instance_url_here
+SUPERTOKENS_KEY=your_supertokens_api_key_here
+MONGO_URI=your_mongodb_connection_string_here
 PORT=3000
 NODE_ENV=development
 TZ=Etc/UTC
