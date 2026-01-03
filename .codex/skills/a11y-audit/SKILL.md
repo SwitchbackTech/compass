@@ -6,7 +6,6 @@ tags:
   - accessibility
   - ui
   - testing
-  - audit
 ---
 
 # Accessibility Change Audit
