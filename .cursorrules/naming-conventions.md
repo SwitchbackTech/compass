@@ -68,9 +68,28 @@ Do NOT use barrel (`index.ts`) files for exports. Use named exports directly fro
 
 **Rationale:** This improves tree-shaking and makes imports more explicit.
 
+## Function Declarations
+
+Prefer arrow functions over traditional function declarations.
+
+**Examples:**
+
+- ✅ Good: `const handleClick = () => { ... }`
+- ✅ Good: `const calculateTotal = (items: Item[]) => { ... }`
+- ❌ Bad: `function handleClick() { ... }`
+- ❌ Bad: `function calculateTotal(items: Item[]) { ... }`
+
+**Rationale:** Arrow functions provide consistent syntax, lexical `this` binding, and are more concise.
+
+**Exceptions:** Traditional function declarations are acceptable for:
+
+- Top-level exported functions in utility files where hoisting is beneficial
+- React component definitions (though `const Component = () => ...` is still preferred)
+
 ## Summary
 
 - Hooks: camelCase (`useHookName.ts`)
 - TypeScript files: period-separated (`feature.module.type.ts`)
 - Booleans: `is` prefix (`isLoading`)
 - No barrel files
+- Functions: arrow functions (`const fn = () => ...`)
