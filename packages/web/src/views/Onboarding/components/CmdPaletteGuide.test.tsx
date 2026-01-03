@@ -13,6 +13,15 @@ import { useStepDetection } from "../hooks/useStepDetection";
 import { markStepCompleted } from "../utils/onboarding.storage.util";
 import { CmdPaletteGuide } from "./CmdPaletteGuide";
 
+// Mock posthog to avoid transitive dependency issues in tests
+jest.mock("posthog-js/react", () => ({
+  usePostHog: () => ({
+    identify: jest.fn(),
+    capture: jest.fn(),
+  }),
+  PostHogProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 // Mock the hooks before importing the component
 jest.mock("react-router-dom", () => ({
   useLocation: jest.fn(),
@@ -59,7 +68,7 @@ describe("CmdPaletteGuide", () => {
       completeGuide: jest.fn(),
     });
 
-    const { container } = render(<CmdPaletteGuide />);
+    render(<CmdPaletteGuide />);
 
     expect(screen.queryByText("Welcome to Compass")).not.toBeInTheDocument();
     expect(

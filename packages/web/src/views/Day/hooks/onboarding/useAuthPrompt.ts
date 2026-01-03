@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSession } from "@web/common/hooks/useSession";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
@@ -31,6 +31,16 @@ export function useAuthPrompt({
   const { authenticated } = useSession();
   const isCmdPaletteOpen = useAppSelector(selectIsCmdPaletteOpen);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [hasUsedCmdPalette, setHasUsedCmdPalette] = useState(false);
+  const prevCmdPaletteOpen = useRef(isCmdPaletteOpen);
+
+  // Track if command palette has been used (opened and then closed)
+  useEffect(() => {
+    if (prevCmdPaletteOpen.current && !isCmdPaletteOpen) {
+      setHasUsedCmdPalette(true);
+    }
+    prevCmdPaletteOpen.current = isCmdPaletteOpen;
+  }, [isCmdPaletteOpen]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -41,10 +51,10 @@ export function useAuthPrompt({
 
     // Show auth prompt if user has:
     // - Created 2+ tasks, OR
-    // - Used cmd+k palette, OR
+    // - Used cmd+k palette (opened and closed), OR
     // - Navigated between dates
     const shouldShow =
-      tasks.length >= 2 || hasNavigatedDates || isCmdPaletteOpen;
+      tasks.length >= 2 || hasNavigatedDates || hasUsedCmdPalette;
 
     if (shouldShow && !showOnboardingOverlay) {
       // Delay showing auth prompt to avoid overwhelming user
@@ -58,7 +68,7 @@ export function useAuthPrompt({
     authenticated,
     tasks.length,
     hasNavigatedDates,
-    isCmdPaletteOpen,
+    hasUsedCmdPalette,
     showOnboardingOverlay,
   ]);
 

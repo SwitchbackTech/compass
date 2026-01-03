@@ -68,10 +68,10 @@ export const DayViewContent = memo(() => {
   // Track date navigation
   useEffect(() => {
     const currentDate = dateInView.format("YYYY-MM-DD");
-    if (previousDateRef.current !== currentDate && previousDateRef.current) {
+    if (previousDateRef.current !== currentDate) {
       setHasNavigatedDates(true);
+      previousDateRef.current = currentDate;
     }
-    previousDateRef.current = currentDate;
   }, [dateInView]);
 
   // Onboarding overlays

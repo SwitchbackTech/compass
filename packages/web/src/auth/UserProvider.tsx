@@ -2,6 +2,7 @@ import { usePostHog } from "posthog-js/react";
 import {
   ReactNode,
   createContext,
+  useContext,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -17,6 +18,14 @@ const UserContext = createContext<
     >
   | undefined
 >(undefined);
+
+export const useUser = () => {
+  const context = useContext(UserContext);
+  if (context === undefined) {
+    throw new Error("useUser must be used within a UserProvider");
+  }
+  return context;
+};
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const profile = useRef<UserProfile | null>(null);
@@ -57,10 +66,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   }, [userId, email, posthog]);
 
   // Allow unauthenticated users to proceed without blocking
-  // Show a loading state while checking auth status
+  // Only show loader briefly while checking auth status
   // Unauthenticated users will have profile.current === null, which is fine
-  if (isLoadingUser && profile.current === null) {
-    // Loading state while user profile is being fetched
+  if (isLoadingUser && userId === null) {
+    // Brief loading state - but don't block indefinitely
     // The route loader handles auth redirects
     return <AbsoluteOverflowLoader />;
   }

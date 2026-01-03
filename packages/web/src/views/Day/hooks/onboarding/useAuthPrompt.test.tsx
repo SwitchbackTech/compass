@@ -1,6 +1,6 @@
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { getOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 import { useAuthPrompt } from "./useAuthPrompt";
@@ -37,7 +37,6 @@ describe("useAuthPrompt", () => {
           tasks: [{ id: "1" }, { id: "2" }],
           hasNavigatedDates: false,
           showOnboardingOverlay: false,
-          showCmdPaletteTutorial: false,
         }),
       {
         wrapper: ({ children }) => (
@@ -63,7 +62,6 @@ describe("useAuthPrompt", () => {
           tasks: [],
           hasNavigatedDates: true,
           showOnboardingOverlay: false,
-          showCmdPaletteTutorial: false,
         }),
       {
         wrapper: ({ children }) => (
@@ -80,8 +78,8 @@ describe("useAuthPrompt", () => {
     );
   });
 
-  it("should show auth prompt after user opens cmd palette", async () => {
-    const store = createTestStore(true); // cmd palette is open
+  it("should show auth prompt after user opens and closes cmd palette", async () => {
+    const store = createTestStore(false);
 
     const { result } = renderHook(
       () =>
@@ -89,7 +87,6 @@ describe("useAuthPrompt", () => {
           tasks: [],
           hasNavigatedDates: false,
           showOnboardingOverlay: false,
-          showCmdPaletteTutorial: false,
         }),
       {
         wrapper: ({ children }) => (
@@ -97,6 +94,16 @@ describe("useAuthPrompt", () => {
         ),
       },
     );
+
+    // Open palette
+    act(() => {
+      store.dispatch(settingsSlice.actions.openCmdPalette());
+    });
+
+    // Close palette
+    act(() => {
+      store.dispatch(settingsSlice.actions.closeCmdPalette());
+    });
 
     await waitFor(
       () => {
@@ -119,7 +126,6 @@ describe("useAuthPrompt", () => {
           tasks: [{ id: "1" }, { id: "2" }],
           hasNavigatedDates: false,
           showOnboardingOverlay: false,
-          showCmdPaletteTutorial: false,
         }),
       {
         wrapper: ({ children }) => (
@@ -142,7 +148,6 @@ describe("useAuthPrompt", () => {
           tasks: [{ id: "1" }, { id: "2" }],
           hasNavigatedDates: false,
           showOnboardingOverlay: false,
-          showCmdPaletteTutorial: false,
         }),
       {
         wrapper: ({ children }) => (
@@ -184,7 +189,6 @@ describe("useAuthPrompt", () => {
           tasks: [{ id: "1" }, { id: "2" }],
           hasNavigatedDates: false,
           showOnboardingOverlay: false,
-          showCmdPaletteTutorial: true,
         }),
       {
         wrapper: ({ children }) => (
@@ -205,7 +209,6 @@ describe("useAuthPrompt", () => {
           tasks: [{ id: "1" }],
           hasNavigatedDates: false,
           showOnboardingOverlay: false,
-          showCmdPaletteTutorial: false,
         }),
       {
         wrapper: ({ children }) => (
@@ -226,7 +229,6 @@ describe("useAuthPrompt", () => {
           tasks: [{ id: "1" }, { id: "2" }],
           hasNavigatedDates: false,
           showOnboardingOverlay: false,
-          showCmdPaletteTutorial: false,
         }),
       {
         wrapper: ({ children }) => (

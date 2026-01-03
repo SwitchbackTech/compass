@@ -58,7 +58,8 @@ export async function loadLoginData() {
   return { authenticated, skipOnboarding };
 }
 
-export async function loadLoggedInData({ request }: LoaderFunctionArgs) {
+export async function loadLoggedInData(args?: LoaderFunctionArgs) {
+  const request = args?.request ?? new Request(window.location.href);
   const { authenticated } = await loadAuthenticated();
   const { skipOnboarding } = loadOnboardingData();
   const { hasCompletedSignup } = loadHasCompletedSignup();
@@ -66,7 +67,6 @@ export async function loadLoggedInData({ request }: LoaderFunctionArgs) {
   const { USER_SESSION_EXPIRED } = AUTH_FAILURE_REASONS;
   const loginRoute = `${ROOT_ROUTES.LOGIN}?reason=${USER_SESSION_EXPIRED}`;
 
-  // Allow unauthenticated access to day view for new users
   // Check if we're accessing the day route
   const url = new URL(request.url);
   const pathname = url.pathname;
@@ -111,7 +111,7 @@ export async function loadSpecificDayData({
 
   // Seed initial tasks for this date if none exist (works for both authenticated and unauthenticated users)
   // Skip seeding in test environment to avoid interfering with tests
-  if (typeof process !== "undefined" && process.env.NODE_ENV !== "test") {
+  if (process.env.NODE_ENV !== "test") {
     const { seedInitialTasks } = await import(
       "@web/common/utils/storage/task-seeding.util"
     );
