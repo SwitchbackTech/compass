@@ -1,9 +1,9 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { ONBOARDING_STEPS } from "@web/views/Onboarding/constants/onboarding.constants";
 import {
   getOnboardingProgress,
   updateOnboardingProgress,
-} from "@web/views/Onboarding/utils/onboardingStorage.util";
+} from "@web/views/Onboarding/utils/onboarding.storage.util";
 import { useOnboardingOverlay } from "./useOnboardingOverlay";
 
 // Mock useSession

@@ -5,7 +5,7 @@ import { useAppSelector } from "@web/store/store.hooks";
 import {
   getOnboardingProgress,
   updateOnboardingProgress,
-} from "@web/views/Onboarding/utils/onboardingStorage.util";
+} from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 interface UseAuthPromptProps {
   tasks: Array<{ id: string }>;

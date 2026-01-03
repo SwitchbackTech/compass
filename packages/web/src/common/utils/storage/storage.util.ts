@@ -3,7 +3,7 @@ import { Task, isTask } from "@web/common/types/task.types";
 import {
   getOnboardingProgress,
   updateOnboardingProgress,
-} from "@web/views/Onboarding/utils/onboardingStorage.util";
+} from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 export const TODAY_TASKS_STORAGE_KEY_PREFIX = "compass.today.tasks";
 export const COMPASS_TASKS_SAVED_EVENT_NAME = "compass.tasks.saved" as const;

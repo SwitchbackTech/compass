@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
-import { updateOnboardingProgress } from "@web/views/Onboarding/utils/onboardingStorage.util";
+import { updateOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 interface CmdPaletteTutorialProps {
   onDismiss: () => void;

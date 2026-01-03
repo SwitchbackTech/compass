@@ -4,7 +4,7 @@ import {
   getOnboardingProgress,
   loadCompletedSteps,
   updateOnboardingProgress,
-} from "../utils/onboardingStorage.util";
+} from "../utils/onboarding.storage.util";
 import { useCmdPaletteGuide } from "./useCmdPaletteGuide";
 
 describe("useCmdPaletteGuide", () => {
@@ -169,12 +169,13 @@ describe("useCmdPaletteGuide", () => {
     expect(result.current.isGuideActive).toBe(false);
     const progress = getOnboardingProgress();
     expect(progress.isCompleted).toBe(true);
+    // Steps are marked in the order defined in ONBOARDING_STEP_CONFIGS
     expect(loadCompletedSteps()).toEqual([
       ONBOARDING_STEPS.CREATE_TASK,
       ONBOARDING_STEPS.NAVIGATE_TO_NOW,
       ONBOARDING_STEPS.EDIT_DESCRIPTION,
-      ONBOARDING_STEPS.CMD_PALETTE_INFO,
       ONBOARDING_STEPS.EDIT_REMINDER,
+      ONBOARDING_STEPS.CMD_PALETTE_INFO,
       ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
     ]);
   });

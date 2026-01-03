@@ -8,9 +8,9 @@ import {
   markStepCompleted,
   saveCompletedSteps,
   updateOnboardingProgress,
-} from "./onboardingStorage.util";
+} from "./onboarding.storage.util";
 
-describe("onboardingStorage.util", () => {
+describe("onboarding.storage.util", () => {
   beforeEach(() => {
     localStorage.clear();
   });
@@ -19,14 +19,7 @@ describe("onboardingStorage.util", () => {
     it("should return default progress when no data exists", () => {
       const progress = getOnboardingProgress();
       expect(progress).toEqual({
-        completedSteps: {
-          createTask: false,
-          navigateToNow: false,
-          editDescription: false,
-          cmdPaletteInfo: false,
-          editReminder: false,
-          navigateToWeek: false,
-        },
+        completedSteps: [],
         isSeen: false,
         isAuthDismissed: false,
         isCompleted: false,
@@ -36,14 +29,10 @@ describe("onboardingStorage.util", () => {
 
     it("should return stored progress from consolidated key", () => {
       const testProgress = {
-        completedSteps: {
-          createTask: true,
-          navigateToNow: true,
-          editDescription: false,
-          cmdPaletteInfo: false,
-          editReminder: false,
-          navigateToWeek: false,
-        },
+        completedSteps: [
+          ONBOARDING_STEPS.CREATE_TASK,
+          ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+        ],
         isSeen: true,
         isAuthDismissed: true,
         isCompleted: false,
@@ -61,14 +50,7 @@ describe("onboardingStorage.util", () => {
       localStorage.setItem(STORAGE_KEYS.ONBOARDING_PROGRESS, "invalid json");
       const progress = getOnboardingProgress();
       expect(progress).toEqual({
-        completedSteps: {
-          createTask: false,
-          navigateToNow: false,
-          editDescription: false,
-          cmdPaletteInfo: false,
-          editReminder: false,
-          navigateToWeek: false,
-        },
+        completedSteps: [],
         isSeen: false,
         isAuthDismissed: false,
         isCompleted: false,
@@ -76,8 +58,8 @@ describe("onboardingStorage.util", () => {
       });
     });
 
-    it("should handle old array format gracefully", () => {
-      const oldFormatProgress = {
+    it("should handle invalid array format gracefully", () => {
+      const invalidFormatProgress = {
         completedSteps: [1, 2, 4, 5, 0, -1, "invalid"],
         isSeen: false,
         isAuthDismissed: false,
@@ -86,17 +68,11 @@ describe("onboardingStorage.util", () => {
       };
       localStorage.setItem(
         STORAGE_KEYS.ONBOARDING_PROGRESS,
-        JSON.stringify(oldFormatProgress),
+        JSON.stringify(invalidFormatProgress),
       );
       const progress = getOnboardingProgress();
-      expect(progress.completedSteps).toEqual({
-        createTask: false,
-        navigateToNow: false,
-        editDescription: false,
-        cmdPaletteInfo: false,
-        editReminder: false,
-        navigateToWeek: false,
-      });
+      // Invalid format should be rejected and return default empty array
+      expect(progress.completedSteps).toEqual([]);
     });
   });
 
@@ -117,24 +93,16 @@ describe("onboardingStorage.util", () => {
 
     it("should update completed steps", () => {
       updateOnboardingProgress({
-        completedSteps: {
-          createTask: true,
-          navigateToNow: true,
-          editDescription: false,
-          cmdPaletteInfo: false,
-          editReminder: false,
-          navigateToWeek: false,
-        },
+        completedSteps: [
+          ONBOARDING_STEPS.CREATE_TASK,
+          ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+        ],
       });
       const progress = getOnboardingProgress();
-      expect(progress.completedSteps).toEqual({
-        createTask: true,
-        navigateToNow: true,
-        editDescription: false,
-        cmdPaletteInfo: false,
-        editReminder: false,
-        navigateToWeek: false,
-      });
+      expect(progress.completedSteps).toEqual([
+        ONBOARDING_STEPS.CREATE_TASK,
+        ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+      ]);
     });
   });
 
@@ -145,12 +113,10 @@ describe("onboardingStorage.util", () => {
 
     it("should return completed steps from onboarding progress", () => {
       updateOnboardingProgress({
-        completedSteps: {
-          createTask: true,
-          navigateToNow: true,
-          editDescription: false,
-          editReminder: false,
-        },
+        completedSteps: [
+          ONBOARDING_STEPS.CREATE_TASK,
+          ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+        ],
       });
       expect(loadCompletedSteps()).toEqual([
         ONBOARDING_STEPS.CREATE_TASK,
@@ -160,12 +126,12 @@ describe("onboardingStorage.util", () => {
 
     it("should return all completed steps", () => {
       updateOnboardingProgress({
-        completedSteps: {
-          createTask: true,
-          navigateToNow: true,
-          editDescription: true,
-          editReminder: true,
-        },
+        completedSteps: [
+          ONBOARDING_STEPS.CREATE_TASK,
+          ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+          ONBOARDING_STEPS.EDIT_DESCRIPTION,
+          ONBOARDING_STEPS.EDIT_REMINDER,
+        ],
       });
       expect(loadCompletedSteps()).toEqual([
         ONBOARDING_STEPS.CREATE_TASK,
@@ -183,14 +149,10 @@ describe("onboardingStorage.util", () => {
         ONBOARDING_STEPS.NAVIGATE_TO_NOW,
       ]);
       const progress = getOnboardingProgress();
-      expect(progress.completedSteps).toEqual({
-        createTask: true,
-        navigateToNow: true,
-        editDescription: false,
-        cmdPaletteInfo: false,
-        editReminder: false,
-        navigateToWeek: false,
-      });
+      expect(progress.completedSteps).toEqual([
+        ONBOARDING_STEPS.CREATE_TASK,
+        ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+      ]);
     });
 
     it("should save all steps correctly", () => {
@@ -201,14 +163,12 @@ describe("onboardingStorage.util", () => {
         ONBOARDING_STEPS.EDIT_REMINDER,
       ]);
       const progress = getOnboardingProgress();
-      expect(progress.completedSteps).toEqual({
-        createTask: true,
-        navigateToNow: true,
-        editDescription: true,
-        cmdPaletteInfo: false,
-        editReminder: true,
-        navigateToWeek: false,
-      });
+      expect(progress.completedSteps).toEqual([
+        ONBOARDING_STEPS.CREATE_TASK,
+        ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+        ONBOARDING_STEPS.EDIT_DESCRIPTION,
+        ONBOARDING_STEPS.EDIT_REMINDER,
+      ]);
     });
   });
 

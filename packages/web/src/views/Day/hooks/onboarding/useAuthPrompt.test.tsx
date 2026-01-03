@@ -2,7 +2,7 @@ import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import { renderHook, waitFor } from "@testing-library/react";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
-import { getOnboardingProgress } from "@web/views/Onboarding/utils/onboardingStorage.util";
+import { getOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 import { useAuthPrompt } from "./useAuthPrompt";
 
 // Mock useSession
@@ -109,7 +109,7 @@ describe("useAuthPrompt", () => {
   it("should not show auth prompt if dismissed", () => {
     const {
       updateOnboardingProgress,
-    } = require("@web/views/Onboarding/utils/onboardingStorage.util");
+    } = require("@web/views/Onboarding/utils/onboarding.storage.util");
     updateOnboardingProgress({ isAuthDismissed: true });
     const store = createTestStore();
 

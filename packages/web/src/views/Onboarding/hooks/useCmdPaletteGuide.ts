@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   ONBOARDING_STEPS,
+  ONBOARDING_STEP_CONFIGS,
   type OnboardingStepName,
 } from "../constants/onboarding.constants";
 import {
@@ -8,7 +9,7 @@ import {
   getOnboardingProgress,
   markStepCompleted,
   updateOnboardingProgress,
-} from "../utils/onboardingStorage.util";
+} from "../utils/onboarding.storage.util";
 
 export type GuideStep = OnboardingStepName | null;
 
@@ -44,20 +45,13 @@ export function useCmdPaletteGuide(): UseCmdPaletteGuideReturn {
     const completedSteps = progress.completedSteps;
 
     // Determine current step based on completed steps
-    // Find the first incomplete step, or null if all are completed
+    // Find the first incomplete step using ordered configuration
     let nextStep: GuideStep = null;
-    if (!completedSteps.createTask) {
-      nextStep = ONBOARDING_STEPS.CREATE_TASK;
-    } else if (!completedSteps.navigateToNow) {
-      nextStep = ONBOARDING_STEPS.NAVIGATE_TO_NOW;
-    } else if (!completedSteps.editDescription) {
-      nextStep = ONBOARDING_STEPS.EDIT_DESCRIPTION;
-    } else if (!completedSteps.editReminder) {
-      nextStep = ONBOARDING_STEPS.EDIT_REMINDER;
-    } else if (!completedSteps.cmdPaletteInfo) {
-      nextStep = ONBOARDING_STEPS.CMD_PALETTE_INFO;
-    } else if (!completedSteps.navigateToWeek) {
-      nextStep = ONBOARDING_STEPS.NAVIGATE_TO_WEEK;
+    for (const stepConfig of ONBOARDING_STEP_CONFIGS) {
+      if (!completedSteps.includes(stepConfig.id)) {
+        nextStep = stepConfig.id;
+        break;
+      }
     }
 
     if (nextStep !== null) {
@@ -75,7 +69,15 @@ export function useCmdPaletteGuide(): UseCmdPaletteGuideReturn {
     // Mark step as completed in onboarding progress
     markStepCompleted(step);
 
-    if (step === ONBOARDING_STEPS.NAVIGATE_TO_WEEK) {
+    // Find current step index in ordered configuration
+    const currentStepIndex = ONBOARDING_STEP_CONFIGS.findIndex(
+      (config) => config.id === step,
+    );
+
+    // Check if this is the last step
+    const isLastStep = currentStepIndex === ONBOARDING_STEP_CONFIGS.length - 1;
+
+    if (isLastStep) {
       // All steps completed
       if (typeof window !== "undefined") {
         updateOnboardingProgress({ isCompleted: true });
@@ -84,17 +86,9 @@ export function useCmdPaletteGuide(): UseCmdPaletteGuideReturn {
       setIsGuideActive(false);
     } else {
       // Move to next step
-      const stepOrder = [
-        ONBOARDING_STEPS.CREATE_TASK,
-        ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-        ONBOARDING_STEPS.EDIT_DESCRIPTION,
-        ONBOARDING_STEPS.EDIT_REMINDER,
-        ONBOARDING_STEPS.CMD_PALETTE_INFO,
-        ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
-      ];
-      const currentIndex = stepOrder.indexOf(step);
-      if (currentIndex !== -1 && currentIndex < stepOrder.length - 1) {
-        setCurrentStep(stepOrder[currentIndex + 1]);
+      const nextStepConfig = ONBOARDING_STEP_CONFIGS[currentStepIndex + 1];
+      if (nextStepConfig) {
+        setCurrentStep(nextStepConfig.id);
       }
     }
   }, []);
@@ -111,13 +105,10 @@ export function useCmdPaletteGuide(): UseCmdPaletteGuideReturn {
   const completeGuide = useCallback(() => {
     if (typeof window !== "undefined") {
       updateOnboardingProgress({ isCompleted: true });
-      // Mark all steps as completed
-      markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
-      markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
-      markStepCompleted(ONBOARDING_STEPS.EDIT_DESCRIPTION);
-      markStepCompleted(ONBOARDING_STEPS.EDIT_REMINDER);
-      markStepCompleted(ONBOARDING_STEPS.CMD_PALETTE_INFO);
-      markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_WEEK);
+      // Mark all steps as completed using ordered configuration
+      ONBOARDING_STEP_CONFIGS.forEach((config) => {
+        markStepCompleted(config.id);
+      });
     }
     setCurrentStep(null);
     setIsGuideActive(false);

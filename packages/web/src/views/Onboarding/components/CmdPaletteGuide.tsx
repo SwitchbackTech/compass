@@ -3,15 +3,13 @@ import { useLocation } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { useSession } from "@web/common/hooks/useSession";
 import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
-import { ONBOARDING_STEPS } from "../constants/onboarding.constants";
+import {
+  ONBOARDING_STEPS,
+  ONBOARDING_STEP_CONFIGS,
+} from "../constants/onboarding.constants";
 import { useCmdPaletteGuide } from "../hooks/useCmdPaletteGuide";
-import { useStep1Detection } from "../hooks/useStep1Detection";
-import { useStep2Detection } from "../hooks/useStep2Detection";
-import { useStep3Detection } from "../hooks/useStep3Detection";
-import { useStep4Detection } from "../hooks/useStep4Detection";
-import { useStep5Detection } from "../hooks/useStep5Detection";
-import { useStep6Detection } from "../hooks/useStep6Detection";
-import { isStepCompleted } from "../utils/onboardingStorage.util";
+import { useStepDetection } from "../hooks/useStepDetection";
+import { isStepCompleted } from "../utils/onboarding.storage.util";
 
 export const CmdPaletteGuide: React.FC = () => {
   const location = useLocation();
@@ -20,44 +18,22 @@ export const CmdPaletteGuide: React.FC = () => {
     useCmdPaletteGuide();
   const step2CompletionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Step detection hooks - always call them, they check currentStep internally
-  useStep1Detection({
+  // Unified step detection hook - handles all detection types
+  useStepDetection({
     currentStep,
-    onStepComplete: () => completeStep(ONBOARDING_STEPS.CREATE_TASK),
-  });
-
-  // Delay step 2 completion to show instructions on Now view first
-  useStep2Detection({
-    currentStep,
-    onStepComplete: () => {
-      // Add a delay so step 2 instructions show on Now view before moving to step 3
-      if (step2CompletionTimeoutRef.current) {
-        clearTimeout(step2CompletionTimeoutRef.current);
+    onStepComplete: (step) => {
+      // Delay step 2 completion to show instructions on Now view first
+      if (step === ONBOARDING_STEPS.NAVIGATE_TO_NOW) {
+        if (step2CompletionTimeoutRef.current) {
+          clearTimeout(step2CompletionTimeoutRef.current);
+        }
+        step2CompletionTimeoutRef.current = setTimeout(() => {
+          completeStep(step);
+        }, 1500); // Show step 2 instructions for 1.5 seconds
+      } else {
+        completeStep(step);
       }
-      step2CompletionTimeoutRef.current = setTimeout(() => {
-        completeStep(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
-      }, 1500); // Show step 2 instructions for 1.5 seconds
     },
-  });
-
-  useStep3Detection({
-    currentStep,
-    onStepComplete: () => completeStep(ONBOARDING_STEPS.EDIT_DESCRIPTION),
-  });
-
-  useStep4Detection({
-    currentStep,
-    onStepComplete: () => completeStep(ONBOARDING_STEPS.EDIT_REMINDER),
-  });
-
-  useStep5Detection({
-    currentStep,
-    onStepComplete: () => completeStep(ONBOARDING_STEPS.CMD_PALETTE_INFO),
-  });
-
-  useStep6Detection({
-    currentStep,
-    onStepComplete: () => completeStep(ONBOARDING_STEPS.NAVIGATE_TO_WEEK),
   });
 
   // Cleanup timeout on unmount
@@ -207,32 +183,20 @@ export const CmdPaletteGuide: React.FC = () => {
               </h3>
               <p className="text-text-light/80 mb-3 text-sm">{instruction}</p>
               <div className="flex items-center gap-2">
-                {[
-                  ONBOARDING_STEPS.CREATE_TASK,
-                  ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-                  ONBOARDING_STEPS.EDIT_DESCRIPTION,
-                  ONBOARDING_STEPS.EDIT_REMINDER,
-                  ONBOARDING_STEPS.CMD_PALETTE_INFO,
-                  ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
-                ].map((step) => {
-                  const stepOrder = [
-                    ONBOARDING_STEPS.CREATE_TASK,
-                    ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-                    ONBOARDING_STEPS.EDIT_DESCRIPTION,
-                    ONBOARDING_STEPS.EDIT_REMINDER,
-                    ONBOARDING_STEPS.CMD_PALETTE_INFO,
-                    ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
-                  ];
-                  const stepIndex = stepOrder.indexOf(step);
+                {ONBOARDING_STEP_CONFIGS.map((stepConfig) => {
+                  const stepIndex = stepConfig.order;
                   const actualStepIndex = actualStep
-                    ? stepOrder.indexOf(actualStep)
+                    ? (ONBOARDING_STEP_CONFIGS.find(
+                        (config) => config.id === actualStep,
+                      )?.order ?? -1)
                     : -1;
                   const isCompleted =
-                    stepIndex < actualStepIndex || isStepCompleted(step);
-                  const isCurrent = step === actualStep;
+                    stepIndex < actualStepIndex ||
+                    isStepCompleted(stepConfig.id);
+                  const isCurrent = stepConfig.id === actualStep;
                   return (
                     <div
-                      key={step}
+                      key={stepConfig.id}
                       className={`h-2 w-2 rounded-full ${
                         isCompleted
                           ? "bg-accent-primary"
@@ -246,16 +210,11 @@ export const CmdPaletteGuide: React.FC = () => {
                 <span className="text-text-lighter ml-2 text-xs">
                   Step{" "}
                   {actualStep
-                    ? [
-                        ONBOARDING_STEPS.CREATE_TASK,
-                        ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-                        ONBOARDING_STEPS.EDIT_DESCRIPTION,
-                        ONBOARDING_STEPS.EDIT_REMINDER,
-                        ONBOARDING_STEPS.CMD_PALETTE_INFO,
-                        ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
-                      ].indexOf(actualStep) + 1
+                    ? (ONBOARDING_STEP_CONFIGS.find(
+                        (config) => config.id === actualStep,
+                      )?.order ?? -1) + 1
                     : 0}{" "}
-                  of 6
+                  of {ONBOARDING_STEP_CONFIGS.length}
                 </span>
               </div>
             </div>
@@ -308,32 +267,20 @@ export const CmdPaletteGuide: React.FC = () => {
               </h3>
               <p className="text-text-light mb-3 text-sm">{instruction}</p>
               <div className="flex items-center gap-2">
-                {[
-                  ONBOARDING_STEPS.CREATE_TASK,
-                  ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-                  ONBOARDING_STEPS.EDIT_DESCRIPTION,
-                  ONBOARDING_STEPS.EDIT_REMINDER,
-                  ONBOARDING_STEPS.CMD_PALETTE_INFO,
-                  ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
-                ].map((step) => {
-                  const stepOrder = [
-                    ONBOARDING_STEPS.CREATE_TASK,
-                    ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-                    ONBOARDING_STEPS.EDIT_DESCRIPTION,
-                    ONBOARDING_STEPS.EDIT_REMINDER,
-                    ONBOARDING_STEPS.CMD_PALETTE_INFO,
-                    ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
-                  ];
-                  const stepIndex = stepOrder.indexOf(step);
+                {ONBOARDING_STEP_CONFIGS.map((stepConfig) => {
+                  const stepIndex = stepConfig.order;
                   const actualStepIndex = actualStep
-                    ? stepOrder.indexOf(actualStep)
+                    ? (ONBOARDING_STEP_CONFIGS.find(
+                        (config) => config.id === actualStep,
+                      )?.order ?? -1)
                     : -1;
                   const isCompleted =
-                    stepIndex < actualStepIndex || isStepCompleted(step);
-                  const isCurrent = step === actualStep;
+                    stepIndex < actualStepIndex ||
+                    isStepCompleted(stepConfig.id);
+                  const isCurrent = stepConfig.id === actualStep;
                   return (
                     <div
-                      key={step}
+                      key={stepConfig.id}
                       className={`h-2 w-2 rounded-full ${
                         isCompleted
                           ? "bg-accent-primary"
@@ -347,16 +294,11 @@ export const CmdPaletteGuide: React.FC = () => {
                 <span className="text-text-lighter ml-2 text-xs">
                   Step{" "}
                   {actualStep
-                    ? [
-                        ONBOARDING_STEPS.CREATE_TASK,
-                        ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-                        ONBOARDING_STEPS.EDIT_DESCRIPTION,
-                        ONBOARDING_STEPS.EDIT_REMINDER,
-                        ONBOARDING_STEPS.CMD_PALETTE_INFO,
-                        ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
-                      ].indexOf(actualStep) + 1
+                    ? (ONBOARDING_STEP_CONFIGS.find(
+                        (config) => config.id === actualStep,
+                      )?.order ?? -1) + 1
                     : 0}{" "}
-                  of 6
+                  of {ONBOARDING_STEP_CONFIGS.length}
                 </span>
               </div>
             </div>
@@ -385,32 +327,20 @@ export const CmdPaletteGuide: React.FC = () => {
               </h3>
               <p className="text-text-light/80 mb-3 text-sm">{instruction}</p>
               <div className="flex items-center gap-2">
-                {[
-                  ONBOARDING_STEPS.CREATE_TASK,
-                  ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-                  ONBOARDING_STEPS.EDIT_DESCRIPTION,
-                  ONBOARDING_STEPS.EDIT_REMINDER,
-                  ONBOARDING_STEPS.CMD_PALETTE_INFO,
-                  ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
-                ].map((step) => {
-                  const stepOrder = [
-                    ONBOARDING_STEPS.CREATE_TASK,
-                    ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-                    ONBOARDING_STEPS.EDIT_DESCRIPTION,
-                    ONBOARDING_STEPS.EDIT_REMINDER,
-                    ONBOARDING_STEPS.CMD_PALETTE_INFO,
-                    ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
-                  ];
-                  const stepIndex = stepOrder.indexOf(step);
+                {ONBOARDING_STEP_CONFIGS.map((stepConfig) => {
+                  const stepIndex = stepConfig.order;
                   const actualStepIndex = actualStep
-                    ? stepOrder.indexOf(actualStep)
+                    ? (ONBOARDING_STEP_CONFIGS.find(
+                        (config) => config.id === actualStep,
+                      )?.order ?? -1)
                     : -1;
                   const isCompleted =
-                    stepIndex < actualStepIndex || isStepCompleted(step);
-                  const isCurrent = step === actualStep;
+                    stepIndex < actualStepIndex ||
+                    isStepCompleted(stepConfig.id);
+                  const isCurrent = stepConfig.id === actualStep;
                   return (
                     <div
-                      key={step}
+                      key={stepConfig.id}
                       className={`h-2 w-2 rounded-full ${
                         isCompleted
                           ? "bg-accent-primary"
@@ -424,16 +354,11 @@ export const CmdPaletteGuide: React.FC = () => {
                 <span className="text-text-lighter ml-2 text-xs">
                   Step{" "}
                   {actualStep
-                    ? [
-                        ONBOARDING_STEPS.CREATE_TASK,
-                        ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-                        ONBOARDING_STEPS.EDIT_DESCRIPTION,
-                        ONBOARDING_STEPS.EDIT_REMINDER,
-                        ONBOARDING_STEPS.CMD_PALETTE_INFO,
-                        ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
-                      ].indexOf(actualStep) + 1
+                    ? (ONBOARDING_STEP_CONFIGS.find(
+                        (config) => config.id === actualStep,
+                      )?.order ?? -1) + 1
                     : 0}{" "}
-                  of 6
+                  of {ONBOARDING_STEP_CONFIGS.length}
                 </span>
               </div>
             </div>

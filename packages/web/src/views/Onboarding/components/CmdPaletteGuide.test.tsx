@@ -9,11 +9,8 @@ import {
 } from "@web/common/utils/storage/storage.util";
 import { ONBOARDING_STEPS } from "../constants/onboarding.constants";
 import { useCmdPaletteGuide } from "../hooks/useCmdPaletteGuide";
-import { useStep1Detection } from "../hooks/useStep1Detection";
-import { useStep2Detection } from "../hooks/useStep2Detection";
-import { useStep3Detection } from "../hooks/useStep3Detection";
-import { useStep4Detection } from "../hooks/useStep4Detection";
-import { markStepCompleted } from "../utils/onboardingStorage.util";
+import { useStepDetection } from "../hooks/useStepDetection";
+import { markStepCompleted } from "../utils/onboarding.storage.util";
 import { CmdPaletteGuide } from "./CmdPaletteGuide";
 
 // Mock the hooks before importing the component
@@ -22,10 +19,7 @@ jest.mock("react-router-dom", () => ({
 }));
 jest.mock("@web/common/hooks/useSession");
 jest.mock("../hooks/useCmdPaletteGuide");
-jest.mock("../hooks/useStep1Detection");
-jest.mock("../hooks/useStep2Detection");
-jest.mock("../hooks/useStep3Detection");
-jest.mock("../hooks/useStep4Detection");
+jest.mock("../hooks/useStepDetection");
 jest.mock("@web/common/utils/storage/storage.util", () => ({
   getDateKey: jest.fn(() => "2024-01-01"),
   loadTasksFromStorage: jest.fn(() => []),
@@ -36,17 +30,8 @@ const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
 const mockUseCmdPaletteGuide = useCmdPaletteGuide as jest.MockedFunction<
   typeof useCmdPaletteGuide
 >;
-const mockUseStep1Detection = useStep1Detection as jest.MockedFunction<
-  typeof useStep1Detection
->;
-const mockUseStep2Detection = useStep2Detection as jest.MockedFunction<
-  typeof useStep2Detection
->;
-const mockUseStep3Detection = useStep3Detection as jest.MockedFunction<
-  typeof useStep3Detection
->;
-const mockUseStep4Detection = useStep4Detection as jest.MockedFunction<
-  typeof useStep4Detection
+const mockUseStepDetection = useStepDetection as jest.MockedFunction<
+  typeof useStepDetection
 >;
 
 const mockGetDateKey = getDateKey as jest.MockedFunction<typeof getDateKey>;
@@ -58,10 +43,7 @@ describe("CmdPaletteGuide", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     localStorage.clear();
-    mockUseStep1Detection.mockImplementation(() => {});
-    mockUseStep2Detection.mockImplementation(() => {});
-    mockUseStep3Detection.mockImplementation(() => {});
-    mockUseStep4Detection.mockImplementation(() => {});
+    mockUseStepDetection.mockImplementation(() => {});
     mockUseSession.mockReturnValue({ authenticated: false });
     mockGetDateKey.mockReturnValue("2024-01-01");
     mockLoadTasksFromStorage.mockReturnValue([]); // No tasks by default
@@ -454,7 +436,7 @@ describe("CmdPaletteGuide", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("should call all step detection hooks", () => {
+  it("should call unified step detection hook", () => {
     mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
     mockUseCmdPaletteGuide.mockReturnValue({
       currentStep: ONBOARDING_STEPS.CREATE_TASK,
@@ -466,13 +448,10 @@ describe("CmdPaletteGuide", () => {
 
     render(<CmdPaletteGuide />);
 
-    expect(mockUseStep1Detection).toHaveBeenCalled();
-    expect(mockUseStep2Detection).toHaveBeenCalled();
-    expect(mockUseStep3Detection).toHaveBeenCalled();
-    expect(mockUseStep4Detection).toHaveBeenCalled();
+    expect(mockUseStepDetection).toHaveBeenCalled();
   });
 
-  it("should pass correct props to step detection hooks", () => {
+  it("should pass correct props to unified step detection hook", () => {
     const completeStep = jest.fn();
     mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
     mockUseCmdPaletteGuide.mockReturnValue({
@@ -485,22 +464,7 @@ describe("CmdPaletteGuide", () => {
 
     render(<CmdPaletteGuide />);
 
-    expect(mockUseStep1Detection).toHaveBeenCalledWith({
-      currentStep: ONBOARDING_STEPS.CREATE_TASK,
-      onStepComplete: expect.any(Function),
-    });
-
-    expect(mockUseStep2Detection).toHaveBeenCalledWith({
-      currentStep: ONBOARDING_STEPS.CREATE_TASK,
-      onStepComplete: expect.any(Function),
-    });
-
-    expect(mockUseStep3Detection).toHaveBeenCalledWith({
-      currentStep: ONBOARDING_STEPS.CREATE_TASK,
-      onStepComplete: expect.any(Function),
-    });
-
-    expect(mockUseStep4Detection).toHaveBeenCalledWith({
+    expect(mockUseStepDetection).toHaveBeenCalledWith({
       currentStep: ONBOARDING_STEPS.CREATE_TASK,
       onStepComplete: expect.any(Function),
     });

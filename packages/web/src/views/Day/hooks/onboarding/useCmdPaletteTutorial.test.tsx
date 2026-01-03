@@ -5,7 +5,7 @@ import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import {
   getOnboardingProgress,
   updateOnboardingProgress,
-} from "@web/views/Onboarding/utils/onboardingStorage.util";
+} from "@web/views/Onboarding/utils/onboarding.storage.util";
 import { useCmdPaletteTutorial } from "./useCmdPaletteTutorial";
 
 // Mock useSession

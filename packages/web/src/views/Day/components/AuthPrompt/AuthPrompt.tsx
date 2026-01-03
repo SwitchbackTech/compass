@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { updateOnboardingProgress } from "@web/views/Onboarding/utils/onboardingStorage.util";
+import { updateOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 interface AuthPromptProps {
   onDismiss: () => void;

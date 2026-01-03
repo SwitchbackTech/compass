@@ -1,7 +1,7 @@
 import { BrowserRouter } from "react-router-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { getOnboardingProgress } from "@web/views/Onboarding/utils/onboardingStorage.util";
+import { getOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 import { AuthPrompt } from "./AuthPrompt";
 
 const renderWithRouter = (component: React.ReactElement) => {

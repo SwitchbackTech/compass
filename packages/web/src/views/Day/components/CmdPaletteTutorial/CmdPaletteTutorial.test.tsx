@@ -3,7 +3,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
-import { getOnboardingProgress } from "@web/views/Onboarding/utils/onboardingStorage.util";
+import { getOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 import { CmdPaletteTutorial } from "./CmdPaletteTutorial";
 
 const createTestStore = (isCmdPaletteOpen = false) => {
