@@ -51,7 +51,6 @@ export const ONBOARDING_STEPS = {
   CREATE_TASK: "createTask",
   NAVIGATE_TO_NOW: "navigateToNow",
   EDIT_DESCRIPTION: "editDescription",
-  CMD_PALETTE_INFO: "cmdPaletteInfo",
   EDIT_REMINDER: "editReminder",
   NAVIGATE_TO_WEEK: "navigateToWeek",
 } as const;
@@ -60,7 +59,6 @@ export type OnboardingStepName =
   | "createTask"
   | "navigateToNow"
   | "editDescription"
-  | "cmdPaletteInfo"
   | "editReminder"
   | "navigateToWeek";
 
@@ -71,8 +69,7 @@ export type StepDetectionType =
   | "task-count"
   | "route"
   | "task-description"
-  | "reminder-poll"
-  | "redux-state";
+  | "reminder-poll";
 
 /**
  * Configuration for route-based detection
@@ -82,20 +79,13 @@ export interface RouteDetectionConfig {
 }
 
 /**
- * Configuration for Redux state-based detection
- */
-export interface ReduxDetectionConfig {
-  selector: (state: unknown) => boolean;
-}
-
-/**
  * Step configuration with order and detection metadata
  */
 export interface OnboardingStepConfig {
   id: OnboardingStepName;
   order: number;
   detectionType: StepDetectionType;
-  detectionConfig?: RouteDetectionConfig | ReduxDetectionConfig;
+  detectionConfig?: RouteDetectionConfig;
 }
 
 /**
@@ -125,19 +115,8 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
     detectionType: "reminder-poll",
   },
   {
-    id: ONBOARDING_STEPS.CMD_PALETTE_INFO,
-    order: 4,
-    detectionType: "redux-state",
-    detectionConfig: {
-      selector: () => {
-        // This will be handled by the hook using useAppSelector
-        return false; // Placeholder, actual selector passed at runtime
-      },
-    },
-  },
-  {
     id: ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
-    order: 5,
+    order: 4,
     detectionType: "route",
     detectionConfig: { route: "/" },
   },

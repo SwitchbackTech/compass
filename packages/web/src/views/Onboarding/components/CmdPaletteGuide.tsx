@@ -45,7 +45,7 @@ export const CmdPaletteGuide: React.FC = () => {
     };
   }, []);
 
-  // Detect current view
+  // Detect current view (only needed for welcome message and overlay positioning)
   const isDayView =
     location.pathname === ROOT_ROUTES.DAY ||
     location.pathname.startsWith(`${ROOT_ROUTES.DAY}/`);
@@ -78,23 +78,22 @@ export const CmdPaletteGuide: React.FC = () => {
     return "Welcome to Compass";
   }, [isDayView, isNowView]);
 
+  // Check if navigateToWeek step is completed (show success message on any view)
+  const showSuccessMessage = isStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_WEEK);
+
   // Determine if we should show the overlay
-  // Show step 1 on any view if it's not completed
-  // Show step 2/3/4/5 on Now view, step 1/2 on Day view
-  // Show step 6 on any view (week view)
+  // Show success message if final step is completed, OR show guide if active with a step
+  // But respect view restrictions: step 1 on any view, step 2 on day/now, steps 3/4 only on now, step 5 on any
   const shouldShowOverlay =
-    isGuideActive &&
-    actualStep !== null &&
-    ((actualStep === ONBOARDING_STEPS.CREATE_TASK && !authenticated) ||
-      (isDayView &&
-        actualStep === ONBOARDING_STEPS.NAVIGATE_TO_NOW &&
-        !authenticated) ||
-      (isNowView &&
-        (actualStep === ONBOARDING_STEPS.NAVIGATE_TO_NOW ||
-          actualStep === ONBOARDING_STEPS.EDIT_DESCRIPTION ||
-          actualStep === ONBOARDING_STEPS.EDIT_REMINDER ||
-          actualStep === ONBOARDING_STEPS.CMD_PALETTE_INFO)) ||
-      actualStep === ONBOARDING_STEPS.NAVIGATE_TO_WEEK);
+    showSuccessMessage ||
+    (isGuideActive &&
+      actualStep !== null &&
+      ((actualStep === ONBOARDING_STEPS.CREATE_TASK && !authenticated) ||
+        (actualStep === ONBOARDING_STEPS.NAVIGATE_TO_NOW &&
+          ((isDayView && !authenticated) || isNowView)) ||
+        (actualStep === ONBOARDING_STEPS.EDIT_DESCRIPTION && isNowView) ||
+        (actualStep === ONBOARDING_STEPS.EDIT_REMINDER && isNowView) ||
+        actualStep === ONBOARDING_STEPS.NAVIGATE_TO_WEEK));
 
   if (!shouldShowOverlay) {
     return null;
@@ -132,15 +131,6 @@ export const CmdPaletteGuide: React.FC = () => {
         to edit the description
       </>
     ),
-    [ONBOARDING_STEPS.CMD_PALETTE_INFO]: (
-      <>
-        If you ever forget a shortcut, just type{" "}
-        <kbd className="bg-bg-secondary text-text-light border-border-primary rounded border px-1.5 py-0.5 font-mono text-xs">
-          {modifierKeyDisplay} + K
-        </kbd>{" "}
-        to open the command palette
-      </>
-    ),
     [ONBOARDING_STEPS.EDIT_REMINDER]: (
       <>
         Press{" "}
@@ -161,212 +151,116 @@ export const CmdPaletteGuide: React.FC = () => {
     ),
   };
 
+  // Success message for when user completes navigateToWeek and returns to day view
+  const successMessage = (
+    <>
+      Great job! You can type{" "}
+      <kbd className="bg-bg-secondary text-text-light border-border-primary rounded border px-1.5 py-0.5 font-mono text-xs">
+        {modifierKeyDisplay} + K
+      </kbd>{" "}
+      anywhere to open the command palette. Ready to get started?
+    </>
+  );
+
   const instruction =
     actualStep !== null
       ? stepInstructions[actualStep as keyof typeof stepInstructions]
       : null;
 
-  // Day view or step 1: centered overlay with progress indicators
-  if (
-    (isDayView &&
-      (actualStep === ONBOARDING_STEPS.CREATE_TASK ||
-        actualStep === ONBOARDING_STEPS.NAVIGATE_TO_NOW)) ||
-    actualStep === ONBOARDING_STEPS.CREATE_TASK
-  ) {
-    return (
-      <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 transform">
-        <div className="bg-bg-primary border-border-primary mx-4 max-w-md rounded-lg border p-4 shadow-lg">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <h3 className="text-text-light mb-2 text-lg font-semibold">
-                {welcomeMessage}
-              </h3>
-              <p className="text-text-light/80 mb-3 text-sm">{instruction}</p>
-              <div className="flex items-center gap-2">
-                {ONBOARDING_STEP_CONFIGS.map((stepConfig) => {
-                  const stepIndex = stepConfig.order;
-                  const actualStepIndex = actualStep
-                    ? (ONBOARDING_STEP_CONFIGS.find(
-                        (config) => config.id === actualStep,
-                      )?.order ?? -1)
-                    : -1;
-                  const isCompleted =
-                    stepIndex < actualStepIndex ||
-                    isStepCompleted(stepConfig.id);
-                  const isCurrent = stepConfig.id === actualStep;
-                  return (
-                    <div
-                      key={stepConfig.id}
-                      className={`h-2 w-2 rounded-full ${
-                        isCompleted
-                          ? "bg-accent-primary"
-                          : isCurrent
-                            ? "bg-accent-primary opacity-50"
-                            : "bg-border-primary"
-                      }`}
-                    />
-                  );
-                })}
-                <span className="text-text-lighter ml-2 text-xs">
-                  Step{" "}
-                  {actualStep
-                    ? (ONBOARDING_STEP_CONFIGS.find(
-                        (config) => config.id === actualStep,
-                      )?.order ?? -1) + 1
-                    : 0}{" "}
-                  of {ONBOARDING_STEP_CONFIGS.length}
-                </span>
-              </div>
-            </div>
-            <button
-              onClick={skipGuide}
-              className="text-text-light/60 hover:text-text-light flex-shrink-0 transition-colors"
-              aria-label="Skip guide"
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Determine overlay content and positioning
+  const isNowViewOverlay = isNowView && !showSuccessMessage;
+  const displayTitle = showSuccessMessage
+    ? "Welcome to Compass"
+    : welcomeMessage;
+  const displayContent = showSuccessMessage ? successMessage : instruction;
+  const stepNumber = showSuccessMessage
+    ? null
+    : actualStep
+      ? (ONBOARDING_STEP_CONFIGS.find((config) => config.id === actualStep)
+          ?.order ?? -1) + 1
+      : 0;
+  const stepText = showSuccessMessage
+    ? "All steps completed"
+    : `Step ${stepNumber} of ${ONBOARDING_STEP_CONFIGS.length}`;
 
-  // Now view: right-aligned overlay with step indicators
-  if (
-    isNowView &&
-    (actualStep === ONBOARDING_STEPS.NAVIGATE_TO_NOW ||
-      actualStep === ONBOARDING_STEPS.EDIT_DESCRIPTION ||
-      actualStep === ONBOARDING_STEPS.EDIT_REMINDER ||
-      actualStep === ONBOARDING_STEPS.CMD_PALETTE_INFO)
-  ) {
-    return (
+  // Single unified overlay component
+  const overlayContent = (
+    <div
+      className={
+        isNowViewOverlay
+          ? "pointer-events-none fixed inset-0 z-50"
+          : "fixed bottom-6 left-1/2 z-40 -translate-x-1/2 transform"
+      }
+      style={isNowViewOverlay ? { zIndex: 9999 } : undefined}
+    >
       <div
-        className="pointer-events-none fixed inset-0 z-50"
-        style={{ zIndex: 9999 }}
+        className={`bg-bg-primary border-border-primary rounded-lg border shadow-lg ${
+          isNowViewOverlay
+            ? "pointer-events-auto fixed right-6 bottom-6 max-w-sm p-6"
+            : "mx-4 max-w-md p-4"
+        }`}
+        style={isNowViewOverlay ? { zIndex: 10000 } : undefined}
       >
         <div
-          className="bg-bg-primary border-border-primary pointer-events-auto fixed right-6 bottom-6 max-w-sm rounded-lg border p-6 shadow-lg"
-          style={{ zIndex: 10000 }}
+          className={
+            isNowViewOverlay
+              ? "mb-4 flex items-start justify-between"
+              : "flex items-start justify-between gap-4"
+          }
         >
-          <div className="mb-4 flex items-start justify-between">
-            <div className="flex-1">
-              <h3 className="text-text-light mb-2 text-lg font-semibold">
-                {welcomeMessage}
-              </h3>
-              <p className="text-text-light mb-3 text-sm">{instruction}</p>
-              <div className="flex items-center gap-2">
-                {ONBOARDING_STEP_CONFIGS.map((stepConfig) => {
-                  const stepIndex = stepConfig.order;
-                  const actualStepIndex = actualStep
-                    ? (ONBOARDING_STEP_CONFIGS.find(
-                        (config) => config.id === actualStep,
-                      )?.order ?? -1)
-                    : -1;
-                  const isCompleted =
-                    stepIndex < actualStepIndex ||
-                    isStepCompleted(stepConfig.id);
-                  const isCurrent = stepConfig.id === actualStep;
-                  return (
-                    <div
-                      key={stepConfig.id}
-                      className={`h-2 w-2 rounded-full ${
-                        isCompleted
-                          ? "bg-accent-primary"
-                          : isCurrent
-                            ? "bg-accent-primary opacity-50"
-                            : "bg-border-primary"
-                      }`}
-                    />
-                  );
-                })}
-                <span className="text-text-lighter ml-2 text-xs">
-                  Step{" "}
-                  {actualStep
-                    ? (ONBOARDING_STEP_CONFIGS.find(
-                        (config) => config.id === actualStep,
-                      )?.order ?? -1) + 1
-                    : 0}{" "}
-                  of {ONBOARDING_STEP_CONFIGS.length}
-                </span>
-              </div>
-            </div>
-            <button
-              onClick={skipGuide}
-              className="text-text-lighter hover:text-text-light ml-4 text-sm font-medium"
-              aria-label="Skip guide"
+          <div className="flex-1">
+            <h3 className="text-text-light mb-2 text-lg font-semibold">
+              {displayTitle}
+            </h3>
+            <p
+              className={`mb-3 text-sm ${
+                isNowViewOverlay ? "text-text-light" : "text-text-light/80"
+              }`}
             >
-              Skip
-            </button>
+              {displayContent}
+            </p>
+            <div className="flex items-center gap-2">
+              {ONBOARDING_STEP_CONFIGS.map((stepConfig) => {
+                const stepIndex = stepConfig.order;
+                const actualStepIndex = actualStep
+                  ? (ONBOARDING_STEP_CONFIGS.find(
+                      (config) => config.id === actualStep,
+                    )?.order ?? -1)
+                  : -1;
+                const isCompleted =
+                  showSuccessMessage ||
+                  stepIndex < actualStepIndex ||
+                  isStepCompleted(stepConfig.id);
+                const isCurrent =
+                  !showSuccessMessage && stepConfig.id === actualStep;
+                return (
+                  <div
+                    key={stepConfig.id}
+                    className={`h-2 w-2 rounded-full ${
+                      isCompleted
+                        ? "bg-accent-primary"
+                        : isCurrent
+                          ? "bg-accent-primary opacity-50"
+                          : "bg-border-primary"
+                    }`}
+                  />
+                );
+              })}
+              <span className="text-text-lighter ml-2 text-xs">{stepText}</span>
+            </div>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Week view: show step 6 overlay
-  if (actualStep === ONBOARDING_STEPS.NAVIGATE_TO_WEEK) {
-    return (
-      <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 transform">
-        <div className="bg-bg-primary border-border-primary mx-4 max-w-md rounded-lg border p-4 shadow-lg">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <h3 className="text-text-light mb-2 text-lg font-semibold">
-                Welcome to Compass
-              </h3>
-              <p className="text-text-light/80 mb-3 text-sm">{instruction}</p>
-              <div className="flex items-center gap-2">
-                {ONBOARDING_STEP_CONFIGS.map((stepConfig) => {
-                  const stepIndex = stepConfig.order;
-                  const actualStepIndex = actualStep
-                    ? (ONBOARDING_STEP_CONFIGS.find(
-                        (config) => config.id === actualStep,
-                      )?.order ?? -1)
-                    : -1;
-                  const isCompleted =
-                    stepIndex < actualStepIndex ||
-                    isStepCompleted(stepConfig.id);
-                  const isCurrent = stepConfig.id === actualStep;
-                  return (
-                    <div
-                      key={stepConfig.id}
-                      className={`h-2 w-2 rounded-full ${
-                        isCompleted
-                          ? "bg-accent-primary"
-                          : isCurrent
-                            ? "bg-accent-primary opacity-50"
-                            : "bg-border-primary"
-                      }`}
-                    />
-                  );
-                })}
-                <span className="text-text-lighter ml-2 text-xs">
-                  Step{" "}
-                  {actualStep
-                    ? (ONBOARDING_STEP_CONFIGS.find(
-                        (config) => config.id === actualStep,
-                      )?.order ?? -1) + 1
-                    : 0}{" "}
-                  of {ONBOARDING_STEP_CONFIGS.length}
-                </span>
-              </div>
-            </div>
-            <button
-              onClick={skipGuide}
-              className="text-text-light/60 hover:text-text-light flex-shrink-0 transition-colors"
-              aria-label="Skip guide"
-            >
+          <button
+            onClick={skipGuide}
+            className={`flex-shrink-0 transition-colors ${
+              isNowViewOverlay
+                ? "text-text-lighter hover:text-text-light ml-4 text-sm font-medium"
+                : "text-text-light/60 hover:text-text-light"
+            }`}
+            aria-label={showSuccessMessage ? "Dismiss" : "Skip guide"}
+          >
+            {isNowViewOverlay ? (
+              "Skip"
+            ) : (
               <svg
                 className="h-5 w-5"
                 fill="none"
@@ -380,12 +274,12 @@ export const CmdPaletteGuide: React.FC = () => {
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
-            </button>
-          </div>
+            )}
+          </button>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
 
-  return null;
+  return overlayContent;
 };

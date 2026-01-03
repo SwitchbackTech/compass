@@ -8,8 +8,6 @@ import {
   getDateKey,
   loadTasksFromStorage,
 } from "@web/common/utils/storage/storage.util";
-import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
 import {
   ONBOARDING_STEP_CONFIGS,
   type OnboardingStepName,
@@ -30,7 +28,6 @@ export function useStepDetection({
   onStepComplete,
 }: UseStepDetectionProps): void {
   const location = useLocation();
-  const isCmdPaletteOpen = useAppSelector(selectIsCmdPaletteOpen);
 
   // Refs for tracking state across detection types
   const initialTaskCountRef = useRef<number | null>(null);
@@ -227,18 +224,10 @@ export function useStepDetection({
         return;
       }
 
-      case "redux-state": {
-        // For cmd palette, check if it's open
-        if (currentStep === "cmdPaletteInfo" && isCmdPaletteOpen) {
-          onStepComplete(currentStep);
-        }
-        return;
-      }
-
       default:
         return;
     }
-  }, [currentStep, location.pathname, isCmdPaletteOpen, onStepComplete]);
+  }, [currentStep, location.pathname, onStepComplete]);
 
   // Reset refs when step changes
   useEffect(() => {

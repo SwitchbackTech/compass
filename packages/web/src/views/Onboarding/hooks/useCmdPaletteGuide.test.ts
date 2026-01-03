@@ -97,7 +97,7 @@ describe("useCmdPaletteGuide", () => {
     expect(loadCompletedSteps()).toContain(ONBOARDING_STEPS.EDIT_DESCRIPTION);
   });
 
-  it("should complete guide when step 6 is completed", () => {
+  it("should complete guide when step 5 is completed", () => {
     const { result } = renderHook(() => useCmdPaletteGuide());
 
     act(() => {
@@ -114,10 +114,6 @@ describe("useCmdPaletteGuide", () => {
 
     act(() => {
       result.current.completeStep(ONBOARDING_STEPS.EDIT_REMINDER);
-    });
-
-    act(() => {
-      result.current.completeStep(ONBOARDING_STEPS.CMD_PALETTE_INFO);
     });
 
     expect(result.current.currentStep).toBe(ONBOARDING_STEPS.NAVIGATE_TO_WEEK);
@@ -175,7 +171,6 @@ describe("useCmdPaletteGuide", () => {
       ONBOARDING_STEPS.NAVIGATE_TO_NOW,
       ONBOARDING_STEPS.EDIT_DESCRIPTION,
       ONBOARDING_STEPS.EDIT_REMINDER,
-      ONBOARDING_STEPS.CMD_PALETTE_INFO,
       ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
     ]);
   });

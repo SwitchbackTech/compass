@@ -7,7 +7,6 @@ const CompletedStepsSchema = z.array(
     "createTask",
     "navigateToNow",
     "editDescription",
-    "cmdPaletteInfo",
     "editReminder",
     "navigateToWeek",
   ]),
