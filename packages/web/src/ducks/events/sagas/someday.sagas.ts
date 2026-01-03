@@ -8,7 +8,6 @@ import { setSomedayEventsOrder } from "@web/common/utils/event/someday.event.uti
 import {
   deleteEventFromIndexedDB,
   getEventsFromIndexedDB,
-  saveEventToIndexedDB,
   updateEventInIndexedDB,
 } from "@web/common/utils/storage/indexeddb.util";
 import { EventApi } from "@web/ducks/events/event.api";
