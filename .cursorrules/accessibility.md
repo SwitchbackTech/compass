@@ -1,5 +1,5 @@
 ---
-description: Accessibility standards - semantic HTML, keyboard navigation, ARIA labels, refer to .claude/skills/a11y-audit/SKILL.md or .codex/skills/a11y-audit/SKILL.md for comprehensive checklist
+description: Accessibility standards - semantic HTML, keyboard navigation, ARIA labels, refer to .codex/skills/a11y-audit/SKILL.md for comprehensive checklist
 globs:
   - "packages/web/**/*.{ts,tsx}"
 ---
@@ -23,7 +23,7 @@ Follow accessibility best practices to ensure the application is usable by every
 ## Detailed Guidelines
 
 Refer to the comprehensive accessibility audit checklist in:
-**`.claude/skills/a11y-audit/SKILL.md`** or **`.codex/skills/a11y-audit/SKILL.md`**
+**`.codex/skills/a11y-audit/SKILL.md`**
 
 This skill provides:
 
@@ -131,7 +131,7 @@ This aligns with the testing standards in `testing.md`.
 ## Audit Checklist Reference
 
 For comprehensive review of UI changes, refer to:
-**`.claude/skills/a11y-audit/SKILL.md`** or **`.codex/skills/a11y-audit/SKILL.md`**
+**`.codex/skills/a11y-audit/SKILL.md`**
 
 Key sections:
 
@@ -157,4 +157,4 @@ Review these for accessibility patterns:
 - Support keyboard navigation (Tab, Enter, Space)
 - Use ARIA when needed (`aria-expanded`, `aria-label`, `role`)
 - Test with semantic queries (`getByRole`, `getByLabelText`)
-- Refer to `.claude/skills/a11y-audit/SKILL.md` or `.codex/skills/a11y-audit/SKILL.md` for detailed guidance
+- Refer to `.codex/skills/a11y-audit/SKILL.md` for detailed guidance
