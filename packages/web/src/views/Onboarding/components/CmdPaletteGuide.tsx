@@ -17,6 +17,8 @@ export const CmdPaletteGuide: React.FC = () => {
   const { currentStep, isGuideActive, completeStep, skipGuide } =
     useCmdPaletteGuide();
   const step2CompletionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isSuccessMessageDismissed, setIsSuccessMessageDismissed] =
+    React.useState(false);
 
   // Unified step detection hook - handles all detection types
   useStepDetection({
@@ -79,7 +81,10 @@ export const CmdPaletteGuide: React.FC = () => {
   }, [isDayView, isNowView]);
 
   // Check if navigateToWeek step is completed (show success message on any view)
-  const showSuccessMessage = isStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_WEEK);
+  // But only if the success message hasn't been dismissed
+  const showSuccessMessage =
+    isStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_WEEK) &&
+    !isSuccessMessageDismissed;
 
   // Determine if we should show the overlay
   // Show success message if final step is completed, OR show guide if active with a step
@@ -250,7 +255,14 @@ export const CmdPaletteGuide: React.FC = () => {
             </div>
           </div>
           <button
-            onClick={skipGuide}
+            onClick={() => {
+              if (showSuccessMessage) {
+                setIsSuccessMessageDismissed(true);
+                skipGuide();
+              } else {
+                skipGuide();
+              }
+            }}
             className={`flex-shrink-0 transition-colors ${
               isNowViewOverlay
                 ? "text-text-lighter hover:text-text-light ml-4 text-sm font-medium"

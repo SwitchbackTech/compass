@@ -19,6 +19,7 @@ import { useWeek } from "@web/views/Calendar/hooks/useWeek";
 import { Styled, StyledCalendar } from "@web/views/Calendar/styled";
 import { CmdPalette } from "@web/views/CmdPalette";
 import { RecurringEventUpdateScopeDialog } from "@web/views/Forms/EventForm/RecurringEventUpdateScopeDialog";
+import { CmdPaletteGuide } from "@web/views/Onboarding/components/CmdPaletteGuide";
 
 export const CalendarView = () => {
   useRefetch();
@@ -58,6 +59,7 @@ export const CalendarView = () => {
   return (
     <Styled id="cal">
       <CmdPalette {...shortcutProps} />
+      <CmdPaletteGuide />
       <Dedication />
 
       <DraftProvider

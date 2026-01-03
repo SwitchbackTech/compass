@@ -215,10 +215,12 @@ export function useStepDetection({
 
         // Check if we're on the target route
         if (
-          currentPath === targetRoute ||
-          (targetRoute === ROOT_ROUTES.NOW &&
-            currentPath.startsWith(`${ROOT_ROUTES.NOW}/`))
+          !hasCompletedRef.current &&
+          (currentPath === targetRoute ||
+            (targetRoute === ROOT_ROUTES.NOW &&
+              currentPath.startsWith(`${ROOT_ROUTES.NOW}/`)))
         ) {
+          hasCompletedRef.current = true;
           onStepComplete(currentStep);
         }
         return;
