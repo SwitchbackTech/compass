@@ -2,6 +2,8 @@ import { fireEvent, screen } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { NowCmdPalette } from "@web/views/Now/components/NowCmdPalette";
+import { ONBOARDING_RESTART_EVENT } from "@web/views/Onboarding/constants/onboarding.constants";
+import { resetOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 // Mock pressKey
 jest.mock("@web/common/utils/dom/event-emitter.util", () => ({
@@ -13,9 +15,11 @@ jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
   onEventTargetVisibility: (cb: () => void) => () => cb(),
 }));
 
-// Mock window.open
-const mockOpen = jest.fn();
-window.open = mockOpen;
+// Mock resetOnboardingProgress
+jest.mock("@web/views/Onboarding/utils/onboarding.storage.util", () => ({
+  ...jest.requireActual("@web/views/Onboarding/utils/onboarding.storage.util"),
+  resetOnboardingProgress: jest.fn(),
+}));
 
 describe("NowCmdPalette", () => {
   const initialState = {
@@ -81,9 +85,16 @@ describe("NowCmdPalette", () => {
     expect(pressKey).toHaveBeenCalledWith("z");
   });
 
-  it("should open onboarding in new tab when 'Re-do onboarding' is clicked", () => {
+  it("should reset onboarding and dispatch restart event when 'Re-do onboarding' is clicked", () => {
+    const mockDispatchEvent = jest.spyOn(window, "dispatchEvent");
     render(<NowCmdPalette />, { state: initialState });
     fireEvent.click(screen.getByText("Re-do onboarding"));
-    expect(mockOpen).toHaveBeenCalledWith("/onboarding", "_blank");
+    expect(resetOnboardingProgress).toHaveBeenCalled();
+    expect(mockDispatchEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: ONBOARDING_RESTART_EVENT,
+      }),
+    );
+    mockDispatchEvent.mockRestore();
   });
 });

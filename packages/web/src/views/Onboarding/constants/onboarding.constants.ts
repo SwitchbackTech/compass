@@ -121,3 +121,9 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
     detectionConfig: { route: "/" },
   },
 ] as const;
+
+/**
+ * Custom event name for restarting the onboarding guide
+ * Dispatched when user clicks "Re-do onboarding" in command palette
+ */
+export const ONBOARDING_RESTART_EVENT = "compass:restart-onboarding" as const;

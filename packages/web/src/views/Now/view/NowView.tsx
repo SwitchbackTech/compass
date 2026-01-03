@@ -7,7 +7,6 @@ import { Header } from "@web/views/Day/components/Header/Header";
 import { NowCmdPalette } from "@web/views/Now/components/NowCmdPalette";
 import { NowViewProvider } from "@web/views/Now/context/NowViewProvider";
 import { NowViewContent } from "@web/views/Now/view/NowViewContent";
-import { CmdPaletteGuide } from "@web/views/Onboarding/components/CmdPaletteGuide";
 
 export const NowView = () => {
   const { togglePointerMovementTracking } = usePointerPosition();
@@ -24,7 +23,6 @@ export const NowView = () => {
   return (
     <NowViewProvider>
       <NowCmdPalette />
-      <CmdPaletteGuide />
       <StyledCalendar>
         <Header showReminder={true} />
 

@@ -6,6 +6,7 @@ import {
   isStepCompleted,
   loadCompletedSteps,
   markStepCompleted,
+  resetOnboardingProgress,
   saveCompletedSteps,
   updateOnboardingProgress,
 } from "./onboarding.storage.util";
@@ -219,6 +220,57 @@ describe("onboarding.storage.util", () => {
       ]);
       clearCompletedSteps();
       expect(loadCompletedSteps()).toEqual([]);
+    });
+  });
+
+  describe("resetOnboardingProgress", () => {
+    it("should remove the onboarding progress key from localStorage", () => {
+      // Set up some progress
+      updateOnboardingProgress({
+        completedSteps: [
+          ONBOARDING_STEPS.CREATE_TASK,
+          ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+        ],
+        isSeen: true,
+        isAuthDismissed: true,
+        isCompleted: true,
+        isStorageWarningSeen: true,
+      });
+
+      // Verify it exists
+      expect(
+        localStorage.getItem(STORAGE_KEYS.ONBOARDING_PROGRESS),
+      ).toBeTruthy();
+      const progressBefore = getOnboardingProgress();
+      expect(progressBefore.completedSteps.length).toBeGreaterThan(0);
+      expect(progressBefore.isCompleted).toBe(true);
+
+      // Reset
+      resetOnboardingProgress();
+
+      // Verify key is removed
+      expect(localStorage.getItem(STORAGE_KEYS.ONBOARDING_PROGRESS)).toBeNull();
+
+      // Verify getOnboardingProgress returns defaults
+      const progressAfter = getOnboardingProgress();
+      expect(progressAfter.completedSteps).toEqual([]);
+      expect(progressAfter.isSeen).toBe(false);
+      expect(progressAfter.isAuthDismissed).toBe(false);
+      expect(progressAfter.isCompleted).toBe(false);
+      expect(progressAfter.isStorageWarningSeen).toBe(false);
+    });
+
+    it("should handle reset when no progress exists", () => {
+      // Ensure no progress exists
+      localStorage.removeItem(STORAGE_KEYS.ONBOARDING_PROGRESS);
+
+      // Should not throw
+      expect(() => resetOnboardingProgress()).not.toThrow();
+
+      // Should still return defaults
+      const progress = getOnboardingProgress();
+      expect(progress.completedSteps).toEqual([]);
+      expect(progress.isCompleted).toBe(false);
     });
   });
 });

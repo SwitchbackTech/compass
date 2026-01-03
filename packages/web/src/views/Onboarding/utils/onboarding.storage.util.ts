@@ -127,3 +127,17 @@ export function clearCompletedSteps(): void {
     completedSteps: [],
   });
 }
+
+/**
+ * Reset onboarding progress by removing the localStorage key
+ * This completely clears all onboarding state
+ */
+export function resetOnboardingProgress(): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    localStorage.removeItem(STORAGE_KEYS.ONBOARDING_PROGRESS);
+  } catch {
+    // Silently fail if localStorage is unavailable
+  }
+}

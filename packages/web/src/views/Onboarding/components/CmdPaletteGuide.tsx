@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { FC, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { useSession } from "@web/common/hooks/useSession";
@@ -11,14 +11,14 @@ import { useCmdPaletteGuide } from "../hooks/useCmdPaletteGuide";
 import { useStepDetection } from "../hooks/useStepDetection";
 import { isStepCompleted } from "../utils/onboarding.storage.util";
 
-export const CmdPaletteGuide: React.FC = () => {
+export const CmdPaletteGuide: FC = () => {
   const location = useLocation();
   const { authenticated } = useSession();
   const { currentStep, isGuideActive, completeStep, skipGuide } =
     useCmdPaletteGuide();
   const step2CompletionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isSuccessMessageDismissed, setIsSuccessMessageDismissed] =
-    React.useState(false);
+    useState(false);
 
   // Unified step detection hook - handles all detection types
   useStepDetection({
@@ -31,7 +31,7 @@ export const CmdPaletteGuide: React.FC = () => {
         }
         step2CompletionTimeoutRef.current = setTimeout(() => {
           completeStep(step);
-        }, 1500); // Show step 2 instructions for 1.5 seconds
+        }, 1000);
       } else {
         completeStep(step);
       }
@@ -57,7 +57,7 @@ export const CmdPaletteGuide: React.FC = () => {
 
   // Determine actual step based on completion status
   // If on step 2 but step 1 wasn't completed, show step 1 instead
-  const actualStep = React.useMemo(() => {
+  const actualStep = useMemo(() => {
     if (currentStep === null) return null;
     // If we're on step 2 but step 1 wasn't completed, stay on step 1
     if (
@@ -159,11 +159,11 @@ export const CmdPaletteGuide: React.FC = () => {
   // Success message for when user completes navigateToWeek and returns to day view
   const successMessage = (
     <>
-      Great job! You can type{" "}
+      You're all set! You can type{" "}
       <kbd className="bg-bg-secondary text-text-light border-border-primary rounded border px-1.5 py-0.5 font-mono text-xs">
         {modifierKeyDisplay} + K
       </kbd>{" "}
-      anywhere to open the command palette. Ready to get started?
+      anywhere to open the command palette.
     </>
   );
 

@@ -8,6 +8,8 @@ import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
+import { ONBOARDING_RESTART_EVENT } from "@web/views/Onboarding/constants/onboarding.constants";
+import { resetOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 // Mock react-router-dom
 const mockNavigate = jest.fn();
@@ -26,9 +28,11 @@ jest.mock("@core/util/date/dayjs", () => ({
   })),
 }));
 
-// Mock window.open
-const mockWindowOpen = jest.fn();
-global.window.open = mockWindowOpen;
+// Mock resetOnboardingProgress
+jest.mock("@web/views/Onboarding/utils/onboarding.storage.util", () => ({
+  ...jest.requireActual("@web/views/Onboarding/utils/onboarding.storage.util"),
+  resetOnboardingProgress: jest.fn(),
+}));
 
 // Mock dispatch
 const mockDispatch = jest.fn();
@@ -165,8 +169,9 @@ describe("DayCmdPalette", () => {
     expect(mockOnGoToToday).toHaveBeenCalled();
   });
 
-  it("opens onboarding in new tab when Re-do onboarding is clicked", async () => {
+  it("resets onboarding and dispatches restart event when Re-do onboarding is clicked", async () => {
     const user = userEvent.setup();
+    const mockDispatchEvent = jest.spyOn(window, "dispatchEvent");
     await act(() =>
       render(<Component />, {
         state: { settings: { isCmdPaletteOpen: true } },
@@ -175,7 +180,13 @@ describe("DayCmdPalette", () => {
 
     await act(() => user.click(screen.getByText("Re-do onboarding")));
 
-    expect(mockWindowOpen).toHaveBeenCalledWith("/onboarding", "_blank");
+    expect(resetOnboardingProgress).toHaveBeenCalled();
+    expect(mockDispatchEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: ONBOARDING_RESTART_EVENT,
+      }),
+    );
+    mockDispatchEvent.mockRestore();
   });
 
   it("navigates to logout when Log Out is clicked", async () => {

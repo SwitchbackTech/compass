@@ -1,8 +1,13 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
-import { ONBOARDING_STEPS } from "../constants/onboarding.constants";
+import { act } from "react";
+import { renderHook } from "@testing-library/react";
+import {
+  ONBOARDING_RESTART_EVENT,
+  ONBOARDING_STEPS,
+} from "../constants/onboarding.constants";
 import {
   getOnboardingProgress,
   loadCompletedSteps,
+  resetOnboardingProgress,
   updateOnboardingProgress,
 } from "../utils/onboarding.storage.util";
 import { useCmdPaletteGuide } from "./useCmdPaletteGuide";
@@ -209,5 +214,110 @@ describe("useCmdPaletteGuide", () => {
     // Should initialize guide normally in test environment
     expect(result.current.isGuideActive).toBe(true);
     expect(result.current.currentStep).toBe(ONBOARDING_STEPS.CREATE_TASK);
+  });
+
+  it("should restart guide when restart event is dispatched", () => {
+    const { result } = renderHook(() => useCmdPaletteGuide());
+
+    // Complete a few steps first
+    act(() => {
+      result.current.completeStep(ONBOARDING_STEPS.CREATE_TASK);
+    });
+
+    act(() => {
+      result.current.completeStep(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
+    });
+
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.EDIT_DESCRIPTION);
+    expect(loadCompletedSteps()).toContain(ONBOARDING_STEPS.CREATE_TASK);
+    expect(loadCompletedSteps()).toContain(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
+
+    // Reset storage and dispatch restart event
+    act(() => {
+      resetOnboardingProgress();
+      window.dispatchEvent(new CustomEvent(ONBOARDING_RESTART_EVENT));
+    });
+
+    // Should restart from the beginning
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.CREATE_TASK);
+    expect(result.current.isGuideActive).toBe(true);
+    expect(loadCompletedSteps()).toEqual([]);
+  });
+
+  it("should restart guide even when guide is completed", () => {
+    // Complete the entire guide first
+    const { result } = renderHook(() => useCmdPaletteGuide());
+
+    act(() => {
+      result.current.completeStep(ONBOARDING_STEPS.CREATE_TASK);
+    });
+
+    act(() => {
+      result.current.completeStep(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
+    });
+
+    act(() => {
+      result.current.completeStep(ONBOARDING_STEPS.EDIT_DESCRIPTION);
+    });
+
+    act(() => {
+      result.current.completeStep(ONBOARDING_STEPS.EDIT_REMINDER);
+    });
+
+    act(() => {
+      result.current.completeStep(ONBOARDING_STEPS.NAVIGATE_TO_WEEK);
+    });
+
+    expect(result.current.isGuideActive).toBe(false);
+    expect(result.current.currentStep).toBe(null);
+    const progress = getOnboardingProgress();
+    expect(progress.isCompleted).toBe(true);
+
+    // Reset and restart
+    act(() => {
+      resetOnboardingProgress();
+      window.dispatchEvent(new CustomEvent(ONBOARDING_RESTART_EVENT));
+    });
+
+    // Should restart from the beginning
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.CREATE_TASK);
+    expect(result.current.isGuideActive).toBe(true);
+    const newProgress = getOnboardingProgress();
+    expect(newProgress.isCompleted).toBe(false);
+  });
+
+  it("should handle multiple restart events", () => {
+    const { result } = renderHook(() => useCmdPaletteGuide());
+
+    // Complete step 1
+    act(() => {
+      result.current.completeStep(ONBOARDING_STEPS.CREATE_TASK);
+    });
+
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
+
+    // First restart
+    act(() => {
+      resetOnboardingProgress();
+      window.dispatchEvent(new CustomEvent(ONBOARDING_RESTART_EVENT));
+    });
+
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.CREATE_TASK);
+
+    // Complete step 1 again
+    act(() => {
+      result.current.completeStep(ONBOARDING_STEPS.CREATE_TASK);
+    });
+
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
+
+    // Second restart
+    act(() => {
+      resetOnboardingProgress();
+      window.dispatchEvent(new CustomEvent(ONBOARDING_RESTART_EVENT));
+    });
+
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.CREATE_TASK);
+    expect(result.current.isGuideActive).toBe(true);
   });
 });

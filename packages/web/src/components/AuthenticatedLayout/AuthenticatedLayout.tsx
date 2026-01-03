@@ -1,5 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
+import { CmdPaletteGuide } from "@web/views/Onboarding/components/CmdPaletteGuide";
 
 /**
  * Layout component for authenticated routes
@@ -9,5 +10,10 @@ export const AuthenticatedLayout = () => {
   // Automatically refetch events when needed for all authenticated views
   useGlobalShortcuts();
 
-  return <Outlet />;
+  return (
+    <>
+      <Outlet />
+      <CmdPaletteGuide />
+    </>
+  );
 };

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  ONBOARDING_STEPS,
+  ONBOARDING_RESTART_EVENT,
   ONBOARDING_STEP_CONFIGS,
   type OnboardingStepName,
 } from "../constants/onboarding.constants";
@@ -22,47 +22,67 @@ interface UseCmdPaletteGuideReturn {
 }
 
 /**
- * Hook to manage the Onboarding Guide state
- * Tracks current step and handles completion/skip
- * Persists completed steps across views and sessions
+ * Helper function to initialize guide state based on onboarding progress
  */
+function initializeGuideState(
+  setCurrentStep: (step: GuideStep) => void,
+  setIsGuideActive: (active: boolean) => void,
+): void {
+  if (typeof window === "undefined") return;
+
+  const progress = getOnboardingProgress();
+
+  if (progress.isCompleted) {
+    setIsGuideActive(false);
+    setCurrentStep(null);
+    return;
+  }
+
+  // Load completed steps from onboarding progress
+  const completedSteps = progress.completedSteps;
+
+  // Determine current step based on completed steps
+  // Find the first incomplete step using ordered configuration
+  let nextStep: GuideStep = null;
+  for (const stepConfig of ONBOARDING_STEP_CONFIGS) {
+    if (!completedSteps.includes(stepConfig.id)) {
+      nextStep = stepConfig.id;
+      break;
+    }
+  }
+
+  if (nextStep !== null) {
+    setIsGuideActive(true);
+    setCurrentStep(nextStep);
+  } else {
+    // All steps completed, mark guide as completed
+    updateOnboardingProgress({ isCompleted: true });
+    setIsGuideActive(false);
+    setCurrentStep(null);
+  }
+}
+
 export function useCmdPaletteGuide(): UseCmdPaletteGuideReturn {
   const [currentStep, setCurrentStep] = useState<GuideStep>(null);
   const [isGuideActive, setIsGuideActive] = useState(false);
 
+  // Initialize guide state on mount and listen for restart events
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const progress = getOnboardingProgress();
+    const initialize = () => {
+      initializeGuideState(setCurrentStep, setIsGuideActive);
+    };
 
-    if (progress.isCompleted) {
-      setIsGuideActive(false);
-      setCurrentStep(null);
-      return;
-    }
+    // Initialize on mount
+    initialize();
 
-    // Load completed steps from onboarding progress
-    const completedSteps = progress.completedSteps;
+    // Listen for restart event
+    window.addEventListener(ONBOARDING_RESTART_EVENT, initialize);
 
-    // Determine current step based on completed steps
-    // Find the first incomplete step using ordered configuration
-    let nextStep: GuideStep = null;
-    for (const stepConfig of ONBOARDING_STEP_CONFIGS) {
-      if (!completedSteps.includes(stepConfig.id)) {
-        nextStep = stepConfig.id;
-        break;
-      }
-    }
-
-    if (nextStep !== null) {
-      setIsGuideActive(true);
-      setCurrentStep(nextStep);
-    } else {
-      // All steps completed, mark guide as completed
-      updateOnboardingProgress({ isCompleted: true });
-      setIsGuideActive(false);
-      setCurrentStep(null);
-    }
+    return () => {
+      window.removeEventListener(ONBOARDING_RESTART_EVENT, initialize);
+    };
   }, []);
 
   const completeStep = useCallback((step: OnboardingStepName) => {
