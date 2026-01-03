@@ -34,14 +34,6 @@ export function useAuthPrompt({
   const [hasUsedCmdPalette, setHasUsedCmdPalette] = useState(false);
   const prevCmdPaletteOpen = useRef(isCmdPaletteOpen);
 
-  // Track if command palette has been used (opened and then closed)
-  useEffect(() => {
-    if (prevCmdPaletteOpen.current && !isCmdPaletteOpen) {
-      setHasUsedCmdPalette(true);
-    }
-    prevCmdPaletteOpen.current = isCmdPaletteOpen;
-  }, [isCmdPaletteOpen]);
-
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (authenticated) return;
@@ -49,12 +41,24 @@ export function useAuthPrompt({
     const progress = getOnboardingProgress();
     if (progress.isAuthDismissed) return;
 
+    // Check if palette was just closed
+    const justClosedPalette =
+      prevCmdPaletteOpen.current && !isCmdPaletteOpen && !hasUsedCmdPalette;
+
+    if (justClosedPalette) {
+      setHasUsedCmdPalette(true);
+    }
+    prevCmdPaletteOpen.current = isCmdPaletteOpen;
+
     // Show auth prompt if user has:
     // - Created 2+ tasks, OR
     // - Used cmd+k palette (opened and closed), OR
     // - Navigated between dates
     const shouldShow =
-      tasks.length >= 2 || hasNavigatedDates || hasUsedCmdPalette;
+      tasks.length >= 2 ||
+      hasNavigatedDates ||
+      hasUsedCmdPalette ||
+      justClosedPalette;
 
     if (shouldShow && !showOnboardingOverlay) {
       // Delay showing auth prompt to avoid overwhelming user
@@ -70,6 +74,7 @@ export function useAuthPrompt({
     hasNavigatedDates,
     hasUsedCmdPalette,
     showOnboardingOverlay,
+    isCmdPaletteOpen,
   ]);
 
   const dismissAuthPrompt = () => {

@@ -11,7 +11,7 @@ import {
 } from "@core/constants/websocket.constants";
 import { UserMetadata } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
-import { useUser } from "@web/auth/UserProvider";
+import { useUser } from "@web/auth/useUser";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import {

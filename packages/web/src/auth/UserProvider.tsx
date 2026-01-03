@@ -1,31 +1,9 @@
 import { usePostHog } from "posthog-js/react";
-import {
-  ReactNode,
-  createContext,
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { UserProfile } from "@core/types/user.types";
 import { UserApi } from "@web/common/apis/user.api";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
-
-const UserContext = createContext<
-  | Partial<
-      { isLoadingUser: boolean; userId: string } & Omit<UserProfile, "_id">
-    >
-  | undefined
->(undefined);
-
-export const useUser = () => {
-  const context = useContext(UserContext);
-  if (context === undefined) {
-    throw new Error("useUser must be used within a UserProvider");
-  }
-  return context;
-};
+import { UserContext } from "./UserContext";
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const profile = useRef<UserProfile | null>(null);
