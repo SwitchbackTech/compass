@@ -27,17 +27,21 @@ Use semantic color tokens defined in `packages/web/src/index.css` with the `@the
 
 ## Available Semantic Tokens
 
-Reference these tokens from `packages/web/src/index.css`:
+Semantic tokens are defined in `packages/web/src/index.css` under `@theme` and are used with Tailwind v4's automatic mapping.
 
-- Accent: `accent-primary`
-- Background: `bg-primary`, `bg-secondary`
-- Border: `border-primary`, `border-primary-dark`, `border-secondary`
-- Foreground: `fg-primary`, `fg-primary-dark`
-- Text: `text-light`, `text-lighter`, `text-light-inactive`, `text-dark`, `text-dark-placeholder`
-- Status: `status-success`, `status-error`, `status-warning`, `status-info`
-- Tags: `tag-one`, `tag-two`, `tag-three`
-- Panel: `panel-bg`, `panel-scrollbar`, `panel-scrollbar-active`, `panel-shadow`, `panel-text`
-- Grid: `grid-line-primary`
+The pattern is: CSS variable `--color-{category}-{name}` → Tailwind class `{category}-{category}-{name}`
+
+**Examples from `packages/web/src/index.css`:**
+
+- **Background:** `bg-bg-primary`, `bg-bg-secondary`
+- **Border:** `border-border-primary`, `border-border-primary-dark`, `border-border-secondary`
+- **Foreground:** `bg-fg-primary`, `bg-fg-primary-dark`
+- **Text:** `text-text-light`, `text-text-lighter`, `text-text-light-inactive`, `text-text-dark`, `text-text-dark-placeholder`
+- **Status:** `bg-status-success`, `bg-status-error`, `bg-status-warning`, `bg-status-info`
+- **Accent:** `bg-accent-primary`, `text-accent-primary`
+- **Tags:** `bg-tag-one`, `bg-tag-two`, `bg-tag-three`
+- **Panel:** `bg-panel-bg`, `text-panel-text`
+- **Grid:** `border-grid-line-primary`
 
 ## Component Best Practices
 
@@ -77,8 +81,8 @@ Always use module aliased paths for imports when importing Compass modules.
 
 ```tsx
 // Good example with semantic colors
-<div className="bg-bg-primary text-text-primary border border-border-primary">
-  <button className="bg-bg-secondary hover:bg-bg-tertiary">
+<div className="bg-bg-primary text-text-light border border-border-primary">
+  <button className="bg-bg-secondary hover:bg-fg-primary hover:text-text-dark">
     Click me
   </button>
 </div>
