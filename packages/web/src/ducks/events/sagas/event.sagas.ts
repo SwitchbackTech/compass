@@ -14,7 +14,14 @@ import {
   Schema_OptimisticEvent,
   Schema_WebEvent,
 } from "@web/common/types/web.event.types";
+import { isUserAuthenticated } from "@web/common/utils/auth/auth.util";
 import { handleError } from "@web/common/utils/event/event.util";
+import {
+  deleteEventFromIndexedDB,
+  getEventsFromIndexedDB,
+  saveEventToIndexedDB,
+  updateEventInIndexedDB,
+} from "@web/common/utils/storage/indexeddb.util";
 import { EventApi } from "@web/ducks/events/event.api";
 import {
   Action_ConvertEvent,
@@ -64,7 +71,18 @@ export function* convertCalendarToSomedayEvent({
     // Mark event as pending when edit starts
     yield put(pendingEventsSlice.actions.add(optimisticEvent._id));
 
-    yield* _editEvent(gridEvent, { applyTo });
+    // Check if user is authenticated
+    const authenticated = (yield call(isUserAuthenticated)) as boolean;
+
+    if (authenticated) {
+      yield* _editEvent(gridEvent, { applyTo });
+    } else {
+      // Update event in IndexedDB for unauthenticated users
+      yield call(updateEventInIndexedDB, optimisticEvent._id, {
+        ...gridEvent,
+        isSomeday: true,
+      });
+    }
 
     yield put(
       eventsEntitiesSlice.actions.edit({
@@ -99,7 +117,15 @@ export function* createEvent({ payload }: Action_CreateEvent) {
   yield put(pendingEventsSlice.actions.add(event._id));
 
   try {
-    yield call(EventApi.create, event);
+    // Check if user is authenticated
+    const authenticated = (yield call(isUserAuthenticated)) as boolean;
+
+    if (authenticated) {
+      yield call(EventApi.create, event);
+    } else {
+      // Save to IndexedDB for unauthenticated users
+      yield call(saveEventToIndexedDB, event);
+    }
 
     yield put(
       eventsEntitiesSlice.actions.edit({
@@ -132,7 +158,15 @@ export function* deleteEvent({ payload }: Action_DeleteEvent) {
     const isPending = pendingEventIds.includes(payload._id);
     // Only call delete API if event is not pending (i.e., exists in DB)
     if (!isPending) {
-      yield call(EventApi.delete, payload._id, payload.applyTo);
+      // Check if user is authenticated
+      const authenticated = (yield call(isUserAuthenticated)) as boolean;
+
+      if (authenticated) {
+        yield call(EventApi.delete, payload._id, payload.applyTo);
+      } else {
+        // Delete from IndexedDB for unauthenticated users
+        yield call(deleteEventFromIndexedDB, payload._id);
+      }
     }
 
     yield put(deleteEventSlice.actions.success());
@@ -156,7 +190,15 @@ export function* editEvent({ payload }: Action_EditEvent) {
     if (shouldRemove) yield put(eventsEntitiesSlice.actions.delete({ _id }));
     else yield put(eventsEntitiesSlice.actions.edit(payload));
 
-    yield call(EventApi.edit, _id, event, { applyTo });
+    // Check if user is authenticated
+    const authenticated = (yield call(isUserAuthenticated)) as boolean;
+
+    if (authenticated) {
+      yield call(EventApi.edit, _id, event, { applyTo });
+    } else {
+      // Update in IndexedDB for unauthenticated users
+      yield call(updateEventInIndexedDB, _id, event);
+    }
 
     // Remove from pending on success
     yield put(pendingEventsSlice.actions.remove(_id));
@@ -198,16 +240,37 @@ function* getEvents(
 
     const _payload = EventDateUtils.adjustStartEndDate(payload);
 
-    const res: Response_GetEventsSuccess = (yield call(
-      EventApi.get,
-      _payload,
-    )) as Response_GetEventsSuccess;
+    // Check if user is authenticated
+    const authenticated = (yield call(isUserAuthenticated)) as boolean;
 
-    const events = EventDateUtils.filterEventsByStartEndDate(
-      res.data,
-      payload.startDate as string,
-      payload.endDate as string,
-    );
+    let events: Schema_Event[] = [];
+
+    if (authenticated) {
+      // Fetch from API for authenticated users
+      const res: Response_GetEventsSuccess = (yield call(
+        EventApi.get,
+        _payload,
+      )) as Response_GetEventsSuccess;
+
+      events = EventDateUtils.filterEventsByStartEndDate(
+        res.data,
+        payload.startDate as string,
+        payload.endDate as string,
+      );
+    } else {
+      // Fetch from IndexedDB for unauthenticated users
+      const localEvents = (yield call(getEventsFromIndexedDB, {
+        someday: false,
+        startDate: _payload.startDate,
+        endDate: _payload.endDate,
+      })) as Schema_Event[];
+
+      events = EventDateUtils.filterEventsByStartEndDate(
+        localEvents,
+        payload.startDate as string,
+        payload.endDate as string,
+      );
+    }
 
     const normalizedEvents = normalize<Schema_Event>(events, [
       normalizedEventsSchema(),

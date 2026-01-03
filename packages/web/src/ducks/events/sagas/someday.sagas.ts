@@ -2,8 +2,15 @@ import { normalize } from "normalizr";
 import { call, put } from "redux-saga/effects";
 import { Schema_Event } from "@core/types/event.types";
 import { Schema_OptimisticEvent } from "@web/common/types/web.event.types";
+import { isUserAuthenticated } from "@web/common/utils/auth/auth.util";
 import { handleError } from "@web/common/utils/event/event.util";
 import { setSomedayEventsOrder } from "@web/common/utils/event/someday.event.util";
+import {
+  deleteEventFromIndexedDB,
+  getEventsFromIndexedDB,
+  saveEventToIndexedDB,
+  updateEventInIndexedDB,
+} from "@web/common/utils/storage/indexeddb.util";
 import { EventApi } from "@web/ducks/events/event.api";
 import {
   Action_ConvertEvent,
@@ -41,7 +48,18 @@ export function* convertSomedayToCalendarEvent({
     // Mark event as pending when edit starts
     yield put(pendingEventsSlice.actions.add(optimisticEvent._id));
 
-    yield* _editEvent(gridEvent);
+    // Check if user is authenticated
+    const authenticated = (yield call(isUserAuthenticated)) as boolean;
+
+    if (authenticated) {
+      yield* _editEvent(gridEvent);
+    } else {
+      // Update event in IndexedDB for unauthenticated users
+      yield call(updateEventInIndexedDB, optimisticEvent._id, {
+        ...gridEvent,
+        isSomeday: false,
+      });
+    }
 
     yield put(
       eventsEntitiesSlice.actions.edit({
@@ -83,7 +101,15 @@ export function* deleteSomedayEvent({ payload }: Action_DeleteEvent) {
   try {
     yield put(eventsEntitiesSlice.actions.delete(payload));
 
-    yield call(EventApi.delete, payload._id, payload.applyTo);
+    // Check if user is authenticated
+    const authenticated = (yield call(isUserAuthenticated)) as boolean;
+
+    if (authenticated) {
+      yield call(EventApi.delete, payload._id, payload.applyTo);
+    } else {
+      // Delete from IndexedDB for unauthenticated users
+      yield call(deleteEventFromIndexedDB, payload._id);
+    }
   } catch (error) {
     yield put(
       getSomedayEventsSlice.actions.error({
@@ -101,13 +127,30 @@ export function* deleteSomedayEvent({ payload }: Action_DeleteEvent) {
 
 export function* getSomedayEvents({ payload }: Action_GetEvents) {
   try {
-    const res = (yield call(EventApi.get, {
-      someday: true,
-      startDate: payload.startDate,
-      endDate: payload.endDate,
-    })) as Response_GetEventsSuccess;
+    // Check if user is authenticated
+    const authenticated = (yield call(isUserAuthenticated)) as boolean;
 
-    const events = setSomedayEventsOrder(res.data);
+    let events: Schema_Event[] = [];
+
+    if (authenticated) {
+      // Fetch from API for authenticated users
+      const res = (yield call(EventApi.get, {
+        someday: true,
+        startDate: payload.startDate,
+        endDate: payload.endDate,
+      })) as Response_GetEventsSuccess;
+
+      events = setSomedayEventsOrder(res.data);
+    } else {
+      // Fetch from IndexedDB for unauthenticated users
+      const localEvents = (yield call(getEventsFromIndexedDB, {
+        someday: true,
+        startDate: payload.startDate,
+        endDate: payload.endDate,
+      })) as Schema_Event[];
+
+      events = setSomedayEventsOrder(localEvents);
+    }
 
     const normalizedEvents = normalize<Schema_Event>(events, [
       normalizedEventsSchema(),
@@ -119,10 +162,10 @@ export function* getSomedayEvents({ payload }: Action_GetEvents) {
     yield put(
       getSomedayEventsSlice.actions.success({
         data: normalizedEvents.result,
-        count: res.count,
-        page: res.page,
-        pageSize: res.pageSize,
-        offset: res.offset,
+        count: events.length,
+        page: 1,
+        pageSize: events.length,
+        offset: 0,
       }),
     );
   } catch (error) {
@@ -136,7 +179,17 @@ export function* getSomedayEvents({ payload }: Action_GetEvents) {
 
 export function* reorderSomedayEvents({ payload }: Action_Someday_Reorder) {
   try {
-    yield call(EventApi.reorder, payload);
+    // Check if user is authenticated
+    const authenticated = (yield call(isUserAuthenticated)) as boolean;
+
+    if (authenticated) {
+      yield call(EventApi.reorder, payload);
+    } else {
+      // For unauthenticated users, update the order in IndexedDB
+      for (const item of payload) {
+        yield call(updateEventInIndexedDB, item._id, { order: item.order });
+      }
+    }
   } catch (error) {
     yield put(
       getSomedayEventsSlice.actions.error({
