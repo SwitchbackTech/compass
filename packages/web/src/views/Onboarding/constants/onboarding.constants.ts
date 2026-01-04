@@ -1,47 +1,7 @@
-/**
- * Onboarding step IDs - defined once to avoid duplication
- * All step IDs used in the onboarding flow should be defined here
- */
-export const ONBOARDING_STEP_IDS = {
-  // Login steps
-  WELCOME: "welcome",
-
-  // Mobile login steps
-  MOBILE_WARNING: "mobile-warning",
-  MOBILE_SIGN_IN: "mobile-sign-in",
-
-  // Main onboarding steps
-  WELCOME_SCREEN: "welcome-screen",
-  WELCOME_NOTE_ONE: "welcome-note-one",
-  WELCOME_NOTE_TWO: "welcome-note-two",
-  SIGN_IN_WITH_GOOGLE_PRELUDE: "sign-in-with-google-prelude",
-  SIGN_IN_WITH_GOOGLE: "sign-in-with-google",
-  REMINDER_INTRO_ONE: "reminder-intro-one",
-  REMINDER_INTRO_TWO: "reminder-intro-two",
-  SET_REMINDER: "set-reminder",
-  SET_REMINDER_SUCCESS: "set-reminder-success",
-  SET_SOMEDAY_EVENTS_ONE: "set-someday-events-one",
-  TASKS_INTRO: "tasks-intro",
-  TASKS_TODAY: "tasks-today",
-  SOMEDAY_EVENTS_INTRO: "someday-events-intro",
-  SOMEDAY_SANDBOX: "someday-sandbox",
-  MIGRATION_INTRO: "migration-intro",
-  SOMEDAY_MIGRATION: "someday-migration",
-  OUTRO_TWO: "outro-two",
-  OUTRO_QUOTE: "outro-quote",
-} as const;
-
-/**
- * Step IDs to skip when re-doing onboarding for authenticated users
- * These steps are skipped because the user has already completed Google login
- * and event import during their initial onboarding
- */
-export const SKIPPED_STEPS_FOR_AUTHENTICATED_USERS: readonly string[] = [
-  ONBOARDING_STEP_IDS.SIGN_IN_WITH_GOOGLE_PRELUDE,
-  ONBOARDING_STEP_IDS.SIGN_IN_WITH_GOOGLE,
-  ONBOARDING_STEP_IDS.MIGRATION_INTRO,
-  ONBOARDING_STEP_IDS.SOMEDAY_MIGRATION,
-];
+import {
+  OnboardingGuideViewConfig,
+  OnboardingStepConfig,
+} from "../types/onboarding.guide.types";
 
 /**
  * Command palette guide step names
@@ -55,39 +15,6 @@ export const ONBOARDING_STEPS = {
   NAVIGATE_TO_WEEK: "navigateToWeek",
 } as const;
 
-export type OnboardingStepName =
-  | "createTask"
-  | "navigateToNow"
-  | "editDescription"
-  | "editReminder"
-  | "navigateToWeek";
-
-/**
- * Detection types for onboarding steps
- */
-export type StepDetectionType =
-  | "task-count"
-  | "route"
-  | "task-description"
-  | "reminder-poll";
-
-/**
- * Configuration for route-based detection
- */
-export interface RouteDetectionConfig {
-  route: string;
-}
-
-/**
- * Step configuration with order and detection metadata
- */
-export interface OnboardingStepConfig {
-  id: OnboardingStepName;
-  order: number;
-  detectionType: StepDetectionType;
-  detectionConfig?: RouteDetectionConfig;
-}
-
 /**
  * Ordered array of onboarding step configurations
  * This is the single source of truth for step order
@@ -97,28 +24,129 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
     id: ONBOARDING_STEPS.CREATE_TASK,
     order: 0,
     detectionType: "task-count",
+    guide: {
+      visibilityByAuth: {
+        authenticated: [],
+        unauthenticated: ["day", "now", "week", "unknown"],
+      },
+      instructionsByView: {
+        day: [
+          { type: "text", value: "Type " },
+          { type: "kbd", value: "c" },
+          { type: "text", value: " to create a task" },
+        ],
+        default: [
+          { type: "text", value: "Press " },
+          { type: "kbd", value: "2" },
+          { type: "text", value: " to go to the Day view, then type " },
+          { type: "kbd", value: "c" },
+          { type: "text", value: " to create a task" },
+        ],
+      },
+    },
   },
   {
     id: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
     order: 1,
     detectionType: "route",
     detectionConfig: { route: "/now" },
+    guide: {
+      visibilityByAuth: {
+        authenticated: ["now", "week"],
+        unauthenticated: ["day", "now", "week"],
+      },
+      instructionsByView: {
+        default: [
+          { type: "text", value: "Press " },
+          { type: "kbd", value: "1" },
+          { type: "text", value: " to go to the /now view" },
+        ],
+      },
+    },
   },
   {
     id: ONBOARDING_STEPS.EDIT_DESCRIPTION,
     order: 2,
     detectionType: "task-description",
+    guide: {
+      visibilityByAuth: {
+        authenticated: ["now"],
+        unauthenticated: ["now"],
+      },
+      instructionsByView: {
+        default: [
+          { type: "text", value: "Press " },
+          { type: "kbd", value: "d" },
+          { type: "text", value: " to edit the description" },
+        ],
+      },
+    },
   },
   {
     id: ONBOARDING_STEPS.EDIT_REMINDER,
     order: 3,
     detectionType: "reminder-poll",
+    guide: {
+      visibilityByAuth: {
+        authenticated: ["now"],
+        unauthenticated: ["now"],
+      },
+      instructionsByView: {
+        default: [
+          { type: "text", value: "Press " },
+          { type: "kbd", value: "r" },
+          { type: "text", value: " to edit the reminder" },
+        ],
+      },
+    },
   },
   {
     id: ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
     order: 4,
     detectionType: "route",
     detectionConfig: { route: "/" },
+    guide: {
+      visibilityByAuth: {
+        authenticated: ["day", "now", "week"],
+        unauthenticated: ["day", "now", "week"],
+      },
+      instructionsByView: {
+        default: [
+          { type: "text", value: "Type " },
+          { type: "kbd", value: "3" },
+          { type: "text", value: " to go to the week view" },
+        ],
+      },
+    },
+  },
+] as const;
+
+export const ONBOARDING_GUIDE_VIEWS: readonly OnboardingGuideViewConfig[] = [
+  {
+    id: "now",
+    label: "Now",
+    routes: ["/now"],
+    routePrefixes: ["/now/"],
+    overlayVariant: "pinned",
+  },
+  {
+    id: "day",
+    label: "Day",
+    routes: ["/day"],
+    routePrefixes: ["/day/"],
+    overlayVariant: "centered",
+  },
+  {
+    id: "week",
+    label: "Week",
+    routes: ["/"],
+    overlayVariant: "centered",
+  },
+  {
+    id: "unknown",
+    label: "Compass",
+    routes: [],
+    overlayVariant: "centered",
   },
 ] as const;
 

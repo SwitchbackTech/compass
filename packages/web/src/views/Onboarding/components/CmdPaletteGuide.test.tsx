@@ -93,7 +93,12 @@ describe("CmdPaletteGuide", () => {
     render(<CmdPaletteGuide />);
 
     expect(screen.getByText("Welcome to the Day View")).toBeInTheDocument();
-    expect(screen.getByText(/Type.*to create a task/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        (_, element) =>
+          element?.textContent === "Type c to create a task" ?? false,
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText("c")).toBeInTheDocument(); // The kbd element
     expect(screen.getByLabelText("Skip guide")).toBeInTheDocument();
   });
@@ -111,9 +116,15 @@ describe("CmdPaletteGuide", () => {
 
     render(<CmdPaletteGuide />);
 
-    // Step 1 should show on any view if not completed
     expect(screen.getByText("Welcome to the Now View")).toBeInTheDocument();
-    expect(screen.getByText(/Type.*to create a task/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        (_, element) =>
+          element?.textContent ===
+            "Press 2 to go to the Day view, then type c to create a task" ??
+          false,
+      ),
+    ).toBeInTheDocument();
   });
 
   it("should render step 2 instructions on Now view when step 1 is completed", () => {
@@ -140,7 +151,10 @@ describe("CmdPaletteGuide", () => {
 
     expect(screen.getByText("Welcome to the Now View")).toBeInTheDocument();
     expect(
-      screen.getByText(/Press.*to go to the \/now view/i),
+      screen.getByText(
+        (_, element) =>
+          element?.textContent === "Press 1 to go to the /now view" ?? false,
+      ),
     ).toBeInTheDocument();
     expect(screen.getByText("1")).toBeInTheDocument(); // The kbd element
     expect(screen.getByText("Step 2 of 5")).toBeInTheDocument();
@@ -159,12 +173,71 @@ describe("CmdPaletteGuide", () => {
 
     render(<CmdPaletteGuide />);
 
-    // Should show step 1 instructions instead since step 1 wasn't completed
-    // Step 1 shows on any view if not completed
     expect(screen.getByText("Welcome to the Now View")).toBeInTheDocument();
-    expect(screen.getByText(/Type.*to create a task/i)).toBeInTheDocument();
-    expect(screen.getByText("c")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        (_, element) =>
+          element?.textContent ===
+            "Press 2 to go to the Day view, then type c to create a task" ??
+          false,
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText("Step 1 of 5")).toBeInTheDocument();
+  });
+
+  it("should render step 1 instructions on Week view", () => {
+    mockUseLocation.mockReturnValue({ pathname: "/" } as any);
+    mockLoadTasksFromStorage.mockReturnValue([]); // Step 1 not completed
+    mockUseCmdPaletteGuide.mockReturnValue({
+      currentStep: ONBOARDING_STEPS.CREATE_TASK,
+      isGuideActive: true,
+      completeStep: jest.fn(),
+      skipGuide: jest.fn(),
+      completeGuide: jest.fn(),
+    });
+
+    render(<CmdPaletteGuide />);
+
+    expect(screen.getByText("Welcome to the Week View")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        (_, element) =>
+          element?.textContent ===
+            "Press 2 to go to the Day view, then type c to create a task" ??
+          false,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("should render step 2 instructions on Week view", () => {
+    mockUseLocation.mockReturnValue({ pathname: "/" } as any);
+    mockLoadTasksFromStorage.mockReturnValue([
+      {
+        id: "task-1",
+        title: "Test task",
+        status: "todo",
+        order: 0,
+        createdAt: new Date().toISOString(),
+      },
+    ] as any);
+    markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
+    mockUseCmdPaletteGuide.mockReturnValue({
+      currentStep: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+      isGuideActive: true,
+      completeStep: jest.fn(),
+      skipGuide: jest.fn(),
+      completeGuide: jest.fn(),
+    });
+
+    render(<CmdPaletteGuide />);
+
+    expect(screen.getByText("Welcome to the Week View")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        (_, element) =>
+          element?.textContent === "Press 1 to go to the /now view" ?? false,
+      ),
+    ).toBeInTheDocument();
   });
 
   it("should render step 2 instructions on Day view when step 1 is completed", () => {
@@ -191,7 +264,10 @@ describe("CmdPaletteGuide", () => {
 
     expect(screen.getByText("Welcome to the Day View")).toBeInTheDocument();
     expect(
-      screen.getByText(/Press.*to go to the \/now view/i),
+      screen.getByText(
+        (_, element) =>
+          element?.textContent === "Press 1 to go to the /now view" ?? false,
+      ),
     ).toBeInTheDocument();
     expect(screen.getByText("1")).toBeInTheDocument(); // The kbd element
   });
@@ -211,7 +287,12 @@ describe("CmdPaletteGuide", () => {
 
     // Should show step 1 instructions instead since step 1 wasn't completed
     expect(screen.getByText("Welcome to the Day View")).toBeInTheDocument();
-    expect(screen.getByText(/Type.*to create a task/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        (_, element) =>
+          element?.textContent === "Type c to create a task" ?? false,
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText("c")).toBeInTheDocument();
     expect(screen.getByText("Step 1 of 5")).toBeInTheDocument();
   });
@@ -230,7 +311,10 @@ describe("CmdPaletteGuide", () => {
 
     expect(screen.getByText("Welcome to the Now View")).toBeInTheDocument();
     expect(
-      screen.getByText(/Press.*to edit the description/i),
+      screen.getByText(
+        (_, element) =>
+          element?.textContent === "Press d to edit the description" ?? false,
+      ),
     ).toBeInTheDocument();
     expect(screen.getByText("d")).toBeInTheDocument(); // The kbd element
     expect(screen.getByText("Step 3 of 5")).toBeInTheDocument();
@@ -253,7 +337,10 @@ describe("CmdPaletteGuide", () => {
 
     expect(screen.getByText("Welcome to the Now View")).toBeInTheDocument();
     expect(
-      screen.getByText(/Press.*to edit the reminder/i),
+      screen.getByText(
+        (_, element) =>
+          element?.textContent === "Press r to edit the reminder" ?? false,
+      ),
     ).toBeInTheDocument();
     expect(screen.getByText("r")).toBeInTheDocument(); // The kbd element
     expect(screen.getByText("Step 4 of 5")).toBeInTheDocument();

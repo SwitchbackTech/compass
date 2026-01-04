@@ -1,15 +1,20 @@
 import React, { FC, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { useSession } from "@web/common/hooks/useSession";
 import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import {
+  ONBOARDING_GUIDE_VIEWS,
   ONBOARDING_STEPS,
   ONBOARDING_STEP_CONFIGS,
 } from "../constants/onboarding.constants";
 import { useCmdPaletteGuide } from "../hooks/useCmdPaletteGuide";
 import { useStepDetection } from "../hooks/useStepDetection";
+import { OnboardingInstructionPart } from "../types/onboarding.guide.types";
 import { isStepCompleted } from "../utils/onboarding.storage.util";
+import {
+  getGuideViewFromPathname,
+  getGuideWelcomeMessage,
+} from "../utils/onboarding.util";
 
 export const CmdPaletteGuide: FC = () => {
   const location = useLocation();
@@ -47,13 +52,11 @@ export const CmdPaletteGuide: FC = () => {
     };
   }, []);
 
-  // Detect current view (only needed for welcome message and overlay positioning)
-  const isDayView =
-    location.pathname === ROOT_ROUTES.DAY ||
-    location.pathname.startsWith(`${ROOT_ROUTES.DAY}/`);
-  const isNowView =
-    location.pathname === ROOT_ROUTES.NOW ||
-    location.pathname.startsWith(`${ROOT_ROUTES.NOW}/`);
+  const currentView = getGuideViewFromPathname(location.pathname);
+  const viewConfig = ONBOARDING_GUIDE_VIEWS.find(
+    (config) => config.id === currentView,
+  );
+  const overlayVariant = viewConfig?.overlayVariant ?? "centered";
 
   // Determine actual step based on completion status
   // If on step 2 but step 1 wasn't completed, show step 1 instead
@@ -69,16 +72,10 @@ export const CmdPaletteGuide: FC = () => {
     return currentStep;
   }, [currentStep]);
 
-  // Determine contextual welcome message based on current view
-  const welcomeMessage = React.useMemo(() => {
-    if (isNowView) {
-      return "Welcome to the Now View";
-    }
-    if (isDayView) {
-      return "Welcome to the Day View";
-    }
-    return "Welcome to Compass";
-  }, [isDayView, isNowView]);
+  const welcomeMessage = React.useMemo(
+    () => getGuideWelcomeMessage(currentView),
+    [currentView],
+  );
 
   // Check if navigateToWeek step is completed (show success message on any view)
   // But only if the success message hasn't been dismissed
@@ -89,16 +86,16 @@ export const CmdPaletteGuide: FC = () => {
   // Determine if we should show the overlay
   // Show success message if final step is completed, OR show guide if active with a step
   // But respect view restrictions: step 1 on any view, step 2 on day/now, steps 3/4 only on now, step 5 on any
+  const actualStepConfig = actualStep
+    ? ONBOARDING_STEP_CONFIGS.find((config) => config.id === actualStep)
+    : null;
+  const visibilityByAuth = authenticated
+    ? actualStepConfig?.guide.visibilityByAuth.authenticated
+    : actualStepConfig?.guide.visibilityByAuth.unauthenticated;
+  const canRenderStep = visibilityByAuth?.includes(currentView) ?? false;
   const shouldShowOverlay =
     showSuccessMessage ||
-    (isGuideActive &&
-      actualStep !== null &&
-      ((actualStep === ONBOARDING_STEPS.CREATE_TASK && !authenticated) ||
-        (actualStep === ONBOARDING_STEPS.NAVIGATE_TO_NOW &&
-          ((isDayView && !authenticated) || isNowView)) ||
-        (actualStep === ONBOARDING_STEPS.EDIT_DESCRIPTION && isNowView) ||
-        (actualStep === ONBOARDING_STEPS.EDIT_REMINDER && isNowView) ||
-        actualStep === ONBOARDING_STEPS.NAVIGATE_TO_WEEK));
+    (isGuideActive && actualStep !== null && canRenderStep);
 
   if (!shouldShowOverlay) {
     return null;
@@ -107,54 +104,10 @@ export const CmdPaletteGuide: FC = () => {
   const modifierKey = getModifierKey();
   const modifierKeyDisplay = modifierKey === "Meta" ? "⌘" : "Ctrl";
 
-  // Step instructions with JSX for keyboard shortcuts
-  const stepInstructions = {
-    [ONBOARDING_STEPS.CREATE_TASK]: (
-      <>
-        Type{" "}
-        <kbd className="bg-bg-secondary text-text-light border-border-primary rounded border px-1.5 py-0.5 font-mono text-xs">
-          c
-        </kbd>{" "}
-        to create a task
-      </>
-    ),
-    [ONBOARDING_STEPS.NAVIGATE_TO_NOW]: (
-      <>
-        Press{" "}
-        <kbd className="bg-bg-secondary text-text-light border-border-primary rounded border px-1.5 py-0.5 font-mono text-xs">
-          1
-        </kbd>{" "}
-        to go to the /now view
-      </>
-    ),
-    [ONBOARDING_STEPS.EDIT_DESCRIPTION]: (
-      <>
-        Press{" "}
-        <kbd className="bg-bg-secondary text-text-light border-border-primary rounded border px-1.5 py-0.5 font-mono text-xs">
-          d
-        </kbd>{" "}
-        to edit the description
-      </>
-    ),
-    [ONBOARDING_STEPS.EDIT_REMINDER]: (
-      <>
-        Press{" "}
-        <kbd className="bg-bg-secondary text-text-light border-border-primary rounded border px-1.5 py-0.5 font-mono text-xs">
-          r
-        </kbd>{" "}
-        to edit the reminder
-      </>
-    ),
-    [ONBOARDING_STEPS.NAVIGATE_TO_WEEK]: (
-      <>
-        Type{" "}
-        <kbd className="bg-bg-secondary text-text-light border-border-primary rounded border px-1.5 py-0.5 font-mono text-xs">
-          3
-        </kbd>{" "}
-        to go to the week view
-      </>
-    ),
-  };
+  const instructionParts =
+    actualStepConfig?.guide.instructionsByView[currentView] ??
+    actualStepConfig?.guide.instructionsByView.default ??
+    [];
 
   // Success message for when user completes navigateToWeek and returns to day view
   const successMessage = (
@@ -168,12 +121,25 @@ export const CmdPaletteGuide: FC = () => {
   );
 
   const instruction =
-    actualStep !== null
-      ? stepInstructions[actualStep as keyof typeof stepInstructions]
-      : null;
+    actualStep !== null ? (
+      <>
+        {instructionParts.map((part: OnboardingInstructionPart, index) =>
+          part.type === "kbd" ? (
+            <kbd
+              key={`${part.value}-${index}`}
+              className="bg-bg-secondary text-text-light border-border-primary rounded border px-1.5 py-0.5 font-mono text-xs"
+            >
+              {part.value}
+            </kbd>
+          ) : (
+            <span key={`${part.value}-${index}`}>{part.value}</span>
+          ),
+        )}
+      </>
+    ) : null;
 
   // Determine overlay content and positioning
-  const isNowViewOverlay = isNowView && !showSuccessMessage;
+  const isNowViewOverlay = overlayVariant === "pinned" && !showSuccessMessage;
   const displayTitle = showSuccessMessage
     ? "Welcome to Compass"
     : welcomeMessage;
