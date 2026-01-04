@@ -1,9 +1,11 @@
 import { normalize } from "normalizr";
 import { call, put } from "redux-saga/effects";
-import { Schema_Event } from "@core/types/event.types";
+import { Event_Core, Schema_Event } from "@core/types/event.types";
+import { session } from "@web/common/classes/Session";
 import { Schema_OptimisticEvent } from "@web/common/types/web.event.types";
 import { handleError } from "@web/common/utils/event/event.util";
 import { setSomedayEventsOrder } from "@web/common/utils/event/someday.event.util";
+import { loadEventsFromIndexedDB } from "@web/common/utils/storage/event.storage.util";
 import { EventApi } from "@web/ducks/events/event.api";
 import {
   Action_ConvertEvent,
@@ -101,6 +103,41 @@ export function* deleteSomedayEvent({ payload }: Action_DeleteEvent) {
 
 export function* getSomedayEvents({ payload }: Action_GetEvents) {
   try {
+    const sessionExists: boolean = yield call(session.doesSessionExist);
+
+    if (!sessionExists) {
+      // Load from IndexedDB for unauthenticated users
+      const events: Event_Core[] = yield call(
+        loadEventsFromIndexedDB,
+        payload.startDate,
+        payload.endDate,
+        true, // isSomeday = true
+      );
+
+      const orderedEvents = setSomedayEventsOrder(events);
+
+      const normalizedEvents = normalize<Schema_Event>(orderedEvents, [
+        normalizedEventsSchema(),
+      ]);
+      yield put(
+        eventsEntitiesSlice.actions.insert(normalizedEvents.entities.events),
+      );
+
+      yield put(
+        getSomedayEventsSlice.actions.success({
+          data: normalizedEvents.result,
+          count: events.length,
+          page: 1,
+          pageSize: events.length || 1,
+          offset: 0,
+          startDate: payload.startDate,
+          endDate: payload.endDate,
+        }),
+      );
+      return;
+    }
+
+    // Authenticated: proceed with API call
     const res = (yield call(EventApi.get, {
       someday: true,
       startDate: payload.startDate,

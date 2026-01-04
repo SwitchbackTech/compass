@@ -27,7 +27,6 @@ import {
   Action_GetEvents,
   Action_GetPaginatedEvents,
   Entities_Event,
-  Payload_GetEvents,
   Response_GetEventsSaga,
   Response_GetEventsSuccess,
 } from "@web/ducks/events/event.types";
