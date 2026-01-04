@@ -3,7 +3,6 @@ import {
   Event_Core,
   Params_Events,
   Payload_Order,
-  RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
 import {
@@ -12,12 +11,10 @@ import {
   saveEventToIndexedDB,
 } from "@web/common/utils/storage/event.storage.util";
 import { Response_GetEventsSuccess } from "@web/ducks/events/event.types";
-import { EventRepository } from "./event.repository";
+import { EventRepository } from "./event.repository.interface";
 
 export class LocalEventRepository implements EventRepository {
-  async create(
-    event: Schema_Event | Schema_Event[] | CompassCoreEvent[],
-  ): Promise<void> {
+  async create(event: Schema_Event | Schema_Event[]): Promise<void> {
     const events = Array.isArray(event) ? event : [event];
     for (const e of events) {
       await saveEventToIndexedDB(e as Event_Core);
@@ -42,20 +39,13 @@ export class LocalEventRepository implements EventRepository {
     };
   }
 
-  async edit(
-    _id: string,
-    event: Schema_Event,
-    params: { applyTo?: RecurringEventUpdateScope },
-  ): Promise<void> {
+  async edit(_id: string, event: CompassCoreEvent): Promise<void> {
     // For local repository, we just save the updated event
     // The applyTo parameter is not relevant for local storage
     await saveEventToIndexedDB(event as Event_Core);
   }
 
-  async delete(
-    _id: string,
-    applyTo?: RecurringEventUpdateScope,
-  ): Promise<void> {
+  async delete(_id: string): Promise<void> {
     // For local repository, applyTo is not relevant
     await deleteEventFromIndexedDB(_id);
   }

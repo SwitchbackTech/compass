@@ -1,5 +1,4 @@
 import {
-  CompassCoreEvent,
   Params_Events,
   Payload_Order,
   RecurringEventUpdateScope,
@@ -7,12 +6,10 @@ import {
 } from "@core/types/event.types";
 import { EventApi } from "@web/ducks/events/event.api";
 import { Response_GetEventsSuccess } from "@web/ducks/events/event.types";
-import { EventRepository } from "./event.repository";
+import { EventRepository } from "./event.repository.interface";
 
 export class RemoteEventRepository implements EventRepository {
-  async create(
-    event: Schema_Event | Schema_Event[] | CompassCoreEvent[],
-  ): Promise<void> {
+  async create(event: Schema_Event | Schema_Event[]): Promise<void> {
     await EventApi.create(event);
   }
 
