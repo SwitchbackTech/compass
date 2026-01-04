@@ -122,7 +122,6 @@ describe("LocalEventRepository", () => {
     it("should load events from IndexedDB filtered by date range", async () => {
       const today = dayjs().startOf("day");
       const tomorrow = today.add(1, "day").startOf("day");
-      const sameDay = today; // Use same day to ensure it's included
 
       const todayStr = today.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
       const tomorrowStr = tomorrow.format(
