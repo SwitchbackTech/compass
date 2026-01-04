@@ -1,6 +1,8 @@
 import { useSession } from "@web/common/hooks/useSession";
-import { ONBOARDING_STEPS } from "@web/views/Onboarding/constants/onboarding.constants";
-import type { OnboardingStepName } from "@web/views/Onboarding/constants/onboarding.constants";
+import {
+  ONBOARDING_STEPS,
+  type OnboardingStepName,
+} from "@web/views/Onboarding/constants/onboarding.constants";
 import { useCmdPaletteGuide } from "@web/views/Onboarding/hooks/useCmdPaletteGuide";
 
 interface UseOnboardingOverlayReturn {

@@ -2,8 +2,8 @@ import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
+import { useAuthPrompt } from "@web/views/Onboarding/hooks/useAuthPrompt";
 import { getOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
-import { useAuthPrompt } from "./useAuthPrompt";
 
 // Mock useSession
 jest.mock("@web/common/hooks/useSession", () => ({

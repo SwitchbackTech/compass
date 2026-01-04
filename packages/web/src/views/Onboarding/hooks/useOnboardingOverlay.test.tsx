@@ -1,10 +1,10 @@
 import { act, renderHook } from "@testing-library/react";
 import { ONBOARDING_STEPS } from "@web/views/Onboarding/constants/onboarding.constants";
+import { useOnboardingOverlay } from "@web/views/Onboarding/hooks/useOnboardingOverlay";
 import {
   getOnboardingProgress,
   updateOnboardingProgress,
 } from "@web/views/Onboarding/utils/onboarding.storage.util";
-import { useOnboardingOverlay } from "./useOnboardingOverlay";
 
 // Mock useSession
 jest.mock("@web/common/hooks/useSession", () => ({
