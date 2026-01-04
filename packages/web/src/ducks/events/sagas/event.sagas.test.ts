@@ -506,7 +506,7 @@ describe("createEvent saga - unauthenticated users", () => {
     expect(savedEvent?._id).toBe(eventId);
   });
 
-  it("should mark event as non-optimistic after saving to IndexedDB", async () => {
+  it("should remove event from pending after saving to IndexedDB", async () => {
     const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
     const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
     const action = createEventSlice.actions.request(event);

@@ -2,13 +2,13 @@ import { normalize } from "normalizr";
 import { call, put, select } from "@redux-saga/core/effects";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import {
-  Event_Core,
   Params_Events,
   RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { session } from "@web/common/classes/Session";
+import { getEventRepository } from "@web/common/repositories/event/event.repository.util";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import {
@@ -17,8 +17,6 @@ import {
   Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import { handleError } from "@web/common/utils/event/event.util";
-import { saveEventToIndexedDB } from "@web/common/utils/storage/event.storage.util";
-import { EventApi } from "@web/ducks/events/event.api";
 import {
   Action_ConvertEvent,
   Action_CreateEvent,
@@ -103,30 +101,16 @@ export function* createEvent({ payload }: Action_CreateEvent): Generator {
 
   try {
     const sessionExists = yield call(session.doesSessionExist);
+    const repository = getEventRepository(sessionExists);
 
-    if (!sessionExists) {
-      // Save to IndexedDB for unauthenticated users
-      yield call(saveEventToIndexedDB, event as Event_Core);
-
-      yield put(
-        eventsEntitiesSlice.actions.edit({
-          _id: event._id,
-          event: event,
-        }),
-      );
-
-      yield put(pendingEventsSlice.actions.remove(event._id));
-      yield put(createEventSlice.actions.success());
-      return;
-    }
-
-    // Authenticated: proceed with API call
-    yield call(EventApi.create, event as Schema_Event);
+    yield call([repository, repository.create], event as Schema_Event);
 
     yield put(
       eventsEntitiesSlice.actions.edit({
         _id: event._id,
-        event: { ...event, isOptimistic: false } as Schema_WebEvent,
+        event: sessionExists
+          ? ({ ...event, isOptimistic: false } as Schema_WebEvent)
+          : event,
       }),
     );
 
@@ -152,9 +136,11 @@ export function* deleteEvent({ payload }: Action_DeleteEvent) {
       (state: RootState) => state.events.pendingEvents.eventIds,
     )) as string[];
     const isPending = pendingEventIds.includes(payload._id);
-    // Only call delete API if event is not pending (i.e., exists in DB)
+    // Only call delete if event is not pending (i.e., exists in DB)
     if (!isPending) {
-      yield call(EventApi.delete, payload._id, payload.applyTo);
+      const sessionExists = yield call(session.doesSessionExist);
+      const repository = getEventRepository(sessionExists);
+      yield call([repository, repository.delete], payload._id, payload.applyTo);
     }
 
     yield put(deleteEventSlice.actions.success());
@@ -178,7 +164,11 @@ export function* editEvent({ payload }: Action_EditEvent) {
     if (shouldRemove) yield put(eventsEntitiesSlice.actions.delete({ _id }));
     else yield put(eventsEntitiesSlice.actions.edit(payload));
 
-    yield call(EventApi.edit, _id, event as Schema_Event, { applyTo });
+    const sessionExists = yield call(session.doesSessionExist);
+    const repository = getEventRepository(sessionExists);
+    yield call([repository, repository.edit], _id, event as Schema_Event, {
+      applyTo,
+    });
 
     // Remove from pending on success
     yield put(pendingEventsSlice.actions.remove(_id));
@@ -219,6 +209,7 @@ function* getEvents(
     }
 
     const sessionExists = yield call(session.doesSessionExist);
+    const repository = getEventRepository(sessionExists);
 
     if (!sessionExists) {
       // For unauthenticated users, return empty data for week/day events
@@ -230,10 +221,10 @@ function* getEvents(
 
     const _payload = EventDateUtils.adjustStartEndDate(payload);
 
-    const res: Response_GetEventsSuccess = (yield call(
-      EventApi.get,
+    const res: Response_GetEventsSuccess = yield call(
+      [repository, repository.get],
       _payload,
-    )) as Response_GetEventsSuccess;
+    );
 
     const events = EventDateUtils.filterEventsByStartEndDate(
       res.data,

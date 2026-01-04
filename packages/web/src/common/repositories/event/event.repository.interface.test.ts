@@ -8,8 +8,8 @@ import {
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { EventApi } from "@web/ducks/events/event.api";
-import { LocalEventRepository } from "../local-event.repository";
-import { RemoteEventRepository } from "../remote-event.repository";
+import { LocalEventRepository } from "./local.event.repository";
+import { RemoteEventRepository } from "./remote.event.repository";
 
 jest.mock("@web/ducks/events/event.api");
 

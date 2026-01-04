@@ -1,17 +1,15 @@
 import { normalize } from "normalizr";
 import { call, put } from "redux-saga/effects";
-import { Event_Core, Schema_Event } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 import { session } from "@web/common/classes/Session";
+import { getEventRepository } from "@web/common/repositories/event/event.repository.util";
 import { Schema_OptimisticEvent } from "@web/common/types/web.event.types";
 import { handleError } from "@web/common/utils/event/event.util";
 import { setSomedayEventsOrder } from "@web/common/utils/event/someday.event.util";
-import { loadEventsFromIndexedDB } from "@web/common/utils/storage/event.storage.util";
-import { EventApi } from "@web/ducks/events/event.api";
 import {
   Action_ConvertEvent,
   Action_DeleteEvent,
   Action_GetEvents,
-  Response_GetEventsSuccess,
 } from "@web/ducks/events/event.types";
 import {
   _assembleGridEvent,
@@ -85,7 +83,9 @@ export function* deleteSomedayEvent({ payload }: Action_DeleteEvent) {
   try {
     yield put(eventsEntitiesSlice.actions.delete(payload));
 
-    yield call(EventApi.delete, payload._id, payload.applyTo);
+    const sessionExists = yield call(session.doesSessionExist);
+    const repository = getEventRepository(sessionExists);
+    yield call([repository, repository.delete], payload._id, payload.applyTo);
   } catch (error) {
     yield put(
       getSomedayEventsSlice.actions.error({
@@ -104,45 +104,13 @@ export function* deleteSomedayEvent({ payload }: Action_DeleteEvent) {
 export function* getSomedayEvents({ payload }: Action_GetEvents) {
   try {
     const sessionExists: boolean = yield call(session.doesSessionExist);
+    const repository = getEventRepository(sessionExists);
 
-    if (!sessionExists) {
-      // Load from IndexedDB for unauthenticated users
-      const events: Event_Core[] = yield call(
-        loadEventsFromIndexedDB,
-        payload.startDate,
-        payload.endDate,
-        true, // isSomeday = true
-      );
-
-      const orderedEvents = setSomedayEventsOrder(events);
-
-      const normalizedEvents = normalize<Schema_Event>(orderedEvents, [
-        normalizedEventsSchema(),
-      ]);
-      yield put(
-        eventsEntitiesSlice.actions.insert(normalizedEvents.entities.events),
-      );
-
-      yield put(
-        getSomedayEventsSlice.actions.success({
-          data: normalizedEvents.result,
-          count: events.length,
-          page: 1,
-          pageSize: events.length || 1,
-          offset: 0,
-          startDate: payload.startDate,
-          endDate: payload.endDate,
-        }),
-      );
-      return;
-    }
-
-    // Authenticated: proceed with API call
-    const res = (yield call(EventApi.get, {
+    const res = yield call([repository, repository.get], {
       someday: true,
       startDate: payload.startDate,
       endDate: payload.endDate,
-    })) as Response_GetEventsSuccess;
+    });
 
     const events = setSomedayEventsOrder(res.data);
 
@@ -160,6 +128,8 @@ export function* getSomedayEvents({ payload }: Action_GetEvents) {
         page: res.page,
         pageSize: res.pageSize,
         offset: res.offset,
+        startDate: res.startDate,
+        endDate: res.endDate,
       }),
     );
   } catch (error) {
@@ -173,7 +143,9 @@ export function* getSomedayEvents({ payload }: Action_GetEvents) {
 
 export function* reorderSomedayEvents({ payload }: Action_Someday_Reorder) {
   try {
-    yield call(EventApi.reorder, payload);
+    const sessionExists = yield call(session.doesSessionExist);
+    const repository = getEventRepository(sessionExists);
+    yield call([repository, repository.reorder], payload);
   } catch (error) {
     yield put(
       getSomedayEventsSlice.actions.error({

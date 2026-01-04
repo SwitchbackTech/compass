@@ -1,6 +1,6 @@
-import { Origin, Priorities } from "@core/constants/core.constants";
 import { Event_Core } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
+import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { compassLocalDB } from "./compass-local.db";
 import {
   clearEventsFromIndexedDB,
@@ -9,39 +9,13 @@ import {
   saveEventToIndexedDB,
 } from "./event.storage.util";
 
-// Mock window.alert to prevent jsdom errors
-global.alert = jest.fn();
-
 describe("event.storage.util", () => {
   beforeEach(async () => {
-    // Clear IndexedDB before each test
-    try {
-      await clearEventsFromIndexedDB();
-    } catch (error) {
-      // Ignore errors if database doesn't exist yet
-    }
+    await clearEventsFromIndexedDB();
   });
 
-  afterEach(async () => {
-    // Clear IndexedDB after each test
-    try {
-      await clearEventsFromIndexedDB();
-    } catch (error) {
-      // Ignore errors
-    }
-  });
-
-  const createMockEvent = (overrides?: Partial<Event_Core>): Event_Core => {
-    return {
-      _id: `event-${Date.now()}-${Math.random()}`,
-      title: "Test Event",
-      startDate: dayjs().toISOString(),
-      endDate: dayjs().add(1, "hour").toISOString(),
-      origin: Origin.COMPASS,
-      priority: Priorities.UNASSIGNED,
-      user: "test-user",
-      ...overrides,
-    };
+  const createMockEvent = (overrides?: Partial<Event_Core>) => {
+    return createMockStandaloneEvent(overrides) as Event_Core;
   };
 
   describe("saveEventToIndexedDB", () => {

@@ -64,13 +64,18 @@ describe("getSomedayEvents saga", () => {
         },
       ];
 
+      // EventApi.get returns an AxiosResponse, and the repository extracts response.data
       mockGetApi.mockResolvedValue({
-        data: mockEvents,
-        count: 1,
-        page: 1,
-        pageSize: 10,
-        offset: 0,
-      });
+        data: {
+          data: mockEvents,
+          count: 1,
+          page: 1,
+          pageSize: 10,
+          offset: 0,
+          startDate,
+          endDate,
+        },
+      } as any);
 
       const action = getSomedayEventsSlice.actions.request({
         startDate,

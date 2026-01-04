@@ -1,5 +1,4 @@
 import {
-  CompassCoreEvent,
   Params_Events,
   Payload_Order,
   RecurringEventUpdateScope,
@@ -8,9 +7,7 @@ import {
 import { Response_GetEventsSuccess } from "@web/ducks/events/event.types";
 
 export interface EventRepository {
-  create(
-    event: Schema_Event | Schema_Event[] | CompassCoreEvent[],
-  ): Promise<void>;
+  create(event: Schema_Event | Schema_Event[]): Promise<void>;
   get(params: Params_Events): Promise<Response_GetEventsSuccess>;
   edit(
     _id: string,
