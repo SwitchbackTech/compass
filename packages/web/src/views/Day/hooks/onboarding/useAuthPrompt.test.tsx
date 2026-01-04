@@ -168,7 +168,6 @@ describe("useAuthPrompt", () => {
           tasks: [{ id: "1" }, { id: "2" }],
           hasNavigatedDates: false,
           showOnboardingOverlay: true,
-          showCmdPaletteTutorial: false,
         }),
       {
         wrapper: ({ children }) => (
