@@ -73,7 +73,6 @@ export async function loadLoggedInData(args?: LoaderFunctionArgs) {
   const isDayRoute = pathname.startsWith(ROOT_ROUTES.DAY);
 
   if (!authenticated) {
-    // Allow unauthenticated access to day view for new users
     if (isDayRoute && !hasCompletedSignup) {
       return { authenticated: false, skipOnboarding, hasCompletedSignup };
     }
