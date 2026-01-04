@@ -2,11 +2,13 @@ import { normalize } from "normalizr";
 import { call, put, select } from "@redux-saga/core/effects";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import {
+  Event_Core,
   Params_Events,
   RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
+import { session } from "@web/common/classes/Session";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import {
@@ -15,6 +17,7 @@ import {
   Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import { handleError } from "@web/common/utils/event/event.util";
+import { saveEventToIndexedDB } from "@web/common/utils/storage/event.storage.util";
 import { EventApi } from "@web/ducks/events/event.api";
 import {
   Action_ConvertEvent,
@@ -24,6 +27,7 @@ import {
   Action_GetEvents,
   Action_GetPaginatedEvents,
   Entities_Event,
+  Payload_GetEvents,
   Response_GetEventsSaga,
   Response_GetEventsSuccess,
 } from "@web/ducks/events/event.types";
@@ -93,13 +97,32 @@ export function* convertCalendarToSomedayEvent({
   }
 }
 
-export function* createEvent({ payload }: Action_CreateEvent) {
+export function* createEvent({ payload }: Action_CreateEvent): Generator {
   const event = yield* _createOptimisticGridEvent(payload, payload.isSomeday);
 
   yield put(pendingEventsSlice.actions.add(event._id));
 
   try {
-    yield call(EventApi.create, event);
+    const sessionExists = yield call(session.doesSessionExist);
+
+    if (!sessionExists) {
+      // Save to IndexedDB for unauthenticated users
+      yield call(saveEventToIndexedDB, event as Event_Core);
+
+      yield put(
+        eventsEntitiesSlice.actions.edit({
+          _id: event._id,
+          event: event,
+        }),
+      );
+
+      yield put(pendingEventsSlice.actions.remove(event._id));
+      yield put(createEventSlice.actions.success());
+      return;
+    }
+
+    // Authenticated: proceed with API call
+    yield call(EventApi.create, event as Schema_Event);
 
     yield put(
       eventsEntitiesSlice.actions.edit({
@@ -156,7 +179,7 @@ export function* editEvent({ payload }: Action_EditEvent) {
     if (shouldRemove) yield put(eventsEntitiesSlice.actions.delete({ _id }));
     else yield put(eventsEntitiesSlice.actions.edit(payload));
 
-    yield call(EventApi.edit, _id, event, { applyTo });
+    yield call(EventApi.edit, _id, event as Schema_Event, { applyTo });
 
     // Remove from pending on success
     yield put(pendingEventsSlice.actions.remove(_id));
@@ -174,7 +197,7 @@ export function* getCurrentMonthEvents({ payload }: Action_GetPaginatedEvents) {
   try {
     const startDate = dayjs().startOf("month").format(YEAR_MONTH_DAY_FORMAT);
     const endDate = dayjs().endOf("month").format(YEAR_MONTH_DAY_FORMAT);
-    const data: Response_GetEventsSaga = (yield call(getEvents, {
+    const data: Response_GetEventsSaga = (yield* getEvents({
       ...payload,
       startDate,
       endDate,
@@ -194,6 +217,16 @@ function* getEvents(
     if (!payload.startDate && !payload.endDate && "data" in payload) {
       yield put(eventsEntitiesSlice.actions.insert(payload.data));
       return { data: payload.data };
+    }
+
+    const sessionExists = yield call(session.doesSessionExist);
+
+    if (!sessionExists) {
+      // For unauthenticated users, return empty data for week/day events
+      // (someday events are handled separately in getSomedayEvents)
+      return {
+        data: [] as Payload_NormalizedAsyncAction,
+      };
     }
 
     const _payload = EventDateUtils.adjustStartEndDate(payload);
@@ -226,7 +259,7 @@ function* getEvents(
 
 export function* getWeekEvents({ payload }: Action_GetEvents) {
   try {
-    const data = (yield call(getEvents, payload)) as Response_GetEventsSaga;
+    const data = (yield* getEvents(payload)) as Response_GetEventsSaga;
     yield put(getWeekEventsSlice.actions.success(data));
   } catch (error) {
     yield put(getWeekEventsSlice.actions.error({}));
