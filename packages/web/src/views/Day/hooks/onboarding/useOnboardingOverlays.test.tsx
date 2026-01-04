@@ -13,6 +13,16 @@ jest.mock("@web/common/hooks/useSession", () => ({
   useSession: jest.fn(() => ({ authenticated: false })),
 }));
 
+jest.mock("@web/views/Onboarding/hooks/useOnboardingProgress", () => ({
+  useOnboardingProgress: jest.fn(),
+}));
+
+const mockUseOnboardingProgress = jest.requireMock(
+  "@web/views/Onboarding/hooks/useOnboardingProgress",
+).useOnboardingProgress as jest.MockedFunction<
+  typeof import("@web/views/Onboarding/hooks/useOnboardingProgress").useOnboardingProgress
+>;
+
 const createTestStore = (isCmdPaletteOpen = false) => {
   return configureStore({
     reducer: {
@@ -29,23 +39,15 @@ const createTestStore = (isCmdPaletteOpen = false) => {
 describe("useOnboardingOverlays", () => {
   beforeEach(() => {
     localStorage.clear();
+    mockUseOnboardingProgress.mockReturnValue({ hasNavigatedDates: false });
   });
 
   it("should show onboarding overlay for unauthenticated users when guide is active on step 1", async () => {
     const store = createTestStore();
 
-    const { result } = renderHook(
-      () =>
-        useOnboardingOverlays({
-          tasks: [],
-          hasNavigatedDates: false,
-        }),
-      {
-        wrapper: ({ children }) => (
-          <Provider store={store}>{children}</Provider>
-        ),
-      },
-    );
+    const { result } = renderHook(() => useOnboardingOverlays({ tasks: [] }), {
+      wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
+    });
 
     await waitFor(() => {
       expect(result.current.showOnboardingOverlay).toBe(true);
@@ -56,18 +58,9 @@ describe("useOnboardingOverlays", () => {
     updateOnboardingProgress({ isCompleted: true });
     const store = createTestStore();
 
-    const { result } = renderHook(
-      () =>
-        useOnboardingOverlays({
-          tasks: [],
-          hasNavigatedDates: false,
-        }),
-      {
-        wrapper: ({ children }) => (
-          <Provider store={store}>{children}</Provider>
-        ),
-      },
-    );
+    const { result } = renderHook(() => useOnboardingOverlays({ tasks: [] }), {
+      wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
+    });
 
     expect(result.current.showOnboardingOverlay).toBe(false);
   });
@@ -77,11 +70,7 @@ describe("useOnboardingOverlays", () => {
     const store = createTestStore();
 
     const { result } = renderHook(
-      () =>
-        useOnboardingOverlays({
-          tasks: [{ id: "1" }, { id: "2" }],
-          hasNavigatedDates: false,
-        }),
+      () => useOnboardingOverlays({ tasks: [{ id: "1" }, { id: "2" }] }),
       {
         wrapper: ({ children }) => (
           <Provider store={store}>{children}</Provider>
@@ -101,18 +90,11 @@ describe("useOnboardingOverlays", () => {
     updateOnboardingProgress({ isCompleted: true, isSeen: true });
     const store = createTestStore();
 
-    const { result } = renderHook(
-      () =>
-        useOnboardingOverlays({
-          tasks: [],
-          hasNavigatedDates: true,
-        }),
-      {
-        wrapper: ({ children }) => (
-          <Provider store={store}>{children}</Provider>
-        ),
-      },
-    );
+    mockUseOnboardingProgress.mockReturnValue({ hasNavigatedDates: true });
+
+    const { result } = renderHook(() => useOnboardingOverlays({ tasks: [] }), {
+      wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
+    });
 
     await waitFor(
       () => {
@@ -131,11 +113,7 @@ describe("useOnboardingOverlays", () => {
     const store = createTestStore();
 
     const { result } = renderHook(
-      () =>
-        useOnboardingOverlays({
-          tasks: [{ id: "1" }, { id: "2" }],
-          hasNavigatedDates: false,
-        }),
+      () => useOnboardingOverlays({ tasks: [{ id: "1" }, { id: "2" }] }),
       {
         wrapper: ({ children }) => (
           <Provider store={store}>{children}</Provider>
@@ -149,18 +127,9 @@ describe("useOnboardingOverlays", () => {
   it("should dismiss onboarding overlay and skip guide", async () => {
     const store = createTestStore();
 
-    const { result } = renderHook(
-      () =>
-        useOnboardingOverlays({
-          tasks: [],
-          hasNavigatedDates: false,
-        }),
-      {
-        wrapper: ({ children }) => (
-          <Provider store={store}>{children}</Provider>
-        ),
-      },
-    );
+    const { result } = renderHook(() => useOnboardingOverlays({ tasks: [] }), {
+      wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
+    });
 
     // Wait for overlay to show first
     await waitFor(() => {

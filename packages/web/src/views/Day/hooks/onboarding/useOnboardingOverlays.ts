@@ -1,10 +1,10 @@
 import type { OnboardingStepName } from "@web/views/Onboarding/constants/onboarding.constants";
+import { useOnboardingProgress } from "@web/views/Onboarding/hooks/useOnboardingProgress";
 import { useAuthPrompt } from "./useAuthPrompt";
 import { useOnboardingOverlay } from "./useOnboardingOverlay";
 
 interface UseOnboardingOverlaysProps {
   tasks: Array<{ id: string }>;
-  hasNavigatedDates: boolean;
 }
 
 interface UseOnboardingOverlaysReturn {
@@ -21,8 +21,8 @@ interface UseOnboardingOverlaysReturn {
  */
 export function useOnboardingOverlays({
   tasks,
-  hasNavigatedDates,
 }: UseOnboardingOverlaysProps): UseOnboardingOverlaysReturn {
+  const { hasNavigatedDates } = useOnboardingProgress();
   const { showOnboardingOverlay, currentStep, dismissOnboardingOverlay } =
     useOnboardingOverlay();
 

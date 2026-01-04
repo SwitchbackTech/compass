@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
 import { useEventDNDActions } from "@web/common/hooks/useEventDNDActions";
@@ -19,7 +19,6 @@ import { Dedication } from "@web/views/Calendar/components/Dedication";
 import { useRefetch } from "@web/views/Calendar/hooks/useRefetch";
 import { StyledCalendar } from "@web/views/Calendar/styled";
 import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
-import { AuthPrompt } from "@web/views/Day/components/AuthPrompt/AuthPrompt";
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
 import { Header } from "@web/views/Day/components/Header/Header";
 import { StorageInfoModal } from "@web/views/Day/components/StorageInfoModal/StorageInfoModal";
@@ -28,7 +27,6 @@ import { useStorageInfoModal } from "@web/views/Day/context/StorageInfoModalCont
 import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
-import { useOnboardingOverlays } from "@web/views/Day/hooks/onboarding/useOnboardingOverlays";
 import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
 import { focusFirstAgendaEvent } from "@web/views/Day/util/agenda/focus.util";
@@ -62,28 +60,10 @@ export const DayViewContent = memo(() => {
   const { isOpen: isModalOpen, closeModal } = useStorageInfoModal();
   const dateInView = useDateInView();
   const shortcuts = getShortcuts({ currentDate: dateInView });
-  const previousDateRef = useRef(dateInView.format("YYYY-MM-DD"));
-  const [hasNavigatedDates, setHasNavigatedDates] = useState(false);
-
-  // Track date navigation
-  useEffect(() => {
-    const currentDate = dateInView.format("YYYY-MM-DD");
-    if (previousDateRef.current !== currentDate) {
-      setHasNavigatedDates(true);
-      previousDateRef.current = currentDate;
-    }
-  }, [dateInView]);
-
-  // Onboarding overlays
-  const { showAuthPrompt, dismissAuthPrompt } = useOnboardingOverlays({
-    tasks,
-    hasNavigatedDates,
-  });
-
-  useDayEvents(dateInView);
 
   const { navigateToNextDay, navigateToPreviousDay, navigateToToday } =
     useDateNavigation();
+  useDayEvents(dateInView);
 
   const hasFocusedTask =
     selectedTaskIndex >= 0 && selectedTaskIndex < tasks.length;
@@ -173,9 +153,6 @@ export const DayViewContent = memo(() => {
       </StyledCalendar>
 
       <StorageInfoModal isOpen={isModalOpen} onClose={closeModal} />
-
-      {/* Onboarding overlays */}
-      {showAuthPrompt && <AuthPrompt onDismiss={dismissAuthPrompt} />}
 
       <ShortcutsOverlay
         sections={[
