@@ -1,7 +1,6 @@
 import axios, { AxiosError } from "axios";
 import { Status } from "@core/errors/status.codes";
 import { session } from "@web/common/classes/Session";
-import { AUTH_FAILURE_REASONS } from "@web/common/constants/auth.constants";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 
@@ -21,18 +20,10 @@ const _signOut = async (status: SignoutStatus) => {
 
   await session.signOut();
 
-  if (window.location.pathname === ROOT_ROUTES.LOGIN) {
+  if (window.location.pathname.startsWith(ROOT_ROUTES.DAY)) {
     return;
   }
-
-  const searchParams = new URLSearchParams({
-    reason:
-      status === Status.NOT_FOUND || status === Status.GONE
-        ? AUTH_FAILURE_REASONS.GAUTH_SESSION_EXPIRED
-        : AUTH_FAILURE_REASONS.USER_SESSION_EXPIRED,
-  });
-
-  window.location.assign(`${ROOT_ROUTES.LOGIN}?${searchParams.toString()}`);
+  window.location.assign(ROOT_ROUTES.DAY);
 };
 
 CompassApi.interceptors.response.use(

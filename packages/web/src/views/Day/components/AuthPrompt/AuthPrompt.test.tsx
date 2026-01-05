@@ -3,7 +3,12 @@ import { BrowserRouter } from "react-router-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import { useGoogleAuth } from "@web/common/hooks/useGoogleAuth";
 import { AuthPrompt } from "./AuthPrompt";
+
+jest.mock("@web/common/hooks/useGoogleAuth", () => ({
+  useGoogleAuth: jest.fn(),
+}));
 
 const renderWithRouter = (component: React.ReactElement) => {
   return render(
@@ -19,6 +24,19 @@ const renderWithRouter = (component: React.ReactElement) => {
 };
 
 describe("AuthPrompt", () => {
+  const loginMock = jest.fn();
+  const mockUseGoogleAuth = useGoogleAuth as jest.MockedFunction<
+    typeof useGoogleAuth
+  >;
+
+  beforeEach(() => {
+    mockUseGoogleAuth.mockReturnValue({
+      login: loginMock,
+      loading: false,
+    });
+    loginMock.mockReset();
+  });
+
   beforeEach(() => {
     localStorage.clear();
   });
@@ -51,7 +69,7 @@ describe("AuthPrompt", () => {
     expect(stored.isAuthPromptDismissed).toBe(true);
   });
 
-  it("should navigate to login when 'Sign in' button is clicked", async () => {
+  it("should start Google login when 'Sign in' button is clicked", async () => {
     const onDismiss = jest.fn();
 
     renderWithRouter(<AuthPrompt onDismiss={onDismiss} />);
@@ -61,8 +79,6 @@ describe("AuthPrompt", () => {
       await userEvent.click(signInButton);
     });
 
-    // Check that navigation occurred (window.location would change in real app)
-    // In test environment, we just verify the button click works
-    expect(signInButton).toBeInTheDocument();
+    expect(loginMock).toHaveBeenCalledTimes(1);
   });
 });

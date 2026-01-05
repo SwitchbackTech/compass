@@ -8,7 +8,6 @@ import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import {
   loadDayData,
   loadLoggedInData,
-  loadLoginData,
   loadSpecificDayData,
 } from "@web/routers/loaders";
 
@@ -76,16 +75,6 @@ export const router = createBrowserRouter(
     },
     {
       path: "/onboarding",
-      lazy: async () =>
-        import(
-          /* webpackChunkName: "onboarding" */ "@web/views/Onboarding/OnboardingFlow"
-        ).then((module) => ({
-          Component: module.default || module.OnboardingFlow,
-        })),
-    },
-    {
-      path: ROOT_ROUTES.LOGIN,
-      loader: loadLoginData,
       lazy: async () =>
         import(
           /* webpackChunkName: "onboarding" */ "@web/views/Onboarding/OnboardingFlow"

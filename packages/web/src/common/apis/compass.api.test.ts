@@ -6,7 +6,6 @@ import type {
 } from "axios";
 import { signOut } from "supertokens-web-js/recipe/session";
 import { Status } from "@core/errors/status.codes";
-import { AUTH_FAILURE_REASONS } from "@web/common/constants/auth.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { CompassApi } from "./compass.api";
 
@@ -72,20 +71,18 @@ describe("CompassApi interceptor auth handling", () => {
     CompassApi.defaults.adapter = originalAdapter;
   });
 
-  it("signs out and redirects to login with GAUTH reason when Google token is invalid", async () => {
+  it("signs out and redirects to day when Google token is invalid", async () => {
     await triggerErrorResponse(Status.NOT_FOUND);
 
     expect(window.alert).toHaveBeenCalledWith(
       "Login required, cuz security 😇",
     );
     expect(signOut).toHaveBeenCalledTimes(1);
-    expect(assignMock).toHaveBeenCalledWith(
-      `${ROOT_ROUTES.LOGIN}?reason=${AUTH_FAILURE_REASONS.GAUTH_SESSION_EXPIRED}`,
-    );
+    expect(assignMock).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
   });
 
-  it("does not redirect if user is already on the login route", async () => {
-    setLocationPath(ROOT_ROUTES.LOGIN);
+  it("does not redirect if user is already on the day route", async () => {
+    setLocationPath(ROOT_ROUTES.DAY);
 
     await triggerErrorResponse(Status.NOT_FOUND);
 

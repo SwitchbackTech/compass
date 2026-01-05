@@ -1,6 +1,5 @@
 import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { useGoogleAuth } from "@web/common/hooks/useGoogleAuth";
 import { useAuthPrompt } from "@web/views/Onboarding/hooks/useAuthPrompt";
 import { useOnboardingOverlay } from "@web/views/Onboarding/hooks/useOnboardingOverlay";
 import { useOnboardingProgress } from "@web/views/Onboarding/hooks/useOnboardingProgress";
@@ -12,7 +11,7 @@ interface UseOnboardingNoticesReturn {
 }
 
 export function useOnboardingNotices(): UseOnboardingNoticesReturn {
-  const navigate = useNavigate();
+  const googleAuth = useGoogleAuth();
   const tasks = useStoredTasks();
   const { hasNavigatedDates } = useOnboardingProgress();
   const { showOnboardingOverlay } = useOnboardingOverlay();
@@ -34,7 +33,9 @@ export function useOnboardingNotices(): UseOnboardingNoticesReturn {
         body: "Your tasks are saved locally. Sign in to sync with Google Calendar and access your data from any device.",
         primaryAction: {
           label: "Sign in",
-          onClick: () => navigate(ROOT_ROUTES.LOGIN),
+          onClick: () => {
+            void googleAuth?.login?.();
+          },
         },
         secondaryAction: {
           label: "Later",
@@ -42,7 +43,7 @@ export function useOnboardingNotices(): UseOnboardingNoticesReturn {
         },
       },
     ];
-  }, [dismissAuthPrompt, navigate, showAuthPrompt]);
+  }, [dismissAuthPrompt, googleAuth, showAuthPrompt]);
 
   return { notices };
 }

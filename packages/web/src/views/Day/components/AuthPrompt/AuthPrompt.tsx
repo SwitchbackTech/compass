@@ -1,6 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { useGoogleAuth } from "@web/common/hooks/useGoogleAuth";
 import { updateOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 interface AuthPromptProps {
@@ -8,7 +7,8 @@ interface AuthPromptProps {
 }
 
 export const AuthPrompt: React.FC<AuthPromptProps> = ({ onDismiss }) => {
-  const navigate = useNavigate();
+  const googleAuth = useGoogleAuth();
+  const isLoading = googleAuth?.loading ?? false;
 
   const handleDismiss = () => {
     updateOnboardingProgress({ isAuthPromptDismissed: true });
@@ -16,7 +16,7 @@ export const AuthPrompt: React.FC<AuthPromptProps> = ({ onDismiss }) => {
   };
 
   const handleSignIn = () => {
-    navigate(ROOT_ROUTES.LOGIN);
+    void googleAuth?.login?.();
   };
 
   return (
@@ -34,7 +34,9 @@ export const AuthPrompt: React.FC<AuthPromptProps> = ({ onDismiss }) => {
         <div className="flex gap-2">
           <button
             onClick={handleSignIn}
-            className="bg-accent-primary hover:bg-accent-primary/90 flex-1 rounded px-4 py-2 text-sm font-medium text-white transition-colors"
+            aria-busy={isLoading}
+            disabled={isLoading}
+            className="bg-accent-primary hover:bg-accent-primary/90 flex-1 rounded px-4 py-2 text-sm font-medium text-white transition-colors disabled:cursor-not-allowed disabled:opacity-70"
           >
             Sign in
           </button>

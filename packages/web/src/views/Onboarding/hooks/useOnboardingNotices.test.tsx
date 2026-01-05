@@ -1,13 +1,13 @@
 import { renderHook } from "@testing-library/react";
+import { useGoogleAuth } from "@web/common/hooks/useGoogleAuth";
 import { useAuthPrompt } from "@web/views/Onboarding/hooks/useAuthPrompt";
 import { useOnboardingNotices } from "@web/views/Onboarding/hooks/useOnboardingNotices";
 import { useOnboardingOverlay } from "@web/views/Onboarding/hooks/useOnboardingOverlay";
 import { useOnboardingProgress } from "@web/views/Onboarding/hooks/useOnboardingProgress";
 import { useStoredTasks } from "@web/views/Onboarding/hooks/useStoredTasks";
 
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
-  useNavigate: () => jest.fn(),
+jest.mock("@web/common/hooks/useGoogleAuth", () => ({
+  useGoogleAuth: jest.fn(),
 }));
 
 jest.mock("@web/views/Onboarding/hooks/useOnboardingOverlay");
@@ -27,6 +27,9 @@ const mockUseAuthPrompt = useAuthPrompt as jest.MockedFunction<
 const mockUseStoredTasks = useStoredTasks as jest.MockedFunction<
   typeof useStoredTasks
 >;
+const mockUseGoogleAuth = useGoogleAuth as jest.MockedFunction<
+  typeof useGoogleAuth
+>;
 
 describe("useOnboardingNotices", () => {
   beforeEach(() => {
@@ -35,6 +38,7 @@ describe("useOnboardingNotices", () => {
       currentStep: null,
       dismissOnboardingOverlay: jest.fn(),
     });
+    mockUseGoogleAuth.mockReturnValue({ login: jest.fn(), loading: false });
     mockUseOnboardingProgress.mockReturnValue({ hasNavigatedDates: false });
     mockUseStoredTasks.mockReturnValue([]);
   });
