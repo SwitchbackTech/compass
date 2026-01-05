@@ -1,9 +1,9 @@
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAuthPrompt } from "@web/views/Onboarding/hooks/useAuthPrompt";
-import { getOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 // Mock useSession
 jest.mock("@web/common/hooks/useSession", () => ({
@@ -114,10 +114,7 @@ describe("useAuthPrompt", () => {
   });
 
   it("should not show auth prompt if dismissed", () => {
-    const {
-      updateOnboardingProgress,
-    } = require("@web/views/Onboarding/utils/onboarding.storage.util");
-    updateOnboardingProgress({ isAuthDismissed: true });
+    localStorage.setItem(STORAGE_KEYS.AUTH_PROMPT_DISMISSED, "true");
     const store = createTestStore();
 
     const { result } = renderHook(
@@ -238,7 +235,8 @@ describe("useAuthPrompt", () => {
 
     result.current.dismissAuthPrompt();
     expect(result.current.showAuthPrompt).toBe(false);
-    const progress = getOnboardingProgress();
-    expect(progress.isAuthDismissed).toBe(true);
+    expect(localStorage.getItem(STORAGE_KEYS.AUTH_PROMPT_DISMISSED)).toBe(
+      "true",
+    );
   });
 });

@@ -4,6 +4,7 @@ export const StorageKeySchema = z.enum([
   "compass.reminder",
   "compass.auth.hasCompletedSignup",
   "compass.auth.skipOnboarding",
+  "compass.auth.authPromptDismissed",
   "compass.onboarding",
 ]);
 
@@ -13,11 +14,13 @@ export const STORAGE_KEYS: Record<
   | "REMINDER"
   | "HAS_COMPLETED_SIGNUP"
   | "SKIP_ONBOARDING"
+  | "AUTH_PROMPT_DISMISSED"
   | "ONBOARDING_PROGRESS",
   StorageKey
 > = {
   REMINDER: "compass.reminder",
   HAS_COMPLETED_SIGNUP: "compass.auth.hasCompletedSignup",
   SKIP_ONBOARDING: "compass.auth.skipOnboarding",
+  AUTH_PROMPT_DISMISSED: "compass.auth.authPromptDismissed",
   ONBOARDING_PROGRESS: "compass.onboarding",
 } as const;
