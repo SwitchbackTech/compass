@@ -209,14 +209,6 @@ function* getEvents(
     const sessionExists = yield call(session.doesSessionExist);
     const repository = getEventRepository(sessionExists);
 
-    if (!sessionExists) {
-      // For unauthenticated users, return empty data for week/day events
-      // (someday events are handled separately in getSomedayEvents)
-      return {
-        data: [] as Payload_NormalizedAsyncAction,
-      };
-    }
-
     const _payload = EventDateUtils.adjustStartEndDate(payload);
 
     const res: Response_GetEventsSuccess = yield call(
