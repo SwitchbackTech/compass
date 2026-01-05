@@ -1,8 +1,8 @@
 import {
-  CompassCoreEvent,
   Event_Core,
   Params_Events,
   Payload_Order,
+  Schema_Event,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import {
@@ -204,8 +204,7 @@ describe("LocalEventRepository", () => {
         user: event.user,
       });
 
-      // createMockStandaloneEvent always generates _id and endDate at runtime
-      await repository.edit("event-1", updatedEvent as CompassCoreEvent);
+      await repository.edit("event-1", updatedEvent as Schema_Event, {});
 
       const savedEvent = mockEvents.get("event-1");
       expect(savedEvent?.title).toBe("Updated Title");

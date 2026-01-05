@@ -1,8 +1,8 @@
 import {
-  CompassCoreEvent,
   Event_Core,
   Params_Events,
   Payload_Order,
+  RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
 import {
@@ -39,13 +39,20 @@ export class LocalEventRepository implements EventRepository {
     };
   }
 
-  async edit(_id: string, event: CompassCoreEvent): Promise<void> {
+  async edit(
+    _id: string,
+    event: Schema_Event,
+    params: { applyTo?: RecurringEventUpdateScope },
+  ): Promise<void> {
     // For local repository, we just save the updated event
     // The applyTo parameter is not relevant for local storage
     await saveEventToIndexedDB(event as Event_Core);
   }
 
-  async delete(_id: string): Promise<void> {
+  async delete(
+    _id: string,
+    applyTo?: RecurringEventUpdateScope,
+  ): Promise<void> {
     // For local repository, applyTo is not relevant
     await deleteEventFromIndexedDB(_id);
   }
