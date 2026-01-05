@@ -35,9 +35,8 @@ describe("AuthPrompt", () => {
     await userEvent.click(laterButton);
 
     expect(onDismiss).toHaveBeenCalled();
-    expect(localStorage.getItem(STORAGE_KEYS.AUTH_PROMPT_DISMISSED)).toBe(
-      "true",
-    );
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.AUTH) ?? "{}");
+    expect(stored.authPromptDismissed).toBe(true);
   });
 
   it("should navigate to login when 'Sign in' button is clicked", async () => {

@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { useSession } from "@web/common/hooks/useSession";
+import {
+  getAuthStorage,
+  updateAuthStorage,
+} from "@web/common/utils/storage/auth.storage.util";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 
@@ -35,10 +38,8 @@ export function useAuthPrompt({
     if (typeof window === "undefined") return;
     if (authenticated) return;
 
-    const isDismissed = localStorage.getItem(
-      STORAGE_KEYS.AUTH_PROMPT_DISMISSED,
-    );
-    if (isDismissed === "true") return;
+    const { authPromptDismissed } = getAuthStorage();
+    if (authPromptDismissed) return;
 
     // Check if palette was just closed
     const justClosedPalette =
@@ -77,7 +78,7 @@ export function useAuthPrompt({
   ]);
 
   const dismissAuthPrompt = () => {
-    localStorage.setItem(STORAGE_KEYS.AUTH_PROMPT_DISMISSED, "true");
+    updateAuthStorage({ authPromptDismissed: true });
     setShowAuthPrompt(false);
   };
 

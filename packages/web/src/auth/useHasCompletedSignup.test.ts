@@ -1,5 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import { updateAuthStorage } from "@web/common/utils/storage/auth.storage.util";
 import { useHasCompletedSignup } from "./useHasCompletedSignup";
 
 describe("useHasCompletedSignup", () => {
@@ -14,7 +15,7 @@ describe("useHasCompletedSignup", () => {
   });
 
   it("should return true when localStorage has completed signup flag", () => {
-    localStorage.setItem(STORAGE_KEYS.HAS_COMPLETED_SIGNUP, "true");
+    updateAuthStorage({ hasCompletedSignup: true });
 
     const { result } = renderHook(() => useHasCompletedSignup());
 
@@ -22,7 +23,7 @@ describe("useHasCompletedSignup", () => {
   });
 
   it("should return false when localStorage has invalid value", () => {
-    localStorage.setItem(STORAGE_KEYS.HAS_COMPLETED_SIGNUP, "invalid");
+    localStorage.setItem(STORAGE_KEYS.AUTH, "invalid");
 
     const { result } = renderHook(() => useHasCompletedSignup());
 
@@ -39,9 +40,8 @@ describe("useHasCompletedSignup", () => {
     });
 
     expect(result.current.hasCompletedSignup).toBe(true);
-    expect(localStorage.getItem(STORAGE_KEYS.HAS_COMPLETED_SIGNUP)).toBe(
-      "true",
-    );
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.AUTH) ?? "{}");
+    expect(stored.hasCompletedSignup).toBe(true);
   });
 
   it("should handle multiple calls to markSignupCompleted", () => {
@@ -58,8 +58,7 @@ describe("useHasCompletedSignup", () => {
     });
 
     expect(result.current.hasCompletedSignup).toBe(true);
-    expect(localStorage.getItem(STORAGE_KEYS.HAS_COMPLETED_SIGNUP)).toBe(
-      "true",
-    );
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.AUTH) ?? "{}");
+    expect(stored.hasCompletedSignup).toBe(true);
   });
 });

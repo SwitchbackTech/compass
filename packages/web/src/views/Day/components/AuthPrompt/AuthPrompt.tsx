@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import { updateAuthStorage } from "@web/common/utils/storage/auth.storage.util";
 
 interface AuthPromptProps {
   onDismiss: () => void;
@@ -11,7 +11,7 @@ export const AuthPrompt: React.FC<AuthPromptProps> = ({ onDismiss }) => {
   const navigate = useNavigate();
 
   const handleDismiss = () => {
-    localStorage.setItem(STORAGE_KEYS.AUTH_PROMPT_DISMISSED, "true");
+    updateAuthStorage({ authPromptDismissed: true });
     onDismiss();
   };
 

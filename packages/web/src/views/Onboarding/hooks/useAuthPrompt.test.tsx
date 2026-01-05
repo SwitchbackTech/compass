@@ -2,6 +2,7 @@ import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import { updateAuthStorage } from "@web/common/utils/storage/auth.storage.util";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAuthPrompt } from "@web/views/Onboarding/hooks/useAuthPrompt";
 
@@ -114,7 +115,7 @@ describe("useAuthPrompt", () => {
   });
 
   it("should not show auth prompt if dismissed", () => {
-    localStorage.setItem(STORAGE_KEYS.AUTH_PROMPT_DISMISSED, "true");
+    updateAuthStorage({ authPromptDismissed: true });
     const store = createTestStore();
 
     const { result } = renderHook(
@@ -235,8 +236,7 @@ describe("useAuthPrompt", () => {
 
     result.current.dismissAuthPrompt();
     expect(result.current.showAuthPrompt).toBe(false);
-    expect(localStorage.getItem(STORAGE_KEYS.AUTH_PROMPT_DISMISSED)).toBe(
-      "true",
-    );
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.AUTH) ?? "{}");
+    expect(stored.authPromptDismissed).toBe(true);
   });
 });

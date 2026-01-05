@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import {
+  getAuthStorage,
+  updateAuthStorage,
+} from "@web/common/utils/storage/auth.storage.util";
 
 export const useHasCompletedSignup = () => {
   const [hasCompletedSignup, setHasCompletedSignup] = useState<boolean | null>(
@@ -8,17 +11,15 @@ export const useHasCompletedSignup = () => {
 
   useEffect(() => {
     const checkSignupStatus = () => {
-      const storedValue = localStorage.getItem(
-        STORAGE_KEYS.HAS_COMPLETED_SIGNUP,
-      );
-      setHasCompletedSignup(storedValue === "true");
+      const { hasCompletedSignup: storedValue } = getAuthStorage();
+      setHasCompletedSignup(storedValue);
     };
 
     checkSignupStatus();
   }, []);
 
   const markSignupCompleted = useCallback(() => {
-    localStorage.setItem(STORAGE_KEYS.HAS_COMPLETED_SIGNUP, "true");
+    updateAuthStorage({ hasCompletedSignup: true });
     setHasCompletedSignup(true);
   }, [setHasCompletedSignup]);
 
