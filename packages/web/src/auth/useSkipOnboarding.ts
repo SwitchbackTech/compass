@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  getAuthStorage,
-  updateAuthStorage,
-} from "@web/common/utils/storage/auth.storage.util";
+  getOnboardingProgress,
+  updateOnboardingProgress,
+} from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 export const useSkipOnboarding = () => {
   const [skipOnboarding, setSkipOnboarding] = useState<boolean>(false);
 
   useEffect(() => {
     const checkOnboardingStatus = () => {
-      const { skipOnboarding: storedValue } = getAuthStorage();
+      const { isOnboardingSkipped: storedValue } = getOnboardingProgress();
       setSkipOnboarding(storedValue);
     };
 
@@ -18,7 +18,7 @@ export const useSkipOnboarding = () => {
 
   const updateOnboardingStatus = useCallback(
     (skip: boolean) => {
-      updateAuthStorage({ skipOnboarding: skip });
+      updateOnboardingProgress({ isOnboardingSkipped: skip });
 
       setSkipOnboarding(skip);
     },

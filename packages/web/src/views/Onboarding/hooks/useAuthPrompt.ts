@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "@web/common/hooks/useSession";
-import {
-  getAuthStorage,
-  updateAuthStorage,
-} from "@web/common/utils/storage/auth.storage.util";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
+import {
+  getOnboardingProgress,
+  updateOnboardingProgress,
+} from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 interface UseAuthPromptProps {
   tasks: Array<{ id: string }>;
@@ -38,8 +38,8 @@ export function useAuthPrompt({
     if (typeof window === "undefined") return;
     if (authenticated) return;
 
-    const { authPromptDismissed } = getAuthStorage();
-    if (authPromptDismissed) return;
+    const { isAuthPromptDismissed } = getOnboardingProgress();
+    if (isAuthPromptDismissed) return;
 
     // Check if palette was just closed
     const justClosedPalette =
@@ -78,7 +78,7 @@ export function useAuthPrompt({
   ]);
 
   const dismissAuthPrompt = () => {
-    updateAuthStorage({ authPromptDismissed: true });
+    updateOnboardingProgress({ isAuthPromptDismissed: true });
     setShowAuthPrompt(false);
   };
 

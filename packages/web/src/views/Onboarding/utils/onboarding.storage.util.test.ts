@@ -1,6 +1,8 @@
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { ONBOARDING_STEPS } from "../constants/onboarding.constants";
 import {
+  DEFAULT_ONBOARDING_PROGRESS,
+  OnboardingProgress,
   clearCompletedSteps,
   getOnboardingProgress,
   isStepCompleted,
@@ -19,26 +21,22 @@ describe("onboarding.storage.util", () => {
   describe("getOnboardingProgress", () => {
     it("should return default progress when no data exists", () => {
       const progress = getOnboardingProgress();
-      expect(progress).toEqual({
-        completedSteps: [],
-        isSeen: false,
-        isAuthDismissed: false,
-        isCompleted: false,
-        isStorageWarningSeen: false,
-      });
+      expect(progress).toEqual(DEFAULT_ONBOARDING_PROGRESS);
     });
 
     it("should return stored progress from consolidated key", () => {
-      const testProgress = {
+      const testProgress: OnboardingProgress = {
         completedSteps: [
           ONBOARDING_STEPS.NAVIGATE_TO_DAY,
           ONBOARDING_STEPS.CREATE_TASK,
           ONBOARDING_STEPS.NAVIGATE_TO_NOW,
         ],
         isSeen: true,
-        isAuthDismissed: true,
         isCompleted: false,
         isStorageWarningSeen: true,
+        isSignupComplete: true,
+        isOnboardingSkipped: false,
+        isAuthPromptDismissed: true,
       };
       localStorage.setItem(
         STORAGE_KEYS.ONBOARDING_PROGRESS,
@@ -51,22 +49,27 @@ describe("onboarding.storage.util", () => {
     it("should handle invalid JSON gracefully", () => {
       localStorage.setItem(STORAGE_KEYS.ONBOARDING_PROGRESS, "invalid json");
       const progress = getOnboardingProgress();
-      expect(progress).toEqual({
+      const expected: OnboardingProgress = {
         completedSteps: [],
         isSeen: false,
-        isAuthDismissed: false,
         isCompleted: false,
         isStorageWarningSeen: false,
-      });
+        isSignupComplete: false,
+        isOnboardingSkipped: false,
+        isAuthPromptDismissed: false,
+      };
+      expect(progress).toEqual(expected);
     });
 
     it("should handle invalid array format gracefully", () => {
       const invalidFormatProgress = {
         completedSteps: [1, 2, 4, 5, 0, -1, "invalid"],
         isSeen: false,
-        isAuthDismissed: false,
         isCompleted: false,
         isStorageWarningSeen: false,
+        hasCompletedSignup: false,
+        skipOnboarding: false,
+        authPromptDismissed: false,
       };
       localStorage.setItem(
         STORAGE_KEYS.ONBOARDING_PROGRESS,
@@ -87,10 +90,10 @@ describe("onboarding.storage.util", () => {
 
     it("should merge partial updates", () => {
       updateOnboardingProgress({ isSeen: true });
-      updateOnboardingProgress({ isAuthDismissed: true });
+      updateOnboardingProgress({ isAuthPromptDismissed: true });
       const progress = getOnboardingProgress();
       expect(progress.isSeen).toBe(true);
-      expect(progress.isAuthDismissed).toBe(true);
+      expect(progress.isAuthPromptDismissed).toBe(true);
     });
 
     it("should update completed steps", () => {
@@ -247,9 +250,11 @@ describe("onboarding.storage.util", () => {
           ONBOARDING_STEPS.NAVIGATE_TO_NOW,
         ],
         isSeen: true,
-        isAuthDismissed: true,
         isCompleted: true,
         isStorageWarningSeen: true,
+        isSignupComplete: true,
+        isOnboardingSkipped: true,
+        isAuthPromptDismissed: true,
       });
 
       // Verify it exists
@@ -270,9 +275,11 @@ describe("onboarding.storage.util", () => {
       const progressAfter = getOnboardingProgress();
       expect(progressAfter.completedSteps).toEqual([]);
       expect(progressAfter.isSeen).toBe(false);
-      expect(progressAfter.isAuthDismissed).toBe(false);
       expect(progressAfter.isCompleted).toBe(false);
       expect(progressAfter.isStorageWarningSeen).toBe(false);
+      expect(progressAfter.isSignupComplete).toBe(false);
+      expect(progressAfter.isOnboardingSkipped).toBe(false);
+      expect(progressAfter.isAuthPromptDismissed).toBe(false);
     });
 
     it("should handle reset when no progress exists", () => {

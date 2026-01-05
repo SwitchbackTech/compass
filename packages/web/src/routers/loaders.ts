@@ -3,7 +3,7 @@ import { zYearMonthDayString } from "@core/types/type.utils";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { AUTH_FAILURE_REASONS } from "@web/common/constants/auth.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { getAuthStorage } from "@web/common/utils/storage/auth.storage.util";
+import { getOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 export interface DayLoaderData {
   dateInView: Dayjs; // in UTC
@@ -19,13 +19,13 @@ export async function loadAuthenticated() {
 }
 
 export function loadHasCompletedSignup() {
-  const { hasCompletedSignup } = getAuthStorage();
+  const { isSignupComplete: hasCompletedSignup } = getOnboardingProgress();
 
   return { hasCompletedSignup };
 }
 
 export function loadOnboardingData() {
-  const { skipOnboarding } = getAuthStorage();
+  const { isOnboardingSkipped: skipOnboarding } = getOnboardingProgress();
 
   return { skipOnboarding };
 }

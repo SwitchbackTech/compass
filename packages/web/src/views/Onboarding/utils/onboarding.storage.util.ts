@@ -16,24 +16,25 @@ const CompletedStepsSchema = z.array(
 export const OnboardingProgressSchema = z.object({
   completedSteps: CompletedStepsSchema.default([]),
   isSeen: z.boolean().default(false),
-  isAuthDismissed: z.boolean().default(false),
   isCompleted: z.boolean().default(false),
   isStorageWarningSeen: z.boolean().default(false),
+  isSignupComplete: z.boolean().default(false),
+  isOnboardingSkipped: z.boolean().default(false),
+  isAuthPromptDismissed: z.boolean().default(false),
 });
 
 export type OnboardingProgress = z.infer<typeof OnboardingProgressSchema>;
 
-const DEFAULT_ONBOARDING_PROGRESS: OnboardingProgress = {
+export const DEFAULT_ONBOARDING_PROGRESS: OnboardingProgress = {
   completedSteps: [],
   isSeen: false,
-  isAuthDismissed: false,
   isCompleted: false,
   isStorageWarningSeen: false,
+  isSignupComplete: false,
+  isOnboardingSkipped: false,
+  isAuthPromptDismissed: false,
 };
 
-/**
- * Get onboarding progress from localStorage
- */
 export function getOnboardingProgress(): OnboardingProgress {
   if (typeof window === "undefined") return DEFAULT_ONBOARDING_PROGRESS;
 

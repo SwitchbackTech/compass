@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { updateAuthStorage } from "@web/common/utils/storage/auth.storage.util";
+import { updateOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 interface AuthPromptProps {
   onDismiss: () => void;
@@ -11,7 +11,7 @@ export const AuthPrompt: React.FC<AuthPromptProps> = ({ onDismiss }) => {
   const navigate = useNavigate();
 
   const handleDismiss = () => {
-    updateAuthStorage({ authPromptDismissed: true });
+    updateOnboardingProgress({ isAuthPromptDismissed: true });
     onDismiss();
   };
 
