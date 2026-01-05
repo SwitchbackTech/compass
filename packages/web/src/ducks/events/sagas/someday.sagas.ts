@@ -46,10 +46,7 @@ export function* convertSomedayToCalendarEvent({
     yield put(
       eventsEntitiesSlice.actions.edit({
         _id: optimisticEvent._id,
-        event: {
-          ...optimisticEvent,
-          isOptimistic: false,
-        } as unknown as Schema_Event,
+        event: optimisticEvent,
       }),
     );
 

@@ -55,12 +55,11 @@ describe("_assembleGridEvent", () => {
 });
 
 describe("addId", () => {
-  it("should add a raw MongoID and set isOptimistic flag", () => {
+  it("should add a raw MongoID", () => {
     const event = createMockStandaloneEvent() as Schema_GridEvent;
     const result = addId(event);
 
     expect(result._id).toBeDefined();
     expect(result._id).not.toMatch(/^optimistic-/);
-    expect((result as any).isOptimistic).toBe(true);
   });
 });

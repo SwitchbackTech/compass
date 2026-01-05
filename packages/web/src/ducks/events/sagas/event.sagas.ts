@@ -70,7 +70,7 @@ export function* convertCalendarToSomedayEvent({
     yield put(
       eventsEntitiesSlice.actions.edit({
         _id: optimisticEvent._id,
-        event: { ...optimisticEvent, isOptimistic: false } as Schema_WebEvent,
+        event: optimisticEvent,
       }),
     );
 
@@ -108,9 +108,7 @@ export function* createEvent({ payload }: Action_CreateEvent): Generator {
     yield put(
       eventsEntitiesSlice.actions.edit({
         _id: event._id,
-        event: sessionExists
-          ? ({ ...event, isOptimistic: false } as Schema_WebEvent)
-          : event,
+        event: event,
       }),
     );
 
