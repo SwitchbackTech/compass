@@ -48,12 +48,8 @@ export interface OnboardingStepConfig {
   id: OnboardingStepName;
   order: number;
   detectionType: StepDetectionType;
-  detectionConfig?: { route: string };
+  detectionConfig?: { route: string; routePrefixes?: string[] };
   guide: {
-    visibilityByAuth: {
-      authenticated: OnboardingGuideView[];
-      unauthenticated: OnboardingGuideView[];
-    };
     instructionsByView: Partial<
       Record<OnboardingInstructionVariant, OnboardingInstructionPart[]>
     >;

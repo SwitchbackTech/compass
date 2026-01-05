@@ -1,6 +1,5 @@
 import React, { FC, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { useSession } from "@web/common/hooks/useSession";
 import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import {
   ONBOARDING_GUIDE_VIEWS,
@@ -18,8 +17,7 @@ import {
 
 export const CmdPaletteGuide: FC = () => {
   const location = useLocation();
-  const { authenticated } = useSession();
-  const { currentStep, isGuideActive, completeStep, skipGuide } =
+  const { currentStep, completeStep, skipGuide, isGuideActive } =
     useCmdPaletteGuide();
   const step2CompletionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isSuccessMessageDismissed, setIsSuccessMessageDismissed] =
@@ -79,23 +77,13 @@ export const CmdPaletteGuide: FC = () => {
     isStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_WEEK) &&
     !isSuccessMessageDismissed;
 
-  // Determine if we should show the overlay
-  // Show success message if final step is completed, OR show guide if active with a step
-  // But respect view restrictions: step 1 on any view, step 2 on day/now, steps 3/4 only on now, step 5 on any
+  if (!isGuideActive && !showSuccessMessage) {
+    return null;
+  }
+
   const actualStepConfig = actualStep
     ? ONBOARDING_STEP_CONFIGS.find((config) => config.id === actualStep)
     : null;
-  const visibilityByAuth = authenticated
-    ? actualStepConfig?.guide.visibilityByAuth.authenticated
-    : actualStepConfig?.guide.visibilityByAuth.unauthenticated;
-  const canRenderStep = visibilityByAuth?.includes(currentView) ?? false;
-  const shouldShowOverlay =
-    showSuccessMessage ||
-    (isGuideActive && actualStep !== null && canRenderStep);
-
-  if (!shouldShowOverlay) {
-    return null;
-  }
 
   const modifierKey = getModifierKey();
   const modifierKeyDisplay = modifierKey === "Meta" ? "⌘" : "Ctrl";

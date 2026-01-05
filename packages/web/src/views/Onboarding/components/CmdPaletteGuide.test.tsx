@@ -286,12 +286,11 @@ describe("CmdPaletteGuide", () => {
     // Should show step 1 instructions instead since step 1 wasn't completed
     expect(screen.getByText("Welcome to the Day View")).toBeInTheDocument();
     expect(
-      screen.getByText(
+      screen.getAllByText(
         (_, element) =>
-          element?.textContent === "Press 2 to go to the Day view" ?? false,
-      ),
+          element?.textContent === "You're already on the Day view." ?? false,
+      )[0],
     ).toBeInTheDocument();
-    expect(screen.getByText("2")).toBeInTheDocument();
     expect(screen.getByText("Step 1 of 6")).toBeInTheDocument();
   });
 
@@ -346,30 +345,6 @@ describe("CmdPaletteGuide", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("r")).toBeInTheDocument(); // The kbd element
     expect(screen.getByText("Step 5 of 6")).toBeInTheDocument();
-  });
-
-  it("should not render step 3 on Day view", () => {
-    mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
-    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
-    markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
-    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
-    mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: ONBOARDING_STEPS.EDIT_DESCRIPTION,
-      isGuideActive: true,
-      completeStep: jest.fn(),
-      skipGuide: jest.fn(),
-      completeGuide: jest.fn(),
-    });
-
-    render(<CmdPaletteGuide />);
-
-    expect(screen.queryByText("Welcome to Compass")).not.toBeInTheDocument();
-    expect(
-      screen.queryByText("Welcome to the Day View"),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByText("Welcome to the Now View"),
-    ).not.toBeInTheDocument();
   });
 
   it("should render on Day view when authenticated", () => {
@@ -495,31 +470,6 @@ describe("CmdPaletteGuide", () => {
       .getByText("Step 2 of 6")
       .parentElement?.querySelectorAll("div[class*='rounded-full']");
     expect(progressDots).toHaveLength(6);
-  });
-
-  it("should not render step 4 on Day view", () => {
-    mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
-    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
-    markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
-    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
-    markStepCompleted(ONBOARDING_STEPS.EDIT_DESCRIPTION);
-    mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: ONBOARDING_STEPS.EDIT_REMINDER,
-      isGuideActive: true,
-      completeStep: jest.fn(),
-      skipGuide: jest.fn(),
-      completeGuide: jest.fn(),
-    });
-
-    render(<CmdPaletteGuide />);
-
-    expect(screen.queryByText("Welcome to Compass")).not.toBeInTheDocument();
-    expect(
-      screen.queryByText("Welcome to the Day View"),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByText("Welcome to the Now View"),
-    ).not.toBeInTheDocument();
   });
 
   it("should call unified step detection hook", () => {

@@ -27,13 +27,10 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
     id: ONBOARDING_STEPS.NAVIGATE_TO_DAY,
     order: 0,
     detectionType: "route",
-    detectionConfig: { route: "/day" },
+    detectionConfig: { route: "/day", routePrefixes: ["/day/"] },
     guide: {
-      visibilityByAuth: {
-        authenticated: ["day", "now", "week"],
-        unauthenticated: ["day", "now", "week"],
-      },
       instructionsByView: {
+        day: [{ type: "text", value: "You're already on the Day view." }],
         default: [
           { type: "text", value: "Press " },
           { type: "kbd", value: "2" },
@@ -47,10 +44,6 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
     order: 1,
     detectionType: "task-count",
     guide: {
-      visibilityByAuth: {
-        authenticated: ["day"],
-        unauthenticated: ["day"],
-      },
       instructionsByView: {
         day: [
           { type: "text", value: "Type " },
@@ -64,12 +57,8 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
     id: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
     order: 2,
     detectionType: "route",
-    detectionConfig: { route: "/now" },
+    detectionConfig: { route: "/now", routePrefixes: ["/now/"] },
     guide: {
-      visibilityByAuth: {
-        authenticated: ["now", "week"],
-        unauthenticated: ["day", "now", "week"],
-      },
       instructionsByView: {
         default: [
           { type: "text", value: "Press " },
@@ -84,10 +73,6 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
     order: 3,
     detectionType: "task-description",
     guide: {
-      visibilityByAuth: {
-        authenticated: ["now"],
-        unauthenticated: ["now"],
-      },
       instructionsByView: {
         default: [
           { type: "text", value: "Press " },
@@ -102,10 +87,6 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
     order: 4,
     detectionType: "reminder-poll",
     guide: {
-      visibilityByAuth: {
-        authenticated: ["now"],
-        unauthenticated: ["now"],
-      },
       instructionsByView: {
         default: [
           { type: "text", value: "Press " },
@@ -121,10 +102,6 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
     detectionType: "route",
     detectionConfig: { route: "/" },
     guide: {
-      visibilityByAuth: {
-        authenticated: ["day", "now", "week"],
-        unauthenticated: ["day", "now", "week"],
-      },
       instructionsByView: {
         default: [
           { type: "text", value: "Type " },

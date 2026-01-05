@@ -204,7 +204,7 @@ export function useStepDetection({
 
       case "route": {
         const routeConfig = stepConfig.detectionConfig as
-          | { route: string }
+          | { route: string; routePrefixes?: string[] }
           | undefined;
         if (!routeConfig) return;
 
@@ -212,13 +212,15 @@ export function useStepDetection({
         const targetRoute =
           routeConfig.route === "/" ? ROOT_ROUTES.ROOT : routeConfig.route;
         const currentPath = location.pathname;
+        const matchesPrefix =
+          routeConfig.routePrefixes?.some((prefix) =>
+            currentPath.startsWith(prefix),
+          ) ?? false;
 
         // Check if we're on the target route
         if (
           !hasCompletedRef.current &&
-          (currentPath === targetRoute ||
-            (targetRoute === ROOT_ROUTES.NOW &&
-              currentPath.startsWith(`${ROOT_ROUTES.NOW}/`)))
+          (currentPath === targetRoute || matchesPrefix)
         ) {
           hasCompletedRef.current = true;
           onStepComplete(currentStep);
