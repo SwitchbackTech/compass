@@ -25,8 +25,8 @@ export function useOnboardingOverlay(): UseOnboardingOverlayReturn {
   const showOnboardingOverlay =
     isGuideActive &&
     currentStep !== null &&
-    (currentStep === ONBOARDING_STEPS.CREATE_TASK ||
-      currentStep === ONBOARDING_STEPS.NAVIGATE_TO_NOW) &&
+    (currentStep === ONBOARDING_STEPS.NAVIGATE_TO_DAY ||
+      currentStep === ONBOARDING_STEPS.CREATE_TASK) &&
     !authenticated;
 
   const dismissOnboardingOverlay = () => {

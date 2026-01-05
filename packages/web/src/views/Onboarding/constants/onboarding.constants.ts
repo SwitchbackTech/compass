@@ -3,11 +3,14 @@ import {
   OnboardingStepConfig,
 } from "../types/onboarding.guide.types";
 
+export type { OnboardingStepName } from "../types/onboarding.guide.types";
+
 /**
  * Command palette guide step names
  * Used for tracking completion of the interactive command palette guide
  */
 export const ONBOARDING_STEPS = {
+  NAVIGATE_TO_DAY: "navigateToDay",
   CREATE_TASK: "createTask",
   NAVIGATE_TO_NOW: "navigateToNow",
   EDIT_DESCRIPTION: "editDescription",
@@ -21,24 +24,36 @@ export const ONBOARDING_STEPS = {
  */
 export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
   {
-    id: ONBOARDING_STEPS.CREATE_TASK,
+    id: ONBOARDING_STEPS.NAVIGATE_TO_DAY,
     order: 0,
+    detectionType: "route",
+    detectionConfig: { route: "/day" },
+    guide: {
+      visibilityByAuth: {
+        authenticated: ["day", "now", "week"],
+        unauthenticated: ["day", "now", "week"],
+      },
+      instructionsByView: {
+        default: [
+          { type: "text", value: "Press " },
+          { type: "kbd", value: "2" },
+          { type: "text", value: " to go to the Day view" },
+        ],
+      },
+    },
+  },
+  {
+    id: ONBOARDING_STEPS.CREATE_TASK,
+    order: 1,
     detectionType: "task-count",
     guide: {
       visibilityByAuth: {
-        authenticated: [],
-        unauthenticated: ["day", "now", "week", "unknown"],
+        authenticated: ["day"],
+        unauthenticated: ["day"],
       },
       instructionsByView: {
         day: [
           { type: "text", value: "Type " },
-          { type: "kbd", value: "c" },
-          { type: "text", value: " to create a task" },
-        ],
-        default: [
-          { type: "text", value: "Press " },
-          { type: "kbd", value: "2" },
-          { type: "text", value: " to go to the Day view, then type " },
           { type: "kbd", value: "c" },
           { type: "text", value: " to create a task" },
         ],
@@ -47,7 +62,7 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
   },
   {
     id: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-    order: 1,
+    order: 2,
     detectionType: "route",
     detectionConfig: { route: "/now" },
     guide: {
@@ -66,7 +81,7 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
   },
   {
     id: ONBOARDING_STEPS.EDIT_DESCRIPTION,
-    order: 2,
+    order: 3,
     detectionType: "task-description",
     guide: {
       visibilityByAuth: {
@@ -84,7 +99,7 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
   },
   {
     id: ONBOARDING_STEPS.EDIT_REMINDER,
-    order: 3,
+    order: 4,
     detectionType: "reminder-poll",
     guide: {
       visibilityByAuth: {
@@ -102,7 +117,7 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
   },
   {
     id: ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
-    order: 4,
+    order: 5,
     detectionType: "route",
     detectionConfig: { route: "/" },
     guide: {

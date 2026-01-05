@@ -8,12 +8,12 @@ export interface OnboardingGuideViewConfig {
   overlayVariant: "pinned" | "centered";
 }
 
-export interface OnboardingInstructionText {
+interface OnboardingInstructionText {
   type: "text";
   value: string;
 }
 
-export interface OnboardingInstructionKey {
+interface OnboardingInstructionKey {
   type: "kbd";
   value: string;
 }
@@ -25,6 +25,7 @@ export type OnboardingInstructionPart =
 export type OnboardingInstructionVariant = OnboardingGuideView | "default";
 
 export type OnboardingStepName =
+  | "navigateToDay"
   | "createTask"
   | "navigateToNow"
   | "editDescription"

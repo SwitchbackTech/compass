@@ -4,6 +4,7 @@ import type { OnboardingStepName } from "../constants/onboarding.constants";
 
 const CompletedStepsSchema = z.array(
   z.enum([
+    "navigateToDay",
     "createTask",
     "navigateToNow",
     "editDescription",

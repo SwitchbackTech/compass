@@ -62,14 +62,10 @@ export const CmdPaletteGuide: FC = () => {
   // If on step 2 but step 1 wasn't completed, show step 1 instead
   const actualStep = useMemo(() => {
     if (currentStep === null) return null;
-    // If we're on step 2 but step 1 wasn't completed, stay on step 1
-    if (
-      currentStep === ONBOARDING_STEPS.NAVIGATE_TO_NOW &&
-      !isStepCompleted(ONBOARDING_STEPS.CREATE_TASK)
-    ) {
-      return ONBOARDING_STEPS.CREATE_TASK;
-    }
-    return currentStep;
+    const firstIncomplete = ONBOARDING_STEP_CONFIGS.find(
+      (config) => !isStepCompleted(config.id),
+    );
+    return firstIncomplete?.id ?? currentStep;
   }, [currentStep]);
 
   const welcomeMessage = React.useMemo(

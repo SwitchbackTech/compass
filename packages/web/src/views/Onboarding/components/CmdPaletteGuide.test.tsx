@@ -79,9 +79,10 @@ describe("CmdPaletteGuide", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("should render step 1 instructions on Day view", () => {
+  it("should render create task instructions on Day view when day step is completed", () => {
     mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
     mockLoadTasksFromStorage.mockReturnValue([]); // No tasks yet
+    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
     mockUseCmdPaletteGuide.mockReturnValue({
       currentStep: ONBOARDING_STEPS.CREATE_TASK,
       isGuideActive: true,
@@ -107,7 +108,7 @@ describe("CmdPaletteGuide", () => {
     mockUseLocation.mockReturnValue({ pathname: "/now" } as any);
     mockLoadTasksFromStorage.mockReturnValue([]); // Step 1 not completed
     mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: ONBOARDING_STEPS.CREATE_TASK,
+      currentStep: ONBOARDING_STEPS.NAVIGATE_TO_DAY,
       isGuideActive: true,
       completeStep: jest.fn(),
       skipGuide: jest.fn(),
@@ -120,14 +121,12 @@ describe("CmdPaletteGuide", () => {
     expect(
       screen.getByText(
         (_, element) =>
-          element?.textContent ===
-            "Press 2 to go to the Day view, then type c to create a task" ??
-          false,
+          element?.textContent === "Press 2 to go to the Day view" ?? false,
       ),
     ).toBeInTheDocument();
   });
 
-  it("should render step 2 instructions on Now view when step 1 is completed", () => {
+  it("should render step 3 instructions on Now view when day and task steps are completed", () => {
     mockUseLocation.mockReturnValue({ pathname: "/now" } as any);
     mockLoadTasksFromStorage.mockReturnValue([
       {
@@ -138,7 +137,8 @@ describe("CmdPaletteGuide", () => {
         createdAt: new Date().toISOString(),
       },
     ] as any); // Step 1 completed
-    markStepCompleted(ONBOARDING_STEPS.CREATE_TASK); // Mark step 1 as completed in onboarding progress
+    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
+    markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
     mockUseCmdPaletteGuide.mockReturnValue({
       currentStep: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
       isGuideActive: true,
@@ -157,7 +157,7 @@ describe("CmdPaletteGuide", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("1")).toBeInTheDocument(); // The kbd element
-    expect(screen.getByText("Step 2 of 5")).toBeInTheDocument();
+    expect(screen.getByText("Step 3 of 6")).toBeInTheDocument();
   });
 
   it("should show step 1 instructions on Now view when step 1 is not completed", () => {
@@ -177,19 +177,17 @@ describe("CmdPaletteGuide", () => {
     expect(
       screen.getByText(
         (_, element) =>
-          element?.textContent ===
-            "Press 2 to go to the Day view, then type c to create a task" ??
-          false,
+          element?.textContent === "Press 2 to go to the Day view" ?? false,
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText("Step 1 of 5")).toBeInTheDocument();
+    expect(screen.getByText("Step 1 of 6")).toBeInTheDocument();
   });
 
   it("should render step 1 instructions on Week view", () => {
     mockUseLocation.mockReturnValue({ pathname: "/" } as any);
     mockLoadTasksFromStorage.mockReturnValue([]); // Step 1 not completed
     mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: ONBOARDING_STEPS.CREATE_TASK,
+      currentStep: ONBOARDING_STEPS.NAVIGATE_TO_DAY,
       isGuideActive: true,
       completeStep: jest.fn(),
       skipGuide: jest.fn(),
@@ -202,14 +200,12 @@ describe("CmdPaletteGuide", () => {
     expect(
       screen.getByText(
         (_, element) =>
-          element?.textContent ===
-            "Press 2 to go to the Day view, then type c to create a task" ??
-          false,
+          element?.textContent === "Press 2 to go to the Day view" ?? false,
       ),
     ).toBeInTheDocument();
   });
 
-  it("should render step 2 instructions on Week view", () => {
+  it("should render step 3 instructions on Week view", () => {
     mockUseLocation.mockReturnValue({ pathname: "/" } as any);
     mockLoadTasksFromStorage.mockReturnValue([
       {
@@ -220,6 +216,7 @@ describe("CmdPaletteGuide", () => {
         createdAt: new Date().toISOString(),
       },
     ] as any);
+    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
     markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
     mockUseCmdPaletteGuide.mockReturnValue({
       currentStep: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
@@ -240,7 +237,7 @@ describe("CmdPaletteGuide", () => {
     ).toBeInTheDocument();
   });
 
-  it("should render step 2 instructions on Day view when step 1 is completed", () => {
+  it("should render step 3 instructions on Day view when day and task steps are completed", () => {
     mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
     mockLoadTasksFromStorage.mockReturnValue([
       {
@@ -251,7 +248,8 @@ describe("CmdPaletteGuide", () => {
         createdAt: new Date().toISOString(),
       },
     ] as any); // Step 1 completed
-    markStepCompleted(ONBOARDING_STEPS.CREATE_TASK); // Mark step 1 as completed in onboarding progress
+    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
+    markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
     mockUseCmdPaletteGuide.mockReturnValue({
       currentStep: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
       isGuideActive: true,
@@ -290,15 +288,18 @@ describe("CmdPaletteGuide", () => {
     expect(
       screen.getByText(
         (_, element) =>
-          element?.textContent === "Type c to create a task" ?? false,
+          element?.textContent === "Press 2 to go to the Day view" ?? false,
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText("c")).toBeInTheDocument();
-    expect(screen.getByText("Step 1 of 5")).toBeInTheDocument();
+    expect(screen.getByText("2")).toBeInTheDocument();
+    expect(screen.getByText("Step 1 of 6")).toBeInTheDocument();
   });
 
-  it("should render step 3 instructions on Now view", () => {
+  it("should render step 4 instructions on Now view", () => {
     mockUseLocation.mockReturnValue({ pathname: "/now" } as any);
+    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
+    markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
+    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
     mockUseCmdPaletteGuide.mockReturnValue({
       currentStep: ONBOARDING_STEPS.EDIT_DESCRIPTION,
       isGuideActive: true,
@@ -317,11 +318,12 @@ describe("CmdPaletteGuide", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("d")).toBeInTheDocument(); // The kbd element
-    expect(screen.getByText("Step 3 of 5")).toBeInTheDocument();
+    expect(screen.getByText("Step 4 of 6")).toBeInTheDocument();
   });
 
-  it("should render step 4 instructions on Now view", () => {
+  it("should render step 5 instructions on Now view", () => {
     mockUseLocation.mockReturnValue({ pathname: "/now" } as any);
+    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
     markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
     markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
     markStepCompleted(ONBOARDING_STEPS.EDIT_DESCRIPTION);
@@ -343,11 +345,14 @@ describe("CmdPaletteGuide", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("r")).toBeInTheDocument(); // The kbd element
-    expect(screen.getByText("Step 4 of 5")).toBeInTheDocument();
+    expect(screen.getByText("Step 5 of 6")).toBeInTheDocument();
   });
 
   it("should not render step 3 on Day view", () => {
     mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
+    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
+    markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
+    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
     mockUseCmdPaletteGuide.mockReturnValue({
       currentStep: ONBOARDING_STEPS.EDIT_DESCRIPTION,
       isGuideActive: true,
@@ -367,9 +372,10 @@ describe("CmdPaletteGuide", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("should not render on Day view when authenticated", () => {
+  it("should render on Day view when authenticated", () => {
     mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
     mockUseSession.mockReturnValue({ authenticated: true });
+    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
     mockUseCmdPaletteGuide.mockReturnValue({
       currentStep: ONBOARDING_STEPS.CREATE_TASK,
       isGuideActive: true,
@@ -380,13 +386,13 @@ describe("CmdPaletteGuide", () => {
 
     render(<CmdPaletteGuide />);
 
-    expect(screen.queryByText("Welcome to Compass")).not.toBeInTheDocument();
+    expect(screen.getByText("Welcome to the Day View")).toBeInTheDocument();
     expect(
-      screen.queryByText("Welcome to the Day View"),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByText("Welcome to the Now View"),
-    ).not.toBeInTheDocument();
+      screen.getByText(
+        (_, element) =>
+          element?.textContent === "Type c to create a task" ?? false,
+      ),
+    ).toBeInTheDocument();
   });
 
   it("should call skipGuide when skip button is clicked on Day view", async () => {
@@ -422,7 +428,8 @@ describe("CmdPaletteGuide", () => {
         createdAt: new Date().toISOString(),
       },
     ] as any); // Step 1 completed
-    markStepCompleted(ONBOARDING_STEPS.CREATE_TASK); // Mark step 1 as completed in onboarding progress
+    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
+    markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
     mockUseCmdPaletteGuide.mockReturnValue({
       currentStep: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
       isGuideActive: true,
@@ -450,7 +457,8 @@ describe("CmdPaletteGuide", () => {
         createdAt: new Date().toISOString(),
       },
     ] as any); // Step 1 completed
-    markStepCompleted(ONBOARDING_STEPS.CREATE_TASK); // Mark step 1 as completed in onboarding progress
+    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
+    markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
     mockUseCmdPaletteGuide.mockReturnValue({
       currentStep: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
       isGuideActive: true,
@@ -463,13 +471,14 @@ describe("CmdPaletteGuide", () => {
 
     // Check that progress dots are rendered
     const progressDots = screen
-      .getByText("Step 2 of 5")
+      .getByText("Step 3 of 6")
       .parentElement?.querySelectorAll("div[class*='rounded-full']");
-    expect(progressDots).toHaveLength(5);
+    expect(progressDots).toHaveLength(6);
   });
 
   it("should show progress indicators on Day view", () => {
     mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
+    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
     mockUseCmdPaletteGuide.mockReturnValue({
       currentStep: ONBOARDING_STEPS.CREATE_TASK,
       isGuideActive: true,
@@ -480,16 +489,20 @@ describe("CmdPaletteGuide", () => {
 
     render(<CmdPaletteGuide />);
 
-    expect(screen.getByText("Step 1 of 5")).toBeInTheDocument();
+    expect(screen.getByText("Step 2 of 6")).toBeInTheDocument();
     // Check that progress dots are rendered
     const progressDots = screen
-      .getByText("Step 1 of 5")
+      .getByText("Step 2 of 6")
       .parentElement?.querySelectorAll("div[class*='rounded-full']");
-    expect(progressDots).toHaveLength(5);
+    expect(progressDots).toHaveLength(6);
   });
 
   it("should not render step 4 on Day view", () => {
     mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
+    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
+    markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
+    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
+    markStepCompleted(ONBOARDING_STEPS.EDIT_DESCRIPTION);
     mockUseCmdPaletteGuide.mockReturnValue({
       currentStep: ONBOARDING_STEPS.EDIT_REMINDER,
       isGuideActive: true,

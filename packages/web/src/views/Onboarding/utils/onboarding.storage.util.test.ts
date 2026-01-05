@@ -31,6 +31,7 @@ describe("onboarding.storage.util", () => {
     it("should return stored progress from consolidated key", () => {
       const testProgress = {
         completedSteps: [
+          ONBOARDING_STEPS.NAVIGATE_TO_DAY,
           ONBOARDING_STEPS.CREATE_TASK,
           ONBOARDING_STEPS.NAVIGATE_TO_NOW,
         ],
@@ -95,12 +96,14 @@ describe("onboarding.storage.util", () => {
     it("should update completed steps", () => {
       updateOnboardingProgress({
         completedSteps: [
+          ONBOARDING_STEPS.NAVIGATE_TO_DAY,
           ONBOARDING_STEPS.CREATE_TASK,
           ONBOARDING_STEPS.NAVIGATE_TO_NOW,
         ],
       });
       const progress = getOnboardingProgress();
       expect(progress.completedSteps).toEqual([
+        ONBOARDING_STEPS.NAVIGATE_TO_DAY,
         ONBOARDING_STEPS.CREATE_TASK,
         ONBOARDING_STEPS.NAVIGATE_TO_NOW,
       ]);
@@ -115,11 +118,13 @@ describe("onboarding.storage.util", () => {
     it("should return completed steps from onboarding progress", () => {
       updateOnboardingProgress({
         completedSteps: [
+          ONBOARDING_STEPS.NAVIGATE_TO_DAY,
           ONBOARDING_STEPS.CREATE_TASK,
           ONBOARDING_STEPS.NAVIGATE_TO_NOW,
         ],
       });
       expect(loadCompletedSteps()).toEqual([
+        ONBOARDING_STEPS.NAVIGATE_TO_DAY,
         ONBOARDING_STEPS.CREATE_TASK,
         ONBOARDING_STEPS.NAVIGATE_TO_NOW,
       ]);
@@ -128,6 +133,7 @@ describe("onboarding.storage.util", () => {
     it("should return all completed steps", () => {
       updateOnboardingProgress({
         completedSteps: [
+          ONBOARDING_STEPS.NAVIGATE_TO_DAY,
           ONBOARDING_STEPS.CREATE_TASK,
           ONBOARDING_STEPS.NAVIGATE_TO_NOW,
           ONBOARDING_STEPS.EDIT_DESCRIPTION,
@@ -135,6 +141,7 @@ describe("onboarding.storage.util", () => {
         ],
       });
       expect(loadCompletedSteps()).toEqual([
+        ONBOARDING_STEPS.NAVIGATE_TO_DAY,
         ONBOARDING_STEPS.CREATE_TASK,
         ONBOARDING_STEPS.NAVIGATE_TO_NOW,
         ONBOARDING_STEPS.EDIT_DESCRIPTION,
@@ -146,11 +153,13 @@ describe("onboarding.storage.util", () => {
   describe("saveCompletedSteps", () => {
     it("should save completed steps to onboarding progress", () => {
       saveCompletedSteps([
+        ONBOARDING_STEPS.NAVIGATE_TO_DAY,
         ONBOARDING_STEPS.CREATE_TASK,
         ONBOARDING_STEPS.NAVIGATE_TO_NOW,
       ]);
       const progress = getOnboardingProgress();
       expect(progress.completedSteps).toEqual([
+        ONBOARDING_STEPS.NAVIGATE_TO_DAY,
         ONBOARDING_STEPS.CREATE_TASK,
         ONBOARDING_STEPS.NAVIGATE_TO_NOW,
       ]);
@@ -158,6 +167,7 @@ describe("onboarding.storage.util", () => {
 
     it("should save all steps correctly", () => {
       saveCompletedSteps([
+        ONBOARDING_STEPS.NAVIGATE_TO_DAY,
         ONBOARDING_STEPS.CREATE_TASK,
         ONBOARDING_STEPS.NAVIGATE_TO_NOW,
         ONBOARDING_STEPS.EDIT_DESCRIPTION,
@@ -165,6 +175,7 @@ describe("onboarding.storage.util", () => {
       ]);
       const progress = getOnboardingProgress();
       expect(progress.completedSteps).toEqual([
+        ONBOARDING_STEPS.NAVIGATE_TO_DAY,
         ONBOARDING_STEPS.CREATE_TASK,
         ONBOARDING_STEPS.NAVIGATE_TO_NOW,
         ONBOARDING_STEPS.EDIT_DESCRIPTION,
@@ -175,14 +186,16 @@ describe("onboarding.storage.util", () => {
 
   describe("isStepCompleted", () => {
     it("should return false when step is not completed", () => {
-      expect(isStepCompleted(ONBOARDING_STEPS.CREATE_TASK)).toBe(false);
+      expect(isStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY)).toBe(false);
     });
 
     it("should return true when step is completed", () => {
       saveCompletedSteps([
+        ONBOARDING_STEPS.NAVIGATE_TO_DAY,
         ONBOARDING_STEPS.CREATE_TASK,
         ONBOARDING_STEPS.NAVIGATE_TO_NOW,
       ]);
+      expect(isStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY)).toBe(true);
       expect(isStepCompleted(ONBOARDING_STEPS.CREATE_TASK)).toBe(true);
       expect(isStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_NOW)).toBe(true);
       expect(isStepCompleted(ONBOARDING_STEPS.EDIT_DESCRIPTION)).toBe(false);
@@ -191,21 +204,21 @@ describe("onboarding.storage.util", () => {
 
   describe("markStepCompleted", () => {
     it("should add step to completed steps", () => {
-      markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
-      expect(isStepCompleted(ONBOARDING_STEPS.CREATE_TASK)).toBe(true);
+      markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
+      expect(isStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY)).toBe(true);
     });
 
     it("should not duplicate steps", () => {
-      markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
-      markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
-      expect(loadCompletedSteps()).toEqual([ONBOARDING_STEPS.CREATE_TASK]);
+      markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
+      markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
+      expect(loadCompletedSteps()).toEqual([ONBOARDING_STEPS.NAVIGATE_TO_DAY]);
     });
 
     it("should preserve existing completed steps", () => {
-      saveCompletedSteps([ONBOARDING_STEPS.CREATE_TASK]);
+      saveCompletedSteps([ONBOARDING_STEPS.NAVIGATE_TO_DAY]);
       markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
       expect(loadCompletedSteps()).toEqual([
-        ONBOARDING_STEPS.CREATE_TASK,
+        ONBOARDING_STEPS.NAVIGATE_TO_DAY,
         ONBOARDING_STEPS.NAVIGATE_TO_NOW,
       ]);
     });
@@ -214,6 +227,7 @@ describe("onboarding.storage.util", () => {
   describe("clearCompletedSteps", () => {
     it("should remove completed steps from localStorage", () => {
       saveCompletedSteps([
+        ONBOARDING_STEPS.NAVIGATE_TO_DAY,
         ONBOARDING_STEPS.CREATE_TASK,
         ONBOARDING_STEPS.NAVIGATE_TO_NOW,
         ONBOARDING_STEPS.EDIT_DESCRIPTION,
@@ -228,6 +242,7 @@ describe("onboarding.storage.util", () => {
       // Set up some progress
       updateOnboardingProgress({
         completedSteps: [
+          ONBOARDING_STEPS.NAVIGATE_TO_DAY,
           ONBOARDING_STEPS.CREATE_TASK,
           ONBOARDING_STEPS.NAVIGATE_TO_NOW,
         ],

@@ -21,7 +21,7 @@ describe("useCmdPaletteGuide", () => {
     const { result } = renderHook(() => useCmdPaletteGuide());
 
     expect(result.current.isGuideActive).toBe(true);
-    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.CREATE_TASK);
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
   });
 
   it("should not initialize guide if already completed", () => {
@@ -38,6 +38,37 @@ describe("useCmdPaletteGuide", () => {
   it("should persist step 1 completion to localStorage", () => {
     const { result } = renderHook(() => useCmdPaletteGuide());
 
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
+
+    act(() => {
+      result.current.completeStep(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
+    });
+
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.CREATE_TASK);
+    expect(result.current.isGuideActive).toBe(true);
+    expect(loadCompletedSteps()).toContain(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
+  });
+
+  it("should advance to step 2 when step 1 is completed", () => {
+    const { result } = renderHook(() => useCmdPaletteGuide());
+
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
+
+    act(() => {
+      result.current.completeStep(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
+    });
+
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.CREATE_TASK);
+    expect(result.current.isGuideActive).toBe(true);
+  });
+
+  it("should advance to step 3 when step 2 is completed", () => {
+    const { result } = renderHook(() => useCmdPaletteGuide());
+
+    act(() => {
+      result.current.completeStep(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
+    });
+
     expect(result.current.currentStep).toBe(ONBOARDING_STEPS.CREATE_TASK);
 
     act(() => {
@@ -49,21 +80,12 @@ describe("useCmdPaletteGuide", () => {
     expect(loadCompletedSteps()).toContain(ONBOARDING_STEPS.CREATE_TASK);
   });
 
-  it("should advance to step 2 when step 1 is completed", () => {
+  it("should advance to step 4 when step 3 is completed", () => {
     const { result } = renderHook(() => useCmdPaletteGuide());
-
-    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.CREATE_TASK);
 
     act(() => {
-      result.current.completeStep(ONBOARDING_STEPS.CREATE_TASK);
+      result.current.completeStep(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
     });
-
-    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
-    expect(result.current.isGuideActive).toBe(true);
-  });
-
-  it("should advance to step 3 when step 2 is completed", () => {
-    const { result } = renderHook(() => useCmdPaletteGuide());
 
     act(() => {
       result.current.completeStep(ONBOARDING_STEPS.CREATE_TASK);
@@ -80,30 +102,12 @@ describe("useCmdPaletteGuide", () => {
     expect(loadCompletedSteps()).toContain(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
   });
 
-  it("should advance to step 4 when step 3 is completed", () => {
+  it("should complete guide when step 6 is completed", () => {
     const { result } = renderHook(() => useCmdPaletteGuide());
 
     act(() => {
-      result.current.completeStep(ONBOARDING_STEPS.CREATE_TASK);
+      result.current.completeStep(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
     });
-
-    act(() => {
-      result.current.completeStep(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
-    });
-
-    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.EDIT_DESCRIPTION);
-
-    act(() => {
-      result.current.completeStep(ONBOARDING_STEPS.EDIT_DESCRIPTION);
-    });
-
-    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.EDIT_REMINDER);
-    expect(result.current.isGuideActive).toBe(true);
-    expect(loadCompletedSteps()).toContain(ONBOARDING_STEPS.EDIT_DESCRIPTION);
-  });
-
-  it("should complete guide when step 5 is completed", () => {
-    const { result } = renderHook(() => useCmdPaletteGuide());
 
     act(() => {
       result.current.completeStep(ONBOARDING_STEPS.CREATE_TASK);
@@ -138,14 +142,14 @@ describe("useCmdPaletteGuide", () => {
     const { result } = renderHook(() => useCmdPaletteGuide());
 
     expect(result.current.isGuideActive).toBe(true);
-    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.CREATE_TASK);
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
 
     // Complete step 1 first
     act(() => {
-      result.current.completeStep(ONBOARDING_STEPS.CREATE_TASK);
+      result.current.completeStep(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
     });
 
-    expect(loadCompletedSteps()).toContain(ONBOARDING_STEPS.CREATE_TASK);
+    expect(loadCompletedSteps()).toContain(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
 
     // Then skip
     act(() => {
@@ -172,6 +176,7 @@ describe("useCmdPaletteGuide", () => {
     expect(progress.isCompleted).toBe(true);
     // Steps are marked in the order defined in ONBOARDING_STEP_CONFIGS
     expect(loadCompletedSteps()).toEqual([
+      ONBOARDING_STEPS.NAVIGATE_TO_DAY,
       ONBOARDING_STEPS.CREATE_TASK,
       ONBOARDING_STEPS.NAVIGATE_TO_NOW,
       ONBOARDING_STEPS.EDIT_DESCRIPTION,
@@ -183,24 +188,22 @@ describe("useCmdPaletteGuide", () => {
   it("should resume from last completed step on remount", () => {
     const { result: firstRender } = renderHook(() => useCmdPaletteGuide());
 
-    expect(firstRender.current.currentStep).toBe(ONBOARDING_STEPS.CREATE_TASK);
+    expect(firstRender.current.currentStep).toBe(
+      ONBOARDING_STEPS.NAVIGATE_TO_DAY,
+    );
 
     act(() => {
-      firstRender.current.completeStep(ONBOARDING_STEPS.CREATE_TASK);
+      firstRender.current.completeStep(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
     });
 
-    expect(firstRender.current.currentStep).toBe(
-      ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-    );
-    expect(loadCompletedSteps()).toContain(ONBOARDING_STEPS.CREATE_TASK);
+    expect(firstRender.current.currentStep).toBe(ONBOARDING_STEPS.CREATE_TASK);
+    expect(loadCompletedSteps()).toContain(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
 
     // Unmount and remount
     const { result: secondRender } = renderHook(() => useCmdPaletteGuide());
 
     // Should resume at step 2 (next incomplete step)
-    expect(secondRender.current.currentStep).toBe(
-      ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-    );
+    expect(secondRender.current.currentStep).toBe(ONBOARDING_STEPS.CREATE_TASK);
     expect(secondRender.current.isGuideActive).toBe(true);
   });
 
@@ -213,7 +216,7 @@ describe("useCmdPaletteGuide", () => {
 
     // Should initialize guide normally in test environment
     expect(result.current.isGuideActive).toBe(true);
-    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.CREATE_TASK);
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
   });
 
   it("should restart guide when restart event is dispatched", () => {
@@ -221,16 +224,16 @@ describe("useCmdPaletteGuide", () => {
 
     // Complete a few steps first
     act(() => {
-      result.current.completeStep(ONBOARDING_STEPS.CREATE_TASK);
+      result.current.completeStep(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
     });
 
     act(() => {
-      result.current.completeStep(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
+      result.current.completeStep(ONBOARDING_STEPS.CREATE_TASK);
     });
 
-    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.EDIT_DESCRIPTION);
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
+    expect(loadCompletedSteps()).toContain(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
     expect(loadCompletedSteps()).toContain(ONBOARDING_STEPS.CREATE_TASK);
-    expect(loadCompletedSteps()).toContain(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
 
     // Reset storage and dispatch restart event
     act(() => {
@@ -239,7 +242,7 @@ describe("useCmdPaletteGuide", () => {
     });
 
     // Should restart from the beginning
-    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.CREATE_TASK);
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
     expect(result.current.isGuideActive).toBe(true);
     expect(loadCompletedSteps()).toEqual([]);
   });
@@ -247,6 +250,10 @@ describe("useCmdPaletteGuide", () => {
   it("should restart guide even when guide is completed", () => {
     // Complete the entire guide first
     const { result } = renderHook(() => useCmdPaletteGuide());
+
+    act(() => {
+      result.current.completeStep(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
+    });
 
     act(() => {
       result.current.completeStep(ONBOARDING_STEPS.CREATE_TASK);
@@ -280,7 +287,7 @@ describe("useCmdPaletteGuide", () => {
     });
 
     // Should restart from the beginning
-    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.CREATE_TASK);
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
     expect(result.current.isGuideActive).toBe(true);
     const newProgress = getOnboardingProgress();
     expect(newProgress.isCompleted).toBe(false);
@@ -291,10 +298,10 @@ describe("useCmdPaletteGuide", () => {
 
     // Complete step 1
     act(() => {
-      result.current.completeStep(ONBOARDING_STEPS.CREATE_TASK);
+      result.current.completeStep(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
     });
 
-    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.CREATE_TASK);
 
     // First restart
     act(() => {
@@ -302,14 +309,14 @@ describe("useCmdPaletteGuide", () => {
       window.dispatchEvent(new CustomEvent(ONBOARDING_RESTART_EVENT));
     });
 
-    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.CREATE_TASK);
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
 
     // Complete step 1 again
     act(() => {
-      result.current.completeStep(ONBOARDING_STEPS.CREATE_TASK);
+      result.current.completeStep(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
     });
 
-    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.CREATE_TASK);
 
     // Second restart
     act(() => {
@@ -317,7 +324,7 @@ describe("useCmdPaletteGuide", () => {
       window.dispatchEvent(new CustomEvent(ONBOARDING_RESTART_EVENT));
     });
 
-    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.CREATE_TASK);
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
     expect(result.current.isGuideActive).toBe(true);
   });
 });
