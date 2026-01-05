@@ -20,7 +20,7 @@ export const LogoutView = () => {
     setIsLoggingOut(false);
 
     alert("You logged out - see ya! ✌");
-    navigate(ROOT_ROUTES.LOGIN);
+    navigate(ROOT_ROUTES.DAY);
   };
 
   return (

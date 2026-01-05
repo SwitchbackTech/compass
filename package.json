@@ -59,6 +59,7 @@
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "babel-loader": "^9.1.0",
+    "baseline-browser-mapping": "^2.9.11",
     "buffer": "^6.0.3",
     "concurrently": "^8.0.1",
     "cross-env": "^7.0.3",

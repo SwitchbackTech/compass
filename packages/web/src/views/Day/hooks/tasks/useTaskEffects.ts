@@ -20,6 +20,7 @@ export function useTaskEffects({
   setTasks,
 }: UseTaskEffectsProps): void {
   // Load tasks from localStorage when date changes
+  // Note: Task seeding happens in loadSpecificDayData loader, so tasks should already exist
   useEffect(() => {
     if (lastLoadedKeyRef.current === dateKey) return;
     lastLoadedKeyRef.current = dateKey;

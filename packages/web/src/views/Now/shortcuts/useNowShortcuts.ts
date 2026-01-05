@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { ID_REMINDER_INPUT } from "@web/common/constants/web.constants";
 import {
   useKeyDownEvent,
   useKeyUpEvent,
@@ -69,10 +70,19 @@ export function useNowShortcuts(props?: Props) {
     deps: [handleTaskNavigation, onNextTask],
   });
 
+  const handleEnterKey = useCallback(() => {
+    // Don't trigger if the reminder input is focused
+    const activeElement = document.activeElement as HTMLElement | null;
+    if (activeElement?.id === ID_REMINDER_INPUT) {
+      return;
+    }
+    handleTaskNavigation(onCompleteTask)?.();
+  }, [handleTaskNavigation, onCompleteTask]);
+
   useKeyUpEvent({
     combination: ["Enter"],
-    handler: handleTaskNavigation(onCompleteTask),
-    deps: [handleTaskNavigation, onCompleteTask],
+    handler: handleEnterKey,
+    deps: [handleEnterKey],
   });
 
   useKeyDownEvent({

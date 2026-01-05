@@ -11,6 +11,7 @@ import {
 } from "@core/constants/websocket.constants";
 import { UserMetadata } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
+import { useUser } from "@web/auth/useUser";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import {
@@ -65,6 +66,16 @@ socket.on("error", onError);
 
 const SocketProvider = ({ children }: { children: ReactNode }) => {
   const dispatch = useDispatch();
+  const { userId } = useUser();
+
+  // Only connect socket if user is authenticated
+  useEffect(() => {
+    if (userId && !socket.connected) {
+      socket.connect();
+    } else if (!userId && socket.connected) {
+      socket.disconnect();
+    }
+  }, [userId]);
 
   const onImportStart = useCallback(
     (importing = true) => {

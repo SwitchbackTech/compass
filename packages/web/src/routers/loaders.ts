@@ -1,9 +1,8 @@
 import { LoaderFunctionArgs, redirect } from "react-router-dom";
 import { zYearMonthDayString } from "@core/types/type.utils";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
-import { AUTH_FAILURE_REASONS } from "@web/common/constants/auth.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import { getOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 export interface DayLoaderData {
   dateInView: Dayjs; // in UTC
@@ -19,15 +18,13 @@ export async function loadAuthenticated() {
 }
 
 export function loadHasCompletedSignup() {
-  const storedValue = localStorage.getItem(STORAGE_KEYS.HAS_COMPLETED_SIGNUP);
-  const hasCompletedSignup = storedValue === "true";
+  const { isSignupComplete: hasCompletedSignup } = getOnboardingProgress();
 
   return { hasCompletedSignup };
 }
 
 export function loadOnboardingData() {
-  const storedValue = localStorage.getItem(STORAGE_KEYS.SKIP_ONBOARDING);
-  const skipOnboarding = storedValue === "true";
+  const { isOnboardingSkipped: skipOnboarding } = getOnboardingProgress();
 
   return { skipOnboarding };
 }
@@ -35,36 +32,28 @@ export function loadOnboardingData() {
 export async function loadLogoutData() {
   const { authenticated } = await loadAuthenticated();
 
-  if (!authenticated) return redirect(ROOT_ROUTES.LOGIN);
+  if (!authenticated) return redirect(ROOT_ROUTES.DAY);
 
   return { authenticated };
 }
 
-export async function loadLoginData() {
-  const { authenticated } = await loadAuthenticated();
-  const { skipOnboarding } = loadOnboardingData();
-
-  if (authenticated) {
-    return redirect(skipOnboarding ? ROOT_ROUTES.ROOT : ROOT_ROUTES.ONBOARDING);
-  }
-
-  return { authenticated, skipOnboarding };
-}
-
-export async function loadLoggedInData() {
+export async function loadLoggedInData(args?: LoaderFunctionArgs) {
+  const request = args?.request ?? new Request(window.location.href);
   const { authenticated } = await loadAuthenticated();
   const { skipOnboarding } = loadOnboardingData();
   const { hasCompletedSignup } = loadHasCompletedSignup();
 
-  const { USER_SESSION_EXPIRED } = AUTH_FAILURE_REASONS;
-  const loginRoute = `${ROOT_ROUTES.LOGIN}?reason=${USER_SESSION_EXPIRED}`;
+  // Check if we're accessing the day route
+  const url = new URL(request.url);
+  const pathname = url.pathname;
+  const isDayRoute = pathname.startsWith(ROOT_ROUTES.DAY);
 
   if (!authenticated) {
-    return redirect(
-      skipOnboarding || hasCompletedSignup
-        ? loginRoute
-        : ROOT_ROUTES.ONBOARDING,
-    );
+    if (isDayRoute) {
+      return { authenticated: false, skipOnboarding, hasCompletedSignup };
+    }
+
+    return redirect(ROOT_ROUTES.DAY);
   }
 
   return { authenticated, skipOnboarding, hasCompletedSignup };
@@ -90,6 +79,15 @@ export async function loadSpecificDayData({
   const { success, data: dateString } = parsedDate;
 
   if (!success) return redirect(ROOT_ROUTES.DAY);
+
+  // Seed initial tasks for this date if none exist (works for both authenticated and unauthenticated users)
+  // Skip seeding in test environment to avoid interfering with tests
+  if (process.env.NODE_ENV !== "test") {
+    const { seedInitialTasks } = await import(
+      "@web/common/utils/storage/task-seeding.util"
+    );
+    seedInitialTasks(dateString);
+  }
 
   return Promise.resolve({
     dateString,

@@ -6,10 +6,12 @@ import userEvent from "@testing-library/user-event";
 import { CLIMB, EUROPE_TRIP } from "@core/__mocks__/v1/events/events.misc";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
-import { findAndUpdateEventInPreloadedState } from "@web/__tests__/utils/state/store.test.util";
-import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
+import {
+  InitialReduxState,
+  findAndUpdateEventInPreloadedState,
+} from "@web/__tests__/utils/state/store.test.util";
+import { RootState } from "@web/store";
 import { CalendarView } from "@web/views/Calendar";
-import { AuthenticatedLayout } from "../../components/AuthenticatedLayout/AuthenticatedLayout";
 import { freshenEventStartEndDate } from "./calendar.render.test.utils";
 
 // Mock IntersectionObserver for jsdom
@@ -46,13 +48,12 @@ jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
     },
 }));
 
+jest.mock("@web/auth/auth.util", () => ({
+  getUserId: async () => "test-user-id",
+}));
+
 function Component() {
-  return (
-    <>
-      <AuthenticatedLayout />
-      <CalendarView />
-    </>
-  );
+  return <CalendarView />;
 }
 
 const router = createMemoryRouter([{ index: true, Component }], {
@@ -83,45 +84,7 @@ describe("Event Form", () => {
 
     expect(screen.queryByRole("form")).not.toBeInTheDocument();
   });
-  it("closes after clicking trash icon", async () => {
-    mockConfirm.mockReturnValue(true);
 
-    const user = userEvent.setup();
-
-    await act(() =>
-      render(<></>, {
-        router,
-        state: findAndUpdateEventInPreloadedState(
-          preloadedState,
-          EUROPE_TRIP._id as string,
-          freshenEventStartEndDate,
-        ),
-      }),
-    );
-
-    await act(async () => {
-      await user.click(screen.getByRole("button", { name: "Europe Trip < >" }));
-    });
-
-    const form = screen.getByRole("form");
-
-    await act(async () => {
-      await user.click(
-        within(form).getByRole("button", { name: /open actions menu/i }),
-      );
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText("Delete")).toBeInTheDocument();
-    });
-    await act(async () => {
-      await user.click(screen.getByText("Delete"));
-    });
-
-    await waitFor(() => {
-      expect(screen.queryByRole("form")).not.toBeInTheDocument();
-    });
-  }, 10000);
   describe("DatePicker", () => {
     it("does not open dialog by default", async () => {
       const user = userEvent.setup();

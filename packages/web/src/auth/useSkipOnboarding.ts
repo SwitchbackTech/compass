@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import {
+  getOnboardingProgress,
+  updateOnboardingProgress,
+} from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 export const useSkipOnboarding = () => {
   const [skipOnboarding, setSkipOnboarding] = useState<boolean>(false);
 
   useEffect(() => {
     const checkOnboardingStatus = () => {
-      const storedValue = localStorage.getItem(STORAGE_KEYS.SKIP_ONBOARDING);
-
-      setSkipOnboarding(storedValue === "true");
+      const { isOnboardingSkipped: storedValue } = getOnboardingProgress();
+      setSkipOnboarding(storedValue);
     };
 
     checkOnboardingStatus();
@@ -16,10 +18,7 @@ export const useSkipOnboarding = () => {
 
   const updateOnboardingStatus = useCallback(
     (skip: boolean) => {
-      localStorage.setItem(
-        STORAGE_KEYS.SKIP_ONBOARDING,
-        skip ? "true" : "false",
-      );
+      updateOnboardingProgress({ isOnboardingSkipped: skip });
 
       setSkipOnboarding(skip);
     },
