@@ -51,6 +51,19 @@ export const AllDayEvents = ({
     );
   };
 
+  const handleKeyDown = (event: Schema_GridEvent) => {
+    const state = store.getState();
+    if (selectIsEventPending(state, event._id!)) return;
+
+    dispatch(
+      draftSlice.actions.start({
+        activity: "keyboardEdit",
+        event,
+        eventType: Categories_Event.ALLDAY,
+      }),
+    );
+  };
+
   const handleDrag = (
     event: Schema_GridEvent,
     moveEvent: PartialMouseEvent,
@@ -119,6 +132,7 @@ export const AllDayEvents = ({
             }
             onMouseDown(e, event);
           }}
+          onKeyDown={handleKeyDown}
           onScalerMouseDown={(
             event,
             e,

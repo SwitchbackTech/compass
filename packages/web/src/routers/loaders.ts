@@ -43,13 +43,16 @@ export async function loadLoggedInData(args?: LoaderFunctionArgs) {
   const { skipOnboarding } = loadOnboardingData();
   const { hasCompletedSignup } = loadHasCompletedSignup();
 
-  // Check if we're accessing the day route
+  // Check if we're accessing routes that work without authentication
   const url = new URL(request.url);
   const pathname = url.pathname;
   const isDayRoute = pathname.startsWith(ROOT_ROUTES.DAY);
+  const isRootRoute = pathname === ROOT_ROUTES.ROOT;
 
   if (!authenticated) {
-    if (isDayRoute) {
+    // Allow unauthenticated access to root (Week view) and Day routes
+    // This enables local-only usage and E2E testing without auth
+    if (isDayRoute || isRootRoute) {
       return { authenticated: false, skipOnboarding, hasCompletedSignup };
     }
 
