@@ -32,10 +32,10 @@ export default defineConfig({
       API_PORT: "3000",
       POSTHOG_KEY: "test-posthog-key",
       POSTHOG_HOST: "https://app.posthog.com",
-      WEB_E2E: "true",
       PORT: `${TEST_PORT}`,
     },
     port: TEST_PORT,
     reuseExistingServer: !process.env.CI,
+    timeout: 120000,
   },
 });

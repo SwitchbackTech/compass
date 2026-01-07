@@ -274,6 +274,7 @@ export default (env, argv) => {
       static: {
         directory: join(_dirname, "public"),
       },
+      host: "127.0.0.1",
       watchFiles: {
         paths: ["src/**/*"],
         options: {
@@ -282,7 +283,7 @@ export default (env, argv) => {
         },
       },
       compress: true,
-      port: 9080,
+      port: Number(PORT),
       historyApiFallback: true,
     },
 
