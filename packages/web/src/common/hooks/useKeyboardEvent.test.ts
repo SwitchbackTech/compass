@@ -144,4 +144,23 @@ describe("useKeyboardEvent", () => {
 
     expect(mockHandler).toHaveBeenCalledTimes(1);
   });
+
+  it("should not call handler when the app is locked", () => {
+    document.body.setAttribute("data-app-locked", "true");
+
+    renderHook(() =>
+      useKeyboardEvent({
+        combination: ["a"],
+        handler: mockHandler,
+        eventType: "keyup",
+      }),
+    );
+
+    fireEvent.keyDown(window, { key: "a" });
+    fireEvent.keyUp(window, { key: "a" });
+
+    expect(mockHandler).not.toHaveBeenCalled();
+
+    document.body.removeAttribute("data-app-locked");
+  });
 });

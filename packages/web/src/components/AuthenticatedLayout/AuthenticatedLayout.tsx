@@ -1,4 +1,5 @@
 import { Outlet } from "react-router-dom";
+import { SyncEventsOverlay } from "@web/components/SyncEventsOverlay/SyncEventsOverlay";
 import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
 import { CmdPaletteGuide } from "@web/views/Onboarding/components/CmdPaletteGuide";
 import { OnboardingOverlayHost } from "@web/views/Onboarding/components/OnboardingOverlay/OnboardingOverlayHost";
@@ -16,6 +17,7 @@ export const AuthenticatedLayout = () => {
       <Outlet />
       <OnboardingOverlayHost />
       <CmdPaletteGuide />
+      <SyncEventsOverlay />
     </>
   );
 };

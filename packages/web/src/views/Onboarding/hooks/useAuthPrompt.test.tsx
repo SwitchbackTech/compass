@@ -8,7 +8,14 @@ import { updateOnboardingProgress } from "@web/views/Onboarding/utils/onboarding
 
 // Mock useSession
 jest.mock("@web/common/hooks/useSession", () => ({
-  useSession: jest.fn(() => ({ authenticated: false })),
+  useSession: jest.fn(() => ({
+    authenticated: false,
+    loading: false,
+    isSyncing: false,
+    setAuthenticated: jest.fn(),
+    setLoading: jest.fn(),
+    setIsSyncing: jest.fn(),
+  })),
 }));
 
 const createTestStore = (isCmdPaletteOpen = false) => {
@@ -137,7 +144,14 @@ describe("useAuthPrompt", () => {
 
   it("should not show auth prompt for authenticated users", () => {
     const { useSession } = require("@web/common/hooks/useSession");
-    useSession.mockReturnValue({ authenticated: true });
+    useSession.mockReturnValue({
+      authenticated: true,
+      loading: false,
+      isSyncing: false,
+      setAuthenticated: jest.fn(),
+      setLoading: jest.fn(),
+      setIsSyncing: jest.fn(),
+    });
     const store = createTestStore();
 
     const { result } = renderHook(

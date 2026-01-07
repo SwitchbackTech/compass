@@ -44,6 +44,13 @@ export async function loadEventsFromIndexedDB(
 }
 
 /**
+ * Loads all events from IndexedDB without filtering.
+ */
+export async function loadAllEventsFromIndexedDB(): Promise<Event_Core[]> {
+  return compassLocalDB.events.toArray();
+}
+
+/**
  * Deletes an event from IndexedDB by its ID.
  */
 export async function deleteEventFromIndexedDB(eventId: string): Promise<void> {

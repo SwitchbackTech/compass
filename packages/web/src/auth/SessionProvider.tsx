@@ -36,22 +36,28 @@ SuperTokens.init({
 interface SessionContext {
   loading: boolean;
   authenticated: boolean;
+  isSyncing: boolean;
   setAuthenticated: (value: boolean) => void;
   setLoading: (value: boolean) => void;
+  setIsSyncing: (value: boolean) => void;
 }
 
 export const SessionContext = createContext<SessionContext>({
   authenticated: false,
   loading: true,
+  isSyncing: false,
   setAuthenticated: () => {},
   setLoading: () => {},
+  setIsSyncing: () => {},
 });
 
 const authenticated$ = new BehaviorSubject(false);
 const loading$ = new BehaviorSubject(false);
+const syncing$ = new BehaviorSubject(false);
 
 const $authenticated = authenticated$.pipe(skip(1), distinctUntilChanged());
 const $loading = loading$.pipe(distinctUntilChanged());
+const $syncing = syncing$.pipe(distinctUntilChanged());
 
 async function checkIfSessionExists(): Promise<boolean> {
   try {
@@ -99,14 +105,17 @@ export function sessionInit() {
 export function SessionProvider({ children }: PropsWithChildren<{}>) {
   const [authenticated, setAuthenticated] = useState(authenticated$.value);
   const [loading, setLoading] = useState(loading$.value);
+  const [isSyncing, setIsSyncing] = useState(syncing$.value);
 
   useEffect(() => {
     const authSub = $authenticated.subscribe(setAuthenticated);
     const loadSub = $loading.subscribe(setLoading);
+    const syncSub = $syncing.subscribe(setIsSyncing);
 
     return () => {
       authSub.unsubscribe();
       loadSub.unsubscribe();
+      syncSub.unsubscribe();
     };
   }, []);
 
@@ -115,8 +124,10 @@ export function SessionProvider({ children }: PropsWithChildren<{}>) {
       value={{
         authenticated,
         loading,
+        isSyncing,
         setAuthenticated: (value: boolean) => authenticated$.next(value),
         setLoading: (value: boolean) => loading$.next(value),
+        setIsSyncing: (value: boolean) => syncing$.next(value),
       }}
     >
       {children}

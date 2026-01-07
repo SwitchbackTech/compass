@@ -5,6 +5,7 @@ import { compassLocalDB } from "./compass-local.db";
 import {
   clearEventsFromIndexedDB,
   deleteEventFromIndexedDB,
+  loadAllEventsFromIndexedDB,
   loadEventsFromIndexedDB,
   saveEventToIndexedDB,
 } from "./event.storage.util";
@@ -166,6 +167,23 @@ describe("event.storage.util", () => {
       );
 
       expect(events).toHaveLength(2);
+    });
+  });
+
+  describe("loadAllEventsFromIndexedDB", () => {
+    it("should load all events from IndexedDB", async () => {
+      const event1 = createMockEvent();
+      const event2 = createMockEvent();
+
+      await saveEventToIndexedDB(event1);
+      await saveEventToIndexedDB(event2);
+
+      const events = await loadAllEventsFromIndexedDB();
+
+      expect(events).toHaveLength(2);
+      expect(events.map((event) => event._id)).toEqual(
+        expect.arrayContaining([event1._id, event2._id]),
+      );
     });
   });
 

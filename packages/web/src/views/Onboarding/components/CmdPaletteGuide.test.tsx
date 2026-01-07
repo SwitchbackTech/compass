@@ -53,7 +53,14 @@ describe("CmdPaletteGuide", () => {
     jest.clearAllMocks();
     localStorage.clear();
     mockUseStepDetection.mockImplementation(() => {});
-    mockUseSession.mockReturnValue({ authenticated: false });
+    mockUseSession.mockReturnValue({
+      authenticated: false,
+      loading: false,
+      isSyncing: false,
+      setAuthenticated: jest.fn(),
+      setLoading: jest.fn(),
+      setIsSyncing: jest.fn(),
+    });
     mockGetDateKey.mockReturnValue("2024-01-01");
     mockLoadTasksFromStorage.mockReturnValue([]); // No tasks by default
   });

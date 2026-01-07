@@ -8,7 +8,14 @@ import {
 
 // Mock useSession
 jest.mock("@web/common/hooks/useSession", () => ({
-  useSession: jest.fn(() => ({ authenticated: false })),
+  useSession: jest.fn(() => ({
+    authenticated: false,
+    loading: false,
+    isSyncing: false,
+    setAuthenticated: jest.fn(),
+    setLoading: jest.fn(),
+    setIsSyncing: jest.fn(),
+  })),
 }));
 
 // Mock useCmdPaletteGuide
@@ -94,7 +101,14 @@ describe("useOnboardingOverlay", () => {
 
   it("should not show onboarding overlay for authenticated users", () => {
     const { useSession } = require("@web/common/hooks/useSession");
-    useSession.mockReturnValue({ authenticated: true });
+    useSession.mockReturnValue({
+      authenticated: true,
+      loading: false,
+      isSyncing: false,
+      setAuthenticated: jest.fn(),
+      setLoading: jest.fn(),
+      setIsSyncing: jest.fn(),
+    });
 
     const { result } = renderHook(() => useOnboardingOverlay());
 
@@ -103,7 +117,14 @@ describe("useOnboardingOverlay", () => {
 
   it("should not show onboarding overlay when guide is completed", () => {
     const { useSession } = require("@web/common/hooks/useSession");
-    useSession.mockReturnValue({ authenticated: false });
+    useSession.mockReturnValue({
+      authenticated: false,
+      loading: false,
+      isSyncing: false,
+      setAuthenticated: jest.fn(),
+      setLoading: jest.fn(),
+      setIsSyncing: jest.fn(),
+    });
 
     // Set guide as completed
     updateOnboardingProgress({ isCompleted: true });
@@ -125,7 +146,14 @@ describe("useOnboardingOverlay", () => {
   it("should skip guide when dismissed", () => {
     // Reset mock to ensure authenticated is false
     const { useSession } = require("@web/common/hooks/useSession");
-    useSession.mockReturnValue({ authenticated: false });
+    useSession.mockReturnValue({
+      authenticated: false,
+      loading: false,
+      isSyncing: false,
+      setAuthenticated: jest.fn(),
+      setLoading: jest.fn(),
+      setIsSyncing: jest.fn(),
+    });
 
     const skipGuideFn = jest.fn(() => {
       updateOnboardingProgress({ isCompleted: true });

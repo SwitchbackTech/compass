@@ -10,7 +10,14 @@ import { useCmdPaletteTutorial } from "./useCmdPaletteTutorial";
 
 // Mock useSession
 jest.mock("@web/common/hooks/useSession", () => ({
-  useSession: jest.fn(() => ({ authenticated: false })),
+  useSession: jest.fn(() => ({
+    authenticated: false,
+    loading: false,
+    isSyncing: false,
+    setAuthenticated: jest.fn(),
+    setLoading: jest.fn(),
+    setIsSyncing: jest.fn(),
+  })),
 }));
 
 const createTestStore = (isCmdPaletteOpen = false) => {
@@ -84,7 +91,14 @@ describe("useCmdPaletteTutorial", () => {
 
   it("should not show cmd palette tutorial for authenticated users", () => {
     const { useSession } = require("@web/common/hooks/useSession");
-    useSession.mockReturnValue({ authenticated: true });
+    useSession.mockReturnValue({
+      authenticated: true,
+      loading: false,
+      isSyncing: false,
+      setAuthenticated: jest.fn(),
+      setLoading: jest.fn(),
+      setIsSyncing: jest.fn(),
+    });
     const store = createTestStore();
 
     const { result } = renderHook(
@@ -102,11 +116,18 @@ describe("useCmdPaletteTutorial", () => {
   it("should mark cmd palette as used when opened", async () => {
     // Reset mock to ensure authenticated is false
     const { useSession } = require("@web/common/hooks/useSession");
-    useSession.mockReturnValue({ authenticated: false });
+    useSession.mockReturnValue({
+      authenticated: false,
+      loading: false,
+      isSyncing: false,
+      setAuthenticated: jest.fn(),
+      setLoading: jest.fn(),
+      setIsSyncing: jest.fn(),
+    });
 
     const store = createTestStore(false); // cmd palette starts closed
 
-    const { result, rerender } = renderHook(
+    const { result } = renderHook(
       ({ showOnboardingOverlay }) =>
         useCmdPaletteTutorial({ showOnboardingOverlay }),
       {
