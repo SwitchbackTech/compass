@@ -10,6 +10,11 @@ import {
   updateEventTitle,
 } from "../utils/event-test-utils";
 
+test.skip(
+  ({ isMobile }) => isMobile,
+  "Mouse flows are desktop-only in week view.",
+);
+
 test("should update a timed event using mouse interaction", async ({
   page,
 }) => {
