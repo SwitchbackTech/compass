@@ -29,8 +29,8 @@ export function useOnboardingNotices(): UseOnboardingNoticesReturn {
     return [
       {
         id: "auth-prompt",
-        header: "Sign in to sync across devices",
-        body: "Your tasks are saved locally. Sign in to sync with Google Calendar and access your data from any device.",
+        header: "Connect your Google Calendar",
+        body: "Your tasks are saved locally. Sign in to sync with Google Calendar",
         primaryAction: {
           label: "Sign in",
           onClick: () => {

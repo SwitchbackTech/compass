@@ -47,10 +47,7 @@ describe("AuthPrompt", () => {
     renderWithRouter(<AuthPrompt onDismiss={onDismiss} />);
 
     expect(
-      screen.getByText("Sign in to sync across devices"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Your tasks are saved locally/i),
+      screen.getByText("Connect your Google Calendar"),
     ).toBeInTheDocument();
   });
 

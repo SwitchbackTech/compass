@@ -24,11 +24,11 @@ export const AuthPrompt: React.FC<AuthPromptProps> = ({ onDismiss }) => {
       <div className="bg-bg-primary border-border-primary rounded-lg border p-4 shadow-lg">
         <div className="mb-3">
           <h3 className="text-text-light mb-1 text-lg font-semibold">
-            Sign in to sync across devices
+            Connect your Google Calendar
           </h3>
           <p className="text-text-light/80 text-sm">
-            Your tasks are saved locally. Sign in to sync with Google Calendar
-            and access your data from any device.
+            Your tasks & events are currently saved locally. Sign in to sync
+            your data with Google Calendar and Compass Cloud.
           </p>
         </div>
         <div className="flex gap-2">
