@@ -13,6 +13,7 @@ import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import * as socket from "@web/socket/SocketProvider";
+import { CompassSession } from "./session.types";
 
 SuperTokens.init({
   appInfo: {
@@ -33,16 +34,7 @@ SuperTokens.init({
   ],
 });
 
-interface SessionContext {
-  loading: boolean;
-  authenticated: boolean;
-  isSyncing: boolean;
-  setAuthenticated: (value: boolean) => void;
-  setLoading: (value: boolean) => void;
-  setIsSyncing: (value: boolean) => void;
-}
-
-export const SessionContext = createContext<SessionContext>({
+export const SessionContext = createContext<CompassSession>({
   authenticated: false,
   loading: true,
   isSyncing: false,
