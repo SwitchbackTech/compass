@@ -16,16 +16,66 @@ import { EventRepository } from "./event.repository.interface";
 export class LocalEventRepository implements EventRepository {
   async create(event: Schema_Event | Schema_Event[]): Promise<void> {
     const events = Array.isArray(event) ? event : [event];
+    console.log(
+      "[LocalEventRepository.create] Saving events to IndexedDB:",
+      events.map((e) => ({
+        _id: e._id,
+        title: e.title,
+        isSomeday: e.isSomeday,
+        startDate: e.startDate,
+      })),
+    );
+
+    // Track errors for individual event saves
+    const errors: Array<{ event: Schema_Event; error: unknown }> = [];
+
     for (const e of events) {
-      await saveEventToIndexedDB(e as Event_Core);
+      try {
+        await saveEventToIndexedDB(e as Event_Core);
+      } catch (error) {
+        console.error(
+          "[LocalEventRepository] Failed to save event:",
+          e._id,
+          error,
+        );
+        errors.push({ event: e, error });
+      }
     }
+
+    // If any saves failed, throw aggregate error
+    if (errors.length > 0) {
+      throw new Error(
+        `Failed to save ${errors.length} of ${events.length} events`,
+      );
+    }
+
+    console.log("[LocalEventRepository.create] All events saved successfully");
   }
 
   async get(params: Params_Events): Promise<Response_GetEventsSuccess> {
+    console.log(
+      "[LocalEventRepository.get] Loading from IndexedDB with params:",
+      {
+        startDate: params.startDate,
+        endDate: params.endDate,
+        someday: params.someday,
+      },
+    );
+
     const events = await loadEventsFromIndexedDB(
       params.startDate,
       params.endDate,
       params.someday,
+    );
+
+    console.log(
+      "[LocalEventRepository.get] Loaded events:",
+      events.map((e) => ({
+        _id: e._id,
+        title: e.title,
+        isSomeday: e.isSomeday,
+        startDate: e.startDate,
+      })),
     );
 
     return {
@@ -65,11 +115,28 @@ export class LocalEventRepository implements EventRepository {
     const allEvents = await compassLocalDB.events.toArray();
     const orderMap = new Map(order.map((o) => [o._id, o.order]));
 
+    // Track errors for individual event saves
+    const errors: Array<{ eventId: string; error: unknown }> = [];
+
     for (const event of allEvents) {
       if (orderMap.has(event._id!)) {
         event.order = orderMap.get(event._id!);
-        await saveEventToIndexedDB(event);
+        try {
+          await saveEventToIndexedDB(event);
+        } catch (error) {
+          console.error(
+            "[LocalEventRepository] Failed to reorder event:",
+            event._id,
+            error,
+          );
+          errors.push({ eventId: event._id!, error });
+        }
       }
+    }
+
+    // If any saves failed, throw aggregate error
+    if (errors.length > 0) {
+      throw new Error(`Failed to reorder ${errors.length} events`);
     }
   }
 }

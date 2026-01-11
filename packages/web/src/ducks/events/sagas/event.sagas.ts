@@ -103,7 +103,18 @@ export function* createEvent({ payload }: Action_CreateEvent): Generator {
     const sessionExists = yield call(session.doesSessionExist);
     const repository = getEventRepository(sessionExists);
 
+    console.log("[createEvent] Session exists:", sessionExists);
+    console.log("[createEvent] Event to save:", {
+      _id: event._id,
+      title: event.title,
+      isSomeday: event.isSomeday,
+      startDate: event.startDate,
+      endDate: event.endDate,
+    });
+
     yield call([repository, repository.create], event as Schema_Event);
+
+    console.log("[createEvent] Event saved successfully");
 
     yield put(
       eventsEntitiesSlice.actions.edit({
@@ -209,6 +220,13 @@ function* getEvents(
     const sessionExists = yield call(session.doesSessionExist);
     const repository = getEventRepository(sessionExists);
 
+    console.log("[getEvents] Session exists:", sessionExists);
+    console.log("[getEvents] Payload:", {
+      startDate: payload.startDate,
+      endDate: payload.endDate,
+      someday: payload.someday,
+    });
+
     const _payload = EventDateUtils.adjustStartEndDate(payload);
 
     const res: Response_GetEventsSuccess = yield call(
@@ -216,11 +234,29 @@ function* getEvents(
       _payload,
     );
 
+    console.log("[getEvents] Raw response from repository:", {
+      count: res.data?.length,
+      events: res.data?.map((e) => ({
+        _id: e._id,
+        title: e.title,
+        isSomeday: e.isSomeday,
+      })),
+    });
+
     const events = EventDateUtils.filterEventsByStartEndDate(
       res.data,
       payload.startDate as string,
       payload.endDate as string,
     );
+
+    console.log("[getEvents] After date filtering:", {
+      count: events.length,
+      events: events.map((e) => ({
+        _id: e._id,
+        title: e.title,
+        isSomeday: e.isSomeday,
+      })),
+    });
 
     const normalizedEvents = normalize<Schema_Event>(events, [
       normalizedEventsSchema(),
@@ -239,7 +275,10 @@ function* getEvents(
 
 export function* getWeekEvents({ payload }: Action_GetEvents) {
   try {
-    const data = (yield* getEvents(payload)) as Response_GetEventsSaga;
+    const data = (yield* getEvents({
+      ...payload,
+      someday: false,
+    })) as Response_GetEventsSaga;
     yield put(getWeekEventsSlice.actions.success(data));
   } catch (error) {
     yield put(getWeekEventsSlice.actions.error({}));
@@ -252,6 +291,7 @@ export function* getDayEvents({ payload }: Action_GetEvents) {
     const data = (yield call(getEvents, {
       ...payload,
       dontAdjustDates: true,
+      someday: false,
     })) as Response_GetEventsSaga;
 
     yield put(getDayEventsSlice.actions.success(data));

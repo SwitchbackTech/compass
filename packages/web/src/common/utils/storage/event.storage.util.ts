@@ -1,6 +1,8 @@
 import { Event_Core } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { compassLocalDB } from "./compass-local.db";
+import { handleDatabaseError, logDatabaseOperation } from "./db-errors.util";
+import { ensureDatabaseReady } from "./db-init.util";
 
 /**
  * Saves an event to IndexedDB. Uses put() to handle both new and existing events.
@@ -10,7 +12,23 @@ export async function saveEventToIndexedDB(event: Event_Core): Promise<void> {
     throw new Error("Event must have an _id to save to IndexedDB");
   }
 
-  await compassLocalDB.events.put(event);
+  try {
+    // Ensure database is ready before operation
+    await ensureDatabaseReady();
+
+    logDatabaseOperation("Saving event to IndexedDB", {
+      _id: event._id,
+      title: event.title,
+      isSomeday: event.isSomeday,
+    });
+
+    await compassLocalDB.events.put(event);
+
+    console.log("[Storage] Event saved successfully:", event._id);
+  } catch (error) {
+    console.error("[Storage] Failed to save event:", error);
+    handleDatabaseError(error, "save");
+  }
 }
 
 /**
@@ -21,45 +39,104 @@ export async function loadEventsFromIndexedDB(
   endDate: string,
   isSomeday?: boolean,
 ): Promise<Event_Core[]> {
-  // Get all events and filter in memory since we need to check date ranges
-  // and isSomeday flag. Dexie's between() works on indexed fields but we
-  // need to handle date string comparisons properly.
-  let events = await compassLocalDB.events.toArray();
+  try {
+    // Ensure database is ready before operation
+    await ensureDatabaseReady();
 
-  // Filter by date range
-  const start = dayjs(startDate);
-  const end = dayjs(endDate);
-  events = events.filter((event) => {
-    if (!event.startDate) return false;
-    const eventStart = dayjs(event.startDate);
-    return eventStart.isBetween(start, end, "day", "[]"); // inclusive on both ends
-  });
+    logDatabaseOperation("Loading events from IndexedDB", {
+      startDate,
+      endDate,
+      isSomeday,
+    });
 
-  // Filter by isSomeday if specified
-  if (isSomeday !== undefined) {
-    events = events.filter((event) => event.isSomeday === isSomeday);
+    // Get all events and filter in memory since we need to check date ranges
+    // and isSomeday flag. Dexie's between() works on indexed fields but we
+    // need to handle date string comparisons properly.
+    let events = await compassLocalDB.events.toArray();
+
+    // Filter by date range
+    const start = dayjs(startDate);
+    const end = dayjs(endDate);
+    events = events.filter((event) => {
+      if (!event.startDate) return false;
+      const eventStart = dayjs(event.startDate);
+      return eventStart.isBetween(start, end, "day", "[]"); // inclusive on both ends
+    });
+
+    // Filter by isSomeday if specified
+    if (isSomeday !== undefined) {
+      events = events.filter((event) => event.isSomeday === isSomeday);
+    }
+
+    console.log("[Storage] Loaded events:", {
+      count: events.length,
+      events: events.map((e) => ({ _id: e._id, title: e.title })),
+    });
+
+    return events;
+  } catch (error) {
+    console.error("[Storage] Failed to load events:", error);
+    handleDatabaseError(error, "load");
   }
-
-  return events;
 }
 
 /**
  * Loads all events from IndexedDB without filtering.
  */
 export async function loadAllEventsFromIndexedDB(): Promise<Event_Core[]> {
-  return compassLocalDB.events.toArray();
+  try {
+    // Ensure database is ready before operation
+    await ensureDatabaseReady();
+
+    logDatabaseOperation("Loading all events from IndexedDB");
+
+    const events = await compassLocalDB.events.toArray();
+
+    console.log("[Storage] Loaded all events:", {
+      count: events.length,
+    });
+
+    return events;
+  } catch (error) {
+    console.error("[Storage] Failed to load all events:", error);
+    handleDatabaseError(error, "load");
+  }
 }
 
 /**
  * Deletes an event from IndexedDB by its ID.
  */
 export async function deleteEventFromIndexedDB(eventId: string): Promise<void> {
-  await compassLocalDB.events.delete(eventId);
+  try {
+    // Ensure database is ready before operation
+    await ensureDatabaseReady();
+
+    logDatabaseOperation("Deleting event from IndexedDB", { eventId });
+
+    await compassLocalDB.events.delete(eventId);
+
+    console.log("[Storage] Event deleted successfully:", eventId);
+  } catch (error) {
+    console.error("[Storage] Failed to delete event:", error);
+    handleDatabaseError(error, "delete");
+  }
 }
 
 /**
  * Clears all events from IndexedDB. Used for migration cleanup.
  */
 export async function clearEventsFromIndexedDB(): Promise<void> {
-  await compassLocalDB.events.clear();
+  try {
+    // Ensure database is ready before operation
+    await ensureDatabaseReady();
+
+    logDatabaseOperation("Clearing all events from IndexedDB");
+
+    await compassLocalDB.events.clear();
+
+    console.log("[Storage] All events cleared successfully");
+  } catch (error) {
+    console.error("[Storage] Failed to clear events:", error);
+    handleDatabaseError(error, "clear");
+  }
 }

@@ -6,6 +6,7 @@ import { AuthApi } from "@web/common/apis/auth.api";
 import { UserApi } from "@web/common/apis/user.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { useSession } from "@web/common/hooks/useSession";
+import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
 import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
 import { toastDefaultOptions } from "@web/views/Day/components/Toasts";
@@ -20,6 +21,10 @@ export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
   const googleLogin = useGoogleLogin({
     onSuccess: async (data) => {
       await AuthApi.loginOrSignup(data);
+
+      // Mark user as authenticated in localStorage
+      // This ensures the app always uses RemoteEventRepository going forward
+      markUserAsAuthenticated();
 
       setAuthenticated(true);
       setIsSyncing(true);

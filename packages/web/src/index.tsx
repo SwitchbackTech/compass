@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import "react-toastify/dist/ReactToastify.css";
 import { sessionInit } from "@web/auth/SessionProvider";
 import { sagaMiddleware } from "@web/common/store/middlewares";
+import { initializeDatabase } from "@web/common/utils/storage/db-init.util";
 import { App } from "@web/components/App/App";
 import { sagas } from "@web/store/sagas";
 import "./index.css";
@@ -15,7 +16,22 @@ if (!container) {
 
 const root = createRoot(container);
 
-sagaMiddleware.run(sagas);
-sessionInit();
+/**
+ * Initialize the application with database setup before starting sagas.
+ * This ensures IndexedDB is ready before any database operations occur.
+ */
+async function initializeApp() {
+  try {
+    await initializeDatabase();
+    console.log("[App] Database initialized successfully");
+  } catch (error) {
+    console.error("[App] Database initialization failed:", error);
+  }
 
-root.render(<App />);
+  sagaMiddleware.run(sagas);
+  sessionInit();
+
+  root.render(<App />);
+}
+
+initializeApp();
