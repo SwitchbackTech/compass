@@ -14,7 +14,6 @@ import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import {
   Schema_GridEvent,
   Schema_OptimisticEvent,
-  Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import { handleError } from "@web/common/utils/event/event.util";
 import {
@@ -257,6 +256,17 @@ function* getEvents(
         isSomeday: e.isSomeday,
       })),
     });
+
+    // Validate response data exists before normalizing
+    if (!res.data || !Array.isArray(res.data)) {
+      console.error(
+        "[getEvents] Invalid response from repository - data is missing or not an array:",
+        res,
+      );
+      throw new Error(
+        "Invalid response from event repository: data field is missing or not an array",
+      );
+    }
 
     const normalizedEvents = normalize<Schema_Event>(events, [
       normalizedEventsSchema(),

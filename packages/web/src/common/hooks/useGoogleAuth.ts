@@ -9,11 +9,14 @@ import { useSession } from "@web/common/hooks/useSession";
 import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
 import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
+import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
+import { useAppDispatch } from "@web/store/store.hooks";
 import { toastDefaultOptions } from "@web/views/Day/components/Toasts";
 import { OnboardingStepProps } from "@web/views/Onboarding";
 
 export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const { setAuthenticated, setIsSyncing } = useSession();
   const { markSignupCompleted } = useIsSignupComplete();
   const { updateOnboardingStatus } = useSkipOnboarding();
@@ -42,17 +45,27 @@ export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
       props?.onNext?.();
 
       try {
-        await syncLocalEventsToCloud();
-        toast(
-          "Your events are now synced and stored in the cloud.",
-          toastDefaultOptions,
-        );
+        const syncedCount = await syncLocalEventsToCloud();
+
+        if (syncedCount > 0) {
+          toast(
+            `${syncedCount} local event(s) synced to the cloud.`,
+            toastDefaultOptions,
+          );
+        }
+
+        // Trigger a refetch to load events from the cloud
+        // This ensures the UI displays events after authentication
+        dispatch(triggerFetch());
       } catch (error) {
         toast.error(
           "We could not sync your local events. Your changes are still saved on this device.",
           toastDefaultOptions,
         );
         console.error(error);
+
+        // Still trigger refetch to show cloud events (even if local sync failed)
+        dispatch(triggerFetch());
       } finally {
         setIsSyncing(false);
       }
