@@ -77,7 +77,7 @@ export default (env, argv) => {
   const POSTHOG_KEY = process.env.POSTHOG_KEY;
   const POSTHOG_HOST = process.env.POSTHOG_HOST;
   const NODE_ENV = process.env.NODE_ENV || ENVIRONMENT || "development";
-  const PORT = process.env.PORT || "3000";
+  const PORT = "9080";
 
   if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === "undefined") {
     logger.error(`Oopsies, you're missing the GOOGLE_CLIENT_ID variable.
