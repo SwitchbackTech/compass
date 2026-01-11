@@ -1,4 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
+import { CompassSession } from "@web/auth/session/session.types";
 import { ONBOARDING_STEPS } from "@web/views/Onboarding/constants/onboarding.constants";
 import { useOnboardingOverlay } from "@web/views/Onboarding/hooks/useOnboardingOverlay";
 import {
@@ -101,14 +102,15 @@ describe("useOnboardingOverlay", () => {
 
   it("should not show onboarding overlay for authenticated users", () => {
     const { useSession } = require("@web/common/hooks/useSession");
-    useSession.mockReturnValue({
+    const mockSession: CompassSession = {
       authenticated: true,
       loading: false,
       isSyncing: false,
       setAuthenticated: jest.fn(),
       setLoading: jest.fn(),
       setIsSyncing: jest.fn(),
-    });
+    };
+    useSession.mockReturnValue(mockSession);
 
     const { result } = renderHook(() => useOnboardingOverlay());
 
@@ -117,14 +119,15 @@ describe("useOnboardingOverlay", () => {
 
   it("should not show onboarding overlay when guide is completed", () => {
     const { useSession } = require("@web/common/hooks/useSession");
-    useSession.mockReturnValue({
+    const mockSession: CompassSession = {
       authenticated: false,
       loading: false,
       isSyncing: false,
       setAuthenticated: jest.fn(),
       setLoading: jest.fn(),
       setIsSyncing: jest.fn(),
-    });
+    };
+    useSession.mockReturnValue(mockSession);
 
     // Set guide as completed
     updateOnboardingProgress({ isCompleted: true });
@@ -146,14 +149,15 @@ describe("useOnboardingOverlay", () => {
   it("should skip guide when dismissed", () => {
     // Reset mock to ensure authenticated is false
     const { useSession } = require("@web/common/hooks/useSession");
-    useSession.mockReturnValue({
+    const mockSession: CompassSession = {
       authenticated: false,
       loading: false,
       isSyncing: false,
       setAuthenticated: jest.fn(),
       setLoading: jest.fn(),
       setIsSyncing: jest.fn(),
-    });
+    };
+    useSession.mockReturnValue(mockSession);
 
     const skipGuideFn = jest.fn(() => {
       updateOnboardingProgress({ isCompleted: true });

@@ -67,7 +67,6 @@ export function markUserAsAuthenticated(): void {
 
   try {
     updateAuthState({ isGoogleAuthenticated: true });
-    console.log("[Auth State] User marked as authenticated");
   } catch {
     // Silently fail if localStorage is unavailable
   }
@@ -96,7 +95,6 @@ export function clearAuthenticationState(): void {
 
   try {
     localStorage.removeItem(STORAGE_KEYS.AUTH);
-    console.log("[Auth State] Authentication state cleared");
   } catch {
     // Silently fail if localStorage is unavailable
   }

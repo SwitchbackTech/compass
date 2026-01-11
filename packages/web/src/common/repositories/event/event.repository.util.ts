@@ -18,26 +18,16 @@ import { RemoteEventRepository } from "./remote.event.repository";
 export function getEventRepository(sessionExists: boolean): EventRepository {
   const hasAuthenticated = hasUserEverAuthenticated();
 
-  console.log("[Repository] Selection criteria:", {
-    sessionExists,
-    hasAuthenticated,
-  });
-
   // Once a user has authenticated, ALWAYS use remote repository
   // This ensures events don't disappear due to empty IndexedDB after login
   if (hasAuthenticated) {
-    console.log(
-      "[Repository] Using RemoteEventRepository (user has authenticated)",
-    );
     return new RemoteEventRepository();
   }
 
   // User has never authenticated - use session state to decide
   if (sessionExists) {
-    console.log("[Repository] Using RemoteEventRepository (session exists)");
     return new RemoteEventRepository();
   }
 
-  console.log("[Repository] Using LocalEventRepository (no auth, no session)");
   return new LocalEventRepository();
 }

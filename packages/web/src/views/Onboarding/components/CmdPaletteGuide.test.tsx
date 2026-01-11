@@ -2,6 +2,7 @@ import { useLocation } from "react-router-dom";
 import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
 import { render, screen } from "@web/__tests__/__mocks__/mock.render";
+import { CompassSession } from "@web/auth/session/session.types";
 import { useSession } from "@web/common/hooks/useSession";
 import {
   getDateKey,
@@ -53,14 +54,15 @@ describe("CmdPaletteGuide", () => {
     jest.clearAllMocks();
     localStorage.clear();
     mockUseStepDetection.mockImplementation(() => {});
-    mockUseSession.mockReturnValue({
+    const mockSession: CompassSession = {
       authenticated: false,
       loading: false,
       isSyncing: false,
       setAuthenticated: jest.fn(),
       setLoading: jest.fn(),
       setIsSyncing: jest.fn(),
-    });
+    };
+    mockUseSession.mockReturnValue(mockSession);
     mockGetDateKey.mockReturnValue("2024-01-01");
     mockLoadTasksFromStorage.mockReturnValue([]); // No tasks by default
   });
@@ -356,7 +358,15 @@ describe("CmdPaletteGuide", () => {
 
   it("should render on Day view when authenticated", () => {
     mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
-    mockUseSession.mockReturnValue({ authenticated: true });
+    const mockSession: CompassSession = {
+      authenticated: true,
+      loading: false,
+      isSyncing: false,
+      setAuthenticated: jest.fn(),
+      setLoading: jest.fn(),
+      setIsSyncing: jest.fn(),
+    };
+    mockUseSession.mockReturnValue(mockSession);
     markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
     mockUseCmdPaletteGuide.mockReturnValue({
       currentStep: ONBOARDING_STEPS.CREATE_TASK,

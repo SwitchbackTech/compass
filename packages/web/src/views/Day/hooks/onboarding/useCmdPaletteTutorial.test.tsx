@@ -1,6 +1,7 @@
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { CompassSession } from "@web/auth/session/session.types";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import {
   getOnboardingProgress,
@@ -91,14 +92,15 @@ describe("useCmdPaletteTutorial", () => {
 
   it("should not show cmd palette tutorial for authenticated users", () => {
     const { useSession } = require("@web/common/hooks/useSession");
-    useSession.mockReturnValue({
+    const mockSession: CompassSession = {
       authenticated: true,
       loading: false,
       isSyncing: false,
       setAuthenticated: jest.fn(),
       setLoading: jest.fn(),
       setIsSyncing: jest.fn(),
-    });
+    };
+    useSession.mockReturnValue(mockSession);
     const store = createTestStore();
 
     const { result } = renderHook(
@@ -116,14 +118,15 @@ describe("useCmdPaletteTutorial", () => {
   it("should mark cmd palette as used when opened", async () => {
     // Reset mock to ensure authenticated is false
     const { useSession } = require("@web/common/hooks/useSession");
-    useSession.mockReturnValue({
+    const mockSession: CompassSession = {
       authenticated: false,
       loading: false,
       isSyncing: false,
       setAuthenticated: jest.fn(),
       setLoading: jest.fn(),
       setIsSyncing: jest.fn(),
-    });
+    };
+    useSession.mockReturnValue(mockSession);
 
     const store = createTestStore(false); // cmd palette starts closed
 
