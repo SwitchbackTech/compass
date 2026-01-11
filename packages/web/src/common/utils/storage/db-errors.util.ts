@@ -49,8 +49,6 @@ export function handleDatabaseError(
   error: unknown,
   operation: "save" | "load" | "delete" | "clear" | "reorder",
 ): never {
-  console.error(`[DB Error] ${operation} operation failed:`, error);
-
   // Handle Dexie-specific errors
   if (error instanceof Dexie.QuotaExceededError) {
     throw new DatabaseOperationError(
@@ -104,18 +102,4 @@ export function handleDatabaseError(
     operation,
     error,
   );
-}
-
-/**
- * Logs database operation details for debugging.
- * Useful for tracking database operations in development and production.
- *
- * @param operation - The operation being performed
- * @param details - Additional details about the operation
- */
-export function logDatabaseOperation(
-  operation: string,
-  details?: Record<string, unknown>,
-): void {
-  console.log(`[DB Operation] ${operation}`, details || {});
 }

@@ -9,45 +9,39 @@ import { sortTasksByStatus } from "@web/common/utils/task/sort.task";
 interface UseTaskEffectsProps {
   tasks: Task[];
   dateKey: string;
-  lastLoadedKeyRef: React.MutableRefObject<string | null>;
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
 }
 
 export function useTaskEffects({
   tasks,
   dateKey,
-  lastLoadedKeyRef,
   setTasks,
 }: UseTaskEffectsProps): void {
-  // Track the dateKey for which we've completed loading using state to ensure
-  // we only save after a re-render has populated the tasks
-  const [loadedDateKey, setLoadedDateKey] = useState<string | null>(null);
+  // Track the dateKey for which we have successfully loaded data.
+  // We use this to prevent overwriting localStorage with empty state
+  // before the initial load for a new date has completed.
+  const [syncedDateKey, setSyncedDateKey] = useState<string | null>(null);
 
-  // Load tasks from localStorage when date changes
-  // Note: Task seeding happens in loadSpecificDayData loader, so tasks should already exist
+  // Load Effect: Runs when dateKey changes
   useEffect(() => {
-    if (lastLoadedKeyRef.current === dateKey) {
-      // If we've already loaded this key (e.g. from parent state persistence),
-      // make sure our local loaded state is synced so saving can happen
-      if (loadedDateKey !== dateKey) {
-        setLoadedDateKey(dateKey);
-      }
-      return;
-    }
-    lastLoadedKeyRef.current = dateKey;
+    // If we've already synced this date, don't reload.
+    if (syncedDateKey === dateKey) return;
 
     const loadedTasks = loadTasksFromStorage(dateKey);
     const sortedTasks = sortTasksByStatus(loadedTasks);
-    setTasks(sortedTasks);
-    setLoadedDateKey(dateKey);
-  }, [dateKey, lastLoadedKeyRef, setTasks, loadedDateKey]);
 
-  // Save tasks to localStorage whenever they change (but only after initial load completes)
+    setTasks(sortedTasks);
+    // Marking as synced triggers a re-render.
+    // The save effect will then see syncedDateKey === dateKey and be enabled.
+    setSyncedDateKey(dateKey);
+  }, [dateKey, syncedDateKey, setTasks]);
+
+  // Save Effect: Runs when tasks or dateKey changes
   useEffect(() => {
-    // Skip saving if we haven't finished initializing for this dateKey
-    if (loadedDateKey !== dateKey) {
+    // strict guard: never save if we haven't confirmed loading for this specific date
+    if (syncedDateKey !== dateKey) {
       return;
     }
     saveTasksToStorage(dateKey, tasks);
-  }, [tasks, dateKey, loadedDateKey]);
+  }, [tasks, dateKey, syncedDateKey]);
 }

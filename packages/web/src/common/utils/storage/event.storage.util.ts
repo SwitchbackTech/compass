@@ -1,7 +1,7 @@
 import { Event_Core } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { compassLocalDB } from "./compass-local.db";
-import { handleDatabaseError, logDatabaseOperation } from "./db-errors.util";
+import { handleDatabaseError } from "./db-errors.util";
 import { ensureDatabaseReady } from "./db-init.util";
 
 /**
@@ -15,12 +15,6 @@ export async function saveEventToIndexedDB(event: Event_Core): Promise<void> {
   try {
     // Ensure database is ready before operation
     await ensureDatabaseReady();
-
-    logDatabaseOperation("Saving event to IndexedDB", {
-      _id: event._id,
-      title: event.title,
-      isSomeday: event.isSomeday,
-    });
 
     await compassLocalDB.events.put(event);
 
@@ -42,12 +36,6 @@ export async function loadEventsFromIndexedDB(
   try {
     // Ensure database is ready before operation
     await ensureDatabaseReady();
-
-    logDatabaseOperation("Loading events from IndexedDB", {
-      startDate,
-      endDate,
-      isSomeday,
-    });
 
     // Get all events and filter in memory since we need to check date ranges
     // and isSomeday flag. Dexie's between() works on indexed fields but we
@@ -88,8 +76,6 @@ export async function loadAllEventsFromIndexedDB(): Promise<Event_Core[]> {
     // Ensure database is ready before operation
     await ensureDatabaseReady();
 
-    logDatabaseOperation("Loading all events from IndexedDB");
-
     const events = await compassLocalDB.events.toArray();
 
     console.log("[Storage] Loaded all events:", {
@@ -111,8 +97,6 @@ export async function deleteEventFromIndexedDB(eventId: string): Promise<void> {
     // Ensure database is ready before operation
     await ensureDatabaseReady();
 
-    logDatabaseOperation("Deleting event from IndexedDB", { eventId });
-
     await compassLocalDB.events.delete(eventId);
 
     console.log("[Storage] Event deleted successfully:", eventId);
@@ -129,8 +113,6 @@ export async function clearEventsFromIndexedDB(): Promise<void> {
   try {
     // Ensure database is ready before operation
     await ensureDatabaseReady();
-
-    logDatabaseOperation("Clearing all events from IndexedDB");
 
     await compassLocalDB.events.clear();
 
