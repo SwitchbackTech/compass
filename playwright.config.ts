@@ -23,7 +23,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "yarn dev:web",
+    command:
+      "cd packages/web && yarn webpack serve --mode=development --node-env=test",
     env: {
       NODE_ENV: "test",
       WEB_IS_DEV: "false",
