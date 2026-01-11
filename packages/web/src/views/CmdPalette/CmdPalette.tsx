@@ -6,7 +6,9 @@ import {
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
+import { AuthApi } from "@web/common/apis/auth.api";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
+import { useSession } from "@web/common/hooks/useSession";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
 import {
@@ -15,11 +17,14 @@ import {
 } from "@web/common/utils/draft/draft.util";
 import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
+import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
+import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
 import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
 } from "@web/ducks/events/selectors/someday.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
@@ -41,6 +46,25 @@ const CmdPalette = ({
   const open = useAppSelector(selectIsCmdPaletteOpen);
   const [page] = useState<"root" | "projects">("root");
   const [search, setSearch] = useState("");
+  const { authenticated, setAuthenticated } = useSession();
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (data) => {
+      try {
+        await AuthApi.loginOrSignup(data);
+        markUserAsAuthenticated();
+        setAuthenticated(true);
+        dispatch(triggerFetch());
+      } catch (error) {
+        console.error("Failed to authenticate:", error);
+      } finally {
+        dispatch(settingsSlice.actions.closeCmdPalette());
+      }
+    },
+    onError: () => {
+      dispatch(settingsSlice.actions.closeCmdPalette());
+    },
+  });
 
   const handleCreateSomedayDraft = async (
     category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
@@ -126,6 +150,23 @@ const CmdPalette = ({
               _discardDraft();
               util.goToToday();
             },
+          },
+        ],
+      },
+      {
+        heading: "Settings",
+        id: "settings",
+        items: [
+          {
+            id: "connect-google-calendar",
+            children: "Connect Google Calendar",
+            icon: "CloudArrowUpIcon",
+            onClick: authenticated
+              ? undefined
+              : () => {
+                  googleLogin.login();
+                  dispatch(settingsSlice.actions.closeCmdPalette());
+                },
           },
           {
             id: "redo-onboarding",

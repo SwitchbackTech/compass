@@ -1,9 +1,14 @@
 import { useState } from "react";
 import CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
+import { AuthApi } from "@web/common/apis/auth.api";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
+import { useSession } from "@web/common/hooks/useSession";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
+import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
+import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
+import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
@@ -15,6 +20,25 @@ export const NowCmdPalette = () => {
   const open = useAppSelector(selectIsCmdPaletteOpen);
   const [page] = useState<"root">("root");
   const [search, setSearch] = useState("");
+  const { authenticated, setAuthenticated } = useSession();
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (data) => {
+      try {
+        await AuthApi.loginOrSignup(data);
+        markUserAsAuthenticated();
+        setAuthenticated(true);
+        dispatch(triggerFetch());
+      } catch (error) {
+        console.error("Failed to authenticate:", error);
+      } finally {
+        dispatch(settingsSlice.actions.closeCmdPalette());
+      }
+    },
+    onError: () => {
+      dispatch(settingsSlice.actions.closeCmdPalette());
+    },
+  });
 
   const filteredItems = filterItems(
     [
@@ -39,6 +63,23 @@ export const NowCmdPalette = () => {
             children: `Edit Reminder [r]`,
             icon: "PencilSquareIcon",
             onClick: onEventTargetVisibility(() => pressKey("r")),
+          },
+        ],
+      },
+      {
+        heading: "Settings",
+        id: "settings",
+        items: [
+          {
+            id: "connect-google-calendar",
+            children: "Connect Google Calendar",
+            icon: "CloudArrowUpIcon",
+            onClick: authenticated
+              ? undefined
+              : () => {
+                  googleLogin.login();
+                  dispatch(settingsSlice.actions.closeCmdPalette());
+                },
           },
           {
             id: "redo-onboarding",
