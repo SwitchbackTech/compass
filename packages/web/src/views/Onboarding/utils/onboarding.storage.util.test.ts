@@ -1,8 +1,10 @@
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
-import { ONBOARDING_STEPS } from "../constants/onboarding.constants";
 import {
   DEFAULT_ONBOARDING_PROGRESS,
   OnboardingProgress,
+} from "@web/common/constants/onboarding.constants";
+import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import { ONBOARDING_STEPS } from "../constants/onboarding.constants";
+import {
   clearCompletedSteps,
   getOnboardingProgress,
   isStepCompleted,

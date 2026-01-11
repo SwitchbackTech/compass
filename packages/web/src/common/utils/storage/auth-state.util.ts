@@ -1,3 +1,8 @@
+import {
+  AuthState,
+  AuthStateSchema,
+  DEFAULT_AUTH_STATE,
+} from "@web/common/constants/auth.constants";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 
 /**
@@ -6,16 +11,65 @@ import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
  */
 
 /**
+ * Get the current authentication state from localStorage.
+ * Returns default state if not found or invalid.
+ */
+export function getAuthState(): AuthState {
+  if (typeof window === "undefined") return DEFAULT_AUTH_STATE;
+
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.AUTH);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      const result = AuthStateSchema.safeParse(parsed);
+      if (result.success) {
+        return result.data;
+      }
+    }
+
+    return DEFAULT_AUTH_STATE;
+  } catch {
+    return DEFAULT_AUTH_STATE;
+  }
+}
+
+/**
+ * Update authentication state in localStorage.
+ * Merges partial updates into existing state.
+ */
+export function updateAuthState(updates: Partial<AuthState>): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    const current = getAuthState();
+    const updated: AuthState = {
+      ...current,
+      ...updates,
+    };
+
+    // Validate with zod schema
+    const result = AuthStateSchema.safeParse(updated);
+    if (result.success) {
+      localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(result.data));
+    }
+  } catch {
+    // Silently fail if localStorage is unavailable
+  }
+}
+
+/**
  * Marks that the user has authenticated at least once.
  * Once set, the app will always use RemoteEventRepository instead of LocalEventRepository.
  * This prevents the UX issue where events disappear after login due to cleared IndexedDB.
  */
 export function markUserAsAuthenticated(): void {
+  if (typeof window === "undefined") return;
+
   try {
-    localStorage.setItem(STORAGE_KEYS.HAS_AUTHENTICATED, "true");
+    updateAuthState({ isGoogleAuthenticated: true });
     console.log("[Auth State] User marked as authenticated");
-  } catch (error) {
-    console.error("[Auth State] Failed to mark user as authenticated:", error);
+  } catch {
+    // Silently fail if localStorage is unavailable
   }
 }
 
@@ -27,10 +81,8 @@ export function markUserAsAuthenticated(): void {
  */
 export function hasUserEverAuthenticated(): boolean {
   try {
-    const value = localStorage.getItem(STORAGE_KEYS.HAS_AUTHENTICATED);
-    return value === "true";
-  } catch (error) {
-    console.error("[Auth State] Failed to check authentication state:", error);
+    return getAuthState().isGoogleAuthenticated;
+  } catch {
     return false;
   }
 }
@@ -40,10 +92,12 @@ export function hasUserEverAuthenticated(): boolean {
  * WARNING: Only use this when user explicitly logs out and wants to clear all data.
  */
 export function clearAuthenticationState(): void {
+  if (typeof window === "undefined") return;
+
   try {
-    localStorage.removeItem(STORAGE_KEYS.HAS_AUTHENTICATED);
+    localStorage.removeItem(STORAGE_KEYS.AUTH);
     console.log("[Auth State] Authentication state cleared");
-  } catch (error) {
-    console.error("[Auth State] Failed to clear authentication state:", error);
+  } catch {
+    // Silently fail if localStorage is unavailable
   }
 }

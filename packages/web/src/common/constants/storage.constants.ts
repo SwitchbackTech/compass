@@ -3,16 +3,16 @@ import { z } from "zod";
 export const StorageKeySchema = z.enum([
   "compass.reminder",
   "compass.onboarding",
-  "compass.hasAuthenticated",
+  "compass.auth",
 ]);
 
 export type StorageKey = z.infer<typeof StorageKeySchema>;
 
 export const STORAGE_KEYS: Record<
-  "REMINDER" | "ONBOARDING_PROGRESS" | "HAS_AUTHENTICATED",
+  "REMINDER" | "ONBOARDING_PROGRESS" | "AUTH",
   StorageKey
 > = {
   REMINDER: "compass.reminder",
   ONBOARDING_PROGRESS: "compass.onboarding",
-  HAS_AUTHENTICATED: "compass.hasAuthenticated",
+  AUTH: "compass.auth",
 } as const;

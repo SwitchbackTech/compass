@@ -1,8 +1,11 @@
+import { DEFAULT_AUTH_STATE } from "@web/common/constants/auth.constants";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import {
   clearAuthenticationState,
+  getAuthState,
   hasUserEverAuthenticated,
   markUserAsAuthenticated,
+  updateAuthState,
 } from "./auth-state.util";
 
 describe("auth-state.util", () => {
@@ -16,16 +19,79 @@ describe("auth-state.util", () => {
     localStorage.clear();
   });
 
+  describe("getAuthState", () => {
+    it("should return default state when no data exists", () => {
+      const state = getAuthState();
+      expect(state).toEqual(DEFAULT_AUTH_STATE);
+    });
+
+    it("should return stored state from localStorage", () => {
+      const testState = { isGoogleAuthenticated: true };
+      localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(testState));
+
+      const state = getAuthState();
+      expect(state).toEqual(testState);
+    });
+
+    it("should handle invalid JSON gracefully", () => {
+      localStorage.setItem(STORAGE_KEYS.AUTH, "invalid json");
+      const state = getAuthState();
+      expect(state).toEqual(DEFAULT_AUTH_STATE);
+    });
+
+    it("should handle invalid schema gracefully", () => {
+      localStorage.setItem(
+        STORAGE_KEYS.AUTH,
+        JSON.stringify({ invalid: "data" }),
+      );
+      const state = getAuthState();
+      expect(state).toEqual(DEFAULT_AUTH_STATE);
+    });
+  });
+
+  describe("updateAuthState", () => {
+    it("should update authentication state in localStorage", () => {
+      updateAuthState({ isGoogleAuthenticated: true });
+
+      const stored = localStorage.getItem(STORAGE_KEYS.AUTH);
+      expect(stored).toBeTruthy();
+      const parsed = JSON.parse(stored!);
+      expect(parsed.isGoogleAuthenticated).toBe(true);
+    });
+
+    it("should merge partial updates into existing state", () => {
+      updateAuthState({ isGoogleAuthenticated: true });
+      updateAuthState({ isGoogleAuthenticated: false });
+
+      const state = getAuthState();
+      expect(state.isGoogleAuthenticated).toBe(false);
+    });
+
+    it("should handle localStorage errors gracefully", () => {
+      const setItemSpy = jest
+        .spyOn(Storage.prototype, "setItem")
+        .mockImplementation(() => {
+          throw new Error("Storage quota exceeded");
+        });
+
+      // Should not throw
+      expect(() =>
+        updateAuthState({ isGoogleAuthenticated: true }),
+      ).not.toThrow();
+
+      setItemSpy.mockRestore();
+    });
+  });
+
   describe("markUserAsAuthenticated", () => {
     it("should set the authentication flag in localStorage", () => {
       markUserAsAuthenticated();
 
-      const value = localStorage.getItem(STORAGE_KEYS.HAS_AUTHENTICATED);
-      expect(value).toBe("true");
+      const state = getAuthState();
+      expect(state.isGoogleAuthenticated).toBe(true);
     });
 
     it("should handle localStorage errors gracefully", () => {
-      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
       const setItemSpy = jest
         .spyOn(Storage.prototype, "setItem")
         .mockImplementation(() => {
@@ -35,19 +101,13 @@ describe("auth-state.util", () => {
       // Should not throw
       expect(() => markUserAsAuthenticated()).not.toThrow();
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "[Auth State] Failed to mark user as authenticated:",
-        expect.any(Error),
-      );
-
       setItemSpy.mockRestore();
-      consoleErrorSpy.mockRestore();
     });
   });
 
   describe("hasUserEverAuthenticated", () => {
     it("should return true when authentication flag is set", () => {
-      localStorage.setItem(STORAGE_KEYS.HAS_AUTHENTICATED, "true");
+      updateAuthState({ isGoogleAuthenticated: true });
 
       expect(hasUserEverAuthenticated()).toBe(true);
     });
@@ -56,14 +116,13 @@ describe("auth-state.util", () => {
       expect(hasUserEverAuthenticated()).toBe(false);
     });
 
-    it("should return false when authentication flag is set to something other than 'true'", () => {
-      localStorage.setItem(STORAGE_KEYS.HAS_AUTHENTICATED, "false");
+    it("should return false when authentication flag is set to false", () => {
+      updateAuthState({ isGoogleAuthenticated: false });
 
       expect(hasUserEverAuthenticated()).toBe(false);
     });
 
     it("should handle localStorage errors gracefully and return false", () => {
-      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
       const getItemSpy = jest
         .spyOn(Storage.prototype, "getItem")
         .mockImplementation(() => {
@@ -73,28 +132,22 @@ describe("auth-state.util", () => {
       const result = hasUserEverAuthenticated();
 
       expect(result).toBe(false);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "[Auth State] Failed to check authentication state:",
-        expect.any(Error),
-      );
 
       getItemSpy.mockRestore();
-      consoleErrorSpy.mockRestore();
     });
   });
 
   describe("clearAuthenticationState", () => {
     it("should remove the authentication flag from localStorage", () => {
-      localStorage.setItem(STORAGE_KEYS.HAS_AUTHENTICATED, "true");
+      updateAuthState({ isGoogleAuthenticated: true });
 
       clearAuthenticationState();
 
-      const value = localStorage.getItem(STORAGE_KEYS.HAS_AUTHENTICATED);
+      const value = localStorage.getItem(STORAGE_KEYS.AUTH);
       expect(value).toBeNull();
     });
 
     it("should handle localStorage errors gracefully", () => {
-      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
       const removeItemSpy = jest
         .spyOn(Storage.prototype, "removeItem")
         .mockImplementation(() => {
@@ -104,13 +157,7 @@ describe("auth-state.util", () => {
       // Should not throw
       expect(() => clearAuthenticationState()).not.toThrow();
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "[Auth State] Failed to clear authentication state:",
-        expect.any(Error),
-      );
-
       removeItemSpy.mockRestore();
-      consoleErrorSpy.mockRestore();
     });
   });
 
