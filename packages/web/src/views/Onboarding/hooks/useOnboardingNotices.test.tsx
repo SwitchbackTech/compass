@@ -64,10 +64,10 @@ describe("useOnboardingNotices", () => {
 
     expect(result.current.notices).toHaveLength(1);
     expect(result.current.notices[0].header).toBe(
-      "Sign in to sync across devices",
+      "Connect your Google Calendar",
     );
     expect(result.current.notices[0].body).toContain(
-      "Sign in to sync with Google Calendar",
+      "Your tasks are saved locally. Sign in to sync with Google Calendar",
     );
     expect(result.current.notices[0].primaryAction?.label).toBe("Sign in");
     expect(result.current.notices[0].secondaryAction?.label).toBe("Later");
