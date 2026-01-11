@@ -28,9 +28,10 @@ const setLocationPath = (pathname: string) => {
   });
 };
 
-const createAxiosError = (status: number): AxiosError => {
+const createAxiosError = (status: number, url?: string): AxiosError => {
+  const config = { url } as InternalAxiosRequestConfig;
   const response = {
-    config: {} as InternalAxiosRequestConfig,
+    config,
     data: {},
     headers: {},
     status,
@@ -38,7 +39,7 @@ const createAxiosError = (status: number): AxiosError => {
   } as AxiosResponse;
 
   return {
-    config: {} as InternalAxiosRequestConfig,
+    config,
     isAxiosError: true,
     message: "boom",
     name: "AxiosError",
@@ -47,8 +48,8 @@ const createAxiosError = (status: number): AxiosError => {
   } as AxiosError;
 };
 
-const triggerErrorResponse = async (status: number) => {
-  const axiosError = createAxiosError(status);
+const triggerErrorResponse = async (status: number, url?: string) => {
+  const axiosError = createAxiosError(status, url);
   const adapter: AxiosAdapter = () => Promise.reject(axiosError);
   CompassApi.defaults.adapter = adapter;
 
@@ -102,6 +103,14 @@ describe("CompassApi interceptor auth handling", () => {
     await triggerErrorResponse(Status.INTERNAL_SERVER);
 
     expect(console.error).toHaveBeenCalled();
+    expect(signOut).not.toHaveBeenCalled();
+    expect(assignMock).not.toHaveBeenCalled();
+  });
+
+  it("does not sign out or redirect on /user/profile 404", async () => {
+    await triggerErrorResponse(Status.NOT_FOUND, "/user/profile");
+
+    expect(window.alert).not.toHaveBeenCalled();
     expect(signOut).not.toHaveBeenCalled();
     expect(assignMock).not.toHaveBeenCalled();
   });

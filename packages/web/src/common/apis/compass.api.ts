@@ -39,10 +39,11 @@ CompassApi.interceptors.response.use(
       return Promise.resolve();
     }
 
-    const isUserNotFound =
+    // Allow /user/profile 404s to be handled gracefully by UserProvider
+    const isUserProfileNotFound =
       status === Status.NOT_FOUND && requestUrl?.includes("/user/profile");
-    if (isUserNotFound) {
-      window.location.assign(ROOT_ROUTES.ONBOARDING);
+    if (isUserProfileNotFound) {
+      // Let UserProvider handle this gracefully - don't sign out
       return Promise.reject(error);
     }
 
