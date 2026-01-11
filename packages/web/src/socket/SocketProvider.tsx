@@ -1,5 +1,6 @@
 import { ReactNode, useCallback, useEffect } from "react";
 import { useDispatch } from "react-redux";
+import { toast } from "react-toastify";
 import { io } from "socket.io-client";
 import {
   EVENT_CHANGED,
@@ -13,11 +14,13 @@ import { UserMetadata } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
 import { useUser } from "@web/auth/useUser";
 import { ENV_WEB } from "@web/common/constants/env.constants";
+import { useSession } from "@web/common/hooks/useSession";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import {
   importGCalSlice,
   triggerFetch,
 } from "@web/ducks/events/slices/sync.slice";
+import { toastDefaultOptions } from "@web/views/Day/components/Toasts";
 
 export const socket = io(ENV_WEB.BACKEND_BASEURL, {
   withCredentials: true,
@@ -67,6 +70,7 @@ socket.on("error", onError);
 const SocketProvider = ({ children }: { children: ReactNode }) => {
   const dispatch = useDispatch();
   const { userId } = useUser();
+  const { isSyncing, setIsSyncing } = useSession();
 
   // Only connect socket if user is authenticated
   useEffect(() => {
@@ -86,7 +90,18 @@ const SocketProvider = ({ children }: { children: ReactNode }) => {
 
   const onImportEnd = useCallback(() => {
     dispatch(importGCalSlice.actions.importing(false));
-  }, [dispatch]);
+
+    // If we're in post-auth sync, show success message and reload page
+    if (isSyncing) {
+      setIsSyncing(false);
+      toast.success(
+        "Your events have been synced successfully!",
+        toastDefaultOptions,
+      );
+      // Reload page to fetch and display the synced events
+      window.location.reload();
+    }
+  }, [dispatch, isSyncing, setIsSyncing]);
 
   const onEventChanged = useCallback(
     (reason: Sync_AsyncStateContextReason) => {

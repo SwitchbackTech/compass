@@ -34,10 +34,11 @@ export const SyncEventsOverlay = () => {
           aria-hidden="true"
         />
         <div className="text-text-lighter text-sm font-semibold">
-          Syncing your events to the cloud...
+          Importing your Google Calendar events...
         </div>
         <div className="text-text-light/80 text-xs">
-          Please keep this tab open while we finish.
+          Please wait while we sync your calendar. You won't be able to create
+          events until this is complete.
         </div>
       </div>
     </div>

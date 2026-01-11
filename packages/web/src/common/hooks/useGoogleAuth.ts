@@ -66,9 +66,8 @@ export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
 
         // Still trigger refetch to show cloud events (even if local sync failed)
         dispatch(triggerFetch());
-      } finally {
-        setIsSyncing(false);
       }
+      // Note: setIsSyncing(false) is handled by SocketProvider when IMPORT_GCAL_END is received
 
       navigate(skipOnboarding ? ROOT_ROUTES.ROOT : ROOT_ROUTES.ONBOARDING);
     },
