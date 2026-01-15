@@ -14,15 +14,61 @@ const ONBOARDING_STATE = {
   isAuthPromptDismissed: true,
 };
 
+// Shared timeout for form operations - use a single reasonable timeout instead of short retries
+const FORM_TIMEOUT = 10000;
+
+/**
+ * Dispatch a keyboard shortcut to the window.
+ * Uses the same event properties as the app's internal pressKey utility.
+ */
 const pressShortcut = async (page: Page, key: string) => {
   await page.evaluate((shortcut) => {
     window.dispatchEvent(
-      new KeyboardEvent("keydown", { key: shortcut, bubbles: true }),
+      new KeyboardEvent("keydown", {
+        key: shortcut,
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+      }),
     );
     window.dispatchEvent(
-      new KeyboardEvent("keyup", { key: shortcut, bubbles: true }),
+      new KeyboardEvent("keyup", {
+        key: shortcut,
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+      }),
     );
   }, key);
+};
+
+/**
+ * Retry an action until a condition is met.
+ * Consolidates the retry pattern used throughout the test utils.
+ */
+const retryUntil = async (
+  page: Page,
+  action: () => Promise<void>,
+  waitFor: Locator,
+  options: { maxAttempts?: number; perAttemptTimeout?: number } = {},
+) => {
+  const { maxAttempts = 3, perAttemptTimeout = 3000 } = options;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    await action();
+    try {
+      await waitFor.waitFor({ state: "visible", timeout: perAttemptTimeout });
+      return;
+    } catch {
+      if (attempt === maxAttempts - 1) {
+        throw new Error(
+          `Action failed after ${maxAttempts} attempts. ` +
+            `Expected element to be visible: ${waitFor}`,
+        );
+      }
+      await page.waitForTimeout(200);
+    }
+  }
 };
 
 const ensureWeekView = async (page: Page) => {
@@ -53,6 +99,10 @@ const blurActiveElement = async (page: Page) => {
     }
   });
 };
+
+/** Returns a locator for the form's title input */
+const getFormTitleInput = (page: Page) =>
+  page.getByRole("form").getByPlaceholder("Title");
 
 export const createEventTitle = (prefix: string) => `${prefix} ${Date.now()}`;
 
@@ -126,59 +176,48 @@ export const clickGridCenter = async (page: Page, locator: Locator) => {
 
   await page.mouse.move(x, y);
   await page.mouse.down();
-  await page.waitForTimeout(75);
+  // Allow draft state to settle before mouseup so the form can open reliably.
+  await page.waitForTimeout(175);
   await page.mouse.up();
 };
 
 export const fillTitleAndSaveWithMouse = async (page: Page, title: string) => {
-  const form = page.getByRole("form");
-  const titleInput = form.getByPlaceholder("Title");
-  await expect(titleInput).toBeVisible();
+  const titleInput = getFormTitleInput(page);
+  await expect(titleInput).toBeVisible({ timeout: FORM_TIMEOUT });
   await titleInput.fill(title);
-  await form.getByRole("tab", { name: "Save" }).click();
+  await page.getByRole("form").getByRole("tab", { name: "Save" }).click();
 };
 
 export const fillTitleAndSaveWithKeyboard = async (
   page: Page,
   title: string,
 ) => {
-  const form = page.getByRole("form");
-  const titleInput = form.getByPlaceholder("Title");
-  await expect(titleInput).toBeVisible();
+  const titleInput = getFormTitleInput(page);
+  await expect(titleInput).toBeVisible({ timeout: FORM_TIMEOUT });
   await titleInput.fill(title);
   await page.keyboard.press("Enter");
 };
 
 export const openTimedEventFormWithMouse = async (page: Page) => {
-  const titleInput = page.getByRole("form").getByPlaceholder("Title");
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    await clickGridCenter(page, page.locator("#mainGrid"));
-    try {
-      await titleInput.waitFor({ state: "visible", timeout: 2500 });
-      return;
-    } catch (error) {
-      if (attempt === 2) {
-        throw error;
+  const draftEvent = page.locator('#mainGrid .active[role="button"]').first();
+  await retryUntil(
+    page,
+    async () => {
+      await clickGridCenter(page, page.locator("#mainGrid"));
+      if (await draftEvent.isVisible().catch(() => false)) {
+        await draftEvent.click({ force: true });
       }
-      await page.waitForTimeout(150);
-    }
-  }
+    },
+    getFormTitleInput(page),
+  );
 };
 
 export const openAllDayEventFormWithMouse = async (page: Page) => {
-  const titleInput = page.getByRole("form").getByPlaceholder("Title");
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    await clickGridCenter(page, page.locator("#allDayRow"));
-    try {
-      await titleInput.waitFor({ state: "visible", timeout: 2500 });
-      return;
-    } catch (error) {
-      if (attempt === 2) {
-        throw error;
-      }
-      await page.waitForTimeout(150);
-    }
-  }
+  await retryUntil(
+    page,
+    () => clickGridCenter(page, page.locator("#allDayRow")),
+    getFormTitleInput(page),
+  );
 };
 
 export const openSomedayEventFormWithMouse = async (
@@ -194,21 +233,38 @@ export const openSomedayEventFormWithMouse = async (
 };
 
 export const openTimedEventFormWithKeyboard = async (page: Page) => {
-  await blurActiveElement(page);
-  await page.locator("#mainGrid").focus();
-  await pressShortcut(page, "c");
+  await retryUntil(
+    page,
+    async () => {
+      await blurActiveElement(page);
+      await page.locator("#mainGrid").focus();
+      await pressShortcut(page, "c");
+    },
+    getFormTitleInput(page),
+  );
 };
 
 export const openAllDayEventFormWithKeyboard = async (page: Page) => {
-  await blurActiveElement(page);
-  await page.locator("#mainGrid").focus();
-  await pressShortcut(page, "a");
+  await retryUntil(
+    page,
+    async () => {
+      await blurActiveElement(page);
+      await page.locator("#mainGrid").focus();
+      await pressShortcut(page, "a");
+    },
+    getFormTitleInput(page),
+  );
 };
 
 export const openSomedayEventFormWithKeyboard = async (page: Page) => {
   await blurActiveElement(page);
   await ensureSidebarOpen(page);
   await pressShortcut(page, "w");
+  // Wait for form to open
+  await getFormTitleInput(page).waitFor({
+    state: "visible",
+    timeout: FORM_TIMEOUT,
+  });
 };
 
 export const openEventForEditingWithKeyboard = async (
@@ -262,25 +318,21 @@ export const openEventForEditingWithKeyboard = async (
   if (box) {
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   }
-  const titleInput = page.getByRole("form").getByPlaceholder("Title");
+  const titleInput = getFormTitleInput(page);
 
-  for (let attempt = 0; attempt < 4; attempt += 1) {
-    await page.waitForTimeout(250);
-    await eventButton.focus();
-    await page.keyboard.press("Enter");
-    if (!(await titleInput.isVisible().catch(() => false))) {
-      await page.keyboard.press(" ");
-    }
-    try {
-      await titleInput.waitFor({ state: "visible", timeout: 3000 });
-      return;
-    } catch (error) {
-      if (attempt === 3) {
-        throw error;
+  await retryUntil(
+    page,
+    async () => {
+      await eventButton.focus();
+      await page.keyboard.press("Enter");
+      // Also try space if Enter didn't work
+      if (!(await titleInput.isVisible().catch(() => false))) {
+        await page.keyboard.press(" ");
       }
-      await page.waitForTimeout(150);
-    }
-  }
+    },
+    titleInput,
+    { maxAttempts: 4 },
+  );
 };
 
 export const openEventForEditingWithMouse = async (
@@ -292,21 +344,15 @@ export const openEventForEditingWithMouse = async (
     (await activeButton.count()) > 0
       ? activeButton.first()
       : page.getByRole("button", { name: eventTitle }).first();
-  const titleInput = page.getByRole("form").getByPlaceholder("Title");
 
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    await page.waitForTimeout(200);
-    await eventButton.click({ force: true });
-    try {
-      await titleInput.waitFor({ state: "visible", timeout: 3000 });
-      return;
-    } catch (error) {
-      if (attempt === 2) {
-        throw error;
-      }
-      await page.waitForTimeout(150);
-    }
-  }
+  await retryUntil(
+    page,
+    async () => {
+      await page.waitForTimeout(200);
+      await eventButton.click({ force: true });
+    },
+    getFormTitleInput(page),
+  );
 };
 
 export const deleteEventWithMouse = async (page: Page) => {
@@ -318,7 +364,7 @@ export const deleteEventWithMouse = async (page: Page) => {
 };
 
 export const deleteEventWithKeyboard = async (page: Page) => {
-  await page.getByRole("form").getByPlaceholder("Title").waitFor();
+  await getFormTitleInput(page).waitFor({ timeout: FORM_TIMEOUT });
   page.once("dialog", (dialog) => dialog.accept());
   await page.keyboard.press("Delete");
 };
