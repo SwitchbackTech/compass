@@ -33,7 +33,7 @@ export default defineConfig({
       API_PORT: "3000",
       POSTHOG_KEY: "test-posthog-key",
       POSTHOG_HOST: "https://app.posthog.com",
-      PORT: `${TEST_PORT}`,
+      WEB_PORT: `${TEST_PORT}`,
     },
     port: TEST_PORT,
     reuseExistingServer: !process.env.CI,
