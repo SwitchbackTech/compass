@@ -9,7 +9,10 @@ import { useSession } from "@web/common/hooks/useSession";
 import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
 import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
-import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
+import {
+  importGCalSlice,
+  triggerFetch,
+} from "@web/ducks/events/slices/sync.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { toastDefaultOptions } from "@web/views/Day/components/Toasts";
 import { OnboardingStepProps } from "@web/views/Onboarding";
@@ -31,6 +34,9 @@ export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
 
       setAuthenticated(true);
       setIsSyncing(true);
+
+      // Optimistically set importing state to show overlay immediately
+      dispatch(importGCalSlice.actions.importing(true));
 
       const metadata = await UserApi.getMetadata().catch(() => ({
         skipOnboarding: true,

@@ -20,13 +20,32 @@ export const importGCalSlice = createAsyncSlice<
   never,
   never,
   never,
-  { importing: boolean }
+  {
+    importing: boolean;
+    importResults: { eventsCount?: number; calendarsCount?: number } | null;
+  }
 >({
   name: "importGCal",
-  initialState: { importing: false },
+  initialState: {
+    importing: false,
+    importResults: null,
+  },
   reducers: {
     importing: (state, action: PayloadAction<boolean>) => {
       state.importing = action.payload;
+    },
+    setImportResults: (
+      state,
+      action: PayloadAction<{
+        eventsCount?: number;
+        calendarsCount?: number;
+      }>,
+    ) => {
+      state.importing = false;
+      state.importResults = action.payload;
+    },
+    clearImportResults: (state) => {
+      state.importResults = null;
     },
   },
 });

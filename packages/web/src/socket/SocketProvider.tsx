@@ -88,20 +88,40 @@ const SocketProvider = ({ children }: { children: ReactNode }) => {
     [dispatch],
   );
 
-  const onImportEnd = useCallback(() => {
-    dispatch(importGCalSlice.actions.importing(false));
+  const onImportEnd = useCallback(
+    (payload?: { eventsCount?: number; calendarsCount?: number } | string) => {
+      dispatch(importGCalSlice.actions.importing(false));
 
-    // If we're in post-auth sync, show success message and reload page
-    if (isSyncing) {
-      setIsSyncing(false);
-      toast.success(
-        "Your events have been synced successfully!",
-        toastDefaultOptions,
-      );
-      // Reload page to fetch and display the synced events
-      window.location.reload();
-    }
-  }, [dispatch, isSyncing, setIsSyncing]);
+      // If we're in post-auth sync, show completion modal
+      if (isSyncing) {
+        setIsSyncing(false);
+
+        // Parse payload if it's a string (from backend)
+        let importResults: { eventsCount?: number; calendarsCount?: number } =
+          {};
+        if (typeof payload === "string") {
+          try {
+            importResults = JSON.parse(payload);
+          } catch (e) {
+            console.error("Failed to parse import results:", e);
+          }
+        } else if (payload) {
+          importResults = payload;
+        }
+
+        // Set import results to trigger modal display
+        dispatch(importGCalSlice.actions.setImportResults(importResults));
+
+        // Trigger refetch to load imported events (no page reload)
+        dispatch(
+          triggerFetch({
+            reason: Sync_AsyncStateContextReason.IMPORT_COMPLETE,
+          }),
+        );
+      }
+    },
+    [dispatch, isSyncing, setIsSyncing],
+  );
 
   const onEventChanged = useCallback(
     (reason: Sync_AsyncStateContextReason) => {

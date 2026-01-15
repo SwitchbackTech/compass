@@ -1,24 +1,20 @@
 import { Provider } from "react-redux";
-import { toast } from "react-toastify";
 import { configureStore } from "@reduxjs/toolkit";
 import { render, waitFor } from "@testing-library/react";
 import { IMPORT_GCAL_END } from "@core/constants/websocket.constants";
 import { CompassSession } from "@web/auth/session/session.types";
 import { useUser } from "@web/auth/useUser";
 import { useSession } from "@web/common/hooks/useSession";
-import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
+import {
+  importGCalSlice,
+  importLatestSlice,
+} from "@web/ducks/events/slices/sync.slice";
 import { socket } from "./SocketProvider";
 import SocketProvider from "./SocketProvider";
 
 // Mock dependencies
 jest.mock("@web/auth/useUser");
 jest.mock("@web/common/hooks/useSession");
-jest.mock("react-toastify", () => ({
-  toast: Object.assign(jest.fn(), {
-    success: jest.fn(),
-    error: jest.fn(),
-  }),
-}));
 jest.mock("socket.io-client", () => ({
   io: jest.fn(() => ({
     on: jest.fn(),
@@ -33,23 +29,11 @@ jest.mock("socket.io-client", () => ({
 
 const mockUseUser = useUser as jest.MockedFunction<typeof useUser>;
 const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
-const mockToastSuccess = toast.success as jest.MockedFunction<
-  typeof toast.success
->;
-
-// Mock window.location.reload
-const mockReload = jest.fn();
-Object.defineProperty(window, "location", {
-  writable: true,
-  value: {
-    reload: mockReload,
-  },
-});
 
 describe("SocketProvider", () => {
   const mockSetIsSyncing = jest.fn();
   const mockUserId = "test-user-id";
-  let importEndCallback: (() => void) | undefined;
+  let importEndCallback: ((data?: string) => void) | undefined;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -63,7 +47,7 @@ describe("SocketProvider", () => {
     });
   });
 
-  it("shows success toast and reloads page when IMPORT_GCAL_END is received during post-auth sync", async () => {
+  it("sets import results and triggers refetch when IMPORT_GCAL_END is received during post-auth sync", async () => {
     // Set up post-auth sync state
     const mockSession: CompassSession = {
       isSyncing: true,
@@ -78,6 +62,7 @@ describe("SocketProvider", () => {
     const store = configureStore({
       reducer: {
         importGCal: importGCalSlice.reducer,
+        importLatest: importLatestSlice.reducer,
       },
     });
 
@@ -94,23 +79,30 @@ describe("SocketProvider", () => {
       expect(importEndCallback).toBeDefined();
     });
 
-    // Simulate IMPORT_GCAL_END event
+    // Simulate IMPORT_GCAL_END event with import results
     if (importEndCallback) {
-      importEndCallback();
+      importEndCallback(JSON.stringify({ eventsCount: 10, calendarsCount: 2 }));
     }
 
     await waitFor(() => {
       expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
     });
 
-    expect(mockToastSuccess).toHaveBeenCalledWith(
-      "Your events have been synced successfully!",
-      expect.any(Object),
-    );
-    expect(mockReload).toHaveBeenCalledTimes(1);
+    // Verify import results are set in Redux store
+    const state = store.getState();
+    expect(state.importGCal.importResults).toEqual({
+      eventsCount: 10,
+      calendarsCount: 2,
+    });
+
+    // Verify importing flag is set to false
+    expect(state.importGCal.importing).toBe(false);
+
+    // Verify triggerFetch was dispatched (isFetchNeeded should be true)
+    expect(state.importLatest.isFetchNeeded).toBe(true);
   });
 
-  it("does not reload page when IMPORT_GCAL_END is received during regular background sync", async () => {
+  it("does not set import results when IMPORT_GCAL_END is received during regular background sync", async () => {
     // Set up regular background sync (isSyncing is false)
     const mockSession: CompassSession = {
       isSyncing: false,
@@ -125,6 +117,7 @@ describe("SocketProvider", () => {
     const store = configureStore({
       reducer: {
         importGCal: importGCalSlice.reducer,
+        importLatest: importLatestSlice.reducer,
       },
     });
 
@@ -154,7 +147,14 @@ describe("SocketProvider", () => {
       { timeout: 100 },
     );
 
-    expect(mockToastSuccess).not.toHaveBeenCalled();
-    expect(mockReload).not.toHaveBeenCalled();
+    // Verify import results remain null (not set) in Redux store
+    const state = store.getState();
+    expect(state.importGCal.importResults).toBeNull();
+
+    // Verify importing flag is set to false
+    expect(state.importGCal.importing).toBe(false);
+
+    // Verify triggerFetch was NOT dispatched
+    expect(state.importLatest.isFetchNeeded).toBe(false);
   });
 });
