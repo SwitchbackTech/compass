@@ -17,10 +17,7 @@ export async function saveEventToIndexedDB(event: Event_Core): Promise<void> {
     await ensureDatabaseReady();
 
     await compassLocalDB.events.put(event);
-
-    console.log("[Storage] Event saved successfully:", event._id);
   } catch (error) {
-    console.error("[Storage] Failed to save event:", error);
     handleDatabaseError(error, "save");
   }
 }
@@ -56,14 +53,8 @@ export async function loadEventsFromIndexedDB(
       events = events.filter((event) => event.isSomeday === isSomeday);
     }
 
-    console.log("[Storage] Loaded events:", {
-      count: events.length,
-      events: events.map((e) => ({ _id: e._id, title: e.title })),
-    });
-
     return events;
   } catch (error) {
-    console.error("[Storage] Failed to load events:", error);
     handleDatabaseError(error, "load");
   }
 }
@@ -78,13 +69,8 @@ export async function loadAllEventsFromIndexedDB(): Promise<Event_Core[]> {
 
     const events = await compassLocalDB.events.toArray();
 
-    console.log("[Storage] Loaded all events:", {
-      count: events.length,
-    });
-
     return events;
   } catch (error) {
-    console.error("[Storage] Failed to load all events:", error);
     handleDatabaseError(error, "load");
   }
 }
@@ -98,10 +84,7 @@ export async function deleteEventFromIndexedDB(eventId: string): Promise<void> {
     await ensureDatabaseReady();
 
     await compassLocalDB.events.delete(eventId);
-
-    console.log("[Storage] Event deleted successfully:", eventId);
   } catch (error) {
-    console.error("[Storage] Failed to delete event:", error);
     handleDatabaseError(error, "delete");
   }
 }
@@ -115,10 +98,7 @@ export async function clearEventsFromIndexedDB(): Promise<void> {
     await ensureDatabaseReady();
 
     await compassLocalDB.events.clear();
-
-    console.log("[Storage] All events cleared successfully");
   } catch (error) {
-    console.error("[Storage] Failed to clear events:", error);
     handleDatabaseError(error, "clear");
   }
 }

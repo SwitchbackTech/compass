@@ -45,10 +45,6 @@ export async function initializeDatabase(): Promise<void> {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(
-          `[DB Init] Starting IndexedDB initialization (attempt ${attempt}/${maxRetries})...`,
-        );
-
         // Critical: Explicitly open the database
         await compassLocalDB.open();
 
@@ -61,26 +57,13 @@ export async function initializeDatabase(): Promise<void> {
           );
         }
 
-        console.log("[DB Init] IndexedDB initialized successfully", {
-          name: compassLocalDB.name,
-          version: compassLocalDB.verno,
-          tables: compassLocalDB.tables.map((t) => t.name),
-        });
-
         isInitialized = true;
         return;
       } catch (error) {
         lastError = error;
-        console.error(
-          `[DB Init] Initialization attempt ${attempt} failed:`,
-          error,
-        );
 
-        // Handle specific Dexie errors
+        // Handle specific Dexie errors - don't retry these
         if (error instanceof Dexie.VersionError) {
-          console.error(
-            "[DB Init] Database version mismatch. This may require a page reload.",
-          );
           throw new DatabaseInitError(
             "Database version mismatch. Please reload the page.",
             error,
@@ -88,9 +71,6 @@ export async function initializeDatabase(): Promise<void> {
         }
 
         if (error instanceof Dexie.QuotaExceededError) {
-          console.error(
-            "[DB Init] Storage quota exceeded. User needs to free up space.",
-          );
           throw new DatabaseInitError(
             "Storage quota exceeded. Please free up space.",
             error,
@@ -100,7 +80,6 @@ export async function initializeDatabase(): Promise<void> {
         // For other errors, retry with exponential backoff
         if (attempt < maxRetries) {
           const backoffMs = Math.pow(2, attempt) * 100; // 200ms, 400ms, 800ms
-          console.log(`[DB Init] Retrying in ${backoffMs}ms...`);
           await new Promise((resolve) => setTimeout(resolve, backoffMs));
         }
       }
@@ -146,11 +125,6 @@ export async function ensureDatabaseReady(): Promise<void> {
  * WARNING: Only use in tests, never in production code.
  */
 export function resetDatabaseInitialization(): void {
-  if (process.env.NODE_ENV !== "test") {
-    console.warn(
-      "[DB Init] resetDatabaseInitialization called outside of test environment",
-    );
-  }
   dbInitPromise = null;
   isInitialized = false;
 }

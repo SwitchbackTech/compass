@@ -116,6 +116,7 @@ export const createInitialState = (
     sync: {
       importGCal: {
         importing: false,
+        importResults: null,
       },
       importLatest: {
         isFetchNeeded: false,

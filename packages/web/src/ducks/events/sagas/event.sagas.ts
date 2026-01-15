@@ -102,18 +102,7 @@ export function* createEvent({ payload }: Action_CreateEvent): Generator {
     const sessionExists = yield call(session.doesSessionExist);
     const repository = getEventRepository(sessionExists);
 
-    console.log("[createEvent] Session exists:", sessionExists);
-    console.log("[createEvent] Event to save:", {
-      _id: event._id,
-      title: event.title,
-      isSomeday: event.isSomeday,
-      startDate: event.startDate,
-      endDate: event.endDate,
-    });
-
     yield call([repository, repository.create], event as Schema_Event);
-
-    console.log("[createEvent] Event saved successfully");
 
     yield put(
       eventsEntitiesSlice.actions.edit({
@@ -219,13 +208,6 @@ function* getEvents(
     const sessionExists = yield call(session.doesSessionExist);
     const repository = getEventRepository(sessionExists);
 
-    console.log("[getEvents] Session exists:", sessionExists);
-    console.log("[getEvents] Payload:", {
-      startDate: payload.startDate,
-      endDate: payload.endDate,
-      someday: payload.someday,
-    });
-
     const _payload = EventDateUtils.adjustStartEndDate(payload);
 
     const res: Response_GetEventsSuccess = yield call(
@@ -233,36 +215,14 @@ function* getEvents(
       _payload,
     );
 
-    console.log("[getEvents] Raw response from repository:", {
-      count: res.data?.length,
-      events: res.data?.map((e) => ({
-        _id: e._id,
-        title: e.title,
-        isSomeday: e.isSomeday,
-      })),
-    });
-
     const events = EventDateUtils.filterEventsByStartEndDate(
       res.data,
       payload.startDate as string,
       payload.endDate as string,
     );
 
-    console.log("[getEvents] After date filtering:", {
-      count: events.length,
-      events: events.map((e) => ({
-        _id: e._id,
-        title: e.title,
-        isSomeday: e.isSomeday,
-      })),
-    });
-
     // Validate response data exists before normalizing
     if (!res.data || !Array.isArray(res.data)) {
-      console.error(
-        "[getEvents] Invalid response from repository - data is missing or not an array:",
-        res,
-      );
       throw new Error(
         "Invalid response from event repository: data field is missing or not an array",
       );
