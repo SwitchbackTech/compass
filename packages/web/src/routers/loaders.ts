@@ -2,6 +2,7 @@ import { LoaderFunctionArgs, redirect } from "react-router-dom";
 import { zYearMonthDayString } from "@core/types/type.utils";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { seedInitialTasks } from "@web/common/utils/storage/task-seeding.util";
 import { getOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 export interface DayLoaderData {
@@ -86,9 +87,6 @@ export async function loadSpecificDayData({
   // Seed initial tasks for this date if none exist (works for both authenticated and unauthenticated users)
   // Skip seeding in test environment to avoid interfering with tests
   if (process.env.NODE_ENV !== "test") {
-    const { seedInitialTasks } = await import(
-      "@web/common/utils/storage/task-seeding.util"
-    );
     seedInitialTasks(dateString);
   }
 
