@@ -464,7 +464,8 @@ describe("createEvent saga - unauthenticated users", () => {
     try {
       await compassLocalDB.events.clear();
     } catch (error) {
-      // Ignore errors if database doesn't exist yet
+      console.error(error);
+      // Expect errors if database doesn't exist yet
     }
     store = createStoreWithEvents([]);
     sagaMiddleware.run(sagas);
@@ -477,7 +478,8 @@ describe("createEvent saga - unauthenticated users", () => {
     try {
       await compassLocalDB.events.clear();
     } catch (error) {
-      // Ignore errors
+      console.error(error);
+      // Expect errors if database doesn't exist yet
     }
   });
 

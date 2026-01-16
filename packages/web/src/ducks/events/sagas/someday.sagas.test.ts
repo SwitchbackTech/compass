@@ -1,9 +1,11 @@
+import { AxiosResponse } from "axios";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import { session } from "@web/common/classes/Session";
 import { sagaMiddleware } from "@web/common/store/middlewares";
+import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { compassLocalDB } from "@web/common/utils/storage/compass-local.db";
 import { saveEventToIndexedDB } from "@web/common/utils/storage/event.storage.util";
 import { EventApi } from "@web/ducks/events/event.api";
@@ -25,7 +27,8 @@ describe("getSomedayEvents saga", () => {
     try {
       await compassLocalDB.events.clear();
     } catch (error) {
-      // Ignore errors if database doesn't exist yet
+      console.error(error);
+      // Expect errors if database doesn't exist yet
     }
     store = createStoreWithEvents([]);
     sagaMiddleware.run(sagas);
@@ -37,7 +40,8 @@ describe("getSomedayEvents saga", () => {
     try {
       await compassLocalDB.events.clear();
     } catch (error) {
-      // Ignore errors
+      console.error(error);
+      // Expect errors if database doesn't exist yet
     }
   });
 
@@ -65,7 +69,9 @@ describe("getSomedayEvents saga", () => {
       ];
 
       // EventApi.get returns an AxiosResponse, and the repository extracts response.data
-      mockGetApi.mockResolvedValue({
+      const mockResponse: AxiosResponse<
+        Response_HttpPaginatedSuccess<Schema_Event[]>
+      > = {
         data: {
           data: mockEvents,
           count: 1,
@@ -75,7 +81,12 @@ describe("getSomedayEvents saga", () => {
           startDate,
           endDate,
         },
-      } as any);
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {} as AxiosResponse["config"],
+      };
+      mockGetApi.mockResolvedValue(mockResponse);
 
       const action = getSomedayEventsSlice.actions.request({
         startDate,

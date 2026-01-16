@@ -1,5 +1,5 @@
 import { normalize, schema } from "normalizr";
-import { SelectEffect, call, put, select } from "redux-saga/effects";
+import { SelectEffect, call, put, select } from "@redux-saga/core/effects";
 import {
   Params_Events,
   RecurringEventUpdateScope,
@@ -40,10 +40,16 @@ export function* getEventById(
 export function* _editEvent(
   gridEvent: Schema_GridEvent,
   params: { applyTo?: RecurringEventUpdateScope } = {},
-) {
+): Generator {
   const sessionExists = yield call(session.doesSessionExist);
   const repository = getEventRepository(sessionExists);
-  yield call([repository, repository.edit], gridEvent._id, gridEvent, params);
+  yield call(
+    // @ts-expect-error - redux-saga call with [context, method] tuple - works at runtime, type inference limitation
+    [repository, repository.edit],
+    gridEvent._id,
+    gridEvent as Schema_Event,
+    params,
+  );
 }
 
 export function* insertOptimisticEvent(
