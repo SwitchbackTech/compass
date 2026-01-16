@@ -254,7 +254,7 @@ describe("LocalEventRepository", () => {
   describe("reorder", () => {
     it("should update event order in IndexedDB", async () => {
       const dateStr = dayjs().format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
-      const event1: Event_Core = {
+      const event1: Schema_Event = {
         _id: "event-1",
         title: "Event 1",
         startDate: dateStr,
@@ -265,7 +265,7 @@ describe("LocalEventRepository", () => {
         user: "user-1",
       };
 
-      const event2: Event_Core = {
+      const event2: Schema_Event = {
         _id: "event-2",
         title: "Event 2",
         startDate: dateStr,

@@ -41,7 +41,11 @@ export const CalendarImportCompleteModal = ({
   return (
     <div
       className="bg-bg-primary/50 fixed inset-0 z-[1000] flex items-center justify-center"
-      onClick={onDismiss}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onDismiss();
+        }
+      }}
       onKeyDown={(e) => {
         if (e.key === "Escape") {
           onDismiss();
@@ -52,11 +56,8 @@ export const CalendarImportCompleteModal = ({
     >
       <div
         className="bg-panel-bg flex max-w-[400px] flex-col items-center gap-6 rounded-xl p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]"
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        tabIndex={-1}
       >
         <CheckCircleIcon
           size={48}
