@@ -1,13 +1,8 @@
 import { useCallback } from "react";
 import { Outlet } from "react-router-dom";
-import { useSession } from "@web/auth/hooks/useSession";
 import { CalendarImportCompleteModal } from "@web/components/CalendarImportCompleteModal/CalendarImportCompleteModal";
-import { CalendarImportOverlay } from "@web/components/CalendarImportOverlay/CalendarImportOverlay";
 import { SyncEventsOverlay } from "@web/components/SyncEventsOverlay/SyncEventsOverlay";
-import {
-  selectImportResults,
-  selectImporting,
-} from "@web/ducks/events/selectors/sync.selector";
+import { selectImportResults } from "@web/ducks/events/selectors/sync.selector";
 import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
@@ -23,11 +18,7 @@ export const AuthenticatedLayout = () => {
   useGlobalShortcuts();
 
   const dispatch = useAppDispatch();
-  const { isSyncing } = useSession();
-  const importing = useAppSelector(selectImporting);
   const importResults = useAppSelector(selectImportResults);
-
-  const isImporting = isSyncing || importing;
 
   const handleDismissModal = useCallback(() => {
     dispatch(importGCalSlice.actions.clearImportResults(undefined));
@@ -39,8 +30,6 @@ export const AuthenticatedLayout = () => {
       <OnboardingOverlayHost />
       <CmdPaletteGuide />
       <SyncEventsOverlay />
-
-      {isImporting && <CalendarImportOverlay />}
       {importResults && (
         <CalendarImportCompleteModal
           eventsCount={importResults.eventsCount}

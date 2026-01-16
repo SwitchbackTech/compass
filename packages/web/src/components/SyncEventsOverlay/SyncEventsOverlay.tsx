@@ -1,11 +1,15 @@
 import { useEffect } from "react";
 import { useSession } from "@web/auth/hooks/useSession";
+import { selectImporting } from "@web/ducks/events/selectors/sync.selector";
+import { useAppSelector } from "@web/store/store.hooks";
 
 export const SyncEventsOverlay = () => {
   const { isSyncing } = useSession();
+  const importing = useAppSelector(selectImporting);
+  const isImporting = isSyncing || importing;
 
   useEffect(() => {
-    if (!isSyncing) {
+    if (!isImporting) {
       document.body.removeAttribute("data-app-locked");
       return;
     }
@@ -17,13 +21,13 @@ export const SyncEventsOverlay = () => {
     return () => {
       document.body.removeAttribute("data-app-locked");
     };
-  }, [isSyncing]);
+  }, [isImporting]);
 
-  if (!isSyncing) return null;
+  if (!isImporting) return null;
 
   return (
     <div
-      className="bg-bg-primary/80 fixed inset-0 z-50 flex cursor-wait items-center justify-center backdrop-blur-sm"
+      className="bg-bg-primary/80 fixed inset-0 z-[999] flex cursor-wait items-center justify-center backdrop-blur-sm"
       role="status"
       aria-live="polite"
       aria-busy="true"
