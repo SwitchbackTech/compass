@@ -2,11 +2,13 @@ import { AxiosResponse } from "axios";
 import { Schema_Event } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
+import { session } from "@web/common/classes/Session";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import {
   Schema_GridEvent,
   Schema_WebEvent,
 } from "@web/common/types/web.event.types";
+import { compassLocalDB } from "@web/common/utils/storage/compass-local.db";
 import { EventApi } from "@web/ducks/events/event.api";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
@@ -19,6 +21,7 @@ import { sagas } from "@web/store/sagas";
 import { OnSubmitParser } from "@web/views/Calendar/components/Draft/hooks/actions/submit.parser";
 
 jest.mock("@web/ducks/events/event.api");
+jest.mock("@web/common/classes/Session");
 
 describe("createEvent saga - optimistic rendering", () => {
   let store: ReturnType<typeof createStoreWithEvents>;
@@ -446,5 +449,105 @@ describe("pending events state management", () => {
       // Event should be removed from pending even on error
       expect(finalState.events.pendingEvents.eventIds).not.toContain(eventId);
     });
+  });
+});
+
+// Mock window.alert to prevent jsdom errors
+global.alert = jest.fn();
+
+describe("createEvent saga - unauthenticated users", () => {
+  let store: ReturnType<typeof createStoreWithEvents>;
+  let mockCreateApi: jest.SpyInstance;
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    try {
+      await compassLocalDB.events.clear();
+    } catch (error) {
+      console.error(error);
+      // Expect errors if database doesn't exist yet
+    }
+    store = createStoreWithEvents([]);
+    sagaMiddleware.run(sagas);
+
+    (session.doesSessionExist as jest.Mock).mockResolvedValue(false);
+    mockCreateApi = jest.spyOn(EventApi, "create");
+  });
+
+  afterEach(async () => {
+    try {
+      await compassLocalDB.events.clear();
+    } catch (error) {
+      console.error(error);
+      // Expect errors if database doesn't exist yet
+    }
+  });
+
+  it("should save event to IndexedDB when user is not authenticated", async () => {
+    const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+    const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
+    const action = createEventSlice.actions.request(event);
+
+    store.dispatch(action);
+
+    // Wait for saga to complete
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Verify API was not called
+    expect(mockCreateApi).not.toHaveBeenCalled();
+
+    // Verify event was saved to IndexedDB
+    const state = store.getState();
+    const eventEntities = state.events.entities.value || {};
+    const eventIds = Object.keys(eventEntities);
+    expect(eventIds).toHaveLength(1);
+
+    const eventId = eventIds[0];
+    const savedEvent = await compassLocalDB.events.get(eventId);
+    expect(savedEvent).toBeDefined();
+    expect(savedEvent?._id).toBe(eventId);
+  });
+
+  it("should remove event from pending after saving to IndexedDB", async () => {
+    const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+    const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
+    const action = createEventSlice.actions.request(event);
+
+    store.dispatch(action);
+
+    // Wait for saga to complete
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const state = store.getState();
+    const eventEntities = state.events.entities.value || {};
+    const eventIds = Object.keys(eventEntities);
+    const eventId = eventIds[0];
+
+    // Event should not be pending anymore
+    const isPending = selectIsEventPending(state as RootState, eventId);
+    expect(isPending).toBe(false);
+    expect(state.events.pendingEvents.eventIds).not.toContain(eventId);
+  });
+
+  it("should dispatch success action after saving to IndexedDB", async () => {
+    const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+    const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
+    const action = createEventSlice.actions.request(event);
+
+    store.dispatch(action);
+
+    // Wait for saga to complete
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Verify event was saved successfully (no error and event exists in store)
+    const state = store.getState() as RootState;
+    const eventEntities = state.events.entities.value || {};
+    const eventIds = Object.keys(eventEntities);
+    expect(eventIds.length).toBeGreaterThan(0);
+
+    // Verify event is not pending anymore
+    const eventId = eventIds[0];
+    const isPending = selectIsEventPending(state, eventId);
+    expect(isPending).toBe(false);
   });
 });

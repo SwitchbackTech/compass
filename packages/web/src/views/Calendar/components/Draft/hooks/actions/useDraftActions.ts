@@ -642,6 +642,11 @@ export const useDraftActions = (
     if (activity === "eventRightClick") {
       return; // Prevents form and context menu from opening at same time
     }
+    if (!isSomeday && activity === "keyboardEdit") {
+      setDraft(reduxDraft as Schema_GridEvent);
+      openForm();
+      return;
+    }
     if (
       !isSomeday &&
       (activity === "createShortcut" || activity === "gridClick")

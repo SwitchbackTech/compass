@@ -1,4 +1,11 @@
-import { ForwardedRef, MouseEvent, forwardRef, memo, useMemo } from "react";
+import {
+  ForwardedRef,
+  KeyboardEvent,
+  MouseEvent,
+  forwardRef,
+  memo,
+  useMemo,
+} from "react";
 import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import {
@@ -35,6 +42,7 @@ interface Props {
   isResizing: boolean;
   measurements: Measurements_Grid;
   onEventMouseDown: (event: Schema_GridEvent, e: MouseEvent) => void;
+  onEventKeyDown?: (event: Schema_GridEvent) => void;
   onScalerMouseDown: (
     event: Schema_GridEvent,
     e: MouseEvent,
@@ -53,6 +61,7 @@ const _GridEvent = (
     isResizing,
     measurements,
     onEventMouseDown,
+    onEventKeyDown,
     onScalerMouseDown,
     weekProps,
   }: Props,
@@ -106,11 +115,19 @@ const _GridEvent = (
 
       onEventMouseDown(event, e);
     },
+    onKeyDown: (e: KeyboardEvent<HTMLDivElement>) => {
+      if (e.key !== "Enter" && e.key !== " ") {
+        return;
+      }
+
+      e.preventDefault();
+      onEventKeyDown?.(event);
+    },
 
     priority: event.priority || Priorities.UNASSIGNED,
     ref,
     role: "button",
-    tabindex: "0",
+    tabIndex: 0,
     top: position.top,
     width: position.width || 0,
   };

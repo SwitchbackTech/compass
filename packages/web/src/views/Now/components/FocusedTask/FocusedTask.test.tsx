@@ -11,6 +11,7 @@ describe("FocusedTask", () => {
     title: "Test Task",
     status: "todo",
     createdAt: "2025-11-15T10:00:00Z",
+    order: 0,
   };
 
   const mockCompletedTask: Task = {
@@ -18,6 +19,7 @@ describe("FocusedTask", () => {
     title: "Completed Task",
     status: "completed",
     createdAt: "2025-11-15T11:00:00Z",
+    order: 0,
   };
 
   const mockOnCompleteTask = jest.fn();
@@ -81,6 +83,7 @@ describe("FocusedTask", () => {
       title: "This is a very long task title that might wrap to multiple lines",
       status: "todo",
       createdAt: "2025-11-15T12:00:00Z",
+      order: 0,
     };
 
     render(
@@ -106,6 +109,7 @@ describe("FocusedTask", () => {
       title: "Task with @#$%^&*() special chars!",
       status: "todo",
       createdAt: "2025-11-15T13:00:00Z",
+      order: 0,
     };
 
     render(
@@ -129,6 +133,7 @@ describe("FocusedTask", () => {
       title: "",
       status: "todo",
       createdAt: "2025-11-15T14:00:00Z",
+      order: 0,
     };
 
     render(

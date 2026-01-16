@@ -24,6 +24,8 @@ interface StyledEventProps {
   opacity?: number;
   priority: Priority;
   top: number;
+  tabIndex?: number;
+  role?: string;
   width: number;
 }
 
@@ -47,6 +49,8 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
       : hoverColorByPriority[props.priority],
     opacity: props.isPlaceholder ? 0.5 : null,
     ref: props.ref,
+    role: props.role,
+    tabIndex: props.tabIndex,
     top: props.top,
     width: props.width,
   };

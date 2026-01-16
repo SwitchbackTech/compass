@@ -1,5 +1,13 @@
-export const AUTH_FAILURE_REASONS = {
-  // User's google auth session is invalid or expired
-  GAUTH_SESSION_EXPIRED: "gauth-session-expired",
-  USER_SESSION_EXPIRED: "user-session-expired",
+import { z } from "zod";
+
+export const AuthStateSchema = z.object({
+  isGoogleAuthenticated: z.boolean().default(false),
+});
+
+export type AuthState = z.infer<typeof AuthStateSchema>;
+
+export const DEFAULT_AUTH_STATE: AuthState = {
+  isGoogleAuthenticated: false,
 };
+
+export const UNAUTHENTICATED_USER = "UNAUTHENTICATED_USER";

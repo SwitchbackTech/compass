@@ -74,7 +74,6 @@ export function TaskProvider({ children }: TaskProviderProps) {
   useTaskEffects({
     tasks: state.tasks,
     dateKey: state.dateKey,
-    lastLoadedKeyRef: state.lastLoadedKeyRef,
     setTasks: state.setTasks,
   });
 

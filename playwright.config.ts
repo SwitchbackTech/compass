@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const TEST_PORT = 9150;
+
 export default defineConfig({
   testDir: "./e2e",
   timeout: 30_000,
@@ -7,7 +9,7 @@ export default defineConfig({
     timeout: 10_000,
   },
   use: {
-    baseURL: "http://localhost:9080",
+    baseURL: `http://localhost:${TEST_PORT}`,
     trace: "on-first-retry",
   },
   projects: [
@@ -21,17 +23,20 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "yarn dev:web",
+    command:
+      "cd packages/web && yarn webpack serve --mode=development --node-env=test",
     env: {
       NODE_ENV: "test",
       WEB_IS_DEV: "false",
       GOOGLE_CLIENT_ID: "test-client-id",
-      API_BASEURL: "http://localhost:3000/api",
+      BASEURL: "http://localhost:3000/api",
       API_PORT: "3000",
       POSTHOG_KEY: "test-posthog-key",
       POSTHOG_HOST: "https://app.posthog.com",
+      WEB_PORT: `${TEST_PORT}`,
     },
-    port: 9080,
+    port: TEST_PORT,
     reuseExistingServer: !process.env.CI,
+    timeout: 120000,
   },
 });

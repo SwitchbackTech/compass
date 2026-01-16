@@ -1,4 +1,3 @@
-import React from "react";
 import { AlignItems, JustifyContent, Props } from "@web/components/Flex/styled";
 import { Styled, StyledSpinner } from "./styled";
 

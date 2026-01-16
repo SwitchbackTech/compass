@@ -1,19 +1,44 @@
 import { useState } from "react";
 import CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
+import { useSession } from "@web/auth/hooks/useSession";
+import { AuthApi } from "@web/common/apis/auth.api";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
+import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
+import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
+import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { ONBOARDING_RESTART_EVENT } from "@web/views/Onboarding/constants/onboarding.constants";
+import { resetOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 export const NowCmdPalette = () => {
   const dispatch = useAppDispatch();
   const open = useAppSelector(selectIsCmdPaletteOpen);
   const [page] = useState<"root">("root");
   const [search, setSearch] = useState("");
+  const { authenticated, setAuthenticated } = useSession();
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (data) => {
+      try {
+        await AuthApi.loginOrSignup(data);
+        markUserAsAuthenticated();
+        setAuthenticated(true);
+        dispatch(triggerFetch());
+      } catch (error) {
+        console.error("Failed to authenticate:", error);
+      } finally {
+        dispatch(settingsSlice.actions.closeCmdPalette());
+      }
+    },
+    onError: () => {
+      dispatch(settingsSlice.actions.closeCmdPalette());
+    },
+  });
 
   const filteredItems = filterItems(
     [
@@ -39,11 +64,31 @@ export const NowCmdPalette = () => {
             icon: "PencilSquareIcon",
             onClick: onEventTargetVisibility(() => pressKey("r")),
           },
+        ],
+      },
+      {
+        heading: "Settings",
+        id: "settings",
+        items: [
+          {
+            id: "connect-google-calendar",
+            children: "Connect Google Calendar",
+            icon: "CloudArrowUpIcon",
+            onClick: authenticated
+              ? undefined
+              : () => {
+                  googleLogin.login();
+                  dispatch(settingsSlice.actions.closeCmdPalette());
+                },
+          },
           {
             id: "redo-onboarding",
             children: "Re-do onboarding",
             icon: "ArrowPathIcon",
-            onClick: () => window.open(ROOT_ROUTES.ONBOARDING, "_blank"),
+            onClick: () => {
+              resetOnboardingProgress();
+              window.dispatchEvent(new CustomEvent(ONBOARDING_RESTART_EVENT));
+            },
           },
           {
             id: "log-out",

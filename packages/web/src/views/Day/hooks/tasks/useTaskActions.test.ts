@@ -29,6 +29,7 @@ describe("useTaskActions - migration", () => {
     title: "Test Task",
     status: "todo",
     createdAt: "2025-10-27T10:00:00Z",
+    order: 0,
   };
 
   beforeEach(() => {
@@ -284,6 +285,7 @@ describe("useTaskActions - migration", () => {
           title: "Deleted Task",
           status: "todo" as const,
           createdAt: "2025-10-27T10:00:00Z",
+          order: 0,
         },
       };
 

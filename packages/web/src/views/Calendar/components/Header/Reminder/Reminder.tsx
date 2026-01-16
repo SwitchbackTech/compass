@@ -253,6 +253,9 @@ export const Reminder = forwardRef(
     const handleReminderKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (e.key === "Enter") {
         e.preventDefault();
+        e.stopPropagation(); // Prevent the Enter key from bubbling up to global shortcuts
+        // Blur the input immediately to prevent global Enter handlers from firing
+        e.currentTarget.blur();
         setIsEditing(false);
         // Save to localStorage on ENTER
         const latestValue = e.currentTarget.textContent || "";

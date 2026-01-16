@@ -49,6 +49,20 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     );
   };
 
+  const handleKeyDown = (event: Schema_GridEvent) => {
+    // Prevent opening form for pending events (being created)
+    const state = store.getState();
+    if (selectIsEventPending(state, event._id!)) return;
+
+    dispatch(
+      draftSlice.actions.start({
+        activity: "keyboardEdit",
+        event,
+        eventType: category,
+      }),
+    );
+  };
+
   const handleDrag = (
     event: Schema_GridEvent,
     moveEvent: PartialMouseEvent,
@@ -115,6 +129,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
           onEventMouseDown={(event, e) => {
             onMouseDown(e, event);
           }}
+          onEventKeyDown={handleKeyDown}
           onScalerMouseDown={(
             event,
             e,

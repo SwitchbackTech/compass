@@ -1,5 +1,18 @@
-export const STORAGE_KEYS = {
+import { z } from "zod";
+
+export const StorageKeySchema = z.enum([
+  "compass.reminder",
+  "compass.onboarding",
+  "compass.auth",
+]);
+
+export type StorageKey = z.infer<typeof StorageKeySchema>;
+
+export const STORAGE_KEYS: Record<
+  "REMINDER" | "ONBOARDING_PROGRESS" | "AUTH",
+  StorageKey
+> = {
   REMINDER: "compass.reminder",
-  HAS_COMPLETED_SIGNUP: "compass.auth.hasCompletedSignup",
-  SKIP_ONBOARDING: "compass.auth.skipOnboarding",
-};
+  ONBOARDING_PROGRESS: "compass.onboarding",
+  AUTH: "compass.auth",
+} as const;

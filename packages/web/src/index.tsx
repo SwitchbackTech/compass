@@ -1,8 +1,12 @@
 import "react-datepicker/dist/react-datepicker.css";
 import { createRoot } from "react-dom/client";
 import "react-toastify/dist/ReactToastify.css";
-import { sessionInit } from "@web/auth/SessionProvider";
+import { sessionInit } from "@web/auth/session/SessionProvider";
 import { sagaMiddleware } from "@web/common/store/middlewares";
+import {
+  initializeDatabaseWithErrorHandling,
+  showDbInitErrorToast,
+} from "@web/common/utils/app-init.util";
 import { App } from "@web/components/App/App";
 import { sagas } from "@web/store/sagas";
 import "./index.css";
@@ -15,7 +19,22 @@ if (!container) {
 
 const root = createRoot(container);
 
-sagaMiddleware.run(sagas);
-sessionInit();
+/**
+ * Initialize the application with database setup before starting sagas.
+ * This ensures IndexedDB is ready before any database operations occur.
+ */
+async function initializeApp() {
+  const { dbInitError } = await initializeDatabaseWithErrorHandling();
 
-root.render(<App />);
+  sagaMiddleware.run(sagas);
+  sessionInit();
+
+  root.render(<App />);
+
+  // Show error toast after app renders (so toast container is available)
+  if (dbInitError) {
+    showDbInitErrorToast(dbInitError);
+  }
+}
+
+initializeApp();

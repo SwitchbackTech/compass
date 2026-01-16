@@ -11,6 +11,8 @@ import {
 } from "@core/constants/websocket.constants";
 import { UserMetadata } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
+import { useSession } from "@web/auth/hooks/useSession";
+import { useUser } from "@web/auth/hooks/useUser";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import {
@@ -30,7 +32,7 @@ export const disconnect = () => {
   socket.disconnect();
 };
 
-export const reconnect = (_message: string) => {
+export const reconnect = () => {
   disconnect();
 
   const timeout = setTimeout(() => {
@@ -65,6 +67,17 @@ socket.on("error", onError);
 
 const SocketProvider = ({ children }: { children: ReactNode }) => {
   const dispatch = useDispatch();
+  const { userId } = useUser();
+  const { isSyncing, setIsSyncing } = useSession();
+
+  // Only connect socket if user is authenticated
+  useEffect(() => {
+    if (userId && !socket.connected) {
+      socket.connect();
+    } else if (!userId && socket.connected) {
+      socket.disconnect();
+    }
+  }, [userId]);
 
   const onImportStart = useCallback(
     (importing = true) => {
@@ -73,9 +86,40 @@ const SocketProvider = ({ children }: { children: ReactNode }) => {
     [dispatch],
   );
 
-  const onImportEnd = useCallback(() => {
-    dispatch(importGCalSlice.actions.importing(false));
-  }, [dispatch]);
+  const onImportEnd = useCallback(
+    (payload?: { eventsCount?: number; calendarsCount?: number } | string) => {
+      dispatch(importGCalSlice.actions.importing(false));
+
+      // If we're in post-auth sync, show completion modal
+      if (isSyncing) {
+        setIsSyncing(false);
+
+        // Parse payload if it's a string (from backend)
+        let importResults: { eventsCount?: number; calendarsCount?: number } =
+          {};
+        if (typeof payload === "string") {
+          try {
+            importResults = JSON.parse(payload);
+          } catch (e) {
+            console.error("Failed to parse import results:", e);
+          }
+        } else if (payload) {
+          importResults = payload;
+        }
+
+        // Set import results to trigger modal display
+        dispatch(importGCalSlice.actions.setImportResults(importResults));
+
+        // Trigger refetch to load imported events (no page reload)
+        dispatch(
+          triggerFetch({
+            reason: Sync_AsyncStateContextReason.IMPORT_COMPLETE,
+          }),
+        );
+      }
+    },
+    [dispatch, isSyncing, setIsSyncing],
+  );
 
   const onEventChanged = useCallback(
     (reason: Sync_AsyncStateContextReason) => {

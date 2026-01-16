@@ -61,10 +61,9 @@ export const DayViewContent = memo(() => {
   const dateInView = useDateInView();
   const shortcuts = getShortcuts({ currentDate: dateInView });
 
-  useDayEvents(dateInView);
-
   const { navigateToNextDay, navigateToPreviousDay, navigateToToday } =
     useDateNavigation();
+  useDayEvents(dateInView);
 
   const hasFocusedTask =
     selectedTaskIndex >= 0 && selectedTaskIndex < tasks.length;
@@ -166,3 +165,5 @@ export const DayViewContent = memo(() => {
     </>
   );
 });
+
+DayViewContent.displayName = "DayViewContent";

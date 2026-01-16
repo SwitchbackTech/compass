@@ -169,6 +169,34 @@ describe("TaskProvider", () => {
     expect(result.current.tasks[0].title).toBe("Loaded task");
   });
 
+  it("should not overwrite localStorage with empty array on mount", () => {
+    // Regression test for bug where tasks were lost on refresh
+    // Pre-populate localStorage with tasks
+    const today = dayjs();
+    const dateKey = today.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
+    const storageKey = `${TODAY_TASKS_STORAGE_KEY_PREFIX}.${dateKey}`;
+    const mockTasks: Task[] = [
+      {
+        id: "task-1",
+        title: "Existing task",
+        status: "todo" as const,
+        order: 0,
+        createdAt: new Date().toISOString(),
+      },
+    ];
+    localStorage.setItem(storageKey, JSON.stringify(mockTasks));
+
+    // Mount component - this should load tasks, not overwrite with []
+    renderHook(useTasks, { wrapper: Wrapper });
+
+    // Verify localStorage still contains the tasks (not overwritten with [])
+    const stored = localStorage.getItem(storageKey);
+    expect(stored).toBeTruthy();
+    const parsed = JSON.parse(stored!);
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].title).toBe("Existing task");
+  });
+
   it("should sort tasks on load when there are mixed statuses", () => {
     // Pre-populate localStorage with mixed statuses
     const today = dayjs();

@@ -12,6 +12,7 @@ describe("AvailableTasks", () => {
     title: "Test Task",
     status: "todo",
     createdAt: "2025-11-15T10:00:00Z",
+    order: 0,
   };
 
   const mockTask2: Task = {
@@ -19,6 +20,7 @@ describe("AvailableTasks", () => {
     title: "Another Task",
     status: "todo",
     createdAt: "2025-11-15T11:00:00Z",
+    order: 0,
   };
 
   beforeEach(() => {
