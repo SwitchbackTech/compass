@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { Outlet } from "react-router-dom";
-import { useSession } from "@web/common/hooks/useSession";
+import { useSession } from "@web/auth/hooks/useSession";
 import { CalendarImportCompleteModal } from "@web/components/CalendarImportCompleteModal/CalendarImportCompleteModal";
 import { CalendarImportOverlay } from "@web/components/CalendarImportOverlay/CalendarImportOverlay";
 import { SyncEventsOverlay } from "@web/components/SyncEventsOverlay/SyncEventsOverlay";

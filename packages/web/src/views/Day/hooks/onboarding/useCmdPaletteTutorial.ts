@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useSession } from "@web/common/hooks/useSession";
+import { useSession } from "@web/auth/hooks/useSession";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import {

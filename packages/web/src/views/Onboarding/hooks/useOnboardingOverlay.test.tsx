@@ -8,7 +8,7 @@ import {
 } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 // Mock useSession
-jest.mock("@web/common/hooks/useSession", () => ({
+jest.mock("@web/auth/hooks/useSession", () => ({
   useSession: jest.fn(() => ({
     authenticated: false,
     loading: false,
@@ -101,7 +101,7 @@ describe("useOnboardingOverlay", () => {
   });
 
   it("should not show onboarding overlay for authenticated users", () => {
-    const { useSession } = require("@web/common/hooks/useSession");
+    const { useSession } = require("@web/auth/hooks/useSession");
     const mockSession: CompassSession = {
       authenticated: true,
       loading: false,
@@ -118,7 +118,7 @@ describe("useOnboardingOverlay", () => {
   });
 
   it("should not show onboarding overlay when guide is completed", () => {
-    const { useSession } = require("@web/common/hooks/useSession");
+    const { useSession } = require("@web/auth/hooks/useSession");
     const mockSession: CompassSession = {
       authenticated: false,
       loading: false,
@@ -148,7 +148,7 @@ describe("useOnboardingOverlay", () => {
 
   it("should skip guide when dismissed", () => {
     // Reset mock to ensure authenticated is false
-    const { useSession } = require("@web/common/hooks/useSession");
+    const { useSession } = require("@web/auth/hooks/useSession");
     const mockSession: CompassSession = {
       authenticated: false,
       loading: false,

@@ -8,7 +8,7 @@ import { useAuthPrompt } from "@web/views/Onboarding/hooks/useAuthPrompt";
 import { updateOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 // Mock useSession
-jest.mock("@web/common/hooks/useSession", () => ({
+jest.mock("@web/auth/hooks/useSession", () => ({
   useSession: jest.fn(() => ({
     authenticated: false,
     loading: false,
@@ -144,7 +144,7 @@ describe("useAuthPrompt", () => {
   });
 
   it("should not show auth prompt for authenticated users", () => {
-    const { useSession } = require("@web/common/hooks/useSession");
+    const { useSession } = require("@web/auth/hooks/useSession");
     const mockSession: CompassSession = {
       authenticated: true,
       loading: false,

@@ -10,7 +10,7 @@ import {
 import { useCmdPaletteTutorial } from "./useCmdPaletteTutorial";
 
 // Mock useSession
-jest.mock("@web/common/hooks/useSession", () => ({
+jest.mock("@web/auth/hooks/useSession", () => ({
   useSession: jest.fn(() => ({
     authenticated: false,
     loading: false,
@@ -91,7 +91,7 @@ describe("useCmdPaletteTutorial", () => {
   });
 
   it("should not show cmd palette tutorial for authenticated users", () => {
-    const { useSession } = require("@web/common/hooks/useSession");
+    const { useSession } = require("@web/auth/hooks/useSession");
     const mockSession: CompassSession = {
       authenticated: true,
       loading: false,
@@ -117,7 +117,7 @@ describe("useCmdPaletteTutorial", () => {
 
   it("should mark cmd palette as used when opened", async () => {
     // Reset mock to ensure authenticated is false
-    const { useSession } = require("@web/common/hooks/useSession");
+    const { useSession } = require("@web/auth/hooks/useSession");
     const mockSession: CompassSession = {
       authenticated: false,
       loading: false,

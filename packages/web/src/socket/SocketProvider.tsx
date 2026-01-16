@@ -11,9 +11,9 @@ import {
 } from "@core/constants/websocket.constants";
 import { UserMetadata } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
+import { useSession } from "@web/auth/hooks/useSession";
 import { useUser } from "@web/auth/hooks/useUser";
 import { ENV_WEB } from "@web/common/constants/env.constants";
-import { useSession } from "@web/common/hooks/useSession";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import {
   importGCalSlice,

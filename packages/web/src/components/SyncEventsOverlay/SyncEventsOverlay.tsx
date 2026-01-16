@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useSession } from "@web/common/hooks/useSession";
+import { useSession } from "@web/auth/hooks/useSession";
 
 export const SyncEventsOverlay = () => {
   const { isSyncing } = useSession();

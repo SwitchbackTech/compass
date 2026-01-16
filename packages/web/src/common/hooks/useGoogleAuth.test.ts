@@ -1,12 +1,12 @@
 import { faker } from "@faker-js/faker";
 import { renderHook, waitFor } from "@testing-library/react";
 import { useIsSignupComplete } from "@web/auth/hooks/useIsSignupComplete";
+import { useSession } from "@web/auth/hooks/useSession";
 import { useSkipOnboarding } from "@web/auth/hooks/useSkipOnboarding";
 import { CompassSession } from "@web/auth/session/session.types";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { UserApi } from "@web/common/apis/user.api";
 import { useGoogleAuth } from "@web/common/hooks/useGoogleAuth";
-import { useSession } from "@web/common/hooks/useSession";
 import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
 import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
@@ -15,7 +15,7 @@ import { SignInUpInput } from "@web/components/oauth/ouath.types";
 // Mock dependencies
 jest.mock("@web/common/apis/auth.api");
 jest.mock("@web/common/apis/user.api");
-jest.mock("@web/common/hooks/useSession");
+jest.mock("@web/auth/hooks/useSession");
 jest.mock("@web/auth/hooks/useIsSignupComplete");
 jest.mock("@web/auth/hooks/useSkipOnboarding");
 jest.mock("@web/components/oauth/google/useGoogleLogin");

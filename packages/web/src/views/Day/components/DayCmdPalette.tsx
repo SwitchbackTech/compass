@@ -2,9 +2,9 @@ import { useState } from "react";
 import CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
 import dayjs from "@core/util/date/dayjs";
+import { useSession } from "@web/auth/hooks/useSession";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
-import { useSession } from "@web/common/hooks/useSession";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import {
   openEventFormCreateEvent,

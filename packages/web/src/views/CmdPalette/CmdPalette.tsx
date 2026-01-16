@@ -6,9 +6,9 @@ import {
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
+import { useSession } from "@web/auth/hooks/useSession";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
-import { useSession } from "@web/common/hooks/useSession";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
 import {

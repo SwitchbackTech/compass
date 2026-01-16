@@ -1,11 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useIsSignupComplete } from "@web/auth/hooks/useIsSignupComplete";
+import { useSession } from "@web/auth/hooks/useSession";
 import { useSkipOnboarding } from "@web/auth/hooks/useSkipOnboarding";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { UserApi } from "@web/common/apis/user.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { useSession } from "@web/common/hooks/useSession";
 import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
 import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";

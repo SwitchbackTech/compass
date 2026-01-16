@@ -1,4 +1,4 @@
-import { useSession } from "@web/common/hooks/useSession";
+import { useSession } from "@web/auth/hooks/useSession";
 import {
   ONBOARDING_STEPS,
   type OnboardingStepName,

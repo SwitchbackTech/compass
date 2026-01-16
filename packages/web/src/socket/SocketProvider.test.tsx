@@ -2,9 +2,9 @@ import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import { render, waitFor } from "@testing-library/react";
 import { IMPORT_GCAL_END } from "@core/constants/websocket.constants";
+import { useSession } from "@web/auth/hooks/useSession";
 import { useUser } from "@web/auth/hooks/useUser";
 import { CompassSession } from "@web/auth/session/session.types";
-import { useSession } from "@web/common/hooks/useSession";
 import {
   importGCalSlice,
   importLatestSlice,
@@ -14,7 +14,7 @@ import SocketProvider from "./SocketProvider";
 
 // Mock dependencies
 jest.mock("@web/auth/hooks/useUser");
-jest.mock("@web/common/hooks/useSession");
+jest.mock("@web/auth/hooks/useSession");
 jest.mock("socket.io-client", () => ({
   io: jest.fn(() => ({
     on: jest.fn(),
