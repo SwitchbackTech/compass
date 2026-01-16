@@ -18,8 +18,8 @@ const initialState: State_Sync = {
 
 export const importGCalSlice = createAsyncSlice<
   never,
-  never,
-  never,
+  undefined,
+  undefined,
   {
     importing: boolean;
     importResults: { eventsCount?: number; calendarsCount?: number } | null;

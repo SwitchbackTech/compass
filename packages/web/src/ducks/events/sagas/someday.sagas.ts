@@ -28,7 +28,7 @@ import { Action_Someday_Reorder } from "@web/ducks/events/slices/someday.slice.t
 
 export function* convertSomedayToCalendarEvent({
   payload,
-}: Action_ConvertEvent) {
+}: Action_ConvertEvent): Generator {
   let optimisticEvent: Schema_OptimisticEvent | null = null;
 
   try {
@@ -69,7 +69,9 @@ export function* convertSomedayToCalendarEvent({
   }
 }
 
-export function* deleteSomedayEvent({ payload }: Action_DeleteEvent) {
+export function* deleteSomedayEvent({
+  payload,
+}: Action_DeleteEvent): Generator {
   const event = yield* getEventById(payload._id);
 
   if (!event) {
@@ -98,7 +100,7 @@ export function* deleteSomedayEvent({ payload }: Action_DeleteEvent) {
   }
 }
 
-export function* getSomedayEvents({ payload }: Action_GetEvents) {
+export function* getSomedayEvents({ payload }: Action_GetEvents): Generator {
   try {
     const sessionExists: boolean = yield call(session.doesSessionExist);
     const repository = getEventRepository(sessionExists);
@@ -138,7 +140,9 @@ export function* getSomedayEvents({ payload }: Action_GetEvents) {
   }
 }
 
-export function* reorderSomedayEvents({ payload }: Action_Someday_Reorder) {
+export function* reorderSomedayEvents({
+  payload,
+}: Action_Someday_Reorder): Generator {
   try {
     const sessionExists = yield call(session.doesSessionExist);
     const repository = getEventRepository(sessionExists);
