@@ -85,7 +85,7 @@ export function sessionInit() {
     switch (e.action) {
       case "REFRESH_SESSION":
       case "SESSION_CREATED":
-        socket.reconnect(e.action);
+        socket.reconnect();
         break;
       case "SIGN_OUT":
         socket.disconnect();

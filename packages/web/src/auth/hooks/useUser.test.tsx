@@ -1,5 +1,5 @@
 import { renderHook } from "@testing-library/react";
-import { UserContext } from "./UserContext";
+import { UserContext } from "../context/UserContext";
 import { useUser } from "./useUser";
 
 describe("useUser", () => {

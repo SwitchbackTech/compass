@@ -1,6 +1,5 @@
 import { ReactNode, useCallback, useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { toast } from "react-toastify";
 import { io } from "socket.io-client";
 import {
   EVENT_CHANGED,
@@ -12,7 +11,7 @@ import {
 } from "@core/constants/websocket.constants";
 import { UserMetadata } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
-import { useUser } from "@web/auth/useUser";
+import { useUser } from "@web/auth/hooks/useUser";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { useSession } from "@web/common/hooks/useSession";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
@@ -20,7 +19,6 @@ import {
   importGCalSlice,
   triggerFetch,
 } from "@web/ducks/events/slices/sync.slice";
-import { toastDefaultOptions } from "@web/views/Day/components/Toasts";
 
 export const socket = io(ENV_WEB.BACKEND_BASEURL, {
   withCredentials: true,
@@ -34,7 +32,7 @@ export const disconnect = () => {
   socket.disconnect();
 };
 
-export const reconnect = (_message: string) => {
+export const reconnect = () => {
   disconnect();
 
   const timeout = setTimeout(() => {

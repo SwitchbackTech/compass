@@ -1,9 +1,8 @@
-import { toast } from "react-toastify";
 import { faker } from "@faker-js/faker";
 import { renderHook, waitFor } from "@testing-library/react";
-import { useIsSignupComplete } from "@web/auth/isSignupComplete";
+import { useIsSignupComplete } from "@web/auth/hooks/useIsSignupComplete";
+import { useSkipOnboarding } from "@web/auth/hooks/useSkipOnboarding";
 import { CompassSession } from "@web/auth/session/session.types";
-import { useSkipOnboarding } from "@web/auth/useSkipOnboarding";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { UserApi } from "@web/common/apis/user.api";
 import { useGoogleAuth } from "@web/common/hooks/useGoogleAuth";
@@ -17,8 +16,8 @@ import { SignInUpInput } from "@web/components/oauth/ouath.types";
 jest.mock("@web/common/apis/auth.api");
 jest.mock("@web/common/apis/user.api");
 jest.mock("@web/common/hooks/useSession");
-jest.mock("@web/auth/isSignupComplete");
-jest.mock("@web/auth/useSkipOnboarding");
+jest.mock("@web/auth/hooks/useIsSignupComplete");
+jest.mock("@web/auth/hooks/useSkipOnboarding");
 jest.mock("@web/components/oauth/google/useGoogleLogin");
 jest.mock("@web/common/utils/storage/auth-state.util");
 jest.mock("@web/common/utils/sync/local-event-sync.util");
@@ -53,7 +52,6 @@ const mockMarkUserAsAuthenticated =
   >;
 const mockSyncLocalEventsToCloud =
   syncLocalEventsToCloud as jest.MockedFunction<typeof syncLocalEventsToCloud>;
-const mockToast = toast as jest.MockedFunction<typeof toast>;
 
 describe("useGoogleAuth", () => {
   const mockSetAuthenticated = jest.fn();

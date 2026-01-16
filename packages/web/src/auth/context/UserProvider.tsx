@@ -54,7 +54,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <UserContext.Provider
-      value={{ ...(profile.current ?? {}), userId, isLoadingUser }}
+      value={{
+        ...(profile.current ?? {}),
+        userId: userId ?? undefined,
+        isLoadingUser,
+      }}
     >
       {children}
     </UserContext.Provider>

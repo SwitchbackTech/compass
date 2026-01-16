@@ -1,7 +1,8 @@
-import { act, renderHook } from "@testing-library/react";
+import { act } from "react";
+import { renderHook } from "@testing-library/react";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { updateOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
-import { useIsSignupComplete } from "./isSignupComplete";
+import { useIsSignupComplete } from "./useIsSignupComplete";
 
 describe("useIsSignupComplete", () => {
   beforeEach(() => {

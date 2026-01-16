@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useIsSignupComplete } from "@web/auth/isSignupComplete";
-import { useSkipOnboarding } from "@web/auth/useSkipOnboarding";
+import { useIsSignupComplete } from "@web/auth/hooks/useIsSignupComplete";
+import { useSkipOnboarding } from "@web/auth/hooks/useSkipOnboarding";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { UserApi } from "@web/common/apis/user.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";

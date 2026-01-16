@@ -6,7 +6,7 @@ import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import { Status } from "@core/errors/status.codes";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
-import { UserProvider } from "@web/auth/UserProvider";
+import { UserProvider } from "@web/auth/context/UserProvider";
 import { UserApi } from "@web/common/apis/user.api";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 
