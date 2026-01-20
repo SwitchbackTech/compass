@@ -136,9 +136,7 @@ export const EventDateUtils = {
     startDate: string,
     endDate: string,
   ) => {
-    const safeEvents = Array.isArray(events) ? events : [];
-
-    return safeEvents.filter((event) => {
+    return events.filter((event) => {
       const eventStart = dayjs(event.startDate).utc(true); // use local time - until we use actual dates
       const eventEnd = dayjs(event.endDate).utc(true); // This is exclusive, so the event ends at the very start of the end date
 
