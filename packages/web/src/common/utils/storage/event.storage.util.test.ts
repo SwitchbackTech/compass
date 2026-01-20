@@ -15,8 +15,11 @@ describe("event.storage.util", () => {
     await clearEventsFromIndexedDB();
   });
 
-  const createMockEvent = (overrides?: Partial<Event_Core>) => {
-    return createMockStandaloneEvent(overrides) as Event_Core;
+  const createMockEvent = (
+    overrides?: Partial<Event_Core>,
+    dateDiff?: { value: number; unit: "days" | "hours" | "minutes" },
+  ) => {
+    return createMockStandaloneEvent(overrides, false, dateDiff) as Event_Core;
   };
 
   describe("saveEventToIndexedDB", () => {
@@ -167,6 +170,94 @@ describe("event.storage.util", () => {
       );
 
       expect(events).toHaveLength(2);
+    });
+
+    it("should include events that start before range but end within it", async () => {
+      // Example: Event from Jan 1-5 should be included when querying Jan 3-10
+      const jan1 = dayjs("2024-01-01").startOf("day");
+      const jan3 = dayjs("2024-01-03").startOf("day");
+      const jan10 = dayjs("2024-01-10").endOf("day");
+
+      // Create event starting Jan 1, lasting 4 days (ends Jan 5)
+      const multiDayEvent = createMockEvent(
+        { startDate: jan1.toISOString() },
+        { value: 4, unit: "days" },
+      );
+
+      await saveEventToIndexedDB(multiDayEvent);
+
+      const events = await loadEventsFromIndexedDB(
+        jan3.toISOString(),
+        jan10.toISOString(),
+      );
+
+      expect(events).toHaveLength(1);
+      expect(events[0]._id).toBe(multiDayEvent._id);
+    });
+
+    it("should include events that span the entire range", async () => {
+      // Event that starts before and ends after the query range
+      const jan1 = dayjs("2024-01-01").startOf("day");
+      const jan3 = dayjs("2024-01-03").startOf("day");
+      const jan5 = dayjs("2024-01-05").endOf("day");
+
+      // Create event starting Jan 1, lasting 9 days (ends Jan 10)
+      const spanningEvent = createMockEvent(
+        { startDate: jan1.toISOString() },
+        { value: 9, unit: "days" },
+      );
+
+      await saveEventToIndexedDB(spanningEvent);
+
+      const events = await loadEventsFromIndexedDB(
+        jan3.toISOString(),
+        jan5.toISOString(),
+      );
+
+      expect(events).toHaveLength(1);
+      expect(events[0]._id).toBe(spanningEvent._id);
+    });
+
+    it("should include events that start within range but end after it", async () => {
+      const jan3 = dayjs("2024-01-03").startOf("day");
+      const jan5 = dayjs("2024-01-05").startOf("day");
+
+      // Create event starting Jan 5, lasting 5 days (ends Jan 10)
+      const event = createMockEvent(
+        { startDate: jan5.toISOString() },
+        { value: 5, unit: "days" },
+      );
+
+      await saveEventToIndexedDB(event);
+
+      const events = await loadEventsFromIndexedDB(
+        jan3.toISOString(),
+        jan5.endOf("day").toISOString(),
+      );
+
+      expect(events).toHaveLength(1);
+      expect(events[0]._id).toBe(event._id);
+    });
+
+    it("should exclude events that are completely outside the range", async () => {
+      const jan1 = dayjs("2024-01-01").startOf("day");
+      const jan3 = dayjs("2024-01-03").startOf("day");
+      const jan5 = dayjs("2024-01-05").endOf("day");
+
+      // Create event starting Jan 1, lasting 1 day (ends Jan 2)
+      const eventBefore = createMockEvent(
+        { startDate: jan1.toISOString() },
+        { value: 1, unit: "days" },
+      );
+
+      await saveEventToIndexedDB(eventBefore);
+
+      const events = await loadEventsFromIndexedDB(
+        jan3.toISOString(),
+        jan5.toISOString(),
+      );
+
+      expect(events).toHaveLength(0);
     });
   });
 

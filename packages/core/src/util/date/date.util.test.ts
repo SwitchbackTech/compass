@@ -2,6 +2,7 @@ import {
   convertRruleWithUntilToDate,
   formatAs,
   formatAsIso8601,
+  isDateRangeOverlapping,
 } from "./date.util";
 
 describe("convertRruleWithUntilToDate", () => {
@@ -62,5 +63,131 @@ describe("formatAs", () => {
   it("returns null for invalid dates", () => {
     const date = formatAs("RFC5545", "invalid");
     expect(date).toBeNull();
+  });
+});
+
+describe("isDateRangeOverlapping", () => {
+  describe("with day granularity", () => {
+    it("returns true when range A is completely within range B", () => {
+      expect(
+        isDateRangeOverlapping(
+          "2024-01-05",
+          "2024-01-07",
+          "2024-01-01",
+          "2024-01-10",
+          "day",
+        ),
+      ).toBe(true);
+    });
+
+    it("returns true when range A starts before but ends within range B", () => {
+      expect(
+        isDateRangeOverlapping(
+          "2024-01-01",
+          "2024-01-05",
+          "2024-01-03",
+          "2024-01-10",
+          "day",
+        ),
+      ).toBe(true);
+    });
+
+    it("returns true when range A spans entirely over range B", () => {
+      expect(
+        isDateRangeOverlapping(
+          "2024-01-01",
+          "2024-01-10",
+          "2024-01-03",
+          "2024-01-05",
+          "day",
+        ),
+      ).toBe(true);
+    });
+
+    it("returns true when range A starts within but ends after range B", () => {
+      expect(
+        isDateRangeOverlapping(
+          "2024-01-05",
+          "2024-01-15",
+          "2024-01-01",
+          "2024-01-10",
+          "day",
+        ),
+      ).toBe(true);
+    });
+
+    it("returns false when ranges do not overlap", () => {
+      expect(
+        isDateRangeOverlapping(
+          "2024-01-01",
+          "2024-01-02",
+          "2024-01-05",
+          "2024-01-10",
+          "day",
+        ),
+      ).toBe(false);
+    });
+
+    it("returns true when ranges share a boundary day", () => {
+      expect(
+        isDateRangeOverlapping(
+          "2024-01-01",
+          "2024-01-05",
+          "2024-01-05",
+          "2024-01-10",
+          "day",
+        ),
+      ).toBe(true);
+    });
+
+    it("works with ISO string dates", () => {
+      expect(
+        isDateRangeOverlapping(
+          "2024-01-05T10:00:00.000Z",
+          "2024-01-05T14:00:00.000Z",
+          "2024-01-05T00:00:00.000Z",
+          "2024-01-05T23:59:59.999Z",
+          "day",
+        ),
+      ).toBe(true);
+    });
+  });
+
+  describe("without granularity (exact time)", () => {
+    it("returns true when ranges overlap in time", () => {
+      expect(
+        isDateRangeOverlapping(
+          "2024-01-01T10:00:00Z",
+          "2024-01-01T14:00:00Z",
+          "2024-01-01T12:00:00Z",
+          "2024-01-01T16:00:00Z",
+          null,
+        ),
+      ).toBe(true);
+    });
+
+    it("returns false when ranges do not overlap in time", () => {
+      expect(
+        isDateRangeOverlapping(
+          "2024-01-01T10:00:00Z",
+          "2024-01-01T11:00:00Z",
+          "2024-01-01T12:00:00Z",
+          "2024-01-01T14:00:00Z",
+          null,
+        ),
+      ).toBe(false);
+    });
+
+    it("returns true when ranges share an exact boundary", () => {
+      expect(
+        isDateRangeOverlapping(
+          "2024-01-01T10:00:00Z",
+          "2024-01-01T12:00:00Z",
+          "2024-01-01T12:00:00Z",
+          "2024-01-01T14:00:00Z",
+          null,
+        ),
+      ).toBe(true);
+    });
   });
 });

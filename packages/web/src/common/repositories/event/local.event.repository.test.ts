@@ -15,8 +15,7 @@ const mockEvents = new Map<string, Event_Core>();
 
 jest.mock("@web/common/utils/storage/event.storage.util", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const dayjsModule = require("@core/util/date/dayjs");
-  const dayjs = dayjsModule.default;
+  const { isDateRangeOverlapping } = require("@core/util/date/date.util");
   return {
     saveEventToIndexedDB: jest.fn(async (event: Event_Core) => {
       mockEvents.set(event._id!, event);
@@ -24,13 +23,15 @@ jest.mock("@web/common/utils/storage/event.storage.util", () => {
     loadEventsFromIndexedDB: jest.fn(
       async (startDate: string, endDate: string, isSomeday?: boolean) => {
         const allEvents = Array.from(mockEvents.values());
-        // Simple date filtering for tests
-        const start = dayjs(startDate);
-        const end = dayjs(endDate);
         let filtered = allEvents.filter((event) => {
-          if (!event.startDate) return false;
-          const eventStart = dayjs(event.startDate);
-          return eventStart.isBetween(start, end, "day", "[]");
+          if (!event.startDate || !event.endDate) return false;
+          return isDateRangeOverlapping(
+            event.startDate,
+            event.endDate,
+            startDate,
+            endDate,
+            "day",
+          );
         });
         if (isSomeday !== undefined) {
           filtered = filtered.filter((event) => event.isSomeday === isSomeday);

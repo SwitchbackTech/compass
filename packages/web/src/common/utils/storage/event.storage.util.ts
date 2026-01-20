@@ -1,5 +1,5 @@
 import { Event_Core } from "@core/types/event.types";
-import dayjs from "@core/util/date/dayjs";
+import { isDateRangeOverlapping } from "@core/util/date/date.util";
 import { compassLocalDB } from "./compass-local.db";
 import { handleDatabaseError } from "./db-errors.util";
 import { ensureDatabaseReady } from "./db-init.util";
@@ -31,29 +31,23 @@ export async function loadEventsFromIndexedDB(
   isSomeday?: boolean,
 ): Promise<Event_Core[]> {
   try {
-    // Ensure database is ready before operation
     await ensureDatabaseReady();
 
-    // Get all events and filter in memory since we need to check date ranges
-    // and isSomeday flag. Dexie's between() works on indexed fields but we
-    // need to handle date string comparisons properly.
-    let events = await compassLocalDB.events.toArray();
+    const allEvents = await compassLocalDB.events.toArray();
 
-    // Filter by date range
-    const start = dayjs(startDate);
-    const end = dayjs(endDate);
-    events = events.filter((event) => {
-      if (!event.startDate) return false;
-      const eventStart = dayjs(event.startDate);
-      return eventStart.isBetween(start, end, "day", "[]"); // inclusive on both ends
+    return allEvents.filter((event) => {
+      if (!event.startDate || !event.endDate) return false;
+      if (isSomeday !== undefined && event.isSomeday !== isSomeday) {
+        return false;
+      }
+      return isDateRangeOverlapping(
+        event.startDate,
+        event.endDate,
+        startDate,
+        endDate,
+        "day",
+      );
     });
-
-    // Filter by isSomeday if specified
-    if (isSomeday !== undefined) {
-      events = events.filter((event) => event.isSomeday === isSomeday);
-    }
-
-    return events;
   } catch (error) {
     handleDatabaseError(error, "load");
   }
