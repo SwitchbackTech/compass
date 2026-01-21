@@ -2,31 +2,21 @@
 
 _A minimal task manager for engineers._
 
-_All your tasks & events in one place_
-
 _Organize your day and stay on track_
+
+----
+
+**Get clear**: Plan your Month → Week → Day → Now
+
+**Simplify**: One app for tasks & events
+
+**Go fast**: Shortcuts, command palette, lightweight code
+
+**Keep your GCal**: Events sync to Google Calendar\*
 
 https://github.com/user-attachments/assets/ba7b91b9-1984-49f2-afc6-7fcda1100b31
 
 ---
-
-## Benefits
-
-### 🧘 Get clear
-
-Plan your Month → Week → Day → Now
-
-### 1️⃣ Simplify your life
-
-One app for tasks, events, and plans
-
-### ⚡ Go fast
-
-Shortcuts, command palette, lightweight code
-
-### 🔄 Keep your GCal
-
-Events sync to Google Calendar\*
 
 ## Features
 
