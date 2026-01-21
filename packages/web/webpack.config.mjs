@@ -274,7 +274,7 @@ export default (env, argv) => {
       static: {
         directory: join(_dirname, "public"),
       },
-      host: "127.0.0.1",
+      host: "localhost",
       watchFiles: {
         paths: ["src/**/*"],
         options: {
