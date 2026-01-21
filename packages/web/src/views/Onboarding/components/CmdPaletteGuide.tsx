@@ -1,10 +1,18 @@
-import React, { FC, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  FC,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useLocation } from "react-router-dom";
 import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import {
   ONBOARDING_GUIDE_VIEWS,
   ONBOARDING_STEPS,
   ONBOARDING_STEP_CONFIGS,
+  OnboardingStepName,
 } from "../constants/onboarding.constants";
 import { useCmdPaletteGuide } from "../hooks/useCmdPaletteGuide";
 import { useStepDetection } from "../hooks/useStepDetection";
@@ -23,10 +31,9 @@ export const CmdPaletteGuide: FC = () => {
   const [isSuccessMessageDismissed, setIsSuccessMessageDismissed] =
     useState(false);
 
-  // Unified step detection hook - handles all detection types
-  useStepDetection({
-    currentStep,
-    onStepComplete: (step) => {
+  // Stable callback to prevent effect re-runs that reset task count tracking
+  const handleStepComplete = useCallback(
+    (step: OnboardingStepName) => {
       // Delay step 2 completion to show instructions on Now view first
       if (step === ONBOARDING_STEPS.NAVIGATE_TO_NOW) {
         if (step2CompletionTimeoutRef.current) {
@@ -39,6 +46,13 @@ export const CmdPaletteGuide: FC = () => {
         completeStep(step);
       }
     },
+    [completeStep],
+  );
+
+  // Unified step detection hook - handles all detection types
+  useStepDetection({
+    currentStep,
+    onStepComplete: handleStepComplete,
   });
 
   // Cleanup timeout on unmount
