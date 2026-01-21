@@ -8,11 +8,15 @@ import {
 } from "@web/common/utils/storage/storage.util";
 import { useTasksToday } from "./useTasksToday";
 
-// Mock the storage utilities
-jest.mock("@web/common/utils/storage/storage.util", () => ({
-  loadTasksFromStorage: jest.fn(),
-  saveTasksToStorage: jest.fn(),
-}));
+// Mock the storage utilities while keeping real helpers like getDateKey
+jest.mock("@web/common/utils/storage/storage.util", () => {
+  const actual = jest.requireActual("@web/common/utils/storage/storage.util");
+  return {
+    ...actual,
+    loadTasksFromStorage: jest.fn(),
+    saveTasksToStorage: jest.fn(),
+  };
+});
 
 describe("useTasksToday", () => {
   const mockOnNext = jest.fn();
@@ -37,11 +41,9 @@ describe("useTasksToday", () => {
     const { result } = renderHook(() => useTasksToday(defaultProps));
 
     expect(result.current.isTaskCreated).toBe(false);
-    expect(result.current.tasks).toHaveLength(2);
+    expect(result.current.tasks).toHaveLength(0);
     expect(result.current.newTask).toBe("");
-    expect(result.current.tasks[0].title).toBe("Review project proposal");
-    expect(result.current.tasks[1].title).toBe("Write weekly report");
-    expect(saveTasksToStorage).toHaveBeenCalled();
+    expect(saveTasksToStorage).not.toHaveBeenCalled();
   });
 
   it("should load existing tasks from storage", () => {
@@ -95,9 +97,9 @@ describe("useTasksToday", () => {
       result.current.handleAddTask();
     });
 
-    expect(result.current.tasks).toHaveLength(3);
-    expect(result.current.tasks[2].title).toBe("Test task");
-    expect(result.current.tasks[2].status).toBe("todo");
+    expect(result.current.tasks).toHaveLength(1);
+    expect(result.current.tasks[0].title).toBe("Test task");
+    expect(result.current.tasks[0].status).toBe("todo");
     expect(result.current.newTask).toBe("");
     expect(result.current.isTaskCreated).toBe(true);
     expect(saveTasksToStorage).toHaveBeenCalled();
@@ -122,7 +124,7 @@ describe("useTasksToday", () => {
   });
 
   it("should not add task when max limit is reached", () => {
-    const existingTasks: Task[] = Array.from({ length: 5 }, (_, i) => ({
+    const existingTasks: Task[] = Array.from({ length: 20 }, (_, i) => ({
       id: `task-${i}`,
       title: `Task ${i}`,
       status: "todo" as const,
@@ -141,7 +143,7 @@ describe("useTasksToday", () => {
       result.current.handleAddTask();
     });
 
-    expect(result.current.tasks).toHaveLength(5);
+    expect(result.current.tasks).toHaveLength(20);
     expect(result.current.newTask).toBe("New task");
   });
 
@@ -165,8 +167,8 @@ describe("useTasksToday", () => {
 
     expect(mockEvent.preventDefault).toHaveBeenCalled();
     expect(mockEvent.stopPropagation).toHaveBeenCalled();
-    expect(result.current.tasks).toHaveLength(3);
-    expect(result.current.tasks[2].title).toBe("Keyboard task");
+    expect(result.current.tasks).toHaveLength(1);
+    expect(result.current.tasks[0].title).toBe("Keyboard task");
   });
 
   it("should not handle non-Enter key events", () => {
@@ -189,7 +191,7 @@ describe("useTasksToday", () => {
 
     expect(mockEvent.preventDefault).not.toHaveBeenCalled();
     expect(mockEvent.stopPropagation).not.toHaveBeenCalled();
-    expect(result.current.tasks).toHaveLength(2); // No new task added
+    expect(result.current.tasks).toHaveLength(0); // No new task added
   });
 
   it("should call onNext when handleNext is called", () => {
@@ -249,7 +251,7 @@ describe("useTasksToday", () => {
       result.current.handleAddTask();
     });
 
-    expect(result.current.tasks[2].title).toBe("Trimmed task");
+    expect(result.current.tasks[0].title).toBe("Trimmed task");
   });
 
   it("should not call onNavigationControlChange when it's not provided", () => {
@@ -296,10 +298,7 @@ describe("useTasksToday", () => {
     renderHook(() => useTasksToday(defaultProps));
 
     expect(loadTasksFromStorage).toHaveBeenCalledWith(expectedDateKey);
-    expect(saveTasksToStorage).toHaveBeenCalledWith(
-      expectedDateKey,
-      expect.any(Array),
-    );
+    expect(saveTasksToStorage).not.toHaveBeenCalled();
   });
 
   it("should generate unique task IDs", () => {
@@ -342,7 +341,7 @@ describe("useTasksToday", () => {
     });
 
     const afterCreation = new Date().toISOString();
-    const newTask = result.current.tasks[2];
+    const newTask = result.current.tasks[0];
 
     expect(newTask.createdAt).toBeDefined();
     expect(newTask.createdAt >= beforeCreation).toBe(true);
