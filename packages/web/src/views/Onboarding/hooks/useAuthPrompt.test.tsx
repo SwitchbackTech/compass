@@ -87,41 +87,6 @@ describe("useAuthPrompt", () => {
     );
   });
 
-  it("should show auth prompt after user opens and closes cmd palette", async () => {
-    const store = createTestStore(false);
-
-    const { result } = renderHook(
-      () =>
-        useAuthPrompt({
-          tasks: [],
-          hasNavigatedDates: false,
-          showOnboardingOverlay: false,
-        }),
-      {
-        wrapper: ({ children }) => (
-          <Provider store={store}>{children}</Provider>
-        ),
-      },
-    );
-
-    // Open palette
-    act(() => {
-      store.dispatch(settingsSlice.actions.openCmdPalette());
-    });
-
-    // Close palette
-    act(() => {
-      store.dispatch(settingsSlice.actions.closeCmdPalette());
-    });
-
-    await waitFor(
-      () => {
-        expect(result.current.showAuthPrompt).toBe(true);
-      },
-      { timeout: 3000 },
-    );
-  });
-
   it("should not show auth prompt if dismissed", () => {
     updateOnboardingProgress({ isAuthPromptDismissed: true });
     const store = createTestStore();

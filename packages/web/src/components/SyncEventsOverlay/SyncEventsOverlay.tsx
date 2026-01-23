@@ -41,8 +41,7 @@ export const SyncEventsOverlay = () => {
           Importing your Google Calendar events...
         </div>
         <div className="text-text-light/80 text-xs">
-          Please wait while we sync your calendar. You won't be able to create
-          events until this is complete.
+          Please hang tight while we sync your calendar
         </div>
       </div>
     </div>

@@ -1,7 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "@web/auth/hooks/useSession";
-import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
 import {
   getOnboardingProgress,
   updateOnboardingProgress,
@@ -29,10 +27,8 @@ export function useAuthPrompt({
   showOnboardingOverlay,
 }: UseAuthPromptProps): UseAuthPromptReturn {
   const { authenticated } = useSession();
-  const isCmdPaletteOpen = useAppSelector(selectIsCmdPaletteOpen);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
-  const [hasUsedCmdPalette, setHasUsedCmdPalette] = useState(false);
-  const prevCmdPaletteOpen = useRef(isCmdPaletteOpen);
+  const AUTH_PROMPT_DELAY = 2000;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -41,41 +37,20 @@ export function useAuthPrompt({
     const { isAuthPromptDismissed } = getOnboardingProgress();
     if (isAuthPromptDismissed) return;
 
-    // Check if palette was just closed
-    const justClosedPalette =
-      prevCmdPaletteOpen.current && !isCmdPaletteOpen && !hasUsedCmdPalette;
-
-    if (justClosedPalette) {
-      setHasUsedCmdPalette(true);
-    }
-    prevCmdPaletteOpen.current = isCmdPaletteOpen;
-
     // Show auth prompt if user has:
     // - Created 2+ tasks, OR
-    // - Used cmd+k palette (opened and closed), OR
     // - Navigated between dates
-    const shouldShow =
-      tasks.length >= 2 ||
-      hasNavigatedDates ||
-      hasUsedCmdPalette ||
-      justClosedPalette;
+    const shouldShow = tasks.length >= 2 || hasNavigatedDates;
 
     if (shouldShow && !showOnboardingOverlay) {
       // Delay showing auth prompt to avoid overwhelming user
       const timer = setTimeout(() => {
         setShowAuthPrompt(true);
-      }, 2000);
+      }, AUTH_PROMPT_DELAY);
 
       return () => clearTimeout(timer);
     }
-  }, [
-    authenticated,
-    tasks.length,
-    hasNavigatedDates,
-    hasUsedCmdPalette,
-    showOnboardingOverlay,
-    isCmdPaletteOpen,
-  ]);
+  }, [authenticated, tasks.length, hasNavigatedDates, showOnboardingOverlay]);
 
   const dismissAuthPrompt = () => {
     updateOnboardingProgress({ isAuthPromptDismissed: true });

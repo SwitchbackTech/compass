@@ -66,9 +66,7 @@ describe("SyncEventsOverlay", () => {
       screen.getByText("Importing your Google Calendar events..."),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(
-        "Please wait while we sync your calendar. You won't be able to create events until this is complete.",
-      ),
+      screen.getByText("Please hang tight while we sync your calendar"),
     ).toBeInTheDocument();
     expect(document.body.getAttribute("data-app-locked")).toBe("true");
   });

@@ -6,11 +6,7 @@ import { useOnboardingProgress } from "@web/views/Onboarding/hooks/useOnboarding
 import { useStoredTasks } from "@web/views/Onboarding/hooks/useStoredTasks";
 import type { OnboardingNotice } from "@web/views/Onboarding/types/onboarding-notice.types";
 
-interface UseOnboardingNoticesReturn {
-  notices: OnboardingNotice[];
-}
-
-export function useOnboardingNotices(): UseOnboardingNoticesReturn {
+export function useOnboardingNotices(): { notices: OnboardingNotice[] } {
   const googleAuth = useGoogleAuth();
   const tasks = useStoredTasks();
   const { hasNavigatedDates } = useOnboardingProgress();
@@ -30,7 +26,7 @@ export function useOnboardingNotices(): UseOnboardingNoticesReturn {
       {
         id: "auth-prompt",
         header: "Connect your Google Calendar",
-        body: "Your tasks are saved locally. Sign in to sync with Google Calendar",
+        body: "Your data is currently saved locally. Sign in to sync with Google Calendar",
         primaryAction: {
           label: "Sign in",
           onClick: () => {

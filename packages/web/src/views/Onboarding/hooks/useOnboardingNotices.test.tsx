@@ -67,7 +67,7 @@ describe("useOnboardingNotices", () => {
       "Connect your Google Calendar",
     );
     expect(result.current.notices[0].body).toContain(
-      "Your tasks are saved locally. Sign in to sync with Google Calendar",
+      "Your data is currently saved locally. Sign in to sync with Google Calendar",
     );
     expect(result.current.notices[0].primaryAction?.label).toBe("Sign in");
     expect(result.current.notices[0].secondaryAction?.label).toBe("Later");
