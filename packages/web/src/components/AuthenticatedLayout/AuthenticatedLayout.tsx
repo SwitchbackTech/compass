@@ -7,7 +7,6 @@ import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
 import { CmdPaletteGuide } from "@web/views/Onboarding/components/CmdPaletteGuide";
-import { OnboardingOverlayHost } from "@web/views/Onboarding/components/OnboardingOverlay/OnboardingOverlayHost";
 
 /**
  * Layout component for authenticated routes
@@ -27,7 +26,6 @@ export const AuthenticatedLayout = () => {
   return (
     <>
       <Outlet />
-      <OnboardingOverlayHost />
       <CmdPaletteGuide />
       <SyncEventsOverlay />
       {importResults && (
