@@ -21,9 +21,7 @@ import { StyledCalendar } from "@web/views/Calendar/styled";
 import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
 import { Header } from "@web/views/Day/components/Header/Header";
-import { StorageInfoModal } from "@web/views/Day/components/StorageInfoModal/StorageInfoModal";
 import { TaskList } from "@web/views/Day/components/TaskList/TaskList";
-import { useStorageInfoModal } from "@web/views/Day/context/StorageInfoModalContext";
 import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
@@ -57,7 +55,6 @@ export const DayViewContent = memo(() => {
     migrateTask,
     undoToastId,
   } = useTasks();
-  const { isOpen: isModalOpen, closeModal } = useStorageInfoModal();
   const dateInView = useDateInView();
   const shortcuts = getShortcuts({ currentDate: dateInView });
 
@@ -151,8 +148,6 @@ export const DayViewContent = memo(() => {
           <Agenda />
         </div>
       </StyledCalendar>
-
-      <StorageInfoModal isOpen={isModalOpen} onClose={closeModal} />
 
       <ShortcutsOverlay
         sections={[
