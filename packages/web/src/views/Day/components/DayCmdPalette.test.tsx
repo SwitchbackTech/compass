@@ -2,9 +2,11 @@ import { act } from "react";
 import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
+import * as useSessionModule from "@web/auth/hooks/useSession";
 import { keyPressed$ } from "@web/common/utils/dom/event-emitter.util";
 import * as eventUtil from "@web/common/utils/event/event.util";
 import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
+import * as useGoogleLoginModule from "@web/components/oauth/google/useGoogleLogin";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
@@ -256,5 +258,108 @@ describe("DayCmdPalette", () => {
 
     expect(screen.getByText("Go to Now [1]")).toBeInTheDocument();
     expect(screen.queryByText("Go to Week [3]")).not.toBeInTheDocument();
+  });
+
+  describe("Google Calendar authentication status", () => {
+    const mockLogin = jest.fn();
+
+    beforeEach(() => {
+      jest.spyOn(useGoogleLoginModule, "useGoogleLogin").mockReturnValue({
+        login: mockLogin,
+      });
+    });
+
+    it("shows 'Connect Google Calendar' when not authenticated", async () => {
+      jest.spyOn(useSessionModule, "useSession").mockReturnValue({
+        authenticated: false,
+        loading: false,
+        isSyncing: false,
+        setAuthenticated: jest.fn(),
+        setLoading: jest.fn(),
+        setIsSyncing: jest.fn(),
+      });
+
+      await act(() =>
+        render(<DayCmdPalette />, {
+          state: { settings: { isCmdPaletteOpen: true } },
+        }),
+      );
+
+      expect(screen.getByText("Connect Google Calendar")).toBeInTheDocument();
+      expect(
+        screen.queryByText("Google Calendar Connected"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("shows 'Google Calendar Connected' when authenticated", async () => {
+      jest.spyOn(useSessionModule, "useSession").mockReturnValue({
+        authenticated: true,
+        loading: false,
+        isSyncing: false,
+        setAuthenticated: jest.fn(),
+        setLoading: jest.fn(),
+        setIsSyncing: jest.fn(),
+      });
+
+      await act(() =>
+        render(<DayCmdPalette />, {
+          state: { settings: { isCmdPaletteOpen: true } },
+        }),
+      );
+
+      expect(screen.getByText("Google Calendar Connected")).toBeInTheDocument();
+      expect(
+        screen.queryByText("Connect Google Calendar"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("triggers login when 'Connect Google Calendar' is clicked and not authenticated", async () => {
+      jest.spyOn(useSessionModule, "useSession").mockReturnValue({
+        authenticated: false,
+        loading: false,
+        isSyncing: false,
+        setAuthenticated: jest.fn(),
+        setLoading: jest.fn(),
+        setIsSyncing: jest.fn(),
+      });
+
+      const user = userEvent.setup();
+      await act(() =>
+        render(<DayCmdPalette />, {
+          state: { settings: { isCmdPaletteOpen: true } },
+        }),
+      );
+
+      await act(() => user.click(screen.getByText("Connect Google Calendar")));
+
+      expect(mockLogin).toHaveBeenCalled();
+      expect(mockDispatch).toHaveBeenCalledWith(
+        settingsSlice.actions.closeCmdPalette(),
+      );
+    });
+
+    it("does not trigger login when 'Google Calendar Connected' is clicked", async () => {
+      jest.spyOn(useSessionModule, "useSession").mockReturnValue({
+        authenticated: true,
+        loading: false,
+        isSyncing: false,
+        setAuthenticated: jest.fn(),
+        setLoading: jest.fn(),
+        setIsSyncing: jest.fn(),
+      });
+
+      const user = userEvent.setup();
+      await act(() =>
+        render(<DayCmdPalette />, {
+          state: { settings: { isCmdPaletteOpen: true } },
+        }),
+      );
+
+      await act(() =>
+        user.click(screen.getByText("Google Calendar Connected")),
+      );
+
+      expect(mockLogin).not.toHaveBeenCalled();
+    });
   });
 });

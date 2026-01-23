@@ -72,8 +72,10 @@ export const NowCmdPalette = () => {
         items: [
           {
             id: "connect-google-calendar",
-            children: "Connect Google Calendar",
-            icon: "CloudArrowUpIcon",
+            children: authenticated
+              ? "Google Calendar Connected"
+              : "Connect Google Calendar",
+            icon: authenticated ? "CheckCircleIcon" : "CloudArrowUpIcon",
             onClick: authenticated
               ? undefined
               : () => {

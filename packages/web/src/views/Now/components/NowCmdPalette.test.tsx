@@ -21,6 +21,28 @@ jest.mock("@web/views/Onboarding/utils/onboarding.storage.util", () => ({
   resetOnboardingProgress: jest.fn(),
 }));
 
+// Mock useSession for auth state tests
+const mockSetAuthenticated = jest.fn();
+let mockAuthenticated = false;
+jest.mock("@web/auth/hooks/useSession", () => ({
+  useSession: () => ({
+    authenticated: mockAuthenticated,
+    loading: false,
+    isSyncing: false,
+    setAuthenticated: mockSetAuthenticated,
+    setLoading: jest.fn(),
+    setIsSyncing: jest.fn(),
+  }),
+}));
+
+// Mock useGoogleLogin
+const mockLogin = jest.fn();
+jest.mock("@web/components/oauth/google/useGoogleLogin", () => ({
+  useGoogleLogin: () => ({
+    login: mockLogin,
+  }),
+}));
+
 describe("NowCmdPalette", () => {
   const initialState = {
     settings: {
@@ -96,5 +118,49 @@ describe("NowCmdPalette", () => {
       }),
     );
     mockDispatchEvent.mockRestore();
+  });
+
+  describe("Google Calendar authentication status", () => {
+    beforeEach(() => {
+      mockLogin.mockClear();
+    });
+
+    it("shows 'Connect Google Calendar' when not authenticated", () => {
+      mockAuthenticated = false;
+      render(<NowCmdPalette />, { state: initialState });
+
+      expect(screen.getByText("Connect Google Calendar")).toBeInTheDocument();
+      expect(
+        screen.queryByText("Google Calendar Connected"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("shows 'Google Calendar Connected' when authenticated", () => {
+      mockAuthenticated = true;
+      render(<NowCmdPalette />, { state: initialState });
+
+      expect(screen.getByText("Google Calendar Connected")).toBeInTheDocument();
+      expect(
+        screen.queryByText("Connect Google Calendar"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("triggers login when 'Connect Google Calendar' is clicked and not authenticated", () => {
+      mockAuthenticated = false;
+      render(<NowCmdPalette />, { state: initialState });
+
+      fireEvent.click(screen.getByText("Connect Google Calendar"));
+
+      expect(mockLogin).toHaveBeenCalled();
+    });
+
+    it("does not trigger login when 'Google Calendar Connected' is clicked", () => {
+      mockAuthenticated = true;
+      render(<NowCmdPalette />, { state: initialState });
+
+      fireEvent.click(screen.getByText("Google Calendar Connected"));
+
+      expect(mockLogin).not.toHaveBeenCalled();
+    });
   });
 });

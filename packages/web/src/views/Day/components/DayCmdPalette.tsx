@@ -1,6 +1,7 @@
 import { useState } from "react";
 import CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
+import { toast } from "react-toastify";
 import dayjs from "@core/util/date/dayjs";
 import { useSession } from "@web/auth/hooks/useSession";
 import { AuthApi } from "@web/common/apis/auth.api";
@@ -11,11 +12,13 @@ import {
   openEventFormEditEvent,
 } from "@web/common/utils/event/event.util";
 import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
+import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
 import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { toastDefaultOptions } from "@web/views/Day/components/Toasts";
 import { ONBOARDING_RESTART_EVENT } from "@web/views/Onboarding/constants/onboarding.constants";
 import { resetOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
@@ -37,6 +40,16 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
         await AuthApi.loginOrSignup(data);
         markUserAsAuthenticated();
         setAuthenticated(true);
+
+        // Sync local events to cloud before fetching
+        const syncedCount = await syncLocalEventsToCloud();
+        if (syncedCount > 0) {
+          toast(
+            `${syncedCount} local event(s) synced to the cloud.`,
+            toastDefaultOptions,
+          );
+        }
+
         dispatch(triggerFetch());
       } catch (error) {
         console.error("Failed to authenticate:", error);
@@ -95,8 +108,10 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
         items: [
           {
             id: "connect-google-calendar",
-            children: "Connect Google Calendar",
-            icon: "CloudArrowUpIcon",
+            children: authenticated
+              ? "Google Calendar Connected"
+              : "Connect Google Calendar",
+            icon: authenticated ? "CheckCircleIcon" : "CloudArrowUpIcon",
             onClick: authenticated
               ? undefined
               : () => {
