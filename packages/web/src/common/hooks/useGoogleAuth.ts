@@ -1,13 +1,16 @@
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useIsSignupComplete } from "@web/auth/hooks/useIsSignupComplete";
 import { useSession } from "@web/auth/hooks/useSession";
 import { useSkipOnboarding } from "@web/auth/hooks/useSkipOnboarding";
-import { AuthApi } from "@web/common/apis/auth.api";
-import { UserApi } from "@web/common/apis/user.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import {
+  authenticate,
+  fetchOnboardingStatus,
+  syncLocalEvents,
+} from "@web/common/utils/auth/google-auth.util";
 import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
-import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
 import {
   importGCalSlice,
@@ -24,25 +27,28 @@ export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
   const { markSignupCompleted } = useIsSignupComplete();
   const { updateOnboardingStatus } = useSkipOnboarding();
 
+  const loginStartedRef = useRef(false);
+
   const googleLogin = useGoogleLogin({
+    onStart: () => {
+      loginStartedRef.current = true;
+      setIsSyncing(true);
+      dispatch(importGCalSlice.actions.importing(true));
+    },
     onSuccess: async (data) => {
-      await AuthApi.loginOrSignup(data);
+      const authResult = await authenticate(data);
+      if (!authResult.success) {
+        console.error(authResult.error);
+        return;
+      }
 
       // Mark user as authenticated in localStorage
       // This ensures the app always uses RemoteEventRepository going forward
       markUserAsAuthenticated();
 
       setAuthenticated(true);
-      setIsSyncing(true);
 
-      // Optimistically set importing state to show overlay immediately
-      dispatch(importGCalSlice.actions.importing(true));
-
-      const metadata = await UserApi.getMetadata().catch(() => ({
-        skipOnboarding: true,
-      }));
-
-      const skipOnboarding = metadata.skipOnboarding ?? true;
+      const { skipOnboarding } = await fetchOnboardingStatus();
 
       updateOnboardingStatus(skipOnboarding);
 
@@ -50,37 +56,45 @@ export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
 
       props?.onNext?.();
 
-      try {
-        const syncedCount = await syncLocalEventsToCloud();
+      const syncResult = await syncLocalEvents();
 
-        if (syncedCount > 0) {
-          toast(
-            `${syncedCount} local event(s) synced to the cloud.`,
-            toastDefaultOptions,
-          );
-        }
-
-        // Trigger a refetch to load events from the cloud
-        // This ensures the UI displays events after authentication
-        dispatch(triggerFetch());
-      } catch (error) {
+      if (syncResult.success && syncResult.syncedCount > 0) {
+        toast(
+          `${syncResult.syncedCount} local event(s) synced to the cloud.`,
+          toastDefaultOptions,
+        );
+      } else if (!syncResult.success) {
         toast.error(
           "We could not sync your local events. Your changes are still saved on this device.",
           toastDefaultOptions,
         );
-        console.error(error);
-
-        // Still trigger refetch to show cloud events (even if local sync failed)
-        dispatch(triggerFetch());
+        console.error(syncResult.error);
       }
+
+      // Trigger a refetch to load events from the cloud
+      // This ensures the UI displays events after authentication
+      dispatch(triggerFetch());
+
       // Note: setIsSyncing(false) is handled by SocketProvider when IMPORT_GCAL_END is received
 
       navigate(skipOnboarding ? ROOT_ROUTES.ROOT : ROOT_ROUTES.ONBOARDING);
     },
     onError: (error) => {
+      loginStartedRef.current = false;
+      setIsSyncing(false);
+      dispatch(importGCalSlice.actions.importing(false));
       console.error(error);
     },
   });
+
+  // Handle popup closed without completing auth
+  useEffect(() => {
+    if (loginStartedRef.current && !googleLogin.loading) {
+      loginStartedRef.current = false;
+      setIsSyncing(false);
+      dispatch(importGCalSlice.actions.importing(false));
+    }
+  }, [googleLogin.loading, dispatch, setIsSyncing]);
 
   return googleLogin;
 }
