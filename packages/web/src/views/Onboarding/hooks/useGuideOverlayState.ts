@@ -88,8 +88,8 @@ export function useGuideOverlayState({
   );
 
   const welcomeMessage = useMemo(
-    () => getGuideWelcomeMessage(currentView),
-    [currentView],
+    () => actualStepConfig?.guide.title ?? getGuideWelcomeMessage(currentView),
+    [actualStepConfig, currentView],
   );
 
   // Check if connectGoogleCalendar step is completed (show success message on any view)

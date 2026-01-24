@@ -117,10 +117,12 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
     order: 6,
     detectionType: "google-auth",
     guide: {
+      title: "Bring Your GCal events (optional)",
       instructionsByView: {
         default: [
-          { type: "text", value: "Press " },
-          { type: "kbd", value: "Cmd/Ctrl + K" },
+          { type: "meta-key" },
+          { type: "text", value: " + " },
+          { type: "kbd", value: "K" },
           { type: "text", value: ", then select " },
           { type: "kbd", value: "Connect Google Calendar" },
         ],

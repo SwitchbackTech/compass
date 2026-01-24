@@ -18,9 +18,14 @@ interface OnboardingInstructionKey {
   value: string;
 }
 
+interface OnboardingInstructionMetaKey {
+  type: "meta-key";
+}
+
 export type OnboardingInstructionPart =
   | OnboardingInstructionText
-  | OnboardingInstructionKey;
+  | OnboardingInstructionKey
+  | OnboardingInstructionMetaKey;
 
 export type OnboardingInstructionVariant = OnboardingGuideView | "default";
 
@@ -52,6 +57,7 @@ export interface OnboardingStepConfig {
   detectionType: StepDetectionType;
   detectionConfig?: { route: string; routePrefixes?: string[] };
   guide: {
+    title?: string;
     instructionsByView: Partial<
       Record<OnboardingInstructionVariant, OnboardingInstructionPart[]>
     >;
