@@ -1,5 +1,4 @@
 import { FC } from "react";
-import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { OnboardingInstructionPart } from "../types/onboarding.guide.types";
 
 const KBD_STYLES =
@@ -28,14 +27,5 @@ export const GuideInstructionContent: FC<GuideInstructionContentProps> = ({
 };
 
 export const GuideSuccessMessage: FC = () => {
-  const modifierKey = getModifierKey();
-  const modifierKeyDisplay = modifierKey === "Meta" ? "\u2318" : "Ctrl";
-
-  return (
-    <>
-      You're all set! You can type{" "}
-      <kbd className={KBD_STYLES}>{modifierKeyDisplay} + K</kbd> anywhere to
-      open the command palette.
-    </>
-  );
+  return <>You&apos;re all set!</>;
 };

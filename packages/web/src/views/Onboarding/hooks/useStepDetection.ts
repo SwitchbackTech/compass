@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
+import { useSession } from "@web/auth/hooks/useSession";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import {
@@ -28,6 +29,7 @@ export function useStepDetection({
   onStepComplete,
 }: UseStepDetectionProps): void {
   const location = useLocation();
+  const { authenticated } = useSession();
 
   // Refs for tracking state across detection types
   const initialTaskCountRef = useRef<number | null>(null);
@@ -228,10 +230,19 @@ export function useStepDetection({
         return;
       }
 
+      case "google-auth": {
+        // Complete when user is authenticated with Google Calendar
+        if (authenticated && !hasCompletedRef.current) {
+          hasCompletedRef.current = true;
+          onStepComplete(currentStep);
+        }
+        return;
+      }
+
       default:
         return;
     }
-  }, [currentStep, location.pathname, onStepComplete]);
+  }, [currentStep, location.pathname, onStepComplete, authenticated]);
 
   // Reset refs when step changes
   useEffect(() => {

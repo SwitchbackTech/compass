@@ -78,17 +78,5 @@ describe("GuideSuccessMessage", () => {
     render(<GuideSuccessMessage />);
 
     expect(screen.getByText(/You're all set!/)).toBeInTheDocument();
-    expect(
-      screen.getByText(/anywhere to open the command palette/),
-    ).toBeInTheDocument();
-  });
-
-  it("should render kbd element with modifier key", () => {
-    const { container } = render(<GuideSuccessMessage />);
-
-    const kbd = container.querySelector("kbd");
-    expect(kbd).toBeInTheDocument();
-    // Should contain either ⌘ + K or Ctrl + K depending on platform
-    expect(kbd?.textContent).toMatch(/(\u2318|Ctrl) \+ K/);
   });
 });

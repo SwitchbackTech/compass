@@ -30,7 +30,8 @@ export type OnboardingStepName =
   | "navigateToNow"
   | "editDescription"
   | "editReminder"
-  | "navigateToWeek";
+  | "navigateToWeek"
+  | "connectGoogleCalendar";
 
 /**
  * Detection types for onboarding steps
@@ -39,7 +40,8 @@ export type StepDetectionType =
   | "task-count"
   | "route"
   | "task-description"
-  | "reminder-poll";
+  | "reminder-poll"
+  | "google-auth";
 
 /**
  * Step configuration with order and detection metadata

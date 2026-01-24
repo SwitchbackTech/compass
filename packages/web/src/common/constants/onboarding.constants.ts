@@ -8,6 +8,7 @@ const CompletedStepsSchema = z.array(
     "editDescription",
     "editReminder",
     "navigateToWeek",
+    "connectGoogleCalendar",
   ]),
 );
 export const OnboardingProgressSchema = z.object({

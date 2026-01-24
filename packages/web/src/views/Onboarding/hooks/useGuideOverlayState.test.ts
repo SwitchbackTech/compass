@@ -150,9 +150,9 @@ describe("useGuideOverlayState", () => {
   });
 
   describe("showSuccessMessage", () => {
-    it("should be true when navigateToWeek is completed and not dismissed", () => {
+    it("should be true when connectGoogleCalendar is completed and not dismissed", () => {
       mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
-      markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_WEEK);
+      markStepCompleted(ONBOARDING_STEPS.CONNECT_GOOGLE_CALENDAR);
 
       const { result } = renderHook(() =>
         useGuideOverlayState({
@@ -166,7 +166,7 @@ describe("useGuideOverlayState", () => {
 
     it("should be false when success message is dismissed", () => {
       mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
-      markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_WEEK);
+      markStepCompleted(ONBOARDING_STEPS.CONNECT_GOOGLE_CALENDAR);
 
       const { result } = renderHook(() =>
         useGuideOverlayState({
@@ -178,7 +178,7 @@ describe("useGuideOverlayState", () => {
       expect(result.current.showSuccessMessage).toBe(false);
     });
 
-    it("should be false when navigateToWeek is not completed", () => {
+    it("should be false when connectGoogleCalendar is not completed", () => {
       mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
 
       const { result } = renderHook(() =>
@@ -245,7 +245,7 @@ describe("useGuideOverlayState", () => {
       );
 
       expect(result.current.stepNumber).toBe(1);
-      expect(result.current.stepText).toBe("Step 1 of 6");
+      expect(result.current.stepText).toBe("Step 1 of 7");
     });
 
     it("should return correct step number for step 3", () => {
@@ -261,12 +261,12 @@ describe("useGuideOverlayState", () => {
       );
 
       expect(result.current.stepNumber).toBe(3);
-      expect(result.current.stepText).toBe("Step 3 of 6");
+      expect(result.current.stepText).toBe("Step 3 of 7");
     });
 
     it("should return 'All steps completed' when showing success message", () => {
       mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
-      markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_WEEK);
+      markStepCompleted(ONBOARDING_STEPS.CONNECT_GOOGLE_CALENDAR);
 
       const { result } = renderHook(() =>
         useGuideOverlayState({
@@ -295,7 +295,7 @@ describe("useGuideOverlayState", () => {
 
     it("should be false for Now view when showing success message", () => {
       mockUseLocation.mockReturnValue({ pathname: "/now" } as any);
-      markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_WEEK);
+      markStepCompleted(ONBOARDING_STEPS.CONNECT_GOOGLE_CALENDAR);
 
       const { result } = renderHook(() =>
         useGuideOverlayState({
@@ -321,7 +321,7 @@ describe("useGuideOverlayState", () => {
   });
 
   describe("totalSteps", () => {
-    it("should return 6 (the total number of steps)", () => {
+    it("should return 7 (the total number of steps)", () => {
       mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
       const { result } = renderHook(() =>
         useGuideOverlayState({
@@ -330,7 +330,7 @@ describe("useGuideOverlayState", () => {
         }),
       );
 
-      expect(result.current.totalSteps).toBe(6);
+      expect(result.current.totalSteps).toBe(7);
     });
   });
 });

@@ -16,6 +16,7 @@ export const ONBOARDING_STEPS = {
   EDIT_DESCRIPTION: "editDescription",
   EDIT_REMINDER: "editReminder",
   NAVIGATE_TO_WEEK: "navigateToWeek",
+  CONNECT_GOOGLE_CALENDAR: "connectGoogleCalendar",
 } as const;
 
 /**
@@ -107,6 +108,21 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
           { type: "text", value: "Type " },
           { type: "kbd", value: "3" },
           { type: "text", value: " to go to the week view" },
+        ],
+      },
+    },
+  },
+  {
+    id: ONBOARDING_STEPS.CONNECT_GOOGLE_CALENDAR,
+    order: 6,
+    detectionType: "google-auth",
+    guide: {
+      instructionsByView: {
+        default: [
+          { type: "text", value: "Press " },
+          { type: "kbd", value: "Cmd/Ctrl + K" },
+          { type: "text", value: ", then select " },
+          { type: "kbd", value: "Connect Google Calendar" },
         ],
       },
     },

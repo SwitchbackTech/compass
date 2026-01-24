@@ -92,9 +92,9 @@ export function useGuideOverlayState({
     [currentView],
   );
 
-  // Check if navigateToWeek step is completed (show success message on any view)
+  // Check if connectGoogleCalendar step is completed (show success message on any view)
   const showSuccessMessage =
-    isStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_WEEK) &&
+    isStepCompleted(ONBOARDING_STEPS.CONNECT_GOOGLE_CALENDAR) &&
     !isSuccessMessageDismissed;
 
   const instructionParts = useMemo(
