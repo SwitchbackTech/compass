@@ -1,17 +1,16 @@
-import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useIsSignupComplete } from "@web/auth/hooks/useIsSignupComplete";
 import { useSession } from "@web/auth/hooks/useSession";
 import { useSkipOnboarding } from "@web/auth/hooks/useSkipOnboarding";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { useGoogleLoginWithSyncOverlay } from "@web/common/hooks/useGoogleLoginWithSyncOverlay";
 import {
   authenticate,
   fetchOnboardingStatus,
   syncLocalEvents,
 } from "@web/common/utils/auth/google-auth.util";
 import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
-import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
 import {
   importGCalSlice,
   triggerFetch,
@@ -23,22 +22,13 @@ import { OnboardingStepProps } from "@web/views/Onboarding";
 export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { setAuthenticated, setIsSyncing } = useSession();
+  const { setAuthenticated } = useSession();
   const { markSignupCompleted } = useIsSignupComplete();
   const { updateOnboardingStatus } = useSkipOnboarding();
 
-  const loginStartedRef = useRef(false);
-
-  const googleLogin = useGoogleLogin({
-    onStart: () => {
-      loginStartedRef.current = true;
-      setIsSyncing(true);
-      // Note: importing(true) is set in onSuccess after OAuth completes
-    },
+  const googleLogin = useGoogleLoginWithSyncOverlay({
+    isSyncingRetainedOnSuccess: true,
     onSuccess: async (data) => {
-      // Clear the ref immediately so the popup-close useEffect doesn't hide the overlay
-      loginStartedRef.current = false;
-
       const authResult = await authenticate(data);
       if (!authResult.success) {
         console.error(authResult.error);
@@ -85,21 +75,9 @@ export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
       navigate(skipOnboarding ? ROOT_ROUTES.ROOT : ROOT_ROUTES.ONBOARDING);
     },
     onError: (error) => {
-      loginStartedRef.current = false;
-      setIsSyncing(false);
-      // Note: importing is only set after OAuth succeeds, so no need to reset it here
       console.error(error);
     },
   });
-
-  // Handle popup closed without completing auth
-  useEffect(() => {
-    if (loginStartedRef.current && !googleLogin.loading) {
-      loginStartedRef.current = false;
-      setIsSyncing(false);
-      // Note: importing is only set after OAuth succeeds, so no need to reset it here
-    }
-  }, [googleLogin.loading, dispatch, setIsSyncing]);
 
   return googleLogin;
 }

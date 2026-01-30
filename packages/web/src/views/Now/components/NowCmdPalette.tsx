@@ -4,10 +4,10 @@ import "react-cmdk/dist/cmdk.css";
 import { useSession } from "@web/auth/hooks/useSession";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
+import { useGoogleLoginWithSyncOverlay } from "@web/common/hooks/useGoogleLoginWithSyncOverlay";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
 import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
-import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
 import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
@@ -22,7 +22,7 @@ export const NowCmdPalette = () => {
   const [search, setSearch] = useState("");
   const { authenticated, setAuthenticated } = useSession();
 
-  const googleLogin = useGoogleLogin({
+  const googleLogin = useGoogleLoginWithSyncOverlay({
     onSuccess: async (data) => {
       try {
         await AuthApi.loginOrSignup(data);
