@@ -97,12 +97,12 @@ describe("useCmdPaletteGuide", () => {
       result.current.completeStep(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
     });
 
-    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.EDIT_REMINDER);
+    expect(result.current.currentStep).toBe(ONBOARDING_STEPS.NAVIGATE_TO_WEEK);
     expect(result.current.isGuideActive).toBe(true);
     expect(loadCompletedSteps()).toContain(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
   });
 
-  it("should complete guide when step 6 is completed", () => {
+  it("should complete guide when step 5 is completed", () => {
     const { result } = renderHook(() => useCmdPaletteGuide());
 
     act(() => {
@@ -115,10 +115,6 @@ describe("useCmdPaletteGuide", () => {
 
     act(() => {
       result.current.completeStep(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
-    });
-
-    act(() => {
-      result.current.completeStep(ONBOARDING_STEPS.EDIT_REMINDER);
     });
 
     expect(result.current.currentStep).toBe(ONBOARDING_STEPS.NAVIGATE_TO_WEEK);
@@ -185,7 +181,6 @@ describe("useCmdPaletteGuide", () => {
       ONBOARDING_STEPS.NAVIGATE_TO_DAY,
       ONBOARDING_STEPS.CREATE_TASK,
       ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-      ONBOARDING_STEPS.EDIT_REMINDER,
       ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
       ONBOARDING_STEPS.CONNECT_GOOGLE_CALENDAR,
     ]);
@@ -267,10 +262,6 @@ describe("useCmdPaletteGuide", () => {
 
     act(() => {
       result.current.completeStep(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
-    });
-
-    act(() => {
-      result.current.completeStep(ONBOARDING_STEPS.EDIT_REMINDER);
     });
 
     act(() => {

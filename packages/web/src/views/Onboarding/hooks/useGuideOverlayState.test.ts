@@ -220,16 +220,16 @@ describe("useGuideOverlayState", () => {
 
       const { result } = renderHook(() =>
         useGuideOverlayState({
-          currentStep: ONBOARDING_STEPS.EDIT_REMINDER,
+          currentStep: ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
           isSuccessMessageDismissed: false,
         }),
       );
 
       // Step 4 only has default instructions
       expect(result.current.instructionParts).toEqual([
-        { type: "text", value: "Press " },
-        { type: "kbd", value: "r" },
-        { type: "text", value: " to edit the reminder" },
+        { type: "text", value: "Type " },
+        { type: "kbd", value: "3" },
+        { type: "text", value: " to go to the week view" },
       ]);
     });
   });
@@ -245,7 +245,7 @@ describe("useGuideOverlayState", () => {
       );
 
       expect(result.current.stepNumber).toBe(1);
-      expect(result.current.stepText).toBe("Step 1 of 6");
+      expect(result.current.stepText).toBe("Step 1 of 5");
     });
 
     it("should return correct step number for step 3", () => {
@@ -261,7 +261,7 @@ describe("useGuideOverlayState", () => {
       );
 
       expect(result.current.stepNumber).toBe(3);
-      expect(result.current.stepText).toBe("Step 3 of 6");
+      expect(result.current.stepText).toBe("Step 3 of 5");
     });
 
     it("should return 'All steps completed' when showing success message", () => {
@@ -330,7 +330,7 @@ describe("useGuideOverlayState", () => {
         }),
       );
 
-      expect(result.current.totalSteps).toBe(6);
+      expect(result.current.totalSteps).toBe(5);
     });
   });
 });

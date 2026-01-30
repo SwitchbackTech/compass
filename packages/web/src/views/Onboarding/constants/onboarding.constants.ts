@@ -13,7 +13,6 @@ export const ONBOARDING_STEPS = {
   NAVIGATE_TO_DAY: "navigateToDay",
   CREATE_TASK: "createTask",
   NAVIGATE_TO_NOW: "navigateToNow",
-  EDIT_REMINDER: "editReminder",
   NAVIGATE_TO_WEEK: "navigateToWeek",
   CONNECT_GOOGLE_CALENDAR: "connectGoogleCalendar",
 } as const;
@@ -69,22 +68,8 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
     },
   },
   {
-    id: ONBOARDING_STEPS.EDIT_REMINDER,
-    order: 3,
-    detectionType: "reminder-poll",
-    guide: {
-      instructionsByView: {
-        default: [
-          { type: "text", value: "Press " },
-          { type: "kbd", value: "r" },
-          { type: "text", value: " to edit the reminder" },
-        ],
-      },
-    },
-  },
-  {
     id: ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
-    order: 4,
+    order: 3,
     detectionType: "route",
     detectionConfig: { route: "/" },
     guide: {
@@ -99,7 +84,7 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
   },
   {
     id: ONBOARDING_STEPS.CONNECT_GOOGLE_CALENDAR,
-    order: 5,
+    order: 4,
     detectionType: "google-auth",
     guide: {
       title: "Bring your events",

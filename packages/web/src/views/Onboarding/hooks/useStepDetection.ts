@@ -2,7 +2,6 @@ import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { useSession } from "@web/auth/hooks/useSession";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { CompassTasksSavedEvent } from "@web/common/utils/storage/storage.types";
 import {
   COMPASS_TASKS_SAVED_EVENT_NAME,
@@ -33,20 +32,13 @@ export function useStepDetection({
 
   // Refs for tracking state across detection types
   const initialTaskCountRef = useRef<number | null>(null);
-  const initialReminderRef = useRef<string | null>(null);
   const hasCompletedRef = useRef(false);
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (currentStep === null) {
       // Reset all refs when no step is active
       hasCompletedRef.current = false;
       initialTaskCountRef.current = null;
-      initialReminderRef.current = null;
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
-      }
       return;
     }
 
@@ -110,50 +102,6 @@ export function useStepDetection({
         };
       }
 
-      case "reminder-poll": {
-        if (typeof window === "undefined") return;
-
-        // Initialize reminder value when step becomes active
-        const initialReminder =
-          localStorage.getItem(STORAGE_KEYS.REMINDER) || "";
-        initialReminderRef.current = initialReminder;
-
-        // Poll localStorage every 500ms to detect changes
-        pollingIntervalRef.current = setInterval(() => {
-          if (hasCompletedRef.current) {
-            if (pollingIntervalRef.current) {
-              clearInterval(pollingIntervalRef.current);
-              pollingIntervalRef.current = null;
-            }
-            return;
-          }
-
-          const currentReminder =
-            localStorage.getItem(STORAGE_KEYS.REMINDER) || "";
-
-          // Check if reminder changed from initial state
-          if (
-            initialReminderRef.current !== null &&
-            currentReminder !== initialReminderRef.current &&
-            currentReminder.trim() !== ""
-          ) {
-            hasCompletedRef.current = true;
-            if (pollingIntervalRef.current) {
-              clearInterval(pollingIntervalRef.current);
-              pollingIntervalRef.current = null;
-            }
-            onStepComplete(currentStep);
-          }
-        }, 500);
-
-        return () => {
-          if (pollingIntervalRef.current) {
-            clearInterval(pollingIntervalRef.current);
-            pollingIntervalRef.current = null;
-          }
-        };
-      }
-
       case "route": {
         const routeConfig = stepConfig.detectionConfig as
           | { route: string; routePrefixes?: string[] }
@@ -199,11 +147,6 @@ export function useStepDetection({
     return () => {
       hasCompletedRef.current = false;
       initialTaskCountRef.current = null;
-      initialReminderRef.current = null;
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
-      }
     };
   }, [currentStep]);
 }

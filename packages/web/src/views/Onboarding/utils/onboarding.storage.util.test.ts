@@ -138,14 +138,14 @@ describe("onboarding.storage.util", () => {
           ONBOARDING_STEPS.NAVIGATE_TO_DAY,
           ONBOARDING_STEPS.CREATE_TASK,
           ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-          ONBOARDING_STEPS.EDIT_REMINDER,
+          ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
         ],
       });
       expect(loadCompletedSteps()).toEqual([
         ONBOARDING_STEPS.NAVIGATE_TO_DAY,
         ONBOARDING_STEPS.CREATE_TASK,
         ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-        ONBOARDING_STEPS.EDIT_REMINDER,
+        ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
       ]);
     });
   });
@@ -170,14 +170,14 @@ describe("onboarding.storage.util", () => {
         ONBOARDING_STEPS.NAVIGATE_TO_DAY,
         ONBOARDING_STEPS.CREATE_TASK,
         ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-        ONBOARDING_STEPS.EDIT_REMINDER,
+        ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
       ]);
       const progress = getOnboardingProgress();
       expect(progress.completedSteps).toEqual([
         ONBOARDING_STEPS.NAVIGATE_TO_DAY,
         ONBOARDING_STEPS.CREATE_TASK,
         ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-        ONBOARDING_STEPS.EDIT_REMINDER,
+        ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
       ]);
     });
   });
@@ -196,7 +196,7 @@ describe("onboarding.storage.util", () => {
       expect(isStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY)).toBe(true);
       expect(isStepCompleted(ONBOARDING_STEPS.CREATE_TASK)).toBe(true);
       expect(isStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_NOW)).toBe(true);
-      expect(isStepCompleted(ONBOARDING_STEPS.EDIT_REMINDER)).toBe(false);
+      expect(isStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_WEEK)).toBe(false);
     });
   });
 
@@ -228,7 +228,7 @@ describe("onboarding.storage.util", () => {
         ONBOARDING_STEPS.NAVIGATE_TO_DAY,
         ONBOARDING_STEPS.CREATE_TASK,
         ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-        ONBOARDING_STEPS.EDIT_REMINDER,
+        ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
       ]);
       clearCompletedSteps();
       expect(loadCompletedSteps()).toEqual([]);

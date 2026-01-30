@@ -14,26 +14,26 @@ describe("GuideProgressIndicator", () => {
       <GuideProgressIndicator
         actualStep={ONBOARDING_STEPS.NAVIGATE_TO_DAY}
         showSuccessMessage={false}
-        stepText="Step 1 of 6"
+        stepText="Step 1 of 5"
       />,
     );
 
-    expect(screen.getByText("Step 1 of 6")).toBeInTheDocument();
+    expect(screen.getByText("Step 1 of 5")).toBeInTheDocument();
   });
 
-  it("should render 6 progress dots", () => {
+  it("should render 5 progress dots", () => {
     render(
       <GuideProgressIndicator
         actualStep={ONBOARDING_STEPS.NAVIGATE_TO_DAY}
         showSuccessMessage={false}
-        stepText="Step 1 of 6"
+        stepText="Step 1 of 5"
       />,
     );
 
     const dots = screen
-      .getByText("Step 1 of 6")
+      .getByText("Step 1 of 5")
       .parentElement?.querySelectorAll("div[class*='rounded-full']");
-    expect(dots).toHaveLength(6);
+    expect(dots).toHaveLength(5);
   });
 
   it("should show completed steps with accent color", () => {
@@ -44,7 +44,7 @@ describe("GuideProgressIndicator", () => {
       <GuideProgressIndicator
         actualStep={ONBOARDING_STEPS.NAVIGATE_TO_NOW}
         showSuccessMessage={false}
-        stepText="Step 3 of 6"
+        stepText="Step 3 of 5"
       />,
     );
 
@@ -63,7 +63,7 @@ describe("GuideProgressIndicator", () => {
       <GuideProgressIndicator
         actualStep={ONBOARDING_STEPS.CREATE_TASK}
         showSuccessMessage={false}
-        stepText="Step 2 of 6"
+        stepText="Step 2 of 5"
       />,
     );
 
@@ -96,12 +96,12 @@ describe("GuideProgressIndicator", () => {
       <GuideProgressIndicator
         actualStep={ONBOARDING_STEPS.NAVIGATE_TO_DAY}
         showSuccessMessage={false}
-        stepText="Step 1 of 6"
+        stepText="Step 1 of 5"
       />,
     );
 
     const dots = container.querySelectorAll("div[class*='rounded-full']");
     // Last few dots should be incomplete (bg-border-primary)
-    expect(dots[5]).toHaveClass("bg-border-primary");
+    expect(dots[4]).toHaveClass("bg-border-primary");
   });
 });
