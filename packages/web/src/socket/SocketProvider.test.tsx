@@ -171,4 +171,290 @@ describe("SocketProvider", () => {
     // Verify triggerFetch was NOT dispatched
     expect(state.sync.importLatest.isFetchNeeded).toBe(false);
   });
+
+  it("dismisses import overlay immediately when IMPORT_GCAL_END is received", async () => {
+    // Set up post-auth sync state with importing=true
+    const mockSession: CompassSession = {
+      isSyncing: true,
+      authenticated: true,
+      loading: false,
+      setAuthenticated: jest.fn(),
+      setIsSyncing: mockSetIsSyncing,
+      setLoading: jest.fn(),
+    };
+    mockUseSession.mockReturnValue(mockSession);
+
+    const store = configureStore({
+      reducer: {
+        sync: combineReducers({
+          importGCal: importGCalSlice.reducer,
+          importLatest: importLatestSlice.reducer,
+        }),
+      },
+      preloadedState: {
+        sync: {
+          importGCal: {
+            importing: true, // Start with overlay visible
+            importResults: null,
+            pendingLocalEventsSynced: null,
+            isProcessing: false,
+            isSuccess: false,
+            error: null,
+            value: null,
+            reason: null,
+          },
+          importLatest: {
+            isFetchNeeded: false,
+            reason: null,
+          },
+        },
+      },
+    });
+
+    render(
+      <Provider store={store}>
+        <SocketProvider>
+          <div>Test</div>
+        </SocketProvider>
+      </Provider>,
+    );
+
+    await waitFor(() => {
+      expect(importEndCallback).toBeDefined();
+    });
+
+    // Verify importing is true initially
+    expect(store.getState().sync.importGCal.importing).toBe(true);
+
+    // Simulate import completion
+    if (importEndCallback) {
+      importStartCallback?.();
+      importEndCallback();
+    }
+
+    // Verify importing flag is immediately set to false (overlay dismissed)
+    await waitFor(() => {
+      expect(store.getState().sync.importGCal.importing).toBe(false);
+    });
+  });
+
+  it("handles payload as object when IMPORT_GCAL_END is received", async () => {
+    const mockSession: CompassSession = {
+      isSyncing: true,
+      authenticated: true,
+      loading: false,
+      setAuthenticated: jest.fn(),
+      setIsSyncing: mockSetIsSyncing,
+      setLoading: jest.fn(),
+    };
+    mockUseSession.mockReturnValue(mockSession);
+
+    const store = configureStore({
+      reducer: {
+        sync: combineReducers({
+          importGCal: importGCalSlice.reducer,
+          importLatest: importLatestSlice.reducer,
+        }),
+      },
+    });
+
+    render(
+      <Provider store={store}>
+        <SocketProvider>
+          <div>Test</div>
+        </SocketProvider>
+      </Provider>,
+    );
+
+    await waitFor(() => {
+      expect(importEndCallback).toBeDefined();
+    });
+
+    // Simulate import with object payload (not stringified)
+    if (importEndCallback) {
+      importStartCallback?.();
+      // @ts-expect-error testing object payload handling
+      importEndCallback({ eventsCount: 25, calendarsCount: 3 });
+    }
+
+    await waitFor(() => {
+      expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
+    });
+
+    const state = store.getState();
+    expect(state.sync.importGCal.importResults).toEqual({
+      eventsCount: 25,
+      calendarsCount: 3,
+    });
+  });
+
+  it("does not show results when import was not started (importStartedRef is false)", async () => {
+    const mockSession: CompassSession = {
+      isSyncing: true,
+      authenticated: true,
+      loading: false,
+      setAuthenticated: jest.fn(),
+      setIsSyncing: mockSetIsSyncing,
+      setLoading: jest.fn(),
+    };
+    mockUseSession.mockReturnValue(mockSession);
+
+    const store = configureStore({
+      reducer: {
+        sync: combineReducers({
+          importGCal: importGCalSlice.reducer,
+          importLatest: importLatestSlice.reducer,
+        }),
+      },
+    });
+
+    render(
+      <Provider store={store}>
+        <SocketProvider>
+          <div>Test</div>
+        </SocketProvider>
+      </Provider>,
+    );
+
+    await waitFor(() => {
+      expect(importEndCallback).toBeDefined();
+    });
+
+    // Call importEndCallback WITHOUT first calling importStartCallback
+    // This simulates receiving IMPORT_GCAL_END when the frontend didn't
+    // know an import was happening
+    if (importEndCallback) {
+      importEndCallback(JSON.stringify({ eventsCount: 10 }));
+    }
+
+    await waitFor(() => {
+      expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
+    });
+
+    // Import results should NOT be set since importStartedRef was false
+    const state = store.getState();
+    expect(state.sync.importGCal.importResults).toBeNull();
+
+    // triggerFetch should NOT have been called
+    expect(state.sync.importLatest.isFetchNeeded).toBe(false);
+  });
+
+  it("triggers event refetch when import completes during post-auth sync", async () => {
+    const mockSession: CompassSession = {
+      isSyncing: true,
+      authenticated: true,
+      loading: false,
+      setAuthenticated: jest.fn(),
+      setIsSyncing: mockSetIsSyncing,
+      setLoading: jest.fn(),
+    };
+    mockUseSession.mockReturnValue(mockSession);
+
+    const store = configureStore({
+      reducer: {
+        sync: combineReducers({
+          importGCal: importGCalSlice.reducer,
+          importLatest: importLatestSlice.reducer,
+        }),
+      },
+    });
+
+    render(
+      <Provider store={store}>
+        <SocketProvider>
+          <div>Test</div>
+        </SocketProvider>
+      </Provider>,
+    );
+
+    await waitFor(() => {
+      expect(importEndCallback).toBeDefined();
+    });
+
+    // Verify isFetchNeeded starts as false
+    expect(store.getState().sync.importLatest.isFetchNeeded).toBe(false);
+
+    if (importEndCallback) {
+      importStartCallback?.();
+      importEndCallback();
+    }
+
+    // triggerFetch should be called to load the imported events
+    await waitFor(() => {
+      expect(store.getState().sync.importLatest.isFetchNeeded).toBe(true);
+    });
+
+    // Verify the reason is set correctly
+    expect(store.getState().sync.importLatest.reason).toBe("IMPORT_COMPLETE");
+  });
+
+  it("clears previous import results when new import starts", async () => {
+    const mockSession: CompassSession = {
+      isSyncing: true,
+      authenticated: true,
+      loading: false,
+      setAuthenticated: jest.fn(),
+      setIsSyncing: mockSetIsSyncing,
+      setLoading: jest.fn(),
+    };
+    mockUseSession.mockReturnValue(mockSession);
+
+    const store = configureStore({
+      reducer: {
+        sync: combineReducers({
+          importGCal: importGCalSlice.reducer,
+          importLatest: importLatestSlice.reducer,
+        }),
+      },
+      preloadedState: {
+        sync: {
+          importGCal: {
+            importing: false,
+            importResults: { eventsCount: 100, calendarsCount: 5 }, // Previous results
+            pendingLocalEventsSynced: null,
+            isProcessing: false,
+            isSuccess: false,
+            error: null,
+            value: null,
+            reason: null,
+          },
+          importLatest: {
+            isFetchNeeded: false,
+            reason: null,
+          },
+        },
+      },
+    });
+
+    render(
+      <Provider store={store}>
+        <SocketProvider>
+          <div>Test</div>
+        </SocketProvider>
+      </Provider>,
+    );
+
+    await waitFor(() => {
+      expect(importStartCallback).toBeDefined();
+    });
+
+    // Verify previous results exist
+    expect(store.getState().sync.importGCal.importResults).toEqual({
+      eventsCount: 100,
+      calendarsCount: 5,
+    });
+
+    // Simulate new import starting
+    if (importStartCallback) {
+      importStartCallback();
+    }
+
+    // Previous results should be cleared
+    await waitFor(() => {
+      expect(store.getState().sync.importGCal.importResults).toBeNull();
+    });
+
+    // Importing flag should be true
+    expect(store.getState().sync.importGCal.importing).toBe(true);
+  });
 });
