@@ -36,6 +36,9 @@ export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
       dispatch(importGCalSlice.actions.importing(true));
     },
     onSuccess: async (data) => {
+      // Clear the ref immediately so the popup-close useEffect doesn't hide the overlay
+      loginStartedRef.current = false;
+
       const authResult = await authenticate(data);
       if (!authResult.success) {
         console.error(authResult.error);

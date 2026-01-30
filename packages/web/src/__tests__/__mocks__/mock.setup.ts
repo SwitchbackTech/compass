@@ -25,7 +25,10 @@ export function mockLinuxUserAgent() {
 
 export function mockUseGoogleLogin() {
   mockModule("@web/components/oauth/google/useGoogleLogin", () => ({
-    useGoogleLogin: jest.fn(),
+    useGoogleLogin: jest.fn().mockReturnValue({
+      login: jest.fn(),
+      loading: false,
+    }),
   }));
 }
 
