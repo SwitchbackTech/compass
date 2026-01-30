@@ -1,24 +1,18 @@
 import { useState } from "react";
 import CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
-import { toast } from "react-toastify";
 import dayjs from "@core/util/date/dayjs";
 import { useSession } from "@web/auth/hooks/useSession";
-import { AuthApi } from "@web/common/apis/auth.api";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
-import { useGoogleLoginWithSyncOverlay } from "@web/common/hooks/useGoogleLoginWithSyncOverlay";
+import { useGoogleAuth } from "@web/common/hooks/useGoogleAuth";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import {
   openEventFormCreateEvent,
   openEventFormEditEvent,
 } from "@web/common/utils/event/event.util";
-import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
-import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
-import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { toastDefaultOptions } from "@web/views/Day/components/Toasts";
 import { ONBOARDING_RESTART_EVENT } from "@web/views/Onboarding/constants/onboarding.constants";
 import { resetOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
@@ -32,35 +26,9 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
   const [page] = useState<"root">("root");
   const [search, setSearch] = useState("");
   const today = dayjs();
-  const { authenticated, setAuthenticated } = useSession();
+  const { authenticated } = useSession();
 
-  const googleLogin = useGoogleLoginWithSyncOverlay({
-    onSuccess: async (data) => {
-      try {
-        await AuthApi.loginOrSignup(data);
-        markUserAsAuthenticated();
-        setAuthenticated(true);
-
-        // Sync local events to cloud before fetching
-        const syncedCount = await syncLocalEventsToCloud();
-        if (syncedCount > 0) {
-          toast(
-            `${syncedCount} local event(s) synced to the cloud.`,
-            toastDefaultOptions,
-          );
-        }
-
-        dispatch(triggerFetch());
-      } catch (error) {
-        console.error("Failed to authenticate:", error);
-      } finally {
-        dispatch(settingsSlice.actions.closeCmdPalette());
-      }
-    },
-    onError: () => {
-      dispatch(settingsSlice.actions.closeCmdPalette());
-    },
-  });
+  const googleLogin = useGoogleAuth();
 
   const filteredItems = filterItems(
     [

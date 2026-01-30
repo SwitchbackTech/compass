@@ -1,4 +1,4 @@
-import { ReactNode, useCallback, useEffect } from "react";
+import { ReactNode, useCallback, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { io } from "socket.io-client";
 import {
@@ -15,10 +15,12 @@ import { useSession } from "@web/auth/hooks/useSession";
 import { useUser } from "@web/auth/hooks/useUser";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
+import { selectImporting } from "@web/ducks/events/selectors/sync.selector";
 import {
   importGCalSlice,
   triggerFetch,
 } from "@web/ducks/events/slices/sync.slice";
+import { useAppSelector } from "@web/store/store.hooks";
 
 export const socket = io(ENV_WEB.BACKEND_BASEURL, {
   withCredentials: true,
@@ -69,6 +71,8 @@ const SocketProvider = ({ children }: { children: ReactNode }) => {
   const dispatch = useDispatch();
   const { userId } = useUser();
   const { isSyncing, setIsSyncing } = useSession();
+  const importStartedRef = useRef(false);
+  const importing = useAppSelector(selectImporting);
 
   // Only connect socket if user is authenticated
   useEffect(() => {
@@ -79,8 +83,18 @@ const SocketProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [userId]);
 
+  useEffect(() => {
+    if (importing) {
+      importStartedRef.current = true;
+    }
+  }, [importing]);
+
   const onImportStart = useCallback(
     (importing = true) => {
+      importStartedRef.current = importing;
+      if (importing) {
+        dispatch(importGCalSlice.actions.clearImportResults());
+      }
       dispatch(importGCalSlice.actions.importing(importing));
     },
     [dispatch],
@@ -89,11 +103,19 @@ const SocketProvider = ({ children }: { children: ReactNode }) => {
   const onImportEnd = useCallback(
     (payload?: { eventsCount?: number; calendarsCount?: number } | string) => {
       dispatch(importGCalSlice.actions.importing(false));
+      const shouldShowResults = isSyncing && importStartedRef.current;
+      importStartedRef.current = false;
 
       // If we're in post-auth sync, show completion modal
       if (isSyncing) {
         setIsSyncing(false);
+      }
 
+      if (!shouldShowResults) {
+        return;
+      }
+
+      if (isSyncing) {
         // Parse payload if it's a string (from backend)
         let importResults: { eventsCount?: number; calendarsCount?: number } =
           {};

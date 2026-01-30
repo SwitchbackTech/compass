@@ -1,7 +1,10 @@
 import { Provider } from "react-redux";
-import { configureStore } from "@reduxjs/toolkit";
+import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { render, waitFor } from "@testing-library/react";
-import { IMPORT_GCAL_END } from "@core/constants/websocket.constants";
+import {
+  IMPORT_GCAL_END,
+  IMPORT_GCAL_START,
+} from "@core/constants/websocket.constants";
 import { useSession } from "@web/auth/hooks/useSession";
 import { useUser } from "@web/auth/hooks/useUser";
 import { CompassSession } from "@web/auth/session/session.types";
@@ -34,15 +37,21 @@ describe("SocketProvider", () => {
   const mockSetIsSyncing = jest.fn();
   const mockUserId = "test-user-id";
   let importEndCallback: ((data?: string) => void) | undefined;
+  let importStartCallback: ((data?: string) => void) | undefined;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    importEndCallback = undefined;
+    importStartCallback = undefined;
     mockUseUser.mockReturnValue({ userId: mockUserId });
 
     // Mock socket.on to capture the IMPORT_GCAL_END callback
     (socket.on as jest.Mock).mockImplementation((event, callback) => {
       if (event === IMPORT_GCAL_END) {
         importEndCallback = callback;
+      }
+      if (event === IMPORT_GCAL_START) {
+        importStartCallback = callback;
       }
     });
   });
@@ -61,8 +70,10 @@ describe("SocketProvider", () => {
 
     const store = configureStore({
       reducer: {
-        importGCal: importGCalSlice.reducer,
-        importLatest: importLatestSlice.reducer,
+        sync: combineReducers({
+          importGCal: importGCalSlice.reducer,
+          importLatest: importLatestSlice.reducer,
+        }),
       },
     });
 
@@ -81,6 +92,7 @@ describe("SocketProvider", () => {
 
     // Simulate IMPORT_GCAL_END event with import results
     if (importEndCallback) {
+      importStartCallback?.();
       importEndCallback(JSON.stringify({ eventsCount: 10, calendarsCount: 2 }));
     }
 
@@ -90,16 +102,16 @@ describe("SocketProvider", () => {
 
     // Verify import results are set in Redux store
     const state = store.getState();
-    expect(state.importGCal.importResults).toEqual({
+    expect(state.sync.importGCal.importResults).toEqual({
       eventsCount: 10,
       calendarsCount: 2,
     });
 
     // Verify importing flag is set to false
-    expect(state.importGCal.importing).toBe(false);
+    expect(state.sync.importGCal.importing).toBe(false);
 
     // Verify triggerFetch was dispatched (isFetchNeeded should be true)
-    expect(state.importLatest.isFetchNeeded).toBe(true);
+    expect(state.sync.importLatest.isFetchNeeded).toBe(true);
   });
 
   it("does not set import results when IMPORT_GCAL_END is received during regular background sync", async () => {
@@ -116,8 +128,10 @@ describe("SocketProvider", () => {
 
     const store = configureStore({
       reducer: {
-        importGCal: importGCalSlice.reducer,
-        importLatest: importLatestSlice.reducer,
+        sync: combineReducers({
+          importGCal: importGCalSlice.reducer,
+          importLatest: importLatestSlice.reducer,
+        }),
       },
     });
 
@@ -149,12 +163,12 @@ describe("SocketProvider", () => {
 
     // Verify import results remain null (not set) in Redux store
     const state = store.getState();
-    expect(state.importGCal.importResults).toBeNull();
+    expect(state.sync.importGCal.importResults).toBeNull();
 
     // Verify importing flag is set to false
-    expect(state.importGCal.importing).toBe(false);
+    expect(state.sync.importGCal.importing).toBe(false);
 
     // Verify triggerFetch was NOT dispatched
-    expect(state.importLatest.isFetchNeeded).toBe(false);
+    expect(state.sync.importLatest.isFetchNeeded).toBe(false);
   });
 });
