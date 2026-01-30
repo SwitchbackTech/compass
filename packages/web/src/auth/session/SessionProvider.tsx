@@ -111,6 +111,17 @@ export function SessionProvider({ children }: PropsWithChildren<{}>) {
     };
   }, []);
 
+  // Expose test hooks for e2e testing
+  useEffect(() => {
+    if (typeof window !== "undefined" && (window as any).__COMPASS_E2E_TEST__) {
+      (window as any).__COMPASS_TEST_HOOKS__ = {
+        setIsSyncing: (value: boolean) => syncing$.next(value),
+        setAuthenticated: (value: boolean) => authenticated$.next(value),
+        setLoading: (value: boolean) => loading$.next(value),
+      };
+    }
+  }, []);
+
   return (
     <SessionContext.Provider
       value={{

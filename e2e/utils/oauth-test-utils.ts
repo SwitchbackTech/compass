@@ -1,0 +1,181 @@
+import { Page, expect } from "@playwright/test";
+
+const ONBOARDING_STATE = {
+  completedSteps: [],
+  isSeen: true,
+  isCompleted: true,
+  isSignupComplete: true,
+  isOnboardingSkipped: true,
+  isAuthPromptDismissed: true,
+};
+
+/**
+ * Sets up the page for OAuth overlay testing.
+ * - Skips onboarding
+ * - Exposes test hooks for session state manipulation
+ * - Mocks API endpoints
+ */
+export const prepareOAuthTestPage = async (page: Page) => {
+  // Enable test mode and skip onboarding before app loads
+  await page.addInitScript((onboardingState) => {
+    // Enable e2e test mode - this exposes test hooks in the app
+    (window as any).__COMPASS_E2E_TEST__ = true;
+    localStorage.setItem("compass.onboarding", JSON.stringify(onboardingState));
+  }, ONBOARDING_STATE);
+
+  // Mock API endpoints to prevent real network calls
+  await page.route("**/api/**", (route) => {
+    const url = route.request().url();
+
+    // Mock session check - return not authenticated
+    if (url.includes("/session")) {
+      return route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "unauthorized" }),
+      });
+    }
+
+    // Mock all other API calls
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({}),
+    });
+  });
+};
+
+/**
+ * Wait for the app to fully mount and be ready for interaction.
+ */
+export const waitForAppReady = async (page: Page) => {
+  await page.waitForFunction(
+    () => {
+      const root = document.querySelector("#root");
+      return root && root.children.length > 0;
+    },
+    { timeout: 15000 },
+  );
+
+  // Wait for test hooks to be available
+  await page.waitForFunction(
+    () =>
+      typeof (window as any).__COMPASS_TEST_HOOKS__?.setIsSyncing ===
+      "function",
+    { timeout: 10000 },
+  );
+
+  // Wait for store to be available
+  await page.waitForFunction(
+    () => typeof (window as any).__COMPASS_STORE__?.dispatch === "function",
+    { timeout: 10000 },
+  );
+};
+
+/**
+ * Set the isSyncing state via test hooks (triggers OAuth overlay when true).
+ */
+export const setIsSyncing = async (page: Page, value: boolean) => {
+  await page.evaluate((syncValue) => {
+    (window as any).__COMPASS_TEST_HOOKS__?.setIsSyncing(syncValue);
+  }, value);
+  // Small delay to let React process the state change
+  await page.waitForTimeout(50);
+};
+
+/**
+ * Set the importing state in Redux store (triggers import phase overlay when true).
+ */
+export const setImporting = async (page: Page, value: boolean) => {
+  await page.evaluate((importValue) => {
+    const store = (window as any).__COMPASS_STORE__;
+    if (store) {
+      // Dispatch the importing action from importGCalSlice
+      // The createAsyncSlice helper prefixes the slice name with "async/"
+      store.dispatch({
+        type: "async/importGCal/importing",
+        payload: importValue,
+      });
+    }
+  }, value);
+  // Small delay to let React process the state change
+  await page.waitForTimeout(50);
+};
+
+/**
+ * Selectors for OAuth overlay elements.
+ */
+export const OVERLAY_SELECTORS = {
+  /** The status overlay panel (specific to SyncEventsOverlay) */
+  statusPanel: '[role="status"][aria-busy="true"][aria-live="polite"]',
+  /** Spinner element */
+  spinner: ".animate-spin",
+};
+
+/**
+ * Text content for different overlay phases.
+ */
+export const OVERLAY_TEXT = {
+  oauthTitle: "Complete Google sign-in...",
+  oauthMessage: "Please complete authorization in the popup window",
+  importTitle: "Importing your Google Calendar events...",
+  importMessage: "Please hang tight while we sync your calendar",
+};
+
+/**
+ * Check if the body is locked (indicating overlay is active).
+ */
+export const isBodyLocked = async (page: Page): Promise<boolean> => {
+  return page.evaluate(() => {
+    return document.body.getAttribute("data-app-locked") === "true";
+  });
+};
+
+/**
+ * Get the current overlay phase by checking text content.
+ */
+export const getOverlayPhase = async (
+  page: Page,
+): Promise<"oauth" | "import" | "none"> => {
+  return page.evaluate(
+    (texts) => {
+      const bodyText = document.body.innerText;
+      if (bodyText.includes(texts.oauthTitle)) return "oauth";
+      if (bodyText.includes(texts.importTitle)) return "import";
+      return "none";
+    },
+    {
+      oauthTitle: OVERLAY_TEXT.oauthTitle,
+      importTitle: OVERLAY_TEXT.importTitle,
+    },
+  );
+};
+
+/**
+ * Assert that the OAuth phase overlay is visible.
+ */
+export const expectOAuthOverlayVisible = async (page: Page) => {
+  await expect(page.getByText(OVERLAY_TEXT.oauthTitle)).toBeVisible();
+  await expect(page.getByText(OVERLAY_TEXT.oauthMessage)).toBeVisible();
+  await expect(page.locator(OVERLAY_SELECTORS.spinner)).toBeVisible();
+  expect(await isBodyLocked(page)).toBe(true);
+};
+
+/**
+ * Assert that the import phase overlay is visible.
+ */
+export const expectImportOverlayVisible = async (page: Page) => {
+  await expect(page.getByText(OVERLAY_TEXT.importTitle)).toBeVisible();
+  await expect(page.getByText(OVERLAY_TEXT.importMessage)).toBeVisible();
+  await expect(page.locator(OVERLAY_SELECTORS.spinner)).toBeVisible();
+  expect(await isBodyLocked(page)).toBe(true);
+};
+
+/**
+ * Assert that no overlay is visible.
+ */
+export const expectNoOverlay = async (page: Page) => {
+  await expect(page.getByText(OVERLAY_TEXT.oauthTitle)).not.toBeVisible();
+  await expect(page.getByText(OVERLAY_TEXT.importTitle)).not.toBeVisible();
+  expect(await isBodyLocked(page)).toBe(false);
+};
