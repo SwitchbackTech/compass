@@ -16,23 +16,34 @@ const initialState: State_Sync = {
   reason: null,
 };
 
+export interface ImportResults {
+  eventsCount?: number;
+  calendarsCount?: number;
+  localEventsSynced?: number;
+}
+
 export const importGCalSlice = createAsyncSlice<
   never,
   undefined,
   undefined,
   {
     importing: boolean;
-    importResults: { eventsCount?: number; calendarsCount?: number } | null;
+    importResults: ImportResults | null;
+    pendingLocalEventsSynced: number | null;
   }
 >({
   name: "importGCal",
   initialState: {
     importing: false,
     importResults: null,
+    pendingLocalEventsSynced: null,
   },
   reducers: {
     importing: (state, action: PayloadAction<boolean>) => {
       state.importing = action.payload;
+    },
+    setLocalEventsSynced: (state, action: PayloadAction<number>) => {
+      state.pendingLocalEventsSynced = action.payload;
     },
     setImportResults: (
       state,
@@ -42,7 +53,11 @@ export const importGCalSlice = createAsyncSlice<
       }>,
     ) => {
       state.importing = false;
-      state.importResults = action.payload;
+      state.importResults = {
+        ...action.payload,
+        localEventsSynced: state.pendingLocalEventsSynced ?? undefined,
+      };
+      state.pendingLocalEventsSynced = null;
     },
     clearImportResults: (state) => {
       state.importResults = null;

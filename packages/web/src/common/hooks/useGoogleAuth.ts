@@ -65,9 +65,8 @@ export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
       const syncResult = await syncLocalEvents();
 
       if (syncResult.success && syncResult.syncedCount > 0) {
-        toast(
-          `${syncResult.syncedCount} local event(s) synced to the cloud.`,
-          toastDefaultOptions,
+        dispatch(
+          importGCalSlice.actions.setLocalEventsSynced(syncResult.syncedCount),
         );
       } else if (!syncResult.success) {
         toast.error(

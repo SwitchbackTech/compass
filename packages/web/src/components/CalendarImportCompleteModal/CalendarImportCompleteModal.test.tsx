@@ -33,9 +33,7 @@ describe("CalendarImportCompleteModal", () => {
       <CalendarImportCompleteModal eventsCount={5} onDismiss={mockOnDismiss} />,
     );
 
-    expect(
-      screen.getByText("Successfully imported 5 events"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Imported 5 events")).toBeInTheDocument();
   });
 
   it("should render the modal with singular event count message", () => {
@@ -43,9 +41,7 @@ describe("CalendarImportCompleteModal", () => {
       <CalendarImportCompleteModal eventsCount={1} onDismiss={mockOnDismiss} />,
     );
 
-    expect(
-      screen.getByText("Successfully imported 1 event"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Imported 1 event")).toBeInTheDocument();
   });
 
   it("should render the modal with calendars count message", () => {
@@ -56,9 +52,7 @@ describe("CalendarImportCompleteModal", () => {
       />,
     );
 
-    expect(
-      screen.getByText("Successfully imported 3 calendars"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Imported 3 calendars")).toBeInTheDocument();
   });
 
   it("should render the modal with singular calendar count message", () => {
@@ -69,9 +63,7 @@ describe("CalendarImportCompleteModal", () => {
       />,
     );
 
-    expect(
-      screen.getByText("Successfully imported 1 calendar"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Imported 1 calendar")).toBeInTheDocument();
   });
 
   it("should render the modal with both events and calendars count message", () => {
@@ -84,8 +76,67 @@ describe("CalendarImportCompleteModal", () => {
     );
 
     expect(
-      screen.getByText("Successfully imported 10 events from 2 calendars"),
+      screen.getByText("Imported 10 events from 2 calendars"),
     ).toBeInTheDocument();
+  });
+
+  it("should render the modal with local events synced message", () => {
+    render(
+      <CalendarImportCompleteModal
+        localEventsSynced={4}
+        onDismiss={mockOnDismiss}
+      />,
+    );
+
+    expect(
+      screen.getByText("4 local events synced to the cloud"),
+    ).toBeInTheDocument();
+  });
+
+  it("should render the modal with singular local event synced message", () => {
+    render(
+      <CalendarImportCompleteModal
+        localEventsSynced={1}
+        onDismiss={mockOnDismiss}
+      />,
+    );
+
+    expect(
+      screen.getByText("1 local event synced to the cloud"),
+    ).toBeInTheDocument();
+  });
+
+  it("should render both import and local sync messages", () => {
+    render(
+      <CalendarImportCompleteModal
+        eventsCount={10}
+        calendarsCount={2}
+        localEventsSynced={4}
+        onDismiss={mockOnDismiss}
+      />,
+    );
+
+    expect(
+      screen.getByText(/Imported 10 events from 2 calendars/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/4 local events synced to the cloud/),
+    ).toBeInTheDocument();
+  });
+
+  it("should not show local sync message when count is 0", () => {
+    render(
+      <CalendarImportCompleteModal
+        eventsCount={5}
+        localEventsSynced={0}
+        onDismiss={mockOnDismiss}
+      />,
+    );
+
+    expect(screen.getByText("Imported 5 events")).toBeInTheDocument();
+    expect(
+      screen.queryByText(/local event.*synced to the cloud/),
+    ).not.toBeInTheDocument();
   });
 
   it("should call onDismiss when dismiss button is clicked", async () => {

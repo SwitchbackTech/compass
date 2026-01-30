@@ -32,6 +32,7 @@ export const AuthenticatedLayout = () => {
         <CalendarImportCompleteModal
           eventsCount={importResults.eventsCount}
           calendarsCount={importResults.calendarsCount}
+          localEventsSynced={importResults.localEventsSynced}
           onDismiss={handleDismissModal}
         />
       )}
