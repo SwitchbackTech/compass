@@ -6,10 +6,15 @@ import { useAppSelector } from "@web/store/store.hooks";
 export const SyncEventsOverlay = () => {
   const { isSyncing } = useSession();
   const importing = useAppSelector(selectImporting);
-  const isImporting = isSyncing || importing;
+  const isActive = isSyncing || importing;
+
+  // Determine which phase we're in:
+  // - isSyncing && !importing: OAuth in progress (waiting for user to complete sign-in)
+  // - importing: Calendar import in progress (after OAuth succeeded)
+  const isOAuthPhase = isSyncing && !importing;
 
   useEffect(() => {
-    if (!isImporting) {
+    if (!isActive) {
       document.body.removeAttribute("data-app-locked");
       return;
     }
@@ -21,9 +26,9 @@ export const SyncEventsOverlay = () => {
     return () => {
       document.body.removeAttribute("data-app-locked");
     };
-  }, [isImporting]);
+  }, [isActive]);
 
-  if (!isImporting) return null;
+  if (!isActive) return null;
 
   return (
     <div
@@ -38,10 +43,14 @@ export const SyncEventsOverlay = () => {
           aria-hidden="true"
         />
         <div className="text-text-lighter text-sm font-semibold">
-          Importing your Google Calendar events...
+          {isOAuthPhase
+            ? "Complete Google sign-in..."
+            : "Importing your Google Calendar events..."}
         </div>
         <div className="text-text-light/80 text-xs">
-          Please hang tight while we sync your calendar
+          {isOAuthPhase
+            ? "Please complete authorization in the popup window"
+            : "Please hang tight while we sync your calendar"}
         </div>
       </div>
     </div>

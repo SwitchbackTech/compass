@@ -49,7 +49,7 @@ describe("SyncEventsOverlay", () => {
     expect(document.body.getAttribute("data-app-locked")).toBeNull();
   });
 
-  it("renders overlay with correct message when syncing", () => {
+  it("renders overlay with OAuth message when syncing but not importing (OAuth phase)", () => {
     const mockSession: CompassSession = {
       isSyncing: true,
       authenticated: true,
@@ -62,11 +62,9 @@ describe("SyncEventsOverlay", () => {
 
     render(<SyncEventsOverlay />);
 
+    expect(screen.getByText("Complete Google sign-in...")).toBeInTheDocument();
     expect(
-      screen.getByText("Importing your Google Calendar events..."),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Please hang tight while we sync your calendar"),
+      screen.getByText("Please complete authorization in the popup window"),
     ).toBeInTheDocument();
     expect(document.body.getAttribute("data-app-locked")).toBe("true");
   });

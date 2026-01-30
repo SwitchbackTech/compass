@@ -33,7 +33,7 @@ export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
     onStart: () => {
       loginStartedRef.current = true;
       setIsSyncing(true);
-      dispatch(importGCalSlice.actions.importing(true));
+      // Note: importing(true) is set in onSuccess after OAuth completes
     },
     onSuccess: async (data) => {
       // Clear the ref immediately so the popup-close useEffect doesn't hide the overlay
@@ -50,6 +50,9 @@ export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
       markUserAsAuthenticated();
 
       setAuthenticated(true);
+
+      // Now that OAuth is complete, indicate that calendar import is starting
+      dispatch(importGCalSlice.actions.importing(true));
 
       const { skipOnboarding } = await fetchOnboardingStatus();
 
@@ -85,7 +88,7 @@ export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
     onError: (error) => {
       loginStartedRef.current = false;
       setIsSyncing(false);
-      dispatch(importGCalSlice.actions.importing(false));
+      // Note: importing is only set after OAuth succeeds, so no need to reset it here
       console.error(error);
     },
   });
@@ -95,7 +98,7 @@ export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
     if (loginStartedRef.current && !googleLogin.loading) {
       loginStartedRef.current = false;
       setIsSyncing(false);
-      dispatch(importGCalSlice.actions.importing(false));
+      // Note: importing is only set after OAuth succeeds, so no need to reset it here
     }
   }, [googleLogin.loading, dispatch, setIsSyncing]);
 
