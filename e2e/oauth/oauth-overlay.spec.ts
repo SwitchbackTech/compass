@@ -2,11 +2,11 @@ import { expect, test } from "@playwright/test";
 import {
   OVERLAY_SELECTORS,
   OVERLAY_TEXT,
+  expectBodyLocked,
   expectImportOverlayVisible,
   expectNoOverlay,
   expectOAuthOverlayVisible,
-  getOverlayPhase,
-  isBodyLocked,
+  expectOverlayPhase,
   prepareOAuthTestPage,
   setImporting,
   setIsSyncing,
@@ -74,19 +74,19 @@ test.describe("OAuth Overlay", () => {
     page,
   }) => {
     // Initially not locked
-    expect(await isBodyLocked(page)).toBe(false);
+    await expectBodyLocked(page, false);
 
     // Activate overlay
     await setIsSyncing(page, true);
 
     // Body should be locked
-    expect(await isBodyLocked(page)).toBe(true);
+    await expectBodyLocked(page, true);
 
     // Deactivate overlay
     await setIsSyncing(page, false);
 
     // Body should be unlocked
-    expect(await isBodyLocked(page)).toBe(false);
+    await expectBodyLocked(page, false);
   });
 
   test("blurs active element when overlay activates", async ({
@@ -133,11 +133,11 @@ test.describe("OAuth Overlay", () => {
   }) => {
     // Activate overlay
     await setIsSyncing(page, true);
-    expect(await isBodyLocked(page)).toBe(true);
+    await expectBodyLocked(page, true);
 
     // Complete import phase
     await setImporting(page, true);
-    expect(await isBodyLocked(page)).toBe(true);
+    await expectBodyLocked(page, true);
 
     // Clear all states (simulating completion)
     await setIsSyncing(page, false);
@@ -145,25 +145,25 @@ test.describe("OAuth Overlay", () => {
 
     // Overlay should be gone and body unlocked
     await expectNoOverlay(page);
-    expect(await isBodyLocked(page)).toBe(false);
+    await expectBodyLocked(page, false);
   });
 
   test("getOverlayPhase returns correct phase", async ({ page }) => {
     // Initially no phase
-    expect(await getOverlayPhase(page)).toBe("none");
+    await expectOverlayPhase(page, "none");
 
     // OAuth phase
     await setIsSyncing(page, true);
-    expect(await getOverlayPhase(page)).toBe("oauth");
+    await expectOverlayPhase(page, "oauth");
 
     // Import phase
     await setIsSyncing(page, false);
     await setImporting(page, true);
-    expect(await getOverlayPhase(page)).toBe("import");
+    await expectOverlayPhase(page, "import");
 
     // Back to none
     await setImporting(page, false);
-    expect(await getOverlayPhase(page)).toBe("none");
+    await expectOverlayPhase(page, "none");
   });
 
   test("overlay has correct ARIA attributes for accessibility", async ({

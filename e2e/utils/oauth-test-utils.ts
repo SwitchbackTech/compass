@@ -132,6 +132,24 @@ export const isBodyLocked = async (page: Page): Promise<boolean> => {
 };
 
 /**
+ * Wait for body locked state to match expected value (with retry).
+ */
+export const expectBodyLocked = async (page: Page, locked: boolean) => {
+  if (locked) {
+    await expect(page.locator("body")).toHaveAttribute(
+      "data-app-locked",
+      "true",
+    );
+  } else {
+    // When unlocked, the attribute is removed entirely
+    await expect(page.locator("body")).not.toHaveAttribute(
+      "data-app-locked",
+      "true",
+    );
+  }
+};
+
+/**
  * Get the current overlay phase by checking text content.
  */
 export const getOverlayPhase = async (
@@ -152,13 +170,30 @@ export const getOverlayPhase = async (
 };
 
 /**
+ * Wait for overlay phase to match expected value (with retry).
+ */
+export const expectOverlayPhase = async (
+  page: Page,
+  phase: "oauth" | "import" | "none",
+) => {
+  if (phase === "oauth") {
+    await expect(page.getByText(OVERLAY_TEXT.oauthTitle)).toBeVisible();
+  } else if (phase === "import") {
+    await expect(page.getByText(OVERLAY_TEXT.importTitle)).toBeVisible();
+  } else {
+    await expect(page.getByText(OVERLAY_TEXT.oauthTitle)).not.toBeVisible();
+    await expect(page.getByText(OVERLAY_TEXT.importTitle)).not.toBeVisible();
+  }
+};
+
+/**
  * Assert that the OAuth phase overlay is visible.
  */
 export const expectOAuthOverlayVisible = async (page: Page) => {
   await expect(page.getByText(OVERLAY_TEXT.oauthTitle)).toBeVisible();
   await expect(page.getByText(OVERLAY_TEXT.oauthMessage)).toBeVisible();
   await expect(page.locator(OVERLAY_SELECTORS.spinner)).toBeVisible();
-  expect(await isBodyLocked(page)).toBe(true);
+  await expectBodyLocked(page, true);
 };
 
 /**
@@ -168,7 +203,7 @@ export const expectImportOverlayVisible = async (page: Page) => {
   await expect(page.getByText(OVERLAY_TEXT.importTitle)).toBeVisible();
   await expect(page.getByText(OVERLAY_TEXT.importMessage)).toBeVisible();
   await expect(page.locator(OVERLAY_SELECTORS.spinner)).toBeVisible();
-  expect(await isBodyLocked(page)).toBe(true);
+  await expectBodyLocked(page, true);
 };
 
 /**
@@ -177,5 +212,5 @@ export const expectImportOverlayVisible = async (page: Page) => {
 export const expectNoOverlay = async (page: Page) => {
   await expect(page.getByText(OVERLAY_TEXT.oauthTitle)).not.toBeVisible();
   await expect(page.getByText(OVERLAY_TEXT.importTitle)).not.toBeVisible();
-  expect(await isBodyLocked(page)).toBe(false);
+  await expectBodyLocked(page, false);
 };
