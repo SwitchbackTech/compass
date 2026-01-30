@@ -3,9 +3,9 @@ import { useLocation } from "react-router-dom";
 import { useSession } from "@web/auth/hooks/useSession";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import { CompassTasksSavedEvent } from "@web/common/utils/storage/storage.types";
 import {
   COMPASS_TASKS_SAVED_EVENT_NAME,
-  CompassTasksSavedEvent,
   getDateKey,
   loadTasksFromStorage,
 } from "@web/common/utils/storage/storage.util";
