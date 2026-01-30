@@ -62,7 +62,7 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
         default: [
           { type: "text", value: "Press " },
           { type: "kbd", value: "1" },
-          { type: "text", value: " to go to the /now view" },
+          { type: "text", value: " to go to the Now view" },
         ],
       },
     },

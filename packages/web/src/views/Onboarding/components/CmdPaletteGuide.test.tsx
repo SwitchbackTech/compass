@@ -162,7 +162,7 @@ describe("CmdPaletteGuide", () => {
     expect(
       screen.getByText(
         (_, element) =>
-          element?.textContent === "Press 1 to go to the /now view" ?? false,
+          element?.textContent === "Press 1 to go to the Now view" ?? false,
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("1")).toBeInTheDocument(); // The kbd element
@@ -241,7 +241,7 @@ describe("CmdPaletteGuide", () => {
     expect(
       screen.getByText(
         (_, element) =>
-          element?.textContent === "Press 1 to go to the /now view" ?? false,
+          element?.textContent === "Press 1 to go to the Now view" ?? false,
       ),
     ).toBeInTheDocument();
   });
@@ -273,7 +273,7 @@ describe("CmdPaletteGuide", () => {
     expect(
       screen.getByText(
         (_, element) =>
-          element?.textContent === "Press 1 to go to the /now view" ?? false,
+          element?.textContent === "Press 1 to go to the Now view" ?? false,
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("1")).toBeInTheDocument(); // The kbd element

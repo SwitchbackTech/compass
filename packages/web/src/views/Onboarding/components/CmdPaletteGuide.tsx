@@ -1,8 +1,5 @@
-import { FC, useCallback, useEffect, useRef, useState } from "react";
-import {
-  ONBOARDING_STEPS,
-  OnboardingStepName,
-} from "../constants/onboarding.constants";
+import { FC, useCallback, useState } from "react";
+import { OnboardingStepName } from "../constants/onboarding.constants";
 import { useCmdPaletteGuide } from "../hooks/useCmdPaletteGuide";
 import { useGuideOverlayState } from "../hooks/useGuideOverlayState";
 import { useStepDetection } from "../hooks/useStepDetection";
@@ -16,7 +13,6 @@ import { GuideSkipButton } from "./GuideSkipButton";
 export const CmdPaletteGuide: FC = () => {
   const { currentStep, completeStep, skipGuide, isGuideActive } =
     useCmdPaletteGuide();
-  const step2CompletionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isSuccessMessageDismissed, setIsSuccessMessageDismissed] =
     useState(false);
 
@@ -35,17 +31,7 @@ export const CmdPaletteGuide: FC = () => {
   // Stable callback to prevent effect re-runs that reset task count tracking
   const handleStepComplete = useCallback(
     (step: OnboardingStepName) => {
-      // Delay step 2 completion to show instructions on Now view first
-      if (step === ONBOARDING_STEPS.NAVIGATE_TO_NOW) {
-        if (step2CompletionTimeoutRef.current) {
-          clearTimeout(step2CompletionTimeoutRef.current);
-        }
-        step2CompletionTimeoutRef.current = setTimeout(() => {
-          completeStep(step);
-        }, 1000);
-      } else {
-        completeStep(step);
-      }
+      completeStep(step);
     },
     [completeStep],
   );
@@ -55,15 +41,6 @@ export const CmdPaletteGuide: FC = () => {
     currentStep,
     onStepComplete: handleStepComplete,
   });
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (step2CompletionTimeoutRef.current) {
-        clearTimeout(step2CompletionTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const handleSkip = useCallback(() => {
     if (showSuccessMessage) {
