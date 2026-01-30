@@ -272,17 +272,19 @@ describe("useGoogleAuth", () => {
   });
 
   describe("authentication failure handling", () => {
-    it("does not proceed when authentication fails", async () => {
+    it("clears syncing and does not proceed when authentication fails", async () => {
       mockAuthenticate.mockResolvedValue({
         success: false,
         error: new Error("Auth failed"),
       });
 
+      let onStartCallback: (() => void) | undefined;
       let onSuccessCallback:
         | ((data: SignInUpInput) => Promise<void>)
         | undefined;
 
-      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
+      mockUseGoogleLogin.mockImplementation(({ onStart, onSuccess }) => {
+        onStartCallback = onStart;
         onSuccessCallback = onSuccess;
         return {
           login: mockLogin,
@@ -292,6 +294,8 @@ describe("useGoogleAuth", () => {
       });
 
       renderHook(() => useGoogleAuth());
+
+      onStartCallback?.();
 
       if (onSuccessCallback) {
         await onSuccessCallback({
@@ -315,6 +319,7 @@ describe("useGoogleAuth", () => {
       // Should not proceed with auth flow
       expect(mockMarkUserAsAuthenticated).not.toHaveBeenCalled();
       expect(mockSetAuthenticated).not.toHaveBeenCalled();
+      expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
     });
   });
 });

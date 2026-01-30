@@ -117,7 +117,7 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
     order: 6,
     detectionType: "google-auth",
     guide: {
-      title: "Bring Your GCal events (optional)",
+      title: "Bring your events",
       instructionsByView: {
         default: [
           { type: "meta-key" },

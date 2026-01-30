@@ -22,7 +22,7 @@ import { OnboardingStepProps } from "@web/views/Onboarding";
 export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { setAuthenticated } = useSession();
+  const { setAuthenticated, setIsSyncing } = useSession();
   const { markSignupCompleted } = useIsSignupComplete();
   const { updateOnboardingStatus } = useSkipOnboarding();
 
@@ -32,6 +32,7 @@ export function useGoogleAuth(props?: Partial<OnboardingStepProps>) {
       const authResult = await authenticate(data);
       if (!authResult.success) {
         console.error(authResult.error);
+        setIsSyncing(false);
         return;
       }
 
