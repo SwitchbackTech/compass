@@ -45,15 +45,11 @@ export const OverlayPanel = ({
       variant === "status",
   });
 
-  const titleClasses = clsx({
-    "text-text-light m-0 text-2xl font-semibold": variant === "modal",
-    "text-text-lighter text-sm font-semibold": variant === "status",
-  });
+  const titleClasses = clsx("text-text-lighter m-0 text-2xl font-semibold");
 
-  const messageClasses = clsx("whitespace-pre-line", {
-    "text-text-lighter m-0 text-base": variant === "modal",
-    "text-text-light/80 text-xs": variant === "status",
-  });
+  const messageClasses = clsx(
+    "text-text-lighter m-0 text-base whitespace-pre-line",
+  );
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (onDismiss && e.target === e.currentTarget) {

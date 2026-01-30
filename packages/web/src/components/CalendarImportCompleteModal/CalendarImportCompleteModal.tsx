@@ -69,7 +69,7 @@ export const CalendarImportCompleteModal = ({
     >
       <button
         onClick={onDismiss}
-        className="bg-fg-primary-dark text-text-lighter focus:outline-fg-primary-dark cursor-pointer rounded-sm border-none px-6 py-2 text-sm font-medium transition-all hover:brightness-110 focus:outline-2 focus:outline-offset-2"
+        className="bg-fg-primary-dark text-text-lighter focus:outline-fg-primary-dark cursor-pointer rounded-sm border-none px-6 py-2 text-sm transition-all hover:brightness-110 focus:outline-2 focus:outline-offset-2"
       >
         Dismiss
       </button>
