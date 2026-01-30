@@ -220,7 +220,7 @@ describe("useGuideOverlayState", () => {
 
       const { result } = renderHook(() =>
         useGuideOverlayState({
-          currentStep: ONBOARDING_STEPS.EDIT_DESCRIPTION,
+          currentStep: ONBOARDING_STEPS.EDIT_REMINDER,
           isSuccessMessageDismissed: false,
         }),
       );
@@ -228,8 +228,8 @@ describe("useGuideOverlayState", () => {
       // Step 4 only has default instructions
       expect(result.current.instructionParts).toEqual([
         { type: "text", value: "Press " },
-        { type: "kbd", value: "d" },
-        { type: "text", value: " to edit the description" },
+        { type: "kbd", value: "r" },
+        { type: "text", value: " to edit the reminder" },
       ]);
     });
   });
@@ -245,7 +245,7 @@ describe("useGuideOverlayState", () => {
       );
 
       expect(result.current.stepNumber).toBe(1);
-      expect(result.current.stepText).toBe("Step 1 of 7");
+      expect(result.current.stepText).toBe("Step 1 of 6");
     });
 
     it("should return correct step number for step 3", () => {
@@ -261,7 +261,7 @@ describe("useGuideOverlayState", () => {
       );
 
       expect(result.current.stepNumber).toBe(3);
-      expect(result.current.stepText).toBe("Step 3 of 7");
+      expect(result.current.stepText).toBe("Step 3 of 6");
     });
 
     it("should return 'All steps completed' when showing success message", () => {
@@ -330,7 +330,7 @@ describe("useGuideOverlayState", () => {
         }),
       );
 
-      expect(result.current.totalSteps).toBe(7);
+      expect(result.current.totalSteps).toBe(6);
     });
   });
 });

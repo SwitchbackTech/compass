@@ -138,7 +138,6 @@ describe("onboarding.storage.util", () => {
           ONBOARDING_STEPS.NAVIGATE_TO_DAY,
           ONBOARDING_STEPS.CREATE_TASK,
           ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-          ONBOARDING_STEPS.EDIT_DESCRIPTION,
           ONBOARDING_STEPS.EDIT_REMINDER,
         ],
       });
@@ -146,7 +145,6 @@ describe("onboarding.storage.util", () => {
         ONBOARDING_STEPS.NAVIGATE_TO_DAY,
         ONBOARDING_STEPS.CREATE_TASK,
         ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-        ONBOARDING_STEPS.EDIT_DESCRIPTION,
         ONBOARDING_STEPS.EDIT_REMINDER,
       ]);
     });
@@ -172,7 +170,6 @@ describe("onboarding.storage.util", () => {
         ONBOARDING_STEPS.NAVIGATE_TO_DAY,
         ONBOARDING_STEPS.CREATE_TASK,
         ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-        ONBOARDING_STEPS.EDIT_DESCRIPTION,
         ONBOARDING_STEPS.EDIT_REMINDER,
       ]);
       const progress = getOnboardingProgress();
@@ -180,7 +177,6 @@ describe("onboarding.storage.util", () => {
         ONBOARDING_STEPS.NAVIGATE_TO_DAY,
         ONBOARDING_STEPS.CREATE_TASK,
         ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-        ONBOARDING_STEPS.EDIT_DESCRIPTION,
         ONBOARDING_STEPS.EDIT_REMINDER,
       ]);
     });
@@ -200,7 +196,7 @@ describe("onboarding.storage.util", () => {
       expect(isStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY)).toBe(true);
       expect(isStepCompleted(ONBOARDING_STEPS.CREATE_TASK)).toBe(true);
       expect(isStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_NOW)).toBe(true);
-      expect(isStepCompleted(ONBOARDING_STEPS.EDIT_DESCRIPTION)).toBe(false);
+      expect(isStepCompleted(ONBOARDING_STEPS.EDIT_REMINDER)).toBe(false);
     });
   });
 
@@ -232,7 +228,7 @@ describe("onboarding.storage.util", () => {
         ONBOARDING_STEPS.NAVIGATE_TO_DAY,
         ONBOARDING_STEPS.CREATE_TASK,
         ONBOARDING_STEPS.NAVIGATE_TO_NOW,
-        ONBOARDING_STEPS.EDIT_DESCRIPTION,
+        ONBOARDING_STEPS.EDIT_REMINDER,
       ]);
       clearCompletedSteps();
       expect(loadCompletedSteps()).toEqual([]);

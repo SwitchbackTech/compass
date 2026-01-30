@@ -33,7 +33,6 @@ export type OnboardingStepName =
   | "navigateToDay"
   | "createTask"
   | "navigateToNow"
-  | "editDescription"
   | "editReminder"
   | "navigateToWeek"
   | "connectGoogleCalendar";
@@ -44,7 +43,6 @@ export type OnboardingStepName =
 export type StepDetectionType =
   | "task-count"
   | "route"
-  | "task-description"
   | "reminder-poll"
   | "google-auth";
 

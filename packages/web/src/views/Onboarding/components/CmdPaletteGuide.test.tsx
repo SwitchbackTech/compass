@@ -166,7 +166,7 @@ describe("CmdPaletteGuide", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("1")).toBeInTheDocument(); // The kbd element
-    expect(screen.getByText("Step 3 of 7")).toBeInTheDocument();
+    expect(screen.getByText("Step 3 of 6")).toBeInTheDocument();
   });
 
   it("should show step 1 instructions on Now view when step 1 is not completed", () => {
@@ -189,7 +189,7 @@ describe("CmdPaletteGuide", () => {
           element?.textContent === "Press 2 to go to the Day view" ?? false,
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText("Step 1 of 7")).toBeInTheDocument();
+    expect(screen.getByText("Step 1 of 6")).toBeInTheDocument();
   });
 
   it("should render step 1 instructions on Week view", () => {
@@ -300,7 +300,7 @@ describe("CmdPaletteGuide", () => {
           element?.textContent === "You're already on the Day view." ?? false,
       )[0],
     ).toBeInTheDocument();
-    expect(screen.getByText("Step 1 of 7")).toBeInTheDocument();
+    expect(screen.getByText("Step 1 of 6")).toBeInTheDocument();
   });
 
   it("should render step 4 instructions on Now view", () => {
@@ -308,33 +308,6 @@ describe("CmdPaletteGuide", () => {
     markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
     markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
     markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
-    mockUseCmdPaletteGuide.mockReturnValue({
-      currentStep: ONBOARDING_STEPS.EDIT_DESCRIPTION,
-      isGuideActive: true,
-      completeStep: jest.fn(),
-      skipGuide: jest.fn(),
-      completeGuide: jest.fn(),
-    });
-
-    render(<CmdPaletteGuide />);
-
-    expect(screen.getByText("Welcome to the Now View")).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        (_, element) =>
-          element?.textContent === "Press d to edit the description" ?? false,
-      ),
-    ).toBeInTheDocument();
-    expect(screen.getByText("d")).toBeInTheDocument(); // The kbd element
-    expect(screen.getByText("Step 4 of 7")).toBeInTheDocument();
-  });
-
-  it("should render step 5 instructions on Now view", () => {
-    mockUseLocation.mockReturnValue({ pathname: "/now" } as any);
-    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
-    markStepCompleted(ONBOARDING_STEPS.CREATE_TASK);
-    markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_NOW);
-    markStepCompleted(ONBOARDING_STEPS.EDIT_DESCRIPTION);
     mockUseCmdPaletteGuide.mockReturnValue({
       currentStep: ONBOARDING_STEPS.EDIT_REMINDER,
       isGuideActive: true,
@@ -353,7 +326,7 @@ describe("CmdPaletteGuide", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("r")).toBeInTheDocument(); // The kbd element
-    expect(screen.getByText("Step 5 of 7")).toBeInTheDocument();
+    expect(screen.getByText("Step 4 of 6")).toBeInTheDocument();
   });
 
   it("should render on Day view when authenticated", () => {
@@ -463,9 +436,9 @@ describe("CmdPaletteGuide", () => {
 
     // Check that progress dots are rendered
     const progressDots = screen
-      .getByText("Step 3 of 7")
+      .getByText("Step 3 of 6")
       .parentElement?.querySelectorAll("div[class*='rounded-full']");
-    expect(progressDots).toHaveLength(7);
+    expect(progressDots).toHaveLength(6);
   });
 
   it("should show progress indicators on Day view", () => {
@@ -481,12 +454,12 @@ describe("CmdPaletteGuide", () => {
 
     render(<CmdPaletteGuide />);
 
-    expect(screen.getByText("Step 2 of 7")).toBeInTheDocument();
+    expect(screen.getByText("Step 2 of 6")).toBeInTheDocument();
     // Check that progress dots are rendered
     const progressDots = screen
-      .getByText("Step 2 of 7")
+      .getByText("Step 2 of 6")
       .parentElement?.querySelectorAll("div[class*='rounded-full']");
-    expect(progressDots).toHaveLength(7);
+    expect(progressDots).toHaveLength(6);
   });
 
   it("should call unified step detection hook", () => {
