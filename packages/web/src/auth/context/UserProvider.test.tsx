@@ -9,10 +9,21 @@ import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { UserProvider } from "@web/auth/context/UserProvider";
 import { UserApi } from "@web/common/apis/user.api";
 import { ENV_WEB } from "@web/common/constants/env.constants";
+import * as authStateUtil from "@web/common/utils/storage/auth-state.util";
 
 // Mock PostHog
 jest.mock("posthog-js/react");
 const mockUsePostHog = usePostHog as jest.MockedFunction<typeof usePostHog>;
+
+// Mock auth state util
+jest.mock("@web/common/utils/storage/auth-state.util", () => ({
+  ...jest.requireActual("@web/common/utils/storage/auth-state.util"),
+  hasUserEverAuthenticated: jest.fn(),
+}));
+const mockHasUserEverAuthenticated =
+  authStateUtil.hasUserEverAuthenticated as jest.MockedFunction<
+    typeof authStateUtil.hasUserEverAuthenticated
+  >;
 
 // Mock AbsoluteOverflowLoader
 jest.mock("@web/components/AbsoluteOverflowLoader", () => ({
@@ -24,6 +35,8 @@ describe("UserProvider", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Default to authenticated so existing tests continue to work
+    mockHasUserEverAuthenticated.mockReturnValue(true);
   });
 
   describe("PostHog Integration", () => {
@@ -232,6 +245,52 @@ describe("UserProvider", () => {
       expect(mockIdentify).not.toHaveBeenCalled();
 
       consoleErrorSpy.mockRestore();
+      getProfileSpy.mockRestore();
+    });
+  });
+
+  describe("Authentication Gating", () => {
+    it("should NOT call getProfile when user has never authenticated", async () => {
+      mockHasUserEverAuthenticated.mockReturnValue(false);
+      const getProfileSpy = jest.spyOn(UserApi, "getProfile");
+      mockUsePostHog.mockReturnValue({
+        identify: mockIdentify,
+      } as any);
+
+      render(
+        <UserProvider>
+          <div>Test Child</div>
+        </UserProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Test Child")).toBeInTheDocument();
+      });
+
+      expect(getProfileSpy).not.toHaveBeenCalled();
+      getProfileSpy.mockRestore();
+    });
+
+    it("should call getProfile when user has authenticated with Google", async () => {
+      mockHasUserEverAuthenticated.mockReturnValue(true);
+      const getProfileSpy = jest.spyOn(UserApi, "getProfile");
+      mockUsePostHog.mockReturnValue({
+        identify: mockIdentify,
+      } as any);
+
+      render(
+        <UserProvider>
+          <div>Test Child</div>
+        </UserProvider>,
+      );
+
+      await waitFor(() => expect(getProfileSpy).toHaveBeenCalled());
+      expect(getProfileSpy).toHaveBeenCalledTimes(1);
+
+      await waitFor(() => {
+        expect(screen.getByText("Test Child")).toBeInTheDocument();
+      });
+
       getProfileSpy.mockRestore();
     });
   });

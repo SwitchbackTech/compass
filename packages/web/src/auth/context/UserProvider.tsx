@@ -2,6 +2,7 @@ import { usePostHog } from "posthog-js/react";
 import { ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { UserProfile } from "@core/types/user.types";
 import { UserApi } from "@web/common/apis/user.api";
+import { hasUserEverAuthenticated } from "@web/common/utils/storage/auth-state.util";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { UserContext } from "./UserContext";
 
@@ -14,6 +15,12 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   useLayoutEffect(() => {
     if (profile.current) return;
+
+    // Only fetch profile if user has authenticated with Google Calendar
+    // Users in localStorage/IndexedDB mode don't have a profile
+    if (!hasUserEverAuthenticated()) {
+      return;
+    }
 
     setIsLoadingUser(true);
 

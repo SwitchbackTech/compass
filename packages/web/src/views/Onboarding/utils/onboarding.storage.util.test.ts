@@ -35,7 +35,6 @@ describe("onboarding.storage.util", () => {
         ],
         isSeen: true,
         isCompleted: false,
-        isStorageWarningSeen: true,
         isSignupComplete: true,
         isOnboardingSkipped: false,
         isAuthPromptDismissed: true,
@@ -55,7 +54,6 @@ describe("onboarding.storage.util", () => {
         completedSteps: [],
         isSeen: false,
         isCompleted: false,
-        isStorageWarningSeen: false,
         isSignupComplete: false,
         isOnboardingSkipped: false,
         isAuthPromptDismissed: false,
@@ -68,7 +66,6 @@ describe("onboarding.storage.util", () => {
         completedSteps: [1, 2, 4, 5, 0, -1, "invalid"],
         isSeen: false,
         isCompleted: false,
-        isStorageWarningSeen: false,
         hasCompletedSignup: false,
         skipOnboarding: false,
         authPromptDismissed: false,
@@ -253,7 +250,6 @@ describe("onboarding.storage.util", () => {
         ],
         isSeen: true,
         isCompleted: true,
-        isStorageWarningSeen: true,
         isSignupComplete: true,
         isOnboardingSkipped: true,
         isAuthPromptDismissed: true,
@@ -278,7 +274,6 @@ describe("onboarding.storage.util", () => {
       expect(progressAfter.completedSteps).toEqual([]);
       expect(progressAfter.isSeen).toBe(false);
       expect(progressAfter.isCompleted).toBe(false);
-      expect(progressAfter.isStorageWarningSeen).toBe(false);
       expect(progressAfter.isSignupComplete).toBe(false);
       expect(progressAfter.isOnboardingSkipped).toBe(false);
       expect(progressAfter.isAuthPromptDismissed).toBe(false);

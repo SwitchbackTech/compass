@@ -8,7 +8,6 @@ const ONBOARDING_STATE = {
   completedSteps: [],
   isSeen: true,
   isCompleted: true,
-  isStorageWarningSeen: true,
   isSignupComplete: true,
   isOnboardingSkipped: true,
   isAuthPromptDismissed: true,
