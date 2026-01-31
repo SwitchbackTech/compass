@@ -74,6 +74,15 @@ export const router = createBrowserRouter(
       ],
     },
     {
+      path: ROOT_ROUTES.CLEANUP,
+      lazy: async () =>
+        import(/* webpackChunkName: "cleanup" */ "@web/views/Cleanup").then(
+          (module) => ({
+            Component: module.CleanupView,
+          }),
+        ),
+    },
+    {
       path: "*",
       lazy: async () =>
         import(/* webpackChunkName: "not-found" */ "@web/views/NotFound").then(
