@@ -44,6 +44,7 @@ export interface GuideOverlayState {
 interface UseGuideOverlayStateOptions {
   currentStep: OnboardingStepName | null;
   isSuccessMessageDismissed: boolean;
+  hasImportResults?: boolean;
 }
 
 /**
@@ -53,6 +54,7 @@ interface UseGuideOverlayStateOptions {
 export function useGuideOverlayState({
   currentStep,
   isSuccessMessageDismissed,
+  hasImportResults = false,
 }: UseGuideOverlayStateOptions): GuideOverlayState {
   const location = useLocation();
 
@@ -92,9 +94,10 @@ export function useGuideOverlayState({
     [actualStepConfig, currentView],
   );
 
-  // Check if connectGoogleCalendar step is completed (show success message on any view)
+  // Check if connectGoogleCalendar step is completed OR import results exist (show success message on any view)
   const showSuccessMessage =
-    isStepCompleted(ONBOARDING_STEPS.CONNECT_GOOGLE_CALENDAR) &&
+    (isStepCompleted(ONBOARDING_STEPS.CONNECT_GOOGLE_CALENDAR) ||
+      hasImportResults) &&
     !isSuccessMessageDismissed;
 
   const instructionParts = useMemo(

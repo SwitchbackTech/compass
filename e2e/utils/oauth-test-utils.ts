@@ -2,7 +2,6 @@ import { Page, expect } from "@playwright/test";
 
 const ONBOARDING_STATE = {
   completedSteps: [],
-  isSeen: true,
   isCompleted: true,
   isSignupComplete: true,
   isOnboardingSkipped: true,

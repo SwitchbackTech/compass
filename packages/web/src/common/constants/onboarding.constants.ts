@@ -13,7 +13,6 @@ const CompletedStepsSchema = z.array(
 );
 export const OnboardingProgressSchema = z.object({
   completedSteps: CompletedStepsSchema.default([]),
-  isSeen: z.boolean().default(false),
   isCompleted: z.boolean().default(false),
   isSignupComplete: z.boolean().default(false),
   isOnboardingSkipped: z.boolean().default(false),
@@ -24,7 +23,6 @@ export type OnboardingProgress = z.infer<typeof OnboardingProgressSchema>;
 
 export const DEFAULT_ONBOARDING_PROGRESS: OnboardingProgress = {
   completedSteps: [],
-  isSeen: false,
   isCompleted: false,
   isSignupComplete: false,
   isOnboardingSkipped: false,

@@ -74,22 +74,6 @@ describe("useCmdPaletteTutorial", () => {
     expect(result.current.showCmdPaletteTutorial).toBe(false);
   });
 
-  it("should not show cmd palette tutorial if already seen", () => {
-    updateOnboardingProgress({ isSeen: true });
-    const store = createTestStore();
-
-    const { result } = renderHook(
-      () => useCmdPaletteTutorial({ showOnboardingOverlay: false }),
-      {
-        wrapper: ({ children }) => (
-          <Provider store={store}>{children}</Provider>
-        ),
-      },
-    );
-
-    expect(result.current.showCmdPaletteTutorial).toBe(false);
-  });
-
   it("should not show cmd palette tutorial for authenticated users", () => {
     const { useSession } = require("@web/auth/hooks/useSession");
     const mockSession: CompassSession = {
@@ -115,56 +99,6 @@ describe("useCmdPaletteTutorial", () => {
     expect(result.current.showCmdPaletteTutorial).toBe(false);
   });
 
-  it("should mark cmd palette as used when opened", async () => {
-    // Reset mock to ensure authenticated is false
-    const { useSession } = require("@web/auth/hooks/useSession");
-    const mockSession: CompassSession = {
-      authenticated: false,
-      loading: false,
-      isSyncing: false,
-      setAuthenticated: jest.fn(),
-      setLoading: jest.fn(),
-      setIsSyncing: jest.fn(),
-    };
-    useSession.mockReturnValue(mockSession);
-
-    const store = createTestStore(false); // cmd palette starts closed
-
-    const { result } = renderHook(
-      ({ showOnboardingOverlay }) =>
-        useCmdPaletteTutorial({ showOnboardingOverlay }),
-      {
-        initialProps: { showOnboardingOverlay: false },
-        wrapper: ({ children }) => (
-          <Provider store={store}>{children}</Provider>
-        ),
-      },
-    );
-
-    // Wait for tutorial to show (has 1 second delay)
-    await waitFor(
-      () => {
-        expect(result.current.showCmdPaletteTutorial).toBe(true);
-      },
-      { timeout: 2500 },
-    );
-
-    // Now open cmd palette
-    act(() => {
-      store.dispatch(settingsSlice.actions.toggleCmdPalette());
-    });
-
-    // Wait for the effect to run and mark tutorial as seen
-    await waitFor(
-      () => {
-        const progress = getOnboardingProgress();
-        expect(progress.isSeen).toBe(true);
-        expect(result.current.showCmdPaletteTutorial).toBe(false);
-      },
-      { timeout: 1000 },
-    );
-  });
-
   it("should dismiss cmd palette tutorial", () => {
     const store = createTestStore();
 
@@ -178,25 +112,6 @@ describe("useCmdPaletteTutorial", () => {
     );
 
     result.current.dismissCmdPaletteTutorial();
-    expect(result.current.showCmdPaletteTutorial).toBe(false);
-  });
-
-  it("should mark cmd palette as used when markCmdPaletteUsed is called", () => {
-    const store = createTestStore();
-
-    const { result } = renderHook(
-      () => useCmdPaletteTutorial({ showOnboardingOverlay: false }),
-      {
-        wrapper: ({ children }) => (
-          <Provider store={store}>{children}</Provider>
-        ),
-      },
-    );
-
-    result.current.markCmdPaletteUsed();
-
-    const progress = getOnboardingProgress();
-    expect(progress.isSeen).toBe(true);
     expect(result.current.showCmdPaletteTutorial).toBe(false);
   });
 });

@@ -6,7 +6,6 @@ const LOCAL_DB_NAME = "compass-local";
 
 const ONBOARDING_STATE = {
   completedSteps: [],
-  isSeen: true,
   isCompleted: true,
   isSignupComplete: true,
   isOnboardingSkipped: true,

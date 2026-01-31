@@ -74,9 +74,103 @@ describe("GuideInstructionContent", () => {
 });
 
 describe("GuideSuccessMessage", () => {
-  it("should render success message text", () => {
+  it("should render success message text when no import results", () => {
     render(<GuideSuccessMessage />);
 
     expect(screen.getByText(/You're all set!/)).toBeInTheDocument();
+  });
+
+  it("should render import results with events count", () => {
+    render(<GuideSuccessMessage importResults={{ eventsCount: 5 }} />);
+
+    expect(screen.getByText("Imported 5 events")).toBeInTheDocument();
+  });
+
+  it("should render import results with singular event count", () => {
+    render(<GuideSuccessMessage importResults={{ eventsCount: 1 }} />);
+
+    expect(screen.getByText("Imported 1 event")).toBeInTheDocument();
+  });
+
+  it("should render import results with calendars count", () => {
+    render(<GuideSuccessMessage importResults={{ calendarsCount: 3 }} />);
+
+    expect(screen.getByText("Imported 3 calendars")).toBeInTheDocument();
+  });
+
+  it("should render import results with singular calendar count", () => {
+    render(<GuideSuccessMessage importResults={{ calendarsCount: 1 }} />);
+
+    expect(screen.getByText("Imported 1 calendar")).toBeInTheDocument();
+  });
+
+  it("should render import results with both events and calendars", () => {
+    render(
+      <GuideSuccessMessage
+        importResults={{ eventsCount: 10, calendarsCount: 2 }}
+      />,
+    );
+
+    expect(
+      screen.getByText("Imported 10 events from 2 calendars"),
+    ).toBeInTheDocument();
+  });
+
+  it("should render import results with local events synced", () => {
+    render(<GuideSuccessMessage importResults={{ localEventsSynced: 4 }} />);
+
+    expect(
+      screen.getByText("4 local events synced to the cloud"),
+    ).toBeInTheDocument();
+  });
+
+  it("should render import results with singular local event synced", () => {
+    render(<GuideSuccessMessage importResults={{ localEventsSynced: 1 }} />);
+
+    expect(
+      screen.getByText("1 local event synced to the cloud"),
+    ).toBeInTheDocument();
+  });
+
+  it("should render import results with both import and local sync messages", () => {
+    const { container } = render(
+      <GuideSuccessMessage
+        importResults={{
+          eventsCount: 10,
+          calendarsCount: 2,
+          localEventsSynced: 4,
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByText("Imported 10 events from 2 calendars"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("4 local events synced to the cloud"),
+    ).toBeInTheDocument();
+    // Verify there's a line break between the two lines
+    expect(container.querySelector("br")).toBeInTheDocument();
+  });
+
+  it("should not show local sync message when count is 0", () => {
+    render(
+      <GuideSuccessMessage
+        importResults={{ eventsCount: 5, localEventsSynced: 0 }}
+      />,
+    );
+
+    expect(screen.getByText("Imported 5 events")).toBeInTheDocument();
+    expect(
+      screen.queryByText(/local event.*synced to the cloud/),
+    ).not.toBeInTheDocument();
+  });
+
+  it("should render fallback message when import results are empty", () => {
+    render(<GuideSuccessMessage importResults={{}} />);
+
+    expect(
+      screen.getByText("Your calendar has been synced successfully!"),
+    ).toBeInTheDocument();
   });
 });

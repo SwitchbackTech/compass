@@ -1,4 +1,7 @@
-import { FC, useCallback, useState } from "react";
+import { FC, useCallback, useEffect, useRef, useState } from "react";
+import { selectImportResults } from "@web/ducks/events/selectors/sync.selector";
+import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { OnboardingStepName } from "../constants/onboarding.constants";
 import { useCmdPaletteGuide } from "../hooks/useCmdPaletteGuide";
 import { useGuideOverlayState } from "../hooks/useGuideOverlayState";
@@ -10,11 +13,18 @@ import {
 import { GuideProgressIndicator } from "./GuideProgressIndicator";
 import { GuideSkipButton } from "./GuideSkipButton";
 
-export const CmdPaletteGuide: FC = () => {
+const AUTO_DISMISS_DELAY_MS = 8000;
+
+export const OnboardingGuide: FC = () => {
+  const dispatch = useAppDispatch();
+  const importResults = useAppSelector(selectImportResults);
   const { currentStep, completeStep, skipGuide, isGuideActive } =
     useCmdPaletteGuide();
   const [isSuccessMessageDismissed, setIsSuccessMessageDismissed] =
     useState(false);
+  const autoDismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   const {
     welcomeMessage,
@@ -26,7 +36,25 @@ export const CmdPaletteGuide: FC = () => {
   } = useGuideOverlayState({
     currentStep,
     isSuccessMessageDismissed,
+    hasImportResults: !!importResults,
   });
+
+  // Auto-dismiss timer for import results
+  useEffect(() => {
+    if (importResults && showSuccessMessage) {
+      autoDismissTimerRef.current = setTimeout(() => {
+        dispatch(importGCalSlice.actions.clearImportResults(undefined));
+        setIsSuccessMessageDismissed(true);
+      }, AUTO_DISMISS_DELAY_MS);
+    }
+
+    return () => {
+      if (autoDismissTimerRef.current) {
+        clearTimeout(autoDismissTimerRef.current);
+        autoDismissTimerRef.current = null;
+      }
+    };
+  }, [importResults, showSuccessMessage, dispatch]);
 
   // Stable callback to prevent effect re-runs that reset task count tracking
   const handleStepComplete = useCallback(
@@ -45,9 +73,12 @@ export const CmdPaletteGuide: FC = () => {
   const handleSkip = useCallback(() => {
     if (showSuccessMessage) {
       setIsSuccessMessageDismissed(true);
+      if (importResults) {
+        dispatch(importGCalSlice.actions.clearImportResults(undefined));
+      }
     }
     skipGuide();
-  }, [showSuccessMessage, skipGuide]);
+  }, [showSuccessMessage, importResults, dispatch, skipGuide]);
 
   if (!isGuideActive && !showSuccessMessage) {
     return null;
@@ -91,7 +122,7 @@ export const CmdPaletteGuide: FC = () => {
               }`}
             >
               {showSuccessMessage ? (
-                <GuideSuccessMessage />
+                <GuideSuccessMessage importResults={importResults} />
               ) : (
                 <GuideInstructionContent instructionParts={instructionParts} />
               )}

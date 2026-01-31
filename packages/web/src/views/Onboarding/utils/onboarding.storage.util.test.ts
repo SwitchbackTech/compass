@@ -33,7 +33,6 @@ describe("onboarding.storage.util", () => {
           ONBOARDING_STEPS.CREATE_TASK,
           ONBOARDING_STEPS.NAVIGATE_TO_NOW,
         ],
-        isSeen: true,
         isCompleted: false,
         isSignupComplete: true,
         isOnboardingSkipped: false,
@@ -52,7 +51,6 @@ describe("onboarding.storage.util", () => {
       const progress = getOnboardingProgress();
       const expected: OnboardingProgress = {
         completedSteps: [],
-        isSeen: false,
         isCompleted: false,
         isSignupComplete: false,
         isOnboardingSkipped: false,
@@ -64,7 +62,6 @@ describe("onboarding.storage.util", () => {
     it("should handle invalid array format gracefully", () => {
       const invalidFormatProgress = {
         completedSteps: [1, 2, 4, 5, 0, -1, "invalid"],
-        isSeen: false,
         isCompleted: false,
         hasCompletedSignup: false,
         skipOnboarding: false,
@@ -82,16 +79,12 @@ describe("onboarding.storage.util", () => {
 
   describe("updateOnboardingProgress", () => {
     it("should update onboarding progress", () => {
-      updateOnboardingProgress({ isSeen: true });
-      const progress = getOnboardingProgress();
-      expect(progress.isSeen).toBe(true);
+      updateOnboardingProgress({ isAuthPromptDismissed: true });
     });
 
     it("should merge partial updates", () => {
-      updateOnboardingProgress({ isSeen: true });
       updateOnboardingProgress({ isAuthPromptDismissed: true });
       const progress = getOnboardingProgress();
-      expect(progress.isSeen).toBe(true);
       expect(progress.isAuthPromptDismissed).toBe(true);
     });
 
@@ -244,7 +237,6 @@ describe("onboarding.storage.util", () => {
           ONBOARDING_STEPS.CREATE_TASK,
           ONBOARDING_STEPS.NAVIGATE_TO_NOW,
         ],
-        isSeen: true,
         isCompleted: true,
         isSignupComplete: true,
         isOnboardingSkipped: true,
@@ -268,7 +260,6 @@ describe("onboarding.storage.util", () => {
       // Verify getOnboardingProgress returns defaults
       const progressAfter = getOnboardingProgress();
       expect(progressAfter.completedSteps).toEqual([]);
-      expect(progressAfter.isSeen).toBe(false);
       expect(progressAfter.isCompleted).toBe(false);
       expect(progressAfter.isSignupComplete).toBe(false);
       expect(progressAfter.isOnboardingSkipped).toBe(false);

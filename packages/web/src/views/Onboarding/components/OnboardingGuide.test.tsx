@@ -1,7 +1,7 @@
 import { useLocation } from "react-router-dom";
 import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
-import { render, screen } from "@web/__tests__/__mocks__/mock.render";
+import { act, render, screen } from "@web/__tests__/__mocks__/mock.render";
 import { useSession } from "@web/auth/hooks/useSession";
 import { CompassSession } from "@web/auth/session/session.types";
 import {
@@ -12,7 +12,7 @@ import { ONBOARDING_STEPS } from "../constants/onboarding.constants";
 import { useCmdPaletteGuide } from "../hooks/useCmdPaletteGuide";
 import { useStepDetection } from "../hooks/useStepDetection";
 import { markStepCompleted } from "../utils/onboarding.storage.util";
-import { CmdPaletteGuide } from "./CmdPaletteGuide";
+import { OnboardingGuide } from "./OnboardingGuide";
 
 // Mock posthog to avoid transitive dependency issues in tests
 jest.mock("posthog-js/react", () => ({
@@ -77,7 +77,7 @@ describe("CmdPaletteGuide", () => {
       completeGuide: jest.fn(),
     });
 
-    render(<CmdPaletteGuide />);
+    render(<OnboardingGuide />);
 
     expect(screen.queryByText("Welcome to Compass")).not.toBeInTheDocument();
     expect(
@@ -100,7 +100,7 @@ describe("CmdPaletteGuide", () => {
       completeGuide: jest.fn(),
     });
 
-    render(<CmdPaletteGuide />);
+    render(<OnboardingGuide />);
 
     expect(screen.getByText("Welcome to the Day View")).toBeInTheDocument();
     expect(
@@ -124,7 +124,7 @@ describe("CmdPaletteGuide", () => {
       completeGuide: jest.fn(),
     });
 
-    render(<CmdPaletteGuide />);
+    render(<OnboardingGuide />);
 
     expect(screen.getByText("Welcome to the Now View")).toBeInTheDocument();
     expect(
@@ -156,7 +156,7 @@ describe("CmdPaletteGuide", () => {
       completeGuide: jest.fn(),
     });
 
-    render(<CmdPaletteGuide />);
+    render(<OnboardingGuide />);
 
     expect(screen.getByText("Welcome to the Now View")).toBeInTheDocument();
     expect(
@@ -180,7 +180,7 @@ describe("CmdPaletteGuide", () => {
       completeGuide: jest.fn(),
     });
 
-    render(<CmdPaletteGuide />);
+    render(<OnboardingGuide />);
 
     expect(screen.getByText("Welcome to the Now View")).toBeInTheDocument();
     expect(
@@ -203,7 +203,7 @@ describe("CmdPaletteGuide", () => {
       completeGuide: jest.fn(),
     });
 
-    render(<CmdPaletteGuide />);
+    render(<OnboardingGuide />);
 
     expect(screen.getByText("Welcome to the Week View")).toBeInTheDocument();
     expect(
@@ -235,7 +235,7 @@ describe("CmdPaletteGuide", () => {
       completeGuide: jest.fn(),
     });
 
-    render(<CmdPaletteGuide />);
+    render(<OnboardingGuide />);
 
     expect(screen.getByText("Welcome to the Week View")).toBeInTheDocument();
     expect(
@@ -267,7 +267,7 @@ describe("CmdPaletteGuide", () => {
       completeGuide: jest.fn(),
     });
 
-    render(<CmdPaletteGuide />);
+    render(<OnboardingGuide />);
 
     expect(screen.getByText("Welcome to the Day View")).toBeInTheDocument();
     expect(
@@ -290,7 +290,7 @@ describe("CmdPaletteGuide", () => {
       completeGuide: jest.fn(),
     });
 
-    render(<CmdPaletteGuide />);
+    render(<OnboardingGuide />);
 
     // Should show step 1 instructions instead since step 1 wasn't completed
     expect(screen.getByText("Welcome to the Day View")).toBeInTheDocument();
@@ -323,7 +323,7 @@ describe("CmdPaletteGuide", () => {
       completeGuide: jest.fn(),
     });
 
-    render(<CmdPaletteGuide />);
+    render(<OnboardingGuide />);
 
     expect(screen.getByText("Welcome to the Day View")).toBeInTheDocument();
     expect(
@@ -346,7 +346,7 @@ describe("CmdPaletteGuide", () => {
       completeGuide: jest.fn(),
     });
 
-    render(<CmdPaletteGuide />);
+    render(<OnboardingGuide />);
 
     const skipButton = screen.getByLabelText("Skip guide");
     await user.click(skipButton);
@@ -377,7 +377,7 @@ describe("CmdPaletteGuide", () => {
       completeGuide: jest.fn(),
     });
 
-    render(<CmdPaletteGuide />);
+    render(<OnboardingGuide />);
 
     const skipButton = screen.getByLabelText("Skip guide");
     await user.click(skipButton);
@@ -406,7 +406,7 @@ describe("CmdPaletteGuide", () => {
       completeGuide: jest.fn(),
     });
 
-    render(<CmdPaletteGuide />);
+    render(<OnboardingGuide />);
 
     // Check that progress dots are rendered
     const progressDots = screen
@@ -426,7 +426,7 @@ describe("CmdPaletteGuide", () => {
       completeGuide: jest.fn(),
     });
 
-    render(<CmdPaletteGuide />);
+    render(<OnboardingGuide />);
 
     expect(screen.getByText("Step 2 of 5")).toBeInTheDocument();
     // Check that progress dots are rendered
@@ -446,7 +446,7 @@ describe("CmdPaletteGuide", () => {
       completeGuide: jest.fn(),
     });
 
-    render(<CmdPaletteGuide />);
+    render(<OnboardingGuide />);
 
     expect(mockUseStepDetection).toHaveBeenCalled();
   });
@@ -462,11 +462,186 @@ describe("CmdPaletteGuide", () => {
       completeGuide: jest.fn(),
     });
 
-    render(<CmdPaletteGuide />);
+    render(<OnboardingGuide />);
 
     expect(mockUseStepDetection).toHaveBeenCalledWith({
       currentStep: ONBOARDING_STEPS.CREATE_TASK,
       onStepComplete: expect.any(Function),
+    });
+  });
+
+  describe("Import Results", () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it("should show success message with import results when import completes", () => {
+      mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
+      mockUseCmdPaletteGuide.mockReturnValue({
+        currentStep: null,
+        isGuideActive: false,
+        completeStep: jest.fn(),
+        skipGuide: jest.fn(),
+        completeGuide: jest.fn(),
+      });
+
+      render(<OnboardingGuide />, {
+        state: {
+          sync: {
+            importGCal: {
+              importing: false,
+              importResults: { eventsCount: 10, calendarsCount: 2 },
+              pendingLocalEventsSynced: null,
+            },
+          },
+        },
+      });
+
+      expect(screen.getByText("Welcome to Compass")).toBeInTheDocument();
+      expect(
+        screen.getByText("Imported 10 events from 2 calendars"),
+      ).toBeInTheDocument();
+    });
+
+    it("should show import results with local events synced", () => {
+      mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
+      mockUseCmdPaletteGuide.mockReturnValue({
+        currentStep: null,
+        isGuideActive: false,
+        completeStep: jest.fn(),
+        skipGuide: jest.fn(),
+        completeGuide: jest.fn(),
+      });
+
+      render(<OnboardingGuide />, {
+        state: {
+          sync: {
+            importGCal: {
+              importing: false,
+              importResults: {
+                eventsCount: 5,
+                calendarsCount: 1,
+                localEventsSynced: 3,
+              },
+              pendingLocalEventsSynced: null,
+            },
+          },
+        },
+      });
+
+      expect(
+        screen.getByText("Imported 5 events from 1 calendar"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("3 local events synced to the cloud"),
+      ).toBeInTheDocument();
+    });
+
+    it("should auto-dismiss after 8 seconds", async () => {
+      mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
+      mockUseCmdPaletteGuide.mockReturnValue({
+        currentStep: null,
+        isGuideActive: false,
+        completeStep: jest.fn(),
+        skipGuide: jest.fn(),
+        completeGuide: jest.fn(),
+      });
+
+      render(<OnboardingGuide />, {
+        state: {
+          sync: {
+            importGCal: {
+              importing: false,
+              importResults: { eventsCount: 10, calendarsCount: 2 },
+              pendingLocalEventsSynced: null,
+            },
+          },
+        },
+      });
+
+      expect(
+        screen.getByText("Imported 10 events from 2 calendars"),
+      ).toBeInTheDocument();
+
+      await act(async () => {
+        jest.advanceTimersByTime(8000);
+      });
+
+      // After auto-dismiss, the success message should no longer be visible
+      expect(
+        screen.queryByText("Imported 10 events from 2 calendars"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("should clear auto-dismiss timer on unmount", async () => {
+      mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
+      mockUseCmdPaletteGuide.mockReturnValue({
+        currentStep: null,
+        isGuideActive: false,
+        completeStep: jest.fn(),
+        skipGuide: jest.fn(),
+        completeGuide: jest.fn(),
+      });
+
+      const { unmount } = render(<OnboardingGuide />, {
+        state: {
+          sync: {
+            importGCal: {
+              importing: false,
+              importResults: { eventsCount: 10, calendarsCount: 2 },
+              pendingLocalEventsSynced: null,
+            },
+          },
+        },
+      });
+
+      await act(async () => {
+        jest.advanceTimersByTime(4000);
+      });
+      unmount();
+
+      // Advancing timers after unmount should not cause any errors
+      await act(async () => {
+        jest.advanceTimersByTime(4000);
+      });
+    });
+
+    it("should dismiss import results when skip button is clicked", async () => {
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+      const skipGuide = jest.fn();
+      mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
+      mockUseCmdPaletteGuide.mockReturnValue({
+        currentStep: null,
+        isGuideActive: false,
+        completeStep: jest.fn(),
+        skipGuide,
+        completeGuide: jest.fn(),
+      });
+
+      render(<OnboardingGuide />, {
+        state: {
+          sync: {
+            importGCal: {
+              importing: false,
+              importResults: { eventsCount: 10, calendarsCount: 2 },
+              pendingLocalEventsSynced: null,
+            },
+          },
+        },
+      });
+
+      expect(
+        screen.getByText("Imported 10 events from 2 calendars"),
+      ).toBeInTheDocument();
+
+      const dismissButton = screen.getByLabelText("Dismiss");
+      await user.click(dismissButton);
+
+      expect(skipGuide).toHaveBeenCalledTimes(1);
     });
   });
 });
