@@ -62,7 +62,12 @@ export const useGoogleLoginWithSyncOverlay = (
     // Handle remount case: component unmounted during login, remounted after OAuth completed
     // If loading is false, we're not tracking a login (ref is false), but isSyncing is still true,
     // we should clear it to prevent stuck overlay
-    if (!loginStartedRef.current && !googleLogin.loading && isSyncing) {
+    if (
+      !isSyncingRetainedOnSuccess &&
+      !loginStartedRef.current &&
+      !googleLogin.loading &&
+      isSyncing
+    ) {
       setIsSyncing(false);
     }
 
@@ -72,7 +77,12 @@ export const useGoogleLoginWithSyncOverlay = (
         setIsSyncing(false);
       }
     };
-  }, [googleLogin.loading, isSyncing, setIsSyncing]);
+  }, [
+    googleLogin.loading,
+    isSyncing,
+    isSyncingRetainedOnSuccess,
+    setIsSyncing,
+  ]);
 
   return googleLogin;
 };

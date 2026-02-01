@@ -245,6 +245,33 @@ describe("useGoogleLoginWithSyncOverlay", () => {
     });
   });
 
+  it("does not clear isSyncing on remount when isSyncingRetainedOnSuccess is true", async () => {
+    mockUseSession.mockReturnValue({
+      authenticated: false,
+      loading: false,
+      isSyncing: true,
+      setAuthenticated: jest.fn(),
+      setLoading: jest.fn(),
+      setIsSyncing: mockSetIsSyncing,
+    });
+
+    mockUseGoogleLogin.mockImplementation(() => {
+      return {
+        login: mockLogin,
+        loading: false,
+        data: null,
+      };
+    });
+
+    renderHook(() =>
+      useGoogleLoginWithSyncOverlay({ isSyncingRetainedOnSuccess: true }),
+    );
+
+    await waitFor(() => {
+      expect(mockSetIsSyncing).not.toHaveBeenCalledWith(false);
+    });
+  });
+
   describe("error handling in onSuccess", () => {
     it("clears isSyncing when onSuccess throws an error with isSyncingRetainedOnSuccess=true", async () => {
       let onSuccessCallback:
