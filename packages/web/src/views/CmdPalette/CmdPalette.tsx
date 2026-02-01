@@ -6,9 +6,8 @@ import {
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
-import { useSession } from "@web/auth/hooks/useSession";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
-import { useGoogleAuth } from "@web/common/hooks/useGoogleAuth";
+import { useConnectGoogle } from "@web/common/hooks/useConnectGoogle";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
 import {
@@ -43,8 +42,8 @@ const CmdPalette = ({
   const open = useAppSelector(selectIsCmdPaletteOpen);
   const [page] = useState<"root" | "projects">("root");
   const [search, setSearch] = useState("");
-  const { authenticated } = useSession();
-  const googleLogin = useGoogleAuth();
+  const { isGoogleCalendarConnected, onConnectGoogleCalendar } =
+    useConnectGoogle();
 
   const handleCreateSomedayDraft = async (
     category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
@@ -139,16 +138,15 @@ const CmdPalette = ({
         items: [
           {
             id: "connect-google-calendar",
-            children: authenticated
+            children: isGoogleCalendarConnected
               ? "Google Calendar Connected"
               : "Connect Google Calendar",
-            icon: authenticated ? "CheckCircleIcon" : "CloudArrowUpIcon",
-            onClick: authenticated
+            icon: isGoogleCalendarConnected
+              ? "CheckCircleIcon"
+              : "CloudArrowUpIcon",
+            onClick: isGoogleCalendarConnected
               ? undefined
-              : () => {
-                  googleLogin.login();
-                  dispatch(settingsSlice.actions.closeCmdPalette());
-                },
+              : onConnectGoogleCalendar,
           },
           {
             id: "redo-onboarding",

@@ -2,9 +2,8 @@ import { useState } from "react";
 import CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
 import dayjs from "@core/util/date/dayjs";
-import { useSession } from "@web/auth/hooks/useSession";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
-import { useGoogleAuth } from "@web/common/hooks/useGoogleAuth";
+import { useConnectGoogle } from "@web/common/hooks/useConnectGoogle";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import {
   openEventFormCreateEvent,
@@ -26,9 +25,8 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
   const [page] = useState<"root">("root");
   const [search, setSearch] = useState("");
   const today = dayjs();
-  const { authenticated } = useSession();
-
-  const googleLogin = useGoogleAuth();
+  const { isGoogleCalendarConnected, onConnectGoogleCalendar } =
+    useConnectGoogle();
 
   const filteredItems = filterItems(
     [
@@ -76,16 +74,15 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
         items: [
           {
             id: "connect-google-calendar",
-            children: authenticated
+            children: isGoogleCalendarConnected
               ? "Google Calendar Connected"
               : "Connect Google Calendar",
-            icon: authenticated ? "CheckCircleIcon" : "CloudArrowUpIcon",
-            onClick: authenticated
+            icon: isGoogleCalendarConnected
+              ? "CheckCircleIcon"
+              : "CloudArrowUpIcon",
+            onClick: isGoogleCalendarConnected
               ? undefined
-              : () => {
-                  googleLogin.login();
-                  dispatch(settingsSlice.actions.closeCmdPalette());
-                },
+              : onConnectGoogleCalendar,
           },
           {
             id: "redo-onboarding",

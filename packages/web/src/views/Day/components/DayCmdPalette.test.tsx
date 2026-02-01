@@ -3,10 +3,10 @@ import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import * as useSessionModule from "@web/auth/hooks/useSession";
+import * as useGoogleAuthModule from "@web/common/hooks/useGoogleAuth";
 import { keyPressed$ } from "@web/common/utils/dom/event-emitter.util";
 import * as eventUtil from "@web/common/utils/event/event.util";
 import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
-import * as useGoogleLoginModule from "@web/components/oauth/google/useGoogleLogin";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
@@ -264,7 +264,7 @@ describe("DayCmdPalette", () => {
     const mockLogin = jest.fn();
 
     beforeEach(() => {
-      jest.spyOn(useGoogleLoginModule, "useGoogleLogin").mockReturnValue({
+      jest.spyOn(useGoogleAuthModule, "useGoogleAuth").mockReturnValue({
         login: mockLogin,
       });
     });

@@ -1,14 +1,10 @@
 import { useState } from "react";
 import CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
-import { useSession } from "@web/auth/hooks/useSession";
-import { AuthApi } from "@web/common/apis/auth.api";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
-import { useGoogleLoginWithSyncOverlay } from "@web/common/hooks/useGoogleLoginWithSyncOverlay";
+import { useConnectGoogle } from "@web/common/hooks/useConnectGoogle";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
-import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
-import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
@@ -20,25 +16,8 @@ export const NowCmdPalette = () => {
   const open = useAppSelector(selectIsCmdPaletteOpen);
   const [page] = useState<"root">("root");
   const [search, setSearch] = useState("");
-  const { authenticated, setAuthenticated } = useSession();
-
-  const googleLogin = useGoogleLoginWithSyncOverlay({
-    onSuccess: async (data) => {
-      try {
-        await AuthApi.loginOrSignup(data);
-        markUserAsAuthenticated();
-        setAuthenticated(true);
-        dispatch(triggerFetch());
-      } catch (error) {
-        console.error("Failed to authenticate:", error);
-      } finally {
-        dispatch(settingsSlice.actions.closeCmdPalette());
-      }
-    },
-    onError: () => {
-      dispatch(settingsSlice.actions.closeCmdPalette());
-    },
-  });
+  const { isGoogleCalendarConnected, onConnectGoogleCalendar } =
+    useConnectGoogle();
 
   const filteredItems = filterItems(
     [
@@ -72,16 +51,15 @@ export const NowCmdPalette = () => {
         items: [
           {
             id: "connect-google-calendar",
-            children: authenticated
+            children: isGoogleCalendarConnected
               ? "Google Calendar Connected"
               : "Connect Google Calendar",
-            icon: authenticated ? "CheckCircleIcon" : "CloudArrowUpIcon",
-            onClick: authenticated
+            icon: isGoogleCalendarConnected
+              ? "CheckCircleIcon"
+              : "CloudArrowUpIcon",
+            onClick: isGoogleCalendarConnected
               ? undefined
-              : () => {
-                  googleLogin.login();
-                  dispatch(settingsSlice.actions.closeCmdPalette());
-                },
+              : onConnectGoogleCalendar,
           },
           {
             id: "redo-onboarding",

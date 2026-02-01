@@ -35,10 +35,10 @@ jest.mock("@web/auth/hooks/useSession", () => ({
   }),
 }));
 
-// Mock useGoogleLogin
+// Mock useGoogleAuth
 const mockLogin = jest.fn();
-jest.mock("@web/components/oauth/google/useGoogleLogin", () => ({
-  useGoogleLogin: () => ({
+jest.mock("@web/common/hooks/useGoogleAuth", () => ({
+  useGoogleAuth: () => ({
     login: mockLogin,
   }),
 }));
