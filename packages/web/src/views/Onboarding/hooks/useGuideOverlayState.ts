@@ -36,7 +36,7 @@ export interface GuideOverlayState {
   /** Total number of steps */
   totalSteps: number;
   /** Step progress text (e.g., "Step 1 of 6") */
-  stepText: string;
+  stepText?: string;
   /** Whether this is the Now view pinned variant */
   isNowViewOverlay: boolean;
 }
@@ -115,9 +115,12 @@ export function useGuideOverlayState({
     return config ? config.order + 1 : 0;
   }, [actualStep, showSuccessMessage]);
 
-  const stepText = showSuccessMessage
-    ? "All steps completed"
-    : `Step ${stepNumber} of ${ONBOARDING_STEP_CONFIGS.length}`;
+  const shouldShowStepText = !(showSuccessMessage && hasImportResults);
+  const stepText = shouldShowStepText
+    ? showSuccessMessage
+      ? "All steps completed"
+      : `Step ${stepNumber} of ${ONBOARDING_STEP_CONFIGS.length}`
+    : undefined;
 
   const isNowViewOverlay = overlayVariant === "pinned" && !showSuccessMessage;
 

@@ -278,6 +278,21 @@ describe("useGuideOverlayState", () => {
       expect(result.current.stepNumber).toBe(null);
       expect(result.current.stepText).toBe("All steps completed");
     });
+
+    it("should omit step text when showing import results", () => {
+      mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
+
+      const { result } = renderHook(() =>
+        useGuideOverlayState({
+          currentStep: null,
+          isSuccessMessageDismissed: false,
+          hasImportResults: true,
+        }),
+      );
+
+      expect(result.current.stepNumber).toBe(null);
+      expect(result.current.stepText).toBeUndefined();
+    });
   });
 
   describe("isNowViewOverlay", () => {

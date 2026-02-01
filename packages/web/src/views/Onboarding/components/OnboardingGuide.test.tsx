@@ -497,6 +497,7 @@ describe("CmdPaletteGuide", () => {
       expect(
         screen.getByText("Imported 10 events from 2 calendars"),
       ).toBeInTheDocument();
+      expect(screen.queryByText(/Step \d+ of \d+/)).not.toBeInTheDocument();
     });
 
     it("should show import results with local events synced", () => {

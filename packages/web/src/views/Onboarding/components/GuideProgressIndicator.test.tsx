@@ -21,6 +21,20 @@ describe("GuideProgressIndicator", () => {
     expect(screen.getByText("Step 1 of 5")).toBeInTheDocument();
   });
 
+  it("should not render step text when omitted", () => {
+    const { container } = render(
+      <GuideProgressIndicator
+        actualStep={ONBOARDING_STEPS.NAVIGATE_TO_DAY}
+        showSuccessMessage={false}
+      />,
+    );
+
+    expect(screen.queryByText(/Step \d+ of \d+/)).not.toBeInTheDocument();
+    expect(
+      container.querySelectorAll("div[class*='rounded-full']"),
+    ).toHaveLength(0);
+  });
+
   it("should render 5 progress dots", () => {
     render(
       <GuideProgressIndicator

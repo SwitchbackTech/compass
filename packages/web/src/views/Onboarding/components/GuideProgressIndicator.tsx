@@ -8,7 +8,7 @@ import { isStepCompleted } from "../utils/onboarding.storage.util";
 interface GuideProgressIndicatorProps {
   actualStep: OnboardingStepName | null;
   showSuccessMessage: boolean;
-  stepText: string;
+  stepText?: string;
 }
 
 export const GuideProgressIndicator: FC<GuideProgressIndicatorProps> = ({
@@ -16,6 +16,10 @@ export const GuideProgressIndicator: FC<GuideProgressIndicatorProps> = ({
   showSuccessMessage,
   stepText,
 }) => {
+  if (!stepText) {
+    return null;
+  }
+
   const actualStepIndex = actualStep
     ? (ONBOARDING_STEP_CONFIGS.find((config) => config.id === actualStep)
         ?.order ?? -1)
