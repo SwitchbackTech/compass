@@ -1,19 +1,13 @@
-import { ReactNode, useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
-import { io } from "socket.io-client";
 import {
-  EVENT_CHANGED,
-  FETCH_USER_METADATA,
   IMPORT_GCAL_END,
   IMPORT_GCAL_START,
-  SOMEDAY_EVENT_CHANGED,
   USER_METADATA,
 } from "@core/constants/websocket.constants";
 import { UserMetadata } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
 import { useSession } from "@web/auth/hooks/useSession";
-import { useUser } from "@web/auth/hooks/useUser";
-import { ENV_WEB } from "@web/common/constants/env.constants";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { selectImporting } from "@web/ducks/events/selectors/sync.selector";
 import {
@@ -21,54 +15,13 @@ import {
   triggerFetch,
 } from "@web/ducks/events/slices/sync.slice";
 import { useAppSelector } from "@web/store/store.hooks";
+import { socket } from "../client/socket.client";
 
-export const socket = io(ENV_WEB.BACKEND_BASEURL, {
-  withCredentials: true,
-  autoConnect: false,
-  reconnection: false,
-  closeOnBeforeunload: true,
-  transports: ["websocket", "polling"],
-});
-
-export const disconnect = () => {
-  socket.disconnect();
-};
-
-export const reconnect = () => {
-  disconnect();
-
-  const timeout = setTimeout(() => {
-    socket.connect();
-    clearTimeout(timeout);
-  }, 1000);
-};
-
-const onError = (error: unknown) => {
-  console.error("Socket error:", error);
-};
-
-export const onceConnected = () => {
-  socket.emit(FETCH_USER_METADATA);
-};
-
-socket.once("connect", onceConnected);
-socket.on("error", onError);
-
-const SocketProvider = ({ children }: { children: ReactNode }) => {
+export const useGcalSync = () => {
   const dispatch = useDispatch();
-  const { userId } = useUser();
   const { isSyncing, setIsSyncing } = useSession();
   const importStartedRef = useRef(false);
   const importing = useAppSelector(selectImporting);
-
-  // Only connect socket if user is authenticated
-  useEffect(() => {
-    if (userId && !socket.connected) {
-      socket.connect();
-    } else if (!userId && socket.connected) {
-      socket.disconnect();
-    }
-  }, [userId]);
 
   useEffect(() => {
     if (importing) {
@@ -93,7 +46,7 @@ const SocketProvider = ({ children }: { children: ReactNode }) => {
       const shouldShowResults = isSyncing && importStartedRef.current;
       importStartedRef.current = false;
 
-      // If we're in post-auth sync, show completion modal
+      // If we're in post-auth sync, show completion
       if (isSyncing) {
         setIsSyncing(false);
       }
@@ -114,7 +67,7 @@ const SocketProvider = ({ children }: { children: ReactNode }) => {
         importResults = payload;
       }
 
-      // Set import results to trigger modal display
+      // Set import results to trigger completion results display
       dispatch(importGCalSlice.actions.setImportResults(importResults));
 
       // Trigger refetch to load imported events (no page reload)
@@ -125,13 +78,6 @@ const SocketProvider = ({ children }: { children: ReactNode }) => {
       );
     },
     [dispatch, isSyncing, setIsSyncing],
-  );
-
-  const onEventChanged = useCallback(
-    (reason: Sync_AsyncStateContextReason) => {
-      dispatch(triggerFetch({ reason }));
-    },
-    [dispatch],
   );
 
   const onMetadataFetch = useCallback(
@@ -146,6 +92,13 @@ const SocketProvider = ({ children }: { children: ReactNode }) => {
           dispatch(importGCalSlice.actions.importing(true));
         } else {
           // Import completed while we were connecting - complete the flow
+
+          // FIX: race condition where USER_METADATA fires before IMPORT_GCAL_END
+          // If we think we are importing, we wait for IMPORT_GCAL_END
+          if (importStartedRef.current) {
+            return;
+          }
+
           dispatch(importGCalSlice.actions.importing(false));
           setIsSyncing(false);
         }
@@ -161,24 +114,6 @@ const SocketProvider = ({ children }: { children: ReactNode }) => {
     },
     [dispatch, isSyncing, setIsSyncing, onImportStart],
   );
-
-  useEffect(() => {
-    const handler = () =>
-      onEventChanged(Sync_AsyncStateContextReason.SOCKET_EVENT_CHANGED);
-    socket.on(EVENT_CHANGED, handler);
-    return () => {
-      socket.removeListener(EVENT_CHANGED, handler);
-    };
-  }, [onEventChanged]);
-
-  useEffect(() => {
-    const handler = () =>
-      onEventChanged(Sync_AsyncStateContextReason.SOCKET_SOMEDAY_EVENT_CHANGED);
-    socket.on(SOMEDAY_EVENT_CHANGED, handler);
-    return () => {
-      socket.removeListener(SOMEDAY_EVENT_CHANGED, handler);
-    };
-  }, [onEventChanged]);
 
   useEffect(() => {
     socket.on(USER_METADATA, onMetadataFetch);
@@ -200,8 +135,4 @@ const SocketProvider = ({ children }: { children: ReactNode }) => {
       socket.removeListener(IMPORT_GCAL_END, onImportEnd);
     };
   }, [onImportEnd]);
-
-  return children;
 };
-
-export default SocketProvider;

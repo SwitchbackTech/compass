@@ -4,6 +4,7 @@ import { render, waitFor } from "@testing-library/react";
 import {
   IMPORT_GCAL_END,
   IMPORT_GCAL_START,
+  USER_METADATA,
 } from "@core/constants/websocket.constants";
 import { useSession } from "@web/auth/hooks/useSession";
 import { useUser } from "@web/auth/hooks/useUser";
@@ -38,11 +39,13 @@ describe("SocketProvider", () => {
   const mockUserId = "test-user-id";
   let importEndCallback: ((data?: string) => void) | undefined;
   let importStartCallback: ((data?: string) => void) | undefined;
+  let userMetadataCallback: ((data: any) => void) | undefined;
 
   beforeEach(() => {
     jest.clearAllMocks();
     importEndCallback = undefined;
     importStartCallback = undefined;
+    userMetadataCallback = undefined;
     mockUseUser.mockReturnValue({ userId: mockUserId });
 
     // Mock socket.on to capture the IMPORT_GCAL_END callback
@@ -52,6 +55,9 @@ describe("SocketProvider", () => {
       }
       if (event === IMPORT_GCAL_START) {
         importStartCallback = callback;
+      }
+      if (event === USER_METADATA) {
+        userMetadataCallback = callback;
       }
     });
   });
@@ -456,5 +462,94 @@ describe("SocketProvider", () => {
 
     // Importing flag should be true
     expect(store.getState().sync.importGCal.importing).toBe(true);
+  });
+
+  it("handles race condition where USER_METADATA arrives before IMPORT_GCAL_END", async () => {
+    // This test ensures that if USER_METADATA says "not importing", but we locally know
+    // we were importing (via importStartedRef), we wait for IMPORT_GCAL_END instead of
+    // closing the sync flow immediately.
+
+    const mockSession: CompassSession = {
+      isSyncing: true,
+      authenticated: true,
+      loading: false,
+      setAuthenticated: jest.fn(),
+      setIsSyncing: mockSetIsSyncing,
+      setLoading: jest.fn(),
+    };
+    mockUseSession.mockReturnValue(mockSession);
+
+    const store = configureStore({
+      reducer: {
+        sync: combineReducers({
+          importGCal: importGCalSlice.reducer,
+          importLatest: importLatestSlice.reducer,
+        }),
+      },
+      preloadedState: {
+        sync: {
+          importGCal: {
+            importing: true, // Start with importing=true
+            importResults: null,
+            pendingLocalEventsSynced: null,
+            isProcessing: false,
+            isSuccess: false,
+            error: null,
+            value: null,
+            reason: null,
+          },
+          importLatest: {
+            isFetchNeeded: false,
+            reason: null,
+          },
+        },
+      },
+    });
+
+    render(
+      <Provider store={store}>
+        <SocketProvider>
+          <div>Test</div>
+        </SocketProvider>
+      </Provider>,
+    );
+
+    await waitFor(() => {
+      expect(userMetadataCallback).toBeDefined();
+      expect(importEndCallback).toBeDefined();
+    });
+
+    // 1. Simulate USER_METADATA event saying "not importing"
+    // This is the "race" - it arrives before the end event
+    if (userMetadataCallback) {
+      userMetadataCallback({
+        _id: mockUserId,
+        sync: { importGCal: "done" }, // Not 'importing'
+      });
+    }
+
+    // Verify setIsSyncing was NOT called yet (because we are waiting for import end)
+    await waitFor(
+      () => {
+        expect(mockSetIsSyncing).not.toHaveBeenCalled();
+      },
+      { timeout: 100 },
+    );
+
+    // 2. Simulate IMPORT_GCAL_END event
+    if (importEndCallback) {
+      importEndCallback(JSON.stringify({ eventsCount: 50 }));
+    }
+
+    // Now setIsSyncing should be called
+    await waitFor(() => {
+      expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
+    });
+
+    // And results should be set
+    const state = store.getState();
+    expect(state.sync.importGCal.importResults).toEqual({
+      eventsCount: 50,
+    });
   });
 });

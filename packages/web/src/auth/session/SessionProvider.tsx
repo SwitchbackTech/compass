@@ -12,7 +12,7 @@ import { APP_NAME } from "@core/constants/core.constants";
 import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import * as socket from "@web/socket/SocketProvider";
+import * as socket from "@web/socket/provider/SocketProvider";
 import { CompassSession } from "./session.types";
 
 SuperTokens.init({
