@@ -122,15 +122,6 @@ export const OVERLAY_TEXT = {
 };
 
 /**
- * Check if the body is locked (indicating overlay is active).
- */
-export const isBodyLocked = async (page: Page): Promise<boolean> => {
-  return page.evaluate(() => {
-    return document.body.getAttribute("data-app-locked") === "true";
-  });
-};
-
-/**
  * Wait for body locked state to match expected value (with retry).
  */
 export const expectBodyLocked = async (page: Page, locked: boolean) => {
@@ -146,26 +137,6 @@ export const expectBodyLocked = async (page: Page, locked: boolean) => {
       "true",
     );
   }
-};
-
-/**
- * Get the current overlay phase by checking text content.
- */
-export const getOverlayPhase = async (
-  page: Page,
-): Promise<"oauth" | "import" | "none"> => {
-  return page.evaluate(
-    (texts) => {
-      const bodyText = document.body.innerText;
-      if (bodyText.includes(texts.oauthTitle)) return "oauth";
-      if (bodyText.includes(texts.importTitle)) return "import";
-      return "none";
-    },
-    {
-      oauthTitle: OVERLAY_TEXT.oauthTitle,
-      importTitle: OVERLAY_TEXT.importTitle,
-    },
-  );
 };
 
 /**
