@@ -212,14 +212,23 @@ class UserService {
     };
   };
 
-  restartGoogleCalendarSync = async (userId: string) => {
-    logger.warn(`Restarting Google Calendar sync for user: ${userId}`);
+  restartGoogleCalendarSync = async (
+    userId: string,
+    options: { force?: boolean } = {},
+  ) => {
+    const isForce = options.force === true;
+
+    logger.warn(
+      `Restarting Google Calendar sync for user: ${userId}${isForce ? " (forced)" : ""}`,
+    );
 
     try {
       webSocketServer.handleImportGCalStart(userId);
 
       const userMeta = await userMetadataService.fetchUserMetadata(userId);
-      const proceed = shouldImportGCal(userMeta);
+      const importStatus = userMeta.sync?.importGCal;
+      const isImporting = importStatus === "importing";
+      const proceed = isForce ? !isImporting : shouldImportGCal(userMeta);
 
       if (!proceed) {
         webSocketServer.handleImportGCalEnd(

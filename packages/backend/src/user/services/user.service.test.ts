@@ -223,6 +223,58 @@ describe("UserService", () => {
       const calendars = await calendarService.getByUser(userId);
       expect(calendars.length).toBeGreaterThan(0);
     });
+
+    it("skips restart when import is completed and not forced", async () => {
+      const { user } = await UtilDriver.setupTestUser();
+      const userId = user._id.toString();
+
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: { sync: { importGCal: "completed" } },
+      });
+
+      const stopSpy = jest.spyOn(userService, "stopGoogleCalendarSync");
+      const startSpy = jest.spyOn(userService, "startGoogleCalendarSync");
+
+      await userService.restartGoogleCalendarSync(userId);
+
+      expect(stopSpy).not.toHaveBeenCalled();
+      expect(startSpy).not.toHaveBeenCalled();
+
+      const metadata = await userMetadataService.fetchUserMetadata(userId);
+      expect(metadata.sync?.importGCal).toBe("completed");
+
+      stopSpy.mockRestore();
+      startSpy.mockRestore();
+    });
+
+    it("forces restart when import is completed", async () => {
+      const { user } = await UtilDriver.setupTestUser();
+      const userId = user._id.toString();
+
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: { sync: { importGCal: "completed" } },
+      });
+
+      const stopSpy = jest
+        .spyOn(userService, "stopGoogleCalendarSync")
+        .mockResolvedValue();
+      const startSpy = jest
+        .spyOn(userService, "startGoogleCalendarSync")
+        .mockResolvedValue({ eventsCount: 0, calendarsCount: 0 });
+
+      await userService.restartGoogleCalendarSync(userId, { force: true });
+
+      expect(stopSpy).toHaveBeenCalledWith(userId);
+      expect(startSpy).toHaveBeenCalledWith(userId);
+
+      const metadata = await userMetadataService.fetchUserMetadata(userId);
+      expect(metadata.sync?.importGCal).toBe("completed");
+
+      stopSpy.mockRestore();
+      startSpy.mockRestore();
+    });
   });
 
   describe("updateUserMetadata", () => {
