@@ -1,9 +1,7 @@
-import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useIsSignupComplete } from "@web/auth/hooks/useIsSignupComplete";
 import { useSession } from "@web/auth/hooks/useSession";
 import { useSkipOnboarding } from "@web/auth/hooks/useSkipOnboarding";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { useGoogleLoginWithSyncOverlay } from "@web/common/hooks/useGoogleLoginWithSyncOverlay";
 import {
   authenticate,
@@ -20,7 +18,6 @@ import { toastDefaultOptions } from "@web/views/Day/components/Toasts";
 import { OnboardingStepProps } from "@web/views/Onboarding";
 
 export function useGoogleAuth(props?: OnboardingStepProps) {
-  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { setAuthenticated, setIsSyncing } = useSession();
   const { markSignupCompleted } = useIsSignupComplete();
@@ -73,8 +70,6 @@ export function useGoogleAuth(props?: OnboardingStepProps) {
         // Trigger a refetch to load events from the cloud
         // This ensures the UI displays events after authentication
         dispatch(triggerFetch());
-
-        navigate(skipOnboarding ? ROOT_ROUTES.ROOT : ROOT_ROUTES.ONBOARDING);
       } catch (error) {
         // Ensure overlay is dismissed if any error occurs during the auth flow
         // This handles cases where authenticate() or other operations throw unexpected errors

@@ -74,15 +74,6 @@ export const router = createBrowserRouter(
       ],
     },
     {
-      path: "/onboarding",
-      lazy: async () =>
-        import(
-          /* webpackChunkName: "onboarding" */ "@web/views/Onboarding/OnboardingFlow"
-        ).then((module) => ({
-          Component: module.default || module.OnboardingFlow,
-        })),
-    },
-    {
       path: "*",
       lazy: async () =>
         import(/* webpackChunkName: "not-found" */ "@web/views/NotFound").then(

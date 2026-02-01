@@ -20,8 +20,6 @@ export async function loadAuthenticated() {
 export async function loadLogoutData() {
   const { authenticated } = await loadAuthenticated();
 
-  if (!authenticated) return redirect(ROOT_ROUTES.DAY);
-
   return { authenticated };
 }
 

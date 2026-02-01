@@ -113,14 +113,10 @@ export const OnboardingGuide: FC = () => {
           }
         >
           <div className="flex-1">
-            <h3 className="text-text-light mb-2 text-lg font-semibold">
+            <h3 className="text-text-lighter mb-2 text-lg font-semibold">
               {displayTitle}
             </h3>
-            <p
-              className={`mb-3 text-sm ${
-                isNowViewOverlay ? "text-text-light" : "text-text-light/80"
-              }`}
-            >
+            <p className="text-text-lighter/80 mb-3 text-sm">
               {showSuccessMessage ? (
                 <GuideSuccessMessage importResults={importResults} />
               ) : (
