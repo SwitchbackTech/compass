@@ -5,7 +5,7 @@ import { session } from "@web/common/classes/Session";
 import {
   clearAllBrowserStorage,
   hasCompassStorage,
-} from "./browserCleanup.util";
+} from "./browser.cleanup.util";
 
 // Mock the session
 jest.mock("@web/common/classes/Session", () => ({
@@ -14,7 +14,7 @@ jest.mock("@web/common/classes/Session", () => ({
   },
 }));
 
-describe("browserCleanup.util", () => {
+describe("browser.cleanup.util", () => {
   beforeEach(() => {
     // Clear localStorage before each test
     localStorage.clear();

@@ -1,4 +1,6 @@
 import pkg from "inquirer";
+import { CLI_ENV, ENVIRONMENT } from "@scripts/common/cli.constants";
+import { Environment_Cli } from "@scripts/common/cli.types";
 import { log } from "@scripts/common/cli.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { findCompassUsersBy } from "@backend/user/queries/user.queries";
@@ -11,16 +13,23 @@ const { prompt } = pkg;
  * Gets the appropriate cleanup URL based on NODE_ENV
  */
 const getCleanupUrl = (): string => {
-  const env = process.env.NODE_ENV;
+  const env = process.env.NODE_ENV as Environment_Cli;
 
-  if (env === "production") {
-    return "https://compass.switchback.tech/cleanup";
-  } else if (env === "staging") {
-    return "https://staging.compass.switchback.tech/cleanup";
+  if (env === ENVIRONMENT.PROD && CLI_ENV.PROD_DOMAIN !== undefined) {
+    return `https://${CLI_ENV.PROD_DOMAIN}/cleanup`;
   }
 
-  // Default to local development
-  return "http://localhost:8080/cleanup";
+  if (env === ENVIRONMENT.STAG && CLI_ENV.STAGING_DOMAIN !== undefined) {
+    return `https://${CLI_ENV.STAGING_DOMAIN}/cleanup`;
+  }
+
+  if (env === ENVIRONMENT.LOCAL && CLI_ENV.LOCAL_DOMAIN !== undefined) {
+    return `http://${CLI_ENV.LOCAL_DOMAIN}/cleanup`;
+  }
+
+  throw new Error(
+    `Unable to determine cleanup URL. NODE_ENV="${env}" but required domain environment variable is not set.`,
+  );
 };
 
 /**

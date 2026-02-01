@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { clearAllBrowserStorage } from "@web/common/utils/cleanup/browserCleanup.util";
+import { clearAllBrowserStorage } from "@web/common/utils/cleanup/browser.cleanup.util";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { StyledLogin } from "../Login/styled";
-import { StyledCleanupMessage } from "./styled";
 
 const REDIRECT_DELAY_MS = 2000;
 
@@ -43,14 +42,15 @@ export const CleanupView = () => {
       {isClearing && <AbsoluteOverflowLoader />}
 
       {!isClearing && !error && (
-        <StyledCleanupMessage>
-          ✅ Browser data cleared successfully!
-          <br />
-          <small>Redirecting to login...</small>
-        </StyledCleanupMessage>
+        <div className="p-8 text-center text-xl">
+          Browser data cleared successfully!
+          <div className="mt-4 block text-sm text-gray-500">
+            Redirecting to login...
+          </div>
+        </div>
       )}
 
-      {error && <StyledCleanupMessage>❌ {error}</StyledCleanupMessage>}
+      {error && <div className="p-8 text-center text-xl">{error}</div>}
     </StyledLogin>
   );
 };
