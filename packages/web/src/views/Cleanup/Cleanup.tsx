@@ -7,6 +7,8 @@ import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { StyledLogin } from "../Login/styled";
 import { StyledCleanupMessage } from "./styled";
 
+const REDIRECT_DELAY_MS = 2000;
+
 export const CleanupView = () => {
   const navigate = useNavigate();
   const [isClearing, setIsClearing] = useState(true);
@@ -17,10 +19,10 @@ export const CleanupView = () => {
       try {
         await clearAllBrowserStorage();
         setIsClearing(false);
-        // Show success message for 2 seconds before redirecting
+        // Show success message before redirecting
         setTimeout(() => {
           navigate(ROOT_ROUTES.LOGIN);
-        }, 2000);
+        }, REDIRECT_DELAY_MS);
       } catch (err) {
         setIsClearing(false);
         setError(

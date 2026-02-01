@@ -29,7 +29,7 @@ const getCleanupUrl = (): string => {
 const promptBrowserCleanup = async (): Promise<void> => {
   const cleanupUrl = getCleanupUrl();
 
-  log.info("\n🧹 Browser Data Cleanup");
+  log.info("\n[Browser Data Cleanup]");
   log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   log.info("Your account has been deleted from the backend.");
   log.info("However, browser storage may still contain:");
@@ -50,16 +50,16 @@ const promptBrowserCleanup = async (): Promise<void> => {
   const answers = await prompt(questions);
 
   if (answers.cleanup) {
-    log.info("\n📋 Follow these steps to complete cleanup:\n");
+    log.info("\n[Cleanup Instructions]\n");
     log.info(`1. Open this URL in your browser:\n   ${cleanupUrl}\n`);
     log.info("2. The page will automatically:");
-    log.info("   ✓ Log you out of your session");
-    log.info("   ✓ Clear all localStorage data");
-    log.info("   ✓ Delete the IndexedDB database");
-    log.info("   ✓ Redirect you to the login page\n");
-    log.success("✨ You'll have a completely clean slate!");
+    log.info("   * Log you out of your session");
+    log.info("   * Clear all localStorage data");
+    log.info("   * Delete the IndexedDB database");
+    log.info("   * Redirect you to the login page\n");
+    log.success("Success: You'll have a completely clean slate!");
   } else {
-    log.info("\n⚠️  Skipping browser cleanup.");
+    log.info("\n[Warning] Skipping browser cleanup.");
     log.info("Note: You can manually clear browser data later by visiting:");
     log.info(`   ${cleanupUrl}\n`);
   }

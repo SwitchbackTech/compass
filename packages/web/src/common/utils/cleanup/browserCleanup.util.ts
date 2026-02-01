@@ -40,7 +40,7 @@ export async function clearAllBrowserStorage(): Promise<void> {
             reject(new Error("Failed to delete IndexedDB"));
           deleteRequest.onblocked = () => {
             console.warn(
-              "IndexedDB deletion blocked - close all tabs and try again",
+              "IndexedDB deletion blocked - close all Compass tabs and try again",
             );
             resolve();
           };
