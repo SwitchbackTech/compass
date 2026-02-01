@@ -76,11 +76,11 @@ export const router = createBrowserRouter(
     {
       path: ROOT_ROUTES.CLEANUP,
       lazy: async () =>
-        import(/* webpackChunkName: "cleanup" */ "@web/views/Cleanup").then(
-          (module) => ({
-            Component: module.CleanupView,
-          }),
-        ),
+        import(
+          /* webpackChunkName: "cleanup" */ "@web/views/Cleanup/Cleanup"
+        ).then((module) => ({
+          Component: module.CleanupView,
+        })),
     },
     {
       path: "*",
