@@ -321,5 +321,108 @@ describe("useGoogleAuth", () => {
       expect(mockSetAuthenticated).not.toHaveBeenCalled();
       expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
     });
+
+    it("clears syncing when authenticate throws an unexpected error", async () => {
+      const authError = new Error("Network error");
+      mockAuthenticate.mockRejectedValue(authError);
+
+      let onStartCallback: (() => void) | undefined;
+      let onSuccessCallback:
+        | ((data: SignInUpInput) => Promise<void>)
+        | undefined;
+
+      mockUseGoogleLogin.mockImplementation(({ onStart, onSuccess }) => {
+        onStartCallback = onStart;
+        onSuccessCallback = onSuccess;
+        return {
+          login: mockLogin,
+          loading: false,
+          data: null,
+        };
+      });
+
+      renderHook(() => useGoogleAuth());
+
+      onStartCallback?.();
+      mockSetIsSyncing.mockClear();
+
+      if (onSuccessCallback) {
+        await onSuccessCallback({
+          clientType: "web",
+          thirdPartyId: "google",
+          redirectURIInfo: {
+            redirectURIOnProviderDashboard: "",
+            redirectURIQueryParams: {
+              code: "test-auth-code",
+              scope: "email profile",
+              state: undefined,
+            },
+          },
+        });
+      }
+
+      await waitFor(() => {
+        expect(mockAuthenticate).toHaveBeenCalled();
+      });
+
+      // Should clear syncing when error occurs (this is the key fix)
+      expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
+
+      // Should not proceed with auth flow
+      expect(mockMarkUserAsAuthenticated).not.toHaveBeenCalled();
+      expect(mockSetAuthenticated).not.toHaveBeenCalled();
+    });
+
+    it("clears syncing when other operations throw errors after OAuth succeeds", async () => {
+      mockAuthenticate.mockResolvedValue({ success: true });
+      const fetchError = new Error("Failed to fetch onboarding status");
+      mockFetchOnboardingStatus.mockRejectedValue(fetchError);
+
+      let onStartCallback: (() => void) | undefined;
+      let onSuccessCallback:
+        | ((data: SignInUpInput) => Promise<void>)
+        | undefined;
+
+      mockUseGoogleLogin.mockImplementation(({ onStart, onSuccess }) => {
+        onStartCallback = onStart;
+        onSuccessCallback = onSuccess;
+        return {
+          login: mockLogin,
+          loading: false,
+          data: null,
+        };
+      });
+
+      renderHook(() => useGoogleAuth());
+
+      onStartCallback?.();
+      mockSetIsSyncing.mockClear();
+
+      if (onSuccessCallback) {
+        await onSuccessCallback({
+          clientType: "web",
+          thirdPartyId: "google",
+          redirectURIInfo: {
+            redirectURIOnProviderDashboard: "",
+            redirectURIQueryParams: {
+              code: "test-auth-code",
+              scope: "email profile",
+              state: undefined,
+            },
+          },
+        });
+      }
+
+      await waitFor(() => {
+        expect(mockAuthenticate).toHaveBeenCalled();
+      });
+
+      // Should clear syncing when error occurs (this is the key fix)
+      expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
+
+      // Authentication succeeded, so these should be called
+      expect(mockMarkUserAsAuthenticated).toHaveBeenCalled();
+      expect(mockSetAuthenticated).toHaveBeenCalled();
+    });
   });
 });

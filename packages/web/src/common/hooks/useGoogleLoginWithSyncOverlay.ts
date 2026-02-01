@@ -30,10 +30,18 @@ export const useGoogleLoginWithSyncOverlay = (
     },
     onSuccess: async (data) => {
       loginStartedRef.current = false;
-      await onSuccess?.(data);
+      try {
+        await onSuccess?.(data);
 
-      if (!isSyncingRetainedOnSuccess) {
+        if (!isSyncingRetainedOnSuccess) {
+          setIsSyncing(false);
+        }
+      } catch (error) {
+        // If onSuccess throws an error, always clear isSyncing to prevent stuck overlay
+        // This handles cases where authentication fails or other errors occur
         setIsSyncing(false);
+        // Call onError to handle the error appropriately
+        onError?.(error);
       }
     },
     onError: (error) => {

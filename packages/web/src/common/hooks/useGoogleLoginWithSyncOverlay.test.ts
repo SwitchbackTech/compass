@@ -244,4 +244,106 @@ describe("useGoogleLoginWithSyncOverlay", () => {
       expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
     });
   });
+
+  describe("error handling in onSuccess", () => {
+    it("clears isSyncing when onSuccess throws an error with isSyncingRetainedOnSuccess=true", async () => {
+      let onSuccessCallback:
+        | ((data: SignInUpInput) => Promise<void>)
+        | undefined;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      let onErrorCallback: ((error: unknown) => void) | undefined;
+      const onSuccess = jest.fn().mockRejectedValue(new Error("Auth failed"));
+      const onError = jest.fn();
+
+      mockUseGoogleLogin.mockImplementation(
+        ({ onSuccess: providedSuccess, onError: providedError }) => {
+          onSuccessCallback = providedSuccess;
+          onErrorCallback = providedError;
+          return {
+            login: mockLogin,
+            loading: false,
+            data: null,
+          };
+        },
+      );
+
+      renderHook(() =>
+        useGoogleLoginWithSyncOverlay({
+          isSyncingRetainedOnSuccess: true,
+          onSuccess,
+          onError,
+        }),
+      );
+
+      await onSuccessCallback?.({
+        clientType: "web",
+        thirdPartyId: "google",
+        redirectURIInfo: {
+          redirectURIOnProviderDashboard: "",
+          redirectURIQueryParams: {
+            code: "test-auth-code",
+            scope: "email profile",
+            state: undefined,
+          },
+        },
+      });
+
+      await waitFor(() => {
+        expect(onSuccess).toHaveBeenCalled();
+      });
+
+      // Even with isSyncingRetainedOnSuccess=true, should clear on error
+      expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
+      // onError should be called
+      expect(onError).toHaveBeenCalled();
+    });
+
+    it("clears isSyncing when onSuccess throws an error by default", async () => {
+      let onSuccessCallback:
+        | ((data: SignInUpInput) => Promise<void>)
+        | undefined;
+      const onSuccess = jest.fn().mockRejectedValue(new Error("Auth failed"));
+      const onError = jest.fn();
+
+      mockUseGoogleLogin.mockImplementation(
+        ({ onSuccess: providedSuccess }) => {
+          onSuccessCallback = providedSuccess;
+          return {
+            login: mockLogin,
+            loading: false,
+            data: null,
+          };
+        },
+      );
+
+      renderHook(() =>
+        useGoogleLoginWithSyncOverlay({
+          onSuccess,
+          onError,
+        }),
+      );
+
+      await onSuccessCallback?.({
+        clientType: "web",
+        thirdPartyId: "google",
+        redirectURIInfo: {
+          redirectURIOnProviderDashboard: "",
+          redirectURIQueryParams: {
+            code: "test-auth-code",
+            scope: "email profile",
+            state: undefined,
+          },
+        },
+      });
+
+      await waitFor(() => {
+        expect(onSuccess).toHaveBeenCalled();
+      });
+
+      // Should clear isSyncing on error
+      expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
+      // onError should be called
+      expect(onError).toHaveBeenCalled();
+    });
+  });
 });
