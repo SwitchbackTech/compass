@@ -1,24 +1,12 @@
 import Dexie from "dexie";
 import { compassLocalDB } from "./compass-local.db";
+import { DatabaseInitError } from "./db-errors.util";
 
 /**
  * Database initialization state tracking
  */
 let dbInitPromise: Promise<void> | null = null;
 let isInitialized = false;
-
-/**
- * Custom error for database initialization failures
- */
-export class DatabaseInitError extends Error {
-  constructor(
-    message: string,
-    public readonly cause?: unknown,
-  ) {
-    super(message);
-    this.name = "DatabaseInitError";
-  }
-}
 
 /**
  * Initializes the IndexedDB database with explicit .open() call.

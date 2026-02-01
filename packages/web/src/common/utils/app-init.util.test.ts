@@ -11,8 +11,12 @@ import {
 // Mock the db-init module
 jest.mock("@web/common/utils/storage/db-init.util", () => {
   const actual = jest.requireActual("@web/common/utils/storage/db-init.util");
+  const { DatabaseInitError } = jest.requireActual(
+    "@web/common/utils/storage/db-errors.util",
+  );
   return {
     ...actual,
+    DatabaseInitError,
     initializeDatabase: jest.fn(),
   };
 });

@@ -19,10 +19,6 @@ import { useAppDispatch } from "@web/store/store.hooks";
 import { toastDefaultOptions } from "@web/views/Day/components/Toasts";
 import { OnboardingStepProps } from "@web/views/Onboarding";
 
-// interface UseGoogleAuthOptions extends Partial<OnboardingStepProps> {
-//   redirectTo?: string | null;
-// }
-
 export function useGoogleAuth(props?: OnboardingStepProps) {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -74,17 +70,6 @@ export function useGoogleAuth(props?: OnboardingStepProps) {
       // Trigger a refetch to load events from the cloud
       // This ensures the UI displays events after authentication
       dispatch(triggerFetch());
-
-      // Note: setIsSyncing(false) is handled by SocketProvider when IMPORT_GCAL_END is received
-
-      // if (options?.redirectTo === null) {
-      //   return;
-      // }
-
-      // if (options?.redirectTo) {
-      //   navigate(options.redirectTo);
-      //   return;
-      // }
 
       navigate(skipOnboarding ? ROOT_ROUTES.ROOT : ROOT_ROUTES.ONBOARDING);
     },
