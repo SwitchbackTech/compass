@@ -6,8 +6,8 @@ import {
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
+import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
 import {
@@ -25,6 +25,8 @@ import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.s
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { ShortcutProps } from "@web/views/Calendar/hooks/shortcuts/useWeekShortcuts";
+import { ONBOARDING_RESTART_EVENT } from "@web/views/Onboarding/constants/onboarding.constants";
+import { resetOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 const CmdPalette = ({
   today,
@@ -40,6 +42,8 @@ const CmdPalette = ({
   const open = useAppSelector(selectIsCmdPaletteOpen);
   const [page] = useState<"root" | "projects">("root");
   const [search, setSearch] = useState("");
+  const { isGoogleCalendarConnected, onConnectGoogleCalendar } =
+    useConnectGoogle();
 
   const handleCreateSomedayDraft = async (
     category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
@@ -126,11 +130,32 @@ const CmdPalette = ({
               util.goToToday();
             },
           },
+        ],
+      },
+      {
+        heading: "Settings",
+        id: "settings",
+        items: [
+          {
+            id: "connect-google-calendar",
+            children: isGoogleCalendarConnected
+              ? "Google Calendar Connected"
+              : "Connect Google Calendar",
+            icon: isGoogleCalendarConnected
+              ? "CheckCircleIcon"
+              : "CloudArrowUpIcon",
+            onClick: isGoogleCalendarConnected
+              ? undefined
+              : onConnectGoogleCalendar,
+          },
           {
             id: "redo-onboarding",
             children: "Re-do onboarding",
             icon: "ArrowPathIcon",
-            onClick: () => window.open(ROOT_ROUTES.ONBOARDING, "_blank"),
+            onClick: () => {
+              resetOnboardingProgress();
+              window.dispatchEvent(new CustomEvent(ONBOARDING_RESTART_EVENT));
+            },
           },
           {
             id: "log-out",

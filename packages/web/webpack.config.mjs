@@ -77,7 +77,7 @@ export default (env, argv) => {
   const POSTHOG_KEY = process.env.POSTHOG_KEY;
   const POSTHOG_HOST = process.env.POSTHOG_HOST;
   const NODE_ENV = process.env.NODE_ENV || ENVIRONMENT || "development";
-  const PORT = process.env.PORT || "3000";
+  const PORT = process.env.WEB_PORT || "9080";
 
   if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === "undefined") {
     logger.error(`Oopsies, you're missing the GOOGLE_CLIENT_ID variable.
@@ -274,6 +274,7 @@ export default (env, argv) => {
       static: {
         directory: join(_dirname, "public"),
       },
+      host: "localhost",
       watchFiles: {
         paths: ["src/**/*"],
         options: {
@@ -282,7 +283,7 @@ export default (env, argv) => {
         },
       },
       compress: true,
-      port: 9080,
+      port: Number(PORT),
       historyApiFallback: true,
     },
 

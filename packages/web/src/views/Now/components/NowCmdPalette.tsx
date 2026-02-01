@@ -1,19 +1,23 @@
 import { useState } from "react";
 import CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
+import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { ONBOARDING_RESTART_EVENT } from "@web/views/Onboarding/constants/onboarding.constants";
+import { resetOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 export const NowCmdPalette = () => {
   const dispatch = useAppDispatch();
   const open = useAppSelector(selectIsCmdPaletteOpen);
   const [page] = useState<"root">("root");
   const [search, setSearch] = useState("");
+  const { isGoogleCalendarConnected, onConnectGoogleCalendar } =
+    useConnectGoogle();
 
   const filteredItems = filterItems(
     [
@@ -39,11 +43,32 @@ export const NowCmdPalette = () => {
             icon: "PencilSquareIcon",
             onClick: onEventTargetVisibility(() => pressKey("r")),
           },
+        ],
+      },
+      {
+        heading: "Settings",
+        id: "settings",
+        items: [
+          {
+            id: "connect-google-calendar",
+            children: isGoogleCalendarConnected
+              ? "Google Calendar Connected"
+              : "Connect Google Calendar",
+            icon: isGoogleCalendarConnected
+              ? "CheckCircleIcon"
+              : "CloudArrowUpIcon",
+            onClick: isGoogleCalendarConnected
+              ? undefined
+              : onConnectGoogleCalendar,
+          },
           {
             id: "redo-onboarding",
             children: "Re-do onboarding",
             icon: "ArrowPathIcon",
-            onClick: () => window.open(ROOT_ROUTES.ONBOARDING, "_blank"),
+            onClick: () => {
+              resetOnboardingProgress();
+              window.dispatchEvent(new CustomEvent(ONBOARDING_RESTART_EVENT));
+            },
           },
           {
             id: "log-out",

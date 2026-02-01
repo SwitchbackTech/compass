@@ -7,15 +7,15 @@ import {
   Schema_Event,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
+import { session } from "@web/common/classes/Session";
+import { getEventRepository } from "@web/common/repositories/event/event.repository.util";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import {
   Schema_GridEvent,
   Schema_OptimisticEvent,
-  Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import { handleError } from "@web/common/utils/event/event.util";
-import { EventApi } from "@web/ducks/events/event.api";
 import {
   Action_ConvertEvent,
   Action_CreateEvent,
@@ -69,7 +69,7 @@ export function* convertCalendarToSomedayEvent({
     yield put(
       eventsEntitiesSlice.actions.edit({
         _id: optimisticEvent._id,
-        event: { ...optimisticEvent, isOptimistic: false } as Schema_WebEvent,
+        event: optimisticEvent,
       }),
     );
 
@@ -93,18 +93,21 @@ export function* convertCalendarToSomedayEvent({
   }
 }
 
-export function* createEvent({ payload }: Action_CreateEvent) {
+export function* createEvent({ payload }: Action_CreateEvent): Generator {
   const event = yield* _createOptimisticGridEvent(payload, payload.isSomeday);
 
   yield put(pendingEventsSlice.actions.add(event._id));
 
   try {
-    yield call(EventApi.create, event);
+    const sessionExists = yield call(session.doesSessionExist);
+    const repository = getEventRepository(sessionExists);
+
+    yield call([repository, repository.create], event as Schema_Event);
 
     yield put(
       eventsEntitiesSlice.actions.edit({
         _id: event._id,
-        event: { ...event, isOptimistic: false } as Schema_WebEvent,
+        event: event,
       }),
     );
 
@@ -130,9 +133,11 @@ export function* deleteEvent({ payload }: Action_DeleteEvent) {
       (state: RootState) => state.events.pendingEvents.eventIds,
     )) as string[];
     const isPending = pendingEventIds.includes(payload._id);
-    // Only call delete API if event is not pending (i.e., exists in DB)
+    // Only call delete if event is not pending (i.e., exists in DB)
     if (!isPending) {
-      yield call(EventApi.delete, payload._id, payload.applyTo);
+      const sessionExists = yield call(session.doesSessionExist);
+      const repository = getEventRepository(sessionExists);
+      yield call([repository, repository.delete], payload._id, payload.applyTo);
     }
 
     yield put(deleteEventSlice.actions.success());
@@ -156,7 +161,11 @@ export function* editEvent({ payload }: Action_EditEvent) {
     if (shouldRemove) yield put(eventsEntitiesSlice.actions.delete({ _id }));
     else yield put(eventsEntitiesSlice.actions.edit(payload));
 
-    yield call(EventApi.edit, _id, event, { applyTo });
+    const sessionExists = yield call(session.doesSessionExist);
+    const repository = getEventRepository(sessionExists);
+    yield call([repository, repository.edit], _id, event as Schema_Event, {
+      applyTo,
+    });
 
     // Remove from pending on success
     yield put(pendingEventsSlice.actions.remove(_id));
@@ -174,7 +183,7 @@ export function* getCurrentMonthEvents({ payload }: Action_GetPaginatedEvents) {
   try {
     const startDate = dayjs().startOf("month").format(YEAR_MONTH_DAY_FORMAT);
     const endDate = dayjs().endOf("month").format(YEAR_MONTH_DAY_FORMAT);
-    const data: Response_GetEventsSaga = (yield call(getEvents, {
+    const data: Response_GetEventsSaga = (yield* getEvents({
       ...payload,
       startDate,
       endDate,
@@ -196,18 +205,28 @@ function* getEvents(
       return { data: payload.data };
     }
 
+    const sessionExists = yield call(session.doesSessionExist);
+    const repository = getEventRepository(sessionExists);
+
     const _payload = EventDateUtils.adjustStartEndDate(payload);
 
-    const res: Response_GetEventsSuccess = (yield call(
-      EventApi.get,
+    const res: Response_GetEventsSuccess = yield call(
+      [repository, repository.get],
       _payload,
-    )) as Response_GetEventsSuccess;
+    );
 
     const events = EventDateUtils.filterEventsByStartEndDate(
       res.data,
       payload.startDate as string,
       payload.endDate as string,
     );
+
+    // Validate response data exists before normalizing
+    if (!res.data || !Array.isArray(res.data)) {
+      throw new Error(
+        "Invalid response from event repository: data field is missing or not an array",
+      );
+    }
 
     const normalizedEvents = normalize<Schema_Event>(events, [
       normalizedEventsSchema(),
@@ -226,7 +245,10 @@ function* getEvents(
 
 export function* getWeekEvents({ payload }: Action_GetEvents) {
   try {
-    const data = (yield call(getEvents, payload)) as Response_GetEventsSaga;
+    const data = (yield* getEvents({
+      ...payload,
+      someday: false,
+    })) as Response_GetEventsSaga;
     yield put(getWeekEventsSlice.actions.success(data));
   } catch (error) {
     yield put(getWeekEventsSlice.actions.error({}));
@@ -239,6 +261,7 @@ export function* getDayEvents({ payload }: Action_GetEvents) {
     const data = (yield call(getEvents, {
       ...payload,
       dontAdjustDates: true,
+      someday: false,
     })) as Response_GetEventsSaga;
 
     yield put(getDayEventsSlice.actions.success(data));

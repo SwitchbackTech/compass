@@ -8,8 +8,13 @@ import {
   TY_TIM,
 } from "@core/__mocks__/v1/events/events.misc";
 import { InitialReduxState } from "@web/__tests__/utils/state/store.test.util";
+import { AuthStatus } from "@web/ducks/auth/slices/auth.slice";
 
 export const preloadedState: InitialReduxState = {
+  auth: {
+    status: "idle",
+    error: null,
+  },
   events: {
     getSomedayEvents: {
       value: {
@@ -77,6 +82,8 @@ export const preloadedState: InitialReduxState = {
   sync: {
     importGCal: {
       importing: false,
+      importResults: null,
+      pendingLocalEventsSynced: null,
     },
     importLatest: {
       isFetchNeeded: false,

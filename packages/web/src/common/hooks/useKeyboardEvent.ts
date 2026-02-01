@@ -65,6 +65,10 @@ export function useKeyboardEvent({
 
   const listenFilter = useCallback(
     ({ event }: KeyCombination) => {
+      if (document?.body?.dataset?.appLocked === "true") {
+        return false;
+      }
+
       const targetElement = event.target as HTMLElement;
       const activeElement = document.activeElement as HTMLElement;
       const activeElementEditable = isEditable(activeElement);

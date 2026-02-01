@@ -1,11 +1,13 @@
 import { normalize, schema } from "normalizr";
-import { SelectEffect, call, put, select } from "redux-saga/effects";
+import { SelectEffect, call, put, select } from "@redux-saga/core/effects";
 import {
   Params_Events,
   RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
+import { session } from "@web/common/classes/Session";
+import { getEventRepository } from "@web/common/repositories/event/event.repository.util";
 import {
   Schema_GridEvent,
   Schema_WebEvent,
@@ -13,7 +15,6 @@ import {
 } from "@web/common/types/web.event.types";
 import { addId, assembleGridEvent } from "@web/common/utils/event/event.util";
 import { validateGridEvent } from "@web/common/validators/grid.event.validator";
-import { EventApi } from "@web/ducks/events/event.api";
 import { Payload_ConvertEvent } from "@web/ducks/events/event.types";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
@@ -39,8 +40,16 @@ export function* getEventById(
 export function* _editEvent(
   gridEvent: Schema_GridEvent,
   params: { applyTo?: RecurringEventUpdateScope } = {},
-) {
-  yield call(EventApi.edit, gridEvent._id, gridEvent, params);
+): Generator {
+  const sessionExists = yield call(session.doesSessionExist);
+  const repository = getEventRepository(sessionExists);
+  yield call(
+    // @ts-expect-error - redux-saga call with [context, method] tuple - works at runtime, type inference limitation
+    [repository, repository.edit],
+    gridEvent._id,
+    gridEvent as Schema_Event,
+    params,
+  );
 }
 
 export function* insertOptimisticEvent(

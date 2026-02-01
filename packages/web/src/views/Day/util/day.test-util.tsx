@@ -8,16 +8,13 @@ import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { loadSpecificDayData, loadTodayData } from "@web/routers/loaders";
 import { store as defaultStore } from "@web/store";
 import { DateNavigationProvider } from "@web/views/Day/context/DateNavigationContext";
-import { StorageInfoModalProvider } from "@web/views/Day/context/StorageInfoModalContext";
 import { TaskProvider } from "@web/views/Day/context/TaskContext";
 
 export const TaskProviderWrapper = ({ children }: PropsWithChildren) => {
   return (
-    <StorageInfoModalProvider>
-      <DateNavigationProvider>
-        <TaskProvider>{children}</TaskProvider>
-      </DateNavigationProvider>
-    </StorageInfoModalProvider>
+    <DateNavigationProvider>
+      <TaskProvider>{children}</TaskProvider>
+    </DateNavigationProvider>
   );
 };
 

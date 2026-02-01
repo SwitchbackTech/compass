@@ -4,8 +4,7 @@ import { session } from "@web/common/classes/Session";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
-import { StyledLogin } from "../Login/styled";
-import { StyledLogoutBtn } from "./styled";
+import { StyledLogoutBtn, StyledLogoutContainer } from "./styled";
 
 export const LogoutView = () => {
   const navigate = useNavigate();
@@ -20,11 +19,11 @@ export const LogoutView = () => {
     setIsLoggingOut(false);
 
     alert("You logged out - see ya! ✌");
-    navigate(ROOT_ROUTES.LOGIN);
+    navigate(ROOT_ROUTES.DAY);
   };
 
   return (
-    <StyledLogin
+    <StyledLogoutContainer
       alignItems={AlignItems.CENTER}
       direction={FlexDirections.COLUMN}
     >
@@ -33,6 +32,6 @@ export const LogoutView = () => {
       <StyledLogoutBtn role="button" onClick={() => void logout()}>
         Signout
       </StyledLogoutBtn>
-    </StyledLogin>
+    </StyledLogoutContainer>
   );
 };

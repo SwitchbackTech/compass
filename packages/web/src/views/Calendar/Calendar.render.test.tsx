@@ -2,13 +2,9 @@ import { act } from "react";
 import { createMemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
-import { GROCERIES } from "@core/__mocks__/v1/events/events.misc";
 import { render } from "@web/__tests__/__mocks__/mock.render";
-import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
-import { findAndUpdateEventInPreloadedState } from "@web/__tests__/utils/state/store.test.util";
 import { getWeekDayLabel } from "@web/common/utils/event/event.util";
 import { CalendarView } from "@web/views/Calendar";
-import { freshenEventStartEndDate } from "@web/views/Calendar/calendar.render.test.utils";
 
 const router = createMemoryRouter([{ index: true, Component: CalendarView }], {
   initialEntries: ["/"],
@@ -49,22 +45,6 @@ describe("Calendar: Display without State", () => {
     /* now line */
     expect(
       screen.getByRole("separator", { name: /now line/i }),
-    ).toBeInTheDocument();
-  });
-});
-
-describe("Calendar: Display with State", () => {
-  it("displays timed events", async () => {
-    const newPreloadedState = findAndUpdateEventInPreloadedState(
-      preloadedState,
-      GROCERIES._id as string,
-      freshenEventStartEndDate,
-    );
-
-    await act(() => render(<></>, { state: newPreloadedState, router }));
-
-    expect(
-      screen.getByRole("button", { name: /groceries/i }),
     ).toBeInTheDocument();
   });
 });

@@ -1,5 +1,5 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import dayjs from "@core/util/date/dayjs";
+import dayjs, { Dayjs } from "@core/util/date/dayjs";
 
 export const FORMAT = {
   RFC5545: {
@@ -118,4 +118,36 @@ export const formatAsIso8601 = (orig: string) => {
   }
 
   return null;
+};
+
+/**
+ * Checks if two date ranges overlap.
+ * Two ranges overlap if one starts before or on the day the other ends
+ * AND ends after or on the day the other starts.
+ *
+ * @param rangeAStart - Start of first range (date string or Dayjs)
+ * @param rangeAEnd - End of first range (date string or Dayjs)
+ * @param rangeBStart - Start of second range (date string or Dayjs)
+ * @param rangeBEnd - End of second range (date string or Dayjs)
+ * @param granularity - "day" for day-level comparison, null for exact time
+ * @returns true if the ranges overlap
+ */
+export const isDateRangeOverlapping = (
+  rangeAStart: string | Dayjs,
+  rangeAEnd: string | Dayjs,
+  rangeBStart: string | Dayjs,
+  rangeBEnd: string | Dayjs,
+  granularity: "day" | null = null,
+): boolean => {
+  const aStart = dayjs(rangeAStart);
+  const aEnd = dayjs(rangeAEnd);
+  const bStart = dayjs(rangeBStart);
+  const bEnd = dayjs(rangeBEnd);
+
+  if (granularity === "day") {
+    return (
+      aStart.isSameOrBefore(bEnd, "day") && aEnd.isSameOrAfter(bStart, "day")
+    );
+  }
+  return aStart.isSameOrBefore(bEnd) && aEnd.isSameOrAfter(bStart);
 };

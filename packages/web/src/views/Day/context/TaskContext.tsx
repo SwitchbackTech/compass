@@ -1,6 +1,5 @@
 import React, { createContext } from "react";
 import { Task, UndoOperation } from "@web/common/types/task.types";
-import { useStorageInfoModal } from "@web/views/Day/context/StorageInfoModalContext";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useTaskActions } from "@web/views/Day/hooks/tasks/useTaskActions";
 import { useTaskEffects } from "@web/views/Day/hooks/tasks/useTaskEffects";
@@ -51,7 +50,6 @@ interface TaskProviderProps {
 export function TaskProvider({ children }: TaskProviderProps) {
   const { dateInView, navigateToNextDay, navigateToPreviousDay } =
     useDateNavigation();
-  const { openModal } = useStorageInfoModal();
   const state = useTaskState({ currentDate: dateInView.toDate() });
   const actions = useTaskActions({
     setTasks: state.setTasks,
@@ -68,13 +66,11 @@ export function TaskProvider({ children }: TaskProviderProps) {
     dateInView,
     navigateToNextDay,
     navigateToPreviousDay,
-    onFirstTaskCreated: openModal,
   });
 
   useTaskEffects({
     tasks: state.tasks,
     dateKey: state.dateKey,
-    lastLoadedKeyRef: state.lastLoadedKeyRef,
     setTasks: state.setTasks,
   });
 

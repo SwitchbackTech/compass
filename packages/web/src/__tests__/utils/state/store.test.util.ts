@@ -61,6 +61,10 @@ export const createInitialState = (
   oneWeekLater.setDate(now.getDate() + 7);
 
   return {
+    auth: {
+      status: "idle",
+      error: null,
+    },
     events: {
       entities: { value: {} },
       getWeekEvents: {
@@ -116,6 +120,10 @@ export const createInitialState = (
     sync: {
       importGCal: {
         importing: false,
+        importResults: null,
+        pendingLocalEventsSynced: null,
+        awaitingImportResults: false,
+        importError: null,
       },
       importLatest: {
         isFetchNeeded: false,

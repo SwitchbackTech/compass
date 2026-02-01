@@ -2,12 +2,16 @@ import { act } from "react";
 import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
+import * as useGoogleAuthModule from "@web/auth/hooks/oauth/useGoogleAuth";
+import * as useSessionModule from "@web/auth/hooks/session/useSession";
 import { keyPressed$ } from "@web/common/utils/dom/event-emitter.util";
 import * as eventUtil from "@web/common/utils/event/event.util";
 import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
+import { ONBOARDING_RESTART_EVENT } from "@web/views/Onboarding/constants/onboarding.constants";
+import { resetOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 // Mock react-router-dom
 const mockNavigate = jest.fn();
@@ -26,9 +30,11 @@ jest.mock("@core/util/date/dayjs", () => ({
   })),
 }));
 
-// Mock window.open
-const mockWindowOpen = jest.fn();
-global.window.open = mockWindowOpen;
+// Mock resetOnboardingProgress
+jest.mock("@web/views/Onboarding/utils/onboarding.storage.util", () => ({
+  ...jest.requireActual("@web/views/Onboarding/utils/onboarding.storage.util"),
+  resetOnboardingProgress: jest.fn(),
+}));
 
 // Mock dispatch
 const mockDispatch = jest.fn();
@@ -165,8 +171,9 @@ describe("DayCmdPalette", () => {
     expect(mockOnGoToToday).toHaveBeenCalled();
   });
 
-  it("opens onboarding in new tab when Re-do onboarding is clicked", async () => {
+  it("resets onboarding and dispatches restart event when Re-do onboarding is clicked", async () => {
     const user = userEvent.setup();
+    const mockDispatchEvent = jest.spyOn(window, "dispatchEvent");
     await act(() =>
       render(<Component />, {
         state: { settings: { isCmdPaletteOpen: true } },
@@ -175,7 +182,13 @@ describe("DayCmdPalette", () => {
 
     await act(() => user.click(screen.getByText("Re-do onboarding")));
 
-    expect(mockWindowOpen).toHaveBeenCalledWith("/onboarding", "_blank");
+    expect(resetOnboardingProgress).toHaveBeenCalled();
+    expect(mockDispatchEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: ONBOARDING_RESTART_EVENT,
+      }),
+    );
+    mockDispatchEvent.mockRestore();
   });
 
   it("navigates to logout when Log Out is clicked", async () => {
@@ -245,5 +258,92 @@ describe("DayCmdPalette", () => {
 
     expect(screen.getByText("Go to Now [1]")).toBeInTheDocument();
     expect(screen.queryByText("Go to Week [3]")).not.toBeInTheDocument();
+  });
+
+  describe("Google Calendar authentication status", () => {
+    const mockLogin = jest.fn();
+
+    beforeEach(() => {
+      jest.spyOn(useGoogleAuthModule, "useGoogleAuth").mockReturnValue({
+        login: mockLogin,
+      });
+    });
+
+    it("shows 'Connect Google Calendar' when not authenticated", async () => {
+      jest.spyOn(useSessionModule, "useSession").mockReturnValue({
+        authenticated: false,
+        setAuthenticated: jest.fn(),
+      });
+
+      await act(() =>
+        render(<DayCmdPalette />, {
+          state: { settings: { isCmdPaletteOpen: true } },
+        }),
+      );
+
+      expect(screen.getByText("Connect Google Calendar")).toBeInTheDocument();
+      expect(
+        screen.queryByText("Google Calendar Connected"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("shows 'Google Calendar Connected' when authenticated", async () => {
+      jest.spyOn(useSessionModule, "useSession").mockReturnValue({
+        authenticated: true,
+        setAuthenticated: jest.fn(),
+      });
+
+      await act(() =>
+        render(<DayCmdPalette />, {
+          state: { settings: { isCmdPaletteOpen: true } },
+        }),
+      );
+
+      expect(screen.getByText("Google Calendar Connected")).toBeInTheDocument();
+      expect(
+        screen.queryByText("Connect Google Calendar"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("triggers login when 'Connect Google Calendar' is clicked and not authenticated", async () => {
+      jest.spyOn(useSessionModule, "useSession").mockReturnValue({
+        authenticated: false,
+        setAuthenticated: jest.fn(),
+      });
+
+      const user = userEvent.setup();
+      await act(() =>
+        render(<DayCmdPalette />, {
+          state: { settings: { isCmdPaletteOpen: true } },
+        }),
+      );
+
+      await act(() => user.click(screen.getByText("Connect Google Calendar")));
+
+      expect(mockLogin).toHaveBeenCalled();
+      expect(mockDispatch).toHaveBeenCalledWith(
+        settingsSlice.actions.closeCmdPalette(),
+      );
+    });
+
+    it("does not trigger login when 'Google Calendar Connected' is clicked", async () => {
+      jest.spyOn(useSessionModule, "useSession").mockReturnValue({
+        authenticated: true,
+        setAuthenticated: jest.fn(),
+      });
+
+      const user = userEvent.setup();
+      await act(() =>
+        render(<DayCmdPalette />, {
+          state: { settings: { isCmdPaletteOpen: true } },
+        }),
+      );
+
+      await act(() =>
+        user.click(screen.getByText("Google Calendar Connected")),
+      );
+
+      expect(mockLogin).not.toHaveBeenCalled();
+    });
   });
 });

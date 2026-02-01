@@ -1,44 +1,137 @@
+import {
+  OnboardingGuideViewConfig,
+  OnboardingStepConfig,
+} from "../types/onboarding.guide.types";
+
+export type { OnboardingStepName } from "../types/onboarding.guide.types";
+
 /**
- * Onboarding step IDs - defined once to avoid duplication
- * All step IDs used in the onboarding flow should be defined here
+ * Command palette guide step names
+ * Used for tracking completion of the interactive command palette guide
  */
-export const ONBOARDING_STEP_IDS = {
-  // Login steps
-  WELCOME: "welcome",
-
-  // Mobile login steps
-  MOBILE_WARNING: "mobile-warning",
-  MOBILE_SIGN_IN: "mobile-sign-in",
-
-  // Main onboarding steps
-  WELCOME_SCREEN: "welcome-screen",
-  WELCOME_NOTE_ONE: "welcome-note-one",
-  WELCOME_NOTE_TWO: "welcome-note-two",
-  SIGN_IN_WITH_GOOGLE_PRELUDE: "sign-in-with-google-prelude",
-  SIGN_IN_WITH_GOOGLE: "sign-in-with-google",
-  REMINDER_INTRO_ONE: "reminder-intro-one",
-  REMINDER_INTRO_TWO: "reminder-intro-two",
-  SET_REMINDER: "set-reminder",
-  SET_REMINDER_SUCCESS: "set-reminder-success",
-  SET_SOMEDAY_EVENTS_ONE: "set-someday-events-one",
-  TASKS_INTRO: "tasks-intro",
-  TASKS_TODAY: "tasks-today",
-  SOMEDAY_EVENTS_INTRO: "someday-events-intro",
-  SOMEDAY_SANDBOX: "someday-sandbox",
-  MIGRATION_INTRO: "migration-intro",
-  SOMEDAY_MIGRATION: "someday-migration",
-  OUTRO_TWO: "outro-two",
-  OUTRO_QUOTE: "outro-quote",
+export const ONBOARDING_STEPS = {
+  NAVIGATE_TO_DAY: "navigateToDay",
+  CREATE_TASK: "createTask",
+  NAVIGATE_TO_NOW: "navigateToNow",
+  NAVIGATE_TO_WEEK: "navigateToWeek",
+  CONNECT_GOOGLE_CALENDAR: "connectGoogleCalendar",
 } as const;
 
 /**
- * Step IDs to skip when re-doing onboarding for authenticated users
- * These steps are skipped because the user has already completed Google login
- * and event import during their initial onboarding
+ * Ordered array of onboarding step configurations
+ * This is the single source of truth for step order
  */
-export const SKIPPED_STEPS_FOR_AUTHENTICATED_USERS: readonly string[] = [
-  ONBOARDING_STEP_IDS.SIGN_IN_WITH_GOOGLE_PRELUDE,
-  ONBOARDING_STEP_IDS.SIGN_IN_WITH_GOOGLE,
-  ONBOARDING_STEP_IDS.MIGRATION_INTRO,
-  ONBOARDING_STEP_IDS.SOMEDAY_MIGRATION,
-];
+export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
+  {
+    id: ONBOARDING_STEPS.NAVIGATE_TO_DAY,
+    order: 0,
+    detectionType: "route",
+    detectionConfig: { route: "/day", routePrefixes: ["/day/"] },
+    guide: {
+      instructionsByView: {
+        day: [{ type: "text", value: "You're already on the Day view." }],
+        default: [
+          { type: "text", value: "Press " },
+          { type: "kbd", value: "2" },
+          { type: "text", value: " to go to the Day view" },
+        ],
+      },
+    },
+  },
+  {
+    id: ONBOARDING_STEPS.CREATE_TASK,
+    order: 1,
+    detectionType: "task-count",
+    guide: {
+      instructionsByView: {
+        day: [
+          { type: "text", value: "Type " },
+          { type: "kbd", value: "c" },
+          { type: "text", value: " to create a task" },
+        ],
+      },
+    },
+  },
+  {
+    id: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
+    order: 2,
+    detectionType: "route",
+    detectionConfig: { route: "/now", routePrefixes: ["/now/"] },
+    guide: {
+      instructionsByView: {
+        default: [
+          { type: "text", value: "Press " },
+          { type: "kbd", value: "1" },
+          { type: "text", value: " to go to the Now view" },
+        ],
+      },
+    },
+  },
+  {
+    id: ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
+    order: 3,
+    detectionType: "route",
+    detectionConfig: { route: "/" },
+    guide: {
+      instructionsByView: {
+        default: [
+          { type: "text", value: "Type " },
+          { type: "kbd", value: "3" },
+          { type: "text", value: " to go to the week view" },
+        ],
+      },
+    },
+  },
+  {
+    id: ONBOARDING_STEPS.CONNECT_GOOGLE_CALENDAR,
+    order: 4,
+    detectionType: "google-auth",
+    guide: {
+      title: "Bring your events",
+      instructionsByView: {
+        default: [
+          { type: "meta-key" },
+          { type: "text", value: " + " },
+          { type: "kbd", value: "K" },
+          { type: "text", value: ", then select " },
+          { type: "kbd", value: "Connect Google Calendar" },
+        ],
+      },
+    },
+  },
+] as const;
+
+export const ONBOARDING_GUIDE_VIEWS: readonly OnboardingGuideViewConfig[] = [
+  {
+    id: "now",
+    label: "Now",
+    routes: ["/now"],
+    routePrefixes: ["/now/"],
+    overlayVariant: "pinned",
+  },
+  {
+    id: "day",
+    label: "Day",
+    routes: ["/day"],
+    routePrefixes: ["/day/"],
+    overlayVariant: "centered",
+  },
+  {
+    id: "week",
+    label: "Week",
+    routes: ["/"],
+    overlayVariant: "centered",
+  },
+  {
+    id: "unknown",
+    label: "Compass",
+    routes: [],
+    overlayVariant: "centered",
+  },
+] as const;
+
+/**
+ * Custom event name for restarting the onboarding guide
+ * Dispatched when user clicks "Re-do onboarding" in command palette
+ */
+export const ONBOARDING_RESTART_EVENT = "compass:restart-onboarding" as const;

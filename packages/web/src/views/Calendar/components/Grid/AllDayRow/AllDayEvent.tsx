@@ -1,4 +1,4 @@
-import { MouseEvent, memo } from "react";
+import { KeyboardEvent, MouseEvent, memo } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import {
@@ -24,6 +24,7 @@ interface Props {
   startOfView: WeekProps["component"]["startOfView"];
   endOfView: WeekProps["component"]["endOfView"];
   onMouseDown: (e: MouseEvent, event: Schema_GridEvent) => void;
+  onKeyDown?: (event: Schema_GridEvent) => void;
   onScalerMouseDown?: (
     event: Schema_GridEvent,
     e: MouseEvent,
@@ -38,6 +39,7 @@ const AllDayEvent = ({
   startOfView,
   endOfView,
   onMouseDown,
+  onKeyDown,
   onScalerMouseDown,
 }: Props) => {
   const position = getEventPosition(
@@ -72,8 +74,17 @@ const AllDayEvent = ({
       }
       onMouseDown(e, event);
     },
+    onKeyDown: (e: KeyboardEvent<HTMLDivElement>) => {
+      if (e.key !== "Enter" && e.key !== " ") {
+        return;
+      }
+
+      e.preventDefault();
+      onKeyDown?.(event);
+    },
     priority: event.priority || Priorities.UNASSIGNED,
     role: "button",
+    tabIndex: 0,
     top: position.top,
     width: position.width,
   };

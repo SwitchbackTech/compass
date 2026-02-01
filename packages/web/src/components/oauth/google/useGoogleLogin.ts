@@ -39,6 +39,7 @@ export const useGoogleLogin = ({
     onNonOAuthError(nonOAuthError) {
       setLoading(false);
       console.error(nonOAuthError);
+      onError?.(nonOAuthError);
     },
     onSuccess: async ({ code, scope, state }) => {
       const isFromHacker = state !== antiCsrfToken;
