@@ -1,12 +1,8 @@
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
 import { CompassSession } from "@web/auth/session/session.types";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
-import {
-  getOnboardingProgress,
-  updateOnboardingProgress,
-} from "@web/views/Onboarding/utils/onboarding.storage.util";
 import { useCmdPaletteTutorial } from "./useCmdPaletteTutorial";
 
 // Mock useSession

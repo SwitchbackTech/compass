@@ -78,6 +78,7 @@ export const preloadedState: InitialReduxState = {
     importGCal: {
       importing: false,
       importResults: null,
+      pendingLocalEventsSynced: null,
     },
     importLatest: {
       isFetchNeeded: false,
