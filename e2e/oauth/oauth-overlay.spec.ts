@@ -148,7 +148,7 @@ test.describe("OAuth Overlay", () => {
     await expectBodyLocked(page, false);
   });
 
-  test("getOverlayPhase returns correct phase", async ({ page }) => {
+  test("expectOverlayPhase returns correct phase", async ({ page }) => {
     // Initially no phase
     await expectOverlayPhase(page, "none");
 
