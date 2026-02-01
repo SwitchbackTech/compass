@@ -1,12 +1,5 @@
 import { Page, expect } from "@playwright/test";
-
-const ONBOARDING_STATE = {
-  completedSteps: [],
-  isCompleted: true,
-  isSignupComplete: true,
-  isOnboardingSkipped: true,
-  isAuthPromptDismissed: true,
-};
+import { ONBOARDING_STATE } from "./test-constants";
 
 /**
  * Sets up the page for OAuth overlay testing.

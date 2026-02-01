@@ -1,16 +1,9 @@
 import { type Locator, type Page, expect } from "@playwright/test";
+import { ONBOARDING_STATE } from "./test-constants";
 
 type SomedaySection = "week" | "month";
 
 const LOCAL_DB_NAME = "compass-local";
-
-const ONBOARDING_STATE = {
-  completedSteps: [],
-  isCompleted: true,
-  isSignupComplete: true,
-  isOnboardingSkipped: true,
-  isAuthPromptDismissed: true,
-};
 
 // Shared timeout for form operations - use a single reasonable timeout instead of short retries
 const FORM_TIMEOUT = 10000;
