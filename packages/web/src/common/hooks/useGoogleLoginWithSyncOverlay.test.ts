@@ -168,4 +168,80 @@ describe("useGoogleLoginWithSyncOverlay", () => {
       expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
     });
   });
+
+  it("clears isSyncing when component unmounts during login", () => {
+    let onStartCallback: (() => void) | undefined;
+
+    mockUseGoogleLogin.mockImplementation(({ onStart }) => {
+      onStartCallback = onStart;
+      return {
+        login: mockLogin,
+        loading: true,
+        data: null,
+      };
+    });
+
+    const { unmount } = renderHook(() => useGoogleLoginWithSyncOverlay());
+
+    onStartCallback?.();
+    expect(mockSetIsSyncing).toHaveBeenCalledWith(true);
+
+    mockSetIsSyncing.mockClear();
+
+    // Unmount while login is in progress
+    unmount();
+
+    // Cleanup should clear isSyncing
+    expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
+  });
+
+  it("clears isSyncing on remount after OAuth completed while unmounted", async () => {
+    let onStartCallback: (() => void) | undefined;
+
+    // First mount: start login
+    mockUseGoogleLogin.mockImplementation(({ onStart }) => {
+      onStartCallback = onStart;
+      return {
+        login: mockLogin,
+        loading: true,
+        data: null,
+      };
+    });
+
+    const { unmount } = renderHook(() => useGoogleLoginWithSyncOverlay());
+
+    onStartCallback?.();
+    expect(mockSetIsSyncing).toHaveBeenCalledWith(true);
+
+    // Unmount while login is in progress
+    unmount();
+
+    // Simulate OAuth completing while component is unmounted
+    // Now remount: loading is false, but isSyncing is still true
+    mockUseSession.mockReturnValue({
+      authenticated: false,
+      loading: false,
+      isSyncing: true, // Still true from previous mount
+      setAuthenticated: jest.fn(),
+      setLoading: jest.fn(),
+      setIsSyncing: mockSetIsSyncing,
+    });
+
+    mockUseGoogleLogin.mockImplementation(() => {
+      return {
+        login: mockLogin,
+        loading: false, // OAuth completed
+        data: null,
+      };
+    });
+
+    mockSetIsSyncing.mockClear();
+
+    // Remount - should detect and clear stuck isSyncing
+    renderHook(() => useGoogleLoginWithSyncOverlay());
+
+    await waitFor(() => {
+      expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
+    });
+  });
 });

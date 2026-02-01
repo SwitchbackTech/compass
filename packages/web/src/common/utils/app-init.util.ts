@@ -1,8 +1,6 @@
 import { toast } from "react-toastify";
-import {
-  DatabaseInitError,
-  initializeDatabase,
-} from "@web/common/utils/storage/db-init.util";
+import { initializeDatabase } from "@web/common/utils/storage/db-init.util";
+import { DatabaseInitError } from "./storage/db-errors.util";
 
 export interface AppInitResult {
   dbInitError: DatabaseInitError | null;
