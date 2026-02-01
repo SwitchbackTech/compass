@@ -49,14 +49,6 @@ export const waitForAppReady = async (page: Page) => {
     { timeout: 15000 },
   );
 
-  // Wait for test hooks to be available
-  await page.waitForFunction(
-    () =>
-      typeof (window as any).__COMPASS_TEST_HOOKS__?.setIsSyncing ===
-      "function",
-    { timeout: 10000 },
-  );
-
   // Wait for store to be available
   await page.waitForFunction(
     () => typeof (window as any).__COMPASS_STORE__?.dispatch === "function",
@@ -65,13 +57,36 @@ export const waitForAppReady = async (page: Page) => {
 };
 
 /**
- * Set the isSyncing state via test hooks (triggers OAuth overlay when true).
+ * Set the authenticating state via Redux (triggers OAuth overlay when true).
  */
 export const setIsSyncing = async (page: Page, value: boolean) => {
   await page.evaluate((syncValue) => {
-    (window as any).__COMPASS_TEST_HOOKS__?.setIsSyncing(syncValue);
+    const store = (window as any).__COMPASS_STORE__;
+    if (!store) return;
+
+    if (syncValue) {
+      store.dispatch({ type: "auth/startAuthenticating" });
+    } else {
+      store.dispatch({ type: "auth/resetAuth" });
+    }
   }, value);
   // Small delay to let React process the state change
+  await page.waitForTimeout(50);
+};
+
+/**
+ * Set the awaitingImportResults state in Redux (triggers import phase when true).
+ */
+export const setAwaitingImportResults = async (page: Page, value: boolean) => {
+  await page.evaluate((awaitingValue) => {
+    const store = (window as any).__COMPASS_STORE__;
+    if (store) {
+      store.dispatch({
+        type: "async/importGCal/setAwaitingImportResults",
+        payload: awaitingValue,
+      });
+    }
+  }, value);
   await page.waitForTimeout(50);
 };
 

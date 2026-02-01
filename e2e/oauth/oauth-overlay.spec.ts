@@ -222,16 +222,13 @@ test.describe("OAuth Overlay - Edge Cases", () => {
     await expectNoOverlay(page);
   });
 
-  test("shows import phase when both isSyncing and importing are true", async ({
+  test("shows OAuth phase when authenticating even if importing is true", async ({
     page,
   }) => {
-    // When both are true, importing takes precedence (it's the later phase)
-    // The component logic: isOAuthPhase = isSyncing && !importing
-    // So when importing=true, it shows import message regardless of isSyncing
+    // When authenticating is true, OAuth messaging takes precedence.
     await setIsSyncing(page, true);
     await setImporting(page, true);
 
-    // Should show import phase text (importing overrides oauth phase)
-    await expect(page.getByText(OVERLAY_TEXT.importTitle)).toBeVisible();
+    await expect(page.getByText(OVERLAY_TEXT.oauthTitle)).toBeVisible();
   });
 });
