@@ -12,6 +12,7 @@ import { APP_NAME } from "@core/constants/core.constants";
 import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
 import * as socket from "@web/socket/provider/SocketProvider";
 import { CompassSession } from "./session.types";
 
@@ -60,6 +61,13 @@ async function checkIfSessionExists(): Promise<boolean> {
     const exists = await session.doesSessionExist();
     const socketConnected = socket.socket.connected;
 
+    // If a session exists, mark the user as authenticated.
+    // This ensures existing users who authenticated before the flag was introduced
+    // will be properly marked, and the flag persists even if their session expires later.
+    if (exists) {
+      markUserAsAuthenticated();
+    }
+
     authenticated$.next(exists);
     loading$.next(false);
 
@@ -85,6 +93,9 @@ export function sessionInit() {
     switch (e.action) {
       case "REFRESH_SESSION":
       case "SESSION_CREATED":
+        // Mark user as authenticated when session is created or refreshed
+        // This ensures the flag is set even if markUserAsAuthenticated wasn't called during OAuth
+        markUserAsAuthenticated();
         socket.reconnect();
         break;
       case "SIGN_OUT":
