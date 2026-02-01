@@ -10,6 +10,11 @@ import {
 } from "@web/common/utils/auth/google-auth.util";
 import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
 import {
+  authError,
+  authSuccess,
+  startAuthenticating,
+} from "@web/ducks/auth/slices/auth.slice";
+import {
   importGCalSlice,
   triggerFetch,
 } from "@web/ducks/events/slices/sync.slice";
@@ -26,16 +31,16 @@ export function useGoogleAuth(props?: OnboardingStepProps) {
   const googleLogin = useGoogleAuthWithOverlay({
     isSyncingRetainedOnSuccess: true,
     onStart: () => {
-      // TODO: create a user state slice to track the user's authentication status
-      // This will be used to track the user's authentication status and to display the appropriate UI
-      // update the slice to indicate that the user is authenticating
-      // be sure to reset the state upon error or success
+      dispatch(startAuthenticating());
     },
     onSuccess: async (data) => {
       try {
         const authResult = await authenticate(data);
         if (!authResult.success) {
           console.error(authResult.error);
+          dispatch(
+            authError(authResult.error?.message || "Authentication failed"),
+          );
           setIsSyncing(false);
           return;
         }
@@ -45,6 +50,7 @@ export function useGoogleAuth(props?: OnboardingStepProps) {
         markUserAsAuthenticated();
 
         setAuthenticated(true);
+        dispatch(authSuccess());
 
         // Now that OAuth is complete, indicate that calendar import is starting
         dispatch(importGCalSlice.actions.importing(true));
@@ -80,12 +86,22 @@ export function useGoogleAuth(props?: OnboardingStepProps) {
         // Ensure overlay is dismissed if any error occurs during the auth flow
         // This handles cases where authenticate() or other operations throw unexpected errors
         console.error("Error during authentication flow:", error);
+        dispatch(
+          authError(
+            error instanceof Error ? error.message : "Authentication failed",
+          ),
+        );
         setIsSyncing(false);
         throw error; // Re-throw so useGoogleLoginWithSyncOverlay can handle it via onError
       }
     },
     onError: (error) => {
       console.error(error);
+      dispatch(
+        authError(
+          error instanceof Error ? error.message : "Authentication failed",
+        ),
+      );
       // Ensure overlay is dismissed on error
       setIsSyncing(false);
     },

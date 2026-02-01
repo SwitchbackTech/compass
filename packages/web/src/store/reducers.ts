@@ -1,4 +1,5 @@
 import { combineReducers } from "redux";
+import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import {
@@ -37,6 +38,7 @@ const syncReducer = combineReducers({
 });
 
 export const reducers = {
+  auth: authSlice.reducer,
   events: eventsReducer,
   settings: settingsSlice.reducer,
   sync: syncReducer,
