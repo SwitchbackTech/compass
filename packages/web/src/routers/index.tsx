@@ -7,7 +7,7 @@ import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import {
   loadDayData,
-  loadLoggedInData,
+  loadOnboardingStatus,
   loadSpecificDayData,
 } from "@web/routers/loaders";
 
@@ -20,7 +20,7 @@ export const router = createBrowserRouter(
             Component: module.RootView,
           }),
         ),
-      loader: loadLoggedInData,
+      loader: loadOnboardingStatus,
       children: [
         {
           path: ROOT_ROUTES.NOW,

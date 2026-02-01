@@ -17,18 +17,6 @@ export async function loadAuthenticated() {
   return { authenticated };
 }
 
-export function loadHasCompletedSignup() {
-  const { isSignupComplete: hasCompletedSignup } = getOnboardingProgress();
-
-  return { hasCompletedSignup };
-}
-
-export function loadOnboardingData() {
-  const { isOnboardingSkipped: skipOnboarding } = getOnboardingProgress();
-
-  return { skipOnboarding };
-}
-
 export async function loadLogoutData() {
   const { authenticated } = await loadAuthenticated();
 
@@ -37,27 +25,12 @@ export async function loadLogoutData() {
   return { authenticated };
 }
 
-export async function loadLoggedInData(args?: LoaderFunctionArgs) {
-  const request = args?.request ?? new Request(window.location.href);
+export async function loadOnboardingStatus() {
   const { authenticated } = await loadAuthenticated();
-  const { skipOnboarding } = loadOnboardingData();
-  const { hasCompletedSignup } = loadHasCompletedSignup();
-
-  // Check if we're accessing routes that work without authentication
-  const url = new URL(request.url);
-  const pathname = url.pathname;
-  const isDayRoute = pathname.startsWith(ROOT_ROUTES.DAY);
-  const isRootRoute = pathname === ROOT_ROUTES.ROOT;
-
-  if (!authenticated) {
-    // Allow unauthenticated access to root (Week view) and Day routes
-    // This enables local-only usage and E2E testing without auth
-    if (isDayRoute || isRootRoute) {
-      return { authenticated: false, skipOnboarding, hasCompletedSignup };
-    }
-
-    return redirect(ROOT_ROUTES.DAY);
-  }
+  const {
+    isOnboardingSkipped: skipOnboarding,
+    isSignupComplete: hasCompletedSignup,
+  } = getOnboardingProgress();
 
   return { authenticated, skipOnboarding, hasCompletedSignup };
 }

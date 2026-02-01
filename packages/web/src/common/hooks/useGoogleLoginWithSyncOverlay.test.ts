@@ -244,7 +244,6 @@ describe("useGoogleLoginWithSyncOverlay", () => {
       expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
     });
   });
-
   it("does not clear isSyncing on remount when isSyncingRetainedOnSuccess is true", async () => {
     mockUseSession.mockReturnValue({
       authenticated: false,
