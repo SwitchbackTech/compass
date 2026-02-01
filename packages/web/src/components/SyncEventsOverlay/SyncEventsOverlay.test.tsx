@@ -1,12 +1,12 @@
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
-import { useSession } from "@web/auth/hooks/useSession";
+import { useSession } from "@web/auth/hooks/session/useSession";
 import { CompassSession } from "@web/auth/session/session.types";
 import { selectImporting } from "@web/ducks/events/selectors/sync.selector";
 import { useAppSelector } from "@web/store/store.hooks";
 import { SyncEventsOverlay } from "./SyncEventsOverlay";
 
-jest.mock("@web/auth/hooks/useSession", () => ({
+jest.mock("@web/auth/hooks/session/useSession", () => ({
   useSession: jest.fn(),
 }));
 

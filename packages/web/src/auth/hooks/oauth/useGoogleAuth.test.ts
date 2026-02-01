@@ -1,9 +1,9 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { useIsSignupComplete } from "@web/auth/hooks/useIsSignupComplete";
-import { useSession } from "@web/auth/hooks/useSession";
-import { useSkipOnboarding } from "@web/auth/hooks/useSkipOnboarding";
+import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
+import { useIsSignupComplete } from "@web/auth/hooks/onboarding/useIsSignupComplete";
+import { useSkipOnboarding } from "@web/auth/hooks/onboarding/useSkipOnboarding";
+import { useSession } from "@web/auth/hooks/session/useSession";
 import { CompassSession } from "@web/auth/session/session.types";
-import { useGoogleAuth } from "@web/common/hooks/useGoogleAuth";
 import {
   authenticate,
   fetchOnboardingStatus,
@@ -15,9 +15,9 @@ import { SignInUpInput } from "@web/components/oauth/ouath.types";
 
 // Mock dependencies
 jest.mock("@web/common/utils/auth/google-auth.util");
-jest.mock("@web/auth/hooks/useSession");
-jest.mock("@web/auth/hooks/useIsSignupComplete");
-jest.mock("@web/auth/hooks/useSkipOnboarding");
+jest.mock("@web/auth/hooks/session/useSession");
+jest.mock("@web/auth/hooks/onboarding/useIsSignupComplete");
+jest.mock("@web/auth/hooks/onboarding/useSkipOnboarding");
 jest.mock("@web/components/oauth/google/useGoogleLogin");
 jest.mock("@web/common/utils/storage/auth-state.util");
 jest.mock("@web/store/store.hooks", () => ({

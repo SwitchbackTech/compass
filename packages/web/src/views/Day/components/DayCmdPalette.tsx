@@ -2,8 +2,8 @@ import { useState } from "react";
 import CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
 import dayjs from "@core/util/date/dayjs";
+import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
-import { useConnectGoogle } from "@web/common/hooks/useConnectGoogle";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import {
   openEventFormCreateEvent,

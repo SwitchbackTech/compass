@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
-import { useSession } from "@web/auth/hooks/useSession";
+import { useSession } from "@web/auth/hooks/session/useSession";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { CompassTasksSavedEvent } from "@web/common/utils/storage/storage.types";
 import {

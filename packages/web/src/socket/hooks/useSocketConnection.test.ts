@@ -1,10 +1,10 @@
 import { renderHook } from "@testing-library/react";
-import { useUser } from "@web/auth/hooks/useUser";
+import { useUser } from "@web/auth/hooks/user/useUser";
 import { socket } from "../client/socket.client";
 import { useSocketConnection } from "./useSocketConnection";
 
 // Mock dependencies
-jest.mock("@web/auth/hooks/useUser");
+jest.mock("@web/auth/hooks/user/useUser");
 jest.mock("../client/socket.client", () => ({
   socket: {
     connect: jest.fn(),

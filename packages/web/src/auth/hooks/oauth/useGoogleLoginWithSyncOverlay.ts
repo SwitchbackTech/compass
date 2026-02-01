@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { useSession } from "@web/auth/hooks/useSession";
+import { useSession } from "@web/auth/hooks/session/useSession";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
 import { SignInUpInput } from "@web/components/oauth/ouath.types";
 

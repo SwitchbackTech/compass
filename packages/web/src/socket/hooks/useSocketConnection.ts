@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useUser } from "@web/auth/hooks/useUser";
+import { useUser } from "@web/auth/hooks/user/useUser";
 import { socket } from "../client/socket.client";
 
 export const useSocketConnection = () => {

@@ -6,7 +6,7 @@ import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useCmdPaletteTutorial } from "./useCmdPaletteTutorial";
 
 // Mock useSession
-jest.mock("@web/auth/hooks/useSession", () => ({
+jest.mock("@web/auth/hooks/session/useSession", () => ({
   useSession: jest.fn(() => ({
     authenticated: false,
     loading: false,
@@ -71,7 +71,7 @@ describe("useCmdPaletteTutorial", () => {
   });
 
   it("should not show cmd palette tutorial for authenticated users", () => {
-    const { useSession } = require("@web/auth/hooks/useSession");
+    const { useSession } = require("@web/auth/hooks/session/useSession");
     const mockSession: CompassSession = {
       authenticated: true,
       loading: false,

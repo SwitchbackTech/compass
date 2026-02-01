@@ -1,8 +1,8 @@
 import { toast } from "react-toastify";
-import { useIsSignupComplete } from "@web/auth/hooks/useIsSignupComplete";
-import { useSession } from "@web/auth/hooks/useSession";
-import { useSkipOnboarding } from "@web/auth/hooks/useSkipOnboarding";
-import { useGoogleLoginWithSyncOverlay } from "@web/common/hooks/useGoogleLoginWithSyncOverlay";
+import { useGoogleLoginWithSyncOverlay } from "@web/auth/hooks/oauth/useGoogleLoginWithSyncOverlay";
+import { useIsSignupComplete } from "@web/auth/hooks/onboarding/useIsSignupComplete";
+import { useSkipOnboarding } from "@web/auth/hooks/onboarding/useSkipOnboarding";
+import { useSession } from "@web/auth/hooks/session/useSession";
 import {
   authenticate,
   fetchOnboardingStatus,
@@ -25,6 +25,12 @@ export function useGoogleAuth(props?: OnboardingStepProps) {
 
   const googleLogin = useGoogleLoginWithSyncOverlay({
     isSyncingRetainedOnSuccess: true,
+    onStart: () => {
+      // TODO: create a user state slice to track the user's authentication status
+      // This will be used to track the user's authentication status and to display the appropriate UI
+      // update the slice to indicate that the user is authenticating
+      // be sure to reset the state upon error or success
+    },
     onSuccess: async (data) => {
       try {
         const authResult = await authenticate(data);

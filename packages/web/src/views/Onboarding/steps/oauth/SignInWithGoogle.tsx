@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { Key } from "ts-key-enum";
-import { useGoogleAuth } from "@web/common/hooks/useGoogleAuth";
+import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { GoogleButton } from "@web/components/oauth/google/GoogleButton";
 import { OnboardingCardLayout } from "@web/views/Onboarding/components";

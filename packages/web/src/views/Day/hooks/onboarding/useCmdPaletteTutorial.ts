@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSession } from "@web/auth/hooks/useSession";
+import { useSession } from "@web/auth/hooks/session/useSession";
 
 interface UseCmdPaletteTutorialProps {
   showOnboardingOverlay: boolean;

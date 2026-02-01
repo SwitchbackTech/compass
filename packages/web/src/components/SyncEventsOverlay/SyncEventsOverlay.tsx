@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useSession } from "@web/auth/hooks/useSession";
+import { useSession } from "@web/auth/hooks/session/useSession";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { selectImporting } from "@web/ducks/events/selectors/sync.selector";
 import { useAppSelector } from "@web/store/store.hooks";
@@ -13,6 +13,10 @@ export const SyncEventsOverlay = () => {
   // - isSyncing && !importing: OAuth in progress (waiting for user to complete sign-in)
   // - importing: Calendar import in progress (after OAuth succeeded)
   const isOAuthPhase = isSyncing && !importing;
+  console.log("isActive", isActive);
+  console.log("isOAuthPhase", isOAuthPhase);
+  console.log("isSyncing", isSyncing);
+  console.log("importing", importing);
 
   useEffect(() => {
     if (!isActive) {

@@ -6,8 +6,8 @@ import {
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
+import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
-import { useConnectGoogle } from "@web/common/hooks/useConnectGoogle";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
 import {

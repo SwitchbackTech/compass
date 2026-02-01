@@ -1,5 +1,5 @@
 import React from "react";
-import { useGoogleAuth } from "@web/common/hooks/useGoogleAuth";
+import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { GoogleButton } from "@web/components/oauth/google/GoogleButton";
 import { OnboardingStepProps } from "@web/views/Onboarding/components/Onboarding";

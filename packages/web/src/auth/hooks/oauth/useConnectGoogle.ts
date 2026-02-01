@@ -1,6 +1,6 @@
 import { useCallback } from "react";
-import { useSession } from "@web/auth/hooks/useSession";
-import { useGoogleAuth } from "@web/common/hooks/useGoogleAuth";
+import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
+import { useSession } from "@web/auth/hooks/session/useSession";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 

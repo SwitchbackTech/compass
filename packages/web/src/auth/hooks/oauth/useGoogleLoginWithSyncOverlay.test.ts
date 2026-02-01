@@ -1,10 +1,10 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { useSession } from "@web/auth/hooks/useSession";
-import { useGoogleLoginWithSyncOverlay } from "@web/common/hooks/useGoogleLoginWithSyncOverlay";
+import { useGoogleLoginWithSyncOverlay } from "@web/auth/hooks/oauth/useGoogleLoginWithSyncOverlay";
+import { useSession } from "@web/auth/hooks/session/useSession";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
 import { SignInUpInput } from "@web/components/oauth/ouath.types";
 
-jest.mock("@web/auth/hooks/useSession");
+jest.mock("@web/auth/hooks/session/useSession");
 jest.mock("@web/components/oauth/google/useGoogleLogin");
 
 const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;

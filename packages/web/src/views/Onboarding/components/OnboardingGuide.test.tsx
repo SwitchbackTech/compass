@@ -2,7 +2,7 @@ import { useLocation } from "react-router-dom";
 import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
 import { act, render, screen } from "@web/__tests__/__mocks__/mock.render";
-import { useSession } from "@web/auth/hooks/useSession";
+import { useSession } from "@web/auth/hooks/session/useSession";
 import { CompassSession } from "@web/auth/session/session.types";
 import {
   getDateKey,
@@ -27,7 +27,7 @@ jest.mock("posthog-js/react", () => ({
 jest.mock("react-router-dom", () => ({
   useLocation: jest.fn(),
 }));
-jest.mock("@web/auth/hooks/useSession");
+jest.mock("@web/auth/hooks/session/useSession");
 jest.mock("../hooks/useCmdPaletteGuide");
 jest.mock("../hooks/useStepDetection");
 jest.mock("@web/common/utils/storage/storage.util", () => ({

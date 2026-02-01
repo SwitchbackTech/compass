@@ -5,7 +5,7 @@ import {
   IMPORT_GCAL_START,
   USER_METADATA,
 } from "@core/constants/websocket.constants";
-import { useSession } from "@web/auth/hooks/useSession";
+import { useSession } from "@web/auth/hooks/session/useSession";
 import {
   importGCalSlice,
   triggerFetch,
@@ -18,7 +18,7 @@ import { useGcalSync } from "./useGcalSync";
 jest.mock("react-redux", () => ({
   useDispatch: jest.fn(),
 }));
-jest.mock("@web/auth/hooks/useSession");
+jest.mock("@web/auth/hooks/session/useSession");
 jest.mock("@web/store/store.hooks", () => ({
   useAppSelector: jest.fn(),
 }));

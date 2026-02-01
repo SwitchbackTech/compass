@@ -6,8 +6,8 @@ import {
   IMPORT_GCAL_START,
   USER_METADATA,
 } from "@core/constants/websocket.constants";
-import { useSession } from "@web/auth/hooks/useSession";
-import { useUser } from "@web/auth/hooks/useUser";
+import { useSession } from "@web/auth/hooks/session/useSession";
+import { useUser } from "@web/auth/hooks/user/useUser";
 import { CompassSession } from "@web/auth/session/session.types";
 import {
   importGCalSlice,
@@ -17,8 +17,8 @@ import { socket } from "./SocketProvider";
 import SocketProvider from "./SocketProvider";
 
 // Mock dependencies
-jest.mock("@web/auth/hooks/useUser");
-jest.mock("@web/auth/hooks/useSession");
+jest.mock("@web/auth/hooks/user/useUser");
+jest.mock("@web/auth/hooks/session/useSession");
 jest.mock("socket.io-client", () => ({
   io: jest.fn(() => ({
     on: jest.fn(),

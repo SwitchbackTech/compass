@@ -1,12 +1,12 @@
 import { renderHook } from "@testing-library/react";
-import { useSession } from "@web/auth/hooks/useSession";
-import { useConnectGoogle } from "@web/common/hooks/useConnectGoogle";
-import { useGoogleAuth } from "@web/common/hooks/useGoogleAuth";
+import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
+import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
+import { useSession } from "@web/auth/hooks/session/useSession";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 
-jest.mock("@web/auth/hooks/useSession");
-jest.mock("@web/common/hooks/useGoogleAuth");
+jest.mock("@web/auth/hooks/session/useSession");
+jest.mock("@web/auth/hooks/oauth/useGoogleAuth");
 jest.mock("@web/store/store.hooks");
 
 const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;

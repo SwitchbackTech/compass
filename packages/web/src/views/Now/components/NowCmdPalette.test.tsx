@@ -24,7 +24,7 @@ jest.mock("@web/views/Onboarding/utils/onboarding.storage.util", () => ({
 // Mock useSession for auth state tests
 const mockSetAuthenticated = jest.fn();
 let mockAuthenticated = false;
-jest.mock("@web/auth/hooks/useSession", () => ({
+jest.mock("@web/auth/hooks/session/useSession", () => ({
   useSession: () => ({
     authenticated: mockAuthenticated,
     loading: false,
@@ -37,7 +37,7 @@ jest.mock("@web/auth/hooks/useSession", () => ({
 
 // Mock useGoogleAuth
 const mockLogin = jest.fn();
-jest.mock("@web/common/hooks/useGoogleAuth", () => ({
+jest.mock("@web/auth/hooks/oauth/useGoogleAuth", () => ({
   useGoogleAuth: () => ({
     login: mockLogin,
   }),

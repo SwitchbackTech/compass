@@ -7,7 +7,7 @@ import {
 } from "@core/constants/websocket.constants";
 import { UserMetadata } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
-import { useSession } from "@web/auth/hooks/useSession";
+import { useSession } from "@web/auth/hooks/session/useSession";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { selectImporting } from "@web/ducks/events/selectors/sync.selector";
 import {
