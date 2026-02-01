@@ -45,12 +45,6 @@ export const addId = (event: Schema_GridEvent): WithId<Schema_GridEvent> => {
     _id: new ObjectId().toString(),
   } as WithId<Schema_GridEvent>;
 
-  Object.defineProperty(_event, "isOptimistic", {
-    value: true,
-    writable: true,
-    configurable: true,
-    enumerable: false,
-  });
   return _event;
 };
 

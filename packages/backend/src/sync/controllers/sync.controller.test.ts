@@ -61,7 +61,11 @@ describe("SyncController", () => {
     ]);
 
     expect(importEnd.status).toEqual("fulfilled");
-    expect((importEnd as { value: unknown })?.value).toBeNull();
+    const importResult = (importEnd as { value: unknown })?.value as string;
+    // On success, the result is a JSON string with import summary (e.g., '{"eventsCount":5,"calendarsCount":1}')
+    const parsed = JSON.parse(importResult);
+    expect(parsed).toHaveProperty("eventsCount");
+    expect(parsed).toHaveProperty("calendarsCount");
 
     if (waitForEventChanged) expect(eventChanged?.status).toEqual("fulfilled");
 
@@ -431,13 +435,16 @@ describe("SyncController", () => {
           data: { sync: { importGCal: "restart" } },
         });
 
-        const failReason = await syncDriver.waitUntilImportGCalEnd(
+        const result = await syncDriver.waitUntilImportGCalEnd(
           websocketClient,
           () => syncDriver.importGCal({ userId }),
           (reason) => Promise.resolve(reason),
         );
 
-        expect(failReason).toBeNull();
+        // On success, result is a JSON string with import summary
+        const parsed = JSON.parse(result as string);
+        expect(parsed).toHaveProperty("eventsCount");
+        expect(parsed).toHaveProperty("calendarsCount");
 
         expect(getAllEventsSpy).toHaveBeenCalledWith(
           expect.objectContaining({ pageToken: "5" }),
@@ -476,13 +483,16 @@ describe("SyncController", () => {
           data: { sync: { importGCal: "errored" } },
         });
 
-        const failReason = await syncDriver.waitUntilImportGCalEnd(
+        const result = await syncDriver.waitUntilImportGCalEnd(
           websocketClient,
           () => syncDriver.importGCal({ userId }),
           (reason) => Promise.resolve(reason),
         );
 
-        expect(failReason).toBeNull();
+        // On success, result is a JSON string with import summary
+        const parsed = JSON.parse(result as string);
+        expect(parsed).toHaveProperty("eventsCount");
+        expect(parsed).toHaveProperty("calendarsCount");
 
         expect(getAllEventsSpy).toHaveBeenCalledWith(
           expect.objectContaining({ pageToken: "5" }),
@@ -541,13 +551,15 @@ describe("SyncController", () => {
           Promise.resolve(websocketClient.connect()),
         );
 
-        await expect(
-          syncDriver.waitUntilImportGCalEnd(
-            websocketClient,
-            () => syncDriver.importGCal({ userId }),
-            (reason) => Promise.resolve(reason),
-          ),
-        ).resolves.toBeNull();
+        const result = await syncDriver.waitUntilImportGCalEnd(
+          websocketClient,
+          () => syncDriver.importGCal({ userId }),
+          (reason) => Promise.resolve(reason),
+        );
+        // On success, result is a JSON string with import summary
+        const parsed = JSON.parse(result as string);
+        expect(parsed).toHaveProperty("eventsCount");
+        expect(parsed).toHaveProperty("calendarsCount");
 
         await waitUntilEvent(websocketClient, "disconnect", 100, () =>
           Promise.resolve(websocketClient.disconnect()),

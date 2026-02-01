@@ -168,7 +168,9 @@ class UserService {
     await syncService.deleteByIntegration("google", userId);
   };
 
-  startGoogleCalendarSync = async (user: string): Promise<void> => {
+  startGoogleCalendarSync = async (
+    user: string,
+  ): Promise<{ eventsCount: number; calendarsCount: number }> => {
     const gcal = await getGcalClient(user);
 
     const calendarInit = await calendarService.initializeGoogleCalendars(
@@ -193,7 +195,21 @@ class UserService {
         : [],
     );
 
-    await syncService.importFull(gcal, gCalendarIds, user);
+    const importResults = await syncService.importFull(
+      gcal,
+      gCalendarIds,
+      user,
+    );
+
+    const eventsCount = importResults.reduce(
+      (sum, result) => sum + result.totalChanged,
+      0,
+    );
+
+    return {
+      eventsCount,
+      calendarsCount: gCalendarIds.length,
+    };
   };
 
   restartGoogleCalendarSync = async (userId: string) => {
@@ -220,14 +236,17 @@ class UserService {
       });
 
       await this.stopGoogleCalendarSync(userId);
-      await this.startGoogleCalendarSync(userId);
+      const importResults = await this.startGoogleCalendarSync(userId);
 
       await userMetadataService.updateUserMetadata({
         userId,
         data: { sync: { importGCal: "completed" } },
       });
 
-      webSocketServer.handleImportGCalEnd(userId);
+      webSocketServer.handleImportGCalEnd(
+        userId,
+        JSON.stringify(importResults),
+      );
       webSocketServer.handleBackgroundCalendarChange(userId);
     } catch (err) {
       await userMetadataService.updateUserMetadata({

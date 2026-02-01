@@ -2,6 +2,8 @@ import { fireEvent, screen } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { NowCmdPalette } from "@web/views/Now/components/NowCmdPalette";
+import { ONBOARDING_RESTART_EVENT } from "@web/views/Onboarding/constants/onboarding.constants";
+import { resetOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 // Mock pressKey
 jest.mock("@web/common/utils/dom/event-emitter.util", () => ({
@@ -13,9 +15,29 @@ jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
   onEventTargetVisibility: (cb: () => void) => () => cb(),
 }));
 
-// Mock window.open
-const mockOpen = jest.fn();
-window.open = mockOpen;
+// Mock resetOnboardingProgress
+jest.mock("@web/views/Onboarding/utils/onboarding.storage.util", () => ({
+  ...jest.requireActual("@web/views/Onboarding/utils/onboarding.storage.util"),
+  resetOnboardingProgress: jest.fn(),
+}));
+
+// Mock useSession for auth state tests
+const mockSetAuthenticated = jest.fn();
+let mockAuthenticated = false;
+jest.mock("@web/auth/hooks/session/useSession", () => ({
+  useSession: () => ({
+    authenticated: mockAuthenticated,
+    setAuthenticated: mockSetAuthenticated,
+  }),
+}));
+
+// Mock useGoogleAuth
+const mockLogin = jest.fn();
+jest.mock("@web/auth/hooks/oauth/useGoogleAuth", () => ({
+  useGoogleAuth: () => ({
+    login: mockLogin,
+  }),
+}));
 
 describe("NowCmdPalette", () => {
   const initialState = {
@@ -81,9 +103,60 @@ describe("NowCmdPalette", () => {
     expect(pressKey).toHaveBeenCalledWith("z");
   });
 
-  it("should open onboarding in new tab when 'Re-do onboarding' is clicked", () => {
+  it("should reset onboarding and dispatch restart event when 'Re-do onboarding' is clicked", () => {
+    const mockDispatchEvent = jest.spyOn(window, "dispatchEvent");
     render(<NowCmdPalette />, { state: initialState });
     fireEvent.click(screen.getByText("Re-do onboarding"));
-    expect(mockOpen).toHaveBeenCalledWith("/onboarding", "_blank");
+    expect(resetOnboardingProgress).toHaveBeenCalled();
+    expect(mockDispatchEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: ONBOARDING_RESTART_EVENT,
+      }),
+    );
+    mockDispatchEvent.mockRestore();
+  });
+
+  describe("Google Calendar authentication status", () => {
+    beforeEach(() => {
+      mockLogin.mockClear();
+    });
+
+    it("shows 'Connect Google Calendar' when not authenticated", () => {
+      mockAuthenticated = false;
+      render(<NowCmdPalette />, { state: initialState });
+
+      expect(screen.getByText("Connect Google Calendar")).toBeInTheDocument();
+      expect(
+        screen.queryByText("Google Calendar Connected"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("shows 'Google Calendar Connected' when authenticated", () => {
+      mockAuthenticated = true;
+      render(<NowCmdPalette />, { state: initialState });
+
+      expect(screen.getByText("Google Calendar Connected")).toBeInTheDocument();
+      expect(
+        screen.queryByText("Connect Google Calendar"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("triggers login when 'Connect Google Calendar' is clicked and not authenticated", () => {
+      mockAuthenticated = false;
+      render(<NowCmdPalette />, { state: initialState });
+
+      fireEvent.click(screen.getByText("Connect Google Calendar"));
+
+      expect(mockLogin).toHaveBeenCalled();
+    });
+
+    it("does not trigger login when 'Google Calendar Connected' is clicked", () => {
+      mockAuthenticated = true;
+      render(<NowCmdPalette />, { state: initialState });
+
+      fireEvent.click(screen.getByText("Google Calendar Connected"));
+
+      expect(mockLogin).not.toHaveBeenCalled();
+    });
   });
 });

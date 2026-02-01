@@ -1,11 +1,8 @@
 import dayjs from "@core/util/date/dayjs";
-import { theme } from "@web/common/styles/theme";
 import { ArrowButton } from "@web/components/Button/ArrowButton";
-import { InfoIcon } from "@web/components/Icons/Info";
 import { SelectView } from "@web/components/SelectView/SelectView";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { TodayButton } from "@web/views/Calendar/components/TodayButton/TodayButton";
-import { useStorageInfoModal } from "@web/views/Day/context/StorageInfoModalContext";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 
@@ -15,7 +12,6 @@ export const DAY_SUBHEADING_FORMAT = "MMMM D";
 export const TaskListHeader = () => {
   const dateNav = useDateNavigation();
   const dateInView = useDateInView();
-  const { openModal } = useStorageInfoModal();
 
   const { navigateToPreviousDay, navigateToNextDay, navigateToToday } = dateNav;
   const header = dateInView.locale("en").format(DAY_HEADING_FORMAT);
@@ -32,15 +28,6 @@ export const TaskListHeader = () => {
               buttonClassName="flex items-center gap-2 rounded px-0 py-0 text-xl font-semibold text-white-100 transition-colors hover:bg-white/10"
             />
           </h2>
-          <TooltipWrapper description="Storage information">
-            <button
-              onClick={openModal}
-              className="rounded p-1 transition-colors hover:bg-white/10"
-              aria-label="View storage information"
-            >
-              <InfoIcon size={15} color={theme.color.text.light} />
-            </button>
-          </TooltipWrapper>
         </div>
       </div>
       <div className="flex items-center justify-between">

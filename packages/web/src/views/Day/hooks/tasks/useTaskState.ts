@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Task, UndoOperation } from "../../../../common/types/task.types";
 import { getDateKey } from "../../../../common/utils/storage/storage.util";
 
@@ -18,7 +18,6 @@ export function useTaskState({
   const [undoState, setUndoState] = useState<UndoOperation | null>(null);
   const [undoToastId, setUndoToastId] = useState<string | number | null>(null);
 
-  const lastLoadedKeyRef = useRef<string | null>(null);
   const dateKey = getDateKey(currentDate);
 
   return {
@@ -38,7 +37,6 @@ export function useTaskState({
     setUndoState,
     undoToastId,
     setUndoToastId,
-    lastLoadedKeyRef,
     dateKey,
   };
 }

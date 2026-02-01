@@ -6,7 +6,6 @@ import type {
 } from "axios";
 import { signOut } from "supertokens-web-js/recipe/session";
 import { Status } from "@core/errors/status.codes";
-import { AUTH_FAILURE_REASONS } from "@web/common/constants/auth.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { CompassApi } from "./compass.api";
 
@@ -29,9 +28,10 @@ const setLocationPath = (pathname: string) => {
   });
 };
 
-const createAxiosError = (status: number): AxiosError => {
+const createAxiosError = (status: number, url?: string): AxiosError => {
+  const config = { url } as InternalAxiosRequestConfig;
   const response = {
-    config: {} as InternalAxiosRequestConfig,
+    config,
     data: {},
     headers: {},
     status,
@@ -39,7 +39,7 @@ const createAxiosError = (status: number): AxiosError => {
   } as AxiosResponse;
 
   return {
-    config: {} as InternalAxiosRequestConfig,
+    config,
     isAxiosError: true,
     message: "boom",
     name: "AxiosError",
@@ -48,8 +48,8 @@ const createAxiosError = (status: number): AxiosError => {
   } as AxiosError;
 };
 
-const triggerErrorResponse = async (status: number) => {
-  const axiosError = createAxiosError(status);
+const triggerErrorResponse = async (status: number, url?: string) => {
+  const axiosError = createAxiosError(status, url);
   const adapter: AxiosAdapter = () => Promise.reject(axiosError);
   CompassApi.defaults.adapter = adapter;
 
@@ -72,20 +72,18 @@ describe("CompassApi interceptor auth handling", () => {
     CompassApi.defaults.adapter = originalAdapter;
   });
 
-  it("signs out and redirects to login with GAUTH reason when Google token is invalid", async () => {
+  it("signs out and redirects to day when Google token is invalid", async () => {
     await triggerErrorResponse(Status.NOT_FOUND);
 
     expect(window.alert).toHaveBeenCalledWith(
       "Login required, cuz security 😇",
     );
     expect(signOut).toHaveBeenCalledTimes(1);
-    expect(assignMock).toHaveBeenCalledWith(
-      `${ROOT_ROUTES.LOGIN}?reason=${AUTH_FAILURE_REASONS.GAUTH_SESSION_EXPIRED}`,
-    );
+    expect(assignMock).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
   });
 
-  it("does not redirect if user is already on the login route", async () => {
-    setLocationPath(ROOT_ROUTES.LOGIN);
+  it("does not redirect if user is already on the day route", async () => {
+    setLocationPath(ROOT_ROUTES.DAY);
 
     await triggerErrorResponse(Status.NOT_FOUND);
 
@@ -105,6 +103,14 @@ describe("CompassApi interceptor auth handling", () => {
     await triggerErrorResponse(Status.INTERNAL_SERVER);
 
     expect(console.error).toHaveBeenCalled();
+    expect(signOut).not.toHaveBeenCalled();
+    expect(assignMock).not.toHaveBeenCalled();
+  });
+
+  it("does not sign out or redirect on /user/profile 404", async () => {
+    await triggerErrorResponse(Status.NOT_FOUND, "/user/profile");
+
+    expect(window.alert).not.toHaveBeenCalled();
     expect(signOut).not.toHaveBeenCalled();
     expect(assignMock).not.toHaveBeenCalled();
   });

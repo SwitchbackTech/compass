@@ -1,9 +1,9 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { Task } from "@web/common/types/task.types";
+import { CompassTasksSavedEvent } from "@web/common/utils/storage/storage.types";
 import {
   COMPASS_TASKS_SAVED_EVENT_NAME,
-  CompassTasksSavedEvent,
   TODAY_TASKS_STORAGE_KEY_PREFIX,
   getDateKey,
   loadTasksFromStorage,

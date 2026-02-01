@@ -4,12 +4,17 @@ import { createMemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { LEARN_CHINESE } from "@core/__mocks__/v1/events/events.misc";
+import {
+  EUROPE_TRIP,
+  LEARN_CHINESE,
+} from "@core/__mocks__/v1/events/events.misc";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
+import { findAndUpdateEventInPreloadedState } from "@web/__tests__/utils/state/store.test.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { CalendarView } from "@web/views/Calendar";
+import { freshenEventStartEndDate } from "@web/views/Calendar/calendar.render.test.utils";
 
 jest.mock("@web/auth/auth.util", () => ({
   getUserId: async () => "test-user-id",
@@ -21,9 +26,28 @@ describe("Sidebar: Interactions", () => {
     { initialEntries: ["/"] },
   );
 
+  const updatedPreloadedState = findAndUpdateEventInPreloadedState(
+    preloadedState,
+    EUROPE_TRIP._id as string,
+    freshenEventStartEndDate,
+  );
+
+  beforeEach(() => {
+    server.use(
+      rest.get(`${ENV_WEB.API_BASEURL}/event`, (req, res, ctx) => {
+        const isSomeday = req.url.searchParams.get("someday");
+        if (isSomeday) {
+          return res(ctx.json([freshenEventStartEndDate(EUROPE_TRIP)]));
+        }
+
+        return res(ctx.json([]));
+      }),
+    );
+  });
+
   it("opens and closes existing someday event form", async () => {
     const user = userEvent.setup();
-    render(<></>, { state: preloadedState, router });
+    render(<></>, { state: updatedPreloadedState, router });
 
     const existing = await screen.findByRole("button", {
       name: /europe trip/i,

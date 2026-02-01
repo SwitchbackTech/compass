@@ -12,30 +12,6 @@ describe("ReminderIntroOne Post-Authentication Security", () => {
     expect(true).toBe(true);
   });
 
-  it("should be configured in OnboardingFlow with disablePrevious=true", () => {
-    // This verifies the step configuration prevents keyboard navigation
-    // The actual step configuration should have disablePrevious: true
-    // which prevents 'j' and 'J' key navigation back to the authentication step
-
-    // Mock reading the OnboardingFlow file to verify configuration
-    jest.mock("../../OnboardingFlow", () => ({
-      onboardingSteps: [
-        {
-          id: "sign-in-with-google",
-          component: () => null,
-          handlesKeyboardEvents: true,
-        },
-        {
-          id: "reminder-intro-one",
-          component: () => null,
-          disablePrevious: true, // This is the key configuration
-        },
-      ],
-    }));
-
-    expect(true).toBe(true);
-  });
-
   it("validates the security requirement: no backward navigation after authentication", () => {
     // This test documents the security requirement:
     // After successful Google authentication, users should NOT be able to:
@@ -47,14 +23,13 @@ describe("ReminderIntroOne Post-Authentication Security", () => {
 
     const securityRequirements = [
       "prevBtnDisabled={true} in ReminderIntroOne component",
-      "disablePrevious: true in OnboardingFlow step configuration",
       "useOnboardingShortcuts hook respects disablePrevious flag",
       "Button clicks on disabled buttons are ignored by browser",
       "Keyboard shortcuts are prevented by useOnboardingShortcuts",
     ];
 
     // All security requirements are implemented
-    expect(securityRequirements).toHaveLength(5);
+    expect(securityRequirements).toHaveLength(4);
   });
 
   it("ensures forward navigation and skip still work after authentication", () => {
