@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { useGoogleLoginWithSyncOverlay } from "@web/auth/hooks/oauth/useGoogleLoginWithSyncOverlay";
+import { useGoogleAuthWithOverlay } from "@web/auth/hooks/oauth/useGoogleAuthWithOverlay";
 import { useSession } from "@web/auth/hooks/session/useSession";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
 import { SignInUpInput } from "@web/components/oauth/ouath.types";
@@ -12,7 +12,7 @@ const mockUseGoogleLogin = useGoogleLogin as jest.MockedFunction<
   typeof useGoogleLogin
 >;
 
-describe("useGoogleLoginWithSyncOverlay", () => {
+describe("useGoogleLoginWithOverlay", () => {
   const mockSetIsSyncing = jest.fn();
   const mockLogin = jest.fn();
 
@@ -35,7 +35,7 @@ describe("useGoogleLoginWithSyncOverlay", () => {
       data: null,
     });
 
-    const { result } = renderHook(() => useGoogleLoginWithSyncOverlay());
+    const { result } = renderHook(() => useGoogleAuthWithOverlay());
 
     result.current.login();
 
@@ -55,7 +55,7 @@ describe("useGoogleLoginWithSyncOverlay", () => {
       };
     });
 
-    renderHook(() => useGoogleLoginWithSyncOverlay({ onSuccess }));
+    renderHook(() => useGoogleAuthWithOverlay({ onSuccess }));
 
     await onSuccessCallback?.({
       clientType: "web",
@@ -89,7 +89,7 @@ describe("useGoogleLoginWithSyncOverlay", () => {
     });
 
     renderHook(() =>
-      useGoogleLoginWithSyncOverlay({ isSyncingRetainedOnSuccess: true }),
+      useGoogleAuthWithOverlay({ isSyncingRetainedOnSuccess: true }),
     );
 
     await onSuccessCallback?.({
@@ -120,7 +120,7 @@ describe("useGoogleLoginWithSyncOverlay", () => {
       };
     });
 
-    renderHook(() => useGoogleLoginWithSyncOverlay());
+    renderHook(() => useGoogleAuthWithOverlay());
 
     onErrorCallback?.(new Error("Login failed"));
 
@@ -139,7 +139,7 @@ describe("useGoogleLoginWithSyncOverlay", () => {
       };
     });
 
-    const { result } = renderHook(() => useGoogleLoginWithSyncOverlay());
+    const { result } = renderHook(() => useGoogleAuthWithOverlay());
 
     result.current.login();
     mockSetIsSyncing.mockClear();
@@ -156,9 +156,7 @@ describe("useGoogleLoginWithSyncOverlay", () => {
       data: null,
     });
 
-    const { result, unmount } = renderHook(() =>
-      useGoogleLoginWithSyncOverlay(),
-    );
+    const { result, unmount } = renderHook(() => useGoogleAuthWithOverlay());
 
     result.current.login();
     expect(mockSetIsSyncing).toHaveBeenCalledWith(true);
@@ -195,7 +193,7 @@ describe("useGoogleLoginWithSyncOverlay", () => {
       );
 
       renderHook(() =>
-        useGoogleLoginWithSyncOverlay({
+        useGoogleAuthWithOverlay({
           isSyncingRetainedOnSuccess: true,
           onSuccess,
           onError,
@@ -244,7 +242,7 @@ describe("useGoogleLoginWithSyncOverlay", () => {
       );
 
       renderHook(() =>
-        useGoogleLoginWithSyncOverlay({
+        useGoogleAuthWithOverlay({
           onSuccess,
           onError,
         }),

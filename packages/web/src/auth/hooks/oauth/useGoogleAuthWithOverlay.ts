@@ -3,15 +3,15 @@ import { useSession } from "@web/auth/hooks/session/useSession";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
 import { SignInUpInput } from "@web/components/oauth/ouath.types";
 
-interface UseGoogleLoginWithSyncOverlayOptions {
+interface UseGoogleAuthWithOverlayOptions {
   onStart?: () => void;
   onSuccess?: (res: SignInUpInput) => Promise<void>;
   onError?: (error: unknown) => void;
   isSyncingRetainedOnSuccess?: boolean;
 }
 
-export const useGoogleLoginWithSyncOverlay = (
-  options: UseGoogleLoginWithSyncOverlayOptions = {},
+export const useGoogleAuthWithOverlay = (
+  options: UseGoogleAuthWithOverlayOptions = {},
 ) => {
   const {
     onStart,
