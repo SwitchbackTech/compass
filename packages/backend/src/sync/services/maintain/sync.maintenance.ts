@@ -142,7 +142,7 @@ export const refreshWatch = async (
       };
     } catch (e) {
       if (isFullSyncRequired(e as Error)) {
-        userService.restartGoogleCalendarSync(r.user);
+        userService.restartGoogleCalendarSync(r.user, { force: true });
         resynced = true;
       } else {
         logger.error(

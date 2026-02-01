@@ -105,12 +105,14 @@ export class SyncController {
           return;
         } else if (isFullSyncRequired(e as Error) && userId) {
           // do not await this call
-          userService.restartGoogleCalendarSync(userId).catch((err) => {
-            logger.error(
-              `Something went wrong with resyncing google calendars for user: ${userId}`,
-              err,
-            );
-          });
+          userService
+            .restartGoogleCalendarSync(userId, { force: true })
+            .catch((err) => {
+              logger.error(
+                `Something went wrong with resyncing google calendars for user: ${userId}`,
+                err,
+              );
+            });
 
           res.status(Status.OK).send({ message: "Full sync in progress." });
 
