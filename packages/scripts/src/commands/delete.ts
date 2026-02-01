@@ -15,21 +15,30 @@ const { prompt } = pkg;
 const getCleanupUrl = (): string => {
   const env = process.env.NODE_ENV as Environment_Cli;
 
-  if (env === ENVIRONMENT.PROD && CLI_ENV.PROD_DOMAIN !== undefined) {
+  if (env === ENVIRONMENT.PROD) {
+    if (!CLI_ENV.PROD_DOMAIN) {
+      throw new Error(
+        'Unable to determine cleanup URL. NODE_ENV="production" but PROD_DOMAIN is not set.',
+      );
+    }
     return `https://${CLI_ENV.PROD_DOMAIN}/cleanup`;
   }
 
-  if (env === ENVIRONMENT.STAG && CLI_ENV.STAGING_DOMAIN !== undefined) {
+  if (env === ENVIRONMENT.STAG) {
+    if (!CLI_ENV.STAGING_DOMAIN) {
+      throw new Error(
+        'Unable to determine cleanup URL. NODE_ENV="staging" but STAGING_DOMAIN is not set.',
+      );
+    }
     return `https://${CLI_ENV.STAGING_DOMAIN}/cleanup`;
   }
 
-  if (env === ENVIRONMENT.LOCAL && CLI_ENV.LOCAL_DOMAIN !== undefined) {
-    return `http://${CLI_ENV.LOCAL_DOMAIN}/cleanup`;
+  if (!CLI_ENV.LOCAL_DOMAIN) {
+    throw new Error(
+      'Unable to determine cleanup URL. NODE_ENV="local" but LOCAL_DOMAIN is not set.',
+    );
   }
-
-  throw new Error(
-    `Unable to determine cleanup URL. NODE_ENV="${env}" but required domain environment variable is not set.`,
-  );
+  return `http://${CLI_ENV.LOCAL_DOMAIN}/cleanup`;
 };
 
 /**

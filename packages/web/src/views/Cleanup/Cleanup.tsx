@@ -44,7 +44,7 @@ export const CleanupView = () => {
       {!isClearing && !error && (
         <div className="p-8 text-center text-xl">
           Browser data cleared successfully!
-          <div className="mt-4 block text-sm text-gray-500">
+          <div className="mt-4 text-sm text-gray-500">
             Redirecting to login...
           </div>
         </div>
