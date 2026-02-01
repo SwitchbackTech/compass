@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useSession } from "@web/auth/hooks/session/useSession";
+import { useBufferedVisibility } from "@web/common/hooks/useBufferedVisibility";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { selectIsAuthenticating } from "@web/ducks/auth/selectors/auth.selectors";
 import { selectImporting } from "@web/ducks/events/selectors/sync.selector";
@@ -14,19 +15,15 @@ export const SyncEventsOverlay = () => {
   // - isAuthenticating: User clicked sign-in, popup is open (from auth slice)
   // - isSyncing: OAuth popup returned, processing response (from session context)
   // - importing: Calendar import in progress (from sync slice)
-  const isActive = isAuthenticating || isSyncing || importing;
+  const shouldBeActive = isAuthenticating || isSyncing || importing;
+
+  // Buffer visibility to prevent flash during state transitions (e.g., OAuth → import phase)
+  const isActive = useBufferedVisibility(shouldBeActive);
 
   // Determine which phase we're in:
   // - isAuthenticating || (isSyncing && !importing): OAuth in progress (waiting for user)
   // - importing: Calendar import in progress (after OAuth succeeded)
   const isOAuthPhase = isAuthenticating || (isSyncing && !importing);
-  console.log("SyncEventsOverlay:", {
-    isActive,
-    isOAuthPhase,
-    isAuthenticating,
-    isSyncing,
-    importing,
-  });
 
   useEffect(() => {
     if (!isActive) {

@@ -1,3 +1,4 @@
+import { batch } from "react-redux";
 import { toast } from "react-toastify";
 import { useGoogleAuthWithOverlay } from "@web/auth/hooks/oauth/useGoogleAuthWithOverlay";
 import { useIsSignupComplete } from "@web/auth/hooks/onboarding/useIsSignupComplete";
@@ -50,10 +51,14 @@ export function useGoogleAuth(props?: OnboardingStepProps) {
         markUserAsAuthenticated();
 
         setAuthenticated(true);
-        dispatch(authSuccess());
 
-        // Now that OAuth is complete, indicate that calendar import is starting
-        dispatch(importGCalSlice.actions.importing(true));
+        // Batch these dispatches to ensure they update in the same render cycle,
+        // preventing a flash where isAuthenticating=false but importing=false
+        batch(() => {
+          dispatch(authSuccess());
+          // Now that OAuth is complete, indicate that calendar import is starting
+          dispatch(importGCalSlice.actions.importing(true));
+        });
 
         const { skipOnboarding } = await fetchOnboardingStatus();
 
