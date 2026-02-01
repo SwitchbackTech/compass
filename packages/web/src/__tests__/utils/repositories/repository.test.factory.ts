@@ -26,25 +26,6 @@ export const createTestEvent = (
 };
 
 /**
- * Factory function to create multiple test events.
- * @param count - Number of events to create
- * @param overrides - Partial event properties to override defaults (applied to all events)
- * @returns Array of Event_Core objects
- */
-export const createTestEvents = (
-  count: number,
-  overrides: Partial<Event_Core> = {},
-): Event_Core[] => {
-  return Array.from({ length: count }, (_, index) =>
-    createTestEvent({
-      ...overrides,
-      _id: overrides._id || `event-${index + 1}`,
-      title: overrides.title || `Event ${index + 1}`,
-    }),
-  );
-};
-
-/**
  * Factory function to create a test CompassCoreEvent (for edit operations).
  * Uses the existing factory from @core/util/test/ccal.event.factory.
  * @param overrides - Partial event properties to override defaults
