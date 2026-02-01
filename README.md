@@ -1,84 +1,89 @@
 # 🧭 Compass Calendar
 
-_A minimal task manager for engineers._
+**A minimalist task manager designed for engineers.**
 
-_All your tasks & events in one place_
+All your tasks and events in one place. Organize your day, stay on track, and ship more code.
 
-_Organize your day and stay on track_
+## Why Use Compass?
+
+It'll help you focus and ship faster:
+
+- **Plan faster**: Organize your Month → Week → Day → Now in minutes.
+- **Keyboard-first**: Shortcuts and command palette for lightning-fast navigation.
+- **Private & Offline**: Runs fully local in your browser, with optional Google Calendar sync.
+- **No bloat**: No AI — just a clean, minimal interface to help you get things done.
+
+Join thousands of engineers who are staying organized and productive with Compass.
 
 https://github.com/user-attachments/assets/ba7b91b9-1984-49f2-afc6-7fcda1100b31
 
 ---
 
-## Benefits
-
-### 🧘 Get clear
-
-Plan your Month → Week → Day → Now
-
-### 1️⃣ Simplify your life
-
-One app for tasks, events, and plans
-
-### ⚡ Go fast
-
-Shortcuts, command palette, lightweight code
-
-### 🔄 Keep your GCal
-
-Events sync to Google Calendar\*
-
 ## Features
 
-### The unique stuff
+### The Unique Stuff
 
-- ☀️ Day mode: See your tasks and events side-by-side
-- 🎯 Now mode: Lock-in on a single task
-- ✍️ Display custom note-to-self
-- ☑️ Organize tasks in a Someday / Maybe list
-- ⏩ Move an event forward/back with one click
+- **Day Mode**: See your tasks and events side-by-side
+- **Now Mode**: Lock-in on a single task
+- **Custom Note**: Display a personal note-to-self for motivation or reminders
+- **Someday/Maybe List**: Organize future tasks without cluttering your schedule
+- **One-Click Adjustments**: Move events forwards or back effortlessly
 
-### The basics
+### The Essentials
 
-- 🔄 Recurring events
-- ⚡ Command palette
-- ⚡ Shortcuts
-- 🕒 Display events in local time
-- 🏷️ Tagging events
-- 🖍️ Resizing events
-- 🖍️ Duplicating events
-- 🖍️ Reordering tasks
-- 🖍️ Drag & drop
-- 🔄 **Hosted** 2-way sync with Google Calendar
-- 🔄 **Local** 2-way sync with Google Calendar (Ngrok proxy)
-- 🔐 Google OAuth authentication
-- 🔐 User session management (Supertokens)
-- ✉️ Email capture (Kit)
+- Recurring events
+- Command palette
+- Event tagging, resizing, duplicating, reordering
+- Drag & drop
+- 2-way sync with Google Calendar (hosted or local via Ngrok)
+- Google OAuth authentication
+- User session management with Supertokens
+- Email capture via Kit
 
-### Limitations
+### Current Limitations
 
-Features we don't support yet:
+- Only supports primary Google Calendar (no sub-calendars)
+- No sharing, locations, reminders, or mobile app (yet!)
 
-- 📂 Sub-calendars (\*only primary calendar is supported)
-- 🔗 Sharing
-- 📍 Location
-- ⏰ Reminders
-- 📱 Mobile app
+We're actively working on improvements – check out our [roadmap](https://github.com/orgs/SwitchbackTech/projects/4).
 
-## Next Steps
+## Getting Started
 
-- 🧭 [Try the app](https://app.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme): Give it a spin before setting it up locally.
+### Try It Online
 
-- 📃 [Read the technical docs](https://docs.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme): All the info you'd need to get started, including guides on how to install, test, build, deploy, and contribute.
+Head over to [app.compasscalendar.com](https://app.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme)
 
-- 📘 [Read the handbook](https://compasscalendar.notion.site/?utm_source=github&utm_medium=referral&utm_campaign=readme): Why Compass exists and how it fits into our loooooong-term vision.
+No signup required — start planning instantly!
 
-- 👀 Stay in touch: [GitHub Discussions](https://github.com/SwitchbackTech/compass/discussions), [X (Twitter)](https://x.com/CompassCalendar), [YouTube](https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=jssXj_g9kln8Iz_w), [LinkedIn](https://www.linkedin.com/company/compass-calendar)
+### Run Locally
+
+Want to poke around or run it self-hosted?
+
+[Read the technical docs](https://docs.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme): All the info you'd need to get started, including guides on how to install, test, build, deploy, and contribute.
 
 ## Tech Stack
 
-![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB) ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white) ![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white) ![Google Cloud](https://img.shields.io/badge/GoogleCloud-%234285F4.svg?style=for-the-badge&logo=google-cloud&logoColor=white) ![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white) ![Redux](https://img.shields.io/badge/redux-%23593d88.svg?style=for-the-badge&logo=redux&logoColor=white) ![Express.js](https://img.shields.io/badge/express.js-%23404d59.svg?style=for-the-badge&logo=express&logoColor=%2361DAFB) ![Socket.io](https://img.shields.io/badge/Socket.io-black?style=for-the-badge&logo=socket.io&badgeColor=010101)
-![Webpack](https://img.shields.io/badge/webpack-%238DD6F9.svg?style=for-the-badge&logo=webpack&logoColor=black) ![Yarn](https://img.shields.io/badge/yarn-%232C8EBB.svg?style=for-the-badge&logo=yarn&logoColor=white) ![Styled Components](https://img.shields.io/badge/styled--components-DB7093?style=for-the-badge&logo=styled-components&logoColor=white) ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
-![Jest](https://img.shields.io/badge/-jest-%23C21325?style=for-the-badge&logo=jest&logoColor=white)
-![Testing-Library](https://img.shields.io/badge/-TestingLibrary-%23E33332?style=for-the-badge&logo=testing-library&logoColor=white)
-![Ngrok](https://img.shields.io/badge/ngrok-1F1F1F?style=for-the-badge&logo=ngrok&logoColor=white)
+- **Frontend**: React, Redux, Tailwind CSS, TypeScript, Webpack
+- **Backend**: Node.js, Express, TypeScript, MongoDB
+- **Integrations**: Google Calendar API, Google OAuth2, Socket.io
+- **Testing**: Jest, React Testing Library
+- **Other**: Yarn workspaces for monorepo management
+
+## Contributing
+
+We love contributions! Whether it's bug fixes, new features, or documentation improvements, your help makes Compass better for everyone.
+
+Issues: Check open issues or create a new one.
+Pull Requests: Fork the repo, make your changes, and submit a PR. Follow our [Contribution Guidelines](https://docs.compasscalendar.com/docs/contribute).
+Discussions: Join the conversation on GitHub Discussions.
+
+First-time contributors? Look for issues labeled "good first issue"!
+
+## Community & Resources
+
+- **Handbook**: [compasscalendar.notion.site](https://compasscalendar.notion.site/Compass-Handbook-26b237bde8f4805c9a56de6db3a7993d/?utm_source=github&utm_medium=referral&utm_campaign=readme)
+- **Twitter**: [@CompassCalendar](https://x.com/CompassCalendar)
+- **Youtube**: [Playlist](https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=jssXj_g9kln8Iz_w)
+- **LinkedIn**: [Compass Calendar](https://www.linkedin.com/company/compass-calendar)
+
+Star the repo for good luck.
