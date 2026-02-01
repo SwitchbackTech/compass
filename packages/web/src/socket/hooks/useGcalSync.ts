@@ -24,6 +24,18 @@ export const useGcalSync = () => {
   const importing = useAppSelector(selectImporting);
 
   useEffect(() => {
+    if (isSyncing) {
+      // Mark post-auth flow as started to avoid USER_METADATA closing sync early.
+      importStartedRef.current = true;
+      return;
+    }
+
+    if (!importing) {
+      importStartedRef.current = false;
+    }
+  }, [isSyncing, importing]);
+
+  useEffect(() => {
     if (importing) {
       importStartedRef.current = true;
     }

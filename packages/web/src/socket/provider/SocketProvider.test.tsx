@@ -294,7 +294,7 @@ describe("SocketProvider", () => {
     });
   });
 
-  it("does not show results when import was not started (importStartedRef is false)", async () => {
+  it("shows results if IMPORT_GCAL_END arrives during post-auth sync", async () => {
     const mockSession: CompassSession = {
       isSyncing: true,
       authenticated: true,
@@ -337,12 +337,14 @@ describe("SocketProvider", () => {
       expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
     });
 
-    // Import results should NOT be set since importStartedRef was false
     const state = store.getState();
-    expect(state.sync.importGCal.importResults).toBeNull();
+    expect(state.sync.importGCal.importResults).toEqual({
+      eventsCount: 10,
+      localEventsSynced: undefined,
+    });
 
-    // triggerFetch should NOT have been called
-    expect(state.sync.importLatest.isFetchNeeded).toBe(false);
+    // triggerFetch should be called to refresh events
+    expect(state.sync.importLatest.isFetchNeeded).toBe(true);
   });
 
   it("triggers event refetch when import completes during post-auth sync", async () => {

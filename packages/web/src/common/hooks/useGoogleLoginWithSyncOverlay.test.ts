@@ -29,20 +29,15 @@ describe("useGoogleLoginWithSyncOverlay", () => {
   });
 
   it("sets isSyncing true on start", () => {
-    let onStartCallback: (() => void) | undefined;
-
-    mockUseGoogleLogin.mockImplementation(({ onStart }) => {
-      onStartCallback = onStart;
-      return {
-        login: mockLogin,
-        loading: false,
-        data: null,
-      };
+    mockUseGoogleLogin.mockReturnValue({
+      login: mockLogin,
+      loading: false,
+      data: null,
     });
 
-    renderHook(() => useGoogleLoginWithSyncOverlay());
+    const { result } = renderHook(() => useGoogleLoginWithSyncOverlay());
 
-    onStartCallback?.();
+    result.current.login();
 
     expect(mockSetIsSyncing).toHaveBeenCalledWith(true);
   });
@@ -132,29 +127,11 @@ describe("useGoogleLoginWithSyncOverlay", () => {
     expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
   });
 
-  it("clears isSyncing when popup is closed without completing auth", async () => {
-    let onStartCallback: (() => void) | undefined;
-    let currentLoading = true;
+  it("clears isSyncing when popup is closed without completing auth", () => {
+    let onErrorCallback: ((error: unknown) => void) | undefined;
 
-    mockUseGoogleLogin.mockImplementation(({ onStart }) => {
-      onStartCallback = onStart;
-      return {
-        login: mockLogin,
-        loading: currentLoading,
-        data: null,
-      };
-    });
-
-    const { rerender } = renderHook(() => useGoogleLoginWithSyncOverlay());
-
-    onStartCallback?.();
-    expect(mockSetIsSyncing).toHaveBeenCalledWith(true);
-
-    mockSetIsSyncing.mockClear();
-
-    currentLoading = false;
-    mockUseGoogleLogin.mockImplementation(({ onStart }) => {
-      onStartCallback = onStart;
+    mockUseGoogleLogin.mockImplementation(({ onError }) => {
+      onErrorCallback = onError;
       return {
         login: mockLogin,
         loading: false,
@@ -162,28 +139,28 @@ describe("useGoogleLoginWithSyncOverlay", () => {
       };
     });
 
-    rerender();
+    const { result } = renderHook(() => useGoogleLoginWithSyncOverlay());
 
-    await waitFor(() => {
-      expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
-    });
+    result.current.login();
+    mockSetIsSyncing.mockClear();
+
+    onErrorCallback?.(new Error("Popup closed"));
+
+    expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
   });
 
   it("clears isSyncing when component unmounts during login", () => {
-    let onStartCallback: (() => void) | undefined;
-
-    mockUseGoogleLogin.mockImplementation(({ onStart }) => {
-      onStartCallback = onStart;
-      return {
-        login: mockLogin,
-        loading: true,
-        data: null,
-      };
+    mockUseGoogleLogin.mockReturnValue({
+      login: mockLogin,
+      loading: true,
+      data: null,
     });
 
-    const { unmount } = renderHook(() => useGoogleLoginWithSyncOverlay());
+    const { result, unmount } = renderHook(() =>
+      useGoogleLoginWithSyncOverlay(),
+    );
 
-    onStartCallback?.();
+    result.current.login();
     expect(mockSetIsSyncing).toHaveBeenCalledWith(true);
 
     mockSetIsSyncing.mockClear();
@@ -193,82 +170,6 @@ describe("useGoogleLoginWithSyncOverlay", () => {
 
     // Cleanup should clear isSyncing
     expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
-  });
-
-  it("clears isSyncing on remount after OAuth completed while unmounted", async () => {
-    let onStartCallback: (() => void) | undefined;
-
-    // First mount: start login
-    mockUseGoogleLogin.mockImplementation(({ onStart }) => {
-      onStartCallback = onStart;
-      return {
-        login: mockLogin,
-        loading: true,
-        data: null,
-      };
-    });
-
-    const { unmount } = renderHook(() => useGoogleLoginWithSyncOverlay());
-
-    onStartCallback?.();
-    expect(mockSetIsSyncing).toHaveBeenCalledWith(true);
-
-    // Unmount while login is in progress
-    unmount();
-
-    // Simulate OAuth completing while component is unmounted
-    // Now remount: loading is false, but isSyncing is still true
-    mockUseSession.mockReturnValue({
-      authenticated: false,
-      loading: false,
-      isSyncing: true, // Still true from previous mount
-      setAuthenticated: jest.fn(),
-      setLoading: jest.fn(),
-      setIsSyncing: mockSetIsSyncing,
-    });
-
-    mockUseGoogleLogin.mockImplementation(() => {
-      return {
-        login: mockLogin,
-        loading: false, // OAuth completed
-        data: null,
-      };
-    });
-
-    mockSetIsSyncing.mockClear();
-
-    // Remount - should detect and clear stuck isSyncing
-    renderHook(() => useGoogleLoginWithSyncOverlay());
-
-    await waitFor(() => {
-      expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
-    });
-  });
-  it("does not clear isSyncing on remount when isSyncingRetainedOnSuccess is true", async () => {
-    mockUseSession.mockReturnValue({
-      authenticated: false,
-      loading: false,
-      isSyncing: true,
-      setAuthenticated: jest.fn(),
-      setLoading: jest.fn(),
-      setIsSyncing: mockSetIsSyncing,
-    });
-
-    mockUseGoogleLogin.mockImplementation(() => {
-      return {
-        login: mockLogin,
-        loading: false,
-        data: null,
-      };
-    });
-
-    renderHook(() =>
-      useGoogleLoginWithSyncOverlay({ isSyncingRetainedOnSuccess: true }),
-    );
-
-    await waitFor(() => {
-      expect(mockSetIsSyncing).not.toHaveBeenCalledWith(false);
-    });
   });
 
   describe("error handling in onSuccess", () => {

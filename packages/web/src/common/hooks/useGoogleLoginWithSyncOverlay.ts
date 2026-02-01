@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useSession } from "@web/auth/hooks/useSession";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
 import { SignInUpInput } from "@web/components/oauth/ouath.types";
@@ -19,15 +19,10 @@ export const useGoogleLoginWithSyncOverlay = (
     onError,
     isSyncingRetainedOnSuccess = false,
   } = options;
-  const { isSyncing, setIsSyncing } = useSession();
+  const { setIsSyncing } = useSession();
   const loginStartedRef = useRef(false);
 
   const googleLogin = useGoogleLogin({
-    onStart: () => {
-      loginStartedRef.current = true;
-      setIsSyncing(true);
-      onStart?.();
-    },
     onSuccess: async (data) => {
       loginStartedRef.current = false;
       try {
@@ -52,37 +47,23 @@ export const useGoogleLoginWithSyncOverlay = (
   });
 
   useEffect(() => {
-    // Handle normal completion: login started and loading finished
-    if (loginStartedRef.current && !googleLogin.loading) {
-      loginStartedRef.current = false;
-      setIsSyncing(false);
-      return;
-    }
-
-    // Handle remount case: component unmounted during login, remounted after OAuth completed
-    // If loading is false, we're not tracking a login (ref is false), but isSyncing is still true,
-    // we should clear it to prevent stuck overlay
-    if (
-      !isSyncingRetainedOnSuccess &&
-      !loginStartedRef.current &&
-      !googleLogin.loading &&
-      isSyncing
-    ) {
-      setIsSyncing(false);
-    }
-
     // Cleanup: if component unmounts while login is in progress, clear isSyncing
     return () => {
       if (loginStartedRef.current) {
         setIsSyncing(false);
       }
     };
-  }, [
-    googleLogin.loading,
-    isSyncing,
-    isSyncingRetainedOnSuccess,
-    setIsSyncing,
-  ]);
+  }, [setIsSyncing]);
 
-  return googleLogin;
+  const login = useCallback(() => {
+    loginStartedRef.current = true;
+    setIsSyncing(true);
+    onStart?.();
+    return googleLogin.login();
+  }, [googleLogin, onStart, setIsSyncing]);
+
+  return {
+    ...googleLogin,
+    login,
+  };
 };

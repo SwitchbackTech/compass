@@ -174,15 +174,10 @@ describe("useGoogleAuth", () => {
 
   describe("onStart callback", () => {
     it("shows overlay immediately when login starts", () => {
-      let onStartCallback: (() => void) | undefined;
-
-      mockUseGoogleLogin.mockImplementation(({ onStart }) => {
-        onStartCallback = onStart;
-        return {
-          login: mockLogin,
-          loading: false,
-          data: null,
-        };
+      mockUseGoogleLogin.mockReturnValue({
+        login: mockLogin,
+        loading: false,
+        data: null,
       });
 
       // Re-mock useAppDispatch for this test
@@ -191,12 +186,10 @@ describe("useGoogleAuth", () => {
         .spyOn(jest.requireMock("@web/store/store.hooks"), "useAppDispatch")
         .mockReturnValue(mockDispatchFn);
 
-      renderHook(() => useGoogleAuth());
-
-      expect(onStartCallback).toBeDefined();
+      const { result } = renderHook(() => useGoogleAuth());
 
       // Simulate login start
-      onStartCallback?.();
+      result.current.login();
 
       expect(mockSetIsSyncing).toHaveBeenCalledWith(true);
     });
@@ -229,32 +222,10 @@ describe("useGoogleAuth", () => {
 
   describe("popup close handling", () => {
     it("hides overlay when popup is closed without completing auth", async () => {
-      let onStartCallback: (() => void) | undefined;
-      let currentLoading = true;
+      let onErrorCallback: ((error: unknown) => void) | undefined;
 
-      mockUseGoogleLogin.mockImplementation(({ onStart }) => {
-        onStartCallback = onStart;
-        return {
-          login: mockLogin,
-          loading: currentLoading,
-          data: null,
-        };
-      });
-
-      const { rerender } = renderHook(() => useGoogleAuth());
-
-      // Simulate login start (popup opens, loading is true)
-      onStartCallback?.();
-      expect(mockSetIsSyncing).toHaveBeenCalledWith(true);
-
-      mockSetIsSyncing.mockClear();
-
-      // Simulate popup closed (loading becomes false without success)
-      currentLoading = false;
-
-      // Update mock to return the new loading state (false)
-      mockUseGoogleLogin.mockImplementation(({ onStart }) => {
-        onStartCallback = onStart;
+      mockUseGoogleLogin.mockImplementation(({ onError }) => {
+        onErrorCallback = onError;
         return {
           login: mockLogin,
           loading: false,
@@ -262,8 +233,16 @@ describe("useGoogleAuth", () => {
         };
       });
 
-      // Trigger re-render to run the useEffect with the new loading state
-      rerender();
+      const { result } = renderHook(() => useGoogleAuth());
+
+      // Simulate login start (popup opens)
+      result.current.login();
+      expect(mockSetIsSyncing).toHaveBeenCalledWith(true);
+
+      mockSetIsSyncing.mockClear();
+
+      // Simulate popup closed without completing auth
+      onErrorCallback?.(new Error("Popup closed"));
 
       await waitFor(() => {
         expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
@@ -278,13 +257,11 @@ describe("useGoogleAuth", () => {
         error: new Error("Auth failed"),
       });
 
-      let onStartCallback: (() => void) | undefined;
       let onSuccessCallback:
         | ((data: SignInUpInput) => Promise<void>)
         | undefined;
 
-      mockUseGoogleLogin.mockImplementation(({ onStart, onSuccess }) => {
-        onStartCallback = onStart;
+      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
         onSuccessCallback = onSuccess;
         return {
           login: mockLogin,
@@ -294,8 +271,6 @@ describe("useGoogleAuth", () => {
       });
 
       renderHook(() => useGoogleAuth());
-
-      onStartCallback?.();
 
       if (onSuccessCallback) {
         await onSuccessCallback({
@@ -326,13 +301,11 @@ describe("useGoogleAuth", () => {
       const authError = new Error("Network error");
       mockAuthenticate.mockRejectedValue(authError);
 
-      let onStartCallback: (() => void) | undefined;
       let onSuccessCallback:
         | ((data: SignInUpInput) => Promise<void>)
         | undefined;
 
-      mockUseGoogleLogin.mockImplementation(({ onStart, onSuccess }) => {
-        onStartCallback = onStart;
+      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
         onSuccessCallback = onSuccess;
         return {
           login: mockLogin,
@@ -342,8 +315,6 @@ describe("useGoogleAuth", () => {
       });
 
       renderHook(() => useGoogleAuth());
-
-      onStartCallback?.();
       mockSetIsSyncing.mockClear();
 
       if (onSuccessCallback) {
@@ -378,13 +349,11 @@ describe("useGoogleAuth", () => {
       const fetchError = new Error("Failed to fetch onboarding status");
       mockFetchOnboardingStatus.mockRejectedValue(fetchError);
 
-      let onStartCallback: (() => void) | undefined;
       let onSuccessCallback:
         | ((data: SignInUpInput) => Promise<void>)
         | undefined;
 
-      mockUseGoogleLogin.mockImplementation(({ onStart, onSuccess }) => {
-        onStartCallback = onStart;
+      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
         onSuccessCallback = onSuccess;
         return {
           login: mockLogin,
@@ -394,8 +363,6 @@ describe("useGoogleAuth", () => {
       });
 
       renderHook(() => useGoogleAuth());
-
-      onStartCallback?.();
       mockSetIsSyncing.mockClear();
 
       if (onSuccessCallback) {

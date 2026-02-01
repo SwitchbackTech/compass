@@ -196,7 +196,7 @@ describe("useGcalSync", () => {
       );
     });
 
-    it("allows USER_METADATA to close sync if import NOT started locally", () => {
+    it("keeps sync open during post-auth flow even before import starts", () => {
       (useSession as jest.Mock).mockReturnValue({
         isSyncing: true,
         setIsSyncing: mockSetIsSyncing,
@@ -220,9 +220,9 @@ describe("useGcalSync", () => {
         });
       }
 
-      // Should close sync
-      expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
-      expect(mockDispatch).toHaveBeenCalledWith(
+      // Should keep sync open until IMPORT_GCAL_END
+      expect(mockSetIsSyncing).not.toHaveBeenCalled();
+      expect(mockDispatch).not.toHaveBeenCalledWith(
         importGCalSlice.actions.importing(false),
       );
     });
