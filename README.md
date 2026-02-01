@@ -7,16 +7,17 @@ All your tasks and events in one place. Organize your day, stay on track, and sh
 ## Why Use Compass?
 
 It'll help you focus and ship faster:
+
 - **Plan faster**: Organize your Month → Week → Day → Now in minutes.
 - **Keyboard-first**: Shortcuts and command palette for lightning-fast navigation.
 - **Private & Offline**: Runs fully local in your browser, with optional Google Calendar sync.
 - **No bloat**: No AI — just a clean, minimal interface to help you get things done.
 
-Join thousands of engineers who are staying organized and productive with Compass. 
+Join thousands of engineers who are staying organized and productive with Compass.
 
 https://github.com/user-attachments/assets/ba7b91b9-1984-49f2-afc6-7fcda1100b31
 
-----
+---
 
 ## Features
 
@@ -49,17 +50,19 @@ We're actively working on improvements – check out our [roadmap](https://githu
 ## Getting Started
 
 ### Try It Online
+
 Head over to [app.compasscalendar.com](https://app.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme)
 
 No signup required — start planning instantly!
 
 ### Run Locally
+
 Want to poke around or run it self-hosted?
 
 [Read the technical docs](https://docs.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme): All the info you'd need to get started, including guides on how to install, test, build, deploy, and contribute.
 
-
 ## Tech Stack
+
 - **Frontend**: React, Redux, Tailwind CSS, TypeScript, Webpack
 - **Backend**: Node.js, Express, TypeScript, MongoDB
 - **Integrations**: Google Calendar API, Google OAuth2, Socket.io
@@ -67,6 +70,7 @@ Want to poke around or run it self-hosted?
 - **Other**: Yarn workspaces for monorepo management
 
 ## Contributing
+
 We love contributions! Whether it's bug fixes, new features, or documentation improvements, your help makes Compass better for everyone.
 
 Issues: Check open issues or create a new one.
@@ -76,6 +80,7 @@ Discussions: Join the conversation on GitHub Discussions.
 First-time contributors? Look for issues labeled "good first issue"!
 
 ## Community & Resources
+
 - **Handbook**: [compasscalendar.notion.site](https://compasscalendar.notion.site/Compass-Handbook-26b237bde8f4805c9a56de6db3a7993d/?utm_source=github&utm_medium=referral&utm_campaign=readme)
 - **Twitter**: [@CompassCalendar](https://x.com/CompassCalendar)
 - **Youtube**: [Playlist](https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=jssXj_g9kln8Iz_w)
