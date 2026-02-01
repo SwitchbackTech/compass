@@ -3,7 +3,6 @@ import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
 import { act, render, screen } from "@web/__tests__/__mocks__/mock.render";
 import { useSession } from "@web/auth/hooks/session/useSession";
-import { CompassSession } from "@web/auth/session/session.types";
 import {
   getDateKey,
   loadTasksFromStorage,
@@ -54,15 +53,10 @@ describe("CmdPaletteGuide", () => {
     jest.clearAllMocks();
     localStorage.clear();
     mockUseStepDetection.mockImplementation(() => {});
-    const mockSession: CompassSession = {
+    mockUseSession.mockReturnValue({
       authenticated: false,
-      loading: false,
-      isSyncing: false,
       setAuthenticated: jest.fn(),
-      setLoading: jest.fn(),
-      setIsSyncing: jest.fn(),
-    };
-    mockUseSession.mockReturnValue(mockSession);
+    });
     mockGetDateKey.mockReturnValue("2024-01-01");
     mockLoadTasksFromStorage.mockReturnValue([]); // No tasks by default
   });
@@ -305,13 +299,9 @@ describe("CmdPaletteGuide", () => {
 
   it("should render on Day view when authenticated", () => {
     mockUseLocation.mockReturnValue({ pathname: "/day" } as any);
-    const mockSession: CompassSession = {
+    const mockSession = {
       authenticated: true,
-      loading: false,
-      isSyncing: false,
       setAuthenticated: jest.fn(),
-      setLoading: jest.fn(),
-      setIsSyncing: jest.fn(),
     };
     mockUseSession.mockReturnValue(mockSession);
     markStepCompleted(ONBOARDING_STEPS.NAVIGATE_TO_DAY);
@@ -496,6 +486,8 @@ describe("CmdPaletteGuide", () => {
               importing: false,
               importResults: { eventsCount: 10, calendarsCount: 2 },
               pendingLocalEventsSynced: null,
+              awaitingImportResults: false,
+              importError: null,
             },
           },
         },
@@ -528,6 +520,8 @@ describe("CmdPaletteGuide", () => {
                 localEventsSynced: 3,
               },
               pendingLocalEventsSynced: null,
+              awaitingImportResults: false,
+              importError: null,
             },
           },
         },
@@ -558,6 +552,8 @@ describe("CmdPaletteGuide", () => {
               importing: false,
               importResults: { eventsCount: 10, calendarsCount: 2 },
               pendingLocalEventsSynced: null,
+              awaitingImportResults: false,
+              importError: null,
             },
           },
         },
@@ -594,6 +590,8 @@ describe("CmdPaletteGuide", () => {
               importing: false,
               importResults: { eventsCount: 10, calendarsCount: 2 },
               pendingLocalEventsSynced: null,
+              awaitingImportResults: false,
+              importError: null,
             },
           },
         },
@@ -629,6 +627,8 @@ describe("CmdPaletteGuide", () => {
               importing: false,
               importResults: { eventsCount: 10, calendarsCount: 2 },
               pendingLocalEventsSynced: null,
+              awaitingImportResults: false,
+              importError: null,
             },
           },
         },
@@ -641,7 +641,10 @@ describe("CmdPaletteGuide", () => {
       const dismissButton = screen.getByLabelText("Dismiss");
       await user.click(dismissButton);
 
-      expect(skipGuide).toHaveBeenCalledTimes(1);
+      expect(skipGuide).not.toHaveBeenCalled();
+      expect(
+        screen.queryByText("Imported 10 events from 2 calendars"),
+      ).not.toBeInTheDocument();
     });
   });
 });

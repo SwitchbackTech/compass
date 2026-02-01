@@ -25,14 +25,15 @@ import { OnboardingStepProps } from "@web/views/Onboarding";
 
 export function useGoogleAuth(props?: OnboardingStepProps) {
   const dispatch = useAppDispatch();
-  const { setAuthenticated, setIsSyncing } = useSession();
+  const { setAuthenticated } = useSession();
   const { markSignupCompleted } = useIsSignupComplete();
   const { updateOnboardingStatus } = useSkipOnboarding();
 
   const googleLogin = useGoogleAuthWithOverlay({
-    isSyncingRetainedOnSuccess: true,
     onStart: () => {
       dispatch(startAuthenticating());
+      dispatch(importGCalSlice.actions.setAwaitingImportResults(true));
+      dispatch(importGCalSlice.actions.clearImportResults(undefined));
     },
     onSuccess: async (data) => {
       try {
@@ -42,7 +43,8 @@ export function useGoogleAuth(props?: OnboardingStepProps) {
           dispatch(
             authError(authResult.error?.message || "Authentication failed"),
           );
-          setIsSyncing(false);
+          dispatch(importGCalSlice.actions.setAwaitingImportResults(false));
+          dispatch(importGCalSlice.actions.importing(false));
           return;
         }
 
@@ -58,6 +60,7 @@ export function useGoogleAuth(props?: OnboardingStepProps) {
           dispatch(authSuccess());
           // Now that OAuth is complete, indicate that calendar import is starting
           dispatch(importGCalSlice.actions.importing(true));
+          dispatch(importGCalSlice.actions.setAwaitingImportResults(true));
         });
 
         const { skipOnboarding } = await fetchOnboardingStatus();
@@ -96,7 +99,8 @@ export function useGoogleAuth(props?: OnboardingStepProps) {
             error instanceof Error ? error.message : "Authentication failed",
           ),
         );
-        setIsSyncing(false);
+        dispatch(importGCalSlice.actions.setAwaitingImportResults(false));
+        dispatch(importGCalSlice.actions.importing(false));
         throw error; // Re-throw so useGoogleLoginWithSyncOverlay can handle it via onError
       }
     },
@@ -107,8 +111,8 @@ export function useGoogleAuth(props?: OnboardingStepProps) {
           error instanceof Error ? error.message : "Authentication failed",
         ),
       );
-      // Ensure overlay is dismissed on error
-      setIsSyncing(false);
+      dispatch(importGCalSlice.actions.setAwaitingImportResults(false));
+      dispatch(importGCalSlice.actions.importing(false));
     },
   });
 

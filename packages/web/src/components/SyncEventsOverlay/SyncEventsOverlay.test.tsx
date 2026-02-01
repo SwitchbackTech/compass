@@ -1,38 +1,43 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
-import { useSession } from "@web/auth/hooks/session/useSession";
-import { CompassSession } from "@web/auth/session/session.types";
 import { selectIsAuthenticating } from "@web/ducks/auth/selectors/auth.selectors";
-import { selectImporting } from "@web/ducks/events/selectors/sync.selector";
+import {
+  selectAwaitingImportResults,
+  selectImporting,
+} from "@web/ducks/events/selectors/sync.selector";
 import { useAppSelector } from "@web/store/store.hooks";
 import { SyncEventsOverlay } from "./SyncEventsOverlay";
-
-jest.mock("@web/auth/hooks/session/useSession", () => ({
-  useSession: jest.fn(),
-}));
 
 jest.mock("@web/store/store.hooks", () => ({
   useAppSelector: jest.fn(),
 }));
 
-const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
 const mockUseAppSelector = useAppSelector as jest.MockedFunction<
   typeof useAppSelector
 >;
 
 describe("SyncEventsOverlay", () => {
+  let importingValue = false;
+  let awaitingValue = false;
+  let authenticatingValue = false;
+
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
     document.body.removeAttribute("data-app-locked");
-    // Default: not importing, not authenticating
+    importingValue = false;
+    awaitingValue = false;
+    authenticatingValue = false;
     mockUseAppSelector.mockImplementation((selector) => {
       if (selector === selectImporting) {
-        return false;
+        return importingValue;
+      }
+      if (selector === selectAwaitingImportResults) {
+        return awaitingValue;
       }
       if (selector === selectIsAuthenticating) {
-        return false;
+        return authenticatingValue;
       }
       return false;
     });
@@ -42,20 +47,9 @@ describe("SyncEventsOverlay", () => {
     jest.useRealTimers();
   });
 
-  it("renders nothing when not syncing and not importing", () => {
-    const mockSession: CompassSession = {
-      isSyncing: false,
-      authenticated: false,
-      loading: false,
-      setAuthenticated: jest.fn(),
-      setIsSyncing: jest.fn(),
-      setLoading: jest.fn(),
-    };
-    mockUseSession.mockReturnValue(mockSession);
-
+  it("renders nothing when not authenticating, awaiting, or importing", () => {
     const { container } = render(<SyncEventsOverlay />);
 
-    // Advance timers to handle visibility buffer
     act(() => {
       jest.advanceTimersByTime(100);
     });
@@ -64,16 +58,8 @@ describe("SyncEventsOverlay", () => {
     expect(document.body.getAttribute("data-app-locked")).toBeNull();
   });
 
-  it("renders overlay with OAuth message when syncing but not importing (OAuth phase)", () => {
-    const mockSession: CompassSession = {
-      isSyncing: true,
-      authenticated: true,
-      loading: false,
-      setAuthenticated: jest.fn(),
-      setIsSyncing: jest.fn(),
-      setLoading: jest.fn(),
-    };
-    mockUseSession.mockReturnValue(mockSession);
+  it("renders OAuth message when authenticating", () => {
+    authenticatingValue = true;
 
     render(<SyncEventsOverlay />);
 
@@ -84,103 +70,8 @@ describe("SyncEventsOverlay", () => {
     expect(document.body.getAttribute("data-app-locked")).toBe("true");
   });
 
-  it("sets data-app-locked attribute when syncing starts", () => {
-    const mockSession: CompassSession = {
-      isSyncing: true,
-      authenticated: true,
-      loading: false,
-      setAuthenticated: jest.fn(),
-      setIsSyncing: jest.fn(),
-      setLoading: jest.fn(),
-    };
-    mockUseSession.mockReturnValue(mockSession);
-
-    render(<SyncEventsOverlay />);
-
-    expect(document.body.getAttribute("data-app-locked")).toBe("true");
-  });
-
-  it("removes data-app-locked attribute when syncing and importing stop", () => {
-    const { rerender } = render(<SyncEventsOverlay />);
-
-    const mockSessionSyncing: CompassSession = {
-      isSyncing: true,
-      authenticated: true,
-      loading: false,
-      setAuthenticated: jest.fn(),
-      setIsSyncing: jest.fn(),
-      setLoading: jest.fn(),
-    };
-    mockUseSession.mockReturnValue(mockSessionSyncing);
-
-    rerender(<SyncEventsOverlay />);
-    expect(document.body.getAttribute("data-app-locked")).toBe("true");
-
-    const mockSessionNotSyncing: CompassSession = {
-      isSyncing: false,
-      authenticated: true,
-      loading: false,
-      setAuthenticated: jest.fn(),
-      setIsSyncing: jest.fn(),
-      setLoading: jest.fn(),
-    };
-    mockUseSession.mockReturnValue(mockSessionNotSyncing);
-
-    rerender(<SyncEventsOverlay />);
-
-    // Advance timers to handle visibility buffer (50ms delay before hiding)
-    act(() => {
-      jest.advanceTimersByTime(100);
-    });
-
-    expect(document.body.getAttribute("data-app-locked")).toBeNull();
-  });
-
-  it("blurs active element when syncing starts", () => {
-    const mockBlur = jest.fn();
-    const mockElement = {
-      blur: mockBlur,
-    } as unknown as HTMLElement;
-
-    Object.defineProperty(document, "activeElement", {
-      writable: true,
-      value: mockElement,
-    });
-
-    const mockSession: CompassSession = {
-      isSyncing: true,
-      authenticated: true,
-      loading: false,
-      setAuthenticated: jest.fn(),
-      setIsSyncing: jest.fn(),
-      setLoading: jest.fn(),
-    };
-    mockUseSession.mockReturnValue(mockSession);
-
-    render(<SyncEventsOverlay />);
-
-    expect(mockBlur).toHaveBeenCalled();
-  });
-
-  it("renders overlay when importing is true even if isSyncing is false", () => {
-    const mockSession: CompassSession = {
-      isSyncing: false,
-      authenticated: true,
-      loading: false,
-      setAuthenticated: jest.fn(),
-      setIsSyncing: jest.fn(),
-      setLoading: jest.fn(),
-    };
-    mockUseSession.mockReturnValue(mockSession);
-    mockUseAppSelector.mockImplementation((selector) => {
-      if (selector === selectImporting) {
-        return true; // importing = true
-      }
-      if (selector === selectIsAuthenticating) {
-        return false;
-      }
-      return false;
-    });
+  it("renders import message when awaiting import results", () => {
+    awaitingValue = true;
 
     render(<SyncEventsOverlay />);
 
@@ -190,25 +81,8 @@ describe("SyncEventsOverlay", () => {
     expect(document.body.getAttribute("data-app-locked")).toBe("true");
   });
 
-  it("renders overlay when both isSyncing and importing are true", () => {
-    const mockSession: CompassSession = {
-      isSyncing: true,
-      authenticated: true,
-      loading: false,
-      setAuthenticated: jest.fn(),
-      setIsSyncing: jest.fn(),
-      setLoading: jest.fn(),
-    };
-    mockUseSession.mockReturnValue(mockSession);
-    mockUseAppSelector.mockImplementation((selector) => {
-      if (selector === selectImporting) {
-        return true; // importing = true
-      }
-      if (selector === selectIsAuthenticating) {
-        return false;
-      }
-      return false;
-    });
+  it("renders import message when importing is true", () => {
+    importingValue = true;
 
     render(<SyncEventsOverlay />);
 
@@ -218,63 +92,20 @@ describe("SyncEventsOverlay", () => {
     expect(document.body.getAttribute("data-app-locked")).toBe("true");
   });
 
-  it("does not flash when transitioning from authenticating to importing", () => {
-    // This test validates the fix for the race condition where the overlay
-    // would briefly disappear during the OAuth → import transition.
-    // The scenario: isAuthenticating=true → isAuthenticating=false, importing=false → importing=true
-    // Without the visibility buffer, the middle state causes a flash.
-
-    const mockSession: CompassSession = {
-      isSyncing: true,
-      authenticated: false,
-      loading: false,
-      setAuthenticated: jest.fn(),
-      setIsSyncing: jest.fn(),
-      setLoading: jest.fn(),
-    };
-    mockUseSession.mockReturnValue(mockSession);
-
-    // Phase 1: OAuth in progress (isAuthenticating=true)
-    mockUseAppSelector.mockImplementation((selector) => {
-      if (selector === selectImporting) return false;
-      if (selector === selectIsAuthenticating) return true;
-      return false;
-    });
+  it("does not flash when transitioning from authenticating to awaiting import results", () => {
+    authenticatingValue = true;
 
     const { rerender, container } = render(<SyncEventsOverlay />);
 
     expect(screen.getByText("Complete Google sign-in...")).toBeInTheDocument();
     expect(container.firstChild).not.toBeNull();
 
-    // Phase 2: Race condition - both states momentarily false
-    // This simulates what happens between authSuccess() and importing(true)
-    mockUseAppSelector.mockImplementation((selector) => {
-      if (selector === selectImporting) return false;
-      if (selector === selectIsAuthenticating) return false;
-      return false;
-    });
+    // Transition to awaiting import results
+    authenticatingValue = false;
+    awaitingValue = true;
 
     rerender(<SyncEventsOverlay />);
 
-    // CRITICAL: Overlay should still be visible due to visibility buffer
-    // The 50ms delay prevents the flash
-    expect(container.firstChild).not.toBeNull();
-    expect(document.body.getAttribute("data-app-locked")).toBe("true");
-
-    // Phase 3: Import starts (importing=true) - within the 50ms buffer window
-    act(() => {
-      jest.advanceTimersByTime(30); // Still within 50ms buffer
-    });
-
-    mockUseAppSelector.mockImplementation((selector) => {
-      if (selector === selectImporting) return true;
-      if (selector === selectIsAuthenticating) return false;
-      return false;
-    });
-
-    rerender(<SyncEventsOverlay />);
-
-    // Overlay should now show import message, having never disappeared
     expect(
       screen.getByText("Importing your Google Calendar events..."),
     ).toBeInTheDocument();

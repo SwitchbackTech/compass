@@ -3,7 +3,6 @@ import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
 import { useIsSignupComplete } from "@web/auth/hooks/onboarding/useIsSignupComplete";
 import { useSkipOnboarding } from "@web/auth/hooks/onboarding/useSkipOnboarding";
 import { useSession } from "@web/auth/hooks/session/useSession";
-import { CompassSession } from "@web/auth/session/session.types";
 import {
   authenticate,
   fetchOnboardingStatus,
@@ -21,7 +20,7 @@ jest.mock("@web/auth/hooks/onboarding/useSkipOnboarding");
 jest.mock("@web/components/oauth/google/useGoogleLogin");
 jest.mock("@web/common/utils/storage/auth-state.util");
 jest.mock("@web/store/store.hooks", () => ({
-  useAppDispatch: () => jest.fn(),
+  useAppDispatch: jest.fn(),
 }));
 jest.mock("react-router-dom", () => ({
   useNavigate: () => jest.fn(),
@@ -52,6 +51,8 @@ const mockUseSkipOnboarding = useSkipOnboarding as jest.MockedFunction<
 const mockUseGoogleLogin = useGoogleLogin as jest.MockedFunction<
   typeof useGoogleLogin
 >;
+const mockUseAppDispatch = jest.requireMock("@web/store/store.hooks")
+  .useAppDispatch as jest.Mock;
 const mockMarkUserAsAuthenticated =
   markUserAsAuthenticated as jest.MockedFunction<
     typeof markUserAsAuthenticated
@@ -59,26 +60,23 @@ const mockMarkUserAsAuthenticated =
 
 describe("useGoogleAuth", () => {
   const mockSetAuthenticated = jest.fn();
-  const mockSetIsSyncing = jest.fn();
   const mockMarkSignupCompleted = jest.fn();
   const mockUpdateOnboardingStatus = jest.fn();
   const mockLogin = jest.fn();
   const originalConsoleError = console.error;
+  let mockDispatchFn: jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
     // Suppress console.error in tests to avoid EPIPE errors
     console.error = jest.fn();
+    mockDispatchFn = jest.fn();
+    mockUseAppDispatch.mockReturnValue(mockDispatchFn);
 
-    const mockSession: CompassSession = {
+    mockUseSession.mockReturnValue({
       setAuthenticated: mockSetAuthenticated,
-      setIsSyncing: mockSetIsSyncing,
       authenticated: false,
-      isSyncing: false,
-      loading: false,
-      setLoading: jest.fn(),
-    };
-    mockUseSession.mockReturnValue(mockSession);
+    });
     mockUseIsSignupComplete.mockReturnValue({
       markSignupCompleted: mockMarkSignupCompleted,
       isSignupComplete: false,
@@ -96,7 +94,7 @@ describe("useGoogleAuth", () => {
     console.error = originalConsoleError;
   });
 
-  it("keeps isSyncing true after authentication and does not set it to false", async () => {
+  it("marks user as authenticated after successful login", async () => {
     let onSuccessCallback: ((data: SignInUpInput) => Promise<void>) | undefined;
 
     mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
@@ -129,13 +127,9 @@ describe("useGoogleAuth", () => {
     await waitFor(() => {
       expect(mockSetAuthenticated).toHaveBeenCalledWith(true);
     });
-
-    // Verify setIsSyncing(false) was NOT called in onSuccess
-    // (it should only be called by SocketProvider when IMPORT_GCAL_END is received)
-    expect(mockSetIsSyncing).not.toHaveBeenCalledWith(false);
   });
 
-  it("sets isSyncing to true after successful authentication", async () => {
+  it("completes auth flow after successful authentication", async () => {
     let onSuccessCallback: ((data: SignInUpInput) => Promise<void>) | undefined;
 
     mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
@@ -170,6 +164,7 @@ describe("useGoogleAuth", () => {
     });
 
     expect(mockMarkUserAsAuthenticated).toHaveBeenCalled();
+    expect(mockSetAuthenticated).toHaveBeenCalledWith(true);
   });
 
   describe("onStart callback", () => {
@@ -180,18 +175,20 @@ describe("useGoogleAuth", () => {
         data: null,
       });
 
-      // Re-mock useAppDispatch for this test
-      const mockDispatchFn = jest.fn();
-      jest
-        .spyOn(jest.requireMock("@web/store/store.hooks"), "useAppDispatch")
-        .mockReturnValue(mockDispatchFn);
-
       const { result } = renderHook(() => useGoogleAuth());
 
       // Simulate login start
       result.current.login();
 
-      expect(mockSetIsSyncing).toHaveBeenCalledWith(true);
+      expect(mockDispatchFn).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "auth/startAuthenticating" }),
+      );
+      expect(mockDispatchFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "async/importGCal/setAwaitingImportResults",
+          payload: true,
+        }),
+      );
     });
   });
 
@@ -216,42 +213,23 @@ describe("useGoogleAuth", () => {
       const error = new Error("Login failed");
       onErrorCallback?.(error);
 
-      expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
-    });
-  });
-
-  describe("popup close handling", () => {
-    it("hides overlay when popup is closed without completing auth", async () => {
-      let onErrorCallback: ((error: unknown) => void) | undefined;
-
-      mockUseGoogleLogin.mockImplementation(({ onError }) => {
-        onErrorCallback = onError;
-        return {
-          login: mockLogin,
-          loading: false,
-          data: null,
-        };
-      });
-
-      const { result } = renderHook(() => useGoogleAuth());
-
-      // Simulate login start (popup opens)
-      result.current.login();
-      expect(mockSetIsSyncing).toHaveBeenCalledWith(true);
-
-      mockSetIsSyncing.mockClear();
-
-      // Simulate popup closed without completing auth
-      onErrorCallback?.(new Error("Popup closed"));
-
-      await waitFor(() => {
-        expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
-      });
+      expect(mockDispatchFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "async/importGCal/setAwaitingImportResults",
+          payload: false,
+        }),
+      );
+      expect(mockDispatchFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "async/importGCal/importing",
+          payload: false,
+        }),
+      );
     });
   });
 
   describe("authentication failure handling", () => {
-    it("clears syncing and does not proceed when authentication fails", async () => {
+    it("clears import flow and does not proceed when authentication fails", async () => {
       mockAuthenticate.mockResolvedValue({
         success: false,
         error: new Error("Auth failed"),
@@ -294,10 +272,15 @@ describe("useGoogleAuth", () => {
       // Should not proceed with auth flow
       expect(mockMarkUserAsAuthenticated).not.toHaveBeenCalled();
       expect(mockSetAuthenticated).not.toHaveBeenCalled();
-      expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
+      expect(mockDispatchFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "async/importGCal/setAwaitingImportResults",
+          payload: false,
+        }),
+      );
     });
 
-    it("clears syncing when authenticate throws an unexpected error", async () => {
+    it("clears import flow when authenticate throws an unexpected error", async () => {
       const authError = new Error("Network error");
       mockAuthenticate.mockRejectedValue(authError);
 
@@ -315,7 +298,6 @@ describe("useGoogleAuth", () => {
       });
 
       renderHook(() => useGoogleAuth());
-      mockSetIsSyncing.mockClear();
 
       if (onSuccessCallback) {
         await onSuccessCallback({
@@ -336,15 +318,19 @@ describe("useGoogleAuth", () => {
         expect(mockAuthenticate).toHaveBeenCalled();
       });
 
-      // Should clear syncing when error occurs (this is the key fix)
-      expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
+      expect(mockDispatchFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "async/importGCal/setAwaitingImportResults",
+          payload: false,
+        }),
+      );
 
       // Should not proceed with auth flow
       expect(mockMarkUserAsAuthenticated).not.toHaveBeenCalled();
       expect(mockSetAuthenticated).not.toHaveBeenCalled();
     });
 
-    it("clears syncing when other operations throw errors after OAuth succeeds", async () => {
+    it("clears import flow when other operations throw errors after OAuth succeeds", async () => {
       mockAuthenticate.mockResolvedValue({ success: true });
       const fetchError = new Error("Failed to fetch onboarding status");
       mockFetchOnboardingStatus.mockRejectedValue(fetchError);
@@ -363,7 +349,6 @@ describe("useGoogleAuth", () => {
       });
 
       renderHook(() => useGoogleAuth());
-      mockSetIsSyncing.mockClear();
 
       if (onSuccessCallback) {
         await onSuccessCallback({
@@ -384,8 +369,12 @@ describe("useGoogleAuth", () => {
         expect(mockAuthenticate).toHaveBeenCalled();
       });
 
-      // Should clear syncing when error occurs (this is the key fix)
-      expect(mockSetIsSyncing).toHaveBeenCalledWith(false);
+      expect(mockDispatchFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "async/importGCal/setAwaitingImportResults",
+          payload: false,
+        }),
+      );
 
       // Authentication succeeded, so these should be called
       expect(mockMarkUserAsAuthenticated).toHaveBeenCalled();

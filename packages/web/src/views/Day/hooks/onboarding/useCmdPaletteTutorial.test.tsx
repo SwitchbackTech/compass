@@ -1,7 +1,6 @@
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import { renderHook, waitFor } from "@testing-library/react";
-import { CompassSession } from "@web/auth/session/session.types";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useCmdPaletteTutorial } from "./useCmdPaletteTutorial";
 
@@ -9,11 +8,7 @@ import { useCmdPaletteTutorial } from "./useCmdPaletteTutorial";
 jest.mock("@web/auth/hooks/session/useSession", () => ({
   useSession: jest.fn(() => ({
     authenticated: false,
-    loading: false,
-    isSyncing: false,
     setAuthenticated: jest.fn(),
-    setLoading: jest.fn(),
-    setIsSyncing: jest.fn(),
   })),
 }));
 
@@ -72,13 +67,9 @@ describe("useCmdPaletteTutorial", () => {
 
   it("should not show cmd palette tutorial for authenticated users", () => {
     const { useSession } = require("@web/auth/hooks/session/useSession");
-    const mockSession: CompassSession = {
+    const mockSession = {
       authenticated: true,
-      loading: false,
-      isSyncing: false,
       setAuthenticated: jest.fn(),
-      setLoading: jest.fn(),
-      setIsSyncing: jest.fn(),
     };
     useSession.mockReturnValue(mockSession);
     const store = createTestStore();

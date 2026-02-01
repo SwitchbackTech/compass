@@ -1,5 +1,4 @@
 import { act, renderHook } from "@testing-library/react";
-import { CompassSession } from "@web/auth/session/session.types";
 import { ONBOARDING_STEPS } from "@web/views/Onboarding/constants/onboarding.constants";
 import { useOnboardingOverlay } from "@web/views/Onboarding/hooks/useOnboardingOverlay";
 import {
@@ -11,11 +10,7 @@ import {
 jest.mock("@web/auth/hooks/session/useSession", () => ({
   useSession: jest.fn(() => ({
     authenticated: false,
-    loading: false,
-    isSyncing: false,
     setAuthenticated: jest.fn(),
-    setLoading: jest.fn(),
-    setIsSyncing: jest.fn(),
   })),
 }));
 
@@ -102,13 +97,9 @@ describe("useOnboardingOverlay", () => {
 
   it("should not show onboarding overlay for authenticated users", () => {
     const { useSession } = require("@web/auth/hooks/session/useSession");
-    const mockSession: CompassSession = {
+    const mockSession = {
       authenticated: true,
-      loading: false,
-      isSyncing: false,
       setAuthenticated: jest.fn(),
-      setLoading: jest.fn(),
-      setIsSyncing: jest.fn(),
     };
     useSession.mockReturnValue(mockSession);
 
@@ -119,13 +110,9 @@ describe("useOnboardingOverlay", () => {
 
   it("should not show onboarding overlay when guide is completed", () => {
     const { useSession } = require("@web/auth/hooks/session/useSession");
-    const mockSession: CompassSession = {
+    const mockSession = {
       authenticated: false,
-      loading: false,
-      isSyncing: false,
       setAuthenticated: jest.fn(),
-      setLoading: jest.fn(),
-      setIsSyncing: jest.fn(),
     };
     useSession.mockReturnValue(mockSession);
 
@@ -149,13 +136,9 @@ describe("useOnboardingOverlay", () => {
   it("should skip guide when dismissed", () => {
     // Reset mock to ensure authenticated is false
     const { useSession } = require("@web/auth/hooks/session/useSession");
-    const mockSession: CompassSession = {
+    const mockSession = {
       authenticated: false,
-      loading: false,
-      isSyncing: false,
       setAuthenticated: jest.fn(),
-      setLoading: jest.fn(),
-      setIsSyncing: jest.fn(),
     };
     useSession.mockReturnValue(mockSession);
 

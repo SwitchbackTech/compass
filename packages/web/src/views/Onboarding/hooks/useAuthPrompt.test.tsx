@@ -1,7 +1,6 @@
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import { renderHook, waitFor } from "@testing-library/react";
-import { CompassSession } from "@web/auth/session/session.types";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAuthPrompt } from "@web/views/Onboarding/hooks/useAuthPrompt";
@@ -11,11 +10,7 @@ import { updateOnboardingProgress } from "@web/views/Onboarding/utils/onboarding
 jest.mock("@web/auth/hooks/session/useSession", () => ({
   useSession: jest.fn(() => ({
     authenticated: false,
-    loading: false,
-    isSyncing: false,
     setAuthenticated: jest.fn(),
-    setLoading: jest.fn(),
-    setIsSyncing: jest.fn(),
   })),
 }));
 
@@ -110,13 +105,9 @@ describe("useAuthPrompt", () => {
 
   it("should not show auth prompt for authenticated users", () => {
     const { useSession } = require("@web/auth/hooks/session/useSession");
-    const mockSession: CompassSession = {
+    const mockSession = {
       authenticated: true,
-      loading: false,
-      isSyncing: false,
       setAuthenticated: jest.fn(),
-      setLoading: jest.fn(),
-      setIsSyncing: jest.fn(),
     };
     useSession.mockReturnValue(mockSession);
     const store = createTestStore();

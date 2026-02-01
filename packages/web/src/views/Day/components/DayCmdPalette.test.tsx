@@ -272,11 +272,7 @@ describe("DayCmdPalette", () => {
     it("shows 'Connect Google Calendar' when not authenticated", async () => {
       jest.spyOn(useSessionModule, "useSession").mockReturnValue({
         authenticated: false,
-        loading: false,
-        isSyncing: false,
         setAuthenticated: jest.fn(),
-        setLoading: jest.fn(),
-        setIsSyncing: jest.fn(),
       });
 
       await act(() =>
@@ -294,11 +290,7 @@ describe("DayCmdPalette", () => {
     it("shows 'Google Calendar Connected' when authenticated", async () => {
       jest.spyOn(useSessionModule, "useSession").mockReturnValue({
         authenticated: true,
-        loading: false,
-        isSyncing: false,
         setAuthenticated: jest.fn(),
-        setLoading: jest.fn(),
-        setIsSyncing: jest.fn(),
       });
 
       await act(() =>
@@ -316,11 +308,7 @@ describe("DayCmdPalette", () => {
     it("triggers login when 'Connect Google Calendar' is clicked and not authenticated", async () => {
       jest.spyOn(useSessionModule, "useSession").mockReturnValue({
         authenticated: false,
-        loading: false,
-        isSyncing: false,
         setAuthenticated: jest.fn(),
-        setLoading: jest.fn(),
-        setIsSyncing: jest.fn(),
       });
 
       const user = userEvent.setup();
@@ -341,11 +329,7 @@ describe("DayCmdPalette", () => {
     it("does not trigger login when 'Google Calendar Connected' is clicked", async () => {
       jest.spyOn(useSessionModule, "useSession").mockReturnValue({
         authenticated: true,
-        loading: false,
-        isSyncing: false,
         setAuthenticated: jest.fn(),
-        setLoading: jest.fn(),
-        setIsSyncing: jest.fn(),
       });
 
       const user = userEvent.setup();

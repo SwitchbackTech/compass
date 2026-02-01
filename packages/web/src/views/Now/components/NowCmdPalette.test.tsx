@@ -27,11 +27,7 @@ let mockAuthenticated = false;
 jest.mock("@web/auth/hooks/session/useSession", () => ({
   useSession: () => ({
     authenticated: mockAuthenticated,
-    loading: false,
-    isSyncing: false,
     setAuthenticated: mockSetAuthenticated,
-    setLoading: jest.fn(),
-    setIsSyncing: jest.fn(),
   }),
 }));
 

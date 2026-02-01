@@ -29,22 +29,14 @@ describe("useConnectGoogle", () => {
     });
     mockUseSession.mockReturnValue({
       authenticated: false,
-      loading: false,
-      isSyncing: false,
       setAuthenticated: jest.fn(),
-      setLoading: jest.fn(),
-      setIsSyncing: jest.fn(),
     });
   });
 
   it("returns true when Google Calendar is connected", () => {
     mockUseSession.mockReturnValue({
       authenticated: true,
-      loading: false,
-      isSyncing: false,
       setAuthenticated: jest.fn(),
-      setLoading: jest.fn(),
-      setIsSyncing: jest.fn(),
     });
 
     const { result } = renderHook(() => useConnectGoogle());
@@ -55,11 +47,7 @@ describe("useConnectGoogle", () => {
   it("returns false when Google Calendar is not connected", () => {
     mockUseSession.mockReturnValue({
       authenticated: false,
-      loading: false,
-      isSyncing: false,
       setAuthenticated: jest.fn(),
-      setLoading: jest.fn(),
-      setIsSyncing: jest.fn(),
     });
 
     const { result } = renderHook(() => useConnectGoogle());

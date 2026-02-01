@@ -37,26 +37,18 @@ SuperTokens.init({
 
 export const SessionContext = createContext<CompassSession>({
   authenticated: false,
-  loading: true,
-  isSyncing: false,
   setAuthenticated: () => {},
-  setLoading: () => {},
-  setIsSyncing: () => {},
 });
 
 const authenticated$ = new BehaviorSubject(false);
-const loading$ = new BehaviorSubject(false);
-const syncing$ = new BehaviorSubject(false);
+let isCheckingSession = false;
 
 const $authenticated = authenticated$.pipe(skip(1), distinctUntilChanged());
-const $loading = loading$.pipe(distinctUntilChanged());
-const $syncing = syncing$.pipe(distinctUntilChanged());
 
 async function checkIfSessionExists(): Promise<boolean> {
   try {
-    if (loading$.value) return false;
-
-    loading$.next(true);
+    if (isCheckingSession) return false;
+    isCheckingSession = true;
 
     const exists = await session.doesSessionExist();
     const socketConnected = socket.socket.connected;
@@ -69,7 +61,6 @@ async function checkIfSessionExists(): Promise<boolean> {
     }
 
     authenticated$.next(exists);
-    loading$.next(false);
 
     if (exists && !socketConnected) socket.socket.connect();
 
@@ -77,9 +68,10 @@ async function checkIfSessionExists(): Promise<boolean> {
   } catch (error) {
     console.error("Error checking auth status:", error);
     authenticated$.next(false);
-    loading$.next(false);
 
     return false;
+  } finally {
+    isCheckingSession = false;
   }
 }
 
@@ -107,18 +99,12 @@ export function sessionInit() {
 
 export function SessionProvider({ children }: PropsWithChildren<{}>) {
   const [authenticated, setAuthenticated] = useState(authenticated$.value);
-  const [loading, setLoading] = useState(loading$.value);
-  const [isSyncing, setIsSyncing] = useState(syncing$.value);
 
   useEffect(() => {
     const authSub = $authenticated.subscribe(setAuthenticated);
-    const loadSub = $loading.subscribe(setLoading);
-    const syncSub = $syncing.subscribe(setIsSyncing);
 
     return () => {
       authSub.unsubscribe();
-      loadSub.unsubscribe();
-      syncSub.unsubscribe();
     };
   }, []);
 
@@ -126,9 +112,7 @@ export function SessionProvider({ children }: PropsWithChildren<{}>) {
   useEffect(() => {
     if (typeof window !== "undefined" && (window as any).__COMPASS_E2E_TEST__) {
       (window as any).__COMPASS_TEST_HOOKS__ = {
-        setIsSyncing: (value: boolean) => syncing$.next(value),
         setAuthenticated: (value: boolean) => authenticated$.next(value),
-        setLoading: (value: boolean) => loading$.next(value),
       };
     }
   }, []);
@@ -137,11 +121,7 @@ export function SessionProvider({ children }: PropsWithChildren<{}>) {
     <SessionContext.Provider
       value={{
         authenticated,
-        loading,
-        isSyncing,
         setAuthenticated: (value: boolean) => authenticated$.next(value),
-        setLoading: (value: boolean) => loading$.next(value),
-        setIsSyncing: (value: boolean) => syncing$.next(value),
       }}
     >
       {children}

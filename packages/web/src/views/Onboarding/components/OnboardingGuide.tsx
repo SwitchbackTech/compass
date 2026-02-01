@@ -39,6 +39,12 @@ export const OnboardingGuide: FC = () => {
     hasImportResults: !!importResults,
   });
 
+  useEffect(() => {
+    if (importResults) {
+      setIsSuccessMessageDismissed(false);
+    }
+  }, [importResults]);
+
   // Auto-dismiss timer for import results
   useEffect(() => {
     if (importResults && showSuccessMessage) {
@@ -76,6 +82,7 @@ export const OnboardingGuide: FC = () => {
       if (importResults) {
         dispatch(importGCalSlice.actions.clearImportResults(undefined));
       }
+      return;
     }
     skipGuide();
   }, [showSuccessMessage, importResults, dispatch, skipGuide]);

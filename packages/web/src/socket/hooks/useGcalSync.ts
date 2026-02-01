@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import {
   IMPORT_GCAL_END,
@@ -7,9 +7,11 @@ import {
 } from "@core/constants/websocket.constants";
 import { UserMetadata } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
-import { useSession } from "@web/auth/hooks/session/useSession";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
-import { selectImporting } from "@web/ducks/events/selectors/sync.selector";
+import {
+  selectAwaitingImportResults,
+  selectImporting,
+} from "@web/ducks/events/selectors/sync.selector";
 import {
   importGCalSlice,
   triggerFetch,
@@ -19,31 +21,11 @@ import { socket } from "../client/socket.client";
 
 export const useGcalSync = () => {
   const dispatch = useDispatch();
-  const { isSyncing, setIsSyncing } = useSession();
-  const importStartedRef = useRef(false);
   const importing = useAppSelector(selectImporting);
-
-  useEffect(() => {
-    if (isSyncing) {
-      // Mark post-auth flow as started to avoid USER_METADATA closing sync early.
-      importStartedRef.current = true;
-      return;
-    }
-
-    if (!importing) {
-      importStartedRef.current = false;
-    }
-  }, [isSyncing, importing]);
-
-  useEffect(() => {
-    if (importing) {
-      importStartedRef.current = true;
-    }
-  }, [importing]);
+  const awaitingImportResults = useAppSelector(selectAwaitingImportResults);
 
   const onImportStart = useCallback(
     (importing = true) => {
-      importStartedRef.current = importing;
       if (importing) {
         dispatch(importGCalSlice.actions.clearImportResults(undefined));
       }
@@ -55,15 +37,7 @@ export const useGcalSync = () => {
   const onImportEnd = useCallback(
     (payload?: { eventsCount?: number; calendarsCount?: number } | string) => {
       dispatch(importGCalSlice.actions.importing(false));
-      const shouldShowResults = isSyncing && importStartedRef.current;
-      importStartedRef.current = false;
-
-      // If we're in post-auth sync, show completion
-      if (isSyncing) {
-        setIsSyncing(false);
-      }
-
-      if (!shouldShowResults) {
+      if (!awaitingImportResults) {
         return;
       }
 
@@ -74,6 +48,12 @@ export const useGcalSync = () => {
           importResults = JSON.parse(payload);
         } catch (e) {
           console.error("Failed to parse import results:", e);
+          dispatch(
+            importGCalSlice.actions.setImportError(
+              "Failed to parse Google Calendar import results.",
+            ),
+          );
+          return;
         }
       } else if (payload) {
         importResults = payload;
@@ -89,7 +69,7 @@ export const useGcalSync = () => {
         }),
       );
     },
-    [dispatch, isSyncing, setIsSyncing],
+    [dispatch, awaitingImportResults],
   );
 
   const onMetadataFetch = useCallback(
@@ -97,22 +77,9 @@ export const useGcalSync = () => {
       const importGcal = shouldImportGCal(metadata);
       const isBackendImporting = metadata.sync?.importGCal === "importing";
 
-      // When we're in post-auth flow (isSyncing=true), handle state carefully
-      if (isSyncing) {
+      if (awaitingImportResults) {
         if (isBackendImporting) {
-          // Backend still importing - ensure frontend shows importing state
           dispatch(importGCalSlice.actions.importing(true));
-        } else {
-          // Import completed while we were connecting - complete the flow
-
-          // FIX: race condition where USER_METADATA fires before IMPORT_GCAL_END
-          // If we think we are importing, we wait for IMPORT_GCAL_END
-          if (importStartedRef.current) {
-            return;
-          }
-
-          dispatch(importGCalSlice.actions.importing(false));
-          setIsSyncing(false);
         }
         return;
       }
@@ -124,7 +91,7 @@ export const useGcalSync = () => {
         dispatch(importGCalSlice.actions.request(undefined as never));
       }
     },
-    [dispatch, isSyncing, setIsSyncing, onImportStart],
+    [dispatch, awaitingImportResults, onImportStart],
   );
 
   useEffect(() => {
