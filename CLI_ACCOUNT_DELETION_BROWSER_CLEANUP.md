@@ -56,13 +56,14 @@ If you choose "Yes", the CLI will provide a cleanup URL:
 📋 Follow these steps to complete cleanup:
 
 1. Open this URL in your browser:
-   http://localhost:8080/cleanup
+   http://localhost:9080/cleanup
 
 2. The page will automatically:
    ✓ Log you out of your session
    ✓ Clear all localStorage data
    ✓ Delete the IndexedDB database
-   ✓ Redirect you to the login page
+   ✓ Show a success message with a "Continue to Home" button
+   ✓ Redirect you to the login page after 3 seconds (or click the button to redirect immediately)
 
 ✨ You'll have a completely clean slate!
 ```
@@ -73,13 +74,14 @@ When you visit the cleanup URL:
 
 1. The page automatically clears all browser storage
 2. You're logged out of your session
-3. After 2 seconds, you're redirected to the login page
+3. A success message is displayed with a "Continue to Home" button
+4. After 3 seconds, you're automatically redirected to the login page (or click the button to redirect immediately)
 
 ## Environment-Specific URLs
 
 The cleanup URL varies by environment:
 
-- **Local Development**: `http://localhost:8080/cleanup`
+- **Local Development**: `http://localhost:9080/cleanup` (or the port your web dev server is running on)
 - **Staging**: `https://staging.compass.switchback.tech/cleanup`
 - **Production**: `https://compass.switchback.tech/cleanup`
 

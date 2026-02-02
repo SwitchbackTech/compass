@@ -47,7 +47,7 @@ However, browser storage may still contain:
 📋 Follow these steps to complete cleanup:
 
 1. Open this URL in your browser:
-   http://localhost:8080/cleanup
+   http://localhost:9080/cleanup
 
 2. The page will automatically:
    ✓ Log you out of your session
@@ -84,7 +84,7 @@ However, browser storage may still contain:
 │                                          │
 │  ✅ Browser data cleared successfully!   │
 │                                          │
-│     Redirecting to login...              │
+│     [Continue to Home]                   │
 │                                          │
 │                                          │
 └──────────────────────────────────────────┘
@@ -92,7 +92,7 @@ However, browser storage may still contain:
 
 ### 7. Redirect to Login Page
 
-After 2 seconds, the user is automatically redirected to the login/onboarding page to start fresh.
+After 3 seconds, the user is automatically redirected to the login/onboarding page to start fresh. Alternatively, they can click the "Continue to Home" button to redirect immediately.
 
 ## Technical Implementation Highlights
 
@@ -101,11 +101,11 @@ After 2 seconds, the user is automatically redirected to the login/onboarding pa
 1. **Session Termination**: Calls `session.signOut()` to clear SuperTokens session cookies
 2. **LocalStorage Cleanup**: Removes all keys starting with `compass.` or `compass.today.tasks.`
 3. **IndexedDB Deletion**: Deletes the `compass-local` database if it exists
-4. **Automatic Redirect**: Sends user to login page after 2 seconds
+4. **Automatic Redirect**: Shows success message with button, then redirects to login page after 3 seconds (or immediately on button click)
 
 ### Environment Support
 
-- **Local**: `http://localhost:8080/cleanup`
+- **Local**: `http://localhost:9080/cleanup` (or the port your web dev server is running on)
 - **Staging**: `https://staging.compass.switchback.tech/cleanup`
 - **Production**: `https://compass.switchback.tech/cleanup`
 

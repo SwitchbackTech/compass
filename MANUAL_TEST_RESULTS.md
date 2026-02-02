@@ -95,7 +95,7 @@ However, browser storage may still contain:
 📋 Follow these steps to complete cleanup:
 
 1. Open this URL in your browser:
-   http://localhost:8080/cleanup
+   http://localhost:9080/cleanup
 
 2. The page will automatically:
    ✓ Log you out of your session
@@ -122,13 +122,13 @@ If we could run a full browser test, the flow would be:
 
 1. User runs `yarn cli delete --user test@example.com`
 2. CLI prompts for cleanup confirmation
-3. User visits `http://localhost:8080/cleanup` in browser
+3. User visits `http://localhost:9080/cleanup` in browser
 4. Cleanup page loads and immediately:
    - Calls `session.signOut()` to terminate SuperTokens session
    - Removes all `compass.*` localStorage keys
    - Deletes `compass-local` IndexedDB database
-   - Shows "✅ Browser data cleared successfully!" message
-   - Redirects to login page after 2 seconds
+   - Shows "✅ Browser data cleared successfully!" message with "Continue to Home" button
+   - Redirects to login page after 3 seconds (or immediately on button click)
 
 ## Known Limitations
 
