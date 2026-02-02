@@ -1,9 +1,7 @@
 import { z } from "zod";
 import type { Logger } from "@core/logger/winston.logger";
 
-export const Schema_Options_Cli_Root = z.object({
-  force: z.boolean().optional(),
-});
+export const Schema_Options_Cli_Root = z.object({});
 
 export const Schema_Options_Cli_Build = z.object({
   clientId: z.string().optional(),
@@ -13,6 +11,7 @@ export const Schema_Options_Cli_Build = z.object({
 
 export const Schema_Options_Cli_Delete = z.object({
   user: z.string().optional(),
+  force: z.boolean().optional(),
 });
 
 export type Options_Cli_Delete = z.infer<typeof Schema_Options_Cli_Delete>;

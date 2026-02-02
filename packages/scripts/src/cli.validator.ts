@@ -108,10 +108,14 @@ export class CliValidator {
       (cmd) => cmd.name() === "delete",
     );
     if (deleteCmd) {
-      const user = deleteCmd?.opts()["user"] as Options_Cli["user"];
+      const opts = deleteCmd.opts();
+
+      const user = opts["user"] as Options_Cli["user"];
       if (user) {
         deleteOpts.user = user;
       }
+
+      deleteOpts.force = opts["force"] === true;
     }
 
     return deleteOpts;
@@ -135,7 +139,6 @@ export class CliValidator {
     const _options = this.program.opts();
     let options: Options_Cli = {
       ..._options,
-      force: _options["force"] === true,
     };
 
     const buildOptions = this._getBuildOptions();
