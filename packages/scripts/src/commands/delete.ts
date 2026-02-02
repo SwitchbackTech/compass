@@ -38,7 +38,7 @@ const getBrowserApp = (): { name: string | readonly string[] } | undefined => {
  * Gets the appropriate cleanup URL based on NODE_ENV
  */
 const getCleanupUrl = (): string => {
-  const env = process.env.NODE_ENV as Environment_Cli;
+  const env = process.env["NODE_ENV"] as Environment_Cli;
 
   if (env === ENVIRONMENT.PROD) {
     if (!CLI_ENV.PROD_DOMAIN) {
@@ -64,6 +64,27 @@ const getCleanupUrl = (): string => {
     );
   }
   return `http://${CLI_ENV.LOCAL_WEB_DOMAIN}/cleanup`;
+};
+
+/**
+ * Opens browser to cleanup page without prompting (for force mode)
+ */
+const forceBrowserCleanup = async (): Promise<void> => {
+  const cleanupUrl = getCleanupUrl();
+  const browserApp = getBrowserApp();
+  const browserName = CLI_ENV.DEV_BROWSER || "default";
+
+  log.info(`\nOpening ${browserName} browser to clear local data...`);
+
+  if (browserApp) {
+    await open(cleanupUrl, { app: browserApp });
+  } else {
+    await open(cleanupUrl);
+  }
+
+  log.success(
+    "Browser cleanup initiated. Check your browser to confirm completion.",
+  );
 };
 
 /**
@@ -136,9 +157,15 @@ export const startDeleteFlow = async (user: string, force = false) => {
   await mongoService.start();
 
   if (force === true) {
+    log.warning("\n! FORCE MODE ENABLED !");
+    log.warning("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    log.warning("Proceeding without confirmation prompts.");
+    log.warning("All data will be deleted immediately.");
+    log.warning("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+
     log.info(`Deleting ${user}'s Compass data ...`);
     await deleteCompassDataForMatchingUsers(user);
-    await promptBrowserCleanup();
+    await forceBrowserCleanup();
     process.exit(0);
   }
 
