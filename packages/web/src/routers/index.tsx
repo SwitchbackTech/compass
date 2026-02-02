@@ -1,8 +1,10 @@
 import {
+  RouteObject,
   RouterProvider,
   RouterProviderProps,
   createBrowserRouter,
 } from "react-router-dom";
+import { IS_DEV } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import {
@@ -10,6 +12,20 @@ import {
   loadOnboardingStatus,
   loadSpecificDayData,
 } from "@web/routers/loaders";
+
+const devOnlyRoutes: RouteObject[] = IS_DEV
+  ? [
+      {
+        path: ROOT_ROUTES.CLEANUP,
+        lazy: async () =>
+          import(
+            /* webpackChunkName: "cleanup" */ "@web/views/Cleanup/Cleanup"
+          ).then((module) => ({
+            Component: module.CleanupView,
+          })),
+      },
+    ]
+  : [];
 
 export const router = createBrowserRouter(
   [
@@ -73,15 +89,7 @@ export const router = createBrowserRouter(
         },
       ],
     },
-    {
-      path: ROOT_ROUTES.CLEANUP,
-      lazy: async () =>
-        import(
-          /* webpackChunkName: "cleanup" */ "@web/views/Cleanup/Cleanup"
-        ).then((module) => ({
-          Component: module.CleanupView,
-        })),
-    },
+    ...devOnlyRoutes,
     {
       path: "*",
       lazy: async () =>
