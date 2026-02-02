@@ -6,10 +6,16 @@ import {
   expectAllDayEventVisible,
   fillTitleAndSaveWithMouse,
   openAllDayEventFormWithMouse,
+  openEventForEditingWithMouse,
   prepareCalendarPage,
 } from "../utils/event-test-utils";
 
-test.skip("should delete an all-day event using mouse interaction", async ({
+test.skip(
+  ({ isMobile }) => isMobile,
+  "Mouse flows are desktop-only in week view.",
+);
+
+test("should delete an all-day event using mouse interaction", async ({
   page,
 }) => {
   await prepareCalendarPage(page);
@@ -19,7 +25,7 @@ test.skip("should delete an all-day event using mouse interaction", async ({
   await fillTitleAndSaveWithMouse(page, title);
   await expectAllDayEventVisible(page, title);
 
-  await page.locator("#allDayRow").getByRole("button", { name: title }).click();
+  await openEventForEditingWithMouse(page, title);
   await deleteEventWithMouse(page);
 
   await expectAllDayEventMissing(page, title);

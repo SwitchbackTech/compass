@@ -12,7 +12,7 @@ import {
 
 test.skip(({ isMobile }) => isMobile, "Someday sidebar is desktop-only.");
 
-test.skip("should update a someday event using keyboard interaction", async ({
+test("should update a someday event using keyboard interaction", async ({
   page,
 }) => {
   await prepareCalendarPage(page);
@@ -21,6 +21,7 @@ test.skip("should update a someday event using keyboard interaction", async ({
   await openSomedayEventFormWithKeyboard(page);
   await fillTitleAndSaveWithKeyboard(page, title);
   await expectSomedayEventVisible(page, title);
+  await page.waitForTimeout(1000);
 
   await openEventForEditingWithKeyboard(page, title);
 

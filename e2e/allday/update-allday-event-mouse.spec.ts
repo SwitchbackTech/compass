@@ -5,6 +5,7 @@ import {
   expectAllDayEventVisible,
   fillTitleAndSaveWithMouse,
   openAllDayEventFormWithMouse,
+  openEventForEditingWithMouse,
   prepareCalendarPage,
   updateEventTitle,
 } from "../utils/event-test-utils";
@@ -14,7 +15,7 @@ test.skip(
   "Mouse flows are desktop-only in week view.",
 );
 
-test.skip("should update an all-day event using mouse interaction", async ({
+test("should update an all-day event using mouse interaction", async ({
   page,
 }) => {
   await prepareCalendarPage(page);
@@ -24,7 +25,7 @@ test.skip("should update an all-day event using mouse interaction", async ({
   await fillTitleAndSaveWithMouse(page, title);
   await expectAllDayEventVisible(page, title);
 
-  await page.locator("#allDayRow").getByRole("button", { name: title }).click();
+  await openEventForEditingWithMouse(page, title);
 
   const updatedTitle = updateEventTitle("All-Day Event");
   await fillTitleAndSaveWithMouse(page, updatedTitle);
