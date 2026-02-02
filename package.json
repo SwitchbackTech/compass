@@ -18,7 +18,7 @@
     "@compass/scripts": "packages/scripts/src"
   },
   "scripts": {
-    "cli": "cross-env-shell TZ=Etc/UTC yarn ts-node  --pretty --transpile-only -r tsconfig-paths/register packages/scripts/src/cli",
+    "cli": "cross-env TZ=Etc/UTC yarn ts-node  --pretty --transpile-only -r tsconfig-paths/register packages/scripts/src/cli",
     "debug:supertokens": "export DEBUG=com.supertokens && yarn dev:backend",
     "debug:web": "http-server build/web/",
     "dev:backend": "yarn dev:backend-start",

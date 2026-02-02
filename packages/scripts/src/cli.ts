@@ -58,8 +58,6 @@ export default class CompassCLI {
   private _createProgram(): Command {
     const program = new Command();
 
-    program.option("-f, --force", "force operation, no cautionary prompts");
-
     program
       .command("build")
       .description("build compass package")
@@ -79,10 +77,8 @@ export default class CompassCLI {
     program
       .command("delete")
       .description("delete user data from compass database")
-      .option(
-        "-u, --user [id | email]",
-        "specify which user to run script for",
-      );
+      .option("-u, --user [id | email]", "specify which user to run script for")
+      .option("-f, --force", "force deletion without confirmation prompts");
 
     program.command("invite").description("invite users from the waitlist");
 
