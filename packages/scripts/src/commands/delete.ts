@@ -1,4 +1,5 @@
 import pkg from "inquirer";
+import open from "open";
 import { CLI_ENV, ENVIRONMENT } from "@scripts/common/cli.constants";
 import { Environment_Cli } from "@scripts/common/cli.types";
 import { log } from "@scripts/common/cli.utils";
@@ -33,12 +34,12 @@ const getCleanupUrl = (): string => {
     return `https://${CLI_ENV.STAGING_DOMAIN}/cleanup`;
   }
 
-  if (!CLI_ENV.LOCAL_DOMAIN) {
+  if (!CLI_ENV.LOCAL_WEB_DOMAIN) {
     throw new Error(
-      'Unable to determine cleanup URL. NODE_ENV="local" but LOCAL_DOMAIN is not set.',
+      'Unable to determine cleanup URL. NODE_ENV="local" but LOCAL_WEB_DOMAIN is not set.',
     );
   }
-  return `http://${CLI_ENV.LOCAL_DOMAIN}/cleanup`;
+  return `http://${CLI_ENV.LOCAL_WEB_DOMAIN}/cleanup`;
 };
 
 /**
@@ -68,16 +69,13 @@ const promptBrowserCleanup = async (): Promise<void> => {
   const answers = await prompt(questions);
 
   if (answers.cleanup) {
-    log.info("\n[Cleanup Instructions]\n");
-    log.info(`1. Open this URL in your browser:\n   ${cleanupUrl}\n`);
-    log.info("2. The page will automatically:");
-    log.info("   * Log you out of your session");
-    log.info("   * Clear all localStorage data");
-    log.info("   * Delete the IndexedDB database");
-    log.info("   * Redirect you to the login page\n");
-    log.success("Success: You'll have a completely clean slate!");
+    log.info("\nOpening browser to clear local data...");
+    await open(cleanupUrl);
+    log.success(
+      "Browser cleanup initiated. Check your browser to confirm completion.",
+    );
   } else {
-    log.info("\n[Warning] Skipping browser cleanup.");
+    log.info("\nSkipping browser cleanup.");
     log.info("Note: You can manually clear browser data later by visiting:");
     log.info(`   ${cleanupUrl}\n`);
   }
