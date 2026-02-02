@@ -1,5 +1,5 @@
 import pkg from "inquirer";
-import open from "open";
+import open, { apps } from "open";
 import { CLI_ENV, ENVIRONMENT } from "@scripts/common/cli.constants";
 import { Environment_Cli } from "@scripts/common/cli.types";
 import { log } from "@scripts/common/cli.utils";
@@ -9,6 +9,30 @@ import userService from "@backend/user/services/user.service";
 import { Summary_Delete } from "@backend/user/types/user.types";
 
 const { prompt } = pkg;
+
+type SupportedBrowser = "chrome" | "firefox" | "brave" | "edge" | "safari";
+
+const BROWSER_MAP: Record<SupportedBrowser, string | readonly string[]> = {
+  chrome: apps.chrome,
+  firefox: apps.firefox,
+  brave: apps.brave,
+  edge: apps.edge,
+  safari: "safari",
+};
+
+const getBrowserApp = (): { name: string | readonly string[] } | undefined => {
+  const browserName = CLI_ENV.DEV_BROWSER?.toLowerCase();
+  if (!browserName) return undefined;
+
+  const browserApp = BROWSER_MAP[browserName as SupportedBrowser];
+  if (!browserApp) {
+    log.warning(
+      `Unknown browser "${CLI_ENV.DEV_BROWSER}". Supported: ${Object.keys(BROWSER_MAP).join(", ")}. Falling back to default.`,
+    );
+    return undefined;
+  }
+  return { name: browserApp };
+};
 
 /**
  * Gets the appropriate cleanup URL based on NODE_ENV
@@ -69,8 +93,17 @@ const promptBrowserCleanup = async (): Promise<void> => {
   const answers = await prompt(questions);
 
   if (answers.cleanup) {
-    log.info("\nOpening browser to clear local data...");
-    await open(cleanupUrl);
+    const browserApp = getBrowserApp();
+    const browserName = CLI_ENV.DEV_BROWSER || "default";
+
+    log.info(`\nOpening ${browserName} browser to clear local data...`);
+
+    if (browserApp) {
+      await open(cleanupUrl, { app: browserApp });
+    } else {
+      await open(cleanupUrl);
+    }
+
     log.success(
       "Browser cleanup initiated. Check your browser to confirm completion.",
     );
