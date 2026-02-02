@@ -7,7 +7,7 @@ import {
   prepareCalendarPage,
 } from "../utils/event-test-utils";
 
-test.skip("should create an all-day event using mouse interaction", async ({
+test("should create an all-day event using mouse interaction", async ({
   page,
 }) => {
   await prepareCalendarPage(page);

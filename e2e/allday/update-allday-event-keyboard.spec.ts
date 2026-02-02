@@ -10,7 +10,7 @@ import {
   updateEventTitle,
 } from "../utils/event-test-utils";
 
-test.skip("should update an all-day event using keyboard interaction", async ({
+test("should update an all-day event using keyboard interaction", async ({
   page,
 }) => {
   await prepareCalendarPage(page);

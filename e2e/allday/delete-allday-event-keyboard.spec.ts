@@ -10,7 +10,7 @@ import {
   prepareCalendarPage,
 } from "../utils/event-test-utils";
 
-test.skip("should delete an all-day event using keyboard interaction", async ({
+test("should delete an all-day event using keyboard interaction", async ({
   page,
 }) => {
   await prepareCalendarPage(page);

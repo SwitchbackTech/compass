@@ -14,7 +14,7 @@ test.skip(
   "Mouse flows are desktop-only in week view.",
 );
 
-test.skip("should update an all-day event using mouse interaction", async ({
+test("should update an all-day event using mouse interaction", async ({
   page,
 }) => {
   await prepareCalendarPage(page);

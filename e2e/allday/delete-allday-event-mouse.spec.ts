@@ -9,7 +9,7 @@ import {
   prepareCalendarPage,
 } from "../utils/event-test-utils";
 
-test.skip("should delete an all-day event using mouse interaction", async ({
+test("should delete an all-day event using mouse interaction", async ({
   page,
 }) => {
   await prepareCalendarPage(page);
