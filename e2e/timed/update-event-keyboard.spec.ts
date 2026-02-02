@@ -10,7 +10,9 @@ import {
   updateEventTitle,
 } from "../utils/event-test-utils";
 
-test.skip("should update a timed event using keyboard interaction", async ({
+test.skip(({ isMobile }) => isMobile, "Keyboard shortcuts are desktop-only.");
+
+test("should update a timed event using keyboard interaction", async ({
   page,
 }) => {
   await prepareCalendarPage(page);

@@ -10,7 +10,12 @@ import {
   prepareCalendarPage,
 } from "../utils/event-test-utils";
 
-test.skip("should delete a timed event using mouse interaction", async ({
+test.skip(
+  ({ isMobile }) => isMobile,
+  "Mouse flows are desktop-only in week view.",
+);
+
+test("should delete a timed event using mouse interaction", async ({
   page,
 }) => {
   await prepareCalendarPage(page);

@@ -7,7 +7,9 @@ import {
   prepareCalendarPage,
 } from "../utils/event-test-utils";
 
-test.skip("should create an all-day event using keyboard interaction", async ({
+test.skip(({ isMobile }) => isMobile, "Keyboard shortcuts are desktop-only.");
+
+test("should create an all-day event using keyboard interaction", async ({
   page,
 }) => {
   await prepareCalendarPage(page);

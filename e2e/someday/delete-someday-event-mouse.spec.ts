@@ -11,7 +11,7 @@ import {
 
 test.skip(({ isMobile }) => isMobile, "Someday sidebar is desktop-only.");
 
-test.skip("should delete a someday event using mouse interaction", async ({
+test("should delete a someday event using mouse interaction", async ({
   page,
 }) => {
   await prepareCalendarPage(page);
