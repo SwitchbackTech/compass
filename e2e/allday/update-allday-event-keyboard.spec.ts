@@ -10,6 +10,8 @@ import {
   updateEventTitle,
 } from "../utils/event-test-utils";
 
+test.skip(({ isMobile }) => isMobile, "Keyboard shortcuts are desktop-only.");
+
 test("should update an all-day event using keyboard interaction", async ({
   page,
 }) => {
