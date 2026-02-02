@@ -9267,7 +9267,7 @@ onetime@^7.0.0:
   dependencies:
     mimic-function "^5.0.0"
 
-open@^10.0.3:
+open@^10.0.3, open@^10.1.0:
   version "10.2.0"
   resolved "https://registry.npmjs.org/open/-/open-10.2.0.tgz"
   integrity sha512-YgBpdJHPyQ2UE5x+hlSXcnejzAvD0b22U2OuAP+8OnlJT+PjWPxtgmGqKKc+RgTM63U9gN0YzrYc71R2WT/hTA==

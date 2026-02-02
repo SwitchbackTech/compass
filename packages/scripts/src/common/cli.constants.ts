@@ -17,6 +17,8 @@ export const ENVIRONMENT = {
 
 export const CLI_ENV = {
   LOCAL_DOMAIN: process.env["LOCAL_DOMAIN"] || `localhost:3000`,
+  LOCAL_WEB_DOMAIN: process.env["LOCAL_WEB_DOMAIN"] || `localhost:9080`,
   STAGING_DOMAIN: process.env["STAGING_DOMAIN"],
   PROD_DOMAIN: process.env["PROD_DOMAIN"],
+  DEV_BROWSER: process.env["DEV_BROWSER"],
 };

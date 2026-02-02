@@ -5,6 +5,13 @@ import { inviteWaitlist } from "@scripts/commands/invite";
 import { NodeEnv } from "../../core/src/constants/core.constants";
 import { MigratorType } from "./common/cli.types";
 
+// Mock 'open' module to avoid ESM compatibility issues in Jest
+jest.mock("open", () => ({
+  __esModule: true,
+  default: jest.fn(),
+  apps: { chrome: "chrome", firefox: "firefox", brave: "brave", edge: "edge" },
+}));
+
 const mockGetCliOptions = jest.fn();
 const mockValidateBuild = jest.fn();
 const mockValidateDelete = jest.fn();
