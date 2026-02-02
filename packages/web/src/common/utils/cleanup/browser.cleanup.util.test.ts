@@ -84,5 +84,143 @@ describe("browser.cleanup.util", () => {
       await expect(clearAllBrowserStorage()).resolves.not.toThrow();
       expect(localStorage.getItem("other.key")).toBe("value");
     });
+
+    describe("IndexedDB deletion", () => {
+      let originalIndexedDB: IDBFactory;
+
+      beforeEach(() => {
+        originalIndexedDB = window.indexedDB;
+      });
+
+      afterEach(() => {
+        Object.defineProperty(window, "indexedDB", {
+          value: originalIndexedDB,
+          writable: true,
+          configurable: true,
+        });
+      });
+
+      it("should delete compass-local IndexedDB when it exists", async () => {
+        const mockDeleteRequest = {
+          onsuccess: null as (() => void) | null,
+          onerror: null as (() => void) | null,
+          onblocked: null as (() => void) | null,
+        };
+
+        const mockIndexedDB = {
+          databases: jest
+            .fn()
+            .mockResolvedValue([
+              { name: "compass-local" },
+              { name: "other-db" },
+            ]),
+          deleteDatabase: jest.fn().mockImplementation(() => {
+            setTimeout(() => mockDeleteRequest.onsuccess?.(), 0);
+            return mockDeleteRequest;
+          }),
+        };
+
+        Object.defineProperty(window, "indexedDB", {
+          value: mockIndexedDB,
+          writable: true,
+          configurable: true,
+        });
+
+        await clearAllBrowserStorage();
+
+        expect(mockIndexedDB.databases).toHaveBeenCalled();
+        expect(mockIndexedDB.deleteDatabase).toHaveBeenCalledWith(
+          "compass-local",
+        );
+      });
+
+      it("should not attempt deletion when compass-local database does not exist", async () => {
+        const mockIndexedDB = {
+          databases: jest.fn().mockResolvedValue([{ name: "other-db" }]),
+          deleteDatabase: jest.fn(),
+        };
+
+        Object.defineProperty(window, "indexedDB", {
+          value: mockIndexedDB,
+          writable: true,
+          configurable: true,
+        });
+
+        await clearAllBrowserStorage();
+
+        expect(mockIndexedDB.databases).toHaveBeenCalled();
+        expect(mockIndexedDB.deleteDatabase).not.toHaveBeenCalled();
+      });
+
+      it("should skip IndexedDB cleanup when indexedDB is not available", async () => {
+        Object.defineProperty(window, "indexedDB", {
+          value: undefined,
+          writable: true,
+          configurable: true,
+        });
+
+        // Should complete without errors
+        await expect(clearAllBrowserStorage()).resolves.not.toThrow();
+      });
+
+      it("should handle IndexedDB deletion error", async () => {
+        const mockDeleteRequest = {
+          onsuccess: null as (() => void) | null,
+          onerror: null as (() => void) | null,
+          onblocked: null as (() => void) | null,
+        };
+
+        const mockIndexedDB = {
+          databases: jest.fn().mockResolvedValue([{ name: "compass-local" }]),
+          deleteDatabase: jest.fn().mockImplementation(() => {
+            setTimeout(() => mockDeleteRequest.onerror?.(), 0);
+            return mockDeleteRequest;
+          }),
+        };
+
+        Object.defineProperty(window, "indexedDB", {
+          value: mockIndexedDB,
+          writable: true,
+          configurable: true,
+        });
+
+        await expect(clearAllBrowserStorage()).rejects.toThrow(
+          "Failed to delete IndexedDB",
+        );
+      });
+
+      it("should handle IndexedDB deletion blocked gracefully", async () => {
+        const consoleWarnSpy = jest
+          .spyOn(console, "warn")
+          .mockImplementation(() => {});
+
+        const mockDeleteRequest = {
+          onsuccess: null as (() => void) | null,
+          onerror: null as (() => void) | null,
+          onblocked: null as (() => void) | null,
+        };
+
+        const mockIndexedDB = {
+          databases: jest.fn().mockResolvedValue([{ name: "compass-local" }]),
+          deleteDatabase: jest.fn().mockImplementation(() => {
+            setTimeout(() => mockDeleteRequest.onblocked?.(), 0);
+            return mockDeleteRequest;
+          }),
+        };
+
+        Object.defineProperty(window, "indexedDB", {
+          value: mockIndexedDB,
+          writable: true,
+          configurable: true,
+        });
+
+        await expect(clearAllBrowserStorage()).resolves.not.toThrow();
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          "IndexedDB deletion blocked - close all Compass tabs and try again",
+        );
+
+        consoleWarnSpy.mockRestore();
+      });
+    });
   });
 });
