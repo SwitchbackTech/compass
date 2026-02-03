@@ -22,8 +22,17 @@ import {
  * The overlay shows two phases:
  * 1. OAuth phase: "Complete Google sign-in..." - when isSyncing=true, importing=false
  * 2. Import phase: "Importing your Google Calendar..." - when importing=true
+ *
+ * NOTE: These tests are skipped on mobile because the MobileGate component
+ * blocks the entire app on mobile viewports, preventing the OAuth overlay
+ * from ever being rendered. This is intentional product behavior.
  */
 test.describe("OAuth Overlay", () => {
+  // Skip on mobile - MobileGate blocks the app, so OAuth overlay never renders
+  test.skip(
+    ({ isMobile }) => isMobile,
+    "OAuth overlay not available on mobile",
+  );
   test.beforeEach(async ({ page }) => {
     await prepareOAuthTestPage(page);
     await page.goto("/");
@@ -89,25 +98,11 @@ test.describe("OAuth Overlay", () => {
     await expectBodyLocked(page, false);
   });
 
-  test("blurs active element when overlay activates", async ({
-    page,
-    isMobile,
-  }) => {
-    // On mobile, the main grid might not be visible - use a different focusable element
-    // or skip for mobile as the blur behavior is the same regardless of viewport
-    if (isMobile) {
-      // On mobile, find any focusable element that's visible
-      const focusable = page
-        .locator("button:visible, [tabindex]:visible")
-        .first();
-      await focusable.waitFor({ state: "visible", timeout: 10000 });
-      await focusable.focus();
-    } else {
-      // Wait for main grid to be visible and focusable on desktop
-      const mainGrid = page.locator("#mainGrid");
-      await mainGrid.waitFor({ state: "visible", timeout: 10000 });
-      await mainGrid.focus();
-    }
+  test("blurs active element when overlay activates", async ({ page }) => {
+    // Wait for main grid to be visible and focusable
+    const mainGrid = page.locator("#mainGrid");
+    await mainGrid.waitFor({ state: "visible", timeout: 10000 });
+    await mainGrid.focus();
 
     await page.waitForTimeout(100); // Give time for focus to settle
 
@@ -201,6 +196,12 @@ test.describe("OAuth Overlay", () => {
 });
 
 test.describe("OAuth Overlay - Edge Cases", () => {
+  // Skip on mobile - MobileGate blocks the app, so OAuth overlay never renders
+  test.skip(
+    ({ isMobile }) => isMobile,
+    "OAuth overlay not available on mobile",
+  );
+
   test.beforeEach(async ({ page }) => {
     await prepareOAuthTestPage(page);
     await page.goto("/");
