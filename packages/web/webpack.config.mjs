@@ -96,6 +96,11 @@ export default (env, argv) => {
 
   const styleLoader = IS_DEV ? "style-loader" : MiniCssExtractPlugin.loader;
 
+  // Generate a version hash based on build time
+  const BUILD_VERSION = IS_DEV
+    ? "dev"
+    : `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
   const envObject = `{
     API_BASEURL: ${JSON.stringify(API_BASEURL)},
     GOOGLE_CLIENT_ID: ${JSON.stringify(GOOGLE_CLIENT_ID)},
@@ -110,6 +115,8 @@ export default (env, argv) => {
       // Define process.env as an object literal (not a JSON string)
       // This allows both process.env.KEY and process.env["KEY"] bracket notation to work
       "process.env": envObject,
+      // Define BUILD_VERSION for version checking
+      BUILD_VERSION: JSON.stringify(BUILD_VERSION),
     }),
     new HtmlWebpackPlugin({
       filename: "index.html",
@@ -124,6 +131,29 @@ export default (env, argv) => {
       chunkFilename: IS_DEV ? "[id].css" : "[id].[contenthash].css",
     }),
   ];
+
+  // Generate version.json file for version checking
+  if (!IS_DEV) {
+    _plugins.push({
+      apply: (compiler) => {
+        compiler.hooks.emit.tapAsync(
+          "GenerateVersionPlugin",
+          (compilation, callback) => {
+            const versionContent = JSON.stringify(
+              { version: BUILD_VERSION },
+              null,
+              2,
+            );
+            compilation.assets["version.json"] = {
+              source: () => versionContent,
+              size: () => versionContent.length,
+            };
+            callback();
+          },
+        );
+      },
+    });
+  }
 
   if (ANALYZE_BUNDLE) {
     _plugins.push(new BundleAnalyzerPlugin());

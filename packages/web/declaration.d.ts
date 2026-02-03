@@ -26,3 +26,6 @@ declare module "*.jpg" {
 declare module "*.jpeg" {
   export = imageUrl;
 }
+
+// Build version injected by webpack
+declare const BUILD_VERSION: string;
