@@ -6,7 +6,11 @@ import { useEffect } from "react";
  */
 export const useChunkLoadErrorHandler = () => {
   useEffect(() => {
+    let isReloading = false;
+
     const handleError = (event: ErrorEvent) => {
+      if (isReloading) return;
+
       const isChunkLoadError =
         event.message?.includes("Loading chunk") ||
         event.message?.includes("ChunkLoadError") ||
@@ -20,12 +24,17 @@ export const useChunkLoadErrorHandler = () => {
         // Prevent default error handling
         event.preventDefault();
 
+        // Set flag to prevent multiple reloads
+        isReloading = true;
+
         // Reload the page to get the new chunks
         window.location.reload();
       }
     };
 
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      if (isReloading) return;
+
       const isChunkLoadError =
         event.reason?.message?.includes("Loading chunk") ||
         event.reason?.name === "ChunkLoadError";
@@ -37,6 +46,9 @@ export const useChunkLoadErrorHandler = () => {
 
         // Prevent default error handling
         event.preventDefault();
+
+        // Set flag to prevent multiple reloads
+        isReloading = true;
 
         // Reload the page to get the new chunks
         window.location.reload();

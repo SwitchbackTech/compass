@@ -47,6 +47,8 @@ export const useVersionCheck = (): VersionCheckResult => {
           const serverVersion = data.version;
 
           // Check if server version differs from current version
+          // Once an update is detected, we keep showing the indicator
+          // until the user refreshes to get the new version
           if (serverVersion && serverVersion !== CURRENT_VERSION) {
             setIsUpdateAvailable(true);
           }
