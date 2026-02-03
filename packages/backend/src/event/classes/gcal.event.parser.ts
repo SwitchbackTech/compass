@@ -281,6 +281,29 @@ export class GcalEventParser {
     return [...seriesChanges, ...baseChanges];
   }
 
+  async instanceToStandalone(
+    session?: ClientSession,
+  ): Promise<Event_Transition[]> {
+    const event = gEventToCompassEvent(this.#event, this.userId);
+
+    const {
+      recurrence, // eslint-disable-line @typescript-eslint/no-unused-vars
+      gRecurringEventId, // eslint-disable-line @typescript-eslint/no-unused-vars
+      ...eventWithoutProps
+    } = event;
+
+    return this.upsertCompassEvent(
+      {
+        $unset: { recurrence: 1, gRecurringEventId: 1 },
+        $set: {
+          ...eventWithoutProps,
+          updatedAt: new Date(),
+        },
+      },
+      session,
+    );
+  }
+
   async standaloneToSeries(session?: ClientSession) {
     this.#logger.info(
       `UPDATING ${this.getTransitionString()}: ${this.#event.id} to series`,
