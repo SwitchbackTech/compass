@@ -21,9 +21,8 @@ import {
 } from "@web/ducks/events/slices/sync.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { toastDefaultOptions } from "@web/views/Day/components/Toasts";
-import { OnboardingStepProps } from "@web/views/Onboarding";
 
-export function useGoogleAuth(props?: OnboardingStepProps) {
+export function useGoogleAuth() {
   const dispatch = useAppDispatch();
   const { setAuthenticated } = useSession();
   const { markSignupCompleted } = useIsSignupComplete();
@@ -68,8 +67,6 @@ export function useGoogleAuth(props?: OnboardingStepProps) {
         updateOnboardingStatus(skipOnboarding);
 
         markSignupCompleted();
-
-        props?.onNext?.();
 
         const syncResult = await syncLocalEvents();
 
