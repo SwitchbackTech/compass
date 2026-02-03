@@ -1,70 +1,6 @@
 import React from "react";
-import styled from "styled-components";
 
 const WAITLIST_URL = "https://tylerdane.kit.com/compass-mobile";
-
-const Container = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  min-height: 100dvh;
-  background-color: ${({ theme }) => theme.color.bg.primary};
-  padding: ${({ theme }) => theme.spacing.m};
-`;
-
-const Card = styled.div`
-  background-color: ${({ theme }) => theme.color.bg.secondary};
-  border: 1px solid ${({ theme }) => theme.color.border.primary};
-  border-radius: ${({ theme }) => theme.shape.borderRadius};
-  padding: ${({ theme }) => theme.spacing.xl};
-  width: 400px;
-  max-width: 90vw;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-`;
-
-const Title = styled.h1`
-  font-family: "Rubik", sans-serif;
-  font-size: 24px;
-  font-weight: 500;
-  color: ${({ theme }) => theme.color.common.white};
-  margin: 0 0 ${({ theme }) => theme.spacing.l};
-`;
-
-const Message = styled.p`
-  font-family: "Rubik", sans-serif;
-  font-size: 16px;
-  font-weight: 400;
-  color: #a0a0a0;
-  margin: 0 0 ${({ theme }) => theme.spacing.xl};
-  line-height: 1.6;
-`;
-
-const WaitlistButton = styled.button`
-  font-family: "Rubik", sans-serif;
-  font-size: 16px;
-  font-weight: 500;
-  min-height: 44px;
-  padding: ${({ theme }) => theme.spacing.s} ${({ theme }) => theme.spacing.xl};
-  background-color: ${({ theme }) => theme.color.text.accent};
-  color: ${({ theme }) => theme.color.common.white};
-  border: none;
-  border-radius: ${({ theme }) => theme.shape.borderRadius};
-  cursor: pointer;
-  transition: opacity ${({ theme }) => theme.transition.default};
-
-  &:hover {
-    opacity: 0.9;
-  }
-
-  &:focus {
-    outline: 2px solid ${({ theme }) => theme.color.text.accent};
-    outline-offset: 2px;
-  }
-`;
 
 export const MobileGate: React.FC = () => {
   const handleJoinWaitlist = () => {
@@ -72,17 +8,22 @@ export const MobileGate: React.FC = () => {
   };
 
   return (
-    <Container>
-      <Card>
-        <Title>Compass isn&apos;t built for mobile yet</Title>
-        <Message>
+    <div className="bg-bg-primary flex min-h-dvh items-center justify-center p-4">
+      <div className="border-border-primary bg-bg-secondary flex w-[400px] max-w-[90vw] flex-col items-center rounded border p-8 text-center">
+        <h1 className="mb-6 font-sans text-2xl font-medium text-white">
+          Compass isn&apos;t built for mobile yet
+        </h1>
+        <p className="mb-8 font-sans text-base leading-relaxed font-normal text-[#a0a0a0]">
           We&apos;re focusing on perfecting the web experience first. Join our
           mobile waitlist to be the first to know when we launch.
-        </Message>
-        <WaitlistButton onClick={handleJoinWaitlist}>
+        </p>
+        <button
+          onClick={handleJoinWaitlist}
+          className="bg-accent-primary focus:outline-accent-primary min-h-[44px] cursor-pointer rounded border-none px-8 py-2 font-sans text-base font-medium text-white transition-opacity duration-300 hover:opacity-90 focus:outline focus:outline-2 focus:outline-offset-2"
+        >
           Join Mobile Waitlist
-        </WaitlistButton>
-      </Card>
-    </Container>
+        </button>
+      </div>
+    </div>
   );
 };
