@@ -13,7 +13,7 @@ export const MobileGate: React.FC = () => {
         <h1 className="mb-6 font-sans text-2xl font-medium text-white">
           Compass isn&apos;t built for mobile yet
         </h1>
-        <p className="text-text-light-inactive mb-8 font-sans text-base leading-relaxed font-normal">
+        <p className="text-text-light-inactive mb-8 font-sans text-base leading-relaxed">
           We&apos;re focusing on perfecting the web experience first. Join our
           mobile waitlist to be the first to know when we launch.
         </p>
