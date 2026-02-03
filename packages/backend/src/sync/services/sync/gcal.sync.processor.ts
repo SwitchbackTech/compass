@@ -80,6 +80,8 @@ export class GcalSyncProcessor {
         return parser.createSeries(session);
       case "STANDALONE->>RECURRENCE_BASE_CONFIRMED":
         return parser.standaloneToSeries(session);
+      case "RECURRENCE_INSTANCE->>STANDALONE_CONFIRMED":
+        return parser.instanceToStandalone(session);
       case "RECURRENCE_BASE->>STANDALONE_CONFIRMED":
         return parser.seriesToStandalone(session);
       case "RECURRENCE_INSTANCE->>RECURRENCE_BASE_CONFIRMED":
