@@ -1,4 +1,5 @@
 import { Categories_Recurrence } from "@core/types/event.types";
+import { gSchema$Event } from "@core/types/gcal";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   cleanupCollections,
@@ -58,6 +59,46 @@ describe("GcalSyncProcessor UPSERT: INSTANCE", () => {
     // Verify the instance was updated
     expect(updatedInstance).toBeDefined();
     expect(updatedInstance?.title).toEqual(instanceTitle);
+  });
+
+  it("should handle DETACHING an INSTANCE into a STANDALONE event", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+
+    const { gcalEvents } = await simulateDbAfterGcalImport(user._id.toString());
+
+    const origInstance = gcalEvents.instances[0];
+
+    const standalone = {
+      ...origInstance,
+      summary: "Detached Instance Event",
+    } as gSchema$Event;
+
+    delete (standalone as { recurringEventId?: string }).recurringEventId;
+    delete (standalone as { recurrence?: string[] }).recurrence;
+
+    const processor = new GcalSyncProcessor(user._id.toString());
+    const changes = await processor.processEvents([standalone]);
+
+    expect(changes).toHaveLength(1);
+    expect(changes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          title: standalone.summary,
+          category: Categories_Recurrence.RECURRENCE_INSTANCE,
+          transition: ["RECURRENCE_INSTANCE", "STANDALONE_CONFIRMED"],
+          operation: "RECURRENCE_INSTANCE_UPDATED",
+        }),
+      ]),
+    );
+
+    const updatedStandalone = await mongoService.event.findOne({
+      gEventId: standalone.id!,
+      user: user._id.toString(),
+    });
+
+    expect(updatedStandalone).toBeDefined();
+    expect(updatedStandalone?.gRecurringEventId).toBeUndefined();
+    expect(updatedStandalone?.recurrence).toBeUndefined();
   });
 
   it("should handle UPDATING a REGULAR, BASE and TIMED INSTANCE", async () => {
