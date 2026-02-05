@@ -27,9 +27,7 @@ export const SidebarIconRow = () => {
   const { isUpdateAvailable } = useVersionCheck();
 
   const handleUpdateReload = () => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("update", Date.now().toString());
-    window.location.replace(url.toString());
+    window.location.reload();
   };
 
   const toggleCmdPalette = () => {

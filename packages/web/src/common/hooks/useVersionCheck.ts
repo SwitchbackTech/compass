@@ -15,6 +15,16 @@ export interface VersionCheckResult {
   currentVersion: string;
 }
 
+/**
+ * Checks for new application versions by polling `/version.json`.
+ *
+ * Performs version checks:
+ * - On initial mount
+ * - When the tab becomes visible after being hidden for 30+ seconds
+ * - Every 5 minutes as a backup poll
+ *
+ * Disabled in development mode.
+ */
 export const useVersionCheck = (): VersionCheckResult => {
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
   const hiddenAtRef = useRef<number | null>(null);

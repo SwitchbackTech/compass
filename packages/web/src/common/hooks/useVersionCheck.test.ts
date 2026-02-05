@@ -2,6 +2,13 @@ import { act } from "react";
 import { renderHook } from "@testing-library/react";
 import { useVersionCheck } from "@web/common/hooks/useVersionCheck";
 
+let mockIsDev = false;
+jest.mock("@web/common/constants/env.constants", () => ({
+  get IS_DEV() {
+    return mockIsDev;
+  },
+}));
+
 const MIN_HIDDEN_DURATION_MS = 30_000;
 const BACKUP_CHECK_INTERVAL_MS = 5 * 60 * 1000;
 
@@ -13,6 +20,7 @@ describe("useVersionCheck", () => {
   };
 
   beforeEach(() => {
+    mockIsDev = false;
     jest.useFakeTimers();
     jest.setSystemTime(new Date("2026-02-05T00:00:00.000Z"));
 
@@ -31,6 +39,39 @@ describe("useVersionCheck", () => {
   afterEach(() => {
     jest.useRealTimers();
     jest.clearAllMocks();
+  });
+
+  it("checks version on initial mount", async () => {
+    renderHook(() => useVersionCheck());
+    await act(async () => {
+      await flushPromises();
+    });
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringMatching(/^\/version\.json\?t=\d+$/),
+      expect.objectContaining({
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      }),
+    );
+  });
+
+  it("does not check for updates in development mode", async () => {
+    mockIsDev = true;
+
+    renderHook(() => useVersionCheck());
+    await act(async () => {
+      await flushPromises();
+    });
+
+    expect(global.fetch).not.toHaveBeenCalled();
+
+    act(() => {
+      jest.advanceTimersByTime(BACKUP_CHECK_INTERVAL_MS);
+    });
+
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 
   it("checks when tab becomes visible after being hidden long enough", async () => {
