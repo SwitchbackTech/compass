@@ -1,7 +1,9 @@
+import { useVersionCheck } from "@web/common/hooks/useVersionCheck";
 import { theme } from "@web/common/styles/theme";
 import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
 import { CalendarIcon } from "@web/components/Icons/Calendar";
 import { CommandIcon } from "@web/components/Icons/Command";
+import { DownloadIcon } from "@web/components/Icons/Download";
 import { SpinnerIcon } from "@web/components/Icons/Spinner";
 import { TodoIcon } from "@web/components/Icons/Todo";
 import { Text } from "@web/components/Text";
@@ -22,6 +24,13 @@ export const SidebarIconRow = () => {
   const tab = useAppSelector(selectSidebarTab);
   const gCalImport = useAppSelector(selectImportGCalState);
   const isCmdPaletteOpen = useAppSelector(selectIsCmdPaletteOpen);
+  const { isUpdateAvailable } = useVersionCheck();
+
+  const handleUpdateReload = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("update", Date.now().toString());
+    window.location.replace(url.toString());
+  };
 
   const toggleCmdPalette = () => {
     if (isCmdPaletteOpen) {
@@ -86,6 +95,14 @@ export const SidebarIconRow = () => {
         {gCalImport.importing ? (
           <TooltipWrapper description="Importing your calendar events in the background">
             <SpinnerIcon disabled />
+          </TooltipWrapper>
+        ) : undefined}
+        {isUpdateAvailable ? (
+          <TooltipWrapper
+            description="Update available"
+            onClick={handleUpdateReload}
+          >
+            <DownloadIcon color={theme.color.text.accent} />
           </TooltipWrapper>
         ) : undefined}
       </LeftIconGroup>

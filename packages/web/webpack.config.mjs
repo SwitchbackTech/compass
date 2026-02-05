@@ -65,6 +65,9 @@ const loadEnvFile = (envName) => {
  */
 export default (env, argv) => {
   const IS_DEV = argv.mode === "development";
+  const BUILD_VERSION = IS_DEV
+    ? "dev"
+    : `${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
   const ENVIRONMENT = argv.nodeEnv || "local";
   loadEnvFile(ENVIRONMENT);
@@ -110,6 +113,7 @@ export default (env, argv) => {
       // Define process.env as an object literal (not a JSON string)
       // This allows both process.env.KEY and process.env["KEY"] bracket notation to work
       "process.env": envObject,
+      BUILD_VERSION: JSON.stringify(BUILD_VERSION),
     }),
     new HtmlWebpackPlugin({
       filename: "index.html",
@@ -127,6 +131,28 @@ export default (env, argv) => {
 
   if (ANALYZE_BUNDLE) {
     _plugins.push(new BundleAnalyzerPlugin());
+  }
+
+  if (!IS_DEV) {
+    _plugins.push({
+      apply: (compiler) => {
+        compiler.hooks.emit.tapAsync(
+          "GenerateVersionPlugin",
+          (compilation, callback) => {
+            const versionContent = JSON.stringify(
+              { version: BUILD_VERSION },
+              null,
+              2,
+            );
+            compilation.assets["version.json"] = {
+              source: () => versionContent,
+              size: () => versionContent.length,
+            };
+            callback();
+          },
+        );
+      },
+    });
   }
 
   return {

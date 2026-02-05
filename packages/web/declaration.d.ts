@@ -26,3 +26,5 @@ declare module "*.jpg" {
 declare module "*.jpeg" {
   export = imageUrl;
 }
+
+declare const BUILD_VERSION: string;
