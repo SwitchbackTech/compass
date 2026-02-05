@@ -3,7 +3,7 @@ import { theme } from "@web/common/styles/theme";
 import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
 import { CalendarIcon } from "@web/components/Icons/Calendar";
 import { CommandIcon } from "@web/components/Icons/Command";
-import { DownloadIcon } from "@web/components/Icons/Download";
+import { RefreshIcon } from "@web/components/Icons/Refresh";
 import { SpinnerIcon } from "@web/components/Icons/Spinner";
 import { TodoIcon } from "@web/components/Icons/Todo";
 import { Text } from "@web/components/Text";
@@ -102,7 +102,7 @@ export const SidebarIconRow = () => {
             description="Update available"
             onClick={handleUpdateReload}
           >
-            <DownloadIcon color={theme.color.text.accent} />
+            <RefreshIcon color={theme.color.text.accent} />
           </TooltipWrapper>
         ) : undefined}
       </LeftIconGroup>
