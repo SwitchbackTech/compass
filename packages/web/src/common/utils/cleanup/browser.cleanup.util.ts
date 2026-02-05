@@ -47,8 +47,6 @@ export async function clearAllBrowserStorage(): Promise<void> {
         });
       }
     }
-
-    console.log("Browser storage cleared successfully");
   } catch (error) {
     console.error("Error clearing browser storage:", error);
     throw error;

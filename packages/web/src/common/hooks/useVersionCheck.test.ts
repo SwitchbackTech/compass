@@ -59,6 +59,8 @@ describe("useVersionCheck", () => {
 
   it("does not check for updates in development mode", async () => {
     mockIsDev = true;
+    const addEventListenerSpy = jest.spyOn(document, "addEventListener");
+    const setIntervalSpy = jest.spyOn(window, "setInterval");
 
     renderHook(() => useVersionCheck());
     await act(async () => {
@@ -66,12 +68,93 @@ describe("useVersionCheck", () => {
     });
 
     expect(global.fetch).not.toHaveBeenCalled();
+    expect(addEventListenerSpy).not.toHaveBeenCalled();
+    expect(setIntervalSpy).not.toHaveBeenCalled();
 
     act(() => {
       jest.advanceTimersByTime(BACKUP_CHECK_INTERVAL_MS);
     });
 
     expect(global.fetch).not.toHaveBeenCalled();
+
+    addEventListenerSpy.mockRestore();
+    setIntervalSpy.mockRestore();
+  });
+
+  it("sets isUpdateAvailable when server version differs", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ version: "1.0.0" }),
+    }) as typeof fetch;
+
+    const { result } = renderHook(() => useVersionCheck());
+
+    await act(async () => {
+      await flushPromises();
+    });
+
+    expect(result.current.isUpdateAvailable).toBe(true);
+  });
+
+  it("keeps isUpdateAvailable false when versions match", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ version: "dev" }),
+    }) as typeof fetch;
+
+    const { result } = renderHook(() => useVersionCheck());
+
+    await act(async () => {
+      await flushPromises();
+    });
+
+    expect(result.current.isUpdateAvailable).toBe(false);
+  });
+
+  it("handles network failures without crashing", async () => {
+    const consoleErrorSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    global.fetch = jest
+      .fn()
+      .mockRejectedValue(new Error("Network down")) as typeof fetch;
+
+    const { result } = renderHook(() => useVersionCheck());
+
+    await act(async () => {
+      await flushPromises();
+    });
+
+    expect(result.current.isUpdateAvailable).toBe(false);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Version check failed:",
+      expect.any(Error),
+    );
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("ignores invalid version payloads", async () => {
+    const consoleErrorSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ version: 123 }),
+    }) as typeof fetch;
+
+    const { result } = renderHook(() => useVersionCheck());
+
+    await act(async () => {
+      await flushPromises();
+    });
+
+    expect(result.current.isUpdateAvailable).toBe(false);
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+
+    consoleErrorSpy.mockRestore();
   });
 
   it("checks when tab becomes visible after being hidden long enough", async () => {

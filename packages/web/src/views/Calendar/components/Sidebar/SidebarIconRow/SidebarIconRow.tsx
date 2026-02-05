@@ -92,12 +92,12 @@ export const SidebarIconRow = () => {
         </TooltipWrapper>
         {gCalImport.importing ? (
           <TooltipWrapper description="Importing your calendar events in the background">
-            <SpinnerIcon disabled />
+            <SpinnerIcon />
           </TooltipWrapper>
         ) : undefined}
         {isUpdateAvailable ? (
           <TooltipWrapper
-            description="Update available"
+            description="Get latest version"
             onClick={handleUpdateReload}
           >
             <RefreshIcon color={theme.color.text.accent} />

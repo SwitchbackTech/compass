@@ -63,7 +63,7 @@ export const useVersionCheck = (): VersionCheckResult => {
 
       setIsUpdateAvailable(serverVersion !== CURRENT_VERSION);
     } catch (error) {
-      console.debug("Version check failed:", error);
+      console.error("Version check failed:", error);
     } finally {
       isCheckingRef.current = false;
     }

@@ -1,3 +1,4 @@
+import { execSync } from "child_process";
 import dotenv from "dotenv";
 import fs from "fs";
 import HtmlWebpackPlugin from "html-webpack-plugin";
@@ -65,9 +66,9 @@ const loadEnvFile = (envName) => {
  */
 export default (env, argv) => {
   const IS_DEV = argv.mode === "development";
-  const BUILD_VERSION = IS_DEV
-    ? "dev"
-    : `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+  // git hash makes the build traceable
+  const GIT_HASH = execSync("git rev-parse --short HEAD").toString().trim();
+  const BUILD_VERSION = IS_DEV ? "dev" : `${Date.now()}-${GIT_HASH}`;
 
   const ENVIRONMENT = argv.nodeEnv || "local";
   loadEnvFile(ENVIRONMENT);
