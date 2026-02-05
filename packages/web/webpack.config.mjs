@@ -1,3 +1,4 @@
+import { execSync } from "child_process";
 import dotenv from "dotenv";
 import fs from "fs";
 import HtmlWebpackPlugin from "html-webpack-plugin";
@@ -65,6 +66,9 @@ const loadEnvFile = (envName) => {
  */
 export default (env, argv) => {
   const IS_DEV = argv.mode === "development";
+  // git hash makes the build traceable
+  const GIT_HASH = execSync("git rev-parse --short HEAD").toString().trim();
+  const BUILD_VERSION = IS_DEV ? "dev" : `${Date.now()}-${GIT_HASH}`;
 
   const ENVIRONMENT = argv.nodeEnv || "local";
   loadEnvFile(ENVIRONMENT);
@@ -110,6 +114,7 @@ export default (env, argv) => {
       // Define process.env as an object literal (not a JSON string)
       // This allows both process.env.KEY and process.env["KEY"] bracket notation to work
       "process.env": envObject,
+      BUILD_VERSION: JSON.stringify(BUILD_VERSION),
     }),
     new HtmlWebpackPlugin({
       filename: "index.html",
@@ -127,6 +132,28 @@ export default (env, argv) => {
 
   if (ANALYZE_BUNDLE) {
     _plugins.push(new BundleAnalyzerPlugin());
+  }
+
+  if (!IS_DEV) {
+    _plugins.push({
+      apply: (compiler) => {
+        compiler.hooks.emit.tapAsync(
+          "GenerateVersionPlugin",
+          (compilation, callback) => {
+            const versionContent = JSON.stringify(
+              { version: BUILD_VERSION },
+              null,
+              2,
+            );
+            compilation.assets["version.json"] = {
+              source: () => versionContent,
+              size: () => versionContent.length,
+            };
+            callback();
+          },
+        );
+      },
+    });
   }
 
   return {
