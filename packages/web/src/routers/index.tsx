@@ -82,7 +82,7 @@ export const router = createBrowserRouter(
         {
           path: ROOT_ROUTES.WEEK,
           lazy: async () =>
-            import(/* webpackChunkName: "home" */ "@web/views/Calendar").then(
+            import(/* webpackChunkName: "week" */ "@web/views/Calendar").then(
               (module) => ({
                 Component: module.CalendarView,
               }),
