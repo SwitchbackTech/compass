@@ -40,7 +40,7 @@ export const SelectView = ({
     ) {
       return "Day";
     }
-    if (pathname === ROOT_ROUTES.WEEK || pathname === ROOT_ROUTES.ROOT) {
+    if (pathname === ROOT_ROUTES.WEEK) {
       return "Week";
     }
     return "Week";
