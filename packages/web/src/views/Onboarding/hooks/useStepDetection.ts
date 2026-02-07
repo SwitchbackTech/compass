@@ -107,7 +107,7 @@ export function useStepDetection({
           | undefined;
         if (!routeConfig) return;
 
-        // Normalize route paths for comparison
+        // Get route paths for comparison
         const targetRoute = routeConfig.route;
         const currentPath = location.pathname;
         const matchesPrefix =
