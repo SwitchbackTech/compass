@@ -47,7 +47,7 @@ export async function loadDayData() {
 }
 
 export async function loadRootData() {
-  return redirect(ROOT_ROUTES.DAY);
+  return loadDayData();
 }
 
 export async function loadSpecificDayData({
