@@ -1,3 +1,4 @@
+import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
   OnboardingGuideViewConfig,
   OnboardingStepConfig,
@@ -26,7 +27,10 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
     id: ONBOARDING_STEPS.NAVIGATE_TO_DAY,
     order: 0,
     detectionType: "route",
-    detectionConfig: { route: "/day", routePrefixes: ["/day/"] },
+    detectionConfig: {
+      route: ROOT_ROUTES.DAY,
+      routePrefixes: [`${ROOT_ROUTES.DAY}/`],
+    },
     guide: {
       instructionsByView: {
         day: [{ type: "text", value: "You're already on the Day view." }],
@@ -56,7 +60,10 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
     id: ONBOARDING_STEPS.NAVIGATE_TO_NOW,
     order: 2,
     detectionType: "route",
-    detectionConfig: { route: "/now", routePrefixes: ["/now/"] },
+    detectionConfig: {
+      route: ROOT_ROUTES.NOW,
+      routePrefixes: [`${ROOT_ROUTES.NOW}/`],
+    },
     guide: {
       instructionsByView: {
         default: [
@@ -71,7 +78,7 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
     id: ONBOARDING_STEPS.NAVIGATE_TO_WEEK,
     order: 3,
     detectionType: "route",
-    detectionConfig: { route: "/" },
+    detectionConfig: { route: ROOT_ROUTES.WEEK },
     guide: {
       instructionsByView: {
         default: [
@@ -105,21 +112,21 @@ export const ONBOARDING_GUIDE_VIEWS: readonly OnboardingGuideViewConfig[] = [
   {
     id: "now",
     label: "Now",
-    routes: ["/now"],
-    routePrefixes: ["/now/"],
+    routes: [ROOT_ROUTES.NOW],
+    routePrefixes: [`${ROOT_ROUTES.NOW}/`],
     overlayVariant: "pinned",
   },
   {
     id: "day",
     label: "Day",
-    routes: ["/day"],
-    routePrefixes: ["/day/"],
+    routes: [ROOT_ROUTES.DAY],
+    routePrefixes: [`${ROOT_ROUTES.DAY}/`],
     overlayVariant: "centered",
   },
   {
     id: "week",
     label: "Week",
-    routes: ["/"],
+    routes: [ROOT_ROUTES.WEEK],
     overlayVariant: "centered",
   },
   {

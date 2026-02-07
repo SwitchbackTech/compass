@@ -77,7 +77,7 @@ const ensureWeekView = async (page: Page) => {
   await viewButton.waitFor({ state: "visible", timeout: 5000 });
   await viewButton.click();
   await page.getByRole("option", { name: "Week" }).click();
-  await page.waitForURL((url) => url.pathname === "/", { timeout: 10000 });
+  await page.waitForURL((url) => url.pathname === "/week", { timeout: 10000 });
 
   // Verify we actually switched to Week view
   await weekViewButton.waitFor({ state: "visible", timeout: 5000 });
@@ -105,7 +105,7 @@ export const prepareCalendarPage = async (page: Page) => {
     localStorage.setItem("compass.onboarding", JSON.stringify(value));
   }, ONBOARDING_STATE);
 
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto("/week", { waitUntil: "networkidle" });
 
   // Wait for React app to mount by checking for root element with content
   await page.waitForFunction(

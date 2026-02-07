@@ -10,6 +10,7 @@ import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import {
   loadDayData,
   loadOnboardingStatus,
+  loadRootData,
   loadSpecificDayData,
 } from "@web/routers/loaders";
 
@@ -79,13 +80,17 @@ export const router = createBrowserRouter(
             ),
         },
         {
-          path: ROOT_ROUTES.ROOT,
+          path: ROOT_ROUTES.WEEK,
           lazy: async () =>
-            import(/* webpackChunkName: "home" */ "@web/views/Calendar").then(
+            import(/* webpackChunkName: "week" */ "@web/views/Calendar").then(
               (module) => ({
                 Component: module.CalendarView,
               }),
             ),
+        },
+        {
+          path: ROOT_ROUTES.ROOT,
+          loader: loadRootData,
         },
       ],
     },

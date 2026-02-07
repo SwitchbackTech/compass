@@ -31,7 +31,7 @@ export function useGlobalShortcuts() {
   useKeyUpEvent({
     combination: ["3"],
     deps: [navigate],
-    handler: () => navigate(ROOT_ROUTES.ROOT),
+    handler: () => navigate(ROOT_ROUTES.WEEK),
   });
 
   useKeyUpEvent({

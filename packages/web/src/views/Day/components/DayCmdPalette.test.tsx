@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import * as useGoogleAuthModule from "@web/auth/hooks/oauth/useGoogleAuth";
 import * as useSessionModule from "@web/auth/hooks/session/useSession";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { keyPressed$ } from "@web/common/utils/dom/event-emitter.util";
 import * as eventUtil from "@web/common/utils/event/event.util";
 import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
@@ -152,7 +153,7 @@ describe("DayCmdPalette", () => {
 
     await act(() => user.click(screen.getByText("Go to Week [3]")));
 
-    expect(mockNavigate).toHaveBeenCalledWith("/");
+    expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.WEEK);
   });
 
   it("calls onGoToToday when Go to Today is clicked", async () => {

@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { useSession } from "@web/auth/hooks/session/useSession";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { CompassTasksSavedEvent } from "@web/common/utils/storage/storage.types";
 import {
   COMPASS_TASKS_SAVED_EVENT_NAME,
@@ -108,9 +107,8 @@ export function useStepDetection({
           | undefined;
         if (!routeConfig) return;
 
-        // Normalize route paths for comparison
-        const targetRoute =
-          routeConfig.route === "/" ? ROOT_ROUTES.ROOT : routeConfig.route;
+        // Get route paths for comparison
+        const targetRoute = routeConfig.route;
         const currentPath = location.pathname;
         const matchesPrefix =
           routeConfig.routePrefixes?.some((prefix) =>

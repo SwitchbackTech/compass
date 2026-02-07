@@ -1,5 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { renderHook } from "@testing-library/react";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { ONBOARDING_STEPS } from "../constants/onboarding.constants";
 import { markStepCompleted } from "../utils/onboarding.storage.util";
 import { useGuideOverlayState } from "./useGuideOverlayState";
@@ -41,8 +42,8 @@ describe("useGuideOverlayState", () => {
       expect(result.current.currentView).toBe("now");
     });
 
-    it("should return 'week' for / pathname", () => {
-      mockUseLocation.mockReturnValue({ pathname: "/" } as any);
+    it("should return 'week' for /week pathname", () => {
+      mockUseLocation.mockReturnValue({ pathname: ROOT_ROUTES.WEEK } as any);
       const { result } = renderHook(() =>
         useGuideOverlayState({
           currentStep: ONBOARDING_STEPS.NAVIGATE_TO_DAY,

@@ -35,7 +35,7 @@ test.describe("OAuth Overlay", () => {
   );
   test.beforeEach(async ({ page }) => {
     await prepareOAuthTestPage(page);
-    await page.goto("/");
+    await page.goto("/week");
     await waitForAppReady(page);
   });
 
@@ -204,7 +204,7 @@ test.describe("OAuth Overlay - Edge Cases", () => {
 
   test.beforeEach(async ({ page }) => {
     await prepareOAuthTestPage(page);
-    await page.goto("/");
+    await page.goto("/week");
     await waitForAppReady(page);
   });
 
