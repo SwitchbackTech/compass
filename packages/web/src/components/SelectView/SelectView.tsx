@@ -40,7 +40,7 @@ export const SelectView = ({
     ) {
       return "Day";
     }
-    if (pathname === ROOT_ROUTES.ROOT) {
+    if (pathname === ROOT_ROUTES.WEEK || pathname === ROOT_ROUTES.ROOT) {
       return "Week";
     }
     return "Week";
@@ -93,7 +93,7 @@ export const SelectView = ({
   const options = [
     { route: ROOT_ROUTES.NOW, label: "Now", view: "Now" as const },
     { route: ROOT_ROUTES.DAY, label: "Day", view: "Day" as const },
-    { route: ROOT_ROUTES.ROOT, label: "Week", view: "Week" as const },
+    { route: ROOT_ROUTES.WEEK, label: "Week", view: "Week" as const },
   ];
 
   const dropdownId = "view-select-dropdown";

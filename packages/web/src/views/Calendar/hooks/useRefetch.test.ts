@@ -43,7 +43,7 @@ describe("useRefetch", () => {
 
   describe("Week view behavior", () => {
     it("should fetch week events when on week view and fetch is needed", () => {
-      mockUseLocation.mockReturnValue({ pathname: ROOT_ROUTES.ROOT });
+      mockUseLocation.mockReturnValue({ pathname: ROOT_ROUTES.WEEK });
       mockUseParams.mockReturnValue({});
 
       const weekStart = "2024-01-15T00:00:00Z";
@@ -82,7 +82,7 @@ describe("useRefetch", () => {
     });
 
     it("should map SOCKET_EVENT_CHANGED to WEEK_VIEW_CHANGE for week view", () => {
-      mockUseLocation.mockReturnValue({ pathname: ROOT_ROUTES.ROOT });
+      mockUseLocation.mockReturnValue({ pathname: ROOT_ROUTES.WEEK });
       mockUseParams.mockReturnValue({});
 
       const weekStart = "2024-01-15T00:00:00Z";
@@ -125,7 +125,7 @@ describe("useRefetch", () => {
     });
 
     it("should not fetch when fetch is not needed", () => {
-      mockUseLocation.mockReturnValue({ pathname: ROOT_ROUTES.ROOT });
+      mockUseLocation.mockReturnValue({ pathname: ROOT_ROUTES.WEEK });
       mockUseParams.mockReturnValue({});
 
       mockUseAppSelector
@@ -269,7 +269,7 @@ describe("useRefetch", () => {
 
   describe("Someday events handling", () => {
     it("should fetch someday events when SOCKET_SOMEDAY_EVENT_CHANGED reason", () => {
-      mockUseLocation.mockReturnValue({ pathname: ROOT_ROUTES.ROOT });
+      mockUseLocation.mockReturnValue({ pathname: ROOT_ROUTES.WEEK });
       mockUseParams.mockReturnValue({});
 
       const weekStart = "2024-01-15T00:00:00Z";
@@ -413,8 +413,8 @@ describe("useRefetch", () => {
       );
     });
 
-    it("should detect week view when pathname is /", () => {
-      mockUseLocation.mockReturnValue({ pathname: ROOT_ROUTES.ROOT });
+    it("should detect week view when pathname is /week", () => {
+      mockUseLocation.mockReturnValue({ pathname: ROOT_ROUTES.WEEK });
       mockUseParams.mockReturnValue({});
 
       const weekStart = "2024-01-15T00:00:00Z";

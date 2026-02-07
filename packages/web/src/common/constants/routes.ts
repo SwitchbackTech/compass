@@ -3,6 +3,7 @@ export const ROOT_ROUTES = {
   LOGOUT: "/logout",
   CLEANUP: "/cleanup",
   ROOT: "/",
+  WEEK: "/week",
   DAY: "/day",
   DAY_DATE: "/day/:dateString",
   NOW: "/now",

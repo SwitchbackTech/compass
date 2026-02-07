@@ -46,6 +46,10 @@ export async function loadDayData() {
   return redirect(`${ROOT_ROUTES.DAY}/${dateString}`);
 }
 
+export async function loadRootData() {
+  return redirect(ROOT_ROUTES.DAY);
+}
+
 export async function loadSpecificDayData({
   params,
 }: LoaderFunctionArgs<unknown>): Promise<DayLoaderData | Response> {

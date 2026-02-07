@@ -55,10 +55,10 @@ describe("useGlobalShortcuts", () => {
     expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
   });
 
-  it("should navigate to ROOT when '3' is pressed", () => {
+  it("should navigate to WEEK when '3' is pressed", () => {
     renderHook(() => useGlobalShortcuts());
     pressKey("3");
-    expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.ROOT);
+    expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.WEEK);
   });
 
   it("should navigate to LOGOUT when 'z' is pressed", () => {

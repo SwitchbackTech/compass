@@ -27,7 +27,7 @@ describe("SelectView", () => {
 
   const renderWithRouter = (
     component: React.ReactElement,
-    initialRoute: string = "/",
+    initialRoute: string = ROOT_ROUTES.WEEK,
   ) => {
     return render(
       <MemoryRouter
@@ -44,7 +44,7 @@ describe("SelectView", () => {
 
   describe("Component Rendering", () => {
     it("renders button with current view label for Week view", () => {
-      renderWithRouter(<SelectView />, ROOT_ROUTES.ROOT);
+      renderWithRouter(<SelectView />, ROOT_ROUTES.WEEK);
 
       const button = screen.getByRole("button");
       expect(button).toBeInTheDocument();
@@ -131,8 +131,8 @@ describe("SelectView", () => {
       expect(button).toHaveTextContent("Day");
     });
 
-    it("detects Week view when on / route", () => {
-      renderWithRouter(<SelectView />, ROOT_ROUTES.ROOT);
+    it("detects Week view when on /week route", () => {
+      renderWithRouter(<SelectView />, ROOT_ROUTES.WEEK);
 
       const button = screen.getByRole("button");
       expect(button).toHaveTextContent("Week");
@@ -329,7 +329,7 @@ describe("SelectView", () => {
         await user.click(weekOption);
       });
 
-      expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.ROOT);
+      expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.WEEK);
       expect(mockNavigate).toHaveBeenCalledTimes(1);
     });
 
@@ -417,7 +417,7 @@ describe("SelectView", () => {
   describe("Keyboard Navigation", () => {
     it("navigates to next option with ArrowDown", async () => {
       const user = userEvent.setup();
-      renderWithRouter(<SelectView />, ROOT_ROUTES.ROOT);
+      renderWithRouter(<SelectView />, ROOT_ROUTES.WEEK);
 
       const button = screen.getByRole("button");
       await act(async () => {
@@ -475,7 +475,7 @@ describe("SelectView", () => {
 
     it("selects highlighted option with Enter key", async () => {
       const user = userEvent.setup();
-      renderWithRouter(<SelectView />, ROOT_ROUTES.ROOT);
+      renderWithRouter(<SelectView />, ROOT_ROUTES.WEEK);
 
       const button = screen.getByRole("button");
       await act(async () => {
@@ -521,7 +521,7 @@ describe("SelectView", () => {
 
     it("selects highlighted option with Space key", async () => {
       const user = userEvent.setup();
-      renderWithRouter(<SelectView />, ROOT_ROUTES.ROOT);
+      renderWithRouter(<SelectView />, ROOT_ROUTES.WEEK);
 
       const button = screen.getByRole("button");
       await act(async () => {
@@ -586,7 +586,7 @@ describe("SelectView", () => {
 
     it("wraps navigation from last to first option", async () => {
       const user = userEvent.setup();
-      renderWithRouter(<SelectView />, ROOT_ROUTES.ROOT);
+      renderWithRouter(<SelectView />, ROOT_ROUTES.WEEK);
 
       const button = screen.getByRole("button");
       await act(async () => {
