@@ -9,10 +9,7 @@ import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
-import {
-  openEventFormCreateEvent,
-  openEventFormEditEvent,
-} from "@web/common/utils/event/event.util";
+import { openEventFormEditEvent } from "@web/common/utils/event/event.util";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
 import { ShortcutsOverlay } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
 import { Dedication } from "@web/views/Calendar/components/Dedication";
@@ -123,7 +120,6 @@ export const DayViewContent = memo(() => {
     onMigrateTask: migrateTask,
     onFocusTasks: focusOnFirstTask,
     onFocusAgenda: focusFirstAgendaEvent,
-    onCreateEvent: openEventFormCreateEvent,
     onEditEvent: openEventFormEditEvent,
     onNextDay: navigateToNextDay,
     onPrevDay: navigateToPreviousDay,

@@ -17,19 +17,19 @@ export function useGlobalShortcuts() {
   const navigate = useNavigate();
 
   useKeyUpEvent({
-    combination: ["1"],
+    combination: ["n"],
     deps: [navigate],
     handler: () => navigate(ROOT_ROUTES.NOW),
   });
 
   useKeyUpEvent({
-    combination: ["2"],
+    combination: ["d"],
     deps: [navigate],
     handler: () => navigate(ROOT_ROUTES.DAY),
   });
 
   useKeyUpEvent({
-    combination: ["3"],
+    combination: ["w"],
     deps: [navigate],
     handler: () => navigate(ROOT_ROUTES.WEEK),
   });

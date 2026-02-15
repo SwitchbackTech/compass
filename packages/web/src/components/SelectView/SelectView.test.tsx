@@ -103,9 +103,9 @@ describe("SelectView", () => {
 
       const shortcutHints = withinDropdown.getAllByTestId("shortcut-hint");
       expect(shortcutHints).toHaveLength(3);
-      expect(shortcutHints[0]).toHaveTextContent("1");
-      expect(shortcutHints[1]).toHaveTextContent("2");
-      expect(shortcutHints[2]).toHaveTextContent("3");
+      expect(shortcutHints[0]).toHaveTextContent("n");
+      expect(shortcutHints[1]).toHaveTextContent("d");
+      expect(shortcutHints[2]).toHaveTextContent("w");
     });
   });
 
@@ -359,7 +359,7 @@ describe("SelectView", () => {
   });
 
   describe("Shortcut Hints", () => {
-    it("displays 1 shortcut hint for Now option", async () => {
+    it("displays n shortcut hint for Now option", async () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
@@ -373,11 +373,11 @@ describe("SelectView", () => {
         const shortcutHint = nowOption.querySelector(
           '[data-testid="shortcut-hint"]',
         );
-        expect(shortcutHint).toHaveTextContent("1");
+        expect(shortcutHint).toHaveTextContent("n");
       });
     });
 
-    it("displays 2 shortcut hint for Day option", async () => {
+    it("displays d shortcut hint for Day option", async () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
@@ -391,11 +391,11 @@ describe("SelectView", () => {
         const shortcutHint = dayOption.querySelector(
           '[data-testid="shortcut-hint"]',
         );
-        expect(shortcutHint).toHaveTextContent("2");
+        expect(shortcutHint).toHaveTextContent("d");
       });
     });
 
-    it("displays 3 shortcut hint for Week option", async () => {
+    it("displays w shortcut hint for Week option", async () => {
       const user = userEvent.setup();
       renderWithRouter(<SelectView />);
 
@@ -409,7 +409,7 @@ describe("SelectView", () => {
         const shortcutHint = weekOption.querySelector(
           '[data-testid="shortcut-hint"]',
         );
-        expect(shortcutHint).toHaveTextContent("3");
+        expect(shortcutHint).toHaveTextContent("w");
       });
     });
   });
