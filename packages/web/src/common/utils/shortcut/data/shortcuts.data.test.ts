@@ -8,9 +8,9 @@ describe("shortcuts.data", () => {
       const shortcuts = getShortcuts();
 
       expect(shortcuts.globalShortcuts).toHaveLength(6);
-      expect(shortcuts.globalShortcuts[0]).toEqual({ k: "1", label: "Now" });
-      expect(shortcuts.globalShortcuts[1]).toEqual({ k: "2", label: "Day" });
-      expect(shortcuts.globalShortcuts[2]).toEqual({ k: "3", label: "Week" });
+      expect(shortcuts.globalShortcuts[0]).toEqual({ k: "n", label: "Now" });
+      expect(shortcuts.globalShortcuts[1]).toEqual({ k: "d", label: "Day" });
+      expect(shortcuts.globalShortcuts[2]).toEqual({ k: "w", label: "Week" });
       expect(shortcuts.globalShortcuts[3]).toEqual({
         k: "r",
         label: "Edit reminder",
@@ -21,16 +21,12 @@ describe("shortcuts.data", () => {
         label: "Command Palette",
       });
 
-      expect(shortcuts.dayAgendaShortcuts).toHaveLength(3);
+      expect(shortcuts.dayAgendaShortcuts).toHaveLength(2);
       expect(shortcuts.dayAgendaShortcuts[0]).toEqual({
         k: "i",
         label: "Focus on calendar",
       });
       expect(shortcuts.dayAgendaShortcuts[1]).toEqual({
-        k: "n",
-        label: "Create event",
-      });
-      expect(shortcuts.dayAgendaShortcuts[2]).toEqual({
         k: "m",
         label: "Edit event",
       });

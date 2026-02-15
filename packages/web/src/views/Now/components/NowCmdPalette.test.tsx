@@ -72,23 +72,23 @@ describe("NowCmdPalette", () => {
 
   it("should display navigation items", () => {
     render(<NowCmdPalette />, { state: initialState });
-    expect(screen.getByText("Go to Day [2]")).toBeInTheDocument();
-    expect(screen.getByText("Go to Week [3]")).toBeInTheDocument();
+    expect(screen.getByText("Go to Day [d]")).toBeInTheDocument();
+    expect(screen.getByText("Go to Week [w]")).toBeInTheDocument();
     expect(screen.getByText("Edit Reminder [r]")).toBeInTheDocument();
     expect(screen.getByText("Re-do onboarding")).toBeInTheDocument();
     expect(screen.getByText("Log Out [z]")).toBeInTheDocument();
   });
 
-  it("should trigger pressKey('2') when 'Go to Day' is clicked", () => {
+  it("should trigger pressKey('d') when 'Go to Day' is clicked", () => {
     render(<NowCmdPalette />, { state: initialState });
-    fireEvent.click(screen.getByText("Go to Day [2]"));
-    expect(pressKey).toHaveBeenCalledWith("2");
+    fireEvent.click(screen.getByText("Go to Day [d]"));
+    expect(pressKey).toHaveBeenCalledWith("d");
   });
 
-  it("should trigger pressKey('3') when 'Go to Week' is clicked", () => {
+  it("should trigger pressKey('w') when 'Go to Week' is clicked", () => {
     render(<NowCmdPalette />, { state: initialState });
-    fireEvent.click(screen.getByText("Go to Week [3]"));
-    expect(pressKey).toHaveBeenCalledWith("3");
+    fireEvent.click(screen.getByText("Go to Week [w]"));
+    expect(pressKey).toHaveBeenCalledWith("w");
   });
 
   it("should trigger pressKey('r') when 'Edit Reminder' is clicked", () => {

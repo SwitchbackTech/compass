@@ -43,21 +43,21 @@ describe("useGlobalShortcuts", () => {
     (useNavigate as jest.Mock).mockReturnValue(mockNavigate);
   });
 
-  it("should navigate to NOW when '1' is pressed", () => {
+  it("should navigate to NOW when 'n' is pressed", () => {
     renderHook(() => useGlobalShortcuts());
-    pressKey("1");
+    pressKey("n");
     expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.NOW);
   });
 
-  it("should navigate to DAY when '2' is pressed", () => {
+  it("should navigate to DAY when 'd' is pressed", () => {
     renderHook(() => useGlobalShortcuts());
-    pressKey("2");
+    pressKey("d");
     expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
   });
 
-  it("should navigate to WEEK when '3' is pressed", () => {
+  it("should navigate to WEEK when 'w' is pressed", () => {
     renderHook(() => useGlobalShortcuts());
-    pressKey("3");
+    pressKey("w");
     expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.WEEK);
   });
 

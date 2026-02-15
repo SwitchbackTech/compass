@@ -91,9 +91,14 @@ export const SelectView = ({
   };
 
   const options = [
-    { route: ROOT_ROUTES.NOW, label: "Now", view: "Now" as const },
-    { route: ROOT_ROUTES.DAY, label: "Day", view: "Day" as const },
-    { route: ROOT_ROUTES.WEEK, label: "Week", view: "Week" as const },
+    { route: ROOT_ROUTES.NOW, label: "Now", view: "Now" as const, key: "n" },
+    { route: ROOT_ROUTES.DAY, label: "Day", view: "Day" as const, key: "d" },
+    {
+      route: ROOT_ROUTES.WEEK,
+      label: "Week",
+      view: "Week" as const,
+      key: "w",
+    },
   ];
 
   const dropdownId = "view-select-dropdown";
@@ -181,7 +186,7 @@ export const SelectView = ({
                 <ShortcutHint
                   className={`${isSelected ? "text-text-dark" : "text-text-light"}`}
                 >
-                  {index + 1}
+                  {option.key}
                 </ShortcutHint>
               </div>
             );

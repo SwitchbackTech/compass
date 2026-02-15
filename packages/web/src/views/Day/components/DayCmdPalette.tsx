@@ -36,19 +36,19 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
         items: [
           {
             id: "go-to-now",
-            children: "Go to Now [1]",
+            children: "Go to Now [n]",
             icon: "ClockIcon",
-            onClick: () => pressKey("1"),
+            onClick: () => pressKey("n"),
           },
           {
             id: "go-to-week",
-            children: "Go to Week [3]",
+            children: "Go to Week [w]",
             icon: "CalendarIcon",
-            onClick: () => pressKey("3"),
+            onClick: () => pressKey("w"),
           },
           {
             id: "create-event",
-            children: "Create event [n]",
+            children: "Create event",
             icon: "PlusIcon",
             onClick: () => queueMicrotask(openEventFormCreateEvent),
           },

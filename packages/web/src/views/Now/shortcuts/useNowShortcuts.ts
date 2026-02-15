@@ -23,7 +23,7 @@ interface Props {
 
 /**
  * Hook to handle keyboard shortcuts for the Now view
- * Handles both global navigation shortcuts (1, 2, 3) and task-specific shortcuts (j, k)
+ * Handles both global navigation shortcuts (n, d, w) and task-specific shortcuts (j, k)
  */
 export function useNowShortcuts(props?: Props) {
   const {

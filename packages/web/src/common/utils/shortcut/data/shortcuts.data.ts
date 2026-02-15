@@ -13,9 +13,9 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
   const { isHome = false, isToday = true, isNow = false, currentDate } = config;
 
   const globalShortcuts: Shortcut[] = [
-    { k: "1", label: "Now" },
-    { k: "2", label: "Day" },
-    { k: "3", label: "Week" },
+    { k: "n", label: "Now" },
+    { k: "d", label: "Day" },
+    { k: "w", label: "Week" },
     { k: "r", label: "Edit reminder" },
     { k: "z", label: "Logout" },
     { k: `${getModifierKey()}+k`, label: "Command Palette" },
@@ -59,7 +59,6 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
     ];
     dayAgendaShortcuts = [
       { k: "i", label: "Focus on calendar" },
-      { k: "n", label: "Create event" },
       { k: "m", label: "Edit event" },
     ];
   }
