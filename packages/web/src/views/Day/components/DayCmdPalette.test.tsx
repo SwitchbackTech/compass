@@ -86,9 +86,9 @@ describe("DayCmdPalette", () => {
     );
 
     expect(screen.getByText("Navigation")).toBeInTheDocument();
-    expect(screen.getByText("Go to Now [1]")).toBeInTheDocument();
-    expect(screen.getByText("Go to Week [3]")).toBeInTheDocument();
-    expect(screen.getByText("Create event [n]")).toBeInTheDocument();
+    expect(screen.getByText("Go to Now [n]")).toBeInTheDocument();
+    expect(screen.getByText("Go to Week [w]")).toBeInTheDocument();
+    expect(screen.getByText("Create event")).toBeInTheDocument();
     expect(screen.getByText("Edit event [m]")).toBeInTheDocument();
     expect(
       screen.getByText("Go to Today (Monday, November 24) [t]"),
@@ -138,7 +138,7 @@ describe("DayCmdPalette", () => {
       }),
     );
 
-    await act(() => user.click(screen.getByText("Go to Now [1]")));
+    await act(() => user.click(screen.getByText("Go to Now [n]")));
 
     expect(mockNavigate).toHaveBeenCalledWith("/now");
   });
@@ -151,7 +151,7 @@ describe("DayCmdPalette", () => {
       }),
     );
 
-    await act(() => user.click(screen.getByText("Go to Week [3]")));
+    await act(() => user.click(screen.getByText("Go to Week [w]")));
 
     expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.WEEK);
   });
@@ -233,7 +233,7 @@ describe("DayCmdPalette", () => {
     );
 
     const createEventBtn = await screen.findByRole("button", {
-      name: /create event \[n\]/i,
+      name: /create event/i,
     });
 
     await act(() => user.click(createEventBtn));
@@ -257,8 +257,8 @@ describe("DayCmdPalette", () => {
       await user.type(searchInput, "now");
     });
 
-    expect(screen.getByText("Go to Now [1]")).toBeInTheDocument();
-    expect(screen.queryByText("Go to Week [3]")).not.toBeInTheDocument();
+    expect(screen.getByText("Go to Now [n]")).toBeInTheDocument();
+    expect(screen.queryByText("Go to Week [w]")).not.toBeInTheDocument();
   });
 
   describe("Google Calendar authentication status", () => {
