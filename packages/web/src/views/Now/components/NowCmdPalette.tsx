@@ -27,15 +27,15 @@ export const NowCmdPalette = () => {
         items: [
           {
             id: "go-to-day",
-            children: "Go to Day [2]",
+            children: "Go to Day [d]",
             icon: "CalendarDaysIcon",
-            onClick: () => pressKey("2"),
+            onClick: () => pressKey("d"),
           },
           {
             id: "go-to-week",
-            children: "Go to Week [3]",
+            children: "Go to Week [w]",
             icon: "CalendarIcon",
-            onClick: () => pressKey("3"),
+            onClick: () => pressKey("w"),
           },
           {
             id: "edit-reminder",
