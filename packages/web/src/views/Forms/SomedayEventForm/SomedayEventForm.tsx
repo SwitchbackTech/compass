@@ -5,6 +5,7 @@ import { Categories_Event } from "@core/types/event.types";
 import { darken } from "@core/util/color.utils";
 import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
+import { isComboboxInteraction } from "@web/common/utils/form/form.util";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import {
@@ -39,11 +40,25 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     if (e.key === Key.Backspace) {
       e.stopPropagation();
     }
-    if (e.key === Key.Enter) {
-      if (e.metaKey) {
-        e.preventDefault();
-        _onSubmit();
-      }
+
+    if (e.key !== Key.Enter || e.defaultPrevented) {
+      return;
+    }
+
+    if (isComboboxInteraction(e.nativeEvent)) {
+      return;
+    }
+
+    const target = e.target as HTMLElement | null;
+    const isTextArea = target?.tagName === "TEXTAREA";
+
+    if (isTextArea && !e.metaKey) {
+      return;
+    }
+
+    if (e.metaKey || !isTextArea) {
+      e.preventDefault();
+      _onSubmit();
     }
   };
 
@@ -85,16 +100,25 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       onSetEventField({ [fieldName]: e.target.value });
     };
 
-  const onKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
-    if (e.key === Key.Backspace) {
-      e.stopPropagation();
-    }
-  };
-
   const onDelete = useCallback(() => {
     onDeleteEvent();
     onClose();
   }, [onDeleteEvent, onClose]);
+
+  const onKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
+    if (e.key === Key.Backspace) {
+      e.stopPropagation();
+      return;
+    }
+
+    if (e.defaultPrevented || e.key !== Key.Delete) {
+      return;
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+    onDelete();
+  };
 
   useSomedayFormShortcuts({
     event,

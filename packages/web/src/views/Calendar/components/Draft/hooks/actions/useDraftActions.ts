@@ -173,24 +173,25 @@ export const useDraftActions = (
     (
       applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
     ) => {
-      const { data: _title } = StringV4Schema.safeParse(reduxDraft?.title);
+      const eventToDelete = draft ?? reduxDraft;
+      const { data: _title } = StringV4Schema.safeParse(eventToDelete?.title);
       const title = _title ?? "this event";
       const usePrefix = applyTo === RecurringEventUpdateScope.ALL_EVENTS;
       const prefix = usePrefix ? "all instances of - " : "";
 
       const confirmed = window.confirm(`Delete ${prefix}${title}?`);
 
-      if (confirmed && reduxDraft?._id) {
+      if (confirmed && eventToDelete?._id) {
         dispatch(
           deleteEventSlice.actions.request({
-            _id: reduxDraft._id,
+            _id: eventToDelete._id,
             applyTo,
           }),
         );
       }
       discard();
     },
-    [dispatch, reduxDraft?._id, reduxDraft?.title, discard],
+    [dispatch, draft, reduxDraft, discard],
   );
 
   const convert = useCallback(
