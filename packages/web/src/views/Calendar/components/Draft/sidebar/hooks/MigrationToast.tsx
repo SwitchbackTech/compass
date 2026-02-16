@@ -1,6 +1,6 @@
 import React from "react";
 import { toast } from "react-toastify";
-import { toastDefaultOptions } from "@web/views/Day/components/Toasts";
+import { toastDefaultOptions } from "@web/common/constants/toast.constants";
 
 interface Props {
   targetMonthName: string;

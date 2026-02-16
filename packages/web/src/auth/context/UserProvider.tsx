@@ -4,9 +4,9 @@ import { toast } from "react-toastify";
 import { Status } from "@core/errors/status.codes";
 import { UserProfile } from "@core/types/user.types";
 import { UserApi } from "@web/common/apis/user.api";
+import { toastDefaultOptions } from "@web/common/constants/toast.constants";
 import { hasUserEverAuthenticated } from "@web/common/utils/storage/auth-state.util";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
-import { toastDefaultOptions } from "@web/views/Day/components/Toasts";
 import { UserContext } from "./UserContext";
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {

@@ -15,12 +15,6 @@ import * as authStateUtil from "@web/common/utils/storage/auth-state.util";
 jest.mock("posthog-js/react");
 const mockUsePostHog = usePostHog as jest.MockedFunction<typeof usePostHog>;
 
-// Mock toasts
-jest.mock("react-toastify", () => ({
-  toast: {
-    error: jest.fn(),
-  },
-}));
 const mockToastError = toast.error as jest.MockedFunction<typeof toast.error>;
 
 // Mock auth state util

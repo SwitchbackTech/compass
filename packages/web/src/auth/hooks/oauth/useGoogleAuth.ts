@@ -4,6 +4,7 @@ import { useGoogleAuthWithOverlay } from "@web/auth/hooks/oauth/useGoogleAuthWit
 import { useIsSignupComplete } from "@web/auth/hooks/onboarding/useIsSignupComplete";
 import { useSkipOnboarding } from "@web/auth/hooks/onboarding/useSkipOnboarding";
 import { useSession } from "@web/auth/hooks/session/useSession";
+import { toastDefaultOptions } from "@web/common/constants/toast.constants";
 import {
   authenticate,
   fetchOnboardingStatus,
@@ -20,7 +21,6 @@ import {
   triggerFetch,
 } from "@web/ducks/events/slices/sync.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
-import { toastDefaultOptions } from "@web/views/Day/components/Toasts";
 
 export function useGoogleAuth() {
   const dispatch = useAppDispatch();
