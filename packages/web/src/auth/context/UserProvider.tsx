@@ -4,11 +4,7 @@ import { Status } from "@core/errors/status.codes";
 import { UserProfile } from "@core/types/user.types";
 import { UserApi } from "@web/common/apis/user.api";
 import { hasUserEverAuthenticated } from "@web/common/utils/storage/auth-state.util";
-import {
-  ErrorToastSeverity,
-  SESSION_EXPIRED_TOAST_ID,
-  showErrorToast,
-} from "@web/common/utils/toast/error-toast.util";
+import { showSessionExpiredToast } from "@web/common/utils/toast/error-toast.util";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { UserContext } from "./UserContext";
 
@@ -42,13 +38,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           status === Status.UNAUTHORIZED || status === Status.FORBIDDEN;
 
         if (isUnauthorized) {
-          showErrorToast(
-            "Session expired. Please log in again to reconnect Google Calendar.",
-            {
-              toastId: SESSION_EXPIRED_TOAST_ID,
-              severity: ErrorToastSeverity.CRITICAL,
-            },
-          );
+          showSessionExpiredToast();
           return;
         }
 

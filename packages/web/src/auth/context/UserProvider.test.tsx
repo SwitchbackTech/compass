@@ -236,7 +236,7 @@ describe("UserProvider", () => {
       });
 
       expect(mockToastError).toHaveBeenCalledWith(
-        "Session expired. Please log in again to reconnect Google Calendar.",
+        expect.any(Object),
         expect.objectContaining({
           toastId: "session-expired-api",
           autoClose: false,
