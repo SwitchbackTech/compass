@@ -4,6 +4,7 @@ import "react-cmdk/dist/cmdk.css";
 import dayjs from "@core/util/date/dayjs";
 import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
+import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import {
   openEventFormCreateEvent,
@@ -36,15 +37,15 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
         items: [
           {
             id: "go-to-now",
-            children: "Go to Now [n]",
+            children: `Go to Now [${VIEW_SHORTCUTS.now.key}]`,
             icon: "ClockIcon",
-            onClick: () => pressKey("n"),
+            onClick: () => pressKey(VIEW_SHORTCUTS.now.key),
           },
           {
             id: "go-to-week",
-            children: "Go to Week [w]",
+            children: `Go to Week [${VIEW_SHORTCUTS.week.key}]`,
             icon: "CalendarIcon",
-            onClick: () => pressKey("w"),
+            onClick: () => pressKey(VIEW_SHORTCUTS.week.key),
           },
           {
             id: "create-event",

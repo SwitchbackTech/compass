@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import {
   useKeyDownEvent,
   useKeyUpEvent,
@@ -17,21 +18,21 @@ export function useGlobalShortcuts() {
   const navigate = useNavigate();
 
   useKeyUpEvent({
-    combination: ["n"],
+    combination: [VIEW_SHORTCUTS.now.key],
     deps: [navigate],
-    handler: () => navigate(ROOT_ROUTES.NOW),
+    handler: () => navigate(VIEW_SHORTCUTS.now.route),
   });
 
   useKeyUpEvent({
-    combination: ["d"],
+    combination: [VIEW_SHORTCUTS.day.key],
     deps: [navigate],
-    handler: () => navigate(ROOT_ROUTES.DAY),
+    handler: () => navigate(VIEW_SHORTCUTS.day.route),
   });
 
   useKeyUpEvent({
-    combination: ["w"],
+    combination: [VIEW_SHORTCUTS.week.key],
     deps: [navigate],
-    handler: () => navigate(ROOT_ROUTES.WEEK),
+    handler: () => navigate(VIEW_SHORTCUTS.week.route),
   });
 
   useKeyUpEvent({

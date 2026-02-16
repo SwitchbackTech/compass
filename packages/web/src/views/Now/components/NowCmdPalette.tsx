@@ -3,6 +3,7 @@ import CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
 import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
+import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
@@ -27,15 +28,15 @@ export const NowCmdPalette = () => {
         items: [
           {
             id: "go-to-day",
-            children: "Go to Day [d]",
+            children: `Go to Day [${VIEW_SHORTCUTS.day.key}]`,
             icon: "CalendarDaysIcon",
-            onClick: () => pressKey("d"),
+            onClick: () => pressKey(VIEW_SHORTCUTS.day.key),
           },
           {
             id: "go-to-week",
-            children: "Go to Week [w]",
+            children: `Go to Week [${VIEW_SHORTCUTS.week.key}]`,
             icon: "CalendarIcon",
-            onClick: () => pressKey("w"),
+            onClick: () => pressKey(VIEW_SHORTCUTS.week.key),
           },
           {
             id: "edit-reminder",
