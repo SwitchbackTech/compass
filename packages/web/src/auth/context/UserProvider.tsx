@@ -1,11 +1,14 @@
 import { usePostHog } from "posthog-js/react";
 import { ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { toast } from "react-toastify";
 import { Status } from "@core/errors/status.codes";
 import { UserProfile } from "@core/types/user.types";
 import { UserApi } from "@web/common/apis/user.api";
-import { toastDefaultOptions } from "@web/common/constants/toast.constants";
 import { hasUserEverAuthenticated } from "@web/common/utils/storage/auth-state.util";
+import {
+  ErrorToastSeverity,
+  SESSION_EXPIRED_TOAST_ID,
+  showErrorToast,
+} from "@web/common/utils/toast/error-toast.util";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { UserContext } from "./UserContext";
 
@@ -39,11 +42,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           status === Status.UNAUTHORIZED || status === Status.FORBIDDEN;
 
         if (isUnauthorized) {
-          toast.error(
+          showErrorToast(
             "Session expired. Please log in again to reconnect Google Calendar.",
             {
-              ...toastDefaultOptions,
-              toastId: "profile-session-expired",
+              toastId: SESSION_EXPIRED_TOAST_ID,
+              severity: ErrorToastSeverity.CRITICAL,
             },
           );
           return;

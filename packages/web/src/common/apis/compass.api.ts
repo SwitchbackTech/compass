@@ -3,18 +3,32 @@ import { Status } from "@core/errors/status.codes";
 import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import {
+  ErrorToastSeverity,
+  SESSION_EXPIRED_TOAST_ID,
+  showErrorToast,
+} from "@web/common/utils/toast/error-toast.util";
 
 export const CompassApi = axios.create({
   baseURL: ENV_WEB.API_BASEURL,
 });
 
 type SignoutStatus = Status.UNAUTHORIZED | Status.NOT_FOUND | Status.GONE;
+
 const _signOut = async (status: SignoutStatus) => {
   // since there are currently duplicate event fetches,
   // this prevents triggering a separate alert for each fetch
   // this can be removed once we have logic to cancel subsequent requests
   // after one failed
-  if (status !== Status.UNAUTHORIZED) {
+  if (status === Status.UNAUTHORIZED) {
+    showErrorToast(
+      "Session expired. Please log in again to reconnect Google Calendar.",
+      {
+        toastId: SESSION_EXPIRED_TOAST_ID,
+        severity: ErrorToastSeverity.CRITICAL,
+      },
+    );
+  } else {
     alert("Login required, cuz security 😇");
   }
 
@@ -47,7 +61,11 @@ CompassApi.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    if (status === Status.GONE || status === Status.NOT_FOUND) {
+    if (
+      status === Status.GONE ||
+      status === Status.NOT_FOUND ||
+      status === Status.UNAUTHORIZED
+    ) {
       await _signOut(status);
     } else {
       console.error(error);

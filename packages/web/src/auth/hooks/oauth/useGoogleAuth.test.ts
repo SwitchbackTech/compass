@@ -27,6 +27,7 @@ jest.mock("react-router-dom", () => ({
 }));
 jest.mock("react-toastify", () => ({
   toast: Object.assign(jest.fn(), {
+    dismiss: jest.fn(),
     error: jest.fn(),
     success: jest.fn(),
   }),
@@ -168,7 +169,7 @@ describe("useGoogleAuth", () => {
   });
 
   describe("onStart callback", () => {
-    it("shows overlay immediately when login starts", () => {
+    it("shows overlay immediately when login starts and clears session-expired toast", () => {
       mockUseGoogleLogin.mockReturnValue({
         login: mockLogin,
         loading: false,
@@ -189,6 +190,8 @@ describe("useGoogleAuth", () => {
           payload: true,
         }),
       );
+      const { toast } = jest.requireMock("react-toastify");
+      expect(toast.dismiss).toHaveBeenCalledWith("session-expired-api");
     });
   });
 

@@ -12,6 +12,10 @@ import {
 } from "@web/common/utils/auth/google-auth.util";
 import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
 import {
+  SESSION_EXPIRED_TOAST_ID,
+  dismissErrorToast,
+} from "@web/common/utils/toast/error-toast.util";
+import {
   authError,
   authSuccess,
   startAuthenticating,
@@ -30,6 +34,7 @@ export function useGoogleAuth() {
 
   const googleLogin = useGoogleAuthWithOverlay({
     onStart: () => {
+      dismissErrorToast(SESSION_EXPIRED_TOAST_ID);
       dispatch(startAuthenticating());
       dispatch(importGCalSlice.actions.setAwaitingImportResults(true));
       dispatch(importGCalSlice.actions.clearImportResults(undefined));

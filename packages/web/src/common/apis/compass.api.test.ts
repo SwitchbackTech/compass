@@ -4,6 +4,7 @@ import type {
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from "axios";
+import { toast } from "react-toastify";
 import { signOut } from "supertokens-web-js/recipe/session";
 import { Status } from "@core/errors/status.codes";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
@@ -62,6 +63,7 @@ describe("CompassApi interceptor auth handling", () => {
     assignMock.mockReset();
     reloadMock.mockReset();
     (signOut as jest.Mock).mockResolvedValue(undefined);
+    (toast.isActive as jest.Mock).mockReturnValue(false);
     setLocationPath(ROOT_ROUTES.NOW);
     jest.spyOn(window, "alert").mockImplementation(() => undefined);
     jest.spyOn(console, "error").mockImplementation(() => undefined);
@@ -89,6 +91,34 @@ describe("CompassApi interceptor auth handling", () => {
 
     expect(signOut).toHaveBeenCalledTimes(1);
     expect(assignMock).not.toHaveBeenCalled();
+  });
+
+  it("shows session-expired toast and signs out on unauthorized", async () => {
+    await triggerErrorResponse(Status.UNAUTHORIZED);
+
+    expect(toast.error).toHaveBeenCalledWith(
+      "Session expired. Please log in again to reconnect Google Calendar.",
+      expect.objectContaining({
+        toastId: "session-expired-api",
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+      }),
+    );
+    expect(window.alert).not.toHaveBeenCalled();
+    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(assignMock).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
+  });
+
+  it("does not enqueue duplicate session-expired toasts when already active", async () => {
+    (toast.isActive as jest.Mock)
+      .mockReturnValueOnce(false)
+      .mockReturnValue(true);
+
+    await triggerErrorResponse(Status.UNAUTHORIZED);
+    await triggerErrorResponse(Status.UNAUTHORIZED);
+
+    expect(toast.error).toHaveBeenCalledTimes(1);
   });
 
   it("reloads the page when redux refresh is needed", async () => {
