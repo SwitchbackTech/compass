@@ -236,7 +236,9 @@ describe("UserProvider", () => {
         }
       });
 
-      expect(mockToastError).toHaveBeenCalledWith(
+      expect(mockToastError).toHaveBeenCalled();
+      const latestToastCall = mockToastError.mock.calls.at(-1);
+      expect(latestToastCall?.[1]).toEqual(
         expect.objectContaining({
           toastId: "session-expired-api",
           autoClose: false,
@@ -244,7 +246,8 @@ describe("UserProvider", () => {
           draggable: false,
         }),
       );
-      const toastContent = mockToastError.mock.calls[0][0];
+
+      const toastContent = latestToastCall?.[0];
       expect(isValidElement(toastContent)).toBe(true);
       if (isValidElement(toastContent)) {
         expect(toastContent.type).toBe(SessionExpiredToast);
