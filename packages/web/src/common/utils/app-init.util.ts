@@ -1,9 +1,11 @@
 import { toast } from "react-toastify";
 import { initializeDatabase } from "@web/common/utils/storage/db-init.util";
+import { migrateTasksFromLocalStorageToIndexedDB } from "@web/common/utils/storage/task-migration.util";
 import { DatabaseInitError } from "./storage/db-errors.util";
 
 export interface AppInitResult {
   dbInitError: DatabaseInitError | null;
+  tasksMigrated: number;
 }
 
 /**
@@ -12,9 +14,13 @@ export interface AppInitResult {
  */
 export async function initializeDatabaseWithErrorHandling(): Promise<AppInitResult> {
   let dbInitError: DatabaseInitError | null = null;
+  let tasksMigrated = 0;
 
   try {
     await initializeDatabase();
+
+    // After database is ready, migrate tasks from localStorage to IndexedDB
+    tasksMigrated = await migrateTasksFromLocalStorageToIndexedDB();
   } catch (error) {
     if (error instanceof DatabaseInitError) {
       dbInitError = error;
@@ -23,7 +29,7 @@ export async function initializeDatabaseWithErrorHandling(): Promise<AppInitResu
     // by falling back to remote-only mode when authenticated
   }
 
-  return { dbInitError };
+  return { dbInitError, tasksMigrated };
 }
 
 /**

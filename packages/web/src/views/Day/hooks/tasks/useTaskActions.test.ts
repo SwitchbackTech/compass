@@ -1,15 +1,14 @@
 import dayjs from "dayjs";
 import { act, renderHook } from "@testing-library/react";
 import { Task } from "../../../../common/types/task.types";
-import * as storageUtil from "../../../../common/utils/storage/storage.util";
+import * as taskStorageUtil from "../../../../common/utils/storage/task.storage.util";
 import { showMigrationToast } from "../../components/Toasts/MigrationToast/MigrationToast";
 import { useTaskActions } from "./useTaskActions";
 
-jest.mock("../../../../common/utils/storage/storage.util", () => ({
-  ...jest.requireActual("../../../../common/utils/storage/storage.util"),
-  loadTasksFromStorage: jest.fn(),
-  saveTasksToStorage: jest.fn(),
-  moveTaskToDate: jest.fn(),
+jest.mock("../../../../common/utils/storage/task.storage.util", () => ({
+  loadTasksFromIndexedDB: jest.fn().mockResolvedValue([]),
+  saveTasksToIndexedDB: jest.fn().mockResolvedValue(undefined),
+  moveTaskBetweenDates: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock("../../components/Toasts/MigrationToast/MigrationToast", () => ({
@@ -34,14 +33,17 @@ describe("useTaskActions - migration", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue([]);
+    (taskStorageUtil.loadTasksFromIndexedDB as jest.Mock).mockResolvedValue([]);
+    (taskStorageUtil.saveTasksToIndexedDB as jest.Mock).mockResolvedValue(
+      undefined,
+    );
+    (taskStorageUtil.moveTaskBetweenDates as jest.Mock).mockResolvedValue(
+      undefined,
+    );
     (showMigrationToast as jest.Mock).mockReturnValue("toast-id-123");
-    // Setup localStorage mock
-    Storage.prototype.getItem = jest.fn();
-    Storage.prototype.setItem = jest.fn();
   });
 
-  it("migrates task forward one day", () => {
+  it("migrates task forward one day", async () => {
     const { result } = renderHook(() =>
       useTaskActions({
         setTasks: mockSetTasks,
@@ -74,8 +76,8 @@ describe("useTaskActions - migration", () => {
     const updatedTasks = setTasksCall([mockTask]);
     expect(updatedTasks).toEqual([]);
 
-    // Should move task from current date to next date
-    expect(storageUtil.moveTaskToDate).toHaveBeenCalledWith(
+    // Should move task from current date to next date (async call)
+    expect(taskStorageUtil.moveTaskBetweenDates).toHaveBeenCalledWith(
       mockTask,
       "2025-10-27",
       "2025-10-28",
@@ -92,7 +94,7 @@ describe("useTaskActions - migration", () => {
     expect(mockSetUndoToastId).toHaveBeenCalledWith("toast-id-123");
   });
 
-  it("migrates task backward one day", () => {
+  it("migrates task backward one day", async () => {
     const { result } = renderHook(() =>
       useTaskActions({
         setTasks: mockSetTasks,
@@ -125,8 +127,8 @@ describe("useTaskActions - migration", () => {
     const updatedTasks = setTasksCall([mockTask]);
     expect(updatedTasks).toEqual([]);
 
-    // Should move task from current date to previous date
-    expect(storageUtil.moveTaskToDate).toHaveBeenCalledWith(
+    // Should move task from current date to previous date (async call)
+    expect(taskStorageUtil.moveTaskBetweenDates).toHaveBeenCalledWith(
       mockTask,
       "2025-10-27",
       "2025-10-26",

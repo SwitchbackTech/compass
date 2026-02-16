@@ -3,12 +3,12 @@ import { useCallback } from "react";
 import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
 import { Task, UndoOperation } from "../../../../common/types/task.types";
+import { getDateKey } from "../../../../common/utils/storage/storage.util";
 import {
-  getDateKey,
-  loadTasksFromStorage,
-  moveTaskToDate,
-  saveTasksToStorage,
-} from "../../../../common/utils/storage/storage.util";
+  loadTasksFromIndexedDB,
+  moveTaskBetweenDates,
+  saveTasksToIndexedDB,
+} from "../../../../common/utils/storage/task.storage.util";
 import { sortTasksByStatus } from "../../../../common/utils/task/sort.task";
 import { showMigrationToast } from "../../components/Toasts/MigrationToast/MigrationToast";
 import { showUndoDeleteToast } from "../../components/Toasts/UndoToast/UndoDeleteToast";
@@ -114,19 +114,29 @@ export function useTaskActions({
         );
         const targetDateKey = getDateKey(targetDate.toDate());
 
-        // Remove the task from the target date in storage
-        const targetDateTasks = loadTasksFromStorage(targetDateKey);
-        const updatedTargetTasks = targetDateTasks.filter(
-          (t: Task) => t.id !== undoState.task.id,
-        );
-        saveTasksToStorage(targetDateKey, updatedTargetTasks);
+        // Async storage operations (fire and forget since we're in a callback)
+        const restoreInStorage = async () => {
+          try {
+            // Remove the task from the target date in storage
+            const targetDateTasks = await loadTasksFromIndexedDB(targetDateKey);
+            const updatedTargetTasks = targetDateTasks.filter(
+              (t: Task) => t.id !== undoState.task.id,
+            );
+            await saveTasksToIndexedDB(targetDateKey, updatedTargetTasks);
 
-        // Restore the task to the original date in storage
-        const originalDateTasks = loadTasksFromStorage(undoState.fromDate);
-        saveTasksToStorage(undoState.fromDate, [
-          ...originalDateTasks,
-          undoState.task,
-        ]);
+            // Restore the task to the original date in storage
+            const originalDateTasks = await loadTasksFromIndexedDB(
+              undoState.fromDate!,
+            );
+            await saveTasksToIndexedDB(undoState.fromDate!, [
+              ...originalDateTasks,
+              undoState.task,
+            ]);
+          } catch (error) {
+            console.error("Failed to restore task in IndexedDB:", error);
+          }
+        };
+        restoreInStorage();
       }
     }
 
@@ -282,8 +292,12 @@ export function useTaskActions({
         direction,
       });
 
-      // Move task in storage
-      moveTaskToDate(taskToMigrate, currentDateKey, targetDateKey);
+      // Move task in storage (async, fire and forget)
+      moveTaskBetweenDates(taskToMigrate, currentDateKey, targetDateKey).catch(
+        (error) => {
+          console.error("Failed to move task in IndexedDB:", error);
+        },
+      );
 
       // Remove from current view
       setTasks((prev) => prev.filter((task) => task.id !== taskId));

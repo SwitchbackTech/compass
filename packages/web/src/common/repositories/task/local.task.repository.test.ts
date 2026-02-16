@@ -3,29 +3,36 @@ import {
   createTestTasks,
 } from "@web/__tests__/utils/repositories/repository.test.factory";
 import {
-  loadTasksFromStorage,
-  saveTasksToStorage,
-} from "@web/common/utils/storage/storage.util";
+  deleteTaskFromIndexedDB,
+  loadTasksFromIndexedDB,
+  saveTasksToIndexedDB,
+} from "@web/common/utils/storage/task.storage.util";
 import { LocalTaskRepository } from "./local.task.repository";
 
-jest.mock("@web/common/utils/storage/storage.util");
+jest.mock("@web/common/utils/storage/task.storage.util");
 
 describe("LocalTaskRepository", () => {
   let repository: LocalTaskRepository;
-  const mockLoadTasks = loadTasksFromStorage as jest.MockedFunction<
-    typeof loadTasksFromStorage
+  const mockLoadTasks = loadTasksFromIndexedDB as jest.MockedFunction<
+    typeof loadTasksFromIndexedDB
   >;
-  const mockSaveTasks = saveTasksToStorage as jest.MockedFunction<
-    typeof saveTasksToStorage
+  const mockSaveTasks = saveTasksToIndexedDB as jest.MockedFunction<
+    typeof saveTasksToIndexedDB
+  >;
+  const mockDeleteTask = deleteTaskFromIndexedDB as jest.MockedFunction<
+    typeof deleteTaskFromIndexedDB
   >;
 
   beforeEach(() => {
     repository = new LocalTaskRepository();
     jest.clearAllMocks();
+    mockLoadTasks.mockResolvedValue([]);
+    mockSaveTasks.mockResolvedValue(undefined);
+    mockDeleteTask.mockResolvedValue(undefined);
   });
 
   describe("get", () => {
-    it("should load tasks from storage", () => {
+    it("should load tasks from IndexedDB", async () => {
       const dateKey = "2024-01-01";
       const mockTasks = [
         createTestTask({
@@ -34,20 +41,20 @@ describe("LocalTaskRepository", () => {
         }),
       ];
 
-      mockLoadTasks.mockReturnValue(mockTasks);
+      mockLoadTasks.mockResolvedValue(mockTasks);
 
-      const result = repository.get(dateKey);
+      const result = await repository.get(dateKey);
 
       expect(mockLoadTasks).toHaveBeenCalledWith(dateKey);
       expect(mockLoadTasks).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockTasks);
     });
 
-    it("should return empty array when no tasks exist", () => {
+    it("should return empty array when no tasks exist", async () => {
       const dateKey = "2024-01-01";
-      mockLoadTasks.mockReturnValue([]);
+      mockLoadTasks.mockResolvedValue([]);
 
-      const result = repository.get(dateKey);
+      const result = await repository.get(dateKey);
 
       expect(mockLoadTasks).toHaveBeenCalledWith(dateKey);
       expect(result).toEqual([]);
@@ -55,7 +62,7 @@ describe("LocalTaskRepository", () => {
   });
 
   describe("save", () => {
-    it("should save tasks to storage", () => {
+    it("should save tasks to IndexedDB", async () => {
       const dateKey = "2024-01-01";
       const tasks = [
         createTestTask({
@@ -64,74 +71,42 @@ describe("LocalTaskRepository", () => {
         }),
       ];
 
-      repository.save(dateKey, tasks);
+      await repository.save(dateKey, tasks);
 
       expect(mockSaveTasks).toHaveBeenCalledWith(dateKey, tasks);
       expect(mockSaveTasks).toHaveBeenCalledTimes(1);
     });
 
-    it("should save empty array", () => {
+    it("should save empty array", async () => {
       const dateKey = "2024-01-01";
       const tasks: ReturnType<typeof createTestTask>[] = [];
 
-      repository.save(dateKey, tasks);
+      await repository.save(dateKey, tasks);
 
       expect(mockSaveTasks).toHaveBeenCalledWith(dateKey, tasks);
     });
   });
 
   describe("delete", () => {
-    it("should delete a task by id", () => {
+    it("should delete a task by id", async () => {
       const dateKey = "2024-01-01";
-      const tasks = createTestTasks(2, {
-        id: undefined, // Let factory generate IDs
-      }).map((task, index) => ({
-        ...task,
-        id: `task-${index + 1}`,
-        title: `Task ${index + 1}`,
-        order: index,
-      }));
 
-      mockLoadTasks.mockReturnValue(tasks);
+      await repository.delete(dateKey, "task-1");
 
-      repository.delete(dateKey, "task-1");
-
-      expect(mockLoadTasks).toHaveBeenCalledWith(dateKey);
-      expect(mockSaveTasks).toHaveBeenCalledWith(dateKey, [
-        expect.objectContaining({ id: "task-2" }),
-      ]);
+      expect(mockDeleteTask).toHaveBeenCalledWith("task-1");
     });
 
-    it("should handle deleting non-existent task", () => {
+    it("should handle deleting non-existent task", async () => {
       const dateKey = "2024-01-01";
-      const tasks = [
-        createTestTask({
-          id: "task-1",
-          title: "Task 1",
-        }),
-      ];
 
-      mockLoadTasks.mockReturnValue(tasks);
+      await repository.delete(dateKey, "non-existent");
 
-      repository.delete(dateKey, "non-existent");
-
-      expect(mockLoadTasks).toHaveBeenCalledWith(dateKey);
-      expect(mockSaveTasks).toHaveBeenCalledWith(dateKey, tasks);
-    });
-
-    it("should handle deleting from empty task list", () => {
-      const dateKey = "2024-01-01";
-      mockLoadTasks.mockReturnValue([]);
-
-      repository.delete(dateKey, "task-1");
-
-      expect(mockLoadTasks).toHaveBeenCalledWith(dateKey);
-      expect(mockSaveTasks).toHaveBeenCalledWith(dateKey, []);
+      expect(mockDeleteTask).toHaveBeenCalledWith("non-existent");
     });
   });
 
   describe("reorder", () => {
-    it("should reorder tasks and update order values for todo tasks", () => {
+    it("should reorder tasks and update order values for todo tasks", async () => {
       const dateKey = "2024-01-01";
       const tasks = createTestTasks(3, {
         status: "todo",
@@ -142,9 +117,9 @@ describe("LocalTaskRepository", () => {
         order: index,
       }));
 
-      mockLoadTasks.mockReturnValue(tasks);
+      mockLoadTasks.mockResolvedValue(tasks);
 
-      repository.reorder(dateKey, 0, 2);
+      await repository.reorder(dateKey, 0, 2);
 
       expect(mockLoadTasks).toHaveBeenCalledWith(dateKey);
       expect(mockSaveTasks).toHaveBeenCalled();
@@ -163,7 +138,7 @@ describe("LocalTaskRepository", () => {
       expect(savedTasks[2].order).toBe(2);
     });
 
-    it("should update order separately for todo and completed tasks", () => {
+    it("should update order separately for todo and completed tasks", async () => {
       const dateKey = "2024-01-01";
       const todoTasks = createTestTasks(2, {
         status: "todo",
@@ -185,9 +160,9 @@ describe("LocalTaskRepository", () => {
 
       const tasks = [...todoTasks, ...completedTasks];
 
-      mockLoadTasks.mockReturnValue(tasks);
+      mockLoadTasks.mockResolvedValue(tasks);
 
-      repository.reorder(dateKey, 0, 1);
+      await repository.reorder(dateKey, 0, 1);
 
       expect(mockLoadTasks).toHaveBeenCalledWith(dateKey);
       expect(mockSaveTasks).toHaveBeenCalled();
@@ -195,19 +170,21 @@ describe("LocalTaskRepository", () => {
       const savedTasks = savedCall[1];
 
       // Todo tasks should have order 0, 1
-      const savedTodoTasks = savedTasks.filter((t) => t.status === "todo");
+      const savedTodoTasks = savedTasks.filter(
+        (t: { status: string }) => t.status === "todo",
+      );
       expect(savedTodoTasks[0].order).toBe(0);
       expect(savedTodoTasks[1].order).toBe(1);
 
       // Completed tasks should have order 0, 1
       const savedCompletedTasks = savedTasks.filter(
-        (t) => t.status === "completed",
+        (t: { status: string }) => t.status === "completed",
       );
       expect(savedCompletedTasks[0].order).toBe(0);
       expect(savedCompletedTasks[1].order).toBe(1);
     });
 
-    it("should handle reordering within completed tasks", () => {
+    it("should handle reordering within completed tasks", async () => {
       const dateKey = "2024-01-01";
       const tasks = createTestTasks(2, {
         status: "completed",
@@ -218,9 +195,9 @@ describe("LocalTaskRepository", () => {
         order: index,
       }));
 
-      mockLoadTasks.mockReturnValue(tasks);
+      mockLoadTasks.mockResolvedValue(tasks);
 
-      repository.reorder(dateKey, 0, 1);
+      await repository.reorder(dateKey, 0, 1);
 
       const savedCall = mockSaveTasks.mock.calls[0];
       const savedTasks = savedCall[1];
