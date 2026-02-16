@@ -23,9 +23,13 @@ import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGloba
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
   useNavigate: jest.fn(),
+  useLocation: jest.fn(),
 }));
 
+const { useLocation } = jest.requireMock("react-router-dom");
+
 const mockNavigate = jest.fn();
+const mockLocation = (pathname: string) => ({ pathname });
 
 const createTestStore = () => {
   const store = configureStore({
@@ -41,24 +45,56 @@ describe("useGlobalShortcuts", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (useNavigate as jest.Mock).mockReturnValue(mockNavigate);
+    (useLocation as jest.Mock).mockReturnValue(mockLocation("/"));
   });
 
-  it("should navigate to NOW when 'n' is pressed", () => {
+  it("should navigate to NOW when 'n' is pressed from different route", () => {
+    (useLocation as jest.Mock).mockReturnValue(mockLocation("/week"));
     renderHook(() => useGlobalShortcuts());
     pressKey("n");
     expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.NOW);
   });
 
-  it("should navigate to DAY when 'd' is pressed", () => {
+  it("should NOT navigate to NOW when 'n' is pressed from NOW route", () => {
+    (useLocation as jest.Mock).mockReturnValue(mockLocation(ROOT_ROUTES.NOW));
+    renderHook(() => useGlobalShortcuts());
+    pressKey("n");
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it("should navigate to DAY when 'd' is pressed from different route", () => {
+    (useLocation as jest.Mock).mockReturnValue(mockLocation("/week"));
     renderHook(() => useGlobalShortcuts());
     pressKey("d");
     expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
   });
 
-  it("should navigate to WEEK when 'w' is pressed", () => {
+  it("should NOT navigate to DAY when 'd' is pressed from DAY route", () => {
+    (useLocation as jest.Mock).mockReturnValue(mockLocation(ROOT_ROUTES.DAY));
+    renderHook(() => useGlobalShortcuts());
+    pressKey("d");
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it("should NOT navigate to DAY when 'd' is pressed from DAY date route", () => {
+    (useLocation as jest.Mock).mockReturnValue(mockLocation("/day/2024-01-15"));
+    renderHook(() => useGlobalShortcuts());
+    pressKey("d");
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it("should navigate to WEEK when 'w' is pressed from different route", () => {
+    (useLocation as jest.Mock).mockReturnValue(mockLocation("/now"));
     renderHook(() => useGlobalShortcuts());
     pressKey("w");
     expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.WEEK);
+  });
+
+  it("should NOT navigate to WEEK when 'w' is pressed from WEEK route", () => {
+    (useLocation as jest.Mock).mockReturnValue(mockLocation(ROOT_ROUTES.WEEK));
+    renderHook(() => useGlobalShortcuts());
+    pressKey("w");
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it("should navigate to LOGOUT when 'z' is pressed", () => {
