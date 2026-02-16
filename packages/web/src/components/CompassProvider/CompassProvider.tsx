@@ -4,7 +4,6 @@ import { Provider } from "react-redux";
 import { ToastContainer } from "react-toastify";
 import { ThemeProvider } from "styled-components";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { SessionExpiredReauthBridge } from "@web/auth/components/SessionExpiredReauthBridge";
 import { SessionProvider } from "@web/auth/session/SessionProvider";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { CompassRefsProvider } from "@web/common/context/compass-refs";
@@ -29,7 +28,6 @@ export const CompassRequiredProviders = (
           <ThemeProvider theme={theme}>
             <PointerPositionProvider>
               <DNDContext>
-                <SessionExpiredReauthBridge />
                 <IconProvider>{props.children}</IconProvider>
 
                 <ToastContainer

@@ -1,16 +1,15 @@
 import { Id, toast } from "react-toastify";
+import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
 
 interface SessionExpiredToastProps {
-  onReconnect: () => void;
   toastId: Id;
 }
 
-export const SessionExpiredToast = ({
-  onReconnect,
-  toastId,
-}: SessionExpiredToastProps) => {
+export const SessionExpiredToast = ({ toastId }: SessionExpiredToastProps) => {
+  const { login } = useGoogleAuth();
+
   const handleReconnect = () => {
-    onReconnect();
+    login();
     toast.dismiss(toastId);
   };
 

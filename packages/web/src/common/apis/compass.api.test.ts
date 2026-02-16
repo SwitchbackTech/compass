@@ -10,9 +10,22 @@ import { Status } from "@core/errors/status.codes";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { CompassApi } from "./compass.api";
 
-jest.mock("supertokens-web-js/recipe/session", () => ({
-  signOut: jest.fn(),
-}));
+jest.mock("supertokens-web-js/recipe/session", () => {
+  const actual = jest.requireActual("supertokens-web-js/recipe/session");
+  const mockedDefault = {
+    ...actual.default,
+    doesSessionExist: jest.fn(),
+    signOut: jest.fn(),
+  };
+
+  return {
+    __esModule: true,
+    ...actual,
+    default: mockedDefault,
+    doesSessionExist: mockedDefault.doesSessionExist,
+    signOut: mockedDefault.signOut,
+  };
+});
 
 const assignMock = jest.fn();
 const reloadMock = jest.fn();

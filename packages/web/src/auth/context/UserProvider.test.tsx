@@ -1,6 +1,6 @@
 import { rest } from "msw";
 import { usePostHog } from "posthog-js/react";
-import { act } from "react";
+import { act, isValidElement } from "react";
 import { toast } from "react-toastify";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
@@ -10,6 +10,7 @@ import { UserProvider } from "@web/auth/context/UserProvider";
 import { UserApi } from "@web/common/apis/user.api";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import * as authStateUtil from "@web/common/utils/storage/auth-state.util";
+import { SessionExpiredToast } from "@web/common/utils/toast/session-expired.toast";
 
 // Mock PostHog
 jest.mock("posthog-js/react");
@@ -236,7 +237,6 @@ describe("UserProvider", () => {
       });
 
       expect(mockToastError).toHaveBeenCalledWith(
-        expect.any(Object),
         expect.objectContaining({
           toastId: "session-expired-api",
           autoClose: false,
@@ -244,6 +244,12 @@ describe("UserProvider", () => {
           draggable: false,
         }),
       );
+      const toastContent = mockToastError.mock.calls[0][0];
+      expect(isValidElement(toastContent)).toBe(true);
+      if (isValidElement(toastContent)) {
+        expect(toastContent.type).toBe(SessionExpiredToast);
+        expect(toastContent.props.toastId).toBe("session-expired-api");
+      }
 
       // Should not call identify
       expect(mockIdentify).not.toHaveBeenCalled();
