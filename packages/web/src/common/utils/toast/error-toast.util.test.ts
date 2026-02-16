@@ -1,8 +1,10 @@
+import { createElement, isValidElement } from "react";
 import { toast } from "react-toastify";
 import {
   ErrorToastSeverity,
   dismissErrorToast,
   showErrorToast,
+  showSessionExpiredToast,
 } from "@web/common/utils/toast/error-toast.util";
 
 jest.mock("react-toastify", () => ({
@@ -40,6 +42,15 @@ describe("error-toast util", () => {
     );
   });
 
+  it("accepts React components as toast content", () => {
+    const content = createElement("span", null, "Custom toast content");
+
+    showErrorToast(content);
+
+    expect(mockToastError).toHaveBeenCalledTimes(1);
+    expect(isValidElement(mockToastError.mock.calls[0][0])).toBe(true);
+  });
+
   it("shows a critical toast that requires user interaction to close", () => {
     showErrorToast("A critical error occurred", {
       toastId: "critical-error",
@@ -73,5 +84,20 @@ describe("error-toast util", () => {
     dismissErrorToast("session-expired-api");
 
     expect(mockToastDismiss).toHaveBeenCalledWith("session-expired-api");
+  });
+
+  it("shows the session-expired toast as a component with critical options", () => {
+    showSessionExpiredToast();
+
+    expect(isValidElement(mockToastError.mock.calls[0][0])).toBe(true);
+    expect(mockToastError).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({
+        toastId: "session-expired-api",
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+      }),
+    );
   });
 });

@@ -3,11 +3,7 @@ import { Status } from "@core/errors/status.codes";
 import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import {
-  ErrorToastSeverity,
-  SESSION_EXPIRED_TOAST_ID,
-  showErrorToast,
-} from "@web/common/utils/toast/error-toast.util";
+import { showSessionExpiredToast } from "@web/common/utils/toast/error-toast.util";
 
 export const CompassApi = axios.create({
   baseURL: ENV_WEB.API_BASEURL,
@@ -21,13 +17,7 @@ const _signOut = async (status: SignoutStatus) => {
   // this can be removed once we have logic to cancel subsequent requests
   // after one failed
   if (status === Status.UNAUTHORIZED) {
-    showErrorToast(
-      "Session expired. Please log in again to reconnect Google Calendar.",
-      {
-        toastId: SESSION_EXPIRED_TOAST_ID,
-        severity: ErrorToastSeverity.CRITICAL,
-      },
-    );
+    showSessionExpiredToast();
   } else {
     alert("Login required, cuz security 😇");
   }
