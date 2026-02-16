@@ -16,9 +16,11 @@ import { resetOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.
 
 // Mock react-router-dom
 const mockNavigate = jest.fn();
+const mockLocation = { pathname: "/" };
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
   useNavigate: jest.fn(),
+  useLocation: jest.fn(),
 }));
 
 // Mock dayjs
@@ -75,6 +77,9 @@ describe("DayCmdPalette", () => {
 
     (require("react-router-dom").useNavigate as jest.Mock).mockReturnValue(
       mockNavigate,
+    );
+    (require("react-router-dom").useLocation as jest.Mock).mockReturnValue(
+      mockLocation,
     );
   });
 
