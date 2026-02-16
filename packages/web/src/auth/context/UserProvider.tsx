@@ -1,8 +1,10 @@
 import { usePostHog } from "posthog-js/react";
 import { ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Status } from "@core/errors/status.codes";
 import { UserProfile } from "@core/types/user.types";
 import { UserApi } from "@web/common/apis/user.api";
 import { hasUserEverAuthenticated } from "@web/common/utils/storage/auth-state.util";
+import { showSessionExpiredToast } from "@web/common/utils/toast/error-toast.util";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { UserContext } from "./UserContext";
 
@@ -29,13 +31,18 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         profile.current = userProfile;
       })
       .catch((e) => {
-        // For unauthenticated users, this is expected - don't show error
-        // Only log if it's not a 401/403 (unauthorized) error
+        // Existing authenticated users can hit this when their session expires.
         const status = (e as { response?: { status?: number } })?.response
           ?.status;
-        if (status !== 401 && status !== 403) {
-          console.error("Failed to get user profile", e);
+        const isUnauthorized =
+          status === Status.UNAUTHORIZED || status === Status.FORBIDDEN;
+
+        if (isUnauthorized) {
+          showSessionExpiredToast();
+          return;
         }
+
+        console.error("Failed to get user profile", e);
       })
       .finally(() => {
         setIsLoadingUser(false);

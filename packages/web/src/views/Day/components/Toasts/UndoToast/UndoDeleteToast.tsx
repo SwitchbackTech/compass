@@ -1,7 +1,7 @@
 import React from "react";
 import { toast } from "react-toastify";
+import { toastDefaultOptions } from "@web/common/constants/toast.constants";
 import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
-import { toastDefaultOptions } from "@web/views/Day/components/Toasts";
 
 interface UndoProps {
   onRestore: () => void;

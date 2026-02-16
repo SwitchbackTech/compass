@@ -4,14 +4,28 @@ import type {
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from "axios";
+import { toast } from "react-toastify";
 import { signOut } from "supertokens-web-js/recipe/session";
 import { Status } from "@core/errors/status.codes";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { CompassApi } from "./compass.api";
 
-jest.mock("supertokens-web-js/recipe/session", () => ({
-  signOut: jest.fn(),
-}));
+jest.mock("supertokens-web-js/recipe/session", () => {
+  const actual = jest.requireActual("supertokens-web-js/recipe/session");
+  const mockedDefault = {
+    ...actual.default,
+    doesSessionExist: jest.fn(),
+    signOut: jest.fn(),
+  };
+
+  return {
+    __esModule: true,
+    ...actual,
+    default: mockedDefault,
+    doesSessionExist: mockedDefault.doesSessionExist,
+    signOut: mockedDefault.signOut,
+  };
+});
 
 const assignMock = jest.fn();
 const reloadMock = jest.fn();
@@ -62,6 +76,7 @@ describe("CompassApi interceptor auth handling", () => {
     assignMock.mockReset();
     reloadMock.mockReset();
     (signOut as jest.Mock).mockResolvedValue(undefined);
+    (toast.isActive as jest.Mock).mockReturnValue(false);
     setLocationPath(ROOT_ROUTES.NOW);
     jest.spyOn(window, "alert").mockImplementation(() => undefined);
     jest.spyOn(console, "error").mockImplementation(() => undefined);
@@ -89,6 +104,34 @@ describe("CompassApi interceptor auth handling", () => {
 
     expect(signOut).toHaveBeenCalledTimes(1);
     expect(assignMock).not.toHaveBeenCalled();
+  });
+
+  it("shows session-expired toast and signs out on unauthorized", async () => {
+    await triggerErrorResponse(Status.UNAUTHORIZED);
+
+    expect(toast.error).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({
+        toastId: "session-expired-api",
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+      }),
+    );
+    expect(window.alert).not.toHaveBeenCalled();
+    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(assignMock).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
+  });
+
+  it("does not enqueue duplicate session-expired toasts when already active", async () => {
+    (toast.isActive as jest.Mock)
+      .mockReturnValueOnce(false)
+      .mockReturnValue(true);
+
+    await triggerErrorResponse(Status.UNAUTHORIZED);
+    await triggerErrorResponse(Status.UNAUTHORIZED);
+
+    expect(toast.error).toHaveBeenCalledTimes(1);
   });
 
   it("reloads the page when redux refresh is needed", async () => {

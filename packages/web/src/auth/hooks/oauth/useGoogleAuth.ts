@@ -4,12 +4,17 @@ import { useGoogleAuthWithOverlay } from "@web/auth/hooks/oauth/useGoogleAuthWit
 import { useIsSignupComplete } from "@web/auth/hooks/onboarding/useIsSignupComplete";
 import { useSkipOnboarding } from "@web/auth/hooks/onboarding/useSkipOnboarding";
 import { useSession } from "@web/auth/hooks/session/useSession";
+import { toastDefaultOptions } from "@web/common/constants/toast.constants";
 import {
   authenticate,
   fetchOnboardingStatus,
   syncLocalEvents,
 } from "@web/common/utils/auth/google-auth.util";
 import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
+import {
+  SESSION_EXPIRED_TOAST_ID,
+  dismissErrorToast,
+} from "@web/common/utils/toast/error-toast.util";
 import {
   authError,
   authSuccess,
@@ -20,7 +25,6 @@ import {
   triggerFetch,
 } from "@web/ducks/events/slices/sync.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
-import { toastDefaultOptions } from "@web/views/Day/components/Toasts";
 
 export function useGoogleAuth() {
   const dispatch = useAppDispatch();
@@ -30,6 +34,7 @@ export function useGoogleAuth() {
 
   const googleLogin = useGoogleAuthWithOverlay({
     onStart: () => {
+      dismissErrorToast(SESSION_EXPIRED_TOAST_ID);
       dispatch(startAuthenticating());
       dispatch(importGCalSlice.actions.setAwaitingImportResults(true));
       dispatch(importGCalSlice.actions.clearImportResults(undefined));

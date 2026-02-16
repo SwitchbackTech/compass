@@ -71,7 +71,12 @@ export const useSomedayFormShortcuts = ({
   onDuplicate,
   onMigrate,
 }: SomedayFormShortcutsProps) => {
-  useHotkeys("delete", onDelete, SOMEDAY_HOTKEY_OPTIONS, [onDelete]);
+  useHotkeys(
+    "delete",
+    stopPropagationWrapper(onDelete),
+    SOMEDAY_HOTKEY_OPTIONS,
+    [onDelete],
+  );
   useHotkeys(
     "enter",
     (keyboardEvent) => {
@@ -83,6 +88,8 @@ export const useSomedayFormShortcuts = ({
         return;
       }
 
+      keyboardEvent.preventDefault();
+      keyboardEvent.stopPropagation();
       onSubmit();
     },
     SOMEDAY_HOTKEY_OPTIONS,
@@ -90,7 +97,9 @@ export const useSomedayFormShortcuts = ({
   );
   useHotkeys(
     "meta+enter",
-    () => {
+    (keyboardEvent) => {
+      keyboardEvent.preventDefault();
+      keyboardEvent.stopPropagation();
       onSubmit();
     },
     SOMEDAY_HOTKEY_OPTIONS,

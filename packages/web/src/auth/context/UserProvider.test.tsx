@@ -1,7 +1,7 @@
-import { AxiosError } from "axios";
 import { rest } from "msw";
 import { usePostHog } from "posthog-js/react";
-import { act } from "react";
+import { act, isValidElement } from "react";
+import { toast } from "react-toastify";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import { Status } from "@core/errors/status.codes";
@@ -10,10 +10,13 @@ import { UserProvider } from "@web/auth/context/UserProvider";
 import { UserApi } from "@web/common/apis/user.api";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import * as authStateUtil from "@web/common/utils/storage/auth-state.util";
+import { SessionExpiredToast } from "@web/common/utils/toast/session-expired.toast";
 
 // Mock PostHog
 jest.mock("posthog-js/react");
 const mockUsePostHog = usePostHog as jest.MockedFunction<typeof usePostHog>;
+
+const mockToastError = toast.error as jest.MockedFunction<typeof toast.error>;
 
 // Mock auth state util
 jest.mock("@web/common/utils/storage/auth-state.util", () => ({
@@ -206,17 +209,13 @@ describe("UserProvider", () => {
       });
     });
 
-    it("should handle session fetch errors gracefully", async () => {
+    it("shows a login toast when profile fetch returns unauthorized", async () => {
       const getProfileSpy = jest.spyOn(UserApi, "getProfile");
       server.use(
         rest.get(`${ENV_WEB.API_BASEURL}/user/profile`, (_req, res, ctx) => {
           return res(ctx.status(Status.UNAUTHORIZED));
         }),
       );
-
-      const consoleErrorSpy = jest
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
 
       mockUsePostHog.mockReturnValue({
         identify: mockIdentify,
@@ -237,14 +236,27 @@ describe("UserProvider", () => {
         }
       });
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        new AxiosError("Request failed with status code 401"),
+      expect(mockToastError).toHaveBeenCalled();
+      const latestToastCall = mockToastError.mock.calls.at(-1);
+      expect(latestToastCall?.[1]).toEqual(
+        expect.objectContaining({
+          toastId: "session-expired-api",
+          autoClose: false,
+          closeOnClick: false,
+          draggable: false,
+        }),
       );
+
+      const toastContent = latestToastCall?.[0];
+      expect(isValidElement(toastContent)).toBe(true);
+      if (isValidElement(toastContent)) {
+        expect(toastContent.type).toBe(SessionExpiredToast);
+        expect(toastContent.props.toastId).toBe("session-expired-api");
+      }
 
       // Should not call identify
       expect(mockIdentify).not.toHaveBeenCalled();
 
-      consoleErrorSpy.mockRestore();
       getProfileSpy.mockRestore();
     });
   });

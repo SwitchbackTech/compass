@@ -1,4 +1,5 @@
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import {
   OnboardingGuideViewConfig,
   OnboardingStepConfig,
@@ -35,8 +36,8 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
       instructionsByView: {
         day: [{ type: "text", value: "You're already on the Day view." }],
         default: [
-          { type: "text", value: "Press " },
-          { type: "kbd", value: "2" },
+          { type: "text", value: "Type " },
+          { type: "kbd", value: VIEW_SHORTCUTS.day.key },
           { type: "text", value: " to go to the Day view" },
         ],
       },
@@ -67,8 +68,8 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
     guide: {
       instructionsByView: {
         default: [
-          { type: "text", value: "Press " },
-          { type: "kbd", value: "1" },
+          { type: "text", value: "Type " },
+          { type: "kbd", value: VIEW_SHORTCUTS.now.key },
           { type: "text", value: " to go to the Now view" },
         ],
       },
@@ -83,7 +84,7 @@ export const ONBOARDING_STEP_CONFIGS: readonly OnboardingStepConfig[] = [
       instructionsByView: {
         default: [
           { type: "text", value: "Type " },
-          { type: "kbd", value: "3" },
+          { type: "kbd", value: VIEW_SHORTCUTS.week.key },
           { type: "text", value: " to go to the week view" },
         ],
       },

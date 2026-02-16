@@ -1,6 +1,7 @@
 import { useLocation } from "react-router-dom";
 import { renderHook } from "@testing-library/react";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { ONBOARDING_STEPS } from "../constants/onboarding.constants";
 import { markStepCompleted } from "../utils/onboarding.storage.util";
 import { useGuideOverlayState } from "./useGuideOverlayState";
@@ -229,7 +230,7 @@ describe("useGuideOverlayState", () => {
       // Step 4 only has default instructions
       expect(result.current.instructionParts).toEqual([
         { type: "text", value: "Type " },
-        { type: "kbd", value: "3" },
+        { type: "kbd", value: VIEW_SHORTCUTS.week.key },
         { type: "text", value: " to go to the week view" },
       ]);
     });
