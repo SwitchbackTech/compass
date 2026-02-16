@@ -46,9 +46,9 @@ describe("NowView", () => {
     await renderWithMemoryRouter(<NowView />, [ROOT_ROUTES.NOW]);
 
     // Check that shortcut keys are rendered
-    expect(screen.getByText("1")).toBeInTheDocument();
-    expect(screen.getByText("2")).toBeInTheDocument();
-    expect(screen.getByText("3")).toBeInTheDocument();
+    expect(screen.getAllByTestId("n-icon").length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId("d-icon").length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId("w-icon").length).toBeGreaterThan(0);
   });
 
   it("renders command palette shortcut", async () => {

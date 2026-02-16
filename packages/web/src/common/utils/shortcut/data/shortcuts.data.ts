@@ -1,4 +1,5 @@
 import dayjs from "@core/util/date/dayjs";
+import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { Shortcut } from "@web/common/types/global.shortcut.types";
 import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 
@@ -13,9 +14,9 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
   const { isHome = false, isToday = true, isNow = false, currentDate } = config;
 
   const globalShortcuts: Shortcut[] = [
-    { k: "1", label: "Now" },
-    { k: "2", label: "Day" },
-    { k: "3", label: "Week" },
+    { k: VIEW_SHORTCUTS.now.key, label: VIEW_SHORTCUTS.now.label },
+    { k: VIEW_SHORTCUTS.day.key, label: VIEW_SHORTCUTS.day.label },
+    { k: VIEW_SHORTCUTS.week.key, label: VIEW_SHORTCUTS.week.label },
     { k: "r", label: "Edit reminder" },
     { k: "z", label: "Logout" },
     { k: `${getModifierKey()}+k`, label: "Command Palette" },
@@ -59,7 +60,6 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
     ];
     dayAgendaShortcuts = [
       { k: "i", label: "Focus on calendar" },
-      { k: "n", label: "Create event" },
       { k: "m", label: "Edit event" },
     ];
   }

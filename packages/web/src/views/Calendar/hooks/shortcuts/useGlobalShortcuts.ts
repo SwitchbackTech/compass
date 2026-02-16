@@ -1,5 +1,6 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import {
   useKeyDownEvent,
   useKeyUpEvent,
@@ -15,23 +16,36 @@ import { useAppDispatch } from "@web/store/store.hooks";
 export function useGlobalShortcuts() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useKeyUpEvent({
-    combination: ["1"],
-    deps: [navigate],
-    handler: () => navigate(ROOT_ROUTES.NOW),
+    combination: [VIEW_SHORTCUTS.now.key],
+    deps: [navigate, location.pathname],
+    handler: () => {
+      if (location.pathname !== VIEW_SHORTCUTS.now.route) {
+        navigate(VIEW_SHORTCUTS.now.route);
+      }
+    },
   });
 
   useKeyUpEvent({
-    combination: ["2"],
-    deps: [navigate],
-    handler: () => navigate(ROOT_ROUTES.DAY),
+    combination: [VIEW_SHORTCUTS.day.key],
+    deps: [navigate, location.pathname],
+    handler: () => {
+      if (!location.pathname.startsWith(VIEW_SHORTCUTS.day.route)) {
+        navigate(VIEW_SHORTCUTS.day.route);
+      }
+    },
   });
 
   useKeyUpEvent({
-    combination: ["3"],
-    deps: [navigate],
-    handler: () => navigate(ROOT_ROUTES.WEEK),
+    combination: [VIEW_SHORTCUTS.week.key],
+    deps: [navigate, location.pathname],
+    handler: () => {
+      if (location.pathname !== VIEW_SHORTCUTS.week.route) {
+        navigate(VIEW_SHORTCUTS.week.route);
+      }
+    },
   });
 
   useKeyUpEvent({
