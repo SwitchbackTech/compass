@@ -116,6 +116,9 @@ export function useTaskActions({
 
         // Async storage operations (fire and forget since we're in a callback)
         const restoreInStorage = async () => {
+          const fromDate = undoState.fromDate;
+          if (!fromDate) return;
+
           try {
             // Remove the task from the target date in storage
             const targetDateTasks = await loadTasksFromIndexedDB(targetDateKey);
@@ -125,10 +128,8 @@ export function useTaskActions({
             await saveTasksToIndexedDB(targetDateKey, updatedTargetTasks);
 
             // Restore the task to the original date in storage
-            const originalDateTasks = await loadTasksFromIndexedDB(
-              undoState.fromDate!,
-            );
-            await saveTasksToIndexedDB(undoState.fromDate!, [
+            const originalDateTasks = await loadTasksFromIndexedDB(fromDate);
+            await saveTasksToIndexedDB(fromDate, [
               ...originalDateTasks,
               undoState.task,
             ]);

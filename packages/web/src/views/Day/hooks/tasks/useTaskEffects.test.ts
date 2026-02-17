@@ -1,3 +1,4 @@
+import React, { StrictMode } from "react";
 import { renderHook, waitFor } from "@testing-library/react";
 import { Task } from "@web/common/types/task.types";
 import {
@@ -33,7 +34,7 @@ describe("useTaskEffects", () => {
     (loadTasksFromIndexedDB as jest.Mock).mockResolvedValue(loadedTasks);
     (sortTasksByStatus as jest.Mock).mockReturnValue(loadedTasks);
 
-    const { result } = renderHook(() =>
+    renderHook(() =>
       useTaskEffects({
         tasks: [],
         dateKey,
@@ -48,11 +49,7 @@ describe("useTaskEffects", () => {
     });
   });
 
-  it("should not save tasks before initial load completes", async () => {
-    // Mock load to never resolve to simulate loading state?
-    // No, useTaskEffects sets isLoadingRef.current = true.
-    // But we want to test that saveTasksToIndexedDB is NOT called if syncedDateKey is null.
-
+  it("should guard saves until the first load for the date completes", async () => {
     renderHook(() =>
       useTaskEffects({
         tasks: [mockTask],
@@ -61,15 +58,7 @@ describe("useTaskEffects", () => {
       }),
     );
 
-    // Initial load is triggered
     expect(loadTasksFromIndexedDB).toHaveBeenCalledWith(dateKey);
-
-    // But save should not happen yet because syncedDateKey hasn't been set (it's set after load completes)
-    // Wait for the load promise to resolve?
-    // Actually, saveTasks is inside a separate useEffect that depends on syncedDateKey.
-    // Initially syncedDateKey is null.
-    // So saveTasks should not run.
-
     expect(saveTasksToIndexedDB).not.toHaveBeenCalled();
   });
 
@@ -116,7 +105,31 @@ describe("useTaskEffects", () => {
       expect(loadTasksFromIndexedDB).toHaveBeenCalledWith(dateKey);
       expect(mockSetTasks).toHaveBeenCalledWith([]); // Should set empty tasks on error
     });
+    expect(saveTasksToIndexedDB).not.toHaveBeenCalled();
 
     consoleSpy.mockRestore();
+  });
+
+  it("should load tasks in React StrictMode", async () => {
+    const loadedTasks = [mockTask];
+    (loadTasksFromIndexedDB as jest.Mock).mockResolvedValue(loadedTasks);
+    (sortTasksByStatus as jest.Mock).mockReturnValue(loadedTasks);
+
+    renderHook(
+      () =>
+        useTaskEffects({
+          tasks: [],
+          dateKey,
+          setTasks: mockSetTasks,
+        }),
+      {
+        wrapper: ({ children }) =>
+          React.createElement(StrictMode, null, children),
+      },
+    );
+
+    await waitFor(() => {
+      expect(mockSetTasks).toHaveBeenCalledWith(loadedTasks);
+    });
   });
 });
