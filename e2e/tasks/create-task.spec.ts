@@ -6,6 +6,11 @@ import {
 } from "../utils/task-test-utils";
 
 test.describe("Task Creation", () => {
+  test.skip(
+    ({ isMobile }) => isMobile,
+    "Tasks are not available in the current mobile experience.",
+  );
+
   test("should create a new task using the UI", async ({ page }) => {
     await prepareTaskPage(page);
 
