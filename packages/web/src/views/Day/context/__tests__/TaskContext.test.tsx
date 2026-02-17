@@ -2,9 +2,9 @@ import { PropsWithChildren, act } from "react";
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
 import { renderHook, waitFor } from "@web/__tests__/__mocks__/mock.render";
+import { clearCompassLocalDb } from "@web/__tests__/utils/storage/indexeddb.test.util";
 import { Task } from "@web/common/types/task.types";
 import {
-  clearAllTasksFromIndexedDB,
   loadTasksFromIndexedDB,
   saveTasksToIndexedDB,
 } from "@web/common/utils/storage/task.storage.util";
@@ -27,7 +27,7 @@ describe("TaskProvider", () => {
   beforeEach(async () => {
     // Clear localStorage before each test
     localStorage.clear();
-    await clearAllTasksFromIndexedDB();
+    await clearCompassLocalDb();
   });
 
   it("should provide task context to children", () => {

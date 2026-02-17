@@ -2,13 +2,9 @@ import dayjs from "dayjs";
 import { useCallback } from "react";
 import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
+import { TaskRepository } from "@web/common/repositories/task/task.repository";
 import { Task, UndoOperation } from "../../../../common/types/task.types";
 import { getDateKey } from "../../../../common/utils/storage/storage.util";
-import {
-  loadTasksFromIndexedDB,
-  moveTaskBetweenDates,
-  saveTasksToIndexedDB,
-} from "../../../../common/utils/storage/task.storage.util";
 import { sortTasksByStatus } from "../../../../common/utils/task/sort.task";
 import { showMigrationToast } from "../../components/Toasts/MigrationToast/MigrationToast";
 import { showUndoDeleteToast } from "../../components/Toasts/UndoToast/UndoDeleteToast";
@@ -16,6 +12,7 @@ import { showUndoDeleteToast } from "../../components/Toasts/UndoToast/UndoDelet
 interface UseTaskActionsProps {
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   tasks: Task[];
+  taskRepository: TaskRepository;
   editingTitle?: string;
   setEditingTitle?: (title: string) => void;
   setEditingTaskId?: (taskId: string | null) => void;
@@ -33,6 +30,7 @@ interface UseTaskActionsProps {
 export function useTaskActions({
   setTasks,
   tasks,
+  taskRepository,
   editingTitle,
   setEditingTitle,
   setEditingTaskId,
@@ -121,20 +119,20 @@ export function useTaskActions({
 
           try {
             // Remove the task from the target date in storage
-            const targetDateTasks = await loadTasksFromIndexedDB(targetDateKey);
+            const targetDateTasks = await taskRepository.get(targetDateKey);
             const updatedTargetTasks = targetDateTasks.filter(
               (t: Task) => t.id !== undoState.task.id,
             );
-            await saveTasksToIndexedDB(targetDateKey, updatedTargetTasks);
+            await taskRepository.save(targetDateKey, updatedTargetTasks);
 
             // Restore the task to the original date in storage
-            const originalDateTasks = await loadTasksFromIndexedDB(fromDate);
-            await saveTasksToIndexedDB(fromDate, [
+            const originalDateTasks = await taskRepository.get(fromDate);
+            await taskRepository.save(fromDate, [
               ...originalDateTasks,
               undoState.task,
             ]);
           } catch (error) {
-            console.error("Failed to restore task in IndexedDB:", error);
+            console.error("Failed to restore task in storage:", error);
           }
         };
         restoreInStorage();
@@ -144,7 +142,14 @@ export function useTaskActions({
     // Clear the undo state
     setUndoState?.(null);
     setUndoToastId?.(null);
-  }, [undoState, dateInView, setTasks, setUndoState, setUndoToastId]);
+  }, [
+    undoState,
+    dateInView,
+    setTasks,
+    setUndoState,
+    setUndoToastId,
+    taskRepository,
+  ]);
 
   const deleteTask = (taskId: string) => {
     const taskToDelete = tasks.find((task) => task.id === taskId);
@@ -294,11 +299,11 @@ export function useTaskActions({
       });
 
       // Move task in storage (async, fire and forget)
-      moveTaskBetweenDates(taskToMigrate, currentDateKey, targetDateKey).catch(
-        (error) => {
-          console.error("Failed to move task in IndexedDB:", error);
-        },
-      );
+      taskRepository
+        .move(taskToMigrate, currentDateKey, targetDateKey)
+        .catch((error) => {
+          console.error("Failed to move task in storage:", error);
+        });
 
       // Remove from current view
       setTasks((prev) => prev.filter((task) => task.id !== taskId));
@@ -321,6 +326,7 @@ export function useTaskActions({
       setUndoState,
       setUndoToastId,
       restoreTask,
+      taskRepository,
     ],
   );
 

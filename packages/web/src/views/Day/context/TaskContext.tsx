@@ -1,9 +1,11 @@
-import React, { createContext } from "react";
+import React, { createContext, useMemo } from "react";
+import { getTaskRepository } from "@web/common/repositories/task/task.repository.util";
 import { Task, UndoOperation } from "@web/common/types/task.types";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useTaskActions } from "@web/views/Day/hooks/tasks/useTaskActions";
-import { useTaskEffects } from "@web/views/Day/hooks/tasks/useTaskEffects";
+import { useTaskSession } from "@web/views/Day/hooks/tasks/useTaskSession";
 import { useTaskState } from "@web/views/Day/hooks/tasks/useTaskState";
+import { TaskSessionService } from "@web/views/Day/tasks/task-session.service";
 
 interface TaskContextValue {
   tasks: Task[];
@@ -51,9 +53,20 @@ export function TaskProvider({ children }: TaskProviderProps) {
   const { dateInView, navigateToNextDay, navigateToPreviousDay } =
     useDateNavigation();
   const state = useTaskState({ currentDate: dateInView.toDate() });
+  const taskRepository = useMemo(() => getTaskRepository("local"), []);
+  const taskSession = useMemo(
+    () => new TaskSessionService(taskRepository),
+    [taskRepository],
+  );
+  const taskSessionState = useTaskSession({
+    taskSession,
+    dateKey: state.dateKey,
+  });
+
   const actions = useTaskActions({
-    setTasks: state.setTasks,
-    tasks: state.tasks,
+    setTasks: taskSessionState.updateTasks,
+    tasks: taskSessionState.tasks,
+    taskRepository,
     editingTitle: state.editingTitle,
     setEditingTitle: state.setEditingTitle,
     setEditingTaskId: state.setEditingTaskId,
@@ -68,14 +81,8 @@ export function TaskProvider({ children }: TaskProviderProps) {
     navigateToPreviousDay,
   });
 
-  useTaskEffects({
-    tasks: state.tasks,
-    dateKey: state.dateKey,
-    setTasks: state.setTasks,
-  });
-
   const value: TaskContextValue = {
-    tasks: state.tasks,
+    tasks: taskSessionState.tasks,
     editingTitle: state.editingTitle,
     editingTaskId: state.editingTaskId,
     selectedTaskIndex: state.selectedTaskIndex,
@@ -103,7 +110,7 @@ export function TaskProvider({ children }: TaskProviderProps) {
     updateTaskTitle: actions.updateTaskTitle,
     migrateTask: actions.migrateTask,
     reorderTasks: (sourceIndex: number, destinationIndex: number) => {
-      state.setTasks((prev) => {
+      taskSessionState.updateTasks((prev) => {
         const newTasks = Array.from(prev);
         const [moved] = newTasks.splice(sourceIndex, 1);
         newTasks.splice(destinationIndex, 0, moved);

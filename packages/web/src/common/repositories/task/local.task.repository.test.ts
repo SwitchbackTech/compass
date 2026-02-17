@@ -5,6 +5,7 @@ import {
 import {
   deleteTaskFromIndexedDB,
   loadTasksFromIndexedDB,
+  moveTaskBetweenDates,
   saveTasksToIndexedDB,
 } from "@web/common/utils/storage/task.storage.util";
 import { LocalTaskRepository } from "./local.task.repository";
@@ -22,6 +23,9 @@ describe("LocalTaskRepository", () => {
   const mockDeleteTask = deleteTaskFromIndexedDB as jest.MockedFunction<
     typeof deleteTaskFromIndexedDB
   >;
+  const mockMoveTask = moveTaskBetweenDates as jest.MockedFunction<
+    typeof moveTaskBetweenDates
+  >;
 
   beforeEach(() => {
     repository = new LocalTaskRepository();
@@ -29,6 +33,7 @@ describe("LocalTaskRepository", () => {
     mockLoadTasks.mockResolvedValue([]);
     mockSaveTasks.mockResolvedValue(undefined);
     mockDeleteTask.mockResolvedValue(undefined);
+    mockMoveTask.mockResolvedValue(undefined);
   });
 
   describe("get", () => {
@@ -216,6 +221,23 @@ describe("LocalTaskRepository", () => {
       // Task 1 should now be second
       expect(savedTasks[1].id).toBe("task-1");
       expect(savedTasks[1].order).toBe(1);
+    });
+  });
+
+  describe("move", () => {
+    it("should move a task between dates", async () => {
+      const task = createTestTask({
+        id: "task-1",
+      });
+
+      await repository.move(task, "2024-01-01", "2024-01-02");
+
+      expect(mockMoveTask).toHaveBeenCalledWith(
+        task,
+        "2024-01-01",
+        "2024-01-02",
+      );
+      expect(mockMoveTask).toHaveBeenCalledTimes(1);
     });
   });
 });

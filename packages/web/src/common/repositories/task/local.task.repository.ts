@@ -2,6 +2,7 @@ import { Task } from "@web/common/types/task.types";
 import {
   deleteTaskFromIndexedDB,
   loadTasksFromIndexedDB,
+  moveTaskBetweenDates,
   saveTasksToIndexedDB,
 } from "@web/common/utils/storage/task.storage.util";
 import { TaskRepository } from "./task.repository";
@@ -24,6 +25,14 @@ export class LocalTaskRepository implements TaskRepository {
     }
 
     await deleteTaskFromIndexedDB(taskId);
+  }
+
+  async move(
+    task: Task,
+    fromDateKey: string,
+    toDateKey: string,
+  ): Promise<void> {
+    await moveTaskBetweenDates(task, fromDateKey, toDateKey);
   }
 
   async reorder(
