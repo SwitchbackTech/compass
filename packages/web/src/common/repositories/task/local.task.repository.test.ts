@@ -88,20 +88,28 @@ describe("LocalTaskRepository", () => {
   });
 
   describe("delete", () => {
-    it("should delete a task by id", async () => {
+    it("should delete a task by id when it belongs to the date", async () => {
       const dateKey = "2024-01-01";
+      mockLoadTasks.mockResolvedValue([
+        createTestTask({
+          id: "task-1",
+        }),
+      ]);
 
       await repository.delete(dateKey, "task-1");
 
+      expect(mockLoadTasks).toHaveBeenCalledWith(dateKey);
       expect(mockDeleteTask).toHaveBeenCalledWith("task-1");
     });
 
     it("should handle deleting non-existent task", async () => {
       const dateKey = "2024-01-01";
+      mockLoadTasks.mockResolvedValue([]);
 
       await repository.delete(dateKey, "non-existent");
 
-      expect(mockDeleteTask).toHaveBeenCalledWith("non-existent");
+      expect(mockLoadTasks).toHaveBeenCalledWith(dateKey);
+      expect(mockDeleteTask).not.toHaveBeenCalled();
     });
   });
 

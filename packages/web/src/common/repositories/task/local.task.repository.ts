@@ -16,6 +16,13 @@ export class LocalTaskRepository implements TaskRepository {
   }
 
   async delete(dateKey: string, taskId: string): Promise<void> {
+    const tasksForDate = await this.get(dateKey);
+    const isTaskInDate = tasksForDate.some((task) => task.id === taskId);
+
+    if (!isTaskInDate) {
+      return;
+    }
+
     await deleteTaskFromIndexedDB(taskId);
   }
 

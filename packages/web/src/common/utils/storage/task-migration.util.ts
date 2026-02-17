@@ -42,6 +42,7 @@ export async function migrateTasksFromLocalStorageToIndexedDB(): Promise<number>
     await ensureDatabaseReady();
 
     let migratedCount = 0;
+    let hasSaveFailures = false;
     const keysToRemove: string[] = [];
 
     // Collect all task keys first (avoid modifying localStorage while iterating)
@@ -64,16 +65,31 @@ export async function migrateTasksFromLocalStorageToIndexedDB(): Promise<number>
         const parsed = JSON.parse(rawValue);
         if (!Array.isArray(parsed)) continue;
 
-        // Validate and save each task
+        // Validate and save each task. If any save fails, keep only failed tasks
+        // in localStorage so successful migrations are not duplicated on retry.
+        const remainingTasks: Task[] = [];
         for (const item of parsed) {
           if (isTask(item)) {
-            await saveTaskToIndexedDB(item as Task, dateKey);
-            migratedCount++;
+            try {
+              await saveTaskToIndexedDB(item, dateKey);
+              migratedCount++;
+            } catch (saveError) {
+              hasSaveFailures = true;
+              remainingTasks.push(item);
+              console.error(
+                `Failed to save task to IndexedDB for dateKey: ${dateKey}`,
+                saveError,
+              );
+            }
           }
         }
 
-        // Mark key for removal after successful migration
-        keysToRemove.push(key);
+        if (remainingTasks.length === 0) {
+          // Mark key for removal after successful migration
+          keysToRemove.push(key);
+        } else {
+          localStorage.setItem(key, JSON.stringify(remainingTasks));
+        }
       } catch (parseError) {
         // Skip invalid entries, don't fail the whole migration
         console.warn(
@@ -88,8 +104,10 @@ export async function migrateTasksFromLocalStorageToIndexedDB(): Promise<number>
       localStorage.removeItem(key);
     }
 
-    // Mark migration as complete
-    markMigrationCompleted();
+    // Mark migration as complete only when all saves succeeded.
+    if (!hasSaveFailures) {
+      markMigrationCompleted();
+    }
 
     if (migratedCount > 0) {
       console.log(

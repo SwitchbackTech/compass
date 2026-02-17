@@ -29,7 +29,13 @@ export class DatabaseInitError extends DatabaseError {
 export class DatabaseOperationError extends DatabaseError {
   constructor(
     message: string,
-    public readonly operation: "save" | "load" | "delete" | "clear" | "reorder",
+    public readonly operation:
+      | "save"
+      | "load"
+      | "delete"
+      | "clear"
+      | "reorder"
+      | "move",
     cause?: unknown,
   ) {
     super(message, cause);
@@ -47,7 +53,7 @@ export class DatabaseOperationError extends DatabaseError {
  */
 export function handleDatabaseError(
   error: unknown,
-  operation: "save" | "load" | "delete" | "clear" | "reorder",
+  operation: "save" | "load" | "delete" | "clear" | "reorder" | "move",
 ): never {
   // Handle Dexie-specific errors
   if (error instanceof Dexie.QuotaExceededError) {
