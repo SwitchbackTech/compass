@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { Task } from "../../../../common/types/task.types";
 import * as taskStorageUtil from "../../../../common/utils/storage/task.storage.util";
 import { showMigrationToast } from "../../components/Toasts/MigrationToast/MigrationToast";
@@ -146,7 +146,7 @@ describe("useTaskActions - migration", () => {
   });
 
   describe("undo migration", () => {
-    it("restores migrated task when on the same date", () => {
+    it("restores migrated task when on the same date", async () => {
       const undoState = {
         type: "migrate" as const,
         task: mockTask,
@@ -167,12 +167,9 @@ describe("useTaskActions - migration", () => {
         }),
       );
 
-      // Mock localStorage to have the migrated task in the target date
-      (Storage.prototype.getItem as jest.Mock).mockImplementation((key) => {
-        if (key === "2025-10-28") return JSON.stringify([mockTask]);
-        if (key === "2025-10-27") return JSON.stringify([]);
-        return null;
-      });
+      (taskStorageUtil.loadTasksFromIndexedDB as jest.Mock)
+        .mockResolvedValueOnce([mockTask]) // target date
+        .mockResolvedValueOnce([]); // original date
 
       act(() => {
         result.current.restoreTask();
@@ -184,24 +181,23 @@ describe("useTaskActions - migration", () => {
       const updatedTasks = setTasksCall([]);
       expect(updatedTasks).toEqual([mockTask]);
 
-      // Should remove from target date in storage
-      expect(storageUtil.saveTasksToStorage).toHaveBeenCalledWith(
-        "2025-10-28",
-        [],
-      );
-
-      // Should restore to original date in storage
-      expect(storageUtil.saveTasksToStorage).toHaveBeenCalledWith(
-        "2025-10-27",
-        [mockTask],
-      );
+      await waitFor(() => {
+        expect(taskStorageUtil.saveTasksToIndexedDB).toHaveBeenCalledWith(
+          "2025-10-28",
+          [],
+        );
+        expect(taskStorageUtil.saveTasksToIndexedDB).toHaveBeenCalledWith(
+          "2025-10-27",
+          [mockTask],
+        );
+      });
 
       // Should clear undo state
       expect(mockSetUndoState).toHaveBeenCalledWith(null);
       expect(mockSetUndoToastId).toHaveBeenCalledWith(null);
     });
 
-    it("restores backward migrated task correctly", () => {
+    it("restores backward migrated task correctly", async () => {
       const undoState = {
         type: "migrate" as const,
         task: mockTask,
@@ -222,28 +218,24 @@ describe("useTaskActions - migration", () => {
         }),
       );
 
-      // Mock localStorage to have the migrated task in the target date (previous day)
-      (Storage.prototype.getItem as jest.Mock).mockImplementation((key) => {
-        if (key === "2025-10-26") return JSON.stringify([mockTask]);
-        if (key === "2025-10-27") return JSON.stringify([]);
-        return null;
-      });
+      (taskStorageUtil.loadTasksFromIndexedDB as jest.Mock)
+        .mockResolvedValueOnce([mockTask]) // target date
+        .mockResolvedValueOnce([]); // original date
 
       act(() => {
         result.current.restoreTask();
       });
 
-      // Should remove from target date (previous day) in storage
-      expect(storageUtil.saveTasksToStorage).toHaveBeenCalledWith(
-        "2025-10-26",
-        [],
-      );
-
-      // Should restore to original date in storage
-      expect(storageUtil.saveTasksToStorage).toHaveBeenCalledWith(
-        "2025-10-27",
-        [mockTask],
-      );
+      await waitFor(() => {
+        expect(taskStorageUtil.saveTasksToIndexedDB).toHaveBeenCalledWith(
+          "2025-10-26",
+          [],
+        );
+        expect(taskStorageUtil.saveTasksToIndexedDB).toHaveBeenCalledWith(
+          "2025-10-27",
+          [mockTask],
+        );
+      });
     });
 
     it("does not restore if dateInView has changed", () => {
@@ -273,6 +265,7 @@ describe("useTaskActions - migration", () => {
 
       // Should not add task back (different date)
       expect(mockSetTasks).not.toHaveBeenCalled();
+      expect(taskStorageUtil.saveTasksToIndexedDB).not.toHaveBeenCalled();
 
       // Should still clear undo state
       expect(mockSetUndoState).toHaveBeenCalledWith(null);

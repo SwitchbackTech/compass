@@ -1,9 +1,13 @@
 import { PropsWithChildren, act } from "react";
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
-import { renderHook } from "@web/__tests__/__mocks__/mock.render";
+import { renderHook, waitFor } from "@web/__tests__/__mocks__/mock.render";
 import { Task } from "@web/common/types/task.types";
-import { TODAY_TASKS_STORAGE_KEY_PREFIX } from "@web/common/utils/storage/storage.util";
+import {
+  clearAllTasksFromIndexedDB,
+  loadTasksFromIndexedDB,
+  saveTasksToIndexedDB,
+} from "@web/common/utils/storage/task.storage.util";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
 import { TaskProviderWrapper } from "@web/views/Day/util/day.test-util";
 
@@ -20,9 +24,10 @@ describe("TaskProvider", () => {
     );
   }
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Clear localStorage before each test
     localStorage.clear();
+    await clearAllTasksFromIndexedDB();
   });
 
   it("should provide task context to children", () => {
@@ -128,30 +133,28 @@ describe("TaskProvider", () => {
     expect(result.current.tasks).toHaveLength(0);
   });
 
-  it("should persist tasks to localStorage", () => {
+  it("should persist tasks to IndexedDB", async () => {
     const { result } = renderHook(useTasks, { wrapper: Wrapper });
 
     act(() => {
       result.current.addTask("Persisted task");
     });
 
-    // Check localStorage
     const today = dayjs();
     const dateKey = today.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
-    const storageKey = `${TODAY_TASKS_STORAGE_KEY_PREFIX}.${dateKey}`;
-    const stored = localStorage.getItem(storageKey);
 
-    expect(stored).toBeTruthy();
-    const parsed = JSON.parse(stored!);
-    expect(parsed).toHaveLength(1);
-    expect(parsed[0].title).toBe("Persisted task");
+    await waitFor(async () => {
+      const stored = await loadTasksFromIndexedDB(dateKey);
+      expect(stored).toHaveLength(1);
+    });
+
+    const stored = await loadTasksFromIndexedDB(dateKey);
+    expect(stored[0].title).toBe("Persisted task");
   });
 
-  it("should load tasks from localStorage on mount", () => {
-    // Pre-populate localStorage
+  it("should load tasks from IndexedDB on mount", async () => {
     const today = dayjs();
     const dateKey = today.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
-    const storageKey = `${TODAY_TASKS_STORAGE_KEY_PREFIX}.${dateKey}`;
     const mockTasks: Task[] = [
       {
         id: "task-1",
@@ -161,20 +164,21 @@ describe("TaskProvider", () => {
         createdAt: new Date().toISOString(),
       },
     ];
-    localStorage.setItem(storageKey, JSON.stringify(mockTasks));
+
+    await saveTasksToIndexedDB(dateKey, mockTasks);
 
     const { result } = renderHook(useTasks, { wrapper: Wrapper });
 
-    expect(result.current.tasks).toHaveLength(1);
+    await waitFor(() => {
+      expect(result.current.tasks).toHaveLength(1);
+    });
     expect(result.current.tasks[0].title).toBe("Loaded task");
   });
 
-  it("should not overwrite localStorage with empty array on mount", () => {
-    // Regression test for bug where tasks were lost on refresh
-    // Pre-populate localStorage with tasks
+  it("should not overwrite IndexedDB with empty array on mount", async () => {
+    // Regression test for bug where tasks were lost on refresh.
     const today = dayjs();
     const dateKey = today.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
-    const storageKey = `${TODAY_TASKS_STORAGE_KEY_PREFIX}.${dateKey}`;
     const mockTasks: Task[] = [
       {
         id: "task-1",
@@ -184,24 +188,22 @@ describe("TaskProvider", () => {
         createdAt: new Date().toISOString(),
       },
     ];
-    localStorage.setItem(storageKey, JSON.stringify(mockTasks));
+    await saveTasksToIndexedDB(dateKey, mockTasks);
 
-    // Mount component - this should load tasks, not overwrite with []
-    renderHook(useTasks, { wrapper: Wrapper });
+    const { result } = renderHook(useTasks, { wrapper: Wrapper });
 
-    // Verify localStorage still contains the tasks (not overwritten with [])
-    const stored = localStorage.getItem(storageKey);
-    expect(stored).toBeTruthy();
-    const parsed = JSON.parse(stored!);
-    expect(parsed).toHaveLength(1);
-    expect(parsed[0].title).toBe("Existing task");
+    await waitFor(() => {
+      expect(result.current.tasks).toHaveLength(1);
+    });
+
+    const stored = await loadTasksFromIndexedDB(dateKey);
+    expect(stored).toHaveLength(1);
+    expect(stored[0].title).toBe("Existing task");
   });
 
-  it("should sort tasks on load when there are mixed statuses", () => {
-    // Pre-populate localStorage with mixed statuses
+  it("should sort tasks on load when there are mixed statuses", async () => {
     const today = dayjs();
     const dateKey = today.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
-    const storageKey = `${TODAY_TASKS_STORAGE_KEY_PREFIX}.${dateKey}`;
     const mockTasks: Task[] = [
       {
         id: "task-1",
@@ -225,9 +227,13 @@ describe("TaskProvider", () => {
         order: 1,
       },
     ];
-    localStorage.setItem(storageKey, JSON.stringify(mockTasks));
+    await saveTasksToIndexedDB(dateKey, mockTasks);
 
     const { result } = renderHook(useTasks, { wrapper: Wrapper });
+
+    await waitFor(() => {
+      expect(result.current.tasks).toHaveLength(3);
+    });
 
     // Tasks should be sorted with todos first, completed last
     expect(result.current.tasks[0].id).toBe("task-1");

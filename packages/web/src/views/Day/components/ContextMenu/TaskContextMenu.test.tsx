@@ -2,6 +2,7 @@ import { act } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { clearCompassLocalDb } from "@web/__tests__/utils/storage/indexeddb.test.util";
 import { renderWithDayProviders } from "../../util/day.test-util";
 import { TaskList } from "../TaskList/TaskList";
 
@@ -9,9 +10,10 @@ import { TaskList } from "../TaskList/TaskList";
 const mockConsoleLog = jest.spyOn(console, "log").mockImplementation(() => {});
 
 describe("TaskContextMenu", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     localStorage.clear();
     mockConsoleLog.mockClear();
+    await clearCompassLocalDb();
   });
 
   afterAll(() => {

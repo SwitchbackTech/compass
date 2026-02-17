@@ -1,6 +1,7 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
+import { clearCompassLocalDb } from "@web/__tests__/utils/storage/indexeddb.test.util";
 import {
   addTasks,
   clickCreateTaskButton,
@@ -9,8 +10,9 @@ import { renderWithDayProviders } from "../../util/day.test-util";
 import { TaskList } from "./TaskList";
 
 describe("TaskList", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     localStorage.clear();
+    await clearCompassLocalDb();
   });
 
   it("should render create task button", async () => {
@@ -198,7 +200,9 @@ describe("TaskList", () => {
     await addTasks(user, ["Complete me"]);
 
     // Complete the task
-    const checkbox = screen.getByRole("checkbox");
+    const checkbox = screen.getByRole("checkbox", {
+      name: "Toggle Complete me",
+    });
     await act(async () => {
       await user.click(checkbox);
     });
