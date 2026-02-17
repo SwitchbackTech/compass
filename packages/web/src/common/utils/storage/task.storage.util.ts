@@ -35,18 +35,19 @@ export async function saveTasksToIndexedDB(
   try {
     await ensureDatabaseReady();
 
-    // Delete existing tasks for this dateKey
-    await compassLocalDB.tasks.where("dateKey").equals(dateKey).delete();
-
-    // Add all new tasks
     const storedTasks: StoredTask[] = tasks.map((task) => ({
       ...task,
       dateKey,
     }));
 
-    if (storedTasks.length > 0) {
-      await compassLocalDB.tasks.bulkPut(storedTasks);
-    }
+    await compassLocalDB.transaction("rw", compassLocalDB.tasks, async () => {
+      // Replace all tasks for this date atomically
+      await compassLocalDB.tasks.where("dateKey").equals(dateKey).delete();
+
+      if (storedTasks.length > 0) {
+        await compassLocalDB.tasks.bulkPut(storedTasks);
+      }
+    });
   } catch (error) {
     handleDatabaseError(error, "save");
   }
@@ -119,14 +120,23 @@ export async function moveTaskBetweenDates(
   try {
     await ensureDatabaseReady();
 
-    // Remove from source date (task id stays the same)
-    await compassLocalDB.tasks.delete(task.id);
+    await compassLocalDB.transaction("rw", compassLocalDB.tasks, async () => {
+      const existingTask = await compassLocalDB.tasks.get(task.id);
 
-    // Add to target date
-    const storedTask: StoredTask = { ...task, dateKey: toDateKey };
-    await compassLocalDB.tasks.put(storedTask);
+      // If the task exists for a different date, don't move it.
+      if (existingTask && existingTask.dateKey !== fromDateKey) {
+        return;
+      }
+
+      // Remove from source date (task id stays the same)
+      await compassLocalDB.tasks.delete(task.id);
+
+      // Add to target date
+      const storedTask: StoredTask = { ...task, dateKey: toDateKey };
+      await compassLocalDB.tasks.put(storedTask);
+    });
   } catch (error) {
-    handleDatabaseError(error, "save");
+    handleDatabaseError(error, "move");
   }
 }
 

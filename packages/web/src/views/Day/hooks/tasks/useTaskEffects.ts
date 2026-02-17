@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Task } from "@web/common/types/task.types";
 import {
   loadTasksFromIndexedDB,
@@ -12,59 +12,80 @@ interface UseTaskEffectsProps {
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
 }
 
+interface LoadState {
+  dateKey: string | null;
+  didFail: boolean;
+}
+
 export function useTaskEffects({
   tasks,
   dateKey,
   setTasks,
 }: UseTaskEffectsProps): void {
-  // Track the dateKey for which we have successfully loaded data.
-  // We use this to prevent overwriting IndexedDB with empty state
-  // before the initial load for a new date has completed.
-  const [syncedDateKey, setSyncedDateKey] = useState<string | null>(null);
-
-  // Track if we're currently loading to prevent race conditions
-  const isLoadingRef = useRef(false);
+  const [loadState, setLoadState] = useState<LoadState>({
+    dateKey: null,
+    didFail: false,
+  });
 
   // Load Effect: Runs when dateKey changes (async)
   useEffect(() => {
-    // If we've already synced this date, don't reload.
-    if (syncedDateKey === dateKey) return;
-
-    // Prevent concurrent loads
-    if (isLoadingRef.current) return;
+    let isCancelled = false;
 
     const loadTasks = async () => {
-      isLoadingRef.current = true;
       try {
         const loadedTasks = await loadTasksFromIndexedDB(dateKey);
-        const sortedTasks = sortTasksByStatus(loadedTasks);
+        if (isCancelled) return;
 
-        setTasks(sortedTasks);
-        // Marking as synced triggers a re-render.
-        // The save effect will then see syncedDateKey === dateKey and be enabled.
-        setSyncedDateKey(dateKey);
+        const sortedTasks = sortTasksByStatus(loadedTasks);
+        setTasks((prevTasks) =>
+          prevTasks.length === 0
+            ? sortedTasks
+            : sortTasksByStatus([
+                ...prevTasks,
+                ...sortedTasks.filter(
+                  (loadedTask) =>
+                    !prevTasks.some(
+                      (prevTask) => prevTask.id === loadedTask.id,
+                    ),
+                ),
+              ]),
+        );
+
+        setLoadState({ dateKey, didFail: false });
       } catch (error) {
         console.error("Failed to load tasks from IndexedDB:", error);
-        // On error, still set empty tasks to prevent UI issues
+        if (isCancelled) return;
+
+        // Keep current behavior: reset UI to empty tasks on load failure.
         setTasks([]);
-        setSyncedDateKey(dateKey);
-      } finally {
-        isLoadingRef.current = false;
+        setLoadState({ dateKey, didFail: true });
       }
     };
 
     loadTasks();
-  }, [dateKey, syncedDateKey, setTasks]);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [dateKey, setTasks]);
 
   // Save Effect: Runs when tasks or dateKey changes (async)
   useEffect(() => {
-    // strict guard: never save if we haven't confirmed loading for this specific date
-    if (syncedDateKey !== dateKey) {
+    // Invariant: never persist until the load attempt for this date is complete.
+    if (loadState.dateKey !== dateKey) {
       return;
     }
 
+    // Invariant: never overwrite persisted data with empty tasks after load failure.
+    if (loadState.didFail && tasks.length === 0) {
+      return;
+    }
+
+    let isCancelled = false;
+
     const saveTasks = async () => {
       try {
+        if (isCancelled) return;
         await saveTasksToIndexedDB(dateKey, tasks);
       } catch (error) {
         console.error("Failed to save tasks to IndexedDB:", error);
@@ -72,5 +93,9 @@ export function useTaskEffects({
     };
 
     saveTasks();
-  }, [tasks, dateKey, syncedDateKey]);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [tasks, dateKey, loadState]);
 }
