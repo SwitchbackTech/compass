@@ -27,14 +27,22 @@ export const Tasks = () => {
             {...droppableProvider.droppableProps}
             style={{ scrollbarGutter: "stable both-edges" }}
           >
-            {tasksProps.tasks.map((task, index) => (
-              <DraggableTask
-                key={task.id}
-                task={task}
-                index={index}
-                tasksProps={tasksProps}
-              />
-            ))}
+            {tasksProps.isLoadingTasks ? (
+              <p className="px-2 py-1 text-sm text-gray-100/70" role="status">
+                Loading tasks...
+              </p>
+            ) : tasksProps.tasks.length === 0 ? (
+              <p className="px-2 py-1 text-sm text-gray-100/70">No tasks yet</p>
+            ) : (
+              tasksProps.tasks.map((task, index) => (
+                <DraggableTask
+                  key={task.id}
+                  task={task}
+                  index={index}
+                  tasksProps={tasksProps}
+                />
+              ))
+            )}
 
             {droppableProvider.placeholder}
           </DropZone>

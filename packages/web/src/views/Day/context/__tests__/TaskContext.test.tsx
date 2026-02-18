@@ -30,14 +30,24 @@ describe("TaskProvider", () => {
     await clearCompassLocalDb();
   });
 
-  it("should provide task context to children", () => {
+  async function waitForTasksReady(result: {
+    current: { isLoadingTasks: boolean };
+  }) {
+    await waitFor(() => {
+      expect(result.current.isLoadingTasks).toBe(false);
+    });
+  }
+
+  it("should provide task context to children", async () => {
     const { result } = renderHook(useTasks, { wrapper: Wrapper });
+    await waitForTasksReady(result);
 
     expect(result.current.tasks).toEqual([]);
   });
 
-  it("should add a task", () => {
+  it("should add a task", async () => {
     const { result } = renderHook(useTasks, { wrapper: Wrapper });
+    await waitForTasksReady(result);
 
     act(() => {
       result.current.addTask("Test task");
@@ -48,8 +58,9 @@ describe("TaskProvider", () => {
     expect(result.current.tasks[0].status).toBe("todo");
   });
 
-  it("should update task title", () => {
+  it("should update task title", async () => {
     const { result } = renderHook(useTasks, { wrapper: Wrapper });
+    await waitForTasksReady(result);
 
     let taskId: string;
     act(() => {
@@ -64,8 +75,9 @@ describe("TaskProvider", () => {
     expect(result.current.tasks[0].title).toBe("New title");
   });
 
-  it("should toggle task status", () => {
+  it("should toggle task status", async () => {
     const { result } = renderHook(useTasks, { wrapper: Wrapper });
+    await waitForTasksReady(result);
 
     let taskId: string;
     act(() => {
@@ -88,8 +100,9 @@ describe("TaskProvider", () => {
     expect(result.current.tasks[0].status).toBe("todo");
   });
 
-  it("should move completed tasks to the end", () => {
+  it("should move completed tasks to the end", async () => {
     const { result } = renderHook(useTasks, { wrapper: Wrapper });
+    await waitForTasksReady(result);
 
     let task1Id: string = "",
       task2Id: string = "",
@@ -115,8 +128,9 @@ describe("TaskProvider", () => {
     expect(result.current.tasks[2].status).toBe("completed");
   });
 
-  it("should delete a task", () => {
+  it("should delete a task", async () => {
     const { result } = renderHook(useTasks, { wrapper: Wrapper });
+    await waitForTasksReady(result);
 
     let taskId: string;
     act(() => {
@@ -135,6 +149,7 @@ describe("TaskProvider", () => {
 
   it("should persist tasks to IndexedDB", async () => {
     const { result } = renderHook(useTasks, { wrapper: Wrapper });
+    await waitForTasksReady(result);
 
     act(() => {
       result.current.addTask("Persisted task");
@@ -241,8 +256,9 @@ describe("TaskProvider", () => {
     expect(result.current.tasks[2].id).toBe("task-2");
   });
 
-  it("should move uncompleted task back to top section", () => {
+  it("should move uncompleted task back to top section", async () => {
     const { result } = renderHook(useTasks, { wrapper: Wrapper });
+    await waitForTasksReady(result);
 
     let task2Id: string;
 
@@ -274,8 +290,9 @@ describe("TaskProvider", () => {
     expect(result.current.tasks[2].title).toBe("Task 2");
   });
 
-  it("should restore a deleted task", () => {
+  it("should restore a deleted task", async () => {
     const { result } = renderHook(useTasks, { wrapper: Wrapper });
+    await waitForTasksReady(result);
 
     let taskId: string;
     act(() => {
@@ -305,8 +322,9 @@ describe("TaskProvider", () => {
     expect(result.current.undoState).toBeNull();
   });
 
-  it("should not restore when no task is deleted", () => {
+  it("should not restore when no task is deleted", async () => {
     const { result } = renderHook(useTasks, { wrapper: Wrapper });
+    await waitForTasksReady(result);
 
     expect(result.current.tasks).toHaveLength(0);
     expect(result.current.undoState).toBeNull();
@@ -320,8 +338,9 @@ describe("TaskProvider", () => {
     expect(result.current.undoState).toBeNull();
   });
 
-  it("should only track the most recent deleted task when multiple tasks are deleted quickly", () => {
+  it("should only track the most recent deleted task when multiple tasks are deleted quickly", async () => {
     const { result } = renderHook(useTasks, { wrapper: Wrapper });
+    await waitForTasksReady(result);
 
     let firstTaskId = "";
     let secondTaskId = "";
@@ -366,8 +385,9 @@ describe("TaskProvider", () => {
   });
 
   describe("reorderTasks", () => {
-    it("should reorder tasks and update order within status groups", () => {
+    it("should reorder tasks and update order within status groups", async () => {
       const { result } = renderHook(useTasks, { wrapper: Wrapper });
+      await waitForTasksReady(result);
 
       act(() => {
         result.current.addTask("Task 1");
@@ -408,8 +428,9 @@ describe("TaskProvider", () => {
       expect(completedTasks[0].order).toBe(0); // Completed task
     });
 
-    it("should handle reordering within the same status group", () => {
+    it("should handle reordering within the same status group", async () => {
       const { result } = renderHook(useTasks, { wrapper: Wrapper });
+      await waitForTasksReady(result);
 
       act(() => {
         result.current.addTask("Task 1");
@@ -434,8 +455,9 @@ describe("TaskProvider", () => {
       expect(result.current.tasks[2].order).toBe(2);
     });
 
-    it("should handle reordering across status boundaries", () => {
+    it("should handle reordering across status boundaries", async () => {
       const { result } = renderHook(useTasks, { wrapper: Wrapper });
+      await waitForTasksReady(result);
 
       act(() => {
         result.current.addTask("Todo Task");

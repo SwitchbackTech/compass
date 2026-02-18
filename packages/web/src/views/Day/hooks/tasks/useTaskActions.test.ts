@@ -2,20 +2,16 @@ import dayjs from "dayjs";
 import { act } from "react";
 import { renderHook, waitFor } from "@testing-library/react";
 import { TaskRepository } from "@web/common/repositories/task/task.repository";
-import { Task } from "../../../../common/types/task.types";
-import * as taskStorageUtil from "../../../../common/utils/storage/task.storage.util";
-import { showMigrationToast } from "../../components/Toasts/MigrationToast/MigrationToast";
+import { Task } from "@web/common/types/task.types";
+import { showMigrationToast } from "@web/views/Day/components/Toasts/MigrationToast/MigrationToast";
 import { useTaskActions } from "./useTaskActions";
 
-jest.mock("../../../../common/utils/storage/task.storage.util", () => ({
-  loadTasksFromIndexedDB: jest.fn().mockResolvedValue([]),
-  saveTasksToIndexedDB: jest.fn().mockResolvedValue(undefined),
-  moveTaskBetweenDates: jest.fn().mockResolvedValue(undefined),
-}));
-
-jest.mock("../../components/Toasts/MigrationToast/MigrationToast", () => ({
-  showMigrationToast: jest.fn(),
-}));
+jest.mock(
+  "@web/views/Day/components/Toasts/MigrationToast/MigrationToast",
+  () => ({
+    showMigrationToast: jest.fn(),
+  }),
+);
 
 describe("useTaskActions - migration", () => {
   const mockSetTasks = jest.fn();
@@ -42,13 +38,6 @@ describe("useTaskActions - migration", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (taskStorageUtil.loadTasksFromIndexedDB as jest.Mock).mockResolvedValue([]);
-    (taskStorageUtil.saveTasksToIndexedDB as jest.Mock).mockResolvedValue(
-      undefined,
-    );
-    (taskStorageUtil.moveTaskBetweenDates as jest.Mock).mockResolvedValue(
-      undefined,
-    );
     mockTaskRepository.get.mockResolvedValue([]);
     mockTaskRepository.save.mockResolvedValue(undefined);
     mockTaskRepository.delete.mockResolvedValue(undefined);
@@ -185,9 +174,6 @@ describe("useTaskActions - migration", () => {
       );
 
       mockTaskRepository.get.mockResolvedValueOnce([mockTask]);
-      (
-        taskStorageUtil.loadTasksFromIndexedDB as jest.Mock
-      ).mockResolvedValueOnce([]);
 
       act(() => {
         result.current.restoreTask();
@@ -202,10 +188,9 @@ describe("useTaskActions - migration", () => {
       await waitFor(() => {
         expect(mockTaskRepository.save).toHaveBeenCalledWith("2025-10-28", []);
       });
-      expect(taskStorageUtil.saveTasksToIndexedDB).toHaveBeenCalledWith(
-        "2025-10-27",
-        [mockTask],
-      );
+      expect(mockTaskRepository.save).toHaveBeenCalledWith("2025-10-27", [
+        mockTask,
+      ]);
 
       // Should clear undo state
       expect(mockSetUndoState).toHaveBeenCalledWith(null);
@@ -235,9 +220,6 @@ describe("useTaskActions - migration", () => {
       );
 
       mockTaskRepository.get.mockResolvedValueOnce([mockTask]);
-      (
-        taskStorageUtil.loadTasksFromIndexedDB as jest.Mock
-      ).mockResolvedValueOnce([]);
 
       act(() => {
         result.current.restoreTask();
@@ -246,10 +228,9 @@ describe("useTaskActions - migration", () => {
       await waitFor(() => {
         expect(mockTaskRepository.save).toHaveBeenCalledWith("2025-10-26", []);
       });
-      expect(taskStorageUtil.saveTasksToIndexedDB).toHaveBeenCalledWith(
-        "2025-10-27",
-        [mockTask],
-      );
+      expect(mockTaskRepository.save).toHaveBeenCalledWith("2025-10-27", [
+        mockTask,
+      ]);
     });
 
     it("does not restore if dateInView has changed", () => {
@@ -438,5 +419,27 @@ describe("useTaskActions - reorderTasks", () => {
     expect(newTasks).not.toBe(tasks);
     expect(newTasks[0]).not.toBe(tasks[1]);
     expect(newTasks[0]).toEqual({ ...tasks[1], order: 0 });
+  });
+
+  it("blocks reordering while tasks are loading", () => {
+    const tasks = [
+      createTask("task-1", "Task 1", "todo", 0),
+      createTask("task-2", "Task 2", "todo", 1),
+    ];
+
+    const { result } = renderHook(() =>
+      useTaskActions({
+        setTasks: mockSetTasks,
+        tasks,
+        taskRepository: mockTaskRepository,
+        isLoadingTasks: true,
+      }),
+    );
+
+    act(() => {
+      result.current.reorderTasks(0, 1);
+    });
+
+    expect(mockSetTasks).not.toHaveBeenCalled();
   });
 });

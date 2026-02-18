@@ -3,20 +3,17 @@ import { useCallback } from "react";
 import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
 import { TaskRepository } from "@web/common/repositories/task/task.repository";
-import { Task, UndoOperation } from "../../../../common/types/task.types";
-import { getDateKey } from "../../../../common/utils/storage/storage.util";
-import {
-  loadTasksFromIndexedDB,
-  saveTasksToIndexedDB,
-} from "../../../../common/utils/storage/task.storage.util";
-import { sortTasksByStatus } from "../../../../common/utils/task/sort.task";
-import { showMigrationToast } from "../../components/Toasts/MigrationToast/MigrationToast";
-import { showUndoDeleteToast } from "../../components/Toasts/UndoToast/UndoDeleteToast";
+import { Task, UndoOperation } from "@web/common/types/task.types";
+import { getDateKey } from "@web/common/utils/storage/storage.util";
+import { sortTasksByStatus } from "@web/common/utils/task/sort.task";
+import { showMigrationToast } from "@web/views/Day/components/Toasts/MigrationToast/MigrationToast";
+import { showUndoDeleteToast } from "@web/views/Day/components/Toasts/UndoToast/UndoDeleteToast";
 
 interface UseTaskActionsProps {
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   tasks: Task[];
   taskRepository: TaskRepository;
+  isLoadingTasks?: boolean;
   editingTitle?: string;
   setEditingTitle?: (title: string) => void;
   setEditingTaskId?: (taskId: string | null) => void;
@@ -35,6 +32,7 @@ export function useTaskActions({
   setTasks,
   tasks,
   taskRepository,
+  isLoadingTasks,
   editingTitle,
   setEditingTitle,
   setEditingTaskId,
@@ -48,6 +46,8 @@ export function useTaskActions({
   navigateToNextDay,
   navigateToPreviousDay,
 }: UseTaskActionsProps) {
+  const isEditingBlocked = Boolean(isLoadingTasks);
+
   const addTask = (title: string): Task => {
     const newTask: Task = {
       id: `task-${uuidv4()}`,
@@ -62,12 +62,16 @@ export function useTaskActions({
   };
 
   const updateTaskTitle = (taskId: string, title: string) => {
+    if (isEditingBlocked) return;
+
     setTasks((prev) =>
       prev.map((task) => (task.id === taskId ? { ...task, title } : task)),
     );
   };
 
   const updateTaskDescription = (taskId: string, description: string) => {
+    if (isEditingBlocked) return;
+
     setTasks((prev) =>
       prev.map((task) =>
         task.id === taskId ? { ...task, description } : task,
@@ -76,6 +80,8 @@ export function useTaskActions({
   };
 
   const toggleTaskStatus = (taskId: string) => {
+    if (isEditingBlocked) return;
+
     setTasks((prev) => {
       const updatedTasks = prev.map((task) => {
         if (task.id === taskId) {
@@ -91,6 +97,7 @@ export function useTaskActions({
   };
 
   const restoreTask = useCallback(() => {
+    if (isEditingBlocked) return;
     if (!undoState) return;
 
     if (undoState.type === "delete") {
@@ -126,16 +133,21 @@ export function useTaskActions({
             );
             await taskRepository.save(targetDateKey, updatedTargetTasks);
 
-            // Restore the task to the original date in storage
-            const originalDateTasks = await loadTasksFromIndexedDB(
-              undoState.fromDate!,
+            // Restore the task to the original date in storage.
+            const originalDateTasks = await taskRepository.get(
+              undoState.fromDate,
             );
-            await saveTasksToIndexedDB(undoState.fromDate!, [
-              ...originalDateTasks,
-              undoState.task,
-            ]);
+            const alreadyExists = originalDateTasks.some(
+              (task) => task.id === undoState.task.id,
+            );
+            if (!alreadyExists) {
+              await taskRepository.save(undoState.fromDate, [
+                ...originalDateTasks,
+                undoState.task,
+              ]);
+            }
           } catch (error) {
-            console.error("Failed to restore task in IndexedDB:", error);
+            console.error("Failed to restore task in repository:", error);
           }
         };
         restoreInStorage();
@@ -152,9 +164,12 @@ export function useTaskActions({
     setUndoToastId,
     setTasks,
     taskRepository,
+    isEditingBlocked,
   ]);
 
   const deleteTask = (taskId: string) => {
+    if (isEditingBlocked) return;
+
     const taskToDelete = tasks.find((task) => task.id === taskId);
     if (!taskToDelete) return;
 
@@ -201,6 +216,8 @@ export function useTaskActions({
     taskId: string,
     title: string,
   ) => {
+    if (isEditingBlocked) return;
+
     if (e.key === " " || e.key === "Enter") {
       e.preventDefault();
       toggleTaskStatus(taskId);
@@ -218,6 +235,8 @@ export function useTaskActions({
   };
 
   const onInputBlur = (taskId: string) => {
+    if (isEditingBlocked) return;
+
     if (isCancellingEdit) {
       // Don't update the task title if we're canceling the edit
       setIsCancellingEdit?.(false);
@@ -238,11 +257,15 @@ export function useTaskActions({
   };
 
   const onInputClick = (taskId: string) => {
+    if (isEditingBlocked) return;
+
     setEditingTaskId?.(taskId);
     setEditingTitle?.(tasks.find((task) => task.id === taskId)?.title || "");
   };
 
   const onInputKeyDown = (e: React.KeyboardEvent, taskId: string) => {
+    if (isEditingBlocked) return;
+
     if (e.key === "Enter") {
       e.preventDefault();
       const trimmedTitle = editingTitle?.trim() || "";
@@ -275,6 +298,8 @@ export function useTaskActions({
 
   const reorderTasks = useCallback(
     (sourceIndex: number, destinationIndex: number) => {
+      if (isEditingBlocked) return;
+
       setTasks((prev) => {
         const newTasks = Array.from(prev);
         const [moved] = newTasks.splice(sourceIndex, 1);
@@ -299,11 +324,12 @@ export function useTaskActions({
         });
       });
     },
-    [setTasks],
+    [setTasks, isEditingBlocked],
   );
 
   const migrateTask = useCallback(
     (taskId: string, direction: "forward" | "backward") => {
+      if (isEditingBlocked) return;
       if (!dateInView) return;
 
       const taskToMigrate = tasks.find((task) => task.id === taskId);
@@ -359,6 +385,7 @@ export function useTaskActions({
       setUndoToastId,
       restoreTask,
       taskRepository,
+      isEditingBlocked,
     ],
   );
 

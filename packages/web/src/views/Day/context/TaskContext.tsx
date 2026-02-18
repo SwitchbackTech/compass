@@ -1,4 +1,5 @@
 import React, { createContext } from "react";
+import { getTaskRepository } from "@web/common/repositories/task/task.repository.util";
 import { Task, UndoOperation } from "@web/common/types/task.types";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useTaskActions } from "@web/views/Day/hooks/tasks/useTaskActions";
@@ -6,6 +7,7 @@ import { useTaskState } from "@web/views/Day/hooks/tasks/useTaskState";
 
 interface TaskContextValue {
   tasks: Task[];
+  isLoadingTasks: boolean;
   editingTitle: string;
   editingTaskId: string | null;
   isAddingTask: boolean;
@@ -41,6 +43,7 @@ interface TaskContextValue {
 export const TaskContext = createContext<TaskContextValue | undefined>(
   undefined,
 );
+const localTaskRepository = getTaskRepository("local");
 
 interface TaskProviderProps {
   children: React.ReactNode;
@@ -53,6 +56,8 @@ export function TaskProvider({ children }: TaskProviderProps) {
   const actions = useTaskActions({
     setTasks: state.setTasks,
     tasks: state.tasks,
+    taskRepository: localTaskRepository,
+    isLoadingTasks: state.isLoadingTasks,
     editingTitle: state.editingTitle,
     setEditingTitle: state.setEditingTitle,
     setEditingTaskId: state.setEditingTaskId,
@@ -69,6 +74,7 @@ export function TaskProvider({ children }: TaskProviderProps) {
 
   const value: TaskContextValue = {
     tasks: state.tasks,
+    isLoadingTasks: state.isLoadingTasks,
     editingTitle: state.editingTitle,
     editingTaskId: state.editingTaskId,
     selectedTaskIndex: state.selectedTaskIndex,

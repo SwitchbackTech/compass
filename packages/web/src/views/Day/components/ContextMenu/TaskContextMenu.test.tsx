@@ -29,7 +29,7 @@ describe("TaskContextMenu", () => {
     await act(async () => {
       await user.click(addButton);
     });
-    const input = screen.getByPlaceholderText("Enter task title...");
+    const input = await screen.findByPlaceholderText("Enter task title...");
     await act(async () => {
       await user.type(input, "Test task{Enter}");
     });
@@ -61,7 +61,7 @@ describe("TaskContextMenu", () => {
     await act(async () => {
       await user.click(addButton);
     });
-    const input = screen.getByPlaceholderText("Enter task title...");
+    const input = await screen.findByPlaceholderText("Enter task title...");
     await act(async () => {
       await user.type(input, "Test task{Enter}");
     });
@@ -92,7 +92,7 @@ describe("TaskContextMenu", () => {
     await act(async () => {
       await user.click(addButton);
     });
-    const input = screen.getByPlaceholderText("Enter task title...");
+    const input = await screen.findByPlaceholderText("Enter task title...");
     await act(async () => {
       await user.type(input, "Task to delete{Enter}");
     });
@@ -133,7 +133,7 @@ describe("TaskContextMenu", () => {
     await act(async () => {
       await user.click(addButton);
     });
-    const input = screen.getByPlaceholderText("Enter task title...");
+    const input = await screen.findByPlaceholderText("Enter task title...");
     await act(async () => {
       await user.type(input, "Test task{Enter}");
     });
@@ -173,7 +173,7 @@ describe("TaskContextMenu", () => {
     await act(async () => {
       await user.click(addButton);
     });
-    const input = screen.getByPlaceholderText("Enter task title...");
+    const input = await screen.findByPlaceholderText("Enter task title...");
     await act(async () => {
       await user.type(input, "Test task{Enter}");
     });
@@ -225,7 +225,7 @@ describe("TaskContextMenu", () => {
     await act(async () => {
       await user.click(addButton);
     });
-    const input = screen.getByPlaceholderText("Enter task title...");
+    const input = await screen.findByPlaceholderText("Enter task title...");
     await act(async () => {
       await user.type(input, "First task{Enter}");
     });
@@ -238,7 +238,7 @@ describe("TaskContextMenu", () => {
     await act(async () => {
       await user.click(addButton2);
     });
-    const input2 = screen.getByPlaceholderText("Enter task title...");
+    const input2 = await screen.findByPlaceholderText("Enter task title...");
     await act(async () => {
       await user.type(input2, "Second task{Enter}");
     });
