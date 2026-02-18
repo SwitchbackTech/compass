@@ -16,10 +16,10 @@ export const SessionExpiredToast = ({ toastId }: SessionExpiredToastProps) => {
   return (
     <div className="flex w-full flex-col gap-2">
       <p className="text-sm text-white">
-        Session expired. Please log in again to reconnect Google Calendar.
+        Google Calendar connection expired. Please reconnect.
       </p>
       <button
-        className="bg-bg-secondary text-text-lighter hover:bg-accent-primary hover:text-text-dark w-full rounded px-3 py-2 text-sm font-medium transition-colors"
+        className="bg-fg-primary-dark text-text-lighter w-full rounded px-3 py-2 text-sm font-medium transition-colors hover:bg-[color-mix(in_srgb,var(--color-fg-primary-dark)_90%,white)]"
         onClick={handleReconnect}
         type="button"
       >

@@ -27,9 +27,7 @@ describe("SessionExpiredToast", () => {
     render(<SessionExpiredToast toastId="session-expired-api" />);
 
     expect(
-      screen.getByText(
-        "Session expired. Please log in again to reconnect Google Calendar.",
-      ),
+      screen.getByText("Google Calendar connection expired. Please reconnect."),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /reconnect google calendar/i }),
