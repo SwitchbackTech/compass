@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import { act } from "react";
-import { renderHook } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
+import { TaskRepository } from "@web/common/repositories/task/task.repository";
 import { Task } from "../../../../common/types/task.types";
 import * as taskStorageUtil from "../../../../common/utils/storage/task.storage.util";
 import { showMigrationToast } from "../../components/Toasts/MigrationToast/MigrationToast";
@@ -23,6 +24,13 @@ describe("useTaskActions - migration", () => {
   const mockDateInView = dayjs("2025-10-27");
   const mockNavigateToNextDay = jest.fn();
   const mockNavigateToPreviousDay = jest.fn();
+  const mockTaskRepository: jest.Mocked<TaskRepository> = {
+    get: jest.fn().mockResolvedValue([]),
+    save: jest.fn().mockResolvedValue(undefined),
+    delete: jest.fn().mockResolvedValue(undefined),
+    move: jest.fn().mockResolvedValue(undefined),
+    reorder: jest.fn().mockResolvedValue(undefined),
+  };
 
   const mockTask: Task = {
     id: "task-1",
@@ -41,6 +49,11 @@ describe("useTaskActions - migration", () => {
     (taskStorageUtil.moveTaskBetweenDates as jest.Mock).mockResolvedValue(
       undefined,
     );
+    mockTaskRepository.get.mockResolvedValue([]);
+    mockTaskRepository.save.mockResolvedValue(undefined);
+    mockTaskRepository.delete.mockResolvedValue(undefined);
+    mockTaskRepository.move.mockResolvedValue(undefined);
+    mockTaskRepository.reorder.mockResolvedValue(undefined);
     (showMigrationToast as jest.Mock).mockReturnValue("toast-id-123");
   });
 
@@ -49,6 +62,7 @@ describe("useTaskActions - migration", () => {
       useTaskActions({
         setTasks: mockSetTasks,
         tasks: [mockTask],
+        taskRepository: mockTaskRepository,
         dateInView: mockDateInView,
         navigateToNextDay: mockNavigateToNextDay,
         navigateToPreviousDay: mockNavigateToPreviousDay,
@@ -78,7 +92,7 @@ describe("useTaskActions - migration", () => {
     expect(updatedTasks).toEqual([]);
 
     // Should move task from current date to next date (async call)
-    expect(taskStorageUtil.moveTaskBetweenDates).toHaveBeenCalledWith(
+    expect(mockTaskRepository.move).toHaveBeenCalledWith(
       mockTask,
       "2025-10-27",
       "2025-10-28",
@@ -100,6 +114,7 @@ describe("useTaskActions - migration", () => {
       useTaskActions({
         setTasks: mockSetTasks,
         tasks: [mockTask],
+        taskRepository: mockTaskRepository,
         dateInView: mockDateInView,
         navigateToNextDay: mockNavigateToNextDay,
         navigateToPreviousDay: mockNavigateToPreviousDay,
@@ -129,7 +144,7 @@ describe("useTaskActions - migration", () => {
     expect(updatedTasks).toEqual([]);
 
     // Should move task from current date to previous date (async call)
-    expect(taskStorageUtil.moveTaskBetweenDates).toHaveBeenCalledWith(
+    expect(mockTaskRepository.move).toHaveBeenCalledWith(
       mockTask,
       "2025-10-27",
       "2025-10-26",
@@ -147,7 +162,7 @@ describe("useTaskActions - migration", () => {
   });
 
   describe("undo migration", () => {
-    it("restores migrated task when on the same date", () => {
+    it("restores migrated task when on the same date", async () => {
       const undoState = {
         type: "migrate" as const,
         task: mockTask,
@@ -159,6 +174,7 @@ describe("useTaskActions - migration", () => {
         useTaskActions({
           setTasks: mockSetTasks,
           tasks: [],
+          taskRepository: mockTaskRepository,
           dateInView: mockDateInView,
           navigateToNextDay: mockNavigateToNextDay,
           navigateToPreviousDay: mockNavigateToPreviousDay,
@@ -168,12 +184,10 @@ describe("useTaskActions - migration", () => {
         }),
       );
 
-      // Mock localStorage to have the migrated task in the target date
-      (Storage.prototype.getItem as jest.Mock).mockImplementation((key) => {
-        if (key === "2025-10-28") return JSON.stringify([mockTask]);
-        if (key === "2025-10-27") return JSON.stringify([]);
-        return null;
-      });
+      mockTaskRepository.get.mockResolvedValueOnce([mockTask]);
+      (
+        taskStorageUtil.loadTasksFromIndexedDB as jest.Mock
+      ).mockResolvedValueOnce([]);
 
       act(() => {
         result.current.restoreTask();
@@ -185,14 +199,10 @@ describe("useTaskActions - migration", () => {
       const updatedTasks = setTasksCall([]);
       expect(updatedTasks).toEqual([mockTask]);
 
-      // Should remove from target date in storage
-      expect(storageUtil.saveTasksToStorage).toHaveBeenCalledWith(
-        "2025-10-28",
-        [],
-      );
-
-      // Should restore to original date in storage
-      expect(storageUtil.saveTasksToStorage).toHaveBeenCalledWith(
+      await waitFor(() => {
+        expect(mockTaskRepository.save).toHaveBeenCalledWith("2025-10-28", []);
+      });
+      expect(taskStorageUtil.saveTasksToIndexedDB).toHaveBeenCalledWith(
         "2025-10-27",
         [mockTask],
       );
@@ -202,7 +212,7 @@ describe("useTaskActions - migration", () => {
       expect(mockSetUndoToastId).toHaveBeenCalledWith(null);
     });
 
-    it("restores backward migrated task correctly", () => {
+    it("restores backward migrated task correctly", async () => {
       const undoState = {
         type: "migrate" as const,
         task: mockTask,
@@ -214,6 +224,7 @@ describe("useTaskActions - migration", () => {
         useTaskActions({
           setTasks: mockSetTasks,
           tasks: [],
+          taskRepository: mockTaskRepository,
           dateInView: mockDateInView,
           navigateToNextDay: mockNavigateToNextDay,
           navigateToPreviousDay: mockNavigateToPreviousDay,
@@ -223,25 +234,19 @@ describe("useTaskActions - migration", () => {
         }),
       );
 
-      // Mock localStorage to have the migrated task in the target date (previous day)
-      (Storage.prototype.getItem as jest.Mock).mockImplementation((key) => {
-        if (key === "2025-10-26") return JSON.stringify([mockTask]);
-        if (key === "2025-10-27") return JSON.stringify([]);
-        return null;
-      });
+      mockTaskRepository.get.mockResolvedValueOnce([mockTask]);
+      (
+        taskStorageUtil.loadTasksFromIndexedDB as jest.Mock
+      ).mockResolvedValueOnce([]);
 
       act(() => {
         result.current.restoreTask();
       });
 
-      // Should remove from target date (previous day) in storage
-      expect(storageUtil.saveTasksToStorage).toHaveBeenCalledWith(
-        "2025-10-26",
-        [],
-      );
-
-      // Should restore to original date in storage
-      expect(storageUtil.saveTasksToStorage).toHaveBeenCalledWith(
+      await waitFor(() => {
+        expect(mockTaskRepository.save).toHaveBeenCalledWith("2025-10-26", []);
+      });
+      expect(taskStorageUtil.saveTasksToIndexedDB).toHaveBeenCalledWith(
         "2025-10-27",
         [mockTask],
       );
@@ -259,6 +264,7 @@ describe("useTaskActions - migration", () => {
         useTaskActions({
           setTasks: mockSetTasks,
           tasks: [],
+          taskRepository: mockTaskRepository,
           dateInView: dayjs("2025-10-28"), // Different date
           navigateToNextDay: mockNavigateToNextDay,
           navigateToPreviousDay: mockNavigateToPreviousDay,
@@ -296,6 +302,7 @@ describe("useTaskActions - migration", () => {
         useTaskActions({
           setTasks: mockSetTasks,
           tasks: [],
+          taskRepository: mockTaskRepository,
           dateInView: mockDateInView,
           navigateToNextDay: mockNavigateToNextDay,
           navigateToPreviousDay: mockNavigateToPreviousDay,
@@ -324,6 +331,13 @@ describe("useTaskActions - migration", () => {
 
 describe("useTaskActions - reorderTasks", () => {
   const mockSetTasks = jest.fn();
+  const mockTaskRepository: jest.Mocked<TaskRepository> = {
+    get: jest.fn().mockResolvedValue([]),
+    save: jest.fn().mockResolvedValue(undefined),
+    delete: jest.fn().mockResolvedValue(undefined),
+    move: jest.fn().mockResolvedValue(undefined),
+    reorder: jest.fn().mockResolvedValue(undefined),
+  };
 
   const createTask = (
     id: string,
@@ -353,6 +367,7 @@ describe("useTaskActions - reorderTasks", () => {
       useTaskActions({
         setTasks: mockSetTasks,
         tasks,
+        taskRepository: mockTaskRepository,
       }),
     );
 
@@ -382,6 +397,7 @@ describe("useTaskActions - reorderTasks", () => {
       useTaskActions({
         setTasks: mockSetTasks,
         tasks,
+        taskRepository: mockTaskRepository,
       }),
     );
 
@@ -408,6 +424,7 @@ describe("useTaskActions - reorderTasks", () => {
       useTaskActions({
         setTasks: mockSetTasks,
         tasks,
+        taskRepository: mockTaskRepository,
       }),
     );
 
