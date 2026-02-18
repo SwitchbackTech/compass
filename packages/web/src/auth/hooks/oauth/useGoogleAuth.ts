@@ -1,13 +1,10 @@
 import { batch } from "react-redux";
 import { toast } from "react-toastify";
 import { useGoogleAuthWithOverlay } from "@web/auth/hooks/oauth/useGoogleAuthWithOverlay";
-import { useIsSignupComplete } from "@web/auth/hooks/onboarding/useIsSignupComplete";
-import { useSkipOnboarding } from "@web/auth/hooks/onboarding/useSkipOnboarding";
 import { useSession } from "@web/auth/hooks/session/useSession";
 import { toastDefaultOptions } from "@web/common/constants/toast.constants";
 import {
   authenticate,
-  fetchOnboardingStatus,
   syncLocalEvents,
 } from "@web/common/utils/auth/google-auth.util";
 import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
@@ -29,8 +26,6 @@ import { useAppDispatch } from "@web/store/store.hooks";
 export function useGoogleAuth() {
   const dispatch = useAppDispatch();
   const { setAuthenticated } = useSession();
-  const { markSignupCompleted } = useIsSignupComplete();
-  const { updateOnboardingStatus } = useSkipOnboarding();
 
   const googleLogin = useGoogleAuthWithOverlay({
     onStart: () => {
@@ -66,12 +61,6 @@ export function useGoogleAuth() {
           dispatch(importGCalSlice.actions.importing(true));
           dispatch(importGCalSlice.actions.setAwaitingImportResults(true));
         });
-
-        const { skipOnboarding } = await fetchOnboardingStatus();
-
-        updateOnboardingStatus(skipOnboarding);
-
-        markSignupCompleted();
 
         const syncResult = await syncLocalEvents();
 

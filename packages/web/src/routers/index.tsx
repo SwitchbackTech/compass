@@ -8,8 +8,8 @@ import { IS_DEV } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import {
+  loadAuthenticated,
   loadDayData,
-  loadOnboardingStatus,
   loadRootData,
   loadSpecificDayData,
 } from "@web/routers/loaders";
@@ -37,7 +37,7 @@ export const router = createBrowserRouter(
             Component: module.RootView,
           }),
         ),
-      loader: loadOnboardingStatus,
+      loader: loadAuthenticated,
       children: [
         {
           path: ROOT_ROUTES.NOW,
