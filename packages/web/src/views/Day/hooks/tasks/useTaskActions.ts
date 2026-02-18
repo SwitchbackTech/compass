@@ -5,6 +5,10 @@ import { v4 as uuidv4 } from "uuid";
 import { TaskRepository } from "@web/common/repositories/task/task.repository";
 import { Task, UndoOperation } from "../../../../common/types/task.types";
 import { getDateKey } from "../../../../common/utils/storage/storage.util";
+import {
+  loadTasksFromIndexedDB,
+  saveTasksToIndexedDB,
+} from "../../../../common/utils/storage/task.storage.util";
 import { sortTasksByStatus } from "../../../../common/utils/task/sort.task";
 import { showMigrationToast } from "../../components/Toasts/MigrationToast/MigrationToast";
 import { showUndoDeleteToast } from "../../components/Toasts/UndoToast/UndoDeleteToast";
@@ -114,9 +118,6 @@ export function useTaskActions({
 
         // Async storage operations (fire and forget since we're in a callback)
         const restoreInStorage = async () => {
-          const fromDate = undoState.fromDate;
-          if (!fromDate) return;
-
           try {
             // Remove the task from the target date in storage
             const targetDateTasks = await taskRepository.get(targetDateKey);
@@ -126,13 +127,15 @@ export function useTaskActions({
             await taskRepository.save(targetDateKey, updatedTargetTasks);
 
             // Restore the task to the original date in storage
-            const originalDateTasks = await taskRepository.get(fromDate);
-            await taskRepository.save(fromDate, [
+            const originalDateTasks = await loadTasksFromIndexedDB(
+              undoState.fromDate!,
+            );
+            await saveTasksToIndexedDB(undoState.fromDate!, [
               ...originalDateTasks,
               undoState.task,
             ]);
           } catch (error) {
-            console.error("Failed to restore task in storage:", error);
+            console.error("Failed to restore task in IndexedDB:", error);
           }
         };
         restoreInStorage();
@@ -145,9 +148,9 @@ export function useTaskActions({
   }, [
     undoState,
     dateInView,
-    setTasks,
     setUndoState,
     setUndoToastId,
+    setTasks,
     taskRepository,
   ]);
 
@@ -270,6 +273,35 @@ export function useTaskActions({
     }
   };
 
+  const reorderTasks = useCallback(
+    (sourceIndex: number, destinationIndex: number) => {
+      setTasks((prev) => {
+        const newTasks = Array.from(prev);
+        const [moved] = newTasks.splice(sourceIndex, 1);
+        newTasks.splice(destinationIndex, 0, moved);
+
+        const todoTasks = newTasks.filter((t) => t.status === "todo");
+        const completedTasks = newTasks.filter((t) => t.status === "completed");
+
+        const todoOrderById = new Map(
+          todoTasks.map((task, index) => [task.id, index]),
+        );
+        const completedOrderById = new Map(
+          completedTasks.map((task, index) => [task.id, index]),
+        );
+
+        return newTasks.map((task) => {
+          const order =
+            task.status === "todo"
+              ? (todoOrderById.get(task.id) ?? 0)
+              : (completedOrderById.get(task.id) ?? 0);
+          return { ...task, order };
+        });
+      });
+    },
+    [setTasks],
+  );
+
   const migrateTask = useCallback(
     (taskId: string, direction: "forward" | "backward") => {
       if (!dateInView) return;
@@ -344,5 +376,6 @@ export function useTaskActions({
     onInputClick,
     onInputKeyDown,
     migrateTask,
+    reorderTasks,
   };
 }
