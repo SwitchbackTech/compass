@@ -9,7 +9,6 @@ const mockSave = jest.fn();
 const mockTaskRepository: TaskRepository = {
   get: jest.fn().mockResolvedValue([]),
   save: mockSave,
-  saveTask: jest.fn().mockResolvedValue(undefined),
   delete: jest.fn().mockResolvedValue(undefined),
   move: jest.fn().mockResolvedValue(undefined),
   reorder: jest.fn().mockResolvedValue(undefined),

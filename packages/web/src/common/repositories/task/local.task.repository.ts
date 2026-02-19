@@ -19,13 +19,13 @@ export class LocalTaskRepository implements TaskRepository {
     return this.adapter.getTasks(dateKey);
   }
 
-  async save(dateKey: string, tasks: Task[]): Promise<void> {
-    await this.adapter.putTasks(dateKey, tasks);
-    dispatchTasksSavedEvent(dateKey);
-  }
-
-  async saveTask(dateKey: string, task: Task): Promise<void> {
-    await this.adapter.putTask(dateKey, task);
+  async save(dateKey: string, taskOrTasks: Task | Task[]): Promise<void> {
+    const tasks = Array.isArray(taskOrTasks) ? taskOrTasks : [taskOrTasks];
+    if (tasks.length === 1 && !Array.isArray(taskOrTasks)) {
+      await this.adapter.putTask(dateKey, tasks[0]);
+    } else {
+      await this.adapter.putTasks(dateKey, tasks);
+    }
     dispatchTasksSavedEvent(dateKey);
   }
 

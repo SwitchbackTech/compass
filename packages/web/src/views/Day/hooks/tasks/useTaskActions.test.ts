@@ -24,7 +24,6 @@ describe("useTaskActions - migration", () => {
   const mockTaskRepository: jest.Mocked<TaskRepository> = {
     get: jest.fn().mockResolvedValue([]),
     save: jest.fn().mockResolvedValue(undefined),
-    saveTask: jest.fn().mockResolvedValue(undefined),
     delete: jest.fn().mockResolvedValue(undefined),
     move: jest.fn().mockResolvedValue(undefined),
     reorder: jest.fn().mockResolvedValue(undefined),
@@ -36,7 +35,6 @@ describe("useTaskActions - migration", () => {
     jest.clearAllMocks();
     mockTaskRepository.get.mockResolvedValue([]);
     mockTaskRepository.save.mockResolvedValue(undefined);
-    mockTaskRepository.saveTask.mockResolvedValue(undefined);
     mockTaskRepository.delete.mockResolvedValue(undefined);
     mockTaskRepository.move.mockResolvedValue(undefined);
     mockTaskRepository.reorder.mockResolvedValue(undefined);
@@ -185,7 +183,7 @@ describe("useTaskActions - migration", () => {
       await waitFor(() => {
         expect(mockTaskRepository.save).toHaveBeenCalledWith("2025-10-28", []);
       });
-      expect(mockTaskRepository.saveTask).toHaveBeenCalledWith(
+      expect(mockTaskRepository.save).toHaveBeenCalledWith(
         "2025-10-27",
         mockTask,
       );
@@ -226,7 +224,7 @@ describe("useTaskActions - migration", () => {
       await waitFor(() => {
         expect(mockTaskRepository.save).toHaveBeenCalledWith("2025-10-26", []);
       });
-      expect(mockTaskRepository.saveTask).toHaveBeenCalledWith(
+      expect(mockTaskRepository.save).toHaveBeenCalledWith(
         "2025-10-27",
         mockTask,
       );
@@ -314,7 +312,6 @@ describe("useTaskActions - reorderTasks", () => {
   const mockTaskRepository: jest.Mocked<TaskRepository> = {
     get: jest.fn().mockResolvedValue([]),
     save: jest.fn().mockResolvedValue(undefined),
-    saveTask: jest.fn().mockResolvedValue(undefined),
     delete: jest.fn().mockResolvedValue(undefined),
     move: jest.fn().mockResolvedValue(undefined),
     reorder: jest.fn().mockResolvedValue(undefined),

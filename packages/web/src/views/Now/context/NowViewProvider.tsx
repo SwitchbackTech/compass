@@ -38,7 +38,7 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
       const completedTask = { ...task, status: "completed" as const };
       const dateKey = getDateKey();
       await ensureStorageReady();
-      await getTaskRepository("local").saveTask(dateKey, completedTask);
+      await getTaskRepository("local").save(dateKey, completedTask);
       return allTasks.map((t) => (t._id === task._id ? completedTask : t));
     },
     [allTasks],
@@ -48,7 +48,7 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
     (task: Task, description: string) => {
       void (async () => {
         await ensureStorageReady();
-        await getTaskRepository("local").saveTask(getDateKey(), {
+        await getTaskRepository("local").save(getDateKey(), {
           ...task,
           description,
         });

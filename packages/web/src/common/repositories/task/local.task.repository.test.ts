@@ -13,6 +13,7 @@ describe("LocalTaskRepository", () => {
   let mockAdapter: {
     getTasks: jest.Mock;
     putTasks: jest.Mock;
+    putTask: jest.Mock;
     deleteTask: jest.Mock;
     moveTask: jest.Mock;
   };
@@ -21,6 +22,7 @@ describe("LocalTaskRepository", () => {
     mockAdapter = {
       getTasks: jest.fn().mockResolvedValue([]),
       putTasks: jest.fn().mockResolvedValue(undefined),
+      putTask: jest.fn().mockResolvedValue(undefined),
       deleteTask: jest.fn().mockResolvedValue(undefined),
       moveTask: jest.fn().mockResolvedValue(undefined),
     };
@@ -91,6 +93,20 @@ describe("LocalTaskRepository", () => {
       await repository.save(dateKey, tasks);
 
       expect(mockAdapter.putTasks).toHaveBeenCalledWith(dateKey, tasks);
+    });
+
+    it("should save single task using putTask", async () => {
+      const dateKey = "2024-01-01";
+      const task = createTestTask({
+        _id: "task-1",
+        title: "Single Task",
+      });
+
+      await repository.save(dateKey, task);
+
+      expect(mockAdapter.putTask).toHaveBeenCalledWith(dateKey, task);
+      expect(mockAdapter.putTask).toHaveBeenCalledTimes(1);
+      expect(mockAdapter.putTasks).not.toHaveBeenCalled();
     });
   });
 

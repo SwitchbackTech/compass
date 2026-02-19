@@ -138,7 +138,7 @@ export function useTaskActions({
               await taskRepository.save(targetDateKey, updatedTargetTasks);
 
               // Restore the task to the original date in storage (single write, no read)
-              await taskRepository.saveTask(fromDate, operation.task);
+              await taskRepository.save(fromDate, operation.task);
             } catch (error) {
               console.error("Failed to restore task in repository:", error);
             }

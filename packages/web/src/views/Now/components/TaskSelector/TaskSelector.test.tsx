@@ -28,10 +28,10 @@ jest.mock("@web/common/utils/storage/storage.util", () => ({
 }));
 
 jest.mock("@web/common/repositories/task/task.repository.util", () => {
-  const mockSaveTask = jest.fn().mockResolvedValue(undefined);
+  const mockSave = jest.fn().mockResolvedValue(undefined);
   return {
     getTaskRepository: jest.fn(() => ({
-      saveTask: mockSaveTask,
+      save: mockSave,
     })),
   };
 });
@@ -40,9 +40,8 @@ jest.mock("@web/common/storage/adapter/adapter", () => ({
   ensureStorageReady: jest.fn().mockResolvedValue(undefined),
 }));
 
-/** Get the saveTask mock from the mocked getTaskRepository return value */
-const getMockSaveTask = () =>
-  (getTaskRepository as jest.Mock)().saveTask as jest.Mock;
+/** Get the save mock from the mocked getTaskRepository return value */
+const getMockSave = () => (getTaskRepository as jest.Mock)().save as jest.Mock;
 
 const mockUseFocusedTask = useFocusedTask as jest.MockedFunction<
   typeof useFocusedTask
@@ -101,7 +100,7 @@ describe("TaskSelector", () => {
     jest.clearAllMocks();
     mockNavigate.mockClear();
     mockSetFocusedTask.mockClear();
-    getMockSaveTask().mockResolvedValue(undefined);
+    getMockSave().mockResolvedValue(undefined);
     (storageUtil.getDateKey as jest.Mock).mockReturnValue(mockDateKey);
 
     // Use fake timers to control the current time
@@ -324,8 +323,8 @@ describe("TaskSelector", () => {
       await user.click(checkButton);
 
       await waitFor(() => {
-        expect(getMockSaveTask()).toHaveBeenCalledTimes(1);
-        expect(getMockSaveTask()).toHaveBeenCalledWith(
+        expect(getMockSave()).toHaveBeenCalledTimes(1);
+        expect(getMockSave()).toHaveBeenCalledWith(
           mockDateKey,
           expect.objectContaining({ _id: "task-1", status: "completed" }),
         );
@@ -372,8 +371,8 @@ describe("TaskSelector", () => {
       await user.click(checkButton);
 
       await waitFor(() => {
-        expect(getMockSaveTask()).toHaveBeenCalledTimes(1);
-        expect(getMockSaveTask()).toHaveBeenCalledWith(
+        expect(getMockSave()).toHaveBeenCalledTimes(1);
+        expect(getMockSave()).toHaveBeenCalledWith(
           mockDateKey,
           expect.objectContaining({ _id: "task-2", status: "completed" }),
         );
@@ -412,8 +411,8 @@ describe("TaskSelector", () => {
       await user.click(checkButton);
 
       await waitFor(() => {
-        expect(getMockSaveTask()).toHaveBeenCalledTimes(1);
-        expect(getMockSaveTask()).toHaveBeenCalledWith(
+        expect(getMockSave()).toHaveBeenCalledTimes(1);
+        expect(getMockSave()).toHaveBeenCalledWith(
           mockDateKey,
           expect.objectContaining({ _id: "task-1", status: "completed" }),
         );
