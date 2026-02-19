@@ -1,7 +1,10 @@
 import { Event_Core } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
-import { compassLocalDB } from "./compass-local.db";
+import {
+  ensureStorageReady,
+  getStorageAdapter,
+} from "@web/common/storage/adapter/adapter";
 import {
   clearEventsFromIndexedDB,
   deleteEventFromIndexedDB,
@@ -12,6 +15,7 @@ import {
 
 describe("event.storage.util", () => {
   beforeEach(async () => {
+    await ensureStorageReady();
     await clearEventsFromIndexedDB();
   });
 
@@ -27,7 +31,8 @@ describe("event.storage.util", () => {
       const event = createMockEvent();
       await saveEventToIndexedDB(event);
 
-      const savedEvent = await compassLocalDB.events.get(event._id!);
+      const allEvents = await getStorageAdapter().getAllEvents();
+      const savedEvent = allEvents.find((e) => e._id === event._id);
       expect(savedEvent).toBeDefined();
       expect(savedEvent?._id).toBe(event._id);
       expect(savedEvent?.title).toBe(event.title);
@@ -43,7 +48,8 @@ describe("event.storage.util", () => {
       };
       await saveEventToIndexedDB(updatedEvent);
 
-      const savedEvent = await compassLocalDB.events.get(event._id!);
+      const allEvents = await getStorageAdapter().getAllEvents();
+      const savedEvent = allEvents.find((e) => e._id === event._id);
       expect(savedEvent?.title).toBe("Updated Title");
     });
 
@@ -285,7 +291,8 @@ describe("event.storage.util", () => {
 
       await deleteEventFromIndexedDB(event._id!);
 
-      const deletedEvent = await compassLocalDB.events.get(event._id!);
+      const allEvents = await getStorageAdapter().getAllEvents();
+      const deletedEvent = allEvents.find((e) => e._id === event._id);
       expect(deletedEvent).toBeUndefined();
     });
 
@@ -306,7 +313,7 @@ describe("event.storage.util", () => {
 
       await clearEventsFromIndexedDB();
 
-      const allEvents = await compassLocalDB.events.toArray();
+      const allEvents = await getStorageAdapter().getAllEvents();
       expect(allEvents).toHaveLength(0);
     });
   });

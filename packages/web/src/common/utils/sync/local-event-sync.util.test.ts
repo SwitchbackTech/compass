@@ -1,6 +1,9 @@
 import { Event_Core } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
-import { compassLocalDB } from "@web/common/utils/storage/compass-local.db";
+import {
+  ensureStorageReady,
+  getStorageAdapter,
+} from "@web/common/storage/adapter/adapter";
 import { saveEventToIndexedDB } from "@web/common/utils/storage/event.storage.util";
 import { EventApi } from "@web/ducks/events/event.api";
 import { syncLocalEventsToCloud } from "./local-event-sync.util";
@@ -13,7 +16,8 @@ describe("syncLocalEventsToCloud", () => {
 
   beforeEach(async () => {
     mockCreate.mockResolvedValue({} as never);
-    await compassLocalDB.events.clear();
+    await ensureStorageReady();
+    await getStorageAdapter().clearAllEvents();
   });
 
   afterEach(() => {
@@ -38,7 +42,7 @@ describe("syncLocalEventsToCloud", () => {
     );
     expect(count).toBe(2);
 
-    const remainingEvents = await compassLocalDB.events.toArray();
+    const remainingEvents = await getStorageAdapter().getAllEvents();
     expect(remainingEvents).toHaveLength(0);
   });
 

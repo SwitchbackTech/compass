@@ -12,7 +12,6 @@ import { MigrationRecord, StorageAdapter, StoredTask } from "./storage.adapter";
  * Dexie database schema for Compass local storage.
  *
  * Schema versioning is handled by Dexie's built-in version() method.
- * When switching to SQLite, the equivalent would be ALTER TABLE migrations.
  */
 class CompassDB extends Dexie {
   events!: Table<Event_Core, string>;
@@ -129,6 +128,14 @@ export class IndexedDBAdapter implements StorageAdapter {
 
   async clearAllTasks(): Promise<void> {
     await this.db.tasks.clear();
+  }
+
+  /**
+   * For use in tests only. Puts a raw stored task without normalization.
+   * Use when testing migration/normalization of legacy data.
+   */
+  async putRawStoredTaskForTesting(storedTask: StoredTask): Promise<void> {
+    await this.db.tasks.put(storedTask);
   }
 
   // ─── Event Operations ──────────────────────────────────────────────────────

@@ -10,7 +10,7 @@ import { DataMigration, ExternalMigration } from "./migration.types";
  * Tracked via the storage adapter's migration records.
  */
 export const dataMigrations: DataMigration[] = [
-  // Add data migrations here as needed:
+  // Add data migrations here as needed. Examples:
   // addUserFieldMigration,
   // renameStatusFieldMigration,
 ];
