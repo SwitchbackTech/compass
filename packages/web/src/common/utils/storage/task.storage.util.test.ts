@@ -46,7 +46,7 @@ describe("task.storage.util", () => {
     });
 
     it("should default user when saving a task without user", async () => {
-      const task = createMockTask();
+      const task = createMockTask({ user: undefined });
       delete (task as Partial<Task>).user;
       const dateKey = "2024-01-15";
 
