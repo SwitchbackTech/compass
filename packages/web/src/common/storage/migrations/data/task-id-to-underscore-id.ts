@@ -36,8 +36,12 @@ export const taskIdToUnderscoreIdMigration: DataMigration = {
     const allTasks = (await adapter.getAllTasks()) as RawStoredTask[];
     if (allTasks.length === 0) return;
 
+    const affectedDateKeys = new Set<string>();
     const byDate = new Map<string, Task[]>();
+
     for (const raw of allTasks) {
+      affectedDateKeys.add(raw.dateKey);
+
       const fixed = fixTaskId(raw);
       if (!fixed) continue;
 
@@ -47,7 +51,8 @@ export const taskIdToUnderscoreIdMigration: DataMigration = {
       byDate.set(dateKey, list);
     }
 
-    for (const [dateKey, tasks] of byDate) {
+    for (const dateKey of affectedDateKeys) {
+      const tasks = byDate.get(dateKey) ?? [];
       const sorted = [...tasks].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
       await adapter.putTasks(dateKey, sorted);
     }
