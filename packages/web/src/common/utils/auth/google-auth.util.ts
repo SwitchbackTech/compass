@@ -1,15 +1,10 @@
 import { AuthApi } from "@web/common/apis/auth.api";
-import { UserApi } from "@web/common/apis/user.api";
 import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
 import { SignInUpInput } from "@web/components/oauth/ouath.types";
 
 export interface AuthenticateResult {
   success: boolean;
   error?: Error;
-}
-
-export interface OnboardingStatusResult {
-  skipOnboarding: boolean;
 }
 
 export interface SyncLocalEventsResult {
@@ -29,19 +24,6 @@ export async function authenticate(
     return { success: true };
   } catch (error) {
     return { success: false, error: error as Error };
-  }
-}
-
-/**
- * Fetch onboarding status from the server.
- * Returns skipOnboarding: true as default if the request fails.
- */
-export async function fetchOnboardingStatus(): Promise<OnboardingStatusResult> {
-  try {
-    const metadata = await UserApi.getMetadata();
-    return { skipOnboarding: metadata.skipOnboarding ?? true };
-  } catch {
-    return { skipOnboarding: true };
   }
 }
 

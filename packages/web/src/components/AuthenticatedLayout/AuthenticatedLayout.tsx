@@ -1,7 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { SyncEventsOverlay } from "@web/components/SyncEventsOverlay/SyncEventsOverlay";
 import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
-import { OnboardingGuide } from "@web/views/Onboarding/components/OnboardingGuide";
 
 /**
  * Layout component for authenticated routes
@@ -14,7 +13,6 @@ export const AuthenticatedLayout = () => {
   return (
     <>
       <Outlet />
-      <OnboardingGuide />
       <SyncEventsOverlay />
     </>
   );

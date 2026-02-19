@@ -9,8 +9,6 @@ import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visi
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { ONBOARDING_RESTART_EVENT } from "@web/views/Onboarding/constants/onboarding.constants";
-import { resetOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 export const NowCmdPalette = () => {
   const dispatch = useAppDispatch();
@@ -61,15 +59,6 @@ export const NowCmdPalette = () => {
             onClick: isGoogleCalendarConnected
               ? undefined
               : onConnectGoogleCalendar,
-          },
-          {
-            id: "redo-onboarding",
-            children: "Re-do onboarding",
-            icon: "ArrowPathIcon",
-            onClick: () => {
-              resetOnboardingProgress();
-              window.dispatchEvent(new CustomEvent(ONBOARDING_RESTART_EVENT));
-            },
           },
           {
             id: "log-out",

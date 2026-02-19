@@ -25,8 +25,6 @@ import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.s
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { ShortcutProps } from "@web/views/Calendar/hooks/shortcuts/useWeekShortcuts";
-import { ONBOARDING_RESTART_EVENT } from "@web/views/Onboarding/constants/onboarding.constants";
-import { resetOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 const CmdPalette = ({
   today,
@@ -147,15 +145,6 @@ const CmdPalette = ({
             onClick: isGoogleCalendarConnected
               ? undefined
               : onConnectGoogleCalendar,
-          },
-          {
-            id: "redo-onboarding",
-            children: "Re-do onboarding",
-            icon: "ArrowPathIcon",
-            onClick: () => {
-              resetOnboardingProgress();
-              window.dispatchEvent(new CustomEvent(ONBOARDING_RESTART_EVENT));
-            },
           },
           {
             id: "log-out",

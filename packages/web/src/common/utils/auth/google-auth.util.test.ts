@@ -1,19 +1,12 @@
 import { AuthApi } from "@web/common/apis/auth.api";
-import { UserApi } from "@web/common/apis/user.api";
 import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
 import { SignInUpInput } from "@web/components/oauth/ouath.types";
-import {
-  authenticate,
-  fetchOnboardingStatus,
-  syncLocalEvents,
-} from "./google-auth.util";
+import { authenticate, syncLocalEvents } from "./google-auth.util";
 
 jest.mock("@web/common/apis/auth.api");
-jest.mock("@web/common/apis/user.api");
 jest.mock("@web/common/utils/sync/local-event-sync.util");
 
 const mockAuthApi = AuthApi as jest.Mocked<typeof AuthApi>;
-const mockUserApi = UserApi as jest.Mocked<typeof UserApi>;
 const mockSyncLocalEventsToCloud =
   syncLocalEventsToCloud as jest.MockedFunction<typeof syncLocalEventsToCloud>;
 
@@ -67,32 +60,6 @@ describe("google-auth.util", () => {
       const result = await authenticate(mockSignInUpInput);
 
       expect(result).toEqual({ success: false, error });
-    });
-  });
-
-  describe("fetchOnboardingStatus", () => {
-    it("returns skipOnboarding from metadata", async () => {
-      mockUserApi.getMetadata.mockResolvedValue({ skipOnboarding: false });
-
-      const result = await fetchOnboardingStatus();
-
-      expect(result).toEqual({ skipOnboarding: false });
-    });
-
-    it("returns skipOnboarding: true when metadata has undefined skipOnboarding", async () => {
-      mockUserApi.getMetadata.mockResolvedValue({});
-
-      const result = await fetchOnboardingStatus();
-
-      expect(result).toEqual({ skipOnboarding: true });
-    });
-
-    it("returns skipOnboarding: true when metadata request fails", async () => {
-      mockUserApi.getMetadata.mockRejectedValue(new Error("Network error"));
-
-      const result = await fetchOnboardingStatus();
-
-      expect(result).toEqual({ skipOnboarding: true });
     });
   });
 
