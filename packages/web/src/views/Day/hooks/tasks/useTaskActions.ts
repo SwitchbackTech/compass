@@ -1,21 +1,20 @@
 import dayjs from "dayjs";
 import { useCallback } from "react";
 import { toast } from "react-toastify";
-import { v4 as uuidv4 } from "uuid";
-import { Task, UndoOperation } from "../../../../common/types/task.types";
-import {
-  getDateKey,
-  loadTasksFromStorage,
-  moveTaskToDate,
-  saveTasksToStorage,
-} from "../../../../common/utils/storage/storage.util";
-import { sortTasksByStatus } from "../../../../common/utils/task/sort.task";
-import { showMigrationToast } from "../../components/Toasts/MigrationToast/MigrationToast";
-import { showUndoDeleteToast } from "../../components/Toasts/UndoToast/UndoDeleteToast";
+import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
+import { TaskRepository } from "@web/common/repositories/task/task.repository";
+import { Task, UndoOperation } from "@web/common/types/task.types";
+import { createObjectIdString } from "@web/common/utils/id/object-id.util";
+import { getDateKey } from "@web/common/utils/storage/storage.util";
+import { sortTasksByStatus } from "@web/common/utils/task/sort.task";
+import { showMigrationToast } from "@web/views/Day/components/Toasts/MigrationToast/MigrationToast";
+import { showUndoDeleteToast } from "@web/views/Day/components/Toasts/UndoToast/UndoDeleteToast";
 
 interface UseTaskActionsProps {
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   tasks: Task[];
+  taskRepository: TaskRepository;
+  isLoadingTasks?: boolean;
   editingTitle?: string;
   setEditingTitle?: (title: string) => void;
   setEditingTaskId?: (taskId: string | null) => void;
@@ -33,6 +32,8 @@ interface UseTaskActionsProps {
 export function useTaskActions({
   setTasks,
   tasks,
+  taskRepository,
+  isLoadingTasks,
   editingTitle,
   setEditingTitle,
   setEditingTaskId,
@@ -46,13 +47,16 @@ export function useTaskActions({
   navigateToNextDay,
   navigateToPreviousDay,
 }: UseTaskActionsProps) {
+  const isEditingBlocked = Boolean(isLoadingTasks);
+
   const addTask = (title: string): Task => {
     const newTask: Task = {
-      id: `task-${uuidv4()}`,
+      id: createObjectIdString(),
       title,
       status: "todo",
       order: tasks.length,
       createdAt: new Date().toISOString(),
+      user: UNAUTHENTICATED_USER,
     };
 
     setTasks((prev) => sortTasksByStatus([...prev, newTask]));
@@ -60,12 +64,16 @@ export function useTaskActions({
   };
 
   const updateTaskTitle = (taskId: string, title: string) => {
+    if (isEditingBlocked) return;
+
     setTasks((prev) =>
       prev.map((task) => (task.id === taskId ? { ...task, title } : task)),
     );
   };
 
   const updateTaskDescription = (taskId: string, description: string) => {
+    if (isEditingBlocked) return;
+
     setTasks((prev) =>
       prev.map((task) =>
         task.id === taskId ? { ...task, description } : task,
@@ -74,6 +82,8 @@ export function useTaskActions({
   };
 
   const toggleTaskStatus = (taskId: string) => {
+    if (isEditingBlocked) return;
+
     setTasks((prev) => {
       const updatedTasks = prev.map((task) => {
         if (task.id === taskId) {
@@ -89,6 +99,7 @@ export function useTaskActions({
   };
 
   const restoreTask = useCallback(() => {
+    if (isEditingBlocked) return;
     if (!undoState) return;
 
     if (undoState.type === "delete") {
@@ -114,28 +125,53 @@ export function useTaskActions({
         );
         const targetDateKey = getDateKey(targetDate.toDate());
 
-        // Remove the task from the target date in storage
-        const targetDateTasks = loadTasksFromStorage(targetDateKey);
-        const updatedTargetTasks = targetDateTasks.filter(
-          (t: Task) => t.id !== undoState.task.id,
-        );
-        saveTasksToStorage(targetDateKey, updatedTargetTasks);
+        // Async storage operations (fire and forget since we're in a callback)
+        const restoreInStorage = async () => {
+          try {
+            // Remove the task from the target date in storage
+            const targetDateTasks = await taskRepository.get(targetDateKey);
+            const updatedTargetTasks = targetDateTasks.filter(
+              (t: Task) => t.id !== undoState.task.id,
+            );
+            await taskRepository.save(targetDateKey, updatedTargetTasks);
 
-        // Restore the task to the original date in storage
-        const originalDateTasks = loadTasksFromStorage(undoState.fromDate);
-        saveTasksToStorage(undoState.fromDate, [
-          ...originalDateTasks,
-          undoState.task,
-        ]);
+            // Restore the task to the original date in storage.
+            const originalDateTasks = await taskRepository.get(
+              undoState.fromDate,
+            );
+            const alreadyExists = originalDateTasks.some(
+              (task) => task.id === undoState.task.id,
+            );
+            if (!alreadyExists) {
+              await taskRepository.save(undoState.fromDate, [
+                ...originalDateTasks,
+                undoState.task,
+              ]);
+            }
+          } catch (error) {
+            console.error("Failed to restore task in repository:", error);
+          }
+        };
+        restoreInStorage();
       }
     }
 
     // Clear the undo state
     setUndoState?.(null);
     setUndoToastId?.(null);
-  }, [undoState, dateInView, setTasks, setUndoState, setUndoToastId]);
+  }, [
+    undoState,
+    dateInView,
+    setUndoState,
+    setUndoToastId,
+    setTasks,
+    taskRepository,
+    isEditingBlocked,
+  ]);
 
   const deleteTask = (taskId: string) => {
+    if (isEditingBlocked) return;
+
     const taskToDelete = tasks.find((task) => task.id === taskId);
     if (!taskToDelete) return;
 
@@ -182,6 +218,8 @@ export function useTaskActions({
     taskId: string,
     title: string,
   ) => {
+    if (isEditingBlocked) return;
+
     if (e.key === " " || e.key === "Enter") {
       e.preventDefault();
       toggleTaskStatus(taskId);
@@ -199,6 +237,8 @@ export function useTaskActions({
   };
 
   const onInputBlur = (taskId: string) => {
+    if (isEditingBlocked) return;
+
     if (isCancellingEdit) {
       // Don't update the task title if we're canceling the edit
       setIsCancellingEdit?.(false);
@@ -219,11 +259,15 @@ export function useTaskActions({
   };
 
   const onInputClick = (taskId: string) => {
+    if (isEditingBlocked) return;
+
     setEditingTaskId?.(taskId);
     setEditingTitle?.(tasks.find((task) => task.id === taskId)?.title || "");
   };
 
   const onInputKeyDown = (e: React.KeyboardEvent, taskId: string) => {
+    if (isEditingBlocked) return;
+
     if (e.key === "Enter") {
       e.preventDefault();
       const trimmedTitle = editingTitle?.trim() || "";
@@ -254,8 +298,40 @@ export function useTaskActions({
     }
   };
 
+  const reorderTasks = useCallback(
+    (sourceIndex: number, destinationIndex: number) => {
+      if (isEditingBlocked) return;
+
+      setTasks((prev) => {
+        const newTasks = Array.from(prev);
+        const [moved] = newTasks.splice(sourceIndex, 1);
+        newTasks.splice(destinationIndex, 0, moved);
+
+        const todoTasks = newTasks.filter((t) => t.status === "todo");
+        const completedTasks = newTasks.filter((t) => t.status === "completed");
+
+        const todoOrderById = new Map(
+          todoTasks.map((task, index) => [task.id, index]),
+        );
+        const completedOrderById = new Map(
+          completedTasks.map((task, index) => [task.id, index]),
+        );
+
+        return newTasks.map((task) => {
+          const order =
+            task.status === "todo"
+              ? (todoOrderById.get(task.id) ?? 0)
+              : (completedOrderById.get(task.id) ?? 0);
+          return { ...task, order };
+        });
+      });
+    },
+    [setTasks, isEditingBlocked],
+  );
+
   const migrateTask = useCallback(
     (taskId: string, direction: "forward" | "backward") => {
+      if (isEditingBlocked) return;
       if (!dateInView) return;
 
       const taskToMigrate = tasks.find((task) => task.id === taskId);
@@ -282,8 +358,12 @@ export function useTaskActions({
         direction,
       });
 
-      // Move task in storage
-      moveTaskToDate(taskToMigrate, currentDateKey, targetDateKey);
+      // Move task in storage (async, fire and forget)
+      taskRepository
+        .move(taskToMigrate, currentDateKey, targetDateKey)
+        .catch((error) => {
+          console.error("Failed to move task in storage:", error);
+        });
 
       // Remove from current view
       setTasks((prev) => prev.filter((task) => task.id !== taskId));
@@ -306,6 +386,8 @@ export function useTaskActions({
       setUndoState,
       setUndoToastId,
       restoreTask,
+      taskRepository,
+      isEditingBlocked,
     ],
   );
 
@@ -323,5 +405,6 @@ export function useTaskActions({
     onInputClick,
     onInputKeyDown,
     migrateTask,
+    reorderTasks,
   };
 }

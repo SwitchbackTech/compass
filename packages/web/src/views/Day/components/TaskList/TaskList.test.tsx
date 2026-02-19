@@ -1,16 +1,19 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
+import { clearCompassLocalDb } from "@web/__tests__/utils/storage/indexeddb.test.util";
 import {
   addTasks,
   clickCreateTaskButton,
+  waitForTaskListReady,
 } from "@web/__tests__/utils/tasks/task.test.util";
 import { renderWithDayProviders } from "../../util/day.test-util";
 import { TaskList } from "./TaskList";
 
 describe("TaskList", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     localStorage.clear();
+    await clearCompassLocalDb();
   });
 
   it("should render create task button", async () => {
@@ -53,10 +56,7 @@ describe("TaskList", () => {
   it("should not add empty task", async () => {
     const { user } = renderWithDayProviders(<TaskList />);
 
-    const addButton = await screen.findByText("Create task");
-    await act(async () => {
-      await user.click(addButton);
-    });
+    await clickCreateTaskButton(user);
 
     await act(async () => {
       await user.keyboard("{Enter}");
@@ -75,10 +75,7 @@ describe("TaskList", () => {
   it("should cancel adding task on Escape", async () => {
     const { user } = renderWithDayProviders(<TaskList />);
 
-    const addButton = await screen.findByText("Create task");
-    await act(async () => {
-      await user.click(addButton);
-    });
+    await clickCreateTaskButton(user);
 
     const input = screen.getByPlaceholderText("Enter task title...");
     await act(async () => {
@@ -198,7 +195,9 @@ describe("TaskList", () => {
     await addTasks(user, ["Complete me"]);
 
     // Complete the task
-    const checkbox = screen.getByRole("checkbox");
+    const checkbox = screen.getByRole("checkbox", {
+      name: "Toggle Complete me",
+    });
     await act(async () => {
       await user.click(checkbox);
     });
@@ -292,6 +291,7 @@ describe("TaskList", () => {
 
   it("should activate add task input when pressing Enter on Add task button after tabbing", async () => {
     const { user } = renderWithDayProviders(<TaskList />);
+    await waitForTaskListReady();
 
     // Now tab to the Add task button
     const addTaskButton = await screen.findByRole("button", {

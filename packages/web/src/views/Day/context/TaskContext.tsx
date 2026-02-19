@@ -1,12 +1,13 @@
 import React, { createContext } from "react";
+import { getTaskRepository } from "@web/common/repositories/task/task.repository.util";
 import { Task, UndoOperation } from "@web/common/types/task.types";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useTaskActions } from "@web/views/Day/hooks/tasks/useTaskActions";
-import { useTaskEffects } from "@web/views/Day/hooks/tasks/useTaskEffects";
 import { useTaskState } from "@web/views/Day/hooks/tasks/useTaskState";
 
 interface TaskContextValue {
   tasks: Task[];
+  isLoadingTasks: boolean;
   editingTitle: string;
   editingTaskId: string | null;
   isAddingTask: boolean;
@@ -42,6 +43,7 @@ interface TaskContextValue {
 export const TaskContext = createContext<TaskContextValue | undefined>(
   undefined,
 );
+const localTaskRepository = getTaskRepository("local");
 
 interface TaskProviderProps {
   children: React.ReactNode;
@@ -54,6 +56,8 @@ export function TaskProvider({ children }: TaskProviderProps) {
   const actions = useTaskActions({
     setTasks: state.setTasks,
     tasks: state.tasks,
+    taskRepository: localTaskRepository,
+    isLoadingTasks: state.isLoadingTasks,
     editingTitle: state.editingTitle,
     setEditingTitle: state.setEditingTitle,
     setEditingTaskId: state.setEditingTaskId,
@@ -68,14 +72,9 @@ export function TaskProvider({ children }: TaskProviderProps) {
     navigateToPreviousDay,
   });
 
-  useTaskEffects({
-    tasks: state.tasks,
-    dateKey: state.dateKey,
-    setTasks: state.setTasks,
-  });
-
   const value: TaskContextValue = {
     tasks: state.tasks,
+    isLoadingTasks: state.isLoadingTasks,
     editingTitle: state.editingTitle,
     editingTaskId: state.editingTaskId,
     selectedTaskIndex: state.selectedTaskIndex,
@@ -102,23 +101,7 @@ export function TaskProvider({ children }: TaskProviderProps) {
     toggleTaskStatus: actions.toggleTaskStatus,
     updateTaskTitle: actions.updateTaskTitle,
     migrateTask: actions.migrateTask,
-    reorderTasks: (sourceIndex: number, destinationIndex: number) => {
-      state.setTasks((prev) => {
-        const newTasks = Array.from(prev);
-        const [moved] = newTasks.splice(sourceIndex, 1);
-        newTasks.splice(destinationIndex, 0, moved);
-        // Update order
-        const todoTasks = newTasks.filter((t) => t.status === "todo");
-        const completedTasks = newTasks.filter((t) => t.status === "completed");
-        todoTasks.forEach((task, index) => {
-          task.order = index;
-        });
-        completedTasks.forEach((task, index) => {
-          task.order = index;
-        });
-        return newTasks;
-      });
-    },
+    reorderTasks: actions.reorderTasks,
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;

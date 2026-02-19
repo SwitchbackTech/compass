@@ -2,6 +2,7 @@ import { Origin, Priorities } from "@core/constants/core.constants";
 import { Event_Core } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
+import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
 import { Task } from "@web/common/types/task.types";
 
 /**
@@ -49,6 +50,7 @@ export const createTestTask = (overrides: Partial<Task> = {}): Task => {
     status: "todo",
     order: 0,
     createdAt: new Date().toISOString(),
+    user: UNAUTHENTICATED_USER,
     ...overrides,
   };
 };

@@ -9,7 +9,7 @@ import { DNDTasksProvider } from "@web/views/Day/context/DNDTasksContext";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
 
 export function TaskList() {
-  const { addTask, isAddingTask, setIsAddingTask } = useTasks();
+  const { addTask, isAddingTask, isLoadingTasks, setIsAddingTask } = useTasks();
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [isHoveringAddBlock, setIsHoveringAddBlock] = useState(false);
 
@@ -28,6 +28,8 @@ export function TaskList() {
   };
 
   const handleAddTask = () => {
+    if (isLoadingTasks) return;
+
     if (newTaskTitle.trim()) {
       addTask(newTaskTitle.trim());
       setNewTaskTitle("");

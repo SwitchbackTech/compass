@@ -1,31 +1,46 @@
 import { Task } from "@web/common/types/task.types";
 import {
-  loadTasksFromStorage,
-  saveTasksToStorage,
-} from "@web/common/utils/storage/storage.util";
+  deleteTaskFromIndexedDB,
+  loadTasksFromIndexedDB,
+  moveTaskBetweenDates,
+  saveTasksToIndexedDB,
+} from "@web/common/utils/storage/task.storage.util";
 import { TaskRepository } from "./task.repository";
 
 export class LocalTaskRepository implements TaskRepository {
-  get(dateKey: string): Task[] {
-    return loadTasksFromStorage(dateKey);
+  async get(dateKey: string): Promise<Task[]> {
+    return loadTasksFromIndexedDB(dateKey);
   }
 
-  save(dateKey: string, tasks: Task[]): void {
-    saveTasksToStorage(dateKey, tasks);
+  async save(dateKey: string, tasks: Task[]): Promise<void> {
+    await saveTasksToIndexedDB(dateKey, tasks);
   }
 
-  delete(dateKey: string, taskId: string): void {
-    const tasks = this.get(dateKey);
-    const updatedTasks = tasks.filter((task) => task.id !== taskId);
-    this.save(dateKey, updatedTasks);
+  async delete(dateKey: string, taskId: string): Promise<void> {
+    const tasksForDate = await this.get(dateKey);
+    const isTaskInDate = tasksForDate.some((task) => task.id === taskId);
+
+    if (!isTaskInDate) {
+      return;
+    }
+
+    await deleteTaskFromIndexedDB(taskId);
   }
 
-  reorder(
+  async move(
+    task: Task,
+    fromDateKey: string,
+    toDateKey: string,
+  ): Promise<void> {
+    await moveTaskBetweenDates(task, fromDateKey, toDateKey);
+  }
+
+  async reorder(
     dateKey: string,
     sourceIndex: number,
     destinationIndex: number,
-  ): void {
-    const tasks = this.get(dateKey);
+  ): Promise<void> {
+    const tasks = await this.get(dateKey);
     const newTasks = Array.from(tasks);
     const [moved] = newTasks.splice(sourceIndex, 1);
     newTasks.splice(destinationIndex, 0, moved);
@@ -40,6 +55,6 @@ export class LocalTaskRepository implements TaskRepository {
       task.order = index;
     });
 
-    this.save(dateKey, newTasks);
+    await this.save(dateKey, newTasks);
   }
 }

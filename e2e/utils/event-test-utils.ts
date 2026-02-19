@@ -131,11 +131,42 @@ export const prepareCalendarPage = async (page: Page) => {
 
 export const resetLocalEventDb = async (page: Page) => {
   await page.evaluate(async (dbName) => {
+    const clearStore = async (
+      db: IDBDatabase,
+      storeName: string,
+    ): Promise<void> => {
+      if (!db.objectStoreNames.contains(storeName)) {
+        return;
+      }
+
+      await new Promise<void>((resolve) => {
+        const transaction = db.transaction(storeName, "readwrite");
+        const clearRequest = transaction.objectStore(storeName).clear();
+        clearRequest.onerror = () => resolve();
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => resolve();
+        transaction.onabort = () => resolve();
+      });
+    };
+
     await new Promise<void>((resolve) => {
-      const request = indexedDB.deleteDatabase(dbName);
-      request.onsuccess = () => resolve();
-      request.onerror = () => resolve();
-      request.onblocked = () => resolve();
+      const deleteRequest = indexedDB.deleteDatabase(dbName);
+
+      deleteRequest.onsuccess = () => resolve();
+      deleteRequest.onerror = () => resolve();
+      deleteRequest.onblocked = async () => {
+        // If the app still has an open connection, fall back to clearing stores
+        // so tests still start from a clean state.
+        const openRequest = indexedDB.open(dbName);
+        openRequest.onerror = () => resolve();
+        openRequest.onsuccess = async () => {
+          const db = openRequest.result;
+          await clearStore(db, "events");
+          await clearStore(db, "tasks");
+          db.close();
+          resolve();
+        };
+      };
     });
   }, LOCAL_DB_NAME);
 };
