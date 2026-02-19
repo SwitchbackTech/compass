@@ -3,12 +3,16 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { Task } from "@web/common/types/task.types";
 import { getDateKey } from "@web/common/utils/storage/storage.util";
-import * as taskStorageUtil from "@web/common/utils/storage/task.storage.util";
 import { useTaskState } from "@web/views/Day/hooks/tasks/useTaskState";
 
-jest.mock("@web/common/utils/storage/task.storage.util", () => ({
-  loadTasksFromIndexedDB: jest.fn(),
-  saveTasksToIndexedDB: jest.fn().mockResolvedValue(undefined),
+const mockGetTasks = jest.fn();
+const mockPutTasks = jest.fn().mockResolvedValue(undefined);
+jest.mock("@web/common/storage/adapter/adapter", () => ({
+  ensureStorageReady: jest.fn().mockResolvedValue(undefined),
+  getStorageAdapter: jest.fn(() => ({
+    getTasks: mockGetTasks,
+    putTasks: mockPutTasks,
+  })),
 }));
 
 interface Deferred<T> {
@@ -25,15 +29,6 @@ function createDeferred<T>(): Deferred<T> {
 }
 
 describe("useTaskState", () => {
-  const loadTasksMock =
-    taskStorageUtil.loadTasksFromIndexedDB as jest.MockedFunction<
-      typeof taskStorageUtil.loadTasksFromIndexedDB
-    >;
-  const saveTasksMock =
-    taskStorageUtil.saveTasksToIndexedDB as jest.MockedFunction<
-      typeof taskStorageUtil.saveTasksToIndexedDB
-    >;
-
   const dayOneDate = new Date("2025-10-27T12:00:00.000Z");
   const dayTwoDate = new Date("2025-10-28T12:00:00.000Z");
   const dayOneKey = getDateKey(dayOneDate);
@@ -41,12 +36,13 @@ describe("useTaskState", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    saveTasksMock.mockResolvedValue(undefined);
+    mockPutTasks.mockResolvedValue(undefined);
+    mockGetTasks.mockReset();
   });
 
   it("clears tasks and enters loading state when date changes", async () => {
     const dayTwoLoad = createDeferred<Task[]>();
-    loadTasksMock
+    mockGetTasks
       .mockResolvedValueOnce([
         createMockTask({
           _id: "task-1",
@@ -86,7 +82,7 @@ describe("useTaskState", () => {
 
   it("does not save previous-day tasks under the next date key", async () => {
     const dayTwoLoad = createDeferred<Task[]>();
-    loadTasksMock
+    mockGetTasks
       .mockResolvedValueOnce([])
       .mockReturnValueOnce(dayTwoLoad.promise);
 
@@ -106,10 +102,10 @@ describe("useTaskState", () => {
     });
 
     await waitFor(() => {
-      expect(saveTasksMock).toHaveBeenCalledWith(dayOneKey, [localTask]);
+      expect(mockPutTasks).toHaveBeenCalledWith(dayOneKey, [localTask]);
     });
 
-    saveTasksMock.mockClear();
+    mockPutTasks.mockClear();
 
     rerender({ currentDate: dayTwoDate });
 
@@ -117,11 +113,8 @@ describe("useTaskState", () => {
       await Promise.resolve();
     });
 
-    expect(saveTasksMock).not.toHaveBeenCalledWith(
-      dayTwoKey,
-      expect.any(Array),
-    );
-    expect(saveTasksMock).not.toHaveBeenCalled();
+    expect(mockPutTasks).not.toHaveBeenCalledWith(dayTwoKey, expect.any(Array));
+    expect(mockPutTasks).not.toHaveBeenCalled();
 
     await act(async () => {
       dayTwoLoad.resolve([]);
@@ -130,7 +123,7 @@ describe("useTaskState", () => {
   });
 
   it("does not save empty tasks after a load failure", async () => {
-    loadTasksMock.mockRejectedValue(new Error("load failed"));
+    mockGetTasks.mockRejectedValue(new Error("load failed"));
     const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
 
     const { result } = renderHook(() =>
@@ -143,7 +136,7 @@ describe("useTaskState", () => {
       expect(result.current.tasks).toEqual([]);
     });
 
-    expect(saveTasksMock).not.toHaveBeenCalled();
+    expect(mockPutTasks).not.toHaveBeenCalled();
     consoleErrorSpy.mockRestore();
   });
 });

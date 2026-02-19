@@ -1,6 +1,9 @@
 import { MutableRefObject, useEffect } from "react";
+import {
+  ensureStorageReady,
+  getStorageAdapter,
+} from "@web/common/storage/adapter/adapter";
 import { Task } from "@web/common/types/task.types";
-import { saveTasksToIndexedDB } from "@web/common/utils/storage/task.storage.util";
 
 interface UseSaveTasksByDateEffectProps {
   dateKey: string;
@@ -31,7 +34,10 @@ export function useSaveTasksByDateEffect({
     const requestId = saveRequestIdRef.current + 1;
     saveRequestIdRef.current = requestId;
 
-    void saveTasksToIndexedDB(dateKey, tasks)
+    void (async () => {
+      await ensureStorageReady();
+      await getStorageAdapter().putTasks(dateKey, tasks);
+    })()
       .then(() => {
         if (isCancelled || requestId !== saveRequestIdRef.current) return;
         isDirtyRef.current = false;

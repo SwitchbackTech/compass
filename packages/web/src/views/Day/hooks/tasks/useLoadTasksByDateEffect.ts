@@ -1,6 +1,9 @@
 import { Dispatch, MutableRefObject, SetStateAction, useEffect } from "react";
+import {
+  ensureStorageReady,
+  getStorageAdapter,
+} from "@web/common/storage/adapter/adapter";
 import { Task } from "@web/common/types/task.types";
-import { loadTasksFromIndexedDB } from "@web/common/utils/storage/task.storage.util";
 import { sortTasksByStatus } from "@web/common/utils/task/sort.task";
 
 interface UseLoadTasksByDateEffectProps {
@@ -33,7 +36,10 @@ export function useLoadTasksByDateEffect({
     setDidLoadFail(false);
     setIsLoadingTasks(true);
 
-    void loadTasksFromIndexedDB(dateKey)
+    void (async () => {
+      await ensureStorageReady();
+      return getStorageAdapter().getTasks(dateKey);
+    })()
       .then((loadedTasks) => {
         if (isCancelled || requestId !== loadRequestIdRef.current) return;
 

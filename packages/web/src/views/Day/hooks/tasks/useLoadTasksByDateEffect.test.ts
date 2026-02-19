@@ -3,11 +3,12 @@ import { useRef, useState } from "react";
 import { renderHook, waitFor } from "@testing-library/react";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { Task } from "@web/common/types/task.types";
-import * as taskStorageUtil from "@web/common/utils/storage/task.storage.util";
 import { useLoadTasksByDateEffect } from "@web/views/Day/hooks/tasks/useLoadTasksByDateEffect";
 
-jest.mock("@web/common/utils/storage/task.storage.util", () => ({
-  loadTasksFromIndexedDB: jest.fn(),
+const mockGetTasks = jest.fn();
+jest.mock("@web/common/storage/adapter/adapter", () => ({
+  ensureStorageReady: jest.fn().mockResolvedValue(undefined),
+  getStorageAdapter: jest.fn(() => ({ getTasks: mockGetTasks })),
 }));
 
 interface Deferred<T> {
@@ -52,17 +53,13 @@ function useLoadHarness(dateKey: string) {
 }
 
 describe("useLoadTasksByDateEffect", () => {
-  const loadTasksMock =
-    taskStorageUtil.loadTasksFromIndexedDB as jest.MockedFunction<
-      typeof taskStorageUtil.loadTasksFromIndexedDB
-    >;
-
   beforeEach(() => {
     jest.clearAllMocks();
+    mockGetTasks.mockReset();
   });
 
   it("loads tasks for date and sorts by status/order", async () => {
-    loadTasksMock.mockResolvedValueOnce([
+    mockGetTasks.mockResolvedValueOnce([
       createMockTask({ _id: "completed-1", status: "completed", order: 0 }),
       createMockTask({ _id: "todo-2", status: "todo", order: 1 }),
       createMockTask({ _id: "todo-1", status: "todo", order: 0 }),
@@ -86,7 +83,7 @@ describe("useLoadTasksByDateEffect", () => {
   it("clears tasks while loading a new date and ignores stale results", async () => {
     const firstLoad = createDeferred<Task[]>();
     const secondLoad = createDeferred<Task[]>();
-    loadTasksMock
+    mockGetTasks
       .mockReturnValueOnce(firstLoad.promise)
       .mockReturnValueOnce(secondLoad.promise);
 
@@ -128,7 +125,7 @@ describe("useLoadTasksByDateEffect", () => {
   });
 
   it("sets failed state when load throws", async () => {
-    loadTasksMock.mockRejectedValueOnce(new Error("load failed"));
+    mockGetTasks.mockRejectedValueOnce(new Error("load failed"));
     const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
 
     const { result } = renderHook(() => useLoadHarness("2025-10-27"));

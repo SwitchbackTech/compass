@@ -1,10 +1,9 @@
 import dayjs from "@core/util/date/dayjs";
-import { Task, normalizeTasks } from "@web/common/types/task.types";
 import {
-  loadTasksFromIndexedDB,
-  moveTaskBetweenDates,
-  saveTasksToIndexedDB,
-} from "@web/common/utils/storage/task.storage.util";
+  ensureStorageReady,
+  getStorageAdapter,
+} from "@web/common/storage/adapter/adapter";
+import { Task, normalizeTasks } from "@web/common/types/task.types";
 import { CompassTasksSavedEventDetail } from "./storage.types";
 
 export const TODAY_TASKS_STORAGE_KEY_PREFIX = "compass.today.tasks";
@@ -33,7 +32,8 @@ export async function loadTasksFromStorage(dateKey: string): Promise<Task[]> {
   }
 
   try {
-    return await loadTasksFromIndexedDB(dateKey);
+    await ensureStorageReady();
+    return await getStorageAdapter().getTasks(dateKey);
   } catch (error) {
     console.error("Error loading tasks from IndexedDB:", error);
     return [];
@@ -49,7 +49,8 @@ export async function saveTasksToStorage(
   }
 
   try {
-    await saveTasksToIndexedDB(dateKey, normalizeTasks(tasks));
+    await ensureStorageReady();
+    await getStorageAdapter().putTasks(dateKey, normalizeTasks(tasks));
     dispatchTasksSavedEvent(dateKey);
   } catch (error) {
     console.error("Error saving tasks to IndexedDB:", error);
@@ -88,7 +89,8 @@ export async function moveTaskToDate(
   }
 
   try {
-    await moveTaskBetweenDates(task, fromDateKey, toDateKey);
+    await ensureStorageReady();
+    await getStorageAdapter().moveTask(task, fromDateKey, toDateKey);
     dispatchTasksSavedEvent(fromDateKey);
     if (toDateKey !== fromDateKey) {
       dispatchTasksSavedEvent(toDateKey);
