@@ -1,5 +1,5 @@
 import { toast } from "react-toastify";
-import { initializeStorage } from "@web/common/storage/adapter";
+import { initializeStorage } from "@web/common/storage/adapter/adapter";
 import { DatabaseInitError } from "@web/common/utils/storage/db-errors.util";
 import {
   initializeDatabaseWithErrorHandling,
@@ -7,7 +7,7 @@ import {
 } from "./app-init.util";
 
 // Mock the storage adapter
-jest.mock("@web/common/storage/adapter", () => ({
+jest.mock("@web/common/storage/adapter/adapter", () => ({
   initializeStorage: jest.fn(),
 }));
 

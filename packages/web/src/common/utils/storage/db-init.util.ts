@@ -11,7 +11,7 @@ import {
   initializeStorage,
   isStorageReady,
   resetStorage,
-} from "@web/common/storage/adapter";
+} from "@web/common/storage/adapter/adapter";
 
 /**
  * Initializes the IndexedDB database.

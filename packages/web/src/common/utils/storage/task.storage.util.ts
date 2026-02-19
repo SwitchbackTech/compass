@@ -10,7 +10,7 @@ import {
   StoredTask,
   ensureStorageReady,
   getStorageAdapter,
-} from "@web/common/storage/adapter";
+} from "@web/common/storage/adapter/adapter";
 import { Task, normalizeTask } from "@web/common/types/task.types";
 import { handleDatabaseError } from "./db-errors.util";
 

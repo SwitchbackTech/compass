@@ -10,7 +10,7 @@ import {
   createTestCompassEvent,
   createTestEvent,
 } from "@web/__tests__/utils/repositories/repository.test.factory";
-import * as storageAdapter from "@web/common/storage/adapter";
+import * as storageAdapter from "@web/common/storage/adapter/adapter";
 import { LocalEventRepository } from "./local.event.repository";
 
 const mockEvents = new Map<string, Event_Core>();
@@ -58,7 +58,7 @@ function createMockAdapter() {
   };
 }
 
-jest.mock("@web/common/storage/adapter");
+jest.mock("@web/common/storage/adapter/adapter");
 
 describe("LocalEventRepository", () => {
   let repository: LocalEventRepository;

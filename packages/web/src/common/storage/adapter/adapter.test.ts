@@ -7,7 +7,7 @@ import {
   initializeStorage,
   isStorageReady,
   resetStorage,
-} from "@web/common/storage/adapter";
+} from "@web/common/storage/adapter/adapter";
 
 describe("storage adapter index", () => {
   beforeEach(() => {

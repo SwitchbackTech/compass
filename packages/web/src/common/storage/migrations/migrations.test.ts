@@ -6,7 +6,7 @@ import {
   runAllMigrations,
   runDataMigrations,
   runExternalMigrations,
-} from "@web/common/storage/migrations";
+} from "@web/common/storage/migrations/migrations";
 
 function createMockAdapter(): jest.Mocked<StorageAdapter> {
   return {

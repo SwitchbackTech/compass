@@ -10,7 +10,7 @@ import { Event_Core } from "@core/types/event.types";
 import {
   ensureStorageReady,
   getStorageAdapter,
-} from "@web/common/storage/adapter";
+} from "@web/common/storage/adapter/adapter";
 import { handleDatabaseError } from "./db-errors.util";
 
 /**

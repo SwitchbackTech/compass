@@ -1,4 +1,4 @@
-import { getStorageAdapter } from "@web/common/storage/adapter";
+import { getStorageAdapter } from "@web/common/storage/adapter/adapter";
 import { Task } from "@web/common/types/task.types";
 import { TaskRepository } from "./task.repository";
 

@@ -9,7 +9,7 @@ import {
   initializeStorage,
   isStorageReady,
   resetStorage,
-} from "@web/common/storage/adapter";
+} from "@web/common/storage/adapter/adapter";
 import {
   ensureDatabaseReady,
   initializeDatabase,
@@ -18,7 +18,7 @@ import {
 } from "./db-init.util";
 
 // Mock the storage adapter
-jest.mock("@web/common/storage/adapter", () => ({
+jest.mock("@web/common/storage/adapter/adapter", () => ({
   initializeStorage: jest.fn(),
   ensureStorageReady: jest.fn(),
   isStorageReady: jest.fn(),

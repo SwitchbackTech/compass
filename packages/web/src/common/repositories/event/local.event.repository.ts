@@ -5,7 +5,7 @@ import {
   RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
-import { getStorageAdapter } from "@web/common/storage/adapter";
+import { getStorageAdapter } from "@web/common/storage/adapter/adapter";
 import { Response_GetEventsSuccess } from "@web/ducks/events/event.types";
 import { EventRepository } from "./event.repository.interface";
 

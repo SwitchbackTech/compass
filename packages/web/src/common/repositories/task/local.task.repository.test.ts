@@ -2,11 +2,11 @@ import {
   createTestTask,
   createTestTasks,
 } from "@web/__tests__/utils/repositories/repository.test.factory";
-import * as storageAdapter from "@web/common/storage/adapter";
+import * as storageAdapter from "@web/common/storage/adapter/adapter";
 import { LocalTaskRepository } from "./local.task.repository";
 
 // Mock the storage adapter module
-jest.mock("@web/common/storage/adapter");
+jest.mock("@web/common/storage/adapter/adapter");
 
 describe("LocalTaskRepository", () => {
   let repository: LocalTaskRepository;
