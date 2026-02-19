@@ -4,7 +4,6 @@ import {
   ensureStorageReady,
   getStorageAdapter,
 } from "@web/common/storage/adapter/adapter";
-import { saveEventToIndexedDB } from "@web/common/utils/storage/event.storage.util";
 import { EventApi } from "@web/ducks/events/event.api";
 import { syncLocalEventsToCloud } from "./local-event-sync.util";
 
@@ -28,8 +27,8 @@ describe("syncLocalEventsToCloud", () => {
     const event1 = createMockEvent();
     const event2 = createMockEvent();
 
-    await saveEventToIndexedDB(event1);
-    await saveEventToIndexedDB(event2);
+    await getStorageAdapter().putEvent(event1);
+    await getStorageAdapter().putEvent(event2);
 
     const count = await syncLocalEventsToCloud();
 

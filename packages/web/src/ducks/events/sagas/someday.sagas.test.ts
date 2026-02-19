@@ -10,7 +10,6 @@ import {
 } from "@web/common/storage/adapter/adapter";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
-import { saveEventToIndexedDB } from "@web/common/utils/storage/event.storage.util";
 import { EventApi } from "@web/ducks/events/event.api";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { sagas } from "@web/store/sagas";
@@ -136,7 +135,7 @@ describe("getSomedayEvents saga", () => {
         user: "UNAUTHENTICATED_USER",
       };
 
-      await saveEventToIndexedDB(somedayEvent);
+      await getStorageAdapter().putEvent(somedayEvent);
 
       const action = getSomedayEventsSlice.actions.request({
         startDate,
@@ -214,8 +213,8 @@ describe("getSomedayEvents saga", () => {
         user: "UNAUTHENTICATED_USER",
       };
 
-      await saveEventToIndexedDB(thisMonthEvent);
-      await saveEventToIndexedDB(nextMonthEvent);
+      await getStorageAdapter().putEvent(thisMonthEvent);
+      await getStorageAdapter().putEvent(nextMonthEvent);
 
       const action = getSomedayEventsSlice.actions.request({
         startDate,
@@ -263,8 +262,8 @@ describe("getSomedayEvents saga", () => {
         user: "UNAUTHENTICATED_USER",
       };
 
-      await saveEventToIndexedDB(somedayEvent);
-      await saveEventToIndexedDB(regularEvent);
+      await getStorageAdapter().putEvent(somedayEvent);
+      await getStorageAdapter().putEvent(regularEvent);
 
       const action = getSomedayEventsSlice.actions.request({
         startDate,
