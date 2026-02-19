@@ -24,7 +24,7 @@ class CompassLocalDB extends Dexie {
     // Version 2: add tasks table
     this.version(2).stores({
       events: "_id, startDate, endDate, isSomeday",
-      tasks: "id, dateKey, status, order",
+      tasks: "_id, dateKey, status, order",
     });
   }
 }

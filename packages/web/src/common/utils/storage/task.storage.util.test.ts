@@ -55,15 +55,6 @@ describe("task.storage.util", () => {
       expect(savedTask?.title).toBe("Updated Title");
     });
 
-    it("should throw an error if task does not have an _id", async () => {
-      const task = createMockTask();
-      delete (task as Partial<Task>)._id;
-
-      await expect(
-        saveTaskToIndexedDB(task as Task, "2024-01-15"),
-      ).rejects.toThrow("Task must have an _id");
-    });
-
     it("should default user when saving a task without user", async () => {
       const task = createMockTask();
       delete (task as Partial<Task>).user;

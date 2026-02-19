@@ -1,6 +1,5 @@
 import {
   Task,
-  TaskInput,
   normalizeTask,
   normalizeTasks,
 } from "@web/common/types/task.types";
@@ -13,7 +12,7 @@ import { ensureDatabaseReady } from "./db-init.util";
  * Uses put() to handle both new and existing tasks.
  */
 export async function saveTaskToIndexedDB(
-  task: TaskInput,
+  task: Task,
   dateKey: string,
 ): Promise<void> {
   const normalizedTask = normalizeTask(task);
@@ -33,7 +32,7 @@ export async function saveTaskToIndexedDB(
  */
 export async function saveTasksToIndexedDB(
   dateKey: string,
-  tasks: TaskInput[],
+  tasks: Task[],
 ): Promise<void> {
   try {
     await ensureDatabaseReady();
