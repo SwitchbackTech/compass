@@ -1,9 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Task } from "@web/common/types/task.types";
-import {
-  getDateKey,
-  loadTasksFromStorage,
-} from "@web/common/utils/storage/storage.util";
 
 interface UseFocusedTaskOptions {
   availableTasks?: Task[];
@@ -12,37 +8,31 @@ interface UseFocusedTaskOptions {
 export function useFocusedTask({
   availableTasks = [],
 }: UseFocusedTaskOptions = {}) {
-  const [focusedTask, setFocusedTaskState] = useState<Task | null>(null);
+  const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
+
+  const focusedTask = useMemo(() => {
+    if (!focusedTaskId) {
+      return null;
+    }
+    return availableTasks.find((task) => task._id === focusedTaskId) ?? null;
+  }, [availableTasks, focusedTaskId]);
 
   const setFocusedTask = useCallback((taskId: string | null) => {
-    if (taskId === null) {
-      setFocusedTaskState(null);
-      return;
-    }
-
-    // Find the task to ensure it exists (today only)
-    const dateKey = getDateKey();
-    const tasks = loadTasksFromStorage(dateKey);
-    const task = tasks.find((t) => t.id === taskId);
-    if (task) {
-      // Don't allow focusing on completed tasks
-      if (task.status === "completed") {
-        setFocusedTaskState(null);
-        return;
-      }
-      setFocusedTaskState(task);
-      return;
-    }
-
-    // Task not found
-    setFocusedTaskState(null);
+    setFocusedTaskId(taskId);
   }, []);
 
   useEffect(() => {
-    if (!focusedTask && availableTasks.length > 0) {
-      setFocusedTask(availableTasks[0].id);
+    if (availableTasks.length === 0) {
+      if (focusedTaskId !== null) {
+        setFocusedTaskId(null);
+      }
+      return;
     }
-  }, [focusedTask, availableTasks, setFocusedTask]);
+
+    if (!focusedTask && availableTasks.length > 0) {
+      setFocusedTaskId(availableTasks[0]._id);
+    }
+  }, [focusedTask, focusedTaskId, availableTasks]);
 
   return {
     focusedTask,

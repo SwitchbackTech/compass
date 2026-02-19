@@ -2,20 +2,14 @@ import React, { act } from "react";
 import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import { fireEvent, screen } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
-import { Task } from "@web/common/types/task.types";
+import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { DraggableTask } from "@web/views/Day/components/Task/DraggableTask";
 import { TaskContext } from "@web/views/Day/context/TaskContext";
 
-const mockTask: Task = {
-  id: "task-1",
-  title: "Test Task",
-  order: 0,
-  status: "todo",
-  createdAt: "2023-01-01",
-};
+const mockTask = createMockTask({ _id: "task-1" });
 
 const defaultTasksProps: NonNullable<React.ContextType<typeof TaskContext>> = {
-  tasks: [mockTask, { ...mockTask, id: "task-2", title: "Another Task" }],
+  tasks: [mockTask, { ...mockTask, _id: "task-2", title: "Another Task" }],
   editingTaskId: null,
   editingTitle: "",
   setSelectedTaskIndex: jest.fn(),
@@ -32,6 +26,7 @@ const defaultTasksProps: NonNullable<React.ContextType<typeof TaskContext>> = {
   // Add missing properties with default values/mocks
   isAddingTask: false,
   isCancellingEdit: false,
+  isLoadingTasks: false,
   selectedTaskIndex: -1,
   undoState: null,
   undoToastId: null,
@@ -108,7 +103,7 @@ describe("DraggableTask", () => {
       name: /Reorder Test Task/i,
     });
     const descriptionId = dragHandle.getAttribute("aria-describedby");
-    expect(descriptionId).toBe(`description-${mockTask.id}`);
+    expect(descriptionId).toBe(`description-${mockTask._id}`);
 
     const description = screen.getByText(
       "Press space to start dragging this task.",
@@ -137,7 +132,7 @@ describe("DraggableTask", () => {
   });
 
   test("drag handle should be visible when dragging the handler button", () => {
-    const draggingTask = { ...mockTask, id: "task-dragging" };
+    const draggingTask = { ...mockTask, _id: "task-dragging" };
 
     renderDraggableTask(draggingTask);
 

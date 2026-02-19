@@ -98,8 +98,8 @@ const promptBrowserCleanup = async (): Promise<void> => {
   log.info("Your account has been deleted from the backend.");
   log.info("However, browser storage may still contain:");
   log.info("  • Session cookies (SuperTokens)");
-  log.info("  • LocalStorage data (tasks, preferences)");
-  log.info("  • IndexedDB (compass-local database)");
+  log.info("  • LocalStorage data (preferences)");
+  log.info("  • IndexedDB (compass-local database with tasks and events)");
   log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
   const questions = [

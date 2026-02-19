@@ -47,7 +47,7 @@ export const TaskContextMenuWrapper = ({ children }: TaskItemsWrapperProps) => {
     }
 
     // Find the task by ID
-    const task = tasks.find((t) => t.id === taskId);
+    const task = tasks.find((t) => t._id === taskId);
     if (!task) {
       return;
     }

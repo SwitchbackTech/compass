@@ -11,7 +11,7 @@ export function TaskContextMenuItems({ task, close }: Props) {
   const { deleteTask } = useTasks();
 
   const handleDelete = () => {
-    deleteTask(task.id);
+    deleteTask(task._id);
     close();
   };
 

@@ -1,17 +1,8 @@
-import { Task } from "@web/common/types/task.types";
+import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import {
   MigrateLocalToCloudParams,
   migrateLocalToCloud,
 } from "./task-storage-migration.service";
-
-const createTask = (overrides: Partial<Task>): Task => ({
-  id: "task-1",
-  title: "Task 1",
-  status: "todo",
-  order: 0,
-  createdAt: "2024-01-01T00:00:00.000Z",
-  ...overrides,
-});
 
 describe("migrateLocalToCloud", () => {
   const createParams = (): MigrateLocalToCloudParams => {
@@ -36,7 +27,10 @@ describe("migrateLocalToCloud", () => {
 
   it("migrates tasks and clears local data after successful upload", async () => {
     const params = createParams();
-    const tasks = [createTask({ id: "task-1" }), createTask({ id: "task-2" })];
+    const tasks = [
+      createMockTask({ _id: "task-1" }),
+      createMockTask({ _id: "task-2" }),
+    ];
     (params.localRepository.get as jest.Mock)
       .mockResolvedValueOnce(tasks)
       .mockResolvedValueOnce([]);
@@ -55,7 +49,7 @@ describe("migrateLocalToCloud", () => {
 
   it("reports failures and keeps local data when cloud upload fails", async () => {
     const params = createParams();
-    const tasks = [createTask({ id: "task-1" })];
+    const tasks = [createMockTask({ _id: "task-1" })];
     const uploadError = new Error("cloud unavailable");
     (params.localRepository.get as jest.Mock)
       .mockResolvedValueOnce(tasks)
@@ -77,8 +71,8 @@ describe("migrateLocalToCloud", () => {
   it("preserves task ids during migration", async () => {
     const params = createParams();
     const tasks = [
-      createTask({ id: "507f1f77bcf86cd799439011" }),
-      createTask({ id: "legacy-task-id" }),
+      createMockTask({ _id: "507f1f77bcf86cd799439011" }),
+      createMockTask({ _id: "legacy-task-id" }),
     ];
 
     (params.localRepository.get as jest.Mock)
@@ -90,8 +84,8 @@ describe("migrateLocalToCloud", () => {
     expect(params.cloudRepository.save).toHaveBeenCalledWith(
       "2024-01-01",
       expect.arrayContaining([
-        expect.objectContaining({ id: "507f1f77bcf86cd799439011" }),
-        expect.objectContaining({ id: "legacy-task-id" }),
+        expect.objectContaining({ _id: "507f1f77bcf86cd799439011" }),
+        expect.objectContaining({ _id: "legacy-task-id" }),
       ]),
     );
   });

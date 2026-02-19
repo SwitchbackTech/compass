@@ -4,6 +4,7 @@ import dayjs from "@core/util/date/dayjs";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
 import { Task } from "@web/common/types/task.types";
+import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 
 /**
  * Factory function to create a test Event_Core with sensible defaults.
@@ -45,7 +46,7 @@ export const createTestCompassEvent = (
  */
 export const createTestTask = (overrides: Partial<Task> = {}): Task => {
   return {
-    id: `task-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+    _id: createObjectIdString(),
     title: "Test Task",
     status: "todo",
     order: 0,
@@ -68,7 +69,7 @@ export const createTestTasks = (
   return Array.from({ length: count }, (_, index) =>
     createTestTask({
       ...overrides,
-      id: overrides.id || `task-${index + 1}`,
+      _id: overrides._id || `task-${index + 1}`,
       title: overrides.title || `Task ${index + 1}`,
       order: overrides.order !== undefined ? overrides.order : index,
     }),

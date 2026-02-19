@@ -14,14 +14,14 @@ const mockUseTasks = useTasks as jest.MockedFunction<typeof useTasks>;
 describe("DNDTasksProvider", () => {
   const mockTasks = [
     {
-      id: "task-1",
+      _id: "task-1",
       title: "Task 1",
       status: "todo" as const,
       order: 0,
       createdAt: "2024-01-01T10:00:00Z",
     },
     {
-      id: "task-2",
+      _id: "task-2",
       title: "Task 2",
       status: "todo" as const,
       order: 1,

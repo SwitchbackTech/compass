@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import { act } from "react";
 import { renderHook, waitFor } from "@testing-library/react";
+import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { TaskRepository } from "@web/common/repositories/task/task.repository";
 import { Task } from "@web/common/types/task.types";
 import { showMigrationToast } from "@web/views/Day/components/Toasts/MigrationToast/MigrationToast";
@@ -28,13 +29,7 @@ describe("useTaskActions - migration", () => {
     reorder: jest.fn().mockResolvedValue(undefined),
   };
 
-  const mockTask: Task = {
-    id: "task-1",
-    title: "Test Task",
-    status: "todo",
-    createdAt: "2025-10-27T10:00:00Z",
-    order: 0,
-  };
+  const mockTask = createMockTask({ _id: "task-1" });
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -61,7 +56,7 @@ describe("useTaskActions - migration", () => {
     );
 
     act(() => {
-      result.current.migrateTask(mockTask.id, "forward");
+      result.current.migrateTask(mockTask._id, "forward");
     });
 
     // Should store migration operation
@@ -113,7 +108,7 @@ describe("useTaskActions - migration", () => {
     );
 
     act(() => {
-      result.current.migrateTask(mockTask.id, "backward");
+      result.current.migrateTask(mockTask._id, "backward");
     });
 
     // Should store migration operation
@@ -271,7 +266,7 @@ describe("useTaskActions - migration", () => {
       const deletedUndoState = {
         type: "delete" as const,
         task: {
-          id: "deleted-task",
+          _id: "deleted-task",
           title: "Deleted Task",
           status: "todo" as const,
           createdAt: "2025-10-27T10:00:00Z",
@@ -321,12 +316,12 @@ describe("useTaskActions - reorderTasks", () => {
   };
 
   const createTask = (
-    id: string,
+    _id: string,
     title: string,
     status: "todo" | "completed",
     order: number,
   ): Task => ({
-    id,
+    _id,
     title,
     status,
     order,
@@ -360,9 +355,9 @@ describe("useTaskActions - reorderTasks", () => {
     const updater = mockSetTasks.mock.calls[0][0];
     const newTasks = updater(tasks);
 
-    expect(newTasks[0].id).toBe("task-2");
-    expect(newTasks[1].id).toBe("task-3");
-    expect(newTasks[2].id).toBe("task-1");
+    expect(newTasks[0]._id).toBe("task-2");
+    expect(newTasks[1]._id).toBe("task-3");
+    expect(newTasks[2]._id).toBe("task-1");
     expect(newTasks[0].order).toBe(0);
     expect(newTasks[1].order).toBe(1);
     expect(newTasks[2].order).toBe(2);
@@ -389,8 +384,8 @@ describe("useTaskActions - reorderTasks", () => {
     const updater = mockSetTasks.mock.calls[0][0];
     const newTasks = updater(tasks);
 
-    expect(newTasks[0].id).toBe("done-1");
-    expect(newTasks[1].id).toBe("todo-1");
+    expect(newTasks[0]._id).toBe("done-1");
+    expect(newTasks[1]._id).toBe("todo-1");
     expect(newTasks[0].order).toBe(0);
     expect(newTasks[1].order).toBe(0);
   });

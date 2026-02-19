@@ -18,8 +18,8 @@ export const AvailableTasks = ({
         <div className="flex flex-col gap-2">
           {tasks.map((task) => (
             <button
-              key={task.id}
-              onClick={() => onTaskSelect(task.id)}
+              key={task._id}
+              onClick={() => onTaskSelect(task._id)}
               aria-label={`Select ${task.title}`}
               className="rounded-lg border border-white/10 bg-white/5 px-6 py-3 text-white transition-colors hover:bg-white/10 focus:ring-2 focus:ring-white/50 focus:outline-none"
             >

@@ -1,12 +1,7 @@
 import { type Page, expect } from "@playwright/test";
 import { resetLocalEventDb } from "./event-test-utils";
-import { ONBOARDING_STATE } from "./test-constants";
 
 export const prepareTaskPage = async (page: Page) => {
-  await page.addInitScript((value) => {
-    localStorage.setItem("compass.onboarding", JSON.stringify(value));
-  }, ONBOARDING_STATE);
-
   await page.goto("/day", { waitUntil: "networkidle" });
   await page.waitForURL(/\/day\/\d{4}-\d{2}-\d{2}$/);
   await page.waitForFunction(

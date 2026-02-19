@@ -51,7 +51,7 @@ export function useTaskActions({
 
   const addTask = (title: string): Task => {
     const newTask: Task = {
-      id: createObjectIdString(),
+      _id: createObjectIdString(),
       title,
       status: "todo",
       order: tasks.length,
@@ -67,7 +67,7 @@ export function useTaskActions({
     if (isEditingBlocked) return;
 
     setTasks((prev) =>
-      prev.map((task) => (task.id === taskId ? { ...task, title } : task)),
+      prev.map((task) => (task._id === taskId ? { ...task, title } : task)),
     );
   };
 
@@ -76,7 +76,7 @@ export function useTaskActions({
 
     setTasks((prev) =>
       prev.map((task) =>
-        task.id === taskId ? { ...task, description } : task,
+        task._id === taskId ? { ...task, description } : task,
       ),
     );
   };
@@ -86,7 +86,7 @@ export function useTaskActions({
 
     setTasks((prev) => {
       const updatedTasks = prev.map((task) => {
-        if (task.id === taskId) {
+        if (task._id === taskId) {
           const newStatus: "todo" | "completed" =
             task.status === "completed" ? "todo" : "completed";
           return { ...task, status: newStatus };
@@ -131,7 +131,7 @@ export function useTaskActions({
             // Remove the task from the target date in storage
             const targetDateTasks = await taskRepository.get(targetDateKey);
             const updatedTargetTasks = targetDateTasks.filter(
-              (t: Task) => t.id !== undoState.task.id,
+              (t: Task) => t._id !== undoState.task._id,
             );
             await taskRepository.save(targetDateKey, updatedTargetTasks);
 
@@ -140,7 +140,7 @@ export function useTaskActions({
               undoState.fromDate,
             );
             const alreadyExists = originalDateTasks.some(
-              (task) => task.id === undoState.task.id,
+              (task) => task._id === undoState.task._id,
             );
             if (!alreadyExists) {
               await taskRepository.save(undoState.fromDate, [
@@ -172,7 +172,7 @@ export function useTaskActions({
   const deleteTask = (taskId: string) => {
     if (isEditingBlocked) return;
 
-    const taskToDelete = tasks.find((task) => task.id === taskId);
+    const taskToDelete = tasks.find((task) => task._id === taskId);
     if (!taskToDelete) return;
 
     // Dismiss any existing undo toast before showing new one
@@ -184,7 +184,7 @@ export function useTaskActions({
     setUndoState?.({ type: "delete", task: taskToDelete });
 
     // Remove task from the list
-    setTasks((prev) => prev.filter((task) => task.id !== taskId));
+    setTasks((prev) => prev.filter((task) => task._id !== taskId));
 
     const toastId = showUndoDeleteToast(restoreTask);
 
@@ -246,7 +246,7 @@ export function useTaskActions({
     }
 
     // Find the current task to check if it has been reverted
-    const currentTask = tasks.find((task) => task.id === taskId);
+    const currentTask = tasks.find((task) => task._id === taskId);
     const title = editingTitle?.trim() || "";
     const shouldUpdateTitle =
       currentTask && title && title !== currentTask.title;
@@ -262,7 +262,7 @@ export function useTaskActions({
     if (isEditingBlocked) return;
 
     setEditingTaskId?.(taskId);
-    setEditingTitle?.(tasks.find((task) => task.id === taskId)?.title || "");
+    setEditingTitle?.(tasks.find((task) => task._id === taskId)?.title || "");
   };
 
   const onInputKeyDown = (e: React.KeyboardEvent, taskId: string) => {
@@ -284,7 +284,7 @@ export function useTaskActions({
     } else if (e.key === "Escape") {
       e.preventDefault();
       // Get the original task title and revert to it
-      const originalTask = tasks.find((task) => task.id === taskId);
+      const originalTask = tasks.find((task) => task._id === taskId);
       if (originalTask) {
         // Use setTimeout to ensure this runs after the blur event
         setTimeout(() => {
@@ -311,17 +311,17 @@ export function useTaskActions({
         const completedTasks = newTasks.filter((t) => t.status === "completed");
 
         const todoOrderById = new Map(
-          todoTasks.map((task, index) => [task.id, index]),
+          todoTasks.map((task, index) => [task._id, index]),
         );
         const completedOrderById = new Map(
-          completedTasks.map((task, index) => [task.id, index]),
+          completedTasks.map((task, index) => [task._id, index]),
         );
 
         return newTasks.map((task) => {
           const order =
             task.status === "todo"
-              ? (todoOrderById.get(task.id) ?? 0)
-              : (completedOrderById.get(task.id) ?? 0);
+              ? (todoOrderById.get(task._id) ?? 0)
+              : (completedOrderById.get(task._id) ?? 0);
           return { ...task, order };
         });
       });
@@ -334,7 +334,7 @@ export function useTaskActions({
       if (isEditingBlocked) return;
       if (!dateInView) return;
 
-      const taskToMigrate = tasks.find((task) => task.id === taskId);
+      const taskToMigrate = tasks.find((task) => task._id === taskId);
       if (!taskToMigrate) return;
 
       // Dismiss any existing undo toast before showing new one
@@ -366,7 +366,7 @@ export function useTaskActions({
         });
 
       // Remove from current view
-      setTasks((prev) => prev.filter((task) => task.id !== taskId));
+      setTasks((prev) => prev.filter((task) => task._id !== taskId));
 
       // Show toast with navigation and undo options
       const onNavigate =

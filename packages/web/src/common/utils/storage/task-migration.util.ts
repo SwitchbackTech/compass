@@ -1,9 +1,210 @@
-import { Task, isTask } from "@web/common/types/task.types";
-import { ensureDatabaseReady } from "./db-init.util";
+import { Event_Core } from "@core/types/event.types";
+import { Task, isTask, normalizeTask } from "@web/common/types/task.types";
+import { StoredTask, compassLocalDB } from "./compass-local.db";
+import {
+  ensureDatabaseReady,
+  resetDatabaseInitialization,
+} from "./db-init.util";
 import { saveTaskToIndexedDB } from "./task.storage.util";
 
 const MIGRATION_FLAG_KEY = "compass.tasks.migrated-to-indexeddb";
 const TASK_STORAGE_KEY_PREFIX = "compass.today.tasks.";
+const COMPASS_LOCAL_DB_NAME = "compass-local";
+const EVENTS_STORE_NAME = "events";
+const TASKS_STORE_NAME = "tasks";
+
+interface LegacyDbSnapshot {
+  events: Event_Core[];
+  tasks: unknown[];
+}
+
+function normalizeTaskWithLegacyId(item: unknown): Task | null {
+  if (isTask(item)) {
+    return item;
+  }
+
+  if (!item || typeof item !== "object") {
+    return null;
+  }
+
+  const legacyTask = item as Record<string, unknown> & { id?: unknown };
+  if (typeof legacyTask.id !== "string") {
+    return null;
+  }
+
+  const { id, ...rest } = legacyTask;
+  const mappedTask = {
+    ...rest,
+    _id: id,
+  };
+
+  return isTask(mappedTask) ? mappedTask : null;
+}
+
+function requestAsPromise<T>(
+  request: IDBRequest<T>,
+  blockedErrorMessage?: string,
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+    if (blockedErrorMessage && "onblocked" in request) {
+      (request as IDBOpenDBRequest).onblocked = () =>
+        reject(new Error(blockedErrorMessage));
+    }
+  });
+}
+
+function transactionDone(transaction: IDBTransaction): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+    transaction.onabort = () => reject(transaction.error);
+  });
+}
+
+function openLocalDatabaseRaw(): Promise<IDBDatabase> {
+  return requestAsPromise(indexedDB.open(COMPASS_LOCAL_DB_NAME));
+}
+
+function deleteLocalDatabaseRaw(): Promise<void> {
+  return requestAsPromise(
+    indexedDB.deleteDatabase(COMPASS_LOCAL_DB_NAME),
+    "Delete database request blocked",
+  ).then(() => undefined);
+}
+
+async function withLocalDatabase<T>(
+  callback: (database: IDBDatabase) => Promise<T>,
+): Promise<T> {
+  const database = await openLocalDatabaseRaw();
+  try {
+    return await callback(database);
+  } finally {
+    database.close();
+  }
+}
+
+async function runTransaction<T>(
+  database: IDBDatabase,
+  storeNames: string | string[],
+  mode: IDBTransactionMode,
+  callback: (transaction: IDBTransaction) => Promise<T> | T,
+): Promise<T> {
+  const transaction = database.transaction(storeNames, mode);
+  const [result] = await Promise.all([
+    Promise.resolve(callback(transaction)),
+    transactionDone(transaction),
+  ]);
+  return result;
+}
+
+async function readLegacyDbSnapshotIfNeeded(): Promise<LegacyDbSnapshot | null> {
+  return withLocalDatabase(async (database) => {
+    if (!database.objectStoreNames.contains(TASKS_STORE_NAME)) {
+      return null;
+    }
+
+    const taskStoreKeyPath = await runTransaction(
+      database,
+      TASKS_STORE_NAME,
+      "readonly",
+      (transaction) => {
+        const taskStore = transaction.objectStore(TASKS_STORE_NAME);
+        return taskStore.keyPath;
+      },
+    );
+
+    if (taskStoreKeyPath !== "id") {
+      return null;
+    }
+
+    const hasEventsStore =
+      database.objectStoreNames.contains(EVENTS_STORE_NAME);
+    const storesToRead = hasEventsStore
+      ? [EVENTS_STORE_NAME, TASKS_STORE_NAME]
+      : [TASKS_STORE_NAME];
+    const { events, tasks } = await runTransaction(
+      database,
+      storesToRead,
+      "readonly",
+      async (transaction) => {
+        const tasks = await requestAsPromise(
+          transaction.objectStore(TASKS_STORE_NAME).getAll(),
+        );
+        const events = hasEventsStore
+          ? await requestAsPromise(
+              transaction.objectStore(EVENTS_STORE_NAME).getAll(),
+            )
+          : [];
+        return { events, tasks };
+      },
+    );
+
+    return {
+      events: events as Event_Core[],
+      tasks: tasks as unknown[],
+    };
+  });
+}
+
+function mapLegacyIndexedDbTask(task: unknown): StoredTask | null {
+  if (!task || typeof task !== "object") {
+    return null;
+  }
+
+  const legacyTask = task as Record<string, unknown> & { dateKey?: unknown };
+  if (typeof legacyTask.dateKey !== "string") {
+    return null;
+  }
+
+  const normalizedTask = normalizeTaskWithLegacyId(legacyTask);
+  if (!normalizedTask) {
+    return null;
+  }
+
+  try {
+    return {
+      ...normalizeTask(normalizedTask),
+      dateKey: legacyTask.dateKey,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function migrateLegacyTaskStoreSchemaIfNeeded(): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (typeof indexedDB === "undefined") return;
+
+  const legacySnapshot = await readLegacyDbSnapshotIfNeeded();
+  if (!legacySnapshot) {
+    return;
+  }
+
+  compassLocalDB.close();
+  resetDatabaseInitialization();
+  await deleteLocalDatabaseRaw();
+  await ensureDatabaseReady();
+
+  const migratedTasks = legacySnapshot.tasks
+    .map(mapLegacyIndexedDbTask)
+    .filter((task): task is StoredTask => task !== null);
+
+  await compassLocalDB.transaction(
+    "rw",
+    compassLocalDB.events,
+    compassLocalDB.tasks,
+    async () => {
+      if (legacySnapshot.events.length > 0) {
+        await compassLocalDB.events.bulkPut(legacySnapshot.events);
+      }
+      if (migratedTasks.length > 0) {
+        await compassLocalDB.tasks.bulkPut(migratedTasks);
+      }
+    },
+  );
+}
 
 /**
  * Checks if task migration from localStorage to IndexedDB has been completed.
@@ -36,6 +237,11 @@ function markMigrationCompleted(): void {
 export async function migrateTasksFromLocalStorageToIndexedDB(): Promise<number> {
   // Skip if running on server or already migrated
   if (typeof window === "undefined") return 0;
+  try {
+    await migrateLegacyTaskStoreSchemaIfNeeded();
+  } catch (error) {
+    console.error("Failed to migrate legacy IndexedDB task schema:", error);
+  }
   if (hasTaskMigrationCompleted()) return 0;
 
   try {
@@ -69,13 +275,15 @@ export async function migrateTasksFromLocalStorageToIndexedDB(): Promise<number>
         // in localStorage so successful migrations are not duplicated on retry.
         const remainingTasks: Task[] = [];
         for (const item of parsed) {
-          if (isTask(item)) {
+          const normalizedTask = normalizeTaskWithLegacyId(item);
+
+          if (normalizedTask) {
             try {
-              await saveTaskToIndexedDB(item, dateKey);
+              await saveTaskToIndexedDB(normalizedTask, dateKey);
               migratedCount++;
             } catch (saveError) {
               hasSaveFailures = true;
-              remainingTasks.push(item);
+              remainingTasks.push(normalizedTask);
               console.error(
                 `Failed to save task to IndexedDB for dateKey: ${dateKey}`,
                 saveError,

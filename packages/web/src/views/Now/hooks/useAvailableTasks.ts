@@ -4,7 +4,6 @@ import { Task } from "@web/common/types/task.types";
 import { CompassTasksSavedEvent } from "@web/common/utils/storage/storage.types";
 import {
   COMPASS_TASKS_SAVED_EVENT_NAME,
-  TODAY_TASKS_STORAGE_KEY_PREFIX,
   getDateKey,
   loadTasksFromStorage,
 } from "@web/common/utils/storage/storage.util";
@@ -16,10 +15,9 @@ export function useAvailableTasks() {
   const taskContext = useContext(TaskContext);
   const hasTaskContext = taskContext !== undefined;
 
-  const loadStoredTasks = useCallback(() => {
+  const loadStoredTasks = useCallback(async () => {
     const dateKey = getDateKey();
-    const tasks = loadTasksFromStorage(dateKey);
-    setStoredTasks(tasks);
+    return await loadTasksFromStorage(dateKey);
   }, []);
 
   useEffect(() => {
@@ -27,33 +25,39 @@ export function useAvailableTasks() {
       return;
     }
 
-    loadStoredTasks();
-
-    // Listen for storage changes to reload tasks (cross-tab synchronization)
-    const handleStorageChange = (event: StorageEvent) => {
-      if (!event.key || event.key.startsWith(TODAY_TASKS_STORAGE_KEY_PREFIX)) {
-        loadStoredTasks();
-      }
+    let isCancelled = false;
+    const reloadTasks = () => {
+      void loadStoredTasks()
+        .then((tasks) => {
+          if (isCancelled) return;
+          setStoredTasks(tasks);
+        })
+        .catch((error) => {
+          if (isCancelled) return;
+          console.error("Failed to load tasks from IndexedDB:", error);
+          setStoredTasks([]);
+        });
     };
+
+    reloadTasks();
 
     // Listen for custom event (same-tab synchronization)
     const handleTasksSaved = (event: CompassTasksSavedEvent) => {
       if (event.detail.dateKey === getDateKey()) {
-        loadStoredTasks();
+        reloadTasks();
       }
     };
 
-    window.addEventListener("storage", handleStorageChange);
     window.addEventListener(
       COMPASS_TASKS_SAVED_EVENT_NAME,
       handleTasksSaved as EventListener,
     );
     return () => {
-      window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener(
         COMPASS_TASKS_SAVED_EVENT_NAME,
         handleTasksSaved as EventListener,
       );
+      isCancelled = true;
     };
   }, [hasTaskContext, loadStoredTasks]);
 

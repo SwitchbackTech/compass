@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
 
-export const TaskSchema = z.object({
-  id: z.string(),
+const TaskSchema = z.object({
+  _id: z.string(),
   title: z.string(),
   status: z.enum(["todo", "completed"]),
   order: z.number().default(0),

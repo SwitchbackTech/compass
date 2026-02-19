@@ -1,7 +1,7 @@
 import { act } from "react";
 import { useNavigate } from "react-router-dom";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
-import { Task } from "@web/common/types/task.types";
+import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import {
   keyPressed$,
   pressKey,
@@ -24,21 +24,8 @@ const mockIsEditable = jest.requireMock(
 ).isEditable;
 
 describe("useNowShortcuts", () => {
-  const mockTask1: Task = {
-    id: "task-1",
-    title: "Task 1",
-    status: "todo",
-    order: 0,
-    createdAt: "2024-01-01T10:00:00Z",
-  };
-
-  const mockTask2: Task = {
-    id: "task-2",
-    title: "Task 2",
-    status: "todo",
-    order: 1,
-    createdAt: "2024-01-01T11:00:00Z",
-  };
+  const mockTask1 = createMockTask();
+  const mockTask2 = createMockTask();
 
   beforeEach(() => {
     jest.clearAllMocks();

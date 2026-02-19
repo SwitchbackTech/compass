@@ -33,6 +33,7 @@ async function initializeApp() {
 
   // Show error toast after app renders (so toast container is available)
   if (dbInitError) {
+    console.error(dbInitError);
     showDbInitErrorToast(dbInitError);
   }
 }

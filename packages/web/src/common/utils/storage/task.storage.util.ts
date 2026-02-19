@@ -15,13 +15,11 @@ export async function saveTaskToIndexedDB(
   task: Task,
   dateKey: string,
 ): Promise<void> {
-  if (!task.id) {
-    throw new Error("Task must have an id to save to IndexedDB");
-  }
+  const normalizedTask = normalizeTask(task);
 
   try {
     await ensureDatabaseReady();
-    const storedTask: StoredTask = { ...normalizeTask(task), dateKey };
+    const storedTask: StoredTask = { ...normalizedTask, dateKey };
     await compassLocalDB.tasks.put(storedTask);
   } catch (error) {
     handleDatabaseError(error, "save");
@@ -126,7 +124,7 @@ export async function moveTaskBetweenDates(
     const normalizedTask = normalizeTask(task);
 
     await compassLocalDB.transaction("rw", compassLocalDB.tasks, async () => {
-      const existingTask = await compassLocalDB.tasks.get(normalizedTask.id);
+      const existingTask = await compassLocalDB.tasks.get(normalizedTask._id);
 
       // If the task exists for a different date, don't move it.
       if (existingTask && existingTask.dateKey !== fromDateKey) {
@@ -134,7 +132,7 @@ export async function moveTaskBetweenDates(
       }
 
       // Remove from source date (task id stays the same)
-      await compassLocalDB.tasks.delete(normalizedTask.id);
+      await compassLocalDB.tasks.delete(normalizedTask._id);
 
       // Add to target date
       const storedTask: StoredTask = { ...normalizedTask, dateKey: toDateKey };

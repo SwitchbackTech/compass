@@ -47,9 +47,9 @@ export const Task = ({
 
   return (
     <div
-      key={task.id}
-      {...{ [DATA_TASK_ELEMENT_ID]: task.id }}
-      data-testid={task.id}
+      key={task._id}
+      {...{ [DATA_TASK_ELEMENT_ID]: task._id }}
+      data-testid={task._id}
       className={`group flex items-start gap-3 rounded border p-2 transition-colors duration-200 focus-within:border-blue-200/50 focus-within:ring-1 focus-within:ring-blue-200/30 ${task.status === "completed" ? "opacity-50" : ""}`}
     >
       <button
@@ -58,12 +58,12 @@ export const Task = ({
         aria-checked={task.status === "completed"}
         aria-label={`Toggle ${task.title}`}
         tabIndex={0}
-        data-task-id={task.id}
+        data-task-id={task._id}
         onFocus={() => {
           onFocus?.(index);
         }}
-        onKeyDown={(e) => onCheckboxKeyDown(e, task.id, task.title)}
-        onClick={() => onStatusToggle(task.id)}
+        onKeyDown={(e) => onCheckboxKeyDown(e, task._id, task.title)}
+        onClick={() => onStatusToggle(task._id)}
         className="mt-1 rounded-full focus:ring-2 focus:ring-blue-200 focus:outline-none"
       >
         <TaskCircleIcon status={task.status} />
@@ -72,9 +72,9 @@ export const Task = ({
         <input
           tabIndex={-1}
           aria-label={`Edit ${task.title}`}
-          data-task-id={task.id}
-          id={`task-input-${task.id}`}
-          name={`task-title-${task.id}`}
+          data-task-id={task._id}
+          id={`task-input-${task._id}`}
+          name={`task-title-${task._id}`}
           className={classNames(
             "text-white-100 w-full text-sm outline-none",
             "border-b border-transparent bg-transparent",
@@ -82,8 +82,8 @@ export const Task = ({
           )}
           type="text"
           value={title}
-          onClick={() => onInputClick(task.id)}
-          onBlur={() => onInputBlur(task.id)}
+          onClick={() => onInputClick(task._id)}
+          onBlur={() => onInputBlur(task._id)}
           onKeyDownCapture={(e) => {
             if (e.key !== "Tab") return;
             // this will focus the checkbox
@@ -93,7 +93,7 @@ export const Task = ({
             checkboxRef.current?.focus();
           }}
           onKeyDown={(e) =>
-            onInputKeyDown(e, task.id, index, e.currentTarget.value)
+            onInputKeyDown(e, task._id, index, e.currentTarget.value)
           }
           onChange={(e) => onTitleChange(e.target.value)}
         />
@@ -107,12 +107,12 @@ export const Task = ({
         <ArrowButton
           direction="left"
           label="Move task to previous day"
-          onClick={() => onMigrate(task.id, "backward")}
+          onClick={() => onMigrate(task._id, "backward")}
         />
         <ArrowButton
           direction="right"
           label="Move task to next day"
-          onClick={() => onMigrate(task.id, "forward")}
+          onClick={() => onMigrate(task._id, "forward")}
         />
       </div>
     </div>

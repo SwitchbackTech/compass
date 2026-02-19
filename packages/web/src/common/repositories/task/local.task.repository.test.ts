@@ -41,7 +41,7 @@ describe("LocalTaskRepository", () => {
       const dateKey = "2024-01-01";
       const mockTasks = [
         createTestTask({
-          id: "task-1",
+          _id: "task-1",
           title: "Test Task",
         }),
       ];
@@ -71,7 +71,7 @@ describe("LocalTaskRepository", () => {
       const dateKey = "2024-01-01";
       const tasks = [
         createTestTask({
-          id: "task-1",
+          _id: "task-1",
           title: "Test Task",
         }),
       ];
@@ -97,7 +97,7 @@ describe("LocalTaskRepository", () => {
       const dateKey = "2024-01-01";
       mockLoadTasks.mockResolvedValue([
         createTestTask({
-          id: "task-1",
+          _id: "task-1",
         }),
       ]);
 
@@ -125,7 +125,7 @@ describe("LocalTaskRepository", () => {
         status: "todo",
       }).map((task, index) => ({
         ...task,
-        id: `task-${index + 1}`,
+        _id: `task-${index + 1}`,
         title: `Task ${index + 1}`,
         order: index,
       }));
@@ -141,13 +141,13 @@ describe("LocalTaskRepository", () => {
       const savedTasks = savedCall[1];
 
       // Task 2 should now be first
-      expect(savedTasks[0].id).toBe("task-2");
+      expect(savedTasks[0]._id).toBe("task-2");
       expect(savedTasks[0].order).toBe(0);
       // Task 3 should now be second
-      expect(savedTasks[1].id).toBe("task-3");
+      expect(savedTasks[1]._id).toBe("task-3");
       expect(savedTasks[1].order).toBe(1);
       // Task 1 should now be third
-      expect(savedTasks[2].id).toBe("task-1");
+      expect(savedTasks[2]._id).toBe("task-1");
       expect(savedTasks[2].order).toBe(2);
     });
 
@@ -157,7 +157,7 @@ describe("LocalTaskRepository", () => {
         status: "todo",
       }).map((task, index) => ({
         ...task,
-        id: `task-${index + 1}`,
+        _id: `task-${index + 1}`,
         title: `Task ${index + 1}`,
         order: index,
       }));
@@ -166,7 +166,7 @@ describe("LocalTaskRepository", () => {
         status: "completed",
       }).map((task, index) => ({
         ...task,
-        id: `task-${index + 3}`,
+        _id: `task-${index + 3}`,
         title: `Task ${index + 3}`,
         order: index,
       }));
@@ -203,7 +203,7 @@ describe("LocalTaskRepository", () => {
         status: "completed",
       }).map((task, index) => ({
         ...task,
-        id: `task-${index + 1}`,
+        _id: `task-${index + 1}`,
         title: `Task ${index + 1}`,
         order: index,
       }));
@@ -216,10 +216,10 @@ describe("LocalTaskRepository", () => {
       const savedTasks = savedCall[1];
 
       // Task 2 should now be first
-      expect(savedTasks[0].id).toBe("task-2");
+      expect(savedTasks[0]._id).toBe("task-2");
       expect(savedTasks[0].order).toBe(0);
       // Task 1 should now be second
-      expect(savedTasks[1].id).toBe("task-1");
+      expect(savedTasks[1]._id).toBe("task-1");
       expect(savedTasks[1].order).toBe(1);
     });
   });
@@ -227,7 +227,7 @@ describe("LocalTaskRepository", () => {
   describe("move", () => {
     it("should move a task between dates", async () => {
       const task = createTestTask({
-        id: "task-1",
+        _id: "task-1",
       });
 
       await repository.move(task, "2024-01-01", "2024-01-02");

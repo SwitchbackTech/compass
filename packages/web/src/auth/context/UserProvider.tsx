@@ -19,7 +19,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     if (profile.current) return;
 
     // Only fetch profile if user has authenticated with Google Calendar
-    // Users in localStorage/IndexedDB mode don't have a profile
     if (!hasUserEverAuthenticated()) {
       return;
     }

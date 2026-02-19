@@ -3,6 +3,7 @@ import "@testing-library/jest-dom";
 import { RenderOptions, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import dayjs from "@core/util/date/dayjs";
+import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { Task } from "@web/common/types/task.types";
 import * as storageUtil from "@web/common/utils/storage/storage.util";
 import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
@@ -62,23 +63,23 @@ describe("TaskSelector", () => {
   const mockToday = dayjs("2025-11-15T00:00:00Z").utc();
   const mockDateKey = "2025-11-15";
 
-  const mockTask: Task = {
-    id: "task-1",
-    title: "Test Task",
-    status: "todo",
-    createdAt: "2025-11-15T10:00:00Z",
-    order: 1,
-  };
-
   const mockTasks: Task[] = [
-    mockTask,
-    {
-      id: "task-2",
+    createMockTask({
+      _id: "task-1",
+      title: "Test Task",
+      status: "todo",
+      order: 1,
+      user: "user-1",
+      createdAt: "2025-11-15T10:00:00Z",
+    }),
+    createMockTask({
+      _id: "task-2",
       title: "Another Task",
       status: "todo",
-      createdAt: "2025-11-15T11:00:00Z",
       order: 2,
-    },
+      user: "user-1",
+      createdAt: "2025-11-15T11:00:00Z",
+    }),
   ];
 
   beforeEach(() => {
@@ -86,11 +87,11 @@ describe("TaskSelector", () => {
     mockNavigate.mockClear();
     mockSetFocusedTask.mockClear();
     (storageUtil.getDateKey as jest.Mock).mockReturnValue(mockDateKey);
-    (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(mockTasks);
-    (storageUtil.saveTasksToStorage as jest.Mock).mockImplementation(() => {});
-    (storageUtil.updateTodayTasks as jest.Mock).mockImplementation(
-      () => mockTasks,
+    (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue(
+      mockTasks,
     );
+    (storageUtil.saveTasksToStorage as jest.Mock).mockResolvedValue(undefined);
+    (storageUtil.updateTodayTasks as jest.Mock).mockResolvedValue(mockTasks);
 
     // Use fake timers to control the current time
     jest.useFakeTimers();
@@ -103,7 +104,7 @@ describe("TaskSelector", () => {
 
   it("renders FocusedTask when a task is focused", () => {
     mockUseFocusedTask.mockReturnValue({
-      focusedTask: mockTask,
+      focusedTask: mockTasks[0],
       setFocusedTask: mockSetFocusedTask,
     });
     mockUseAvailableTasks.mockReturnValue({
@@ -195,7 +196,7 @@ describe("TaskSelector", () => {
       availableTasks: [],
       allTasks: [
         {
-          id: "task-1",
+          _id: "task-1",
           title: "Completed Task",
           status: "completed",
           createdAt: "2025-11-15T10:00:00Z",
@@ -249,7 +250,7 @@ describe("TaskSelector", () => {
 
     // Update the mock to return focused task (simulating state update)
     mockUseFocusedTask.mockReturnValue({
-      focusedTask: mockTask,
+      focusedTask: mockTasks[0],
       setFocusedTask: mockSetFocusedTask,
     });
 
@@ -269,27 +270,30 @@ describe("TaskSelector", () => {
     it("marks task as complete and navigates to next incomplete task when CheckCircle is clicked", async () => {
       const user = userEvent.setup({ delay: null });
       const tasks: Task[] = [
-        {
-          id: "task-1",
+        createMockTask({
+          _id: "task-1",
           title: "First Task",
           status: "todo",
-          createdAt: "2025-11-15T10:00:00Z",
           order: 1,
-        },
-        {
-          id: "task-2",
+          user: "user-1",
+          createdAt: "2025-11-15T10:00:00Z",
+        }),
+        createMockTask({
+          _id: "task-2",
           title: "Second Task",
           status: "todo",
-          createdAt: "2025-11-15T11:00:00Z",
           order: 2,
-        },
-        {
-          id: "task-3",
+          user: "user-1",
+          createdAt: "2025-11-15T11:00:00Z",
+        }),
+        createMockTask({
+          _id: "task-3",
           title: "Third Task",
           status: "todo",
-          createdAt: "2025-11-15T12:00:00Z",
           order: 3,
-        },
+          user: "user-1",
+          createdAt: "2025-11-15T12:00:00Z",
+        }),
       ];
 
       mockUseFocusedTask.mockReturnValue({
@@ -303,7 +307,7 @@ describe("TaskSelector", () => {
       });
       let lastUpdatedTasks: Task[] = [];
       (storageUtil.updateTodayTasks as jest.Mock).mockImplementation(
-        (updater: (taskList: Task[]) => Task[]) => {
+        async (updater: (taskList: Task[]) => Task[]) => {
           lastUpdatedTasks = updater(tasks);
           return lastUpdatedTasks;
         },
@@ -316,30 +320,34 @@ describe("TaskSelector", () => {
       });
       await user.click(checkButton);
 
-      expect(storageUtil.updateTodayTasks).toHaveBeenCalledTimes(1);
-      expect(
-        lastUpdatedTasks.find((task) => task.id === "task-1")?.status,
-      ).toBe("completed");
-      expect(mockSetFocusedTask).toHaveBeenCalledWith("task-2");
+      await waitFor(() => {
+        expect(storageUtil.updateTodayTasks).toHaveBeenCalledTimes(1);
+        expect(
+          lastUpdatedTasks.find((task) => task._id === "task-1")?.status,
+        ).toBe("completed");
+        expect(mockSetFocusedTask).toHaveBeenCalledWith("task-2");
+      });
     });
 
     it("marks task as complete and navigates to previous task when it's the last task", async () => {
       const user = userEvent.setup({ delay: null });
       const tasks: Task[] = [
-        {
-          id: "task-1",
+        createMockTask({
+          _id: "task-1",
           title: "First Task",
           status: "todo",
-          createdAt: "2025-11-15T10:00:00Z",
           order: 1,
-        },
-        {
-          id: "task-2",
+          user: "user-1",
+          createdAt: "2025-11-15T10:00:00Z",
+        }),
+        createMockTask({
+          _id: "task-2",
           title: "Second Task",
           status: "todo",
-          createdAt: "2025-11-15T11:00:00Z",
           order: 2,
-        },
+          user: "user-1",
+          createdAt: "2025-11-15T11:00:00Z",
+        }),
       ];
 
       mockUseFocusedTask.mockReturnValue({
@@ -353,7 +361,7 @@ describe("TaskSelector", () => {
       });
       let lastUpdatedTasks: Task[] = [];
       (storageUtil.updateTodayTasks as jest.Mock).mockImplementation(
-        (updater: (taskList: Task[]) => Task[]) => {
+        async (updater: (taskList: Task[]) => Task[]) => {
           lastUpdatedTasks = updater(tasks);
           return lastUpdatedTasks;
         },
@@ -366,23 +374,26 @@ describe("TaskSelector", () => {
       });
       await user.click(checkButton);
 
-      expect(storageUtil.updateTodayTasks).toHaveBeenCalledTimes(1);
-      expect(
-        lastUpdatedTasks.find((task) => task.id === "task-2")?.status,
-      ).toBe("completed");
-      expect(mockSetFocusedTask).toHaveBeenCalledWith("task-1");
+      await waitFor(() => {
+        expect(storageUtil.updateTodayTasks).toHaveBeenCalledTimes(1);
+        expect(
+          lastUpdatedTasks.find((task) => task._id === "task-2")?.status,
+        ).toBe("completed");
+        expect(mockSetFocusedTask).toHaveBeenCalledWith("task-1");
+      });
     });
 
     it("marks task as complete and navigates to Day view when it's the only task", async () => {
       const user = userEvent.setup({ delay: null });
       const tasks: Task[] = [
-        {
-          id: "task-1",
+        createMockTask({
+          _id: "task-1",
           title: "Only Task",
           status: "todo",
-          createdAt: "2025-11-15T10:00:00Z",
           order: 1,
-        },
+          user: "user-1",
+          createdAt: "2025-11-15T10:00:00Z",
+        }),
       ];
 
       mockUseFocusedTask.mockReturnValue({
@@ -396,7 +407,7 @@ describe("TaskSelector", () => {
       });
       let lastUpdatedTasks: Task[] = [];
       (storageUtil.updateTodayTasks as jest.Mock).mockImplementation(
-        (updater: (taskList: Task[]) => Task[]) => {
+        async (updater: (taskList: Task[]) => Task[]) => {
           lastUpdatedTasks = updater(tasks);
           return lastUpdatedTasks;
         },
@@ -409,11 +420,13 @@ describe("TaskSelector", () => {
       });
       await user.click(checkButton);
 
-      expect(storageUtil.updateTodayTasks).toHaveBeenCalledTimes(1);
-      expect(
-        lastUpdatedTasks.find((task) => task.id === "task-1")?.status,
-      ).toBe("completed");
-      expect(mockNavigate).toHaveBeenCalledWith("/day");
+      await waitFor(() => {
+        expect(storageUtil.updateTodayTasks).toHaveBeenCalledTimes(1);
+        expect(
+          lastUpdatedTasks.find((task) => task._id === "task-1")?.status,
+        ).toBe("completed");
+        expect(mockNavigate).toHaveBeenCalledWith("/day");
+      });
     });
 
     it("does nothing when no task is focused", async () => {

@@ -1,10 +1,10 @@
 import dayjs from "@core/util/date/dayjs";
+import { Task, normalizeTasks } from "@web/common/types/task.types";
 import {
-  Task,
-  isTask,
-  normalizeTask,
-  normalizeTasks,
-} from "@web/common/types/task.types";
+  loadTasksFromIndexedDB,
+  moveTaskBetweenDates,
+  saveTasksToIndexedDB,
+} from "@web/common/utils/storage/task.storage.util";
 import { CompassTasksSavedEventDetail } from "./storage.types";
 
 export const TODAY_TASKS_STORAGE_KEY_PREFIX = "compass.today.tasks";
@@ -14,86 +14,86 @@ export function getDateKey(date: Date = new Date()): string {
   return dayjs(date).format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
 }
 
-export function getStorageKey(dateKey: string): string {
-  return `${TODAY_TASKS_STORAGE_KEY_PREFIX}.${dateKey}`;
+function dispatchTasksSavedEvent(dateKey: string): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const eventDetail: CompassTasksSavedEventDetail = { dateKey };
+  window.dispatchEvent(
+    new CustomEvent(COMPASS_TASKS_SAVED_EVENT_NAME, {
+      detail: eventDetail,
+    }),
+  );
 }
 
-export function loadTasksFromStorage(dateKey: string): Task[] {
+export async function loadTasksFromStorage(dateKey: string): Promise<Task[]> {
   if (typeof window === "undefined") {
     return [];
   }
 
   try {
-    const rawTasks = window.localStorage.getItem(getStorageKey(dateKey));
-    if (!rawTasks) {
-      return [];
-    }
-
-    const parsed = JSON.parse(rawTasks);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed.filter(isTask).map(normalizeTask);
+    return await loadTasksFromIndexedDB(dateKey);
   } catch (error) {
-    console.error("Error loading tasks from localStorage:", error);
+    console.error("Error loading tasks from IndexedDB:", error);
     return [];
   }
 }
 
-export function saveTasksToStorage(dateKey: string, tasks: Task[]): void {
+export async function saveTasksToStorage(
+  dateKey: string,
+  tasks: Task[],
+): Promise<void> {
   if (typeof window === "undefined") {
     return;
   }
 
   try {
-    window.localStorage.setItem(
-      getStorageKey(dateKey),
-      JSON.stringify(normalizeTasks(tasks)),
-    );
-    // Dispatch custom event for same-tab synchronization
-    const eventDetail: CompassTasksSavedEventDetail = { dateKey };
-    window.dispatchEvent(
-      new CustomEvent(COMPASS_TASKS_SAVED_EVENT_NAME, {
-        detail: eventDetail,
-      }),
-    );
+    await saveTasksToIndexedDB(dateKey, normalizeTasks(tasks));
+    dispatchTasksSavedEvent(dateKey);
   } catch (error) {
-    console.error("Error saving tasks to localStorage:", error);
+    console.error("Error saving tasks to IndexedDB:", error);
   }
 }
 
-export function loadTodayTasks(): Task[] {
+export async function loadTodayTasks(): Promise<Task[]> {
   const dateKey = getDateKey();
-  return loadTasksFromStorage(dateKey);
+  return await loadTasksFromStorage(dateKey);
 }
 
-export function updateTasksForDate(
+export async function updateTasksForDate(
   dateKey: string,
   updater: (tasks: Task[]) => Task[],
-): Task[] {
-  const updatedTasks = updater(loadTasksFromStorage(dateKey));
-  saveTasksToStorage(dateKey, updatedTasks);
+): Promise<Task[]> {
+  const loadedTasks = await loadTasksFromStorage(dateKey);
+  const updatedTasks = updater(loadedTasks);
+  await saveTasksToStorage(dateKey, updatedTasks);
   return updatedTasks;
 }
 
-export function updateTodayTasks(updater: (tasks: Task[]) => Task[]): Task[] {
+export async function updateTodayTasks(
+  updater: (tasks: Task[]) => Task[],
+): Promise<Task[]> {
   const dateKey = getDateKey();
-  return updateTasksForDate(dateKey, updater);
+  return await updateTasksForDate(dateKey, updater);
 }
 
-export function moveTaskToDate(
+export async function moveTaskToDate(
   task: Task,
   fromDateKey: string,
   toDateKey: string,
-): void {
-  // Remove from source date
-  const sourceTasks = loadTasksFromStorage(fromDateKey);
-  const updatedSourceTasks = sourceTasks.filter((t) => t.id !== task.id);
-  saveTasksToStorage(fromDateKey, updatedSourceTasks);
+): Promise<void> {
+  if (typeof window === "undefined") {
+    return;
+  }
 
-  // Add to target date
-  const targetTasks = loadTasksFromStorage(toDateKey);
-  const updatedTargetTasks = [...targetTasks, task];
-  saveTasksToStorage(toDateKey, updatedTargetTasks);
+  try {
+    await moveTaskBetweenDates(task, fromDateKey, toDateKey);
+    dispatchTasksSavedEvent(fromDateKey);
+    if (toDateKey !== fromDateKey) {
+      dispatchTasksSavedEvent(toDateKey);
+    }
+  } catch (error) {
+    console.error("Error moving task in IndexedDB:", error);
+  }
 }
