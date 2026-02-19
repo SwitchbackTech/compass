@@ -136,14 +136,6 @@ export class IndexedDBAdapter implements StorageAdapter {
     await this.db.tasks.clear();
   }
 
-  /**
-   * For use in tests only. Puts a raw stored task without normalization.
-   * Use when testing migration/normalization of legacy data.
-   */
-  async putRawStoredTaskForTesting(storedTask: StoredTask): Promise<void> {
-    await this.db.tasks.put(storedTask);
-  }
-
   // ─── Event Operations ──────────────────────────────────────────────────────
 
   async getEvents(

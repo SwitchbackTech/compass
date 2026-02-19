@@ -14,6 +14,10 @@ export class CloudTaskRepository implements TaskRepository {
     throw this.createNotImplementedError("save");
   }
 
+  async saveTask(_dateKey: string, _task: Task): Promise<void> {
+    throw this.createNotImplementedError("saveTask");
+  }
+
   async delete(_dateKey: string, _taskId: string): Promise<void> {
     throw this.createNotImplementedError("delete");
   }

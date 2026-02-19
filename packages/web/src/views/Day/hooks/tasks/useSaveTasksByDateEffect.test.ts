@@ -1,16 +1,22 @@
 import { useEffect, useRef } from "react";
 import { renderHook, waitFor } from "@testing-library/react";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
+import { TaskRepository } from "@web/common/repositories/task/task.repository";
 import { Task } from "@web/common/types/task.types";
 import { useSaveTasksByDateEffect } from "@web/views/Day/hooks/tasks/useSaveTasksByDateEffect";
 
-const mockPutTasks = jest.fn();
+const mockSave = jest.fn();
+const mockTaskRepository: TaskRepository = {
+  get: jest.fn().mockResolvedValue([]),
+  save: mockSave,
+  saveTask: jest.fn().mockResolvedValue(undefined),
+  delete: jest.fn().mockResolvedValue(undefined),
+  move: jest.fn().mockResolvedValue(undefined),
+  reorder: jest.fn().mockResolvedValue(undefined),
+};
+
 jest.mock("@web/common/storage/adapter/adapter", () => ({
   ensureStorageReady: jest.fn().mockResolvedValue(undefined),
-  getStorageAdapter: jest.fn(() => ({
-    putTasks: mockPutTasks,
-    putTask: jest.fn().mockResolvedValue(undefined),
-  })),
 }));
 
 interface SaveHarnessProps {
@@ -40,6 +46,7 @@ function useSaveHarness({
   useSaveTasksByDateEffect({
     dateKey,
     tasks,
+    taskRepository: mockTaskRepository,
     isLoadingTasks,
     didLoadFail,
     loadedDateKey,
@@ -53,7 +60,7 @@ function useSaveHarness({
 describe("useSaveTasksByDateEffect", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockPutTasks.mockResolvedValue(undefined);
+    mockSave.mockResolvedValue(undefined);
   });
 
   it("saves tasks and clears dirty flag when all guards pass", async () => {
@@ -71,7 +78,7 @@ describe("useSaveTasksByDateEffect", () => {
     );
 
     await waitFor(() => {
-      expect(mockPutTasks).toHaveBeenCalledWith("2025-10-27", tasks);
+      expect(mockSave).toHaveBeenCalledWith("2025-10-27", tasks);
       expect(result.current.isDirtyRef.current).toBe(false);
     });
   });
@@ -124,13 +131,13 @@ describe("useSaveTasksByDateEffect", () => {
     );
 
     await waitFor(() => {
-      expect(mockPutTasks).not.toHaveBeenCalled();
+      expect(mockSave).not.toHaveBeenCalled();
     });
   });
 
   it("keeps dirty flag when save fails", async () => {
     const tasks = [createMockTask({ _id: "task-1" })];
-    mockPutTasks.mockRejectedValueOnce(new Error("save failed"));
+    mockSave.mockRejectedValueOnce(new Error("save failed"));
     const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
 
     const { result } = renderHook(() =>
@@ -145,7 +152,7 @@ describe("useSaveTasksByDateEffect", () => {
     );
 
     await waitFor(() => {
-      expect(mockPutTasks).toHaveBeenCalledWith("2025-10-27", tasks);
+      expect(mockSave).toHaveBeenCalledWith("2025-10-27", tasks);
       expect(consoleErrorSpy).toHaveBeenCalled();
     });
 

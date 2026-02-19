@@ -4,7 +4,6 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { TaskRepository } from "@web/common/repositories/task/task.repository";
 import { Task } from "@web/common/types/task.types";
-import * as storageUtil from "@web/common/utils/storage/storage.util";
 import { showMigrationToast } from "@web/views/Day/components/Toasts/MigrationToast/MigrationToast";
 import { useTaskActions } from "./useTaskActions";
 
@@ -25,6 +24,7 @@ describe("useTaskActions - migration", () => {
   const mockTaskRepository: jest.Mocked<TaskRepository> = {
     get: jest.fn().mockResolvedValue([]),
     save: jest.fn().mockResolvedValue(undefined),
+    saveTask: jest.fn().mockResolvedValue(undefined),
     delete: jest.fn().mockResolvedValue(undefined),
     move: jest.fn().mockResolvedValue(undefined),
     reorder: jest.fn().mockResolvedValue(undefined),
@@ -34,9 +34,9 @@ describe("useTaskActions - migration", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(storageUtil, "saveTaskToStorage").mockResolvedValue(undefined);
     mockTaskRepository.get.mockResolvedValue([]);
     mockTaskRepository.save.mockResolvedValue(undefined);
+    mockTaskRepository.saveTask.mockResolvedValue(undefined);
     mockTaskRepository.delete.mockResolvedValue(undefined);
     mockTaskRepository.move.mockResolvedValue(undefined);
     mockTaskRepository.reorder.mockResolvedValue(undefined);
@@ -185,7 +185,7 @@ describe("useTaskActions - migration", () => {
       await waitFor(() => {
         expect(mockTaskRepository.save).toHaveBeenCalledWith("2025-10-28", []);
       });
-      expect(storageUtil.saveTaskToStorage).toHaveBeenCalledWith(
+      expect(mockTaskRepository.saveTask).toHaveBeenCalledWith(
         "2025-10-27",
         mockTask,
       );
@@ -226,7 +226,7 @@ describe("useTaskActions - migration", () => {
       await waitFor(() => {
         expect(mockTaskRepository.save).toHaveBeenCalledWith("2025-10-26", []);
       });
-      expect(storageUtil.saveTaskToStorage).toHaveBeenCalledWith(
+      expect(mockTaskRepository.saveTask).toHaveBeenCalledWith(
         "2025-10-27",
         mockTask,
       );
@@ -314,6 +314,7 @@ describe("useTaskActions - reorderTasks", () => {
   const mockTaskRepository: jest.Mocked<TaskRepository> = {
     get: jest.fn().mockResolvedValue([]),
     save: jest.fn().mockResolvedValue(undefined),
+    saveTask: jest.fn().mockResolvedValue(undefined),
     delete: jest.fn().mockResolvedValue(undefined),
     move: jest.fn().mockResolvedValue(undefined),
     reorder: jest.fn().mockResolvedValue(undefined),

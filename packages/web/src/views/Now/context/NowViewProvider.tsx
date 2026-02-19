@@ -1,11 +1,10 @@
 import React, { createContext, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { getTaskRepository } from "@web/common/repositories/task/task.repository.util";
+import { ensureStorageReady } from "@web/common/storage/adapter/adapter";
 import { Task } from "@web/common/types/task.types";
-import {
-  getDateKey,
-  saveTaskToStorage,
-} from "@web/common/utils/storage/storage.util";
+import { getDateKey } from "@web/common/utils/storage/storage.util";
 import { getIncompleteTasksSorted } from "@web/common/utils/task/sort.task";
 import { useAvailableTasks } from "../hooks/useAvailableTasks";
 import { useFocusedTask } from "../hooks/useFocusedTask";
@@ -37,7 +36,9 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
   const completeFocusedTask = useCallback(
     async (task: Task) => {
       const completedTask = { ...task, status: "completed" as const };
-      await saveTaskToStorage(getDateKey(), completedTask);
+      const dateKey = getDateKey();
+      await ensureStorageReady();
+      await getTaskRepository("local").saveTask(dateKey, completedTask);
       return allTasks.map((t) => (t._id === task._id ? completedTask : t));
     },
     [allTasks],
@@ -45,11 +46,15 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
 
   const updateTaskDescription = useCallback(
     (task: Task, description: string) => {
-      void saveTaskToStorage(getDateKey(), { ...task, description }).catch(
-        (error) => {
-          console.error("Failed to update task description:", error);
-        },
-      );
+      void (async () => {
+        await ensureStorageReady();
+        await getTaskRepository("local").saveTask(getDateKey(), {
+          ...task,
+          description,
+        });
+      })().catch((error) => {
+        console.error("Failed to update task description:", error);
+      });
     },
     [],
   );

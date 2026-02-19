@@ -1,5 +1,6 @@
 import { getStorageAdapter } from "@web/common/storage/adapter/adapter";
 import { Task } from "@web/common/types/task.types";
+import { dispatchTasksSavedEvent } from "@web/common/utils/storage/storage.util";
 import { TaskRepository } from "./task.repository";
 
 /**
@@ -20,6 +21,12 @@ export class LocalTaskRepository implements TaskRepository {
 
   async save(dateKey: string, tasks: Task[]): Promise<void> {
     await this.adapter.putTasks(dateKey, tasks);
+    dispatchTasksSavedEvent(dateKey);
+  }
+
+  async saveTask(dateKey: string, task: Task): Promise<void> {
+    await this.adapter.putTask(dateKey, task);
+    dispatchTasksSavedEvent(dateKey);
   }
 
   async delete(dateKey: string, taskId: string): Promise<void> {

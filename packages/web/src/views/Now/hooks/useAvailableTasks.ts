@@ -34,7 +34,7 @@ export function useAvailableTasks() {
         })
         .catch((error) => {
           if (isCancelled) return;
-          console.error("Failed to load tasks from IndexedDB:", error);
+          console.error("Failed to load tasks from storage:", error);
           setStoredTasks([]);
         });
     };

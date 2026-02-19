@@ -9,8 +9,8 @@ import { useAvailableTasks } from "./useAvailableTasks";
 
 jest.mock("@web/common/utils/storage/storage.util", () => ({
   ...jest.requireActual("@web/common/utils/storage/storage.util"),
-  loadTasksFromStorage: jest.fn(),
   getDateKey: jest.fn(),
+  loadTasksFromStorage: jest.fn(),
 }));
 
 describe("useAvailableTasks", () => {
@@ -29,7 +29,6 @@ describe("useAvailableTasks", () => {
 
   afterEach(() => {
     jest.useRealTimers();
-    jest.restoreAllMocks();
     localStorage.clear();
   });
 

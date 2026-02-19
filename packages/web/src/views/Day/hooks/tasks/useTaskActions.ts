@@ -5,10 +5,7 @@ import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
 import { TaskRepository } from "@web/common/repositories/task/task.repository";
 import { Task, UndoOperation } from "@web/common/types/task.types";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
-import {
-  getDateKey,
-  saveTaskToStorage,
-} from "@web/common/utils/storage/storage.util";
+import { getDateKey } from "@web/common/utils/storage/storage.util";
 import { sortTasksByStatus } from "@web/common/utils/task/sort.task";
 import { showMigrationToast } from "@web/views/Day/components/Toasts/MigrationToast/MigrationToast";
 import { showUndoDeleteToast } from "@web/views/Day/components/Toasts/UndoToast/UndoDeleteToast";
@@ -141,7 +138,7 @@ export function useTaskActions({
               await taskRepository.save(targetDateKey, updatedTargetTasks);
 
               // Restore the task to the original date in storage (single write, no read)
-              await saveTaskToStorage(fromDate, operation.task);
+              await taskRepository.saveTask(fromDate, operation.task);
             } catch (error) {
               console.error("Failed to restore task in repository:", error);
             }

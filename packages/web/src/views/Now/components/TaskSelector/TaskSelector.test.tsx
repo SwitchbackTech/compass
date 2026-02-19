@@ -4,6 +4,7 @@ import { RenderOptions, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import dayjs from "@core/util/date/dayjs";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
+import { getTaskRepository } from "@web/common/repositories/task/task.repository.util";
 import { Task } from "@web/common/types/task.types";
 import * as storageUtil from "@web/common/utils/storage/storage.util";
 import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
@@ -24,10 +25,24 @@ jest.mock("@web/views/Now/hooks/useAvailableTasks");
 jest.mock("@web/common/utils/storage/storage.util", () => ({
   ...jest.requireActual("@web/common/utils/storage/storage.util"),
   getDateKey: jest.fn(),
-  loadTasksFromStorage: jest.fn(),
-  saveTasksToStorage: jest.fn(),
-  saveTaskToStorage: jest.fn(),
 }));
+
+jest.mock("@web/common/repositories/task/task.repository.util", () => {
+  const mockSaveTask = jest.fn().mockResolvedValue(undefined);
+  return {
+    getTaskRepository: jest.fn(() => ({
+      saveTask: mockSaveTask,
+    })),
+  };
+});
+
+jest.mock("@web/common/storage/adapter/adapter", () => ({
+  ensureStorageReady: jest.fn().mockResolvedValue(undefined),
+}));
+
+/** Get the saveTask mock from the mocked getTaskRepository return value */
+const getMockSaveTask = () =>
+  (getTaskRepository as jest.Mock)().saveTask as jest.Mock;
 
 const mockUseFocusedTask = useFocusedTask as jest.MockedFunction<
   typeof useFocusedTask
@@ -86,12 +101,8 @@ describe("TaskSelector", () => {
     jest.clearAllMocks();
     mockNavigate.mockClear();
     mockSetFocusedTask.mockClear();
+    getMockSaveTask().mockResolvedValue(undefined);
     (storageUtil.getDateKey as jest.Mock).mockReturnValue(mockDateKey);
-    (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue(
-      mockTasks,
-    );
-    (storageUtil.saveTasksToStorage as jest.Mock).mockResolvedValue(undefined);
-    (storageUtil.saveTaskToStorage as jest.Mock).mockResolvedValue(undefined);
 
     // Use fake timers to control the current time
     jest.useFakeTimers();
@@ -305,8 +316,6 @@ describe("TaskSelector", () => {
         allTasks: tasks,
         hasCompletedTasks: false,
       });
-      (storageUtil.saveTaskToStorage as jest.Mock).mockResolvedValue(undefined);
-
       renderWithNowProvider(<TaskSelector />);
 
       const checkButton = screen.getByRole("button", {
@@ -315,8 +324,8 @@ describe("TaskSelector", () => {
       await user.click(checkButton);
 
       await waitFor(() => {
-        expect(storageUtil.saveTaskToStorage).toHaveBeenCalledTimes(1);
-        expect(storageUtil.saveTaskToStorage).toHaveBeenCalledWith(
+        expect(getMockSaveTask()).toHaveBeenCalledTimes(1);
+        expect(getMockSaveTask()).toHaveBeenCalledWith(
           mockDateKey,
           expect.objectContaining({ _id: "task-1", status: "completed" }),
         );
@@ -354,7 +363,6 @@ describe("TaskSelector", () => {
         allTasks: tasks,
         hasCompletedTasks: false,
       });
-      (storageUtil.saveTaskToStorage as jest.Mock).mockResolvedValue(undefined);
 
       renderWithNowProvider(<TaskSelector />);
 
@@ -364,8 +372,8 @@ describe("TaskSelector", () => {
       await user.click(checkButton);
 
       await waitFor(() => {
-        expect(storageUtil.saveTaskToStorage).toHaveBeenCalledTimes(1);
-        expect(storageUtil.saveTaskToStorage).toHaveBeenCalledWith(
+        expect(getMockSaveTask()).toHaveBeenCalledTimes(1);
+        expect(getMockSaveTask()).toHaveBeenCalledWith(
           mockDateKey,
           expect.objectContaining({ _id: "task-2", status: "completed" }),
         );
@@ -395,7 +403,6 @@ describe("TaskSelector", () => {
         allTasks: tasks,
         hasCompletedTasks: false,
       });
-      (storageUtil.saveTaskToStorage as jest.Mock).mockResolvedValue(undefined);
 
       renderWithNowProvider(<TaskSelector />);
 
@@ -405,8 +412,8 @@ describe("TaskSelector", () => {
       await user.click(checkButton);
 
       await waitFor(() => {
-        expect(storageUtil.saveTaskToStorage).toHaveBeenCalledTimes(1);
-        expect(storageUtil.saveTaskToStorage).toHaveBeenCalledWith(
+        expect(getMockSaveTask()).toHaveBeenCalledTimes(1);
+        expect(getMockSaveTask()).toHaveBeenCalledWith(
           mockDateKey,
           expect.objectContaining({ _id: "task-1", status: "completed" }),
         );

@@ -1,19 +1,24 @@
 import { act } from "react";
 import { renderHook, waitFor } from "@testing-library/react";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
+import { TaskRepository } from "@web/common/repositories/task/task.repository";
 import { Task } from "@web/common/types/task.types";
 import { getDateKey } from "@web/common/utils/storage/storage.util";
 import { useTaskState } from "@web/views/Day/hooks/tasks/useTaskState";
 
-const mockGetTasks = jest.fn();
-const mockPutTasks = jest.fn().mockResolvedValue(undefined);
+const mockGet = jest.fn();
+const mockSave = jest.fn().mockResolvedValue(undefined);
+const mockTaskRepository: TaskRepository = {
+  get: mockGet,
+  save: mockSave,
+  saveTask: jest.fn().mockResolvedValue(undefined),
+  delete: jest.fn().mockResolvedValue(undefined),
+  move: jest.fn().mockResolvedValue(undefined),
+  reorder: jest.fn().mockResolvedValue(undefined),
+};
+
 jest.mock("@web/common/storage/adapter/adapter", () => ({
   ensureStorageReady: jest.fn().mockResolvedValue(undefined),
-  getStorageAdapter: jest.fn(() => ({
-    getTasks: mockGetTasks,
-    putTasks: mockPutTasks,
-    putTask: jest.fn().mockResolvedValue(undefined),
-  })),
 }));
 
 interface Deferred<T> {
@@ -37,13 +42,13 @@ describe("useTaskState", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockPutTasks.mockResolvedValue(undefined);
-    mockGetTasks.mockReset();
+    mockSave.mockResolvedValue(undefined);
+    mockGet.mockReset();
   });
 
   it("clears tasks and enters loading state when date changes", async () => {
     const dayTwoLoad = createDeferred<Task[]>();
-    mockGetTasks
+    mockGet
       .mockResolvedValueOnce([
         createMockTask({
           _id: "task-1",
@@ -57,7 +62,8 @@ describe("useTaskState", () => {
       .mockReturnValueOnce(dayTwoLoad.promise);
 
     const { result, rerender } = renderHook(
-      ({ currentDate }) => useTaskState({ currentDate }),
+      ({ currentDate }) =>
+        useTaskState({ currentDate, taskRepository: mockTaskRepository }),
       { initialProps: { currentDate: dayOneDate } },
     );
 
@@ -83,13 +89,17 @@ describe("useTaskState", () => {
 
   it("does not save previous-day tasks under the next date key", async () => {
     const dayTwoLoad = createDeferred<Task[]>();
-    mockGetTasks
-      .mockResolvedValueOnce([])
-      .mockReturnValueOnce(dayTwoLoad.promise);
+    mockGet.mockResolvedValueOnce([]).mockReturnValueOnce(dayTwoLoad.promise);
 
     const { result, rerender } = renderHook(
-      ({ currentDate }) => useTaskState({ currentDate }),
-      { initialProps: { currentDate: dayOneDate } },
+      ({ currentDate, taskRepository }) =>
+        useTaskState({ currentDate, taskRepository }),
+      {
+        initialProps: {
+          currentDate: dayOneDate,
+          taskRepository: mockTaskRepository,
+        },
+      },
     );
 
     await waitFor(() => {
@@ -103,19 +113,22 @@ describe("useTaskState", () => {
     });
 
     await waitFor(() => {
-      expect(mockPutTasks).toHaveBeenCalledWith(dayOneKey, [localTask]);
+      expect(mockSave).toHaveBeenCalledWith(dayOneKey, [localTask]);
     });
 
-    mockPutTasks.mockClear();
+    mockSave.mockClear();
 
-    rerender({ currentDate: dayTwoDate });
+    rerender({
+      currentDate: dayTwoDate,
+      taskRepository: mockTaskRepository,
+    });
 
     await act(async () => {
       await Promise.resolve();
     });
 
-    expect(mockPutTasks).not.toHaveBeenCalledWith(dayTwoKey, expect.any(Array));
-    expect(mockPutTasks).not.toHaveBeenCalled();
+    expect(mockSave).not.toHaveBeenCalledWith(dayTwoKey, expect.any(Array));
+    expect(mockSave).not.toHaveBeenCalled();
 
     await act(async () => {
       dayTwoLoad.resolve([]);
@@ -124,11 +137,14 @@ describe("useTaskState", () => {
   });
 
   it("does not save empty tasks after a load failure", async () => {
-    mockGetTasks.mockRejectedValue(new Error("load failed"));
+    mockGet.mockRejectedValue(new Error("load failed"));
     const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
 
     const { result } = renderHook(() =>
-      useTaskState({ currentDate: dayOneDate }),
+      useTaskState({
+        currentDate: dayOneDate,
+        taskRepository: mockTaskRepository,
+      }),
     );
 
     await waitFor(() => {
@@ -137,7 +153,7 @@ describe("useTaskState", () => {
       expect(result.current.tasks).toEqual([]);
     });
 
-    expect(mockPutTasks).not.toHaveBeenCalled();
+    expect(mockSave).not.toHaveBeenCalled();
     consoleErrorSpy.mockRestore();
   });
 });
