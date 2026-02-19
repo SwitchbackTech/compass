@@ -89,7 +89,7 @@ export function moveTaskToDate(
 ): void {
   // Remove from source date
   const sourceTasks = loadTasksFromStorage(fromDateKey);
-  const updatedSourceTasks = sourceTasks.filter((t) => t.id !== task.id);
+  const updatedSourceTasks = sourceTasks.filter((t) => t._id !== task._id);
   saveTasksToStorage(fromDateKey, updatedSourceTasks);
 
   // Add to target date

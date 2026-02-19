@@ -7,19 +7,21 @@ import { FocusedTask } from "./FocusedTask";
 
 describe("FocusedTask", () => {
   const mockTask: Task = {
-    id: "task-1",
+    _id: "task-1",
     title: "Test Task",
     status: "todo",
     createdAt: "2025-11-15T10:00:00Z",
     order: 0,
+    user: "user-1",
   };
 
   const mockCompletedTask: Task = {
-    id: "task-2",
+    _id: "task-2",
     title: "Completed Task",
     status: "completed",
     createdAt: "2025-11-15T11:00:00Z",
     order: 0,
+    user: "user-1",
   };
 
   const mockOnCompleteTask = jest.fn();
@@ -79,11 +81,12 @@ describe("FocusedTask", () => {
 
   it("renders task with long title", () => {
     const longTitleTask: Task = {
-      id: "task-3",
+      _id: "task-3",
       title: "This is a very long task title that might wrap to multiple lines",
       status: "todo",
       createdAt: "2025-11-15T12:00:00Z",
       order: 0,
+      user: "user-1",
     };
 
     render(
@@ -105,11 +108,12 @@ describe("FocusedTask", () => {
 
   it("renders task with special characters in title", () => {
     const specialCharTask: Task = {
-      id: "task-4",
+      _id: "task-4",
       title: "Task with @#$%^&*() special chars!",
       status: "todo",
       createdAt: "2025-11-15T13:00:00Z",
       order: 0,
+      user: "user-1",
     };
 
     render(
@@ -129,11 +133,12 @@ describe("FocusedTask", () => {
 
   it("renders task with empty title", () => {
     const emptyTitleTask: Task = {
-      id: "task-5",
+      _id: "task-5",
       title: "",
       status: "todo",
       createdAt: "2025-11-15T14:00:00Z",
       order: 0,
+      user: "user-1",
     };
 
     render(

@@ -36,7 +36,7 @@ export const Tasks = () => {
             ) : (
               tasksProps.tasks.map((task, index) => (
                 <DraggableTask
-                  key={task.id}
+                  key={task._id}
                   task={task}
                   index={index}
                   tasksProps={tasksProps}

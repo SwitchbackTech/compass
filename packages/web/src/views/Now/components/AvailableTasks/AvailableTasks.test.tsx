@@ -8,19 +8,21 @@ describe("AvailableTasks", () => {
   const mockOnTaskSelect = jest.fn();
 
   const mockTask1: Task = {
-    id: "task-1",
+    _id: "task-1",
     title: "Test Task",
     status: "todo",
     createdAt: "2025-11-15T10:00:00Z",
     order: 0,
+    user: "user-1",
   };
 
   const mockTask2: Task = {
-    id: "task-2",
+    _id: "task-2",
     title: "Another Task",
     status: "todo",
     createdAt: "2025-11-15T11:00:00Z",
     order: 0,
+    user: "user-1",
   };
 
   beforeEach(() => {

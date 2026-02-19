@@ -1,4 +1,5 @@
 import { Task } from "@web/common/types/task.types";
+import { createObjectIdString } from "../id/object-id.util";
 import {
   hasTaskMigrationCompleted,
   migrateTasksFromLocalStorageToIndexedDB,
@@ -14,9 +15,10 @@ describe("task-migration.util", () => {
   const MIGRATION_FLAG_KEY = "compass.tasks.migrated-to-indexeddb";
 
   const createMockTask = (overrides?: Partial<Task>): Task => ({
-    id: `task-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+    _id: createObjectIdString(),
     title: "Test Task",
     status: "todo",
+    user: "user-1",
     order: 0,
     createdAt: new Date().toISOString(),
     ...overrides,

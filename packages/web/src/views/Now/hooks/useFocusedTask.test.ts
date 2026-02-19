@@ -14,18 +14,20 @@ describe("useFocusedTask", () => {
   const mockToday = dayjs("2025-11-15T00:00:00Z").utc();
   const mockDateKey = "2025-11-15";
   const mockTask: Task = {
-    id: "task-1",
+    _id: "task-1",
     title: "Test Task",
     status: "todo",
     createdAt: "2025-11-15T10:00:00Z",
     order: 0,
+    user: "user-1",
   };
   const secondTask: Task = {
-    id: "task-2",
+    _id: "task-2",
     title: "Another Task",
     status: "todo",
     createdAt: "2025-11-15T11:00:00Z",
     order: 0,
+    user: "user-1",
   };
   const mockTasks: Task[] = [mockTask, secondTask];
 
@@ -79,11 +81,12 @@ describe("useFocusedTask", () => {
 
     it("prevents setting a completed task as focused", async () => {
       const completedTask: Task = {
-        id: "task-1",
+        _id: "task-1",
         title: "Completed Task",
         status: "completed",
         createdAt: "2025-11-15T10:00:00Z",
         order: 0,
+        user: "user-1",
       };
 
       (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue([
@@ -212,7 +215,7 @@ describe("useFocusedTask", () => {
       });
 
       act(() => {
-        result.current.setFocusedTask(secondTask.id);
+        result.current.setFocusedTask(secondTask._id);
       });
 
       await waitFor(() => {
@@ -247,7 +250,7 @@ describe("useFocusedTask", () => {
       });
 
       act(() => {
-        result.current.setFocusedTask(secondTask.id);
+        result.current.setFocusedTask(secondTask._id);
       });
 
       await waitFor(() => {
@@ -257,11 +260,12 @@ describe("useFocusedTask", () => {
       const updatedTasks: Task[] = [
         secondTask,
         {
-          id: "task-3",
+          _id: "task-3",
           title: "Third Task",
           status: "todo",
           createdAt: "2025-11-15T12:00:00Z",
           order: 0,
+          user: "user-1",
         },
       ];
 

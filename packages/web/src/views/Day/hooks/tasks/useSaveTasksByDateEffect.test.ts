@@ -17,13 +17,14 @@ interface SaveHarnessProps {
   isDirty: boolean;
 }
 
-function createTask(id: string): Task {
+function createTask(_id: string): Task {
   return {
-    id,
-    title: id,
+    _id,
+    title: _id,
     status: "todo",
     order: 0,
     createdAt: "2025-10-27T00:00:00.000Z",
+    user: "user-1",
   };
 }
 

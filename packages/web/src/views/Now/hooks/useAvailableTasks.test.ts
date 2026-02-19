@@ -34,18 +34,20 @@ describe("useAvailableTasks", () => {
   it("loads tasks from today only", async () => {
     const mockTasks: Task[] = [
       {
-        id: "task-1",
+        _id: "task-1",
         title: "Task 1",
         status: "todo",
         createdAt: "2025-11-15T10:00:00Z",
         order: 0,
+        user: "user-1",
       },
       {
-        id: "task-2",
+        _id: "task-2",
         title: "Task 2",
         status: "todo",
         createdAt: "2025-11-15T11:00:00Z",
         order: 0,
+        user: "user-1",
       },
     ];
 
@@ -60,8 +62,8 @@ describe("useAvailableTasks", () => {
     await waitFor(() => {
       // Tasks are sorted by creation date (newest first), so task-2 comes before task-1
       expect(result.current.availableTasks).toHaveLength(2);
-      expect(result.current.availableTasks[0].id).toBe("task-2");
-      expect(result.current.availableTasks[1].id).toBe("task-1");
+      expect(result.current.availableTasks[0]._id).toBe("task-2");
+      expect(result.current.availableTasks[1]._id).toBe("task-1");
       expect(result.current.allTasks).toEqual(mockTasks);
       expect(result.current.hasCompletedTasks).toBe(false);
     });
@@ -70,25 +72,28 @@ describe("useAvailableTasks", () => {
   it("filters out completed tasks", async () => {
     const mockTasks: Task[] = [
       {
-        id: "task-1",
+        _id: "task-1",
         title: "Task 1",
         status: "todo",
         createdAt: "2025-11-15T10:00:00Z",
         order: 0,
+        user: "user-1",
       },
       {
-        id: "task-2",
+        _id: "task-2",
         title: "Task 2",
         status: "completed",
         createdAt: "2025-11-15T11:00:00Z",
         order: 0,
+        user: "user-1",
       },
       {
-        id: "task-3",
+        _id: "task-3",
         title: "Task 3",
         status: "todo",
         createdAt: "2025-11-15T12:00:00Z",
         order: 0,
+        user: "user-1",
       },
     ];
 
@@ -98,8 +103,8 @@ describe("useAvailableTasks", () => {
 
     await waitFor(() => {
       expect(result.current.availableTasks).toHaveLength(2);
-      expect(result.current.availableTasks[0].id).toBe("task-3");
-      expect(result.current.availableTasks[1].id).toBe("task-1");
+      expect(result.current.availableTasks[0]._id).toBe("task-3");
+      expect(result.current.availableTasks[1]._id).toBe("task-1");
       expect(
         result.current.availableTasks.every((task) => task.status === "todo"),
       ).toBe(true);
@@ -111,25 +116,28 @@ describe("useAvailableTasks", () => {
   it("sorts tasks by creation date (newest first)", async () => {
     const mockTasks: Task[] = [
       {
-        id: "task-1",
+        _id: "task-1",
         title: "Task 1",
         status: "todo",
         createdAt: "2025-11-15T10:00:00Z",
         order: 0,
+        user: "user-1",
       },
       {
-        id: "task-2",
+        _id: "task-2",
         title: "Task 2",
         status: "todo",
         createdAt: "2025-11-15T12:00:00Z",
         order: 0,
+        user: "user-1",
       },
       {
-        id: "task-3",
+        _id: "task-3",
         title: "Task 3",
         status: "todo",
         createdAt: "2025-11-15T11:00:00Z",
         order: 0,
+        user: "user-1",
       },
     ];
 
@@ -139,9 +147,9 @@ describe("useAvailableTasks", () => {
 
     await waitFor(() => {
       expect(result.current.availableTasks).toHaveLength(3);
-      expect(result.current.availableTasks[0].id).toBe("task-2");
-      expect(result.current.availableTasks[1].id).toBe("task-3");
-      expect(result.current.availableTasks[2].id).toBe("task-1");
+      expect(result.current.availableTasks[0]._id).toBe("task-2");
+      expect(result.current.availableTasks[1]._id).toBe("task-3");
+      expect(result.current.availableTasks[2]._id).toBe("task-1");
     });
   });
 
@@ -160,28 +168,31 @@ describe("useAvailableTasks", () => {
   it("reloads tasks when storage changes", async () => {
     const initialTasks: Task[] = [
       {
-        id: "task-1",
+        _id: "task-1",
         title: "Task 1",
         status: "todo",
         createdAt: "2025-11-15T10:00:00Z",
         order: 0,
+        user: "user-1",
       },
     ];
 
     const updatedTasks: Task[] = [
       {
-        id: "task-1",
+        _id: "task-1",
         title: "Task 1",
         status: "todo",
         createdAt: "2025-11-15T10:00:00Z",
         order: 0,
+        user: "user-1",
       },
       {
-        id: "task-2",
+        _id: "task-2",
         title: "Task 2",
         status: "todo",
         createdAt: "2025-11-15T11:00:00Z",
         order: 0,
+        user: "user-1",
       },
     ];
 
@@ -209,11 +220,12 @@ describe("useAvailableTasks", () => {
   it("does not reload tasks when unrelated storage key changes", async () => {
     const mockTasks: Task[] = [
       {
-        id: "task-1",
+        _id: "task-1",
         title: "Task 1",
         status: "todo",
         createdAt: "2025-11-15T10:00:00Z",
         order: 0,
+        user: "user-1",
       },
     ];
 
@@ -239,11 +251,12 @@ describe("useAvailableTasks", () => {
   it("handles storage clear event", async () => {
     const mockTasks: Task[] = [
       {
-        id: "task-1",
+        _id: "task-1",
         title: "Task 1",
         status: "todo",
         createdAt: "2025-11-15T10:00:00Z",
         order: 0,
+        user: "user-1",
       },
     ];
 
@@ -271,18 +284,20 @@ describe("useAvailableTasks", () => {
   it("returns hasCompletedTasks as true when all tasks are completed", async () => {
     const mockTasks: Task[] = [
       {
-        id: "task-1",
+        _id: "task-1",
         title: "Task 1",
         status: "completed",
         createdAt: "2025-11-15T10:00:00Z",
         order: 0,
+        user: "user-1",
       },
       {
-        id: "task-2",
+        _id: "task-2",
         title: "Task 2",
         status: "completed",
         createdAt: "2025-11-15T11:00:00Z",
         order: 0,
+        user: "user-1",
       },
     ];
 

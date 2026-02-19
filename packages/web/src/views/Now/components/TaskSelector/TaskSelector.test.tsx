@@ -63,21 +63,23 @@ describe("TaskSelector", () => {
   const mockDateKey = "2025-11-15";
 
   const mockTask: Task = {
-    id: "task-1",
+    _id: "task-1",
     title: "Test Task",
     status: "todo",
     createdAt: "2025-11-15T10:00:00Z",
     order: 1,
+    user: "user-1",
   };
 
   const mockTasks: Task[] = [
     mockTask,
     {
-      id: "task-2",
+      _id: "task-2",
       title: "Another Task",
       status: "todo",
       createdAt: "2025-11-15T11:00:00Z",
       order: 2,
+      user: "user-1",
     },
   ];
 
@@ -195,7 +197,7 @@ describe("TaskSelector", () => {
       availableTasks: [],
       allTasks: [
         {
-          id: "task-1",
+          _id: "task-1",
           title: "Completed Task",
           status: "completed",
           createdAt: "2025-11-15T10:00:00Z",
@@ -270,25 +272,28 @@ describe("TaskSelector", () => {
       const user = userEvent.setup({ delay: null });
       const tasks: Task[] = [
         {
-          id: "task-1",
+          _id: "task-1",
           title: "First Task",
           status: "todo",
           createdAt: "2025-11-15T10:00:00Z",
           order: 1,
+          user: "user-1",
         },
         {
-          id: "task-2",
+          _id: "task-2",
           title: "Second Task",
           status: "todo",
           createdAt: "2025-11-15T11:00:00Z",
           order: 2,
+          user: "user-1",
         },
         {
-          id: "task-3",
+          _id: "task-3",
           title: "Third Task",
           status: "todo",
           createdAt: "2025-11-15T12:00:00Z",
           order: 3,
+          user: "user-1",
         },
       ];
 
@@ -318,7 +323,7 @@ describe("TaskSelector", () => {
 
       expect(storageUtil.updateTodayTasks).toHaveBeenCalledTimes(1);
       expect(
-        lastUpdatedTasks.find((task) => task.id === "task-1")?.status,
+        lastUpdatedTasks.find((task) => task._id === "task-1")?.status,
       ).toBe("completed");
       expect(mockSetFocusedTask).toHaveBeenCalledWith("task-2");
     });
@@ -327,18 +332,20 @@ describe("TaskSelector", () => {
       const user = userEvent.setup({ delay: null });
       const tasks: Task[] = [
         {
-          id: "task-1",
+          _id: "task-1",
           title: "First Task",
           status: "todo",
           createdAt: "2025-11-15T10:00:00Z",
           order: 1,
+          user: "user-1",
         },
         {
-          id: "task-2",
+          _id: "task-2",
           title: "Second Task",
           status: "todo",
           createdAt: "2025-11-15T11:00:00Z",
           order: 2,
+          user: "user-1",
         },
       ];
 
@@ -368,7 +375,7 @@ describe("TaskSelector", () => {
 
       expect(storageUtil.updateTodayTasks).toHaveBeenCalledTimes(1);
       expect(
-        lastUpdatedTasks.find((task) => task.id === "task-2")?.status,
+        lastUpdatedTasks.find((task) => task._id === "task-2")?.status,
       ).toBe("completed");
       expect(mockSetFocusedTask).toHaveBeenCalledWith("task-1");
     });
@@ -377,11 +384,12 @@ describe("TaskSelector", () => {
       const user = userEvent.setup({ delay: null });
       const tasks: Task[] = [
         {
-          id: "task-1",
+          _id: "task-1",
           title: "Only Task",
           status: "todo",
           createdAt: "2025-11-15T10:00:00Z",
           order: 1,
+          user: "user-1",
         },
       ];
 
@@ -411,7 +419,7 @@ describe("TaskSelector", () => {
 
       expect(storageUtil.updateTodayTasks).toHaveBeenCalledTimes(1);
       expect(
-        lastUpdatedTasks.find((task) => task.id === "task-1")?.status,
+        lastUpdatedTasks.find((task) => task._id === "task-1")?.status,
       ).toBe("completed");
       expect(mockNavigate).toHaveBeenCalledWith("/day");
     });

@@ -25,19 +25,21 @@ const mockIsEditable = jest.requireMock(
 
 describe("useNowShortcuts", () => {
   const mockTask1: Task = {
-    id: "task-1",
+    _id: "task-1",
     title: "Task 1",
     status: "todo",
     order: 0,
     createdAt: "2024-01-01T10:00:00Z",
+    user: "user-1",
   };
 
   const mockTask2: Task = {
-    id: "task-2",
+    _id: "task-2",
     title: "Task 2",
     status: "todo",
     order: 1,
     createdAt: "2024-01-01T11:00:00Z",
+    user: "user-1",
   };
 
   beforeEach(() => {

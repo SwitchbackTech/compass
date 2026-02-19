@@ -1,4 +1,5 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { act } from "react";
+import { renderHook, waitFor } from "@testing-library/react";
 import { Task } from "@web/common/types/task.types";
 import { getDateKey } from "@web/common/utils/storage/storage.util";
 import * as taskStorageUtil from "@web/common/utils/storage/task.storage.util";
@@ -37,12 +38,13 @@ describe("useTaskState", () => {
   const dayOneKey = getDateKey(dayOneDate);
   const dayTwoKey = getDateKey(dayTwoDate);
 
-  const createTask = (id: string, title: string): Task => ({
-    id,
+  const createTask = (_id: string, title: string): Task => ({
+    _id,
     title,
     status: "todo",
     order: 0,
     createdAt: "2025-10-27T00:00:00.000Z",
+    user: "user-1",
   });
 
   beforeEach(() => {

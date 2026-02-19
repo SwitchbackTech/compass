@@ -7,11 +7,12 @@ import { Task, TaskProps } from "@web/views/Day/components/Task/Task";
 
 describe("Task - migration", () => {
   const mockTask: TaskType = {
-    id: "task-1",
+    _id: "task-1",
     title: "Test Task",
     status: "todo",
     order: 0,
     createdAt: "2025-10-27T10:00:00Z",
+    user: "user-1",
   };
 
   const mockProps: TaskProps = {
@@ -49,7 +50,7 @@ describe("Task - migration", () => {
     const forwardButton = screen.getByLabelText("Move task to next day");
     fireEvent.click(forwardButton);
 
-    expect(mockProps.onMigrate).toHaveBeenCalledWith(mockTask.id, "forward");
+    expect(mockProps.onMigrate).toHaveBeenCalledWith(mockTask._id, "forward");
   });
 
   it("calls onMigrate with backward direction when backward button clicked", () => {
@@ -58,17 +59,18 @@ describe("Task - migration", () => {
     const backwardButton = screen.getByLabelText("Move task to previous day");
     fireEvent.click(backwardButton);
 
-    expect(mockProps.onMigrate).toHaveBeenCalledWith(mockTask.id, "backward");
+    expect(mockProps.onMigrate).toHaveBeenCalledWith(mockTask._id, "backward");
   });
 });
 
 describe("Task - migration icon visibility on focus", () => {
   const mockTask: TaskType = {
-    id: "task-1",
+    _id: "task-1",
     title: "Test Task",
     status: "todo",
     order: 0,
     createdAt: "2025-10-27T10:00:00Z",
+    user: "user-1",
   };
 
   const mockProps: TaskProps = {

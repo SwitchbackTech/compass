@@ -23,7 +23,7 @@ export const TaskSelector = () => {
         onPreviousTask={handlePreviousTask}
         onNextTask={handleNextTask}
         onUpdateDescription={(description: string) =>
-          updateTaskDescription(focusedTask.id, description)
+          updateTaskDescription(focusedTask._id, description)
         }
       />
     );

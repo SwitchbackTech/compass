@@ -42,7 +42,7 @@ export function DraggableTask({
 
   return (
     <Draggable
-      draggableId={task.id}
+      draggableId={task._id}
       index={index}
       isDragDisabled={tasks.length === 1}
       disableInteractiveElementBlocking
@@ -50,7 +50,7 @@ export function DraggableTask({
       {(draggableProvider, draggableSnapshot) => (
         <div
           {...draggableProvider.draggableProps}
-          id={task.id}
+          id={task._id}
           className={`group relative mr-2 select-none`}
           style={getStyle(
             draggableSnapshot,
@@ -69,7 +69,7 @@ export function DraggableTask({
               ref={refs.setFloating}
               style={floatingStyles}
               aria-label={`Reorder ${task.title}`}
-              aria-describedby={`description-${task.id}`}
+              aria-describedby={`description-${task._id}`}
               onFocus={() => setSelectedTaskIndex(index)}
               className={classNames(
                 "opacity-0",
@@ -94,7 +94,7 @@ export function DraggableTask({
           <Task
             task={task}
             index={index}
-            isEditing={editingTaskId === task.id}
+            isEditing={editingTaskId === task._id}
             onFocus={setSelectedTaskIndex}
             onCheckboxKeyDown={onCheckboxKeyDown}
             onInputBlur={onInputBlur}
@@ -103,10 +103,10 @@ export function DraggableTask({
             onTitleChange={onTitleChange}
             onStatusToggle={onStatusToggle}
             onMigrate={migrateTask}
-            title={editingTaskId === task.id ? editingTitle : task.title}
+            title={editingTaskId === task._id ? editingTitle : task.title}
           />
 
-          <div id={`description-${task.id}`} className="hidden">
+          <div id={`description-${task._id}`} className="hidden">
             Press space to start dragging this task.
           </div>
         </div>

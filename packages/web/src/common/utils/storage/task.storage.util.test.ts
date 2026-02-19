@@ -1,5 +1,6 @@
 import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
 import { Task } from "@web/common/types/task.types";
+import { createObjectIdString } from "../id/object-id.util";
 import { compassLocalDB } from "./compass-local.db";
 import {
   clearAllTasksFromIndexedDB,
@@ -18,11 +19,12 @@ describe("task.storage.util", () => {
   });
 
   const createMockTask = (overrides?: Partial<Task>): Task => ({
-    id: `task-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+    _id: createObjectIdString(),
     title: "Test Task",
     status: "todo",
     order: 0,
     createdAt: new Date().toISOString(),
+    user: "user-1",
     ...overrides,
   });
 
@@ -33,9 +35,9 @@ describe("task.storage.util", () => {
 
       await saveTaskToIndexedDB(task, dateKey);
 
-      const savedTask = await compassLocalDB.tasks.get(task.id);
+      const savedTask = await compassLocalDB.tasks.get(task._id);
       expect(savedTask).toBeDefined();
-      expect(savedTask?.id).toBe(task.id);
+      expect(savedTask?._id).toBe(task._id);
       expect(savedTask?.title).toBe(task.title);
       expect(savedTask?.dateKey).toBe(dateKey);
     });
@@ -49,17 +51,17 @@ describe("task.storage.util", () => {
       const updatedTask = { ...task, title: "Updated Title" };
       await saveTaskToIndexedDB(updatedTask, dateKey);
 
-      const savedTask = await compassLocalDB.tasks.get(task.id);
+      const savedTask = await compassLocalDB.tasks.get(task._id);
       expect(savedTask?.title).toBe("Updated Title");
     });
 
-    it("should throw an error if task does not have an id", async () => {
+    it("should throw an error if task does not have an _id", async () => {
       const task = createMockTask();
-      delete (task as Partial<Task>).id;
+      delete (task as Partial<Task>)._id;
 
       await expect(
         saveTaskToIndexedDB(task as Task, "2024-01-15"),
-      ).rejects.toThrow("Task must have an id to save to IndexedDB");
+      ).rejects.toThrow("Task must have an _id");
     });
 
     it("should default user when saving a task without user", async () => {
@@ -69,7 +71,7 @@ describe("task.storage.util", () => {
 
       await saveTaskToIndexedDB(task, dateKey);
 
-      const savedTask = await compassLocalDB.tasks.get(task.id);
+      const savedTask = await compassLocalDB.tasks.get(task._id);
       expect(savedTask?.user).toBe(UNAUTHENTICATED_USER);
     });
   });
@@ -163,9 +165,9 @@ describe("task.storage.util", () => {
       const task = createMockTask();
       await saveTaskToIndexedDB(task, "2024-01-15");
 
-      await deleteTaskFromIndexedDB(task.id);
+      await deleteTaskFromIndexedDB(task._id);
 
-      const deletedTask = await compassLocalDB.tasks.get(task.id);
+      const deletedTask = await compassLocalDB.tasks.get(task._id);
       expect(deletedTask).toBeUndefined();
     });
 
@@ -232,7 +234,7 @@ describe("task.storage.util", () => {
 
       await moveTaskBetweenDates(task, "2024-01-15", "2024-01-16");
 
-      const savedTask = await compassLocalDB.tasks.get(task.id);
+      const savedTask = await compassLocalDB.tasks.get(task._id);
       expect(savedTask?.dateKey).toBe("2024-01-16");
     });
   });

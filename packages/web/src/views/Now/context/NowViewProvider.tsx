@@ -34,7 +34,7 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
   const completeFocusedTask = useCallback((taskId: string) => {
     return updateTodayTasks((tasks) =>
       tasks.map((task) =>
-        task.id === taskId ? { ...task, status: "completed" as const } : task,
+        task._id === taskId ? { ...task, status: "completed" as const } : task,
       ),
     );
   }, []);
@@ -43,7 +43,7 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
     (taskId: string, description: string) => {
       updateTodayTasks((tasks) =>
         tasks.map((task) =>
-          task.id === taskId ? { ...task, description } : task,
+          task._id === taskId ? { ...task, description } : task,
         ),
       );
     },
@@ -54,7 +54,7 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
     if (!focusedTask || availableTasks.length === 0) return;
 
     const currentTaskIndex = availableTasks.findIndex(
-      (task) => task.id === focusedTask.id,
+      (task) => task._id === focusedTask._id,
     );
 
     if (currentTaskIndex === -1) return;
@@ -63,14 +63,14 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
     const previousIndex =
       currentTaskIndex === 0 ? availableTasks.length - 1 : currentTaskIndex - 1;
 
-    setFocusedTask(availableTasks[previousIndex].id);
+    setFocusedTask(availableTasks[previousIndex]._id);
   }, [focusedTask, availableTasks, setFocusedTask]);
 
   const handleNextTask = useCallback(() => {
     if (!focusedTask || availableTasks.length === 0) return;
 
     const currentTaskIndex = availableTasks.findIndex(
-      (task) => task.id === focusedTask.id,
+      (task) => task._id === focusedTask._id,
     );
 
     if (currentTaskIndex === -1) return;
@@ -79,16 +79,16 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
     const nextIndex =
       currentTaskIndex === availableTasks.length - 1 ? 0 : currentTaskIndex + 1;
 
-    setFocusedTask(availableTasks[nextIndex].id);
+    setFocusedTask(availableTasks[nextIndex]._id);
   }, [focusedTask, availableTasks, setFocusedTask]);
 
   const handleCompleteTask = useCallback(() => {
     if (!focusedTask) return;
 
     const currentTaskIndex = availableTasks.findIndex(
-      (task) => task.id === focusedTask.id,
+      (task) => task._id === focusedTask._id,
     );
-    const updatedTasks = completeFocusedTask(focusedTask.id);
+    const updatedTasks = completeFocusedTask(focusedTask._id);
     const incompleteTasks = getIncompleteTasksSorted(updatedTasks);
 
     if (incompleteTasks.length === 0) {
@@ -103,11 +103,11 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
     });
 
     if (nextTask) {
-      setFocusedTask(nextTask.id);
+      setFocusedTask(nextTask._id);
       return;
     }
 
-    setFocusedTask(incompleteTasks[0].id);
+    setFocusedTask(incompleteTasks[0]._id);
   }, [
     availableTasks,
     completeFocusedTask,
@@ -153,13 +153,13 @@ function getNextTaskAfterCompletion({
   currentTaskIndex,
 }: NextTaskParams): Task | null {
   if (currentTaskIndex >= 0 && currentTaskIndex < availableTasks.length - 1) {
-    const nextTaskId = availableTasks[currentTaskIndex + 1].id;
-    return incompleteTasks.find((task) => task.id === nextTaskId) ?? null;
+    const nextTaskId = availableTasks[currentTaskIndex + 1]._id;
+    return incompleteTasks.find((task) => task._id === nextTaskId) ?? null;
   }
 
   if (currentTaskIndex > 0) {
-    const previousTaskId = availableTasks[currentTaskIndex - 1].id;
-    return incompleteTasks.find((task) => task.id === previousTaskId) ?? null;
+    const previousTaskId = availableTasks[currentTaskIndex - 1]._id;
+    return incompleteTasks.find((task) => task._id === previousTaskId) ?? null;
   }
 
   return incompleteTasks[0] ?? null;

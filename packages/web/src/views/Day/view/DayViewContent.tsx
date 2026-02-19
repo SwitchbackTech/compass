@@ -74,7 +74,7 @@ export const DayViewContent = memo(() => {
   const handleEditTask = useCallback(() => {
     const taskIndexToEdit = getTaskIndexToEdit();
     if (taskIndexToEdit >= 0) {
-      const taskId = tasks[taskIndexToEdit].id;
+      const taskId = tasks[taskIndexToEdit]._id;
       setEditingTaskId(taskId);
       setEditingTitle(tasks[taskIndexToEdit].title);
       setSelectedTaskIndex(taskIndexToEdit);

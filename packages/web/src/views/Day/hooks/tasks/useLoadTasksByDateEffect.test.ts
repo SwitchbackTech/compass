@@ -24,16 +24,17 @@ function createDeferred<T>(): Deferred<T> {
 }
 
 function createTask(
-  id: string,
+  _id: string,
   status: "todo" | "completed",
   order: number,
 ): Task {
   return {
-    id,
-    title: id,
+    _id,
+    title: _id,
     status,
     order,
     createdAt: "2025-10-27T00:00:00.000Z",
+    user: "user-1",
   };
 }
 
@@ -89,7 +90,7 @@ describe("useLoadTasksByDateEffect", () => {
 
     expect(result.current.didLoadFail).toBe(false);
     expect(result.current.loadedDateKey).toBe("2025-10-27");
-    expect(result.current.tasks.map((task) => task.id)).toEqual([
+    expect(result.current.tasks.map((task) => task._id)).toEqual([
       "todo-1",
       "todo-2",
       "completed-1",
@@ -129,7 +130,7 @@ describe("useLoadTasksByDateEffect", () => {
 
     await waitFor(() => {
       expect(result.current.isLoadingTasks).toBe(false);
-      expect(result.current.tasks.map((task) => task.id)).toEqual([
+      expect(result.current.tasks.map((task) => task._id)).toEqual([
         "fresh-task",
       ]);
       expect(result.current.loadedDateKey).toBe("2025-10-28");
