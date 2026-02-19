@@ -72,6 +72,10 @@ export async function deleteCompassLocalDb(): Promise<void> {
     const req = indexedDB.deleteDatabase(DB_NAME);
     req.onsuccess = () => resolve();
     req.onerror = () => reject(req.error);
-    req.onblocked = () => resolve();
+    req.onblocked = () => {
+      console.warn(
+        "[deleteCompassLocalDb] Deletion blocked: waiting for other connections to close. Ensure all DB connections are closed before retrying.",
+      );
+    };
   });
 }
