@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import { useCallback } from "react";
 import { toast } from "react-toastify";
+import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
 import { TaskRepository } from "@web/common/repositories/task/task.repository";
 import { Task, UndoOperation } from "@web/common/types/task.types";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
@@ -55,6 +56,7 @@ export function useTaskActions({
       status: "todo",
       order: tasks.length,
       createdAt: new Date().toISOString(),
+      user: UNAUTHENTICATED_USER,
     };
 
     setTasks((prev) => sortTasksByStatus([...prev, newTask]));

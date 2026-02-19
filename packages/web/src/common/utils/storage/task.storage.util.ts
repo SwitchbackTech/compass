@@ -1,4 +1,8 @@
-import { Task } from "@web/common/types/task.types";
+import {
+  Task,
+  normalizeTask,
+  normalizeTasks,
+} from "@web/common/types/task.types";
 import { StoredTask, compassLocalDB } from "./compass-local.db";
 import { handleDatabaseError } from "./db-errors.util";
 import { ensureDatabaseReady } from "./db-init.util";
@@ -17,7 +21,7 @@ export async function saveTaskToIndexedDB(
 
   try {
     await ensureDatabaseReady();
-    const storedTask: StoredTask = { ...task, dateKey };
+    const storedTask: StoredTask = { ...normalizeTask(task), dateKey };
     await compassLocalDB.tasks.put(storedTask);
   } catch (error) {
     handleDatabaseError(error, "save");
@@ -35,7 +39,7 @@ export async function saveTasksToIndexedDB(
   try {
     await ensureDatabaseReady();
 
-    const storedTasks: StoredTask[] = tasks.map((task) => ({
+    const storedTasks: StoredTask[] = normalizeTasks(tasks).map((task) => ({
       ...task,
       dateKey,
     }));
@@ -65,8 +69,8 @@ export async function loadTasksFromIndexedDB(dateKey: string): Promise<Task[]> {
       .equals(dateKey)
       .toArray();
 
-    // Remove dateKey from returned tasks to match Task type
-    return storedTasks.map(({ dateKey: _, ...task }) => task);
+    // Remove dateKey and normalize legacy records (e.g. missing user).
+    return storedTasks.map(({ dateKey: _, ...task }) => normalizeTask(task));
   } catch (error) {
     handleDatabaseError(error, "load");
     return [];
@@ -119,9 +123,10 @@ export async function moveTaskBetweenDates(
 ): Promise<void> {
   try {
     await ensureDatabaseReady();
+    const normalizedTask = normalizeTask(task);
 
     await compassLocalDB.transaction("rw", compassLocalDB.tasks, async () => {
-      const existingTask = await compassLocalDB.tasks.get(task.id);
+      const existingTask = await compassLocalDB.tasks.get(normalizedTask.id);
 
       // If the task exists for a different date, don't move it.
       if (existingTask && existingTask.dateKey !== fromDateKey) {
@@ -129,10 +134,10 @@ export async function moveTaskBetweenDates(
       }
 
       // Remove from source date (task id stays the same)
-      await compassLocalDB.tasks.delete(task.id);
+      await compassLocalDB.tasks.delete(normalizedTask.id);
 
       // Add to target date
-      const storedTask: StoredTask = { ...task, dateKey: toDateKey };
+      const storedTask: StoredTask = { ...normalizedTask, dateKey: toDateKey };
       await compassLocalDB.tasks.put(storedTask);
     });
   } catch (error) {

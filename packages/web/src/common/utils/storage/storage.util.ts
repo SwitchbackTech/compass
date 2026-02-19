@@ -1,5 +1,10 @@
 import dayjs from "@core/util/date/dayjs";
-import { Task, isTask } from "@web/common/types/task.types";
+import {
+  Task,
+  isTask,
+  normalizeTask,
+  normalizeTasks,
+} from "@web/common/types/task.types";
 import { CompassTasksSavedEventDetail } from "./storage.types";
 
 export const TODAY_TASKS_STORAGE_KEY_PREFIX = "compass.today.tasks";
@@ -29,7 +34,7 @@ export function loadTasksFromStorage(dateKey: string): Task[] {
       return [];
     }
 
-    return parsed.filter(isTask);
+    return parsed.filter(isTask).map(normalizeTask);
   } catch (error) {
     console.error("Error loading tasks from localStorage:", error);
     return [];
@@ -42,7 +47,10 @@ export function saveTasksToStorage(dateKey: string, tasks: Task[]): void {
   }
 
   try {
-    window.localStorage.setItem(getStorageKey(dateKey), JSON.stringify(tasks));
+    window.localStorage.setItem(
+      getStorageKey(dateKey),
+      JSON.stringify(normalizeTasks(tasks)),
+    );
     // Dispatch custom event for same-tab synchronization
     const eventDetail: CompassTasksSavedEventDetail = { dateKey };
     window.dispatchEvent(

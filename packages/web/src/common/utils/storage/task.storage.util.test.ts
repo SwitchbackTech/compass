@@ -1,3 +1,4 @@
+import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
 import { Task } from "@web/common/types/task.types";
 import { compassLocalDB } from "./compass-local.db";
 import {
@@ -59,6 +60,17 @@ describe("task.storage.util", () => {
       await expect(
         saveTaskToIndexedDB(task as Task, "2024-01-15"),
       ).rejects.toThrow("Task must have an id to save to IndexedDB");
+    });
+
+    it("should default user when saving a task without user", async () => {
+      const task = createMockTask();
+      delete (task as Partial<Task>).user;
+      const dateKey = "2024-01-15";
+
+      await saveTaskToIndexedDB(task, dateKey);
+
+      const savedTask = await compassLocalDB.tasks.get(task.id);
+      expect(savedTask?.user).toBe(UNAUTHENTICATED_USER);
     });
   });
 
@@ -128,6 +140,21 @@ describe("task.storage.util", () => {
     it("should return empty array when no tasks exist for dateKey", async () => {
       const tasks = await loadTasksFromIndexedDB("2024-01-15");
       expect(tasks).toHaveLength(0);
+    });
+
+    it("should normalize legacy tasks without a user", async () => {
+      const task = createMockTask();
+      delete (task as Partial<Task>).user;
+
+      await compassLocalDB.tasks.put({
+        ...(task as unknown as Task),
+        dateKey: "2024-01-15",
+      });
+
+      const tasks = await loadTasksFromIndexedDB("2024-01-15");
+
+      expect(tasks).toHaveLength(1);
+      expect(tasks[0].user).toBe(UNAUTHENTICATED_USER);
     });
   });
 
