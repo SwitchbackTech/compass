@@ -73,4 +73,26 @@ describe("migrateLocalToCloud", () => {
     expect(result.failed).toBe(1);
     expect(result.failures).toHaveLength(1);
   });
+
+  it("preserves task ids during migration", async () => {
+    const params = createParams();
+    const tasks = [
+      createTask({ id: "507f1f77bcf86cd799439011" }),
+      createTask({ id: "legacy-task-id" }),
+    ];
+
+    (params.localRepository.get as jest.Mock)
+      .mockResolvedValueOnce(tasks)
+      .mockResolvedValueOnce([]);
+
+    await migrateLocalToCloud(params);
+
+    expect(params.cloudRepository.save).toHaveBeenCalledWith(
+      "2024-01-01",
+      expect.arrayContaining([
+        expect.objectContaining({ id: "507f1f77bcf86cd799439011" }),
+        expect.objectContaining({ id: "legacy-task-id" }),
+      ]),
+    );
+  });
 });

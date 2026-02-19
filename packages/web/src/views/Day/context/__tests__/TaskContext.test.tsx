@@ -1,3 +1,4 @@
+import { ObjectId } from "bson";
 import { PropsWithChildren, act } from "react";
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
@@ -56,6 +57,7 @@ describe("TaskProvider", () => {
     expect(result.current.tasks).toHaveLength(1);
     expect(result.current.tasks[0].title).toBe("Test task");
     expect(result.current.tasks[0].status).toBe("todo");
+    expect(ObjectId.isValid(result.current.tasks[0].id)).toBe(true);
   });
 
   it("should update task title", async () => {
@@ -151,8 +153,10 @@ describe("TaskProvider", () => {
     const { result } = renderHook(useTasks, { wrapper: Wrapper });
     await waitForTasksReady(result);
 
+    let createdTaskId = "";
     act(() => {
-      result.current.addTask("Persisted task");
+      const createdTask = result.current.addTask("Persisted task");
+      createdTaskId = createdTask.id;
     });
 
     const today = dayjs();
@@ -165,6 +169,7 @@ describe("TaskProvider", () => {
 
     const stored = await loadTasksFromIndexedDB(dateKey);
     expect(stored[0].title).toBe("Persisted task");
+    expect(stored[0].id).toBe(createdTaskId);
   });
 
   it("should load tasks from IndexedDB on mount", async () => {

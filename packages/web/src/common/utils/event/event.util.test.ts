@@ -1,3 +1,4 @@
+import { ObjectId } from "bson";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import {
   Schema_GridEvent,
@@ -60,6 +61,7 @@ describe("addId", () => {
     const result = addId(event);
 
     expect(result._id).toBeDefined();
-    expect(result._id).not.toMatch(/^optimistic-/);
+    expect(ObjectId.isValid(result._id)).toBe(true);
+    expect(result._id).toMatch(/^[a-f0-9]{24}$/);
   });
 });

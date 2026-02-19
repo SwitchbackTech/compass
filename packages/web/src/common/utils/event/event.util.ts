@@ -1,4 +1,3 @@
-import { ObjectId } from "bson";
 import { DropResult } from "@hello-pangea/dnd";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@core/constants/date.constants";
@@ -24,6 +23,7 @@ import {
   Schema_WebEvent,
   WithId,
 } from "@web/common/types/web.event.types";
+import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
   focusElement,
   getFocusedEvent,
@@ -42,7 +42,7 @@ export const gridEventDefaultPosition: Schema_GridEvent["position"] = {
 export const addId = (event: Schema_GridEvent): WithId<Schema_GridEvent> => {
   const _event = {
     ...event,
-    _id: new ObjectId().toString(),
+    _id: createObjectIdString(),
   } as WithId<Schema_GridEvent>;
 
   return _event;

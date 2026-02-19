@@ -1,9 +1,9 @@
 import dayjs from "dayjs";
 import { useCallback } from "react";
 import { toast } from "react-toastify";
-import { v4 as uuidv4 } from "uuid";
 import { TaskRepository } from "@web/common/repositories/task/task.repository";
 import { Task, UndoOperation } from "@web/common/types/task.types";
+import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { getDateKey } from "@web/common/utils/storage/storage.util";
 import { sortTasksByStatus } from "@web/common/utils/task/sort.task";
 import { showMigrationToast } from "@web/views/Day/components/Toasts/MigrationToast/MigrationToast";
@@ -50,7 +50,7 @@ export function useTaskActions({
 
   const addTask = (title: string): Task => {
     const newTask: Task = {
-      id: `task-${uuidv4()}`,
+      id: createObjectIdString(),
       title,
       status: "todo",
       order: tasks.length,
