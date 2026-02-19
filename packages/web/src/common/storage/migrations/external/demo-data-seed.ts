@@ -2,8 +2,10 @@ import { Origin, Priorities } from "@core/constants/core.constants";
 import { Event_Core } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
+import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { Task } from "@web/common/types/task.types";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
+import { getModifierKeyLabel } from "@web/common/utils/shortcut/shortcut.util";
 import { StorageAdapter } from "../../adapter/storage.adapter";
 import { ExternalMigration } from "../migration.types";
 
@@ -45,6 +47,7 @@ function generateDemoData() {
   const yesterday = now.subtract(1, "day").toYearMonthDayString();
   const tomorrow = now.add(1, "day").toYearMonthDayString();
   const { week, month } = now.weekMonthRange();
+  const modKey = getModifierKeyLabel();
 
   // Helper for creating timed events today
   const todayAt = (h: number, m = 0) =>
@@ -80,8 +83,7 @@ function generateDemoData() {
     }),
     createEvent({
       title: "Try Compass",
-      description:
-        "Welcome! Explore the calendar and tasks. When ready to bring in Google events, select 'Connect Google Calendar' from the cmd palette (Cmd+K)",
+      description: `Welcome! Explore the calendar and tasks. When ready to bring in Google events, select 'Connect Google Calendar' from the command palette (${modKey}+K)`,
       startDate: todayAt(10, 0),
       endDate: todayAt(11, 0),
       priority: Priorities.UNASSIGNED,
@@ -103,38 +105,42 @@ function generateDemoData() {
   // ─── Tasks (Today) ──────────────────────────────────────────────────────────
   const todayTasks: Task[] = [
     createTask({
-      title: "Star the repo",
-      description: "https://github.com/SwitchbackTech/compass",
+      title: `Open command palette (${modKey} + K)`,
       order: 0,
     }),
     createTask({
-      title: "Open cmd palette (Cmd+K)",
+      title: "Migrate this forward",
       order: 1,
     }),
     createTask({
-      title: "Migrate this forward",
+      title: "Migrate this backward",
       order: 2,
     }),
     createTask({
-      title: "Migrate this backward",
+      title: `Go to Now view (${VIEW_SHORTCUTS.now.key})`,
       order: 3,
+    }),
+    createTask({
+      title: "Star the repo =]",
+      description: "https://github.com/SwitchbackTech/compass",
+      order: 4,
     }),
   ];
 
   // ─── Tasks (Yesterday) - Completed ──────────────────────────────────────────
   const yesterdayTasks: Task[] = [
     createTask({
-      title: "Set up development environment",
+      title: "Lurk on HN",
       status: "completed",
       order: 0,
     }),
     createTask({
-      title: "Read project documentation",
+      title: "Watch Fireship",
       status: "completed",
       order: 1,
     }),
     createTask({
-      title: "Configure IDE",
+      title: "Rewrite in Rust",
       status: "completed",
       order: 2,
     }),

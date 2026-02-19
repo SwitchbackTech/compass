@@ -41,6 +41,15 @@ export const getModifierKey = () => {
   }
 };
 
+/**
+ * Get the user-friendly display name for the modifier key.
+ * Maps internal key names to what users expect to see.
+ */
+export const getModifierKeyLabel = (): string => {
+  const key = getModifierKey();
+  return key === "Meta" ? "Cmd" : "Ctrl";
+};
+
 export const getModifierKeyTestId = () =>
   `${getModifierKey().toLowerCase()}-icon`;
 

@@ -14,7 +14,6 @@ import calendarService from "@backend/calendar/services/calendar.service";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
-import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
@@ -85,7 +84,6 @@ describe("UserService", () => {
       expect(storedUser).not.toBeNull();
 
       await priorityService.createDefaultPriorities(userId);
-      await eventService.createDefaultSomedays(userId);
       await SyncDriver.createSync(storedUser!, true);
       await userService.startGoogleCalendarSync(userId);
 
@@ -121,7 +119,7 @@ describe("UserService", () => {
   });
 
   describe("initUserData", () => {
-    it("creates the compass user with default resources", async () => {
+    it("creates the compass user with default priorities", async () => {
       const gUser = UserDriver.generateGoogleUser();
 
       EmailDriver.mockEmailServiceResponse();
@@ -141,11 +139,6 @@ describe("UserService", () => {
         .find({ user: userId })
         .toArray();
       expect(priorities.length).toBeGreaterThan(0);
-
-      const somedayEvents = await mongoService.event
-        .find({ user: userId, isSomeday: true })
-        .toArray();
-      expect(somedayEvents.length).toBeGreaterThan(0);
     });
   });
 

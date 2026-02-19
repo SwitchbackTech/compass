@@ -1,11 +1,6 @@
 import type { GaxiosError } from "gaxios";
 import { ClientSession, Document, Filter, ObjectId, WithId } from "mongodb";
 import {
-  Origin,
-  Priorities,
-  RRULE,
-  RRULE_COUNT_MONTHS,
-  RRULE_COUNT_WEEKS,
   SOMEDAY_MONTHLY_LIMIT,
   SOMEDAY_WEEKLY_LIMIT,
 } from "@core/constants/core.constants";
@@ -14,14 +9,11 @@ import { Status } from "@core/errors/status.codes";
 import { MapEvent } from "@core/mappers/map.event";
 import {
   CalendarProvider,
-  CompassEventStatus,
-  CompassThisEvent,
   EventUpdatePayload,
   EventUpdateSchema,
   Params_DeleteMany,
   Payload_Order,
   Query_Event,
-  RecurringEventUpdateScope,
   Result_DeleteMany,
   Schema_Event,
   Schema_Event_Core,
@@ -29,7 +21,6 @@ import {
 } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
 import { IDSchema } from "@core/types/type.utils";
-import { getCurrentRangeDates } from "@core/util/date/date.util";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { isInstance, parseCompassEventDate } from "@core/util/event/event.util";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
@@ -41,78 +32,8 @@ import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { reorderEvents } from "@backend/event/queries/event.queries";
 import { getReadAllFilter } from "@backend/event/services/event.service.util";
-import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.processor";
 
 class EventService {
-  createDefaultSomedays = async (userId: string, session?: ClientSession) => {
-    const { week, month } = getCurrentRangeDates();
-
-    const defaultWeekly: Schema_Event_Core = {
-      title: "⭐ That one thing...",
-      isAllDay: false,
-      isSomeday: true,
-      startDate: week.startDate,
-      endDate: week.endDate,
-      priority: Priorities.UNASSIGNED,
-      origin: Origin.COMPASS,
-      description: `... that you wanna do this week, but aren't sure when.\
-      \nKeep it here for safekeeping, then drag it over to the calendar once you're ready to commit times.\
-      \n\nThese sidebar events are:\
-      \n-filtered by the calendar week you're on\
-      \n-limited to ${SOMEDAY_WEEKLY_LIMIT} per week`,
-      user: userId,
-    };
-
-    const weeklyRepeat: Schema_Event_Core = {
-      title: "🪴 Water plants",
-      isAllDay: false,
-      isSomeday: true,
-      startDate: week.startDate,
-      endDate: week.endDate,
-      origin: Origin.COMPASS,
-      priority: Priorities.SELF,
-      description: `This event happens every week.\
-        \n\nRather than repeating forever, however, it'll stop after ${
-          RRULE_COUNT_WEEKS / RRULE_COUNT_MONTHS
-        } months.\
-        \n\nThis encourages frequent re-prioritizing, rather than running on autopilot indefinitely.`,
-      recurrence: {
-        rule: [RRULE.WEEK],
-      },
-      user: userId,
-    };
-
-    const monthlyRepeat: Schema_Event_Core = {
-      isAllDay: false,
-      isSomeday: true,
-      origin: Origin.COMPASS,
-      priority: Priorities.RELATIONS,
-      startDate: month.startDate,
-      endDate: month.endDate,
-      title: "🎲 Schedule game night",
-      recurrence: {
-        rule: [RRULE.MONTH],
-      },
-      description: `This one repeats once a month for ${RRULE_COUNT_MONTHS} months`,
-      user: userId,
-    };
-
-    return CompassSyncProcessor.processEvents(
-      [weeklyRepeat, monthlyRepeat, defaultWeekly].map((e) => {
-        const eventId = new ObjectId().toString();
-
-        return {
-          eventId,
-          userId,
-          payload: { ...e, _id: eventId } as CompassThisEvent["payload"],
-          status: CompassEventStatus.CONFIRMED,
-          applyTo: RecurringEventUpdateScope.THIS_EVENT,
-        };
-      }),
-      session,
-    );
-  };
-
   /*
   Deletes all of a user's events
   REMINDER: this should only delete a user's *Compass* events --
