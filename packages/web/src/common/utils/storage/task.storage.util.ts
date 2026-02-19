@@ -1,26 +1,48 @@
+/**
+ * Task storage utilities - compatibility layer.
+ *
+ * @deprecated These functions delegate to the StorageAdapter.
+ * New code should use getStorageAdapter() directly.
+ *
+ * @see {@link @web/common/storage/adapter}
+ */
 import {
-  Task,
-  normalizeTask,
-  normalizeTasks,
-} from "@web/common/types/task.types";
-import { StoredTask, compassLocalDB } from "./compass-local.db";
+  StoredTask,
+  ensureStorageReady,
+  getStorageAdapter,
+} from "@web/common/storage/adapter";
+import { Task, normalizeTask } from "@web/common/types/task.types";
 import { handleDatabaseError } from "./db-errors.util";
-import { ensureDatabaseReady } from "./db-init.util";
+
+// Re-export StoredTask for backward compatibility
+export type { StoredTask };
 
 /**
  * Saves a single task to IndexedDB with its associated dateKey.
- * Uses put() to handle both new and existing tasks.
+ * @deprecated Use getStorageAdapter().putTasks() instead
  */
 export async function saveTaskToIndexedDB(
   task: Task,
   dateKey: string,
 ): Promise<void> {
-  const normalizedTask = normalizeTask(task);
-
   try {
-    await ensureDatabaseReady();
-    const storedTask: StoredTask = { ...normalizedTask, dateKey };
-    await compassLocalDB.tasks.put(storedTask);
+    await ensureStorageReady();
+    const adapter = getStorageAdapter();
+
+    // Get existing tasks, add/update this one, save all
+    const existingTasks = await adapter.getTasks(dateKey);
+    const normalizedTask = normalizeTask(task);
+    const taskIndex = existingTasks.findIndex(
+      (t) => t._id === normalizedTask._id,
+    );
+
+    if (taskIndex >= 0) {
+      existingTasks[taskIndex] = normalizedTask;
+    } else {
+      existingTasks.push(normalizedTask);
+    }
+
+    await adapter.putTasks(dateKey, existingTasks);
   } catch (error) {
     handleDatabaseError(error, "save");
   }
@@ -28,28 +50,15 @@ export async function saveTaskToIndexedDB(
 
 /**
  * Saves multiple tasks to IndexedDB for a specific dateKey.
- * Replaces all existing tasks for that dateKey.
+ * @deprecated Use getStorageAdapter().putTasks() instead
  */
 export async function saveTasksToIndexedDB(
   dateKey: string,
   tasks: Task[],
 ): Promise<void> {
   try {
-    await ensureDatabaseReady();
-
-    const storedTasks: StoredTask[] = normalizeTasks(tasks).map((task) => ({
-      ...task,
-      dateKey,
-    }));
-
-    await compassLocalDB.transaction("rw", compassLocalDB.tasks, async () => {
-      // Replace all tasks for this date atomically
-      await compassLocalDB.tasks.where("dateKey").equals(dateKey).delete();
-
-      if (storedTasks.length > 0) {
-        await compassLocalDB.tasks.bulkPut(storedTasks);
-      }
-    });
+    await ensureStorageReady();
+    await getStorageAdapter().putTasks(dateKey, tasks);
   } catch (error) {
     handleDatabaseError(error, "save");
   }
@@ -57,31 +66,25 @@ export async function saveTasksToIndexedDB(
 
 /**
  * Loads all tasks from IndexedDB for a specific dateKey.
+ * @deprecated Use getStorageAdapter().getTasks() instead
  */
 export async function loadTasksFromIndexedDB(dateKey: string): Promise<Task[]> {
   try {
-    await ensureDatabaseReady();
-
-    const storedTasks = await compassLocalDB.tasks
-      .where("dateKey")
-      .equals(dateKey)
-      .toArray();
-
-    // Remove dateKey and normalize legacy records (e.g. missing user).
-    return storedTasks.map(({ dateKey: _, ...task }) => normalizeTask(task));
+    await ensureStorageReady();
+    return await getStorageAdapter().getTasks(dateKey);
   } catch (error) {
     handleDatabaseError(error, "load");
-    return [];
   }
 }
 
 /**
  * Deletes a task from IndexedDB by its ID.
+ * @deprecated Use getStorageAdapter().deleteTask() instead
  */
 export async function deleteTaskFromIndexedDB(taskId: string): Promise<void> {
   try {
-    await ensureDatabaseReady();
-    await compassLocalDB.tasks.delete(taskId);
+    await ensureStorageReady();
+    await getStorageAdapter().deleteTask(taskId);
   } catch (error) {
     handleDatabaseError(error, "delete");
   }
@@ -89,23 +92,25 @@ export async function deleteTaskFromIndexedDB(taskId: string): Promise<void> {
 
 /**
  * Clears all tasks for a specific dateKey from IndexedDB.
+ * @deprecated Use getStorageAdapter().putTasks(dateKey, []) instead
  */
 export async function clearTasksForDateKey(dateKey: string): Promise<void> {
   try {
-    await ensureDatabaseReady();
-    await compassLocalDB.tasks.where("dateKey").equals(dateKey).delete();
+    await ensureStorageReady();
+    await getStorageAdapter().putTasks(dateKey, []);
   } catch (error) {
     handleDatabaseError(error, "clear");
   }
 }
 
 /**
- * Clears all tasks from IndexedDB. Used for cleanup or testing.
+ * Clears all tasks from IndexedDB.
+ * @deprecated Use getStorageAdapter().clearAllTasks() instead
  */
 export async function clearAllTasksFromIndexedDB(): Promise<void> {
   try {
-    await ensureDatabaseReady();
-    await compassLocalDB.tasks.clear();
+    await ensureStorageReady();
+    await getStorageAdapter().clearAllTasks();
   } catch (error) {
     handleDatabaseError(error, "clear");
   }
@@ -113,6 +118,7 @@ export async function clearAllTasksFromIndexedDB(): Promise<void> {
 
 /**
  * Moves a task from one date to another.
+ * @deprecated Use getStorageAdapter().moveTask() instead
  */
 export async function moveTaskBetweenDates(
   task: Task,
@@ -120,38 +126,22 @@ export async function moveTaskBetweenDates(
   toDateKey: string,
 ): Promise<void> {
   try {
-    await ensureDatabaseReady();
-    const normalizedTask = normalizeTask(task);
-
-    await compassLocalDB.transaction("rw", compassLocalDB.tasks, async () => {
-      const existingTask = await compassLocalDB.tasks.get(normalizedTask._id);
-
-      // If the task exists for a different date, don't move it.
-      if (existingTask && existingTask.dateKey !== fromDateKey) {
-        return;
-      }
-
-      // Remove from source date (task id stays the same)
-      await compassLocalDB.tasks.delete(normalizedTask._id);
-
-      // Add to target date
-      const storedTask: StoredTask = { ...normalizedTask, dateKey: toDateKey };
-      await compassLocalDB.tasks.put(storedTask);
-    });
+    await ensureStorageReady();
+    await getStorageAdapter().moveTask(task, fromDateKey, toDateKey);
   } catch (error) {
     handleDatabaseError(error, "move");
   }
 }
 
 /**
- * Loads all tasks from IndexedDB. Used for migration or bulk operations.
+ * Loads all tasks from IndexedDB.
+ * @deprecated Use getStorageAdapter().getAllTasks() instead
  */
 export async function loadAllTasksFromIndexedDB(): Promise<StoredTask[]> {
   try {
-    await ensureDatabaseReady();
-    return await compassLocalDB.tasks.toArray();
+    await ensureStorageReady();
+    return await getStorageAdapter().getAllTasks();
   } catch (error) {
     handleDatabaseError(error, "load");
-    return [];
   }
 }

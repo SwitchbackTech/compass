@@ -1,30 +1,14 @@
 import { toast } from "react-toastify";
-import {
-  DatabaseInitError,
-  initializeDatabase,
-} from "@web/common/utils/storage/db-init.util";
-import { migrateTasksFromLocalStorageToIndexedDB } from "@web/common/utils/storage/task-migration.util";
+import { initializeStorage } from "@web/common/storage/adapter";
+import { DatabaseInitError } from "@web/common/utils/storage/db-errors.util";
 import {
   initializeDatabaseWithErrorHandling,
   showDbInitErrorToast,
 } from "./app-init.util";
 
-// Mock the db-init module
-jest.mock("@web/common/utils/storage/db-init.util", () => {
-  const actual = jest.requireActual("@web/common/utils/storage/db-init.util");
-  const { DatabaseInitError } = jest.requireActual(
-    "@web/common/utils/storage/db-errors.util",
-  );
-  return {
-    ...actual,
-    DatabaseInitError,
-    initializeDatabase: jest.fn(),
-  };
-});
-
-// Mock the task-migration module
-jest.mock("@web/common/utils/storage/task-migration.util", () => ({
-  migrateTasksFromLocalStorageToIndexedDB: jest.fn(),
+// Mock the storage adapter
+jest.mock("@web/common/storage/adapter", () => ({
+  initializeStorage: jest.fn(),
 }));
 
 // Mock react-toastify
@@ -34,14 +18,12 @@ jest.mock("react-toastify", () => ({
   },
 }));
 
-const mockInitializeDatabase = initializeDatabase as jest.Mock;
-const mockMigrateTasks = migrateTasksFromLocalStorageToIndexedDB as jest.Mock;
+const mockInitializeStorage = initializeStorage as jest.Mock;
 
 describe("app-init.util", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
-    mockMigrateTasks.mockResolvedValue(0);
   });
 
   afterEach(() => {
@@ -49,28 +31,18 @@ describe("app-init.util", () => {
   });
 
   describe("initializeDatabaseWithErrorHandling", () => {
-    it("should return null error when database initializes successfully", async () => {
-      mockInitializeDatabase.mockResolvedValue(undefined);
+    it("should return null error when storage initializes successfully", async () => {
+      mockInitializeStorage.mockResolvedValue(undefined);
 
       const result = await initializeDatabaseWithErrorHandling();
 
       expect(result.dbInitError).toBeNull();
-      expect(mockInitializeDatabase).toHaveBeenCalledTimes(1);
-    });
-
-    it("should migrate tasks after database initializes", async () => {
-      mockInitializeDatabase.mockResolvedValue(undefined);
-      mockMigrateTasks.mockResolvedValue(5);
-
-      const result = await initializeDatabaseWithErrorHandling();
-
-      expect(mockMigrateTasks).toHaveBeenCalledTimes(1);
-      expect(result.tasksMigrated).toBe(5);
+      expect(mockInitializeStorage).toHaveBeenCalledTimes(1);
     });
 
     it("should catch DatabaseInitError and return it", async () => {
       const dbError = new DatabaseInitError("Storage quota exceeded");
-      mockInitializeDatabase.mockRejectedValue(dbError);
+      mockInitializeStorage.mockRejectedValue(dbError);
 
       const result = await initializeDatabaseWithErrorHandling();
 
@@ -80,31 +52,21 @@ describe("app-init.util", () => {
 
     it("should ignore non-DatabaseInitError errors and return null", async () => {
       const genericError = new Error("Some other error");
-      mockInitializeDatabase.mockRejectedValue(genericError);
+      mockInitializeStorage.mockRejectedValue(genericError);
 
       const result = await initializeDatabaseWithErrorHandling();
 
       expect(result.dbInitError).toBeNull();
     });
 
-    it("should not throw when database initialization fails", async () => {
+    it("should not throw when storage initialization fails", async () => {
       const dbError = new DatabaseInitError("Database version mismatch");
-      mockInitializeDatabase.mockRejectedValue(dbError);
+      mockInitializeStorage.mockRejectedValue(dbError);
 
       // Should not throw - just return the error
       await expect(
         initializeDatabaseWithErrorHandling(),
       ).resolves.not.toThrow();
-    });
-
-    it("should not migrate tasks when database initialization fails", async () => {
-      const dbError = new DatabaseInitError("Database version mismatch");
-      mockInitializeDatabase.mockRejectedValue(dbError);
-
-      const result = await initializeDatabaseWithErrorHandling();
-
-      expect(mockMigrateTasks).not.toHaveBeenCalled();
-      expect(result.tasksMigrated).toBe(0);
     });
   });
 
@@ -160,7 +122,7 @@ describe("app-init.util", () => {
       const dbError = new DatabaseInitError(
         "Failed to initialize IndexedDB after 3 attempts",
       );
-      mockInitializeDatabase.mockRejectedValue(dbError);
+      mockInitializeStorage.mockRejectedValue(dbError);
 
       // Simulate what index.tsx does
       const { dbInitError } = await initializeDatabaseWithErrorHandling();
@@ -182,14 +144,11 @@ describe("app-init.util", () => {
     });
 
     it("should handle full initialization flow without error", async () => {
-      mockInitializeDatabase.mockResolvedValue(undefined);
-      mockMigrateTasks.mockResolvedValue(3);
+      mockInitializeStorage.mockResolvedValue(undefined);
 
-      const { dbInitError, tasksMigrated } =
-        await initializeDatabaseWithErrorHandling();
+      const { dbInitError } = await initializeDatabaseWithErrorHandling();
 
       expect(dbInitError).toBeNull();
-      expect(tasksMigrated).toBe(3);
 
       // No toast should be shown
       jest.advanceTimersByTime(100);

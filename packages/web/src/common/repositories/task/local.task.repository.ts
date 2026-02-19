@@ -1,19 +1,25 @@
+import { getStorageAdapter } from "@web/common/storage/adapter";
 import { Task } from "@web/common/types/task.types";
-import {
-  deleteTaskFromIndexedDB,
-  loadTasksFromIndexedDB,
-  moveTaskBetweenDates,
-  saveTasksToIndexedDB,
-} from "@web/common/utils/storage/task.storage.util";
 import { TaskRepository } from "./task.repository";
 
+/**
+ * Local task repository implementation using the storage adapter.
+ *
+ * This repository delegates all storage operations to the StorageAdapter,
+ * making it independent of the underlying storage technology. The adapter
+ * can be IndexedDB, SQLite, or any other implementation.
+ */
 export class LocalTaskRepository implements TaskRepository {
+  private get adapter() {
+    return getStorageAdapter();
+  }
+
   async get(dateKey: string): Promise<Task[]> {
-    return loadTasksFromIndexedDB(dateKey);
+    return this.adapter.getTasks(dateKey);
   }
 
   async save(dateKey: string, tasks: Task[]): Promise<void> {
-    await saveTasksToIndexedDB(dateKey, tasks);
+    await this.adapter.putTasks(dateKey, tasks);
   }
 
   async delete(dateKey: string, taskId: string): Promise<void> {
@@ -24,7 +30,7 @@ export class LocalTaskRepository implements TaskRepository {
       return;
     }
 
-    await deleteTaskFromIndexedDB(taskId);
+    await this.adapter.deleteTask(taskId);
   }
 
   async move(
@@ -32,7 +38,7 @@ export class LocalTaskRepository implements TaskRepository {
     fromDateKey: string,
     toDateKey: string,
   ): Promise<void> {
-    await moveTaskBetweenDates(task, fromDateKey, toDateKey);
+    await this.adapter.moveTask(task, fromDateKey, toDateKey);
   }
 
   async reorder(

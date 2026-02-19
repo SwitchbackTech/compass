@@ -1,11 +1,21 @@
+/**
+ * Event storage utilities - compatibility layer.
+ *
+ * @deprecated These functions delegate to the StorageAdapter.
+ * New code should use getStorageAdapter() directly.
+ *
+ * @see {@link @web/common/storage/adapter}
+ */
 import { Event_Core } from "@core/types/event.types";
-import { isDateRangeOverlapping } from "@core/util/date/date.util";
-import { compassLocalDB } from "./compass-local.db";
+import {
+  ensureStorageReady,
+  getStorageAdapter,
+} from "@web/common/storage/adapter";
 import { handleDatabaseError } from "./db-errors.util";
-import { ensureDatabaseReady } from "./db-init.util";
 
 /**
- * Saves an event to IndexedDB. Uses put() to handle both new and existing events.
+ * Saves an event to IndexedDB.
+ * @deprecated Use getStorageAdapter().putEvent() instead
  */
 export async function saveEventToIndexedDB(event: Event_Core): Promise<void> {
   if (!event._id) {
@@ -13,10 +23,8 @@ export async function saveEventToIndexedDB(event: Event_Core): Promise<void> {
   }
 
   try {
-    // Ensure database is ready before operation
-    await ensureDatabaseReady();
-
-    await compassLocalDB.events.put(event);
+    await ensureStorageReady();
+    await getStorageAdapter().putEvent(event);
   } catch (error) {
     handleDatabaseError(error, "save");
   }
@@ -24,6 +32,7 @@ export async function saveEventToIndexedDB(event: Event_Core): Promise<void> {
 
 /**
  * Loads events from IndexedDB filtered by date range and optionally by isSomeday flag.
+ * @deprecated Use getStorageAdapter().getEvents() instead
  */
 export async function loadEventsFromIndexedDB(
   startDate: string,
@@ -31,23 +40,8 @@ export async function loadEventsFromIndexedDB(
   isSomeday?: boolean,
 ): Promise<Event_Core[]> {
   try {
-    await ensureDatabaseReady();
-
-    const allEvents = await compassLocalDB.events.toArray();
-
-    return allEvents.filter((event) => {
-      if (!event.startDate || !event.endDate) return false;
-      if (isSomeday !== undefined && event.isSomeday !== isSomeday) {
-        return false;
-      }
-      return isDateRangeOverlapping(
-        event.startDate,
-        event.endDate,
-        startDate,
-        endDate,
-        "day",
-      );
-    });
+    await ensureStorageReady();
+    return await getStorageAdapter().getEvents(startDate, endDate, isSomeday);
   } catch (error) {
     handleDatabaseError(error, "load");
   }
@@ -55,15 +49,12 @@ export async function loadEventsFromIndexedDB(
 
 /**
  * Loads all events from IndexedDB without filtering.
+ * @deprecated Use getStorageAdapter().getAllEvents() instead
  */
 export async function loadAllEventsFromIndexedDB(): Promise<Event_Core[]> {
   try {
-    // Ensure database is ready before operation
-    await ensureDatabaseReady();
-
-    const events = await compassLocalDB.events.toArray();
-
-    return events;
+    await ensureStorageReady();
+    return await getStorageAdapter().getAllEvents();
   } catch (error) {
     handleDatabaseError(error, "load");
   }
@@ -71,27 +62,25 @@ export async function loadAllEventsFromIndexedDB(): Promise<Event_Core[]> {
 
 /**
  * Deletes an event from IndexedDB by its ID.
+ * @deprecated Use getStorageAdapter().deleteEvent() instead
  */
 export async function deleteEventFromIndexedDB(eventId: string): Promise<void> {
   try {
-    // Ensure database is ready before operation
-    await ensureDatabaseReady();
-
-    await compassLocalDB.events.delete(eventId);
+    await ensureStorageReady();
+    await getStorageAdapter().deleteEvent(eventId);
   } catch (error) {
     handleDatabaseError(error, "delete");
   }
 }
 
 /**
- * Clears all events from IndexedDB. Used for migration cleanup.
+ * Clears all events from IndexedDB.
+ * @deprecated Use getStorageAdapter().clearAllEvents() instead
  */
 export async function clearEventsFromIndexedDB(): Promise<void> {
   try {
-    // Ensure database is ready before operation
-    await ensureDatabaseReady();
-
-    await compassLocalDB.events.clear();
+    await ensureStorageReady();
+    await getStorageAdapter().clearAllEvents();
   } catch (error) {
     handleDatabaseError(error, "clear");
   }

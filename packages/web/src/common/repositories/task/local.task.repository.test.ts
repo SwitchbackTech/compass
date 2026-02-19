@@ -2,42 +2,44 @@ import {
   createTestTask,
   createTestTasks,
 } from "@web/__tests__/utils/repositories/repository.test.factory";
-import {
-  deleteTaskFromIndexedDB,
-  loadTasksFromIndexedDB,
-  moveTaskBetweenDates,
-  saveTasksToIndexedDB,
-} from "@web/common/utils/storage/task.storage.util";
+import * as storageAdapter from "@web/common/storage/adapter";
 import { LocalTaskRepository } from "./local.task.repository";
 
-jest.mock("@web/common/utils/storage/task.storage.util");
+// Mock the storage adapter module
+jest.mock("@web/common/storage/adapter");
 
 describe("LocalTaskRepository", () => {
   let repository: LocalTaskRepository;
-  const mockLoadTasks = loadTasksFromIndexedDB as jest.MockedFunction<
-    typeof loadTasksFromIndexedDB
-  >;
-  const mockSaveTasks = saveTasksToIndexedDB as jest.MockedFunction<
-    typeof saveTasksToIndexedDB
-  >;
-  const mockDeleteTask = deleteTaskFromIndexedDB as jest.MockedFunction<
-    typeof deleteTaskFromIndexedDB
-  >;
-  const mockMoveTask = moveTaskBetweenDates as jest.MockedFunction<
-    typeof moveTaskBetweenDates
-  >;
+  let mockAdapter: {
+    getTasks: jest.Mock;
+    putTasks: jest.Mock;
+    deleteTask: jest.Mock;
+    moveTask: jest.Mock;
+  };
 
   beforeEach(() => {
+    mockAdapter = {
+      getTasks: jest.fn().mockResolvedValue([]),
+      putTasks: jest.fn().mockResolvedValue(undefined),
+      deleteTask: jest.fn().mockResolvedValue(undefined),
+      moveTask: jest.fn().mockResolvedValue(undefined),
+    };
+
+    (storageAdapter.getStorageAdapter as jest.Mock).mockReturnValue(
+      mockAdapter,
+    );
+
     repository = new LocalTaskRepository();
     jest.clearAllMocks();
-    mockLoadTasks.mockResolvedValue([]);
-    mockSaveTasks.mockResolvedValue(undefined);
-    mockDeleteTask.mockResolvedValue(undefined);
-    mockMoveTask.mockResolvedValue(undefined);
+
+    // Re-mock after clearing
+    (storageAdapter.getStorageAdapter as jest.Mock).mockReturnValue(
+      mockAdapter,
+    );
   });
 
   describe("get", () => {
-    it("should load tasks from IndexedDB", async () => {
+    it("should load tasks from adapter", async () => {
       const dateKey = "2024-01-01";
       const mockTasks = [
         createTestTask({
@@ -46,28 +48,28 @@ describe("LocalTaskRepository", () => {
         }),
       ];
 
-      mockLoadTasks.mockResolvedValue(mockTasks);
+      mockAdapter.getTasks.mockResolvedValue(mockTasks);
 
       const result = await repository.get(dateKey);
 
-      expect(mockLoadTasks).toHaveBeenCalledWith(dateKey);
-      expect(mockLoadTasks).toHaveBeenCalledTimes(1);
+      expect(mockAdapter.getTasks).toHaveBeenCalledWith(dateKey);
+      expect(mockAdapter.getTasks).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockTasks);
     });
 
     it("should return empty array when no tasks exist", async () => {
       const dateKey = "2024-01-01";
-      mockLoadTasks.mockResolvedValue([]);
+      mockAdapter.getTasks.mockResolvedValue([]);
 
       const result = await repository.get(dateKey);
 
-      expect(mockLoadTasks).toHaveBeenCalledWith(dateKey);
+      expect(mockAdapter.getTasks).toHaveBeenCalledWith(dateKey);
       expect(result).toEqual([]);
     });
   });
 
   describe("save", () => {
-    it("should save tasks to IndexedDB", async () => {
+    it("should save tasks to adapter", async () => {
       const dateKey = "2024-01-01";
       const tasks = [
         createTestTask({
@@ -78,8 +80,8 @@ describe("LocalTaskRepository", () => {
 
       await repository.save(dateKey, tasks);
 
-      expect(mockSaveTasks).toHaveBeenCalledWith(dateKey, tasks);
-      expect(mockSaveTasks).toHaveBeenCalledTimes(1);
+      expect(mockAdapter.putTasks).toHaveBeenCalledWith(dateKey, tasks);
+      expect(mockAdapter.putTasks).toHaveBeenCalledTimes(1);
     });
 
     it("should save empty array", async () => {
@@ -88,14 +90,14 @@ describe("LocalTaskRepository", () => {
 
       await repository.save(dateKey, tasks);
 
-      expect(mockSaveTasks).toHaveBeenCalledWith(dateKey, tasks);
+      expect(mockAdapter.putTasks).toHaveBeenCalledWith(dateKey, tasks);
     });
   });
 
   describe("delete", () => {
     it("should delete a task by id when it belongs to the date", async () => {
       const dateKey = "2024-01-01";
-      mockLoadTasks.mockResolvedValue([
+      mockAdapter.getTasks.mockResolvedValue([
         createTestTask({
           _id: "task-1",
         }),
@@ -103,18 +105,18 @@ describe("LocalTaskRepository", () => {
 
       await repository.delete(dateKey, "task-1");
 
-      expect(mockLoadTasks).toHaveBeenCalledWith(dateKey);
-      expect(mockDeleteTask).toHaveBeenCalledWith("task-1");
+      expect(mockAdapter.getTasks).toHaveBeenCalledWith(dateKey);
+      expect(mockAdapter.deleteTask).toHaveBeenCalledWith("task-1");
     });
 
     it("should handle deleting non-existent task", async () => {
       const dateKey = "2024-01-01";
-      mockLoadTasks.mockResolvedValue([]);
+      mockAdapter.getTasks.mockResolvedValue([]);
 
       await repository.delete(dateKey, "non-existent");
 
-      expect(mockLoadTasks).toHaveBeenCalledWith(dateKey);
-      expect(mockDeleteTask).not.toHaveBeenCalled();
+      expect(mockAdapter.getTasks).toHaveBeenCalledWith(dateKey);
+      expect(mockAdapter.deleteTask).not.toHaveBeenCalled();
     });
   });
 
@@ -130,13 +132,13 @@ describe("LocalTaskRepository", () => {
         order: index,
       }));
 
-      mockLoadTasks.mockResolvedValue(tasks);
+      mockAdapter.getTasks.mockResolvedValue(tasks);
 
       await repository.reorder(dateKey, 0, 2);
 
-      expect(mockLoadTasks).toHaveBeenCalledWith(dateKey);
-      expect(mockSaveTasks).toHaveBeenCalled();
-      const savedCall = mockSaveTasks.mock.calls[0];
+      expect(mockAdapter.getTasks).toHaveBeenCalledWith(dateKey);
+      expect(mockAdapter.putTasks).toHaveBeenCalled();
+      const savedCall = mockAdapter.putTasks.mock.calls[0];
       expect(savedCall[0]).toBe(dateKey);
       const savedTasks = savedCall[1];
 
@@ -173,13 +175,13 @@ describe("LocalTaskRepository", () => {
 
       const tasks = [...todoTasks, ...completedTasks];
 
-      mockLoadTasks.mockResolvedValue(tasks);
+      mockAdapter.getTasks.mockResolvedValue(tasks);
 
       await repository.reorder(dateKey, 0, 1);
 
-      expect(mockLoadTasks).toHaveBeenCalledWith(dateKey);
-      expect(mockSaveTasks).toHaveBeenCalled();
-      const savedCall = mockSaveTasks.mock.calls[0];
+      expect(mockAdapter.getTasks).toHaveBeenCalledWith(dateKey);
+      expect(mockAdapter.putTasks).toHaveBeenCalled();
+      const savedCall = mockAdapter.putTasks.mock.calls[0];
       const savedTasks = savedCall[1];
 
       // Todo tasks should have order 0, 1
@@ -208,11 +210,11 @@ describe("LocalTaskRepository", () => {
         order: index,
       }));
 
-      mockLoadTasks.mockResolvedValue(tasks);
+      mockAdapter.getTasks.mockResolvedValue(tasks);
 
       await repository.reorder(dateKey, 0, 1);
 
-      const savedCall = mockSaveTasks.mock.calls[0];
+      const savedCall = mockAdapter.putTasks.mock.calls[0];
       const savedTasks = savedCall[1];
 
       // Task 2 should now be first
@@ -232,12 +234,12 @@ describe("LocalTaskRepository", () => {
 
       await repository.move(task, "2024-01-01", "2024-01-02");
 
-      expect(mockMoveTask).toHaveBeenCalledWith(
+      expect(mockAdapter.moveTask).toHaveBeenCalledWith(
         task,
         "2024-01-01",
         "2024-01-02",
       );
-      expect(mockMoveTask).toHaveBeenCalledTimes(1);
+      expect(mockAdapter.moveTask).toHaveBeenCalledTimes(1);
     });
   });
 });

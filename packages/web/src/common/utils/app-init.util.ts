@@ -1,26 +1,26 @@
 import { toast } from "react-toastify";
-import { initializeDatabase } from "@web/common/utils/storage/db-init.util";
-import { migrateTasksFromLocalStorageToIndexedDB } from "@web/common/utils/storage/task-migration.util";
+import { initializeStorage } from "@web/common/storage/adapter";
 import { DatabaseInitError } from "./storage/db-errors.util";
 
 export interface AppInitResult {
   dbInitError: DatabaseInitError | null;
-  tasksMigrated: number;
 }
 
 /**
- * Initialize the database for the application.
+ * Initialize storage for the application.
+ *
+ * This:
+ * 1. Initializes the storage adapter (IndexedDB with Dexie schema migrations)
+ * 2. Runs data migrations (storage-agnostic transformations)
+ * 3. Runs external migrations (imports from localStorage, etc.)
+ *
  * Returns any initialization error so the caller can handle it appropriately.
  */
 export async function initializeDatabaseWithErrorHandling(): Promise<AppInitResult> {
   let dbInitError: DatabaseInitError | null = null;
-  let tasksMigrated = 0;
 
   try {
-    await initializeDatabase();
-
-    // After database is ready, migrate tasks from localStorage to IndexedDB
-    tasksMigrated = await migrateTasksFromLocalStorageToIndexedDB();
+    await initializeStorage();
   } catch (error) {
     if (error instanceof DatabaseInitError) {
       dbInitError = error;
@@ -29,7 +29,7 @@ export async function initializeDatabaseWithErrorHandling(): Promise<AppInitResu
     // by falling back to remote-only mode when authenticated
   }
 
-  return { dbInitError, tasksMigrated };
+  return { dbInitError };
 }
 
 /**
