@@ -44,7 +44,6 @@ export function useAvailableTasks() {
 
     // Listen for storage changes to reload tasks (cross-tab synchronization)
     const handleStorageChange = (event: StorageEvent) => {
-      console.log("handleStorageChange", event);
       if (!event.key || event.key.startsWith(TODAY_TASKS_STORAGE_KEY_PREFIX)) {
         reloadTasks();
       }

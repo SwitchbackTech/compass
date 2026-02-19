@@ -1,4 +1,7 @@
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
+import { clearCompassLocalDb } from "@web/__tests__/utils/storage/indexeddb.test.util";
+import { compassLocalDB } from "./compass-local.db";
+import { resetDatabaseInitialization } from "./db-init.util";
 import {
   hasTaskMigrationCompleted,
   migrateTasksFromLocalStorageToIndexedDB,
@@ -7,11 +10,57 @@ import {
 import {
   clearAllTasksFromIndexedDB,
   loadAllTasksFromIndexedDB,
+  loadTasksFromIndexedDB,
+  saveTasksToIndexedDB,
 } from "./task.storage.util";
 
 describe("task-migration.util", () => {
   const TASK_STORAGE_KEY_PREFIX = "compass.today.tasks.";
   const MIGRATION_FLAG_KEY = "compass.tasks.migrated-to-indexeddb";
+  const COMPASS_LOCAL_DB_NAME = "compass-local";
+
+  async function createLegacySchemaDatabase(
+    tasks: Array<Record<string, unknown>> = [],
+  ): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open(COMPASS_LOCAL_DB_NAME, 2);
+
+      request.onupgradeneeded = () => {
+        const db = request.result;
+
+        if (!db.objectStoreNames.contains("events")) {
+          const eventsStore = db.createObjectStore("events", {
+            keyPath: "_id",
+          });
+          eventsStore.createIndex("startDate", "startDate", { unique: false });
+          eventsStore.createIndex("endDate", "endDate", { unique: false });
+          eventsStore.createIndex("isSomeday", "isSomeday", { unique: false });
+        }
+
+        if (!db.objectStoreNames.contains("tasks")) {
+          const tasksStore = db.createObjectStore("tasks", { keyPath: "id" });
+          tasksStore.createIndex("dateKey", "dateKey", { unique: false });
+          tasksStore.createIndex("status", "status", { unique: false });
+          tasksStore.createIndex("order", "order", { unique: false });
+        }
+      };
+
+      request.onsuccess = () => {
+        const db = request.result;
+        const transaction = db.transaction("tasks", "readwrite");
+        const tasksStore = transaction.objectStore("tasks");
+
+        tasks.forEach((task) => tasksStore.put(task));
+
+        transaction.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        transaction.onerror = () => reject(transaction.error);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
 
   beforeEach(async () => {
     // Clear IndexedDB
@@ -217,6 +266,43 @@ describe("task-migration.util", () => {
       expect(allTasks).toHaveLength(1);
       expect(allTasks[0]._id).toBe("legacy-task-id");
       expect(allTasks[0].title).toBe("Legacy Task");
+    });
+
+    it("should migrate legacy IndexedDB schema and allow saving new tasks", async () => {
+      const legacyTask = {
+        id: "legacy-task-id",
+        title: "Legacy Task",
+        status: "todo",
+        order: 0,
+        createdAt: new Date().toISOString(),
+        user: "user-1",
+        dateKey: "2024-01-15",
+      };
+
+      compassLocalDB.close();
+      resetDatabaseInitialization();
+      await clearCompassLocalDb();
+      await createLegacySchemaDatabase([legacyTask]);
+
+      localStorage.setItem(MIGRATION_FLAG_KEY, "true");
+
+      const migratedCount = await migrateTasksFromLocalStorageToIndexedDB();
+      expect(migratedCount).toBe(0);
+
+      const restoredLegacyTasks = await loadTasksFromIndexedDB("2024-01-15");
+      expect(restoredLegacyTasks).toHaveLength(1);
+      expect(restoredLegacyTasks[0]._id).toBe("legacy-task-id");
+
+      const newTask = createMockTask({
+        _id: "new-task-id",
+        title: "New Task",
+      });
+      await saveTasksToIndexedDB("2024-01-16", [newTask]);
+
+      const persistedNewTasks = await loadTasksFromIndexedDB("2024-01-16");
+      expect(persistedNewTasks).toHaveLength(1);
+      expect(persistedNewTasks[0]._id).toBe("new-task-id");
+      expect(persistedNewTasks[0].title).toBe("New Task");
     });
   });
 
