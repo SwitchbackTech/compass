@@ -4,23 +4,28 @@ import {
   Payload_Order,
   Schema_Event,
 } from "@core/types/event.types";
+import { isDateRangeOverlapping } from "@core/util/date/date.util";
 import dayjs from "@core/util/date/dayjs";
 import {
   createTestCompassEvent,
   createTestEvent,
 } from "@web/__tests__/utils/repositories/repository.test.factory";
+import * as storageAdapter from "@web/common/storage/adapter";
 import { LocalEventRepository } from "./local.event.repository";
 
 const mockEvents = new Map<string, Event_Core>();
 
-jest.mock("@web/common/utils/storage/event.storage.util", () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { isDateRangeOverlapping } = require("@core/util/date/date.util");
+function createMockAdapter() {
   return {
-    saveEventToIndexedDB: jest.fn(async (event: Event_Core) => {
-      mockEvents.set(event._id!, event);
-    }),
-    loadEventsFromIndexedDB: jest.fn(
+    initialize: jest.fn().mockResolvedValue(undefined),
+    isReady: jest.fn().mockReturnValue(true),
+    getTasks: jest.fn().mockResolvedValue([]),
+    getAllTasks: jest.fn().mockResolvedValue([]),
+    putTasks: jest.fn().mockResolvedValue(undefined),
+    deleteTask: jest.fn().mockResolvedValue(undefined),
+    moveTask: jest.fn().mockResolvedValue(undefined),
+    clearAllTasks: jest.fn().mockResolvedValue(undefined),
+    getEvents: jest.fn(
       async (startDate: string, endDate: string, isSomeday?: boolean) => {
         const allEvents = Array.from(mockEvents.values());
         let filtered = allEvents.filter((event) => {
@@ -39,31 +44,36 @@ jest.mock("@web/common/utils/storage/event.storage.util", () => {
         return filtered;
       },
     ),
-    deleteEventFromIndexedDB: jest.fn(async (id: string) => {
+    getAllEvents: jest.fn(async () => Array.from(mockEvents.values())),
+    putEvent: jest.fn(async (event: Event_Core) => {
+      mockEvents.set(event._id!, event);
+    }),
+    putEvents: jest.fn().mockResolvedValue(undefined),
+    deleteEvent: jest.fn(async (id: string) => {
       mockEvents.delete(id);
     }),
+    clearAllEvents: jest.fn().mockResolvedValue(undefined),
+    getMigrationRecords: jest.fn().mockResolvedValue([]),
+    setMigrationRecord: jest.fn().mockResolvedValue(undefined),
   };
-});
+}
 
-jest.mock("@web/common/utils/storage/compass-local.db", () => {
-  return {
-    compassLocalDB: {
-      events: {
-        toArray: jest.fn(async () => Array.from(mockEvents.values())),
-      },
-    },
-  };
-});
+jest.mock("@web/common/storage/adapter");
 
 describe("LocalEventRepository", () => {
   let repository: LocalEventRepository;
+  let mockAdapter: ReturnType<typeof createMockAdapter>;
 
   beforeEach(async () => {
-    repository = new LocalEventRepository();
     mockEvents.clear();
+    mockAdapter = createMockAdapter();
+    (storageAdapter.getStorageAdapter as jest.Mock).mockReturnValue(
+      mockAdapter,
+    );
+    repository = new LocalEventRepository();
   });
 
-  afterEach(async () => {
+  afterEach(() => {
     mockEvents.clear();
   });
 

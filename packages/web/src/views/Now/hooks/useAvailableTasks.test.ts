@@ -158,8 +158,10 @@ describe("useAvailableTasks", () => {
     });
 
     act(() => {
-      dispatchStorageEvent(
-        `${storageUtil.TODAY_TASKS_STORAGE_KEY_PREFIX}.${mockDateKey}`,
+      window.dispatchEvent(
+        new CustomEvent(storageUtil.COMPASS_TASKS_SAVED_EVENT_NAME, {
+          detail: { dateKey: mockDateKey },
+        }),
       );
     });
 
@@ -206,7 +208,11 @@ describe("useAvailableTasks", () => {
     });
 
     act(() => {
-      dispatchStorageEvent(null);
+      window.dispatchEvent(
+        new CustomEvent(storageUtil.COMPASS_TASKS_SAVED_EVENT_NAME, {
+          detail: { dateKey: mockDateKey },
+        }),
+      );
     });
 
     await waitFor(() => {
