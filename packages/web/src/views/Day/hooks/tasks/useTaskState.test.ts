@@ -99,16 +99,14 @@ describe("useTaskState", () => {
       expect(result.current.isLoadingTasks).toBe(false);
     });
 
+    const localTask = createMockTask({ _id: "task-1", title: "Local task" });
+
     act(() => {
-      result.current.setTasks([
-        createMockTask({ _id: "task-1", title: "Local task" }),
-      ]);
+      result.current.setTasks([localTask]);
     });
 
     await waitFor(() => {
-      expect(saveTasksMock).toHaveBeenCalledWith(dayOneKey, [
-        createMockTask({ _id: "task-1", title: "Local task" }),
-      ]);
+      expect(saveTasksMock).toHaveBeenCalledWith(dayOneKey, [localTask]);
     });
 
     saveTasksMock.mockClear();
@@ -132,7 +130,7 @@ describe("useTaskState", () => {
   });
 
   it("does not save empty tasks after a load failure", async () => {
-    loadTasksMock.mockRejectedValueOnce(new Error("load failed"));
+    loadTasksMock.mockRejectedValue(new Error("load failed"));
     const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
 
     const { result } = renderHook(() =>
