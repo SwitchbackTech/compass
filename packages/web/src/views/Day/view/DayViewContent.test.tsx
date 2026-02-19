@@ -1,7 +1,6 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
-import { addTasks } from "@web/__tests__/utils/tasks/task.test.util";
 import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
 import { DayViewContent } from "@web/views/Day/view/DayViewContent";
 
@@ -29,6 +28,37 @@ jest.mock("../hooks/shortcuts/useDayViewShortcuts", () => {
 });
 
 describe("TodayViewContent", () => {
+  const addTask = async (
+    user: ReturnType<typeof renderWithDayProviders>["user"],
+    title: string,
+    expectedCount = 1,
+  ) => {
+    const addTaskButton = await screen.findByRole("button", {
+      name: "Create new task",
+    });
+    await act(async () => {
+      await user.click(addTaskButton);
+    });
+
+    const addTaskInput = await screen.findByRole("textbox", {
+      name: "Task title",
+    });
+    await act(async () => {
+      await user.clear(addTaskInput);
+      await user.type(addTaskInput, title);
+      await user.keyboard("{Enter}");
+    });
+
+    await screen.findAllByRole("checkbox", {
+      name: `Toggle ${title}`,
+    });
+    expect(
+      screen.getAllByRole("checkbox", {
+        name: `Toggle ${title}`,
+      }).length,
+    ).toBeGreaterThanOrEqual(expectedCount);
+  };
+
   beforeEach(() => {
     mockUseTodayViewShortcuts.mockReset();
     // Set up the mock to call the real implementation
@@ -148,7 +178,7 @@ describe("TodayViewContent", () => {
   it("should delete task when Delete key is pressed on focused checkbox", async () => {
     const { user } = renderWithDayProviders(<DayViewContent />);
 
-    await addTasks(user, ["Test task"]);
+    await addTask(user, "Test task");
 
     // Find the task checkbox and focus on it
     const taskCheckbox = await screen.findByRole("checkbox", {
@@ -175,7 +205,7 @@ describe("TodayViewContent", () => {
     const { user } = renderWithDayProviders(<DayViewContent />);
 
     // Add a task
-    await addTasks(user, ["Test task"]);
+    await addTask(user, "Test task");
 
     // Click on the task input to edit it
     const taskEditInput = screen.getByDisplayValue("Test task");
@@ -198,10 +228,10 @@ describe("TodayViewContent", () => {
       const { user } = renderWithDayProviders(<DayViewContent />);
 
       // Add first task
-      await addTasks(user, ["Buy milk"]);
+      await addTask(user, "Buy milk", 1);
 
       // Add second task with same name
-      await addTasks(user, ["Buy milk"]);
+      await addTask(user, "Buy milk", 2);
 
       // Get both checkboxes and identify them by their data-task-id
       const checkboxes = screen.getAllByRole("checkbox", {

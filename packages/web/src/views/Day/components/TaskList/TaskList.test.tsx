@@ -5,6 +5,7 @@ import { clearCompassLocalDb } from "@web/__tests__/utils/storage/indexeddb.test
 import {
   addTasks,
   clickCreateTaskButton,
+  waitForTaskListReady,
 } from "@web/__tests__/utils/tasks/task.test.util";
 import { renderWithDayProviders } from "../../util/day.test-util";
 import { TaskList } from "./TaskList";
@@ -55,10 +56,7 @@ describe("TaskList", () => {
   it("should not add empty task", async () => {
     const { user } = renderWithDayProviders(<TaskList />);
 
-    const addButton = await screen.findByText("Create task");
-    await act(async () => {
-      await user.click(addButton);
-    });
+    await clickCreateTaskButton(user);
 
     await act(async () => {
       await user.keyboard("{Enter}");
@@ -77,10 +75,7 @@ describe("TaskList", () => {
   it("should cancel adding task on Escape", async () => {
     const { user } = renderWithDayProviders(<TaskList />);
 
-    const addButton = await screen.findByText("Create task");
-    await act(async () => {
-      await user.click(addButton);
-    });
+    await clickCreateTaskButton(user);
 
     const input = screen.getByPlaceholderText("Enter task title...");
     await act(async () => {
@@ -296,6 +291,7 @@ describe("TaskList", () => {
 
   it("should activate add task input when pressing Enter on Add task button after tabbing", async () => {
     const { user } = renderWithDayProviders(<TaskList />);
+    await waitForTaskListReady();
 
     // Now tab to the Add task button
     const addTaskButton = await screen.findByRole("button", {

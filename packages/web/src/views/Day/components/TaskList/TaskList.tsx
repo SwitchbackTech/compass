@@ -18,7 +18,6 @@ export function TaskList() {
 
   useTaskListInputFocus({
     isAddingTask,
-    isLoadingTasks,
     addTaskInputRef,
   });
 
@@ -73,7 +72,7 @@ export function TaskList() {
         </TaskContextMenuWrapper>
 
         <div className="mr-4 ml-2">
-          {isAddingTask && !isLoadingTasks ? (
+          {isAddingTask ? (
             <AddTaskActiveButton
               newTaskTitle={newTaskTitle}
               setNewTaskTitle={setNewTaskTitle}

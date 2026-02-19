@@ -3,6 +3,7 @@ import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { clearCompassLocalDb } from "@web/__tests__/utils/storage/indexeddb.test.util";
+import { addTasks } from "@web/__tests__/utils/tasks/task.test.util";
 import { renderWithDayProviders } from "../../util/day.test-util";
 import { TaskList } from "../TaskList/TaskList";
 
@@ -24,15 +25,7 @@ describe("TaskContextMenu", () => {
     const user = userEvent.setup();
     renderWithDayProviders(<TaskList />);
 
-    // Add a task first
-    const addButton = await screen.findByText("Create task");
-    await act(async () => {
-      await user.click(addButton);
-    });
-    const input = await screen.findByPlaceholderText("Enter task title...");
-    await act(async () => {
-      await user.type(input, "Test task{Enter}");
-    });
+    await addTasks(user, ["Test task"]);
 
     await waitFor(() => {
       expect(screen.getByDisplayValue("Test task")).toBeInTheDocument();
@@ -56,15 +49,7 @@ describe("TaskContextMenu", () => {
     const user = userEvent.setup();
     renderWithDayProviders(<TaskList />);
 
-    // Add a task
-    const addButton = await screen.findByText("Create task");
-    await act(async () => {
-      await user.click(addButton);
-    });
-    const input = await screen.findByPlaceholderText("Enter task title...");
-    await act(async () => {
-      await user.type(input, "Test task{Enter}");
-    });
+    await addTasks(user, ["Test task"]);
 
     await waitFor(() => {
       expect(screen.getByDisplayValue("Test task")).toBeInTheDocument();
@@ -87,15 +72,7 @@ describe("TaskContextMenu", () => {
   it("should remove task from list when Delete Task is clicked", async () => {
     const { user } = renderWithDayProviders(<TaskList />);
 
-    // Add a task
-    const addButton = await screen.findByText("Create task");
-    await act(async () => {
-      await user.click(addButton);
-    });
-    const input = await screen.findByPlaceholderText("Enter task title...");
-    await act(async () => {
-      await user.type(input, "Task to delete{Enter}");
-    });
+    await addTasks(user, ["Task to delete"]);
 
     await waitFor(() => {
       expect(screen.getByDisplayValue("Task to delete")).toBeInTheDocument();
@@ -128,15 +105,7 @@ describe("TaskContextMenu", () => {
   it("should close menu when clicking outside", async () => {
     const { user } = renderWithDayProviders(<TaskList />);
 
-    // Add a task
-    const addButton = await screen.findByText("Create task");
-    await act(async () => {
-      await user.click(addButton);
-    });
-    const input = await screen.findByPlaceholderText("Enter task title...");
-    await act(async () => {
-      await user.type(input, "Test task{Enter}");
-    });
+    await addTasks(user, ["Test task"]);
 
     await waitFor(() => {
       expect(screen.getByDisplayValue("Test task")).toBeInTheDocument();
@@ -168,15 +137,7 @@ describe("TaskContextMenu", () => {
   it("should close menu when pressing Escape key", async () => {
     const { user } = renderWithDayProviders(<TaskList />);
 
-    // Add a task
-    const addButton = await screen.findByText("Create task");
-    await act(async () => {
-      await user.click(addButton);
-    });
-    const input = await screen.findByPlaceholderText("Enter task title...");
-    await act(async () => {
-      await user.type(input, "Test task{Enter}");
-    });
+    await addTasks(user, ["Test task"]);
 
     await waitFor(() => {
       expect(screen.getByDisplayValue("Test task")).toBeInTheDocument();
@@ -220,28 +181,7 @@ describe("TaskContextMenu", () => {
   it("should work with multiple tasks", async () => {
     const { user } = renderWithDayProviders(<TaskList />);
 
-    // Add two tasks
-    const addButton = await screen.findByText("Create task");
-    await act(async () => {
-      await user.click(addButton);
-    });
-    const input = await screen.findByPlaceholderText("Enter task title...");
-    await act(async () => {
-      await user.type(input, "First task{Enter}");
-    });
-
-    await waitFor(() => {
-      expect(screen.getByDisplayValue("First task")).toBeInTheDocument();
-    });
-
-    const addButton2 = await screen.findByText("Create task");
-    await act(async () => {
-      await user.click(addButton2);
-    });
-    const input2 = await screen.findByPlaceholderText("Enter task title...");
-    await act(async () => {
-      await user.type(input2, "Second task{Enter}");
-    });
+    await addTasks(user, ["First task", "Second task"]);
 
     await waitFor(() => {
       expect(screen.getByDisplayValue("Second task")).toBeInTheDocument();
