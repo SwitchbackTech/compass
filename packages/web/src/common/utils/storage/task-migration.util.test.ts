@@ -195,6 +195,29 @@ describe("task-migration.util", () => {
       expect(allTasks).toHaveLength(1);
       expect(allTasks[0].title).toBe("Valid Task");
     });
+
+    it("should migrate legacy tasks with id mapped to _id", async () => {
+      const task = createMockTask({
+        _id: "legacy-task-id",
+        title: "Legacy Task",
+      });
+      const { _id, ...rest } = task;
+      const legacyTask = { ...rest, id: _id };
+
+      localStorage.setItem(
+        `${TASK_STORAGE_KEY_PREFIX}2024-01-15`,
+        JSON.stringify([legacyTask]),
+      );
+
+      const migratedCount = await migrateTasksFromLocalStorageToIndexedDB();
+
+      expect(migratedCount).toBe(1);
+
+      const allTasks = await loadAllTasksFromIndexedDB();
+      expect(allTasks).toHaveLength(1);
+      expect(allTasks[0]._id).toBe("legacy-task-id");
+      expect(allTasks[0].title).toBe("Legacy Task");
+    });
   });
 
   describe("resetTaskMigrationFlag", () => {

@@ -5,6 +5,29 @@ import { saveTaskToIndexedDB } from "./task.storage.util";
 const MIGRATION_FLAG_KEY = "compass.tasks.migrated-to-indexeddb";
 const TASK_STORAGE_KEY_PREFIX = "compass.today.tasks.";
 
+function normalizeLegacyTask(item: unknown): Task | null {
+  if (isTask(item)) {
+    return item;
+  }
+
+  if (!item || typeof item !== "object") {
+    return null;
+  }
+
+  const legacyTask = item as Record<string, unknown> & { id?: unknown };
+  if (typeof legacyTask.id !== "string") {
+    return null;
+  }
+
+  const { id, ...rest } = legacyTask;
+  const mappedTask = {
+    ...rest,
+    _id: id,
+  };
+
+  return isTask(mappedTask) ? mappedTask : null;
+}
+
 /**
  * Checks if task migration from localStorage to IndexedDB has been completed.
  */
@@ -69,13 +92,15 @@ export async function migrateTasksFromLocalStorageToIndexedDB(): Promise<number>
         // in localStorage so successful migrations are not duplicated on retry.
         const remainingTasks: Task[] = [];
         for (const item of parsed) {
-          if (isTask(item)) {
+          const normalizedTask = normalizeLegacyTask(item);
+
+          if (normalizedTask) {
             try {
-              await saveTaskToIndexedDB(item, dateKey);
+              await saveTaskToIndexedDB(normalizedTask, dateKey);
               migratedCount++;
             } catch (saveError) {
               hasSaveFailures = true;
-              remainingTasks.push(item);
+              remainingTasks.push(normalizedTask);
               console.error(
                 `Failed to save task to IndexedDB for dateKey: ${dateKey}`,
                 saveError,
