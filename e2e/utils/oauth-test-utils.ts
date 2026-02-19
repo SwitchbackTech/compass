@@ -1,19 +1,16 @@
 import { Page, expect } from "@playwright/test";
-import { ONBOARDING_STATE } from "./test-constants";
 
 /**
  * Sets up the page for OAuth overlay testing.
- * - Skips onboarding
  * - Exposes test hooks for session state manipulation
  * - Mocks API endpoints
  */
 export const prepareOAuthTestPage = async (page: Page) => {
-  // Enable test mode and skip onboarding before app loads
-  await page.addInitScript((onboardingState) => {
+  // Enable test mode before app loads
+  await page.addInitScript(() => {
     // Enable e2e test mode - this exposes test hooks in the app
     (window as any).__COMPASS_E2E_TEST__ = true;
-    localStorage.setItem("compass.onboarding", JSON.stringify(onboardingState));
-  }, ONBOARDING_STATE);
+  });
 
   // Mock API endpoints to prevent real network calls
   await page.route("**/api/**", (route) => {

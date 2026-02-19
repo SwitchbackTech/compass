@@ -2,7 +2,6 @@ import { LoaderFunctionArgs, redirect } from "react-router-dom";
 import { zYearMonthDayString } from "@core/types/type.utils";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { getOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 export interface DayLoaderData {
   dateInView: Dayjs; // in UTC
@@ -21,16 +20,6 @@ export async function loadLogoutData() {
   const { authenticated } = await loadAuthenticated();
 
   return { authenticated };
-}
-
-export async function loadOnboardingStatus() {
-  const { authenticated } = await loadAuthenticated();
-  const {
-    isOnboardingSkipped: skipOnboarding,
-    isSignupComplete: hasCompletedSignup,
-  } = getOnboardingProgress();
-
-  return { authenticated, skipOnboarding, hasCompletedSignup };
 }
 
 export function loadTodayData(): DayLoaderData {

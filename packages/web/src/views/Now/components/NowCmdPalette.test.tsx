@@ -2,8 +2,6 @@ import { fireEvent, screen } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { NowCmdPalette } from "@web/views/Now/components/NowCmdPalette";
-import { ONBOARDING_RESTART_EVENT } from "@web/views/Onboarding/constants/onboarding.constants";
-import { resetOnboardingProgress } from "@web/views/Onboarding/utils/onboarding.storage.util";
 
 // Mock pressKey
 jest.mock("@web/common/utils/dom/event-emitter.util", () => ({
@@ -13,12 +11,6 @@ jest.mock("@web/common/utils/dom/event-emitter.util", () => ({
 // Mock onEventTargetVisibility
 jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
   onEventTargetVisibility: (cb: () => void) => () => cb(),
-}));
-
-// Mock resetOnboardingProgress
-jest.mock("@web/views/Onboarding/utils/onboarding.storage.util", () => ({
-  ...jest.requireActual("@web/views/Onboarding/utils/onboarding.storage.util"),
-  resetOnboardingProgress: jest.fn(),
 }));
 
 // Mock useSession for auth state tests
@@ -75,7 +67,6 @@ describe("NowCmdPalette", () => {
     expect(screen.getByText("Go to Day [d]")).toBeInTheDocument();
     expect(screen.getByText("Go to Week [w]")).toBeInTheDocument();
     expect(screen.getByText("Edit Reminder [r]")).toBeInTheDocument();
-    expect(screen.getByText("Re-do onboarding")).toBeInTheDocument();
     expect(screen.getByText("Log Out [z]")).toBeInTheDocument();
   });
 
@@ -101,19 +92,6 @@ describe("NowCmdPalette", () => {
     render(<NowCmdPalette />, { state: initialState });
     fireEvent.click(screen.getByText("Log Out [z]"));
     expect(pressKey).toHaveBeenCalledWith("z");
-  });
-
-  it("should reset onboarding and dispatch restart event when 'Re-do onboarding' is clicked", () => {
-    const mockDispatchEvent = jest.spyOn(window, "dispatchEvent");
-    render(<NowCmdPalette />, { state: initialState });
-    fireEvent.click(screen.getByText("Re-do onboarding"));
-    expect(resetOnboardingProgress).toHaveBeenCalled();
-    expect(mockDispatchEvent).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: ONBOARDING_RESTART_EVENT,
-      }),
-    );
-    mockDispatchEvent.mockRestore();
   });
 
   describe("Google Calendar authentication status", () => {

@@ -1,5 +1,4 @@
 import { type Locator, type Page, expect } from "@playwright/test";
-import { ONBOARDING_STATE } from "./test-constants";
 
 type SomedaySection = "week" | "month";
 
@@ -101,10 +100,6 @@ export const updateEventTitle = (prefix: string) =>
   `${prefix} Updated ${Date.now()}`;
 
 export const prepareCalendarPage = async (page: Page) => {
-  await page.addInitScript((value) => {
-    localStorage.setItem("compass.onboarding", JSON.stringify(value));
-  }, ONBOARDING_STATE);
-
   await page.goto("/week", { waitUntil: "networkidle" });
 
   // Wait for React app to mount by checking for root element with content

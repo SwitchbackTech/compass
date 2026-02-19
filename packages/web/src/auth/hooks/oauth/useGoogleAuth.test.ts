@@ -1,11 +1,8 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
-import { useIsSignupComplete } from "@web/auth/hooks/onboarding/useIsSignupComplete";
-import { useSkipOnboarding } from "@web/auth/hooks/onboarding/useSkipOnboarding";
 import { useSession } from "@web/auth/hooks/session/useSession";
 import {
   authenticate,
-  fetchOnboardingStatus,
   syncLocalEvents,
 } from "@web/common/utils/auth/google-auth.util";
 import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
@@ -15,8 +12,6 @@ import { SignInUpInput } from "@web/components/oauth/ouath.types";
 // Mock dependencies
 jest.mock("@web/common/utils/auth/google-auth.util");
 jest.mock("@web/auth/hooks/session/useSession");
-jest.mock("@web/auth/hooks/onboarding/useIsSignupComplete");
-jest.mock("@web/auth/hooks/onboarding/useSkipOnboarding");
 jest.mock("@web/components/oauth/google/useGoogleLogin");
 jest.mock("@web/common/utils/storage/auth-state.util");
 jest.mock("@web/store/store.hooks", () => ({
@@ -36,19 +31,10 @@ jest.mock("react-toastify", () => ({
 const mockAuthenticate = authenticate as jest.MockedFunction<
   typeof authenticate
 >;
-const mockFetchOnboardingStatus = fetchOnboardingStatus as jest.MockedFunction<
-  typeof fetchOnboardingStatus
->;
 const mockSyncLocalEvents = syncLocalEvents as jest.MockedFunction<
   typeof syncLocalEvents
 >;
 const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
-const mockUseIsSignupComplete = useIsSignupComplete as jest.MockedFunction<
-  typeof useIsSignupComplete
->;
-const mockUseSkipOnboarding = useSkipOnboarding as jest.MockedFunction<
-  typeof useSkipOnboarding
->;
 const mockUseGoogleLogin = useGoogleLogin as jest.MockedFunction<
   typeof useGoogleLogin
 >;
@@ -61,8 +47,6 @@ const mockMarkUserAsAuthenticated =
 
 describe("useGoogleAuth", () => {
   const mockSetAuthenticated = jest.fn();
-  const mockMarkSignupCompleted = jest.fn();
-  const mockUpdateOnboardingStatus = jest.fn();
   const mockLogin = jest.fn();
   const originalConsoleError = console.error;
   let mockDispatchFn: jest.Mock;
@@ -78,16 +62,7 @@ describe("useGoogleAuth", () => {
       setAuthenticated: mockSetAuthenticated,
       authenticated: false,
     });
-    mockUseIsSignupComplete.mockReturnValue({
-      markSignupCompleted: mockMarkSignupCompleted,
-      isSignupComplete: false,
-    });
-    mockUseSkipOnboarding.mockReturnValue({
-      updateOnboardingStatus: mockUpdateOnboardingStatus,
-      skipOnboarding: false,
-    });
     mockAuthenticate.mockResolvedValue({ success: true });
-    mockFetchOnboardingStatus.mockResolvedValue({ skipOnboarding: true });
     mockSyncLocalEvents.mockResolvedValue({ syncedCount: 0, success: true });
   });
 
@@ -331,57 +306,6 @@ describe("useGoogleAuth", () => {
       // Should not proceed with auth flow
       expect(mockMarkUserAsAuthenticated).not.toHaveBeenCalled();
       expect(mockSetAuthenticated).not.toHaveBeenCalled();
-    });
-
-    it("clears import flow when other operations throw errors after OAuth succeeds", async () => {
-      mockAuthenticate.mockResolvedValue({ success: true });
-      const fetchError = new Error("Failed to fetch onboarding status");
-      mockFetchOnboardingStatus.mockRejectedValue(fetchError);
-
-      let onSuccessCallback:
-        | ((data: SignInUpInput) => Promise<void>)
-        | undefined;
-
-      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
-        onSuccessCallback = onSuccess;
-        return {
-          login: mockLogin,
-          loading: false,
-          data: null,
-        };
-      });
-
-      renderHook(() => useGoogleAuth());
-
-      if (onSuccessCallback) {
-        await onSuccessCallback({
-          clientType: "web",
-          thirdPartyId: "google",
-          redirectURIInfo: {
-            redirectURIOnProviderDashboard: "",
-            redirectURIQueryParams: {
-              code: "test-auth-code",
-              scope: "email profile",
-              state: undefined,
-            },
-          },
-        });
-      }
-
-      await waitFor(() => {
-        expect(mockAuthenticate).toHaveBeenCalled();
-      });
-
-      expect(mockDispatchFn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "async/importGCal/setAwaitingImportResults",
-          payload: false,
-        }),
-      );
-
-      // Authentication succeeded, so these should be called
-      expect(mockMarkUserAsAuthenticated).toHaveBeenCalled();
-      expect(mockSetAuthenticated).toHaveBeenCalled();
     });
   });
 });
