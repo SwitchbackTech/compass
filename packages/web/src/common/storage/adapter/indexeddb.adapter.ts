@@ -6,6 +6,11 @@ import {
   normalizeTask,
   normalizeTasks,
 } from "@web/common/types/task.types";
+import {
+  deleteCompassLocalDb,
+  extractDataFromLegacySchema,
+  isPrimaryKeyUpgradeError,
+} from "./legacy-primary-key.migration";
 import { MigrationRecord, StorageAdapter, StoredTask } from "./storage.adapter";
 
 /**
@@ -58,8 +63,46 @@ export class IndexedDBAdapter implements StorageAdapter {
       return;
     }
 
-    await this.db.open();
+    try {
+      await this.db.open();
+    } catch (error) {
+      if (!isPrimaryKeyUpgradeError(error)) {
+        throw error;
+      }
+
+      await this.migrateFromLegacyPrimaryKey();
+    }
+
     this.initialized = true;
+  }
+
+  /**
+   * Handle UpgradeError from legacy DB where tasks used "id" instead of "_id".
+   * Read data with legacy schema, delete DB, re-open with current schema, re-insert.
+   */
+  private async migrateFromLegacyPrimaryKey(): Promise<void> {
+    const { events, tasks } = await extractDataFromLegacySchema();
+    await deleteCompassLocalDb();
+    await this.db.open();
+
+    if (events.length > 0 || tasks.length > 0) {
+      await this.db.transaction(
+        "rw",
+        this.db.events,
+        this.db.tasks,
+        async () => {
+          if (events.length > 0) {
+            await this.db.events.bulkPut(events);
+          }
+          if (tasks.length > 0) {
+            await this.db.tasks.bulkPut(tasks);
+          }
+        },
+      );
+      console.log(
+        `[Migration] Migrated ${events.length} events and ${tasks.length} tasks from legacy primary key schema`,
+      );
+    }
   }
 
   isReady(): boolean {

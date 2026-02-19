@@ -8,6 +8,7 @@ import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { createTestEvent } from "@web/__tests__/utils/repositories/repository.test.factory";
 import { clearCompassLocalDb } from "@web/__tests__/utils/storage/indexeddb.test.util";
 import { IndexedDBAdapter } from "./indexeddb.adapter";
+import { LegacyCompassDB } from "./legacy-primary-key.migration";
 
 describe("IndexedDBAdapter", () => {
   let adapter: IndexedDBAdapter;
@@ -33,6 +34,49 @@ describe("IndexedDBAdapter", () => {
       await adapter.initialize();
 
       expect(adapter.isReady()).toBe(true);
+    });
+
+    it("migrates from legacy schema (tasks keyed by id) to _id", async () => {
+      const legacyDb = new LegacyCompassDB();
+      await legacyDb.open();
+
+      await legacyDb.tasks.bulkAdd([
+        {
+          id: "legacy-task-1",
+          title: "Legacy Task 1",
+          status: "todo",
+          order: 0,
+          createdAt: new Date().toISOString(),
+          user: "user-1",
+          dateKey: "2025-01-15",
+        },
+        {
+          id: "legacy-task-2",
+          title: "Legacy Task 2",
+          status: "todo",
+          order: 1,
+          createdAt: new Date().toISOString(),
+          user: "user-1",
+          dateKey: "2025-01-15",
+        },
+      ]);
+
+      legacyDb.close();
+
+      const migratedAdapter = new IndexedDBAdapter();
+      await migratedAdapter.initialize();
+
+      const tasks = await migratedAdapter.getTasks("2025-01-15");
+
+      expect(tasks).toHaveLength(2);
+      expect(tasks.map((t) => t._id)).toEqual([
+        "legacy-task-1",
+        "legacy-task-2",
+      ]);
+      expect(tasks.map((t) => t.title)).toEqual([
+        "Legacy Task 1",
+        "Legacy Task 2",
+      ]);
     });
   });
 
