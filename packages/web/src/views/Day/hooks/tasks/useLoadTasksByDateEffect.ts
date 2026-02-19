@@ -1,10 +1,12 @@
 import { Dispatch, MutableRefObject, SetStateAction, useEffect } from "react";
+import { TaskRepository } from "@web/common/repositories/task/task.repository";
+import { ensureStorageReady } from "@web/common/storage/adapter/adapter";
 import { Task } from "@web/common/types/task.types";
-import { loadTasksFromIndexedDB } from "@web/common/utils/storage/task.storage.util";
 import { sortTasksByStatus } from "@web/common/utils/task/sort.task";
 
 interface UseLoadTasksByDateEffectProps {
   dateKey: string;
+  taskRepository: TaskRepository;
   setTasksState: Dispatch<SetStateAction<Task[]>>;
   setIsLoadingTasks: Dispatch<SetStateAction<boolean>>;
   setDidLoadFail: Dispatch<SetStateAction<boolean>>;
@@ -15,6 +17,7 @@ interface UseLoadTasksByDateEffectProps {
 
 export function useLoadTasksByDateEffect({
   dateKey,
+  taskRepository,
   setTasksState,
   setIsLoadingTasks,
   setDidLoadFail,
@@ -33,7 +36,10 @@ export function useLoadTasksByDateEffect({
     setDidLoadFail(false);
     setIsLoadingTasks(true);
 
-    void loadTasksFromIndexedDB(dateKey)
+    void (async () => {
+      await ensureStorageReady();
+      return taskRepository.get(dateKey);
+    })()
       .then((loadedTasks) => {
         if (isCancelled || requestId !== loadRequestIdRef.current) return;
 
@@ -45,7 +51,7 @@ export function useLoadTasksByDateEffect({
       .catch((error) => {
         if (isCancelled || requestId !== loadRequestIdRef.current) return;
 
-        console.error("Failed to load tasks from IndexedDB:", error);
+        console.error("Failed to load tasks from storage:", error);
         setTasksState([]);
         setLoadedDateKey(dateKey);
         setDidLoadFail(true);
@@ -57,6 +63,7 @@ export function useLoadTasksByDateEffect({
     };
   }, [
     dateKey,
+    taskRepository,
     isDirtyRef,
     loadRequestIdRef,
     setDidLoadFail,

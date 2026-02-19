@@ -4,10 +4,12 @@ import { Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import { session } from "@web/common/classes/Session";
+import {
+  ensureStorageReady,
+  getStorageAdapter,
+} from "@web/common/storage/adapter/adapter";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
-import { compassLocalDB } from "@web/common/utils/storage/compass-local.db";
-import { saveEventToIndexedDB } from "@web/common/utils/storage/event.storage.util";
 import { EventApi } from "@web/ducks/events/event.api";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { sagas } from "@web/store/sagas";
@@ -25,7 +27,8 @@ describe("getSomedayEvents saga", () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     try {
-      await compassLocalDB.events.clear();
+      await ensureStorageReady();
+      await getStorageAdapter().clearAllEvents();
     } catch (error) {
       console.error(error);
       // Expect errors if database doesn't exist yet
@@ -38,7 +41,7 @@ describe("getSomedayEvents saga", () => {
 
   afterEach(async () => {
     try {
-      await compassLocalDB.events.clear();
+      await getStorageAdapter().clearAllEvents();
     } catch (error) {
       console.error(error);
       // Expect errors if database doesn't exist yet
@@ -132,7 +135,7 @@ describe("getSomedayEvents saga", () => {
         user: "UNAUTHENTICATED_USER",
       };
 
-      await saveEventToIndexedDB(somedayEvent);
+      await getStorageAdapter().putEvent(somedayEvent);
 
       const action = getSomedayEventsSlice.actions.request({
         startDate,
@@ -210,8 +213,8 @@ describe("getSomedayEvents saga", () => {
         user: "UNAUTHENTICATED_USER",
       };
 
-      await saveEventToIndexedDB(thisMonthEvent);
-      await saveEventToIndexedDB(nextMonthEvent);
+      await getStorageAdapter().putEvent(thisMonthEvent);
+      await getStorageAdapter().putEvent(nextMonthEvent);
 
       const action = getSomedayEventsSlice.actions.request({
         startDate,
@@ -259,8 +262,8 @@ describe("getSomedayEvents saga", () => {
         user: "UNAUTHENTICATED_USER",
       };
 
-      await saveEventToIndexedDB(somedayEvent);
-      await saveEventToIndexedDB(regularEvent);
+      await getStorageAdapter().putEvent(somedayEvent);
+      await getStorageAdapter().putEvent(regularEvent);
 
       const action = getSomedayEventsSlice.actions.request({
         startDate,

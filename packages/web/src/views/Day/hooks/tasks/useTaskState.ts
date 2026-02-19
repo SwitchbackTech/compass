@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { TaskRepository } from "@web/common/repositories/task/task.repository";
 import { Task, UndoOperation } from "@web/common/types/task.types";
 import { getDateKey } from "@web/common/utils/storage/storage.util";
 import { useLoadTasksByDateEffect } from "@web/views/Day/hooks/tasks/useLoadTasksByDateEffect";
@@ -6,11 +7,13 @@ import { useSaveTasksByDateEffect } from "@web/views/Day/hooks/tasks/useSaveTask
 
 interface UseTaskStateProps {
   currentDate?: Date;
+  taskRepository: TaskRepository;
 }
 
 export function useTaskState({
   currentDate = new Date(),
-}: UseTaskStateProps = {}) {
+  taskRepository,
+}: UseTaskStateProps) {
   const [tasks, setTasksState] = useState<Task[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
   const [didLoadFail, setDidLoadFail] = useState(false);
@@ -39,6 +42,7 @@ export function useTaskState({
 
   useLoadTasksByDateEffect({
     dateKey,
+    taskRepository,
     setTasksState,
     setIsLoadingTasks,
     setDidLoadFail,
@@ -49,6 +53,7 @@ export function useTaskState({
   useSaveTasksByDateEffect({
     dateKey,
     tasks,
+    taskRepository,
     isLoadingTasks,
     didLoadFail,
     loadedDateKey,

@@ -51,10 +51,42 @@ export const expectTaskVisible = async (
   title: string,
   timeout = 10000,
 ) => {
-  // Tasks are rendered as inputs
-  await expect(page.locator(`input[value="${title}"]`)).toBeVisible({
+  await expect(
+    page.getByRole("textbox", { name: `Edit ${title}` }),
+  ).toBeVisible({
     timeout,
   });
+};
+
+export const expectTaskMissing = async (
+  page: Page,
+  title: string,
+  timeout = 10000,
+) => {
+  await expect(
+    page.getByRole("textbox", { name: `Edit ${title}` }),
+  ).toHaveCount(0, {
+    timeout,
+  });
+};
+
+export const deleteTaskWithKeyboard = async (page: Page, title: string) => {
+  const taskCheckbox = page.getByRole("checkbox", {
+    name: `Toggle ${title}`,
+  });
+
+  await expect(taskCheckbox).toBeVisible();
+  await taskCheckbox.focus();
+  await page.keyboard.press("Delete");
+};
+
+export const restoreDeletedTaskFromUndoToast = async (page: Page) => {
+  const undoDeleteText = page.getByText("Deleted").first();
+
+  await expect(undoDeleteText).toBeVisible();
+  await undoDeleteText.click();
+  await page.keyboard.press("Meta+z");
+  await page.keyboard.press("Control+z");
 };
 
 export const expectTaskSavedToIndexedDB = async (page: Page, title: string) => {

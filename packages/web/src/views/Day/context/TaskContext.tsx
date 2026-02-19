@@ -52,7 +52,10 @@ interface TaskProviderProps {
 export function TaskProvider({ children }: TaskProviderProps) {
   const { dateInView, navigateToNextDay, navigateToPreviousDay } =
     useDateNavigation();
-  const state = useTaskState({ currentDate: dateInView.toDate() });
+  const state = useTaskState({
+    currentDate: dateInView.toDate(),
+    taskRepository: localTaskRepository,
+  });
   const actions = useTaskActions({
     setTasks: state.setTasks,
     tasks: state.tasks,
