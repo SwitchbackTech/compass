@@ -67,7 +67,9 @@ export const CleanupView = () => {
         </div>
       )}
 
-      {error && <div className="p-8 text-center text-xl">{error}</div>}
+      {error && (
+        <div className="text-text-lighter p-8 text-center text-xl">{error}</div>
+      )}
     </div>
   );
 };
