@@ -4,6 +4,7 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { TaskRepository } from "@web/common/repositories/task/task.repository";
 import { Task } from "@web/common/types/task.types";
+import * as storageUtil from "@web/common/utils/storage/storage.util";
 import { showMigrationToast } from "@web/views/Day/components/Toasts/MigrationToast/MigrationToast";
 import { useTaskActions } from "./useTaskActions";
 
@@ -33,6 +34,7 @@ describe("useTaskActions - migration", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(storageUtil, "saveTaskToStorage").mockResolvedValue(undefined);
     mockTaskRepository.get.mockResolvedValue([]);
     mockTaskRepository.save.mockResolvedValue(undefined);
     mockTaskRepository.delete.mockResolvedValue(undefined);
@@ -183,9 +185,10 @@ describe("useTaskActions - migration", () => {
       await waitFor(() => {
         expect(mockTaskRepository.save).toHaveBeenCalledWith("2025-10-28", []);
       });
-      expect(mockTaskRepository.save).toHaveBeenCalledWith("2025-10-27", [
+      expect(storageUtil.saveTaskToStorage).toHaveBeenCalledWith(
+        "2025-10-27",
         mockTask,
-      ]);
+      );
 
       // Should clear undo state
       expect(mockSetUndoState).toHaveBeenCalledWith(null);
@@ -223,9 +226,10 @@ describe("useTaskActions - migration", () => {
       await waitFor(() => {
         expect(mockTaskRepository.save).toHaveBeenCalledWith("2025-10-26", []);
       });
-      expect(mockTaskRepository.save).toHaveBeenCalledWith("2025-10-27", [
+      expect(storageUtil.saveTaskToStorage).toHaveBeenCalledWith(
+        "2025-10-27",
         mockTask,
-      ]);
+      );
     });
 
     it("does not restore if dateInView has changed", () => {

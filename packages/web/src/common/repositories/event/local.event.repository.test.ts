@@ -22,6 +22,7 @@ function createMockAdapter() {
     getTasks: jest.fn().mockResolvedValue([]),
     getAllTasks: jest.fn().mockResolvedValue([]),
     putTasks: jest.fn().mockResolvedValue(undefined),
+    putTask: jest.fn().mockResolvedValue(undefined),
     deleteTask: jest.fn().mockResolvedValue(undefined),
     moveTask: jest.fn().mockResolvedValue(undefined),
     clearAllTasks: jest.fn().mockResolvedValue(undefined),

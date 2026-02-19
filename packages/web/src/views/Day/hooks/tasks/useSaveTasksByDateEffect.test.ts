@@ -7,7 +7,10 @@ import { useSaveTasksByDateEffect } from "@web/views/Day/hooks/tasks/useSaveTask
 const mockPutTasks = jest.fn();
 jest.mock("@web/common/storage/adapter/adapter", () => ({
   ensureStorageReady: jest.fn().mockResolvedValue(undefined),
-  getStorageAdapter: jest.fn(() => ({ putTasks: mockPutTasks })),
+  getStorageAdapter: jest.fn(() => ({
+    putTasks: mockPutTasks,
+    putTask: jest.fn().mockResolvedValue(undefined),
+  })),
 }));
 
 interface SaveHarnessProps {

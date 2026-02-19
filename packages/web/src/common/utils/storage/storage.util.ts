@@ -3,7 +3,11 @@ import {
   ensureStorageReady,
   getStorageAdapter,
 } from "@web/common/storage/adapter/adapter";
-import { Task, normalizeTasks } from "@web/common/types/task.types";
+import {
+  Task,
+  normalizeTask,
+  normalizeTasks,
+} from "@web/common/types/task.types";
 import { CompassTasksSavedEventDetail } from "./storage.types";
 
 export const TODAY_TASKS_STORAGE_KEY_PREFIX = "compass.today.tasks";
@@ -54,6 +58,23 @@ export async function saveTasksToStorage(
     dispatchTasksSavedEvent(dateKey);
   } catch (error) {
     console.error("Error saving tasks to IndexedDB:", error);
+  }
+}
+
+export async function saveTaskToStorage(
+  dateKey: string,
+  task: Task,
+): Promise<void> {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    await ensureStorageReady();
+    await getStorageAdapter().putTask(dateKey, normalizeTask(task));
+    dispatchTasksSavedEvent(dateKey);
+  } catch (error) {
+    console.error("Error saving task to storage:", error);
   }
 }
 

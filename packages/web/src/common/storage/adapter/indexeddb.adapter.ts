@@ -98,6 +98,12 @@ export class IndexedDBAdapter implements StorageAdapter {
     });
   }
 
+  async putTask(dateKey: string, task: Task): Promise<void> {
+    const normalizedTask = normalizeTask(task);
+    const storedTask: StoredTask = { ...normalizedTask, dateKey };
+    await this.db.tasks.put(storedTask);
+  }
+
   async deleteTask(taskId: string): Promise<void> {
     await this.db.tasks.delete(taskId);
   }

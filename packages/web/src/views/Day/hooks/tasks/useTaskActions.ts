@@ -5,7 +5,10 @@ import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
 import { TaskRepository } from "@web/common/repositories/task/task.repository";
 import { Task, UndoOperation } from "@web/common/types/task.types";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
-import { getDateKey } from "@web/common/utils/storage/storage.util";
+import {
+  getDateKey,
+  saveTaskToStorage,
+} from "@web/common/utils/storage/storage.util";
 import { sortTasksByStatus } from "@web/common/utils/task/sort.task";
 import { showMigrationToast } from "@web/views/Day/components/Toasts/MigrationToast/MigrationToast";
 import { showUndoDeleteToast } from "@web/views/Day/components/Toasts/UndoToast/UndoDeleteToast";
@@ -113,8 +116,9 @@ export function useTaskActions({
     ) {
       const currentDateKey = getDateKey(dateInView.toDate());
 
+      const fromDate = undoState.fromDate;
       // Only restore if we're still on the same date where the migration happened
-      if (currentDateKey === undoState.fromDate) {
+      if (currentDateKey === fromDate) {
         // Add the task back to the list
         setTasks((prev) => sortTasksByStatus([...prev, undoState.task]));
 
@@ -135,19 +139,8 @@ export function useTaskActions({
             );
             await taskRepository.save(targetDateKey, updatedTargetTasks);
 
-            // Restore the task to the original date in storage.
-            const originalDateTasks = await taskRepository.get(
-              undoState.fromDate,
-            );
-            const alreadyExists = originalDateTasks.some(
-              (task) => task._id === undoState.task._id,
-            );
-            if (!alreadyExists) {
-              await taskRepository.save(undoState.fromDate, [
-                ...originalDateTasks,
-                undoState.task,
-              ]);
-            }
+            // Restore the task to the original date in storage (single write, no read)
+            await saveTaskToStorage(fromDate, undoState.task);
           } catch (error) {
             console.error("Failed to restore task in repository:", error);
           }

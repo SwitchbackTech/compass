@@ -12,6 +12,7 @@ jest.mock("@web/common/storage/adapter/adapter", () => ({
   getStorageAdapter: jest.fn(() => ({
     getTasks: mockGetTasks,
     putTasks: mockPutTasks,
+    putTask: jest.fn().mockResolvedValue(undefined),
   })),
 }));
 

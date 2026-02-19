@@ -20,6 +20,15 @@ function createMockAdapter(): jest.Mocked<StorageAdapter> {
     putTasks: jest.fn().mockImplementation(async (dateKey: string, tasks) => {
       tasksByDate.set(dateKey, tasks);
     }),
+    putTask: jest.fn().mockImplementation(async (dateKey: string, task) => {
+      const existing = tasksByDate.get(dateKey) ?? [];
+      const index = existing.findIndex((t) => t._id === task._id);
+      const updated =
+        index >= 0
+          ? existing.map((t, i) => (i === index ? task : t))
+          : [...existing, task];
+      tasksByDate.set(dateKey, updated);
+    }),
     deleteTask: jest.fn().mockResolvedValue(undefined),
     moveTask: jest.fn().mockResolvedValue(undefined),
     clearAllTasks: jest.fn().mockResolvedValue(undefined),

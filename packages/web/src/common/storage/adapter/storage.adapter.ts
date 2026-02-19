@@ -58,6 +58,12 @@ export interface StorageAdapter {
   putTasks(dateKey: string, tasks: Task[]): Promise<void>;
 
   /**
+   * Save or update a single task for a specific date.
+   * Uses upsert semantics - inserts or updates by task _id.
+   */
+  putTask(dateKey: string, task: Task): Promise<void>;
+
+  /**
    * Delete a single task by ID.
    */
   deleteTask(taskId: string): Promise<void>;

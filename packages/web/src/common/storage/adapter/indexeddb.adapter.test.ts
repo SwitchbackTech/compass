@@ -56,6 +56,55 @@ describe("IndexedDBAdapter", () => {
       expect(result.map((t) => t.title)).toEqual(["Task 1", "Task 2"]);
     });
 
+    it("putTask inserts new task", async () => {
+      const dateKey = "2025-01-15";
+      const task = createMockTask({ _id: "task-1", title: "New task" });
+
+      await adapter.putTask(dateKey, task);
+      const result = await adapter.getTasks(dateKey);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]._id).toBe("task-1");
+      expect(result[0].title).toBe("New task");
+    });
+
+    it("putTask updates existing task", async () => {
+      const dateKey = "2025-01-15";
+      await adapter.putTasks(dateKey, [
+        createMockTask({ _id: "task-1", title: "Original" }),
+      ]);
+
+      await adapter.putTask(dateKey, {
+        ...createMockTask({ _id: "task-1" }),
+        title: "Updated",
+      });
+      const result = await adapter.getTasks(dateKey);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].title).toBe("Updated");
+    });
+
+    it("putTask works alongside putTasks", async () => {
+      const dateKeyA = "2025-01-15";
+      const dateKeyB = "2025-01-16";
+      await adapter.putTasks(dateKeyA, [
+        createMockTask({ _id: "task-1", title: "Date A" }),
+      ]);
+
+      await adapter.putTask(
+        dateKeyB,
+        createMockTask({ _id: "task-2", title: "Date B" }),
+      );
+
+      const tasksA = await adapter.getTasks(dateKeyA);
+      const tasksB = await adapter.getTasks(dateKeyB);
+
+      expect(tasksA).toHaveLength(1);
+      expect(tasksA[0].title).toBe("Date A");
+      expect(tasksB).toHaveLength(1);
+      expect(tasksB[0].title).toBe("Date B");
+    });
+
     it("replaces tasks when putting for same date", async () => {
       const dateKey = "2025-01-15";
       await adapter.putTasks(dateKey, [
