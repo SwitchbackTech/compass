@@ -4,6 +4,7 @@ import { RenderOptions, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import dayjs from "@core/util/date/dayjs";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
+import { getTaskRepository } from "@web/common/repositories/task/task.repository.util";
 import { Task } from "@web/common/types/task.types";
 import * as storageUtil from "@web/common/utils/storage/storage.util";
 import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
@@ -24,10 +25,23 @@ jest.mock("@web/views/Now/hooks/useAvailableTasks");
 jest.mock("@web/common/utils/storage/storage.util", () => ({
   ...jest.requireActual("@web/common/utils/storage/storage.util"),
   getDateKey: jest.fn(),
-  loadTasksFromStorage: jest.fn(),
-  saveTasksToStorage: jest.fn(),
-  updateTodayTasks: jest.fn(),
 }));
+
+jest.mock("@web/common/repositories/task/task.repository.util", () => {
+  const mockSave = jest.fn().mockResolvedValue(undefined);
+  return {
+    getTaskRepository: jest.fn(() => ({
+      save: mockSave,
+    })),
+  };
+});
+
+jest.mock("@web/common/storage/adapter/adapter", () => ({
+  ensureStorageReady: jest.fn().mockResolvedValue(undefined),
+}));
+
+/** Get the save mock from the mocked getTaskRepository return value */
+const getMockSave = () => (getTaskRepository as jest.Mock)().save as jest.Mock;
 
 const mockUseFocusedTask = useFocusedTask as jest.MockedFunction<
   typeof useFocusedTask
@@ -86,12 +100,8 @@ describe("TaskSelector", () => {
     jest.clearAllMocks();
     mockNavigate.mockClear();
     mockSetFocusedTask.mockClear();
+    getMockSave().mockResolvedValue(undefined);
     (storageUtil.getDateKey as jest.Mock).mockReturnValue(mockDateKey);
-    (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue(
-      mockTasks,
-    );
-    (storageUtil.saveTasksToStorage as jest.Mock).mockResolvedValue(undefined);
-    (storageUtil.updateTodayTasks as jest.Mock).mockResolvedValue(mockTasks);
 
     // Use fake timers to control the current time
     jest.useFakeTimers();
@@ -305,14 +315,6 @@ describe("TaskSelector", () => {
         allTasks: tasks,
         hasCompletedTasks: false,
       });
-      let lastUpdatedTasks: Task[] = [];
-      (storageUtil.updateTodayTasks as jest.Mock).mockImplementation(
-        async (updater: (taskList: Task[]) => Task[]) => {
-          lastUpdatedTasks = updater(tasks);
-          return lastUpdatedTasks;
-        },
-      );
-
       renderWithNowProvider(<TaskSelector />);
 
       const checkButton = screen.getByRole("button", {
@@ -321,10 +323,11 @@ describe("TaskSelector", () => {
       await user.click(checkButton);
 
       await waitFor(() => {
-        expect(storageUtil.updateTodayTasks).toHaveBeenCalledTimes(1);
-        expect(
-          lastUpdatedTasks.find((task) => task._id === "task-1")?.status,
-        ).toBe("completed");
+        expect(getMockSave()).toHaveBeenCalledTimes(1);
+        expect(getMockSave()).toHaveBeenCalledWith(
+          mockDateKey,
+          expect.objectContaining({ _id: "task-1", status: "completed" }),
+        );
         expect(mockSetFocusedTask).toHaveBeenCalledWith("task-2");
       });
     });
@@ -359,13 +362,6 @@ describe("TaskSelector", () => {
         allTasks: tasks,
         hasCompletedTasks: false,
       });
-      let lastUpdatedTasks: Task[] = [];
-      (storageUtil.updateTodayTasks as jest.Mock).mockImplementation(
-        async (updater: (taskList: Task[]) => Task[]) => {
-          lastUpdatedTasks = updater(tasks);
-          return lastUpdatedTasks;
-        },
-      );
 
       renderWithNowProvider(<TaskSelector />);
 
@@ -375,10 +371,11 @@ describe("TaskSelector", () => {
       await user.click(checkButton);
 
       await waitFor(() => {
-        expect(storageUtil.updateTodayTasks).toHaveBeenCalledTimes(1);
-        expect(
-          lastUpdatedTasks.find((task) => task._id === "task-2")?.status,
-        ).toBe("completed");
+        expect(getMockSave()).toHaveBeenCalledTimes(1);
+        expect(getMockSave()).toHaveBeenCalledWith(
+          mockDateKey,
+          expect.objectContaining({ _id: "task-2", status: "completed" }),
+        );
         expect(mockSetFocusedTask).toHaveBeenCalledWith("task-1");
       });
     });
@@ -405,13 +402,6 @@ describe("TaskSelector", () => {
         allTasks: tasks,
         hasCompletedTasks: false,
       });
-      let lastUpdatedTasks: Task[] = [];
-      (storageUtil.updateTodayTasks as jest.Mock).mockImplementation(
-        async (updater: (taskList: Task[]) => Task[]) => {
-          lastUpdatedTasks = updater(tasks);
-          return lastUpdatedTasks;
-        },
-      );
 
       renderWithNowProvider(<TaskSelector />);
 
@@ -421,10 +411,11 @@ describe("TaskSelector", () => {
       await user.click(checkButton);
 
       await waitFor(() => {
-        expect(storageUtil.updateTodayTasks).toHaveBeenCalledTimes(1);
-        expect(
-          lastUpdatedTasks.find((task) => task._id === "task-1")?.status,
-        ).toBe("completed");
+        expect(getMockSave()).toHaveBeenCalledTimes(1);
+        expect(getMockSave()).toHaveBeenCalledWith(
+          mockDateKey,
+          expect.objectContaining({ _id: "task-1", status: "completed" }),
+        );
         expect(mockNavigate).toHaveBeenCalledWith("/day");
       });
     });

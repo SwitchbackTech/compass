@@ -3,12 +3,15 @@ import { Schema_Event } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import { session } from "@web/common/classes/Session";
+import {
+  ensureStorageReady,
+  getStorageAdapter,
+} from "@web/common/storage/adapter/adapter";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import {
   Schema_GridEvent,
   Schema_WebEvent,
 } from "@web/common/types/web.event.types";
-import { compassLocalDB } from "@web/common/utils/storage/compass-local.db";
 import { EventApi } from "@web/ducks/events/event.api";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
@@ -462,7 +465,8 @@ describe("createEvent saga - unauthenticated users", () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     try {
-      await compassLocalDB.events.clear();
+      await ensureStorageReady();
+      await getStorageAdapter().clearAllEvents();
     } catch (error) {
       console.error(error);
       // Expect errors if database doesn't exist yet
@@ -476,7 +480,7 @@ describe("createEvent saga - unauthenticated users", () => {
 
   afterEach(async () => {
     try {
-      await compassLocalDB.events.clear();
+      await getStorageAdapter().clearAllEvents();
     } catch (error) {
       console.error(error);
       // Expect errors if database doesn't exist yet
@@ -503,7 +507,8 @@ describe("createEvent saga - unauthenticated users", () => {
     expect(eventIds).toHaveLength(1);
 
     const eventId = eventIds[0];
-    const savedEvent = await compassLocalDB.events.get(eventId);
+    const allEvents = await getStorageAdapter().getAllEvents();
+    const savedEvent = allEvents.find((e) => e._id === eventId);
     expect(savedEvent).toBeDefined();
     expect(savedEvent?._id).toBe(eventId);
   });

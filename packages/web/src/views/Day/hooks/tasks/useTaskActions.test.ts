@@ -183,9 +183,10 @@ describe("useTaskActions - migration", () => {
       await waitFor(() => {
         expect(mockTaskRepository.save).toHaveBeenCalledWith("2025-10-28", []);
       });
-      expect(mockTaskRepository.save).toHaveBeenCalledWith("2025-10-27", [
+      expect(mockTaskRepository.save).toHaveBeenCalledWith(
+        "2025-10-27",
         mockTask,
-      ]);
+      );
 
       // Should clear undo state
       expect(mockSetUndoState).toHaveBeenCalledWith(null);
@@ -223,9 +224,10 @@ describe("useTaskActions - migration", () => {
       await waitFor(() => {
         expect(mockTaskRepository.save).toHaveBeenCalledWith("2025-10-26", []);
       });
-      expect(mockTaskRepository.save).toHaveBeenCalledWith("2025-10-27", [
+      expect(mockTaskRepository.save).toHaveBeenCalledWith(
+        "2025-10-27",
         mockTask,
-      ]);
+      );
     });
 
     it("does not restore if dateInView has changed", () => {

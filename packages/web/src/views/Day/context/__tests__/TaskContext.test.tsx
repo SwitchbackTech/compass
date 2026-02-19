@@ -5,11 +5,11 @@ import dayjs from "@core/util/date/dayjs";
 import { renderHook, waitFor } from "@web/__tests__/__mocks__/mock.render";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { clearCompassLocalDb } from "@web/__tests__/utils/storage/indexeddb.test.util";
-import { Task } from "@web/common/types/task.types";
 import {
-  loadTasksFromIndexedDB,
-  saveTasksToIndexedDB,
-} from "@web/common/utils/storage/task.storage.util";
+  ensureStorageReady,
+  getStorageAdapter,
+} from "@web/common/storage/adapter/adapter";
+import { Task } from "@web/common/types/task.types";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
 import { TaskProviderWrapper } from "@web/views/Day/util/day.test-util";
 
@@ -164,11 +164,13 @@ describe("TaskProvider", () => {
     const dateKey = today.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
 
     await waitFor(async () => {
-      const stored = await loadTasksFromIndexedDB(dateKey);
+      await ensureStorageReady();
+      const stored = await getStorageAdapter().getTasks(dateKey);
       expect(stored).toHaveLength(1);
     });
 
-    const stored = await loadTasksFromIndexedDB(dateKey);
+    await ensureStorageReady();
+    const stored = await getStorageAdapter().getTasks(dateKey);
     expect(stored[0].title).toBe("Persisted task");
     expect(stored[0]._id).toBe(createdTaskId);
   });
@@ -180,7 +182,8 @@ describe("TaskProvider", () => {
       createMockTask({ _id: "task-1", title: "Loaded task" }),
     ];
 
-    await saveTasksToIndexedDB(dateKey, mockTasks);
+    await ensureStorageReady();
+    await getStorageAdapter().putTasks(dateKey, mockTasks);
 
     const { result } = renderHook(useTasks, { wrapper: Wrapper });
 
@@ -197,7 +200,8 @@ describe("TaskProvider", () => {
     const mockTasks: Task[] = [
       createMockTask({ _id: "task-1", title: "Existing task" }),
     ];
-    await saveTasksToIndexedDB(dateKey, mockTasks);
+    await ensureStorageReady();
+    await getStorageAdapter().putTasks(dateKey, mockTasks);
 
     const { result } = renderHook(useTasks, { wrapper: Wrapper });
 
@@ -205,7 +209,7 @@ describe("TaskProvider", () => {
       expect(result.current.tasks).toHaveLength(1);
     });
 
-    const stored = await loadTasksFromIndexedDB(dateKey);
+    const stored = await getStorageAdapter().getTasks(dateKey);
     expect(stored).toHaveLength(1);
     expect(stored[0].title).toBe("Existing task");
   });
@@ -219,7 +223,8 @@ describe("TaskProvider", () => {
       createMockTask({ _id: "task-3", status: "todo" }),
     ];
 
-    await saveTasksToIndexedDB(dateKey, mockTasks);
+    await ensureStorageReady();
+    await getStorageAdapter().putTasks(dateKey, mockTasks);
 
     const { result } = renderHook(useTasks, { wrapper: Wrapper });
 

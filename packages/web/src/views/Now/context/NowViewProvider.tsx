@@ -1,8 +1,10 @@
 import React, { createContext, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { getTaskRepository } from "@web/common/repositories/task/task.repository.util";
+import { ensureStorageReady } from "@web/common/storage/adapter/adapter";
 import { Task } from "@web/common/types/task.types";
-import { updateTodayTasks } from "@web/common/utils/storage/storage.util";
+import { getDateKey } from "@web/common/utils/storage/storage.util";
 import { getIncompleteTasksSorted } from "@web/common/utils/task/sort.task";
 import { useAvailableTasks } from "../hooks/useAvailableTasks";
 import { useFocusedTask } from "../hooks/useFocusedTask";
@@ -16,7 +18,7 @@ interface NowViewContextValue {
   handlePreviousTask: () => void;
   handleNextTask: () => void;
   handleCompleteTask: () => void;
-  updateTaskDescription: (taskId: string, description: string) => void;
+  updateTaskDescription: (task: Task, description: string) => void;
 }
 
 export const NowViewContext = createContext<NowViewContextValue | undefined>(
@@ -29,23 +31,28 @@ interface NowViewProviderProps {
 
 export function NowViewProvider({ children }: NowViewProviderProps) {
   const navigate = useNavigate();
-  const { availableTasks, hasCompletedTasks } = useAvailableTasks();
+  const { availableTasks, allTasks, hasCompletedTasks } = useAvailableTasks();
   const { focusedTask, setFocusedTask } = useFocusedTask({ availableTasks });
-  const completeFocusedTask = useCallback(async (taskId: string) => {
-    return await updateTodayTasks((tasks) =>
-      tasks.map((task) =>
-        task._id === taskId ? { ...task, status: "completed" as const } : task,
-      ),
-    );
-  }, []);
+  const completeFocusedTask = useCallback(
+    async (task: Task) => {
+      const completedTask = { ...task, status: "completed" as const };
+      const dateKey = getDateKey();
+      await ensureStorageReady();
+      await getTaskRepository("local").save(dateKey, completedTask);
+      return allTasks.map((t) => (t._id === task._id ? completedTask : t));
+    },
+    [allTasks],
+  );
 
   const updateTaskDescription = useCallback(
-    (taskId: string, description: string) => {
-      void updateTodayTasks((tasks) =>
-        tasks.map((task) =>
-          task._id === taskId ? { ...task, description } : task,
-        ),
-      ).catch((error) => {
+    (task: Task, description: string) => {
+      void (async () => {
+        await ensureStorageReady();
+        await getTaskRepository("local").save(getDateKey(), {
+          ...task,
+          description,
+        });
+      })().catch((error) => {
         console.error("Failed to update task description:", error);
       });
     },
@@ -90,7 +97,7 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
     const currentTaskIndex = availableTasks.findIndex(
       (task) => task._id === focusedTask._id,
     );
-    void completeFocusedTask(focusedTask._id)
+    void completeFocusedTask(focusedTask)
       .then((updatedTasks) => {
         const incompleteTasks = getIncompleteTasksSorted(updatedTasks);
 

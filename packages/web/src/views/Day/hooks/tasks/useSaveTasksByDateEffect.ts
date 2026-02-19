@@ -1,10 +1,12 @@
 import { MutableRefObject, useEffect } from "react";
+import { TaskRepository } from "@web/common/repositories/task/task.repository";
+import { ensureStorageReady } from "@web/common/storage/adapter/adapter";
 import { Task } from "@web/common/types/task.types";
-import { saveTasksToIndexedDB } from "@web/common/utils/storage/task.storage.util";
 
 interface UseSaveTasksByDateEffectProps {
   dateKey: string;
   tasks: Task[];
+  taskRepository: TaskRepository;
   isLoadingTasks: boolean;
   didLoadFail: boolean;
   loadedDateKey: string | null;
@@ -15,6 +17,7 @@ interface UseSaveTasksByDateEffectProps {
 export function useSaveTasksByDateEffect({
   dateKey,
   tasks,
+  taskRepository,
   isLoadingTasks,
   didLoadFail,
   loadedDateKey,
@@ -31,13 +34,16 @@ export function useSaveTasksByDateEffect({
     const requestId = saveRequestIdRef.current + 1;
     saveRequestIdRef.current = requestId;
 
-    void saveTasksToIndexedDB(dateKey, tasks)
+    void (async () => {
+      await ensureStorageReady();
+      await taskRepository.save(dateKey, tasks);
+    })()
       .then(() => {
         if (isCancelled || requestId !== saveRequestIdRef.current) return;
         isDirtyRef.current = false;
       })
       .catch((error) => {
-        console.error("Failed to save tasks to IndexedDB:", error);
+        console.error("Failed to save tasks to storage:", error);
       });
 
     return () => {
@@ -50,6 +56,7 @@ export function useSaveTasksByDateEffect({
     isLoadingTasks,
     loadedDateKey,
     saveRequestIdRef,
+    taskRepository,
     tasks,
   ]);
 }
