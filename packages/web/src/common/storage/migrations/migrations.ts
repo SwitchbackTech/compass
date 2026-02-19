@@ -66,6 +66,10 @@ export async function runDataMigrations(
 export async function runExternalMigrations(
   adapter: StorageAdapter,
 ): Promise<void> {
+  if (typeof localStorage === "undefined") {
+    return;
+  }
+
   for (const migration of externalMigrations) {
     const flagKey = `compass.migration.${migration.id}`;
 
@@ -76,6 +80,15 @@ export async function runExternalMigrations(
     console.log(`[Migration] Running external migration: ${migration.id}`);
     try {
       await migration.migrate(adapter);
+      const isComplete = migration.isComplete
+        ? await migration.isComplete()
+        : true;
+
+      if (!isComplete) {
+        console.warn(`[Migration] Incomplete (will retry): ${migration.id}`);
+        continue;
+      }
+
       localStorage.setItem(flagKey, "completed");
       console.log(`[Migration] Completed: ${migration.id}`);
     } catch (error) {

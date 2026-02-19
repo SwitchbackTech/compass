@@ -66,4 +66,11 @@ export interface ExternalMigration {
   description: string;
   /** Migration function that imports external data */
   migrate: (adapter: StorageAdapter) => Promise<void>;
+  /**
+   * Optional completion check.
+   *
+   * When provided, migration completion is only recorded if this returns true.
+   * Useful for partial migrations that should retry on next startup.
+   */
+  isComplete?: () => boolean | Promise<boolean>;
 }

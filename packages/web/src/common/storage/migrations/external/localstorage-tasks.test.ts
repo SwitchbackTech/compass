@@ -183,4 +183,30 @@ describe("localStorageTasksMigration", () => {
     expect(adapter.putTasks).not.toHaveBeenCalled();
     expect(localStorage.getItem(storageKey)).toBeTruthy();
   });
+
+  it("reports incomplete when task keys remain in localStorage", async () => {
+    const dateKey = "2025-01-15";
+    localStorage.setItem(
+      `${TASK_KEY_PREFIX}${dateKey}`,
+      JSON.stringify("not an array"),
+    );
+
+    expect(localStorageTasksMigration.isComplete?.()).toBe(false);
+  });
+
+  it("reports complete after all task keys are migrated", async () => {
+    const task = createMockTask({ _id: "task-1", title: "Test Task" });
+    const dateKey = "2025-01-15";
+    localStorage.setItem(
+      `${TASK_KEY_PREFIX}${dateKey}`,
+      JSON.stringify([task]),
+    );
+
+    const adapter = createMockAdapter();
+    adapter.getTasks.mockResolvedValue([]);
+
+    await localStorageTasksMigration.migrate(adapter);
+
+    expect(localStorageTasksMigration.isComplete?.()).toBe(true);
+  });
 });

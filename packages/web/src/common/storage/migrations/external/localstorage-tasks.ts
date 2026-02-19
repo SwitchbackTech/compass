@@ -64,8 +64,8 @@ export const localStorageTasksMigration: ExternalMigration = {
   description: "Migrate tasks from localStorage to storage adapter",
 
   async migrate(adapter: StorageAdapter): Promise<void> {
-    // Skip if not in browser
-    if (typeof window === "undefined" || typeof localStorage === "undefined") {
+    // Skip when localStorage is unavailable
+    if (typeof localStorage === "undefined") {
       return;
     }
 
@@ -126,5 +126,13 @@ export const localStorageTasksMigration: ExternalMigration = {
         `[Migration] Migrated ${totalMigrated} tasks from localStorage`,
       );
     }
+  },
+
+  isComplete(): boolean {
+    if (typeof localStorage === "undefined") {
+      return true;
+    }
+
+    return getTaskStorageKeys().length === 0;
   },
 };

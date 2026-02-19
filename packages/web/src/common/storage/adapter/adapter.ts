@@ -41,7 +41,11 @@ export async function initializeStorage(): Promise<void> {
     // Import migrations dynamically to avoid circular dependencies
     const { runAllMigrations } = await import("../migrations/migrations");
     await runAllMigrations(storage);
-  })();
+  })().catch((error) => {
+    // Allow retry if initialization fails.
+    initPromise = null;
+    throw error;
+  });
 
   return initPromise;
 }

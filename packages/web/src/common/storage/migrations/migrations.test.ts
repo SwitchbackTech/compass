@@ -31,9 +31,22 @@ function createMockAdapter(): jest.Mocked<StorageAdapter> {
 
 describe("storage migrations", () => {
   const externalMigrationFlagKey = "compass.migration.localstorage-tasks-v1";
+  const taskStoragePrefix = "compass.today.tasks.";
+
+  function clearTaskStorageKeys(): void {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(taskStoragePrefix)) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((key) => localStorage.removeItem(key));
+  }
 
   beforeEach(() => {
     localStorage.removeItem(externalMigrationFlagKey);
+    clearTaskStorageKeys();
     jest.spyOn(console, "log").mockImplementation(() => {});
     jest.spyOn(console, "error").mockImplementation(() => {});
     jest.spyOn(console, "warn").mockImplementation(() => {});
@@ -41,6 +54,7 @@ describe("storage migrations", () => {
 
   afterEach(() => {
     localStorage.removeItem(externalMigrationFlagKey);
+    clearTaskStorageKeys();
     jest.restoreAllMocks();
   });
 
@@ -84,6 +98,7 @@ describe("storage migrations", () => {
       const adapter = createMockAdapter();
 
       await expect(runExternalMigrations(adapter)).resolves.not.toThrow();
+      expect(localStorage.getItem(externalMigrationFlagKey)).toBeNull();
     });
   });
 

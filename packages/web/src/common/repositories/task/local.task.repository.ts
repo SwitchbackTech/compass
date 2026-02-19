@@ -47,9 +47,27 @@ export class LocalTaskRepository implements TaskRepository {
     destinationIndex: number,
   ): Promise<void> {
     const tasks = await this.get(dateKey);
+    if (tasks.length <= 1) {
+      return;
+    }
+
+    const isSourceIndexValid = sourceIndex >= 0 && sourceIndex < tasks.length;
+    if (!isSourceIndexValid) {
+      return;
+    }
+
+    const boundedDestinationIndex = Math.max(
+      0,
+      Math.min(destinationIndex, tasks.length - 1),
+    );
+
+    if (sourceIndex === boundedDestinationIndex) {
+      return;
+    }
+
     const newTasks = Array.from(tasks);
     const [moved] = newTasks.splice(sourceIndex, 1);
-    newTasks.splice(destinationIndex, 0, moved);
+    newTasks.splice(boundedDestinationIndex, 0, moved);
 
     // Update order for todo and completed tasks separately
     const todoTasks = newTasks.filter((t) => t.status === "todo");

@@ -224,6 +224,29 @@ describe("LocalTaskRepository", () => {
       expect(savedTasks[1]._id).toBe("task-1");
       expect(savedTasks[1].order).toBe(1);
     });
+
+    it("should no-op when source index is out of bounds", async () => {
+      const dateKey = "2024-01-01";
+      mockAdapter.getTasks.mockResolvedValue([
+        createTestTask({ _id: "task-1", status: "todo", order: 0 }),
+      ]);
+
+      await repository.reorder(dateKey, 5, 0);
+
+      expect(mockAdapter.putTasks).not.toHaveBeenCalled();
+    });
+
+    it("should no-op when source and destination indexes are equal", async () => {
+      const dateKey = "2024-01-01";
+      mockAdapter.getTasks.mockResolvedValue([
+        createTestTask({ _id: "task-1", status: "todo", order: 0 }),
+        createTestTask({ _id: "task-2", status: "todo", order: 1 }),
+      ]);
+
+      await repository.reorder(dateKey, 1, 1);
+
+      expect(mockAdapter.putTasks).not.toHaveBeenCalled();
+    });
   });
 
   describe("move", () => {

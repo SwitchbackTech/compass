@@ -8,6 +8,7 @@ import {
   isStorageReady,
   resetStorage,
 } from "@web/common/storage/adapter/adapter";
+import { IndexedDBAdapter } from "@web/common/storage/adapter/indexeddb.adapter";
 
 describe("storage adapter index", () => {
   beforeEach(() => {
@@ -80,6 +81,22 @@ describe("storage adapter index", () => {
       const adapterAfter = getStorageAdapter();
 
       expect(adapterBefore).toBe(adapterAfter);
+    });
+
+    it("allows retry after initialization failure", async () => {
+      const initializeSpy = jest
+        .spyOn(IndexedDBAdapter.prototype, "initialize")
+        .mockRejectedValueOnce(new Error("init failed"))
+        .mockResolvedValueOnce(undefined);
+
+      try {
+        await expect(initializeStorage()).rejects.toThrow("init failed");
+        await expect(initializeStorage()).resolves.toBeUndefined();
+
+        expect(initializeSpy).toHaveBeenCalledTimes(2);
+      } finally {
+        initializeSpy.mockRestore();
+      }
     });
   });
 
