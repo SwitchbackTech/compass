@@ -1,5 +1,6 @@
 import { act } from "react";
 import { renderHook, waitFor } from "@testing-library/react";
+import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { Task } from "@web/common/types/task.types";
 import { getDateKey } from "@web/common/utils/storage/storage.util";
 import * as taskStorageUtil from "@web/common/utils/storage/task.storage.util";
@@ -38,15 +39,6 @@ describe("useTaskState", () => {
   const dayOneKey = getDateKey(dayOneDate);
   const dayTwoKey = getDateKey(dayTwoDate);
 
-  const createTask = (_id: string, title: string): Task => ({
-    _id,
-    title,
-    status: "todo",
-    order: 0,
-    createdAt: "2025-10-27T00:00:00.000Z",
-    user: "user-1",
-  });
-
   beforeEach(() => {
     jest.clearAllMocks();
     saveTasksMock.mockResolvedValue(undefined);
@@ -55,7 +47,16 @@ describe("useTaskState", () => {
   it("clears tasks and enters loading state when date changes", async () => {
     const dayTwoLoad = createDeferred<Task[]>();
     loadTasksMock
-      .mockResolvedValueOnce([createTask("task-1", "Loaded task")])
+      .mockResolvedValueOnce([
+        createMockTask({
+          _id: "task-1",
+          title: "Loaded task",
+          status: "todo",
+          order: 0,
+          createdAt: "2025-10-27T12:00:00.000Z",
+          user: "user-1",
+        }),
+      ])
       .mockReturnValueOnce(dayTwoLoad.promise);
 
     const { result, rerender } = renderHook(
@@ -99,12 +100,14 @@ describe("useTaskState", () => {
     });
 
     act(() => {
-      result.current.setTasks([createTask("task-1", "Local task")]);
+      result.current.setTasks([
+        createMockTask({ _id: "task-1", title: "Local task" }),
+      ]);
     });
 
     await waitFor(() => {
       expect(saveTasksMock).toHaveBeenCalledWith(dayOneKey, [
-        createTask("task-1", "Local task"),
+        createMockTask({ _id: "task-1", title: "Local task" }),
       ]);
     });
 

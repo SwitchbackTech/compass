@@ -1,6 +1,6 @@
+import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
 import { Task } from "@web/common/types/task.types";
-import { createObjectIdString } from "../id/object-id.util";
 import { compassLocalDB } from "./compass-local.db";
 import {
   clearAllTasksFromIndexedDB,
@@ -16,16 +16,6 @@ import {
 describe("task.storage.util", () => {
   beforeEach(async () => {
     await clearAllTasksFromIndexedDB();
-  });
-
-  const createMockTask = (overrides?: Partial<Task>): Task => ({
-    _id: createObjectIdString(),
-    title: "Test Task",
-    status: "todo",
-    order: 0,
-    createdAt: new Date().toISOString(),
-    user: "user-1",
-    ...overrides,
   });
 
   describe("saveTaskToIndexedDB", () => {

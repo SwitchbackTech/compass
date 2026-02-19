@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { renderHook, waitFor } from "@testing-library/react";
+import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { Task } from "@web/common/types/task.types";
 import * as taskStorageUtil from "@web/common/utils/storage/task.storage.util";
 import { useSaveTasksByDateEffect } from "@web/views/Day/hooks/tasks/useSaveTasksByDateEffect";
@@ -15,17 +16,6 @@ interface SaveHarnessProps {
   didLoadFail: boolean;
   loadedDateKey: string | null;
   isDirty: boolean;
-}
-
-function createTask(_id: string): Task {
-  return {
-    _id,
-    title: _id,
-    status: "todo",
-    order: 0,
-    createdAt: "2025-10-27T00:00:00.000Z",
-    user: "user-1",
-  };
 }
 
 function useSaveHarness({
@@ -68,7 +58,7 @@ describe("useSaveTasksByDateEffect", () => {
   });
 
   it("saves tasks and clears dirty flag when all guards pass", async () => {
-    const tasks = [createTask("task-1")];
+    const tasks = [createMockTask({ _id: "task-1" })];
 
     const { result } = renderHook(() =>
       useSaveHarness({
@@ -88,7 +78,7 @@ describe("useSaveTasksByDateEffect", () => {
   });
 
   it("does not save when any guard blocks persistence", async () => {
-    const tasks = [createTask("task-1")];
+    const tasks = [createMockTask({ _id: "task-1" })];
 
     renderHook(() =>
       useSaveHarness({
@@ -140,7 +130,7 @@ describe("useSaveTasksByDateEffect", () => {
   });
 
   it("keeps dirty flag when save fails", async () => {
-    const tasks = [createTask("task-1")];
+    const tasks = [createMockTask({ _id: "task-1" })];
     saveTasksMock.mockRejectedValueOnce(new Error("save failed"));
     const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
 

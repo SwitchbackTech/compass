@@ -1,16 +1,9 @@
-import { Task } from "@web/common/types/task.types";
+import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { CloudTaskRepository } from "./cloud.task.repository";
 
 describe("CloudTaskRepository", () => {
   const dateKey = "2024-01-01";
-  const task: Task = {
-    _id: "task-1",
-    title: "Task 1",
-    status: "todo",
-    order: 0,
-    createdAt: "2024-01-01T00:00:00.000Z",
-    user: "user-1",
-  };
+  const task = createMockTask({ _id: "task-1" });
 
   it("throws not implemented for all methods", async () => {
     const repository = new CloudTaskRepository();

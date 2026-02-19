@@ -2,18 +2,11 @@ import React, { act } from "react";
 import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import { fireEvent, screen } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
-import { Task } from "@web/common/types/task.types";
+import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { DraggableTask } from "@web/views/Day/components/Task/DraggableTask";
 import { TaskContext } from "@web/views/Day/context/TaskContext";
 
-const mockTask: Task = {
-  _id: "task-1",
-  title: "Test Task",
-  order: 0,
-  status: "todo",
-  createdAt: "2023-01-01",
-  user: "user-1",
-};
+const mockTask = createMockTask({ _id: "task-1" });
 
 const defaultTasksProps: NonNullable<React.ContextType<typeof TaskContext>> = {
   tasks: [mockTask, { ...mockTask, _id: "task-2", title: "Another Task" }],

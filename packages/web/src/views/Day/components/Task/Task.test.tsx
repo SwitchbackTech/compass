@@ -2,18 +2,11 @@ import { act } from "react";
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Task as TaskType } from "@web/common/types/task.types";
-import { Task, TaskProps } from "@web/views/Day/components/Task/Task";
+import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
+import { Task, TaskProps } from "./Task";
 
 describe("Task - migration", () => {
-  const mockTask: TaskType = {
-    _id: "task-1",
-    title: "Test Task",
-    status: "todo",
-    order: 0,
-    createdAt: "2025-10-27T10:00:00Z",
-    user: "user-1",
-  };
+  const mockTask = createMockTask({ _id: "task-1" });
 
   const mockProps: TaskProps = {
     task: mockTask,
@@ -64,14 +57,7 @@ describe("Task - migration", () => {
 });
 
 describe("Task - migration icon visibility on focus", () => {
-  const mockTask: TaskType = {
-    _id: "task-1",
-    title: "Test Task",
-    status: "todo",
-    order: 0,
-    createdAt: "2025-10-27T10:00:00Z",
-    user: "user-1",
-  };
+  const mockTask = createMockTask({ _id: "task-1" });
 
   const mockProps: TaskProps = {
     task: mockTask,

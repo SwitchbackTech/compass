@@ -3,6 +3,7 @@ import { PropsWithChildren, act } from "react";
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
 import { renderHook, waitFor } from "@web/__tests__/__mocks__/mock.render";
+import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { clearCompassLocalDb } from "@web/__tests__/utils/storage/indexeddb.test.util";
 import { Task } from "@web/common/types/task.types";
 import {
@@ -176,14 +177,7 @@ describe("TaskProvider", () => {
     const today = dayjs();
     const dateKey = today.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
     const mockTasks: Task[] = [
-      {
-        _id: "task-1",
-        title: "Loaded task",
-        status: "todo" as const,
-        order: 0,
-        createdAt: new Date().toISOString(),
-        user: "user-1",
-      },
+      createMockTask({ _id: "task-1", title: "Loaded task" }),
     ];
 
     await saveTasksToIndexedDB(dateKey, mockTasks);
@@ -201,14 +195,7 @@ describe("TaskProvider", () => {
     const today = dayjs();
     const dateKey = today.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
     const mockTasks: Task[] = [
-      {
-        _id: "task-1",
-        title: "Existing task",
-        status: "todo" as const,
-        order: 0,
-        createdAt: new Date().toISOString(),
-        user: "user-1",
-      },
+      createMockTask({ _id: "task-1", title: "Existing task" }),
     ];
     await saveTasksToIndexedDB(dateKey, mockTasks);
 
@@ -227,31 +214,11 @@ describe("TaskProvider", () => {
     const today = dayjs();
     const dateKey = today.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
     const mockTasks: Task[] = [
-      {
-        _id: "task-1",
-        title: "Todo 1",
-        status: "todo" as const,
-        createdAt: "2024-01-01T10:00:00Z",
-        order: 0,
-        user: "user-1",
-      },
-      {
-        _id: "task-2",
-        title: "Completed 1",
-        status: "completed" as const,
-        createdAt: "2024-01-01T11:00:00Z",
-        order: 0,
-        user: "user-1",
-      },
-      {
-        _id: "task-3",
-        title: "Todo 2",
-        status: "todo" as const,
-        createdAt: "2024-01-01T12:00:00Z",
-        order: 1,
-        user: "user-1",
-      },
+      createMockTask({ _id: "task-1", status: "todo" }),
+      createMockTask({ _id: "task-2", status: "completed" }),
+      createMockTask({ _id: "task-3", status: "todo" }),
     ];
+
     await saveTasksToIndexedDB(dateKey, mockTasks);
 
     const { result } = renderHook(useTasks, { wrapper: Wrapper });

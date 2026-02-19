@@ -1,29 +1,15 @@
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Task } from "@web/common/types/task.types";
+import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { AvailableTasks } from "./AvailableTasks";
 
 describe("AvailableTasks", () => {
   const mockOnTaskSelect = jest.fn();
 
-  const mockTask1: Task = {
-    _id: "task-1",
-    title: "Test Task",
-    status: "todo",
-    createdAt: "2025-11-15T10:00:00Z",
-    order: 0,
-    user: "user-1",
-  };
+  const mockTask1 = createMockTask({ _id: "task-1", title: "Test Task" });
 
-  const mockTask2: Task = {
-    _id: "task-2",
-    title: "Another Task",
-    status: "todo",
-    createdAt: "2025-11-15T11:00:00Z",
-    order: 0,
-    user: "user-1",
-  };
+  const mockTask2 = createMockTask({ _id: "task-2", title: "Another Task" });
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -40,8 +26,8 @@ describe("AvailableTasks", () => {
 
     render(<AvailableTasks tasks={tasks} onTaskSelect={mockOnTaskSelect} />);
 
-    expect(screen.getByText("Test Task")).toBeInTheDocument();
-    expect(screen.getByText("Another Task")).toBeInTheDocument();
+    expect(screen.getByText(mockTask1.title)).toBeInTheDocument();
+    expect(screen.getByText(mockTask2.title)).toBeInTheDocument();
   });
 
   it("calls onTaskSelect when a task button is clicked", async () => {
@@ -51,7 +37,7 @@ describe("AvailableTasks", () => {
     render(<AvailableTasks tasks={tasks} onTaskSelect={mockOnTaskSelect} />);
 
     const taskButton = screen.getByRole("button", {
-      name: "Select Test Task",
+      name: `Select ${mockTask1.title}`,
     });
     await user.click(taskButton);
 
@@ -65,10 +51,10 @@ describe("AvailableTasks", () => {
     render(<AvailableTasks tasks={tasks} onTaskSelect={mockOnTaskSelect} />);
 
     expect(
-      screen.getByRole("button", { name: "Select Test Task" }),
+      screen.getByRole("button", { name: `Select ${mockTask1.title}` }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Select Another Task" }),
+      screen.getByRole("button", { name: `Select ${mockTask2.title}` }),
     ).toBeInTheDocument();
   });
 

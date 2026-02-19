@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import { act } from "react";
 import { renderHook, waitFor } from "@testing-library/react";
+import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { TaskRepository } from "@web/common/repositories/task/task.repository";
 import { Task } from "@web/common/types/task.types";
 import { showMigrationToast } from "@web/views/Day/components/Toasts/MigrationToast/MigrationToast";
@@ -28,14 +29,7 @@ describe("useTaskActions - migration", () => {
     reorder: jest.fn().mockResolvedValue(undefined),
   };
 
-  const mockTask: Task = {
-    _id: "task-1",
-    title: "Test Task",
-    status: "todo",
-    createdAt: "2025-10-27T10:00:00Z",
-    order: 0,
-    user: "user-1",
-  };
+  const mockTask = createMockTask({ _id: "task-1" });
 
   beforeEach(() => {
     jest.clearAllMocks();

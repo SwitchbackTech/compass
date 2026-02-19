@@ -3,6 +3,7 @@ import "@testing-library/jest-dom";
 import { RenderOptions, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import dayjs from "@core/util/date/dayjs";
+import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { Task } from "@web/common/types/task.types";
 import * as storageUtil from "@web/common/utils/storage/storage.util";
 import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
@@ -62,25 +63,23 @@ describe("TaskSelector", () => {
   const mockToday = dayjs("2025-11-15T00:00:00Z").utc();
   const mockDateKey = "2025-11-15";
 
-  const mockTask: Task = {
-    _id: "task-1",
-    title: "Test Task",
-    status: "todo",
-    createdAt: "2025-11-15T10:00:00Z",
-    order: 1,
-    user: "user-1",
-  };
-
   const mockTasks: Task[] = [
-    mockTask,
-    {
+    createMockTask({
+      _id: "task-1",
+      title: "Test Task",
+      status: "todo",
+      order: 1,
+      user: "user-1",
+      createdAt: "2025-11-15T10:00:00Z",
+    }),
+    createMockTask({
       _id: "task-2",
       title: "Another Task",
       status: "todo",
-      createdAt: "2025-11-15T11:00:00Z",
       order: 2,
       user: "user-1",
-    },
+      createdAt: "2025-11-15T11:00:00Z",
+    }),
   ];
 
   beforeEach(() => {
@@ -105,7 +104,7 @@ describe("TaskSelector", () => {
 
   it("renders FocusedTask when a task is focused", () => {
     mockUseFocusedTask.mockReturnValue({
-      focusedTask: mockTask,
+      focusedTask: mockTasks[0],
       setFocusedTask: mockSetFocusedTask,
     });
     mockUseAvailableTasks.mockReturnValue({
@@ -251,7 +250,7 @@ describe("TaskSelector", () => {
 
     // Update the mock to return focused task (simulating state update)
     mockUseFocusedTask.mockReturnValue({
-      focusedTask: mockTask,
+      focusedTask: mockTasks[0],
       setFocusedTask: mockSetFocusedTask,
     });
 
@@ -271,30 +270,30 @@ describe("TaskSelector", () => {
     it("marks task as complete and navigates to next incomplete task when CheckCircle is clicked", async () => {
       const user = userEvent.setup({ delay: null });
       const tasks: Task[] = [
-        {
+        createMockTask({
           _id: "task-1",
           title: "First Task",
           status: "todo",
-          createdAt: "2025-11-15T10:00:00Z",
           order: 1,
           user: "user-1",
-        },
-        {
+          createdAt: "2025-11-15T10:00:00Z",
+        }),
+        createMockTask({
           _id: "task-2",
           title: "Second Task",
           status: "todo",
-          createdAt: "2025-11-15T11:00:00Z",
           order: 2,
           user: "user-1",
-        },
-        {
+          createdAt: "2025-11-15T11:00:00Z",
+        }),
+        createMockTask({
           _id: "task-3",
           title: "Third Task",
           status: "todo",
-          createdAt: "2025-11-15T12:00:00Z",
           order: 3,
           user: "user-1",
-        },
+          createdAt: "2025-11-15T12:00:00Z",
+        }),
       ];
 
       mockUseFocusedTask.mockReturnValue({
@@ -331,22 +330,22 @@ describe("TaskSelector", () => {
     it("marks task as complete and navigates to previous task when it's the last task", async () => {
       const user = userEvent.setup({ delay: null });
       const tasks: Task[] = [
-        {
+        createMockTask({
           _id: "task-1",
           title: "First Task",
           status: "todo",
-          createdAt: "2025-11-15T10:00:00Z",
           order: 1,
           user: "user-1",
-        },
-        {
+          createdAt: "2025-11-15T10:00:00Z",
+        }),
+        createMockTask({
           _id: "task-2",
           title: "Second Task",
           status: "todo",
-          createdAt: "2025-11-15T11:00:00Z",
           order: 2,
           user: "user-1",
-        },
+          createdAt: "2025-11-15T11:00:00Z",
+        }),
       ];
 
       mockUseFocusedTask.mockReturnValue({
@@ -383,14 +382,14 @@ describe("TaskSelector", () => {
     it("marks task as complete and navigates to Day view when it's the only task", async () => {
       const user = userEvent.setup({ delay: null });
       const tasks: Task[] = [
-        {
+        createMockTask({
           _id: "task-1",
           title: "Only Task",
           status: "todo",
-          createdAt: "2025-11-15T10:00:00Z",
           order: 1,
           user: "user-1",
-        },
+          createdAt: "2025-11-15T10:00:00Z",
+        }),
       ];
 
       mockUseFocusedTask.mockReturnValue({

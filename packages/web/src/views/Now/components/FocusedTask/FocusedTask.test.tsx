@@ -2,27 +2,18 @@ import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
+import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { Task } from "@web/common/types/task.types";
 import { FocusedTask } from "./FocusedTask";
 
 describe("FocusedTask", () => {
-  const mockTask: Task = {
-    _id: "task-1",
-    title: "Test Task",
-    status: "todo",
-    createdAt: "2025-11-15T10:00:00Z",
-    order: 0,
-    user: "user-1",
-  };
+  const mockTask = createMockTask({ _id: "task-1", title: "Test Task" });
 
-  const mockCompletedTask: Task = {
+  const mockCompletedTask = createMockTask({
     _id: "task-2",
     title: "Completed Task",
     status: "completed",
-    createdAt: "2025-11-15T11:00:00Z",
-    order: 0,
-    user: "user-1",
-  };
+  });
 
   const mockOnCompleteTask = jest.fn();
   const mockOnPreviousTask = jest.fn();
@@ -80,14 +71,10 @@ describe("FocusedTask", () => {
   });
 
   it("renders task with long title", () => {
-    const longTitleTask: Task = {
+    const longTitleTask = createMockTask({
       _id: "task-3",
       title: "This is a very long task title that might wrap to multiple lines",
-      status: "todo",
-      createdAt: "2025-11-15T12:00:00Z",
-      order: 0,
-      user: "user-1",
-    };
+    });
 
     render(
       <FocusedTask
@@ -107,14 +94,11 @@ describe("FocusedTask", () => {
   });
 
   it("renders task with special characters in title", () => {
-    const specialCharTask: Task = {
+    const specialCharTask = createMockTask({
       _id: "task-4",
       title: "Task with @#$%^&*() special chars!",
       status: "todo",
-      createdAt: "2025-11-15T13:00:00Z",
-      order: 0,
-      user: "user-1",
-    };
+    });
 
     render(
       <FocusedTask
@@ -132,14 +116,11 @@ describe("FocusedTask", () => {
   });
 
   it("renders task with empty title", () => {
-    const emptyTitleTask: Task = {
+    const emptyTitleTask = createMockTask({
       _id: "task-5",
       title: "",
       status: "todo",
-      createdAt: "2025-11-15T14:00:00Z",
-      order: 0,
-      user: "user-1",
-    };
+    });
 
     render(
       <FocusedTask

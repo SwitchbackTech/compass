@@ -1,6 +1,7 @@
 import { act } from "react";
 import { useRef, useState } from "react";
 import { renderHook, waitFor } from "@testing-library/react";
+import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { Task } from "@web/common/types/task.types";
 import * as taskStorageUtil from "@web/common/utils/storage/task.storage.util";
 import { useLoadTasksByDateEffect } from "@web/views/Day/hooks/tasks/useLoadTasksByDateEffect";
@@ -21,21 +22,6 @@ function createDeferred<T>(): Deferred<T> {
   });
 
   return { promise, resolve };
-}
-
-function createTask(
-  _id: string,
-  status: "todo" | "completed",
-  order: number,
-): Task {
-  return {
-    _id,
-    title: _id,
-    status,
-    order,
-    createdAt: "2025-10-27T00:00:00.000Z",
-    user: "user-1",
-  };
 }
 
 function useLoadHarness(dateKey: string) {
@@ -77,9 +63,9 @@ describe("useLoadTasksByDateEffect", () => {
 
   it("loads tasks for date and sorts by status/order", async () => {
     loadTasksMock.mockResolvedValueOnce([
-      createTask("completed-1", "completed", 0),
-      createTask("todo-2", "todo", 1),
-      createTask("todo-1", "todo", 0),
+      createMockTask({ _id: "completed-1", status: "completed", order: 0 }),
+      createMockTask({ _id: "todo-2", status: "todo", order: 1 }),
+      createMockTask({ _id: "todo-1", status: "todo", order: 0 }),
     ]);
 
     const { result } = renderHook(() => useLoadHarness("2025-10-27"));
@@ -117,14 +103,18 @@ describe("useLoadTasksByDateEffect", () => {
     expect(result.current.tasks).toEqual([]);
 
     await act(async () => {
-      firstLoad.resolve([createTask("stale-task", "todo", 0)]);
+      firstLoad.resolve([
+        createMockTask({ _id: "stale-task", status: "todo", order: 0 }),
+      ]);
       await Promise.resolve();
     });
 
     expect(result.current.tasks).toEqual([]);
 
     await act(async () => {
-      secondLoad.resolve([createTask("fresh-task", "todo", 0)]);
+      secondLoad.resolve([
+        createMockTask({ _id: "fresh-task", status: "todo", order: 0 }),
+      ]);
       await secondLoad.promise;
     });
 

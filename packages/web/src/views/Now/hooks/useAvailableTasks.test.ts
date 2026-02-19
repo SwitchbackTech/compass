@@ -1,6 +1,7 @@
 import { act } from "react";
 import { renderHook, waitFor } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
+import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { Task } from "@web/common/types/task.types";
 import * as storageUtil from "@web/common/utils/storage/storage.util";
 import { useAvailableTasks } from "./useAvailableTasks";
@@ -33,22 +34,16 @@ describe("useAvailableTasks", () => {
 
   it("loads tasks from today only", async () => {
     const mockTasks: Task[] = [
-      {
+      createMockTask({
         _id: "task-1",
-        title: "Task 1",
         status: "todo",
         createdAt: "2025-11-15T10:00:00Z",
-        order: 0,
-        user: "user-1",
-      },
-      {
+      }),
+      createMockTask({
         _id: "task-2",
-        title: "Task 2",
         status: "todo",
         createdAt: "2025-11-15T11:00:00Z",
-        order: 0,
-        user: "user-1",
-      },
+      }),
     ];
 
     (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(mockTasks);
@@ -70,31 +65,19 @@ describe("useAvailableTasks", () => {
   });
 
   it("filters out completed tasks", async () => {
-    const mockTasks: Task[] = [
-      {
+    const mockTasks = [
+      createMockTask({
         _id: "task-1",
-        title: "Task 1",
         status: "todo",
-        createdAt: "2025-11-15T10:00:00Z",
-        order: 0,
-        user: "user-1",
-      },
-      {
+      }),
+      createMockTask({
         _id: "task-2",
-        title: "Task 2",
         status: "completed",
-        createdAt: "2025-11-15T11:00:00Z",
-        order: 0,
-        user: "user-1",
-      },
-      {
+      }),
+      createMockTask({
         _id: "task-3",
-        title: "Task 3",
         status: "todo",
-        createdAt: "2025-11-15T12:00:00Z",
-        order: 0,
-        user: "user-1",
-      },
+      }),
     ];
 
     (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(mockTasks);
@@ -115,30 +98,18 @@ describe("useAvailableTasks", () => {
 
   it("sorts tasks by creation date (newest first)", async () => {
     const mockTasks: Task[] = [
-      {
+      createMockTask({
         _id: "task-1",
-        title: "Task 1",
-        status: "todo",
         createdAt: "2025-11-15T10:00:00Z",
-        order: 0,
-        user: "user-1",
-      },
-      {
+      }),
+      createMockTask({
         _id: "task-2",
-        title: "Task 2",
-        status: "todo",
         createdAt: "2025-11-15T12:00:00Z",
-        order: 0,
-        user: "user-1",
-      },
-      {
+      }),
+      createMockTask({
         _id: "task-3",
-        title: "Task 3",
-        status: "todo",
         createdAt: "2025-11-15T11:00:00Z",
-        order: 0,
-        user: "user-1",
-      },
+      }),
     ];
 
     (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(mockTasks);
@@ -166,35 +137,8 @@ describe("useAvailableTasks", () => {
   });
 
   it("reloads tasks when storage changes", async () => {
-    const initialTasks: Task[] = [
-      {
-        _id: "task-1",
-        title: "Task 1",
-        status: "todo",
-        createdAt: "2025-11-15T10:00:00Z",
-        order: 0,
-        user: "user-1",
-      },
-    ];
-
-    const updatedTasks: Task[] = [
-      {
-        _id: "task-1",
-        title: "Task 1",
-        status: "todo",
-        createdAt: "2025-11-15T10:00:00Z",
-        order: 0,
-        user: "user-1",
-      },
-      {
-        _id: "task-2",
-        title: "Task 2",
-        status: "todo",
-        createdAt: "2025-11-15T11:00:00Z",
-        order: 0,
-        user: "user-1",
-      },
-    ];
+    const initialTasks: Task[] = [createMockTask()];
+    const updatedTasks: Task[] = [createMockTask(), createMockTask()];
 
     (storageUtil.loadTasksFromStorage as jest.Mock)
       .mockReturnValueOnce(initialTasks)
@@ -218,16 +162,7 @@ describe("useAvailableTasks", () => {
   });
 
   it("does not reload tasks when unrelated storage key changes", async () => {
-    const mockTasks: Task[] = [
-      {
-        _id: "task-1",
-        title: "Task 1",
-        status: "todo",
-        createdAt: "2025-11-15T10:00:00Z",
-        order: 0,
-        user: "user-1",
-      },
-    ];
+    const mockTasks: Task[] = [createMockTask()];
 
     (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(mockTasks);
 
@@ -249,16 +184,7 @@ describe("useAvailableTasks", () => {
   });
 
   it("handles storage clear event", async () => {
-    const mockTasks: Task[] = [
-      {
-        _id: "task-1",
-        title: "Task 1",
-        status: "todo",
-        createdAt: "2025-11-15T10:00:00Z",
-        order: 0,
-        user: "user-1",
-      },
-    ];
+    const mockTasks: Task[] = [createMockTask()];
 
     (storageUtil.loadTasksFromStorage as jest.Mock)
       .mockReturnValueOnce(mockTasks)
@@ -283,22 +209,12 @@ describe("useAvailableTasks", () => {
 
   it("returns hasCompletedTasks as true when all tasks are completed", async () => {
     const mockTasks: Task[] = [
-      {
-        _id: "task-1",
-        title: "Task 1",
+      createMockTask({
         status: "completed",
-        createdAt: "2025-11-15T10:00:00Z",
-        order: 0,
-        user: "user-1",
-      },
-      {
-        _id: "task-2",
-        title: "Task 2",
+      }),
+      createMockTask({
         status: "completed",
-        createdAt: "2025-11-15T11:00:00Z",
-        order: 0,
-        user: "user-1",
-      },
+      }),
     ];
 
     (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(mockTasks);

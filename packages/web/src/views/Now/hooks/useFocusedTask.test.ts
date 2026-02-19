@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
+import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { Task } from "@web/common/types/task.types";
 import * as storageUtil from "@web/common/utils/storage/storage.util";
 import { useFocusedTask } from "./useFocusedTask";
@@ -13,22 +14,16 @@ jest.mock("@web/common/utils/storage/storage.util", () => ({
 describe("useFocusedTask", () => {
   const mockToday = dayjs("2025-11-15T00:00:00Z").utc();
   const mockDateKey = "2025-11-15";
-  const mockTask: Task = {
+  const mockTask = createMockTask({
     _id: "task-1",
-    title: "Test Task",
     status: "todo",
     createdAt: "2025-11-15T10:00:00Z",
-    order: 0,
-    user: "user-1",
-  };
-  const secondTask: Task = {
+  });
+  const secondTask = createMockTask({
     _id: "task-2",
-    title: "Another Task",
     status: "todo",
     createdAt: "2025-11-15T11:00:00Z",
-    order: 0,
-    user: "user-1",
-  };
+  });
   const mockTasks: Task[] = [mockTask, secondTask];
 
   beforeEach(() => {
@@ -80,14 +75,7 @@ describe("useFocusedTask", () => {
     });
 
     it("prevents setting a completed task as focused", async () => {
-      const completedTask: Task = {
-        _id: "task-1",
-        title: "Completed Task",
-        status: "completed",
-        createdAt: "2025-11-15T10:00:00Z",
-        order: 0,
-        user: "user-1",
-      };
+      const completedTask = createMockTask({ status: "completed" });
 
       (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue([
         completedTask,
@@ -259,14 +247,11 @@ describe("useFocusedTask", () => {
 
       const updatedTasks: Task[] = [
         secondTask,
-        {
+        createMockTask({
           _id: "task-3",
-          title: "Third Task",
           status: "todo",
           createdAt: "2025-11-15T12:00:00Z",
-          order: 0,
-          user: "user-1",
-        },
+        }),
       ];
 
       (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(
