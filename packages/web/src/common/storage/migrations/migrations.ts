@@ -1,4 +1,5 @@
 import { StorageAdapter } from "../adapter/storage.adapter";
+import { taskIdToUnderscoreIdMigration } from "./data/task-id-to-underscore-id";
 import { localStorageTasksMigration } from "./external/localstorage-tasks";
 import { DataMigration, ExternalMigration } from "./migration.types";
 
@@ -9,11 +10,7 @@ import { DataMigration, ExternalMigration } from "./migration.types";
  * Data migrations transform existing data within storage.
  * Tracked via the storage adapter's migration records.
  */
-export const dataMigrations: DataMigration[] = [
-  // Add data migrations here as needed. Examples:
-  // addUserFieldMigration,
-  // renameStatusFieldMigration,
-];
+export const dataMigrations: DataMigration[] = [taskIdToUnderscoreIdMigration];
 
 /**
  * External migrations import data from outside storage.

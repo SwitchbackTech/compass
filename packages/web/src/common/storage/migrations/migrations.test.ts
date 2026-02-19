@@ -60,12 +60,19 @@ describe("storage migrations", () => {
   });
 
   describe("runDataMigrations", () => {
-    it("returns early when dataMigrations array is empty", async () => {
+    it("skips migrations that are already completed", async () => {
       const adapter = createMockAdapter();
+      adapter.getMigrationRecords.mockResolvedValue([
+        {
+          id: "task-id-to-underscore-id-v1",
+          completedAt: new Date().toISOString(),
+        },
+      ]);
+      adapter.getAllTasks.mockResolvedValue([]);
 
       await runDataMigrations(adapter);
 
-      expect(adapter.getMigrationRecords).not.toHaveBeenCalled();
+      expect(adapter.putTasks).not.toHaveBeenCalled();
     });
   });
 
