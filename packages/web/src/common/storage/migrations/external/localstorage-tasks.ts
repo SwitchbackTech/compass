@@ -112,7 +112,7 @@ export const localStorageTasksMigration: ExternalMigration = {
         keysToRemove.push(key);
       } catch {
         // Skip invalid entries - don't remove from localStorage for retry
-        console.warn(`[Migration] Failed to parse tasks from: ${key}`);
+        console.error(`[Migration] Failed to parse tasks from: ${key}`);
       }
     }
 
