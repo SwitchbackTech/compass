@@ -29,7 +29,7 @@ describe("useFocusedTask", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (storageUtil.getDateKey as jest.Mock).mockReturnValue(mockDateKey);
-    (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue([]);
+    (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue([]);
 
     // Use fake timers to control the current time
     jest.useFakeTimers();
@@ -53,7 +53,7 @@ describe("useFocusedTask", () => {
     });
 
     it("sets a focused task when setFocusedTask is called with valid task ID", async () => {
-      (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue([
+      (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue([
         mockTask,
       ]);
 
@@ -77,7 +77,7 @@ describe("useFocusedTask", () => {
     it("prevents setting a completed task as focused", async () => {
       const completedTask = createMockTask({ status: "completed" });
 
-      (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue([
+      (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue([
         completedTask,
       ]);
 
@@ -95,7 +95,7 @@ describe("useFocusedTask", () => {
     });
 
     it("clears focused task when setFocusedTask is called with null", async () => {
-      (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue([
+      (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue([
         mockTask,
       ]);
 
@@ -123,7 +123,7 @@ describe("useFocusedTask", () => {
     });
 
     it("clears focused task when task is not found", async () => {
-      (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue([]);
+      (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue([]);
 
       const { result } = renderHook(() =>
         useFocusedTask({ availableTasks: [] }),
@@ -141,7 +141,7 @@ describe("useFocusedTask", () => {
 
   describe("auto-focus behavior", () => {
     it("auto-focuses on the first available task when none is focused", async () => {
-      (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(
+      (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue(
         mockTasks,
       );
 
@@ -178,7 +178,7 @@ describe("useFocusedTask", () => {
         expect(result.current.focusedTask).toBeNull();
       });
 
-      (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(
+      (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue(
         mockTasks,
       );
 
@@ -190,7 +190,7 @@ describe("useFocusedTask", () => {
     });
 
     it("auto-focuses when focused task becomes null but tasks are available", async () => {
-      (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(
+      (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue(
         mockTasks,
       );
 
@@ -220,7 +220,7 @@ describe("useFocusedTask", () => {
     });
 
     it("does not override a focused task when available tasks change", async () => {
-      (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(
+      (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue(
         mockTasks,
       );
 
@@ -254,7 +254,7 @@ describe("useFocusedTask", () => {
         }),
       ];
 
-      (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(
+      (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue(
         updatedTasks,
       );
 

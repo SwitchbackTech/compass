@@ -16,10 +16,9 @@ export function useAvailableTasks() {
   const taskContext = useContext(TaskContext);
   const hasTaskContext = taskContext !== undefined;
 
-  const loadStoredTasks = useCallback(() => {
+  const loadStoredTasks = useCallback(async () => {
     const dateKey = getDateKey();
-    const tasks = loadTasksFromStorage(dateKey);
-    setStoredTasks(tasks);
+    return await loadTasksFromStorage(dateKey);
   }, []);
 
   useEffect(() => {
@@ -27,19 +26,35 @@ export function useAvailableTasks() {
       return;
     }
 
-    loadStoredTasks();
+    let isCancelled = false;
+    const reloadTasks = () => {
+      void loadStoredTasks()
+        .then((tasks) => {
+          if (isCancelled) return;
+          setStoredTasks(tasks);
+        })
+        .catch((error) => {
+          if (isCancelled) return;
+          console.error("Failed to load tasks from IndexedDB:", error);
+          setStoredTasks([]);
+        });
+    };
+
+    reloadTasks();
 
     // Listen for storage changes to reload tasks (cross-tab synchronization)
     const handleStorageChange = (event: StorageEvent) => {
+      console.log("handleStorageChange", event);
       if (!event.key || event.key.startsWith(TODAY_TASKS_STORAGE_KEY_PREFIX)) {
-        loadStoredTasks();
+        reloadTasks();
       }
     };
 
     // Listen for custom event (same-tab synchronization)
     const handleTasksSaved = (event: CompassTasksSavedEvent) => {
+      console.log("handleTasksSaved", event);
       if (event.detail.dateKey === getDateKey()) {
-        loadStoredTasks();
+        reloadTasks();
       }
     };
 
@@ -54,6 +69,7 @@ export function useAvailableTasks() {
         COMPASS_TASKS_SAVED_EVENT_NAME,
         handleTasksSaved as EventListener,
       );
+      isCancelled = true;
     };
   }, [hasTaskContext, loadStoredTasks]);
 

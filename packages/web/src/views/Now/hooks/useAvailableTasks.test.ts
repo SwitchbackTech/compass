@@ -1,9 +1,10 @@
-import { act } from "react";
+import React, { act } from "react";
 import { renderHook, waitFor } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { Task } from "@web/common/types/task.types";
 import * as storageUtil from "@web/common/utils/storage/storage.util";
+import { TaskContext } from "@web/views/Day/context/TaskContext";
 import { useAvailableTasks } from "./useAvailableTasks";
 
 jest.mock("@web/common/utils/storage/storage.util", () => ({
@@ -19,7 +20,7 @@ describe("useAvailableTasks", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (storageUtil.getDateKey as jest.Mock).mockReturnValue(mockDateKey);
-    (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue([]);
+    (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue([]);
 
     // Use fake timers to control the current time
     jest.useFakeTimers();
@@ -46,7 +47,9 @@ describe("useAvailableTasks", () => {
       }),
     ];
 
-    (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(mockTasks);
+    (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue(
+      mockTasks,
+    );
 
     const { result } = renderHook(() => useAvailableTasks());
 
@@ -80,7 +83,9 @@ describe("useAvailableTasks", () => {
       }),
     ];
 
-    (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(mockTasks);
+    (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue(
+      mockTasks,
+    );
 
     const { result } = renderHook(() => useAvailableTasks());
 
@@ -112,7 +117,9 @@ describe("useAvailableTasks", () => {
       }),
     ];
 
-    (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(mockTasks);
+    (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue(
+      mockTasks,
+    );
 
     const { result } = renderHook(() => useAvailableTasks());
 
@@ -125,7 +132,7 @@ describe("useAvailableTasks", () => {
   });
 
   it("returns empty array when no tasks exist", async () => {
-    (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue([]);
+    (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue([]);
 
     const { result } = renderHook(() => useAvailableTasks());
 
@@ -141,8 +148,8 @@ describe("useAvailableTasks", () => {
     const updatedTasks: Task[] = [createMockTask(), createMockTask()];
 
     (storageUtil.loadTasksFromStorage as jest.Mock)
-      .mockReturnValueOnce(initialTasks)
-      .mockReturnValueOnce(updatedTasks);
+      .mockResolvedValueOnce(initialTasks)
+      .mockResolvedValueOnce(updatedTasks);
 
     const { result } = renderHook(() => useAvailableTasks());
 
@@ -164,7 +171,9 @@ describe("useAvailableTasks", () => {
   it("does not reload tasks when unrelated storage key changes", async () => {
     const mockTasks: Task[] = [createMockTask()];
 
-    (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(mockTasks);
+    (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue(
+      mockTasks,
+    );
 
     const { result } = renderHook(() => useAvailableTasks());
 
@@ -187,8 +196,8 @@ describe("useAvailableTasks", () => {
     const mockTasks: Task[] = [createMockTask()];
 
     (storageUtil.loadTasksFromStorage as jest.Mock)
-      .mockReturnValueOnce(mockTasks)
-      .mockReturnValueOnce([]);
+      .mockResolvedValueOnce(mockTasks)
+      .mockResolvedValueOnce([]);
 
     const { result } = renderHook(() => useAvailableTasks());
 
@@ -217,7 +226,9 @@ describe("useAvailableTasks", () => {
       }),
     ];
 
-    (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(mockTasks);
+    (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue(
+      mockTasks,
+    );
 
     const { result } = renderHook(() => useAvailableTasks());
 
@@ -229,7 +240,7 @@ describe("useAvailableTasks", () => {
   });
 
   it("returns hasCompletedTasks as false when no tasks exist", async () => {
-    (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue([]);
+    (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue([]);
 
     const { result } = renderHook(() => useAvailableTasks());
 
@@ -238,6 +249,68 @@ describe("useAvailableTasks", () => {
       expect(result.current.allTasks).toEqual([]);
       expect(result.current.hasCompletedTasks).toBe(false);
     });
+  });
+
+  it("ignores stale async task loads after effect cleanup", async () => {
+    const staleTasks: Task[] = [
+      createMockTask({
+        _id: "stale-task-1",
+        createdAt: "2025-11-15T08:00:00Z",
+      }),
+    ];
+    const freshTasks: Task[] = [
+      createMockTask({
+        _id: "fresh-task-1",
+        createdAt: "2025-11-15T12:00:00Z",
+      }),
+    ];
+
+    let resolveStaleLoad: ((value: Task[]) => void) | null = null;
+    const staleLoadPromise = new Promise<Task[]>((resolve) => {
+      resolveStaleLoad = resolve;
+    });
+
+    (storageUtil.loadTasksFromStorage as jest.Mock)
+      .mockReturnValueOnce(staleLoadPromise)
+      .mockResolvedValueOnce(freshTasks);
+
+    let taskContextValue: React.ContextType<typeof TaskContext> = undefined;
+    const wrapper = ({ children }: { children: React.ReactNode }) => {
+      if (taskContextValue) {
+        return React.createElement(
+          TaskContext.Provider,
+          { value: taskContextValue },
+          children,
+        );
+      }
+      return React.createElement(React.Fragment, null, children);
+    };
+
+    const { result, rerender } = renderHook(() => useAvailableTasks(), {
+      wrapper,
+    });
+
+    await waitFor(() => {
+      expect(storageUtil.loadTasksFromStorage).toHaveBeenCalledTimes(1);
+    });
+
+    taskContextValue = { tasks: [] } as React.ContextType<typeof TaskContext>;
+    rerender();
+
+    taskContextValue = undefined;
+    rerender();
+
+    await waitFor(() => {
+      expect(storageUtil.loadTasksFromStorage).toHaveBeenCalledTimes(2);
+      expect(result.current.allTasks).toEqual(freshTasks);
+    });
+
+    await act(async () => {
+      resolveStaleLoad?.(staleTasks);
+      await Promise.resolve();
+    });
+
+    expect(result.current.allTasks).toEqual(freshTasks);
   });
 });
 

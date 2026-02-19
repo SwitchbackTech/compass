@@ -87,11 +87,11 @@ describe("TaskSelector", () => {
     mockNavigate.mockClear();
     mockSetFocusedTask.mockClear();
     (storageUtil.getDateKey as jest.Mock).mockReturnValue(mockDateKey);
-    (storageUtil.loadTasksFromStorage as jest.Mock).mockReturnValue(mockTasks);
-    (storageUtil.saveTasksToStorage as jest.Mock).mockImplementation(() => {});
-    (storageUtil.updateTodayTasks as jest.Mock).mockImplementation(
-      () => mockTasks,
+    (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue(
+      mockTasks,
     );
+    (storageUtil.saveTasksToStorage as jest.Mock).mockResolvedValue(undefined);
+    (storageUtil.updateTodayTasks as jest.Mock).mockResolvedValue(mockTasks);
 
     // Use fake timers to control the current time
     jest.useFakeTimers();
@@ -307,7 +307,7 @@ describe("TaskSelector", () => {
       });
       let lastUpdatedTasks: Task[] = [];
       (storageUtil.updateTodayTasks as jest.Mock).mockImplementation(
-        (updater: (taskList: Task[]) => Task[]) => {
+        async (updater: (taskList: Task[]) => Task[]) => {
           lastUpdatedTasks = updater(tasks);
           return lastUpdatedTasks;
         },
@@ -320,11 +320,13 @@ describe("TaskSelector", () => {
       });
       await user.click(checkButton);
 
-      expect(storageUtil.updateTodayTasks).toHaveBeenCalledTimes(1);
-      expect(
-        lastUpdatedTasks.find((task) => task._id === "task-1")?.status,
-      ).toBe("completed");
-      expect(mockSetFocusedTask).toHaveBeenCalledWith("task-2");
+      await waitFor(() => {
+        expect(storageUtil.updateTodayTasks).toHaveBeenCalledTimes(1);
+        expect(
+          lastUpdatedTasks.find((task) => task._id === "task-1")?.status,
+        ).toBe("completed");
+        expect(mockSetFocusedTask).toHaveBeenCalledWith("task-2");
+      });
     });
 
     it("marks task as complete and navigates to previous task when it's the last task", async () => {
@@ -359,7 +361,7 @@ describe("TaskSelector", () => {
       });
       let lastUpdatedTasks: Task[] = [];
       (storageUtil.updateTodayTasks as jest.Mock).mockImplementation(
-        (updater: (taskList: Task[]) => Task[]) => {
+        async (updater: (taskList: Task[]) => Task[]) => {
           lastUpdatedTasks = updater(tasks);
           return lastUpdatedTasks;
         },
@@ -372,11 +374,13 @@ describe("TaskSelector", () => {
       });
       await user.click(checkButton);
 
-      expect(storageUtil.updateTodayTasks).toHaveBeenCalledTimes(1);
-      expect(
-        lastUpdatedTasks.find((task) => task._id === "task-2")?.status,
-      ).toBe("completed");
-      expect(mockSetFocusedTask).toHaveBeenCalledWith("task-1");
+      await waitFor(() => {
+        expect(storageUtil.updateTodayTasks).toHaveBeenCalledTimes(1);
+        expect(
+          lastUpdatedTasks.find((task) => task._id === "task-2")?.status,
+        ).toBe("completed");
+        expect(mockSetFocusedTask).toHaveBeenCalledWith("task-1");
+      });
     });
 
     it("marks task as complete and navigates to Day view when it's the only task", async () => {
@@ -403,7 +407,7 @@ describe("TaskSelector", () => {
       });
       let lastUpdatedTasks: Task[] = [];
       (storageUtil.updateTodayTasks as jest.Mock).mockImplementation(
-        (updater: (taskList: Task[]) => Task[]) => {
+        async (updater: (taskList: Task[]) => Task[]) => {
           lastUpdatedTasks = updater(tasks);
           return lastUpdatedTasks;
         },
@@ -416,11 +420,13 @@ describe("TaskSelector", () => {
       });
       await user.click(checkButton);
 
-      expect(storageUtil.updateTodayTasks).toHaveBeenCalledTimes(1);
-      expect(
-        lastUpdatedTasks.find((task) => task._id === "task-1")?.status,
-      ).toBe("completed");
-      expect(mockNavigate).toHaveBeenCalledWith("/day");
+      await waitFor(() => {
+        expect(storageUtil.updateTodayTasks).toHaveBeenCalledTimes(1);
+        expect(
+          lastUpdatedTasks.find((task) => task._id === "task-1")?.status,
+        ).toBe("completed");
+        expect(mockNavigate).toHaveBeenCalledWith("/day");
+      });
     });
 
     it("does nothing when no task is focused", async () => {

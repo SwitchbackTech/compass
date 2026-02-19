@@ -31,8 +31,8 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
   const navigate = useNavigate();
   const { availableTasks, hasCompletedTasks } = useAvailableTasks();
   const { focusedTask, setFocusedTask } = useFocusedTask({ availableTasks });
-  const completeFocusedTask = useCallback((taskId: string) => {
-    return updateTodayTasks((tasks) =>
+  const completeFocusedTask = useCallback(async (taskId: string) => {
+    return await updateTodayTasks((tasks) =>
       tasks.map((task) =>
         task._id === taskId ? { ...task, status: "completed" as const } : task,
       ),
@@ -41,11 +41,13 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
 
   const updateTaskDescription = useCallback(
     (taskId: string, description: string) => {
-      updateTodayTasks((tasks) =>
+      void updateTodayTasks((tasks) =>
         tasks.map((task) =>
           task._id === taskId ? { ...task, description } : task,
         ),
-      );
+      ).catch((error) => {
+        console.error("Failed to update task description:", error);
+      });
     },
     [],
   );
@@ -88,26 +90,31 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
     const currentTaskIndex = availableTasks.findIndex(
       (task) => task._id === focusedTask._id,
     );
-    const updatedTasks = completeFocusedTask(focusedTask._id);
-    const incompleteTasks = getIncompleteTasksSorted(updatedTasks);
+    void completeFocusedTask(focusedTask._id)
+      .then((updatedTasks) => {
+        const incompleteTasks = getIncompleteTasksSorted(updatedTasks);
 
-    if (incompleteTasks.length === 0) {
-      navigate(ROOT_ROUTES.DAY);
-      return;
-    }
+        if (incompleteTasks.length === 0) {
+          navigate(ROOT_ROUTES.DAY);
+          return;
+        }
 
-    const nextTask = getNextTaskAfterCompletion({
-      availableTasks,
-      incompleteTasks,
-      currentTaskIndex,
-    });
+        const nextTask = getNextTaskAfterCompletion({
+          availableTasks,
+          incompleteTasks,
+          currentTaskIndex,
+        });
 
-    if (nextTask) {
-      setFocusedTask(nextTask._id);
-      return;
-    }
+        if (nextTask) {
+          setFocusedTask(nextTask._id);
+          return;
+        }
 
-    setFocusedTask(incompleteTasks[0]._id);
+        setFocusedTask(incompleteTasks[0]._id);
+      })
+      .catch((error) => {
+        console.error("Failed to complete task:", error);
+      });
   }, [
     availableTasks,
     completeFocusedTask,

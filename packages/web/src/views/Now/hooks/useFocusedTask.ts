@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Task } from "@web/common/types/task.types";
 import {
   getDateKey,
@@ -13,8 +13,12 @@ export function useFocusedTask({
   availableTasks = [],
 }: UseFocusedTaskOptions = {}) {
   const [focusedTask, setFocusedTaskState] = useState<Task | null>(null);
+  const focusRequestIdRef = useRef(0);
 
   const setFocusedTask = useCallback((taskId: string | null) => {
+    const requestId = focusRequestIdRef.current + 1;
+    focusRequestIdRef.current = requestId;
+
     if (taskId === null) {
       setFocusedTaskState(null);
       return;
@@ -22,20 +26,23 @@ export function useFocusedTask({
 
     // Find the task to ensure it exists (today only)
     const dateKey = getDateKey();
-    const tasks = loadTasksFromStorage(dateKey);
-    const task = tasks.find((t) => t._id === taskId);
-    if (task) {
-      // Don't allow focusing on completed tasks
-      if (task.status === "completed") {
-        setFocusedTaskState(null);
-        return;
-      }
-      setFocusedTaskState(task);
-      return;
-    }
+    void loadTasksFromStorage(dateKey)
+      .then((tasks) => {
+        if (requestId !== focusRequestIdRef.current) return;
 
-    // Task not found
-    setFocusedTaskState(null);
+        const task = tasks.find((t) => t._id === taskId);
+        if (!task || task.status === "completed") {
+          setFocusedTaskState(null);
+          return;
+        }
+
+        setFocusedTaskState(task);
+      })
+      .catch((error) => {
+        if (requestId !== focusRequestIdRef.current) return;
+        console.error("Failed to load tasks for focus state:", error);
+        setFocusedTaskState(null);
+      });
   }, []);
 
   useEffect(() => {

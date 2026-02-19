@@ -34,6 +34,7 @@ function markMigrationCompleted(): void {
  * @returns The number of tasks migrated
  */
 export async function migrateTasksFromLocalStorageToIndexedDB(): Promise<number> {
+  console.log("migrateTasksFromLocalStorageToIndexedDB");
   // Skip if running on server or already migrated
   if (typeof window === "undefined") return 0;
   if (hasTaskMigrationCompleted()) return 0;
