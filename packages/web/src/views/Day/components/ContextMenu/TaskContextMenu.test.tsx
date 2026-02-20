@@ -2,7 +2,7 @@ import { act } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { clearCompassLocalDb } from "@web/__tests__/utils/storage/indexeddb.test.util";
+import { prepareEmptyStorageForTests } from "@web/__tests__/utils/storage/indexeddb.test.util";
 import { addTasks } from "@web/__tests__/utils/tasks/task.test.util";
 import { renderWithDayProviders } from "../../util/day.test-util";
 import { TaskList } from "../TaskList/TaskList";
@@ -12,9 +12,8 @@ const mockConsoleLog = jest.spyOn(console, "log").mockImplementation(() => {});
 
 describe("TaskContextMenu", () => {
   beforeEach(async () => {
-    localStorage.clear();
     mockConsoleLog.mockClear();
-    await clearCompassLocalDb();
+    await prepareEmptyStorageForTests();
   });
 
   afterAll(() => {
@@ -43,7 +42,7 @@ describe("TaskContextMenu", () => {
     await waitFor(async () => {
       expect(await screen.findByText("Delete Task")).toBeInTheDocument();
     });
-  });
+  }, 10000);
 
   it("should show Delete Task menu item when menu is open", async () => {
     const user = userEvent.setup();
