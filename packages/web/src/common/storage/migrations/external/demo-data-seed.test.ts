@@ -7,6 +7,7 @@ import dayjs from "@core/util/date/dayjs";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { createMockStorageAdapter } from "@web/__tests__/utils/storage/mock-storage-adapter.util";
 import { Task } from "@web/common/types/task.types";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { demoDataSeedMigration } from "./demo-data-seed";
 
 describe("demoDataSeedMigration", () => {
@@ -164,6 +165,32 @@ describe("demoDataSeedMigration", () => {
       expect(event.endDate).toMatch(offsetFormat);
       expect(event.startDate).not.toContain(".");
       expect(event.endDate).not.toContain(".");
+    }
+  });
+
+  it("adds default grid position data to seeded timed events", async () => {
+    const adapter = createMockStorageAdapter();
+
+    await demoDataSeedMigration.migrate(adapter);
+
+    const eventsCall = adapter.putEvents.mock.calls[0][0] as Event_Core[];
+    const timedEvents = eventsCall.filter(
+      (e) => !e.isSomeday && !e.isAllDay,
+    ) as Schema_GridEvent[];
+
+    expect(timedEvents.length).toBeGreaterThan(0);
+
+    for (const event of timedEvents) {
+      expect(event.position).toBeDefined();
+      expect(event.position).toMatchObject({
+        isOverlapping: false,
+        totalEventsInGroup: 1,
+        widthMultiplier: 1,
+        horizontalOrder: 1,
+        initialX: null,
+        initialY: null,
+        dragOffset: { x: 0, y: 0 },
+      });
     }
   });
 });

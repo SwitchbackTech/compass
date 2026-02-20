@@ -4,6 +4,7 @@ import dayjs from "@core/util/date/dayjs";
 import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { Task } from "@web/common/types/task.types";
+import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { getModifierKeyLabel } from "@web/common/utils/shortcut/shortcut.util";
 import { StorageAdapter } from "../../adapter/storage.adapter";
@@ -85,6 +86,8 @@ function generateDemoData() {
   const todayEvents: Event_Core[] = [
     createEvent({
       title: "Morning standup",
+      description:
+        "Let's be honest. No one here has actually done anything. You are just making things up as you go. And yet, all of you sit here, pretending as if we are making progress. It seems, my dear team, that the only thing we do efficiently is exceed the stand up time.",
       startDate: todayAt(9, 0),
       endDate: todayAt(9, 30),
       priority: Priorities.WORK,
@@ -120,6 +123,8 @@ function generateDemoData() {
     // All-day event
     createEvent({
       title: "Deep work day",
+      description:
+        "The ability to perform deep work is becoming increasingly rare at exactly the same time it is becoming increasingly valuable in our economy. As a consequence, the few who cultivate this skill, and then make it the core of their working life, will thrive.",
       startDate: today,
       endDate: today,
       isAllDay: true,
@@ -185,7 +190,9 @@ function generateDemoData() {
   ];
 
   return {
-    events: [...somedayEvents, ...todayEvents],
+    events: [...somedayEvents, ...todayEvents].map((event) =>
+      !event.isSomeday && !event.isAllDay ? assembleGridEvent(event) : event,
+    ),
     tasks: {
       [today]: todayTasks,
       [yesterday]: yesterdayTasks,
