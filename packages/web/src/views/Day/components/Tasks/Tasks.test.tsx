@@ -1,7 +1,7 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
-import { clearCompassLocalDb } from "@web/__tests__/utils/storage/indexeddb.test.util";
+import { prepareEmptyStorageForTests } from "@web/__tests__/utils/storage/indexeddb.test.util";
 import { addTasks } from "@web/__tests__/utils/tasks/task.test.util";
 import { TaskList } from "@web/views/Day/components/TaskList/TaskList";
 import { Tasks } from "@web/views/Day/components/Tasks/Tasks";
@@ -10,8 +10,7 @@ import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
 
 describe("Tasks Tab Navigation", () => {
   beforeEach(async () => {
-    localStorage.clear();
-    await clearCompassLocalDb();
+    await prepareEmptyStorageForTests();
   });
 
   it("should render empty state initially", async () => {
@@ -43,8 +42,7 @@ describe("Tasks Tab Navigation", () => {
 
 describe("Tasks Keyboard Drag and Drop", () => {
   beforeEach(async () => {
-    localStorage.clear();
-    await clearCompassLocalDb();
+    await prepareEmptyStorageForTests();
   });
 
   it("should render drag handles when there are multiple tasks", async () => {

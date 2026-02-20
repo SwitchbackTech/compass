@@ -155,8 +155,6 @@ class UserService {
 
     await priorityService.createDefaultPriorities(cUser.userId, session);
 
-    await eventService.createDefaultSomedays(cUser.userId, session);
-
     return cUser;
   };
 

@@ -1,37 +1,17 @@
 /**
  * Tests for the migration runners.
  */
-import { StorageAdapter } from "@web/common/storage/adapter/storage.adapter";
+import { createMockStorageAdapter } from "@web/__tests__/utils/storage/mock-storage-adapter.util";
+import { DEMO_DATA_SEED_FLAG_KEY } from "@web/common/storage/migrations/external/demo-data-seed";
 import {
   runAllMigrations,
   runDataMigrations,
   runExternalMigrations,
 } from "@web/common/storage/migrations/migrations";
 
-function createMockAdapter(): jest.Mocked<StorageAdapter> {
-  return {
-    initialize: jest.fn().mockResolvedValue(undefined),
-    isReady: jest.fn().mockReturnValue(true),
-    getTasks: jest.fn().mockResolvedValue([]),
-    getAllTasks: jest.fn().mockResolvedValue([]),
-    putTasks: jest.fn().mockResolvedValue(undefined),
-    putTask: jest.fn().mockResolvedValue(undefined),
-    deleteTask: jest.fn().mockResolvedValue(undefined),
-    moveTask: jest.fn().mockResolvedValue(undefined),
-    clearAllTasks: jest.fn().mockResolvedValue(undefined),
-    getEvents: jest.fn().mockResolvedValue([]),
-    getAllEvents: jest.fn().mockResolvedValue([]),
-    putEvent: jest.fn().mockResolvedValue(undefined),
-    putEvents: jest.fn().mockResolvedValue(undefined),
-    deleteEvent: jest.fn().mockResolvedValue(undefined),
-    clearAllEvents: jest.fn().mockResolvedValue(undefined),
-    getMigrationRecords: jest.fn().mockResolvedValue([]),
-    setMigrationRecord: jest.fn().mockResolvedValue(undefined),
-  };
-}
-
 describe("storage migrations", () => {
-  const externalMigrationFlagKey = "compass.migration.localstorage-tasks-v1";
+  const localStorageMigrationFlagKey =
+    "compass.migration.localstorage-tasks-v1";
   const taskStoragePrefix = "compass.today.tasks.";
 
   function clearTaskStorageKeys(): void {
@@ -46,7 +26,8 @@ describe("storage migrations", () => {
   }
 
   beforeEach(() => {
-    localStorage.removeItem(externalMigrationFlagKey);
+    localStorage.removeItem(localStorageMigrationFlagKey);
+    localStorage.removeItem(DEMO_DATA_SEED_FLAG_KEY);
     clearTaskStorageKeys();
     jest.spyOn(console, "log").mockImplementation(() => {});
     jest.spyOn(console, "error").mockImplementation(() => {});
@@ -54,14 +35,15 @@ describe("storage migrations", () => {
   });
 
   afterEach(() => {
-    localStorage.removeItem(externalMigrationFlagKey);
+    localStorage.removeItem(localStorageMigrationFlagKey);
+    localStorage.removeItem(DEMO_DATA_SEED_FLAG_KEY);
     clearTaskStorageKeys();
     jest.restoreAllMocks();
   });
 
   describe("runDataMigrations", () => {
     it("skips migrations that are already completed", async () => {
-      const adapter = createMockAdapter();
+      const adapter = createMockStorageAdapter();
       adapter.getMigrationRecords.mockResolvedValue([
         {
           id: "task-id-to-underscore-id-v1",
@@ -77,46 +59,56 @@ describe("storage migrations", () => {
   });
 
   describe("runExternalMigrations", () => {
-    it("skips migration when localStorage flag is already set", async () => {
-      localStorage.setItem(externalMigrationFlagKey, "completed");
+    it("skips migrations when localStorage flags are already set", async () => {
+      localStorage.setItem(localStorageMigrationFlagKey, "completed");
+      localStorage.setItem(DEMO_DATA_SEED_FLAG_KEY, "completed");
 
-      const adapter = createMockAdapter();
+      const adapter = createMockStorageAdapter();
 
       await runExternalMigrations(adapter);
 
       expect(adapter.putTasks).not.toHaveBeenCalled();
     });
 
-    it("runs migration and sets flag when not previously completed", async () => {
-      const adapter = createMockAdapter();
+    it("runs migrations and sets flags when not previously completed", async () => {
+      const adapter = createMockStorageAdapter();
       adapter.getTasks.mockResolvedValue([]);
       adapter.putTasks.mockResolvedValue(undefined);
 
       await runExternalMigrations(adapter);
 
-      expect(localStorage.getItem(externalMigrationFlagKey)).toBe("completed");
+      expect(localStorage.getItem(localStorageMigrationFlagKey)).toBe(
+        "completed",
+      );
+      expect(localStorage.getItem(DEMO_DATA_SEED_FLAG_KEY)).toBe("completed");
     });
 
     it("does not throw when migration fails (non-blocking)", async () => {
+      // Set demo data seed as completed so we isolate the localStorage migration test
+      localStorage.setItem(DEMO_DATA_SEED_FLAG_KEY, "completed");
       localStorage.setItem(
         "compass.today.tasks.2025-01-01",
         "invalid json {{{",
       );
 
-      const adapter = createMockAdapter();
+      const adapter = createMockStorageAdapter();
 
       await expect(runExternalMigrations(adapter)).resolves.not.toThrow();
-      expect(localStorage.getItem(externalMigrationFlagKey)).toBeNull();
+      // localStorage migration should not be marked completed due to invalid JSON
+      expect(localStorage.getItem(localStorageMigrationFlagKey)).toBeNull();
     });
   });
 
   describe("runAllMigrations", () => {
     it("runs data then external migrations without error", async () => {
-      const adapter = createMockAdapter();
+      const adapter = createMockStorageAdapter();
       adapter.getTasks.mockResolvedValue([]);
 
       await expect(runAllMigrations(adapter)).resolves.toBeUndefined();
-      expect(localStorage.getItem(externalMigrationFlagKey)).toBe("completed");
+      expect(localStorage.getItem(localStorageMigrationFlagKey)).toBe(
+        "completed",
+      );
+      expect(localStorage.getItem(DEMO_DATA_SEED_FLAG_KEY)).toBe("completed");
     });
   });
 });

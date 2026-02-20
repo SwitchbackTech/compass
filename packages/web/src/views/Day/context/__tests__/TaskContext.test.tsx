@@ -4,7 +4,7 @@ import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
 import { renderHook, waitFor } from "@web/__tests__/__mocks__/mock.render";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
-import { clearCompassLocalDb } from "@web/__tests__/utils/storage/indexeddb.test.util";
+import { prepareEmptyStorageForTests } from "@web/__tests__/utils/storage/indexeddb.test.util";
 import {
   ensureStorageReady,
   getStorageAdapter,
@@ -27,9 +27,7 @@ describe("TaskProvider", () => {
   }
 
   beforeEach(async () => {
-    // Clear localStorage before each test
-    localStorage.clear();
-    await clearCompassLocalDb();
+    await prepareEmptyStorageForTests();
   });
 
   async function waitForTasksReady(result: {
