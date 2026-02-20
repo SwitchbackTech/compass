@@ -42,7 +42,7 @@ describe("TaskContextMenu", () => {
     await waitFor(async () => {
       expect(await screen.findByText("Delete Task")).toBeInTheDocument();
     });
-  }, 10000);
+  });
 
   it("should show Delete Task menu item when menu is open", async () => {
     const user = userEvent.setup();

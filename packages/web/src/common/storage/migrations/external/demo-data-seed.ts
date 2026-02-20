@@ -179,15 +179,8 @@ function generateDemoData() {
  * This migration checks if the user has any existing events or tasks.
  * If storage is empty (first-time user), it populates the app with
  * sample data so they can immediately explore functionality.
- *
- * Demo data includes:
- * - 4 timed today events with different priorities (work, self, relationships, unassigned)
- * - 1 all-day today event
- * - 2 someday events (week and month)
- * - 5 today tasks
- * - 3 completed yesterday tasks
- * - 1 tomorrow task
  */
+
 export const demoDataSeedMigration: ExternalMigration = {
   id: "demo-data-seed-v1",
   description: "Seed demo data for first-time users",

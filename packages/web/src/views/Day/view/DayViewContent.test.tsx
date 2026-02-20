@@ -177,7 +177,7 @@ describe("TodayViewContent", () => {
 
     // Assert task is removed from DOM
     expect(taskCheckbox).not.toBeInTheDocument();
-  }, 10000);
+  });
 
   it("should NOT delete task when Delete key is pressed on input field", async () => {
     const { user } = renderWithDayProviders(<DayViewContent />);
