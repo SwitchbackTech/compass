@@ -19,6 +19,7 @@ function createEvent(
     _id: createObjectIdString(),
     origin: Origin.COMPASS,
     priority: Priorities.UNASSIGNED,
+    isSomeday: false,
     user: UNAUTHENTICATED_USER,
     ...overrides,
   };
@@ -100,6 +101,14 @@ function generateDemoData() {
       endDate: todayAt(18, 0),
       priority: Priorities.RELATIONS,
     }),
+    // All-day event
+    createEvent({
+      title: "Deep work day",
+      startDate: today,
+      endDate: today,
+      isAllDay: true,
+      priority: Priorities.WORK,
+    }),
   ];
 
   // ─── Tasks (Today) ──────────────────────────────────────────────────────────
@@ -172,9 +181,10 @@ function generateDemoData() {
  * sample data so they can immediately explore functionality.
  *
  * Demo data includes:
- * - 4 today events with different priorities (work, self, relationships, unassigned)
+ * - 4 timed today events with different priorities (work, self, relationships, unassigned)
+ * - 1 all-day today event
  * - 2 someday events (week and month)
- * - 4 today tasks
+ * - 5 today tasks
  * - 3 completed yesterday tasks
  * - 1 tomorrow task
  */

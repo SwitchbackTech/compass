@@ -70,9 +70,9 @@ describe("demoDataSeedMigration", () => {
     expect(adapter.putEvents).toHaveBeenCalled();
     expect(adapter.putTasks).toHaveBeenCalled();
 
-    // Verify events were created (6 total: 4 today + 2 someday)
+    // Verify events were created (7 total: 5 today + 2 someday)
     const eventsCall = adapter.putEvents.mock.calls[0][0] as Event_Core[];
-    expect(eventsCall).toHaveLength(6);
+    expect(eventsCall).toHaveLength(7);
 
     // Verify tasks were created for 3 days
     expect(adapter.putTasks).toHaveBeenCalledTimes(3);
@@ -178,5 +178,17 @@ describe("demoDataSeedMigration", () => {
     const somedayEvents = eventsCall.filter((e) => e.isSomeday);
 
     expect(somedayEvents).toHaveLength(2);
+  });
+
+  it("creates an all-day event for today", async () => {
+    const adapter = createMockAdapter();
+
+    await demoDataSeedMigration.migrate(adapter);
+
+    const eventsCall = adapter.putEvents.mock.calls[0][0] as Event_Core[];
+    const allDayEvents = eventsCall.filter((e) => e.isAllDay);
+
+    expect(allDayEvents).toHaveLength(1);
+    expect(allDayEvents[0].title).toBe("Deep work day");
   });
 });
