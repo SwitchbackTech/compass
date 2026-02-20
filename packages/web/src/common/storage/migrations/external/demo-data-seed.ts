@@ -4,11 +4,15 @@ import dayjs from "@core/util/date/dayjs";
 import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { Task } from "@web/common/types/task.types";
-import { assembleGridEvent } from "@web/common/utils/event/event.util";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { getModifierKeyLabel } from "@web/common/utils/shortcut/shortcut.util";
 import { StorageAdapter } from "../../adapter/storage.adapter";
 import { ExternalMigration } from "../migration.types";
+
+type Event_WithPosition = Event_Core & Pick<Schema_GridEvent, "position">;
+type Event_Seeded = Event_Core | Event_WithPosition;
 
 /**
  * Creates a demo event with sensible defaults.
@@ -105,6 +109,7 @@ function generateDemoData() {
     }),
     createEvent({
       title: "Exercise",
+      description: "I'm sorry for what I said during burpees.",
       startDate: todayAt(12, 0),
       endDate: todayAt(13, 0),
       priority: Priorities.SELF,
@@ -190,9 +195,19 @@ function generateDemoData() {
   ];
 
   return {
-    events: [...somedayEvents, ...todayEvents].map((event) =>
-      !event.isSomeday && !event.isAllDay ? assembleGridEvent(event) : event,
-    ),
+    events: [...somedayEvents, ...todayEvents].map((event): Event_Seeded => {
+      if (event.isSomeday || event.isAllDay) {
+        return event;
+      }
+
+      return {
+        ...event,
+        position: {
+          ...gridEventDefaultPosition,
+          dragOffset: { ...gridEventDefaultPosition.dragOffset },
+        },
+      };
+    }),
     tasks: {
       [today]: todayTasks,
       [yesterday]: yesterdayTasks,

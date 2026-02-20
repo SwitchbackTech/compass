@@ -2,12 +2,15 @@
  * Tests for the demo data seed migration.
  */
 import { Priorities } from "@core/constants/core.constants";
-import { Event_Core } from "@core/types/event.types";
+import { CompassCoreEventSchema, Event_Core } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { createMockStorageAdapter } from "@web/__tests__/utils/storage/mock-storage-adapter.util";
 import { Task } from "@web/common/types/task.types";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  GridEventSchema,
+  Schema_GridEvent,
+} from "@web/common/types/web.event.types";
 import { demoDataSeedMigration } from "./demo-data-seed";
 
 describe("demoDataSeedMigration", () => {
@@ -191,6 +194,23 @@ describe("demoDataSeedMigration", () => {
         initialY: null,
         dragOffset: { x: 0, y: 0 },
       });
+    }
+  });
+
+  it("seeds events with valid schemas for their event type", async () => {
+    const adapter = createMockStorageAdapter();
+
+    await demoDataSeedMigration.migrate(adapter);
+
+    const eventsCall = adapter.putEvents.mock.calls[0][0] as Event_Core[];
+
+    for (const event of eventsCall) {
+      if (!event.isSomeday && !event.isAllDay) {
+        expect(() => GridEventSchema.parse(event)).not.toThrow();
+        continue;
+      }
+
+      expect(() => CompassCoreEventSchema.parse(event)).not.toThrow();
     }
   });
 });
