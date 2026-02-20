@@ -13,6 +13,7 @@ import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
+import { syncLocalTaskUsersToAuthenticatedUser } from "@web/common/utils/sync/local-task-user-sync.util";
 import * as socket from "@web/socket/provider/SocketProvider";
 import { CompassSession } from "./session.types";
 
@@ -116,6 +117,19 @@ export function SessionProvider({ children }: PropsWithChildren<{}>) {
       };
     }
   }, []);
+
+  useEffect(() => {
+    if (!authenticated) {
+      return;
+    }
+
+    void syncLocalTaskUsersToAuthenticatedUser().catch((error) => {
+      console.error(
+        "Failed to sync local task users after authentication:",
+        error,
+      );
+    });
+  }, [authenticated]);
 
   return (
     <SessionContext.Provider

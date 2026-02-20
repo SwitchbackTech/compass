@@ -2,14 +2,18 @@ import {
   createTestTask,
   createTestTasks,
 } from "@web/__tests__/utils/repositories/repository.test.factory";
+import { getUserId } from "@web/auth/auth.util";
+import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
 import * as storageAdapter from "@web/common/storage/adapter/adapter";
 import { LocalTaskRepository } from "./local.task.repository";
 
 // Mock the storage adapter module
 jest.mock("@web/common/storage/adapter/adapter");
+jest.mock("@web/auth/auth.util");
 
 describe("LocalTaskRepository", () => {
   let repository: LocalTaskRepository;
+  let mockGetUserId: jest.MockedFunction<typeof getUserId>;
   let mockAdapter: {
     getTasks: jest.Mock;
     putTasks: jest.Mock;
@@ -19,6 +23,7 @@ describe("LocalTaskRepository", () => {
   };
 
   beforeEach(() => {
+    mockGetUserId = getUserId as jest.MockedFunction<typeof getUserId>;
     mockAdapter = {
       getTasks: jest.fn().mockResolvedValue([]),
       putTasks: jest.fn().mockResolvedValue(undefined),
@@ -33,6 +38,7 @@ describe("LocalTaskRepository", () => {
 
     repository = new LocalTaskRepository();
     jest.clearAllMocks();
+    mockGetUserId.mockResolvedValue(UNAUTHENTICATED_USER);
 
     // Re-mock after clearing
     (storageAdapter.getStorageAdapter as jest.Mock).mockReturnValue(
@@ -107,6 +113,70 @@ describe("LocalTaskRepository", () => {
       expect(mockAdapter.putTask).toHaveBeenCalledWith(dateKey, task);
       expect(mockAdapter.putTask).toHaveBeenCalledTimes(1);
       expect(mockAdapter.putTasks).not.toHaveBeenCalled();
+    });
+
+    it("rewrites placeholder task users when authenticated", async () => {
+      const dateKey = "2024-01-01";
+      mockGetUserId.mockResolvedValue("mongo-user-id");
+      const tasks = [
+        createTestTask({
+          _id: "task-1",
+          title: "Task One",
+          user: UNAUTHENTICATED_USER,
+        }),
+      ];
+
+      await repository.save(dateKey, tasks);
+
+      expect(mockAdapter.putTasks).toHaveBeenCalledWith(
+        dateKey,
+        expect.arrayContaining([
+          expect.objectContaining({
+            _id: "task-1",
+            user: "mongo-user-id",
+          }),
+        ]),
+      );
+    });
+
+    it("does not rewrite non-placeholder task users", async () => {
+      const dateKey = "2024-01-01";
+      mockGetUserId.mockResolvedValue("mongo-user-id");
+      const task = createTestTask({
+        _id: "task-1",
+        title: "Task One",
+        user: "already-authenticated-user",
+      });
+
+      await repository.save(dateKey, task);
+
+      expect(mockAdapter.putTask).toHaveBeenCalledWith(
+        dateKey,
+        expect.objectContaining({
+          _id: "task-1",
+          user: "already-authenticated-user",
+        }),
+      );
+    });
+
+    it("keeps placeholder task users when unauthenticated", async () => {
+      const dateKey = "2024-01-01";
+      mockGetUserId.mockResolvedValue(UNAUTHENTICATED_USER);
+      const task = createTestTask({
+        _id: "task-1",
+        title: "Task One",
+        user: UNAUTHENTICATED_USER,
+      });
+
+      await repository.save(dateKey, task);
+
+      expect(mockAdapter.putTask).toHaveBeenCalledWith(
+        dateKey,
+        expect.objectContaining({
+          _id: "task-1",
+          user: UNAUTHENTICATED_USER,
+        }),
+      );
     });
   });
 

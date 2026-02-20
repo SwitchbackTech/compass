@@ -1,3 +1,5 @@
+import { getUserId } from "@web/auth/auth.util";
+import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
 import { getStorageAdapter } from "@web/common/storage/adapter/adapter";
 import { Task } from "@web/common/types/task.types";
 import { dispatchTasksSavedEvent } from "@web/common/utils/storage/storage.util";
@@ -21,12 +23,37 @@ export class LocalTaskRepository implements TaskRepository {
 
   async save(dateKey: string, taskOrTasks: Task | Task[]): Promise<void> {
     const tasks = Array.isArray(taskOrTasks) ? taskOrTasks : [taskOrTasks];
-    if (tasks.length === 1 && !Array.isArray(taskOrTasks)) {
-      await this.adapter.putTask(dateKey, tasks[0]);
+    const normalizedTasks = await this.normalizeUnauthenticatedUsers(tasks);
+
+    if (normalizedTasks.length === 1 && !Array.isArray(taskOrTasks)) {
+      await this.adapter.putTask(dateKey, normalizedTasks[0]);
     } else {
-      await this.adapter.putTasks(dateKey, tasks);
+      await this.adapter.putTasks(dateKey, normalizedTasks);
     }
     dispatchTasksSavedEvent(dateKey);
+  }
+
+  private async normalizeUnauthenticatedUsers(tasks: Task[]): Promise<Task[]> {
+    let authenticatedUserId = UNAUTHENTICATED_USER;
+
+    try {
+      authenticatedUserId = await getUserId();
+    } catch (error) {
+      console.error("Failed to resolve user id while saving tasks:", error);
+      return tasks;
+    }
+
+    if (!authenticatedUserId || authenticatedUserId === UNAUTHENTICATED_USER) {
+      return tasks;
+    }
+
+    return tasks.map((task) => {
+      if (task.user !== UNAUTHENTICATED_USER) {
+        return task;
+      }
+
+      return { ...task, user: authenticatedUserId };
+    });
   }
 
   async delete(dateKey: string, taskId: string): Promise<void> {
