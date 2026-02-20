@@ -51,14 +51,21 @@ function generateDemoData() {
   const modKey = getModifierKeyLabel();
 
   // Helper for creating timed events today (clone to avoid mutating now)
+  // Use offset format and 15-minute alignment - consistent with event creation in the app
   const todayAt = (h: number, m = 0) =>
-    now.clone().hour(h).minute(m).second(0).toRFC3339OffsetString();
+    now
+      .clone()
+      .hour(h)
+      .minute(m)
+      .second(0)
+      .millisecond(0)
+      .toRFC3339OffsetString();
 
   // ─── Someday Events ─────────────────────────────────────────────────────────
   const somedayEvents: Event_Core[] = [
     // Someday Week
     createEvent({
-      title: "Learn a new keyboard shortcut",
+      title: "Learn a new shortcut",
       description: "Press `w` to create a new someday week event",
       startDate: week.startDate,
       endDate: week.endDate,
@@ -130,9 +137,13 @@ function generateDemoData() {
       order: 3,
     }),
     createTask({
+      title: `Go to Week view (${VIEW_SHORTCUTS.week.key})`,
+      order: 4,
+    }),
+    createTask({
       title: "Star the repo =]",
       description: "https://github.com/SwitchbackTech/compass",
-      order: 4,
+      order: 5,
     }),
   ];
 

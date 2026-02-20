@@ -147,4 +147,23 @@ describe("demoDataSeedMigration", () => {
     expect(allDayEvents).toHaveLength(1);
     expect(allDayEvents[0].title).toBe("Deep work day");
   });
+
+  it("creates timed events with offset format and 15-minute-aligned times (no seconds/milliseconds)", async () => {
+    const adapter = createMockStorageAdapter();
+
+    await demoDataSeedMigration.migrate(adapter);
+
+    const eventsCall = adapter.putEvents.mock.calls[0][0] as Event_Core[];
+    const timedEvents = eventsCall.filter((e) => !e.isSomeday && !e.isAllDay);
+
+    // RFC3339 offset format: "2026-02-19T16:30:00-08:00" (no milliseconds, offset instead of Z)
+    const offsetFormat = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00[+-]\d{2}:\d{2}$/;
+
+    for (const event of timedEvents) {
+      expect(event.startDate).toMatch(offsetFormat);
+      expect(event.endDate).toMatch(offsetFormat);
+      expect(event.startDate).not.toContain(".");
+      expect(event.endDate).not.toContain(".");
+    }
+  });
 });
