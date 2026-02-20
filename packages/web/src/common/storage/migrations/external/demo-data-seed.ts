@@ -88,6 +88,8 @@ function generateDemoData() {
       startDate: todayAt(9, 0),
       endDate: todayAt(9, 30),
       priority: Priorities.WORK,
+      isAllDay: false,
+      isSomeday: false,
     }),
     createEvent({
       title: "Try Compass",
@@ -95,18 +97,25 @@ function generateDemoData() {
       startDate: todayAt(10, 0),
       endDate: todayAt(11, 0),
       priority: Priorities.UNASSIGNED,
+      isAllDay: false,
+      isSomeday: false,
     }),
     createEvent({
       title: "Exercise",
       startDate: todayAt(12, 0),
       endDate: todayAt(13, 0),
       priority: Priorities.SELF,
+      isAllDay: false,
+      isSomeday: false,
     }),
     createEvent({
-      title: "Catch up with a friend",
+      title: "Call a friend",
+      description: "Of all possessions, a friend is the most precious.",
       startDate: todayAt(17, 0),
       endDate: todayAt(18, 0),
       priority: Priorities.RELATIONS,
+      isAllDay: false,
+      isSomeday: false,
     }),
     // All-day event
     createEvent({
@@ -114,6 +123,7 @@ function generateDemoData() {
       startDate: today,
       endDate: today,
       isAllDay: true,
+      isSomeday: false,
       priority: Priorities.WORK,
     }),
   ];
