@@ -1,5 +1,6 @@
+import { DEMO_DATA_SEED_FLAG_KEY } from "@web/common/storage/migrations/external/demo-data-seed";
+
 const COMPASS_LOCAL_DB_NAME = "compass-local";
-const DEMO_DATA_SEED_MIGRATION_FLAG = "compass.migration.demo-data-seed-v1";
 
 export async function clearCompassLocalDb(): Promise<void> {
   await new Promise<void>((resolve) => {
@@ -18,5 +19,5 @@ export async function clearCompassLocalDb(): Promise<void> {
 export async function prepareEmptyStorageForTests(): Promise<void> {
   localStorage.clear();
   await clearCompassLocalDb();
-  localStorage.setItem(DEMO_DATA_SEED_MIGRATION_FLAG, "completed");
+  localStorage.setItem(DEMO_DATA_SEED_FLAG_KEY, "completed");
 }

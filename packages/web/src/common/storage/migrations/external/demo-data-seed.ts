@@ -50,9 +50,9 @@ function generateDemoData() {
   const { week, month } = now.weekMonthRange();
   const modKey = getModifierKeyLabel();
 
-  // Helper for creating timed events today
+  // Helper for creating timed events today (clone to avoid mutating now)
   const todayAt = (h: number, m = 0) =>
-    now.hour(h).minute(m).second(0).toRFC3339OffsetString();
+    now.clone().hour(h).minute(m).second(0).toRFC3339OffsetString();
 
   // ─── Someday Events ─────────────────────────────────────────────────────────
   const somedayEvents: Event_Core[] = [
@@ -181,8 +181,13 @@ function generateDemoData() {
  * sample data so they can immediately explore functionality.
  */
 
+const DEMO_DATA_SEED_MIGRATION_ID = "demo-data-seed-v1";
+
+/** localStorage flag key used to track demo data seed completion. */
+export const DEMO_DATA_SEED_FLAG_KEY = `compass.migration.${DEMO_DATA_SEED_MIGRATION_ID}`;
+
 export const demoDataSeedMigration: ExternalMigration = {
-  id: "demo-data-seed-v1",
+  id: DEMO_DATA_SEED_MIGRATION_ID,
   description: "Seed demo data for first-time users",
 
   async migrate(adapter: StorageAdapter): Promise<void> {
