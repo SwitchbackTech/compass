@@ -9,6 +9,7 @@ import { ENV_WEB } from "@web/common/constants/env.constants";
 import { CompassRefsProvider } from "@web/common/context/compass-refs";
 import { PointerPositionProvider } from "@web/common/context/pointer-position";
 import { theme } from "@web/common/styles/theme";
+import { AuthModal, AuthModalProvider } from "@web/components/AuthModal";
 import { DNDContext } from "@web/components/DND/DNDContext";
 import { DNDOverlay } from "@web/components/DND/DNDOverlay";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
@@ -28,7 +29,12 @@ export const CompassRequiredProviders = (
           <ThemeProvider theme={theme}>
             <PointerPositionProvider>
               <DNDContext>
-                <IconProvider>{props.children}</IconProvider>
+                <IconProvider>
+                  <AuthModalProvider>
+                    {props.children}
+                    <AuthModal />
+                  </AuthModalProvider>
+                </IconProvider>
 
                 <ToastContainer
                   position="bottom-left"
