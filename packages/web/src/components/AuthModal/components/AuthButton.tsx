@@ -30,7 +30,7 @@ export const AuthButton: FC<AuthButtonProps> = ({
     <button
       disabled={isDisabled}
       className={clsx(
-        "rounded-md text-sm font-medium transition-colors",
+        "rounded-3xl text-sm font-medium transition-colors",
         "focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent focus:outline-none",
         {
           // Primary variant

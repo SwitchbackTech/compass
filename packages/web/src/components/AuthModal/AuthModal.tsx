@@ -79,24 +79,6 @@ export const AuthModal: FC = () => {
         {showTabs && (
           <AuthTabs activeTab={currentView} onTabChange={handleTabChange} />
         )}
-
-        {/* Google Sign In */}
-        {showTabs && (
-          <>
-            <GoogleButton
-              onClick={handleGoogleSignIn}
-              label="Sign in with Google"
-              style={{ width: "100%" }}
-            />
-
-            <div className="flex items-center gap-3">
-              <div className="bg-border-primary h-px flex-1" />
-              <span className="text-text-light text-sm">or</span>
-              <div className="bg-border-primary h-px flex-1" />
-            </div>
-          </>
-        )}
-
         {/* Form based on current view */}
         {currentView === "signUp" && <SignUpForm onSubmit={handleSignUp} />}
         {currentView === "signIn" && (
@@ -111,7 +93,21 @@ export const AuthModal: FC = () => {
             onBackToSignIn={handleBackToSignIn}
           />
         )}
-
+        {/* Google Sign In */}
+        {showTabs && (
+          <>
+            <div className="flex items-center gap-3">
+              <div className="bg-border-primary h-px flex-1" />
+              <span className="text-text-light text-sm">or</span>
+              <div className="bg-border-primary h-px flex-1" />
+            </div>
+            <GoogleButton
+              onClick={handleGoogleSignIn}
+              label="Sign in with Google"
+              style={{ width: "100%" }}
+            />
+          </>
+        )}
         {/* Privacy & Terms links */}
         {showTabs && (
           <div className="text-text-light-inactive flex items-center justify-center text-center text-xs">
