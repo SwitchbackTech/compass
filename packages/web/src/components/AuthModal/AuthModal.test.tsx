@@ -323,6 +323,30 @@ describe("AuthModal", () => {
         ).toBeInTheDocument();
       });
     });
+
+    it("updates greeting when user types name", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<ModalTrigger />);
+
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
+      await user.click(screen.getByRole("tab", { name: /sign up/i }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole("heading", { name: /^nice to meet you$/i }),
+        ).toBeInTheDocument();
+      });
+
+      await user.type(screen.getByLabelText(/name/i), "Alex");
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole("heading", {
+            name: /nice to meet you, alex/i,
+          }),
+        ).toBeInTheDocument();
+      });
+    });
   });
 
   describe("Forgot Password Form", () => {

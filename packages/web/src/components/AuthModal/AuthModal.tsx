@@ -79,8 +79,8 @@ export const AuthModal: FC = () => {
       ? "Reset Password"
       : currentView === "signUp"
         ? trimmedName
-          ? `Hey, ${trimmedName} nice to meet you`
-          : "Hey, nice to meet you"
+          ? `Nice to meet you, ${trimmedName}`
+          : "Nice to meet you"
         : "Hey, welcome back";
 
   return (
