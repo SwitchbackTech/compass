@@ -1,4 +1,11 @@
-import { FC, FormEvent, useCallback, useMemo, useState } from "react";
+import {
+  ChangeEvent,
+  FC,
+  FormEvent,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
 import {
   ForgotPasswordFormData,
   forgotPasswordSchema,
@@ -40,7 +47,7 @@ export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
   }, []);
 
   const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    (e: ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       setEmail(value);
 

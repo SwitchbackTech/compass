@@ -42,7 +42,7 @@ export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
             "text-text-lighter placeholder:text-text-darkPlaceholder",
             "focus:border-accent-primary focus:outline-none",
             {
-              "border-red-500 focus:border-red-500": showError,
+              "border-status-error focus:border-status-error": showError,
             },
           )}
           aria-invalid={showError ? true : undefined}
@@ -50,7 +50,7 @@ export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
           {...inputProps}
         />
         {showError && (
-          <span id={errorId} className="text-sm text-red-400" role="alert">
+          <span id={errorId} className="text-status-error text-sm" role="alert">
             {error}
           </span>
         )}

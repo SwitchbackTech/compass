@@ -1,3 +1,4 @@
+import { ReactElement, ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
@@ -46,7 +47,7 @@ jest.mock("@web/components/Tooltip/TooltipWrapper", () => ({
     children,
     onClick,
   }: {
-    children: React.ReactNode;
+    children: ReactNode;
     onClick?: () => void;
     description?: string;
   }) => (
@@ -67,7 +68,7 @@ const ModalTrigger = () => {
 };
 
 const renderWithProviders = (
-  component: React.ReactElement,
+  component: ReactElement,
   initialRoute: string = "/day",
 ) => {
   return render(
@@ -125,11 +126,11 @@ describe("AuthModal", () => {
         ).toBeInTheDocument();
       });
 
-      // Click on backdrop (the presentation div)
-      const backdrop = document.querySelector('[role="presentation"]');
+      // Click on backdrop using semantic role query
+      const backdrop = screen.getByRole("presentation");
       expect(backdrop).toBeInTheDocument();
 
-      await user.click(backdrop!);
+      await user.click(backdrop);
 
       await waitFor(() => {
         expect(
@@ -151,8 +152,8 @@ describe("AuthModal", () => {
       });
 
       // Focus the backdrop so it can receive keyboard events
-      const backdrop = document.querySelector('[role="presentation"]');
-      (backdrop as HTMLElement)?.focus();
+      const backdrop = screen.getByRole("presentation");
+      backdrop.focus();
 
       await user.keyboard("{Escape}");
 
@@ -238,8 +239,8 @@ describe("AuthModal", () => {
       await user.click(screen.getByTestId("open-modal"));
 
       await waitFor(() => {
-        // Look for the submit button by type
-        const submitButton = screen.getByRole("button", { name: /^sign in$/i });
+        // Look for the submit button by type - CTA is "Enter" per spec
+        const submitButton = screen.getByRole("button", { name: /^enter$/i });
         expect(submitButton).toBeInTheDocument();
         expect(submitButton).toHaveAttribute("type", "submit");
       });
@@ -424,7 +425,7 @@ describe("AuthModal", () => {
       expect(mockGoogleLogin).toHaveBeenCalled();
     });
 
-    it("changes button label based on active tab", async () => {
+    it("keeps consistent button label across tabs", async () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
@@ -438,9 +439,10 @@ describe("AuthModal", () => {
 
       await user.click(screen.getByRole("tab", { name: /sign up/i }));
 
+      // Google button label stays consistent as "Sign in with Google" per spec
       await waitFor(() => {
         expect(screen.getByTestId("google-button")).toHaveTextContent(
-          /sign up with google/i,
+          /sign in with google/i,
         );
       });
     });

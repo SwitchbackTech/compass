@@ -1,4 +1,11 @@
-import { FC, FormEvent, useCallback, useMemo, useState } from "react";
+import {
+  ChangeEvent,
+  FC,
+  FormEvent,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
 import { SignUpFormData, signUpSchema } from "@web/auth/schemas/auth.schemas";
 import { AuthButton } from "../components/AuthButton";
 import { AuthInput } from "../components/AuthInput";
@@ -65,7 +72,7 @@ export const SignUpForm: FC<SignUpFormProps> = ({ onSubmit, isSubmitting }) => {
   );
 
   const handleChange = useCallback(
-    (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    (field: keyof FormState) => (e: ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       setFormState((prev) => ({ ...prev, [field]: value }));
 

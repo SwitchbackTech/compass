@@ -2,7 +2,7 @@ import { FC } from "react";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import { getCalendarHeadingLabel } from "@web/common/utils/datetime/web.date.util";
-import { AccountIcon } from "@web/components/AuthModal";
+import { AccountIcon } from "@web/components/AuthModal/AccountIcon";
 import { AlignItems } from "@web/components/Flex/styled";
 import { SidebarIcon } from "@web/components/Icons/Sidebar";
 import { SelectView } from "@web/components/SelectView/SelectView";

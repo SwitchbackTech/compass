@@ -36,15 +36,13 @@ export const AuthModal: FC = () => {
   }, [googleAuth, closeModal]);
 
   const handleSignUp = useCallback((_data: SignUpFormData) => {
-    // TODO: Implement email/password sign up API call
+    // TODO: Implement email/password sign up API call in Phase 2
     // For now, this is UI-only - backend integration will be added later
-    console.log("Sign up submitted:", _data);
   }, []);
 
   const handleSignIn = useCallback((_data: SignInFormData) => {
-    // TODO: Implement email/password sign in API call
+    // TODO: Implement email/password sign in API call in Phase 2
     // For now, this is UI-only - backend integration will be added later
-    console.log("Sign in submitted:", _data);
   }, []);
 
   const handleForgotPassword = useCallback(() => {
@@ -56,9 +54,8 @@ export const AuthModal: FC = () => {
   }, [setView]);
 
   const handleForgotPasswordSubmit = useCallback((_data: { email: string }) => {
-    // TODO: Implement forgot password API call
+    // TODO: Implement forgot password API call in Phase 2
     // For now, this is UI-only - backend integration will be added later
-    console.log("Forgot password submitted:", _data);
   }, []);
 
   if (!isOpen) {
@@ -87,11 +84,7 @@ export const AuthModal: FC = () => {
           <>
             <GoogleButton
               onClick={handleGoogleSignIn}
-              label={
-                currentView === "signUp"
-                  ? "Sign up with Google"
-                  : "Sign in with Google"
-              }
+              label="Sign in with Google"
               style={{ width: "100%" }}
             />
 
@@ -123,7 +116,7 @@ export const AuthModal: FC = () => {
           <p className="text-text-light text-center text-xs">
             By continuing, you agree to our{" "}
             <a
-              href="https://compasscalendar.com/terms"
+              href="https://www.compasscalendar.com/terms"
               target="_blank"
               rel="noopener noreferrer"
               className="text-text-lighter hover:underline"
@@ -132,7 +125,7 @@ export const AuthModal: FC = () => {
             </a>{" "}
             and{" "}
             <a
-              href="https://compasscalendar.com/privacy"
+              href="https://www.compasscalendar.com/privacy"
               target="_blank"
               rel="noopener noreferrer"
               className="text-text-lighter hover:underline"
