@@ -13,6 +13,8 @@ import { AuthInput } from "../components/AuthInput";
 interface SignUpFormProps {
   /** Callback when form is submitted with valid data */
   onSubmit: (data: SignUpFormData) => void;
+  /** Callback when name field changes (for dynamic greeting) */
+  onNameChange?: (name: string) => void;
   /** Whether form submission is in progress */
   isSubmitting?: boolean;
 }
@@ -40,7 +42,11 @@ interface TouchedFields {
  *
  * Validates on blur and enables CTA only when all fields are valid
  */
-export const SignUpForm: FC<SignUpFormProps> = ({ onSubmit, isSubmitting }) => {
+export const SignUpForm: FC<SignUpFormProps> = ({
+  onSubmit,
+  onNameChange,
+  isSubmitting,
+}) => {
   const [formState, setFormState] = useState<FormState>({
     name: "",
     email: "",
@@ -76,13 +82,17 @@ export const SignUpForm: FC<SignUpFormProps> = ({ onSubmit, isSubmitting }) => {
       const value = e.target.value;
       setFormState((prev) => ({ ...prev, [field]: value }));
 
+      if (field === "name") {
+        onNameChange?.(value);
+      }
+
       // Clear error on change if field was touched
       if (touched[field]) {
         const error = validateField(field, value);
         setErrors((prev) => ({ ...prev, [field]: error }));
       }
     },
-    [touched, validateField],
+    [touched, validateField, onNameChange],
   );
 
   const handleBlur = useCallback(

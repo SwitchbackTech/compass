@@ -1,4 +1,4 @@
-import { FC, useCallback } from "react";
+import { FC, useCallback, useEffect, useRef, useState } from "react";
 import { DotIcon } from "@phosphor-icons/react";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
 import { SignInFormData, SignUpFormData } from "@web/auth/schemas/auth.schemas";
@@ -23,6 +23,15 @@ import { AuthView, useAuthModal } from "./hooks/useAuthModal";
 export const AuthModal: FC = () => {
   const { isOpen, currentView, closeModal, setView } = useAuthModal();
   const googleAuth = useGoogleAuth();
+  const [signUpName, setSignUpName] = useState("");
+  const prevViewRef = useRef(currentView);
+
+  useEffect(() => {
+    if (prevViewRef.current !== "signUp" && currentView === "signUp") {
+      setSignUpName("");
+    }
+    prevViewRef.current = currentView;
+  }, [currentView]);
 
   const handleTabChange = useCallback(
     (tab: AuthView) => {
@@ -64,8 +73,15 @@ export const AuthModal: FC = () => {
   }
 
   const showTabs = currentView !== "forgotPassword";
+  const trimmedName = signUpName.trim();
   const title =
-    currentView === "forgotPassword" ? "Reset Password" : "Welcome to Compass";
+    currentView === "forgotPassword"
+      ? "Reset Password"
+      : currentView === "signUp"
+        ? trimmedName
+          ? `Hey, ${trimmedName} nice to meet you`
+          : "Hey, nice to meet you"
+        : "Hey, welcome back";
 
   return (
     <OverlayPanel
@@ -80,7 +96,9 @@ export const AuthModal: FC = () => {
           <AuthTabs activeTab={currentView} onTabChange={handleTabChange} />
         )}
         {/* Form based on current view */}
-        {currentView === "signUp" && <SignUpForm onSubmit={handleSignUp} />}
+        {currentView === "signUp" && (
+          <SignUpForm onSubmit={handleSignUp} onNameChange={setSignUpName} />
+        )}
         {currentView === "signIn" && (
           <SignInForm
             onSubmit={handleSignIn}

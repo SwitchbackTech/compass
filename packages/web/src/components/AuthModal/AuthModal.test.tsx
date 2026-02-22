@@ -100,14 +100,14 @@ describe("AuthModal", () => {
       renderWithProviders(<ModalTrigger />);
 
       expect(
-        screen.queryByRole("heading", { name: /welcome to compass/i }),
+        screen.queryByRole("heading", { name: /hey, welcome back/i }),
       ).not.toBeInTheDocument();
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(
-          screen.getByRole("heading", { name: /welcome to compass/i }),
+          screen.getByRole("heading", { name: /hey, welcome back/i }),
         ).toBeInTheDocument();
       });
     });
@@ -120,7 +120,7 @@ describe("AuthModal", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByRole("heading", { name: /welcome to compass/i }),
+          screen.getByRole("heading", { name: /hey, welcome back/i }),
         ).toBeInTheDocument();
       });
 
@@ -132,7 +132,7 @@ describe("AuthModal", () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByRole("heading", { name: /welcome to compass/i }),
+          screen.queryByRole("heading", { name: /hey, welcome back/i }),
         ).not.toBeInTheDocument();
       });
     });
@@ -145,7 +145,7 @@ describe("AuthModal", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByRole("heading", { name: /welcome to compass/i }),
+          screen.getByRole("heading", { name: /hey, welcome back/i }),
         ).toBeInTheDocument();
       });
 
@@ -157,7 +157,7 @@ describe("AuthModal", () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByRole("heading", { name: /welcome to compass/i }),
+          screen.queryByRole("heading", { name: /hey, welcome back/i }),
         ).not.toBeInTheDocument();
       });
     });
@@ -548,7 +548,7 @@ describe("AccountIcon", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole("heading", { name: /welcome to compass/i }),
+        screen.getByRole("heading", { name: /hey, welcome back/i }),
       ).toBeInTheDocument();
     });
   });

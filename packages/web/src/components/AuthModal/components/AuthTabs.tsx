@@ -31,9 +31,9 @@ export const AuthTabs: FC<AuthTabsProps> = ({ activeTab, onTabChange }) => {
             aria-selected={isActive}
             onClick={() => onTabChange(tab.id)}
             className={clsx(
-              "flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors",
+              "flex-1 rounded-md px-4 py-2 text-sm transition-colors",
               {
-                "bg-accent-primary text-white": isActive,
+                "bg-fg-primary-dark text-white": isActive,
                 "text-text-light hover:bg-bg-secondary": !isActive,
               },
             )}
