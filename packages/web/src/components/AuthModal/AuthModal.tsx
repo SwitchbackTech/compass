@@ -1,4 +1,5 @@
 import { FC, useCallback } from "react";
+import { DotIcon } from "@phosphor-icons/react";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
 import { SignInFormData, SignUpFormData } from "@web/auth/schemas/auth.schemas";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
@@ -113,26 +114,25 @@ export const AuthModal: FC = () => {
 
         {/* Privacy & Terms links */}
         {showTabs && (
-          <p className="text-text-light text-center text-xs">
-            By continuing, you agree to our{" "}
+          <div className="text-text-light-inactive flex items-center justify-center text-center text-xs">
             <a
               href="https://www.compasscalendar.com/terms"
               target="_blank"
               rel="noopener noreferrer"
               className="text-text-lighter hover:underline"
             >
-              Terms of Service
-            </a>{" "}
-            and{" "}
+              Terms
+            </a>
+            <DotIcon size={26} />
             <a
               href="https://www.compasscalendar.com/privacy"
               target="_blank"
               rel="noopener noreferrer"
               className="text-text-lighter hover:underline"
             >
-              Privacy Policy
+              Privacy
             </a>
-          </p>
+          </div>
         )}
       </div>
     </OverlayPanel>

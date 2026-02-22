@@ -26,7 +26,7 @@ jest.mock("@web/auth/hooks/oauth/useGoogleAuth", () => ({
   }),
 }));
 
-// Mock GoogleButton
+// Mock GoogleButton - uses button with label for semantic queries (matches real component's aria-label)
 jest.mock("@web/components/oauth/google/GoogleButton", () => ({
   GoogleButton: ({
     onClick,
@@ -35,13 +35,13 @@ jest.mock("@web/components/oauth/google/GoogleButton", () => ({
     onClick: () => void;
     label: string;
   }) => (
-    <button onClick={onClick} data-testid="google-button">
+    <button onClick={onClick} aria-label={label}>
       {label}
     </button>
   ),
 }));
 
-// Mock TooltipWrapper
+// Mock TooltipWrapper - no data-testid; use semantic queries (role/name/text)
 jest.mock("@web/components/Tooltip/TooltipWrapper", () => ({
   TooltipWrapper: ({
     children,
@@ -52,10 +52,8 @@ jest.mock("@web/components/Tooltip/TooltipWrapper", () => ({
     onClick?: () => void;
     description?: string;
   }) => (
-    <div onClick={onClick} data-testid="tooltip-wrapper" title={description}>
-      {description && (
-        <span data-testid="tooltip-description">{description}</span>
-      )}
+    <div onClick={onClick} title={description}>
+      {description && <span>{description}</span>}
       {children}
     </div>
   ),
@@ -64,11 +62,7 @@ jest.mock("@web/components/Tooltip/TooltipWrapper", () => ({
 // Helper component to trigger modal open
 const ModalTrigger = () => {
   const { openModal } = useAuthModal();
-  return (
-    <button onClick={() => openModal("signIn")} data-testid="open-modal">
-      Open Modal
-    </button>
-  );
+  return <button onClick={() => openModal("signIn")}>Open Modal</button>;
 };
 
 const renderWithProviders = (
@@ -109,7 +103,7 @@ describe("AuthModal", () => {
         screen.queryByRole("heading", { name: /welcome to compass/i }),
       ).not.toBeInTheDocument();
 
-      await user.click(screen.getByTestId("open-modal"));
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(
@@ -122,7 +116,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await user.click(screen.getByTestId("open-modal"));
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(
@@ -147,7 +141,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await user.click(screen.getByTestId("open-modal"));
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(
@@ -174,7 +168,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await user.click(screen.getByTestId("open-modal"));
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         const signInTab = screen.getByRole("tab", { name: /sign in/i });
@@ -186,7 +180,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await user.click(screen.getByTestId("open-modal"));
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(
@@ -206,7 +200,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await user.click(screen.getByTestId("open-modal"));
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       // Sign In tab - no Name field
       await waitFor(() => {
@@ -228,7 +222,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await user.click(screen.getByTestId("open-modal"));
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
@@ -240,7 +234,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await user.click(screen.getByTestId("open-modal"));
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         // Look for the submit button by type - CTA is "Enter" per spec
@@ -254,7 +248,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await user.click(screen.getByTestId("open-modal"));
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
@@ -274,7 +268,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await user.click(screen.getByTestId("open-modal"));
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(
@@ -299,7 +293,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await user.click(screen.getByTestId("open-modal"));
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
       await user.click(screen.getByRole("tab", { name: /sign up/i }));
 
       await waitFor(() => {
@@ -313,7 +307,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await user.click(screen.getByTestId("open-modal"));
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
       await user.click(screen.getByRole("tab", { name: /sign up/i }));
 
       await waitFor(() => {
@@ -336,7 +330,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await user.click(screen.getByTestId("open-modal"));
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
       await user.click(
         screen.getByRole("button", { name: /forgot password/i }),
       );
@@ -353,7 +347,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await user.click(screen.getByTestId("open-modal"));
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
       await user.click(
         screen.getByRole("button", { name: /forgot password/i }),
       );
@@ -376,7 +370,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await user.click(screen.getByTestId("open-modal"));
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
       await user.click(
         screen.getByRole("button", { name: /forgot password/i }),
       );
@@ -404,13 +398,14 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await user.click(screen.getByTestId("open-modal"));
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
-        expect(screen.getByTestId("google-button")).toBeInTheDocument();
-        expect(screen.getByTestId("google-button")).toHaveTextContent(
-          /sign in with google/i,
-        );
+        const googleButton = screen.getByRole("button", {
+          name: /sign in with google/i,
+        });
+        expect(googleButton).toBeInTheDocument();
+        expect(googleButton).toHaveTextContent(/sign in with google/i);
       });
     });
 
@@ -418,13 +413,17 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await user.click(screen.getByTestId("open-modal"));
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
-        expect(screen.getByTestId("google-button")).toBeInTheDocument();
+        expect(
+          screen.getByRole("button", { name: /sign in with google/i }),
+        ).toBeInTheDocument();
       });
 
-      await user.click(screen.getByTestId("google-button"));
+      await user.click(
+        screen.getByRole("button", { name: /sign in with google/i }),
+      );
 
       expect(mockGoogleLogin).toHaveBeenCalled();
     });
@@ -433,21 +432,21 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await user.click(screen.getByTestId("open-modal"));
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
-        expect(screen.getByTestId("google-button")).toHaveTextContent(
-          /sign in with google/i,
-        );
+        expect(
+          screen.getByRole("button", { name: /sign in with google/i }),
+        ).toHaveTextContent(/sign in with google/i);
       });
 
       await user.click(screen.getByRole("tab", { name: /sign up/i }));
 
       // Google button label stays consistent as "Sign in with Google" per spec
       await waitFor(() => {
-        expect(screen.getByTestId("google-button")).toHaveTextContent(
-          /sign in with google/i,
-        );
+        expect(
+          screen.getByRole("button", { name: /sign in with google/i }),
+        ).toHaveTextContent(/sign in with google/i);
       });
     });
   });
@@ -457,14 +456,14 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await user.click(screen.getByTestId("open-modal"));
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(
-          screen.getByRole("link", { name: /terms of service/i }),
+          screen.getByRole("link", { name: /terms/i }),
         ).toBeInTheDocument();
         expect(
-          screen.getByRole("link", { name: /privacy policy/i }),
+          screen.getByRole("link", { name: /privacy/i }),
         ).toBeInTheDocument();
       });
     });
@@ -473,14 +472,14 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await user.click(screen.getByTestId("open-modal"));
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         const termsLink = screen.getByRole("link", {
-          name: /terms of service/i,
+          name: /terms/i,
         });
         const privacyLink = screen.getByRole("link", {
-          name: /privacy policy/i,
+          name: /privacy/i,
         });
 
         expect(termsLink).toHaveAttribute("target", "_blank");
@@ -518,9 +517,7 @@ describe("AccountIcon", () => {
 
     renderWithProviders(<AccountIcon />, "/day?enableAuth=true");
 
-    expect(screen.getByTestId("tooltip-description")).toHaveTextContent(
-      "Log in",
-    );
+    expect(screen.getByText("Log in")).toBeInTheDocument();
   });
 
   it("does not render when feature flag is disabled", () => {
@@ -547,7 +544,7 @@ describe("AccountIcon", () => {
       expect(screen.getByLabelText(/log in/i)).toBeInTheDocument();
     });
 
-    await user.click(screen.getByTestId("tooltip-wrapper"));
+    await user.click(screen.getByLabelText(/log in/i));
 
     await waitFor(() => {
       expect(
