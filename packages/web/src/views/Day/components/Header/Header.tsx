@@ -1,4 +1,5 @@
 import { FC, useCallback, useRef } from "react";
+import { AccountIcon } from "@web/components/AuthModal/AccountIcon";
 import { AlignItems } from "@web/components/Flex/styled";
 import { SelectView } from "@web/components/SelectView/SelectView";
 import { Reminder } from "@web/views/Calendar/components/Header/Reminder/Reminder";
@@ -30,6 +31,7 @@ export const Header: FC<Props> = ({ showReminder = false }) => {
       {showReminder && <Reminder ref={reminderRef} />}
 
       <SelectView />
+      <AccountIcon />
     </StyledHeaderRow>
   );
 };
