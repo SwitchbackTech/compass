@@ -46,12 +46,16 @@ jest.mock("@web/components/Tooltip/TooltipWrapper", () => ({
   TooltipWrapper: ({
     children,
     onClick,
+    description,
   }: {
     children: ReactNode;
     onClick?: () => void;
     description?: string;
   }) => (
-    <div onClick={onClick} data-testid="tooltip-wrapper">
+    <div onClick={onClick} data-testid="tooltip-wrapper" title={description}>
+      {description && (
+        <span data-testid="tooltip-description">{description}</span>
+      )}
       {children}
     </div>
   ),
@@ -502,19 +506,21 @@ describe("AccountIcon", () => {
     renderWithProviders(<AccountIcon />, "/day?enableAuth=true");
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/sign in/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/log in/i)).toBeInTheDocument();
     });
   });
 
-  it("does not render when user is authenticated", () => {
+  it("shows 'Log in' when user is not authenticated", () => {
     mockUseSession.mockReturnValue({
-      authenticated: true,
+      authenticated: false,
       setAuthenticated: jest.fn(),
     });
 
     renderWithProviders(<AccountIcon />, "/day?enableAuth=true");
 
-    expect(screen.queryByLabelText(/sign in/i)).not.toBeInTheDocument();
+    expect(screen.getByTestId("tooltip-description")).toHaveTextContent(
+      "Log in",
+    );
   });
 
   it("does not render when feature flag is disabled", () => {
@@ -525,7 +531,7 @@ describe("AccountIcon", () => {
 
     renderWithProviders(<AccountIcon />, "/day");
 
-    expect(screen.queryByLabelText(/sign in/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/log in/i)).not.toBeInTheDocument();
   });
 
   it("opens modal when clicked", async () => {
@@ -538,7 +544,7 @@ describe("AccountIcon", () => {
     renderWithProviders(<AccountIcon />, "/day?enableAuth=true");
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/sign in/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/log in/i)).toBeInTheDocument();
     });
 
     await user.click(screen.getByTestId("tooltip-wrapper"));
