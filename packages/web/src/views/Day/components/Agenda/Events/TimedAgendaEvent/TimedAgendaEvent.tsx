@@ -57,7 +57,7 @@ export const TimedAgendaEvent = memo(
             : {}),
         }}
       >
-        <span className="flex-1 truncate">{event.title || "Untitled"}</span>
+        <span className="flex-1 truncate">{event.title || ""}</span>
       </div>
     );
   },
