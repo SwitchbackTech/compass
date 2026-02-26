@@ -1,17 +1,11 @@
-import {
-  ChangeEvent,
-  FC,
-  FormEvent,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import { FC, useState } from "react";
 import {
   ForgotPasswordFormData,
   forgotPasswordSchema,
 } from "@web/auth/schemas/auth.schemas";
 import { AuthButton } from "../components/AuthButton";
 import { AuthInput } from "../components/AuthInput";
+import { useZodForm } from "../hooks/useZodForm";
 
 interface ForgotPasswordFormProps {
   /** Callback when form is submitted with valid data */
@@ -33,67 +27,25 @@ export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
   onBackToSignIn,
   isSubmitting,
 }) => {
-  const [email, setEmail] = useState("");
-  const [touched, setTouched] = useState(false);
-  const [error, setError] = useState<string>();
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const validateEmail = useCallback((value: string): string | undefined => {
-    const result = forgotPasswordSchema.safeParse({ email: value });
-    if (!result.success) {
-      return result.error.errors[0]?.message;
-    }
-    return undefined;
-  }, []);
-
-  const handleChange = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      setEmail(value);
-
-      // Clear error when user types - only show validation errors after blur
-      if (touched) {
-        setError(undefined);
-      }
+  const form = useZodForm({
+    schema: forgotPasswordSchema,
+    initialValues: { email: "" },
+    onSubmit: (data) => {
+      onSubmit(data);
+      setIsSubmitted(true);
     },
-    [touched],
-  );
+  });
 
-  const handleBlur = useCallback(() => {
-    setTouched(true);
-    setError(validateEmail(email));
-  }, [email, validateEmail]);
-
-  const isValid = useMemo(() => {
-    const result = forgotPasswordSchema.safeParse({ email });
-    return result.success;
-  }, [email]);
-
-  const handleSubmit = useCallback(
-    (e: FormEvent) => {
-      e.preventDefault();
-      setTouched(true);
-
-      const result = forgotPasswordSchema.safeParse({ email });
-      if (result.success) {
-        onSubmit(result.data);
-        setIsSubmitted(true);
-      } else {
-        setError(result.error.errors[0]?.message);
-      }
-    },
-    [email, onSubmit],
-  );
-
-  // Show success state after submission
   if (isSubmitted) {
     return (
       <div className="flex w-full flex-col gap-4 text-center">
         <div className="text-text-lighter">
           <p className="mb-2 text-base font-medium">Check your email</p>
           <p className="text-text-light text-sm">
-            If an account exists for {email}, you will receive a password reset
-            link shortly.
+            If an account exists for {form.values.email}, you will receive a
+            password reset link shortly.
           </p>
         </div>
         <AuthButton type="button" variant="secondary" onClick={onBackToSignIn}>
@@ -104,7 +56,7 @@ export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
+    <form onSubmit={form.handleSubmit} className="flex w-full flex-col gap-4">
       <p className="text-text-light text-center text-sm">
         Enter your email address and we&apos;ll send you a link to reset your
         password.
@@ -114,15 +66,19 @@ export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
         type="email"
         placeholder="Email"
         ariaLabel="Email"
-        value={email}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={error}
-        hasError={touched && !!error}
+        value={form.values.email}
+        onChange={form.handleChange("email")}
+        onBlur={form.handleBlur("email")}
+        error={form.errors.email}
+        hasError={!!form.touched.email && !!form.errors.email}
         autoComplete="email"
       />
 
-      <AuthButton type="submit" disabled={!isValid} isLoading={isSubmitting}>
+      <AuthButton
+        type="submit"
+        disabled={!form.isValid}
+        isLoading={isSubmitting}
+      >
         Send reset link
       </AuthButton>
 

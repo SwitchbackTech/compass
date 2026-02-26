@@ -1,14 +1,8 @@
-import {
-  ChangeEvent,
-  FC,
-  FormEvent,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import { FC } from "react";
 import { SignInFormData, signInSchema } from "@web/auth/schemas/auth.schemas";
 import { AuthButton } from "../components/AuthButton";
 import { AuthInput } from "../components/AuthInput";
+import { useZodForm } from "../hooks/useZodForm";
 
 interface SignInFormProps {
   /** Callback when form is submitted with valid data */
@@ -17,21 +11,6 @@ interface SignInFormProps {
   onForgotPassword: () => void;
   /** Whether form submission is in progress */
   isSubmitting?: boolean;
-}
-
-interface FormState {
-  email: string;
-  password: string;
-}
-
-interface FormErrors {
-  email?: string;
-  password?: string;
-}
-
-interface TouchedFields {
-  email: boolean;
-  password: boolean;
 }
 
 /**
@@ -44,104 +23,23 @@ export const SignInForm: FC<SignInFormProps> = ({
   onForgotPassword,
   isSubmitting,
 }) => {
-  const [formState, setFormState] = useState<FormState>({
-    email: "",
-    password: "",
+  const form = useZodForm({
+    schema: signInSchema,
+    initialValues: { email: "", password: "" },
+    onSubmit,
   });
-
-  const [touched, setTouched] = useState<TouchedFields>({
-    email: false,
-    password: false,
-  });
-
-  const [errors, setErrors] = useState<FormErrors>({});
-
-  const validateField = useCallback(
-    (field: keyof FormState, value: string): string | undefined => {
-      const testData = { ...formState, [field]: value };
-      const result = signInSchema.safeParse(testData);
-
-      if (!result.success) {
-        const fieldError = result.error.errors.find(
-          (err) => err.path[0] === field,
-        );
-        return fieldError?.message;
-      }
-      return undefined;
-    },
-    [formState],
-  );
-
-  const handleChange = useCallback(
-    (field: keyof FormState) => (e: ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      setFormState((prev) => ({ ...prev, [field]: value }));
-
-      // Clear error when user types - only show validation errors after blur
-      if (touched[field]) {
-        setErrors((prev) => ({ ...prev, [field]: undefined }));
-      }
-    },
-    [touched],
-  );
-
-  const handleBlur = useCallback(
-    (field: keyof FormState) => () => {
-      setTouched((prev) => ({ ...prev, [field]: true }));
-      const value = formState[field];
-      // Only show errors on blur when user has entered something; empty required
-      // fields don't need an error - the disabled button already conveys that
-      if (value.trim() !== "") {
-        const error = validateField(field, value);
-        setErrors((prev) => ({ ...prev, [field]: error }));
-      } else {
-        setErrors((prev) => ({ ...prev, [field]: undefined }));
-      }
-    },
-    [formState, validateField],
-  );
-
-  const isValid = useMemo(() => {
-    const result = signInSchema.safeParse(formState);
-    return result.success;
-  }, [formState]);
-
-  const handleSubmit = useCallback(
-    (e: FormEvent) => {
-      e.preventDefault();
-
-      // Mark all fields as touched
-      setTouched({ email: true, password: true });
-
-      const result = signInSchema.safeParse(formState);
-      if (result.success) {
-        onSubmit(result.data);
-      } else {
-        // Set all errors
-        const newErrors: FormErrors = {};
-        result.error.errors.forEach((err) => {
-          const field = err.path[0] as keyof FormErrors;
-          if (!newErrors[field]) {
-            newErrors[field] = err.message;
-          }
-        });
-        setErrors(newErrors);
-      }
-    },
-    [formState, onSubmit],
-  );
 
   return (
-    <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
+    <form onSubmit={form.handleSubmit} className="flex w-full flex-col gap-4">
       <AuthInput
         type="email"
         placeholder="Email"
         ariaLabel="Email"
-        value={formState.email}
-        onChange={handleChange("email")}
-        onBlur={handleBlur("email")}
-        error={errors.email}
-        hasError={touched.email && !!errors.email}
+        value={form.values.email}
+        onChange={form.handleChange("email")}
+        onBlur={form.handleBlur("email")}
+        error={form.errors.email}
+        hasError={!!form.touched.email && !!form.errors.email}
         autoComplete="email"
       />
 
@@ -149,11 +47,11 @@ export const SignInForm: FC<SignInFormProps> = ({
         type="password"
         placeholder="Password"
         ariaLabel="Password"
-        value={formState.password}
-        onChange={handleChange("password")}
-        onBlur={handleBlur("password")}
-        error={errors.password}
-        hasError={touched.password && !!errors.password}
+        value={form.values.password}
+        onChange={form.handleChange("password")}
+        onBlur={form.handleBlur("password")}
+        error={form.errors.password}
+        hasError={!!form.touched.password && !!form.errors.password}
         autoComplete="current-password"
       />
 
@@ -163,7 +61,11 @@ export const SignInForm: FC<SignInFormProps> = ({
         </AuthButton>
       </div>
 
-      <AuthButton type="submit" disabled={!isValid} isLoading={isSubmitting}>
+      <AuthButton
+        type="submit"
+        disabled={!form.isValid}
+        isLoading={isSubmitting}
+      >
         Enter
       </AuthButton>
     </form>

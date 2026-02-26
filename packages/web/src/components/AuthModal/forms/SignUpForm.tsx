@@ -1,14 +1,8 @@
-import {
-  ChangeEvent,
-  FC,
-  FormEvent,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import { ChangeEvent, FC, useCallback } from "react";
 import { SignUpFormData, signUpSchema } from "@web/auth/schemas/auth.schemas";
 import { AuthButton } from "../components/AuthButton";
 import { AuthInput } from "../components/AuthInput";
+import { useZodForm } from "../hooks/useZodForm";
 
 interface SignUpFormProps {
   /** Callback when form is submitted with valid data */
@@ -17,24 +11,6 @@ interface SignUpFormProps {
   onNameChange?: (name: string) => void;
   /** Whether form submission is in progress */
   isSubmitting?: boolean;
-}
-
-interface FormState {
-  name: string;
-  email: string;
-  password: string;
-}
-
-interface FormErrors {
-  name?: string;
-  email?: string;
-  password?: string;
-}
-
-interface TouchedFields {
-  name: boolean;
-  email: boolean;
-  password: boolean;
 }
 
 /**
@@ -47,110 +23,31 @@ export const SignUpForm: FC<SignUpFormProps> = ({
   onNameChange,
   isSubmitting,
 }) => {
-  const [formState, setFormState] = useState<FormState>({
-    name: "",
-    email: "",
-    password: "",
+  const form = useZodForm({
+    schema: signUpSchema,
+    initialValues: { name: "", email: "", password: "" },
+    onSubmit,
   });
 
-  const [touched, setTouched] = useState<TouchedFields>({
-    name: false,
-    email: false,
-    password: false,
-  });
-
-  const [errors, setErrors] = useState<FormErrors>({});
-
-  const validateField = useCallback(
-    (field: keyof FormState, value: string): string | undefined => {
-      const testData = { ...formState, [field]: value };
-      const result = signUpSchema.safeParse(testData);
-
-      if (!result.success) {
-        const fieldError = result.error.errors.find(
-          (err) => err.path[0] === field,
-        );
-        return fieldError?.message;
-      }
-      return undefined;
+  const handleNameChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      form.handleChange("name")(e);
+      onNameChange?.(e.target.value);
     },
-    [formState],
-  );
-
-  const handleChange = useCallback(
-    (field: keyof FormState) => (e: ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      setFormState((prev) => ({ ...prev, [field]: value }));
-
-      if (field === "name") {
-        onNameChange?.(value);
-      }
-
-      // Clear error when user types - only show validation errors after blur
-      if (touched[field]) {
-        setErrors((prev) => ({ ...prev, [field]: undefined }));
-      }
-    },
-    [touched, onNameChange],
-  );
-
-  const handleBlur = useCallback(
-    (field: keyof FormState) => () => {
-      setTouched((prev) => ({ ...prev, [field]: true }));
-      const value = formState[field];
-      // Only show errors on blur when user has entered something; empty required
-      // fields don't need an error - the disabled button already conveys that
-      if (value.trim() !== "") {
-        const error = validateField(field, value);
-        setErrors((prev) => ({ ...prev, [field]: error }));
-      } else {
-        setErrors((prev) => ({ ...prev, [field]: undefined }));
-      }
-    },
-    [formState, validateField],
-  );
-
-  const isValid = useMemo(() => {
-    const result = signUpSchema.safeParse(formState);
-    return result.success;
-  }, [formState]);
-
-  const handleSubmit = useCallback(
-    (e: FormEvent) => {
-      e.preventDefault();
-
-      // Mark all fields as touched
-      setTouched({ name: true, email: true, password: true });
-
-      const result = signUpSchema.safeParse(formState);
-      if (result.success) {
-        onSubmit(result.data);
-      } else {
-        // Set all errors
-        const newErrors: FormErrors = {};
-        result.error.errors.forEach((err) => {
-          const field = err.path[0] as keyof FormErrors;
-          if (!newErrors[field]) {
-            newErrors[field] = err.message;
-          }
-        });
-        setErrors(newErrors);
-      }
-    },
-    [formState, onSubmit],
+    [form.handleChange, onNameChange],
   );
 
   return (
-    <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
+    <form onSubmit={form.handleSubmit} className="flex w-full flex-col gap-4">
       <AuthInput
         type="text"
         placeholder="Name"
         ariaLabel="Name"
-        value={formState.name}
-        onChange={handleChange("name")}
-        onBlur={handleBlur("name")}
-        error={errors.name}
-        hasError={touched.name && !!errors.name}
+        value={form.values.name}
+        onChange={handleNameChange}
+        onBlur={form.handleBlur("name")}
+        error={form.errors.name}
+        hasError={!!form.touched.name && !!form.errors.name}
         autoComplete="name"
       />
 
@@ -158,11 +55,11 @@ export const SignUpForm: FC<SignUpFormProps> = ({
         type="email"
         placeholder="Email"
         ariaLabel="Email"
-        value={formState.email}
-        onChange={handleChange("email")}
-        onBlur={handleBlur("email")}
-        error={errors.email}
-        hasError={touched.email && !!errors.email}
+        value={form.values.email}
+        onChange={form.handleChange("email")}
+        onBlur={form.handleBlur("email")}
+        error={form.errors.email}
+        hasError={!!form.touched.email && !!form.errors.email}
         autoComplete="email"
       />
 
@@ -170,15 +67,19 @@ export const SignUpForm: FC<SignUpFormProps> = ({
         type="password"
         placeholder="Password"
         ariaLabel="Password"
-        value={formState.password}
-        onChange={handleChange("password")}
-        onBlur={handleBlur("password")}
-        error={errors.password}
-        hasError={touched.password && !!errors.password}
+        value={form.values.password}
+        onChange={form.handleChange("password")}
+        onBlur={form.handleBlur("password")}
+        error={form.errors.password}
+        hasError={!!form.touched.password && !!form.errors.password}
         autoComplete="new-password"
       />
 
-      <AuthButton type="submit" disabled={!isValid} isLoading={isSubmitting}>
+      <AuthButton
+        type="submit"
+        disabled={!form.isValid}
+        isLoading={isSubmitting}
+      >
         Create account
       </AuthButton>
     </form>
