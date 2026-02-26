@@ -31,7 +31,7 @@ export const AuthButton: FC<AuthButtonProps> = ({
     <button
       disabled={isDisabled}
       className={clsx(
-        "rounded-3xl text-sm font-medium transition-colors",
+        "rounded-3xl text-sm font-medium transition-all duration-150",
         "focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent focus:outline-none",
         isDisabled ? "cursor-not-allowed" : "cursor-pointer",
         {
@@ -49,7 +49,8 @@ export const AuthButton: FC<AuthButtonProps> = ({
           // Outline variant (white/black, matches Google button)
           "h-10 w-full border border-[#1f1f1f] bg-white px-4 text-[#1f1f1f]":
             variant === "outline",
-          "hover:bg-[#f8f8f8]": variant === "outline" && !isDisabled,
+          "hover:border-[#151515] hover:bg-[#f0f0f0]":
+            variant === "outline" && !isDisabled,
 
           // Link variant
           "text-text-light hover:text-text-lighter px-0 py-0":
