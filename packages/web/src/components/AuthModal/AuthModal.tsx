@@ -4,6 +4,7 @@ import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
 import { SignInFormData, SignUpFormData } from "@web/auth/schemas/auth.schemas";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { GoogleButton } from "@web/components/oauth/google/GoogleButton";
+import { AuthButton } from "./components/AuthButton";
 import { ForgotPasswordForm } from "./forms/ForgotPasswordForm";
 import { SignInForm } from "./forms/SignInForm";
 import { SignUpForm } from "./forms/SignUpForm";
@@ -80,23 +81,8 @@ export const AuthModal: FC = () => {
           : "Nice to meet you"
         : "Hey, welcome back";
 
-  const titleAction = showAuthSwitch ? (
-    <button
-      type="button"
-      onClick={handleSwitchAuth}
-      className="border-border-primary text-text-lighter hover:bg-bg-secondary hover:text-text-light shrink-0 rounded-md border px-3 py-1.5 text-sm transition-colors"
-    >
-      {currentView === "signIn" ? "Sign Up" : "Sign In"}
-    </button>
-  ) : undefined;
-
   return (
-    <OverlayPanel
-      title={title}
-      titleAction={titleAction}
-      onDismiss={closeModal}
-      variant="modal"
-    >
+    <OverlayPanel title={title} onDismiss={closeModal} variant="modal">
       <div className="flex w-full flex-col gap-6">
         {/* Form based on current view */}
         {currentView === "signUp" && (
@@ -114,7 +100,24 @@ export const AuthModal: FC = () => {
             onBackToSignIn={handleBackToSignIn}
           />
         )}
-        {/* Google Sign In */}
+        {/* Auth switch (Sign In / Sign Up) - only for signIn and signUp views */}
+        {showAuthSwitch && (
+          <>
+            <div className="flex items-center gap-3">
+              <div className="bg-border-primary h-px flex-1" />
+              <span className="text-text-light text-sm">or</span>
+              <div className="bg-border-primary h-px flex-1" />
+            </div>
+            <AuthButton
+              type="button"
+              variant="outline"
+              onClick={handleSwitchAuth}
+            >
+              {currentView === "signIn" ? "Sign Up" : "Sign In"}
+            </AuthButton>
+          </>
+        )}
+        {/* Google Sign In - at bottom */}
         <>
           <div className="flex items-center gap-3">
             <div className="bg-border-primary h-px flex-1" />
@@ -123,7 +126,7 @@ export const AuthModal: FC = () => {
           </div>
           <GoogleButton
             onClick={handleGoogleSignIn}
-            label="Sign in with Google"
+            label="Continue with Google"
             style={{ width: "100%" }}
           />
         </>

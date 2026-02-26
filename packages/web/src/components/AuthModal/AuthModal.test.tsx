@@ -256,8 +256,8 @@ describe("AuthModal", () => {
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
-        // Look for the submit button by type - CTA is "Enter" per spec
-        const submitButton = screen.getByRole("button", { name: /^enter$/i });
+        // Look for the submit button by type - CTA is "Log in"
+        const submitButton = screen.getByRole("button", { name: /^log in$/i });
         expect(submitButton).toBeInTheDocument();
         expect(submitButton).toHaveAttribute("type", "submit");
       });
@@ -448,10 +448,10 @@ describe("AuthModal", () => {
 
       await waitFor(() => {
         const googleButton = screen.getByRole("button", {
-          name: /sign in with google/i,
+          name: /continue with google/i,
         });
         expect(googleButton).toBeInTheDocument();
-        expect(googleButton).toHaveTextContent(/sign in with google/i);
+        expect(googleButton).toHaveTextContent(/continue with google/i);
       });
     });
 
@@ -463,12 +463,12 @@ describe("AuthModal", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByRole("button", { name: /sign in with google/i }),
+          screen.getByRole("button", { name: /continue with google/i }),
         ).toBeInTheDocument();
       });
 
       await user.click(
-        screen.getByRole("button", { name: /sign in with google/i }),
+        screen.getByRole("button", { name: /continue with google/i }),
       );
 
       expect(mockGoogleLogin).toHaveBeenCalled();
@@ -482,17 +482,17 @@ describe("AuthModal", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByRole("button", { name: /sign in with google/i }),
-        ).toHaveTextContent(/sign in with google/i);
+          screen.getByRole("button", { name: /continue with google/i }),
+        ).toHaveTextContent(/continue with google/i);
       });
 
       await user.click(screen.getByRole("button", { name: /^sign up$/i }));
 
-      // Google button label stays consistent as "Sign in with Google"
+      // Google button label stays consistent as "Continue with Google"
       await waitFor(() => {
         expect(
-          screen.getByRole("button", { name: /sign in with google/i }),
-        ).toHaveTextContent(/sign in with google/i);
+          screen.getByRole("button", { name: /continue with google/i }),
+        ).toHaveTextContent(/continue with google/i);
       });
     });
   });

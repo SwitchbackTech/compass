@@ -80,7 +80,7 @@ export const SignUpForm: FC<SignUpFormProps> = ({
         disabled={!form.isValid}
         isLoading={isSubmitting}
       >
-        Create account
+        Sign up
       </AuthButton>
     </form>
   );

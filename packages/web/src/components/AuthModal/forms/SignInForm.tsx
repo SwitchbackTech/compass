@@ -66,7 +66,7 @@ export const SignInForm: FC<SignInFormProps> = ({
         disabled={!form.isValid}
         isLoading={isSubmitting}
       >
-        Enter
+        Log in
       </AuthButton>
     </form>
   );

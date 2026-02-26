@@ -101,7 +101,7 @@ describe("SignInForm", () => {
 
       await user.type(screen.getByLabelText(/email/i), "test@example.com");
       await user.type(screen.getByLabelText(/password/i), "password123");
-      await user.click(screen.getByRole("button", { name: /^enter$/i }));
+      await user.click(screen.getByRole("button", { name: /^log in$/i }));
 
       await waitFor(() => {
         expect(mockOnSubmit).toHaveBeenCalledWith({
@@ -117,7 +117,7 @@ describe("SignInForm", () => {
 
       await user.type(screen.getByLabelText(/email/i), "Test@Example.COM");
       await user.type(screen.getByLabelText(/password/i), "password123");
-      await user.click(screen.getByRole("button", { name: /^enter$/i }));
+      await user.click(screen.getByRole("button", { name: /^log in$/i }));
 
       await waitFor(() => {
         expect(mockOnSubmit).toHaveBeenCalledWith({
@@ -132,7 +132,7 @@ describe("SignInForm", () => {
     it("disables submit when form is invalid", async () => {
       renderSignInForm();
 
-      const submitButton = screen.getByRole("button", { name: /^enter$/i });
+      const submitButton = screen.getByRole("button", { name: /^log in$/i });
       expect(submitButton).toBeDisabled();
     });
 
@@ -143,7 +143,7 @@ describe("SignInForm", () => {
       await user.type(screen.getByLabelText(/email/i), "test@example.com");
       await user.type(screen.getByLabelText(/password/i), "password123");
 
-      const submitButton = screen.getByRole("button", { name: /^enter$/i });
+      const submitButton = screen.getByRole("button", { name: /^log in$/i });
       expect(submitButton).not.toBeDisabled();
     });
   });
