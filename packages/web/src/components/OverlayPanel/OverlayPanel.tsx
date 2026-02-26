@@ -14,8 +14,6 @@ interface Props {
   onDismiss?: () => void;
   /** ARIA role for the panel (default: "dialog") */
   role?: "dialog" | "status" | "alert";
-  /** Backdrop style variant */
-  backdrop?: "light" | "blur";
   /** Panel style variant */
   variant?: "modal" | "status";
 }
@@ -27,15 +25,10 @@ export const OverlayPanel = ({
   children,
   onDismiss,
   role = "dialog",
-  backdrop = "light",
   variant = "modal",
 }: Props) => {
   const backdropClasses = clsx(
-    "fixed inset-0 z-[1000] flex items-center justify-center",
-    {
-      "bg-bg-primary/50": backdrop === "light",
-      "bg-bg-primary/80 backdrop-blur-sm cursor-wait": backdrop === "blur",
-    },
+    "fixed inset-0 z-[1000] flex items-center justify-center bg-bg-primary/85 backdrop-blur-sm",
   );
 
   const panelClasses = clsx("flex flex-col items-center", {

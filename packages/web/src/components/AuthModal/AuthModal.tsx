@@ -84,12 +84,7 @@ export const AuthModal: FC = () => {
         : "Hey, welcome back";
 
   return (
-    <OverlayPanel
-      title={title}
-      onDismiss={closeModal}
-      variant="modal"
-      backdrop="light"
-    >
+    <OverlayPanel title={title} onDismiss={closeModal} variant="modal">
       <div className="flex w-full flex-col gap-6">
         {/* Tabs for Sign In / Sign Up */}
         {showTabs && (
