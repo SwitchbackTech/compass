@@ -4,11 +4,10 @@ import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
 import { SignInFormData, SignUpFormData } from "@web/auth/schemas/auth.schemas";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { GoogleButton } from "@web/components/oauth/google/GoogleButton";
-import { AuthTabs } from "./components/AuthTabs";
 import { ForgotPasswordForm } from "./forms/ForgotPasswordForm";
 import { SignInForm } from "./forms/SignInForm";
 import { SignUpForm } from "./forms/SignUpForm";
-import { AuthView, useAuthModal } from "./hooks/useAuthModal";
+import { useAuthModal } from "./hooks/useAuthModal";
 
 /**
  * Authentication modal with Sign In, Sign Up, and Forgot Password views
@@ -33,11 +32,9 @@ export const AuthModal: FC = () => {
     prevViewRef.current = currentView;
   }, [currentView]);
 
-  const handleTabChange = useCallback(
-    (tab: AuthView) => {
-      setView(tab);
-    },
-    [setView],
+  const handleSwitchAuth = useCallback(
+    () => setView(currentView === "signIn" ? "signUp" : "signIn"),
+    [currentView, setView],
   );
 
   const handleGoogleSignIn = useCallback(() => {
@@ -72,7 +69,7 @@ export const AuthModal: FC = () => {
     return null;
   }
 
-  const showTabs = currentView !== "forgotPassword";
+  const showAuthSwitch = currentView !== "forgotPassword";
   const trimmedName = signUpName.trim();
   const title =
     currentView === "forgotPassword"
@@ -83,13 +80,24 @@ export const AuthModal: FC = () => {
           : "Nice to meet you"
         : "Hey, welcome back";
 
+  const titleAction = showAuthSwitch ? (
+    <button
+      type="button"
+      onClick={handleSwitchAuth}
+      className="border-border-primary text-text-lighter hover:bg-bg-secondary hover:text-text-light shrink-0 rounded-md border px-3 py-1.5 text-sm transition-colors"
+    >
+      {currentView === "signIn" ? "Sign Up" : "Sign In"}
+    </button>
+  ) : undefined;
+
   return (
-    <OverlayPanel title={title} onDismiss={closeModal} variant="modal">
+    <OverlayPanel
+      title={title}
+      titleAction={titleAction}
+      onDismiss={closeModal}
+      variant="modal"
+    >
       <div className="flex w-full flex-col gap-6">
-        {/* Tabs for Sign In / Sign Up */}
-        {showTabs && (
-          <AuthTabs activeTab={currentView} onTabChange={handleTabChange} />
-        )}
         {/* Form based on current view */}
         {currentView === "signUp" && (
           <SignUpForm onSubmit={handleSignUp} onNameChange={setSignUpName} />
@@ -107,42 +115,38 @@ export const AuthModal: FC = () => {
           />
         )}
         {/* Google Sign In */}
-        {showTabs && (
-          <>
-            <div className="flex items-center gap-3">
-              <div className="bg-border-primary h-px flex-1" />
-              <span className="text-text-light text-sm">or</span>
-              <div className="bg-border-primary h-px flex-1" />
-            </div>
-            <GoogleButton
-              onClick={handleGoogleSignIn}
-              label="Sign in with Google"
-              style={{ width: "100%" }}
-            />
-          </>
-        )}
-        {/* Privacy & Terms links */}
-        {showTabs && (
-          <div className="text-text-light-inactive flex items-center justify-center text-center text-xs">
-            <a
-              href="https://www.compasscalendar.com/terms"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-text-lighter hover:underline"
-            >
-              Terms
-            </a>
-            <DotIcon size={26} />
-            <a
-              href="https://www.compasscalendar.com/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-text-lighter hover:underline"
-            >
-              Privacy
-            </a>
+        <>
+          <div className="flex items-center gap-3">
+            <div className="bg-border-primary h-px flex-1" />
+            <span className="text-text-light text-sm">or</span>
+            <div className="bg-border-primary h-px flex-1" />
           </div>
-        )}
+          <GoogleButton
+            onClick={handleGoogleSignIn}
+            label="Sign in with Google"
+            style={{ width: "100%" }}
+          />
+        </>
+        {/* Privacy & Terms links */}
+        <div className="text-text-light-inactive flex items-center justify-center text-center text-xs">
+          <a
+            href="https://www.compasscalendar.com/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-text-lighter hover:underline"
+          >
+            Terms
+          </a>
+          <DotIcon size={26} />
+          <a
+            href="https://www.compasscalendar.com/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-text-lighter hover:underline"
+          >
+            Privacy
+          </a>
+        </div>
       </div>
     </OverlayPanel>
   );

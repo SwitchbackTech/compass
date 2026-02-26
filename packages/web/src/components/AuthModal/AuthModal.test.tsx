@@ -178,20 +178,20 @@ describe("AuthModal", () => {
     });
   });
 
-  describe("Tab Navigation", () => {
-    it("shows Sign In tab as active by default", async () => {
+  describe("Auth view switching", () => {
+    it("shows Sign Up switch when on sign in form", async () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
-        const signInTab = screen.getByRole("tab", { name: /sign in/i });
-        expect(signInTab).toHaveAttribute("aria-selected", "true");
+        const signUpSwitch = screen.getByRole("button", { name: /^sign up$/i });
+        expect(signUpSwitch).toBeInTheDocument();
       });
     });
 
-    it("switches to Sign Up tab when clicked", async () => {
+    it("switches to Sign Up form when switch is clicked", async () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
@@ -199,15 +199,19 @@ describe("AuthModal", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByRole("tab", { name: /sign up/i }),
+          screen.getByRole("button", { name: /^sign up$/i }),
         ).toBeInTheDocument();
       });
 
-      await user.click(screen.getByRole("tab", { name: /sign up/i }));
+      await user.click(screen.getByRole("button", { name: /^sign up$/i }));
 
       await waitFor(() => {
-        const signUpTab = screen.getByRole("tab", { name: /sign up/i });
-        expect(signUpTab).toHaveAttribute("aria-selected", "true");
+        expect(
+          screen.getByRole("heading", { name: /nice to meet you/i }),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByRole("button", { name: /^sign in$/i }),
+        ).toBeInTheDocument();
       });
     });
 
@@ -217,14 +221,14 @@ describe("AuthModal", () => {
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
-      // Sign In tab - no Name field
+      // Sign In form - no Name field
       await waitFor(() => {
         expect(screen.queryByLabelText(/name/i)).not.toBeInTheDocument();
         expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
       });
 
       // Switch to Sign Up
-      await user.click(screen.getByRole("tab", { name: /sign up/i }));
+      await user.click(screen.getByRole("button", { name: /^sign up$/i }));
 
       await waitFor(() => {
         expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
@@ -309,7 +313,7 @@ describe("AuthModal", () => {
       renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
-      await user.click(screen.getByRole("tab", { name: /sign up/i }));
+      await user.click(screen.getByRole("button", { name: /^sign up$/i }));
 
       await waitFor(() => {
         expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
@@ -323,7 +327,7 @@ describe("AuthModal", () => {
       renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
-      await user.click(screen.getByRole("tab", { name: /sign up/i }));
+      await user.click(screen.getByRole("button", { name: /^sign up$/i }));
 
       await waitFor(() => {
         expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
@@ -344,7 +348,7 @@ describe("AuthModal", () => {
       renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
-      await user.click(screen.getByRole("tab", { name: /sign up/i }));
+      await user.click(screen.getByRole("button", { name: /^sign up$/i }));
 
       await waitFor(() => {
         expect(
@@ -426,7 +430,10 @@ describe("AuthModal", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByRole("tab", { name: /sign in/i }),
+          screen.getByRole("button", { name: /^sign up$/i }),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByRole("heading", { name: /hey, welcome back/i }),
         ).toBeInTheDocument();
       });
     });
@@ -467,7 +474,7 @@ describe("AuthModal", () => {
       expect(mockGoogleLogin).toHaveBeenCalled();
     });
 
-    it("keeps consistent button label across tabs", async () => {
+    it("keeps consistent button label when switching views", async () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
@@ -479,9 +486,9 @@ describe("AuthModal", () => {
         ).toHaveTextContent(/sign in with google/i);
       });
 
-      await user.click(screen.getByRole("tab", { name: /sign up/i }));
+      await user.click(screen.getByRole("button", { name: /^sign up$/i }));
 
-      // Google button label stays consistent as "Sign in with Google" per spec
+      // Google button label stays consistent as "Sign in with Google"
       await waitFor(() => {
         expect(
           screen.getByRole("button", { name: /sign in with google/i }),

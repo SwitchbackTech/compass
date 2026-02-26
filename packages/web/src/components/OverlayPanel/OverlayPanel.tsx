@@ -6,6 +6,8 @@ interface Props {
   icon?: ReactNode;
   /** Main title text */
   title?: string;
+  /** Optional content rendered on the same row as the title (e.g. a switch link) */
+  titleAction?: ReactNode;
   /** Description/message text */
   message?: string;
   /** Additional content (buttons, etc.) */
@@ -21,6 +23,7 @@ interface Props {
 export const OverlayPanel = ({
   icon,
   title,
+  titleAction,
   message,
   children,
   onDismiss,
@@ -74,12 +77,16 @@ export const OverlayPanel = ({
         aria-busy={role === "status" ? true : undefined}
       >
         {icon}
-        {title &&
-          (variant === "modal" ? (
-            <h2 className={titleClasses}>{title}</h2>
-          ) : (
-            <div className={titleClasses}>{title}</div>
-          ))}
+        {title && (
+          <div className="flex w-full items-center justify-between gap-3">
+            {variant === "modal" ? (
+              <h2 className={titleClasses}>{title}</h2>
+            ) : (
+              <div className={titleClasses}>{title}</div>
+            )}
+            {titleAction}
+          </div>
+        )}
         {message && <p className={messageClasses}>{message}</p>}
         {children}
       </div>
