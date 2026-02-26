@@ -31,7 +31,7 @@ export const AuthButton: FC<AuthButtonProps> = ({
     <button
       disabled={isDisabled}
       className={clsx(
-        "rounded-3xl text-sm font-medium transition-all duration-150",
+        "rounded-3xl text-sm transition-all duration-150",
         "focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent focus:outline-none",
         isDisabled ? "cursor-not-allowed" : "cursor-pointer",
         {
