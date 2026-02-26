@@ -7,6 +7,7 @@ import {
   useInteractions,
   useRole,
 } from "@floating-ui/react";
+import { ZIndex } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { ContextMenuItems } from "./ContextMenuItems";
 
@@ -18,7 +19,7 @@ const MenuWrapper = styled.ul`
   border-radius: ${({ theme }) => theme.shape.borderRadius};
   padding: 5px 0;
   list-style: none;
-  z-index: 1000;
+  z-index: ${ZIndex.LAYER_2};
   min-width: 160px;
 `;
 
