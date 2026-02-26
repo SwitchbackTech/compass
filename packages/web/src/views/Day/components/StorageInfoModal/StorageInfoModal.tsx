@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 import { InfoIcon } from "@web/components/Icons/Info";
 import { StyledXIcon } from "@web/components/Icons/X";
@@ -97,13 +98,19 @@ export const StorageInfoModal = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 flex items-center justify-center"
+      style={{
+        zIndex: ZIndex.LAYER_5,
+      }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="storage-info-title"
     >
       <button
-        className="fixed inset-0 z-0 bg-black"
+        className="fixed inset-0 bg-black"
+        style={{
+          zIndex: ZIndex.LAYER_1,
+        }}
         onClick={handleBackdropClick}
         aria-label="Close modal"
         tabIndex={-1}

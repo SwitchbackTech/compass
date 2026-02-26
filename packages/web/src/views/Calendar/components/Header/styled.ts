@@ -25,7 +25,7 @@ export const StyledHeaderRow = styled(Flex)`
 export const StyledLeftGroup = styled(Flex)`
   align-items: center;
   justify-content: space-between;
-  z-index: 2;
+  z-index: ${ZIndex.LAYER_2};
 `;
 
 export const StyledRightGroup = styled(Flex)`

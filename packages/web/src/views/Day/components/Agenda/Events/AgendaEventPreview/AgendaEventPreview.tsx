@@ -8,6 +8,7 @@ import {
 import { useObservable } from "@ngneat/use-observable";
 import { Priorities } from "@core/constants/core.constants";
 import { darken, isDark } from "@core/util/color.utils";
+import { ZIndex } from "@web/common/constants/web.constants";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import {
   CursorItem,
@@ -61,7 +62,7 @@ export function AgendaEventPreview({
         role="dialog"
         aria-labelledby="event-title"
         aria-describedby={event?.description ? "event-description" : undefined}
-        className="z-50 max-w-80 min-w-64 rounded-lg p-4 shadow-lg"
+        className={`z-${ZIndex.LAYER_5} max-w-80 min-w-64 rounded-lg p-4 shadow-lg`}
         style={{
           ...floating.context.floatingStyles,
           backgroundColor: darkPriorityColor,
