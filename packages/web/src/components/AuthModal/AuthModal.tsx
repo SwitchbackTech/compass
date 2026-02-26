@@ -51,13 +51,11 @@ export const AuthModal: FC = () => {
   const handleSignUp = useCallback((data: SignUpFormData) => {
     // TODO: Implement email/password sign up API call in Phase 2
     // For now, this is UI-only - backend integration will be added later
-    console.log(data);
   }, []);
 
   const handleLogin = useCallback((data: LogInFormData) => {
     // TODO: Implement email/password sign in API call in Phase 2
     // For now, this is UI-only - backend integration will be added later
-    console.log(data);
   }, []);
 
   const handleForgotPassword = useCallback(() => {
