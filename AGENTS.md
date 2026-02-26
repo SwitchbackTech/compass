@@ -20,7 +20,7 @@ Always reference these instructions first and fallback to search or bash command
 
 - **CRITICAL**: The backend requires external service credentials (Google OAuth, Supertokens, MongoDB) to run properly
 - **Web Development** (RECOMMENDED for coding):
-  - `yarn dev:web` - Takes ~10 seconds to build. Serves on <http://localhost:9080/>
+  - `yarn dev:web` - Takes ~10 seconds to build. Serves on <http://[REDACTED]/>
   - Frontend works standalone without backend services
 - **Backend Development** (requires full setup):
   - `yarn dev:backend` - Fails without proper .env configuration
@@ -115,7 +115,7 @@ packages/core/src/
 
 ```bash
 # Required for backend to start
-BASEURL=http://localhost:3000/api
+BASEURL=[REDACTED]
 GOOGLE_CLIENT_ID=YOUR_GOOGLE_OAUTH_CLIENT_ID
 GOOGLE_CLIENT_SECRET=YOUR_GOOGLE_OAUTH_SECRET
 SUPERTOKENS_URI=YOUR_SUPERTOKENS_INSTANCE_URL
@@ -144,7 +144,7 @@ TZ=Etc/UTC
 1. **Start Development**: `yarn dev:web` (frontend only, always works)
 2. **Run Tests**: `yarn test:core && yarn test:web` (skips problematic backend tests)
 3. **Check Code Style**: `yarn prettier . --write`
-4. **Manual Validation**: Open <http://localhost:9080/> and verify login page loads
+4. **Manual Validation**: Open <http://[REDACTED]/> and verify login page loads
 
 ### Styling
 
@@ -273,3 +273,26 @@ The repository includes Husky hooks that will:
 - Run `yarn prettier . --write` on pre-push (ensures consistent formatting)
 
 **ALWAYS** ensure your commits pass these checks before pushing.
+
+## Cursor Cloud specific instructions
+
+### Node.js Version
+
+This project requires Node.js >= 24.0.0. The update script installs it via `nvm`. After the update script runs, `nvm use 24` is needed in each new shell session (the update script handles `nvm alias default 24`).
+
+### Running Services
+
+- **Web frontend** (`yarn dev:web`): Works standalone on port 9080 with demo/mock data, no backend needed. This is the primary development target in cloud environments.
+- **Backend** (`yarn dev:backend`): Requires real Google OAuth, SuperTokens, and MongoDB credentials in `packages/backend/.env`. Will not start without them.
+
+### Testing
+
+- Run `yarn test:core`, `yarn test:web`, and `yarn test:backend` individually. All three pass in cloud environments.
+- `yarn test` (full suite) also works because `@shelf/jest-mongodb` downloads a MongoDB memory server binary; this succeeds as long as `fastdl.mongodb.org` is reachable.
+- Lint: `yarn prettier . --check` (or `--write` to auto-fix).
+
+### Gotchas
+
+- The `.env.local.example` file is at `packages/backend/.env.local.example` (not `.env.example`). The update script copies it to `packages/backend/.env` if the `.env` file doesn't already exist.
+- Webpack dev server warns about a missing `.env.local` file; this is harmless — it falls back to `process.env`.
+- Husky pre-push hook runs `yarn prettier . --write`, which can modify files. Ensure working tree is clean or committed before pushing.
