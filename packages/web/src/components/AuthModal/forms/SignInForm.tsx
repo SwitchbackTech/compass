@@ -128,9 +128,9 @@ export const SignInForm: FC<SignInFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
       <AuthInput
-        label="Email"
         type="email"
-        placeholder="Enter your email"
+        placeholder="Email"
+        ariaLabel="Email"
         value={formState.email}
         onChange={handleChange("email")}
         onBlur={handleBlur("email")}
@@ -140,9 +140,9 @@ export const SignInForm: FC<SignInFormProps> = ({
       />
 
       <AuthInput
-        label="Password"
         type="password"
-        placeholder="Enter your password"
+        placeholder="Password"
+        ariaLabel="Password"
         value={formState.password}
         onChange={handleChange("password")}
         onBlur={handleBlur("password")}

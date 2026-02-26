@@ -110,9 +110,9 @@ export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
       </p>
 
       <AuthInput
-        label="Email"
         type="email"
-        placeholder="Enter your email"
+        placeholder="Email"
+        ariaLabel="Email"
         value={email}
         onChange={handleChange}
         onBlur={handleBlur}
