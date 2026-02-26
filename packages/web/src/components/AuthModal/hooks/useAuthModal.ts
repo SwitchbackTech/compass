@@ -6,7 +6,7 @@ import {
   useState,
 } from "react";
 
-export type AuthView = "signIn" | "signUp" | "forgotPassword";
+export type AuthView = "login" | "signUp" | "forgotPassword";
 
 interface AuthModalContextValue {
   isOpen: boolean;
@@ -18,7 +18,7 @@ interface AuthModalContextValue {
 
 const defaultContextValue: AuthModalContextValue = {
   isOpen: false,
-  currentView: "signIn",
+  currentView: "login",
   openModal: () => {},
   closeModal: () => {},
   setView: () => {},
@@ -43,9 +43,9 @@ export function useAuthModal(): AuthModalContextValue {
  */
 export function useAuthModalState() {
   const [isOpen, setIsOpen] = useState(false);
-  const [currentView, setCurrentView] = useState<AuthView>("signIn");
+  const [currentView, setCurrentView] = useState<AuthView>("login");
 
-  const openModal = useCallback((view: AuthView = "signIn") => {
+  const openModal = useCallback((view: AuthView = "login") => {
     setCurrentView(view);
     setIsOpen(true);
   }, []);
@@ -53,7 +53,7 @@ export function useAuthModalState() {
   const closeModal = useCallback(() => {
     setIsOpen(false);
     // Reset to signIn view after closing
-    setCurrentView("signIn");
+    setCurrentView("login");
   }, []);
 
   const setView = useCallback((view: AuthView) => {

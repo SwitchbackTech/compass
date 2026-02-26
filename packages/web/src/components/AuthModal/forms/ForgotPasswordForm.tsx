@@ -1,7 +1,7 @@
 import { FC, useState } from "react";
 import {
   ForgotPasswordFormData,
-  forgotPasswordSchema,
+  ForgotPasswordSchema,
 } from "@web/auth/schemas/auth.schemas";
 import { AuthButton } from "../components/AuthButton";
 import { AuthInput } from "../components/AuthInput";
@@ -30,7 +30,7 @@ export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const form = useZodForm({
-    schema: forgotPasswordSchema,
+    schema: ForgotPasswordSchema,
     initialValues: { email: "" },
     onSubmit: (data) => {
       onSubmit(data);

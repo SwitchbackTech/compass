@@ -1,21 +1,21 @@
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { SignInForm } from "./SignInForm";
+import { LogInForm } from "./LogInForm";
 
 const mockOnSubmit = jest.fn();
 const mockOnForgotPassword = jest.fn();
 
 const renderSignInForm = () => {
   render(
-    <SignInForm
+    <LogInForm
       onSubmit={mockOnSubmit}
       onForgotPassword={mockOnForgotPassword}
     />,
   );
 };
 
-describe("SignInForm", () => {
+describe("LogInForm", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });

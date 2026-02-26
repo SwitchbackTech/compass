@@ -20,7 +20,7 @@ export const AccountIcon: FC = () => {
   }
 
   const handleClick = () => {
-    openModal("signIn");
+    openModal("login");
   };
 
   const tipDescription = authenticated ? "You're logged in" : "Log in";

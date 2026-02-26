@@ -9,7 +9,7 @@ import { z } from "zod";
  * Note: We use preprocess to trim/lowercase BEFORE validation so that
  * "  test@example.com  " validates correctly after trimming.
  */
-export const emailSchema = z.preprocess(
+export const EmailSchema = z.preprocess(
   (val) => (typeof val === "string" ? val.trim().toLowerCase() : val),
   z
     .string()
@@ -22,7 +22,7 @@ export const emailSchema = z.preprocess(
  * - Required with meaningful error
  * - Minimum 8 characters for security
  */
-export const passwordSchema = z
+export const PasswordSchema = z
   .string()
   .min(1, "Password is required")
   .min(8, "Password must be at least 8 characters");
@@ -35,7 +35,7 @@ export const passwordSchema = z
  * Note: We use preprocess to trim BEFORE validation, then refine to check
  * that the trimmed result is non-empty (rejects whitespace-only strings).
  */
-export const nameSchema = z.preprocess(
+export const NameSchema = z.preprocess(
   (val) => (typeof val === "string" ? val.trim() : val),
   z.string().min(1, "Name is required"),
 );
@@ -44,18 +44,18 @@ export const nameSchema = z.preprocess(
  * Sign up form schema
  * Combines name, email, and password validation
  */
-export const signUpSchema = z.object({
-  name: nameSchema,
-  email: emailSchema,
-  password: passwordSchema,
+export const SignUpSchema = z.object({
+  name: NameSchema,
+  email: EmailSchema,
+  password: PasswordSchema,
 });
 
 /**
  * Sign in form schema
  * Email validation + password presence check (no min length on sign in)
  */
-export const signInSchema = z.object({
-  email: emailSchema,
+export const LogInSchema = z.object({
+  email: EmailSchema,
   password: z.string().min(1, "Password is required"),
 });
 
@@ -63,11 +63,11 @@ export const signInSchema = z.object({
  * Forgot password form schema
  * Only requires valid email
  */
-export const forgotPasswordSchema = z.object({
-  email: emailSchema,
+export const ForgotPasswordSchema = z.object({
+  email: EmailSchema,
 });
 
 // Type exports for form data
-export type SignUpFormData = z.infer<typeof signUpSchema>;
-export type SignInFormData = z.infer<typeof signInSchema>;
-export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
+export type SignUpFormData = z.infer<typeof SignUpSchema>;
+export type LogInFormData = z.infer<typeof LogInSchema>;
+export type ForgotPasswordFormData = z.infer<typeof ForgotPasswordSchema>;

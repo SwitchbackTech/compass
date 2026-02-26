@@ -1,5 +1,5 @@
 import { ChangeEvent, FC, useCallback } from "react";
-import { SignUpFormData, signUpSchema } from "@web/auth/schemas/auth.schemas";
+import { SignUpFormData, SignUpSchema } from "@web/auth/schemas/auth.schemas";
 import { AuthButton } from "../components/AuthButton";
 import { AuthInput } from "../components/AuthInput";
 import { useZodForm } from "../hooks/useZodForm";
@@ -24,7 +24,7 @@ export const SignUpForm: FC<SignUpFormProps> = ({
   isSubmitting,
 }) => {
   const form = useZodForm({
-    schema: signUpSchema,
+    schema: SignUpSchema,
     initialValues: { name: "", email: "", password: "" },
     onSubmit,
   });

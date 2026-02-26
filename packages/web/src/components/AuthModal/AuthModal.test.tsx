@@ -77,7 +77,7 @@ jest.mock("@web/components/Tooltip/TooltipWrapper", () => ({
 // Helper component to trigger modal open
 const ModalTrigger = () => {
   const { openModal } = useAuthModal();
-  return <button onClick={() => openModal("signIn")}>Open Modal</button>;
+  return <button onClick={() => openModal("login")}>Open Modal</button>;
 };
 
 const renderWithProviders = (
@@ -179,7 +179,7 @@ describe("AuthModal", () => {
   });
 
   describe("Auth view switching", () => {
-    it("shows Sign Up switch when on sign in form", async () => {
+    it("shows sign up when on sign in form", async () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
@@ -210,7 +210,7 @@ describe("AuthModal", () => {
           screen.getByRole("heading", { name: /nice to meet you/i }),
         ).toBeInTheDocument();
         expect(
-          screen.getByRole("button", { name: /^sign in$/i }),
+          screen.getByRole("button", { name: /^log in$/i }),
         ).toBeInTheDocument();
       });
     });
@@ -221,13 +221,13 @@ describe("AuthModal", () => {
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
-      // Sign In form - no Name field
+      // Login form - no Name field
       await waitFor(() => {
         expect(screen.queryByLabelText(/name/i)).not.toBeInTheDocument();
         expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
       });
 
-      // Switch to Sign Up
+      // Switch to sign up
       await user.click(screen.getByRole("button", { name: /^sign up$/i }));
 
       await waitFor(() => {
@@ -236,7 +236,7 @@ describe("AuthModal", () => {
     });
   });
 
-  describe("Sign In Form", () => {
+  describe("Login Form", () => {
     it("renders email and password fields", async () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
@@ -256,7 +256,7 @@ describe("AuthModal", () => {
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
-        // Look for the submit button by type - CTA is "Log in"
+        // Look for the submit button by type - CTA is "login"
         const submitButton = screen.getByRole("button", { name: /^log in$/i });
         expect(submitButton).toBeInTheDocument();
         expect(submitButton).toHaveAttribute("type", "submit");
@@ -537,6 +537,137 @@ describe("AuthModal", () => {
   });
 });
 
+// Helper to mock window.location for URL param tests
+const mockWindowLocation = (url: string) => {
+  const urlObj = new URL(url, "http://localhost");
+  Object.defineProperty(window, "location", {
+    value: {
+      pathname: urlObj.pathname,
+      search: urlObj.search,
+      hash: urlObj.hash,
+      href: urlObj.href,
+    },
+    writable: true,
+    configurable: true,
+  });
+};
+
+// Mock history.replaceState for URL param tests
+const mockReplaceState = jest.fn();
+const originalHistory = window.history;
+
+describe("URL Parameter Support", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUseSession.mockReturnValue({
+      authenticated: false,
+      setAuthenticated: jest.fn(),
+    });
+    // Mock history.replaceState
+    Object.defineProperty(window, "history", {
+      value: { ...originalHistory, replaceState: mockReplaceState },
+      writable: true,
+      configurable: true,
+    });
+  });
+
+  afterEach(() => {
+    // Reset window.location to default
+    mockWindowLocation("/day");
+    // Restore original history
+    Object.defineProperty(window, "history", {
+      value: originalHistory,
+      writable: true,
+      configurable: true,
+    });
+  });
+
+  it("opens sign in modal when ?auth=login is present", async () => {
+    mockWindowLocation("/?auth=login");
+    renderWithProviders(<div />, "/?auth=login");
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /hey, welcome back/i }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("opens sign up modal when ?auth=signup is present", async () => {
+    mockWindowLocation("/?auth=signup");
+    renderWithProviders(<div />, "/?auth=signup");
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /nice to meet you/i }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("opens forgot password modal when ?auth=forgot is present", async () => {
+    mockWindowLocation("/?auth=forgot");
+    renderWithProviders(<div />, "/?auth=forgot");
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /reset password/i }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("handles case-insensitive param values", async () => {
+    mockWindowLocation("/?auth=LOGIN");
+    renderWithProviders(<div />, "/?auth=LOGIN");
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /hey, welcome back/i }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("does not open modal for invalid param value", async () => {
+    mockWindowLocation("/?auth=invalid");
+    renderWithProviders(<div />, "/?auth=invalid");
+
+    // Give it time to potentially open (it shouldn't)
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(
+      screen.queryByRole("heading", { name: /hey, welcome back/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: /nice to meet you/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: /reset password/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("implicitly enables auth feature when ?auth param is present", async () => {
+    mockWindowLocation("/?auth=signup");
+    renderWithProviders(<AccountIcon />, "/?auth=signup");
+
+    await waitFor(() => {
+      // The auth modal should open
+      expect(
+        screen.getByRole("heading", { name: /nice to meet you/i }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("works on different routes", async () => {
+    mockWindowLocation("/week?auth=signup");
+    renderWithProviders(<div />, "/week?auth=signup");
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /nice to meet you/i }),
+      ).toBeInTheDocument();
+    });
+  });
+});
+
 describe("AccountIcon", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -548,7 +679,7 @@ describe("AccountIcon", () => {
       setAuthenticated: jest.fn(),
     });
 
-    renderWithProviders(<AccountIcon />, "/day?enableAuth=true");
+    renderWithProviders(<AccountIcon />, "/day?auth=signup");
 
     await waitFor(() => {
       expect(screen.getByLabelText(/log in/i)).toBeInTheDocument();
@@ -561,7 +692,7 @@ describe("AccountIcon", () => {
       setAuthenticated: jest.fn(),
     });
 
-    renderWithProviders(<AccountIcon />, "/day?enableAuth=true");
+    renderWithProviders(<AccountIcon />, "/day?auth=signup");
 
     expect(screen.getByText("Log in")).toBeInTheDocument();
   });
@@ -584,7 +715,7 @@ describe("AccountIcon", () => {
       setAuthenticated: jest.fn(),
     });
 
-    renderWithProviders(<AccountIcon />, "/day?enableAuth=true");
+    renderWithProviders(<AccountIcon />, "/day?auth=signup");
 
     await waitFor(() => {
       expect(screen.getByLabelText(/log in/i)).toBeInTheDocument();

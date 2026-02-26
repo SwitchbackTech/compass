@@ -1,14 +1,15 @@
 import { FC, useCallback, useEffect, useRef, useState } from "react";
 import { DotIcon } from "@phosphor-icons/react";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
-import { SignInFormData, SignUpFormData } from "@web/auth/schemas/auth.schemas";
+import { LogInFormData, SignUpFormData } from "@web/auth/schemas/auth.schemas";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { GoogleButton } from "@web/components/oauth/google/GoogleButton";
 import { AuthButton } from "./components/AuthButton";
 import { ForgotPasswordForm } from "./forms/ForgotPasswordForm";
-import { SignInForm } from "./forms/SignInForm";
+import { LogInForm } from "./forms/LogInForm";
 import { SignUpForm } from "./forms/SignUpForm";
 import { useAuthModal } from "./hooks/useAuthModal";
+import { useAuthUrlParam } from "./hooks/useAuthUrlParam";
 
 /**
  * Authentication modal with Sign In, Sign Up, and Forgot Password views
@@ -21,8 +22,12 @@ import { useAuthModal } from "./hooks/useAuthModal";
  * - Accessible modal with proper ARIA attributes
  */
 export const AuthModal: FC = () => {
-  const { isOpen, currentView, closeModal, setView } = useAuthModal();
+  const { isOpen, currentView, openModal, closeModal, setView } =
+    useAuthModal();
   const googleAuth = useGoogleAuth();
+
+  // Handle URL-based auth modal triggers (e.g., ?auth=signup)
+  useAuthUrlParam(openModal);
   const [signUpName, setSignUpName] = useState("");
   const prevViewRef = useRef(currentView);
 
@@ -34,7 +39,7 @@ export const AuthModal: FC = () => {
   }, [currentView]);
 
   const handleSwitchAuth = useCallback(
-    () => setView(currentView === "signIn" ? "signUp" : "signIn"),
+    () => setView(currentView === "login" ? "signUp" : "login"),
     [currentView, setView],
   );
 
@@ -43,14 +48,16 @@ export const AuthModal: FC = () => {
     closeModal();
   }, [googleAuth, closeModal]);
 
-  const handleSignUp = useCallback((_data: SignUpFormData) => {
+  const handleSignUp = useCallback((data: SignUpFormData) => {
     // TODO: Implement email/password sign up API call in Phase 2
     // For now, this is UI-only - backend integration will be added later
+    console.log(data);
   }, []);
 
-  const handleSignIn = useCallback((_data: SignInFormData) => {
+  const handleLogin = useCallback((data: LogInFormData) => {
     // TODO: Implement email/password sign in API call in Phase 2
     // For now, this is UI-only - backend integration will be added later
+    console.log(data);
   }, []);
 
   const handleForgotPassword = useCallback(() => {
@@ -58,7 +65,7 @@ export const AuthModal: FC = () => {
   }, [setView]);
 
   const handleBackToSignIn = useCallback(() => {
-    setView("signIn");
+    setView("login");
   }, [setView]);
 
   const handleForgotPasswordSubmit = useCallback((_data: { email: string }) => {
@@ -88,9 +95,9 @@ export const AuthModal: FC = () => {
         {currentView === "signUp" && (
           <SignUpForm onSubmit={handleSignUp} onNameChange={setSignUpName} />
         )}
-        {currentView === "signIn" && (
-          <SignInForm
-            onSubmit={handleSignIn}
+        {currentView === "login" && (
+          <LogInForm
+            onSubmit={handleLogin}
             onForgotPassword={handleForgotPassword}
           />
         )}
@@ -113,7 +120,7 @@ export const AuthModal: FC = () => {
               variant="outline"
               onClick={handleSwitchAuth}
             >
-              {currentView === "signIn" ? "Sign Up" : "Sign In"}
+              {currentView === "login" ? "Sign up" : "Log in"}
             </AuthButton>
           </>
         )}
