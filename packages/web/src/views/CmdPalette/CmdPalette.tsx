@@ -8,6 +8,7 @@ import {
 import { Categories_Event } from "@core/types/event.types";
 import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
+import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
 import {
@@ -42,6 +43,7 @@ const CmdPalette = ({
   const [search, setSearch] = useState("");
   const { isGoogleCalendarConnected, onConnectGoogleCalendar } =
     useConnectGoogle();
+  const authCmdItems = useAuthCmdItems();
 
   const handleCreateSomedayDraft = async (
     category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
@@ -146,6 +148,7 @@ const CmdPalette = ({
               ? undefined
               : onConnectGoogleCalendar,
           },
+          ...authCmdItems,
           {
             id: "log-out",
             children: "Log Out [z]",
