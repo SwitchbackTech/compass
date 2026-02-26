@@ -31,7 +31,7 @@ export const OverlayPanel = ({
   variant = "modal",
 }: Props) => {
   const backdropClasses = clsx(
-    "fixed inset-0 z-[1000] flex items-center justify-center bg-bg-primary/85 backdrop-blur-sm",
+    "fixed inset-0 z-layer-20 flex items-center justify-center bg-bg-primary/85 backdrop-blur-sm",
   );
 
   const panelClasses = clsx("flex flex-col items-center", {

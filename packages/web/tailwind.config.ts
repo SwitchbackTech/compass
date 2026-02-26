@@ -18,6 +18,27 @@ const config: Config = {
       borderRadius: {
         DEFAULT: "4px",
       },
+      zIndex: {
+        // Layer 1-5: Grid-level stacking for calendar events
+        "layer-1": "1", // Base grid events
+        "layer-2": "2", // Now line, time indicators
+        "layer-3": "3", // Event text, icons
+        "layer-4": "4", // Resize handles, scalers
+        "layer-5": "5", // Sticky headers, edge indicators
+
+        // Layer 10: Floating UI elements
+        "layer-10": "50", // Dropdowns, popovers, datepickers
+
+        // Layer 20: Overlay backgrounds and content
+        "layer-20": "100", // Modal/overlay backdrops
+        "layer-21": "101", // Modal/overlay content (above backdrop)
+
+        // Layer 30: Top-level interactive elements
+        "layer-30": "200", // Tooltips, context menus
+
+        // Max: Absolute top priority
+        max: "9999", // Keyboard shortcuts overlay, emergency top
+      },
     },
   },
   plugins: [],
