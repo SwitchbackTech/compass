@@ -1,6 +1,6 @@
 import { ID_ADD_TASK_BUTTON } from "@web/common/constants/web.constants";
 import { PlusIcon } from "../Icons/PlusIcon";
-import { Shortcut } from "../Shortcuts/ShortcutTip";
+import { ShortcutTip } from "../Shortcuts/ShortcutTip";
 
 interface AddTaskPreviewButtonProps {
   onBeginAddingTask: () => void;
@@ -34,7 +34,7 @@ export function AddTaskPreviewButton({
           Create task
         </span>
         {isHoveringAddBlock && (
-          <Shortcut shortcut="C" aria-label="Press C to create task" />
+          <ShortcutTip shortcut="C" aria-label="Press C to create task" />
         )}
       </div>
     </button>

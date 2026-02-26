@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { ZIndex } from "@web/common/constants/web.constants";
 
 export const TriggerWrapper = styled.div`
   display: inline-flex;
@@ -16,7 +17,7 @@ export const StyledMenu = styled.div<StyledMenuProps>`
   padding: 8px;
   border-radius: ${({ theme }) => theme.shape.borderRadius || "6px"};
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-  z-index: 3;
+  z-index: ${ZIndex.LAYER_3};
 `;
 
 /**

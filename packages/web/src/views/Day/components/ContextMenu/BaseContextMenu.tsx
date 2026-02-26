@@ -12,6 +12,7 @@ import {
   useInteractions,
   useRole,
 } from "@floating-ui/react";
+import { ZIndex } from "@web/common/constants/web.constants";
 
 interface BaseContextMenuProps {
   onOutsideClick: () => void;
@@ -43,9 +44,13 @@ export const BaseContextMenu = forwardRef<HTMLUListElement, Props>(
     return createElement("ul", {
       ...getFloatingProps(props),
       className: classNames(
-        "bg-bg-secondary absolute z-[1000] min-w-[160px] list-none rounded",
+        "bg-bg-secondary absolute min-w-[160px] list-none rounded",
         "border border-gray-600 shadow-md",
       ),
+      style: {
+        ...props.style,
+        zIndex: ZIndex.LAYER_5,
+      },
       ref,
     });
   },

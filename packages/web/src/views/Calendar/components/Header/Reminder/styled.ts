@@ -1,4 +1,5 @@
 import styled, { css, keyframes } from "styled-components";
+import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 
 // Hand-drawn underline animation
@@ -127,7 +128,7 @@ export const StyledReminderContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1;
+  z-index: ${ZIndex.LAYER_1};
   height: 100%;
   width: 100%;
   margin: 0 auto;

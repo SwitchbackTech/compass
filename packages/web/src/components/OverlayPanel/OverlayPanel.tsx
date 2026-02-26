@@ -6,6 +6,8 @@ interface Props {
   icon?: ReactNode;
   /** Main title text */
   title?: string;
+  /** Optional content rendered on the same row as the title (e.g. a switch link) */
+  titleAction?: ReactNode;
   /** Description/message text */
   message?: string;
   /** Additional content (buttons, etc.) */
@@ -14,8 +16,6 @@ interface Props {
   onDismiss?: () => void;
   /** ARIA role for the panel (default: "dialog") */
   role?: "dialog" | "status" | "alert";
-  /** Backdrop style variant */
-  backdrop?: "light" | "blur";
   /** Panel style variant */
   variant?: "modal" | "status";
 }
@@ -23,29 +23,27 @@ interface Props {
 export const OverlayPanel = ({
   icon,
   title,
+  titleAction,
   message,
   children,
   onDismiss,
   role = "dialog",
-  backdrop = "light",
   variant = "modal",
 }: Props) => {
   const backdropClasses = clsx(
-    "fixed inset-0 z-[1000] flex items-center justify-center",
-    {
-      "bg-bg-primary/50": backdrop === "light",
-      "bg-bg-primary/80 backdrop-blur-sm cursor-wait": backdrop === "blur",
-    },
+    "fixed inset-0 z-[1000] flex items-center justify-center bg-bg-primary/85 backdrop-blur-sm",
   );
 
-  const panelClasses = clsx("flex flex-col items-center text-center", {
-    "bg-panel-bg max-w-[400px] gap-6 rounded-xl p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]":
+  const panelClasses = clsx("flex flex-col items-center", {
+    "bg-panel-bg w-[400px] max-w-[90vw] gap-6 rounded-xl p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]":
       variant === "modal",
     "border-border-primary bg-bg-secondary/90 max-w-sm gap-3 rounded-lg border px-6 py-5 shadow-lg":
       variant === "status",
   });
 
-  const titleClasses = clsx("text-text-lighter m-0 text-2xl font-semibold");
+  const titleClasses = clsx(
+    "text-text-lighter m-0 w-full min-w-0 line-clamp-2 text-lg font-semibold",
+  );
 
   const messageClasses = clsx(
     "text-text-lighter m-0 text-base whitespace-pre-line",
@@ -79,12 +77,16 @@ export const OverlayPanel = ({
         aria-busy={role === "status" ? true : undefined}
       >
         {icon}
-        {title &&
-          (variant === "modal" ? (
-            <h2 className={titleClasses}>{title}</h2>
-          ) : (
-            <div className={titleClasses}>{title}</div>
-          ))}
+        {title && (
+          <div className="flex w-full items-center justify-between gap-3">
+            {variant === "modal" ? (
+              <h2 className={titleClasses}>{title}</h2>
+            ) : (
+              <div className={titleClasses}>{title}</div>
+            )}
+            {titleAction}
+          </div>
+        )}
         {message && <p className={messageClasses}>{message}</p>}
         {children}
       </div>

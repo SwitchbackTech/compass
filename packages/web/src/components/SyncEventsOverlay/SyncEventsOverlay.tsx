@@ -63,7 +63,6 @@ export const SyncEventsOverlay = () => {
           : "Please hang tight while we sync your calendar"
       }
       role="status"
-      backdrop="blur"
       variant="status"
     />
   );
