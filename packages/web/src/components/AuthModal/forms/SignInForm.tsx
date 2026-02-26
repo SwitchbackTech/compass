@@ -77,20 +77,26 @@ export const SignInForm: FC<SignInFormProps> = ({
       const value = e.target.value;
       setFormState((prev) => ({ ...prev, [field]: value }));
 
-      // Clear error on change if field was touched
+      // Clear error when user types - only show validation errors after blur
       if (touched[field]) {
-        const error = validateField(field, value);
-        setErrors((prev) => ({ ...prev, [field]: error }));
+        setErrors((prev) => ({ ...prev, [field]: undefined }));
       }
     },
-    [touched, validateField],
+    [touched],
   );
 
   const handleBlur = useCallback(
     (field: keyof FormState) => () => {
       setTouched((prev) => ({ ...prev, [field]: true }));
-      const error = validateField(field, formState[field]);
-      setErrors((prev) => ({ ...prev, [field]: error }));
+      const value = formState[field];
+      // Only show errors on blur when user has entered something; empty required
+      // fields don't need an error - the disabled button already conveys that
+      if (value.trim() !== "") {
+        const error = validateField(field, value);
+        setErrors((prev) => ({ ...prev, [field]: error }));
+      } else {
+        setErrors((prev) => ({ ...prev, [field]: undefined }));
+      }
     },
     [formState, validateField],
   );

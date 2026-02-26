@@ -51,11 +51,12 @@ export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
       const value = e.target.value;
       setEmail(value);
 
+      // Clear error when user types - only show validation errors after blur
       if (touched) {
-        setError(validateEmail(value));
+        setError(undefined);
       }
     },
-    [touched, validateEmail],
+    [touched],
   );
 
   const handleBlur = useCallback(() => {
