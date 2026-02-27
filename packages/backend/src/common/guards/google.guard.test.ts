@@ -1,12 +1,18 @@
 import { ObjectId } from "mongodb";
 import { faker } from "@faker-js/faker";
+import { IDSchema } from "@core/types/type.utils";
 import { Schema_User } from "@core/types/user.types";
 import { UserError } from "@backend/common/errors/user/user.errors";
-import {
-  isGoogleConnected,
-  requireGoogleConnection,
-} from "@backend/common/guards/google.guard";
+import { requireGoogleConnection } from "@backend/common/guards/google.guard";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
+
+const isGoogleConnected = async (userId: string): Promise<boolean> => {
+  if (!IDSchema.safeParse(userId).success) {
+    return false;
+  }
+  const user = await findCompassUserBy("_id", userId);
+  return !!user?.google?.gRefreshToken;
+};
 
 jest.mock("@backend/user/queries/user.queries", () => ({
   findCompassUserBy: jest.fn(),

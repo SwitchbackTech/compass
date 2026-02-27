@@ -29,7 +29,12 @@ export const getGAuthClientForUser = async (
   }
 
   if (!gRefreshToken) {
-    const userId = "_id" in user ? (user._id as string) : undefined;
+    const userId =
+      "_id" in user
+        ? typeof user._id === "string"
+          ? user._id
+          : user._id.toString()
+        : undefined;
 
     if (!userId) {
       logger.error(`Expected to either get a user or a userId.`);
