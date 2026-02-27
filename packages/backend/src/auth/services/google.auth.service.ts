@@ -44,10 +44,7 @@ export const getGAuthClientForUser = async (
     }
 
     if (!_user?.google?.gRefreshToken) {
-      throw error(
-        UserError.GoogleNotConnected,
-        "User has not connected Google Calendar",
-      );
+      throw error(UserError.MissingGoogleField, "Auth client not initialized");
     }
 
     gRefreshToken = _user.google.gRefreshToken;
@@ -113,10 +110,7 @@ export const getGcalClient = async (userId: string): Promise<gCalendar> => {
   }
 
   if (!user.google?.gRefreshToken) {
-    throw error(
-      UserError.GoogleNotConnected,
-      "User has not connected Google Calendar",
-    );
+    throw error(UserError.MissingGoogleField, "Google client not initialized");
   }
 
   const gAuthClient = await getGAuthClientForUser(user);
