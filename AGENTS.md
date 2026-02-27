@@ -1,6 +1,53 @@
 # Compass Calendar Development Instructions
 
-Always reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.
+Primary instructions for AI agents and developers in the Compass monorepo.
+
+## Quick Start
+
+1. `yarn install --frozen-lockfile --network-timeout 300000` (takes ~3.5 min, do not cancel)
+2. `cp packages/backend/.env.local.example packages/backend/.env`
+3. `yarn dev:web` (frontend on http://localhost:9080/)
+
+## Table of Contents
+
+- [Compass Calendar Development Instructions](#compass-calendar-development-instructions)
+  - [Quick Start](#quick-start)
+  - [Table of Contents](#table-of-contents)
+  - [Key Guidelines](#key-guidelines)
+  - [Module Aliases](#module-aliases)
+  - [Working Effectively](#working-effectively)
+    - [Initial Setup](#initial-setup)
+    - [Development Servers](#development-servers)
+    - [Testing](#testing)
+      - [Writing Tests in `@compass/web`](#writing-tests-in-compassweb)
+      - [Running Tests](#running-tests)
+    - [Building](#building)
+    - [Linting](#linting)
+  - [Validation](#validation)
+  - [Project Structure](#project-structure)
+    - [Packages Overview](#packages-overview)
+    - [Key Files \& Directories](#key-files--directories)
+  - [Environment Requirements](#environment-requirements)
+    - [Required for Full Development](#required-for-full-development)
+    - [Optional Services](#optional-services)
+    - [Critical Environment Variables (backend/.env)](#critical-environment-variables-backendenv)
+  - [Common Tasks \& Timing](#common-tasks--timing)
+    - [Repository Operations](#repository-operations)
+    - [Development Workflow](#development-workflow)
+    - [Styling](#styling)
+    - [CI/CD Integration](#cicd-integration)
+  - [Troubleshooting](#troubleshooting)
+    - [Common Issues](#common-issues)
+    - [Network Limitations](#network-limitations)
+    - [Workarounds](#workarounds)
+  - [Package Scripts Reference](#package-scripts-reference)
+    - [Root Level Commands](#root-level-commands)
+  - [Naming Conventions](#naming-conventions)
+  - [Branch Naming \& Commit Message Conventions](#branch-naming--commit-message-conventions)
+    - [Semantic Branch Naming](#semantic-branch-naming)
+    - [Semantic Commit Messages](#semantic-commit-messages)
+    - [Pre-commit Validation](#pre-commit-validation)
+  - [Gotchas](#gotchas)
 
 ## Key Guidelines
 
@@ -9,13 +56,27 @@ Always reference these instructions first and fallback to search or bash command
 3. Always use module aliased paths for imports when importing Compass modules.
 4. Prefer the simplest solution to a problem over the more complex solutions.
 
+## Module Aliases
+
+Use these aliases instead of relative paths:
+
+- **Backend, scripts, core** (see root `package.json` `_moduleAliases`):
+  - `@compass/backend` → `packages/backend/src`
+  - `@compass/core` → `packages/core/src`
+  - `@compass/scripts` → `packages/scripts/src`
+- **Web** (see `packages/web/tsconfig.json` paths):
+  - `@web/*` → `packages/web/src/*`
+  - `@core/*` → `packages/core/src/*`
+
+Example: `import { foo } from '@compass/core'` not `import { foo } from '../../../core'`
+
 ## Working Effectively
 
 ### Initial Setup
 
 - Install dependencies: `yarn install --frozen-lockfile --network-timeout 300000`
-  - Takes ~3.5 minutes. NEVER CANCEL. Set timeout to 10+ minutes.
-- Copy environment template: `cp packages/backend/.env.example packages/backend/.env`
+  - Takes ~3.5 minutes. Set timeout to 10+ minutes.
+- Copy environment template: `cp packages/backend/.env.local.example packages/backend/.env`
 
 ### Development Servers
 
@@ -27,20 +88,23 @@ Always reference these instructions first and fallback to search or bash command
 
 ### Testing
 
-### Writing Tests in `@compass/web`
+Run `yarn test:core`, `yarn test:web`, and `yarn test:backend` after making changes. Use `yarn test:scripts` for scripts package tests. Avoid `yarn test` (full suite) in restricted network environments—MongoDB binary download may fail.
+
+#### Writing Tests in `@compass/web`
 
 - Write tests the way a user would use the application by using the DOM and user interactions with `@testing-library/user-event` rather than internal implementation details of React components.
 - Do NOT use `data-` attributes or CSS selectors to locate elements. Use semantic locators and roles instead.
 - When writing tests, avoid mocking as much as possible.
 - Where mocking is inevitable, use spies to sub out specific module functions before attempting to mock the whole module.
+- **DO NOT** attempt to test login functionality without proper backend setup.
 
 #### Running Tests
 
-- **Core tests**: `yarn test:core`.
-- **Web tests**: `yarn test:web`.
-- **Full test suite**: `yarn test`.
-- **ALWAYS** run `yarn test:core` and `yarn test:web` and `yarn test:backend` after making changes
-- **DO NOT** attempt to test login functionality without proper backend setup
+- **Core tests**: `yarn test:core`
+- **Web tests**: `yarn test:web`
+- **Backend tests**: `yarn test:backend`
+- **Scripts tests**: `yarn test:scripts`
+- **Full test suite**: `yarn test` (may fail if MongoDB binary download is blocked)
 
 ### Building
 
@@ -50,7 +114,7 @@ Always reference these instructions first and fallback to search or bash command
 
 ### Linting
 
-- `yarn prettier . --write` - Takes ~15 seconds. NEVER CANCEL.
+- `yarn prettier . --write` - Takes ~15 seconds.
 
 ## Validation
 
@@ -129,17 +193,18 @@ TZ=Etc/UTC
 
 ### Repository Operations
 
-- `yarn install` - 3.5 minutes (NEVER CANCEL, set 10+ minute timeout)
-- `yarn test:core` - 2 seconds (all pass)
-- `yarn test:web` - 15 seconds (all pass)
-- `yarn test:backend` - 15 seconds (all pass)
-- `yarn dev:web` - 10 seconds to start (always works)
-- `yarn cli --help` - 3 seconds (shows available commands)
+- `yarn install` - 3.5 minutes
+- `yarn test:core` - ~2 seconds (all pass)
+- `yarn test:web` - ~15 seconds (all pass)
+- `yarn test:backend` - ~15 seconds (all pass)
+- `yarn test:scripts` - scripts package tests
+- `yarn dev:web` - ~10 seconds to start
+- `yarn cli --help` - ~3 seconds (shows available commands)
 
 ### Development Workflow
 
 1. **Start Development**: `yarn dev:web` (frontend only, always works)
-2. **Run Tests**: `yarn test:core && yarn test:web` (skips problematic backend tests)
+2. **Run Tests**: `yarn test:core && yarn test:web` (add `&& yarn test:backend` when credentials available)
 3. **Check Code Style**: `yarn prettier . --write`
 4. **Manual Validation**: Open <http://localhost:9080/> and verify login page loads
 
@@ -157,10 +222,8 @@ TZ=Etc/UTC
 
 ### Common Issues
 
-- **MongoDB download failures**: Use `yarn test:core` and `yarn test:web` instead of `yarn test`
-- **Backend won't start**: Missing environment variables, use web-only development
-- **Build timeouts**: All build operations need 10+ minute timeouts
-- **Test failures**: Expected in restricted network environments
+- **Test failures**: Run `yarn test:core`, `yarn test:web`, and `yarn test:backend` individually to narrow the scope of the failure
+- **Backend won't start**: Missing environment variables in `packages/backend/.env`, use web-only development (`yarn dev:web`)
 
 ### Network Limitations
 
@@ -183,6 +246,8 @@ TZ=Etc/UTC
 - `yarn test` - Run all tests (fails in restricted environments)
 - `yarn test:core` - Run core package tests only
 - `yarn test:web` - Run web package tests only
+- `yarn test:backend` - Run backend package tests only
+- `yarn test:scripts` - Run scripts package tests only
 
 Always prioritize frontend development with `yarn dev:web` when backend services are unavailable.
 
@@ -195,9 +260,9 @@ Always prioritize frontend development with `yarn dev:web` when backend services
 
 ### Semantic Branch Naming
 
-**ALWAYS** create branches following this pattern based on the GitHub issue:
+**ALWAYS** create branches following this pattern:
 
-- `type/action-issue-number` (e.g., `copilot/fix-spinner`, `feature/add-form`, `bug/fix-auth`)
+- `type/action[-issue-number]` (e.g., `feature/add-form`, `bug/fix-auth`, `bug/fix-auth-123`)
 
 **Branch Type Prefixes:**
 
@@ -269,25 +334,8 @@ The repository includes Husky hooks that will:
 
 **ALWAYS** ensure your commits pass these checks before pushing.
 
-## Cursor Cloud specific instructions
+## Gotchas
 
-### Node.js Version
-
-This project requires Node.js >= 24.0.0.
-
-### Running Services
-
-- **Web frontend** (`yarn dev:web`): Works standalone on port 9080 with demo/mock data, no backend needed. This is the primary development target in cloud environments.
-- **Backend** (`yarn dev:backend`): Requires real Google OAuth, SuperTokens, and MongoDB credentials in `packages/backend/.env`. Will not start without them.
-
-### Cursor Testing
-
-- Run `yarn test:core`, `yarn test:web`, and `yarn test:backend` individually. All three pass in cloud environments.
-- `yarn test` (full suite) also works because `@shelf/jest-mongodb` downloads a MongoDB memory server binary; this succeeds as long as `fastdl.mongodb.org` is reachable.
-- Lint: `yarn prettier . --write` to auto-fix.
-
-### Gotchas
-
-- The `.env.local.example` file is at `packages/backend/.env.local.example` (not `.env.example`). The update script copies it to `packages/backend/.env` if the `.env` file doesn't already exist.
-- Webpack dev server warns about a missing `.env.local` file; this is harmless — it falls back to `process.env`.
+- Environment: Copy from `packages/backend/.env.local.example` to `packages/backend/.env` (there is no `.env.example`).
+- Webpack dev server warns about a missing `.env.local` file; this is harmless—it falls back to `process.env`.
 - Husky pre-push hook runs `yarn prettier . --write`, which can modify files. Ensure working tree is clean or committed before pushing.
