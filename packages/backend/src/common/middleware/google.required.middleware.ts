@@ -2,18 +2,12 @@ import { Request, Response } from "express";
 import { NextFunction } from "express";
 import { SessionRequest } from "supertokens-node/framework/express";
 import { BaseError } from "@core/errors/errors.base";
+import {
+  errorHandler,
+  toClientErrorPayload,
+} from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { requireGoogleConnection } from "@backend/common/guards/google.guard";
-
-const sendBaseError = (res: Response, e: BaseError) => {
-  // Log full error on server; do not expose stack/details to client.
-  console.error(e);
-
-  res.status(e.statusCode).json({
-    result: e.result,
-    message: e.description,
-  });
-};
 
 export const requireGoogleConnectionSession = async (
   req: SessionRequest,
@@ -33,7 +27,8 @@ export const requireGoogleConnectionSession = async (
     await requireGoogleConnection(userId);
   } catch (e) {
     if (e instanceof BaseError) {
-      sendBaseError(res, e);
+      errorHandler.log(e);
+      res.status(e.statusCode).json(toClientErrorPayload(e));
       return;
     }
     return next(e);
@@ -58,7 +53,8 @@ export const requireGoogleConnectionFrom =
       await requireGoogleConnection(userId);
     } catch (e) {
       if (e instanceof BaseError) {
-        sendBaseError(res, e);
+        errorHandler.log(e);
+        res.status(e.statusCode).json(toClientErrorPayload(e));
         return;
       }
       return next(e);
