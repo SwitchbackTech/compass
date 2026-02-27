@@ -33,6 +33,15 @@ export const genericError = (
   return error(cause, result);
 };
 
+/**
+ * Returns a safe payload for BaseError to send to clients.
+ * Avoids exposing stack, isOperational, or other internal details.
+ */
+export const toClientErrorPayload = (e: BaseError) => ({
+  result: e.result,
+  message: e.description,
+});
+
 class ErrorHandler {
   public isOperational(error: Error): boolean {
     if (error instanceof BaseError) {

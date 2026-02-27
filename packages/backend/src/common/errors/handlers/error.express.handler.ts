@@ -5,7 +5,10 @@ import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { IS_DEV } from "@backend/common/constants/env.constants";
-import { errorHandler } from "@backend/common/errors/handlers/error.handler";
+import {
+  errorHandler,
+  toClientErrorPayload,
+} from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import {
   getEmailFromUrl,
@@ -76,7 +79,7 @@ export const handleExpressError = async (
 
   errorHandler.log(e);
   if (e instanceof BaseError) {
-    res.status(e.statusCode).send(e);
+    res.status(e.statusCode).json(toClientErrorPayload(e));
   } else {
     const userId = await parseUserId(res, e);
     if (!userId) {
