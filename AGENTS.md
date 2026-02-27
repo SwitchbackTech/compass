@@ -7,6 +7,7 @@ Always reference these instructions first and fallback to search or bash command
 1. When working in `packages/web`, follow React best practices and idiomatic patterns
 2. When working in `packages/backend` or `packages/core`, follow Node.js best practices and idiomatic patterns
 3. Always use module aliased paths for imports when importing Compass modules.
+4. Prefer the simplest solution to a problem over the more complex solutions.
 
 ## Working Effectively
 
@@ -18,13 +19,11 @@ Always reference these instructions first and fallback to search or bash command
 
 ### Development Servers
 
-- **CRITICAL**: The backend requires external service credentials (Google OAuth, Supertokens, MongoDB) to run properly
-- **Web Development** (RECOMMENDED for coding):
-  - `yarn dev:web` - Takes ~10 seconds to build. Serves on <http://[REDACTED]/>
+- **Web Development**:
+  - yarn dev:web - Takes ~10 seconds to build. Serves on http://localhost:9080/
   - Frontend works standalone without backend services
-- **Backend Development** (requires full setup):
+- **Backend Development**:
   - `yarn dev:backend` - Fails without proper .env configuration
-  - Needs: Google Cloud OAuth credentials, Supertokens account, MongoDB connection
 
 ### Testing
 
@@ -37,16 +36,14 @@ Always reference these instructions first and fallback to search or bash command
 
 #### Running Tests
 
-- **Core tests**: `yarn test:core` - Takes ~2 seconds. NEVER CANCEL. Always tests pass.
-- **Web tests**: `yarn test:web` - Takes ~15 seconds. NEVER CANCEL. All tests pass
-- **Full test suite**: `yarn test` - Takes ~18 seconds but FAILS in restricted environments due to MongoDB binary download from fastdl.mongodb.org
-  - Use individual package tests instead: `yarn test:core` and `yarn test:web`
-- **DO NOT** attempt to test login functionality without proper backend setup
+- **Core tests**: `yarn test:core`.
+- **Web tests**: `yarn test:web`.
+- **Full test suite**: `yarn test`.
 - **ALWAYS** run `yarn test:core` and `yarn test:web` and `yarn test:backend` after making changes
+- **DO NOT** attempt to test login functionality without proper backend setup
 
 ### Building
 
-- **CLI Tool**: `yarn cli --help` - Takes ~3 seconds. Lists all available commands.
 - **Web Build**: `yarn cli build web --environment staging --clientId "test-client-id"`
 - **Node Build**: `yarn cli build nodePckgs --environment staging`
 - Both builds require valid environment configuration
@@ -74,7 +71,7 @@ This is a Typescript project with a monorepo structure.
 
 ### Key Files & Directories
 
-```
+```text
 packages/backend/src/
 ├── auth/           # Google OAuth integration
 ├── calendar/       # Google Calendar API
@@ -115,7 +112,7 @@ packages/core/src/
 
 ```bash
 # Required for backend to start
-BASEURL=[REDACTED]
+BASEURL=http://localhost:3000/api
 GOOGLE_CLIENT_ID=YOUR_GOOGLE_OAUTH_CLIENT_ID
 GOOGLE_CLIENT_SECRET=YOUR_GOOGLE_OAUTH_SECRET
 SUPERTOKENS_URI=YOUR_SUPERTOKENS_INSTANCE_URL
@@ -144,7 +141,7 @@ TZ=Etc/UTC
 1. **Start Development**: `yarn dev:web` (frontend only, always works)
 2. **Run Tests**: `yarn test:core && yarn test:web` (skips problematic backend tests)
 3. **Check Code Style**: `yarn prettier . --write`
-4. **Manual Validation**: Open <http://[REDACTED]/> and verify login page loads
+4. **Manual Validation**: Open <http://localhost:9080/> and verify login page loads
 
 ### Styling
 
@@ -155,8 +152,6 @@ TZ=Etc/UTC
 ### CI/CD Integration
 
 - GitHub Actions runs `yarn install` and `yarn test`
-- Tests fail in CI due to MongoDB network restrictions (known limitation)
-- Linting and build validation happens in CI pipeline
 
 ## Troubleshooting
 
@@ -278,18 +273,18 @@ The repository includes Husky hooks that will:
 
 ### Node.js Version
 
-This project requires Node.js >= 24.0.0. The update script installs it via `nvm`. After the update script runs, `nvm use 24` is needed in each new shell session (the update script handles `nvm alias default 24`).
+This project requires Node.js >= 24.0.0.
 
 ### Running Services
 
 - **Web frontend** (`yarn dev:web`): Works standalone on port 9080 with demo/mock data, no backend needed. This is the primary development target in cloud environments.
 - **Backend** (`yarn dev:backend`): Requires real Google OAuth, SuperTokens, and MongoDB credentials in `packages/backend/.env`. Will not start without them.
 
-### Testing
+### Cursor Testing
 
 - Run `yarn test:core`, `yarn test:web`, and `yarn test:backend` individually. All three pass in cloud environments.
 - `yarn test` (full suite) also works because `@shelf/jest-mongodb` downloads a MongoDB memory server binary; this succeeds as long as `fastdl.mongodb.org` is reachable.
-- Lint: `yarn prettier . --check` (or `--write` to auto-fix).
+- Lint: `yarn prettier . --write` to auto-fix.
 
 ### Gotchas
 
