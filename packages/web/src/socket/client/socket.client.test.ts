@@ -65,14 +65,10 @@ describe("socket.client", () => {
   });
 
   describe("reconnect", () => {
-    it("disconnects and then connects after 1 second", () => {
+    it("disconnects and then connects immediately", () => {
       socketClientModule.reconnect();
 
       expect(mockSocket.disconnect).toHaveBeenCalled();
-      expect(mockSocket.connect).not.toHaveBeenCalled();
-
-      jest.advanceTimersByTime(1000);
-
       expect(mockSocket.connect).toHaveBeenCalled();
     });
   });
