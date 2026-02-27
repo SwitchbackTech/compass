@@ -30,7 +30,7 @@ export const importGCalSlice = createAsyncSlice<
     importing: boolean;
     importResults: ImportResults | null;
     pendingLocalEventsSynced: number | null;
-    awaitingImportResults: boolean;
+    isImportPending: boolean;
     importError: string | null;
   }
 >({
@@ -39,7 +39,7 @@ export const importGCalSlice = createAsyncSlice<
     importing: false,
     importResults: null,
     pendingLocalEventsSynced: null,
-    awaitingImportResults: false,
+    isImportPending: false,
     importError: null,
   },
   reducers: {
@@ -47,7 +47,7 @@ export const importGCalSlice = createAsyncSlice<
       state.importing = action.payload;
     },
     setAwaitingImportResults: (state, action: PayloadAction<boolean>) => {
-      state.awaitingImportResults = action.payload;
+      state.isImportPending = action.payload;
       if (action.payload) {
         state.importError = null;
       }
@@ -63,7 +63,7 @@ export const importGCalSlice = createAsyncSlice<
       }>,
     ) => {
       state.importing = false;
-      state.awaitingImportResults = false;
+      state.isImportPending = false;
       state.importError = null;
       state.importResults = {
         ...action.payload,
@@ -73,7 +73,7 @@ export const importGCalSlice = createAsyncSlice<
     },
     setImportError: (state, action: PayloadAction<string>) => {
       state.importing = false;
-      state.awaitingImportResults = false;
+      state.isImportPending = false;
       state.importError = action.payload;
       state.importResults = null;
       state.pendingLocalEventsSynced = null;

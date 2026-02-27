@@ -3,14 +3,14 @@ import { useBufferedVisibility } from "@web/common/hooks/useBufferedVisibility";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { selectIsAuthenticating } from "@web/ducks/auth/selectors/auth.selectors";
 import {
-  selectAwaitingImportResults,
   selectImporting,
+  selectIsImportPending,
 } from "@web/ducks/events/selectors/sync.selector";
 import { useAppSelector } from "@web/store/store.hooks";
 
 export const SyncEventsOverlay = () => {
   const importing = useAppSelector(selectImporting);
-  const awaitingImportResults = useAppSelector(selectAwaitingImportResults);
+  const awaitingImportResults = useAppSelector(selectIsImportPending);
   const isAuthenticating = useAppSelector(selectIsAuthenticating);
 
   // Show overlay when:

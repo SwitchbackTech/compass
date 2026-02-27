@@ -6,8 +6,8 @@ import {
   USER_METADATA,
 } from "@core/constants/websocket.constants";
 import {
-  selectAwaitingImportResults,
   selectImporting,
+  selectIsImportPending,
 } from "@web/ducks/events/selectors/sync.selector";
 import {
   importGCalSlice,
@@ -65,7 +65,7 @@ describe("useGcalSync", () => {
       if (selector === selectImporting) {
         return importingValue;
       }
-      if (selector === selectAwaitingImportResults) {
+      if (selector === selectIsImportPending) {
         return awaitingValue;
       }
       return false;

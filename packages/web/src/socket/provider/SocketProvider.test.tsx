@@ -91,7 +91,7 @@ describe("SocketProvider", () => {
       calendarsCount: 2,
     });
     expect(state.sync.importGCal.importing).toBe(false);
-    expect(state.sync.importGCal.awaitingImportResults).toBe(false);
+    expect(state.sync.importGCal.isImportPending).toBe(false);
     expect(state.sync.importLatest.isFetchNeeded).toBe(true);
   });
 

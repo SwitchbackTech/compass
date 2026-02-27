@@ -8,7 +8,7 @@ import {
 import { UserMetadata } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
-import { selectAwaitingImportResults } from "@web/ducks/events/selectors/sync.selector";
+import { selectIsImportPending } from "@web/ducks/events/selectors/sync.selector";
 import {
   importGCalSlice,
   triggerFetch,
@@ -18,11 +18,11 @@ import { socket } from "../client/socket.client";
 
 export const useGcalSync = () => {
   const dispatch = useDispatch();
-  const awaitingImportResults = useAppSelector(selectAwaitingImportResults);
+  const isImportPending = useAppSelector(selectIsImportPending);
 
   // Keep ref in sync synchronously during render to avoid race with socket events
-  const awaitingImportResultsRef = useRef(awaitingImportResults);
-  awaitingImportResultsRef.current = awaitingImportResults;
+  const isImportPendingRef = useRef(isImportPending);
+  isImportPendingRef.current = isImportPending;
 
   const onImportStart = useCallback(
     (importing = true) => {
@@ -37,7 +37,7 @@ export const useGcalSync = () => {
   const onImportEnd = useCallback(
     (payload?: { eventsCount?: number; calendarsCount?: number } | string) => {
       dispatch(importGCalSlice.actions.importing(false));
-      if (!awaitingImportResultsRef.current) {
+      if (!isImportPendingRef.current) {
         return;
       }
 
@@ -77,7 +77,7 @@ export const useGcalSync = () => {
       const importGcal = shouldImportGCal(metadata);
       const isBackendImporting = metadata.sync?.importGCal === "importing";
 
-      if (awaitingImportResultsRef.current) {
+      if (isImportPendingRef.current) {
         if (isBackendImporting) {
           dispatch(importGCalSlice.actions.importing(true));
         }
