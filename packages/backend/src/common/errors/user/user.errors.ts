@@ -3,7 +3,7 @@ import { ErrorMetadata } from "@backend/common/types/error.types";
 
 interface UserErrors {
   InvalidValue: ErrorMetadata;
-  MissingGoogleUserField: ErrorMetadata;
+  MissingGoogleRefreshToken: ErrorMetadata;
   MissingUserIdField: ErrorMetadata;
   UserNotFound: ErrorMetadata;
 }
@@ -14,9 +14,9 @@ export const UserError: UserErrors = {
     status: Status.BAD_REQUEST,
     isOperational: true,
   },
-  MissingGoogleUserField: {
-    description: "Email field is missing from the Google user object",
-    status: Status.NOT_FOUND,
+  MissingGoogleRefreshToken: {
+    description: "User is missing a Google refresh token",
+    status: Status.BAD_REQUEST,
     isOperational: true,
   },
   MissingUserIdField: {

@@ -17,7 +17,7 @@ import { Res_Promise, SReqBody } from "@backend/common/types/express.types";
 import eventService from "@backend/event/services/event.service";
 import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.processor";
 
-const logger = Logger("app.event.controllers.event.controller");
+const logger = Logger("app:event.controller");
 
 class EventController {
   private async processEvents(_events: CompassEvent[]) {

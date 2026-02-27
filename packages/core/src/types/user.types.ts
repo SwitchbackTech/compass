@@ -7,7 +7,7 @@ export interface Schema_User {
   lastName: string;
   name: string;
   locale: string;
-  google: {
+  google?: {
     googleId: string;
     picture: string;
     gRefreshToken: string;
