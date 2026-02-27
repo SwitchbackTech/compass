@@ -46,7 +46,7 @@ export const importGCalSlice = createAsyncSlice<
     importing: (state, action: PayloadAction<boolean>) => {
       state.importing = action.payload;
     },
-    setAwaitingImportResults: (state, action: PayloadAction<boolean>) => {
+    setIsImportPending: (state, action: PayloadAction<boolean>) => {
       state.isImportPending = action.payload;
       if (action.payload) {
         state.importError = null;

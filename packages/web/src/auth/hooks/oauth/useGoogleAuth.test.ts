@@ -161,7 +161,7 @@ describe("useGoogleAuth", () => {
       );
       expect(mockDispatchFn).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: "async/importGCal/setAwaitingImportResults",
+          type: "async/importGCal/setIsImportPending",
           payload: true,
         }),
       );
@@ -193,7 +193,7 @@ describe("useGoogleAuth", () => {
 
       expect(mockDispatchFn).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: "async/importGCal/setAwaitingImportResults",
+          type: "async/importGCal/setIsImportPending",
           payload: false,
         }),
       );
@@ -252,7 +252,7 @@ describe("useGoogleAuth", () => {
       expect(mockSetAuthenticated).not.toHaveBeenCalled();
       expect(mockDispatchFn).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: "async/importGCal/setAwaitingImportResults",
+          type: "async/importGCal/setIsImportPending",
           payload: false,
         }),
       );
@@ -298,7 +298,7 @@ describe("useGoogleAuth", () => {
 
       expect(mockDispatchFn).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: "async/importGCal/setAwaitingImportResults",
+          type: "async/importGCal/setIsImportPending",
           payload: false,
         }),
       );

@@ -448,7 +448,7 @@ describe("GCal Re-Authentication Flow", () => {
 
       // User clicks Reconnect - state changes to isImportPending = true
       await act(async () => {
-        store.dispatch(importGCalSlice.actions.setAwaitingImportResults(true));
+        store.dispatch(importGCalSlice.actions.setIsImportPending(true));
       });
 
       rerender(

@@ -61,7 +61,7 @@ describe("SocketProvider", () => {
       },
     });
 
-    store.dispatch(importGCalSlice.actions.setAwaitingImportResults(true));
+    store.dispatch(importGCalSlice.actions.setIsImportPending(true));
 
     render(
       <Provider store={store}>

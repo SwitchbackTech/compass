@@ -31,7 +31,7 @@ export function useGoogleAuth() {
     onStart: () => {
       dismissErrorToast(SESSION_EXPIRED_TOAST_ID);
       dispatch(startAuthenticating());
-      dispatch(importGCalSlice.actions.setAwaitingImportResults(true));
+      dispatch(importGCalSlice.actions.setIsImportPending(true));
       dispatch(importGCalSlice.actions.clearImportResults(undefined));
     },
     onSuccess: async (data) => {
@@ -42,7 +42,7 @@ export function useGoogleAuth() {
           dispatch(
             authError(authResult.error?.message || "Authentication failed"),
           );
-          dispatch(importGCalSlice.actions.setAwaitingImportResults(false));
+          dispatch(importGCalSlice.actions.setIsImportPending(false));
           dispatch(importGCalSlice.actions.importing(false));
           return;
         }
@@ -59,7 +59,7 @@ export function useGoogleAuth() {
           dispatch(authSuccess());
           // Now that OAuth is complete, indicate that calendar import is starting
           dispatch(importGCalSlice.actions.importing(true));
-          dispatch(importGCalSlice.actions.setAwaitingImportResults(true));
+          dispatch(importGCalSlice.actions.setIsImportPending(true));
         });
 
         const syncResult = await syncLocalEvents();
@@ -90,7 +90,7 @@ export function useGoogleAuth() {
             error instanceof Error ? error.message : "Authentication failed",
           ),
         );
-        dispatch(importGCalSlice.actions.setAwaitingImportResults(false));
+        dispatch(importGCalSlice.actions.setIsImportPending(false));
         dispatch(importGCalSlice.actions.importing(false));
         throw error; // Re-throw so useGoogleLoginWithSyncOverlay can handle it via onError
       }
@@ -102,7 +102,7 @@ export function useGoogleAuth() {
           error instanceof Error ? error.message : "Authentication failed",
         ),
       );
-      dispatch(importGCalSlice.actions.setAwaitingImportResults(false));
+      dispatch(importGCalSlice.actions.setIsImportPending(false));
       dispatch(importGCalSlice.actions.importing(false));
     },
   });
