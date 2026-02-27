@@ -20,12 +20,9 @@ export const useGcalSync = () => {
   const dispatch = useDispatch();
   const awaitingImportResults = useAppSelector(selectAwaitingImportResults);
 
-  // Use ref to prevent stale closures when socket events arrive
-  // between state change and effect re-run
+  // Keep ref in sync synchronously during render to avoid race with socket events
   const awaitingImportResultsRef = useRef(awaitingImportResults);
-  useEffect(() => {
-    awaitingImportResultsRef.current = awaitingImportResults;
-  }, [awaitingImportResults]);
+  awaitingImportResultsRef.current = awaitingImportResults;
 
   const onImportStart = useCallback(
     (importing = true) => {

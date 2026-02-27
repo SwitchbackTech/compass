@@ -251,7 +251,7 @@ describe("useGcalSync", () => {
       });
     });
 
-    it("hides spinner when import completes within timeout", () => {
+    it("hides spinner when import completes successfully", () => {
       const handlers: Record<string, (...args: unknown[]) => void> = {};
       (socket.on as jest.Mock).mockImplementation((event, handler) => {
         handlers[event] = handler;
@@ -295,20 +295,20 @@ describe("useGcalSync", () => {
         JSON.stringify({ eventsCount: 2, calendarsCount: 1 }),
       );
 
-      // Final state should have importing=false
-      const importingCalls = mockDispatch.mock.calls.filter(
-        (call) =>
-          call[0] === importGCalSlice.actions.importing(true) ||
-          call[0] === importGCalSlice.actions.importing(false),
+      // Verify the correct sequence of actions was dispatched:
+      // 1. clearImportResults (on start)
+      // 2. importing(true) (on start)
+      // 3. importing(false) (on end)
+      // 4. setImportResults (on end)
+      expect(importGCalSlice.actions.clearImportResults).toHaveBeenCalledWith(
+        undefined,
       );
-
-      // Last importing call should be false (spinner hidden)
-      expect(mockDispatch).toHaveBeenLastCalledWith(
-        importGCalSlice.actions.setImportResults({
-          eventsCount: 2,
-          calendarsCount: 1,
-        }),
-      );
+      expect(importGCalSlice.actions.importing).toHaveBeenCalledWith(true);
+      expect(importGCalSlice.actions.importing).toHaveBeenCalledWith(false);
+      expect(importGCalSlice.actions.setImportResults).toHaveBeenCalledWith({
+        eventsCount: 2,
+        calendarsCount: 1,
+      });
     });
 
     it("handles import end with empty payload gracefully", () => {
