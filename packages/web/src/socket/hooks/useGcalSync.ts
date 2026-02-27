@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 import {
   IMPORT_GCAL_END,
@@ -8,10 +8,7 @@ import {
 import { UserMetadata } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
-import {
-  selectAwaitingImportResults,
-  selectImporting,
-} from "@web/ducks/events/selectors/sync.selector";
+import { selectAwaitingImportResults } from "@web/ducks/events/selectors/sync.selector";
 import {
   importGCalSlice,
   triggerFetch,
@@ -21,8 +18,14 @@ import { socket } from "../client/socket.client";
 
 export const useGcalSync = () => {
   const dispatch = useDispatch();
-  const importing = useAppSelector(selectImporting);
   const awaitingImportResults = useAppSelector(selectAwaitingImportResults);
+
+  // Use ref to prevent stale closures when socket events arrive
+  // between state change and effect re-run
+  const awaitingImportResultsRef = useRef(awaitingImportResults);
+  useEffect(() => {
+    awaitingImportResultsRef.current = awaitingImportResults;
+  }, [awaitingImportResults]);
 
   const onImportStart = useCallback(
     (importing = true) => {
@@ -37,7 +40,7 @@ export const useGcalSync = () => {
   const onImportEnd = useCallback(
     (payload?: { eventsCount?: number; calendarsCount?: number } | string) => {
       dispatch(importGCalSlice.actions.importing(false));
-      if (!awaitingImportResults) {
+      if (!awaitingImportResultsRef.current) {
         return;
       }
 
@@ -69,7 +72,7 @@ export const useGcalSync = () => {
         }),
       );
     },
-    [dispatch, awaitingImportResults],
+    [dispatch],
   );
 
   const onMetadataFetch = useCallback(
@@ -77,7 +80,7 @@ export const useGcalSync = () => {
       const importGcal = shouldImportGCal(metadata);
       const isBackendImporting = metadata.sync?.importGCal === "importing";
 
-      if (awaitingImportResults) {
+      if (awaitingImportResultsRef.current) {
         if (isBackendImporting) {
           dispatch(importGCalSlice.actions.importing(true));
         }
@@ -91,7 +94,7 @@ export const useGcalSync = () => {
         dispatch(importGCalSlice.actions.request(undefined as never));
       }
     },
-    [dispatch, awaitingImportResults, onImportStart],
+    [dispatch, onImportStart],
   );
 
   useEffect(() => {

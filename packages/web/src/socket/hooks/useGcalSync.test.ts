@@ -157,5 +157,38 @@ describe("useGcalSync", () => {
       );
       expect(importGCalSlice.actions.setImportResults).not.toHaveBeenCalled();
     });
+
+    it("handles import end when awaitingImportResults changes mid-render", () => {
+      // Simulate the race condition: starts false, changes to true,
+      // then event arrives (testing ref pattern works correctly)
+
+      let importEndHandler: (data: string) => void;
+      (socket.on as jest.Mock).mockImplementation((event, handler) => {
+        if (event === IMPORT_GCAL_END) {
+          importEndHandler = handler;
+        }
+      });
+
+      // Start with awaitingImportResults = false
+      awaitingValue = false;
+      const { rerender } = renderHook(() => useGcalSync());
+
+      // Change to true (simulating user clicking Reconnect)
+      awaitingValue = true;
+      rerender();
+
+      // Event arrives - should process correctly with ref pattern
+      importEndHandler?.(
+        JSON.stringify({ eventsCount: 10, calendarsCount: 2 }),
+      );
+
+      // Verify setImportResults was called (not skipped due to stale closure)
+      expect(mockDispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.setImportResults({
+          eventsCount: 10,
+          calendarsCount: 2,
+        }),
+      );
+    });
   });
 });
