@@ -1,4 +1,4 @@
-name: Feature Request ✨
+name: Feature Request
 description: You want something added to the app
 labels: [enhancement]
 projects: [SwitchbackTech/4]
@@ -8,17 +8,6 @@ body:
     attributes:
       value: |
         Thanks for taking the time to fill out this feature request!
-
-  - type: dropdown
-    attributes:
-      label: Priority
-      description: How important is this feature to you?
-      multiple: false
-      options:
-        - Critical (blocking my workflow)
-        - High (would significantly improve my experience)
-        - Medium (nice to have)
-        - Low (minor improvement)
 
   - type: textarea
     attributes:

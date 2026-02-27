@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
-  - name: 💬 GitHub Discussions
+  - name: GitHub Discussions
     url: https://github.com/SwitchbackTech/compass/discussions
     about: Start a GitHub Discussion for general questions and feedback
-  - name: 📚 Documentation
+  - name: Documentation
     url: https://docs.compasscalendar.com
     about: Check our documentation for setup guides, API reference, and contributing guidelines
