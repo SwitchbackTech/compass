@@ -89,8 +89,29 @@ describe("google.required.middleware", () => {
       );
 
       expect(mockRes.status).toHaveBeenCalledWith(Status.BAD_REQUEST);
-      expect(mockRes.send).toHaveBeenCalledWith(baseError);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        result: baseError.result,
+        message: baseError.description,
+      });
       expect(mockNext).not.toHaveBeenCalled();
+    });
+
+    it("calls next with error when non-BaseError is thrown", async () => {
+      const userId = new ObjectId().toString();
+      mockReq = {
+        session: { getUserId: () => userId },
+      };
+      const unexpectedError = new Error("Database connection failed");
+      mockRequireGoogleConnection.mockRejectedValue(unexpectedError);
+
+      await requireGoogleConnectionSession(
+        mockReq as Parameters<typeof requireGoogleConnectionSession>[0],
+        mockRes as Response,
+        mockNext,
+      );
+
+      expect(mockRes.status).not.toHaveBeenCalled();
+      expect(mockNext).toHaveBeenCalledWith(unexpectedError);
     });
   });
 

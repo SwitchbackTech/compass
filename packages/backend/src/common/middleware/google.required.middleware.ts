@@ -5,6 +5,10 @@ import { BaseError } from "@core/errors/errors.base";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { requireGoogleConnection } from "@backend/common/guards/google.guard";
 
+const sendBaseError = (res: Response, e: BaseError) => {
+  res.status(e.statusCode).json({ result: e.result, message: e.description });
+};
+
 export const requireGoogleConnectionSession = async (
   req: SessionRequest,
   res: Response,
@@ -23,10 +27,10 @@ export const requireGoogleConnectionSession = async (
     await requireGoogleConnection(userId);
   } catch (e) {
     if (e instanceof BaseError) {
-      res.status(e.statusCode).send(e);
+      sendBaseError(res, e);
       return;
     }
-    throw e;
+    next(e);
   }
 
   next();
@@ -48,10 +52,10 @@ export const requireGoogleConnectionFrom =
       await requireGoogleConnection(userId);
     } catch (e) {
       if (e instanceof BaseError) {
-        res.status(e.statusCode).send(e);
+        sendBaseError(res, e);
         return;
       }
-      throw e;
+      next(e);
     }
 
     next();

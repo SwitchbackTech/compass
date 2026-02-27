@@ -33,18 +33,21 @@ export const getGAuthClientForUser = async (
 
     if (!userId) {
       logger.error(`Expected to either get a user or a userId.`);
-      throw error(UserError.InvalidValue, "Auth client not initialized");
+      throw error(UserError.InvalidValue, "User id is required");
     }
 
     const _user = await findCompassUserBy("_id", userId);
 
     if (!_user) {
       logger.error(`Couldn't find user with this id: ${userId}`);
-      throw error(UserError.UserNotFound, "Auth client not initialized");
+      throw error(UserError.UserNotFound, "User not found");
     }
 
     if (!_user?.google?.gRefreshToken) {
-      throw error(UserError.MissingGoogleField, "Auth client not initialized");
+      throw error(
+        UserError.MissingGoogleField,
+        "User has not connected Google Calendar",
+      );
     }
 
     gRefreshToken = _user.google.gRefreshToken;
@@ -110,7 +113,10 @@ export const getGcalClient = async (userId: string): Promise<gCalendar> => {
   }
 
   if (!user.google?.gRefreshToken) {
-    throw error(UserError.MissingGoogleField, "Google client not initialized");
+    throw error(
+      UserError.MissingGoogleField,
+      "User has not connected Google Calendar",
+    );
   }
 
   const gAuthClient = await getGAuthClientForUser(user);

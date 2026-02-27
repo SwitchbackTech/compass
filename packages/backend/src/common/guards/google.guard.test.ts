@@ -119,6 +119,15 @@ describe("google.guard", () => {
       await expect(requireGoogleConnection(userId)).resolves.not.toThrow();
     });
 
+    it("throws when userId is not a valid ObjectId", async () => {
+      await expect(
+        requireGoogleConnection("not-an-object-id"),
+      ).rejects.toMatchObject({
+        description: UserError.InvalidValue.description,
+      });
+      expect(mockFindCompassUserBy).not.toHaveBeenCalled();
+    });
+
     it("throws when user has no google.gRefreshToken", async () => {
       const userId = new ObjectId().toString();
       const userWithoutGoogle: Schema_User & { _id: ObjectId } = {
