@@ -191,9 +191,9 @@ export class CompassEventParser {
 
     switch (calendarProvider) {
       case CalendarProvider.GOOGLE: {
-        const event = await _createGcal(userId, cEvent);
+        await _createGcal(userId, cEvent);
 
-        return event ? [operationSummary] : [];
+        return [operationSummary];
       }
       default:
         return [];
@@ -222,9 +222,9 @@ export class CompassEventParser {
 
     switch (calendarProvider) {
       case CalendarProvider.GOOGLE: {
-        const event = await _updateGcal(userId, cEvent as Schema_Event_Core);
+        await _updateGcal(userId, cEvent as Schema_Event_Core);
 
-        return event ? [operationSummary] : [];
+        return [operationSummary];
       }
       default:
         return [];
@@ -316,9 +316,9 @@ export class CompassEventParser {
 
     switch (calendarProvider) {
       case CalendarProvider.GOOGLE: {
-        const event = await _updateGcal(userId, cEvent as Schema_Event_Core);
+        await _updateGcal(userId, cEvent as Schema_Event_Core);
 
-        return event ? [operationSummary] : [];
+        return [operationSummary];
       }
       default:
         return [];
@@ -347,7 +347,9 @@ export class CompassEventParser {
 
     switch (calendarProvider) {
       case CalendarProvider.GOOGLE: {
-        const ok = await _deleteGcal(userId, cEvent.gEventId!);
+        const ok = cEvent.gEventId
+          ? await _deleteGcal(userId, cEvent.gEventId)
+          : true;
 
         return ok ? [operationSummary] : [];
       }
@@ -379,7 +381,9 @@ export class CompassEventParser {
 
     switch (calendarProvider) {
       case CalendarProvider.GOOGLE: {
-        const ok = await _deleteGcal(user, this.#event.gEventId!);
+        const ok = this.#event.gEventId
+          ? await _deleteGcal(user, this.#event.gEventId)
+          : true;
 
         return ok ? [operationSummary] : [];
       }
@@ -418,7 +422,9 @@ export class CompassEventParser {
 
     switch (calendarProvider) {
       case CalendarProvider.GOOGLE: {
-        const ok = await _deleteGcal(user, this.#event.gEventId!);
+        const ok = this.#event.gEventId
+          ? await _deleteGcal(user, this.#event.gEventId)
+          : true;
 
         return ok ? [operationSummary] : [];
       }
@@ -455,9 +461,9 @@ export class CompassEventParser {
       case CalendarProvider.GOOGLE: {
         Object.assign(cEvent, { recurrence: null });
 
-        const event = await _updateGcal(userId, cEvent);
+        await _updateGcal(userId, cEvent);
 
-        return event ? [operationSummary] : [];
+        return [operationSummary];
       }
       default:
         return [];
@@ -490,9 +496,9 @@ export class CompassEventParser {
 
     switch (calendarProvider) {
       case CalendarProvider.GOOGLE: {
-        const event = await _updateGcal(userId, cEvent);
+        await _updateGcal(userId, cEvent);
 
-        return event ? [operationSummary] : [];
+        return [operationSummary];
       }
       default:
         return [];
@@ -516,7 +522,9 @@ export class CompassEventParser {
 
     switch (calendarProvider) {
       case CalendarProvider.GOOGLE: {
-        const ok = await _deleteGcal(userId, this.#event.gEventId!);
+        const ok = this.#event.gEventId
+          ? await _deleteGcal(userId, this.#event.gEventId)
+          : true;
 
         return ok ? [operationSummary] : [];
       }
