@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { fromEvent, share } from "rxjs";
+import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import {
   CompassDOMEvents,
   compassEventEmitter,
@@ -16,6 +17,7 @@ const scroll$ = fromEvent(
 ).pipe(share());
 
 export const NowLine = memo(function NowLine() {
+  const maxZIndex = useGridMaxZIndex();
   const ref = useRef<HTMLDivElement | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -45,9 +47,10 @@ export const NowLine = memo(function NowLine() {
     <div
       ref={ref}
       data-now-marker="true"
-      className={"text-accent-primary absolute right-0 left-0 z-5 border-t-1"}
+      className={"text-accent-primary absolute right-0 left-0 border-t"}
       style={{
         top: `${getNowLinePosition(currentTime)}px`,
+        zIndex: maxZIndex + 1,
       }}
     >
       <div className="now-line absolute -top-1 -left-2 h-2 w-4 rounded-full"></div>
