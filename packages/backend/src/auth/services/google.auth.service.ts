@@ -43,6 +43,13 @@ export const getGAuthClientForUser = async (
       throw error(UserError.UserNotFound, "Auth client not initialized");
     }
 
+    if (!_user?.google?.gRefreshToken) {
+      throw error(
+        UserError.GoogleNotConnected,
+        "User has not connected Google Calendar",
+      );
+    }
+
     gRefreshToken = _user.google.gRefreshToken;
   }
 
@@ -61,7 +68,7 @@ export const getGcalClient = async (userId: string): Promise<gCalendar> => {
 
     // throw gaxios error here to trigger specific session invalidation
     // see error.express.handler.ts
-    const error = new GaxiosError(
+    const gaxiosErr = new GaxiosError(
       "invalid_grant",
       {
         headers: new Headers(),
@@ -101,8 +108,15 @@ export const getGcalClient = async (userId: string): Promise<gCalendar> => {
         },
       },
     );
-    error.code = "400";
-    throw error;
+    gaxiosErr.code = "400";
+    throw gaxiosErr;
+  }
+
+  if (!user.google?.gRefreshToken) {
+    throw error(
+      UserError.GoogleNotConnected,
+      "User has not connected Google Calendar",
+    );
   }
 
   const gAuthClient = await getGAuthClientForUser(user);
