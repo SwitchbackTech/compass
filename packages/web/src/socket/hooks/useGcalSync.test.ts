@@ -57,7 +57,6 @@ describe("useGcalSync", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useFakeTimers();
     importingValue = false;
     awaitingValue = false;
     (useDispatch as jest.Mock).mockReturnValue(mockDispatch);
@@ -70,10 +69,6 @@ describe("useGcalSync", () => {
       }
       return false;
     });
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
   });
 
   it("sets up socket listeners", () => {
@@ -92,7 +87,7 @@ describe("useGcalSync", () => {
 
   describe("IMPORT_GCAL_START", () => {
     it("handles import start correctly", () => {
-      let importStartHandler: (importing?: boolean) => void;
+      let importStartHandler: ((importing?: boolean) => void) | undefined;
       (socket.on as jest.Mock).mockImplementation((event, handler) => {
         if (event === IMPORT_GCAL_START) {
           importStartHandler = handler;
@@ -116,7 +111,7 @@ describe("useGcalSync", () => {
     it("sets results when awaiting import results", () => {
       awaitingValue = true;
 
-      let importEndHandler: (data: string) => void;
+      let importEndHandler: ((data: string) => void) | undefined;
       (socket.on as jest.Mock).mockImplementation((event, handler) => {
         if (event === IMPORT_GCAL_END) {
           importEndHandler = handler;
@@ -146,7 +141,7 @@ describe("useGcalSync", () => {
     it("does not set results when not awaiting import results", () => {
       awaitingValue = false;
 
-      let importEndHandler: (data: string) => void;
+      let importEndHandler: ((data: string) => void) | undefined;
       (socket.on as jest.Mock).mockImplementation((event, handler) => {
         if (event === IMPORT_GCAL_END) {
           importEndHandler = handler;
@@ -167,7 +162,7 @@ describe("useGcalSync", () => {
       // Simulate the race condition: starts false, changes to true,
       // then event arrives (testing ref pattern works correctly)
 
-      let importEndHandler: (data: string) => void;
+      let importEndHandler: ((data: string) => void) | undefined;
       (socket.on as jest.Mock).mockImplementation((event, handler) => {
         if (event === IMPORT_GCAL_END) {
           importEndHandler = handler;
