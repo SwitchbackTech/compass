@@ -6,6 +6,10 @@ import {
 } from "@core/constants/core.constants";
 import authMiddleware from "@backend/auth/middleware/auth.middleware";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
+import {
+  requireGoogleConnectionFrom,
+  requireGoogleConnectionSession,
+} from "@backend/common/middleware/google.required.middleware";
 import { SyncController } from "@backend/sync/controllers/sync.controller";
 import syncDebugController from "@backend/sync/controllers/sync.debug.controller";
 
@@ -31,7 +35,11 @@ export class SyncRoutes extends CommonRoutesConfig {
 
     this.app
       .route(`/api/sync/import-gcal`)
-      .post(verifySession(), SyncController.importGCal);
+      .post(
+        verifySession(),
+        requireGoogleConnectionSession,
+        SyncController.importGCal,
+      );
 
     /***************
      * DEBUG ROUTES
@@ -44,6 +52,7 @@ export class SyncRoutes extends CommonRoutesConfig {
       .route(`${SYNC_DEBUG}/import-incremental/:userId`)
       .post([
         authMiddleware.verifyIsFromCompass,
+        requireGoogleConnectionFrom("userId"),
         syncDebugController.importIncremental,
       ]);
 
@@ -51,6 +60,7 @@ export class SyncRoutes extends CommonRoutesConfig {
       .route(`${SYNC_DEBUG}/maintain/:userId`)
       .post([
         authMiddleware.verifyIsFromCompass,
+        requireGoogleConnectionFrom("userId"),
         syncDebugController.maintainByUser,
       ]);
 
@@ -58,6 +68,7 @@ export class SyncRoutes extends CommonRoutesConfig {
       .route(`${SYNC_DEBUG}/refresh/:userId`)
       .post([
         authMiddleware.verifyIsFromCompass,
+        requireGoogleConnectionFrom("userId"),
         syncDebugController.refreshEventWatch,
       ]);
 
@@ -65,6 +76,8 @@ export class SyncRoutes extends CommonRoutesConfig {
       .route(`${SYNC_DEBUG}/start`)
       .post([
         authMiddleware.verifyIsFromCompass,
+        verifySession(),
+        requireGoogleConnectionSession,
         syncDebugController.startEventWatch,
       ]);
 
@@ -72,6 +85,8 @@ export class SyncRoutes extends CommonRoutesConfig {
       .route(`${SYNC_DEBUG}/stop`)
       .post([
         authMiddleware.verifyIsFromCompass,
+        verifySession(),
+        requireGoogleConnectionSession,
         syncDebugController.stopWatching,
       ]);
 
@@ -79,6 +94,7 @@ export class SyncRoutes extends CommonRoutesConfig {
       .route(`${SYNC_DEBUG}/stop-all/:userId`)
       .post([
         authMiddleware.verifyIsFromCompass,
+        requireGoogleConnectionFrom("userId"),
         syncDebugController.stopAllChannelWatches,
       ]);
 
