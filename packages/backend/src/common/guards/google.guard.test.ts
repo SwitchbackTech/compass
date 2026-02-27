@@ -21,7 +21,7 @@ describe("google.guard", () => {
     jest.clearAllMocks();
   });
 
-  describe("hasGoogleConnected", () => {
+  describe("isGoogleConnected", () => {
     it("returns true when user has google.gRefreshToken", async () => {
       const userId = new ObjectId().toString();
       const userWithGoogle: Schema_User & { _id: ObjectId } = {
@@ -97,7 +97,7 @@ describe("google.guard", () => {
     });
   });
 
-  describe("requireGoogleConnected", () => {
+  describe("requireGoogleConnection", () => {
     it("does not throw when user has google.gRefreshToken", async () => {
       const userId = new ObjectId().toString();
       const userWithGoogle: Schema_User & { _id: ObjectId } = {
@@ -126,6 +126,15 @@ describe("google.guard", () => {
         description: UserError.InvalidValue.description,
       });
       expect(mockFindCompassUserBy).not.toHaveBeenCalled();
+    });
+
+    it("throws UserError.UserNotFound when user does not exist", async () => {
+      const userId = new ObjectId().toString();
+      mockFindCompassUserBy.mockResolvedValue(null);
+
+      await expect(requireGoogleConnection(userId)).rejects.toMatchObject({
+        description: UserError.UserNotFound.description,
+      });
     });
 
     it("throws when user has no google.gRefreshToken", async () => {

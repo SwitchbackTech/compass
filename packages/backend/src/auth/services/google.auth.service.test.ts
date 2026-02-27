@@ -19,7 +19,7 @@ describe("getGcalClient", () => {
     jest.clearAllMocks();
   });
 
-  it("throws UserError.MissingGoogleField when user exists but has no google", async () => {
+  it("throws UserError.MissingGoogleRefreshToken when user exists but has no google", async () => {
     const userId = new ObjectId().toString();
     const userWithoutGoogle: Schema_User & { _id: ObjectId } = {
       _id: new ObjectId(userId),
@@ -40,7 +40,7 @@ describe("getGcalClient", () => {
     expect(mockFindCompassUserBy).toHaveBeenCalledWith("_id", userId);
   });
 
-  it("throws UserError.MissingGoogleField when user has google but no gRefreshToken", async () => {
+  it("throws UserError.MissingGoogleRefreshToken when user has google but no gRefreshToken", async () => {
     const userId = new ObjectId().toString();
     const userWithEmptyGoogle = {
       _id: new ObjectId(userId),

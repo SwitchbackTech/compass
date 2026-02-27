@@ -33,7 +33,7 @@ describe("google.required.middleware", () => {
     };
   });
 
-  describe("requireGoogleConnectedSession", () => {
+  describe("requireGoogleConnectionSession", () => {
     it("calls next when user has Google connected", async () => {
       const userId = new ObjectId().toString();
       mockReq = {
@@ -69,7 +69,7 @@ describe("google.required.middleware", () => {
       expect(mockNext).not.toHaveBeenCalled();
     });
 
-    it("responds with BaseError statusCode when requireGoogleConnected throws", async () => {
+    it("responds with BaseError statusCode when requireGoogleConnection throws", async () => {
       const userId = new ObjectId().toString();
       mockReq = {
         session: { getUserId: () => userId },
@@ -89,10 +89,7 @@ describe("google.required.middleware", () => {
       );
 
       expect(mockRes.status).toHaveBeenCalledWith(Status.BAD_REQUEST);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        result: baseError.result,
-        message: baseError.description,
-      });
+      expect(mockRes.send).toHaveBeenCalledWith(baseError);
       expect(mockNext).not.toHaveBeenCalled();
     });
 
@@ -116,7 +113,7 @@ describe("google.required.middleware", () => {
     });
   });
 
-  describe("requireGoogleConnectedFrom", () => {
+  describe("requireGoogleConnectionFrom", () => {
     it("calls next when user has Google connected", async () => {
       const userId = new ObjectId().toString();
       mockReq = {
