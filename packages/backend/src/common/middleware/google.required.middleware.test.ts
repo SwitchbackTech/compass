@@ -89,10 +89,7 @@ describe("google.required.middleware", () => {
       );
 
       expect(mockRes.status).toHaveBeenCalledWith(Status.BAD_REQUEST);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        result: baseError.result,
-        message: baseError.description,
-      });
+      expect(mockRes.send).toHaveBeenCalledWith(baseError);
       expect(mockNext).not.toHaveBeenCalled();
     });
 
@@ -112,6 +109,7 @@ describe("google.required.middleware", () => {
 
       expect(mockRes.status).not.toHaveBeenCalled();
       expect(mockNext).toHaveBeenCalledWith(unexpectedError);
+      expect(mockNext).toHaveBeenCalledTimes(1);
     });
   });
 

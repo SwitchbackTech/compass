@@ -6,7 +6,7 @@ import { UserError } from "@backend/common/errors/user/user.errors";
 import { requireGoogleConnection } from "@backend/common/guards/google.guard";
 
 const sendBaseError = (res: Response, e: BaseError) => {
-  res.status(e.statusCode).json({ result: e.result, message: e.description });
+  res.status(e.statusCode).send(e);
 };
 
 export const requireGoogleConnectionSession = async (
@@ -30,7 +30,7 @@ export const requireGoogleConnectionSession = async (
       sendBaseError(res, e);
       return;
     }
-    next(e);
+    return next(e);
   }
 
   next();
@@ -55,7 +55,7 @@ export const requireGoogleConnectionFrom =
         sendBaseError(res, e);
         return;
       }
-      next(e);
+      return next(e);
     }
 
     next();
