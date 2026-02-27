@@ -6,7 +6,13 @@ import { UserError } from "@backend/common/errors/user/user.errors";
 import { requireGoogleConnection } from "@backend/common/guards/google.guard";
 
 const sendBaseError = (res: Response, e: BaseError) => {
-  res.status(e.statusCode).send(e);
+  // Log full error on server; do not expose stack/details to client.
+  console.error(e);
+
+  res.status(e.statusCode).json({
+    result: e.result,
+    message: e.description,
+  });
 };
 
 export const requireGoogleConnectionSession = async (

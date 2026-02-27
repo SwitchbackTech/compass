@@ -19,7 +19,7 @@ describe("Map to Compass", () => {
     expect(cUser.name).toEqual("Mystery Person");
     expect(cUser.firstName).toEqual("Mystery");
     expect(cUser.lastName).toEqual("Person");
-    expect(cUser.google.picture).toEqual("not provided");
+    expect(cUser.google?.picture).toEqual("not provided");
   });
   it("throws error if missing email", () => {
     expect(() => {

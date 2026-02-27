@@ -55,7 +55,7 @@ describe("UserService", () => {
       expect(profile).toEqual(
         expect.objectContaining({
           userId: userId.toString(),
-          picture: user.google.picture,
+          picture: user.google?.picture,
           firstName: user.firstName,
           lastName: user.lastName,
           name: user.name,
