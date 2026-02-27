@@ -5,6 +5,7 @@ import dayjs from "@core/util/date/dayjs";
 import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
+import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import {
   openEventFormCreateEvent,
@@ -26,6 +27,7 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
   const today = dayjs();
   const { isGoogleCalendarConnected, onConnectGoogleCalendar } =
     useConnectGoogle();
+  const authCmdItems = useAuthCmdItems();
 
   const filteredItems = filterItems(
     [
@@ -83,6 +85,7 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
               ? undefined
               : onConnectGoogleCalendar,
           },
+          ...authCmdItems,
           {
             id: "log-out",
             children: "Log Out [z]",

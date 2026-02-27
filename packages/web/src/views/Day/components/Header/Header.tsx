@@ -30,8 +30,8 @@ export const Header: FC<Props> = ({ showReminder = false }) => {
 
       {showReminder && <Reminder ref={reminderRef} />}
 
-      <SelectView />
       <AccountIcon />
+      <SelectView />
     </StyledHeaderRow>
   );
 };

@@ -213,6 +213,8 @@ export const fillTitleAndSaveWithKeyboard = async (
   await expect(titleInput).toBeVisible({ timeout: FORM_TIMEOUT });
   await titleInput.fill(title);
   await page.keyboard.press("Enter");
+  // Wait for form to close, confirming the save completed
+  await titleInput.waitFor({ state: "hidden", timeout: FORM_TIMEOUT });
 };
 
 export const openTimedEventFormWithMouse = async (page: Page) => {

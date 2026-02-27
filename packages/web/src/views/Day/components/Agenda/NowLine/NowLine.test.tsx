@@ -44,11 +44,11 @@ describe("NowLine", () => {
     expect(nowLineElement).toHaveStyle({ top: "100px" });
   });
 
-  it("sets the correct z-index", () => {
+  it("sets z-index above the max grid z-index", () => {
     const { container } = render(<NowLine />);
 
     const nowLineElement = container.querySelector('[data-now-marker="true"]');
-    expect(nowLineElement).toHaveStyle({ zIndex: "10" });
+    expect(nowLineElement).toHaveStyle({ zIndex: "11" });
   });
 
   it("updates time on minute sync", () => {

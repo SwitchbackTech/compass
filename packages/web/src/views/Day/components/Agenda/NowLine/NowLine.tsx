@@ -47,10 +47,10 @@ export const NowLine = memo(function NowLine() {
     <div
       ref={ref}
       data-now-marker="true"
-      className={"absolute right-0 left-0 border-t-2 text-yellow-300"}
+      className={"text-accent-primary absolute right-0 left-0 border-t"}
       style={{
         top: `${getNowLinePosition(currentTime)}px`,
-        zIndex: maxZIndex,
+        zIndex: maxZIndex + 1,
       }}
     >
       <div className="now-line absolute -top-1 -left-2 h-2 w-4 rounded-full"></div>

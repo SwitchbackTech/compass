@@ -4,6 +4,7 @@ import "react-cmdk/dist/cmdk.css";
 import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
+import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
@@ -17,6 +18,7 @@ export const NowCmdPalette = () => {
   const [search, setSearch] = useState("");
   const { isGoogleCalendarConnected, onConnectGoogleCalendar } =
     useConnectGoogle();
+  const authCmdItems = useAuthCmdItems();
 
   const filteredItems = filterItems(
     [
@@ -60,6 +62,7 @@ export const NowCmdPalette = () => {
               ? undefined
               : onConnectGoogleCalendar,
           },
+          ...authCmdItems,
           {
             id: "log-out",
             children: "Log Out [z]",
