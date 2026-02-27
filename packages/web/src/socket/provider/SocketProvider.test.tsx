@@ -1,3 +1,4 @@
+import { act } from "react";
 import { Provider } from "react-redux";
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { render, waitFor } from "@testing-library/react";
@@ -74,8 +75,15 @@ describe("SocketProvider", () => {
       expect(importEndCallback).toBeDefined();
     });
 
-    importStartCallback?.();
-    importEndCallback?.(JSON.stringify({ eventsCount: 10, calendarsCount: 2 }));
+    await act(async () => {
+      importStartCallback?.();
+    });
+
+    await act(async () => {
+      importEndCallback?.(
+        JSON.stringify({ eventsCount: 10, calendarsCount: 2 }),
+      );
+    });
 
     const state = store.getState();
     expect(state.sync.importGCal.importResults).toEqual({
