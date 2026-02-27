@@ -16,7 +16,7 @@ export const requireGoogleConnection = async (
   }
   if (!(await isGoogleConnected(userId))) {
     throw error(
-      UserError.MissingGoogleField,
+      UserError.MissingGoogleRefreshToken,
       "User has not connected Google Calendar",
     );
   }

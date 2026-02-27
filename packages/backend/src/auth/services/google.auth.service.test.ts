@@ -34,7 +34,7 @@ describe("getGcalClient", () => {
     mockFindCompassUserBy.mockResolvedValue(userWithoutGoogle);
 
     await expect(getGcalClient(userId)).rejects.toMatchObject({
-      description: UserError.MissingGoogleField.description,
+      description: UserError.MissingGoogleRefreshToken.description,
     });
 
     expect(mockFindCompassUserBy).toHaveBeenCalledWith("_id", userId);
@@ -59,7 +59,7 @@ describe("getGcalClient", () => {
     mockFindCompassUserBy.mockResolvedValue(userWithEmptyGoogle);
 
     await expect(getGcalClient(userId)).rejects.toMatchObject({
-      description: UserError.MissingGoogleField.description,
+      description: UserError.MissingGoogleRefreshToken.description,
     });
   });
 

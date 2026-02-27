@@ -76,7 +76,7 @@ describe("google.required.middleware", () => {
       };
       const baseError = new BaseError(
         "User has not connected Google Calendar",
-        UserError.MissingGoogleField.description,
+        UserError.MissingGoogleRefreshToken.description,
         Status.BAD_REQUEST,
         true,
       );

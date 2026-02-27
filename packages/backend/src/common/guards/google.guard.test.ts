@@ -142,7 +142,7 @@ describe("google.guard", () => {
       mockFindCompassUserBy.mockResolvedValue(userWithoutGoogle);
 
       await expect(requireGoogleConnection(userId)).rejects.toMatchObject({
-        description: UserError.MissingGoogleField.description,
+        description: UserError.MissingGoogleRefreshToken.description,
       });
     });
   });

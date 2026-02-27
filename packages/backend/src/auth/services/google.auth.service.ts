@@ -45,7 +45,7 @@ export const getGAuthClientForUser = async (
 
     if (!_user?.google?.gRefreshToken) {
       throw error(
-        UserError.MissingGoogleField,
+        UserError.MissingGoogleRefreshToken,
         "User has not connected Google Calendar",
       );
     }
@@ -114,7 +114,7 @@ export const getGcalClient = async (userId: string): Promise<gCalendar> => {
 
   if (!user.google?.gRefreshToken) {
     throw error(
-      UserError.MissingGoogleField,
+      UserError.MissingGoogleRefreshToken,
       "User has not connected Google Calendar",
     );
   }
