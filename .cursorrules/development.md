@@ -22,7 +22,7 @@ yarn install --frozen-lockfile --network-timeout 300000
 ### Environment Configuration
 
 ```bash
-cp packages/backend/.env.example packages/backend/.env
+cp packages/backend/.env.local.example packages/backend/.env
 ```
 
 Edit `packages/backend/.env` with your credentials.
