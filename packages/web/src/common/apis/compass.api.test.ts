@@ -168,19 +168,25 @@ describe("CompassApi interceptor auth handling", () => {
   });
 
   it("does not sign out on 401/410 when response has GOOGLE_REVOKED code", async () => {
-    await triggerErrorResponse(Status.UNAUTHORIZED, undefined, {
+    const googleRevokedPayload = {
       code: "GOOGLE_REVOKED",
       message: "Google access revoked.",
+    };
+    const toastExpectation = expect.objectContaining({
+      toastId: GOOGLE_REVOKED_TOAST_ID,
+      autoClose: false,
     });
 
-    expect(toast.error).toHaveBeenCalledWith(
-      "Google access revoked. Your Google data has been removed.",
-      expect.objectContaining({
-        toastId: GOOGLE_REVOKED_TOAST_ID,
-        autoClose: false,
-      }),
-    );
-    expect(signOut).not.toHaveBeenCalled();
-    expect(assignMock).not.toHaveBeenCalled();
+    for (const status of [Status.UNAUTHORIZED, Status.GONE]) {
+      jest.clearAllMocks();
+      await triggerErrorResponse(status, undefined, googleRevokedPayload);
+
+      expect(toast.error).toHaveBeenCalledWith(
+        "Google access revoked. Your Google data has been removed.",
+        toastExpectation,
+      );
+      expect(signOut).not.toHaveBeenCalled();
+      expect(assignMock).not.toHaveBeenCalled();
+    }
   });
 });
