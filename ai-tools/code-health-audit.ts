@@ -104,17 +104,18 @@ function analyzeFile(filePath: string): FileMetrics {
     issues.push("Uses console.log (prefer logger utility)");
   }
 
-  // Check for long functions (> 50 lines)
-  const functionBodies = content.match(/\{[^{}]*\}/gs);
-  if (functionBodies) {
-    functionBodies.forEach((body) => {
-      const bodyLines = body.split("\n").length;
-      if (bodyLines > 50) {
-        issues.push(
-          `Contains long function (${bodyLines} lines - consider refactoring)`,
-        );
-      }
-    });
+  // Check for long functions (> 50 lines) - simplified check
+  const longFunctionMatches = content.match(
+    /function\s+\w+\s*\([^)]*\)\s*{|const\s+\w+\s*=\s*\([^)]*\)\s*=>\s*{/g,
+  );
+  if (longFunctionMatches && longFunctionMatches.length > 0) {
+    // Simple heuristic: if file has many functions and is large, flag it
+    const avgLinesPerFunction = lines / functions;
+    if (avgLinesPerFunction > 50 && functions > 0) {
+      issues.push(
+        `Contains potentially long functions (avg ${Math.round(avgLinesPerFunction)} lines per function)`,
+      );
+    }
   }
 
   // Check for large files (> 500 lines)
@@ -325,7 +326,7 @@ async function runAudit() {
   const packagesPath = path.join(__dirname, "../packages");
 
   // Find all TypeScript source files (excluding tests, node_modules, and build artifacts)
-  const findCommand = `find ${packagesPath} -name "*.ts" -o -name "*.tsx" | grep -v node_modules | grep -v __tests__ | grep -v ".test." | grep -v ".spec." | grep -v "build/"`;
+  const findCommand = `find ${packagesPath} \\( -name "*.ts" -o -name "*.tsx" \\) -type f ! -path "*/node_modules/*" ! -path "*/__tests__/*" ! -path "*/*.test.ts" ! -path "*/*.spec.ts" ! -path "*/build/*"`;
 
   let files: string[];
   try {
@@ -353,7 +354,11 @@ async function runAudit() {
         process.stdout.write(`\rAnalyzed ${analyzed}/${files.length} files...`);
       }
     } catch (error) {
-      // Skip files that can't be analyzed
+      // Skip files that can't be analyzed - common for declaration files, etc.
+      if (analyzed % 100 === 0) {
+        // Only show errors occasionally to avoid spam
+        console.error(`Warning: Could not analyze some files`);
+      }
     }
   });
 
