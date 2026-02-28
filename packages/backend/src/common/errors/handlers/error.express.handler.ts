@@ -1,6 +1,7 @@
 import { Request } from "express";
 import { GaxiosError } from "gaxios";
 import { SessionRequest } from "supertokens-node/framework/express";
+import { GOOGLE_REVOKED } from "@core/constants/websocket.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
@@ -19,6 +20,7 @@ import {
 } from "@backend/common/services/gcal/gcal.utils";
 import { CompassError, Info_Error } from "@backend/common/types/error.types";
 import { SessionResponse } from "@backend/common/types/express.types";
+import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import { getSyncByToken } from "@backend/sync/util/sync.queries";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
@@ -104,20 +106,23 @@ export const handleExpressError = async (
 };
 
 const handleGoogleError = async (
-  req: Request | SessionRequest,
+  _req: Request | SessionRequest,
   res: SessionResponse,
   userId: string,
   e: GaxiosError,
 ) => {
   if (isInvalidGoogleToken(e)) {
-    await req.session?.revokeSession();
+    await userService.pruneGoogleData(userId);
+    webSocketServer.handleGoogleRevoked(userId);
 
-    // revoke specific sessions for this user
-    logger.debug(
-      `Invalid Google token for user: ${userId}\n\tsession revoked as result`,
+    logger.warn(
+      `Invalid Google token for user: ${userId}. Google data pruned and client notified.`,
     );
 
-    res.status(Status.UNAUTHORIZED).send();
+    res.status(Status.UNAUTHORIZED).send({
+      code: GOOGLE_REVOKED,
+      message: "Google access revoked. Your Google data has been removed.",
+    });
     return;
   }
 
