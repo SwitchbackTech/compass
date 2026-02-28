@@ -42,7 +42,7 @@ export const getEmailFromUrl = (url: string) => {
 };
 
 // occurs when token expired or revoked
-export const isInvalidGoogleToken = (e: GaxiosError | Error) => {
+export const isInvalidGoogleToken = (e: unknown) => {
   if (!isGoogleError(e)) return false;
 
   const err = e as GaxiosError;
@@ -57,9 +57,12 @@ export const isGoogleError = (e: unknown) => {
   return e instanceof GaxiosError || (e as any)?.name === "GaxiosError";
 };
 
-export const isFullSyncRequired = (e: GaxiosError | Error) => {
-  if (isGoogleError(e) && e.code) {
-    const codeStr = typeof e.code === "string" ? e.code : String(e.code);
+export const isFullSyncRequired = (e: unknown) => {
+  if (!isGoogleError(e)) return false;
+
+  const err = e as GaxiosError;
+  if (err.code) {
+    const codeStr = typeof err.code === "string" ? err.code : String(err.code);
     if (parseInt(codeStr) === 410) {
       return true;
     }

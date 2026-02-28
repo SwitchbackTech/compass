@@ -93,7 +93,7 @@ export const handleExpressError = async (
     }
 
     if (isGoogleError(e)) {
-      await handleGoogleError(req, res, userId, e);
+      await handleGoogleError(req, res, userId, e as GaxiosError);
     } else {
       const errInfo = assembleErrorInfo(e);
       res.status(e.status || Status.INTERNAL_SERVER).send(errInfo);

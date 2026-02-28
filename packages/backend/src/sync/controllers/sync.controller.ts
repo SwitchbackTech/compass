@@ -107,7 +107,7 @@ export class SyncController {
           res.status(Status.GONE).send(msg);
 
           return;
-        } else if (isFullSyncRequired(e as Error) && userId) {
+        } else if (isFullSyncRequired(e) && userId) {
           // do not await this call
           userService
             .restartGoogleCalendarSync(userId, { force: true })
