@@ -13,10 +13,7 @@ import { shouldImportGCal } from "@core/util/event/event.util";
 import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { selectIsImportPending } from "@web/ducks/events/selectors/sync.selector";
-<<<<<<< fix/1478-import-bug
 import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
-=======
->>>>>>> main
 import {
   importGCalSlice,
   triggerFetch,
