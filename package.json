@@ -32,7 +32,11 @@
     "test:backend": "yarn test backend",
     "test:core": "yarn test core",
     "test:web": "yarn test web",
-    "test:scripts": "yarn test scripts"
+    "test:scripts": "yarn test scripts",
+    "type-check": "tsc --noEmit",
+    "ai:index": "yarn ts-node ai-tools/generate-api-docs.ts && yarn ts-node ai-tools/extract-types.ts",
+    "docs:generate": "yarn ts-node ai-tools/generate-api-docs.ts",
+    "audit:code-health": "yarn ts-node ai-tools/code-health-audit.ts"
   },
   "dependencies": {
     "@compass/backend": "*",
