@@ -158,17 +158,25 @@ class UserService {
     return cUser;
   };
 
-  stopGoogleCalendarSync = async (user: string | ObjectId): Promise<void> => {
+  stopGoogleCalendarSync = async (
+    user: string | ObjectId,
+    options?: { skipGoogleWatchStop?: boolean },
+  ): Promise<void> => {
     const userId = zObjectId.parse(user).toString();
+    const skipGoogleWatchStop = options?.skipGoogleWatchStop === true;
 
     await eventService.deleteByIntegration("google", userId);
-    await syncService.stopWatches(userId);
+    if (skipGoogleWatchStop) {
+      await syncService.deleteWatchesByUser(userId);
+    } else {
+      await syncService.stopWatches(userId);
+    }
     await syncService.deleteByIntegration("google", userId);
   };
 
   pruneGoogleData = async (userId: string): Promise<void> => {
     const _id = zObjectId.parse(userId);
-    await this.stopGoogleCalendarSync(userId);
+    await this.stopGoogleCalendarSync(userId, { skipGoogleWatchStop: true });
     await mongoService.user.updateOne({ _id }, { $unset: { google: "" } });
   };
 

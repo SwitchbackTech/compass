@@ -57,18 +57,25 @@ export const isGoogleError = (e: unknown) => {
   return e instanceof GaxiosError || (e as any)?.name === "GaxiosError";
 };
 
-export const isFullSyncRequired = (e: unknown) => {
-  if (!isGoogleError(e)) return false;
+export const getGoogleErrorStatus = (e: unknown) => {
+  if (!isGoogleError(e)) return undefined;
 
   const err = e as GaxiosError;
-  if (err.code) {
-    const codeStr = typeof err.code === "string" ? err.code : String(err.code);
-    if (parseInt(codeStr) === 410) {
-      return true;
-    }
+  const responseStatus = err.response?.status;
+
+  if (typeof responseStatus === "number") return responseStatus;
+  if (typeof err.code === "number") return err.code;
+
+  if (typeof err.code === "string") {
+    const code = Number.parseInt(err.code, 10);
+    if (!Number.isNaN(code)) return code;
   }
 
-  return false;
+  return undefined;
+};
+
+export const isFullSyncRequired = (e: unknown) => {
+  return getGoogleErrorStatus(e) === 410;
 };
 
 export const isInvalidValue = (e: GaxiosError) => {

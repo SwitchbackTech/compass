@@ -15,6 +15,7 @@ import { UserError } from "@backend/common/errors/user/user.errors";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
 import priorityService from "@backend/priority/services/priority.service";
+import syncService from "@backend/sync/services/sync.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
 
@@ -203,6 +204,8 @@ describe("UserService", () => {
     it("stops sync and removes google field from user document", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
+      const stopWatchesSpy = jest.spyOn(syncService, "stopWatches");
+      const deleteWatchesSpy = jest.spyOn(syncService, "deleteWatchesByUser");
 
       expect(user.google).toBeDefined();
 
@@ -214,6 +217,9 @@ describe("UserService", () => {
       expect(eventCountBefore).toBeGreaterThan(0);
 
       await userService.pruneGoogleData(userId);
+
+      expect(stopWatchesSpy).not.toHaveBeenCalled();
+      expect(deleteWatchesSpy).toHaveBeenCalledWith(userId);
 
       const storedUser = await mongoService.user.findOne({ _id: user._id });
       expect(storedUser?.google).toBeUndefined();
