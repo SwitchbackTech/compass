@@ -33,6 +33,7 @@ export interface ServerToClientEvents {
   USER_METADATA: (data: UserMetadata) => void;
   IMPORT_GCAL_START: () => void;
   IMPORT_GCAL_END: (reason?: string) => void;
+  GOOGLE_REVOKED: () => void;
 }
 
 export interface SocketData {

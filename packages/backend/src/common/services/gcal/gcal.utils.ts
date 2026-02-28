@@ -43,15 +43,18 @@ export const getEmailFromUrl = (url: string) => {
 
 // occurs when token expired or revoked
 export const isInvalidGoogleToken = (e: GaxiosError | Error) => {
-  const is400 = "code" in e && e.code === "400";
-  const hasInvalidMsg = "message" in e && e.message === "invalid_grant";
-  const isInvalid = is400 && hasInvalidMsg;
+  if (!isGoogleError(e)) return false;
 
-  return isGoogleError(e) && isInvalid;
+  const err = e as GaxiosError;
+  const is400 = err.code === "400" || err.response?.status === 400;
+  const hasInvalidMsg = err.message === "invalid_grant";
+  const hasInvalidData = err.response?.data?.error === "invalid_grant";
+
+  return is400 && (hasInvalidMsg || hasInvalidData);
 };
 
 export const isGoogleError = (e: unknown) => {
-  return e instanceof GaxiosError;
+  return e instanceof GaxiosError || (e as any)?.name === "GaxiosError";
 };
 
 export const isFullSyncRequired = (e: GaxiosError | Error) => {

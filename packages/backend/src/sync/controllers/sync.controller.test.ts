@@ -3,7 +3,10 @@ import { randomUUID } from "node:crypto";
 import { DefaultEventsMap } from "socket.io";
 import { Socket } from "socket.io-client";
 import { faker } from "@faker-js/faker";
-import { EVENT_CHANGED } from "@core/constants/websocket.constants";
+import {
+  EVENT_CHANGED,
+  GOOGLE_REVOKED,
+} from "@core/constants/websocket.constants";
 import { Status } from "@core/errors/status.codes";
 import { Resource_Sync, XGoogleResourceState } from "@core/types/sync.types";
 import { Schema_User } from "@core/types/user.types";
@@ -23,12 +26,16 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { invalidGrant400Error } from "@backend/__tests__/mocks.gcal/errors/error.google.invalidGrant";
 import { WatchError } from "@backend/common/errors/sync/watch.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
+import { webSocketServer } from "@backend/servers/websocket/websocket.server";
+import syncService from "@backend/sync/services/sync.service";
 import * as syncQueries from "@backend/sync/util/sync.queries";
 import { updateSync } from "@backend/sync/util/sync.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";
+import userService from "@backend/user/services/user.service";
 
 describe("SyncController", () => {
   const baseDriver = new BaseDriver();
@@ -183,6 +190,54 @@ describe("SyncController", () => {
       );
 
       expect(response.text).toEqual("IGNORED");
+    });
+
+    it("should prune Google data, notify client via websocket, and return structured response when user revokes access", async () => {
+      const { user } = await UtilDriver.setupTestUser();
+      const userId = user._id.toString();
+
+      const watch = await mongoService.watch.findOne({
+        user: userId,
+        gCalendarId: { $ne: Resource_Sync.CALENDAR },
+      });
+
+      expect(watch).toBeDefined();
+      expect(watch).not.toBeNull();
+
+      const handleGcalNotificationSpy = jest
+        .spyOn(syncService, "handleGcalNotification")
+        .mockRejectedValue(invalidGrant400Error);
+
+      const pruneGoogleDataSpy = jest
+        .spyOn(userService, "pruneGoogleData")
+        .mockResolvedValue();
+
+      const handleGoogleRevokedSpy = jest.spyOn(
+        webSocketServer,
+        "handleGoogleRevoked",
+      );
+
+      const response = await syncDriver.handleGoogleNotification(
+        {
+          resource: Resource_Sync.EVENTS,
+          channelId: watch!._id,
+          resourceId: watch!.resourceId,
+          resourceState: XGoogleResourceState.EXISTS,
+          expiration: watch!.expiration,
+        },
+        Status.GONE,
+      );
+
+      expect(response.body).toEqual({
+        code: GOOGLE_REVOKED,
+        message: "User revoked access, pruned Google data",
+      });
+      expect(pruneGoogleDataSpy).toHaveBeenCalledWith(userId);
+      expect(handleGoogleRevokedSpy).toHaveBeenCalledWith(userId);
+
+      handleGcalNotificationSpy.mockRestore();
+      pruneGoogleDataSpy.mockRestore();
+      handleGoogleRevokedSpy.mockRestore();
     });
   });
 

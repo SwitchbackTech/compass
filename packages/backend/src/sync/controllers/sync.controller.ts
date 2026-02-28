@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { ObjectId } from "mongodb";
 import { ZodError } from "zod/v4";
 import { COMPASS_RESOURCE_HEADER } from "@core/constants/core.constants";
+import { GOOGLE_REVOKED } from "@core/constants/websocket.constants";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import {
@@ -18,6 +19,7 @@ import {
   isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
+import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import syncService from "@backend/sync/services/sync.service";
 import { getSync } from "@backend/sync/util/sync.queries";
 import userService from "@backend/user/services/user.service";
@@ -87,11 +89,13 @@ export class SyncController {
               `Cleaning data after this user revoked access: ${userId}`,
             );
 
-            await userService.deleteCompassDataForUser(userId, false);
+            await userService.pruneGoogleData(userId);
+            webSocketServer.handleGoogleRevoked(userId);
 
-            res
-              .status(Status.GONE)
-              .send("User revoked access, deleted all data");
+            res.status(Status.GONE).send({
+              code: GOOGLE_REVOKED,
+              message: "User revoked access, pruned Google data",
+            });
 
             return;
           }
