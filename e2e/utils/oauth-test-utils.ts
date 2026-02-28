@@ -74,13 +74,13 @@ export const setIsSyncing = async (page: Page, value: boolean) => {
 /**
  * Set the awaitingImportResults state in Redux (triggers import phase when true).
  */
-export const setAwaitingImportResults = async (page: Page, value: boolean) => {
-  await page.evaluate((awaitingValue) => {
+export const setIsImportPending = async (page: Page, value: boolean) => {
+  await page.evaluate((isImportPendingValue) => {
     const store = (window as any).__COMPASS_STORE__;
     if (store) {
       store.dispatch({
-        type: "async/importGCal/setAwaitingImportResults",
-        payload: awaitingValue,
+        type: "async/importGCal/setIsImportPending",
+        payload: isImportPendingValue,
       });
     }
   }, value);

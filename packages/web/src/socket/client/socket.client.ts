@@ -16,11 +16,7 @@ export const disconnect = () => {
 
 export const reconnect = () => {
   disconnect();
-
-  const timeout = setTimeout(() => {
-    socket.connect();
-    clearTimeout(timeout);
-  }, 1000);
+  socket.connect();
 };
 
 const onError = (error: unknown) => {

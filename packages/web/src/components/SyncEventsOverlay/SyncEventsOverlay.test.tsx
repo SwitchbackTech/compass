@@ -3,8 +3,8 @@ import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import { selectIsAuthenticating } from "@web/ducks/auth/selectors/auth.selectors";
 import {
-  selectAwaitingImportResults,
   selectImporting,
+  selectIsImportPending,
 } from "@web/ducks/events/selectors/sync.selector";
 import { useAppSelector } from "@web/store/store.hooks";
 import { SyncEventsOverlay } from "./SyncEventsOverlay";
@@ -33,7 +33,7 @@ describe("SyncEventsOverlay", () => {
       if (selector === selectImporting) {
         return importingValue;
       }
-      if (selector === selectAwaitingImportResults) {
+      if (selector === selectIsImportPending) {
         return awaitingValue;
       }
       if (selector === selectIsAuthenticating) {
