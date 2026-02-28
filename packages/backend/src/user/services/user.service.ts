@@ -166,6 +166,12 @@ class UserService {
     await syncService.deleteByIntegration("google", userId);
   };
 
+  pruneGoogleData = async (userId: string): Promise<void> => {
+    const _id = zObjectId.parse(userId);
+    await this.stopGoogleCalendarSync(userId);
+    await mongoService.user.updateOne({ _id }, { $unset: { google: "" } });
+  };
+
   startGoogleCalendarSync = async (
     user: string,
   ): Promise<{ eventsCount: number; calendarsCount: number }> => {

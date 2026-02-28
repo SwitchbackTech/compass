@@ -199,6 +199,32 @@ describe("UserService", () => {
     });
   });
 
+  describe("pruneGoogleData", () => {
+    it("stops sync and removes google field from user document", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+
+      expect(user.google).toBeDefined();
+
+      await userService.startGoogleCalendarSync(userId);
+
+      const eventCountBefore = await mongoService.event.countDocuments({
+        user: userId,
+      });
+      expect(eventCountBefore).toBeGreaterThan(0);
+
+      await userService.pruneGoogleData(userId);
+
+      const storedUser = await mongoService.user.findOne({ _id: user._id });
+      expect(storedUser?.google).toBeUndefined();
+
+      expect(await mongoService.event.countDocuments({ user: userId })).toBe(0);
+      expect(await mongoService.watch.countDocuments({ user: userId })).toBe(0);
+      const sync = await mongoService.sync.findOne({ user: userId });
+      expect(sync).not.toHaveProperty(CalendarProvider.GOOGLE);
+    });
+  });
+
   describe("restartGoogleCalendarSync", () => {
     it("restarts the import workflow and completes successfully", async () => {
       const { user } = await UtilDriver.setupTestUser();
