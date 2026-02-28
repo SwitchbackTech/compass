@@ -33,6 +33,11 @@ playwright-report/
 test-results/
 blob-report/
 
+# AI tools generated files
+ai-tools/api-documentation.md
+ai-tools/type-reference.md
+ai-tools/code-index.json
+
 #core
 packages/core/build/
 

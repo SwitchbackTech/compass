@@ -69,6 +69,59 @@ Want to poke around or run it self-hosted?
 - **Testing**: Jest, React Testing Library
 - **Other**: Yarn workspaces for monorepo management
 
+## For AI Agents
+
+Compass is designed to be AI-friendly with comprehensive tooling and documentation for automated development.
+
+### Quick Reference for AI Agents
+
+- **Primary Guide**: See [AGENTS.md](./AGENTS.md) for complete development instructions
+- **Architecture**: Monorepo with 4 packages: `@compass/web` (React frontend), `@compass/backend` (Express API), `@compass/core` (shared utilities), `@compass/scripts` (CLI tools)
+- **API Boundaries**: All backend routes in `packages/backend/src/*/routes.config.ts`, authenticated via Supertokens sessions
+- **State Management**: Redux store in `packages/web/src/store/`, organized by domain (calendar, draft, schema, settings, sidebar, task, view)
+- **Type System**: Zod schemas for validation, TypeScript for type safety - see `packages/core/src/types/`
+- **Module Aliases**: Use `@compass/*`, `@web/*`, `@core/*` instead of relative paths
+- **Testing**: Unit tests with Jest, E2E with Playwright - test commands: `yarn test:core`, `yarn test:web`, `yarn test:backend`
+- **AI Tools**: See `ai-tools/` directory for endpoint docs, type extraction, code health audits, and workflow harnesses
+
+### Key Entry Points
+
+- **Backend API**: `packages/backend/src/app.ts` - Express server initialization
+- **Frontend**: `packages/web/src/index.tsx` - React app entry point
+- **Routing**: Backend routes in `*routes.config.ts`, frontend routes in `packages/web/src/views/Root.tsx`
+- **Database**: MongoDB models in `packages/backend/src/*/dao/*.dao.ts`
+- **Sync Logic**: Calendar sync in `packages/backend/src/sync/`
+
+### Development Workflow
+
+```bash
+# Quick start
+yarn install --frozen-lockfile --network-timeout 300000
+cp packages/backend/.env.local.example packages/backend/.env
+yarn dev:web  # Frontend on http://localhost:9080
+
+# Testing
+yarn test:core && yarn test:web && yarn test:backend
+
+# Type checking and linting
+yarn type-check
+yarn prettier . --write
+
+# AI tooling
+yarn ai:index          # Semantic code search
+yarn docs:generate     # Generate API docs
+yarn audit:code-health # Code quality metrics
+```
+
+### AI-Specific Guidelines
+
+1. **Read First**: Always check `AGENTS.md` and `CONTRIBUTING.md` before making changes
+2. **Module Aliases**: Use aliased imports (`@compass/*`, `@web/*`) not relative paths
+3. **Validation**: Use Zod schemas for all new types and validation
+4. **Testing**: Write tests using Testing Library patterns (semantic queries, user interactions)
+5. **Commits**: Follow semantic commit format: `type(scope): description`
+6. **Safety**: Run `yarn audit:code-health` before submitting PRs
+
 ## Contributing
 
 We love contributions! Whether it's bug fixes, new features, or documentation improvements, your help makes Compass better for everyone.
