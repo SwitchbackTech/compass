@@ -1,6 +1,10 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 
+/**
+ * RFC date format definitions for date parsing and formatting
+ * Used across the application for consistent date handling
+ */
 export const FORMAT = {
   RFC5545: {
     key: "RFC5545",
@@ -18,7 +22,7 @@ export const FORMAT = {
 type Key_Format = (typeof FORMAT)[keyof typeof FORMAT]["key"];
 
 /**
- * Convert a recurrence rule with UNTIL value to  date
+ * Convert a recurrence rule with UNTIL value to date
  * @param rrule The full recurrence rule with UNTIL value (e.g. "RRULE:FREQ=DAILY;UNTIL=20260108T005808Z")
  * @returns The UNTIL value, parsed as iso8601 (e.g. '2026-01-08T00:58:08.000Z')
  */
@@ -29,6 +33,15 @@ export const convertRruleWithUntilToDate = (rrule: string) => {
   return origDateFromUntil;
 };
 
+/**
+ * Get current week and month date ranges
+ * @returns Object containing week and month date ranges in YYYY-MM-DD format
+ * @example
+ * {
+ *   week: { startDate: '2024-01-01', endDate: '2024-01-07' },
+ *   month: { startDate: '2024-01-01', endDate: '2024-01-31' }
+ * }
+ */
 export const getCurrentRangeDates = () => {
   const now = dayjs();
 
@@ -50,6 +63,12 @@ export const getCurrentRangeDates = () => {
   };
 };
 
+/**
+ * Check if two date strings are in the same month
+ * @param start Start date string (ISO or other parseable format)
+ * @param end End date string (ISO or other parseable format)
+ * @returns true if both dates are in the same month
+ */
 export const isSameMonth = (start: string, end: string) => {
   const _start = dayjs(start);
   const _end = dayjs(end);
