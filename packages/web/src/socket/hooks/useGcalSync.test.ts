@@ -242,6 +242,13 @@ describe("useGcalSync", () => {
   });
 
   describe("import flow interaction", () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
     it("shows spinner on import start and hides it on successful import end", () => {
       // Capture socket handlers to simulate backend events
       const handlers: Record<string, (...args: unknown[]) => void> = {};
