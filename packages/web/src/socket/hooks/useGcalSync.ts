@@ -1,14 +1,19 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
+import { toast } from "react-toastify";
+import { Origin } from "@core/constants/core.constants";
 import {
+  GOOGLE_REVOKED,
   IMPORT_GCAL_END,
   IMPORT_GCAL_START,
   USER_METADATA,
 } from "@core/constants/websocket.constants";
 import { UserMetadata } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
+import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { selectIsImportPending } from "@web/ducks/events/selectors/sync.selector";
+import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
 import {
   importGCalSlice,
   triggerFetch,
@@ -72,6 +77,25 @@ export const useGcalSync = () => {
     [dispatch],
   );
 
+  const onGoogleRevoked = useCallback(() => {
+    if (!toast.isActive(GOOGLE_REVOKED_TOAST_ID)) {
+      toast.error("Google access revoked. Your Google data has been removed.", {
+        toastId: GOOGLE_REVOKED_TOAST_ID,
+        autoClose: false,
+      });
+    }
+    dispatch(
+      eventsEntitiesSlice.actions.removeEventsByOrigin({
+        origins: [Origin.GOOGLE, Origin.GOOGLE_IMPORT],
+      }),
+    );
+    dispatch(
+      triggerFetch({
+        reason: Sync_AsyncStateContextReason.GOOGLE_REVOKED,
+      }),
+    );
+  }, [dispatch]);
+
   const onMetadataFetch = useCallback(
     (metadata: UserMetadata) => {
       const importGcal = shouldImportGCal(metadata);
@@ -114,4 +138,11 @@ export const useGcalSync = () => {
       socket.removeListener(IMPORT_GCAL_END, onImportEnd);
     };
   }, [onImportEnd]);
+
+  useEffect(() => {
+    socket.on(GOOGLE_REVOKED, onGoogleRevoked);
+    return () => {
+      socket.removeListener(GOOGLE_REVOKED, onGoogleRevoked);
+    };
+  }, [onGoogleRevoked]);
 };

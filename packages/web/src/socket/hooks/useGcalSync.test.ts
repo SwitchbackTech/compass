@@ -1,6 +1,8 @@
 import { useDispatch } from "react-redux";
 import { renderHook } from "@testing-library/react";
+import { Origin } from "@core/constants/core.constants";
 import {
+  GOOGLE_REVOKED,
   IMPORT_GCAL_END,
   IMPORT_GCAL_START,
   USER_METADATA,
@@ -9,6 +11,7 @@ import {
   selectImporting,
   selectIsImportPending,
 } from "@web/ducks/events/selectors/sync.selector";
+import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
 import {
   importGCalSlice,
   triggerFetch,
@@ -40,11 +43,21 @@ jest.mock("@web/ducks/events/slices/sync.slice", () => ({
       request: jest.fn(),
     },
   },
+  importLatestSlice: {
+    reducer: (state = { isFetchNeeded: false, reason: null }) => state,
+    actions: { resetIsFetchNeeded: jest.fn() },
+  },
   triggerFetch: jest.fn(),
 }));
 // Mock shouldImportGCal util
 jest.mock("@core/util/event/event.util", () => ({
   shouldImportGCal: jest.fn(() => false),
+}));
+jest.mock("react-toastify", () => ({
+  toast: {
+    error: jest.fn(),
+    isActive: jest.fn(() => false),
+  },
 }));
 
 describe("useGcalSync", () => {
@@ -83,6 +96,42 @@ describe("useGcalSync", () => {
       IMPORT_GCAL_END,
       expect.any(Function),
     );
+    expect(socket.on).toHaveBeenCalledWith(
+      GOOGLE_REVOKED,
+      expect.any(Function),
+    );
+  });
+
+  describe("GOOGLE_REVOKED", () => {
+    it("shows toast, clears Google events, and triggers refetch", () => {
+      const { toast } = require("react-toastify");
+      let onGoogleRevoked: (() => void) | undefined;
+      (socket.on as jest.Mock).mockImplementation((event, handler) => {
+        if (event === GOOGLE_REVOKED) {
+          onGoogleRevoked = handler;
+        }
+      });
+
+      renderHook(() => useGcalSync());
+
+      onGoogleRevoked?.();
+
+      expect(toast.error).toHaveBeenCalledWith(
+        "Google access revoked. Your Google data has been removed.",
+        expect.objectContaining({
+          toastId: "google-revoked-api",
+          autoClose: false,
+        }),
+      );
+      expect(mockDispatch).toHaveBeenCalledWith(
+        eventsEntitiesSlice.actions.removeEventsByOrigin({
+          origins: [Origin.GOOGLE, Origin.GOOGLE_IMPORT],
+        }),
+      );
+      expect(triggerFetch).toHaveBeenCalledWith({
+        reason: "GOOGLE_REVOKED",
+      });
+    });
   });
 
   describe("IMPORT_GCAL_START", () => {

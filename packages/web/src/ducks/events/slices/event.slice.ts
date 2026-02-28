@@ -1,5 +1,6 @@
 import produce from "immer";
-import { createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createSlice } from "@reduxjs/toolkit";
+import { Origin } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createAsyncSlice } from "@web/common/store/helpers";
@@ -64,6 +65,18 @@ export const eventsEntitiesSlice = createSlice({
     updateAfterTzChange: (state, action: Action_TimezoneChange) => {
       const nextState = changeTimezones(state, action.payload.timezone);
       state.value = nextState.value;
+    },
+    removeEventsByOrigin: (
+      state,
+      action: PayloadAction<{ origins: readonly Origin[] }>,
+    ) => {
+      const origins = new Set(action.payload.origins);
+      for (const id of Object.keys(state.value)) {
+        const event = state.value[id] as Schema_Event | undefined;
+        if (event?.origin && origins.has(event.origin as Origin)) {
+          delete state.value[id];
+        }
+      }
     },
   },
 });

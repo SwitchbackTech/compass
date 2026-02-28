@@ -1,9 +1,18 @@
 import axios, { AxiosError } from "axios";
+import { toast } from "react-toastify";
+import { Origin } from "@core/constants/core.constants";
+import { GOOGLE_REVOKED } from "@core/constants/websocket.constants";
 import { Status } from "@core/errors/status.codes";
+import { getApiErrorCode } from "@web/common/apis/compass.api.util";
 import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { showSessionExpiredToast } from "@web/common/utils/toast/error-toast.util";
+import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
+import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
+import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
+import { store } from "@web/store";
 
 export const CompassApi = axios.create({
   baseURL: ENV_WEB.API_BASEURL,
@@ -11,7 +20,7 @@ export const CompassApi = axios.create({
 
 type SignoutStatus = Status.UNAUTHORIZED | Status.NOT_FOUND | Status.GONE;
 
-const _signOut = async (status: SignoutStatus) => {
+const signOut = async (status: SignoutStatus) => {
   // since there are currently duplicate event fetches,
   // this prevents triggering a separate alert for each fetch
   // this can be removed once we have logic to cancel subsequent requests
@@ -28,6 +37,23 @@ const _signOut = async (status: SignoutStatus) => {
     return;
   }
   window.location.assign(ROOT_ROUTES.DAY);
+};
+
+const handleGoogleRevokedError = () => {
+  if (!toast.isActive(GOOGLE_REVOKED_TOAST_ID)) {
+    toast.error("Google access revoked. Your Google data has been removed.", {
+      toastId: GOOGLE_REVOKED_TOAST_ID,
+      autoClose: false,
+    });
+  }
+  store.dispatch(
+    eventsEntitiesSlice.actions.removeEventsByOrigin({
+      origins: [Origin.GOOGLE, Origin.GOOGLE_IMPORT],
+    }),
+  );
+  store.dispatch(
+    triggerFetch({ reason: Sync_AsyncStateContextReason.GOOGLE_REVOKED }),
+  );
 };
 
 CompassApi.interceptors.response.use(
@@ -51,12 +77,21 @@ CompassApi.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // Google revoked: keep user logged in, show toast, clear Google events, trigger refetch
+    if (
+      (status === Status.GONE || status === Status.UNAUTHORIZED) &&
+      getApiErrorCode(error) === GOOGLE_REVOKED
+    ) {
+      handleGoogleRevokedError();
+      return Promise.reject(error);
+    }
+
     if (
       status === Status.GONE ||
       status === Status.NOT_FOUND ||
       status === Status.UNAUTHORIZED
     ) {
-      await _signOut(status);
+      await signOut(status);
     } else {
       console.error(error);
     }
