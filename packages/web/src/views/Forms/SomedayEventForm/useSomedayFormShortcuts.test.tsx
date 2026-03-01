@@ -56,7 +56,7 @@ describe("SomedayEventForm shortcuts hook", () => {
     expect(registeredCombos).toEqual([
       "delete",
       "enter",
-      "meta+enter",
+      "mod+enter",
       "meta+d",
       "ctrl+meta+up",
       "ctrl+meta+down",
@@ -105,7 +105,7 @@ describe("SomedayEventForm shortcuts hook", () => {
     expect(defaultProps.onDuplicate).toHaveBeenCalledTimes(1);
   });
 
-  test("meta+enter shortcut triggers submit with propagation blocked", () => {
+  test("mod+enter shortcut triggers submit with propagation blocked", () => {
     render(<TestComponent {...defaultProps} />);
 
     const keyboardEvent = {
@@ -114,13 +114,13 @@ describe("SomedayEventForm shortcuts hook", () => {
       target: document.createElement("input"),
     } as unknown as KeyboardEvent;
 
-    const handler = getHotkeyHandler("meta+enter");
+    const handler = getHotkeyHandler("mod+enter");
     handler(keyboardEvent);
 
     expect(defaultProps.onSubmit).toHaveBeenCalledTimes(1);
   });
 
-  test("meta+enter shortcut invokes onSubmit", () => {
+  test("mod+enter shortcut invokes onSubmit", () => {
     render(<TestComponent {...defaultProps} />);
 
     const menuButton = document.createElement("button");
@@ -132,7 +132,7 @@ describe("SomedayEventForm shortcuts hook", () => {
       target: menuButton,
     } as unknown as KeyboardEvent;
 
-    const handler = getHotkeyHandler("meta+enter");
+    const handler = getHotkeyHandler("mod+enter");
     handler(keyboardEvent);
 
     expect(defaultProps.onSubmit).toHaveBeenCalled();

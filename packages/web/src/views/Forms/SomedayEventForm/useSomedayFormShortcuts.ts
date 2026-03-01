@@ -96,7 +96,7 @@ export const useSomedayFormShortcuts = ({
     [onSubmit],
   );
   useHotkeys(
-    "meta+enter",
+    "mod+enter",
     (keyboardEvent) => {
       keyboardEvent.preventDefault();
       keyboardEvent.stopPropagation();

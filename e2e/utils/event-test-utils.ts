@@ -212,8 +212,9 @@ export const fillTitleAndSaveWithKeyboard = async (
   const titleInput = getFormTitleInput(page);
   await expect(titleInput).toBeVisible({ timeout: FORM_TIMEOUT });
   await titleInput.fill(title);
-  // EventForm saves on Meta+Enter (Cmd+Enter on Mac, Win+Enter on Windows/Linux)
-  await page.keyboard.press("Meta+Enter");
+  // EventForm saves on Cmd+Enter (Mac) or Ctrl+Enter (Linux/Windows)
+  // ControlOrMeta maps to the platform-appropriate modifier
+  await page.keyboard.press("ControlOrMeta+Enter");
   // Wait for form to close, confirming the save completed
   await titleInput.waitFor({ state: "hidden", timeout: FORM_TIMEOUT });
 };
