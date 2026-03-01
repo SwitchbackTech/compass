@@ -1,6 +1,8 @@
-import { ToastOptions } from "react-toastify";
+import { Id, ToastOptions } from "react-toastify";
 import { c } from "@web/common/styles/colors";
 import { theme } from "@web/common/styles/theme";
+
+export const GOOGLE_REVOKED_TOAST_ID: Id = "google-revoked-api";
 
 export const toastDefaultOptions: ToastOptions = {
   autoClose: 5000,

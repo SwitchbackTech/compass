@@ -1,6 +1,7 @@
 import { useDispatch } from "react-redux";
 import { renderHook } from "@testing-library/react";
 import {
+  GOOGLE_REVOKED,
   IMPORT_GCAL_END,
   IMPORT_GCAL_START,
   USER_METADATA,
@@ -40,11 +41,24 @@ jest.mock("@web/ducks/events/slices/sync.slice", () => ({
       request: jest.fn(),
     },
   },
+  importLatestSlice: {
+    reducer: (state = { isFetchNeeded: false, reason: null }) => state,
+    actions: { resetIsFetchNeeded: jest.fn() },
+  },
   triggerFetch: jest.fn(),
 }));
 // Mock shouldImportGCal util
 jest.mock("@core/util/event/event.util", () => ({
   shouldImportGCal: jest.fn(() => false),
+}));
+jest.mock("react-toastify", () => ({
+  toast: {
+    error: jest.fn(),
+    isActive: jest.fn(() => false),
+  },
+}));
+jest.mock("@web/common/utils/auth/google-auth.util", () => ({
+  handleGoogleRevoked: jest.fn(),
 }));
 
 describe("useGcalSync", () => {
@@ -83,6 +97,30 @@ describe("useGcalSync", () => {
       IMPORT_GCAL_END,
       expect.any(Function),
     );
+    expect(socket.on).toHaveBeenCalledWith(
+      GOOGLE_REVOKED,
+      expect.any(Function),
+    );
+  });
+
+  describe("GOOGLE_REVOKED", () => {
+    it("calls handleGoogleRevoked when socket event fires", () => {
+      const {
+        handleGoogleRevoked,
+      } = require("@web/common/utils/auth/google-auth.util");
+      let onGoogleRevoked: (() => void) | undefined;
+      (socket.on as jest.Mock).mockImplementation((event, handler) => {
+        if (event === GOOGLE_REVOKED) {
+          onGoogleRevoked = handler;
+        }
+      });
+
+      renderHook(() => useGcalSync());
+
+      onGoogleRevoked?.();
+
+      expect(handleGoogleRevoked).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("IMPORT_GCAL_START", () => {
@@ -193,6 +231,13 @@ describe("useGcalSync", () => {
   });
 
   describe("import flow interaction", () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
     it("shows spinner on import start and hides it on successful import end", () => {
       // Capture socket handlers to simulate backend events
       const handlers: Record<string, (...args: unknown[]) => void> = {};

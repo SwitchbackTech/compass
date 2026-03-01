@@ -42,27 +42,40 @@ export const getEmailFromUrl = (url: string) => {
 };
 
 // occurs when token expired or revoked
-export const isInvalidGoogleToken = (e: GaxiosError | Error) => {
-  const is400 = "code" in e && e.code === "400";
-  const hasInvalidMsg = "message" in e && e.message === "invalid_grant";
-  const isInvalid = is400 && hasInvalidMsg;
+export const isInvalidGoogleToken = (e: unknown) => {
+  if (!isGoogleError(e)) return false;
 
-  return isGoogleError(e) && isInvalid;
+  const err = e as GaxiosError;
+  const is400 = err.code === "400" || err.response?.status === 400;
+  const hasInvalidMsg = err.message === "invalid_grant";
+  const hasInvalidData = err.response?.data?.error === "invalid_grant";
+
+  return is400 && (hasInvalidMsg || hasInvalidData);
 };
 
 export const isGoogleError = (e: unknown) => {
-  return e instanceof GaxiosError;
+  return e instanceof GaxiosError || (e as any)?.name === "GaxiosError";
 };
 
-export const isFullSyncRequired = (e: GaxiosError | Error) => {
-  if (isGoogleError(e) && e.code) {
-    const codeStr = typeof e.code === "string" ? e.code : String(e.code);
-    if (parseInt(codeStr) === 410) {
-      return true;
-    }
+export const getGoogleErrorStatus = (e: unknown) => {
+  if (!isGoogleError(e)) return undefined;
+
+  const err = e as GaxiosError;
+  const responseStatus = err.response?.status;
+
+  if (typeof responseStatus === "number") return responseStatus;
+  if (typeof err.code === "number") return err.code;
+
+  if (typeof err.code === "string") {
+    const code = Number.parseInt(err.code, 10);
+    if (!Number.isNaN(code)) return code;
   }
 
-  return false;
+  return undefined;
+};
+
+export const isFullSyncRequired = (e: unknown) => {
+  return getGoogleErrorStatus(e) === 410;
 };
 
 export const isInvalidValue = (e: GaxiosError) => {

@@ -1,10 +1,32 @@
+import { toast } from "react-toastify";
+import { Origin } from "@core/constants/core.constants";
 import { AuthApi } from "@web/common/apis/auth.api";
+import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
 import { SignInUpInput } from "@web/components/oauth/ouath.types";
-import { authenticate, syncLocalEvents } from "./google-auth.util";
+import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
+import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
+import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
+import { store } from "@web/store";
+import {
+  authenticate,
+  handleGoogleRevoked,
+  syncLocalEvents,
+} from "./google-auth.util";
 
 jest.mock("@web/common/apis/auth.api");
 jest.mock("@web/common/utils/sync/local-event-sync.util");
+jest.mock("react-toastify", () => ({
+  toast: {
+    error: jest.fn(),
+    isActive: jest.fn(() => false),
+  },
+}));
+jest.mock("@web/store", () => ({
+  store: {
+    dispatch: jest.fn(),
+  },
+}));
 
 const mockAuthApi = AuthApi as jest.Mocked<typeof AuthApi>;
 const mockSyncLocalEventsToCloud =
@@ -87,6 +109,52 @@ describe("google-auth.util", () => {
       const result = await syncLocalEvents();
 
       expect(result).toEqual({ syncedCount: 0, success: false, error });
+    });
+  });
+
+  describe("handleGoogleRevoked", () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+      (toast.isActive as jest.Mock).mockReturnValue(false);
+    });
+
+    it("shows toast with GOOGLE_REVOKED_TOAST_ID when not already active", () => {
+      handleGoogleRevoked();
+
+      expect(toast.error).toHaveBeenCalledWith(
+        "Google access revoked. Your Google data has been removed.",
+        expect.objectContaining({
+          toastId: GOOGLE_REVOKED_TOAST_ID,
+          autoClose: false,
+        }),
+      );
+    });
+
+    it("dispatches removeEventsByOrigin for Google origins", () => {
+      handleGoogleRevoked();
+
+      expect(store.dispatch).toHaveBeenCalledWith(
+        eventsEntitiesSlice.actions.removeEventsByOrigin({
+          origins: [Origin.GOOGLE, Origin.GOOGLE_IMPORT],
+        }),
+      );
+    });
+
+    it("dispatches triggerFetch with GOOGLE_REVOKED reason", () => {
+      handleGoogleRevoked();
+
+      expect(store.dispatch).toHaveBeenCalledWith(
+        triggerFetch({ reason: Sync_AsyncStateContextReason.GOOGLE_REVOKED }),
+      );
+    });
+
+    it("does not show toast when one is already active (idempotent)", () => {
+      (toast.isActive as jest.Mock).mockReturnValue(true);
+
+      handleGoogleRevoked();
+
+      expect(toast.error).not.toHaveBeenCalled();
+      expect(store.dispatch).toHaveBeenCalledTimes(2);
     });
   });
 });

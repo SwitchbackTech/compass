@@ -165,7 +165,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         e.preventDefault();
       }
 
-      if (e.metaKey && e.key === Key.Enter) {
+      if ((e.metaKey || e.ctrlKey) && e.key === Key.Enter) {
         e.preventDefault();
         onSubmitForm();
       }
@@ -266,7 +266,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     );
 
     useHotkeys(
-      "meta+enter",
+      "mod+enter",
       (e) => {
         e.preventDefault();
         onSubmitForm();

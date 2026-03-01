@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 import {
+  GOOGLE_REVOKED,
   IMPORT_GCAL_END,
   IMPORT_GCAL_START,
   USER_METADATA,
 } from "@core/constants/websocket.constants";
 import { UserMetadata } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
+import { handleGoogleRevoked } from "@web/common/utils/auth/google-auth.util";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { selectIsImportPending } from "@web/ducks/events/selectors/sync.selector";
 import {
@@ -72,6 +74,10 @@ export const useGcalSync = () => {
     [dispatch],
   );
 
+  const onGoogleRevoked = useCallback(() => {
+    handleGoogleRevoked();
+  }, []);
+
   const onMetadataFetch = useCallback(
     (metadata: UserMetadata) => {
       const importGcal = shouldImportGCal(metadata);
@@ -114,4 +120,11 @@ export const useGcalSync = () => {
       socket.removeListener(IMPORT_GCAL_END, onImportEnd);
     };
   }, [onImportEnd]);
+
+  useEffect(() => {
+    socket.on(GOOGLE_REVOKED, onGoogleRevoked);
+    return () => {
+      socket.removeListener(GOOGLE_REVOKED, onGoogleRevoked);
+    };
+  }, [onGoogleRevoked]);
 };

@@ -1,8 +1,10 @@
+import { createGoogleError } from "../../../__tests__/mocks.gcal/errors/error.google.factory";
 import { invalidGrant400Error } from "../../../__tests__/mocks.gcal/errors/error.google.invalidGrant";
 import { invalidValueError } from "../../../__tests__/mocks.gcal/errors/error.google.invalidValue";
 import { invalidSyncTokenError } from "../../../__tests__/mocks.gcal/errors/error.invalidSyncToken";
 import {
   getEmailFromUrl,
+  getGoogleErrorStatus,
   isFullSyncRequired,
   isInvalidGoogleToken,
   isInvalidValue,
@@ -17,6 +19,19 @@ describe("Google Error Parsing", () => {
   });
   it("recognizes expired refresh token", () => {
     expect(isInvalidGoogleToken(invalidGrant400Error)).toBe(true);
+  });
+  it("returns response status when present", () => {
+    expect(
+      getGoogleErrorStatus(
+        createGoogleError({ code: "500", responseStatus: 401 }),
+      ),
+    ).toBe(401);
+  });
+  it("falls back to the parsed gaxios code", () => {
+    expect(getGoogleErrorStatus(createGoogleError({ code: "410" }))).toBe(410);
+  });
+  it("returns undefined for non-google errors", () => {
+    expect(getGoogleErrorStatus(new Error("nope"))).toBeUndefined();
   });
 });
 

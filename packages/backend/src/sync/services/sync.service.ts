@@ -1,4 +1,3 @@
-import { GaxiosError } from "gaxios";
 import { ClientSession, ObjectId } from "mongodb";
 import { RESULT_NOTIFIED_CLIENT } from "@core/constants/websocket.constants";
 import { Logger } from "@core/logger/winston.logger";
@@ -19,6 +18,10 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { WatchError } from "@backend/common/errors/sync/watch.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
+import {
+  getGoogleErrorStatus,
+  isInvalidGoogleToken,
+} from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import { createSyncImport } from "@backend/sync/services/import/sync.import";
@@ -67,6 +70,22 @@ class SyncService {
       .updateOne({ user: userId }, { $unset: { [integration]: "" } });
 
     return response;
+  };
+
+  deleteWatchesByUser = async (
+    user: string,
+    session?: ClientSession,
+  ): Promise<Result_Watch_Stop> => {
+    const watches = await mongoService.watch
+      .find({ user }, { session })
+      .toArray();
+
+    await mongoService.watch.deleteMany({ user }, { session });
+
+    return watches.map(({ _id, resourceId }) => ({
+      channelId: _id.toString(),
+      resourceId,
+    }));
   };
 
   async cleanupStaleWatchChannel({
@@ -626,14 +645,23 @@ class SyncService {
 
       return { channelId, resourceId };
     } catch (e) {
-      const _e = e as GaxiosError;
-      const code = (_e.code as unknown as number) || 0;
+      const status = getGoogleErrorStatus(e);
 
-      if (_e.code === "404" || code === 404) {
+      if (status === 404) {
         await mongoService.watch.deleteOne(filter, { session });
 
         logger.warn(
           "Channel no longer exists. Corresponding sync record deleted",
+        );
+
+        return undefined;
+      }
+
+      if (status === 401 || isInvalidGoogleToken(e)) {
+        await mongoService.watch.deleteOne(filter, { session });
+
+        logger.warn(
+          "Google authorization is no longer valid. Corresponding sync record deleted",
         );
 
         return undefined;

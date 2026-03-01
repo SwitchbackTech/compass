@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import { signOut } from "supertokens-web-js/recipe/session";
 import { Status } from "@core/errors/status.codes";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { CompassApi } from "./compass.api";
 
 jest.mock("supertokens-web-js/recipe/session", () => {
@@ -42,11 +43,15 @@ const setLocationPath = (pathname: string) => {
   });
 };
 
-const createAxiosError = (status: number, url?: string): AxiosError => {
+const createAxiosError = (
+  status: number,
+  url?: string,
+  data?: unknown,
+): AxiosError => {
   const config = { url } as InternalAxiosRequestConfig;
   const response = {
     config,
-    data: {},
+    data: data ?? {},
     headers: {},
     status,
     statusText: "Error",
@@ -62,8 +67,12 @@ const createAxiosError = (status: number, url?: string): AxiosError => {
   } as AxiosError;
 };
 
-const triggerErrorResponse = async (status: number, url?: string) => {
-  const axiosError = createAxiosError(status, url);
+const triggerErrorResponse = async (
+  status: number,
+  url?: string,
+  data?: unknown,
+) => {
+  const axiosError = createAxiosError(status, url, data);
   const adapter: AxiosAdapter = () => Promise.reject(axiosError);
   CompassApi.defaults.adapter = adapter;
 
@@ -156,5 +165,28 @@ describe("CompassApi interceptor auth handling", () => {
     expect(window.alert).not.toHaveBeenCalled();
     expect(signOut).not.toHaveBeenCalled();
     expect(assignMock).not.toHaveBeenCalled();
+  });
+
+  it("does not sign out on 401/410 when response has GOOGLE_REVOKED code", async () => {
+    const googleRevokedPayload = {
+      code: "GOOGLE_REVOKED",
+      message: "Google access revoked.",
+    };
+    const toastExpectation = expect.objectContaining({
+      toastId: GOOGLE_REVOKED_TOAST_ID,
+      autoClose: false,
+    });
+
+    for (const status of [Status.UNAUTHORIZED, Status.GONE]) {
+      jest.clearAllMocks();
+      await triggerErrorResponse(status, undefined, googleRevokedPayload);
+
+      expect(toast.error).toHaveBeenCalledWith(
+        "Google access revoked. Your Google data has been removed.",
+        toastExpectation,
+      );
+      expect(signOut).not.toHaveBeenCalled();
+      expect(assignMock).not.toHaveBeenCalled();
+    }
   });
 });

@@ -74,6 +74,23 @@ export const useRefetch = () => {
         } else {
           dispatch(getWeekEventsSlice.actions.request(payload));
         }
+
+        // Full refresh on Google revoked: also refetch someday events
+        if (_reason === Sync_AsyncStateContextReason.GOOGLE_REVOKED) {
+          const dateStart = dayjs(dateRange.start);
+          const { startDate, endDate } = computeSomedayEventsRequestFilter(
+            dateStart,
+            dateStart.endOf("month"),
+          );
+
+          dispatch(
+            getSomedayEventsSlice.actions.request({
+              startDate,
+              endDate,
+              __context: { reason: _reason },
+            }),
+          );
+        }
       }
 
       dispatch(resetIsFetchNeeded());

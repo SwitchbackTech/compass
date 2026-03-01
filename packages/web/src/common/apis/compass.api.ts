@@ -1,9 +1,12 @@
 import axios, { AxiosError } from "axios";
+import { GOOGLE_REVOKED } from "@core/constants/websocket.constants";
 import { Status } from "@core/errors/status.codes";
+import { getApiErrorCode } from "@web/common/apis/compass.api.util";
 import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { showSessionExpiredToast } from "@web/common/utils/toast/error-toast.util";
+import { handleGoogleRevoked } from "../utils/auth/google-auth.util";
 
 export const CompassApi = axios.create({
   baseURL: ENV_WEB.API_BASEURL,
@@ -11,7 +14,7 @@ export const CompassApi = axios.create({
 
 type SignoutStatus = Status.UNAUTHORIZED | Status.NOT_FOUND | Status.GONE;
 
-const _signOut = async (status: SignoutStatus) => {
+const signOut = async (status: SignoutStatus) => {
   // since there are currently duplicate event fetches,
   // this prevents triggering a separate alert for each fetch
   // this can be removed once we have logic to cancel subsequent requests
@@ -51,12 +54,21 @@ CompassApi.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // Google revoked: keep user logged in, show toast, clear Google events, trigger refetch
+    if (
+      (status === Status.GONE || status === Status.UNAUTHORIZED) &&
+      getApiErrorCode(error) === GOOGLE_REVOKED
+    ) {
+      handleGoogleRevoked();
+      return Promise.reject(error);
+    }
+
     if (
       status === Status.GONE ||
       status === Status.NOT_FOUND ||
       status === Status.UNAUTHORIZED
     ) {
-      await _signOut(status);
+      await signOut(status);
     } else {
       console.error(error);
     }

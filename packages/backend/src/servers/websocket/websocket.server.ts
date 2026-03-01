@@ -6,6 +6,7 @@ import {
   EVENT_CHANGED,
   EVENT_CHANGE_PROCESSED,
   FETCH_USER_METADATA,
+  GOOGLE_REVOKED,
   IMPORT_GCAL_END,
   IMPORT_GCAL_START,
   RESULT_IGNORED,
@@ -235,6 +236,10 @@ class WebSocketServer {
 
   handleBackgroundSomedayChange(userId: string) {
     return this.notifyUser(userId, SOMEDAY_EVENT_CHANGED);
+  }
+
+  handleGoogleRevoked(userId: string) {
+    return this.notifyUser(userId, GOOGLE_REVOKED);
   }
 }
 
