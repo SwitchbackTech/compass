@@ -1,6 +1,5 @@
 import { useDispatch } from "react-redux";
 import { renderHook } from "@testing-library/react";
-import { Origin } from "@core/constants/core.constants";
 import {
   GOOGLE_REVOKED,
   IMPORT_GCAL_END,
@@ -11,7 +10,6 @@ import {
   selectImporting,
   selectIsImportPending,
 } from "@web/ducks/events/selectors/sync.selector";
-import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
 import {
   importGCalSlice,
   triggerFetch,
@@ -59,6 +57,9 @@ jest.mock("react-toastify", () => ({
     isActive: jest.fn(() => false),
   },
 }));
+jest.mock("@web/common/utils/auth/google-auth.util", () => ({
+  handleGoogleRevoked: jest.fn(),
+}));
 
 describe("useGcalSync", () => {
   const mockDispatch = jest.fn();
@@ -103,8 +104,10 @@ describe("useGcalSync", () => {
   });
 
   describe("GOOGLE_REVOKED", () => {
-    it("shows toast, clears Google events, and triggers refetch", () => {
-      const { toast } = require("react-toastify");
+    it("calls handleGoogleRevoked when socket event fires", () => {
+      const {
+        handleGoogleRevoked,
+      } = require("@web/common/utils/auth/google-auth.util");
       let onGoogleRevoked: (() => void) | undefined;
       (socket.on as jest.Mock).mockImplementation((event, handler) => {
         if (event === GOOGLE_REVOKED) {
@@ -116,21 +119,7 @@ describe("useGcalSync", () => {
 
       onGoogleRevoked?.();
 
-      expect(toast.error).toHaveBeenCalledWith(
-        "Google access revoked. Your Google data has been removed.",
-        expect.objectContaining({
-          toastId: "google-revoked-api",
-          autoClose: false,
-        }),
-      );
-      expect(mockDispatch).toHaveBeenCalledWith(
-        eventsEntitiesSlice.actions.removeEventsByOrigin({
-          origins: [Origin.GOOGLE, Origin.GOOGLE_IMPORT],
-        }),
-      );
-      expect(triggerFetch).toHaveBeenCalledWith({
-        reason: "GOOGLE_REVOKED",
-      });
+      expect(handleGoogleRevoked).toHaveBeenCalledTimes(1);
     });
   });
 

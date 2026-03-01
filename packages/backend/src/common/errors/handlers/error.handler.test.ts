@@ -49,7 +49,11 @@ describe("error.handler", () => {
     it("returns 401 with GOOGLE_REVOKED payload when Google token is invalid", async () => {
       const userId = "507f1f77bcf86cd799439011";
       jest.spyOn(userService, "pruneGoogleData").mockResolvedValue();
-      jest.spyOn(webSocketServer, "handleGoogleRevoked");
+      const handleGoogleRevokedSpy = jest.spyOn(
+        webSocketServer,
+        "handleGoogleRevoked",
+      );
+      handleGoogleRevokedSpy.mockImplementation(() => undefined);
       jest.spyOn(errorHandler, "isOperational").mockReturnValue(true);
 
       const send = jest.fn();
@@ -70,6 +74,8 @@ describe("error.handler", () => {
         code: GOOGLE_REVOKED,
         message: "Google access revoked. Your Google data has been removed.",
       });
+      expect(handleGoogleRevokedSpy).toHaveBeenCalledWith(userId);
+      handleGoogleRevokedSpy.mockRestore();
     });
   });
 });
