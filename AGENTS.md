@@ -128,7 +128,7 @@ This is a Typescript project with a monorepo structure.
 
 ### Documentation
 
-Additional documentation lives in the `docs/` directory (e.g. API docs, workflow examples).
+Additional documentation lives in the `docs/` directory (e.g. API docs, workflow examples). Update these documents as you make changes when relevant.
 
 ### Key Files & Directories
 
