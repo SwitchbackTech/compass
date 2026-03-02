@@ -17,8 +17,6 @@ Join thousands of engineers who are staying organized and productive with Compas
 
 https://github.com/user-attachments/assets/ba7b91b9-1984-49f2-afc6-7fcda1100b31
 
----
-
 ## Features
 
 ### The Unique Stuff
@@ -43,23 +41,9 @@ https://github.com/user-attachments/assets/ba7b91b9-1984-49f2-afc6-7fcda1100b31
 ### Current Limitations
 
 - Only supports primary Google Calendar (no sub-calendars)
-- No sharing, locations, reminders, or mobile app (yet!)
+- No sharing, locations, reminders, or mobile app
 
 We're actively working on improvements – check out our [roadmap](https://github.com/orgs/SwitchbackTech/projects/4).
-
-## Getting Started
-
-### Try It Online
-
-Head over to [app.compasscalendar.com](https://app.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme)
-
-No signup required — start planning instantly!
-
-### Run Locally
-
-Want to poke around or run it self-hosted?
-
-[Read the technical docs](https://docs.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme): All the info you'd need to get started, including guides on how to install, test, build, deploy, and contribute.
 
 ## Tech Stack
 
@@ -69,28 +53,17 @@ Want to poke around or run it self-hosted?
 - **Testing**: Jest, React Testing Library
 - **Other**: Yarn workspaces for monorepo management
 
-## For AI Agents
+## Getting Started
 
-Compass is designed to be AI-friendly with comprehensive tooling and documentation for automated development.
+### Try It Online
 
-### Quick Reference for AI Agents
+Head over to [app.compasscalendar.com](https://app.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme). No signup required
 
-- **Primary Guide**: See [AGENTS.md](./AGENTS.md) for complete development instructions
-- **Architecture**: Monorepo with 4 packages: `@compass/web` (React frontend), `@compass/backend` (Express API), `@compass/core` (shared utilities), `@compass/scripts` (CLI tools)
-- **API Boundaries**: All backend routes in `packages/backend/src/*/routes.config.ts`, authenticated via Supertokens sessions
-- **State Management**: Redux store in `packages/web/src/store/`, organized by domain (calendar, draft, schema, settings, sidebar, task, view)
-- **Type System**: Zod schemas for validation, TypeScript for type safety - see `packages/core/src/types/`
-- **Module Aliases**: Use `@compass/*`, `@web/*`, `@core/*` instead of relative paths
-- **Testing**: Unit tests with Jest, E2E with Playwright - test commands: `yarn test:core`, `yarn test:web`, `yarn test:backend`
-- **AI Tools**: See `ai-tools/` directory for endpoint docs, type extraction, code health audits, and workflow harnesses
+### Run Locally
 
-### Key Entry Points
+Want to poke around or self-host?
 
-- **Backend API**: `packages/backend/src/app.ts` - Express server initialization
-- **Frontend**: `packages/web/src/index.tsx` - React app entry point
-- **Routing**: Backend routes in `*routes.config.ts`, frontend routes in `packages/web/src/views/Root.tsx`
-- **Database**: MongoDB models in `packages/backend/src/*/dao/*.dao.ts`
-- **Sync Logic**: Calendar sync in `packages/backend/src/sync/`
+[Read the technical docs](https://docs.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme): All the info you'd need to get started, including guides on how to install, test, build, deploy, and contribute.
 
 ### Development Workflow
 
@@ -99,28 +72,16 @@ Compass is designed to be AI-friendly with comprehensive tooling and documentati
 yarn install --frozen-lockfile --network-timeout 300000
 cp packages/backend/.env.local.example packages/backend/.env
 yarn dev:web  # Frontend on http://localhost:9080
+yarn dev:backend # Backend on http://localhost:3000
 
 # Testing
 yarn test:core && yarn test:web && yarn test:backend
+yarn test:e2e
 
 # Type checking and linting
 yarn type-check
 yarn prettier . --write
-
-# AI tooling
-yarn ai:index          # Semantic code search
-yarn docs:generate     # Generate API docs
-yarn audit:code-health # Code quality metrics
 ```
-
-### AI-Specific Guidelines
-
-1. **Read First**: Always check `AGENTS.md` and `CONTRIBUTING.md` before making changes
-2. **Module Aliases**: Use aliased imports (`@compass/*`, `@web/*`) not relative paths
-3. **Validation**: Use Zod schemas for all new types and validation
-4. **Testing**: Write tests using Testing Library patterns (semantic queries, user interactions)
-5. **Commits**: Follow semantic commit format: `type(scope): description`
-6. **Safety**: Run `yarn audit:code-health` before submitting PRs
 
 ## Contributing
 
@@ -130,7 +91,7 @@ Issues: Check open issues or create a new one.
 Pull Requests: Fork the repo, make your changes, and submit a PR. Follow our [Contribution Guidelines](https://docs.compasscalendar.com/docs/contribute).
 Discussions: Join the conversation on GitHub Discussions.
 
-First-time contributors? Look for issues labeled "good first issue"!
+First-time contributors? Look for issues labeled `good first issue.`
 
 ## Community & Resources
 
