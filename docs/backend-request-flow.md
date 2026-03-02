@@ -1,0 +1,114 @@
+# Backend Request Flow
+
+Compass backend code follows a consistent route -> controller -> service pattern with middleware-heavy request setup.
+
+## Startup And Route Registration
+
+Primary files:
+
+- `packages/backend/src/app.ts`
+- `packages/backend/src/servers/express/express.server.ts`
+
+Express startup does this:
+
+1. initialize SuperTokens
+2. install request middleware
+3. install CORS and SuperTokens middleware
+4. install helmet, logging, and JSON parsing
+5. register route config classes
+6. install the SuperTokens error handler after routes
+
+## Route Config Pattern
+
+Each feature owns a `*routes.config.ts` file that extends `CommonRoutesConfig`.
+
+Base class:
+
+- `packages/backend/src/common/common.routes.config.ts`
+
+Typical ownership split:
+
+- routes config: express path and middleware composition
+- controller: request parsing and response orchestration
+- service: business logic
+- query/repo layer: database-specific access
+
+## Middleware Order Matters
+
+The backend relies on middleware ordering for correct behavior:
+
+- request/response promise helpers are installed before routes
+- session middleware runs before route handlers that require auth
+- SuperTokens error handling runs after routes
+
+If a new route behaves strangely, verify it is registered inside `initExpressServer()` and uses the expected middleware stack.
+
+## Response Pattern
+
+File:
+
+- `packages/backend/src/common/middleware/promise.middleware.ts`
+
+The backend decorates `res` with `res.promise(...)` so controllers can pass:
+
+- a Promise
+- a sync function
+- a resolved value
+
+Errors funnel through shared Express error handling.
+
+## Event Request Example
+
+Files:
+
+- `packages/backend/src/event/event.routes.config.ts`
+- `packages/backend/src/event/controllers/event.controller.ts`
+- `packages/backend/src/event/services/event.service.ts`
+
+For `POST /api/event`:
+
+1. route requires `verifySession()`
+2. route also requires `requireGoogleConnectionSession` for create
+3. controller adds the authenticated user id
+4. controller normalizes single vs array payloads
+5. controller forwards the change set to `CompassSyncProcessor`
+6. processor persists and syncs changes, then notifies clients
+
+## Common Auth Guards
+
+Frequently used middleware:
+
+- `verifySession()`: authenticated Compass session required
+- `requireGoogleConnectionSession`: active Google connection required
+- `authMiddleware.verifyIsDev`: development-only route
+- `authMiddleware.verifyIsFromCompass`: trusted internal caller
+- `authMiddleware.verifyIsFromGoogle`: trusted Google notification source
+
+## Validation Placement
+
+Validation is spread across a few layers:
+
+- env validation at startup through Zod
+- shared data schemas in `packages/core/src/types`
+- query validation in feature utilities where needed
+- controller/service parsing for request-specific inputs
+
+When adding a public contract, prefer creating or extending a shared schema in `core` first.
+
+## How To Add A Backend Endpoint
+
+1. Add or reuse a shared schema/type in `core` if the contract is cross-package.
+2. Register the route in the relevant `*routes.config.ts`.
+3. Keep the controller thin: extract params, user id, and response orchestration only.
+4. Put business logic in a service.
+5. Add or update tests at the controller/service level.
+6. If the endpoint affects realtime UI, check whether a websocket notification is also needed.
+
+## Where Bugs Usually Hide
+
+- middleware ordering
+- session requirement mismatches
+- user id injection in controllers
+- recurring event scope handling
+- Mongo/ObjectId conversion around event ids
+- returning instance events without rehydrating recurrence rules
