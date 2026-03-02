@@ -4,7 +4,6 @@ import "@scripts/init";
 import { CliValidator } from "@scripts/cli.validator";
 import { runBuild } from "@scripts/commands/build";
 import { startDeleteFlow } from "@scripts/commands/delete";
-import { inviteWaitlist } from "@scripts/commands/invite";
 import { runMigrator } from "@scripts/commands/migrate";
 import { ALL_PACKAGES, ENVIRONMENT } from "@scripts/common/cli.constants";
 import { MigratorType } from "@scripts/common/cli.types";
@@ -34,10 +33,6 @@ export default class CompassCLI {
         const { force, user } = options;
         this.validator.validateDelete(options);
         await startDeleteFlow(user as string, force);
-        break;
-      }
-      case cmd === "invite": {
-        await inviteWaitlist();
         break;
       }
       case cmd === "migrate":
@@ -79,8 +74,6 @@ export default class CompassCLI {
       .description("delete user data from compass database")
       .option("-u, --user [id | email]", "specify which user to run script for")
       .option("-f, --force", "force deletion without confirmation prompts");
-
-    program.command("invite").description("invite users from the waitlist");
 
     program
       .enablePositionalOptions(true)

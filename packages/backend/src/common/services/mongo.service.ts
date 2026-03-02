@@ -1,22 +1,21 @@
 import { backOff } from "exponential-backoff";
 import {
-  ClientSession,
-  ClientSessionOptions,
-  Collection,
-  ConnectionClosedEvent,
-  ConnectionReadyEvent,
-  Db,
+  type ClientSession,
+  type ClientSessionOptions,
+  type Collection,
+  type ConnectionClosedEvent,
+  type ConnectionReadyEvent,
+  type Db,
   MongoClient,
   ObjectId,
 } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
-import { Schema_Calendar } from "@core/types/calendar.types";
-import { Schema_Event } from "@core/types/event.types";
-import { Schema_Priority } from "@core/types/priority.types";
-import { Schema_Sync } from "@core/types/sync.types";
-import { Schema_User } from "@core/types/user.types";
-import { Schema_Waitlist } from "@core/types/waitlist/waitlist.types";
-import { Schema_Watch } from "@core/types/watch.types";
+import { type Schema_Calendar } from "@core/types/calendar.types";
+import { type Schema_Event } from "@core/types/event.types";
+import { type Schema_Priority } from "@core/types/priority.types";
+import { type Schema_Sync } from "@core/types/sync.types";
+import { type Schema_User } from "@core/types/user.types";
+import { type Schema_Watch } from "@core/types/watch.types";
 import { waitUntilEvent } from "@core/util/wait-until-event.util";
 import { Collections } from "@backend/common/constants/collections";
 import { ENV } from "@backend/common/constants/env.constants";
@@ -31,7 +30,6 @@ interface InternalClient {
   priority: Collection<Omit<Schema_Priority, "_id">>;
   sync: Collection<Schema_Sync>;
   user: Collection<Schema_User>;
-  waitlist: Collection<Schema_Waitlist>;
   watch: Collection<Schema_Watch>;
 }
 
@@ -88,15 +86,6 @@ class MongoService {
   }
 
   /**
-   * waitlist
-   *
-   * mongo collection
-   */
-  get waitlist(): InternalClient["waitlist"] {
-    return this.#accessInternalCollectionProps("waitlist");
-  }
-
-  /**
    * watch
    *
    * mongo collection
@@ -143,7 +132,6 @@ class MongoService {
       ),
       sync: db.collection<Schema_Sync>(Collections.SYNC),
       user: db.collection<Schema_User>(Collections.USER),
-      waitlist: db.collection<Schema_Waitlist>(Collections.WAITLIST),
       watch: db.collection<Schema_Watch>(Collections.WATCH),
     };
   }
