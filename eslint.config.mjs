@@ -74,6 +74,13 @@ export default [
       "jest/valid-expect": "error",
     },
   },
+  // Warn on console.log in packages/web to avoid leaking secure info
+  {
+    files: ["packages/web/**/*.{ts,tsx}"],
+    rules: {
+      "no-console": ["warn", { allow: ["warn", "error"] }],
+    },
+  },
   // these plugins adjust other parts of this config,
   // so keep them down here
   {
