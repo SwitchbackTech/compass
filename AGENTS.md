@@ -13,7 +13,7 @@ Primary instructions for AI agents and developers in the Compass monorepo.
 - [Compass Calendar Development Instructions](#compass-calendar-development-instructions)
   - [Quick Start](#quick-start)
   - [Table of Contents](#table-of-contents)
-  - [Key Guidelines](#key-guidelines)
+  - [Principles](#principles)
   - [Module Aliases](#module-aliases)
   - [Working Effectively](#working-effectively)
     - [Initial Setup](#initial-setup)
@@ -26,11 +26,8 @@ Primary instructions for AI agents and developers in the Compass monorepo.
   - [Validation](#validation)
   - [Project Structure](#project-structure)
     - [Packages Overview](#packages-overview)
+    - [Documentation](#documentation)
     - [Key Files \& Directories](#key-files--directories)
-  - [Environment Requirements](#environment-requirements)
-    - [Required for Full Development](#required-for-full-development)
-    - [Optional Services](#optional-services)
-    - [Critical Environment Variables (backend/.env)](#critical-environment-variables-backendenv)
   - [Common Tasks \& Timing](#common-tasks--timing)
     - [Repository Operations](#repository-operations)
     - [Development Workflow](#development-workflow)
@@ -47,14 +44,11 @@ Primary instructions for AI agents and developers in the Compass monorepo.
     - [Semantic Branch Naming](#semantic-branch-naming)
     - [Semantic Commit Messages](#semantic-commit-messages)
     - [Pre-commit Validation](#pre-commit-validation)
-  - [Gotchas](#gotchas)
 
-## Key Guidelines
+## Principles
 
-1. When working in `packages/web`, follow React best practices and idiomatic patterns
-2. When working in `packages/backend` or `packages/core`, follow Node.js best practices and idiomatic patterns
-3. Always use module aliased paths for imports when importing Compass modules.
-4. Prefer the simplest solution to a problem over the more complex solutions.
+1. **Simplicity**. Prefer the simplest solution to a problem over the more complex solutions.
+2. **Avoid Dependencies**. Prefer built-ins and stable, minimal dependencies. This project will be around for decades, so we want to avoid dependencies that will become obsolete.
 
 ## Module Aliases
 
@@ -104,17 +98,16 @@ Run `yarn test:core`, `yarn test:web`, and `yarn test:backend` after making chan
 - **Web tests**: `yarn test:web`
 - **Backend tests**: `yarn test:backend`
 - **Scripts tests**: `yarn test:scripts`
-- **Full test suite**: `yarn test` (may fail if MongoDB binary download is blocked)
+- **Full test suite**: `yarn test`
 
 ### Building
 
 - **Web Build**: `yarn cli build web --environment staging --clientId "test-client-id"`
 - **Node Build**: `yarn cli build nodePckgs --environment staging`
-- Both builds require valid environment configuration
 
 ### Linting
 
-- `yarn prettier . --write` - Takes ~15 seconds.
+- `yarn prettier . --write`
 
 ## Validation
 
@@ -132,6 +125,10 @@ This is a Typescript project with a monorepo structure.
 - `@compass/web` - React/TypeScript frontend with Redux, styled-components, webpack bundling
 - `@compass/core` - Shared utilities, types, and business logic
 - `@compass/scripts` - CLI tools for building, database operations, user management
+
+### Documentation
+
+Additional documentation lives in the `docs/` directory (e.g. API docs, workflow examples). Update these documents as you make changes when relevant.
 
 ### Key Files & Directories
 
@@ -155,38 +152,6 @@ packages/core/src/
 ├── constants/      # Shared constants
 ├── util/           # Utility functions
 └── mappers/        # Data transformation logic
-```
-
-## Environment Requirements
-
-### Required for Full Development
-
-- Node.js (version specified in package.json engines)
-- Yarn package manager (lockfile format)
-- Google Cloud Project with OAuth 2.0 credentials
-- Supertokens account for user session management
-- MongoDB database (cloud or local)
-
-### Optional Services
-
-- Kit.com account for email integration
-- NGrok account for local tunneling
-
-### Critical Environment Variables (backend/.env)
-
-```bash
-# Required for backend to start
-BASEURL=http://localhost:3000/api
-GOOGLE_CLIENT_ID=YOUR_GOOGLE_OAUTH_CLIENT_ID
-GOOGLE_CLIENT_SECRET=YOUR_GOOGLE_OAUTH_SECRET
-SUPERTOKENS_URI=YOUR_SUPERTOKENS_INSTANCE_URL
-SUPERTOKENS_KEY=YOUR_SUPERTOKENS_API_KEY
-MONGO_URI=YOUR_MONGODB_CONNECTION_STRING
-
-# Required for web development
-PORT=3000
-NODE_ENV=development
-TZ=Etc/UTC
 ```
 
 ## Common Tasks & Timing
@@ -224,6 +189,9 @@ TZ=Etc/UTC
 
 - **Test failures**: Run `yarn test:core`, `yarn test:web`, and `yarn test:backend` individually to narrow the scope of the failure
 - **Backend won't start**: Missing environment variables in `packages/backend/.env`, use web-only development (`yarn dev:web`)
+- Environment: Copy from `packages/backend/.env.local.example` to `packages/backend/.env` (there is no `.env.example`).
+- Webpack dev server warns about a missing `.env.local` file; this is harmless—it falls back to `process.env`.
+- Husky pre-push hook runs `yarn prettier . --write`, which can modify files. Ensure working tree is clean or committed before pushing.
 
 ### Network Limitations
 
@@ -248,8 +216,6 @@ TZ=Etc/UTC
 - `yarn test:web` - Run web package tests only
 - `yarn test:backend` - Run backend package tests only
 - `yarn test:scripts` - Run scripts package tests only
-
-Always prioritize frontend development with `yarn dev:web` when backend services are unavailable.
 
 ## Naming Conventions
 
@@ -333,9 +299,3 @@ The repository includes Husky hooks that will:
 - Run `yarn prettier . --write` on pre-push (ensures consistent formatting)
 
 **ALWAYS** ensure your commits pass these checks before pushing.
-
-## Gotchas
-
-- Environment: Copy from `packages/backend/.env.local.example` to `packages/backend/.env` (there is no `.env.example`).
-- Webpack dev server warns about a missing `.env.local` file; this is harmless—it falls back to `process.env`.
-- Husky pre-push hook runs `yarn prettier . --write`, which can modify files. Ensure working tree is clean or committed before pushing.

@@ -32,7 +32,8 @@
     "test:backend": "yarn test backend",
     "test:core": "yarn test core",
     "test:web": "yarn test web",
-    "test:scripts": "yarn test scripts"
+    "test:scripts": "yarn test scripts",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@compass/backend": "*",

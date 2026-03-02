@@ -17,8 +17,6 @@ Join thousands of engineers who are staying organized and productive with Compas
 
 https://github.com/user-attachments/assets/ba7b91b9-1984-49f2-afc6-7fcda1100b31
 
----
-
 ## Features
 
 ### The Unique Stuff
@@ -43,23 +41,9 @@ https://github.com/user-attachments/assets/ba7b91b9-1984-49f2-afc6-7fcda1100b31
 ### Current Limitations
 
 - Only supports primary Google Calendar (no sub-calendars)
-- No sharing, locations, reminders, or mobile app (yet!)
+- No sharing, locations, reminders, or mobile app
 
 We're actively working on improvements – check out our [roadmap](https://github.com/orgs/SwitchbackTech/projects/4).
-
-## Getting Started
-
-### Try It Online
-
-Head over to [app.compasscalendar.com](https://app.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme)
-
-No signup required — start planning instantly!
-
-### Run Locally
-
-Want to poke around or run it self-hosted?
-
-[Read the technical docs](https://docs.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme): All the info you'd need to get started, including guides on how to install, test, build, deploy, and contribute.
 
 ## Tech Stack
 
@@ -69,6 +53,36 @@ Want to poke around or run it self-hosted?
 - **Testing**: Jest, React Testing Library
 - **Other**: Yarn workspaces for monorepo management
 
+## Getting Started
+
+### Try It Online
+
+Head over to [app.compasscalendar.com](https://app.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme). No signup required
+
+### Run Locally
+
+Want to poke around or self-host?
+
+[Read the technical docs](https://docs.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme): All the info you'd need to get started, including guides on how to install, test, build, deploy, and contribute.
+
+### Development Workflow
+
+```bash
+# Quick start
+yarn install --frozen-lockfile --network-timeout 300000
+cp packages/backend/.env.local.example packages/backend/.env
+yarn dev:web  # Frontend on http://localhost:9080
+yarn dev:backend # Backend on http://localhost:3000
+
+# Testing
+yarn test:core && yarn test:web && yarn test:backend
+yarn test:e2e
+
+# Type checking and linting
+yarn type-check
+yarn prettier . --write
+```
+
 ## Contributing
 
 We love contributions! Whether it's bug fixes, new features, or documentation improvements, your help makes Compass better for everyone.
@@ -77,7 +91,7 @@ Issues: Check open issues or create a new one.
 Pull Requests: Fork the repo, make your changes, and submit a PR. Follow our [Contribution Guidelines](https://docs.compasscalendar.com/docs/contribute).
 Discussions: Join the conversation on GitHub Discussions.
 
-First-time contributors? Look for issues labeled "good first issue"!
+First-time contributors? Look for issues labeled `good first issue.`
 
 ## Community & Resources
 
