@@ -1,3 +1,4 @@
+import eslintConfigPrettier from "eslint-config-prettier";
 import pluginJest from "eslint-plugin-jest";
 import jestDom from "eslint-plugin-jest-dom";
 import jsxA11y from "eslint-plugin-jsx-a11y";
@@ -18,11 +19,15 @@ export default [
   pluginJs.configs.recommended,
   pluginReact.configs.flat.recommended,
   pluginReact.configs.flat["jsx-runtime"],
-  ...tseslint.configs.recommended,
+  ...tseslint.configs.recommendedTypeChecked,
   {
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
       globals: { ...globals.browser, ...globals.node },
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: __dirname,
+      },
     },
   },
   {
@@ -47,6 +52,10 @@ export default [
     rules: {
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
+      "@typescript-eslint/consistent-type-imports": [
+        "warn",
+        { prefer: "type-imports", fixStyle: "inline-type-imports" },
+      ],
     },
   },
   {
@@ -91,4 +100,5 @@ export default [
       ...prettierEslint.configs.recommended.rules,
     },
   },
+  eslintConfigPrettier,
 ];
