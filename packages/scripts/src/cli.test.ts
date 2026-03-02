@@ -1,7 +1,6 @@
 import CompassCLI from "@scripts/cli";
 import { runBuild } from "@scripts/commands/build";
 import { startDeleteFlow } from "@scripts/commands/delete";
-import { inviteWaitlist } from "@scripts/commands/invite";
 import { NodeEnv } from "../../core/src/constants/core.constants";
 import { MigratorType } from "./common/cli.types";
 
@@ -32,7 +31,6 @@ jest.mock("@scripts/cli.validator", () => {
 jest.mock("@scripts/commands/build.util");
 jest.mock("@scripts/commands/build");
 jest.mock("@scripts/commands/delete");
-jest.mock("@scripts/commands/invite");
 
 jest.mock("@scripts/commands/migrate", () => ({
   runMigrator: jest
@@ -73,16 +71,6 @@ describe("CompassCLI", () => {
 
     expect(mockValidateDelete).toHaveBeenCalled();
     expect(startDeleteFlow).toHaveBeenCalledWith("user@example.com", true);
-  });
-
-  it("runs invite command and calls inviteWaitlist", async () => {
-    mockGetCliOptions.mockReturnValue({});
-
-    const cli = new CompassCLI(["node", "cli", "invite"]);
-
-    await cli.run();
-
-    expect(inviteWaitlist).toHaveBeenCalled();
   });
 
   it("runs migrate command and does not throw", async () => {

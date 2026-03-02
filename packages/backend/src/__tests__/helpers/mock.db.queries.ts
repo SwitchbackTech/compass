@@ -1,10 +1,7 @@
-import { Filter } from "mongodb";
-import { Event_Core, Schema_Event } from "@core/types/event.types";
-import { Schema_Waitlist } from "@core/types/waitlist/waitlist.types";
-import { Collections } from "@backend/common/constants/collections";
+import { type Filter } from "mongodb";
+import { type Event_Core, type Schema_Event } from "@core/types/event.types";
 import mongoService from "@backend/common/services/mongo.service";
-import { Event_API } from "@backend/common/types/backend.event.types";
-import { getNormalizedEmail } from "@backend/waitlist/service/waitlist.service.util";
+import { type Event_API } from "@backend/common/types/backend.event.types";
 
 export const getCategorizedEventsInDb = async (
   filter?: Filter<Omit<Schema_Event, "_id">>,
@@ -24,21 +21,6 @@ export const getEventsInDb = async (
   return (await mongoService.event
     .find(filter)
     .toArray()) as unknown as Event_API[];
-};
-
-export const getEmailsOnWaitlist = async () => {
-  const waitlist = (await mongoService.db
-    .collection(Collections.WAITLIST)
-    .find()
-    .toArray()) as unknown as Schema_Waitlist[];
-
-  const emails = waitlist.map((w) => w.email);
-  return emails;
-};
-
-export const isEmailOnWaitlist = async (email: string) => {
-  const normalizedEmail = getNormalizedEmail(email);
-  return (await getEmailsOnWaitlist()).includes(normalizedEmail);
 };
 
 export const isEventCollectionEmpty = async (
