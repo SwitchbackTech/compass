@@ -25,9 +25,12 @@ export const SomedayEventRectangle = ({
   onMigrate,
 }: Props) => {
   const target = category === Categories_Event.SOMEDAY_WEEK ? "week" : "month";
-  const canMigrate =
-    !event.recurrence?.rule || event.recurrence?.rule.length === 0;
-  const isRecurring = !canMigrate;
+  const rule = event.recurrence?.rule;
+  const recurrenceEventId = event.recurrence?.eventId;
+  const isRecurring =
+    (Array.isArray(rule) && rule.length > 0) ||
+    typeof recurrenceEventId === "string";
+  const canMigrate = !isRecurring;
 
   return (
     <div ref={formProps.refs.setReference} {...formProps.getReferenceProps()}>
@@ -39,6 +42,7 @@ export const SomedayEventRectangle = ({
         <Text size="l">
           {isRecurring && (
             <RepeatIcon
+              data-testid="repeat-icon"
               size={14}
               style={{ marginRight: "4px", verticalAlign: "middle" }}
             />
