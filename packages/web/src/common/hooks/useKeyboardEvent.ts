@@ -12,6 +12,28 @@ interface Options {
 }
 
 /**
+ * Normalize KeyboardEvent.key values to TanStack Hotkeys format
+ */
+function normalizeKey(key: string): string {
+  const keyMap: Record<string, string> = {
+    Control: "ctrl",
+    Meta: "meta",
+    Alt: "alt",
+    Shift: "shift",
+    Escape: "esc",
+    ArrowUp: "arrowup",
+    ArrowDown: "arrowdown",
+    ArrowLeft: "arrowleft",
+    ArrowRight: "arrowright",
+    Delete: "delete",
+    Backspace: "backspace",
+    Enter: "enter",
+  };
+
+  return keyMap[key] ?? key.toLowerCase();
+}
+
+/**
  * useKeyboardEvent
  *
  * hook to listen to specific global DOM keyboard events key combination
@@ -27,7 +49,8 @@ export function useKeyboardEvent({
   eventType = "keyup",
 }: Options) {
   // Convert combination array to TanStack hotkey format
-  const hotkeyString = combination.join("+").toLowerCase();
+  // Normalize keys like "Control" -> "ctrl", "ArrowRight" -> "arrowright"
+  const hotkeyString = combination.map(normalizeKey).join("+");
 
   useHotkeys(
     hotkeyString,

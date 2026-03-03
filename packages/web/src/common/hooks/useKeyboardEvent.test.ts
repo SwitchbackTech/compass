@@ -77,7 +77,9 @@ describe("useKeyboardEvent", () => {
       }),
     );
 
-    const expectedKey = `${getModifierKey().toLowerCase()}+a`.toLowerCase();
+    // getModifierKey() returns "Control" or "Meta", which normalizes to "ctrl" or "meta"
+    const modifierKey = getModifierKey();
+    const expectedKey = modifierKey === "Meta" ? "meta+a" : "ctrl+a";
 
     expect(mockUseHotkeys).toHaveBeenCalledWith(
       expectedKey,
