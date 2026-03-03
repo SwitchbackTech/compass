@@ -73,10 +73,12 @@ describe("browser.cleanup.util", () => {
     });
 
     it("should handle errors gracefully", async () => {
+      const spy = jest.spyOn(console, "error").mockImplementation();
       const mockSignOut = session.signOut as jest.Mock;
       mockSignOut.mockRejectedValueOnce(new Error("Sign out failed"));
 
       await expect(clearAllBrowserStorage()).rejects.toThrow("Sign out failed");
+      spy.mockRestore();
     });
 
     it("should not fail when no Compass storage exists", async () => {
@@ -164,6 +166,7 @@ describe("browser.cleanup.util", () => {
       });
 
       it("should handle IndexedDB deletion error", async () => {
+        const spy = jest.spyOn(console, "error").mockImplementation();
         const mockDeleteRequest = {
           onsuccess: null as (() => void) | null,
           onerror: null as (() => void) | null,
@@ -187,6 +190,7 @@ describe("browser.cleanup.util", () => {
         await expect(clearAllBrowserStorage()).rejects.toThrow(
           "Failed to delete IndexedDB",
         );
+        spy.mockRestore();
       });
 
       it("should handle IndexedDB deletion blocked gracefully", async () => {

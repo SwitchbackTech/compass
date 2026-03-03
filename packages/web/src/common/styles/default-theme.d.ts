@@ -1,5 +1,5 @@
 import "styled-components";
-import { type textDark, type textLight } from "./colors";
+import { type textLight } from "./colors";
 
 declare module "styled-components" {
   export interface DefaultTheme {
