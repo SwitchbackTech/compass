@@ -1,5 +1,9 @@
 import { toast } from "react-toastify";
 import { Origin } from "@core/constants/core.constants";
+import {
+  clearGoogleRevokedState,
+  isGoogleRevoked,
+} from "@web/auth/state/auth.state.util";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
@@ -12,7 +16,7 @@ import {
   authenticate,
   handleGoogleRevoked,
   syncLocalEvents,
-} from "./google-auth.util";
+} from "./google.auth.util";
 
 jest.mock("@web/common/apis/auth.api");
 jest.mock("@web/common/utils/sync/local-event-sync.util");
@@ -35,6 +39,12 @@ const mockSyncLocalEventsToCloud =
 describe("google-auth.util", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Clear in-memory revoked state between tests
+    clearGoogleRevokedState();
+  });
+
+  afterEach(() => {
+    clearGoogleRevokedState();
   });
 
   describe("authenticate", () => {
@@ -146,6 +156,14 @@ describe("google-auth.util", () => {
       expect(store.dispatch).toHaveBeenCalledWith(
         triggerFetch({ reason: Sync_AsyncStateContextReason.GOOGLE_REVOKED }),
       );
+    });
+
+    it("marks Google as revoked in session state", () => {
+      expect(isGoogleRevoked()).toBe(false);
+
+      handleGoogleRevoked();
+
+      expect(isGoogleRevoked()).toBe(true);
     });
 
     it("does not show toast when one is already active (idempotent)", () => {

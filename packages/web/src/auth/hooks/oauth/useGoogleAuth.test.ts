@@ -1,11 +1,11 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
-import { useSession } from "@web/auth/hooks/session/useSession";
 import {
   authenticate,
   syncLocalEvents,
-} from "@web/common/utils/auth/google-auth.util";
-import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
+} from "@web/auth/google/google.auth.util";
+import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
+import { useSession } from "@web/auth/hooks/session/useSession";
+import { markUserAsAuthenticated } from "@web/auth/state/auth.state.util";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
 import { type SignInUpInput } from "@web/components/oauth/ouath.types";
 

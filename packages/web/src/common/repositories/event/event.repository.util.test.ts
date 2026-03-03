@@ -1,4 +1,4 @@
-import * as authStateUtil from "@web/common/utils/storage/auth-state.util";
+import * as authStateUtil from "@web/auth/state/auth.state.util";
 import { getEventRepository } from "./event.repository.util";
 import { LocalEventRepository } from "./local.event.repository";
 import { RemoteEventRepository } from "./remote.event.repository";
@@ -9,10 +9,11 @@ jest.mock("@web/common/utils/storage/auth-state.util");
 describe("getEventRepository", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Default: user has not authenticated
+    // Default: user has not authenticated, Google not revoked
     jest
       .spyOn(authStateUtil, "hasUserEverAuthenticated")
       .mockReturnValue(false);
+    jest.spyOn(authStateUtil, "isGoogleRevoked").mockReturnValue(false);
   });
 
   describe("without authentication flag", () => {
@@ -58,6 +59,40 @@ describe("getEventRepository", () => {
 
       // Should still use remote repository to prevent event disappearance
       expect(repository).toBeInstanceOf(RemoteEventRepository);
+    });
+  });
+
+  describe("with Google revoked", () => {
+    it("should return LocalEventRepository when Google is revoked (even if authenticated)", () => {
+      jest
+        .spyOn(authStateUtil, "hasUserEverAuthenticated")
+        .mockReturnValue(true);
+      jest.spyOn(authStateUtil, "isGoogleRevoked").mockReturnValue(true);
+
+      const repository = getEventRepository(true);
+
+      expect(repository).toBeInstanceOf(LocalEventRepository);
+    });
+
+    it("should return LocalEventRepository when Google is revoked and session exists", () => {
+      jest.spyOn(authStateUtil, "isGoogleRevoked").mockReturnValue(true);
+
+      const repository = getEventRepository(true);
+
+      expect(repository).toBeInstanceOf(LocalEventRepository);
+    });
+
+    it("should prioritize revoked state over authentication flag", () => {
+      // User authenticated in the past, but Google was revoked
+      jest
+        .spyOn(authStateUtil, "hasUserEverAuthenticated")
+        .mockReturnValue(true);
+      jest.spyOn(authStateUtil, "isGoogleRevoked").mockReturnValue(true);
+
+      const repository = getEventRepository(true);
+
+      // Should use local repository to prevent API errors
+      expect(repository).toBeInstanceOf(LocalEventRepository);
     });
   });
 });

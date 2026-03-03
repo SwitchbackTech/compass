@@ -8,8 +8,8 @@ import {
 } from "react";
 import { Status } from "@core/errors/status.codes";
 import { type UserProfile } from "@core/types/user.types";
+import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
 import { UserApi } from "@web/common/apis/user.api";
-import { hasUserEverAuthenticated } from "@web/common/utils/storage/auth-state.util";
 import { showSessionExpiredToast } from "@web/common/utils/toast/error-toast.util";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { UserContext } from "./UserContext";
