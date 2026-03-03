@@ -5,10 +5,11 @@ import {
   FlexDirections,
   JustifyContent,
 } from "@web/components/Flex/styled";
+import { RepeatIcon } from "@web/components/Icons/Repeat";
 import { Text } from "@web/components/Text";
 import { type Props_DraftForm } from "@web/views/Calendar/components/Draft/context/DraftContext";
 import { type Actions_Sidebar } from "@web/views/Calendar/components/Draft/sidebar/hooks/useSidebarActions";
-import { StyledMigrateArrow, StyledRecurrenceText } from "./styled";
+import { StyledMigrateArrow } from "./styled";
 
 interface Props {
   category: Categories_Event;
@@ -26,6 +27,7 @@ export const SomedayEventRectangle = ({
   const target = category === Categories_Event.SOMEDAY_WEEK ? "week" : "month";
   const canMigrate =
     !event.recurrence?.rule || event.recurrence?.rule.length === 0;
+  const isRecurring = !canMigrate;
 
   return (
     <div ref={formProps.refs.setReference} {...formProps.getReferenceProps()}>
@@ -34,9 +36,17 @@ export const SomedayEventRectangle = ({
         direction={FlexDirections.ROW}
         justifyContent={JustifyContent.SPACE_BETWEEN}
       >
-        <Text size="l">{event.title}</Text>
+        <Text size="l">
+          {isRecurring && (
+            <RepeatIcon
+              size={14}
+              style={{ marginRight: "4px", verticalAlign: "middle" }}
+            />
+          )}
+          {event.title}
+        </Text>
 
-        {canMigrate ? (
+        {canMigrate && (
           <Flex>
             <StyledMigrateArrow
               onClick={(e) => {
@@ -58,18 +68,6 @@ export const SomedayEventRectangle = ({
             >
               {">"}
             </StyledMigrateArrow>
-          </Flex>
-        ) : (
-          <Flex>
-            <StyledRecurrenceText
-              onClick={(e) => {
-                e.stopPropagation();
-                alert("Can't migrate recurring events");
-              }}
-              title="Can't migrate recurring events"
-            >
-              ☝️
-            </StyledRecurrenceText>
           </Flex>
         )}
       </Flex>

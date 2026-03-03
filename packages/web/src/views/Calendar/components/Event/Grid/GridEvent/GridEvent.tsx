@@ -23,6 +23,7 @@ import {
   FlexDirections,
   FlexWrap,
 } from "@web/components/Flex/styled";
+import { RepeatIcon } from "@web/components/Icons/Repeat";
 import { Text } from "@web/components/Text";
 import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
@@ -140,6 +141,12 @@ const _GridEvent = (
         flexWrap={FlexWrap.WRAP}
       >
         <StyledEventTitle eventHeight={position.height} role="textbox">
+          {isRecurring && (
+            <RepeatIcon
+              size={12}
+              style={{ marginRight: "4px", verticalAlign: "middle" }}
+            />
+          )}
           {event.title}
         </StyledEventTitle>
         {!event.isAllDay && (
