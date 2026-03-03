@@ -9,6 +9,7 @@ import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getEventPosition } from "@web/common/utils/position/position.util";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
+import { RepeatIcon } from "@web/components/Icons/Repeat";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
 import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
@@ -96,6 +97,12 @@ const AllDayEvent = ({
         direction={FlexDirections.COLUMN}
       >
         <Text size="m" role="textbox">
+          {isRecurring && (
+            <RepeatIcon
+              size={12}
+              style={{ marginRight: "4px", verticalAlign: "middle" }}
+            />
+          )}
           {event.title}
           <SpaceCharacter />
         </Text>
