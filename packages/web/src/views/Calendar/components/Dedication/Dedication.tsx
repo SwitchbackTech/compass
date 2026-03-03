@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useHotkeys } from "react-hotkeys-hook";
+import { useHotkeys } from "@tanstack/react-hotkeys";
 import { XIcon } from "@phosphor-icons/react";
 import derekImg from "@web/assets/png/derek.png";
 
