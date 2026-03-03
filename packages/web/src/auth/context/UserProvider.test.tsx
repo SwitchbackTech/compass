@@ -19,8 +19,8 @@ const mockUsePostHog = usePostHog as jest.MockedFunction<typeof usePostHog>;
 const mockToastError = toast.error as jest.MockedFunction<typeof toast.error>;
 
 // Mock auth state util
-jest.mock("@web/common/utils/storage/auth-state.util", () => ({
-  ...jest.requireActual("@web/common/utils/storage/auth-state.util"),
+jest.mock("@web/auth/state/auth.state.util", () => ({
+  ...jest.requireActual("@web/auth/state/auth.state.util"),
   hasUserEverAuthenticated: jest.fn(),
 }));
 const mockHasUserEverAuthenticated =

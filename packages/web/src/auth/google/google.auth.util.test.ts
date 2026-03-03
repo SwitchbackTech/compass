@@ -3,7 +3,7 @@ import { Origin } from "@core/constants/core.constants";
 import {
   clearGoogleRevokedState,
   isGoogleRevoked,
-} from "@web/auth/state/auth.state.util";
+} from "@web/auth/google/google.auth.state";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";

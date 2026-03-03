@@ -57,7 +57,7 @@ jest.mock("react-toastify", () => ({
     isActive: jest.fn(() => false),
   },
 }));
-jest.mock("@web/common/utils/auth/google-auth.util", () => ({
+jest.mock("@web/auth/google/google.auth.util", () => ({
   handleGoogleRevoked: jest.fn(),
 }));
 
@@ -107,7 +107,7 @@ describe("useGcalSync", () => {
     it("calls handleGoogleRevoked when socket event fires", () => {
       const {
         handleGoogleRevoked,
-      } = require("@web/common/utils/auth/google-auth.util");
+      } = require("@web/auth/google/google.auth.util");
       let onGoogleRevoked: (() => void) | undefined;
       (socket.on as jest.Mock).mockImplementation((event, handler) => {
         if (event === GOOGLE_REVOKED) {

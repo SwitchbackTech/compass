@@ -10,10 +10,10 @@ import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
 import { type SignInUpInput } from "@web/components/oauth/ouath.types";
 
 // Mock dependencies
-jest.mock("@web/common/utils/auth/google-auth.util");
+jest.mock("@web/auth/google/google.auth.util");
 jest.mock("@web/auth/hooks/session/useSession");
 jest.mock("@web/components/oauth/google/useGoogleLogin");
-jest.mock("@web/common/utils/storage/auth-state.util");
+jest.mock("@web/auth/state/auth.state.util");
 jest.mock("@web/store/store.hooks", () => ({
   useAppDispatch: jest.fn(),
 }));

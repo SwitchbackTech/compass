@@ -7,7 +7,7 @@ import {
 } from "../event/event.util";
 import { adjustOverlappingEvents, getOverlappingStyles } from "./overlap";
 
-jest.mock("@web/auth/auth.util", () => ({
+jest.mock("@web/auth/session/session.util", () => ({
   getUserId: jest.fn(),
 }));
 

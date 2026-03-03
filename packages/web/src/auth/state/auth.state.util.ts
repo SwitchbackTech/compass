@@ -83,3 +83,17 @@ export function hasUserEverAuthenticated(): boolean {
     return false;
   }
 }
+
+/**
+ * Clears the authentication state.
+ * WARNING: Only use this when user explicitly logs out and wants to clear all data.
+ */
+export function clearAuthenticationState(): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    localStorage.removeItem(STORAGE_KEYS.AUTH);
+  } catch {
+    // Silently fail if localStorage is unavailable
+  }
+}

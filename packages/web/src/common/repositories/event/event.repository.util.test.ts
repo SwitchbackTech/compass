@@ -1,10 +1,12 @@
+import * as googleAuthState from "@web/auth/google/google.auth.state";
 import * as authStateUtil from "@web/auth/state/auth.state.util";
 import { getEventRepository } from "./event.repository.util";
 import { LocalEventRepository } from "./local.event.repository";
 import { RemoteEventRepository } from "./remote.event.repository";
 
 jest.mock("@web/common/classes/Session");
-jest.mock("@web/common/utils/storage/auth-state.util");
+jest.mock("@web/auth/google/google.auth.state");
+jest.mock("@web/auth/state/auth.state.util");
 
 describe("getEventRepository", () => {
   beforeEach(() => {
@@ -13,7 +15,7 @@ describe("getEventRepository", () => {
     jest
       .spyOn(authStateUtil, "hasUserEverAuthenticated")
       .mockReturnValue(false);
-    jest.spyOn(authStateUtil, "isGoogleRevoked").mockReturnValue(false);
+    jest.spyOn(googleAuthState, "isGoogleRevoked").mockReturnValue(false);
   });
 
   describe("without authentication flag", () => {
@@ -67,7 +69,7 @@ describe("getEventRepository", () => {
       jest
         .spyOn(authStateUtil, "hasUserEverAuthenticated")
         .mockReturnValue(true);
-      jest.spyOn(authStateUtil, "isGoogleRevoked").mockReturnValue(true);
+      jest.spyOn(googleAuthState, "isGoogleRevoked").mockReturnValue(true);
 
       const repository = getEventRepository(true);
 
@@ -75,7 +77,7 @@ describe("getEventRepository", () => {
     });
 
     it("should return LocalEventRepository when Google is revoked and session exists", () => {
-      jest.spyOn(authStateUtil, "isGoogleRevoked").mockReturnValue(true);
+      jest.spyOn(googleAuthState, "isGoogleRevoked").mockReturnValue(true);
 
       const repository = getEventRepository(true);
 
@@ -87,7 +89,7 @@ describe("getEventRepository", () => {
       jest
         .spyOn(authStateUtil, "hasUserEverAuthenticated")
         .mockReturnValue(true);
-      jest.spyOn(authStateUtil, "isGoogleRevoked").mockReturnValue(true);
+      jest.spyOn(googleAuthState, "isGoogleRevoked").mockReturnValue(true);
 
       const repository = getEventRepository(true);
 

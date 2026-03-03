@@ -6,6 +6,7 @@ import {
   markGoogleAsRevoked,
 } from "../google/google.auth.state";
 import {
+  clearAuthenticationState,
   getAuthState,
   hasUserEverAuthenticated,
   markUserAsAuthenticated,
