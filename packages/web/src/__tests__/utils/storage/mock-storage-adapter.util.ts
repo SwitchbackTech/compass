@@ -1,4 +1,4 @@
-import { StorageAdapter } from "@web/common/storage/adapter/storage.adapter";
+import { type StorageAdapter } from "@web/common/storage/adapter/storage.adapter";
 
 /**
  * Creates a mock StorageAdapter for tests.

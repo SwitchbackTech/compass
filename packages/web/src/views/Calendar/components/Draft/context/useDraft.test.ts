@@ -1,6 +1,6 @@
 import { act } from "react";
 import { renderHook } from "@testing-library/react";
-import { Schema_Event, WithCompassId } from "@core/types/event.types";
+import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import { resetDraft, setDraft } from "@web/store/events";
 import { useDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
 

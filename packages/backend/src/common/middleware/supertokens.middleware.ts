@@ -1,5 +1,5 @@
 import cors from "cors";
-import { TokenPayload } from "google-auth-library";
+import { type TokenPayload } from "google-auth-library";
 import { ObjectId } from "mongodb";
 import supertokens, { default as SuperTokens, User } from "supertokens-node";
 import Dashboard from "supertokens-node/recipe/dashboard";

@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 
 const WAITLIST_URL = "https://tylerdane.kit.com/compass-mobile";
 

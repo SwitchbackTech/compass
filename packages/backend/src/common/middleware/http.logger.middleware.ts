@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import { IncomingMessage, ServerResponse } from "http";
+import { type IncomingMessage, type ServerResponse } from "http";
 import morgan from "morgan";
 
 const get = (

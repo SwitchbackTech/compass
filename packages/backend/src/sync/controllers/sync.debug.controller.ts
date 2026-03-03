@@ -1,8 +1,11 @@
-import { Request, Response } from "express";
-import { SessionRequest } from "supertokens-node/framework/express";
-import { BaseError } from "@core/errors/errors.base";
+import { type Request, type Response } from "express";
+import { type SessionRequest } from "supertokens-node/framework/express";
+import { type BaseError } from "@core/errors/errors.base";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
-import { Res_Promise, SReqBody } from "@backend/common/types/express.types";
+import {
+  type Res_Promise,
+  type SReqBody,
+} from "@backend/common/types/express.types";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import syncService from "../services/sync.service";
 import { getSync } from "../util/sync.queries";

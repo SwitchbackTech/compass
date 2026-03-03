@@ -1,9 +1,9 @@
-import { PropsWithChildren, useMemo } from "react";
+import { type PropsWithChildren, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { DragOverlay, useDndContext } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { Categories_Event } from "@core/types/event.types";
-import { DraggableDNDData } from "@web/components/DND/Draggable";
+import { type DraggableDNDData } from "@web/components/DND/Draggable";
 import { AllDayAgendaEvent } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/AllDayAgendaEvent";
 import { TimedAgendaEvent } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/TimedAgendaEvent";
 
@@ -32,7 +32,7 @@ export function DNDOverlay({ children }: PropsWithChildren) {
 
     switch (type) {
       case Categories_Event.TIMED:
-        return <TimedAgendaEvent event={event!} dndProps={dndProps} />;
+        return <TimedAgendaEvent event={event} dndProps={dndProps} />;
       case Categories_Event.ALLDAY:
         return <AllDayAgendaEvent event={event} dndProps={dndProps} />;
       default:

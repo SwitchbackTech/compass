@@ -54,7 +54,7 @@ describe("Tasks Keyboard Drag and Drop", () => {
     // Verify drag handles are rendered (the DotsSixVerticalIcon button)
     // The drag handle is an IconButton containing the DotsSixVerticalIcon
     const dragHandles = screen.getAllByRole("button", { name: /Reorder/i });
-    expect(dragHandles.length).toBe(2);
+    expect(dragHandles).toHaveLength(2);
   }, 10000);
 
   it("should not render drag handles when there is only one task", async () => {
@@ -77,7 +77,7 @@ describe("Tasks Keyboard Drag and Drop", () => {
 
     // Find drag handles
     const dragHandles = screen.getAllByRole("button", { name: /Reorder/i });
-    expect(dragHandles.length).toBe(2);
+    expect(dragHandles).toHaveLength(2);
 
     // Verify the first drag handle can receive focus
     const firstDragHandle = dragHandles[0];

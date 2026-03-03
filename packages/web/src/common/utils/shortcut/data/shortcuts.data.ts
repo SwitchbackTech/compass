@@ -1,6 +1,6 @@
 import dayjs from "@core/util/date/dayjs";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
-import { Shortcut } from "@web/common/types/global.shortcut.types";
+import { type Shortcut } from "@web/common/types/global.shortcut.types";
 import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 
 interface ShortcutsConfig {

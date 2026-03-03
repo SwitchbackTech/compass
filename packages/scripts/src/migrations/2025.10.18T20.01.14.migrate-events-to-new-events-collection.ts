@@ -1,13 +1,13 @@
 import { ObjectId } from "bson";
 import type { MigrationParams, RunnableMigration } from "umzug";
 import { z } from "zod/v4";
-import { MigrationContext } from "@scripts/common/cli.types";
+import { type MigrationContext } from "@scripts/common/cli.types";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { CalendarProvider } from "@core/types/event.types";
 import {
   EventSchema,
   GoogleEventMetadataSchema,
-  Schema_Event,
+  type Schema_Event,
 } from "@core/types/event_new.types";
 import { zObjectId } from "@core/types/type.utils";
 import { parseCompassEventDate } from "@core/util/event/event.util";

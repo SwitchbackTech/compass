@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Schema_Event } from "@core/types/event.types";
+import { type Schema_Event } from "@core/types/event.types";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { usePointerPosition } from "@web/common/hooks/usePointerPosition";
 import { usePointerState } from "@web/common/hooks/usePointerState";
@@ -26,10 +26,8 @@ export const useSidebarState = () => {
   const { togglePointerMovementTracking } = usePointerPosition();
   const { isOverAllDayRow, isOverGrid, isOverMainGrid } = usePointerState();
 
-  const somedayWeekIds = somedayEvents.columns[COLUMN_WEEK]
-    .eventIds as string[];
-  const somedayMonthIds = somedayEvents.columns[COLUMN_MONTH]
-    .eventIds as string[];
+  const somedayWeekIds = somedayEvents.columns[COLUMN_WEEK].eventIds;
+  const somedayMonthIds = somedayEvents.columns[COLUMN_MONTH].eventIds;
   const somedayIds = [...somedayWeekIds, ...somedayMonthIds];
 
   const isDraftingNew =

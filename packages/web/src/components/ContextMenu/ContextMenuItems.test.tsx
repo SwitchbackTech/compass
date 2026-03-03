@@ -3,10 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import {
-  InitialReduxState,
+  type InitialReduxState,
   createInitialState,
 } from "@web/__tests__/utils/state/store.test.util";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { ContextMenuItems } from "./ContextMenuItems";
 
@@ -61,7 +61,7 @@ const createStateWithPendingEvents = (
   return {
     ...baseState,
     events: {
-      ...baseState.events!,
+      ...baseState.events,
       pendingEvents: {
         eventIds: pendingEventIds,
       },

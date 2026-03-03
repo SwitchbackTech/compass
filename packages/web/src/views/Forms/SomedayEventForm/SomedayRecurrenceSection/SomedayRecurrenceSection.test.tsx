@@ -1,8 +1,8 @@
-import { SetStateAction, useCallback, useState } from "react";
+import { type SetStateAction, useCallback, useState } from "react";
 import "@testing-library/jest-dom";
 import { fireEvent, screen } from "@testing-library/react";
 import { Priorities } from "@core/constants/core.constants";
-import { Schema_Event } from "@core/types/event.types";
+import { type Schema_Event } from "@core/types/event.types";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { SomedayRecurrenceSection } from "./SomedayRecurrenceSection";
 
@@ -70,17 +70,13 @@ describe("SomedayRecurrenceSection", () => {
     focusOption?: boolean;
   }) => {
     const { focusOption = true } = options ?? {};
-    let control = document.querySelector(
-      ".freq-select__control",
-    ) as HTMLElement | null;
+    let control = document.querySelector(".freq-select__control");
 
     if (!control) {
       const trigger = screen.getByRole("button", { name: /edit recurrence/i });
       fireEvent.click(trigger);
       await screen.findByRole("combobox");
-      control = document.querySelector(
-        ".freq-select__control",
-      ) as HTMLElement | null;
+      control = document.querySelector(".freq-select__control");
     }
 
     if (!control) {
@@ -280,7 +276,7 @@ describe("SomedayRecurrenceSection", () => {
     const input = control.querySelector("input") as HTMLElement | null;
     fireEvent.keyDown(input ?? control, { key: "Escape", code: "Escape" });
 
-    expect(mockSetEvent.mock.calls.length).toBe(initialCalls);
+    expect(mockSetEvent.mock.calls).toHaveLength(initialCalls);
     expect(
       screen.getByRole("button", { name: /edit recurrence/i }),
     ).toHaveTextContent(/^Repeat$/i);

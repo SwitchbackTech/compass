@@ -1,5 +1,11 @@
-import { ChangeEvent, FormEvent, useCallback, useMemo, useState } from "react";
-import { z } from "zod";
+import {
+  type ChangeEvent,
+  type FormEvent,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
+import { type z } from "zod";
 
 /**
  * Extracts field errors from a ZodError as Record<field, firstMessage>

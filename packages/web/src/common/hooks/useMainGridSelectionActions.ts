@@ -5,7 +5,7 @@ import {
   CursorItem,
   openFloatingAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
-import { DomMovement } from "@web/common/utils/dom/event-emitter.util";
+import { type DomMovement } from "@web/common/utils/dom/event-emitter.util";
 import { reorderGrid } from "@web/common/utils/dom/grid-organization.util";
 import { getCalendarEventElementFromGrid } from "@web/common/utils/event/event.util";
 import { setDraft, updateDraft } from "@web/store/events";

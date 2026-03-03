@@ -1,4 +1,4 @@
-import { Schema_Event } from "@core/types/event.types";
+import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 
 export const freshenEventStartEndDate = (event: Schema_Event): Schema_Event => {

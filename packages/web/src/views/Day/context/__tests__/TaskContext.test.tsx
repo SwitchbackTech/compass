@@ -1,5 +1,5 @@
 import { ObjectId } from "bson";
-import { PropsWithChildren, act } from "react";
+import { type PropsWithChildren, act } from "react";
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
 import { renderHook, waitFor } from "@web/__tests__/__mocks__/mock.render";
@@ -9,7 +9,7 @@ import {
   ensureStorageReady,
   getStorageAdapter,
 } from "@web/common/storage/adapter/adapter";
-import { Task } from "@web/common/types/task.types";
+import { type Task } from "@web/common/types/task.types";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
 import { TaskProviderWrapper } from "@web/views/Day/util/day.test-util";
 

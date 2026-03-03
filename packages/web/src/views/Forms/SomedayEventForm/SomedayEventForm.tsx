@@ -1,4 +1,6 @@
-import React, { KeyboardEvent, MouseEvent, useCallback, useRef } from "react";
+import { type KeyboardEvent, type MouseEvent } from "react";
+import type React from "react";
+import { useCallback, useRef } from "react";
 import { Key } from "ts-key-enum";
 import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
@@ -14,7 +16,10 @@ import {
   StyledIconRow,
   StyledTitle,
 } from "@web/views/Forms/EventForm/styled";
-import { FormProps, SetEventFormField } from "@web/views/Forms/EventForm/types";
+import {
+  type FormProps,
+  type SetEventFormField,
+} from "@web/views/Forms/EventForm/types";
 import { SomedayEventActionMenu } from "@web/views/Forms/SomedayEventForm/SomedayEventActionMenu";
 import { SomedayRecurrenceSection } from "@web/views/Forms/SomedayEventForm/SomedayRecurrenceSection/SomedayRecurrenceSection";
 import { useSomedayFormShortcuts } from "@web/views/Forms/SomedayEventForm/useSomedayFormShortcuts";

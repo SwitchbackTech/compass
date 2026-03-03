@@ -1,4 +1,4 @@
-import { RootState } from "@web/store";
+import { type RootState } from "@web/store";
 
 export const selectAuthState = ({ auth }: RootState) => auth;
 

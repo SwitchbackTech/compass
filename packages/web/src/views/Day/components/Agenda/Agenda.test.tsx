@@ -1,7 +1,7 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
-import { Schema_Event } from "@core/types/event.types";
+import { type Schema_Event } from "@core/types/event.types";
 import {
   renderAgenda,
   selectIsDayEventsProcessingSpy,

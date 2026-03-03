@@ -1,4 +1,4 @@
-import { Schema_Event } from "@core/types/event.types";
+import { type Schema_Event } from "@core/types/event.types";
 
 export enum Category_DragItem {
   EVENT_SOMEDAY = "event_someday",

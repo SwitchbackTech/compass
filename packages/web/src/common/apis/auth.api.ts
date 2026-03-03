@@ -1,6 +1,6 @@
-import { Result_Auth_Compass } from "@core/types/auth.types";
+import { type Result_Auth_Compass } from "@core/types/auth.types";
 import { CompassApi } from "@web/common/apis/compass.api";
-import { SignInUpInput } from "@web/components/oauth/ouath.types";
+import { type SignInUpInput } from "@web/components/oauth/ouath.types";
 
 const AuthApi = {
   async loginOrSignup(data: SignInUpInput): Promise<Result_Auth_Compass> {

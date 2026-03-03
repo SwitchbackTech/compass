@@ -1,6 +1,6 @@
-import { FC, useState } from "react";
+import { type FC, useState } from "react";
 import {
-  ForgotPasswordFormData,
+  type ForgotPasswordFormData,
   ForgotPasswordSchema,
 } from "@web/auth/schemas/auth.schemas";
 import { AuthButton } from "../components/AuthButton";

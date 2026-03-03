@@ -8,7 +8,7 @@ import {
   setEntities,
   updateEntities,
 } from "@ngneat/elf-entities";
-import { Schema_Event, WithCompassId } from "@core/types/event.types";
+import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
 import { useFloatingAtCursor } from "@web/common/hooks/useFloatingAtCursor";

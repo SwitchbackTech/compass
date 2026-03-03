@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom";
-import { Schema_Event } from "@core/types/event.types";
+import { type Schema_Event } from "@core/types/event.types";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import * as eventSelectors from "@web/ducks/events/selectors/event.selectors";
 import * as reduxStore from "@web/store";

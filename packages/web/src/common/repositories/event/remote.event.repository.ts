@@ -1,12 +1,12 @@
 import {
-  Params_Events,
-  Payload_Order,
-  RecurringEventUpdateScope,
-  Schema_Event,
+  type Params_Events,
+  type Payload_Order,
+  type RecurringEventUpdateScope,
+  type Schema_Event,
 } from "@core/types/event.types";
 import { EventApi } from "@web/ducks/events/event.api";
-import { Response_GetEventsSuccess } from "@web/ducks/events/event.types";
-import { EventRepository } from "./event.repository.interface";
+import { type Response_GetEventsSuccess } from "@web/ducks/events/event.types";
+import { type EventRepository } from "./event.repository.interface";
 
 export class RemoteEventRepository implements EventRepository {
   async create(event: Schema_Event | Schema_Event[]): Promise<void> {

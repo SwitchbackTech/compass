@@ -1,12 +1,9 @@
 import classNames from "classnames";
-import React, {
-  DetailedHTMLProps,
-  HTMLAttributes,
-  createElement,
-  forwardRef,
-} from "react";
+import { type DetailedHTMLProps, type HTMLAttributes } from "react";
+import type React from "react";
+import { createElement, forwardRef } from "react";
 import {
-  FloatingContext,
+  type FloatingContext,
   useClick,
   useDismiss,
   useInteractions,

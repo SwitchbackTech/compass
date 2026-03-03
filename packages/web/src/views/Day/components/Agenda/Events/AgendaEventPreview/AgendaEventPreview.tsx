@@ -2,8 +2,8 @@ import { useMemo } from "react";
 import { useDndContext } from "@dnd-kit/core";
 import {
   FloatingPortal,
-  UseInteractionsReturn,
-  useFloating,
+  type UseInteractionsReturn,
+  type useFloating,
 } from "@floating-ui/react";
 import { useObservable } from "@ngneat/use-observable";
 import { Priorities } from "@core/constants/core.constants";

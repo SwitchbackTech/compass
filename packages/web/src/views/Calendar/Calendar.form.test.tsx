@@ -1,4 +1,4 @@
-import { SyntheticEvent, act } from "react";
+import { type SyntheticEvent, act } from "react";
 import { createMemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
 import { screen, waitFor, within } from "@testing-library/react";

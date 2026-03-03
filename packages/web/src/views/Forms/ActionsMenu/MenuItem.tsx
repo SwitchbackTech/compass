@@ -1,4 +1,6 @@
-import React, { ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode } from "react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import { LegacyShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import {
   Tooltip,

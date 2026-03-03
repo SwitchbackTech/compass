@@ -4,7 +4,7 @@ import {
   GoogleCalendarMetadataSchema,
 } from "@core/types/calendar.types";
 import { CalendarProvider } from "@core/types/event.types";
-import { gSchema$CalendarListEntry } from "@core/types/gcal";
+import { type gSchema$CalendarListEntry } from "@core/types/gcal";
 import { generateCalendarColorScheme } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
 

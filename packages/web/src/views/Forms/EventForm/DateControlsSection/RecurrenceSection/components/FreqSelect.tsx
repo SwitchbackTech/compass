@@ -5,7 +5,7 @@ import { theme } from "@web/common/styles/theme";
 import {
   FREQUENCY_MAP,
   FREQUENCY_OPTIONS,
-  FrequencyValues,
+  type FrequencyValues,
 } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";
 
 export interface FreqSelectProps {

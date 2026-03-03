@@ -1,6 +1,6 @@
 import React from "react";
-import { FloatingContext } from "@floating-ui/react";
-import { Task } from "../../../../common/types/task.types";
+import { type FloatingContext } from "@floating-ui/react";
+import { type Task } from "../../../../common/types/task.types";
 import { BaseContextMenu } from "./BaseContextMenu";
 import { TaskContextMenuItems } from "./TaskContextMenuItems";
 

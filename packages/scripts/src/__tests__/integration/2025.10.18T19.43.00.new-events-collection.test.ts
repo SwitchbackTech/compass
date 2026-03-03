@@ -4,7 +4,7 @@ import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
 import Migration from "@scripts/migrations/2025.10.18T19.43.00.new-events-collection";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { CalendarProvider } from "@core/types/event.types";
-import { EventSchema, Schema_Event } from "@core/types/event_new.types";
+import { EventSchema, type Schema_Event } from "@core/types/event_new.types";
 import dayjs from "@core/util/date/dayjs";
 import {
   cleanupCollections,

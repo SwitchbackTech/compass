@@ -1,8 +1,8 @@
-import Dexie, { Table } from "dexie";
-import { Event_Core } from "@core/types/event.types";
+import Dexie, { type Table } from "dexie";
+import { type Event_Core } from "@core/types/event.types";
 import { isDateRangeOverlapping } from "@core/util/date/date.util";
 import {
-  Task,
+  type Task,
   normalizeTask,
   normalizeTasks,
 } from "@web/common/types/task.types";
@@ -11,7 +11,11 @@ import {
   extractDataFromLegacySchema,
   isPrimaryKeyUpgradeError,
 } from "./legacy-primary-key.migration";
-import { MigrationRecord, StorageAdapter, StoredTask } from "./storage.adapter";
+import {
+  type MigrationRecord,
+  type StorageAdapter,
+  type StoredTask,
+} from "./storage.adapter";
 
 /**
  * Dexie database schema for Compass local storage.

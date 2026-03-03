@@ -2,30 +2,30 @@ import { normalize } from "normalizr";
 import { call, put, select } from "@redux-saga/core/effects";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import {
-  Params_Events,
+  type Params_Events,
   RecurringEventUpdateScope,
-  Schema_Event,
+  type Schema_Event,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { session } from "@web/common/classes/Session";
 import { getEventRepository } from "@web/common/repositories/event/event.repository.util";
-import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
-import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
+import { type Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
+import { type Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import {
-  Schema_GridEvent,
-  Schema_OptimisticEvent,
+  type Schema_GridEvent,
+  type Schema_OptimisticEvent,
 } from "@web/common/types/web.event.types";
 import { handleError } from "@web/common/utils/event/event.util";
 import {
-  Action_ConvertEvent,
-  Action_CreateEvent,
-  Action_DeleteEvent,
-  Action_EditEvent,
-  Action_GetEvents,
-  Action_GetPaginatedEvents,
-  Entities_Event,
-  Response_GetEventsSaga,
-  Response_GetEventsSuccess,
+  type Action_ConvertEvent,
+  type Action_CreateEvent,
+  type Action_DeleteEvent,
+  type Action_EditEvent,
+  type Action_GetEvents,
+  type Action_GetPaginatedEvents,
+  type Entities_Event,
+  type Response_GetEventsSaga,
+  type Response_GetEventsSuccess,
 } from "@web/ducks/events/event.types";
 import {
   EventDateUtils,
@@ -45,7 +45,7 @@ import {
 } from "@web/ducks/events/slices/event.slice";
 import { pendingEventsSlice } from "@web/ducks/events/slices/pending.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
-import { RootState } from "@web/store";
+import { type RootState } from "@web/store";
 
 export function* convertCalendarToSomedayEvent({
   payload,
@@ -85,8 +85,8 @@ export function* convertCalendarToSomedayEvent({
       );
     }
 
-    yield put(getWeekEventsSlice.actions.insert(payload.event._id!));
-    yield put(getDayEventsSlice.actions.insert(payload.event._id!));
+    yield put(getWeekEventsSlice.actions.insert(payload.event._id));
+    yield put(getDayEventsSlice.actions.insert(payload.event._id));
     yield put(editEventSlice.actions.error());
 
     handleError(error as Error);
@@ -217,8 +217,8 @@ function* getEvents(
 
     const events = EventDateUtils.filterEventsByStartEndDate(
       res.data,
-      payload.startDate as string,
-      payload.endDate as string,
+      payload.startDate,
+      payload.endDate,
     );
 
     // Validate response data exists before normalizing

@@ -1,7 +1,7 @@
-import { DependencyList, useCallback, useEffect, useMemo } from "react";
+import { type DependencyList, useCallback, useEffect, useMemo } from "react";
 import { filter, map } from "rxjs/operators";
 import {
-  KeyCombination,
+  type KeyCombination,
   globalOnKeyPressHandler,
   globalOnKeyUpHandler,
   keyPressed$,

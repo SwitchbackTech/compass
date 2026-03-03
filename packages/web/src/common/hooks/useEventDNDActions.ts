@@ -1,5 +1,10 @@
 import { useCallback } from "react";
-import { Active, DragEndEvent, Over, useDndMonitor } from "@dnd-kit/core";
+import {
+  type Active,
+  type DragEndEvent,
+  type Over,
+  useDndMonitor,
+} from "@dnd-kit/core";
 import { Categories_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import {
@@ -12,7 +17,7 @@ import {
   setFloatingReferenceAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
 import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { reorderGrid } from "@web/common/utils/dom/grid-organization.util";
 import { getCalendarEventElementFromGrid } from "@web/common/utils/event/event.util";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";

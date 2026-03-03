@@ -1,10 +1,10 @@
 import { ObjectId } from "mongodb";
 import type { MigrationParams, RunnableMigration } from "umzug";
 import { z } from "zod/v4";
-import { MigrationContext } from "@scripts/common/cli.types";
+import { type MigrationContext } from "@scripts/common/cli.types";
 import { Resource_Sync } from "@core/types/sync.types";
 import { ExpirationDateSchema } from "@core/types/type.utils";
-import { Schema_Watch, WatchSchema } from "@core/types/watch.types";
+import { type Schema_Watch, WatchSchema } from "@core/types/watch.types";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
 import gcalService from "@backend/common/services/gcal/gcal.service";

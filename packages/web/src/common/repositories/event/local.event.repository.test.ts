@@ -1,8 +1,8 @@
 import {
-  Event_Core,
-  Params_Events,
-  Payload_Order,
-  Schema_Event,
+  type Event_Core,
+  type Params_Events,
+  type Payload_Order,
+  type Schema_Event,
 } from "@core/types/event.types";
 import { isDateRangeOverlapping } from "@core/util/date/date.util";
 import dayjs from "@core/util/date/dayjs";

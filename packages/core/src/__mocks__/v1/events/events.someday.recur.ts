@@ -1,6 +1,6 @@
 import { ObjectId } from "bson";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { Schema_Event } from "@core/types/event.types";
+import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 
 export const userId = new ObjectId().toString();

@@ -2,10 +2,10 @@ import classNames from "classnames";
 import { autoUpdate, inline, offset, useFloating } from "@floating-ui/react";
 import { Draggable } from "@hello-pangea/dnd";
 import { DotsSixVerticalIcon } from "@phosphor-icons/react";
-import { Task as ITask } from "@web/common/types/task.types";
+import { type Task as ITask } from "@web/common/types/task.types";
 import { getStyle } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEvent/styled";
 import { Task } from "@web/views/Day/components/Task/Task";
-import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
+import { type useTasks } from "@web/views/Day/hooks/tasks/useTasks";
 
 export function DraggableTask({
   task,

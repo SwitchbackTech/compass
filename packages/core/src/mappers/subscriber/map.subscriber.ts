@@ -1,5 +1,5 @@
-import { Subscriber } from "@core/types/email/email.types";
-import { Schema_User } from "@core/types/user.types";
+import { type Subscriber } from "@core/types/email/email.types";
+import { type Schema_User } from "@core/types/user.types";
 
 export const mapCompassUserToEmailSubscriber = (
   user: Schema_User,

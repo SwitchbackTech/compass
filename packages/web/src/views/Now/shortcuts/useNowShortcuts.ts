@@ -6,7 +6,7 @@ import {
   useKeyDownEvent,
   useKeyUpEvent,
 } from "@web/common/hooks/useKeyboardEvent";
-import { Task } from "@web/common/types/task.types";
+import { type Task } from "@web/common/types/task.types";
 import {
   CompassDOMEvents,
   compassEventEmitter,

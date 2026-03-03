@@ -1,7 +1,10 @@
-import { ClientSession } from "mongodb";
+import { type ClientSession } from "mongodb";
 import { Priorities } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
-import { PriorityReq, Schema_Priority } from "@core/types/priority.types";
+import {
+  type PriorityReq,
+  type Schema_Priority,
+} from "@core/types/priority.types";
 import mongoService from "@backend/common/services/mongo.service";
 
 class PriorityService {

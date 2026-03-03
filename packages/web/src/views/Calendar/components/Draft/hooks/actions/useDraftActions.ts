@@ -1,5 +1,5 @@
 import { ObjectId } from "bson";
-import { MouseEvent, useCallback } from "react";
+import { type MouseEvent, useCallback } from "react";
 import {
   Priorities,
   SOMEDAY_WEEK_LIMIT_MSG,
@@ -8,27 +8,27 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { MapEvent } from "@core/mappers/map.event";
 import {
   Categories_Event,
-  Recurrence,
+  type Recurrence,
   RecurringEventUpdateScope,
-  Schema_Event,
-  WithCompassId,
+  type Schema_Event,
+  type WithCompassId,
 } from "@core/types/event.types";
 import { StringV4Schema } from "@core/types/type.utils";
 import { devAlert } from "@core/util/app.util";
-import dayjs, { Dayjs } from "@core/util/date/dayjs";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { DirtyParser } from "@web/common/parsers/dirty.parser";
 import { EventInViewParser } from "@web/common/parsers/view.parser";
-import { PartialMouseEvent } from "@web/common/types/util.types";
+import { type PartialMouseEvent } from "@web/common/types/util.types";
 import {
-  Schema_GridEvent,
-  Schema_WebEvent,
+  type Schema_GridEvent,
+  type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import {
   addId,
   assembleDefaultEvent,
 } from "@web/common/utils/event/event.util";
 import { getX } from "@web/common/utils/grid/grid.util";
-import { Payload_EditEvent } from "@web/ducks/events/event.types";
+import { type Payload_EditEvent } from "@web/ducks/events/event.types";
 import {
   selectDraft,
   selectDraftStatus,
@@ -49,12 +49,12 @@ import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { OnSubmitParser } from "@web/views/Calendar/components/Draft/hooks/actions/submit.parser";
 import { useDraftEffects } from "@web/views/Calendar/components/Draft/hooks/effects/useDraftEffects";
 import {
-  Setters_Draft,
-  State_Draft_Local,
-  Status_Drag,
+  type Setters_Draft,
+  type State_Draft_Local,
+  type Status_Drag,
 } from "@web/views/Calendar/components/Draft/hooks/state/useDraftState";
-import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 
 export const useDraftActions = (
@@ -204,12 +204,12 @@ export const useDraftActions = (
       const event: WithCompassId<Omit<Schema_WebEvent, "_id">> = {
         ...draft,
         _id: draft!._id!,
-        user: draft!.user!,
+        user: draft!.user,
         isAllDay: false,
         isSomeday: true,
         startDate: start,
         endDate: end,
-        origin: draft!.origin!,
+        origin: draft!.origin,
         priority: draft?.priority ?? Priorities.UNASSIGNED,
         order: somedayWeekCount,
       };
@@ -539,9 +539,9 @@ export const useDraftActions = (
             ..._draft!,
             _id: _draft!._id!,
             hasFlipped: justFlipped,
-            endDate: endDate!,
-            startDate: startDate!,
-            priority: draft!.priority,
+            endDate: endDate,
+            startDate: startDate,
+            priority: draft.priority,
           };
         });
 

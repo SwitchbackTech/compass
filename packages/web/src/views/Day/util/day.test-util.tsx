@@ -1,8 +1,9 @@
-import React, { PropsWithChildren } from "react";
+import { type PropsWithChildren } from "react";
+import type React from "react";
 import { createMemoryRouter } from "react-router-dom";
-import { Store } from "redux";
+import { type Store } from "redux";
 import userEvent from "@testing-library/user-event";
-import dayjs, { Dayjs } from "@core/util/date/dayjs";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { loadSpecificDayData, loadTodayData } from "@web/routers/loaders";

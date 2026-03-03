@@ -1,4 +1,4 @@
-import { Schema_WebEvent } from "@web/common/types/web.event.types";
+import { type Schema_WebEvent } from "@web/common/types/web.event.types";
 
 /**
  * Parser for determining if an event has been modified (is dirty)

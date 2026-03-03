@@ -1,5 +1,5 @@
 import { TrashIcon } from "@phosphor-icons/react";
-import { Task } from "@web/common/types/task.types";
+import { type Task } from "@web/common/types/task.types";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
 
 interface Props {

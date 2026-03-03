@@ -1,4 +1,4 @@
-import { Priorities } from "@core/constants/core.constants";
+import { type Priorities } from "@core/constants/core.constants";
 
 export interface FutureEventsProps {
   shouldSetTopMargin?: boolean;

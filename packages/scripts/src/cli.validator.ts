@@ -1,9 +1,9 @@
-import { Command } from "commander";
+import { type Command } from "commander";
 import { ALL_PACKAGES } from "./common/cli.constants";
 import {
-  Options_Cli,
-  Options_Cli_Build,
-  Options_Cli_Delete,
+  type Options_Cli,
+  type Options_Cli_Build,
+  type Options_Cli_Delete,
   Schema_Options_Cli_Build,
   Schema_Options_Cli_Delete,
   Schema_Options_Cli_Root,

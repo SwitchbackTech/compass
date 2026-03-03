@@ -2,7 +2,7 @@ import chalk from "chalk";
 import pkg from "inquirer";
 import shell from "shelljs";
 import { ALL_PACKAGES, CLI_ENV } from "./cli.constants";
-import { Environment_Cli } from "./cli.types";
+import { type Environment_Cli } from "./cli.types";
 
 const { prompt } = pkg;
 

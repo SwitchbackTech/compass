@@ -1,6 +1,6 @@
-import { Filter } from "mongodb";
+import { type Filter } from "mongodb";
 import { mockEventSetMar22 } from "@core/__mocks__/v1/events/events.22mar";
-import { Schema_Event } from "@core/types/event.types";
+import { type Schema_Event } from "@core/types/event.types";
 import {
   cleanupTestDb,
   setupTestDb,

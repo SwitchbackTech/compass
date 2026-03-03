@@ -1,6 +1,6 @@
-import { Task, isTask } from "@web/common/types/task.types";
-import { StorageAdapter } from "../../adapter/storage.adapter";
-import { ExternalMigration } from "../migration.types";
+import { type Task, isTask } from "@web/common/types/task.types";
+import { type StorageAdapter } from "../../adapter/storage.adapter";
+import { type ExternalMigration } from "../migration.types";
 
 const TASK_KEY_PREFIX = "compass.today.tasks.";
 

@@ -1,4 +1,4 @@
-import { Credentials, TokenPayload } from "google-auth-library";
+import { type Credentials, type TokenPayload } from "google-auth-library";
 import type { User } from "supertokens-node";
 
 export interface Result_Auth_Compass {

@@ -1,19 +1,23 @@
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import { toast } from "react-toastify";
 import { Key } from "ts-key-enum";
 import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
-import { DraggableProvided, DraggableStateSnapshot } from "@hello-pangea/dnd";
+import {
+  type DraggableProvided,
+  type DraggableStateSnapshot,
+} from "@hello-pangea/dnd";
 import { Priorities } from "@core/constants/core.constants";
 import {
   Categories_Event,
   RecurringEventUpdateScope,
-  Schema_Event,
+  type Schema_Event,
 } from "@core/types/event.types";
 import { computeCurrentEventDateRange } from "@web/common/utils/datetime/web.date.util";
 import { useDraftForm } from "@web/views/Calendar/components/Draft/hooks/state/useDraftForm";
-import { SidebarDraftContextValue } from "@web/views/Calendar/components/Draft/sidebar/context/SidebarDraftContext";
+import { type SidebarDraftContextValue } from "@web/views/Calendar/components/Draft/sidebar/context/SidebarDraftContext";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
-import { Setters_Sidebar } from "@web/views/Calendar/components/Draft/sidebar/hooks/useSidebarState";
+import { type Setters_Sidebar } from "@web/views/Calendar/components/Draft/sidebar/hooks/useSidebarState";
 import { SomedayEvent } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEvent/SomedayEvent";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm/SomedayEventForm";

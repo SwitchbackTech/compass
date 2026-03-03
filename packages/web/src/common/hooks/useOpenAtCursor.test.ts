@@ -1,5 +1,5 @@
 import { act } from "react";
-import { Placement, Strategy } from "@floating-ui/react";
+import { type Placement, type Strategy } from "@floating-ui/react";
 import { renderHook } from "@testing-library/react";
 import {
   CursorItem,

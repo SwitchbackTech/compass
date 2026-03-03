@@ -4,10 +4,10 @@ import {
   CalendarProvider,
   Categories_Recurrence,
   CompassEventStatus,
-  CompassThisEvent,
+  type CompassThisEvent,
   RecurringEventUpdateScope,
-  Schema_Event_Recur_Base,
-  WithCompassId,
+  type Schema_Event_Recur_Base,
+  type WithCompassId,
 } from "@core/types/event.types";
 import { parseCompassEventDate } from "@core/util/event/event.util";
 import { createMockBaseEvent } from "@core/util/test/ccal.event.factory";

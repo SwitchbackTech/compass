@@ -3,7 +3,7 @@ import { Categories_Event } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import {
   SOMEDAY_HOTKEY_OPTIONS,
-  SomedayFormShortcutsProps,
+  type SomedayFormShortcutsProps,
   useSomedayFormShortcuts,
 } from "@web/views/Forms/SomedayEventForm/useSomedayFormShortcuts";
 
@@ -11,9 +11,7 @@ jest.mock("react-hotkeys-hook", () => ({
   useHotkeys: jest.fn(),
 }));
 
-const { useHotkeys } = jest.requireMock("react-hotkeys-hook") as {
-  useHotkeys: jest.Mock;
-};
+const { useHotkeys } = jest.requireMock("react-hotkeys-hook");
 
 const TestComponent = (props: SomedayFormShortcutsProps) => {
   useSomedayFormShortcuts(props);

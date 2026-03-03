@@ -1,13 +1,13 @@
-import React, { FC } from "react";
+import React, { type FC } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";
-import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import {
-  Measurements_Grid,
-  Refs_Grid,
+  type Measurements_Grid,
+  type Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { SomedayEvents } from "../SomedayEvents/SomedayEvents";
 import { SidebarHeader, SidebarSection } from "../styled";
 

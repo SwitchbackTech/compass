@@ -1,13 +1,13 @@
 import {
-  Event_Core,
-  Params_Events,
-  Payload_Order,
-  RecurringEventUpdateScope,
-  Schema_Event,
+  type Event_Core,
+  type Params_Events,
+  type Payload_Order,
+  type RecurringEventUpdateScope,
+  type Schema_Event,
 } from "@core/types/event.types";
 import { getStorageAdapter } from "@web/common/storage/adapter/adapter";
-import { Response_GetEventsSuccess } from "@web/ducks/events/event.types";
-import { EventRepository } from "./event.repository.interface";
+import { type Response_GetEventsSuccess } from "@web/ducks/events/event.types";
+import { type EventRepository } from "./event.repository.interface";
 
 /**
  * Local event repository implementation using the storage adapter.

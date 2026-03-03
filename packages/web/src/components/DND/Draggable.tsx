@@ -1,23 +1,23 @@
 import { ObjectId } from "bson";
 import {
-  DetailedHTMLProps,
-  ForwardedRef,
-  HTMLAttributes,
-  ReactHTML,
+  type DetailedHTMLProps,
+  type ForwardedRef,
+  type HTMLAttributes,
+  type ReactHTML,
   cloneElement,
   createElement,
   forwardRef,
   isValidElement,
 } from "react";
 import {
-  UniqueIdentifier,
-  UseDraggableArguments,
+  type UniqueIdentifier,
+  type UseDraggableArguments,
   useDraggable,
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { useMergeRefs } from "@floating-ui/react";
-import { Categories_Event } from "@core/types/event.types";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type Categories_Event } from "@core/types/event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 
 export interface DraggableDNDData {
   type: Categories_Event;

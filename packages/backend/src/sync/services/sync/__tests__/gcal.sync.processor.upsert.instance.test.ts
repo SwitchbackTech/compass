@@ -1,5 +1,5 @@
 import { Categories_Recurrence } from "@core/types/event.types";
-import { gSchema$Event } from "@core/types/gcal";
+import { type gSchema$Event } from "@core/types/gcal";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   cleanupCollections,
@@ -163,7 +163,7 @@ describe("GcalSyncProcessor UPSERT: INSTANCE", () => {
         user: user._id.toString(),
       }),
       mongoService.event.findOne({
-        gEventId: base.id!,
+        gEventId: base.id,
         user: user._id.toString(),
       }),
       mongoService.event.findOne({
@@ -172,7 +172,7 @@ describe("GcalSyncProcessor UPSERT: INSTANCE", () => {
       }),
       mongoService.event
         .find({
-          gRecurringEventId: base.id!,
+          gRecurringEventId: base.id,
           user: user._id.toString(),
           gEventId: { $ne: instance.id! },
         })

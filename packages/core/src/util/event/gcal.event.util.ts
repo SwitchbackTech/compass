@@ -1,6 +1,6 @@
 import type { calendar_v3 } from "@googleapis/calendar";
-import { gSchema$Event } from "@core/types/gcal";
-import dayjs, { Dayjs } from "@core/util/date/dayjs";
+import { type gSchema$Event } from "@core/types/gcal";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 
 /** Google Calendar event utilities */
 export const isCancelledGCalEvent = (e: gSchema$Event): boolean => {

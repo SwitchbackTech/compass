@@ -1,7 +1,7 @@
-import { EventEmitter2, ListenerFn } from "eventemitter2";
+import { EventEmitter2, type ListenerFn } from "eventemitter2";
 import { fromEventPattern } from "rxjs";
 import SuperTokensSession from "supertokens-web-js/recipe/session";
-import { Event } from "supertokens-website/lib/build/types";
+import { type Event } from "supertokens-website/lib/build/types";
 
 class Session {
   #emitter: EventEmitter2 = new EventEmitter2({

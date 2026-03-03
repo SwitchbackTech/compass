@@ -1,13 +1,13 @@
-import { ObjectId, WithoutId } from "mongodb";
-import { Options } from "rrule";
+import { ObjectId, type WithoutId } from "mongodb";
+import { type Options } from "rrule";
 import { calendar } from "@googleapis/calendar";
 import { Origin } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
-import { Schema_Event, WithCompassId } from "@core/types/event.types";
+import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import {
-  gSchema$Event,
-  gSchema$EventBase,
-  gSchema$EventInstance,
+  type gSchema$Event,
+  type gSchema$EventBase,
+  type gSchema$EventInstance,
 } from "@core/types/gcal";
 import { isBase } from "@core/util/event/event.util";
 import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";

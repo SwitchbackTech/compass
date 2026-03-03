@@ -4,7 +4,7 @@ import {
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
-import { Dayjs } from "@core/util/date/dayjs";
+import { type Dayjs } from "@core/util/date/dayjs";
 import {
   useKeyDownEvent,
   useKeyUpEvent,
@@ -26,9 +26,9 @@ import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
-import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
-import { Util_Scroll } from "@web/views/Calendar/hooks/grid/useScroll";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { type Util_Scroll } from "@web/views/Calendar/hooks/grid/useScroll";
+import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 
 export interface ShortcutProps {
   today: Dayjs;

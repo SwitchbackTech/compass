@@ -1,4 +1,4 @@
-import { CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import { BehaviorSubject } from "rxjs";
 import {
   CLASS_TIMED_CALENDAR_EVENT,

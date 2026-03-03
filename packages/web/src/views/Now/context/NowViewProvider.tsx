@@ -1,9 +1,10 @@
-import React, { createContext, useCallback } from "react";
+import type React from "react";
+import { createContext, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { getTaskRepository } from "@web/common/repositories/task/task.repository.util";
 import { ensureStorageReady } from "@web/common/storage/adapter/adapter";
-import { Task } from "@web/common/types/task.types";
+import { type Task } from "@web/common/types/task.types";
 import { getDateKey } from "@web/common/utils/storage/storage.util";
 import { getIncompleteTasksSorted } from "@web/common/utils/task/sort.task";
 import { useAvailableTasks } from "../hooks/useAvailableTasks";

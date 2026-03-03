@@ -1,4 +1,4 @@
-import { Shortcut } from "@web/common/types/global.shortcut.types";
+import { type Shortcut } from "@web/common/types/global.shortcut.types";
 import { ShortCutLabel } from "@web/common/utils/shortcut/shortcut.util";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 

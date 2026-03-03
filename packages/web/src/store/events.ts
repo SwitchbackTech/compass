@@ -19,7 +19,7 @@ import {
   withEntities,
   withUIEntities,
 } from "@ngneat/elf-entities";
-import { Schema_Event, WithCompassId } from "@core/types/event.types";
+import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 
 export interface EventUIState {
   _id: string;

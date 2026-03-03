@@ -1,6 +1,7 @@
-import React, { createContext } from "react";
+import type React from "react";
+import { createContext } from "react";
 import { getTaskRepository } from "@web/common/repositories/task/task.repository.util";
-import { Task, UndoOperation } from "@web/common/types/task.types";
+import { type Task, type UndoOperation } from "@web/common/types/task.types";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useTaskActions } from "@web/views/Day/hooks/tasks/useTaskActions";
 import { useTaskState } from "@web/views/Day/hooks/tasks/useTaskState";

@@ -1,6 +1,6 @@
-import dayjs, { Dayjs } from "@core/util/date/dayjs";
-import { Schema_WebEvent } from "@web/common/types/web.event.types";
-import { WeekNavigationSource } from "@web/views/Calendar/hooks/useWeek";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { type Schema_WebEvent } from "@web/common/types/web.event.types";
+import { type WeekNavigationSource } from "@web/views/Calendar/hooks/useWeek";
 
 export class EventInViewParser {
   private readonly event: Schema_WebEvent;

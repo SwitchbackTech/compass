@@ -1,4 +1,4 @@
-import { PropsWithChildren, createContext, useRef } from "react";
+import { type PropsWithChildren, createContext, useRef } from "react";
 
 interface CompassRefs {
   nowLineRef: React.MutableRefObject<HTMLDivElement | null>;

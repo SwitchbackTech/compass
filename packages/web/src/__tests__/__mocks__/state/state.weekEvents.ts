@@ -7,7 +7,7 @@ import {
   MULTI_WEEK,
   TY_TIM,
 } from "@core/__mocks__/v1/events/events.misc";
-import { InitialReduxState } from "@web/__tests__/utils/state/store.test.util";
+import { type InitialReduxState } from "@web/__tests__/utils/state/store.test.util";
 import { AuthStatus } from "@web/ducks/auth/slices/auth.slice";
 
 export const preloadedState: InitialReduxState = {

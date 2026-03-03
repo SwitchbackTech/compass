@@ -1,6 +1,6 @@
 import { ObjectId } from "bson";
 import { faker } from "@faker-js/faker";
-import { Schema_Watch, WatchSchema } from "@core/types/watch.types";
+import { type Schema_Watch, WatchSchema } from "@core/types/watch.types";
 import dayjs from "@core/util/date/dayjs";
 
 describe("Watch Types", () => {

@@ -1,14 +1,14 @@
 import uniqby from "lodash.uniqby";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
-import dayjs, { Dayjs } from "@core/util/date/dayjs";
+import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
   COLUMN_MONTH,
   COLUMN_WEEK,
   ID_SOMEDAY_EVENT_ACTION_MENU,
 } from "@web/common/constants/web.constants";
 import {
-  Schema_SomedayEvent,
-  Schema_SomedayEventsColumn,
+  type Schema_SomedayEvent,
+  type Schema_SomedayEventsColumn,
 } from "@web/common/types/web.event.types";
 import { validateSomedayEvents } from "@web/common/validators/someday.event.validator";
 

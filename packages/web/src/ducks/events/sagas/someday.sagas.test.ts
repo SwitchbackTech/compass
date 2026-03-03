@@ -1,6 +1,6 @@
-import { AxiosResponse } from "axios";
+import { type AxiosResponse } from "axios";
 import { Origin, Priorities } from "@core/constants/core.constants";
-import { Schema_Event } from "@core/types/event.types";
+import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import { session } from "@web/common/classes/Session";
@@ -9,7 +9,7 @@ import {
   getStorageAdapter,
 } from "@web/common/storage/adapter/adapter";
 import { sagaMiddleware } from "@web/common/store/middlewares";
-import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
+import { type Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { EventApi } from "@web/ducks/events/event.api";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { sagas } from "@web/store/sagas";

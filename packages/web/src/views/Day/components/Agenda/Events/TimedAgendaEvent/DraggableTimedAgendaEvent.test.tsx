@@ -1,5 +1,5 @@
 import { ObjectId } from "bson";
-import { UseInteractionsReturn } from "@floating-ui/react";
+import { type UseInteractionsReturn } from "@floating-ui/react";
 import "@testing-library/jest-dom";
 import { fireEvent, screen } from "@testing-library/react";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
@@ -9,7 +9,7 @@ import {
   CursorItem,
   useFloatingNodeIdAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { DraggableTimedAgendaEvent } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/DraggableTimedAgendaEvent";
 import { useOpenAgendaEventPreview } from "@web/views/Day/hooks/events/useOpenAgendaEventPreview";

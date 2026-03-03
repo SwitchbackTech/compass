@@ -5,7 +5,7 @@ import {
   createMockStandaloneEvent,
 } from "@core/util/test/ccal.event.factory";
 import { DirtyParser } from "@web/common/parsers/dirty.parser";
-import { Schema_WebEvent } from "../types/web.event.types";
+import { type Schema_WebEvent } from "../types/web.event.types";
 
 describe("WebEventParser", () => {
   it("should return false when draft and original events are identical", () => {

@@ -2,7 +2,7 @@
  * Tests for the localStorage tasks migration.
  */
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
-import { StorageAdapter } from "@web/common/storage/adapter/storage.adapter";
+import { type StorageAdapter } from "@web/common/storage/adapter/storage.adapter";
 import { localStorageTasksMigration } from "./localstorage-tasks";
 
 const TASK_KEY_PREFIX = "compass.today.tasks.";

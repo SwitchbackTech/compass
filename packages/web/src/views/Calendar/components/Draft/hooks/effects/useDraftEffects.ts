@@ -1,7 +1,10 @@
 import { useEffect } from "react";
 import dayjs from "@core/util/date/dayjs";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { Setters_Draft, State_Draft_Local } from "../state/useDraftState";
+import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import {
+  type Setters_Draft,
+  type State_Draft_Local,
+} from "../state/useDraftState";
 
 export const useDraftEffects = (
   state: State_Draft_Local,

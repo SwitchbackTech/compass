@@ -1,4 +1,7 @@
-import { Subscriber, SubscriberSchema } from "@core/types/email/email.types";
+import {
+  type Subscriber,
+  SubscriberSchema,
+} from "@core/types/email/email.types";
 
 describe("Subscriber", () => {
   it("parses a valid subscriber", () => {

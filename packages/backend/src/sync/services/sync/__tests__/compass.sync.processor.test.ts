@@ -5,7 +5,7 @@ import {
 } from "@core/constants/websocket.constants";
 import {
   Categories_Recurrence,
-  CompassEvent,
+  type CompassEvent,
   CompassEventStatus,
   RecurringEventUpdateScope,
 } from "@core/types/event.types";
@@ -15,7 +15,7 @@ import {
 } from "@core/util/test/ccal.event.factory";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.processor";
-import { Event_Transition } from "@backend/sync/sync.types";
+import { type Event_Transition } from "@backend/sync/sync.types";
 
 // Import the enum
 

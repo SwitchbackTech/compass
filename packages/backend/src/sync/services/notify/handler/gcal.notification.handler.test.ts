@@ -1,4 +1,4 @@
-import { gCalendar } from "@core/types/gcal";
+import { type gCalendar } from "@core/types/gcal";
 import { Resource_Sync } from "@core/types/sync.types";
 import {
   cleanupTestDb,

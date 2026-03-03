@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
-import { SignInUpInput } from "@web/components/oauth/ouath.types";
+import { type SignInUpInput } from "@web/components/oauth/ouath.types";
 
 interface UseGoogleAuthWithOverlayOptions {
   onStart?: () => void;

@@ -1,9 +1,9 @@
 import { useCallback } from "react";
 import {
-  OpenChangeReason,
-  Placement,
-  ReferenceType,
-  UseFloatingOptions,
+  type OpenChangeReason,
+  type Placement,
+  type ReferenceType,
+  type UseFloatingOptions,
   autoUpdate,
   flip,
   hide,

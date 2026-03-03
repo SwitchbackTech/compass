@@ -1,4 +1,4 @@
-import { FC } from "react";
+import { type FC } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
@@ -7,12 +7,12 @@ import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/
 import { GridEventPreview } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/GridEventPreview";
 import { SomedayEventsContainer } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventsContainer/SomedayEventsContainer";
 import { SidebarList } from "@web/views/Calendar/components/Sidebar/styled";
-import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import {
-  Measurements_Grid,
-  Refs_Grid,
+  type Measurements_Grid,
+  type Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 
 interface Props {
   category: Categories_Event;

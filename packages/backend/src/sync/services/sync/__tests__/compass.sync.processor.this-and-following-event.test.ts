@@ -1,15 +1,15 @@
-import { WithId } from "mongodb";
+import { type WithId } from "mongodb";
 import { faker } from "@faker-js/faker";
 import { Priorities } from "@core/constants/core.constants";
 import {
   CalendarProvider,
   Categories_Recurrence,
   CompassEventStatus,
-  CompassThisAndFollowingEvent,
-  CompassThisEvent,
+  type CompassThisAndFollowingEvent,
+  type CompassThisEvent,
   RecurringEventUpdateScope,
-  Schema_Event,
-  Schema_Event_Recur_Base,
+  type Schema_Event,
+  type Schema_Event_Recur_Base,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { parseCompassEventDate } from "@core/util/event/event.util";
@@ -162,7 +162,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
               expect(until).toBeDefined();
 
-              const untilDay = dayjs(until!, dayjs.DateFormat.RFC5545);
+              const untilDay = dayjs(until, dayjs.DateFormat.RFC5545);
 
               oldInstances.forEach(({ startDate }) =>
                 expect(
@@ -195,7 +195,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
               expect(newUntil).toBeDefined();
 
-              const newUntilDay = dayjs(newUntil!, dayjs.DateFormat.RFC5545);
+              const newUntilDay = dayjs(newUntil, dayjs.DateFormat.RFC5545);
 
               newInstances.forEach(({ startDate, title }) => {
                 expect(
@@ -388,7 +388,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
               expect(until).toBeDefined();
 
-              const untilDay = dayjs(until!, dayjs.DateFormat.RFC5545);
+              const untilDay = dayjs(until, dayjs.DateFormat.RFC5545);
 
               oldInstances.forEach(({ startDate }) =>
                 expect(
@@ -421,7 +421,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
               expect(newUntil).toBeDefined();
 
-              const newUntilDay = dayjs(newUntil!, dayjs.DateFormat.RFC5545);
+              const newUntilDay = dayjs(newUntil, dayjs.DateFormat.RFC5545);
 
               newInstances.forEach(({ startDate, description }) => {
                 expect(
@@ -616,7 +616,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
               expect(until).toBeDefined();
 
-              const untilDay = dayjs(until!, dayjs.DateFormat.RFC5545);
+              const untilDay = dayjs(until, dayjs.DateFormat.RFC5545);
 
               oldInstances.forEach(({ startDate }) =>
                 expect(
@@ -649,7 +649,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
               expect(newUntil).toBeDefined();
 
-              const newUntilDay = dayjs(newUntil!, dayjs.DateFormat.RFC5545);
+              const newUntilDay = dayjs(newUntil, dayjs.DateFormat.RFC5545);
 
               newInstances.forEach(({ startDate, priority }) => {
                 expect(
@@ -834,7 +834,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
           expect(until).toBeDefined();
 
-          const untilDay = dayjs(until!, dayjs.DateFormat.RFC5545);
+          const untilDay = dayjs(until, dayjs.DateFormat.RFC5545);
 
           oldInstances.forEach(({ startDate }) =>
             expect(
@@ -884,14 +884,14 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           switch (calendarProvider) {
             case CalendarProvider.GOOGLE:
               await expect(
-                _getGcal(user, baseEvent._id.toString()!),
+                _getGcal(user, baseEvent._id.toString()),
               ).rejects.toThrow(
                 `Event with id ${baseEvent._id.toString()} not found`,
               );
 
               instances.forEach(async (instance) => {
                 await expect(
-                  _getGcal(user, instance._id.toString()!),
+                  _getGcal(user, instance._id.toString()),
                 ).rejects.toThrow(
                   `Event with id ${instance._id.toString()} not found`,
                 );

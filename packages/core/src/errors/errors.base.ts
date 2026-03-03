@@ -1,4 +1,4 @@
-import { Status } from "./status.codes";
+import { type Status } from "./status.codes";
 
 interface ErrorMetadata {
   description: string;

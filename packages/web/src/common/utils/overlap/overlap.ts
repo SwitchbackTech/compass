@@ -1,6 +1,6 @@
 import dayjs from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 
 export const adjustOverlappingEvents = (
   events: Schema_GridEvent[],

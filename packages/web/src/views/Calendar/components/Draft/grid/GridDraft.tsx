@@ -1,15 +1,15 @@
-import { FC, MouseEvent } from "react";
+import { type FC, type MouseEvent } from "react";
 import { FloatingFocusManager } from "@floating-ui/react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
-import { PartialMouseEvent } from "@web/common/types/util.types";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import { type PartialMouseEvent } from "@web/common/types/util.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getEventDragOffset } from "@web/common/utils/event/event.util";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
 import { GridEvent } from "@web/views/Calendar/components/Event/Grid";
 import { useGridEventMouseDown } from "@web/views/Calendar/hooks/grid/useGridEventMouseDown";
-import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
 

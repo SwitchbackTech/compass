@@ -1,4 +1,4 @@
-import { gCalendar } from "@core/types/gcal";
+import { type gCalendar } from "@core/types/gcal";
 import { StringV4Schema } from "@core/types/type.utils";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 

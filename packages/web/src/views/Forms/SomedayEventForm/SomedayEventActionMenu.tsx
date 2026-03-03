@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { ID_SOMEDAY_EVENT_ACTION_MENU } from "@web/common/constants/web.constants";
 import { ActionsMenu } from "../ActionsMenu/ActionsMenu";
 import { DeleteMenuButton } from "../EventForm/DeleteMenuButton";

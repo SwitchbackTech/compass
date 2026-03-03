@@ -1,13 +1,13 @@
-import { DropResult } from "@hello-pangea/dnd";
+import { type DropResult } from "@hello-pangea/dnd";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@core/constants/date.constants";
 import { Status } from "@core/errors/status.codes";
 import {
   Categories_Event,
-  Schema_Event,
-  Schema_Event_Recur_Base,
+  type Schema_Event,
+  type Schema_Event_Recur_Base,
 } from "@core/types/event.types";
-import dayjs, { Dayjs } from "@core/util/date/dayjs";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/auth.util";
 import {
   CLASS_TIMED_CALENDAR_EVENT,
@@ -17,11 +17,11 @@ import {
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { isElementInViewport } from "@web/common/context/pointer-position";
-import { PartialMouseEvent } from "@web/common/types/util.types";
+import { type PartialMouseEvent } from "@web/common/types/util.types";
 import {
-  Schema_GridEvent,
-  Schema_WebEvent,
-  WithId,
+  type Schema_GridEvent,
+  type Schema_WebEvent,
+  type WithId,
 } from "@web/common/types/web.event.types";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
@@ -107,11 +107,11 @@ export const assembleGridEvent = (event: Schema_WebEvent): Schema_GridEvent => {
     ...event,
     position: gridEventDefaultPosition,
     _id: event._id!,
-    startDate: event.startDate!,
-    endDate: event.endDate!,
+    startDate: event.startDate,
+    endDate: event.endDate,
     origin: event.origin ?? Origin.COMPASS,
     priority: event.priority ?? Priorities.UNASSIGNED,
-    user: event.user!,
+    user: event.user,
     recurrence: event.recurrence,
   };
 

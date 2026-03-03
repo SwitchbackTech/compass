@@ -1,5 +1,5 @@
 import { Categories_Event } from "@core/types/event.types";
-import { RootState } from "@web/store";
+import { type RootState } from "@web/store";
 
 export const selectDraft = (state: RootState) => state.events.draft.event;
 

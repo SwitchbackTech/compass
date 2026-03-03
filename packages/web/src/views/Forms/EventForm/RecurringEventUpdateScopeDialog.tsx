@@ -13,7 +13,7 @@ import { Priorities } from "@core/constants/core.constants";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { DirtyParser } from "@web/common/parsers/dirty.parser";
 import { theme } from "@web/common/styles/theme";
-import { Schema_WebEvent } from "@web/common/types/web.event.types";
+import { type Schema_WebEvent } from "@web/common/types/web.event.types";
 import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";

@@ -1,8 +1,8 @@
 import { act } from "react";
 import { renderHook, waitFor } from "@testing-library/react";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
-import { TaskRepository } from "@web/common/repositories/task/task.repository";
-import { Task } from "@web/common/types/task.types";
+import { type TaskRepository } from "@web/common/repositories/task/task.repository";
+import { type Task } from "@web/common/types/task.types";
 import { getDateKey } from "@web/common/utils/storage/storage.util";
 import { useTaskState } from "@web/views/Day/hooks/tasks/useTaskState";
 

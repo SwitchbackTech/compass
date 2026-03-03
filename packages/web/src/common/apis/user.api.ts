@@ -1,4 +1,4 @@
-import { UserMetadata, UserProfile } from "@core/types/user.types";
+import { type UserMetadata, type UserProfile } from "@core/types/user.types";
 import { CompassApi } from "@web/common/apis/compass.api";
 
 const UserApi = {

@@ -1,5 +1,5 @@
-import { Active, Over } from "@dnd-kit/core";
-import { Schema_Event } from "@core/types/event.types";
+import { type Active, type Over } from "@dnd-kit/core";
+import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import {
   MINUTES_PER_SLOT,

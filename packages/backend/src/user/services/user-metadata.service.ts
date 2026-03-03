@@ -1,8 +1,8 @@
 import mergeWith from "lodash.mergewith";
 import SupertokensUserMetadata, {
-  JSONObject,
+  type JSONObject,
 } from "supertokens-node/recipe/usermetadata";
-import { UserMetadata } from "@core/types/user.types";
+import { type UserMetadata } from "@core/types/user.types";
 
 class UserMetadataService {
   /*

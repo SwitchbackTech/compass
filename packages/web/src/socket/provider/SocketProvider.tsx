@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { type ReactNode } from "react";
 import { useEventSync } from "../hooks/useEventSync";
 import { useGcalSync } from "../hooks/useGcalSync";
 import { useSocketConnection } from "../hooks/useSocketConnection";

@@ -5,8 +5,8 @@ import {
   IMPORT_GCAL_START,
 } from "@core/constants/websocket.constants";
 import { Status } from "@core/errors/status.codes";
-import { Payload_Sync_Notif } from "@core/types/sync.types";
-import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
+import { type Payload_Sync_Notif } from "@core/types/sync.types";
+import { type BaseDriver } from "@backend/__tests__/drivers/base.driver";
 import { encodeChannelToken } from "@backend/sync/util/watch.util";
 
 export class SyncControllerDriver {

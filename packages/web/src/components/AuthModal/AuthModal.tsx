@@ -1,7 +1,10 @@
-import { FC, useCallback, useEffect, useRef, useState } from "react";
+import { type FC, useCallback, useEffect, useRef, useState } from "react";
 import { DotIcon } from "@phosphor-icons/react";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
-import { LogInFormData, SignUpFormData } from "@web/auth/schemas/auth.schemas";
+import {
+  type LogInFormData,
+  type SignUpFormData,
+} from "@web/auth/schemas/auth.schemas";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { GoogleButton } from "@web/components/oauth/google/GoogleButton";
 import { AuthButton } from "./components/AuthButton";

@@ -1,6 +1,9 @@
-import React, { FC } from "react";
+import React, { type FC } from "react";
 import { Draggable } from "@hello-pangea/dnd";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import {
+  type Categories_Event,
+  type Schema_Event,
+} from "@core/types/event.types";
 import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";

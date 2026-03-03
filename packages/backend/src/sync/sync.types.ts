@@ -1,8 +1,8 @@
-import { ObjectId } from "mongodb";
+import { type ObjectId } from "mongodb";
 import {
-  Categories_Recurrence,
-  Event_Core,
-  TransitionCategoriesRecurrence,
+  type Categories_Recurrence,
+  type Event_Core,
+  type TransitionCategoriesRecurrence,
 } from "@core/types/event.types";
 
 export type Event_Core_WithObjectId = Omit<Event_Core, "_id"> & {

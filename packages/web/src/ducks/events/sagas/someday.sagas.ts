@@ -1,15 +1,15 @@
 import { normalize } from "normalizr";
 import { call, put } from "redux-saga/effects";
-import { Schema_Event } from "@core/types/event.types";
+import { type Schema_Event } from "@core/types/event.types";
 import { session } from "@web/common/classes/Session";
 import { getEventRepository } from "@web/common/repositories/event/event.repository.util";
-import { Schema_OptimisticEvent } from "@web/common/types/web.event.types";
+import { type Schema_OptimisticEvent } from "@web/common/types/web.event.types";
 import { handleError } from "@web/common/utils/event/event.util";
 import { setSomedayEventsOrder } from "@web/common/utils/event/someday.event.util";
 import {
-  Action_ConvertEvent,
-  Action_DeleteEvent,
-  Action_GetEvents,
+  type Action_ConvertEvent,
+  type Action_DeleteEvent,
+  type Action_GetEvents,
 } from "@web/ducks/events/event.types";
 import {
   _assembleGridEvent,
@@ -24,7 +24,7 @@ import {
 } from "@web/ducks/events/slices/event.slice";
 import { pendingEventsSlice } from "@web/ducks/events/slices/pending.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
-import { Action_Someday_Reorder } from "@web/ducks/events/slices/someday.slice.types";
+import { type Action_Someday_Reorder } from "@web/ducks/events/slices/someday.slice.types";
 
 export function* convertSomedayToCalendarEvent({
   payload,

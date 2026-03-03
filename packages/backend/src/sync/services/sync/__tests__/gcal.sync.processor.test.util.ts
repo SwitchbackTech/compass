@@ -1,12 +1,15 @@
-import { Filter, ObjectId, WithId } from "mongodb";
+import { type Filter, ObjectId, type WithId } from "mongodb";
 import {
-  Event_Core,
-  Schema_Event,
-  Schema_Event_Recur_Base,
-  Schema_Event_Recur_Instance,
+  type Event_Core,
+  type Schema_Event,
+  type Schema_Event_Recur_Base,
+  type Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
-import { gSchema$EventBase, gSchema$EventInstance } from "@core/types/gcal";
-import { Schema_User } from "@core/types/user.types";
+import {
+  type gSchema$EventBase,
+  type gSchema$EventInstance,
+} from "@core/types/gcal";
+import { type Schema_User } from "@core/types/user.types";
 import dayjs from "@core/util/date/dayjs";
 import {
   categorizeEvents,
@@ -14,10 +17,10 @@ import {
   isInstance,
 } from "@core/util/event/event.util";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
-import { State_AfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
+import { type State_AfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 import { createRecurrenceSeries } from "@backend/__tests__/mocks.db/ccal.mock.db.util";
 import { mockRecurringGcalInstances } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
-import { Event_API } from "@backend/common/types/backend.event.types";
+import { type Event_API } from "@backend/common/types/backend.event.types";
 import { validateEventSafely } from "@backend/common/validators/validate.event";
 
 /** Utility assertions for the gcal sync processor tests */
@@ -44,7 +47,7 @@ export const createCompassSeriesFromGcalBase = async (
     title: gBase.summary as string,
     user: user._id.toString(),
     _id: baseCompassId,
-    gEventId: gBase.id as string,
+    gEventId: gBase.id,
     recurrence: {
       rule: ["RRULE:FREQ=DAILY"],
     },

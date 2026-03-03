@@ -1,8 +1,8 @@
 import { useStore } from "react-redux";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
-import { PartialMouseEvent } from "@web/common/types/util.types";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type PartialMouseEvent } from "@web/common/types/util.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getEventDragOffset } from "@web/common/utils/event/event.util";
 import { adjustOverlappingEvents } from "@web/common/utils/overlap/overlap";
 import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
@@ -13,8 +13,8 @@ import { selectIsGetWeekEventsProcessingWithReason } from "@web/ducks/events/sel
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { useGridEventMouseDown } from "@web/views/Calendar/hooks/grid/useGridEventMouseDown";
-import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { GridEventMemo } from "../../Event/Grid/GridEvent/GridEvent";
 
 interface Props {

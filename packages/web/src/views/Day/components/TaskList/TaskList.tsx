@@ -1,4 +1,5 @@
-import React, { useRef, useState } from "react";
+import type React from "react";
+import { useRef, useState } from "react";
 import { AddTaskActiveButton } from "@web/views/Day/components/AddTask/AddTaskActiveButton";
 import { AddTaskPreviewButton } from "@web/views/Day/components/AddTask/AddTaskPreviewButton";
 import { TaskContextMenuWrapper } from "@web/views/Day/components/ContextMenu/TaskContextMenuWrapper";

@@ -1,8 +1,8 @@
-import { StorageAdapter } from "../adapter/storage.adapter";
+import { type StorageAdapter } from "../adapter/storage.adapter";
 import { taskIdToUnderscoreIdMigration } from "./data/task-id-to-underscore-id";
 import { demoDataSeedMigration } from "./external/demo-data-seed";
 import { localStorageTasksMigration } from "./external/localstorage-tasks";
-import { DataMigration, ExternalMigration } from "./migration.types";
+import { type DataMigration, type ExternalMigration } from "./migration.types";
 
 // ─── Migration Registry ──────────────────────────────────────────────────────
 // Add new migrations to these arrays. They run in order.

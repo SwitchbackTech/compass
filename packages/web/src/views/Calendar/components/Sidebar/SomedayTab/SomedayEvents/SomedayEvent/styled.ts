@@ -1,7 +1,10 @@
 import styled from "styled-components";
-import { DraggableStateSnapshot, DroppableProvided } from "@hello-pangea/dnd";
-import { DraggableStyle } from "@hello-pangea/dnd";
-import { Priorities } from "@core/constants/core.constants";
+import {
+  type DraggableStateSnapshot,
+  type DroppableProvided,
+} from "@hello-pangea/dnd";
+import { type DraggableStyle } from "@hello-pangea/dnd";
+import { type Priorities } from "@core/constants/core.constants";
 import { brighten } from "@core/util/color.utils";
 import {
   colorByPriority,

@@ -1,13 +1,17 @@
-import { TokenPayload } from "google-auth-library";
-import { ClientSession, ObjectId } from "mongodb";
+import { type TokenPayload } from "google-auth-library";
+import { type ClientSession, ObjectId } from "mongodb";
 import SupertokensUserMetadata, {
-  JSONObject,
+  type JSONObject,
 } from "supertokens-node/recipe/usermetadata";
 import { Logger } from "@core/logger/winston.logger";
 import { mapUserToCompass } from "@core/mappers/map.user";
 import { Resource_Sync } from "@core/types/sync.types";
 import { zObjectId } from "@core/types/type.utils";
-import { Schema_User, UserMetadata, UserProfile } from "@core/types/user.types";
+import {
+  type Schema_User,
+  type UserMetadata,
+  type UserProfile,
+} from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
@@ -22,7 +26,7 @@ import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import syncService from "@backend/sync/services/sync.service";
 import { isUsingHttps } from "@backend/sync/util/sync.util";
 import userMetadataService from "@backend/user/services/user-metadata.service";
-import { Summary_Delete } from "@backend/user/types/user.types";
+import { type Summary_Delete } from "@backend/user/types/user.types";
 
 const logger = Logger("app:user.service");
 

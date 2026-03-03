@@ -1,15 +1,15 @@
-import { ClientSession, ObjectId } from "mongodb";
+import { type ClientSession, ObjectId } from "mongodb";
 import { RESULT_NOTIFIED_CLIENT } from "@core/constants/websocket.constants";
 import { Logger } from "@core/logger/winston.logger";
-import { gCalendar } from "@core/types/gcal";
+import { type gCalendar } from "@core/types/gcal";
 import {
-  Params_WatchEvents,
-  Payload_Sync_Notif,
+  type Params_WatchEvents,
+  type Payload_Sync_Notif,
   Resource_Sync,
-  Result_Watch_Stop,
+  type Result_Watch_Stop,
 } from "@core/types/sync.types";
 import { ExpirationDateSchema } from "@core/types/type.utils";
-import { Schema_Watch, WatchSchema } from "@core/types/watch.types";
+import { type Schema_Watch, WatchSchema } from "@core/types/watch.types";
 import { shouldDoIncrementalGCalSync } from "@core/util/event/event.util";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";

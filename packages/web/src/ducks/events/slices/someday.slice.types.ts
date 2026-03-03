@@ -1,4 +1,4 @@
-import { Action } from "redux";
+import { type Action } from "redux";
 
 export interface Action_Someday_Reorder extends Action {
   payload: Payload_Someday_Reorder[];

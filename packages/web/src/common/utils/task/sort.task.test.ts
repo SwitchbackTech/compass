@@ -1,5 +1,5 @@
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
-import { Task } from "../../types/task.types";
+import { type Task } from "../../types/task.types";
 import { getIncompleteTasksSorted, sortTasksByStatus } from "./sort.task";
 
 describe("sort.task", () => {

@@ -1,6 +1,9 @@
-import { Task } from "@web/common/types/task.types";
-import { StorageAdapter, StoredTask } from "../../adapter/storage.adapter";
-import { DataMigration } from "../migration.types";
+import { type Task } from "@web/common/types/task.types";
+import {
+  type StorageAdapter,
+  type StoredTask,
+} from "../../adapter/storage.adapter";
+import { type DataMigration } from "../migration.types";
 
 type RawStoredTask = StoredTask & { id?: string };
 

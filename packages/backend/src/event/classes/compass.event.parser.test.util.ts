@@ -1,13 +1,13 @@
-import { ObjectId, WithId } from "mongodb";
+import { ObjectId, type WithId } from "mongodb";
 import {
   CalendarProvider,
-  Schema_Event,
-  Schema_Event_Recur_Base,
-  Schema_Event_Recur_Instance,
-  Schema_Event_Regular,
-  WithCompassId,
+  type Schema_Event,
+  type Schema_Event_Recur_Base,
+  type Schema_Event_Recur_Instance,
+  type Schema_Event_Regular,
+  type WithCompassId,
 } from "@core/types/event.types";
-import { gSchema$Event } from "@core/types/gcal";
+import { type gSchema$Event } from "@core/types/gcal";
 import {
   isBase,
   isInstance,
@@ -59,7 +59,7 @@ export async function testCompassInstanceEvent(
   expect(instanceEvent).toBeDefined();
   expect(instanceEvent).not.toBeNull();
 
-  expect(isInstance(instanceEvent!)).toBe(true);
+  expect(isInstance(instanceEvent)).toBe(true);
 
   expect(instanceEvent).toEqual(
     expect.objectContaining({
@@ -136,7 +136,7 @@ export async function testCompassEventNotInGcal(
   expect(event).not.toHaveProperty("gEventId");
   expect(event).not.toHaveProperty("gRecurringEventId");
   // check that event does not exist in external calendar
-  await expect(_getGcal(event.user!, event._id.toString()!)).rejects.toThrow(
+  await expect(_getGcal(event.user!, event._id.toString())).rejects.toThrow(
     `Event with id ${event._id.toString()} not found`,
   );
 }
@@ -147,12 +147,12 @@ export async function testCompassEventInGcal(
   // check that event does not have external calendar provider attributes
   expect(event).toHaveProperty("gEventId");
   // check that event exists in external calendar
-  const gcalEvent = await _getGcal(event.user!, event!.gEventId!);
+  const gcalEvent = await _getGcal(event.user!, event.gEventId!);
   const dateKey = event.isAllDay ? "date" : "dateTime";
 
   expect(gcalEvent).toEqual(
     expect.objectContaining({
-      id: event!.gEventId,
+      id: event.gEventId,
       summary: event.title,
       ...(event.description ? { description: event.description } : {}),
       start: expect.objectContaining({ [dateKey]: event.startDate }),
@@ -192,7 +192,7 @@ export async function testCompassSeriesInGcal(
   expect(gcalEvent).toEqual(
     expect.objectContaining({
       id: baseEvent.gEventId,
-      recurrence: baseEvent.recurrence!.rule,
+      recurrence: baseEvent.recurrence.rule,
     }),
   );
 

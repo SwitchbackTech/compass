@@ -1,7 +1,7 @@
-import { Request } from "express";
-import { Socket, Server as SocketIOServer } from "socket.io";
-import { Schema_Event } from "@core/types/event.types";
-import { UserMetadata } from "@core/types/user.types";
+import { type Request } from "express";
+import { type Socket, type Server as SocketIOServer } from "socket.io";
+import { type Schema_Event } from "@core/types/event.types";
+import { type UserMetadata } from "@core/types/user.types";
 
 export interface ClientToServerEvents {
   EVENT_CHANGE_PROCESSED: () => void;

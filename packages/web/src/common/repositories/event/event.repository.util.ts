@@ -1,5 +1,5 @@
 import { hasUserEverAuthenticated } from "@web/common/utils/storage/auth-state.util";
-import { EventRepository } from "./event.repository.interface";
+import { type EventRepository } from "./event.repository.interface";
 import { LocalEventRepository } from "./local.event.repository";
 import { RemoteEventRepository } from "./remote.event.repository";
 

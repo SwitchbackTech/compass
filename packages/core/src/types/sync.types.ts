@@ -1,6 +1,6 @@
 import type { AnyBulkWriteOperation, BulkWriteResult } from "mongodb";
 import { z } from "zod/v4";
-import { BaseError } from "@core/errors/errors.base";
+import { type BaseError } from "@core/errors/errors.base";
 import { ExpirationDateSchema, zObjectId } from "@core/types/type.utils";
 
 export interface Params_Sync_Gcal extends Payload_Sync_Notif {

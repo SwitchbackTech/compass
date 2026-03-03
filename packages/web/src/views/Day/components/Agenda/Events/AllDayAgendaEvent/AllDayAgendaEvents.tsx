@@ -2,11 +2,11 @@ import classNames from "classnames";
 import fastDeepEqual from "fast-deep-equal/react";
 import { memo, useCallback } from "react";
 import { Key } from "ts-key-enum";
-import { UseInteractionsReturn } from "@floating-ui/react";
+import { type UseInteractionsReturn } from "@floating-ui/react";
 import { useObservable } from "@ngneat/use-observable";
 import { ID_GRID_ALLDAY_ROW } from "@web/common/constants/web.constants";
 import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Droppable } from "@web/components/DND/Droppable";
 import { selectPendingEventIds } from "@web/ducks/events/selectors/pending.selectors";
 import { allDayEvents$ } from "@web/store/events";
@@ -70,7 +70,7 @@ const AllDayAgendaEventsComponent = ({
           interactions={interactions}
           isDraftEvent={draft?._id === event._id}
           isNewDraftEvent={!events.find((e) => e._id === event?._id)}
-          isDisabled={pendingEventIds.includes(event._id!)}
+          isDisabled={pendingEventIds.includes(event._id)}
         />
       ))}
     </Droppable>

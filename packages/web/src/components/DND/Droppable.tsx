@@ -1,16 +1,16 @@
 import { ObjectId } from "bson";
 import {
-  DetailedHTMLProps,
-  ForwardedRef,
-  HTMLAttributes,
-  ReactHTML,
+  type DetailedHTMLProps,
+  type ForwardedRef,
+  type HTMLAttributes,
+  type ReactHTML,
   createElement,
   forwardRef,
   useCallback,
 } from "react";
 import {
-  UniqueIdentifier,
-  UseDroppableArguments,
+  type UniqueIdentifier,
+  type UseDroppableArguments,
   useDroppable,
 } from "@dnd-kit/core";
 import { useMergeRefs } from "@floating-ui/react";

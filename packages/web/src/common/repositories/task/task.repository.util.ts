@@ -1,6 +1,6 @@
 import { CloudTaskRepository } from "./cloud.task.repository";
 import { LocalTaskRepository } from "./local.task.repository";
-import { TaskRepository } from "./task.repository";
+import { type TaskRepository } from "./task.repository";
 
 export type TaskStorageMode = "local" | "cloud";
 

@@ -1,7 +1,7 @@
 import { act } from "react";
 import { addEntities } from "@ngneat/elf-entities";
 import { renderHook } from "@testing-library/react";
-import { Schema_Event, WithCompassId } from "@core/types/event.types";
+import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import {
   DATA_EVENT_ELEMENT_ID,
   ID_GRID_MAIN,

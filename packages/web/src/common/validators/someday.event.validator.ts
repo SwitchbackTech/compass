@@ -1,6 +1,6 @@
 import {
-  Schema_SomedayEvent,
-  Schema_WebEvent,
+  type Schema_SomedayEvent,
+  type Schema_WebEvent,
   SomedayEventSchema,
 } from "../types/web.event.types";
 

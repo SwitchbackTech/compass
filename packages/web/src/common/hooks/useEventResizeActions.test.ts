@@ -1,7 +1,7 @@
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { act } from "react";
 import { renderHook } from "@testing-library/react";
-import { Schema_Event, WithCompassId } from "@core/types/event.types";
+import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { useEventResizeActions } from "@web/common/hooks/useEventResizeActions";
 import { CursorItem, nodeId$, open$ } from "@web/common/hooks/useOpenAtCursor";

@@ -1,6 +1,6 @@
 import {
-  DependencyList,
-  PointerEvent,
+  type DependencyList,
+  type PointerEvent,
   useCallback,
   useEffect,
   useMemo,
@@ -8,7 +8,7 @@ import {
 import { BehaviorSubject, EMPTY, NEVER, fromEvent, iif, merge, of } from "rxjs";
 import { filter, map, switchMap } from "rxjs/operators";
 import {
-  DomMovement,
+  type DomMovement,
   domMovement$,
   globalMovementHandler,
 } from "@web/common/utils/dom/event-emitter.util";

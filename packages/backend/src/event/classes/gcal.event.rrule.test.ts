@@ -3,7 +3,7 @@ import { RRule } from "rrule";
 import { faker } from "@faker-js/faker";
 import { recurring } from "@core/__mocks__/v1/events/gcal/gcal.recurring";
 import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
-import { gSchema$EventBase } from "@core/types/gcal";
+import { type gSchema$EventBase } from "@core/types/gcal";
 import dayjs from "@core/util/date/dayjs";
 import { isInstance } from "@core/util/event/event.util";
 import {

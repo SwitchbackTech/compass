@@ -1,6 +1,6 @@
 import { ObjectId } from "bson";
 import { MapEvent } from "@core/mappers/map.event";
-import { Schema_Event } from "@core/types/event.types";
+import { type Schema_Event } from "@core/types/event.types";
 import {
   createMockBaseEvent,
   createMockInstance,

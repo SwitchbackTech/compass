@@ -1,4 +1,4 @@
-import { HTMLProps, ReactNode } from "react";
+import { type HTMLProps, type ReactNode } from "react";
 
 export function ShortcutHint({
   children,

@@ -1,4 +1,9 @@
-import { PropsWithChildren, createContext, useEffect, useState } from "react";
+import {
+  type PropsWithChildren,
+  createContext,
+  useEffect,
+  useState,
+} from "react";
 import { BehaviorSubject } from "rxjs";
 import {
   distinctUntilChanged,
@@ -14,7 +19,7 @@ import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
 import * as socket from "@web/socket/provider/SocketProvider";
-import { CompassSession } from "./session.types";
+import { type CompassSession } from "./session.types";
 
 SuperTokens.init({
   appInfo: {

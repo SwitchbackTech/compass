@@ -1,7 +1,7 @@
-import { TokenPayload } from "google-auth-library";
-import { ObjectId, WithId } from "mongodb";
+import { type TokenPayload } from "google-auth-library";
+import { ObjectId, type WithId } from "mongodb";
 import { faker } from "@faker-js/faker";
-import { Schema_User } from "@core/types/user.types";
+import { type Schema_User } from "@core/types/user.types";
 import userService from "../../user/services/user.service";
 
 export class UserDriver {

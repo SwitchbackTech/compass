@@ -1,5 +1,5 @@
 import {
-  Event_API,
+  type Event_API,
   Schema_Event_API,
 } from "@backend/common/types/backend.event.types";
 import { safeValidate } from "./validate";

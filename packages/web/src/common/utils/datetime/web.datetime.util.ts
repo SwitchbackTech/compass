@@ -5,10 +5,10 @@
  * should go in @core/
  */
 import { YMDHAM_FORMAT } from "@core/constants/date.constants";
-import dayjs, { Dayjs } from "@core/util/date/dayjs";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
-  Params_DateChange,
-  Params_TimeChange,
+  type Params_DateChange,
+  type Params_TimeChange,
 } from "@web/common/types/util.types";
 
 export const shouldAdjustComplimentDate = (

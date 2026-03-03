@@ -1,7 +1,7 @@
 import { createSelector } from "@reduxjs/toolkit";
 import { isProcessing } from "@web/common/store/helpers";
-import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
-import { RootState } from "@web/store";
+import { type Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
+import { type RootState } from "@web/store";
 
 type SectionType_Sidebar = "someday" | "currentMonth";
 

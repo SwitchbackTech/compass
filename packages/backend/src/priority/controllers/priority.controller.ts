@@ -1,8 +1,11 @@
-import { Request } from "express";
-import { SessionRequest } from "supertokens-node/framework/express";
-import { PriorityReq } from "@core/types/priority.types";
+import { type Request } from "express";
+import { type SessionRequest } from "supertokens-node/framework/express";
+import { type PriorityReq } from "@core/types/priority.types";
 import { zObjectId } from "@core/types/type.utils";
-import { Res_Promise, SReqBody } from "@backend/common/types/express.types";
+import {
+  type Res_Promise,
+  type SReqBody,
+} from "@backend/common/types/express.types";
 import priorityService from "@backend/priority/services/priority.service";
 
 class PriorityController {

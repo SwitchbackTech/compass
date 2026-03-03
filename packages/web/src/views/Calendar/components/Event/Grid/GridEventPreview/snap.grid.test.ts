@@ -1,7 +1,7 @@
-import { Coordinates } from "@web/common/types/util.types";
+import { type Coordinates } from "@web/common/types/util.types";
 import {
-  MeasureableElement,
-  Measurements_Grid,
+  type MeasureableElement,
+  type Measurements_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { MAIN_GRID_TIME_COLUMN_WIDTH, snapToGrid } from "./snap.grid";
 

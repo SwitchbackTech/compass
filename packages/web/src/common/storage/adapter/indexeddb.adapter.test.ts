@@ -3,7 +3,7 @@
  *
  * Uses fake-indexeddb (see web.test.start.ts) for in-memory IndexedDB support.
  */
-import { Event_Core } from "@core/types/event.types";
+import { type Event_Core } from "@core/types/event.types";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { createTestEvent } from "@web/__tests__/utils/repositories/repository.test.factory";
 import { clearCompassLocalDb } from "@web/__tests__/utils/storage/indexeddb.test.util";

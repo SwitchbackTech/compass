@@ -1,8 +1,8 @@
 import { ObjectId } from "bson";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import {
-  Schema_GridEvent,
-  Schema_WebEvent,
+  type Schema_GridEvent,
+  type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import { addId, isEventInRange } from "@web/common/utils/event/event.util";
 import { _assembleGridEvent } from "@web/ducks/events/sagas/saga.util";

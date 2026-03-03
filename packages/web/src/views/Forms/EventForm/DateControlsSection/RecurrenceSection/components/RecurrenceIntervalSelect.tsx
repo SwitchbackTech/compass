@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { StyledText } from "@web/components/Text/styled";
-import { FrequencyValues } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";
+import { type FrequencyValues } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";
 import {
   StyledIntervalInput,
   StyledRepeatRow,

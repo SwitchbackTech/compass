@@ -1,11 +1,11 @@
 import classNames from "classnames";
 import fastDeepEqual from "fast-deep-equal/react";
 import { memo } from "react";
-import { UseInteractionsReturn } from "@floating-ui/react";
+import { type UseInteractionsReturn } from "@floating-ui/react";
 import {
   Categories_Event,
-  Schema_Event,
-  WithCompassId,
+  type Schema_Event,
+  type WithCompassId,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { CLASS_TIMED_CALENDAR_EVENT } from "@web/common/constants/web.constants";
@@ -22,7 +22,7 @@ import {
 import { useResizeId } from "@web/common/hooks/useResizeId";
 import { useResizing } from "@web/common/hooks/useResizing";
 import { theme } from "@web/common/styles/theme";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getEventCursorClass } from "@web/common/utils/event/event.util";
 import { Draggable } from "@web/components/DND/Draggable";
 import { Resizable } from "@web/components/DND/Resizable";

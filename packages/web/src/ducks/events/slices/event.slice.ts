@@ -1,21 +1,21 @@
 import produce from "immer";
-import { PayloadAction, createSlice } from "@reduxjs/toolkit";
-import { Origin } from "@core/constants/core.constants";
-import { Schema_Event } from "@core/types/event.types";
+import { type PayloadAction, createSlice } from "@reduxjs/toolkit";
+import { type Origin } from "@core/constants/core.constants";
+import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createAsyncSlice } from "@web/common/store/helpers";
-import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
-import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
+import { type Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
+import { type Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import {
-  Action_DeleteEvent,
-  Action_EditEvent,
-  Action_InsertEvents,
-  Action_ReplaceEvent,
-  Action_TimezoneChange,
-  Entities_Event,
-  Payload_DeleteEvent,
-  Payload_EditEvent,
-  Payload_GetPaginatedEvents,
+  type Action_DeleteEvent,
+  type Action_EditEvent,
+  type Action_InsertEvents,
+  type Action_ReplaceEvent,
+  type Action_TimezoneChange,
+  type Entities_Event,
+  type Payload_DeleteEvent,
+  type Payload_EditEvent,
+  type Payload_GetPaginatedEvents,
 } from "@web/ducks/events/event.types";
 
 const changeTimezones = produce((draft, newTimeZone) => {
@@ -73,7 +73,7 @@ export const eventsEntitiesSlice = createSlice({
       const origins = new Set(action.payload.origins);
       for (const id of Object.keys(state.value)) {
         const event = state.value[id] as Schema_Event | undefined;
-        if (event?.origin && origins.has(event.origin as Origin)) {
+        if (event?.origin && origins.has(event.origin)) {
           delete state.value[id];
         }
       }

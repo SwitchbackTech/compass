@@ -3,7 +3,7 @@ import dayjs from "@core/util/date/dayjs";
 import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
+import { type Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
 
 // Mock assembleDefaultEvent since it makes external calls
 jest.mock("../event/event.util", () => ({

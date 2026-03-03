@@ -1,10 +1,10 @@
 import { MS_IN_HR } from "@core/constants/core.constants";
 import { HOURS_AM_FORMAT } from "@core/constants/date.constants";
-import dayjs, { Dayjs } from "@core/util/date/dayjs";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Category } from "@web/ducks/events/event.types";
-import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import {
   DRAFT_PADDING_BOTTOM,
   EVENT_ALLDAY_HEIGHT,

@@ -1,4 +1,4 @@
-import { TaskRepository } from "@web/common/repositories/task/task.repository";
+import { type TaskRepository } from "@web/common/repositories/task/task.repository";
 
 export interface TaskStorageMigrationFailure {
   dateKey: string;

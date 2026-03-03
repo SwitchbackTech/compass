@@ -1,15 +1,15 @@
-import { ClientSession, ObjectId, WithId } from "mongodb";
+import { type ClientSession, ObjectId, type WithId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
 import {
   CalendarProvider,
   Categories_Recurrence,
-  CompassEvent,
-  Schema_Event,
-  Schema_Event_Core,
-  Schema_Event_Recur_Base,
-  TransitionCategoriesRecurrence,
-  TransitionStatus,
-  WithCompassId,
+  type CompassEvent,
+  type Schema_Event,
+  type Schema_Event_Core,
+  type Schema_Event_Recur_Base,
+  type TransitionCategoriesRecurrence,
+  type TransitionStatus,
+  type WithCompassId,
 } from "@core/types/event.types";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import {
@@ -31,7 +31,10 @@ import {
   _updateCompassSeries,
   _updateGcal,
 } from "@backend/event/services/event.service";
-import { Event_Transition, Operation_Sync } from "@backend/sync/sync.types";
+import {
+  type Event_Transition,
+  type Operation_Sync,
+} from "@backend/sync/sync.types";
 
 export class CompassEventParser {
   #logger = Logger("app.event.classes.compass.event.parser");

@@ -1,4 +1,4 @@
-import { CodeResponse } from "@react-oauth/google";
+import { type CodeResponse } from "@react-oauth/google";
 
 export interface SignInUpInput {
   thirdPartyId: string;

@@ -1,5 +1,6 @@
-import React, { useCallback } from "react";
-import { Priority } from "@core/constants/core.constants";
+import type React from "react";
+import { useCallback } from "react";
+import { type Priority } from "@core/constants/core.constants";
 import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
 import { Btn, StyledSaveBtn } from "@web/components/Button/styled";
 import { Text } from "@web/components/Text";

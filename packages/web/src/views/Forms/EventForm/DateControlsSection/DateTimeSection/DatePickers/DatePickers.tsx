@@ -1,4 +1,5 @@
-import React, { FC } from "react";
+import { type FC } from "react";
+import type React from "react";
 import { Key } from "ts-key-enum";
 import { MONTH_DAY_YEAR } from "@core/constants/date.constants";
 import { darken } from "@core/util/color.utils";
@@ -8,7 +9,7 @@ import { shouldAdjustComplimentDate } from "@web/common/utils/datetime/web.datet
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { AlignItems } from "@web/components/Flex/styled";
 import { StyledDateFlex } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/DatePickers/styled";
-import { SetEventFormField } from "@web/views/Forms/EventForm/types";
+import { type SetEventFormField } from "@web/views/Forms/EventForm/types";
 
 const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
   e.stopPropagation();

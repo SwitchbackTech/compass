@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  PointerState,
+  type PointerState,
   pointerState$,
 } from "@web/common/context/pointer-position";
 

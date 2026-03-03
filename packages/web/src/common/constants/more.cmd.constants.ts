@@ -1,4 +1,4 @@
-import { JsonStructureItem } from "react-cmdk";
+import { type JsonStructureItem } from "react-cmdk";
 
 export const moreCommandPaletteItems: Array<{
   heading: string;

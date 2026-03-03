@@ -1,6 +1,6 @@
-import { Request } from "express";
-import { Server as HttpServer } from "node:http";
-import { ExtendedError, Server as SocketIOServer } from "socket.io";
+import { type Request } from "express";
+import { type Server as HttpServer } from "node:http";
+import { type ExtendedError, Server as SocketIOServer } from "socket.io";
 import { verifySession } from "supertokens-node/recipe/session/framework/express";
 import {
   EVENT_CHANGED,
@@ -17,14 +17,14 @@ import {
 } from "@core/constants/websocket.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { StringV4Schema } from "@core/types/type.utils";
-import { UserMetadata } from "@core/types/user.types";
+import { type UserMetadata } from "@core/types/user.types";
 import {
-  ClientToServerEvents,
-  CompassSocket,
-  CompassSocketServer,
-  InterServerEvents,
-  ServerToClientEvents,
-  SocketData,
+  type ClientToServerEvents,
+  type CompassSocket,
+  type CompassSocketServer,
+  type InterServerEvents,
+  type ServerToClientEvents,
+  type SocketData,
 } from "@core/types/websocket.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
@@ -45,10 +45,10 @@ class WebSocketServer {
 
     const sessionId = StringV4Schema.parse(socket.data.session.getHandle());
 
-    const userConnections = this.#userConnections.get(userId!) ?? [];
+    const userConnections = this.#userConnections.get(userId) ?? [];
 
     this.#sessionConnections.set(sessionId, socket.id);
-    this.#userConnections.set(userId!, userConnections?.concat(socket.id));
+    this.#userConnections.set(userId, userConnections?.concat(socket.id));
 
     logger.debug(`Connection made to: ${socket.id}`);
 
@@ -79,7 +79,7 @@ class WebSocketServer {
       FETCH_USER_METADATA,
       handleWsError(() =>
         userMetadataService
-          .fetchUserMetadata(socket.data.session!.getUserId()!)
+          .fetchUserMetadata(socket.data.session.getUserId())
           .then((data) => this.handleUserMetadata(sessionId, data)),
       ),
     );
@@ -97,12 +97,12 @@ class WebSocketServer {
     return () => {
       logger.debug(`Disconnecting from: ${socket.id}`);
 
-      const userConnections = this.#userConnections.get(userId!)!;
+      const userConnections = this.#userConnections.get(userId)!;
 
-      this.#sessionConnections.delete(sessionId!);
+      this.#sessionConnections.delete(sessionId);
 
       this.#userConnections.set(
-        userId!,
+        userId,
         userConnections.filter((id) => id !== socket.id),
       );
     };

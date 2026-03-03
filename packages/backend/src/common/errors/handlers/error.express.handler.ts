@@ -1,6 +1,6 @@
-import { Request } from "express";
+import { type Request } from "express";
 import { GaxiosError } from "gaxios";
-import { SessionRequest } from "supertokens-node/framework/express";
+import { type SessionRequest } from "supertokens-node/framework/express";
 import { GOOGLE_REVOKED } from "@core/constants/websocket.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
@@ -18,8 +18,11 @@ import {
   isInvalidGoogleToken,
   isInvalidValue,
 } from "@backend/common/services/gcal/gcal.utils";
-import { CompassError, Info_Error } from "@backend/common/types/error.types";
-import { SessionResponse } from "@backend/common/types/express.types";
+import {
+  type CompassError,
+  type Info_Error,
+} from "@backend/common/types/error.types";
+import { type SessionResponse } from "@backend/common/types/express.types";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import { getSyncByToken } from "@backend/sync/util/sync.queries";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";

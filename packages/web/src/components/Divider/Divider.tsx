@@ -1,6 +1,8 @@
-import React, { HTMLAttributes, useEffect, useState } from "react";
+import { type HTMLAttributes } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { StyledDivider } from "./styled";
-import { Props } from "./types";
+import { type Props } from "./types";
 
 export const Divider: React.FC<Props & HTMLAttributes<HTMLDivElement>> = (
   props,

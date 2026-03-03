@@ -1,6 +1,6 @@
 import shell from "shelljs";
 import { COMPASS_ROOT_DEV, PCKG } from "@scripts/common/cli.constants";
-import { Options_Cli } from "@scripts/common/cli.types";
+import { type Options_Cli } from "@scripts/common/cli.types";
 import { getEnvironmentAnswer, log } from "@scripts/common/cli.utils";
 import {
   copyNodeConfigsToBuild,

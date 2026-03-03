@@ -5,7 +5,7 @@ import {
   GoogleCalendarMetadataSchema,
 } from "@core/types/calendar.types";
 import { CalendarProvider } from "@core/types/event.types";
-import { gSchema$CalendarListEntry } from "@core/types/gcal";
+import { type gSchema$CalendarListEntry } from "@core/types/gcal";
 
 describe("Calendar Types", () => {
   const id = faker.internet.email();

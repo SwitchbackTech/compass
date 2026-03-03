@@ -1,9 +1,9 @@
 import { useHotkeys } from "react-hotkeys-hook";
-import { OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
+import { type OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
 import {
-  Categories_Event,
-  Direction_Migrate,
-  Schema_Event,
+  type Categories_Event,
+  type Direction_Migrate,
+  type Schema_Event,
 } from "@core/types/event.types";
 import { isComboboxInteraction } from "@web/common/utils/form/form.util";
 

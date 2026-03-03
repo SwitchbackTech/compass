@@ -1,5 +1,10 @@
 import { createElement } from "react";
-import { Id, ToastContent, ToastOptions, toast } from "react-toastify";
+import {
+  type Id,
+  type ToastContent,
+  type ToastOptions,
+  toast,
+} from "react-toastify";
 import { toastDefaultOptions } from "@web/common/constants/toast.constants";
 import { SessionExpiredToast } from "@web/common/utils/toast/session-expired.toast";
 

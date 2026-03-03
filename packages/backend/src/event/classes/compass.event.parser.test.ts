@@ -3,10 +3,10 @@ import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
 import {
   CalendarProvider,
   Categories_Recurrence,
-  CompassEvent,
+  type CompassEvent,
   CompassEventStatus,
-  Schema_Event_Recur_Base,
-  WithCompassId,
+  type Schema_Event_Recur_Base,
+  type WithCompassId,
 } from "@core/types/event.types";
 import {
   createMockBaseEvent,
@@ -210,7 +210,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
           switch (calendarProvider) {
             case CalendarProvider.GOOGLE:
-              await testCompassSeriesInGcal(baseEvent!, instances);
+              await testCompassSeriesInGcal(baseEvent, instances);
               break;
           }
         });

@@ -3,7 +3,7 @@ import {
   ArrowCircleRightIcon,
   CheckCircleIcon,
 } from "@phosphor-icons/react";
-import { Task } from "@web/common/types/task.types";
+import { type Task } from "@web/common/types/task.types";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { TaskDescription } from "../TaskDescription/TaskDescription";
 

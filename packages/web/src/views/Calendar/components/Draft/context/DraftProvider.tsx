@@ -1,14 +1,14 @@
-import React from "react";
+import type React from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
-import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { useDraftActions } from "../hooks/actions/useDraftActions";
 import { useDraftConfirmation } from "../hooks/state/useDraftConfirmation";
 import { useDraftForm } from "../hooks/state/useDraftForm";
 import { useDraftState } from "../hooks/state/useDraftState";
-import { DraftContext, State_Draft } from "./DraftContext";
+import { DraftContext, type State_Draft } from "./DraftContext";
 
 interface DraftProviderProps {
   children: React.ReactNode;

@@ -1,7 +1,7 @@
-import { PreloadedState, configureStore } from "@reduxjs/toolkit";
-import { Schema_Event } from "@core/types/event.types";
+import { type PreloadedState, configureStore } from "@reduxjs/toolkit";
+import { type Schema_Event } from "@core/types/event.types";
 import { sagaMiddleware } from "@web/common/store/middlewares";
-import { RootState } from "@web/store";
+import { type RootState } from "@web/store";
 import { reducers } from "@web/store/reducers";
 
 // Type for the simplified test state that matches our mock
@@ -165,7 +165,7 @@ export const createStoreWithEvents = (
 
   return configureStore({
     reducer: reducers,
-    preloadedState: preloadedState as PreloadedState<RootState>,
+    preloadedState: preloadedState,
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({
         thunk: false,

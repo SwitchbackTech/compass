@@ -1,5 +1,5 @@
-import React from "react";
-import { IconButtonProps, StyledIconButton } from "./styled";
+import type React from "react";
+import { type IconButtonProps, StyledIconButton } from "./styled";
 
 const IconButton: React.FC<IconButtonProps> = ({
   size = "medium",

@@ -1,7 +1,7 @@
 import { Origin, Priorities } from "@core/constants/core.constants";
 import {
-  Schema_GridEvent,
-  Schema_SomedayEvent,
+  type Schema_GridEvent,
+  type Schema_SomedayEvent,
 } from "@web/common/types/web.event.types";
 import {
   OnSubmitParser,

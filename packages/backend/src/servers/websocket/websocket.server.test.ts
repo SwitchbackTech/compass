@@ -14,7 +14,7 @@ import {
   SOMEDAY_EVENT_CHANGE_PROCESSED,
   USER_METADATA,
 } from "@core/constants/websocket.constants";
-import { UserMetadata } from "@core/types/user.types";
+import { type UserMetadata } from "@core/types/user.types";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 

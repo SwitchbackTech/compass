@@ -7,8 +7,8 @@ import { ID_GRID_ALLDAY_ROW } from "@web/common/constants/web.constants";
 import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
 import { theme } from "@web/common/styles/theme";
 import { colorByPriority } from "@web/common/styles/theme.util";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { DNDChildProps } from "@web/components/DND/Draggable";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type DNDChildProps } from "@web/components/DND/Draggable";
 import { SLOT_HEIGHT } from "@web/views/Day/constants/day.constants";
 import { getEventHeight } from "@web/views/Day/util/agenda/agenda.util";
 

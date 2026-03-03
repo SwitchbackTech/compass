@@ -1,7 +1,7 @@
 import { renderHook } from "@testing-library/react";
-import { Schema_Event, WithCompassId } from "@core/types/event.types";
+import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
-import { Schema_WebEvent } from "@web/common/types/web.event.types";
+import { type Schema_WebEvent } from "@web/common/types/web.event.types";
 import { editEventSlice } from "@web/ducks/events/slices/event.slice";
 import { eventsStore, setDraft } from "@web/store/events";
 import { useAppDispatch } from "@web/store/store.hooks";

@@ -1,4 +1,4 @@
-import { Event_Core } from "@core/types/event.types";
+import { type Event_Core } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import {
   ensureStorageReady,

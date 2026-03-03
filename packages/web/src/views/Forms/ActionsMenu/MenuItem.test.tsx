@@ -1,4 +1,4 @@
-import { KeyboardEvent } from "react";
+import { type KeyboardEvent } from "react";
 import "@testing-library/jest-dom";
 import { fireEvent, screen } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";

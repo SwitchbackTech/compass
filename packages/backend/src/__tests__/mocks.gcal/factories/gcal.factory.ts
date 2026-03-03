@@ -276,7 +276,7 @@ export const mockGcal = ({
               options,
               200,
               "OK",
-              updatedEvent.id!,
+              updatedEvent.id,
             ),
           );
         },

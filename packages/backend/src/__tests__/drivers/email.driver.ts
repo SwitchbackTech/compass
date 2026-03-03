@@ -1,10 +1,10 @@
 import { faker } from "@faker-js/faker";
-import { Subscriber } from "@core/types/email/email.types";
+import { type Subscriber } from "@core/types/email/email.types";
 import dayjs from "@core/util/date/dayjs";
 import EmailService from "@backend/email/email.service";
 import {
-  Response_TagSubscriber,
-  Response_UpsertSubscriber,
+  type Response_TagSubscriber,
+  type Response_UpsertSubscriber,
 } from "@backend/email/email.types";
 
 export class EmailDriver {

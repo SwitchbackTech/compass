@@ -1,4 +1,4 @@
-import { gSchema$Events } from "@core/types/gcal";
+import { type gSchema$Events } from "@core/types/gcal";
 
 export const deleteAllPayload2: gSchema$Events = {
   kind: "calendar#events",

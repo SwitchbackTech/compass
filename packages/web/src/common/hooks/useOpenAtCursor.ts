@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
-import { BehaviorSubject, Observable, distinctUntilChanged, share } from "rxjs";
-import { Placement, Strategy } from "@floating-ui/react";
+import {
+  BehaviorSubject,
+  type Observable,
+  distinctUntilChanged,
+  share,
+} from "rxjs";
+import { type Placement, type Strategy } from "@floating-ui/react";
 
 export enum CursorItem {
   EventForm = "EventForm",

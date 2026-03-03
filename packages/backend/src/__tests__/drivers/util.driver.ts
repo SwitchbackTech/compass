@@ -1,5 +1,5 @@
-import { WithId } from "mongodb";
-import { Schema_User } from "@core/types/user.types";
+import { type WithId } from "mongodb";
+import { type Schema_User } from "@core/types/user.types";
 import { SyncDriver } from "@backend/__tests__/drivers/sync.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 

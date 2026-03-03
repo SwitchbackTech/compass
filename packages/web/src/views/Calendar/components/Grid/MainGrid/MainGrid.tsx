@@ -1,6 +1,6 @@
-import { FC, MouseEvent, MutableRefObject } from "react";
+import { type FC, type MouseEvent, type MutableRefObject } from "react";
 import { Categories_Event } from "@core/types/event.types";
-import { Dayjs } from "@core/util/date/dayjs";
+import { type Dayjs } from "@core/util/date/dayjs";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { getHourLabels } from "@web/common/utils/datetime/web.date.util";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
@@ -16,10 +16,10 @@ import {
   StyledGridWithTimeLabels,
   StyledMainGrid,
 } from "@web/views/Calendar/components/Grid/MainGrid/styled";
-import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { useDragEventSmartScroll } from "@web/views/Calendar/hooks/grid/useDragEventSmartScroll";
-import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { DRAFT_DURATION_MIN } from "@web/views/Calendar/layout.constants";
 
 interface Props {

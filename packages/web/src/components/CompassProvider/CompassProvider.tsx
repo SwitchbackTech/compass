@@ -1,5 +1,5 @@
 import { PostHogProvider } from "posthog-js/react";
-import { PropsWithChildren } from "react";
+import { type PropsWithChildren } from "react";
 import { Provider } from "react-redux";
 import { ToastContainer } from "react-toastify";
 import { ThemeProvider } from "styled-components";

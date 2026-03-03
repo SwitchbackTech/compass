@@ -1,7 +1,7 @@
-import { ObjectId, WithId } from "mongodb";
+import { ObjectId, type WithId } from "mongodb";
 import { randomUUID } from "node:crypto";
-import { DefaultEventsMap } from "socket.io";
-import { Socket } from "socket.io-client";
+import { type DefaultEventsMap } from "socket.io";
+import { type Socket } from "socket.io-client";
 import { faker } from "@faker-js/faker";
 import {
   EVENT_CHANGED,
@@ -9,7 +9,7 @@ import {
 } from "@core/constants/websocket.constants";
 import { Status } from "@core/errors/status.codes";
 import { Resource_Sync, XGoogleResourceState } from "@core/types/sync.types";
-import { Schema_User } from "@core/types/user.types";
+import { type Schema_User } from "@core/types/user.types";
 import { isBase, isInstance } from "@core/util/event/event.util";
 import { waitUntilEvent } from "@core/util/wait-until-event.util";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";

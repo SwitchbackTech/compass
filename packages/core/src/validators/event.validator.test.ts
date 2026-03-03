@@ -1,5 +1,5 @@
 import { Origin, Priorities } from "../constants/core.constants";
-import { Schema_Event } from "../types/event.types";
+import { type Schema_Event } from "../types/event.types";
 import { validateEvent } from "./event.validator";
 
 describe("validateEvent", () => {
