@@ -11,13 +11,20 @@ import {
 import { IndexedDBAdapter } from "@web/common/storage/adapter/indexeddb.adapter";
 
 describe("storage adapter index", () => {
+  let consoleLogSpy: jest.SpyInstance;
+  let consoleWarnSpy: jest.SpyInstance;
+
   beforeEach(() => {
+    consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
+    consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation();
     resetStorage();
     jest.clearAllMocks();
   });
 
   afterEach(() => {
     resetStorage();
+    consoleLogSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
   });
 
   describe("getStorageAdapter", () => {
