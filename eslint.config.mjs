@@ -89,6 +89,8 @@ export default [
       "jest/no-identical-title": "error",
       "jest/prefer-to-have-length": "warn",
       "jest/valid-expect": "error",
+      "@typescript-eslint/unbound-method": "off",
+      "jest/unbound-method": "error",
     },
   },
   // Warn on console.log in packages/web to avoid leaking secure info
