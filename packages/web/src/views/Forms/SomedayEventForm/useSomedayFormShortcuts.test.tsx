@@ -7,11 +7,11 @@ import {
   useSomedayFormShortcuts,
 } from "@web/views/Forms/SomedayEventForm/useSomedayFormShortcuts";
 
-jest.mock("react-hotkeys-hook", () => ({
+jest.mock("@tanstack/react-hotkeys", () => ({
   useHotkeys: jest.fn(),
 }));
 
-const { useHotkeys } = jest.requireMock("react-hotkeys-hook");
+const { useHotkeys } = jest.requireMock("@tanstack/react-hotkeys");
 
 const TestComponent = (props: SomedayFormShortcutsProps) => {
   useSomedayFormShortcuts(props);
@@ -37,7 +37,7 @@ describe("SomedayEventForm shortcuts hook", () => {
   });
 
   const getHotkeyHandler = (combo: string) => {
-    const call = useHotkeys.mock.calls.find(([registeredCombo]) => {
+    const call = useHotkeys.mock.calls.find(([registeredCombo]: [string]) => {
       return registeredCombo === combo;
     });
     if (!call) {
@@ -49,22 +49,26 @@ describe("SomedayEventForm shortcuts hook", () => {
   test("registers all expected shortcuts with shared options", () => {
     render(<TestComponent {...defaultProps} />);
 
-    const registeredCombos = useHotkeys.mock.calls.map(([combo]) => combo);
+    const registeredCombos = useHotkeys.mock.calls.map(
+      ([combo]: [string]) => combo,
+    );
 
     expect(registeredCombos).toEqual([
       "delete",
       "enter",
-      "mod+enter",
+      "$mod+enter",
       "meta+d",
-      "ctrl+meta+up",
-      "ctrl+meta+down",
-      "ctrl+meta+right",
-      "ctrl+meta+left",
+      "ctrl+meta+arrowup",
+      "ctrl+meta+arrowdown",
+      "ctrl+meta+arrowright",
+      "ctrl+meta+arrowleft",
     ]);
 
-    useHotkeys.mock.calls.forEach(([, , options]) => {
-      expect(options).toBe(SOMEDAY_HOTKEY_OPTIONS);
-    });
+    useHotkeys.mock.calls.forEach(
+      ([, , options]: [string, Function, unknown]) => {
+        expect(options).toBe(SOMEDAY_HOTKEY_OPTIONS);
+      },
+    );
   });
 
   test("directional shortcuts prevent propagation and call onMigrate", () => {
@@ -75,7 +79,7 @@ describe("SomedayEventForm shortcuts hook", () => {
       stopPropagation: jest.fn(),
     } as unknown as KeyboardEvent;
 
-    const upHandler = getHotkeyHandler("ctrl+meta+up");
+    const upHandler = getHotkeyHandler("ctrl+meta+arrowup");
     upHandler(keyboardEvent);
 
     expect(keyboardEvent.preventDefault).toHaveBeenCalledTimes(1);
@@ -112,7 +116,7 @@ describe("SomedayEventForm shortcuts hook", () => {
       target: document.createElement("input"),
     } as unknown as KeyboardEvent;
 
-    const handler = getHotkeyHandler("mod+enter");
+    const handler = getHotkeyHandler("$mod+enter");
     handler(keyboardEvent);
 
     expect(defaultProps.onSubmit).toHaveBeenCalledTimes(1);
@@ -130,7 +134,7 @@ describe("SomedayEventForm shortcuts hook", () => {
       target: menuButton,
     } as unknown as KeyboardEvent;
 
-    const handler = getHotkeyHandler("mod+enter");
+    const handler = getHotkeyHandler("$mod+enter");
     handler(keyboardEvent);
 
     expect(defaultProps.onSubmit).toHaveBeenCalled();

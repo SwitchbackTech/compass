@@ -1,5 +1,4 @@
-import { useHotkeys } from "react-hotkeys-hook";
-import { type OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
+import { useHotkeys } from "@tanstack/react-hotkeys";
 import {
   type Categories_Event,
   type Direction_Migrate,
@@ -7,11 +6,8 @@ import {
 } from "@core/types/event.types";
 import { isComboboxInteraction } from "@web/common/utils/form/form.util";
 
-export const SOMEDAY_HOTKEY_OPTIONS: OptionsOrDependencyArray = {
-  enableOnFormTags: ["input"],
-  enableOnContentEditable: true,
+export const SOMEDAY_HOTKEY_OPTIONS = {
   enabled: true,
-  eventListenerOptions: { capture: true },
 };
 
 export interface SomedayFormShortcutsProps {
@@ -96,7 +92,7 @@ export const useSomedayFormShortcuts = ({
     [onSubmit],
   );
   useHotkeys(
-    "mod+enter",
+    "$mod+enter",
     (keyboardEvent) => {
       keyboardEvent.preventDefault();
       keyboardEvent.stopPropagation();
@@ -114,28 +110,28 @@ export const useSomedayFormShortcuts = ({
   );
 
   useHotkeys(
-    "ctrl+meta+up",
+    "ctrl+meta+arrowup",
     handleMigration("up", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
     [event, category, onMigrate],
   );
 
   useHotkeys(
-    "ctrl+meta+down",
+    "ctrl+meta+arrowdown",
     handleMigration("down", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
     [event, category, onMigrate],
   );
 
   useHotkeys(
-    "ctrl+meta+right",
+    "ctrl+meta+arrowright",
     handleMigration("forward", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
     [event, category, onMigrate],
   );
 
   useHotkeys(
-    "ctrl+meta+left",
+    "ctrl+meta+arrowleft",
     handleMigration("back", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
     [event, category, onMigrate],

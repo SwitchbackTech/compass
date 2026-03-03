@@ -2,9 +2,8 @@ import fastDeepEqual from "fast-deep-equal/react";
 import { type KeyboardEvent } from "react";
 import type React from "react";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { useHotkeys } from "react-hotkeys-hook";
-import { type OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
 import { Key } from "ts-key-enum";
+import { useHotkeys } from "@tanstack/react-hotkeys";
 import { Priorities } from "@core/constants/core.constants";
 import { darken } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
@@ -34,8 +33,8 @@ import {
   type SetEventFormField,
 } from "@web/views/Forms/EventForm/types";
 
-const hotkeysOptions: OptionsOrDependencyArray = {
-  enableOnFormTags: ["input"],
+const hotkeysOptions = {
+  enabled: true,
 };
 
 export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
@@ -261,23 +260,23 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         onDuplicate?.(event);
       },
       hotkeysOptions,
+      [onDuplicate, event],
     );
 
     useHotkeys(
-      "mod+enter",
+      "$mod+enter",
       (e) => {
         e.preventDefault();
         onSubmitForm();
       },
       {
         enabled: isFormOpen,
-        enableOnFormTags: true,
       },
       [isFormOpen, onSubmitForm],
     );
 
     useHotkeys(
-      "ctrl+meta+left",
+      "ctrl+meta+arrowleft",
       () => {
         if (isDraft) {
           return;
@@ -287,9 +286,8 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       },
       {
         enabled: isFormOpen,
-        enableOnFormTags: true,
       },
-      [isFormOpen],
+      [isFormOpen, onConvert],
     );
 
     return (
