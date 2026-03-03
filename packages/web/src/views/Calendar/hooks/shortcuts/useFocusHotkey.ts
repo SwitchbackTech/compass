@@ -4,4 +4,15 @@ export const useReminderHotkey = (
   callback: () => void,
   dependencies: unknown[] = [],
   enabled = true,
-) => useHotkeys("r", callback, { enabled }, dependencies);
+) =>
+  useHotkeys(
+    "r",
+    (event) => {
+      if (event && typeof event.preventDefault === "function") {
+        event.preventDefault();
+      }
+      callback();
+    },
+    { enabled },
+    dependencies,
+  );
