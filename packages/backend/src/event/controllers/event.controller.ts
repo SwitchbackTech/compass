@@ -2,7 +2,6 @@ import { ObjectId } from "mongodb";
 import { type SessionRequest } from "supertokens-node/framework/express";
 import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
 import { Status } from "@core/errors/status.codes";
-import { Logger } from "@core/logger/winston.logger";
 import {
   CompassCoreEventSchema,
   type CompassEvent,
@@ -20,8 +19,14 @@ import {
 import eventService from "@backend/event/services/event.service";
 import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.processor";
 
-const logger = Logger("app:event.controller");
-
+/**
+ * Event controller for CRUD operations on Compass events.
+ *
+ * Methods use `res.promise()` instead of try/catch to ensure errors are routed
+ * through the centralized error handler (handleExpressError). This is critical
+ * for proper handling of Google API errors like `invalid_grant`, which triggers
+ * automatic cleanup of revoked Google data and appropriate client notifications.
+ */
 class EventController {
   private async processEvents(_events: CompassEvent[]) {
     const events = _events.map((e) => ({
@@ -37,55 +42,42 @@ class EventController {
     await CompassSyncProcessor.processEvents(events);
   }
 
-  create = async (
+  create = (
     req: SReqBody<CompassEvent["payload"] | CompassEvent["payload"][]>,
     res: Res_Promise,
   ) => {
-    try {
-      const { body } = req;
-      const user = req.session?.getUserId() as string;
+    const { body } = req;
+    const user = req.session?.getUserId() as string;
+    const events = Array.isArray(body) ? body : [body];
 
-      // Handle both single object and array cases
-      const events = Array.isArray(body) ? body : [body];
-
-      await this.processEvents(
+    res.promise(
+      this.processEvents(
         events.map((e) => ({
           payload: { ...e, user },
           status: CompassEventStatus.CONFIRMED,
           applyTo: RecurringEventUpdateScope.THIS_EVENT,
         })) as CompassEvent[],
-      );
-
-      res.status(Status.NO_CONTENT).send();
-    } catch (e) {
-      logger.error(e);
-
-      res.status(Status.BAD_REQUEST).send();
-    }
+      ).then(() => ({ statusCode: Status.NO_CONTENT })),
+    );
   };
 
-  delete = async (req: SessionRequest, res: Res_Promise) => {
-    try {
-      const { query } = req;
-      const user = req.session?.getUserId() as string;
-      const _id = req.params["id"] as string;
-      const event = await eventService.readById(user, _id);
-      const applyTo = query["applyTo"] ?? RecurringEventUpdateScope.THIS_EVENT;
+  delete = (req: SessionRequest, res: Res_Promise) => {
+    const { query } = req;
+    const user = req.session?.getUserId() as string;
+    const _id = req.params["id"] as string;
+    const applyTo = query["applyTo"] ?? RecurringEventUpdateScope.THIS_EVENT;
 
-      await this.processEvents([
-        {
-          payload: event as CompassThisEvent["payload"],
-          status: CompassEventStatus.CANCELLED,
-          applyTo: applyTo as RecurringEventUpdateScope.THIS_EVENT,
-        },
-      ]);
-
-      res.status(Status.NO_CONTENT).send();
-    } catch (e) {
-      logger.error(e);
-
-      res.status(Status.BAD_REQUEST).send();
-    }
+    res.promise(
+      eventService.readById(user, _id).then((event) =>
+        this.processEvents([
+          {
+            payload: event as CompassThisEvent["payload"],
+            status: CompassEventStatus.CANCELLED,
+            applyTo: applyTo as RecurringEventUpdateScope.THIS_EVENT,
+          },
+        ]).then(() => ({ statusCode: Status.NO_CONTENT })),
+      ),
+    );
   };
 
   deleteAllByUser = async (req: SessionRequest, res: Res_Promise) => {
@@ -140,28 +132,22 @@ class EventController {
     }
   };
 
-  update = async (req: SReqBody<Schema_Event>, res: Res_Promise) => {
-    try {
-      const { body, query, params, session } = req;
-      const user = session?.getUserId() as string;
-      const _id = params["id"] as string;
-      const payload = { ...body, user, _id } as CompassThisEvent["payload"];
-      const applyTo = query["applyTo"] as RecurringEventUpdateScope.THIS_EVENT;
+  update = (req: SReqBody<Schema_Event>, res: Res_Promise) => {
+    const { body, query, params, session } = req;
+    const user = session?.getUserId() as string;
+    const _id = params["id"] as string;
+    const payload = { ...body, user, _id } as CompassThisEvent["payload"];
+    const applyTo = query["applyTo"] as RecurringEventUpdateScope.THIS_EVENT;
 
-      await this.processEvents([
+    res.promise(
+      this.processEvents([
         {
           payload,
           status: CompassEventStatus.CONFIRMED,
           applyTo: applyTo ?? RecurringEventUpdateScope.THIS_EVENT,
         },
-      ]);
-
-      res.status(Status.NO_CONTENT).send();
-    } catch (e) {
-      logger.error(e);
-
-      res.status(Status.BAD_REQUEST).send();
-    }
+      ]).then(() => ({ statusCode: Status.NO_CONTENT })),
+    );
   };
 }
 
