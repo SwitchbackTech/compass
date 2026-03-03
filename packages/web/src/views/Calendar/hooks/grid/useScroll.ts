@@ -1,4 +1,4 @@
-import { MutableRefObject, useCallback, useEffect } from "react";
+import { type MutableRefObject, useCallback, useEffect } from "react";
 import { getCurrentMinute } from "@web/common/utils/grid/grid.util";
 
 export const useScroll = (

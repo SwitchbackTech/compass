@@ -2,7 +2,7 @@ import axios from "axios";
 import pkg from "inquirer";
 import { ObjectId } from "mongodb";
 import { getApiBaseUrl, log } from "@scripts/common/cli.utils";
-import { Schema_Event } from "@core/types/event.types";
+import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import compassAuthService from "@backend/auth/services/compass.auth.service";

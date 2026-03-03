@@ -1,5 +1,5 @@
 import {
-  AuthState,
+  type AuthState,
   AuthStateSchema,
   DEFAULT_AUTH_STATE,
 } from "@web/common/constants/auth.constants";

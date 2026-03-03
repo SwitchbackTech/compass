@@ -1,6 +1,9 @@
-import { MouseEvent } from "react";
-import dayjs, { Dayjs } from "@core/util/date/dayjs";
-import { AssignResult, WidthPercentages } from "@web/common/types/util.types";
+import { type MouseEvent } from "react";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import {
+  type AssignResult,
+  type WidthPercentages,
+} from "@web/common/types/util.types";
 import {
   AFTER_TMRW_MULTIPLE,
   DIVIDER_GRID,

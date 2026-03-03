@@ -1,4 +1,4 @@
-import { FocusEvent, MouseEvent, useCallback } from "react";
+import { type FocusEvent, type MouseEvent, useCallback } from "react";
 import { getEntity } from "@ngneat/elf-entities";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import {

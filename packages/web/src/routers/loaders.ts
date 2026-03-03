@@ -1,6 +1,6 @@
-import { LoaderFunctionArgs, redirect } from "react-router-dom";
+import { type LoaderFunctionArgs, redirect } from "react-router-dom";
 import { zYearMonthDayString } from "@core/types/type.utils";
-import dayjs, { Dayjs } from "@core/util/date/dayjs";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 
 export interface DayLoaderData {

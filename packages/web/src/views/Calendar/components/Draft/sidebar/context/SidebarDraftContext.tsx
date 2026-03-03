@@ -1,6 +1,9 @@
 import { createContext } from "react";
-import { Actions_Sidebar } from "../hooks/useSidebarActions";
-import { Setters_Sidebar, State_Sidebar } from "../hooks/useSidebarState";
+import { type Actions_Sidebar } from "../hooks/useSidebarActions";
+import {
+  type Setters_Sidebar,
+  type State_Sidebar,
+} from "../hooks/useSidebarState";
 
 export interface SidebarDraftContextValue {
   state: State_Sidebar;

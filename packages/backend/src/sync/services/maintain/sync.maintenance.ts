@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
-import { Result_Watch_Stop } from "@core/types/sync.types";
-import { Schema_Watch } from "@core/types/watch.types";
+import { type Result_Watch_Stop } from "@core/types/sync.types";
+import { type Schema_Watch } from "@core/types/watch.types";
 import dayjs from "@core/util/date/dayjs";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import {

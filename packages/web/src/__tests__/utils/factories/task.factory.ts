@@ -1,4 +1,4 @@
-import { Task } from "@web/common/types/task.types";
+import { type Task } from "@web/common/types/task.types";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 
 export const createMockTask = (overrides?: Partial<Task>): Task => ({

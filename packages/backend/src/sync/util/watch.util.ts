@@ -1,6 +1,6 @@
 import { Logger } from "@core/logger/winston.logger";
 import { zBase64String } from "@core/types/type.utils";
-import { ChannelToken, ChannelTokenSchema } from "@core/types/watch.types";
+import { type ChannelToken, ChannelTokenSchema } from "@core/types/watch.types";
 import { ENV } from "@backend/common/constants/env.constants";
 
 const logger = Logger("app:sync.watch.util");

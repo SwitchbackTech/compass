@@ -1,11 +1,11 @@
 import { ObjectId } from "mongodb";
 import type { MigrationParams, RunnableMigration } from "umzug";
 import { confirm, input } from "@inquirer/prompts";
-import { MigrationContext } from "@scripts/common/cli.types";
+import { type MigrationContext } from "@scripts/common/cli.types";
 import { NodeEnv } from "@core/constants/core.constants";
 import {
   CompassEventStatus,
-  CompassThisEvent,
+  type CompassThisEvent,
   RecurringEventUpdateScope,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";

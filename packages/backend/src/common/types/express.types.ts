@@ -1,5 +1,5 @@
-import { Request, Response } from "express";
-import { SessionRequest } from "supertokens-node/framework/express";
+import { type Request, type Response } from "express";
+import { type SessionRequest } from "supertokens-node/framework/express";
 
 declare module "express-serve-static-core" {
   interface Request {

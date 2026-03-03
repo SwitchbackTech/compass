@@ -5,12 +5,12 @@ import {
   YMDHAM_FORMAT,
   YMDHM_FORMAT,
 } from "@core/constants/date.constants";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
-import dayjs, { Dayjs } from "@core/util/date/dayjs";
+import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
-import { Option_Time } from "@web/common/types/util.types";
-import { Schema_SelectedDates } from "@web/common/types/web.event.types";
+import { type Option_Time } from "@web/common/types/util.types";
+import { type Schema_SelectedDates } from "@web/common/types/web.event.types";
 import { roundToNext } from "@web/common/utils/round/round.util";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 

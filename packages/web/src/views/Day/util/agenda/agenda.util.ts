@@ -1,8 +1,8 @@
-import { Active, Over } from "@dnd-kit/core";
-import { Schema_Event } from "@core/types/event.types";
-import { Dayjs } from "@core/util/date/dayjs";
+import { type Active, type Over } from "@dnd-kit/core";
+import { type Schema_Event } from "@core/types/event.types";
+import { type Dayjs } from "@core/util/date/dayjs";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   MINUTES_PER_SLOT,
   SLOT_HEIGHT,

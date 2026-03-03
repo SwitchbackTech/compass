@@ -1,13 +1,13 @@
 import {
-  FocusEvent,
-  HTMLAttributes,
-  PropsWithChildren,
+  type FocusEvent,
+  type HTMLAttributes,
+  type PropsWithChildren,
   forwardRef,
   useCallback,
   useState,
 } from "react";
-import { StyledComponent } from "styled-components";
-import { UnderlinedInput } from "@web/common/types/component.types";
+import { type StyledComponent } from "styled-components";
+import { type UnderlinedInput } from "@web/common/types/component.types";
 import { Divider } from "@web/components/Divider";
 
 export interface Props extends UnderlinedInput, HTMLAttributes<HTMLElement> {

@@ -2,9 +2,9 @@ import { ObjectId } from "bson";
 import { act } from "react";
 import { screen, waitFor } from "@testing-library/react";
 import { Origin, Priorities } from "@core/constants/core.constants";
-import { Schema_Event } from "@core/types/event.types";
+import { type Schema_Event } from "@core/types/event.types";
 import { renderAgenda } from "@web/__tests__/utils/agenda/agenda.test.util";
-import { AppDispatch } from "@web/store";
+import { type AppDispatch } from "@web/store";
 import * as reduxHooks from "@web/store/store.hooks";
 
 describe("EventContextMenu", () => {

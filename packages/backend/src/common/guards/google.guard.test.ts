@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 import { faker } from "@faker-js/faker";
 import { IDSchema } from "@core/types/type.utils";
-import { Schema_User } from "@core/types/user.types";
+import { type Schema_User } from "@core/types/user.types";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { requireGoogleConnection } from "@backend/common/guards/google.guard";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";

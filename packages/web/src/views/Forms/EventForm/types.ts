@@ -1,9 +1,9 @@
-import { Dispatch, SetStateAction } from "react";
-import { Priority } from "@core/constants/core.constants";
+import { type Dispatch, type SetStateAction } from "react";
+import { type Priority } from "@core/constants/core.constants";
 import {
-  Categories_Event,
-  Direction_Migrate,
-  Schema_Event,
+  type Categories_Event,
+  type Direction_Migrate,
+  type Schema_Event,
 } from "@core/types/event.types";
 
 export interface FormProps {

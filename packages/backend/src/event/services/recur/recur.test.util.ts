@@ -1,4 +1,4 @@
-import { Schema_Event } from "@core/types/event.types";
+import { type Schema_Event } from "@core/types/event.types";
 
 export const areDatesUnique = (events: Schema_Event[]) => {
   const starts = new Set(events.map((e) => e.startDate));

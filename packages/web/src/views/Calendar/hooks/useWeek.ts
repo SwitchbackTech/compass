@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Dayjs } from "@core/util/date/dayjs";
+import { type Dayjs } from "@core/util/date/dayjs";
 import {
   computeSomedayEventsRequestFilter,
   toUTCOffset,
@@ -9,7 +9,7 @@ import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { updateDates } from "@web/ducks/events/slices/view.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
-import { Category_View } from "@web/views/Calendar/calendarView.types";
+import { type Category_View } from "@web/views/Calendar/calendarView.types";
 
 export type WeekNavigationSource = "manual" | "drag-to-edge";
 

@@ -1,9 +1,9 @@
 import { ObjectId } from "bson";
-import { UseInteractionsReturn } from "@floating-ui/react";
+import { type UseInteractionsReturn } from "@floating-ui/react";
 import "@testing-library/jest-dom";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { render, screen } from "@web/__tests__/__mocks__/mock.render";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { DraggableAllDayAgendaEvent } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/DraggableAllDayAgendaEvent";
 

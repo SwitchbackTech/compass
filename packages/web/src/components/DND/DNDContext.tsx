@@ -1,4 +1,4 @@
-import { PropsWithChildren, useCallback } from "react";
+import { type PropsWithChildren, useCallback } from "react";
 import {
   DndContext,
   KeyboardSensor,

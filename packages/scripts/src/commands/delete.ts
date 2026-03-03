@@ -1,12 +1,12 @@
 import pkg from "inquirer";
 import open, { apps } from "open";
 import { CLI_ENV, ENVIRONMENT } from "@scripts/common/cli.constants";
-import { Environment_Cli } from "@scripts/common/cli.types";
+import { type Environment_Cli } from "@scripts/common/cli.types";
 import { log } from "@scripts/common/cli.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { findCompassUsersBy } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
-import { Summary_Delete } from "@backend/user/types/user.types";
+import { type Summary_Delete } from "@backend/user/types/user.types";
 
 const { prompt } = pkg;
 

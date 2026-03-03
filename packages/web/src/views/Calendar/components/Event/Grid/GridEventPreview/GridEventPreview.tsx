@@ -1,7 +1,7 @@
-import { FC, memo, useCallback, useMemo } from "react";
+import { type FC, memo, useCallback, useMemo } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { DAY_COMPACT, DAY_HOUR_MIN_M } from "@core/constants/date.constants";
-import { Schema_Event } from "@core/types/event.types";
+import { type Schema_Event } from "@core/types/event.types";
 import { useCursorCoordinates } from "@web/common/hooks/useCursorCoordinates";
 import { getWidthBuffer } from "@web/common/utils/grid/grid.util";
 import { Flex } from "@web/components/Flex";
@@ -17,12 +17,12 @@ import {
   layerStyles,
 } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/styled";
 import { SOMEDAY_EVENT_HEIGHT } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEvent/styled";
-import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import {
-  Measurements_Grid,
-  Refs_Grid,
+  type Measurements_Grid,
+  type Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import {
   EVENT_ALLDAY_GAP,
   EVENT_ALLDAY_HEIGHT,

@@ -9,7 +9,7 @@ import type {
 import {
   type Params_WatchEvents,
   Resource_Sync,
-  SyncDetails,
+  type SyncDetails,
 } from "@core/types/sync.types";
 import { IDSchemaV4 } from "@core/types/type.utils";
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";

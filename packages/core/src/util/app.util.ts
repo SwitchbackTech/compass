@@ -1,4 +1,4 @@
-import { NodeEnv } from "@core/constants/core.constants";
+import { type NodeEnv } from "@core/constants/core.constants";
 import { isDev } from "@core/util/env.util";
 
 export const devAlert = (message: string) => {

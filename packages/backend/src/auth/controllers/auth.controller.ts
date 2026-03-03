@@ -1,8 +1,11 @@
 import { ObjectId } from "mongodb";
-import { SessionRequest } from "supertokens-node/framework/express";
+import { type SessionRequest } from "supertokens-node/framework/express";
 import { zObjectId } from "@core/types/type.utils";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
-import { ReqBody, Res_Promise } from "@backend/common/types/express.types";
+import {
+  type ReqBody,
+  type Res_Promise,
+} from "@backend/common/types/express.types";
 
 class AuthController {
   createSession = async (

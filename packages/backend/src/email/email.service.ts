@@ -1,12 +1,15 @@
 import axios from "axios";
 import { Logger } from "@core/logger/winston.logger";
-import { Subscriber, SubscriberSchema } from "@core/types/email/email.types";
+import {
+  type Subscriber,
+  SubscriberSchema,
+} from "@core/types/email/email.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import { EmailerError } from "@backend/common/errors/emailer/emailer.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import {
-  Response_TagSubscriber,
-  Response_UpsertSubscriber,
+  type Response_TagSubscriber,
+  type Response_UpsertSubscriber,
 } from "./email.types";
 
 const logger = Logger("app:email.service");

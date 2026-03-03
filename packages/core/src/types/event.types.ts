@@ -1,4 +1,4 @@
-import { ObjectId } from "bson";
+import { type ObjectId } from "bson";
 import type { Query } from "express-serve-static-core";
 import { z } from "zod";
 import {

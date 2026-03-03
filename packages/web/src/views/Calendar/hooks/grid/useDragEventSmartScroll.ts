@@ -1,4 +1,4 @@
-import { MutableRefObject, useEffect, useRef, useState } from "react";
+import { type MutableRefObject, useEffect, useRef, useState } from "react";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
 
 const SCROLL_SPEED = 10;

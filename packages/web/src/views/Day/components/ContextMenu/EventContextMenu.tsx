@@ -1,8 +1,8 @@
 import classNames from "classnames";
 import {
   FloatingPortal,
-  UseInteractionsReturn,
-  useFloating,
+  type UseInteractionsReturn,
+  type useFloating,
 } from "@floating-ui/react";
 import { useObservable } from "@ngneat/use-observable";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";

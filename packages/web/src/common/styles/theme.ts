@@ -1,4 +1,4 @@
-import { DefaultTheme } from "styled-components";
+import { type DefaultTheme } from "styled-components";
 import { c, textDark, textLight } from "@web/common/styles/colors";
 
 export const theme: DefaultTheme = {
@@ -82,9 +82,7 @@ export const theme: DefaultTheme = {
       extraBold: 900,
     },
   },
-  getContrastText: (
-    backgroundColor: string,
-  ): typeof textLight | typeof textDark => {
+  getContrastText: (backgroundColor: string): typeof textLight => {
     // Convert hex to RGB
     const hex = backgroundColor.replace("#", "");
     const r = parseInt(hex.substring(0, 2), 16);

@@ -1,12 +1,12 @@
 import { Provider } from "react-redux";
-import { BehaviorSubject } from "rxjs";
+import { type BehaviorSubject } from "rxjs";
 import { configureStore } from "@reduxjs/toolkit";
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   RecurringEventUpdateScope,
-  Schema_Event,
+  type Schema_Event,
 } from "@core/types/event.types";
 import { closeFloatingAtCursor } from "@web/common/hooks/useOpenAtCursor";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";

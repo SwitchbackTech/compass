@@ -1,8 +1,8 @@
 import { Origin, Priorities } from "@core/constants/core.constants";
 import {
-  Schema_GridEvent,
-  Schema_SomedayEvent,
-  Schema_WebEvent,
+  type Schema_GridEvent,
+  type Schema_SomedayEvent,
+  type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { validateGridEvent } from "@web/common/validators/grid.event.validator";

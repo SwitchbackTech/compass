@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import { z } from "zod/v4";
+import { type z } from "zod/v4";
 import Migration from "@scripts/migrations/2025.10.18T20.01.14.migrate-events-to-new-events-collection";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
@@ -41,8 +41,8 @@ export class EventDriver {
       });
 
       const recurringEventIds = new Map<string, ObjectId>([
-        [gcalAllDayEvents.gcalEvents.recurring.id!, new ObjectId()],
-        [gcalTimedEvents.gcalEvents.recurring.id!, new ObjectId()],
+        [gcalAllDayEvents.gcalEvents.recurring.id, new ObjectId()],
+        [gcalTimedEvents.gcalEvents.recurring.id, new ObjectId()],
       ]);
 
       const gcalEvents = [

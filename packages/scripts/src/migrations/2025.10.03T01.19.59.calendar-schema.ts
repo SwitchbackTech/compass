@@ -1,5 +1,5 @@
 import type { RunnableMigration } from "umzug";
-import { MigrationContext } from "@scripts/common/cli.types";
+import { type MigrationContext } from "@scripts/common/cli.types";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
 import { CompassCalendarSchema } from "@core/types/calendar.types";
 import { IDSchemaV4 } from "@core/types/type.utils";

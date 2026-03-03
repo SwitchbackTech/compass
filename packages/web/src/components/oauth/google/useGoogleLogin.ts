@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useGoogleLogin as useGoogleLoginBase } from "@react-oauth/google";
-import { SignInUpInput } from "@web/components/oauth/ouath.types";
+import { type SignInUpInput } from "@web/components/oauth/ouath.types";
 
 const SCOPES_REQUIRED = [
   "https://www.googleapis.com/auth/userinfo.email",

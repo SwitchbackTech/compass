@@ -1,4 +1,4 @@
-import { SyntheticEvent } from "react";
+import { type SyntheticEvent } from "react";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
 
 // Mock IntersectionObserver

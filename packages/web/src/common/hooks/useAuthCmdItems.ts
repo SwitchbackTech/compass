@@ -1,4 +1,4 @@
-import { JsonStructureItem } from "react-cmdk";
+import { type JsonStructureItem } from "react-cmdk";
 import { useSession } from "@web/auth/hooks/session/useSession";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 

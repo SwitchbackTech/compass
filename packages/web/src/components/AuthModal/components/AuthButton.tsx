@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { ButtonHTMLAttributes, FC } from "react";
+import { type ButtonHTMLAttributes, type FC } from "react";
 
 interface AuthButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   /** Visual variant of the button */

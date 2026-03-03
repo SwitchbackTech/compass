@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { getGradient } from "@web/common/styles/theme.util";
-import { Props } from "./types";
+import { type Props } from "./types";
 
 export const StyledDivider = styled.div<Props>`
   background: ${({ color }) => getGradient(color)};

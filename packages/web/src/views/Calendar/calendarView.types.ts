@@ -1,4 +1,4 @@
-import { Dayjs } from "@core/util/date/dayjs";
+import { type Dayjs } from "@core/util/date/dayjs";
 
 export interface RootProps {
   component: {

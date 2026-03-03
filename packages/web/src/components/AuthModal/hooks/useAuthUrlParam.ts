@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { AuthView } from "./useAuthModal";
+import { type AuthView } from "./useAuthModal";
 
 /**
  * Maps URL parameter values to AuthView types

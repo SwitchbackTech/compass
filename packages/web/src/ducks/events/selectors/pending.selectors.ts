@@ -1,5 +1,5 @@
 import { createSelector } from "@reduxjs/toolkit";
-import { RootState } from "@web/store";
+import { type RootState } from "@web/store";
 
 export const selectPendingEventIds = (state: RootState): string[] =>
   state.events.pendingEvents.eventIds;

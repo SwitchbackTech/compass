@@ -1,14 +1,9 @@
 import fastDeepEqual from "fast-deep-equal/react";
-import React, {
-  KeyboardEvent,
-  memo,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type KeyboardEvent } from "react";
+import type React from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
-import { OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
+import { type OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
 import { Key } from "ts-key-enum";
 import { Priorities } from "@core/constants/core.constants";
 import { darken } from "@core/util/color.utils";
@@ -18,7 +13,7 @@ import {
   colorByPriority,
   hoverColorByPriority,
 } from "@web/common/styles/theme.util";
-import { SelectOption } from "@web/common/types/component.types";
+import { type SelectOption } from "@web/common/types/component.types";
 import { mapToBackend } from "@web/common/utils/datetime/web.date.util";
 import { getCategory } from "@web/common/utils/event/event.util";
 import { isComboboxInteraction } from "@web/common/utils/form/form.util";
@@ -34,7 +29,10 @@ import {
   StyledIconRow,
   StyledTitle,
 } from "@web/views/Forms/EventForm/styled";
-import { FormProps, SetEventFormField } from "@web/views/Forms/EventForm/types";
+import {
+  type FormProps,
+  type SetEventFormField,
+} from "@web/views/Forms/EventForm/types";
 
 const hotkeysOptions: OptionsOrDependencyArray = {
   enableOnFormTags: ["input"],

@@ -1,4 +1,4 @@
-import { TransformableInfo } from "logform";
+import { type TransformableInfo } from "logform";
 import * as winston from "winston";
 import { MB_50 } from "@core/constants/core.constants";
 

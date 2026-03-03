@@ -3,12 +3,12 @@ import { RRule } from "rrule";
 import { RRULE } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import {
-  Schema_Event,
-  Schema_Event_Core,
-  Schema_Event_Recur_Base,
-  Schema_Event_Recur_Instance,
+  type Schema_Event,
+  type Schema_Event_Core,
+  type Schema_Event_Recur_Base,
+  type Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
-import dayjs, { Dayjs } from "@core/util/date/dayjs";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 

@@ -1,7 +1,7 @@
 import {
   CommandIcon,
   ControlIcon,
-  Icon,
+  type Icon,
   WindowsLogoIcon,
 } from "@phosphor-icons/react";
 import { DesktopOS, getDesktopOS } from "@web/common/utils/device/device.util";

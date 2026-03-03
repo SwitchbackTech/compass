@@ -7,7 +7,7 @@ import {
 } from "@web/common/utils/auth/google-auth.util";
 import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
-import { SignInUpInput } from "@web/components/oauth/ouath.types";
+import { type SignInUpInput } from "@web/components/oauth/ouath.types";
 
 // Mock dependencies
 jest.mock("@web/common/utils/auth/google-auth.util");

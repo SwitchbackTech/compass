@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 import { afterAll, beforeAll, describe, expect, it } from "@jest/globals";
 import { Priorities } from "@core/constants/core.constants";
-import { Schema_Priority } from "@core/types/priority.types";
+import { type Schema_Priority } from "@core/types/priority.types";
 import {
   cleanupCollections,
   cleanupTestDb,

@@ -1,5 +1,5 @@
 import { IndexedDBAdapter } from "./indexeddb.adapter";
-import { StorageAdapter } from "./storage.adapter";
+import { type StorageAdapter } from "./storage.adapter";
 
 let adapter: StorageAdapter | null = null;
 let initPromise: Promise<void> | null = null;

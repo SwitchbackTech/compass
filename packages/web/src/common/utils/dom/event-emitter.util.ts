@@ -1,5 +1,5 @@
 import { EventEmitter2 } from "eventemitter2";
-import { PointerEvent } from "react";
+import { type PointerEvent } from "react";
 import { BehaviorSubject, Subject } from "rxjs";
 import { StringV4Schema } from "@core/types/type.utils";
 import { isLeftClick } from "../mouse/mouse.util";

@@ -1,5 +1,9 @@
-import React, { useEffect, useMemo, useRef } from "react";
-import ReactSelect, { SelectInstance, SingleValueProps } from "react-select";
+import type React from "react";
+import { useEffect, useMemo, useRef } from "react";
+import ReactSelect, {
+  type SelectInstance,
+  type SingleValueProps,
+} from "react-select";
 import { components } from "react-select";
 import { Frequency } from "rrule";
 import { useTheme } from "styled-components";
@@ -7,7 +11,7 @@ import { Key } from "ts-key-enum";
 import { brighten, darken } from "@core/util/color.utils";
 import { theme } from "@web/common/styles/theme";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
-import { FrequencyValues } from "../../../EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";
+import { type FrequencyValues } from "../../../EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";
 import { SelectContent } from "./styled";
 
 export type SomedayFrequencyOption = {

@@ -2,10 +2,10 @@ import { z } from "zod";
 import {
   CompassCoreEventSchema,
   CompassEventRecurrence,
-  Schema_Event,
+  type Schema_Event,
 } from "@core/types/event.types";
 import { IDSchema } from "@core/types/type.utils";
-import { SelectOption } from "@web/common/types/component.types";
+import { type SelectOption } from "@web/common/types/component.types";
 
 const WebEventRecurrence = z.union([
   z.undefined(),

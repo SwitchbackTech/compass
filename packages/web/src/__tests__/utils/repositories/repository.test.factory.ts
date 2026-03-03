@@ -1,9 +1,9 @@
 import { Origin, Priorities } from "@core/constants/core.constants";
-import { Event_Core } from "@core/types/event.types";
+import { type Event_Core } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
-import { Task } from "@web/common/types/task.types";
+import { type Task } from "@web/common/types/task.types";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 
 /**

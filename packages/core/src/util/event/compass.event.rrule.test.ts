@@ -7,7 +7,7 @@ import { gEventToCompassEvent } from "@core/mappers/map.event";
 import {
   CalendarProvider,
   type Schema_Event_Recur_Base,
-  WithMongoId,
+  type WithMongoId,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
@@ -432,8 +432,8 @@ describe("CompassEventRRule: ", () => {
 
         const startDate = parseCompassEventDate(instance.startDate!);
         const endDate = parseCompassEventDate(instance.endDate!);
-        const cStartDate = parseCompassEventDate(compassInstance!.startDate!);
-        const cEndDate = parseCompassEventDate(compassInstance!.endDate!);
+        const cStartDate = parseCompassEventDate(compassInstance!.startDate);
+        const cEndDate = parseCompassEventDate(compassInstance!.endDate);
 
         expect(startDate.isSame(cStartDate)).toBe(true);
         expect(endDate.isSame(cEndDate)).toBe(true);

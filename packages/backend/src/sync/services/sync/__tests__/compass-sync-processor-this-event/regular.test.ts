@@ -4,7 +4,7 @@ import {
   CalendarProvider,
   Categories_Recurrence,
   CompassEventStatus,
-  CompassThisEvent,
+  type CompassThisEvent,
   RecurringEventUpdateScope,
 } from "@core/types/event.types";
 import { parseCompassEventDate } from "@core/util/event/event.util";
@@ -1179,7 +1179,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE:
-                await testCompassSeriesInGcal(baseEvent!, instances);
+                await testCompassSeriesInGcal(baseEvent, instances);
                 break;
             }
           });

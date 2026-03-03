@@ -1,4 +1,4 @@
-import { FC, ReactNode } from "react";
+import { type FC, type ReactNode } from "react";
 import { AuthModalContext, useAuthModalState } from "./hooks/useAuthModal";
 
 interface AuthModalProviderProps {

@@ -1,20 +1,20 @@
 import {
   Resizable as ReResizable,
-  ResizableProps,
-  ResizeCallback,
-  ResizeStartCallback,
+  type ResizableProps,
+  type ResizeCallback,
+  type ResizeStartCallback,
 } from "re-resizable";
 import {
-  PropsWithChildren,
+  type PropsWithChildren,
   cloneElement,
   isValidElement,
   useCallback,
 } from "react";
-import { UniqueIdentifier } from "@dnd-kit/core";
+import { type UniqueIdentifier } from "@dnd-kit/core";
 import { usePointerPosition } from "@web/common/hooks/usePointerPosition";
 import { resizeId$ } from "@web/common/hooks/useResizeId";
 import { resizing$ } from "@web/common/hooks/useResizing";
-import { DNDChildProps } from "@web/components/DND/Draggable";
+import { type DNDChildProps } from "@web/components/DND/Draggable";
 
 interface Props extends ResizableProps {
   id: UniqueIdentifier;

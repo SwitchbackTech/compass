@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { InputHTMLAttributes, forwardRef, useId } from "react";
+import { type InputHTMLAttributes, forwardRef, useId } from "react";
 
 interface AuthInputProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, "className"> {

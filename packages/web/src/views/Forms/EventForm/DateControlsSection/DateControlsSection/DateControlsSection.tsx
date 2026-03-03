@@ -1,8 +1,8 @@
 import React from "react";
-import { Categories_Event } from "@core/types/event.types";
+import { type Categories_Event } from "@core/types/event.types";
 import {
   DateTimeSection,
-  Props as DateTimeSectionProps,
+  type Props as DateTimeSectionProps,
 } from "../DateTimeSection/DateTimeSection";
 import { StyledControlsSection } from "./styled";
 

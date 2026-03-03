@@ -10,7 +10,7 @@ import type {
   Schema_Event_Recur_Instance,
   WithMongoId,
 } from "@core/types/event.types";
-import dayjs, { Dayjs } from "@core/util/date/dayjs";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
   diffRRuleOptions,
   getCompassEventDateFormat,
@@ -52,7 +52,7 @@ export class CompassEventRRule extends RRule {
     const opts: Partial<RRuleStrOptions> = { dtstart, tzid };
     const recurrence = event.recurrence?.rule?.join("\n").trim();
     const valid = (recurrence?.length ?? 0) > 0;
-    const rruleSet = valid ? rrulestr(recurrence!, opts) : { origOptions: {} };
+    const rruleSet = valid ? rrulestr(recurrence, opts) : { origOptions: {} };
     const rruleOptions = { ...rruleSet.origOptions, ..._options };
     const options = { ...rruleOptions, dtstart, tzid };
 
@@ -155,7 +155,7 @@ export class CompassEventRRule extends RRule {
       const endDate = _endDate.format(this.#dateFormat);
       const recurrence = { eventId: baseEventId };
       const instance = { ...baseData, _id, startDate, endDate, recurrence };
-      const providerData = MapEvent.toProviderData(instance, provider!, base);
+      const providerData = MapEvent.toProviderData(instance, provider, base);
 
       return { ...instance, ...providerData };
     });

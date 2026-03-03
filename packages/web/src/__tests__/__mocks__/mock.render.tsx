@@ -1,14 +1,14 @@
 import {
-  ComponentType,
-  PropsWithChildren,
-  ReactElement,
+  type ComponentType,
+  type PropsWithChildren,
+  type ReactElement,
   isValidElement,
 } from "react";
-import { RouterProvider, RouterProviderProps } from "react-router-dom";
+import { RouterProvider, type RouterProviderProps } from "react-router-dom";
 import { configureStore } from "@reduxjs/toolkit";
 import {
-  RenderHookOptions,
-  RenderOptions,
+  type RenderHookOptions,
+  type RenderOptions,
   render,
   renderHook,
 } from "@testing-library/react";

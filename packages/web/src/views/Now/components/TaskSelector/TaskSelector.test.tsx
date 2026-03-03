@@ -1,11 +1,16 @@
 import { MemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
-import { RenderOptions, render, screen, waitFor } from "@testing-library/react";
+import {
+  type RenderOptions,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import dayjs from "@core/util/date/dayjs";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { getTaskRepository } from "@web/common/repositories/task/task.repository.util";
-import { Task } from "@web/common/types/task.types";
+import { type Task } from "@web/common/types/task.types";
 import * as storageUtil from "@web/common/utils/storage/storage.util";
 import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
 import { useAvailableTasks } from "@web/views/Now/hooks/useAvailableTasks";

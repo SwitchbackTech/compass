@@ -1,11 +1,14 @@
 import React from "react";
-import { DraggableProvided, DraggableStateSnapshot } from "@hello-pangea/dnd";
+import {
+  type DraggableProvided,
+  type DraggableStateSnapshot,
+} from "@hello-pangea/dnd";
 import "@testing-library/jest-dom";
 import { LEARN_CHINESE } from "@core/__mocks__/v1/events/events.misc";
 import {
   Categories_Event,
   RecurringEventUpdateScope,
-  Schema_Event,
+  type Schema_Event,
 } from "@core/types/event.types";
 import { createMockBaseEvent } from "@core/util/test/ccal.event.factory";
 import { fireEvent, render } from "@web/__tests__/__mocks__/mock.render";
@@ -81,7 +84,7 @@ describe("SomedayEventContainer keyboard interactions", () => {
 
     const btn = document.querySelector(
       `[data-event-id="${LEARN_CHINESE._id}"]`,
-    )! as HTMLElement;
+    )!;
     btn.focus();
     fireEvent.keyDown(btn, { key: "Enter" });
 
@@ -148,7 +151,7 @@ describe("SomedayEventContainer keyboard interactions", () => {
 
     const btn = document.querySelector(
       `[data-event-id="${LEARN_CHINESE._id}"]`,
-    )! as HTMLElement;
+    )!;
     btn.focus();
     fireEvent.keyDown(btn, { key: "ArrowUp", metaKey: true, ctrlKey: true });
 
@@ -213,7 +216,7 @@ describe("SomedayEventContainer keyboard interactions", () => {
 
     const btn = document.querySelector(
       `[data-event-id="${LEARN_CHINESE._id}"]`,
-    )! as HTMLElement;
+    )!;
     btn.focus();
     fireEvent.keyDown(btn, { key: "ArrowDown", metaKey: true, ctrlKey: true });
 

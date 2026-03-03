@@ -1,4 +1,4 @@
-import { gSchema$EventBase } from "@core/types/gcal";
+import { type gSchema$EventBase } from "@core/types/gcal";
 import {
   mockRecurringGcalBaseEvent,
   mockRecurringGcalInstances,
@@ -13,7 +13,7 @@ export const mockAndCategorizeGcalEvents = () => {
     { summary: "Recurrence" },
     false,
     { count: 3 },
-  ) as gSchema$EventBase;
+  );
 
   // Create instances of the recurring event
   const instances = mockRecurringGcalInstances(baseRecurringEvent);

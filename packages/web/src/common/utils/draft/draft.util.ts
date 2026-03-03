@@ -1,18 +1,18 @@
-import { MouseEvent } from "react";
-import { Dispatch } from "redux";
+import { type MouseEvent } from "react";
+import { type Dispatch } from "redux";
 import { Categories_Event } from "@core/types/event.types";
-import dayjs, { Dayjs } from "@core/util/date/dayjs";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
   ID_GRID_EVENTS_ALLDAY,
   ID_GRID_EVENTS_TIMED,
 } from "@web/common/constants/web.constants";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
 import { getElemById, getX } from "@web/common/utils/grid/grid.util";
 import { roundToNext } from "@web/common/utils/round/round.util";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
-import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { type Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
+import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import {
   DRAFT_DURATION_MIN,
   GRID_TIME_STEP,

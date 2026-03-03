@@ -1,5 +1,5 @@
-import { ObjectId, WithId } from "mongodb";
-import { Schema_User } from "@core/types/user.types";
+import { ObjectId, type WithId } from "mongodb";
+import { type Schema_User } from "@core/types/user.types";
 import { createRecurrenceSeries } from "@backend/__tests__/mocks.db/ccal.mock.db.util";
 import { mockRecurringGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 

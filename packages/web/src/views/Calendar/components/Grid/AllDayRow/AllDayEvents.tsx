@@ -1,8 +1,8 @@
 import { useStore } from "react-redux";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
-import { PartialMouseEvent } from "@web/common/types/util.types";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type PartialMouseEvent } from "@web/common/types/util.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getEventDragOffset } from "@web/common/utils/event/event.util";
 import { isLeftClick } from "@web/common/utils/mouse/mouse.util";
 import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
@@ -15,8 +15,8 @@ import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { AllDayEventMemo } from "@web/views/Calendar/components/Grid/AllDayRow/AllDayEvent";
 import { StyledEvents } from "@web/views/Calendar/components/Grid/AllDayRow/styled";
 import { useGridEventMouseDown } from "@web/views/Calendar/hooks/grid/useGridEventMouseDown";
-import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 
 interface Props {
   measurements: Measurements_Grid;

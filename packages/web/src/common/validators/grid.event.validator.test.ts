@@ -1,6 +1,6 @@
 import { ObjectId } from "bson";
 import { Origin, Priorities } from "@core/constants/core.constants";
-import { Schema_GridEvent } from "../types/web.event.types";
+import { type Schema_GridEvent } from "../types/web.event.types";
 import { validateGridEvent } from "./grid.event.validator";
 
 describe("validateGridEvent", () => {

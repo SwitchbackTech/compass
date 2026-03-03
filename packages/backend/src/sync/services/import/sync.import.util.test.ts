@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { gcalEvents } from "@core/__mocks__/v1/events/gcal/gcal.event";
-import { gSchema$Event } from "@core/types/gcal";
+import { type gSchema$Event } from "@core/types/gcal";
 import dayjs from "@core/util/date/dayjs";
 import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.utils";
 import { organizeGcalEventsByType } from "@backend/sync/services/import/sync.import.util";

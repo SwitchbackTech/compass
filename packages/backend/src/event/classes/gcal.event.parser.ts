@@ -1,14 +1,18 @@
-import { ClientSession, UpdateFilter, WithId } from "mongodb";
+import { type ClientSession, type UpdateFilter, type WithId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
 import { gEventToCompassEvent } from "@core/mappers/map.event";
 import {
   Categories_Recurrence,
-  Schema_Event,
-  Schema_Event_Recur_Base,
-  TransitionCategoriesRecurrence,
-  TransitionStatus,
+  type Schema_Event,
+  type Schema_Event_Recur_Base,
+  type TransitionCategoriesRecurrence,
+  type TransitionStatus,
 } from "@core/types/event.types";
-import { WithGcalId, gSchema$Event, gSchema$EventBase } from "@core/types/gcal";
+import {
+  type WithGcalId,
+  type gSchema$Event,
+  type gSchema$EventBase,
+} from "@core/types/gcal";
 import {
   isBase,
   isInstance,
@@ -28,7 +32,10 @@ import {
   stripReadonlyEventProps,
 } from "@backend/event/services/recur/util/recur.util";
 import { createSyncImport } from "@backend/sync/services/import/sync.import";
-import { Event_Transition, Operation_Sync } from "@backend/sync/sync.types";
+import {
+  type Event_Transition,
+  type Operation_Sync,
+} from "@backend/sync/sync.types";
 
 export class GcalEventParser {
   #logger = Logger("app.event.classes.gcal.parser");

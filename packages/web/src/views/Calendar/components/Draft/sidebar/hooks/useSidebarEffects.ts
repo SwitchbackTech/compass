@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { selectIsDNDing } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
-import { Actions_Sidebar } from "./useSidebarActions";
-import { State_Sidebar } from "./useSidebarState";
+import { type Actions_Sidebar } from "./useSidebarActions";
+import { type State_Sidebar } from "./useSidebarState";
 
 export const useSidebarEffects = (
   state: State_Sidebar,

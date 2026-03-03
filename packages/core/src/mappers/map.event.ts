@@ -4,16 +4,16 @@ import { Origin, Priorities } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import {
   CalendarProvider,
-  Event_Core,
-  Schema_Event,
-  Schema_Event_Recur_Base,
-  Schema_Event_Recur_Instance,
-  Schema_Event_Regular,
-  WithCompassId,
-  WithMongoId,
-  WithoutCompassId,
+  type Event_Core,
+  type Schema_Event,
+  type Schema_Event_Recur_Base,
+  type Schema_Event_Recur_Instance,
+  type Schema_Event_Regular,
+  type WithCompassId,
+  type WithMongoId,
+  type WithoutCompassId,
 } from "@core/types/event.types";
-import { WithGcalId, gSchema$Event } from "@core/types/gcal";
+import { type WithGcalId, type gSchema$Event } from "@core/types/gcal";
 import dayjs from "@core/util/date/dayjs";
 import {
   isAllDay,

@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import styled from "styled-components";
 import { ArrowDownIcon } from "@phosphor-icons/react";
 import { getMetaKeyIcon } from "@web/common/utils/shortcut/shortcut.util";

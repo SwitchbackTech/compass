@@ -77,4 +77,4 @@ if (!success) {
   process.exit(1);
 }
 
-export const ENV = data!;
+export const ENV = data;

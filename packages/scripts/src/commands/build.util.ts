@@ -5,7 +5,7 @@ import {
   NODE_BUILD,
   PCKG,
 } from "@scripts/common/cli.constants";
-import { Options_Cli } from "@scripts/common/cli.types";
+import { type Options_Cli } from "@scripts/common/cli.types";
 import { _confirm, fileExists, log } from "@scripts/common/cli.utils";
 
 /**

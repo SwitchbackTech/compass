@@ -1,12 +1,12 @@
-import { PropsWithChildren, createContext, useCallback } from "react";
+import { type PropsWithChildren, createContext, useCallback } from "react";
 import {
-  DragStart,
-  DragUpdate,
-  DropResult,
-  OnDragEndResponder,
-  OnDragStartResponder,
-  OnDragUpdateResponder,
-  ResponderProvided,
+  type DragStart,
+  type DragUpdate,
+  type DropResult,
+  type OnDragEndResponder,
+  type OnDragStartResponder,
+  type OnDragUpdateResponder,
+  type ResponderProvided,
 } from "@hello-pangea/dnd";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
 

@@ -1,7 +1,7 @@
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
-import { RootProps } from "@web/views/Calendar/calendarView.types";
+import { type RootProps } from "@web/views/Calendar/calendarView.types";
 import { Dedication } from "@web/views/Calendar/components/Dedication";
 import { Draft } from "@web/views/Calendar/components/Draft/Draft";
 import { DraftProvider } from "@web/views/Calendar/components/Draft/context/DraftProvider";

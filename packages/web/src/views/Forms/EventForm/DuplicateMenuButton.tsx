@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { Copy } from "@phosphor-icons/react";
 import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
 import { Text } from "@web/components/Text";

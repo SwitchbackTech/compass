@@ -1,7 +1,8 @@
 import classNames from "classnames";
-import React, { useRef } from "react";
+import type React from "react";
+import { useRef } from "react";
 import { DATA_TASK_ELEMENT_ID } from "@web/common/constants/web.constants";
-import { Task as TaskType } from "@web/common/types/task.types";
+import { type Task as TaskType } from "@web/common/types/task.types";
 import { ArrowButton } from "@web/components/Button/ArrowButton";
 import { TaskCircleIcon } from "@web/views/Day/components/Icons/TaskCircleIcon";
 

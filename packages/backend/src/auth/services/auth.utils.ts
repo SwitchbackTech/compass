@@ -1,5 +1,5 @@
-import { Credentials } from "google-auth-library";
-import GoogleAuthService from "@backend/auth/services/google.auth.service";
+import { type Credentials } from "google-auth-library";
+import type GoogleAuthService from "@backend/auth/services/google.auth.service";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 

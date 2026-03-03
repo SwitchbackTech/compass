@@ -2,10 +2,10 @@ import { screen } from "@testing-library/react";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
-import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { AllDayEvents } from "./AllDayEvents";
 
 jest.mock("@web/views/Calendar/components/Grid/AllDayRow/AllDayEvent", () => ({

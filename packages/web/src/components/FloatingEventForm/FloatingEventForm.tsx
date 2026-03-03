@@ -2,11 +2,11 @@ import { useCallback, useMemo } from "react";
 import {
   FloatingFocusManager,
   FloatingPortal,
-  UseInteractionsReturn,
-  useFloating,
+  type UseInteractionsReturn,
+  type useFloating,
 } from "@floating-ui/react";
 import { getEntity } from "@ngneat/elf-entities";
-import { Schema_Event, WithCompassId } from "@core/types/event.types";
+import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import {
   CursorItem,

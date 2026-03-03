@@ -1,5 +1,5 @@
 import { Status } from "@core/errors/status.codes";
-import { ErrorMetadata } from "@backend/common/types/error.types";
+import { type ErrorMetadata } from "@backend/common/types/error.types";
 
 interface UserErrors {
   InvalidValue: ErrorMetadata;

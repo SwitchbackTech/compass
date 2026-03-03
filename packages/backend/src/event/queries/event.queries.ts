@@ -1,5 +1,5 @@
-import { AnyBulkWriteOperation, WithId } from "mongodb";
-import { Payload_Order, Schema_Event } from "@core/types/event.types";
+import { type AnyBulkWriteOperation, type WithId } from "mongodb";
+import { type Payload_Order, type Schema_Event } from "@core/types/event.types";
 import { Collections } from "@backend/common/constants/collections";
 import { getIdFilter } from "@backend/common/helpers/mongo.utils";
 import mongoService from "@backend/common/services/mongo.service";

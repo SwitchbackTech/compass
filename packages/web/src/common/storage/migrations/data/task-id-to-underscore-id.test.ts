@@ -1,5 +1,5 @@
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
-import { StorageAdapter } from "@web/common/storage/adapter/storage.adapter";
+import { type StorageAdapter } from "@web/common/storage/adapter/storage.adapter";
 import { taskIdToUnderscoreIdMigration } from "./task-id-to-underscore-id";
 
 function createMockAdapter(): jest.Mocked<StorageAdapter> {

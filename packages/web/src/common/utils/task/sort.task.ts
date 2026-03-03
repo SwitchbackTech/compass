@@ -1,4 +1,4 @@
-import { Task } from "@web/common/types/task.types";
+import { type Task } from "@web/common/types/task.types";
 
 /**
  * Sorts tasks by status, placing incomplete tasks first and completed tasks last.

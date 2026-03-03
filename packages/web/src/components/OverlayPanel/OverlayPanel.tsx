@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { ReactNode } from "react";
+import { type ReactNode } from "react";
 
 interface Props {
   /** Icon or element displayed at the top of the panel */

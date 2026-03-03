@@ -1,4 +1,4 @@
-import { Shortcut } from "@web/common/types/global.shortcut.types";
+import { type Shortcut } from "@web/common/types/global.shortcut.types";
 import { ShortcutList } from "../ShortcutList";
 
 export const ShortcutSection = ({

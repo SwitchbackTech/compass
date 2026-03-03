@@ -1,6 +1,6 @@
 import type { Dayjs, PluginFunc } from "dayjs";
 import dayjs from "dayjs";
-import winston from "winston";
+import type winston from "winston";
 
 enum DateFormatEnum {
   RFC5545 = "YYYYMMDD[T]HHmmss[Z]",

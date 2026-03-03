@@ -1,13 +1,13 @@
-import { Filter, ObjectId, WithId } from "mongodb";
+import { type Filter, ObjectId, type WithId } from "mongodb";
 import { mockEventSetJan22 } from "@core/__mocks__/v1/events/events.22jan";
 import { mockEventSetSomeday1 } from "@core/__mocks__/v1/events/events.someday.1";
 import { MapEvent, gEventToCompassEvent } from "@core/mappers/map.event";
 import {
   Categories_Recurrence,
   CompassEventStatus,
-  CompassThisEvent,
+  type CompassThisEvent,
   RecurringEventUpdateScope,
-  Schema_Event,
+  type Schema_Event,
 } from "@core/types/event.types";
 import { isBase, isInstance } from "@core/util/event/event.util";
 import { createMockBaseEvent } from "@core/util/test/ccal.event.factory";

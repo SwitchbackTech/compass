@@ -1,5 +1,5 @@
 import {
-  ShortcutProps,
+  type ShortcutProps,
   useWeekShortcuts,
 } from "@web/views/Calendar/hooks/shortcuts/useWeekShortcuts";
 

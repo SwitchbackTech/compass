@@ -1,8 +1,8 @@
 import {
-  Params_Events,
-  Payload_Order,
+  type Params_Events,
+  type Payload_Order,
   RecurringEventUpdateScope,
-  Schema_Event,
+  type Schema_Event,
 } from "@core/types/event.types";
 import { EventApi } from "@web/ducks/events/event.api";
 import { RemoteEventRepository } from "./remote.event.repository";

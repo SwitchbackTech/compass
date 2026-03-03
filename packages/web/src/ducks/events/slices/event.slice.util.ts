@@ -1,7 +1,10 @@
-import { PayloadAction } from "@reduxjs/toolkit";
-import { AsyncState } from "@web/common/store/helpers";
-import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
-import { Action_ConvertEvent, Action_DeleteEvent } from "../event.types";
+import { type PayloadAction } from "@reduxjs/toolkit";
+import { type AsyncState } from "@web/common/store/helpers";
+import { type Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
+import {
+  type Action_ConvertEvent,
+  type Action_DeleteEvent,
+} from "../event.types";
 
 export const insert = (
   state: AsyncState<Response_HttpPaginatedSuccess<string[]>, unknown>,
@@ -51,5 +54,5 @@ export const convert = (
   state: AsyncState<Response_HttpPaginatedSuccess<string[]>, unknown>,
   action: Action_ConvertEvent,
 ): void => {
-  cancel(state, { payload: { _id: action.payload.event._id! }, type: "" });
+  cancel(state, { payload: { _id: action.payload.event._id }, type: "" });
 };

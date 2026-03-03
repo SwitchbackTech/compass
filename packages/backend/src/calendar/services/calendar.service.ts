@@ -1,12 +1,12 @@
-import { ClientSession, ObjectId } from "mongodb";
+import { type ClientSession, type ObjectId } from "mongodb";
 import { z } from "zod/v4";
 import { MapCalendar } from "@core/mappers/map.calendar";
 import {
   CompassCalendarSchema,
-  Schema_Calendar,
+  type Schema_Calendar,
 } from "@core/types/calendar.types";
 import { CalendarProvider } from "@core/types/event.types";
-import { gCalendar } from "@core/types/gcal";
+import { type gCalendar } from "@core/types/gcal";
 import { Resource_Sync } from "@core/types/sync.types";
 import { zObjectId } from "@core/types/type.utils";
 import mongoService from "@backend/common/services/mongo.service";

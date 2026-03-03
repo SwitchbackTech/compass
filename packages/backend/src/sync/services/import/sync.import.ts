@@ -1,16 +1,20 @@
-import { ClientSession, ObjectId } from "mongodb";
+import { type ClientSession, type ObjectId } from "mongodb";
 import { Origin } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { MapEvent } from "@core/mappers/map.event";
 import {
-  RecurrenceWithoutId,
-  Schema_Event_Recur_Base,
-  Schema_Event_Recur_Instance,
-  WithCompassId,
-  WithoutCompassId,
+  type RecurrenceWithoutId,
+  type Schema_Event_Recur_Base,
+  type Schema_Event_Recur_Instance,
+  type WithCompassId,
+  type WithoutCompassId,
 } from "@core/types/event.types";
-import { gCalendar, gSchema$Event, gSchema$EventBase } from "@core/types/gcal";
-import { Resource_Sync, SyncDetails } from "@core/types/sync.types";
+import {
+  type gCalendar,
+  type gSchema$Event,
+  type gSchema$EventBase,
+} from "@core/types/gcal";
+import { Resource_Sync, type SyncDetails } from "@core/types/sync.types";
 import { isBaseGCalEvent } from "@core/util/event/gcal.event.util";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
@@ -22,7 +26,7 @@ import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import { EventsToModify } from "@backend/sync/services/import/sync.import.types";
+import { type EventsToModify } from "@backend/sync/services/import/sync.import.types";
 import { organizeGcalEventsByType } from "@backend/sync/services/import/sync.import.util";
 import { getCalendarsToSync } from "@backend/sync/services/init/sync.init";
 import syncService from "@backend/sync/services/sync.service";

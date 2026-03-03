@@ -1,8 +1,8 @@
-import express from "express";
-import { SessionRequest } from "supertokens-node/framework/express";
+import type express from "express";
+import { type SessionRequest } from "supertokens-node/framework/express";
 import { Logger } from "@core/logger/winston.logger";
 import { handleExpressError } from "@backend/common/errors/handlers/error.express.handler";
-import { Res_Promise } from "@backend/common/types/express.types";
+import { type Res_Promise } from "@backend/common/types/express.types";
 
 const logger = Logger("app:promise.middleware");
 

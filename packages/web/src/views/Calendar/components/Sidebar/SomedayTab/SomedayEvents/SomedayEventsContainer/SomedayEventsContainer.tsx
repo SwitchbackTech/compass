@@ -1,4 +1,5 @@
-import React, { FC } from "react";
+import { type FC } from "react";
+import type React from "react";
 import { Droppable } from "@hello-pangea/dnd";
 import { Categories_Event } from "@core/types/event.types";
 import {
@@ -10,7 +11,7 @@ import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
-import { State_Sidebar } from "@web/views/Calendar/components/Draft/sidebar/hooks/useSidebarState";
+import { type State_Sidebar } from "@web/views/Calendar/components/Draft/sidebar/hooks/useSidebarState";
 import { DraggableSomedayEvent } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/DraggableSomedayEvent/DraggableSomedayEvent";
 import { DraggableSomedayEvents } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/DraggableSomedayEvent/DraggableSomedayEvents";
 import { AddSomedayEvent } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventsContainer/AddSomedayEvent";

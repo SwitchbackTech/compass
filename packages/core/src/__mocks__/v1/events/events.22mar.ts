@@ -1,6 +1,6 @@
 import { ObjectId } from "bson";
 import { Priorities } from "@core/constants/core.constants";
-import { Schema_Event, WithMongoId } from "@core/types/event.types";
+import { type Schema_Event, type WithMongoId } from "@core/types/event.types";
 
 const allDayEventsThatShouldMatch: Array<
   WithMongoId<Omit<Schema_Event, "_id">>

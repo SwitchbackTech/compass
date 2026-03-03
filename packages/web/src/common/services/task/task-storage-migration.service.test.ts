@@ -1,6 +1,6 @@
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import {
-  MigrateLocalToCloudParams,
+  type MigrateLocalToCloudParams,
   migrateLocalToCloud,
 } from "./task-storage-migration.service";
 

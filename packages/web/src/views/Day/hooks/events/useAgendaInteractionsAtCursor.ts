@@ -2,7 +2,7 @@ import {
   safePolygon,
   useClick,
   useDismiss,
-  useFloating,
+  type useFloating,
   useFocus,
   useHover,
   useInteractions,

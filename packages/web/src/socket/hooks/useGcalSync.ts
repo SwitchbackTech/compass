@@ -6,7 +6,7 @@ import {
   IMPORT_GCAL_START,
   USER_METADATA,
 } from "@core/constants/websocket.constants";
-import { UserMetadata } from "@core/types/user.types";
+import { type UserMetadata } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
 import { handleGoogleRevoked } from "@web/common/utils/auth/google-auth.util";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";

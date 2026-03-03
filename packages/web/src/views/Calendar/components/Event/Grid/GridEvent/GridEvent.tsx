@@ -1,7 +1,7 @@
 import {
-  ForwardedRef,
-  KeyboardEvent,
-  MouseEvent,
+  type ForwardedRef,
+  type KeyboardEvent,
+  type MouseEvent,
   forwardRef,
   memo,
   useMemo,
@@ -12,7 +12,7 @@ import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
 } from "@web/common/constants/web.constants";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 import { getLineClamp } from "@web/common/utils/grid/grid.util";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
@@ -31,8 +31,8 @@ import {
   StyledEventScaler,
   StyledEventTitle,
 } from "@web/views/Calendar/components/Event/styled";
-import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 
 interface Props {
   event: Schema_GridEvent;
@@ -146,10 +146,7 @@ const _GridEvent = (
           <>
             {(isDraft || !isInPast) && (
               <Text role="textbox" size="xs" zIndex={ZIndex.LAYER_3}>
-                {getTimesLabel(
-                  event.startDate as string,
-                  event.endDate as string,
-                )}
+                {getTimesLabel(event.startDate, event.endDate)}
               </Text>
             )}
             <>

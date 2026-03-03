@@ -1,4 +1,4 @@
-import { Schema_Event_Core } from "@core/types/event.types";
+import { type Schema_Event_Core } from "@core/types/event.types";
 import { RRULE } from "../../../../../core/src/constants/core.constants";
 import { assembleInstances } from "./util/recur.util";
 

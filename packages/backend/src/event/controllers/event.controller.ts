@@ -1,19 +1,22 @@
 import { ObjectId } from "mongodb";
-import { SessionRequest } from "supertokens-node/framework/express";
+import { type SessionRequest } from "supertokens-node/framework/express";
 import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import {
   CompassCoreEventSchema,
-  CompassEvent,
+  type CompassEvent,
   CompassEventStatus,
-  CompassThisEvent,
-  Params_DeleteMany,
-  Payload_Order,
+  type CompassThisEvent,
+  type Params_DeleteMany,
+  type Payload_Order,
   RecurringEventUpdateScope,
-  Schema_Event,
+  type Schema_Event,
 } from "@core/types/event.types";
-import { Res_Promise, SReqBody } from "@backend/common/types/express.types";
+import {
+  type Res_Promise,
+  type SReqBody,
+} from "@backend/common/types/express.types";
 import eventService from "@backend/event/services/event.service";
 import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.processor";
 

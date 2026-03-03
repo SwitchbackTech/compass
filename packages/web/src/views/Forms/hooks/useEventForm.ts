@@ -1,6 +1,6 @@
 import {
-  OpenChangeReason,
-  UseFloatingOptions,
+  type OpenChangeReason,
+  type UseFloatingOptions,
   autoUpdate,
   flip,
   offset,

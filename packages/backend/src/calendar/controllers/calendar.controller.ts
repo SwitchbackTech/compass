@@ -1,11 +1,14 @@
-import { SessionRequest } from "supertokens-node/framework/express";
+import { type SessionRequest } from "supertokens-node/framework/express";
 import { z } from "zod/v4";
-import { Schema_Calendar } from "@core/types/calendar.types";
+import { type Schema_Calendar } from "@core/types/calendar.types";
 import { zObjectId } from "@core/types/type.utils";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import { Res_Promise, SReqBody } from "@backend/common/types/express.types";
+import {
+  type Res_Promise,
+  type SReqBody,
+} from "@backend/common/types/express.types";
 
 class CalendarController {
   create = async (req: SReqBody<Schema_Calendar>, res: Res_Promise) => {

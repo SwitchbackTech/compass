@@ -1,27 +1,27 @@
 import { normalize, schema } from "normalizr";
-import { SelectEffect, call, put, select } from "@redux-saga/core/effects";
+import { type SelectEffect, call, put, select } from "@redux-saga/core/effects";
 import {
-  Params_Events,
-  RecurringEventUpdateScope,
-  Schema_Event,
+  type Params_Events,
+  type RecurringEventUpdateScope,
+  type Schema_Event,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { session } from "@web/common/classes/Session";
 import { getEventRepository } from "@web/common/repositories/event/event.repository.util";
 import {
-  Schema_GridEvent,
-  Schema_WebEvent,
-  WithId,
+  type Schema_GridEvent,
+  type Schema_WebEvent,
+  type WithId,
 } from "@web/common/types/web.event.types";
 import { addId, assembleGridEvent } from "@web/common/utils/event/event.util";
 import { validateGridEvent } from "@web/common/validators/grid.event.validator";
-import { Payload_ConvertEvent } from "@web/ducks/events/event.types";
+import { type Payload_ConvertEvent } from "@web/ducks/events/event.types";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
 import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
-import { RootState } from "@web/store";
+import { type RootState } from "@web/store";
 
 export function* getEventById(
   _id: string,
@@ -77,7 +77,7 @@ export function* _assembleGridEvent({
   Schema_GridEvent,
   Schema_WebEvent
 > {
-  const currEvent = yield* getEventById(_id!);
+  const currEvent = yield* getEventById(_id);
 
   // First merge the current event with updated fields
   const eventWithUpdates = { ...currEvent, ...updatedFields, _id };

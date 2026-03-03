@@ -1,4 +1,4 @@
-import { Task } from "@web/common/types/task.types";
+import { type Task } from "@web/common/types/task.types";
 
 export interface TaskRepository {
   get(dateKey: string): Promise<Task[]>;

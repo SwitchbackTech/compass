@@ -1,15 +1,15 @@
-import { ObjectId, WithId } from "mongodb";
-import { Options, RRule, RRuleStrOptions, rrulestr } from "rrule";
-import { ParsedOptions } from "rrule/dist/esm/types";
+import { type ObjectId, type WithId } from "mongodb";
+import { type Options, RRule, type RRuleStrOptions, rrulestr } from "rrule";
+import { type ParsedOptions } from "rrule/dist/esm/types";
 import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
 import { gEventToCompassEvent } from "@core/mappers/map.event";
-import { Schema_Event_Recur_Instance } from "@core/types/event.types";
+import { type Schema_Event_Recur_Instance } from "@core/types/event.types";
 import {
-  gSchema$Event,
-  gSchema$EventBase,
-  gSchema$EventInstance,
+  type gSchema$Event,
+  type gSchema$EventBase,
+  type gSchema$EventInstance,
 } from "@core/types/gcal";
-import dayjs, { Dayjs } from "@core/util/date/dayjs";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { diffRRuleOptions } from "@core/util/event/event.util";
 import {
   getGcalEventDateFormat,
@@ -52,7 +52,7 @@ export class GcalEventRRule extends RRule {
     const opts: Partial<RRuleStrOptions> = { dtstart, tzid };
     const recurrence = event.recurrence?.join("\n").trim();
     const valid = recurrence?.length > 0;
-    const rruleSet = valid ? rrulestr(recurrence!, opts) : { origOptions: {} };
+    const rruleSet = valid ? rrulestr(recurrence, opts) : { origOptions: {} };
     const rruleOptions = { ...rruleSet.origOptions, ..._options };
     const options = { ...rruleOptions, dtstart, tzid };
 

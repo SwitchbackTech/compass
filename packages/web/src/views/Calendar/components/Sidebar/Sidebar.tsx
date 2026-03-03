@@ -1,13 +1,14 @@
-import React, { FC } from "react";
+import { type FC } from "react";
+import type React from "react";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { selectSidebarTab } from "@web/ducks/events/selectors/view.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
-import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import {
-  Measurements_Grid,
-  Refs_Grid,
+  type Measurements_Grid,
+  type Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { MonthTab } from "./MonthTab/MonthTab";
 import { SidebarIconRow } from "./SidebarIconRow";
 import { SomedayTab } from "./SomedayTab/SomedayTab";

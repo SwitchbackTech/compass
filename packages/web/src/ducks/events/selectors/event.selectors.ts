@@ -1,11 +1,11 @@
 import { createSelector } from "@reduxjs/toolkit";
-import { Schema_Event } from "@core/types/event.types";
+import { type Schema_Event } from "@core/types/event.types";
 import { isProcessing } from "@web/common/store/helpers";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
 import { adjustOverlappingEvents } from "@web/common/utils/overlap/overlap";
-import { RootState } from "@web/store";
+import { type RootState } from "@web/store";
 
 type Schema_GridEvent_NoPosition = Omit<Schema_GridEvent, "position">;
 

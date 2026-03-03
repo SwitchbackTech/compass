@@ -1,5 +1,5 @@
 import { GoogleCalendarMetadataSchema } from "@core/types/calendar.types";
-import { gCalendar } from "@core/types/gcal";
+import { type gCalendar } from "@core/types/gcal";
 import { StringV4Schema } from "@core/types/type.utils";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {

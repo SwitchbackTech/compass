@@ -1,5 +1,5 @@
-import SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
-import { WithCompassId } from "./event.types";
+import type SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
+import { type WithCompassId } from "./event.types";
 
 export interface Schema_User {
   email: string;

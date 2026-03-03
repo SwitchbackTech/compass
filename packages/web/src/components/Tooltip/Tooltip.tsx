@@ -1,6 +1,6 @@
 import {
-  HTMLProps,
-  ReactNode,
+  type HTMLProps,
+  type ReactNode,
   cloneElement,
   forwardRef,
   isValidElement,
@@ -8,7 +8,7 @@ import {
 import { FloatingPortal, useMergeRefs } from "@floating-ui/react";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
-import { TooltipOptions } from "./tooltip.types";
+import { type TooltipOptions } from "./tooltip.types";
 import { TooltipContext, useTooltip, useTooltipContext } from "./useTooltip";
 
 export function Tooltip({

@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { toast } from "react-toastify";
 import { toastDefaultOptions } from "@web/common/constants/toast.constants";
 

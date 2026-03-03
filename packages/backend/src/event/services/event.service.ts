@@ -1,5 +1,11 @@
 import type { GaxiosError } from "gaxios";
-import { ClientSession, Document, Filter, ObjectId, WithId } from "mongodb";
+import {
+  type ClientSession,
+  type Document,
+  type Filter,
+  ObjectId,
+  type WithId,
+} from "mongodb";
 import {
   SOMEDAY_MONTHLY_LIMIT,
   SOMEDAY_WEEKLY_LIMIT,
@@ -9,19 +15,19 @@ import { Status } from "@core/errors/status.codes";
 import { MapEvent } from "@core/mappers/map.event";
 import {
   CalendarProvider,
-  EventUpdatePayload,
+  type EventUpdatePayload,
   EventUpdateSchema,
-  Params_DeleteMany,
-  Payload_Order,
-  Query_Event,
-  Result_DeleteMany,
-  Schema_Event,
-  Schema_Event_Core,
-  WithCompassId,
+  type Params_DeleteMany,
+  type Payload_Order,
+  type Query_Event,
+  type Result_DeleteMany,
+  type Schema_Event,
+  type Schema_Event_Core,
+  type WithCompassId,
 } from "@core/types/event.types";
-import { gSchema$Event } from "@core/types/gcal";
+import { type gSchema$Event } from "@core/types/gcal";
 import { IDSchema } from "@core/types/type.utils";
-import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
+import { type CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { isInstance, parseCompassEventDate } from "@core/util/event/event.util";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
@@ -292,7 +298,7 @@ export const _updateCompassSeries = async (
 
   delete update.startDate;
   delete update.endDate;
-  delete (update as Schema_Event).recurrence;
+  delete update.recurrence;
 
   await mongoService.event.updateMany(
     {

@@ -1,4 +1,4 @@
-import { Id, ToastOptions } from "react-toastify";
+import { type Id, type ToastOptions } from "react-toastify";
 import { c } from "@web/common/styles/colors";
 import { theme } from "@web/common/styles/theme";
 

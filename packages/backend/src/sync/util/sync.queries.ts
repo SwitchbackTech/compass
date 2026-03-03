@@ -1,10 +1,14 @@
-import { ClientSession, UpdateFilter, UpdateResult } from "mongodb";
+import {
+  type ClientSession,
+  type UpdateFilter,
+  type UpdateResult,
+} from "mongodb";
 import zod from "zod";
 import { Origin } from "@core/constants/core.constants";
 import {
   Resource_Sync,
-  Schema_Sync,
-  SyncDetails,
+  type Schema_Sync,
+  type SyncDetails,
 } from "@core/types/sync.types";
 import dayjs from "@core/util/date/dayjs";
 import mongoService from "@backend/common/services/mongo.service";

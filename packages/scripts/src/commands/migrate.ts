@@ -3,7 +3,10 @@ import { readFile } from "node:fs/promises";
 import { parse, resolve, sep } from "node:path";
 import type { MigrationParams, RunnableMigration } from "umzug";
 import { MongoDBStorage, Umzug, UmzugCLI } from "umzug";
-import { MigrationContext, MigratorType } from "@scripts/common/cli.types";
+import {
+  type MigrationContext,
+  type MigratorType,
+} from "@scripts/common/cli.types";
 import { Logger } from "@core/logger/winston.logger";
 import mongoService from "@backend/common/services/mongo.service";
 

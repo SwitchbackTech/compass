@@ -1,4 +1,5 @@
-import React, { useCallback } from "react";
+import type React from "react";
+import { useCallback } from "react";
 import { TrashIcon } from "@phosphor-icons/react";
 import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 

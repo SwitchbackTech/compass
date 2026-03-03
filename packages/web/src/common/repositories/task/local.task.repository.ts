@@ -1,7 +1,7 @@
 import { getStorageAdapter } from "@web/common/storage/adapter/adapter";
-import { Task } from "@web/common/types/task.types";
+import { type Task } from "@web/common/types/task.types";
 import { dispatchTasksSavedEvent } from "@web/common/utils/storage/storage.util";
-import { TaskRepository } from "./task.repository";
+import { type TaskRepository } from "./task.repository";
 
 /**
  * Local task repository implementation using the storage adapter.

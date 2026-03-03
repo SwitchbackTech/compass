@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import { UserProfile } from "@core/types/user.types";
+import { type UserProfile } from "@core/types/user.types";
 
 export const UserContext = createContext<
   | Partial<

@@ -1,12 +1,12 @@
-import { AxiosPromise } from "axios";
+import { type AxiosPromise } from "axios";
 import {
-  Params_Events,
-  Payload_Order,
-  RecurringEventUpdateScope,
-  Schema_Event,
+  type Params_Events,
+  type Payload_Order,
+  type RecurringEventUpdateScope,
+  type Schema_Event,
 } from "@core/types/event.types";
 import { CompassApi } from "@web/common/apis/compass.api";
-import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
+import { type Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 
 const EventApi = {
   create: (event: Schema_Event | Schema_Event[]) => {

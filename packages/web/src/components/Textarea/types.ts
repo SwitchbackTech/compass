@@ -1,7 +1,7 @@
-import { TextareaAutosizeProps } from "react-textarea-autosize";
+import { type TextareaAutosizeProps } from "react-textarea-autosize";
 import {
-  ClassNamedComponent,
-  UnderlinedInput,
+  type ClassNamedComponent,
+  type UnderlinedInput,
 } from "@web/common/types/component.types";
 
 export interface TextareaProps

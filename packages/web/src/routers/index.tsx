@@ -1,7 +1,7 @@
 import {
-  RouteObject,
+  type RouteObject,
   RouterProvider,
-  RouterProviderProps,
+  type RouterProviderProps,
   createBrowserRouter,
 } from "react-router-dom";
 import { IS_DEV } from "@web/common/constants/env.constants";

@@ -14,9 +14,7 @@ mockNodeModules();
 
 beforeEach(() => {
   jest.clearAllMocks();
-  const sessionModule = jest.requireMock(
-    "supertokens-web-js/recipe/session",
-  ) as { doesSessionExist?: jest.Mock };
+  const sessionModule = jest.requireMock("supertokens-web-js/recipe/session");
   sessionModule.doesSessionExist?.mockResolvedValue(true);
 });
 beforeAll(() => server.listen());

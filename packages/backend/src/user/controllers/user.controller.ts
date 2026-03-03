@@ -1,9 +1,9 @@
-import { Request, Response } from "express";
+import { type Request, type Response } from "express";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { zObjectId } from "@core/types/type.utils";
-import { UserMetadata, UserProfile } from "@core/types/user.types";
-import { SReqBody } from "@backend/common/types/express.types";
+import { type UserMetadata, type UserProfile } from "@core/types/user.types";
+import { type SReqBody } from "@backend/common/types/express.types";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
 

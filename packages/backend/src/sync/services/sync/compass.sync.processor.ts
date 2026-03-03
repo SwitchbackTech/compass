@@ -1,17 +1,17 @@
-import { ClientSession } from "mongodb";
+import { type ClientSession } from "mongodb";
 import {
   EVENT_CHANGED,
   SOMEDAY_EVENT_CHANGED,
 } from "@core/constants/websocket.constants";
 import { Logger } from "@core/logger/winston.logger";
-import { CompassEvent } from "@core/types/event.types";
+import { type CompassEvent } from "@core/types/event.types";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
 import { CompassEventFactory } from "@backend/event/classes/compass.event.generator";
 import { CompassEventParser } from "@backend/event/classes/compass.event.parser";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
-import { Event_Transition } from "@backend/sync/sync.types";
+import { type Event_Transition } from "@backend/sync/sync.types";
 
 const logger = Logger("app.compass.sync.processor");
 

@@ -1,5 +1,8 @@
-import { FC, memo } from "react";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import { type FC, memo } from "react";
+import {
+  type Categories_Event,
+  type Schema_Event,
+} from "@core/types/event.types";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
 import { DraggableSomedayEvent } from "./DraggableSomedayEvent";
 

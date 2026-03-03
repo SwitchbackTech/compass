@@ -1,8 +1,8 @@
-import React from "react";
-import ReactSelect, { Props as RSProps } from "react-select";
+import type React from "react";
+import ReactSelect, { type Props as RSProps } from "react-select";
 import { Key } from "ts-key-enum";
-import { SelectOption } from "@web/common/types/component.types";
-import { Option_Time } from "@web/common/types/util.types";
+import { type SelectOption } from "@web/common/types/component.types";
+import { type Option_Time } from "@web/common/types/util.types";
 import { StyledTimePicker } from "./styled";
 
 export interface Props extends Omit<RSProps, "onChange" | "value"> {

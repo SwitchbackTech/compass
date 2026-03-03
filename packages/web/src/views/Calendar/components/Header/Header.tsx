@@ -1,5 +1,5 @@
-import { FC } from "react";
-import dayjs, { Dayjs } from "@core/util/date/dayjs";
+import { type FC } from "react";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import { getCalendarHeadingLabel } from "@web/common/utils/datetime/web.date.util";
 import { AccountIcon } from "@web/components/AuthModal/AccountIcon";
@@ -11,9 +11,9 @@ import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { RootProps } from "../../calendarView.types";
-import { Util_Scroll } from "../../hooks/grid/useScroll";
-import { WeekProps } from "../../hooks/useWeek";
+import { type RootProps } from "../../calendarView.types";
+import { type Util_Scroll } from "../../hooks/grid/useScroll";
+import { type WeekProps } from "../../hooks/useWeek";
 import { TodayButton } from "../TodayButton/TodayButton";
 import { DayLabels } from "./DayLabels";
 import {

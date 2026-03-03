@@ -1,7 +1,13 @@
 import { usePostHog } from "posthog-js/react";
-import { ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { Status } from "@core/errors/status.codes";
-import { UserProfile } from "@core/types/user.types";
+import { type UserProfile } from "@core/types/user.types";
 import { UserApi } from "@web/common/apis/user.api";
 import { hasUserEverAuthenticated } from "@web/common/utils/storage/auth-state.util";
 import { showSessionExpiredToast } from "@web/common/utils/toast/error-toast.util";

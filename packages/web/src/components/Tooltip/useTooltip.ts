@@ -11,7 +11,7 @@ import {
   useInteractions,
   useRole,
 } from "@floating-ui/react";
-import { TooltipOptions } from "./tooltip.types";
+import { type TooltipOptions } from "./tooltip.types";
 
 export function useTooltip({
   initialOpen = false,

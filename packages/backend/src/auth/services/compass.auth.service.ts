@@ -1,4 +1,4 @@
-import { Credentials, TokenPayload } from "google-auth-library";
+import { type Credentials, type TokenPayload } from "google-auth-library";
 import supertokens from "supertokens-node";
 import Session from "supertokens-node/recipe/session";
 import { Logger } from "@core/logger/winston.logger";

@@ -1,5 +1,5 @@
-import { AxiosResponse } from "axios";
-import { Schema_Event } from "@core/types/event.types";
+import { type AxiosResponse } from "axios";
+import { type Schema_Event } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import { session } from "@web/common/classes/Session";
@@ -9,8 +9,8 @@ import {
 } from "@web/common/storage/adapter/adapter";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import {
-  Schema_GridEvent,
-  Schema_WebEvent,
+  type Schema_GridEvent,
+  type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import { EventApi } from "@web/ducks/events/event.api";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
@@ -19,7 +19,7 @@ import {
   createEventSlice,
   editEventSlice,
 } from "@web/ducks/events/slices/event.slice";
-import { RootState } from "@web/store";
+import { type RootState } from "@web/store";
 import { sagas } from "@web/store/sagas";
 import { OnSubmitParser } from "@web/views/Calendar/components/Draft/hooks/actions/submit.parser";
 
@@ -97,7 +97,7 @@ describe("createEvent saga - optimistic rendering", () => {
     // Verify event is still in state while API call is pending
     const stateDuringApiCall = store.getState();
     const eventDuringApiCall = selectEventById(
-      stateDuringApiCall as RootState,
+      stateDuringApiCall,
       optimisticId,
     );
 
@@ -123,10 +123,7 @@ describe("createEvent saga - optimistic rendering", () => {
 
     // Verify event is still in state after API call completes with the SAME ID
     const stateAfterApiCall = store.getState();
-    const eventAfterApiCall = selectEventById(
-      stateAfterApiCall as RootState,
-      optimisticId,
-    );
+    const eventAfterApiCall = selectEventById(stateAfterApiCall, optimisticId);
 
     // Event should still exist with same ID
     expect(eventAfterApiCall).not.toBeNull();
@@ -166,7 +163,7 @@ describe("createEvent saga - optimistic rendering", () => {
     expect(eventIds[0]).toBe(eventId);
 
     // Verify the event is confirmed (not optimistic anymore)
-    const finalEvent = selectEventById(finalState as RootState, eventId);
+    const finalEvent = selectEventById(finalState, eventId);
     expect(finalEvent).not.toBeNull();
     expect(finalEvent?._id).toBe(eventId);
   });
@@ -187,7 +184,7 @@ describe("createEvent saga - optimistic rendering", () => {
 
     // Check 1: Immediately after dispatch (should be optimistic)
     const check1 = store.getState();
-    const event1 = selectEventById(check1 as RootState, eventId);
+    const event1 = selectEventById(check1, eventId);
     expect(event1).not.toBeNull();
     expect(event1?._id).toBe(eventId);
 
@@ -196,7 +193,7 @@ describe("createEvent saga - optimistic rendering", () => {
 
     // Check 2: After API call completes (should still have same ID but not optimistic)
     const check2 = store.getState();
-    const event2 = selectEventById(check2 as RootState, eventId);
+    const event2 = selectEventById(check2, eventId);
 
     expect(event2).not.toBeNull();
     expect(event2?._id).toBe(eventId);
@@ -287,7 +284,7 @@ describe("pending events state management", () => {
       const eventIds = Object.keys(eventEntities);
       const eventId = eventIds[0];
 
-      const isPending = selectIsEventPending(state as RootState, eventId);
+      const isPending = selectIsEventPending(state, eventId);
       expect(isPending).toBe(true);
       expect(state.events.pendingEvents.eventIds).toContain(eventId);
     });
@@ -308,7 +305,7 @@ describe("pending events state management", () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       const finalState = store.getState();
-      const isPending = selectIsEventPending(finalState as RootState, eventId);
+      const isPending = selectIsEventPending(finalState, eventId);
       expect(isPending).toBe(false);
       expect(finalState.events.pendingEvents.eventIds).not.toContain(eventId);
     });
@@ -349,7 +346,7 @@ describe("pending events state management", () => {
 
       // Now edit the event - get the actual event from store
       const existingEvent = selectEventById(
-        stateAfterCreate as RootState,
+        stateAfterCreate,
         eventId,
       ) as Schema_GridEvent;
       const updatedEvent = {
@@ -364,10 +361,7 @@ describe("pending events state management", () => {
       store.dispatch(editAction);
 
       const stateAfterEdit = store.getState();
-      const isPending = selectIsEventPending(
-        stateAfterEdit as RootState,
-        eventId,
-      );
+      const isPending = selectIsEventPending(stateAfterEdit, eventId);
       expect(isPending).toBe(true);
       expect(stateAfterEdit.events.pendingEvents.eventIds).toContain(eventId);
     });
@@ -388,7 +382,7 @@ describe("pending events state management", () => {
 
       // Now edit the event - get the actual event from store
       const existingEvent = selectEventById(
-        stateAfterCreate as RootState,
+        stateAfterCreate,
         eventId,
       ) as Schema_GridEvent;
       const updatedEvent = {
@@ -406,7 +400,7 @@ describe("pending events state management", () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       const finalState = store.getState();
-      const isPending = selectIsEventPending(finalState as RootState, eventId);
+      const isPending = selectIsEventPending(finalState, eventId);
       expect(isPending).toBe(false);
       expect(finalState.events.pendingEvents.eventIds).not.toContain(eventId);
     });
@@ -431,7 +425,7 @@ describe("pending events state management", () => {
 
       // Now edit the event - get the actual event from store
       const existingEvent = selectEventById(
-        stateAfterCreate as RootState,
+        stateAfterCreate,
         eventId,
       ) as Schema_GridEvent;
       const updatedEvent = {
@@ -529,7 +523,7 @@ describe("createEvent saga - unauthenticated users", () => {
     const eventId = eventIds[0];
 
     // Event should not be pending anymore
-    const isPending = selectIsEventPending(state as RootState, eventId);
+    const isPending = selectIsEventPending(state, eventId);
     expect(isPending).toBe(false);
     expect(state.events.pendingEvents.eventIds).not.toContain(eventId);
   });
@@ -545,7 +539,7 @@ describe("createEvent saga - unauthenticated users", () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Verify event was saved successfully (no error and event exists in store)
-    const state = store.getState() as RootState;
+    const state = store.getState();
     const eventEntities = state.events.entities.value || {};
     const eventIds = Object.keys(eventEntities);
     expect(eventIds.length).toBeGreaterThan(0);

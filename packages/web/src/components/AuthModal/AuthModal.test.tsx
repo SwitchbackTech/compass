@@ -1,4 +1,4 @@
-import { ReactElement, ReactNode } from "react";
+import { type ReactElement, type ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";

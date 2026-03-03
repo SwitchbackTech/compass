@@ -1,4 +1,4 @@
-import { Event_Core } from "@core/types/event.types";
+import { type Event_Core } from "@core/types/event.types";
 import {
   ensureStorageReady,
   getStorageAdapter,
@@ -14,7 +14,7 @@ export async function syncLocalEventsToCloud(): Promise<number> {
     return 0;
   }
 
-  await EventApi.create(events as Event_Core[]);
+  await EventApi.create(events);
   await adapter.clearAllEvents();
 
   return events.length;

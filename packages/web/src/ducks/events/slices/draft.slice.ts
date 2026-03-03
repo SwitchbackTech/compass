@@ -1,9 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit";
 import {
-  Action_DraftEvent,
-  Action_Draft_Resize,
-  Action_Draft_Swap,
-  State_DraftEvent,
+  type Action_DraftEvent,
+  type Action_Draft_Resize,
+  type Action_Draft_Swap,
+  type State_DraftEvent,
 } from "./draft.slice.types";
 
 const initialDraft = {

@@ -16,7 +16,7 @@ import { selectionId$ } from "@web/common/hooks/useMainGridSelectionId";
 import { selecting$ } from "@web/common/hooks/useMainGridSelectionState";
 import { resizing$ } from "@web/common/hooks/useResizing";
 import {
-  DomMovement,
+  type DomMovement,
   getElementAtPoint,
   selectionStart$,
 } from "@web/common/utils/dom/event-emitter.util";
@@ -109,7 +109,7 @@ export function useMainGridSelection({
         } else {
           onSelectionEnd?.(
             selectionId$.getValue()!,
-            internalSelectionStart$.getValue()!,
+            internalSelectionStart$.getValue(),
             delta,
           );
 

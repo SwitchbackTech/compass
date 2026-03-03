@@ -1,4 +1,4 @@
-import express from "express";
+import type express from "express";
 
 export abstract class CommonRoutesConfig {
   app: express.Application;

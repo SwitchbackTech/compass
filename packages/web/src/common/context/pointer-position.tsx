@@ -1,6 +1,6 @@
 import {
-  PointerEvent,
-  PropsWithChildren,
+  type PointerEvent,
+  type PropsWithChildren,
   createContext,
   useCallback,
 } from "react";
@@ -15,7 +15,7 @@ import {
 } from "@web/common/constants/web.constants";
 import { useMovementEvent } from "@web/common/hooks/useMovementEvent";
 import {
-  DomMovement,
+  type DomMovement,
   getElementAtPoint,
 } from "@web/common/utils/dom/event-emitter.util";
 

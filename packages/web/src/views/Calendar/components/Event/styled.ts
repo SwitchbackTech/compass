@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { Priority } from "@core/constants/core.constants";
+import { type Priority } from "@core/constants/core.constants";
 import { brighten, darken } from "@core/util/color.utils";
 import { ZIndex } from "@web/common/constants/web.constants";
 import {

@@ -2,14 +2,17 @@
  * Tests for the demo data seed migration.
  */
 import { Priorities } from "@core/constants/core.constants";
-import { CompassCoreEventSchema, Event_Core } from "@core/types/event.types";
+import {
+  CompassCoreEventSchema,
+  type Event_Core,
+} from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { createMockStorageAdapter } from "@web/__tests__/utils/storage/mock-storage-adapter.util";
-import { Task } from "@web/common/types/task.types";
+import { type Task } from "@web/common/types/task.types";
 import {
   GridEventSchema,
-  Schema_GridEvent,
+  type Schema_GridEvent,
 } from "@web/common/types/web.event.types";
 import { demoDataSeedMigration } from "./demo-data-seed";
 
@@ -31,7 +34,7 @@ describe("demoDataSeedMigration", () => {
     expect(adapter.putTasks).toHaveBeenCalled();
 
     // Verify events were created (7 total: 5 today + 2 someday)
-    const eventsCall = adapter.putEvents.mock.calls[0][0] as Event_Core[];
+    const eventsCall = adapter.putEvents.mock.calls[0][0];
     expect(eventsCall).toHaveLength(7);
 
     // Verify tasks were created for 3 days
@@ -74,7 +77,7 @@ describe("demoDataSeedMigration", () => {
 
     await demoDataSeedMigration.migrate(adapter);
 
-    const eventsCall = adapter.putEvents.mock.calls[0][0] as Event_Core[];
+    const eventsCall = adapter.putEvents.mock.calls[0][0];
     const today = dayjs().toYearMonthDayString();
 
     // Check that at least one timed event starts today
@@ -111,7 +114,7 @@ describe("demoDataSeedMigration", () => {
     const yesterdayCall = putTasksCalls.find((call) => call[0] === yesterday);
 
     expect(yesterdayCall).toBeDefined();
-    const yesterdayTasks = yesterdayCall![1] as Task[];
+    const yesterdayTasks = yesterdayCall![1];
     expect(yesterdayTasks.every((t) => t.status === "completed")).toBe(true);
   });
 
@@ -120,7 +123,7 @@ describe("demoDataSeedMigration", () => {
 
     await demoDataSeedMigration.migrate(adapter);
 
-    const eventsCall = adapter.putEvents.mock.calls[0][0] as Event_Core[];
+    const eventsCall = adapter.putEvents.mock.calls[0][0];
     const priorities = new Set(eventsCall.map((e) => e.priority));
 
     expect(priorities.has(Priorities.WORK)).toBe(true);
@@ -134,7 +137,7 @@ describe("demoDataSeedMigration", () => {
 
     await demoDataSeedMigration.migrate(adapter);
 
-    const eventsCall = adapter.putEvents.mock.calls[0][0] as Event_Core[];
+    const eventsCall = adapter.putEvents.mock.calls[0][0];
     const somedayEvents = eventsCall.filter((e) => e.isSomeday);
 
     expect(somedayEvents).toHaveLength(2);
@@ -145,7 +148,7 @@ describe("demoDataSeedMigration", () => {
 
     await demoDataSeedMigration.migrate(adapter);
 
-    const eventsCall = adapter.putEvents.mock.calls[0][0] as Event_Core[];
+    const eventsCall = adapter.putEvents.mock.calls[0][0];
     const allDayEvents = eventsCall.filter((e) => e.isAllDay);
 
     expect(allDayEvents).toHaveLength(1);
@@ -157,7 +160,7 @@ describe("demoDataSeedMigration", () => {
 
     await demoDataSeedMigration.migrate(adapter);
 
-    const eventsCall = adapter.putEvents.mock.calls[0][0] as Event_Core[];
+    const eventsCall = adapter.putEvents.mock.calls[0][0];
     const timedEvents = eventsCall.filter((e) => !e.isSomeday && !e.isAllDay);
 
     // RFC3339 offset format: "2026-02-19T16:30:00-08:00" (no milliseconds, offset instead of Z)
@@ -176,7 +179,7 @@ describe("demoDataSeedMigration", () => {
 
     await demoDataSeedMigration.migrate(adapter);
 
-    const eventsCall = adapter.putEvents.mock.calls[0][0] as Event_Core[];
+    const eventsCall = adapter.putEvents.mock.calls[0][0];
     const timedEvents = eventsCall.filter(
       (e) => !e.isSomeday && !e.isAllDay,
     ) as Schema_GridEvent[];
@@ -202,7 +205,7 @@ describe("demoDataSeedMigration", () => {
 
     await demoDataSeedMigration.migrate(adapter);
 
-    const eventsCall = adapter.putEvents.mock.calls[0][0] as Event_Core[];
+    const eventsCall = adapter.putEvents.mock.calls[0][0];
 
     for (const event of eventsCall) {
       if (!event.isSomeday && !event.isAllDay) {

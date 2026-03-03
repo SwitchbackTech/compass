@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from "express";
+import { type NextFunction, type Request, type Response } from "express";
 import { ObjectId } from "mongodb";
 import { ZodError } from "zod/v4";
 import { COMPASS_RESOURCE_HEADER } from "@core/constants/core.constants";
@@ -7,8 +7,8 @@ import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import {
   GcalNotificationSchema,
-  Payload_Sync_Notif,
-  Resource_Sync,
+  type Payload_Sync_Notif,
+  type Resource_Sync,
 } from "@core/types/sync.types";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
@@ -184,7 +184,7 @@ export class SyncController {
   };
 
   static importGCal = async (req: Request, res: Response) => {
-    const userId = req.session!.getUserId()!;
+    const userId = req.session!.getUserId();
 
     userService.restartGoogleCalendarSync(userId);
 

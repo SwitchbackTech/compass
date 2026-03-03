@@ -1,6 +1,6 @@
-import { Server as HttpServer } from "http";
+import { type Server as HttpServer } from "http";
 import { type AddressInfo } from "node:net";
-import { BaseError } from "@core/errors/errors.base";
+import { type BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 
 const logger = Logger("app:websocket.util");

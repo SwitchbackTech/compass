@@ -1,4 +1,4 @@
-import { PointerEvent as IPointerEvent, act } from "react";
+import { type PointerEvent as IPointerEvent, act } from "react";
 import { renderHook } from "@testing-library/react";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { cursor$, pointerState$ } from "@web/common/context/pointer-position";

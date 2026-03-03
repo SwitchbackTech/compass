@@ -1,10 +1,10 @@
-import { ResizeCallback, ResizeStartCallback } from "re-resizable";
+import { type ResizeCallback, type ResizeStartCallback } from "re-resizable";
 import { useCallback, useRef } from "react";
-import { Schema_Event, WithCompassId } from "@core/types/event.types";
+import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { CursorItem, nodeId$, open$ } from "@web/common/hooks/useOpenAtCursor";
 import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { reorderGrid } from "@web/common/utils/dom/grid-organization.util";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { store } from "@web/store";

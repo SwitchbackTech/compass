@@ -1,15 +1,15 @@
-import { FC } from "react";
-import { Dayjs } from "@core/util/date/dayjs";
+import { type FC } from "react";
+import { type Dayjs } from "@core/util/date/dayjs";
 import { AllDayRow } from "@web/views/Calendar/components/Grid/AllDayRow";
 import { MainGrid } from "@web/views/Calendar/components/Grid/MainGrid";
 import { EdgeNavigationIndicators } from "@web/views/Calendar/components/Grid/MainGrid/EdgeNavigationIndicators";
-import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { useDragEdgeNavigation } from "@web/views/Calendar/hooks/grid/useDragEdgeNavigation";
 import {
-  Measurements_Grid,
-  Refs_Grid,
+  type Measurements_Grid,
+  type Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { GRID_PADDING_BOTTOM } from "../../layout.constants";
 
 interface Props {

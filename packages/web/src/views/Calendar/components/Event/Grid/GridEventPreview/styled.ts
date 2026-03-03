@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import styled from "styled-components";
-import { Priority } from "@core/constants/core.constants";
+import { type Priority } from "@core/constants/core.constants";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";

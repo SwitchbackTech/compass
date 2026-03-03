@@ -1,4 +1,4 @@
-import React, { FC, useRef } from "react";
+import React, { type FC, useRef } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { theme } from "@web/common/styles/theme";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
@@ -7,12 +7,12 @@ import { selectIsGetSomedayEventsProcessing } from "@web/ducks/events/selectors/
 import { useAppSelector } from "@web/store/store.hooks";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
 import { useWeekLabel } from "@web/views/Calendar/components/Sidebar/SomedayTab/WeekSection/useWeekLabel";
-import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import {
-  Measurements_Grid,
-  Refs_Grid,
+  type Measurements_Grid,
+  type Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { MonthSection } from "./MonthSection/MonthSection";
 import { WeekSection } from "./WeekSection/WeekSection";
 import { SidebarContent } from "./styled";

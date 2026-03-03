@@ -1,11 +1,11 @@
 import { useCallback } from "react";
 import {
-  Recurrence,
+  type Recurrence,
   RecurringEventUpdateScope,
-  Schema_Event,
+  type Schema_Event,
 } from "@core/types/event.types";
 import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { createEventSlice } from "@web/ducks/events/slices/event.slice";
 import { store } from "@web/store";

@@ -1,7 +1,7 @@
 import type { RunnableMigration } from "umzug";
-import { MigrationContext } from "@scripts/common/cli.types";
+import { type MigrationContext } from "@scripts/common/cli.types";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
-import { EventSchema, Schema_Event } from "@core/types/event_new.types";
+import { EventSchema, type Schema_Event } from "@core/types/event_new.types";
 import mongoService from "@backend/common/services/mongo.service";
 
 export default class Migration implements RunnableMigration<MigrationContext> {

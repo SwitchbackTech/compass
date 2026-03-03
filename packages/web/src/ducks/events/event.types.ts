@@ -1,20 +1,20 @@
-import { Action } from "redux";
-import { PayloadAction } from "@reduxjs/toolkit";
-import { Priorities } from "@core/constants/core.constants";
+import { type Action } from "redux";
+import { type PayloadAction } from "@reduxjs/toolkit";
+import { type Priorities } from "@core/constants/core.constants";
 import {
-  RecurringEventUpdateScope,
-  Schema_Event,
-  WithCompassId,
+  type RecurringEventUpdateScope,
+  type Schema_Event,
+  type WithCompassId,
 } from "@core/types/event.types";
-import { SliceStateContext } from "@web/common/store/helpers";
+import { type SliceStateContext } from "@web/common/store/helpers";
 import {
-  Filters_Pagination,
-  Response_HttpPaginatedSuccess,
+  type Filters_Pagination,
+  type Response_HttpPaginatedSuccess,
 } from "@web/common/types/api.types";
-import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
+import { type Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import {
-  Schema_GridEvent,
-  Schema_WebEvent,
+  type Schema_GridEvent,
+  type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 
 export type Action_ConvertEvent = PayloadAction<Payload_ConvertEvent>;

@@ -1,9 +1,9 @@
 import { produce } from "immer";
 import {
-  ActionCreatorWithPayload,
-  PayloadAction,
-  SliceCaseReducers,
-  ValidateSliceCaseReducers,
+  type ActionCreatorWithPayload,
+  type PayloadAction,
+  type SliceCaseReducers,
+  type ValidateSliceCaseReducers,
   createSlice,
 } from "@reduxjs/toolkit";
 

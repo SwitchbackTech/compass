@@ -1,6 +1,6 @@
 import { ObjectId } from "bson";
 import { useCallback, useMemo } from "react";
-import { DropResult } from "@hello-pangea/dnd";
+import { type DropResult } from "@hello-pangea/dnd";
 import {
   SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
@@ -8,20 +8,20 @@ import {
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import {
   Categories_Event,
-  Direction_Migrate,
+  type Direction_Migrate,
   RecurringEventUpdateScope,
-  Schema_Event,
+  type Schema_Event,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/auth.util";
 import {
   COLUMN_MONTH,
-  COLUMN_WEEK,
+  type COLUMN_WEEK,
   ID_SOMEDAY_DRAFT,
 } from "@web/common/constants/web.constants";
 import { getPointerPosition } from "@web/common/context/pointer-position";
 import { DirtyParser } from "@web/common/parsers/dirty.parser";
-import { Schema_WebEvent } from "@web/common/types/web.event.types";
+import { type Schema_WebEvent } from "@web/common/types/web.event.types";
 import {
   computeCurrentEventDateRange,
   computeRelativeEventDateRange,
@@ -42,7 +42,7 @@ import {
 } from "@web/ducks/events/selectors/someday.selectors";
 import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
+import { type Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
 import {
   createEventSlice,
   editEventSlice,
@@ -52,11 +52,11 @@ import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { parseSomedayEventBeforeSubmit } from "@web/views/Calendar/components/Draft/hooks/actions/submit.parser";
 import { showMigrationToast } from "@web/views/Calendar/components/Draft/sidebar/hooks/MigrationToast";
 import {
-  Setters_Sidebar,
-  State_Sidebar,
+  type Setters_Sidebar,
+  type State_Sidebar,
 } from "@web/views/Calendar/components/Draft/sidebar/hooks/useSidebarState";
-import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 
 interface SomedayEventsColumns {
   [COLUMN_WEEK]: {

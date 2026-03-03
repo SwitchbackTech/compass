@@ -1,12 +1,12 @@
 import {
-  ForwardRefRenderFunction,
-  ForwardedRef,
+  type ForwardRefRenderFunction,
+  type ForwardedRef,
   forwardRef,
   useRef,
 } from "react";
 import { Focusable } from "@web/components/Focusable/Focusable";
 import { StyledTextarea } from "./styled";
-import { TextareaProps } from "./types";
+import { type TextareaProps } from "./types";
 
 const _Textarea: ForwardRefRenderFunction<
   HTMLTextAreaElement,

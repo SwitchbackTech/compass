@@ -5,7 +5,7 @@ import {
   PAGE_MARGIN_TOP,
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
-import { SectionProps } from "./sidebar.types";
+import { type SectionProps } from "./sidebar.types";
 
 const ICON_ROW_HEIGHT = 40;
 

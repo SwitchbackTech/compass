@@ -4,9 +4,9 @@ import {
   CalendarProvider,
   Categories_Recurrence,
   CompassEventStatus,
-  CompassThisEvent,
+  type CompassThisEvent,
   RecurringEventUpdateScope,
-  Schema_Event,
+  type Schema_Event,
 } from "@core/types/event.types";
 import { parseCompassEventDate } from "@core/util/event/event.util";
 import { createMockBaseEvent } from "@core/util/test/ccal.event.factory";
@@ -76,7 +76,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE:
-                await testCompassSeriesInGcal(baseEvent!, instances);
+                await testCompassSeriesInGcal(baseEvent, instances);
                 break;
             }
 
@@ -88,8 +88,8 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               ...instanceUpdate,
               _id: instanceUpdate._id.toString(),
               recurrence: {
-                ...instanceUpdate.recurrence!,
-                rule: baseEvent.recurrence!.rule,
+                ...instanceUpdate.recurrence,
+                rule: baseEvent.recurrence.rule,
               },
               title: faker.lorem.sentence(3),
             };
@@ -126,7 +126,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             const otherInstances = await mongoService.event
               .find({
                 user,
-                "recurrence.eventId": baseEvent!._id.toString(),
+                "recurrence.eventId": baseEvent._id.toString(),
                 _id: { $ne: instanceEvent._id },
               })
               .toArray();
@@ -138,18 +138,18 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 ...instance,
                 _id: instance._id.toString(),
                 title: payload.title,
-                recurrence: { eventId: baseEvent!._id.toString() },
+                recurrence: { eventId: baseEvent._id.toString() },
               }),
             );
 
             // check that the base event was not updated
             const _baseEvent = await eventService.readById(
               user,
-              baseEvent!._id.toString(),
+              baseEvent._id.toString(),
             );
 
             expect(_baseEvent).toEqual(
-              expect.objectContaining({ title: payload!.title }),
+              expect.objectContaining({ title: payload.title }),
             );
 
             switch (calendarProvider) {
@@ -158,11 +158,11 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
                 // check that the base event has not been updated in gcal
                 await expect(
-                  _getGcal(user, instanceEvent!.gRecurringEventId!),
+                  _getGcal(user, instanceEvent.gRecurringEventId!),
                 ).resolves.toEqual(
                   expect.objectContaining({
-                    id: instanceEvent!.gRecurringEventId,
-                    summary: payload!.title,
+                    id: instanceEvent.gRecurringEventId,
+                    summary: payload.title,
                   }),
                 );
 
@@ -172,7 +172,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                     expect(_getGcal(user, instance.gEventId!)).resolves.toEqual(
                       expect.objectContaining({
                         id: instance.gEventId,
-                        summary: payload!.title,
+                        summary: payload.title,
                       }),
                     ),
                   ),
@@ -228,7 +228,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             // expect event to have instances
             const instances = await mongoService.event
-              .find({ user, "recurrence.eventId": event!._id.toString() })
+              .find({ user, "recurrence.eventId": event._id.toString() })
               .toArray();
 
             expect(instances).toHaveLength(10); // recurrence rule count
@@ -237,7 +237,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               expect.arrayContaining(
                 instances.map(() =>
                   expect.objectContaining({
-                    recurrence: { eventId: event!._id.toString() },
+                    recurrence: { eventId: event._id.toString() },
                     isSomeday: false,
                     updatedAt: expect.any(Date),
                     origin: CalendarProvider.COMPASS,
@@ -280,7 +280,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                   expect.arrayContaining(
                     gcalInstances.map(() =>
                       expect.objectContaining({
-                        recurringEventId: event!.gEventId,
+                        recurringEventId: event.gEventId,
                       }),
                     ),
                   ),
@@ -337,7 +337,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               expect.objectContaining({
                 ...updatedPayload,
                 _id: instanceUpdate._id,
-                recurrence: { eventId: event!._id.toString() },
+                recurrence: { eventId: event._id.toString() },
                 description: updatedPayload.description,
                 isSomeday: false,
                 updatedAt: expect.any(Date),
@@ -349,7 +349,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             const otherInstances = await mongoService.event
               .find({
                 user,
-                "recurrence.eventId": event!._id.toString(),
+                "recurrence.eventId": event._id.toString(),
                 _id: { $ne: instanceUpdate._id },
               })
               .toArray();
@@ -359,7 +359,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             expect(otherInstances).toEqual(
               expect.arrayContaining(
                 otherInstances.map(() =>
-                  expect.objectContaining({ description: event!.description }),
+                  expect.objectContaining({ description: event.description }),
                 ),
               ),
             );
@@ -367,11 +367,11 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             // check that the base event was not updated
             const baseEvent = await eventService.readById(
               user,
-              event!._id.toString(),
+              event._id.toString(),
             );
 
             expect(baseEvent).toEqual(
-              expect.objectContaining({ description: event!.description }),
+              expect.objectContaining({ description: event.description }),
             );
 
             switch (calendarProvider) {
@@ -399,7 +399,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 ).resolves.toEqual(
                   expect.objectContaining({
                     id: updatedInstance!.gRecurringEventId,
-                    description: event!.description,
+                    description: event.description,
                   }),
                 );
 
@@ -409,7 +409,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                     expect(_getGcal(user, instance.gEventId!)).resolves.toEqual(
                       expect.objectContaining({
                         id: instance.gEventId,
-                        description: event!.description,
+                        description: event.description,
                       }),
                     ),
                   ),
@@ -467,7 +467,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             // expect event to have instances
             const instances = await mongoService.event
-              .find({ user, "recurrence.eventId": event!._id.toString() })
+              .find({ user, "recurrence.eventId": event._id.toString() })
               .toArray();
 
             expect(instances).toHaveLength(10); // recurrence rule count
@@ -476,7 +476,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               expect.arrayContaining(
                 instances.map(() =>
                   expect.objectContaining({
-                    recurrence: { eventId: event!._id.toString() },
+                    recurrence: { eventId: event._id.toString() },
                     isSomeday: false,
                     updatedAt: expect.any(Date),
                     origin: CalendarProvider.COMPASS,
@@ -519,7 +519,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                   expect.arrayContaining(
                     gcalInstances.map(() =>
                       expect.objectContaining({
-                        recurringEventId: event!.gEventId,
+                        recurringEventId: event.gEventId,
                       }),
                     ),
                   ),
@@ -576,7 +576,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               expect.objectContaining({
                 ...updatedPayload,
                 _id: instanceUpdate._id,
-                recurrence: { eventId: event!._id.toString() },
+                recurrence: { eventId: event._id.toString() },
                 priority: updatedPayload.priority,
                 isSomeday: false,
                 updatedAt: expect.any(Date),
@@ -588,7 +588,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             const otherInstances = await mongoService.event
               .find({
                 user,
-                "recurrence.eventId": event!._id.toString(),
+                "recurrence.eventId": event._id.toString(),
                 _id: { $ne: instanceUpdate._id },
               })
               .toArray();
@@ -598,7 +598,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             expect(otherInstances).toEqual(
               expect.arrayContaining(
                 otherInstances.map(() =>
-                  expect.objectContaining({ priority: event!.priority }),
+                  expect.objectContaining({ priority: event.priority }),
                 ),
               ),
             );
@@ -606,11 +606,11 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             // check that the base event was not updated
             const baseEvent = await eventService.readById(
               user,
-              event!._id.toString(),
+              event._id.toString(),
             );
 
             expect(baseEvent).toEqual(
-              expect.objectContaining({ priority: event!.priority }),
+              expect.objectContaining({ priority: event.priority }),
             );
 
             switch (calendarProvider) {
@@ -716,7 +716,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             // expect event to have instances
             const instances = await mongoService.event
-              .find({ user, "recurrence.eventId": event!._id.toString() })
+              .find({ user, "recurrence.eventId": event._id.toString() })
               .toArray();
 
             expect(instances).toHaveLength(10); // recurrence rule count
@@ -725,7 +725,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               expect.arrayContaining(
                 instances.map(() =>
                   expect.objectContaining({
-                    recurrence: { eventId: event!._id.toString() },
+                    recurrence: { eventId: event._id.toString() },
                     isSomeday: false,
                     updatedAt: expect.any(Date),
                     origin: CalendarProvider.COMPASS,
@@ -768,7 +768,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                   expect.arrayContaining(
                     gcalInstances.map(() =>
                       expect.objectContaining({
-                        recurringEventId: event!.gEventId,
+                        recurringEventId: event.gEventId,
                       }),
                     ),
                   ),
@@ -827,7 +827,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               expect.objectContaining({
                 ...updatedPayload,
                 _id: instanceUpdate._id,
-                recurrence: { eventId: event!._id.toString() },
+                recurrence: { eventId: event._id.toString() },
                 startDate: updatedPayload.startDate,
                 isSomeday: false,
                 updatedAt: expect.any(Date),
@@ -839,7 +839,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             const otherInstances = await mongoService.event
               .find({
                 user,
-                "recurrence.eventId": event!._id.toString(),
+                "recurrence.eventId": event._id.toString(),
                 _id: { $ne: instanceUpdate._id },
               })
               .toArray();
@@ -849,7 +849,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             expect(otherInstances).toEqual(
               expect.arrayContaining(
                 otherInstances.map(() =>
-                  expect.not.objectContaining({ startDate: event!.startDate }),
+                  expect.not.objectContaining({ startDate: event.startDate }),
                 ),
               ),
             );
@@ -857,11 +857,11 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             // check that the base event was not updated
             const baseEvent = await eventService.readById(
               user,
-              event!._id.toString(),
+              event._id.toString(),
             );
 
             expect(baseEvent).toEqual(
-              expect.objectContaining({ startDate: event!.startDate }),
+              expect.objectContaining({ startDate: event.startDate }),
             );
 
             switch (calendarProvider) {
@@ -961,7 +961,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             // expect event to have instances
             const instances = await mongoService.event
-              .find({ user, "recurrence.eventId": event!._id.toString() })
+              .find({ user, "recurrence.eventId": event._id.toString() })
               .toArray();
 
             expect(instances).toHaveLength(10); // recurrence rule count
@@ -970,7 +970,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               expect.arrayContaining(
                 instances.map(() =>
                   expect.objectContaining({
-                    recurrence: { eventId: event!._id.toString() },
+                    recurrence: { eventId: event._id.toString() },
                     isSomeday: false,
                     updatedAt: expect.any(Date),
                     origin: CalendarProvider.COMPASS,
@@ -1013,7 +1013,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                   expect.arrayContaining(
                     gcalInstances.map(() =>
                       expect.objectContaining({
-                        recurringEventId: event!.gEventId,
+                        recurringEventId: event.gEventId,
                       }),
                     ),
                   ),
@@ -1072,7 +1072,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               expect.objectContaining({
                 ...updatedPayload,
                 _id: instanceUpdate._id,
-                recurrence: { eventId: event!._id.toString() },
+                recurrence: { eventId: event._id.toString() },
                 endDate: updatedPayload.endDate,
                 isSomeday: false,
                 updatedAt: expect.any(Date),
@@ -1084,7 +1084,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             const otherInstances = await mongoService.event
               .find({
                 user,
-                "recurrence.eventId": event!._id.toString(),
+                "recurrence.eventId": event._id.toString(),
                 _id: { $ne: instanceUpdate._id },
               })
               .toArray();
@@ -1094,7 +1094,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             expect(otherInstances).toEqual(
               expect.arrayContaining(
                 otherInstances.map(() =>
-                  expect.not.objectContaining({ endDate: event!.endDate }),
+                  expect.not.objectContaining({ endDate: event.endDate }),
                 ),
               ),
             );
@@ -1102,11 +1102,11 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             // check that the base event was not updated
             const baseEvent = await eventService.readById(
               user,
-              event!._id.toString(),
+              event._id.toString(),
             );
 
             expect(baseEvent).toEqual(
-              expect.objectContaining({ endDate: event!.endDate }),
+              expect.objectContaining({ endDate: event.endDate }),
             );
 
             switch (calendarProvider) {
@@ -1206,7 +1206,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             // expect event to have instances
             const instances = await mongoService.event
-              .find({ user, "recurrence.eventId": event!._id.toString() })
+              .find({ user, "recurrence.eventId": event._id.toString() })
               .toArray();
 
             expect(instances).toHaveLength(10); // recurrence rule count
@@ -1215,7 +1215,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               expect.arrayContaining(
                 instances.map(() =>
                   expect.objectContaining({
-                    recurrence: { eventId: event!._id.toString() },
+                    recurrence: { eventId: event._id.toString() },
                     isSomeday: false,
                     updatedAt: expect.any(Date),
                     origin: CalendarProvider.COMPASS,
@@ -1258,7 +1258,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                   expect.arrayContaining(
                     gcalInstances.map(() =>
                       expect.objectContaining({
-                        recurringEventId: event!.gEventId,
+                        recurringEventId: event.gEventId,
                       }),
                     ),
                   ),
@@ -1315,7 +1315,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 ...updatedPayload,
                 _id: instanceUpdate._id.toString(),
                 recurrence: expect.objectContaining({
-                  eventId: event!._id.toString(),
+                  eventId: event._id.toString(),
                   rule: expect.arrayContaining(recurrence.rule),
                 }),
                 endDate: updatedPayload.endDate,
@@ -1329,7 +1329,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             const otherInstances = await mongoService.event
               .find({
                 user,
-                "recurrence.eventId": event!._id.toString(),
+                "recurrence.eventId": event._id.toString(),
                 _id: { $ne: instanceUpdate._id },
               })
               .toArray();
@@ -1339,11 +1339,11 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             // check that the base event was not updated
             const baseEvent = await eventService.readById(
               user,
-              event!._id.toString(),
+              event._id.toString(),
             );
 
             expect(baseEvent).toEqual(
-              expect.objectContaining({ recurrence: event!.recurrence }),
+              expect.objectContaining({ recurrence: event.recurrence }),
             );
 
             switch (calendarProvider) {
@@ -1353,18 +1353,18 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 // check that event exist in gcal
                 const gcalEvent = await _getGcal(
                   user,
-                  updatedInstance!.gEventId!,
+                  updatedInstance.gEventId!,
                 );
 
                 expect(gcalEvent).not.toHaveProperty("recurrence");
 
                 // check that the base event recurrence has not been updated in gcal
                 await expect(
-                  _getGcal(user, updatedInstance!.gRecurringEventId!),
+                  _getGcal(user, updatedInstance.gRecurringEventId!),
                 ).resolves.toEqual(
                   expect.objectContaining({
-                    id: updatedInstance!.gRecurringEventId,
-                    recurrence: event!.recurrence!.rule,
+                    id: updatedInstance.gRecurringEventId,
+                    recurrence: event.recurrence!.rule,
                   }),
                 );
 
@@ -1429,7 +1429,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             // expect event to have instances
             const instances = await mongoService.event
-              .find({ user, "recurrence.eventId": event!._id.toString() })
+              .find({ user, "recurrence.eventId": event._id.toString() })
               .toArray();
 
             expect(instances).toHaveLength(10); // recurrence rule count
@@ -1438,7 +1438,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               expect.arrayContaining(
                 instances.map(() =>
                   expect.objectContaining({
-                    recurrence: { eventId: event!._id.toString() },
+                    recurrence: { eventId: event._id.toString() },
                     isSomeday: false,
                     updatedAt: expect.any(Date),
                     origin: CalendarProvider.COMPASS,
@@ -1479,7 +1479,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                   expect.arrayContaining(
                     gcalInstances.map(() =>
                       expect.objectContaining({
-                        recurringEventId: event!.gEventId,
+                        recurringEventId: event.gEventId,
                       }),
                     ),
                   ),
@@ -1561,7 +1561,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
         // expect event to have instances
         const instances = await mongoService.event
-          .find({ user, "recurrence.eventId": event!._id.toString() })
+          .find({ user, "recurrence.eventId": event._id.toString() })
           .toArray();
 
         expect(instances).toHaveLength(10); // recurrence rule count
@@ -1570,7 +1570,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           expect.arrayContaining(
             instances.map(() =>
               expect.objectContaining({
-                recurrence: { eventId: event!._id.toString() },
+                recurrence: { eventId: event._id.toString() },
                 isSomeday: false,
                 updatedAt: expect.any(Date),
                 origin: CalendarProvider.COMPASS,
@@ -1611,7 +1611,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               expect.arrayContaining(
                 gcalInstances.map(() =>
                   expect.objectContaining({
-                    recurringEventId: event!.gEventId,
+                    recurringEventId: event.gEventId,
                   }),
                 ),
               ),
@@ -1633,7 +1633,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               _id: deletedInstanceId,
               recurrence: {
                 ...deletedInstance.recurrence,
-                rule: event!.recurrence!.rule!,
+                rule: event.recurrence!.rule!,
               },
             } as CompassThisEvent["payload"],
             applyTo: RecurringEventUpdateScope.THIS_EVENT,
@@ -1662,7 +1662,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
         // check that other instances still exist
         const otherInstances = await mongoService.event
-          .find({ user, "recurrence.eventId": event!._id.toString() })
+          .find({ user, "recurrence.eventId": event._id.toString() })
           .toArray();
 
         expect(otherInstances).toHaveLength(9); // 10 - 1 deleted
@@ -1670,7 +1670,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
         // check that the base event still exist
         const baseEvent = await eventService.readById(
           user,
-          event!._id.toString(),
+          event._id.toString(),
         );
 
         expect(baseEvent).toBeDefined();
@@ -1754,8 +1754,8 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             ...instanceToUpdate,
             _id: instanceToUpdate._id.toString(),
             recurrence: {
-              ...instanceToUpdate.recurrence!,
-              rule: baseEvent.recurrence!.rule,
+              ...instanceToUpdate.recurrence,
+              rule: baseEvent.recurrence.rule,
             },
             title: newTitle,
             description: newDescription,
@@ -1796,7 +1796,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           const otherInstances = await mongoService.event
             .find({
               user,
-              "recurrence.eventId": baseEvent!._id.toString(),
+              "recurrence.eventId": baseEvent._id.toString(),
               _id: { $ne: instanceEvent._id },
             })
             .toArray();
@@ -1811,12 +1811,12 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
           // Verify the base event was NOT updated
           const _baseEvent = await eventService.readById(
             user,
-            baseEvent!._id.toString(),
+            baseEvent._id.toString(),
           );
 
           expect(_baseEvent).toEqual(
             expect.objectContaining({
-              title: payload!.title,
+              title: payload.title,
               description: payload.description,
             }),
           );

@@ -3,7 +3,7 @@ import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
-import { Task, TaskProps } from "./Task";
+import { Task, type TaskProps } from "./Task";
 
 describe("Task - migration", () => {
   const mockTask = createMockTask({ _id: "task-1" });

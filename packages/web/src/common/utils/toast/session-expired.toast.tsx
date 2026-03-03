@@ -1,4 +1,4 @@
-import { Id, toast } from "react-toastify";
+import { type Id, toast } from "react-toastify";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
 
 interface SessionExpiredToastProps {

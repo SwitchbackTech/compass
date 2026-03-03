@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 
 /**
  * Monochrome Google "G" logo SVG

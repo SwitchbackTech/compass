@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { ActionsMenu } from "../ActionsMenu/ActionsMenu";
 import { DeleteMenuButton } from "./DeleteMenuButton";
 import { DuplicateMenuButton } from "./DuplicateMenuButton";

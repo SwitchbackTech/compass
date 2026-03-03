@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { Trash } from "@phosphor-icons/react";
 import MenuItem from "../ActionsMenu/MenuItem";
 

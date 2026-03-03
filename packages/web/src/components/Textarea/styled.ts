@@ -1,6 +1,6 @@
 import TextareaAutoSize from "react-textarea-autosize";
 import styled from "styled-components";
-import { TextareaProps } from "./types";
+import { type TextareaProps } from "./types";
 
 export const StyledTextarea = styled(TextareaAutoSize)<TextareaProps>`
   border: none;

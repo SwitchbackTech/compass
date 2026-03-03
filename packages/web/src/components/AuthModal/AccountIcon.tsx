@@ -1,4 +1,4 @@
-import { FC } from "react";
+import { type FC } from "react";
 import { UserCircleDashedIcon, UserCircleIcon } from "@phosphor-icons/react";
 import { useSession } from "@web/auth/hooks/session/useSession";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";

@@ -1,6 +1,9 @@
 import { calendar } from "@googleapis/calendar";
-import { Categories_Recurrence, Schema_Event } from "@core/types/event.types";
-import { gSchema$Event } from "@core/types/gcal";
+import {
+  Categories_Recurrence,
+  type Schema_Event,
+} from "@core/types/event.types";
+import { type gSchema$Event } from "@core/types/gcal";
 import { isInstance } from "@core/util/event/event.util";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
@@ -52,25 +55,25 @@ describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
     expect(changes).toEqual(
       expect.arrayContaining([
         {
-          title: gBaseWithUntil.summary as string,
+          title: gBaseWithUntil.summary,
           category: Categories_Recurrence.RECURRENCE_BASE,
           operation: "SERIES_DELETED",
           transition: ["RECURRENCE_BASE", "RECURRENCE_BASE_CONFIRMED"],
         },
         {
-          title: gBaseWithUntil.summary as string,
+          title: gBaseWithUntil.summary,
           category: Categories_Recurrence.RECURRENCE_BASE,
           operation: "SERIES_CREATED",
           transition: ["RECURRENCE_BASE", "RECURRENCE_BASE_CONFIRMED"],
         },
         {
-          title: gBaseWithUntil.summary as string,
+          title: gBaseWithUntil.summary,
           category: Categories_Recurrence.RECURRENCE_BASE,
           operation: "RECURRENCE_BASE_UPDATED",
           transition: ["RECURRENCE_BASE", "RECURRENCE_BASE_CONFIRMED"],
         },
         {
-          title: gBaseWithUntil.summary as string,
+          title: gBaseWithUntil.summary,
           category: Categories_Recurrence.RECURRENCE_BASE,
           operation: "TIMED_INSTANCES_UPDATED",
           transition: ["RECURRENCE_BASE", "RECURRENCE_BASE_CONFIRMED"],

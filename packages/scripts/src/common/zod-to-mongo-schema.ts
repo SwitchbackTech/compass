@@ -197,7 +197,7 @@ const jsonSchemaToMongoSchema = (
       result.exclusiveMaximum = schema.exclusiveMaximum;
     } else {
       result.exclusiveMaximum = true;
-      result.maximum = schema.exclusiveMaximum as number;
+      result.maximum = schema.exclusiveMaximum;
     }
   }
   if (schema.exclusiveMinimum != null) {
@@ -205,7 +205,7 @@ const jsonSchemaToMongoSchema = (
       result.exclusiveMinimum = schema.exclusiveMinimum;
     } else {
       result.exclusiveMinimum = true;
-      result.minimum = schema.exclusiveMinimum as number;
+      result.minimum = schema.exclusiveMinimum;
     }
   }
   if (schema.items != null) {
@@ -215,18 +215,15 @@ const jsonSchemaToMongoSchema = (
       : convertJSONSchema7DefinitionNoBoolean(root, items);
   }
   // integer schema
-  if (schema.maximum != null) result.maximum = schema.maximum as number;
-  if (schema.maxItems != null) result.maxItems = schema.maxItems as number;
-  if (schema.maxLength != null) result.maxLength = schema.maxLength as number;
-  if (schema.maxProperties != null)
-    result.maxProperties = schema.maxProperties as number;
-  if (schema.minimum != null) result.minimum = schema.minimum as number;
-  if (schema.minItems != null) result.minItems = schema.minItems as number;
-  if (schema.minLength != null) result.minLength = schema.minLength as number;
-  if (schema.minProperties != null)
-    result.minProperties = schema.minProperties as number;
-  if (schema.multipleOf != null)
-    result.multipleOf = schema.multipleOf as number;
+  if (schema.maximum != null) result.maximum = schema.maximum;
+  if (schema.maxItems != null) result.maxItems = schema.maxItems;
+  if (schema.maxLength != null) result.maxLength = schema.maxLength;
+  if (schema.maxProperties != null) result.maxProperties = schema.maxProperties;
+  if (schema.minimum != null) result.minimum = schema.minimum;
+  if (schema.minItems != null) result.minItems = schema.minItems;
+  if (schema.minLength != null) result.minLength = schema.minLength;
+  if (schema.minProperties != null) result.minProperties = schema.minProperties;
+  if (schema.multipleOf != null) result.multipleOf = schema.multipleOf;
   if (schema.not != null)
     result.not = convertJSONSchema7DefinitionNoBoolean(
       root,
@@ -236,7 +233,7 @@ const jsonSchemaToMongoSchema = (
     result.oneOf = schema.oneOf.map((s) =>
       convertJSONSchema7DefinitionNoBoolean(root, s as JSONSchema.Schema),
     );
-  if (schema.pattern != null) result.pattern = schema.pattern as string;
+  if (schema.pattern != null) result.pattern = schema.pattern;
   if (schema.patternProperties != null) {
     result.patternProperties = Object.entries(schema.patternProperties).reduce(
       (acc: NonNullable<MongoSchema["patternProperties"]>, [k, v]) => {
@@ -263,15 +260,14 @@ const jsonSchemaToMongoSchema = (
       {},
     );
   }
-  if (schema.required != null) result.required = schema.required as string[];
+  if (schema.required != null) result.required = schema.required;
   if (schema.title != null) result.title = schema.title;
   if (schema.type != null) {
     result.bsonType = Array.isArray(schema.type)
       ? schema.type.map(convertTypeToBsonType)
       : convertTypeToBsonType(schema.type);
   }
-  if (schema.uniqueItems != null)
-    result.uniqueItems = schema.uniqueItems as boolean;
+  if (schema.uniqueItems != null) result.uniqueItems = schema.uniqueItems;
 
   if ("bsonType" in schema) {
     result.bsonType = schema["bsonType"] as MongoBsonType | MongoBsonType[];

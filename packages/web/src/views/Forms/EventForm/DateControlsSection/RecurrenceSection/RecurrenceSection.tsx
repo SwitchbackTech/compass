@@ -1,9 +1,9 @@
-import React, { Dispatch, SetStateAction } from "react";
+import React, { type Dispatch, type SetStateAction } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
 import {
-  Schema_GridEvent,
-  Schema_WebEvent,
+  type Schema_GridEvent,
+  type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import { ConditionalRender } from "@web/components/ConditionalRender/ConditionalRender";
 import { FlexDirections } from "@web/components/Flex/styled";

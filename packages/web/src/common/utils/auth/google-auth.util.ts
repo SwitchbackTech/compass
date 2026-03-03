@@ -3,7 +3,7 @@ import { Origin } from "@core/constants/core.constants";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
-import { SignInUpInput } from "@web/components/oauth/ouath.types";
+import { type SignInUpInput } from "@web/components/oauth/ouath.types";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
 import { triggerFetch } from "@web/ducks/events/slices/sync.slice";

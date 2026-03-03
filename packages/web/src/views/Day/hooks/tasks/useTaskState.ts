@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
-import { TaskRepository } from "@web/common/repositories/task/task.repository";
-import { Task, UndoOperation } from "@web/common/types/task.types";
+import { type TaskRepository } from "@web/common/repositories/task/task.repository";
+import { type Task, type UndoOperation } from "@web/common/types/task.types";
 import { getDateKey } from "@web/common/utils/storage/storage.util";
 import { useLoadTasksByDateEffect } from "@web/views/Day/hooks/tasks/useLoadTasksByDateEffect";
 import { useSaveTasksByDateEffect } from "@web/views/Day/hooks/tasks/useSaveTasksByDateEffect";

@@ -1,8 +1,11 @@
 import { createContext } from "react";
-import { Actions_Draft } from "../hooks/actions/useDraftActions";
-import { useDraftConfirmation } from "../hooks/state/useDraftConfirmation";
-import { useDraftForm } from "../hooks/state/useDraftForm";
-import { Setters_Draft, State_Draft_Local } from "../hooks/state/useDraftState";
+import { type Actions_Draft } from "../hooks/actions/useDraftActions";
+import { type useDraftConfirmation } from "../hooks/state/useDraftConfirmation";
+import { type useDraftForm } from "../hooks/state/useDraftForm";
+import {
+  type Setters_Draft,
+  type State_Draft_Local,
+} from "../hooks/state/useDraftState";
 
 export type Props_DraftForm = ReturnType<typeof useDraftForm>;
 

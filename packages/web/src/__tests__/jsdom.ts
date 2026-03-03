@@ -1,4 +1,4 @@
-import { EventEmitter2, ListenerFn } from "eventemitter2";
+import { EventEmitter2, type ListenerFn } from "eventemitter2";
 import { TestEnvironment } from "jest-environment-jsdom";
 import fetch, { Request } from "node-fetch";
 import {

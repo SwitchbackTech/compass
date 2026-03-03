@@ -1,3 +1,3 @@
-import { ObjectId } from "bson";
+import { type ObjectId } from "bson";
 
 export type InsertedIds = { [key: number]: ObjectId };

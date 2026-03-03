@@ -6,7 +6,7 @@ import { Flex } from "@web/components/Flex";
 import { Input } from "@web/components/Input/Input";
 import { Textarea } from "@web/components/Textarea";
 import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
-import { StyledFormProps } from "./types";
+import { type StyledFormProps } from "./types";
 
 interface SomedayFormProps extends StyledFormProps {
   x?: number;

@@ -1,4 +1,4 @@
-import express from "express";
+import type express from "express";
 import { verifySession } from "supertokens-node/recipe/session/framework/express";
 import {
   GCAL_NOTIFICATION_ENDPOINT,

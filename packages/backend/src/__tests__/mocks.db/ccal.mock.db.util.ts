@@ -1,8 +1,8 @@
 import { ObjectId } from "mongodb";
 import {
-  Schema_Event,
-  Schema_Event_Recur_Base,
-  Schema_Event_Recur_Instance,
+  type Schema_Event,
+  type Schema_Event_Recur_Base,
+  type Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
 import {
   createMockBaseEvent,

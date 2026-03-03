@@ -1,24 +1,24 @@
 import { ObjectId } from "bson";
 import {
-  Dispatch,
-  SetStateAction,
+  type Dispatch,
+  type SetStateAction,
   useCallback,
   useEffect,
   useMemo,
   useState,
 } from "react";
-import { Frequency, Options, RRule, Weekday } from "rrule";
+import { Frequency, type Options, RRule, type Weekday } from "rrule";
 import dayjs from "@core/util/date/dayjs";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { parseCompassEventDate } from "@core/util/event/event.util";
 import {
-  Schema_GridEvent,
-  Schema_WebEvent,
+  type Schema_GridEvent,
+  type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import {
-  FrequencyValues,
-  WEEKDAYS,
-  WEEKDAY_RRULE_MAP,
+  type FrequencyValues,
+  type WEEKDAYS,
+  type WEEKDAY_RRULE_MAP,
 } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";
 import { toWeekDays } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/util/recurrence.util";
 
@@ -97,8 +97,8 @@ export const useRecurrence = (
 
     return new CompassEventRRule({
       _id: new ObjectId(), // we do not need the event's actual id here
-      startDate: startDate!,
-      endDate: endDate!,
+      startDate: startDate,
+      endDate: endDate,
       recurrence: { rule: recurrence?.rule as string[] },
     });
   }, [_startDate, startDate, endDate, hasRecurrence, recurrence?.rule]);

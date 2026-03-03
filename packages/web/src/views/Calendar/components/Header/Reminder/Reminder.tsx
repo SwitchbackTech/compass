@@ -1,5 +1,6 @@
-import React, {
-  ForwardedRef,
+import { type ForwardedRef } from "react";
+import type React from "react";
+import {
   forwardRef,
   useCallback,
   useEffect,

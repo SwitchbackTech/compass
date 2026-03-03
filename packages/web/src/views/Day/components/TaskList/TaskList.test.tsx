@@ -178,7 +178,7 @@ describe("TaskList", () => {
   it("should show keyboard shortcut hint on hover over add button", async () => {
     const { user } = renderWithDayProviders(<TaskList />);
 
-    const addTaskArea = await screen.findByText("Create task")!;
+    const addTaskArea = await screen.findByText("Create task");
     await act(async () => {
       await user.hover(addTaskArea.parentElement!);
     });

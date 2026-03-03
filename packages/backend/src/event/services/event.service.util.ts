@@ -1,8 +1,8 @@
-import { Filter, ObjectId, WithId } from "mongodb";
+import { type Filter, ObjectId, type WithId } from "mongodb";
 import {
-  Query_Event,
-  Schema_Event,
-  Schema_Event_Core,
+  type Query_Event,
+  type Schema_Event,
+  type Schema_Event_Core,
 } from "@core/types/event.types";
 import { isSameMonth } from "@core/util/date/date.util";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";

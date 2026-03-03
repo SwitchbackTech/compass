@@ -1,5 +1,5 @@
 import { Categories_Recurrence } from "@core/types/event.types";
-import { gSchema$EventBase } from "@core/types/gcal";
+import { type gSchema$EventBase } from "@core/types/gcal";
 import dayjs from "@core/util/date/dayjs";
 import { categorizeEvents } from "@core/util/event/event.util";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";

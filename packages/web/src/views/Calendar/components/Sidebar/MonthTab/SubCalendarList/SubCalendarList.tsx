@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { type FC } from "react";
 import { theme } from "@web/common/styles/theme";
 import { Divider } from "@web/components/Divider";
 import { Text } from "@web/components/Text";

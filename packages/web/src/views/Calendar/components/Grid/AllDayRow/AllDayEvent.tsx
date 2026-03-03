@@ -1,11 +1,11 @@
-import { KeyboardEvent, MouseEvent, memo } from "react";
+import { type KeyboardEvent, type MouseEvent, memo } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
 } from "@web/common/constants/web.constants";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getEventPosition } from "@web/common/utils/position/position.util";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
@@ -13,8 +13,8 @@ import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
 import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
-import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { StyledEvent, StyledEventHorizontalScaler } from "../../Event/styled";
 
 interface Props {

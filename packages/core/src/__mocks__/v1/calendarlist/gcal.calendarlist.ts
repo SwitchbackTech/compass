@@ -1,4 +1,4 @@
-import { gSchema$CalendarList } from "@core/types/gcal";
+import { type gSchema$CalendarList } from "@core/types/gcal";
 
 export const gcalCalendarList: gSchema$CalendarList = {
   kind: "calendar#calendarList",

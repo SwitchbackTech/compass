@@ -1,5 +1,5 @@
-import { Task } from "@web/common/types/task.types";
-import { TaskRepository } from "./task.repository";
+import { type Task } from "@web/common/types/task.types";
+import { type TaskRepository } from "./task.repository";
 
 export class CloudTaskRepository implements TaskRepository {
   private createNotImplementedError(method: string): Error {

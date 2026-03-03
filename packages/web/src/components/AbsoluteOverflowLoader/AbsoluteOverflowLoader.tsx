@@ -1,4 +1,8 @@
-import { AlignItems, JustifyContent, Props } from "@web/components/Flex/styled";
+import {
+  AlignItems,
+  JustifyContent,
+  type Props,
+} from "@web/components/Flex/styled";
 import { Styled, StyledSpinner } from "./styled";
 
 export const AbsoluteOverflowLoader = (props: Props) => (

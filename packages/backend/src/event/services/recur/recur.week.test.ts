@@ -1,5 +1,5 @@
 import { RRULE } from "@core/constants/core.constants";
-import { Schema_Event_Core } from "@core/types/event.types";
+import { type Schema_Event_Core } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { areDatesUnique, haveSharedValues } from "./recur.test.util";
 import { assembleInstances } from "./util/recur.util";

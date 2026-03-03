@@ -1,4 +1,4 @@
-import { gSchema$Event } from "@core/types/gcal";
+import { type gSchema$Event } from "@core/types/gcal";
 import { Origin, Priorities } from "../constants/core.constants";
 import { MapEvent } from "./map.event";
 

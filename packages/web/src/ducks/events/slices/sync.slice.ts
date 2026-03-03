@@ -1,5 +1,5 @@
-import { PayloadAction, createSlice } from "@reduxjs/toolkit";
-import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
+import { type PayloadAction, createSlice } from "@reduxjs/toolkit";
+import { type Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { createAsyncSlice } from "../../../common/store/helpers";
 
 type Payload_TriggerFetch = {

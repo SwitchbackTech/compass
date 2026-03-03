@@ -1,4 +1,7 @@
-import { gSchema$EventBase, gSchema$EventInstance } from "@core/types/gcal";
+import {
+  type gSchema$EventBase,
+  type gSchema$EventInstance,
+} from "@core/types/gcal";
 
 export const recurring: [gSchema$EventBase, ...gSchema$EventInstance[]] = [
   {

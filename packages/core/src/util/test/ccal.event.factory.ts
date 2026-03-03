@@ -2,11 +2,11 @@ import { ObjectId } from "bson";
 import { faker } from "@faker-js/faker";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import {
-  Schema_Event,
-  Schema_Event_Recur_Base,
-  Schema_Event_Recur_Instance,
-  Schema_Event_Regular,
-  WithCompassId,
+  type Schema_Event,
+  type Schema_Event_Recur_Base,
+  type Schema_Event_Recur_Instance,
+  type Schema_Event_Regular,
+  type WithCompassId,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { isAllDay, parseCompassEventDate } from "@core/util/event/event.util";

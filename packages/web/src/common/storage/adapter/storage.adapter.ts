@@ -1,5 +1,5 @@
-import { Event_Core } from "@core/types/event.types";
-import { Task } from "@web/common/types/task.types";
+import { type Event_Core } from "@core/types/event.types";
+import { type Task } from "@web/common/types/task.types";
 
 /**
  * Record of a completed migration.
