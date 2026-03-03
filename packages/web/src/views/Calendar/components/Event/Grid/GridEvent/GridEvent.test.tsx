@@ -1,5 +1,9 @@
 import { screen } from "@testing-library/react";
-import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
+import {
+  createMockBaseEvent,
+  createMockInstance,
+  createMockStandaloneEvent,
+} from "@core/util/test/ccal.event.factory";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -233,5 +237,150 @@ describe("GridEvent", () => {
     // Note: In a real scenario, React.memo would prevent re-render,
     // but here we're testing that the selector only checks event1's pending state
     expect(renderSpy).toHaveBeenCalledTimes(2); // Rerender was called, but memo should prevent actual re-render
+  });
+
+  describe("repeat icon for recurring events", () => {
+    it("should render repeat icon for base recurring event with rule", () => {
+      const baseEvent = createMockBaseEvent({
+        _id: "base-event-1",
+        title: "Weekly Meeting",
+        recurrence: { rule: ["RRULE:FREQ=WEEKLY"] },
+      });
+
+      const event = createMockGridEvent(baseEvent);
+
+      const initialState = createInitialState({
+        events: {
+          pendingEvents: {
+            eventIds: [],
+          },
+        },
+      });
+
+      render(
+        <GridEventMemo
+          event={event}
+          isDraft={false}
+          isDragging={false}
+          isPlaceholder={false}
+          isResizing={false}
+          measurements={mockMeasurements}
+          onEventMouseDown={mockOnEventMouseDown}
+          onScalerMouseDown={mockOnScalerMouseDown}
+          weekProps={mockWeekProps}
+        />,
+        { state: initialState },
+      );
+
+      const icon = screen.getByTestId("repeat-icon");
+      expect(icon).toBeInTheDocument();
+      expect(screen.getByText("Weekly Meeting")).toBeInTheDocument();
+    });
+
+    it("should render repeat icon for recurring instance with eventId", () => {
+      const baseEventId = "base-123";
+      const gBaseId = "gbase-123";
+      const instance = createMockInstance(baseEventId, gBaseId, {
+        _id: "instance-1",
+        title: "Weekly Meeting Instance",
+      });
+
+      const event = createMockGridEvent(instance);
+
+      const initialState = createInitialState({
+        events: {
+          pendingEvents: {
+            eventIds: [],
+          },
+        },
+      });
+
+      render(
+        <GridEventMemo
+          event={event}
+          isDraft={false}
+          isDragging={false}
+          isPlaceholder={false}
+          isResizing={false}
+          measurements={mockMeasurements}
+          onEventMouseDown={mockOnEventMouseDown}
+          onScalerMouseDown={mockOnScalerMouseDown}
+          weekProps={mockWeekProps}
+        />,
+        { state: initialState },
+      );
+
+      const icon = screen.getByTestId("repeat-icon");
+      expect(icon).toBeInTheDocument();
+    });
+
+    it("should not render repeat icon for non-recurring event", () => {
+      const event = createMockGridEvent({
+        _id: "standalone-1",
+        title: "One-time Meeting",
+        recurrence: undefined,
+      });
+
+      const initialState = createInitialState({
+        events: {
+          pendingEvents: {
+            eventIds: [],
+          },
+        },
+      });
+
+      render(
+        <GridEventMemo
+          event={event}
+          isDraft={false}
+          isDragging={false}
+          isPlaceholder={false}
+          isResizing={false}
+          measurements={mockMeasurements}
+          onEventMouseDown={mockOnEventMouseDown}
+          onScalerMouseDown={mockOnScalerMouseDown}
+          weekProps={mockWeekProps}
+        />,
+        { state: initialState },
+      );
+
+      const icon = screen.queryByTestId("repeat-icon");
+      expect(icon).not.toBeInTheDocument();
+      expect(screen.getByText("One-time Meeting")).toBeInTheDocument();
+    });
+
+    it("should not render repeat icon when recurrence is disabled (rule is null)", () => {
+      const event = createMockGridEvent({
+        _id: "disabled-recurring-1",
+        title: "Disabled Recurring Meeting",
+        recurrence: { rule: null },
+      });
+
+      const initialState = createInitialState({
+        events: {
+          pendingEvents: {
+            eventIds: [],
+          },
+        },
+      });
+
+      render(
+        <GridEventMemo
+          event={event}
+          isDraft={false}
+          isDragging={false}
+          isPlaceholder={false}
+          isResizing={false}
+          measurements={mockMeasurements}
+          onEventMouseDown={mockOnEventMouseDown}
+          onScalerMouseDown={mockOnScalerMouseDown}
+          weekProps={mockWeekProps}
+        />,
+        { state: initialState },
+      );
+
+      const icon = screen.queryByTestId("repeat-icon");
+      expect(icon).not.toBeInTheDocument();
+    });
   });
 });

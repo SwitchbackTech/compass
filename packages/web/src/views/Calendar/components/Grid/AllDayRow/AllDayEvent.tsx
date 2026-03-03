@@ -54,7 +54,11 @@ const AllDayEvent = ({
   const isPending = useAppSelector((state) =>
     selectIsEventPending(state, event._id!),
   );
-  const isRecurring = event.recurrence && event.recurrence?.eventId !== null;
+  const rule = event.recurrence?.rule;
+  const recurrenceEventId = event.recurrence?.eventId;
+  const isRecurring =
+    (Array.isArray(rule) && rule.length > 0) ||
+    typeof recurrenceEventId === "string";
 
   const styledEventProps = {
     [DATA_EVENT_ELEMENT_ID]: event._id,
@@ -99,6 +103,7 @@ const AllDayEvent = ({
         <Text size="m" role="textbox">
           {isRecurring && (
             <RepeatIcon
+              data-testid="repeat-icon"
               size={12}
               style={{ marginRight: "4px", verticalAlign: "middle" }}
             />

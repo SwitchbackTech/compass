@@ -75,7 +75,11 @@ const _GridEvent = (
   const isPending = useAppSelector((state) =>
     event._id ? selectIsEventPending(state, event._id) : false,
   );
-  const isRecurring = event.recurrence && event.recurrence?.eventId !== null;
+  const rule = event.recurrence?.rule;
+  const recurrenceEventId = event.recurrence?.eventId;
+  const isRecurring =
+    (Array.isArray(rule) && rule.length > 0) ||
+    typeof recurrenceEventId === "string";
 
   const position = getEventPosition(
     event,
@@ -143,6 +147,7 @@ const _GridEvent = (
         <StyledEventTitle eventHeight={position.height} role="textbox">
           {isRecurring && (
             <RepeatIcon
+              data-testid="repeat-icon"
               size={12}
               style={{ marginRight: "4px", verticalAlign: "middle" }}
             />
