@@ -1,4 +1,5 @@
 import { rest } from "msw";
+import { type PostHog } from "posthog-js";
 import { usePostHog } from "posthog-js/react";
 import { act, isValidElement } from "react";
 import { toast } from "react-toastify";
@@ -12,34 +13,45 @@ import { ENV_WEB } from "@web/common/constants/env.constants";
 import * as authStateUtil from "@web/common/utils/storage/auth-state.util";
 import { SessionExpiredToast } from "@web/common/utils/toast/session-expired.toast";
 
-// Mock PostHog
 jest.mock("posthog-js/react");
-const mockUsePostHog = usePostHog as jest.MockedFunction<typeof usePostHog>;
+const mockUsePostHog = jest.mocked(usePostHog);
+const mockToastError = jest.mocked(toast.error);
 
-const mockToastError = toast.error as jest.MockedFunction<typeof toast.error>;
+jest.mock("@web/common/utils/storage/auth-state.util", () => {
+  const actual: typeof authStateUtil = jest.requireActual(
+    "@web/common/utils/storage/auth-state.util",
+  );
+  return {
+    ...actual,
+    hasUserEverAuthenticated: jest.fn(),
+  };
+});
+const mockHasUserEverAuthenticated = jest.mocked(
+  authStateUtil.hasUserEverAuthenticated,
+);
 
-// Mock auth state util
-jest.mock("@web/common/utils/storage/auth-state.util", () => ({
-  ...jest.requireActual("@web/common/utils/storage/auth-state.util"),
-  hasUserEverAuthenticated: jest.fn(),
-}));
-const mockHasUserEverAuthenticated =
-  authStateUtil.hasUserEverAuthenticated as jest.MockedFunction<
-    typeof authStateUtil.hasUserEverAuthenticated
-  >;
-
-// Mock AbsoluteOverflowLoader
 jest.mock("@web/components/AbsoluteOverflowLoader", () => ({
   AbsoluteOverflowLoader: () => <div>Loading...</div>,
 }));
 
-describe("UserProvider", () => {
-  const mockIdentify = jest.fn();
+const mockIdentify = jest.fn();
 
+function mockPostHogEnabled(overrides?: Partial<PostHog>): void {
+  mockUsePostHog.mockReturnValue({
+    identify: mockIdentify,
+    ...overrides,
+  } as unknown as PostHog);
+}
+
+function mockPostHogDisabled(): void {
+  mockUsePostHog.mockReturnValue(undefined as unknown as PostHog);
+}
+
+describe("UserProvider", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Default to authenticated so existing tests continue to work
     mockHasUserEverAuthenticated.mockReturnValue(true);
+    mockPostHogEnabled();
   });
 
   describe("PostHog Integration", () => {
@@ -47,18 +59,12 @@ describe("UserProvider", () => {
       const testUserId = "test-user-123";
       const testEmail = "test@example.com";
 
-      // Mock PostHog as enabled
-      mockUsePostHog.mockReturnValue({
-        identify: mockIdentify,
-      } as any);
-
       render(
         <UserProvider>
           <div>Test Child</div>
         </UserProvider>,
       );
 
-      // Wait for async data fetch and PostHog identify to be called
       await waitFor(() => {
         expect(screen.getByText("Test Child")).toBeInTheDocument();
       });
@@ -68,13 +74,11 @@ describe("UserProvider", () => {
         userId: testUserId,
       });
 
-      // Verify it was called exactly once
       expect(mockIdentify).toHaveBeenCalledTimes(1);
     });
 
     it("should NOT call posthog.identify when PostHog is disabled", async () => {
-      // Mock PostHog as disabled (returns undefined/null)
-      mockUsePostHog.mockReturnValue(undefined as any);
+      mockPostHogDisabled();
 
       render(
         <UserProvider>
@@ -86,7 +90,6 @@ describe("UserProvider", () => {
         expect(screen.getByText("Test Child")).toBeInTheDocument();
       });
 
-      // Verify identify was never called
       expect(mockIdentify).not.toHaveBeenCalled();
     });
 
@@ -100,11 +103,6 @@ describe("UserProvider", () => {
         }),
       );
 
-      // Mock PostHog as enabled
-      mockUsePostHog.mockReturnValue({
-        identify: mockIdentify,
-      } as any);
-
       render(
         <UserProvider>
           <div>Test Child</div>
@@ -115,7 +113,6 @@ describe("UserProvider", () => {
         expect(screen.getByText("Test Child")).toBeInTheDocument();
       });
 
-      // Verify identify was not called because email is missing
       expect(mockIdentify).not.toHaveBeenCalled();
     });
 
@@ -129,11 +126,6 @@ describe("UserProvider", () => {
           );
         }),
       );
-
-      // Mock PostHog as enabled
-      mockUsePostHog.mockReturnValue({
-        identify: mockIdentify,
-      } as any);
 
       render(
         <UserProvider>
@@ -151,12 +143,10 @@ describe("UserProvider", () => {
     });
 
     it("should handle posthog.identify not being a function gracefully", async () => {
-      // Mock PostHog with identify not being a function
-      mockUsePostHog.mockReturnValue({
-        identify: null,
-      } as any);
+      mockPostHogEnabled({
+        identify: null as unknown as PostHog["identify"],
+      });
 
-      // Should not throw an error
       expect(() => {
         render(
           <UserProvider>
@@ -169,7 +159,6 @@ describe("UserProvider", () => {
         expect(screen.getByText("Test Child")).toBeInTheDocument();
       });
 
-      // Verify identify was not called
       expect(mockIdentify).not.toHaveBeenCalled();
     });
 
@@ -190,20 +179,14 @@ describe("UserProvider", () => {
         }),
       );
 
-      mockUsePostHog.mockReturnValue({
-        identify: mockIdentify,
-      } as any);
-
       render(
         <UserProvider>
           <div>Test Child Content</div>
         </UserProvider>,
       );
 
-      // Initially should show loading
       expect(screen.getByText("Loading...")).toBeInTheDocument();
 
-      // After data loads, should show children
       await waitFor(() => {
         expect(screen.getByText("Test Child Content")).toBeInTheDocument();
       });
@@ -224,10 +207,6 @@ describe("UserProvider", () => {
         }),
       );
 
-      mockUsePostHog.mockReturnValue({
-        identify: mockIdentify,
-      } as any);
-
       render(
         <UserProvider>
           <div>Test Child</div>
@@ -238,14 +217,15 @@ describe("UserProvider", () => {
       await act(async () => {
         try {
           await getProfileSpy.mock.results[0].value;
-        } catch (e) {
-          // Ignore error
+        } catch {
+          // expected — profile fetch rejects on 401
         }
       });
 
       expect(mockToastError).toHaveBeenCalled();
-      const latestToastCall = mockToastError.mock.calls.at(-1);
-      expect(latestToastCall?.[1]).toEqual(
+      const latestToastCall =
+        mockToastError.mock.calls[mockToastError.mock.calls.length - 1];
+      expect(latestToastCall[1]).toEqual(
         expect.objectContaining({
           toastId: "session-expired-api",
           autoClose: false,
@@ -254,14 +234,13 @@ describe("UserProvider", () => {
         }),
       );
 
-      const toastContent = latestToastCall?.[0];
+      const toastContent = latestToastCall[0];
       expect(isValidElement(toastContent)).toBe(true);
-      if (isValidElement(toastContent)) {
+      if (isValidElement<{ toastId: string }>(toastContent)) {
         expect(toastContent.type).toBe(SessionExpiredToast);
         expect(toastContent.props.toastId).toBe("session-expired-api");
       }
 
-      // Should not call identify
       expect(mockIdentify).not.toHaveBeenCalled();
 
       getProfileSpy.mockRestore();
@@ -276,9 +255,6 @@ describe("UserProvider", () => {
     it("should NOT call getProfile when user has never authenticated", async () => {
       mockHasUserEverAuthenticated.mockReturnValue(false);
       const getProfileSpy = jest.spyOn(UserApi, "getProfile");
-      mockUsePostHog.mockReturnValue({
-        identify: mockIdentify,
-      } as any);
 
       render(
         <UserProvider>
@@ -297,9 +273,6 @@ describe("UserProvider", () => {
     it("should call getProfile when user has authenticated with Google", async () => {
       mockHasUserEverAuthenticated.mockReturnValue(true);
       const getProfileSpy = jest.spyOn(UserApi, "getProfile");
-      mockUsePostHog.mockReturnValue({
-        identify: mockIdentify,
-      } as any);
 
       render(
         <UserProvider>
