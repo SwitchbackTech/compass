@@ -1,10 +1,12 @@
 import { renderHook } from "@testing-library/react";
+import * as googleAuthState from "@web/auth/google/google.auth.state";
 import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
 import { useSession } from "@web/auth/hooks/session/useSession";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 
+jest.mock("@web/auth/google/google.auth.state");
 jest.mock("@web/auth/hooks/session/useSession");
 jest.mock("@web/auth/hooks/oauth/useGoogleAuth");
 jest.mock("@web/store/store.hooks");
@@ -31,6 +33,8 @@ describe("useConnectGoogle", () => {
       authenticated: false,
       setAuthenticated: jest.fn(),
     });
+    // Default: Google not revoked
+    jest.spyOn(googleAuthState, "isGoogleRevoked").mockReturnValue(false);
   });
 
   it("returns true when Google Calendar is connected", () => {
@@ -49,6 +53,18 @@ describe("useConnectGoogle", () => {
       authenticated: false,
       setAuthenticated: jest.fn(),
     });
+
+    const { result } = renderHook(() => useConnectGoogle());
+
+    expect(result.current.isGoogleCalendarConnected).toBe(false);
+  });
+
+  it("returns false when authenticated but Google is revoked", () => {
+    mockUseSession.mockReturnValue({
+      authenticated: true,
+      setAuthenticated: jest.fn(),
+    });
+    jest.spyOn(googleAuthState, "isGoogleRevoked").mockReturnValue(true);
 
     const { result } = renderHook(() => useConnectGoogle());
 
