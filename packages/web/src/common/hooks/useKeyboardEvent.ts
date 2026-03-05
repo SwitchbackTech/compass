@@ -1,5 +1,5 @@
 import { type DependencyList } from "react";
-import { useHotkeys } from "@tanstack/react-hotkeys";
+import { useHotkey } from "@tanstack/react-hotkeys";
 import { isEditable } from "@web/views/Day/util/day.shortcut.util";
 
 interface Options {
@@ -52,7 +52,7 @@ export function useKeyboardEvent({
   // Normalize keys like "Control" -> "ctrl", "ArrowRight" -> "arrowright"
   const hotkeyString = combination.map(normalizeKey).join("+");
 
-  useHotkeys(
+  useHotkey(
     hotkeyString,
     (event) => {
       if (!handler) return;

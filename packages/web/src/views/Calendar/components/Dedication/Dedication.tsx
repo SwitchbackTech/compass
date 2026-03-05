@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useHotkeys } from "@tanstack/react-hotkeys";
+import { useHotkey } from "@tanstack/react-hotkeys";
 import { XIcon } from "@phosphor-icons/react";
 import derekImg from "@web/assets/png/derek.png";
 
@@ -22,7 +22,7 @@ export const Dedication = () => {
     }
   };
 
-  useHotkeys("ctrl+shift+0", () => {
+  useHotkey("ctrl+shift+0", () => {
     if (dialogRef.current?.open) {
       close();
     } else {
@@ -30,7 +30,7 @@ export const Dedication = () => {
     }
   });
 
-  useHotkeys("escape", () => {
+  useHotkey("escape", () => {
     if (dialogRef.current?.open) {
       close();
     }

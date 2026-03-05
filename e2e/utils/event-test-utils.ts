@@ -13,7 +13,7 @@ const FORM_TIMEOUT = 10000;
  */
 const pressShortcut = async (page: Page, key: string) => {
   await page.evaluate((shortcut) => {
-    window.dispatchEvent(
+    document.dispatchEvent(
       new KeyboardEvent("keydown", {
         key: shortcut,
         bubbles: true,
@@ -21,7 +21,7 @@ const pressShortcut = async (page: Page, key: string) => {
         composed: true,
       }),
     );
-    window.dispatchEvent(
+    document.dispatchEvent(
       new KeyboardEvent("keyup", {
         key: shortcut,
         bubbles: true,

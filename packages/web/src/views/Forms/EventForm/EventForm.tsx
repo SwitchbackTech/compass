@@ -3,7 +3,7 @@ import { type KeyboardEvent } from "react";
 import type React from "react";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { Key } from "ts-key-enum";
-import { useHotkeys } from "@tanstack/react-hotkeys";
+import { useHotkey } from "@tanstack/react-hotkeys";
 import { Priorities } from "@core/constants/core.constants";
 import { darken } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
@@ -227,7 +227,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       setEvent,
     };
 
-    useHotkeys(
+    useHotkey(
       "delete",
       () => {
         if (isDraft) {
@@ -241,7 +241,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       [onDelete],
     );
 
-    useHotkeys(
+    useHotkey(
       "enter",
       (keyboardEvent) => {
         if (isComboboxInteraction(keyboardEvent)) {
@@ -254,7 +254,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       [onSubmitForm],
     );
 
-    useHotkeys(
+    useHotkey(
       "meta+d",
       () => {
         onDuplicate?.(event);
@@ -263,7 +263,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       [onDuplicate, event],
     );
 
-    useHotkeys(
+    useHotkey(
       "$mod+enter",
       (e) => {
         e.preventDefault();
@@ -275,7 +275,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       [isFormOpen, onSubmitForm],
     );
 
-    useHotkeys(
+    useHotkey(
       "ctrl+meta+arrowleft",
       () => {
         if (isDraft) {
