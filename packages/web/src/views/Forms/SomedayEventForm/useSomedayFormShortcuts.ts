@@ -5,6 +5,7 @@ import {
   type Schema_Event,
 } from "@core/types/event.types";
 import { isComboboxInteraction } from "@web/common/utils/form/form.util";
+import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 
 export const SOMEDAY_HOTKEY_OPTIONS = {
   enabled: true,
@@ -26,7 +27,7 @@ export interface SomedayFormShortcutsProps {
 const isMenuInteraction = (keyboardEvent: KeyboardEvent) => {
   const target = keyboardEvent.target as HTMLElement | null;
 
-  if (!target) {
+  if (!target || !(target instanceof HTMLElement)) {
     return false;
   }
 
@@ -110,28 +111,28 @@ export const useSomedayFormShortcuts = ({
   );
 
   useHotkey(
-    "ctrl+meta+arrowup",
+    `${getModifierKey().toLowerCase()}+arrowup`,
     handleMigration("up", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
     [event, category, onMigrate],
   );
 
   useHotkey(
-    "ctrl+meta+arrowdown",
+    `${getModifierKey().toLowerCase()}+arrowdown`,
     handleMigration("down", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
     [event, category, onMigrate],
   );
 
   useHotkey(
-    "ctrl+meta+arrowright",
+    `${getModifierKey().toLowerCase()}+arrowright`,
     handleMigration("forward", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
     [event, category, onMigrate],
   );
 
   useHotkey(
-    "ctrl+meta+arrowleft",
+    `${getModifierKey().toLowerCase()}+arrowleft`,
     handleMigration("back", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
     [event, category, onMigrate],

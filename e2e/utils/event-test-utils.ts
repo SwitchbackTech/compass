@@ -8,7 +8,7 @@ const LOCAL_DB_NAME = "compass-local";
 const FORM_TIMEOUT = 10000;
 
 /**
- * Dispatch a keyboard shortcut to the window.
+ * Dispatch a keyboard shortcut to the document.
  * Uses the same event properties as the app's internal pressKey utility.
  */
 const pressShortcut = async (page: Page, key: string) => {
