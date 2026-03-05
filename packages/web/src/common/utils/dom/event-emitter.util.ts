@@ -137,7 +137,7 @@ export function pressKey(
     keyUpInit = {},
     keyDownInit = {},
   }: { keyUpInit?: KeyboardEventInit; keyDownInit?: KeyboardEventInit } = {},
-  target: Element | Node | Window | Document = window,
+  target: Element | Node | Window | Document = document,
 ) {
   target.dispatchEvent(
     new KeyboardEvent("keydown", { ...keyDownInit, key, composed: true }),

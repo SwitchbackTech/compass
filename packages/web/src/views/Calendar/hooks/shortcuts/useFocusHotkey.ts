@@ -1,13 +1,18 @@
-import { useHotkeys } from "react-hotkeys-hook";
+import { useHotkey } from "@tanstack/react-hotkeys";
 
 export const useReminderHotkey = (
   callback: () => void,
   dependencies: unknown[] = [],
   enabled = true,
 ) =>
-  useHotkeys(
-    "R",
-    callback,
-    { description: "reminder", preventDefault: true, enabled },
+  useHotkey(
+    "r",
+    (event) => {
+      if (event && typeof event.preventDefault === "function") {
+        event.preventDefault();
+      }
+      callback();
+    },
+    { enabled },
     dependencies,
   );

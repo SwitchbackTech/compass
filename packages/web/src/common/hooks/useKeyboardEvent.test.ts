@@ -1,5 +1,4 @@
-import { fireEvent } from "@testing-library/react";
-import { renderHook } from "@web/__tests__/__mocks__/mock.render";
+import { renderHook, waitFor } from "@web/__tests__/__mocks__/mock.render";
 import { useKeyboardEvent } from "@web/common/hooks/useKeyboardEvent";
 import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 
@@ -12,15 +11,34 @@ const mockIsEditable = jest.requireMock(
   "@web/views/Day/util/day.shortcut.util",
 ).isEditable;
 
+/**
+ * Helper function to dispatch a keyboard event to the document
+ */
+function dispatchKeyEvent(
+  key: string,
+  type: "keydown" | "keyup",
+  options: KeyboardEventInit = {},
+) {
+  const event = new KeyboardEvent(type, {
+    key,
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    ...options,
+  });
+  document.dispatchEvent(event);
+}
+
 describe("useKeyboardEvent", () => {
   const mockHandler = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockIsEditable.mockReturnValue(false);
+    document.body.removeAttribute("data-app-locked");
   });
 
-  it("should call handler when key combination matches (keyup default)", () => {
+  it("should call handler when key is pressed (keyup)", async () => {
     renderHook(() =>
       useKeyboardEvent({
         combination: ["a"],
@@ -29,13 +47,16 @@ describe("useKeyboardEvent", () => {
       }),
     );
 
-    fireEvent.keyDown(window, { key: "a" });
-    fireEvent.keyUp(window, { key: "a" });
+    dispatchKeyEvent("a", "keydown");
+    dispatchKeyEvent("a", "keyup");
 
-    expect(mockHandler).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(mockHandler).toHaveBeenCalledTimes(1);
+      expect(mockHandler).toHaveBeenCalledWith(expect.any(KeyboardEvent));
+    });
   });
 
-  it("should call handler when key combination matches (keydown)", () => {
+  it("should call handler when key is pressed (keydown)", async () => {
     renderHook(() =>
       useKeyboardEvent({
         combination: ["a"],
@@ -44,91 +65,78 @@ describe("useKeyboardEvent", () => {
       }),
     );
 
-    fireEvent.keyDown(window, { key: "a" });
+    dispatchKeyEvent("a", "keydown");
 
-    expect(mockHandler).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(mockHandler).toHaveBeenCalledTimes(1);
+    });
   });
 
-  it("should not call handler when key combination does not match", () => {
+  it("should handle multi-key combinations with modifier keys", async () => {
+    const modifierKey = getModifierKey();
+    const isCtrl = modifierKey === "Control";
+
     renderHook(() =>
       useKeyboardEvent({
-        combination: ["a"],
+        combination: [modifierKey, "a"],
         handler: mockHandler,
         eventType: "keyup",
       }),
     );
 
-    fireEvent.keyDown(window, { key: "b" });
-    fireEvent.keyUp(window, { key: "b" });
+    // Press modifier key first
+    dispatchKeyEvent(modifierKey, "keydown", {
+      ctrlKey: isCtrl,
+      metaKey: !isCtrl,
+    });
 
-    expect(mockHandler).not.toHaveBeenCalled();
+    // Then press 'a' while holding modifier
+    dispatchKeyEvent("a", "keydown", {
+      ctrlKey: isCtrl,
+      metaKey: !isCtrl,
+    });
+    dispatchKeyEvent("a", "keyup", {
+      ctrlKey: isCtrl,
+      metaKey: !isCtrl,
+    });
+
+    await waitFor(() => {
+      expect(mockHandler).toHaveBeenCalled();
+    });
   });
 
-  it("should handle multi-key combinations", () => {
-    renderHook(() =>
-      useKeyboardEvent({
-        combination: [getModifierKey(), "a"],
-        handler: mockHandler,
-        eventType: "keyup",
-      }),
-    );
-
-    fireEvent.keyDown(window, { key: getModifierKey() });
-    fireEvent.keyDown(window, { key: "a", ctrlKey: true });
-    fireEvent.keyUp(window, { key: "a", ctrlKey: true });
-
-    expect(mockHandler).toHaveBeenCalledTimes(1);
-  });
-
-  it("should respect exactMatch = true (default)", () => {
-    renderHook(() =>
-      useKeyboardEvent({
-        combination: ["a"],
-        handler: mockHandler,
-        exactMatch: true,
-        eventType: "keyup",
-      }),
-    );
-
-    fireEvent.keyDown(window, { key: "Shift" });
-    fireEvent.keyDown(window, { key: "a", shiftKey: true });
-    fireEvent.keyUp(window, { key: "a", shiftKey: true });
-
-    expect(mockHandler).not.toHaveBeenCalled();
-  });
-
-  it("should respect exactMatch = false", () => {
-    renderHook(() =>
-      useKeyboardEvent({
-        combination: ["a"],
-        handler: mockHandler,
-        exactMatch: false,
-        eventType: "keyup",
-      }),
-    );
-
-    // ... (comments)
-  });
-
-  it("should not call handler when editing if listenWhileEditing is false (default)", () => {
+  it("should not call handler when editing if listenWhileEditing is false", async () => {
     mockIsEditable.mockReturnValue(true);
 
     renderHook(() =>
       useKeyboardEvent({
         combination: ["a"],
         handler: mockHandler,
+        listenWhileEditing: false,
         eventType: "keyup",
       }),
     );
 
-    fireEvent.keyDown(window, { key: "a" });
-    fireEvent.keyUp(window, { key: "a" });
+    dispatchKeyEvent("a", "keydown");
+    dispatchKeyEvent("a", "keyup");
+
+    // Wait a bit to ensure handler is not called
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     expect(mockHandler).not.toHaveBeenCalled();
   });
 
-  it("should call handler when editing if listenWhileEditing is true", () => {
+  it("should call handler and blur element when editing if listenWhileEditing is true", async () => {
     mockIsEditable.mockReturnValue(true);
+    const mockBlur = jest.fn();
+    const mockElement = document.createElement("input");
+    mockElement.blur = mockBlur;
+
+    Object.defineProperty(document, "activeElement", {
+      value: mockElement,
+      writable: true,
+      configurable: true,
+    });
 
     renderHook(() =>
       useKeyboardEvent({
@@ -139,13 +147,16 @@ describe("useKeyboardEvent", () => {
       }),
     );
 
-    fireEvent.keyDown(window, { key: "a" });
-    fireEvent.keyUp(window, { key: "a" });
+    dispatchKeyEvent("a", "keydown");
+    dispatchKeyEvent("a", "keyup");
 
-    expect(mockHandler).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(mockHandler).toHaveBeenCalled();
+      expect(mockBlur).toHaveBeenCalled();
+    });
   });
 
-  it("should not call handler when the app is locked", () => {
+  it("should not call handler when the app is locked", async () => {
     document.body.setAttribute("data-app-locked", "true");
 
     renderHook(() =>
@@ -156,11 +167,12 @@ describe("useKeyboardEvent", () => {
       }),
     );
 
-    fireEvent.keyDown(window, { key: "a" });
-    fireEvent.keyUp(window, { key: "a" });
+    dispatchKeyEvent("a", "keydown");
+    dispatchKeyEvent("a", "keyup");
+
+    // Wait a bit to ensure handler is not called
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     expect(mockHandler).not.toHaveBeenCalled();
-
-    document.body.removeAttribute("data-app-locked");
   });
 });

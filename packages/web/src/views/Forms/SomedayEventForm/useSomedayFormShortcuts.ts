@@ -1,17 +1,14 @@
-import { useHotkeys } from "react-hotkeys-hook";
-import { type OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
+import { useHotkey } from "@tanstack/react-hotkeys";
 import {
   type Categories_Event,
   type Direction_Migrate,
   type Schema_Event,
 } from "@core/types/event.types";
 import { isComboboxInteraction } from "@web/common/utils/form/form.util";
+import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 
-export const SOMEDAY_HOTKEY_OPTIONS: OptionsOrDependencyArray = {
-  enableOnFormTags: ["input"],
-  enableOnContentEditable: true,
+export const SOMEDAY_HOTKEY_OPTIONS = {
   enabled: true,
-  eventListenerOptions: { capture: true },
 };
 
 export interface SomedayFormShortcutsProps {
@@ -30,7 +27,7 @@ export interface SomedayFormShortcutsProps {
 const isMenuInteraction = (keyboardEvent: KeyboardEvent) => {
   const target = keyboardEvent.target as HTMLElement | null;
 
-  if (!target) {
+  if (!target || !(target instanceof HTMLElement)) {
     return false;
   }
 
@@ -71,13 +68,13 @@ export const useSomedayFormShortcuts = ({
   onDuplicate,
   onMigrate,
 }: SomedayFormShortcutsProps) => {
-  useHotkeys(
+  useHotkey(
     "delete",
     stopPropagationWrapper(onDelete),
     SOMEDAY_HOTKEY_OPTIONS,
     [onDelete],
   );
-  useHotkeys(
+  useHotkey(
     "enter",
     (keyboardEvent) => {
       if (
@@ -95,8 +92,8 @@ export const useSomedayFormShortcuts = ({
     SOMEDAY_HOTKEY_OPTIONS,
     [onSubmit],
   );
-  useHotkeys(
-    "mod+enter",
+  useHotkey(
+    "$mod+enter",
     (keyboardEvent) => {
       keyboardEvent.preventDefault();
       keyboardEvent.stopPropagation();
@@ -106,36 +103,36 @@ export const useSomedayFormShortcuts = ({
     [onSubmit],
   );
 
-  useHotkeys(
+  useHotkey(
     "meta+d",
     stopPropagationWrapper(onDuplicate),
     SOMEDAY_HOTKEY_OPTIONS,
     [onDuplicate],
   );
 
-  useHotkeys(
-    "ctrl+meta+up",
+  useHotkey(
+    `${getModifierKey().toLowerCase()}+arrowup`,
     handleMigration("up", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
     [event, category, onMigrate],
   );
 
-  useHotkeys(
-    "ctrl+meta+down",
+  useHotkey(
+    `${getModifierKey().toLowerCase()}+arrowdown`,
     handleMigration("down", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
     [event, category, onMigrate],
   );
 
-  useHotkeys(
-    "ctrl+meta+right",
+  useHotkey(
+    `${getModifierKey().toLowerCase()}+arrowright`,
     handleMigration("forward", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
     [event, category, onMigrate],
   );
 
-  useHotkeys(
-    "ctrl+meta+left",
+  useHotkey(
+    `${getModifierKey().toLowerCase()}+arrowleft`,
     handleMigration("back", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
     [event, category, onMigrate],

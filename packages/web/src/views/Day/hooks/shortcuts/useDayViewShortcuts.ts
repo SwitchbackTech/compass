@@ -146,15 +146,13 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   });
 
   useKeyDownEvent({
-    combination: ["Control", "Meta", "ArrowRight"],
-    exactMatch: false,
+    combination: [getModifierKey(), "ArrowRight"],
     listenWhileEditing: true,
     handler: handleMigrationNavigation("forward"),
   });
 
   useKeyDownEvent({
-    combination: ["Control", "Meta", "ArrowLeft"],
-    exactMatch: false,
+    combination: [getModifierKey(), "ArrowLeft"],
     listenWhileEditing: true,
     handler: handleMigrationNavigation("backward"),
   });

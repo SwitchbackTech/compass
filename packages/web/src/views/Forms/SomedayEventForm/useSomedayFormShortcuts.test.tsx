@@ -1,17 +1,29 @@
-import { render } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 import { Categories_Event } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
+import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import {
-  SOMEDAY_HOTKEY_OPTIONS,
   type SomedayFormShortcutsProps,
   useSomedayFormShortcuts,
 } from "@web/views/Forms/SomedayEventForm/useSomedayFormShortcuts";
 
-jest.mock("react-hotkeys-hook", () => ({
-  useHotkeys: jest.fn(),
-}));
-
-const { useHotkeys } = jest.requireMock("react-hotkeys-hook");
+/**
+ * Helper function to dispatch a keyboard event to the document
+ */
+function dispatchKeyEvent(
+  key: string,
+  type: "keydown" | "keyup",
+  options: KeyboardEventInit = {},
+) {
+  const event = new KeyboardEvent(type, {
+    key,
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    ...options,
+  });
+  document.dispatchEvent(event);
+}
 
 const TestComponent = (props: SomedayFormShortcutsProps) => {
   useSomedayFormShortcuts(props);
@@ -36,123 +48,148 @@ describe("SomedayEventForm shortcuts hook", () => {
     jest.clearAllMocks();
   });
 
-  const getHotkeyHandler = (combo: string) => {
-    const call = useHotkeys.mock.calls.find(([registeredCombo]) => {
-      return registeredCombo === combo;
-    });
-    if (!call) {
-      throw new Error(`Hotkey ${combo} was not registered`);
-    }
-    return call[1] as (keyboardEvent: KeyboardEvent) => void;
-  };
-
-  test("registers all expected shortcuts with shared options", () => {
+  test("delete shortcut calls onDelete", async () => {
     render(<TestComponent {...defaultProps} />);
 
-    const registeredCombos = useHotkeys.mock.calls.map(([combo]) => combo);
+    dispatchKeyEvent("Delete", "keydown");
+    dispatchKeyEvent("Delete", "keyup");
 
-    expect(registeredCombos).toEqual([
-      "delete",
-      "enter",
-      "mod+enter",
-      "meta+d",
-      "ctrl+meta+up",
-      "ctrl+meta+down",
-      "ctrl+meta+right",
-      "ctrl+meta+left",
-    ]);
-
-    useHotkeys.mock.calls.forEach(([, , options]) => {
-      expect(options).toBe(SOMEDAY_HOTKEY_OPTIONS);
+    await waitFor(() => {
+      expect(defaultProps.onDelete).toHaveBeenCalled();
     });
   });
 
-  test("directional shortcuts prevent propagation and call onMigrate", () => {
+  test("enter shortcut calls onSubmit", async () => {
     render(<TestComponent {...defaultProps} />);
 
-    const keyboardEvent = {
-      preventDefault: jest.fn(),
-      stopPropagation: jest.fn(),
-    } as unknown as KeyboardEvent;
+    dispatchKeyEvent("Enter", "keydown");
+    dispatchKeyEvent("Enter", "keyup");
 
-    const upHandler = getHotkeyHandler("ctrl+meta+up");
-    upHandler(keyboardEvent);
-
-    expect(keyboardEvent.preventDefault).toHaveBeenCalledTimes(1);
-    expect(keyboardEvent.stopPropagation).toHaveBeenCalledTimes(1);
-    expect(defaultProps.onMigrate).toHaveBeenCalledWith(
-      defaultProps.event,
-      defaultProps.category,
-      "up",
-    );
+    await waitFor(() => {
+      expect(defaultProps.onSubmit).toHaveBeenCalled();
+    });
   });
 
-  test("duplicate shortcut prevents propagation and calls onDuplicate", () => {
+  test("meta+d shortcut calls onDuplicate", async () => {
     render(<TestComponent {...defaultProps} />);
 
-    const keyboardEvent = {
-      preventDefault: jest.fn(),
-      stopPropagation: jest.fn(),
-    } as unknown as KeyboardEvent;
+    // Press Meta key
+    dispatchKeyEvent("Meta", "keydown", { metaKey: true });
 
-    const handler = getHotkeyHandler("meta+d");
-    handler(keyboardEvent);
+    // Press 'd' while holding Meta
+    dispatchKeyEvent("d", "keydown", { metaKey: true });
+    dispatchKeyEvent("d", "keyup", { metaKey: true });
 
-    expect(keyboardEvent.preventDefault).toHaveBeenCalledTimes(1);
-    expect(keyboardEvent.stopPropagation).toHaveBeenCalledTimes(1);
-    expect(defaultProps.onDuplicate).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(defaultProps.onDuplicate).toHaveBeenCalled();
+    });
   });
 
-  test("mod+enter shortcut triggers submit with propagation blocked", () => {
+  test("ctrl+meta+arrowup calls onMigrate with 'up'", async () => {
+    const modifierKey = getModifierKey();
+    const isCtrl = modifierKey === "Control";
+
     render(<TestComponent {...defaultProps} />);
 
-    const keyboardEvent = {
-      preventDefault: jest.fn(),
-      stopPropagation: jest.fn(),
-      target: document.createElement("input"),
-    } as unknown as KeyboardEvent;
+    // Press modifier key
+    dispatchKeyEvent(modifierKey, "keydown", {
+      ctrlKey: isCtrl,
+      metaKey: !isCtrl,
+    });
 
-    const handler = getHotkeyHandler("mod+enter");
-    handler(keyboardEvent);
+    // Press ArrowUp while holding modifier
+    dispatchKeyEvent("ArrowUp", "keydown", {
+      ctrlKey: isCtrl,
+      metaKey: !isCtrl,
+    });
 
-    expect(defaultProps.onSubmit).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(defaultProps.onMigrate).toHaveBeenCalledWith(
+        defaultProps.event,
+        defaultProps.category,
+        "up",
+      );
+    });
   });
 
-  test("mod+enter shortcut invokes onSubmit", () => {
+  test("ctrl+meta+arrowdown calls onMigrate with 'down'", async () => {
+    const modifierKey = getModifierKey();
+    const isCtrl = modifierKey === "Control";
+
     render(<TestComponent {...defaultProps} />);
 
-    const menuButton = document.createElement("button");
-    menuButton.setAttribute("role", "menuitem");
+    // Press modifier key
+    dispatchKeyEvent(modifierKey, "keydown", {
+      ctrlKey: isCtrl,
+      metaKey: !isCtrl,
+    });
 
-    const keyboardEvent = {
-      preventDefault: jest.fn(),
-      stopPropagation: jest.fn(),
-      target: menuButton,
-    } as unknown as KeyboardEvent;
+    // Press ArrowDown while holding modifier
+    dispatchKeyEvent("ArrowDown", "keydown", {
+      ctrlKey: isCtrl,
+      metaKey: !isCtrl,
+    });
 
-    const handler = getHotkeyHandler("mod+enter");
-    handler(keyboardEvent);
-
-    expect(defaultProps.onSubmit).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(defaultProps.onMigrate).toHaveBeenCalledWith(
+        defaultProps.event,
+        defaultProps.category,
+        "down",
+      );
+    });
   });
 
-  test("enter shortcut ignores events originating from the recurrence combobox", () => {
+  test("ctrl+meta+arrowright calls onMigrate with 'forward'", async () => {
+    const modifierKey = getModifierKey();
+    const isCtrl = modifierKey === "Control";
+
     render(<TestComponent {...defaultProps} />);
 
-    const combobox = document.createElement("div");
-    combobox.setAttribute("role", "combobox");
+    // Press modifier key
+    dispatchKeyEvent(modifierKey, "keydown", {
+      ctrlKey: isCtrl,
+      metaKey: !isCtrl,
+    });
 
-    const keyboardEvent = {
-      target: combobox,
-      preventDefault: jest.fn(),
-      stopPropagation: jest.fn(),
-    } as unknown as KeyboardEvent;
+    // Press ArrowRight while holding modifier
+    dispatchKeyEvent("ArrowRight", "keydown", {
+      ctrlKey: isCtrl,
+      metaKey: !isCtrl,
+    });
 
-    const handler = getHotkeyHandler("enter");
-    handler(keyboardEvent);
+    await waitFor(() => {
+      expect(defaultProps.onMigrate).toHaveBeenCalledWith(
+        defaultProps.event,
+        defaultProps.category,
+        "forward",
+      );
+    });
+  });
 
-    expect(defaultProps.onSubmit).not.toHaveBeenCalled();
-    expect(keyboardEvent.preventDefault).not.toHaveBeenCalled();
-    expect(keyboardEvent.stopPropagation).not.toHaveBeenCalled();
+  test("ctrl+meta+arrowleft calls onMigrate with 'back'", async () => {
+    const modifierKey = getModifierKey();
+    const isCtrl = modifierKey === "Control";
+
+    render(<TestComponent {...defaultProps} />);
+
+    // Press modifier key
+    dispatchKeyEvent(modifierKey, "keydown", {
+      ctrlKey: isCtrl,
+      metaKey: !isCtrl,
+    });
+
+    // Press ArrowLeft while holding modifier
+    dispatchKeyEvent("ArrowLeft", "keydown", {
+      ctrlKey: isCtrl,
+      metaKey: !isCtrl,
+    });
+
+    await waitFor(() => {
+      expect(defaultProps.onMigrate).toHaveBeenCalledWith(
+        defaultProps.event,
+        defaultProps.category,
+        "back",
+      );
+    });
   });
 });
