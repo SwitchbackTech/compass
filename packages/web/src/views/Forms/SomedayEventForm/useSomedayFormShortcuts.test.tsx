@@ -8,10 +8,10 @@ import {
 } from "@web/views/Forms/SomedayEventForm/useSomedayFormShortcuts";
 
 jest.mock("@tanstack/react-hotkeys", () => ({
-  useHotkeys: jest.fn(),
+  useHotkey: jest.fn(),
 }));
 
-const { useHotkeys } = jest.requireMock("@tanstack/react-hotkeys");
+const { useHotkey } = jest.requireMock("@tanstack/react-hotkeys");
 
 const TestComponent = (props: SomedayFormShortcutsProps) => {
   useSomedayFormShortcuts(props);
@@ -37,7 +37,7 @@ describe("SomedayEventForm shortcuts hook", () => {
   });
 
   const getHotkeyHandler = (combo: string) => {
-    const call = useHotkeys.mock.calls.find(([registeredCombo]: [string]) => {
+    const call = useHotkey.mock.calls.find(([registeredCombo]: [string]) => {
       return registeredCombo === combo;
     });
     if (!call) {
@@ -49,7 +49,7 @@ describe("SomedayEventForm shortcuts hook", () => {
   test("registers all expected shortcuts with shared options", () => {
     render(<TestComponent {...defaultProps} />);
 
-    const registeredCombos = useHotkeys.mock.calls.map(
+    const registeredCombos = useHotkey.mock.calls.map(
       ([combo]: [string]) => combo,
     );
 
@@ -64,7 +64,7 @@ describe("SomedayEventForm shortcuts hook", () => {
       "ctrl+meta+arrowleft",
     ]);
 
-    useHotkeys.mock.calls.forEach(
+    useHotkey.mock.calls.forEach(
       ([, , options]: [string, Function, unknown]) => {
         expect(options).toBe(SOMEDAY_HOTKEY_OPTIONS);
       },

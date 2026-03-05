@@ -4,10 +4,10 @@ import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 
 // Mock TanStack Hotkeys
 jest.mock("@tanstack/react-hotkeys", () => ({
-  useHotkeys: jest.fn(),
+  useHotkey: jest.fn(),
 }));
 
-const mockUseHotkeys = jest.requireMock("@tanstack/react-hotkeys").useHotkeys;
+const mockUseHotkey = jest.requireMock("@tanstack/react-hotkeys").useHotkey;
 
 // Mock isEditable
 jest.mock("@web/views/Day/util/day.shortcut.util", () => ({
@@ -35,7 +35,7 @@ describe("useKeyboardEvent", () => {
       }),
     );
 
-    expect(mockUseHotkeys).toHaveBeenCalledWith(
+    expect(mockUseHotkey).toHaveBeenCalledWith(
       "a",
       expect.any(Function),
       expect.objectContaining({
@@ -56,7 +56,7 @@ describe("useKeyboardEvent", () => {
       }),
     );
 
-    expect(mockUseHotkeys).toHaveBeenCalledWith(
+    expect(mockUseHotkey).toHaveBeenCalledWith(
       "a",
       expect.any(Function),
       expect.objectContaining({
@@ -81,7 +81,7 @@ describe("useKeyboardEvent", () => {
     const modifierKey = getModifierKey();
     const expectedKey = modifierKey === "Meta" ? "meta+a" : "ctrl+a";
 
-    expect(mockUseHotkeys).toHaveBeenCalledWith(
+    expect(mockUseHotkey).toHaveBeenCalledWith(
       expectedKey,
       expect.any(Function),
       expect.objectContaining({
@@ -105,7 +105,7 @@ describe("useKeyboardEvent", () => {
     );
 
     // Get the registered handler
-    const registeredHandler = mockUseHotkeys.mock.calls[0][1];
+    const registeredHandler = mockUseHotkey.mock.calls[0][1];
     const mockEvent = {
       preventDefault: jest.fn(),
       target: document.createElement("div"),
@@ -130,7 +130,7 @@ describe("useKeyboardEvent", () => {
     );
 
     // Get the registered handler
-    const registeredHandler = mockUseHotkeys.mock.calls[0][1];
+    const registeredHandler = mockUseHotkey.mock.calls[0][1];
     const mockEvent = {
       preventDefault: jest.fn(),
       target: document.createElement("input"),
@@ -155,7 +155,7 @@ describe("useKeyboardEvent", () => {
     );
 
     // Get the registered handler
-    const registeredHandler = mockUseHotkeys.mock.calls[0][1];
+    const registeredHandler = mockUseHotkey.mock.calls[0][1];
     const mockElement = document.createElement("input");
     mockElement.blur = mockBlur;
 
@@ -188,7 +188,7 @@ describe("useKeyboardEvent", () => {
     );
 
     // Get the registered handler
-    const registeredHandler = mockUseHotkeys.mock.calls[0][1];
+    const registeredHandler = mockUseHotkey.mock.calls[0][1];
     const mockEvent = {
       preventDefault: jest.fn(),
       target: document.createElement("div"),

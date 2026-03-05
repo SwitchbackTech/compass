@@ -1,4 +1,4 @@
-import { useHotkeys } from "@tanstack/react-hotkeys";
+import { useHotkey } from "@tanstack/react-hotkeys";
 import {
   type Categories_Event,
   type Direction_Migrate,
@@ -67,13 +67,13 @@ export const useSomedayFormShortcuts = ({
   onDuplicate,
   onMigrate,
 }: SomedayFormShortcutsProps) => {
-  useHotkeys(
+  useHotkey(
     "delete",
     stopPropagationWrapper(onDelete),
     SOMEDAY_HOTKEY_OPTIONS,
     [onDelete],
   );
-  useHotkeys(
+  useHotkey(
     "enter",
     (keyboardEvent) => {
       if (
@@ -91,7 +91,7 @@ export const useSomedayFormShortcuts = ({
     SOMEDAY_HOTKEY_OPTIONS,
     [onSubmit],
   );
-  useHotkeys(
+  useHotkey(
     "$mod+enter",
     (keyboardEvent) => {
       keyboardEvent.preventDefault();
@@ -102,35 +102,35 @@ export const useSomedayFormShortcuts = ({
     [onSubmit],
   );
 
-  useHotkeys(
+  useHotkey(
     "meta+d",
     stopPropagationWrapper(onDuplicate),
     SOMEDAY_HOTKEY_OPTIONS,
     [onDuplicate],
   );
 
-  useHotkeys(
+  useHotkey(
     "ctrl+meta+arrowup",
     handleMigration("up", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
     [event, category, onMigrate],
   );
 
-  useHotkeys(
+  useHotkey(
     "ctrl+meta+arrowdown",
     handleMigration("down", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
     [event, category, onMigrate],
   );
 
-  useHotkeys(
+  useHotkey(
     "ctrl+meta+arrowright",
     handleMigration("forward", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
     [event, category, onMigrate],
   );
 
-  useHotkeys(
+  useHotkey(
     "ctrl+meta+arrowleft",
     handleMigration("back", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
