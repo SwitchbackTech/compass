@@ -42,6 +42,7 @@ export const SomedayEventRectangle = ({
         <Text size="l">
           {isRecurring && (
             <RepeatIcon
+              aria-hidden="true"
               data-testid="repeat-icon"
               size={14}
               style={{ marginRight: "4px", verticalAlign: "middle" }}
@@ -50,7 +51,7 @@ export const SomedayEventRectangle = ({
           {event.title}
         </Text>
 
-        {canMigrate && (
+        {canMigrate ? (
           <Flex>
             <StyledMigrateArrow
               onClick={(e) => {
@@ -72,6 +73,26 @@ export const SomedayEventRectangle = ({
             >
               {">"}
             </StyledMigrateArrow>
+          </Flex>
+        ) : (
+          <Flex>
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                alert("Can't migrate recurring events");
+              }}
+              style={{
+                border: "1px solid transparent",
+                borderRadius: "2px",
+                fontSize: "10px",
+                opacity: 0.5,
+                cursor: "not-allowed",
+                padding: "2px 4px",
+              }}
+              title="Can't migrate recurring events"
+            >
+              ☝️
+            </span>
           </Flex>
         )}
       </Flex>
