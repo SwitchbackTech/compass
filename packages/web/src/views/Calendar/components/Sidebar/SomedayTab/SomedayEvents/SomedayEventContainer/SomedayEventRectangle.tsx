@@ -9,7 +9,7 @@ import { RepeatIcon } from "@web/components/Icons/Repeat";
 import { Text } from "@web/components/Text";
 import { type Props_DraftForm } from "@web/views/Calendar/components/Draft/context/DraftContext";
 import { type Actions_Sidebar } from "@web/views/Calendar/components/Draft/sidebar/hooks/useSidebarActions";
-import { StyledMigrateArrow } from "./styled";
+import { StyledMigrateArrow, StyledRecurringWarning } from "./styled";
 
 interface Props {
   category: Categories_Event;
@@ -28,8 +28,7 @@ export const SomedayEventRectangle = ({
   const rule = event.recurrence?.rule;
   const recurrenceEventId = event.recurrence?.eventId;
   const isRecurring =
-    (Array.isArray(rule) && rule.length > 0) ||
-    typeof recurrenceEventId === "string";
+    Array.isArray(rule) || typeof recurrenceEventId === "string";
   const canMigrate = !isRecurring;
 
   return (
@@ -42,8 +41,7 @@ export const SomedayEventRectangle = ({
         <Text size="l">
           {isRecurring && (
             <RepeatIcon
-              aria-hidden="true"
-              data-testid="repeat-icon"
+              aria-label="Recurring event"
               size={14}
               style={{ marginRight: "4px", verticalAlign: "middle" }}
             />
@@ -76,23 +74,15 @@ export const SomedayEventRectangle = ({
           </Flex>
         ) : (
           <Flex>
-            <span
+            <StyledRecurringWarning
               onClick={(e) => {
                 e.stopPropagation();
                 alert("Can't migrate recurring events");
               }}
-              style={{
-                border: "1px solid transparent",
-                borderRadius: "2px",
-                fontSize: "10px",
-                opacity: 0.5,
-                cursor: "not-allowed",
-                padding: "2px 4px",
-              }}
               title="Can't migrate recurring events"
             >
               ☝️
-            </span>
+            </StyledRecurringWarning>
           </Flex>
         )}
       </Flex>
