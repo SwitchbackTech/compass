@@ -272,7 +272,7 @@ describe("GridEvent", () => {
         { state: initialState },
       );
 
-      const icon = screen.getByTestId("repeat-icon");
+      const icon = screen.getByLabelText("Recurring event");
       expect(icon).toBeInTheDocument();
       expect(screen.getByText("Weekly Meeting")).toBeInTheDocument();
     });
@@ -310,7 +310,7 @@ describe("GridEvent", () => {
         { state: initialState },
       );
 
-      const icon = screen.getByTestId("repeat-icon");
+      const icon = screen.getByLabelText("Recurring event");
       expect(icon).toBeInTheDocument();
     });
 
@@ -344,7 +344,7 @@ describe("GridEvent", () => {
         { state: initialState },
       );
 
-      const icon = screen.queryByTestId("repeat-icon");
+      const icon = screen.queryByLabelText("Recurring event");
       expect(icon).not.toBeInTheDocument();
       expect(screen.getByText("One-time Meeting")).toBeInTheDocument();
     });
@@ -379,7 +379,7 @@ describe("GridEvent", () => {
         { state: initialState },
       );
 
-      const icon = screen.queryByTestId("repeat-icon");
+      const icon = screen.queryByLabelText("Recurring event");
       expect(icon).not.toBeInTheDocument();
     });
   });
