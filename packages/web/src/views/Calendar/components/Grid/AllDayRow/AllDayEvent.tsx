@@ -103,6 +103,7 @@ const AllDayEvent = ({
         <Text size="m" role="textbox">
           {isRecurring && (
             <RepeatIcon
+              aria-hidden="true"
               data-testid="repeat-icon"
               size={12}
               style={{ marginRight: "4px", verticalAlign: "middle" }}
