@@ -18,7 +18,7 @@ export const isComboboxInteraction = (
 ) => {
   const target = keyboardEvent.target as HTMLElement | null;
 
-  if (!target) {
+  if (!target || !(target instanceof HTMLElement)) {
     return false;
   }
 

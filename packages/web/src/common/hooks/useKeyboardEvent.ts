@@ -5,7 +5,6 @@ import { isEditable } from "@web/views/Day/util/day.shortcut.util";
 interface Options {
   combination: string[];
   handler?: (e: KeyboardEvent) => void;
-  exactMatch?: boolean;
   listenWhileEditing?: boolean;
   deps?: DependencyList;
   eventType: "keydown" | "keyup";
@@ -42,7 +41,6 @@ function normalizeKey(key: string): string {
  */
 export function useKeyboardEvent({
   combination,
-  exactMatch = true,
   handler,
   listenWhileEditing,
   deps = [],
