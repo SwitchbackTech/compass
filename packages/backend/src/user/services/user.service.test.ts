@@ -200,8 +200,36 @@ describe("UserService", () => {
     });
   });
 
+  describe("reconnectGoogleCredentials", () => {
+    it("updates the user's Google credentials and lastLoggedInAt", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+
+      const newGUser = UserDriver.generateGoogleUser({
+        sub: faker.string.uuid(),
+        picture: faker.image.urlPicsumPhotos(),
+      });
+      const newRefreshToken = faker.internet.jwt();
+
+      const updatedUser = await userService.reconnectGoogleCredentials(
+        userId,
+        newGUser,
+        newRefreshToken,
+      );
+
+      expect(updatedUser._id.toString()).toBe(userId);
+
+      const storedUser = await mongoService.user.findOne({ _id: user._id });
+
+      expect(storedUser?.google?.googleId).toBe(newGUser.sub);
+      expect(storedUser?.google?.picture).toBe(newGUser.picture ?? "");
+      expect(storedUser?.google?.gRefreshToken).toBe(newRefreshToken);
+      expect(storedUser?.lastLoggedInAt).toBeDefined();
+    });
+  });
+
   describe("pruneGoogleData", () => {
-    it("stops sync and removes google field from user document", async () => {
+    it("stops sync and clears the Google refresh token on the user document", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
       const stopWatchesSpy = jest.spyOn(syncService, "stopWatches");
@@ -222,7 +250,9 @@ describe("UserService", () => {
       expect(deleteWatchesSpy).toHaveBeenCalledWith(userId);
 
       const storedUser = await mongoService.user.findOne({ _id: user._id });
-      expect(storedUser?.google).toBeUndefined();
+      expect(storedUser?.google?.googleId).toBe(user.google?.googleId);
+      expect(storedUser?.google?.picture).toBe(user.google?.picture);
+      expect(storedUser?.google?.gRefreshToken).toBe("");
 
       expect(await mongoService.event.countDocuments({ user: userId })).toBe(0);
       expect(await mongoService.watch.countDocuments({ user: userId })).toBe(0);

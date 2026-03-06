@@ -1,5 +1,5 @@
 import { type TokenPayload } from "google-auth-library";
-import { type ClientSession, ObjectId } from "mongodb";
+import { type ClientSession, ObjectId, type WithId } from "mongodb";
 import SupertokensUserMetadata, {
   type JSONObject,
 } from "supertokens-node/recipe/usermetadata";
@@ -178,10 +178,35 @@ class UserService {
     await syncService.deleteByIntegration("google", userId);
   };
 
+  reconnectGoogleCredentials = async (
+    cUserId: string,
+    gUser: TokenPayload,
+    refreshToken: string,
+  ): Promise<WithId<Schema_User>> => {
+    const user = await mongoService.user.findOneAndUpdate(
+      { _id: zObjectId.parse(cUserId) },
+      {
+        $set: {
+          "google.googleId": gUser.sub ?? "",
+          "google.picture": gUser.picture ?? "",
+          "google.gRefreshToken": refreshToken,
+          lastLoggedInAt: new Date(),
+        },
+      },
+      { returnDocument: "after" },
+    );
+
+    zObjectId.parse(user?._id, { error: () => "Invalid credentials" });
+    return user as WithId<Schema_User>;
+  };
+
   pruneGoogleData = async (userId: string): Promise<void> => {
     const _id = zObjectId.parse(userId);
     await this.stopGoogleCalendarSync(userId, { skipGoogleWatchStop: true });
-    await mongoService.user.updateOne({ _id }, { $unset: { google: "" } });
+    await mongoService.user.updateOne(
+      { _id },
+      { $set: { "google.gRefreshToken": "" } },
+    );
   };
 
   startGoogleCalendarSync = async (
