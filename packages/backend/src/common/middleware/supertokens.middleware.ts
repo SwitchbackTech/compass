@@ -1,5 +1,5 @@
 import cors from "cors";
-import { type TokenPayload } from "google-auth-library";
+import { type Credentials, type TokenPayload } from "google-auth-library";
 import { ObjectId } from "mongodb";
 import supertokens, { default as SuperTokens, User } from "supertokens-node";
 import Dashboard from "supertokens-node/recipe/dashboard";
@@ -15,6 +15,8 @@ import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { zObjectId } from "@core/types/type.utils";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
+import type { GoogleSignInSuccess } from "@backend/auth/services/google/google.auth.success.service";
+import { handleGoogleAuth } from "@backend/auth/services/google/google.auth.success.service";
 import { ENV } from "@backend/common/constants/env.constants";
 import mongoService from "@backend/common/services/mongo.service";
 import syncService from "@backend/sync/services/sync.service";
@@ -110,34 +112,7 @@ export const initSupertokens = () => {
                 input: Parameters<typeof originalImplementation.signInUp>[0],
               ) {
                 const response = await originalImplementation.signInUp(input);
-
-                if (response.status === "OK") {
-                  const providerUser = response.rawUserInfoFromProvider
-                    .fromIdTokenPayload as TokenPayload;
-
-                  const refreshToken = response.oAuthTokens["refresh_token"];
-
-                  if (input.session === undefined || input.session === null) {
-                    if (
-                      response.createdNewRecipeUser &&
-                      response.user.loginMethods.length === 1
-                    ) {
-                      // sign up logic
-                      await compassAuthService.googleSignup(
-                        providerUser,
-                        refreshToken,
-                        response.user.id,
-                      );
-                    } else {
-                      // sign in logic
-                      await compassAuthService.googleSignin(
-                        providerUser,
-                        response.oAuthTokens,
-                      );
-                    }
-                  }
-                }
-
+                await runGoogleAuth(response, input);
                 return response;
               },
             };
@@ -199,3 +174,28 @@ export const supertokensCors = () =>
     ],
     credentials: true,
   });
+
+function runGoogleAuth(
+  response: { status: string } & Record<string, unknown>,
+  input: { session?: { getUserId(): string } },
+): Promise<void> {
+  if (response.status !== "OK") return Promise.resolve();
+
+  const ok = response as unknown as {
+    rawUserInfoFromProvider: { fromIdTokenPayload: TokenPayload };
+    oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">;
+    createdNewRecipeUser: boolean;
+    user: { id: string; loginMethods: unknown[] };
+  };
+
+  const success: GoogleSignInSuccess = {
+    providerUser: ok.rawUserInfoFromProvider.fromIdTokenPayload,
+    oAuthTokens: ok.oAuthTokens,
+    createdNewRecipeUser: ok.createdNewRecipeUser,
+    recipeUserId: ok.user.id,
+    loginMethodsLength: ok.user.loginMethods.length,
+    sessionUserId: input.session ? input.session.getUserId() : null,
+  };
+
+  return handleGoogleAuth(success, compassAuthService);
+}

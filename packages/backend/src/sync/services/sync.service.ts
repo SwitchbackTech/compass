@@ -11,7 +11,7 @@ import {
 import { ExpirationDateSchema } from "@core/types/type.utils";
 import { type Schema_Watch, WatchSchema } from "@core/types/watch.types";
 import { shouldDoIncrementalGCalSync } from "@core/util/event/event.util";
-import { getGcalClient } from "@backend/auth/services/google.auth.service";
+import { getGcalClient } from "@backend/auth/services/google/google.auth.service";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
 import { Collections } from "@backend/common/constants/collections";
 import { error } from "@backend/common/errors/handlers/error.handler";

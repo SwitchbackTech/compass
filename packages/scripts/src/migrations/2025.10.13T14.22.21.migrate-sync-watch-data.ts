@@ -5,7 +5,7 @@ import { type MigrationContext } from "@scripts/common/cli.types";
 import { Resource_Sync } from "@core/types/sync.types";
 import { ExpirationDateSchema } from "@core/types/type.utils";
 import { type Schema_Watch, WatchSchema } from "@core/types/watch.types";
-import { getGcalClient } from "@backend/auth/services/google.auth.service";
+import { getGcalClient } from "@backend/auth/services/google/google.auth.service";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";

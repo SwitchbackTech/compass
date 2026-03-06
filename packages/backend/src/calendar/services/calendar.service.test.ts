@@ -13,7 +13,7 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
-import { getGcalClient } from "@backend/auth/services/google.auth.service";
+import { getGcalClient } from "@backend/auth/services/google/google.auth.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 
 describe("CalendarService", () => {

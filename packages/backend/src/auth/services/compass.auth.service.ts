@@ -5,7 +5,7 @@ import { Logger } from "@core/logger/winston.logger";
 import { mapCompassUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import { parseReconnectGoogleParams } from "@backend/auth/schemas/reconnect-google.schemas";
-import GoogleAuthService from "@backend/auth/services/google.auth.service";
+import GoogleAuthService from "@backend/auth/services/google/google.auth.service";
 import { ENV } from "@backend/common/constants/env.constants";
 import { isMissingUserTagId } from "@backend/common/constants/env.util";
 import { error } from "@backend/common/errors/handlers/error.handler";
