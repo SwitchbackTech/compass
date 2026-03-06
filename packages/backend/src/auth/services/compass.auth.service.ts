@@ -4,6 +4,7 @@ import Session from "supertokens-node/recipe/session";
 import { Logger } from "@core/logger/winston.logger";
 import { mapCompassUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
+import { parseReconnectGoogleParams } from "@backend/auth/schemas/reconnect-google.schemas";
 import GoogleAuthService from "@backend/auth/services/google.auth.service";
 import { ENV } from "@backend/common/constants/env.constants";
 import { isMissingUserTagId } from "@backend/common/constants/env.util";
@@ -107,17 +108,41 @@ class CompassAuthService {
         );
       }
 
-      userService.restartGoogleCalendarSync(cUser.userId).catch((err) => {
-        logger.error(
-          `Something went wrong with starting calendar sync for user ${cUser.userId}`,
-          err,
-        );
-      });
+      await userService.restartGoogleCalendarSync(cUser.userId);
 
       return { cUserId: cUser.userId };
     });
 
     return user;
+  }
+
+  async reconnectGoogleForSession(
+    sessionUserId: string,
+    gUser: TokenPayload,
+    oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">,
+  ) {
+    const {
+      cUserId,
+      gUser: validatedGUser,
+      refreshToken,
+    } = parseReconnectGoogleParams(sessionUserId, gUser, oAuthTokens);
+
+    await userService.reconnectGoogleCredentials(
+      cUserId,
+      validatedGUser,
+      refreshToken,
+    );
+
+    await userMetadataService.updateUserMetadata({
+      userId: cUserId,
+      data: {
+        sync: { importGCal: "restart", incrementalGCalSync: "restart" },
+      },
+    });
+
+    await userService.restartGoogleCalendarSync(cUserId);
+
+    return { cUserId };
   }
 
   async googleSignin(
@@ -169,12 +194,7 @@ class CompassAuthService {
           data: { sync: { importGCal: "restart" } },
         });
 
-        userService.restartGoogleCalendarSync(cUserId).catch((err) => {
-          logger.error(
-            `Something went wrong with ${message.toLowerCase()}`,
-            err,
-          );
-        });
+        await userService.restartGoogleCalendarSync(cUserId);
       } else {
         logger.error("Error during incremental sync:", e);
       }
