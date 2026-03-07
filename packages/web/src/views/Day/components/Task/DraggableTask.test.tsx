@@ -7,6 +7,19 @@ import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { DraggableTask } from "@web/views/Day/components/Task/DraggableTask";
 import { type TaskContext } from "@web/views/Day/context/TaskContext";
 
+jest.mock("@floating-ui/react", () => ({
+  autoUpdate: jest.fn(),
+  inline: jest.fn(() => ({})),
+  offset: jest.fn(() => ({})),
+  useFloating: jest.fn(() => ({
+    refs: {
+      setReference: jest.fn(),
+      setFloating: jest.fn(),
+    },
+    floatingStyles: {},
+  })),
+}));
+
 const mockTask = createMockTask({ _id: "task-1" });
 
 const defaultTasksProps: NonNullable<React.ContextType<typeof TaskContext>> = {
@@ -47,23 +60,17 @@ const renderDraggableTask = (
   index = 0,
   tasksProps = defaultTasksProps,
 ) => {
-  return act(() =>
-    render(
-      <DragDropContext onDragEnd={jest.fn()}>
-        <Droppable droppableId="test-droppable">
-          {(provided) => (
-            <div ref={provided.innerRef} {...provided.droppableProps}>
-              <DraggableTask
-                task={task}
-                index={index}
-                tasksProps={tasksProps}
-              />
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>,
-    ),
+  return render(
+    <DragDropContext onDragEnd={jest.fn()}>
+      <Droppable droppableId="test-droppable">
+        {(provided) => (
+          <div ref={provided.innerRef} {...provided.droppableProps}>
+            <DraggableTask task={task} index={index} tasksProps={tasksProps} />
+            {provided.placeholder}
+          </div>
+        )}
+      </Droppable>
+    </DragDropContext>,
   );
 };
 
@@ -150,5 +157,9 @@ describe("DraggableTask", () => {
     });
 
     expect(dragHandle).toHaveClass("opacity-100");
+
+    act(() => {
+      fireEvent.mouseUp(dragHandle);
+    });
   });
 });

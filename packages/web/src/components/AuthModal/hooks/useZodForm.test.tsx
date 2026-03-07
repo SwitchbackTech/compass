@@ -1,4 +1,4 @@
-import React from "react";
+import React, { act } from "react";
 import { z } from "zod";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -50,7 +50,9 @@ describe("useZodForm", () => {
     const user = userEvent.setup();
     render(<TestForm />);
 
-    await user.type(screen.getByLabelText(/email/i), "invalid");
+    await act(async () => {
+      await user.type(screen.getByLabelText(/email/i), "invalid");
+    });
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
@@ -58,8 +60,10 @@ describe("useZodForm", () => {
     const user = userEvent.setup();
     render(<TestForm />);
 
-    await user.type(screen.getByLabelText(/email/i), "invalid");
-    await user.tab();
+    await act(async () => {
+      await user.type(screen.getByLabelText(/email/i), "invalid");
+      await user.tab();
+    });
 
     await waitFor(() => {
       expect(screen.getByRole("alert")).toHaveTextContent(/invalid email/i);
@@ -71,15 +75,19 @@ describe("useZodForm", () => {
     render(<TestForm />);
 
     const emailInput = screen.getByLabelText(/email/i);
-    await user.type(emailInput, "invalid");
-    await user.tab();
+    await act(async () => {
+      await user.type(emailInput, "invalid");
+      await user.tab();
+    });
 
     await waitFor(() => {
       expect(screen.getByRole("alert")).toHaveTextContent(/invalid email/i);
     });
 
-    await user.click(emailInput);
-    await user.type(emailInput, "@example.com");
+    await act(async () => {
+      await user.click(emailInput);
+      await user.type(emailInput, "@example.com");
+    });
 
     await waitFor(() => {
       expect(screen.queryByRole("alert")).not.toBeInTheDocument();
@@ -90,7 +98,9 @@ describe("useZodForm", () => {
     render(<TestForm />);
 
     const form = screen.getByLabelText(/email/i).closest("form");
-    if (form) fireEvent.submit(form);
+    if (form) {
+      act(() => fireEvent.submit(form));
+    }
 
     await waitFor(() => {
       expect(screen.getByText(/email is required/i)).toBeInTheDocument();
@@ -107,8 +117,10 @@ describe("useZodForm", () => {
     const user = userEvent.setup();
     render(<TestForm />);
 
-    await user.type(screen.getByLabelText(/email/i), "test@example.com");
-    await user.type(screen.getByLabelText(/name/i), "Alex");
+    await act(async () => {
+      await user.type(screen.getByLabelText(/email/i), "test@example.com");
+      await user.type(screen.getByLabelText(/name/i), "Alex");
+    });
 
     expect(screen.getByRole("button", { name: /submit/i })).not.toBeDisabled();
   });

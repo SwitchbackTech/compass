@@ -27,11 +27,11 @@
     "dev:update": "git checkout main && git pull && yarn",
     "dev:web": "cd packages/web && yarn webpack serve --mode=development --node-env=local",
     "postinstall": "husky install | chmod ug+x .husky/*",
-    "test": "cross-env TZ=Etc/UTC yarn jest",
+    "test": "cross-env TZ=Etc/UTC ./node_modules/.bin/jest",
     "test:e2e": "playwright test",
     "test:backend": "yarn test backend",
     "test:core": "yarn test core",
-    "test:web": "yarn test web",
+    "test:web": "cross-env TZ=Etc/UTC ./node_modules/.bin/jest web",
     "test:scripts": "yarn test scripts",
     "type-check": "tsc --noEmit"
   },

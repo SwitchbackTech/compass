@@ -49,7 +49,7 @@ describe("useVersionCheck", () => {
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
     expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringMatching(/^\/version\.json\?t=\d+$/),
+      expect.stringMatching(/^http:\/\/localhost\/version\.json\?t=\d+$/),
       expect.objectContaining({
         cache: "no-store",
         headers: { "Cache-Control": "no-cache" },

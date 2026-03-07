@@ -10,6 +10,16 @@ const versionResponseSchema = z.object({
   version: z.string().optional(),
 });
 
+function getVersionCheckUrl() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const url = new URL("/version.json", window.location.origin);
+  url.searchParams.set("t", Date.now().toString());
+  return url.toString();
+}
+
 export interface VersionCheckResult {
   isUpdateAvailable: boolean;
   currentVersion: string;
@@ -35,10 +45,15 @@ export const useVersionCheck = (): VersionCheckResult => {
       return;
     }
 
+    const versionCheckUrl = getVersionCheckUrl();
+    if (!versionCheckUrl) {
+      return;
+    }
+
     isCheckingRef.current = true;
 
     try {
-      const response = await fetch(`/version.json?t=${Date.now()}`, {
+      const response = await fetch(versionCheckUrl, {
         cache: "no-store",
         headers: { "Cache-Control": "no-cache" },
       });

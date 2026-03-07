@@ -18,16 +18,19 @@ jest.mock("@web/ducks/events/slices/event.slice", () => ({
     actions: {
       request: jest.fn(),
     },
+    reducer: jest.fn(() => ({})),
   },
   editEventSlice: {
     actions: {
       request: jest.fn(),
     },
+    reducer: jest.fn(() => ({})),
   },
   deleteEventSlice: {
     actions: {
       request: jest.fn(),
     },
+    reducer: jest.fn(() => ({})),
   },
   eventsEntitiesSlice: {
     reducer: jest.fn(() => ({})),

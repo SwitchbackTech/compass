@@ -1,3 +1,4 @@
+import { act } from "react";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -56,7 +57,9 @@ describe("ShortcutTip", () => {
     expect(screen.queryByText("C")).not.toBeInTheDocument();
 
     // Hover over button to show shortcut
-    await user.hover(button);
+    await act(async () => {
+      await user.hover(button);
+    });
     await waitFor(() => {
       expect(screen.getByText("C")).toBeInTheDocument();
     });
@@ -77,7 +80,9 @@ describe("ShortcutTip", () => {
     expect(screen.queryByText("Cmd + K")).not.toBeInTheDocument();
 
     // Hover over button to show shortcut
-    await user.hover(button);
+    await act(async () => {
+      await user.hover(button);
+    });
     await waitFor(() => {
       expect(screen.getByText("Cmd + K")).toBeInTheDocument();
     });
@@ -94,13 +99,17 @@ describe("ShortcutTip", () => {
     const button = screen.getByText("Test Button");
 
     // Hover to show shortcut
-    await user.hover(button);
+    await act(async () => {
+      await user.hover(button);
+    });
     await waitFor(() => {
       expect(screen.getByText("C")).toBeInTheDocument();
     });
 
     // Move mouse away to hide shortcut
-    await user.unhover(button);
+    await act(async () => {
+      await user.unhover(button);
+    });
     await waitFor(() => {
       expect(screen.queryByText("C")).not.toBeInTheDocument();
     });
