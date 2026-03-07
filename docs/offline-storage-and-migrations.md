@@ -24,6 +24,8 @@ The adapter layer exists so application code is not tightly bound to Dexie.
 
 The initialization call is idempotent and memoized by `initPromise`.
 
+For tests that instantiate `IndexedDBAdapter` directly, call `adapter.close()` during teardown before deleting the test database. This closes the Dexie connection and resets adapter readiness state for the next test.
+
 ## IndexedDB Schema
 
 Current database name:

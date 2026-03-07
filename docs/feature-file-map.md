@@ -84,5 +84,6 @@ Use this document to find the first files to inspect for common Compass changes.
 - Root Jest project config: `jest.config.js`
 - Core test setup: `packages/core/src/__tests__`
 - Web test setup: `packages/web/src/__tests__`
+- Web memory-router test helper: `packages/web/src/__tests__/utils/providers/MemoryRouter.tsx`
 - Backend test setup: `packages/backend/src/__tests__`
 - E2E tests: `e2e`
