@@ -118,6 +118,21 @@ When testing changes around event loading, explicitly decide which user state yo
 
 Ngrok is optional for general local development but relevant for Google notification/watch flows. The backend env schema requires both ngrok auth token and static domain together if ngrok is enabled.
 
+## Repo-Local Yarn Cache
+
+Files:
+
+- `.yarnrc`
+- `.gitignore`
+
+Yarn is configured to use a repo-local cache folder:
+
+```text
+--cache-folder .yarn-cache
+```
+
+This keeps cache writes inside the workspace (instead of relying on a user-level global cache path) and reduces cache-permission noise in CI/sandboxed environments. The cache directory is ignored by git.
+
 ## Common Failure Modes
 
 - backend exits immediately because required env is missing

@@ -112,6 +112,42 @@ Avoid:
 - implementation-detail assertions
 - unnecessary module-wide mocks
 
+### Web Jest Harness Defaults (MSW + Globals)
+
+Primary setup files:
+
+- `packages/web/src/__tests__/web.test.start.ts`
+- `packages/web/src/__tests__/__mocks__/server/mock.handlers.ts`
+
+Current defaults worth knowing:
+
+- MSW runs in strict mode: `server.listen({ onUnhandledRequest: "error" })`
+- unhandled HTTP requests fail the test (instead of silently passing)
+- IndexedDB is provided by `fake-indexeddb/auto`
+- `structuredClone` is polyfilled for test environments that do not provide it
+- SuperTokens session existence is reset to `true` in `beforeEach`
+
+Important built-in handlers include:
+
+- `GET http://localhost/version.json` (used by `useVersionCheck`)
+- event and user profile/metadata routes under `ENV_WEB.API_BASEURL`
+- `POST /session/refresh` with both token headers and token cookies
+
+When a component/hook introduces a new request, add a handler in the test (or shared handlers) rather than disabling strict mode.
+
+Example per-test override:
+
+```tsx
+import { rest } from "msw";
+import { server } from "@web/__tests__/__mocks__/server/mock.server";
+
+server.use(
+  rest.get("http://localhost/version.json", (_req, res, ctx) => {
+    return res(ctx.json({ version: "1.2.3" }));
+  }),
+);
+```
+
 ### Warning-Free React Updates
 
 When a test drives React state updates outside simple one-off interactions, wrap the update sequence in `act` imported from `react`.
@@ -146,6 +182,14 @@ Pass `initialEntries` when asserting nested or non-root routes.
 ### Global And Console Cleanup
 
 If a test overrides globals (for example `window.location` or `window.indexedDB`) or spies on `console.*`, always restore them in teardown (`afterEach`/`afterAll`) to prevent cross-test leakage and noisy output.
+
+### Floating UI-Dependent Tests
+
+If a test exercises components that rely on `@floating-ui/react` refs/styles (for example Day view task/context-menu interactions), import the shared setup:
+
+- `@web/__tests__/floating-ui.setup`
+
+This keeps tests on production code paths while avoiding brittle layout coupling in JSDOM.
 
 ### Jest Unbound-Method Rule In Tests
 

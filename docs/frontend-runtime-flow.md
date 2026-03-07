@@ -110,6 +110,23 @@ Responsibilities:
 - show a session-expired toast on auth failures
 - identify the user in PostHog when enabled
 
+## Client Version Polling
+
+Files:
+
+- `packages/web/src/common/hooks/useVersionCheck.ts`
+- `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
+
+Runtime behavior:
+
+- version checks are disabled in development mode
+- in non-dev mode, the client checks on mount, then every 5 minutes
+- the client also checks when a tab returns to visible after being hidden for at least 30 seconds
+- requests use an absolute URL built from `window.location.origin` (`/version.json?t=<timestamp>`) with no-store/no-cache fetch options
+- checks are de-duplicated so concurrent visibility/interval triggers do not issue overlapping fetches
+
+When the server version differs from `BUILD_VERSION`, `isUpdateAvailable` becomes `true` and the sidebar shows a refresh action that triggers `window.location.reload()`.
+
 ## State Systems
 
 The web app uses multiple state layers:
@@ -125,6 +142,14 @@ Read these together for event work:
 - `packages/web/src/store/sagas.ts`
 - `packages/web/src/ducks/events/sagas`
 - `packages/web/src/store/events.ts`
+
+## Day Task Drag Handle Positioning
+
+File:
+
+- `packages/web/src/views/Day/components/Task/DraggableTask.tsx`
+
+`DraggableTask` uses `@floating-ui/react` to place the reorder handle. The component explicitly strips non-finite floating coordinates (`left`/`top`) before applying styles. This avoids invalid inline styles when the layout engine cannot resolve a finite position and keeps task rows render-safe during drag-handle visibility transitions.
 
 ## Repository Selection
 
