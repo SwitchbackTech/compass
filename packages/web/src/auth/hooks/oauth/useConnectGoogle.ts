@@ -35,15 +35,6 @@ export const useConnectGoogle = () => {
     };
   }
 
-  if (connectionStatus === "connected" && syncStatus === "healthy") {
-    return {
-      label: "Google Calendar Connected",
-      icon: "CheckCircleIcon",
-      isDisabled: false,
-      onSelect: undefined,
-    };
-  }
-
   if (connectionStatus === "connected") {
     // Catch-all for connected users with unhandled sync status
     return {
