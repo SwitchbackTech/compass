@@ -15,6 +15,7 @@ const backendProject = {
     "^@backend/dev(/(.*)$)?": "<rootDir>/packages/backend/src/dev/$1",
     "^@backend/email(/(.*)$)?": "<rootDir>/packages/backend/src/email/$1",
     "^@backend/event(/(.*)$)?": "<rootDir>/packages/backend/src/event/$1",
+    "^@backend/health(/(.*)$)?": "<rootDir>/packages/backend/src/health/$1",
     "^@backend/priority(/(.*)$)?": "<rootDir>/packages/backend/src/priority/$1",
     "^@backend/servers(/(.*)$)?": "<rootDir>/packages/backend/src/servers/$1",
     "^@backend/sync(/(.*)$)?": "<rootDir>/packages/backend/src/sync/$1",
