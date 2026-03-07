@@ -5,10 +5,11 @@ import {
   FlexDirections,
   JustifyContent,
 } from "@web/components/Flex/styled";
+import { RepeatIcon } from "@web/components/Icons/Repeat";
 import { Text } from "@web/components/Text";
 import { type Props_DraftForm } from "@web/views/Calendar/components/Draft/context/DraftContext";
 import { type Actions_Sidebar } from "@web/views/Calendar/components/Draft/sidebar/hooks/useSidebarActions";
-import { StyledMigrateArrow, StyledRecurrenceText } from "./styled";
+import { StyledMigrateArrow, StyledRecurringWarning } from "./styled";
 
 interface Props {
   category: Categories_Event;
@@ -24,8 +25,11 @@ export const SomedayEventRectangle = ({
   onMigrate,
 }: Props) => {
   const target = category === Categories_Event.SOMEDAY_WEEK ? "week" : "month";
-  const canMigrate =
-    !event.recurrence?.rule || event.recurrence?.rule.length === 0;
+  const rule = event.recurrence?.rule;
+  const recurrenceEventId = event.recurrence?.eventId;
+  const isRecurring =
+    Array.isArray(rule) || typeof recurrenceEventId === "string";
+  const canMigrate = !isRecurring;
 
   return (
     <div ref={formProps.refs.setReference} {...formProps.getReferenceProps()}>
@@ -34,7 +38,16 @@ export const SomedayEventRectangle = ({
         direction={FlexDirections.ROW}
         justifyContent={JustifyContent.SPACE_BETWEEN}
       >
-        <Text size="l">{event.title}</Text>
+        <Text size="l">
+          {isRecurring && (
+            <RepeatIcon
+              aria-label="Recurring event"
+              size={14}
+              style={{ marginRight: "4px", verticalAlign: "middle" }}
+            />
+          )}
+          {event.title}
+        </Text>
 
         {canMigrate ? (
           <Flex>
@@ -61,7 +74,7 @@ export const SomedayEventRectangle = ({
           </Flex>
         ) : (
           <Flex>
-            <StyledRecurrenceText
+            <StyledRecurringWarning
               onClick={(e) => {
                 e.stopPropagation();
                 alert("Can't migrate recurring events");
@@ -69,7 +82,7 @@ export const SomedayEventRectangle = ({
               title="Can't migrate recurring events"
             >
               ☝️
-            </StyledRecurrenceText>
+            </StyledRecurringWarning>
           </Flex>
         )}
       </Flex>
