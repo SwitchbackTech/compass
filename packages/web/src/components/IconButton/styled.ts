@@ -8,8 +8,7 @@ const sizeMap: Record<IconButtonSize, number> = {
   large: 34,
 };
 
-export interface IconButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: IconButtonSize;
 }
 

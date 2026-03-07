@@ -25,11 +25,10 @@ export interface DraggableDNDData {
   view: "day" | "week" | "now";
 }
 
-export interface DNDChildProps
-  extends Pick<
-    ReturnType<typeof useDraggable>,
-    "over" | "listeners" | "isDragging"
-  > {
+export interface DNDChildProps extends Pick<
+  ReturnType<typeof useDraggable>,
+  "over" | "listeners" | "isDragging"
+> {
   id: UniqueIdentifier;
   setDisabled?: (disabled: boolean) => void;
 }
