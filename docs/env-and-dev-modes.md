@@ -99,6 +99,20 @@ Important variables:
 - Mongo persistence
 - websocket server behavior
 
+## Backend Health Probe
+
+When debugging backend startup or connectivity issues, use the health endpoint first:
+
+```bash
+curl -i http://localhost:<PORT>/api/health
+```
+
+Interpretation:
+
+- `200` with `{"status":"ok","timestamp":"..."}`: backend is running and can reach MongoDB
+- `500` with `{"status":"error","timestamp":"..."}`: backend is running but database connectivity failed
+- connection refused/timeouts: backend process is not listening yet, or the port/base URL is wrong
+
 ### Requires Google-related setup
 
 - real OAuth
@@ -139,3 +153,4 @@ This keeps cache writes inside the workspace (instead of relying on a user-level
 - web points at the wrong API base URL
 - session exists but user profile fetch fails
 - sync endpoints work but notification/watch setup fails due to incomplete Google/ngrok setup
+- backend starts but `/api/health` returns `500` because `MONGO_URI` or database reachability is broken

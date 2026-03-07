@@ -15,7 +15,7 @@ Express startup does this:
 2. install request middleware
 3. install CORS and SuperTokens middleware
 4. install helmet, logging, and JSON parsing
-5. register route config classes
+5. register route config classes (including unauthenticated health check route)
 6. install the SuperTokens error handler after routes
 
 ## Route Config Pattern
@@ -42,6 +42,22 @@ The backend relies on middleware ordering for correct behavior:
 - SuperTokens error handling runs after routes
 
 If a new route behaves strangely, verify it is registered inside `initExpressServer()` and uses the expected middleware stack.
+
+## Health Check Endpoint Pattern
+
+Files:
+
+- `packages/backend/src/health/health.routes.config.ts`
+- `packages/backend/src/health/controllers/health.controller.ts`
+
+`GET /api/health` is registered as a lightweight operational endpoint:
+
+- no `verifySession()` requirement
+- controller performs `mongoService.db.admin().ping()`
+- response contract is intentionally small: `{ status, timestamp }`
+- returns `200` (`status: "ok"`) on successful DB ping, `500` (`status: "error"`) on failure
+
+This route is suitable for uptime probes and quick backend triage, but it is not a deep dependency readiness check beyond database reachability.
 
 ## Response Pattern
 
@@ -96,6 +112,10 @@ Frequently used middleware:
 - `authMiddleware.verifyIsDev`: development-only route
 - `authMiddleware.verifyIsFromCompass`: trusted internal caller
 - `authMiddleware.verifyIsFromGoogle`: trusted Google notification source
+
+Intentional unauthenticated route:
+
+- `GET /api/health`: monitoring endpoint that checks DB connectivity
 
 ## Validation Placement
 

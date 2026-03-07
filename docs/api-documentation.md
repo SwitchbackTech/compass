@@ -2,6 +2,7 @@
 
 ## Table of Contents
 
+- [Health Routes](#health-routes)
 - [Calendar Routes](#calendar-routes)
 - [Auth Routes](#auth-routes)
 - [User Routes](#user-routes)
@@ -9,6 +10,41 @@
 - [Priority Routes](#priority-routes)
 - [Sync Routes](#sync-routes)
 - [Event Routes](#event-routes)
+
+---
+
+## Health Routes
+
+**Source**: `packages/backend/src/health/health.routes.config.ts`, `packages/backend/src/health/controllers/health.controller.ts`
+
+### /api/health
+
+`GET /api/health` verifies MongoDB connectivity and returns a minimal status payload.
+
+Behavior:
+
+- no authentication middleware is applied
+- returns `200` when `mongoService.db.admin().ping()` succeeds
+- returns `500` when the database ping fails
+- always includes an ISO-8601 `timestamp`
+
+Success response:
+
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-03-07T12:34:56.789Z"
+}
+```
+
+Failure response:
+
+```json
+{
+  "status": "error",
+  "timestamp": "2026-03-07T12:34:56.789Z"
+}
+```
 
 ---
 
@@ -157,6 +193,10 @@ Most endpoints require authentication via Supertokens session management.
 4. Subsequent requests include session cookie
 5. Backend validates session with `verifySession()` middleware
 
+Authentication exceptions:
+
+- `GET /api/health` is intentionally unauthenticated for monitoring and load balancer probes
+
 ## Common Patterns
 
 ### Route Configuration
@@ -210,3 +250,4 @@ When this payload accompanies `401` or `410`, web clients should keep the sessio
 - `/api/calendars/*` - Calendar list and selection
 - `/api/sync/*` - Google Calendar synchronization
 - `/api/priority/*` - Task priority management
+- `/api/health` - service health and database reachability check
