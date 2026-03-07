@@ -48,10 +48,6 @@ Implementation:
 
 Use with care; this is user-data deletion logic.
 
-Implementation:
-
-- `packages/scripts/src/commands/invite.ts`
-
 ### Migrate
 
 Example shape:
@@ -100,4 +96,6 @@ There is also a separate web-local migration system under `packages/web/src/comm
 - Build package outputs: `yarn cli build ...`
 - Database migration framework: `yarn cli migrate ...`
 - Seeder framework: `yarn cli seed ...`
-- Waitlist/user maintenance: `yarn cli invite`, `yarn cli delete ...`
+- User-data maintenance: `yarn cli delete ...`
+
+There is no waitlist invite CLI command in the current codebase. Mobile waitlist signup is handled in the web app via `packages/web/src/components/MobileGate/MobileGate.tsx`.
