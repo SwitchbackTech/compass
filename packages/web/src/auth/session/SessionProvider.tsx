@@ -18,7 +18,9 @@ import { markUserAsAuthenticated } from "@web/auth/state/auth.state.util";
 import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import * as socket from "@web/socket/provider/SocketProvider";
+import { store } from "@web/store";
 import { type CompassSession } from "./session.types";
 
 SuperTokens.init({
@@ -96,6 +98,7 @@ export function sessionInit() {
         socket.reconnect();
         break;
       case "SIGN_OUT":
+        store.dispatch(userMetadataSlice.actions.clear());
         socket.disconnect();
         break;
     }

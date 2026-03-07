@@ -154,6 +154,21 @@ class SyncService {
       }),
     );
 
+    const affectedUsers = [...new Set(channels.map(({ user }) => user))];
+
+    await Promise.all(
+      affectedUsers.map(async (userId) => {
+        try {
+          await userMetadataService.assessGoogleMetadata(userId);
+        } catch (error) {
+          logger.error(
+            `Failed to assess Google metadata after stale watch cleanup for user: ${userId}`,
+            error,
+          );
+        }
+      }),
+    );
+
     return deleted.some((d) => d);
   }
 
@@ -306,7 +321,13 @@ class SyncService {
     try {
       webSocketServer.handleImportGCalStart(userId);
 
-      const userMeta = await userMetadataService.fetchUserMetadata(userId);
+      const userMeta = await userMetadataService.fetchUserMetadata(
+        userId,
+        undefined,
+        {
+          skipAssessment: true,
+        },
+      );
       const proceed = shouldDoIncrementalGCalSync(userMeta);
 
       if (!proceed) {

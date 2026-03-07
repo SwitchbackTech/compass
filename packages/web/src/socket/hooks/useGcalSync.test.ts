@@ -6,6 +6,7 @@ import {
   IMPORT_GCAL_START,
   USER_METADATA,
 } from "@core/constants/websocket.constants";
+import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import {
   selectImporting,
   selectIsImportPending,
@@ -48,9 +49,13 @@ jest.mock("@web/ducks/events/slices/sync.slice", () => ({
   },
   triggerFetch: jest.fn(),
 }));
-// Mock shouldImportGCal util
-jest.mock("@core/util/event/event.util", () => ({
-  shouldImportGCal: jest.fn(() => false),
+jest.mock("@web/ducks/auth/slices/user-metadata.slice", () => ({
+  userMetadataSlice: {
+    actions: {
+      set: jest.fn((payload) => ({ type: "userMetadata/set", payload })),
+      clear: jest.fn(() => ({ type: "userMetadata/clear" })),
+    },
+  },
 }));
 jest.mock("react-toastify", () => ({
   toast: {
@@ -141,6 +146,9 @@ describe("useGcalSync", () => {
       metadataHandler?.({ sync: { importGCal: "importing" } });
 
       expect(mockDispatch).toHaveBeenCalledWith(
+        userMetadataSlice.actions.set({ sync: { importGCal: "importing" } }),
+      );
+      expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.importing(true),
       );
       expect(importGCalSlice.actions.setIsImportPending).not.toHaveBeenCalled();
@@ -160,6 +168,9 @@ describe("useGcalSync", () => {
 
       metadataHandler?.({ sync: { importGCal: "completed" } });
 
+      expect(mockDispatch).toHaveBeenCalledWith(
+        userMetadataSlice.actions.set({ sync: { importGCal: "completed" } }),
+      );
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.importing(false),
       );
@@ -186,6 +197,9 @@ describe("useGcalSync", () => {
       metadataHandler?.({ sync: { importGCal: "errored" } });
 
       expect(mockDispatch).toHaveBeenCalledWith(
+        userMetadataSlice.actions.set({ sync: { importGCal: "errored" } }),
+      );
+      expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.importing(false),
       );
       expect(mockDispatch).toHaveBeenCalledWith(
@@ -194,10 +208,7 @@ describe("useGcalSync", () => {
       expect(triggerFetch).not.toHaveBeenCalled();
     });
 
-    it("requests an import when metadata says one is needed", () => {
-      const { shouldImportGCal } = require("@core/util/event/event.util");
-      shouldImportGCal.mockReturnValue(true);
-
+    it("requests an import when metadata says restart is needed", () => {
       let metadataHandler: ((metadata: unknown) => void) | undefined;
       (socket.on as jest.Mock).mockImplementation((event, handler) => {
         if (event === USER_METADATA) {
@@ -212,6 +223,24 @@ describe("useGcalSync", () => {
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.request(undefined as never),
       );
+    });
+
+    it("does not auto-request an import when metadata says errored", () => {
+      let metadataHandler: ((metadata: unknown) => void) | undefined;
+      (socket.on as jest.Mock).mockImplementation((event, handler) => {
+        if (event === USER_METADATA) {
+          metadataHandler = handler;
+        }
+      });
+
+      renderHook(() => useGcalSync());
+
+      metadataHandler?.({
+        sync: { importGCal: "errored" },
+        google: { connectionStatus: "connected", syncStatus: "attention" },
+      });
+
+      expect(importGCalSlice.actions.request).not.toHaveBeenCalled();
     });
   });
 

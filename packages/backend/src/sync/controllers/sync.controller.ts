@@ -113,24 +113,18 @@ export class SyncController {
       resourceId,
     });
 
-    const metadata = await userMetadataService.fetchUserMetadata(userId);
-
-    if (metadata.sync?.importGCal === "importing") {
-      logger.info(
-        `Skipped Google sync recovery because full import is already running for user: ${userId}`,
-      );
-      res.status(Status.NO_CONTENT).send();
-      return;
-    }
-
+    // Force-restart sync to recover from invalid sync token.
+    // When Google returns 410 (sync token invalid), the token may still exist
+    // in the database but is no longer valid. assessGoogleMetadata checks token
+    // existence, not validity, so we must force-restart directly.
     userService
       .restartGoogleCalendarSync(userId, { force: true })
-      .catch((err) =>
+      .catch((err) => {
         logger.error(
-          `Something went wrong recovering Google calendars for user: ${userId}`,
+          `Something went wrong with recovering google calendars for user: ${userId}`,
           err,
-        ),
-      );
+        );
+      });
 
     res.status(Status.NO_CONTENT).send();
   };

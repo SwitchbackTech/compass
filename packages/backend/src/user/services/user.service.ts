@@ -266,7 +266,7 @@ class UserService {
     try {
       webSocketServer.handleImportGCalStart(userId);
 
-      const userMeta = await userMetadataService.fetchUserMetadata(userId);
+      const userMeta = await this.fetchUserMetadata(userId);
       const importStatus = userMeta.sync?.importGCal;
       const isImporting = importStatus === "importing";
       const proceed = isForce ? !isImporting : shouldImportGCal(userMeta);
