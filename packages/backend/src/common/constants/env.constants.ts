@@ -58,7 +58,7 @@ const processEnv = {
   EMAILER_USER_TAG_ID: process.env["EMAILER_USER_TAG_ID"],
   MONGO_URI: process.env["MONGO_URI"],
   NODE_ENV: _nodeEnv,
-  TZ: process.env.TZ,
+  TZ: process.env["TZ"],
   ORIGINS_ALLOWED: process.env["CORS"] ? process.env["CORS"].split(",") : [],
   PORT: process.env["PORT"],
   SUPERTOKENS_URI: process.env["SUPERTOKENS_URI"],
