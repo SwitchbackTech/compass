@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useGoogleLogin as useGoogleLoginBase } from "@react-oauth/google";
+import { isGooglePopupClosedError } from "@web/common/utils/auth/google-oauth-error.util";
 import { type SignInUpInput } from "@web/components/oauth/ouath.types";
 
 const SCOPES_REQUIRED = [
@@ -38,6 +39,12 @@ export const useGoogleLogin = ({
     state: antiCsrfToken,
     onNonOAuthError(nonOAuthError) {
       setLoading(false);
+
+      if (isGooglePopupClosedError(nonOAuthError)) {
+        onError?.(nonOAuthError);
+        return;
+      }
+
       console.error(nonOAuthError);
       onError?.(nonOAuthError);
     },
@@ -74,6 +81,12 @@ export const useGoogleLogin = ({
     },
     onError: (error) => {
       setLoading(false);
+
+      if (isGooglePopupClosedError(error)) {
+        onError?.(error);
+        return;
+      }
+
       alert(`Login failed because: ${error.error}`);
       console.error(error);
       onError?.(error);
