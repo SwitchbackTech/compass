@@ -1,21 +1,41 @@
 import type express from "express";
 import { type SessionRequest } from "supertokens-node/framework/express";
+import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { handleExpressError } from "@backend/common/errors/handlers/error.express.handler";
 import { type Res_Promise } from "@backend/common/types/express.types";
 
 const logger = Logger("app:promise.middleware");
 
-interface D extends Record<string, unknown> {
+interface StatusPayload extends Record<string, unknown> {
   statusCode: number;
 }
 
-const sendResponse = (res: express.Response, data: D) => {
+const hasStatusCode = (data: unknown): data is StatusPayload =>
+  typeof data === "object" &&
+  data !== null &&
+  "statusCode" in data &&
+  typeof data.statusCode === "number";
+
+const isStatusOnlyPayload = (data: unknown): data is StatusPayload =>
+  hasStatusCode(data) && Object.keys(data).length === 1;
+
+const sendResponse = (res: express.Response, data: unknown) => {
   if (data === null) {
     logger.error(`No data provided for response`);
     res.status(500).send("uh oh, no data provided");
+    return;
   }
-  res.status(data.statusCode || 200).send(data);
+
+  if (
+    isStatusOnlyPayload(data) &&
+    (data.statusCode as Status) === Status.NO_CONTENT
+  ) {
+    res.status(Status.NO_CONTENT).send();
+    return;
+  }
+
+  res.status(hasStatusCode(data) ? data.statusCode : Status.OK).send(data);
 };
 
 /*
@@ -42,7 +62,7 @@ export const requestMiddleware = () => {
       }
 
       toResolve
-        .then((data) => sendResponse(res, data as D))
+        .then((data) => sendResponse(res, data))
         .catch((e) => handleExpressError(req, res, e));
 
       return res;
