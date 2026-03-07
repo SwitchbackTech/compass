@@ -9,6 +9,7 @@ import { syncLocalEventsToCloud } from "./local-event-sync.util";
 
 describe("syncLocalEventsToCloud", () => {
   const mockCreate = jest.spyOn(EventApi, "create");
+  const mockConsoleLog = jest.spyOn(console, "log").mockImplementation();
 
   const createMockEvent = (overrides?: Partial<Event_Core>) =>
     createMockStandaloneEvent(overrides) as Event_Core;
@@ -17,6 +18,10 @@ describe("syncLocalEventsToCloud", () => {
     mockCreate.mockResolvedValue({} as never);
     await ensureStorageReady();
     await getStorageAdapter().clearAllEvents();
+  });
+
+  afterAll(() => {
+    mockConsoleLog.mockRestore();
   });
 
   afterEach(() => {

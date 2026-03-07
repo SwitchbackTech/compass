@@ -120,12 +120,6 @@ export const localStorageTasksMigration: ExternalMigration = {
     for (const key of keysToRemove) {
       localStorage.removeItem(key);
     }
-
-    if (totalMigrated > 0) {
-      console.log(
-        `[Migration] Migrated ${totalMigrated} tasks from localStorage`,
-      );
-    }
   },
 
   isComplete(): boolean {
