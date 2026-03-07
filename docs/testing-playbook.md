@@ -16,6 +16,34 @@ yarn type-check
 
 Avoid defaulting to `yarn test` unless you really need the full suite.
 
+## CI Unit Test Workflow
+
+Source of truth:
+
+- `.github/workflows/test-unit.yml`
+- `.github/workflows/test-e2e.yml`
+
+Unit workflow (`test-unit.yml`):
+
+- triggers on `push`
+- runs a matrix across `core`, `web`, `backend`, and `scripts`
+- uses `fail-fast: false`, so one failing lane does not cancel the others
+- runs `yarn test <project>` in each lane after dependency install
+- passes timezone through `TZ: ${{ vars.TZ }}`
+
+Local parity commands:
+
+```bash
+yarn test core
+yarn test web
+yarn test backend
+yarn test scripts
+```
+
+`yarn test:<project>` aliases are equivalent and usually easier to remember.
+
+E2E workflow (`test-e2e.yml`) is separate and runs on pull requests to `main` via `yarn test:e2e`.
+
 ## Jest Project Layout
 
 Source:
