@@ -71,8 +71,29 @@ export async function ensureStorageReady(): Promise<void> {
  * Reset storage state. Used for testing only.
  */
 export function resetStorage(): void {
+  if (
+    adapter &&
+    "close" in adapter &&
+    typeof (adapter as { close?: unknown }).close === "function"
+  ) {
+    (adapter as { close: () => void }).close();
+  }
   adapter = null;
   initPromise = null;
+}
+
+export async function resetStorageAsync(): Promise<void> {
+  const pendingInit = initPromise;
+
+  if (pendingInit) {
+    try {
+      await pendingInit;
+    } catch {
+      // Ignore init failures while resetting test state.
+    }
+  }
+
+  resetStorage();
 }
 
 export type {

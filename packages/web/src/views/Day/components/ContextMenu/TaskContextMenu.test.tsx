@@ -1,10 +1,9 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { prepareEmptyStorageForTests } from "@web/__tests__/utils/storage/indexeddb.test.util";
 import { addTasks } from "@web/__tests__/utils/tasks/task.test.util";
-import { renderWithDayProviders } from "../../util/day.test-util";
+import { renderWithDayProvidersAsync } from "../../util/day.test-util";
 import { TaskList } from "../TaskList/TaskList";
 
 // Mock console.log to test the delete action
@@ -21,8 +20,7 @@ describe("TaskContextMenu", () => {
   });
 
   it("should open context menu on right-click on a task", async () => {
-    const user = userEvent.setup();
-    renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     await addTasks(user, ["Test task"]);
 
@@ -45,8 +43,7 @@ describe("TaskContextMenu", () => {
   });
 
   it("should show Delete Task menu item when menu is open", async () => {
-    const user = userEvent.setup();
-    renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     await addTasks(user, ["Test task"]);
 
@@ -69,7 +66,7 @@ describe("TaskContextMenu", () => {
   });
 
   it("should remove task from list when Delete Task is clicked", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     await addTasks(user, ["Task to delete"]);
 
@@ -102,7 +99,7 @@ describe("TaskContextMenu", () => {
   });
 
   it("should close menu when clicking outside", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     await addTasks(user, ["Test task"]);
 
@@ -134,7 +131,7 @@ describe("TaskContextMenu", () => {
   });
 
   it("should close menu when pressing Escape key", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     await addTasks(user, ["Test task"]);
 
@@ -165,7 +162,7 @@ describe("TaskContextMenu", () => {
   });
 
   it("should not open context menu when right-clicking on add task button", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     // Right-click on the add task button
     const addButton = await screen.findByText("Create task");
@@ -178,7 +175,7 @@ describe("TaskContextMenu", () => {
   });
 
   it("should work with multiple tasks", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     await addTasks(user, ["First task", "Second task"]);
 

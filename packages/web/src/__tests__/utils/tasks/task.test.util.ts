@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import type userEvent from "@testing-library/user-event";
 
 type User = ReturnType<typeof userEvent.setup>;
@@ -30,9 +30,11 @@ export const addTasks = async (user: User, taskTitles: string[]) => {
       screen.getByPlaceholderText("Enter task title..."),
     )) as HTMLInputElement;
 
-    await user.clear(input);
-    await user.type(input, title);
-    await user.keyboard("{Enter}");
+    await act(async () => {
+      await user.clear(input);
+      await user.type(input, title);
+      await user.keyboard("{Enter}");
+    });
 
     // Wait for the task to be created and appear in the DOM
     await waitFor(
@@ -58,7 +60,9 @@ export const clickCreateTaskButton = async (user: User) => {
     { timeout: 5000 },
   );
 
-  await user.click(addButton);
+  await act(async () => {
+    await user.click(addButton);
+  });
 
   return waitFor(() => screen.getByRole("textbox", { name: /task title/i }), {
     timeout: 5000,

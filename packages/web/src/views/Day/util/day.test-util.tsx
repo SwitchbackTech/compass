@@ -19,20 +19,24 @@ export const TaskProviderWrapper = ({ children }: PropsWithChildren) => {
   );
 };
 
-export const renderWithDayProviders = (
+type RenderWithDayProvidersOptions = {
+  initialEntries?: string[];
+  initialDate?: Dayjs;
+  store?: Store;
+};
+
+const createDayRouter = (
   component: React.ReactNode,
   opts?: {
     initialEntries?: string[];
     initialDate?: Dayjs;
-    store?: Store;
   },
 ) => {
   const date =
     opts?.initialDate?.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT) ??
     loadTodayData().dateString;
 
-  const store = opts?.store ?? defaultStore;
-  const router = createMemoryRouter(
+  return createMemoryRouter(
     [
       {
         path: ROOT_ROUTES.DAY_DATE,
@@ -46,6 +50,45 @@ export const renderWithDayProviders = (
       initialEntries: [`${ROOT_ROUTES.DAY}/${date}`],
     },
   );
+};
 
-  return { user: userEvent.setup(), ...render(<></>, { store, router }) };
+const createUser = () => userEvent.setup({ skipHover: true });
+
+const waitForRouterToInitialize = async (
+  router: ReturnType<typeof createMemoryRouter>,
+) => {
+  if (router.state.initialized && router.state.navigation.state === "idle") {
+    return;
+  }
+
+  await new Promise<void>((resolve) => {
+    const unsubscribe = router.subscribe((state) => {
+      if (state.initialized && state.navigation.state === "idle") {
+        unsubscribe();
+        resolve();
+      }
+    });
+  });
+};
+
+export const renderWithDayProviders = (
+  component: React.ReactNode,
+  opts?: RenderWithDayProvidersOptions,
+) => {
+  const store = opts?.store ?? defaultStore;
+  const router = createDayRouter(component, opts);
+
+  return { user: createUser(), ...render(<></>, { store, router }) };
+};
+
+export const renderWithDayProvidersAsync = async (
+  component: React.ReactNode,
+  opts?: RenderWithDayProvidersOptions,
+) => {
+  const store = opts?.store ?? defaultStore;
+  const router = createDayRouter(component, opts);
+
+  await waitForRouterToInitialize(router);
+
+  return { user: createUser(), ...render(<></>, { store, router }) };
 };

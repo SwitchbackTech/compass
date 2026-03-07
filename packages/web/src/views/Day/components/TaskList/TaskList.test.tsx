@@ -1,30 +1,29 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
-import { clearCompassLocalDb } from "@web/__tests__/utils/storage/indexeddb.test.util";
+import { prepareEmptyStorageForTests } from "@web/__tests__/utils/storage/indexeddb.test.util";
 import {
   addTasks,
   clickCreateTaskButton,
   waitForTaskListReady,
 } from "@web/__tests__/utils/tasks/task.test.util";
-import { renderWithDayProviders } from "../../util/day.test-util";
+import { renderWithDayProvidersAsync } from "../../util/day.test-util";
 import { TaskList } from "./TaskList";
 
 describe("TaskList", () => {
   beforeEach(async () => {
-    localStorage.clear();
-    await clearCompassLocalDb();
+    await prepareEmptyStorageForTests();
   });
 
   it("should render create task button", async () => {
-    renderWithDayProviders(<TaskList />);
+    await renderWithDayProvidersAsync(<TaskList />);
 
     const addButton = await screen.findByText("Create task");
     expect(addButton).toBeInTheDocument();
   });
 
   it("should show create task input when clicking create button", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     await clickCreateTaskButton(user);
 
@@ -33,7 +32,7 @@ describe("TaskList", () => {
   });
 
   it("should focus add task input on first click and allow typing", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     await clickCreateTaskButton(user);
 
@@ -47,14 +46,14 @@ describe("TaskList", () => {
   });
 
   it("should add a task when entering text and pressing Enter", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     await addTasks(user, ["New task"]);
     // TODO finish
   });
 
   it("should not add empty task", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     await clickCreateTaskButton(user);
 
@@ -73,7 +72,7 @@ describe("TaskList", () => {
   });
 
   it("should cancel adding task on Escape", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     await clickCreateTaskButton(user);
 
@@ -92,7 +91,7 @@ describe("TaskList", () => {
   });
 
   it("should toggle task completion when clicking checkbox", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     // Add a task first
     await addTasks(user, ["Task to complete"]);
@@ -110,7 +109,7 @@ describe("TaskList", () => {
   });
 
   it("should enter edit mode when clicking task text", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     // Add a task
     await addTasks(user, ["Edit me"]);
@@ -127,7 +126,7 @@ describe("TaskList", () => {
   });
 
   it("should update task title when editing", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     // Add a task
     await addTasks(user, ["Original title"]);
@@ -150,7 +149,7 @@ describe("TaskList", () => {
   });
 
   it("should cancel edit on Escape", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     // Add a task
     await addTasks(user, ["Original"]);
@@ -176,7 +175,7 @@ describe("TaskList", () => {
   });
 
   it("should show keyboard shortcut hint on hover over add button", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     const addTaskArea = await screen.findByText("Create task");
     await act(async () => {
@@ -189,7 +188,7 @@ describe("TaskList", () => {
   });
 
   it("should display completed tasks with reduced opacity", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     // Add a task
     await addTasks(user, ["Complete me"]);
@@ -209,7 +208,7 @@ describe("TaskList", () => {
   });
 
   it("should create new tasks above completed tasks", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     // Add first task
     await addTasks(user, ["First task"]);
@@ -239,7 +238,7 @@ describe("TaskList", () => {
   }, 10000);
 
   it("should maintain focus after pressing ESC in edit mode, allowing re-edit with 'e'", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     // Add a task
     await addTasks(user, ["Test task"]);
@@ -290,7 +289,7 @@ describe("TaskList", () => {
   });
 
   it("should activate add task input when pressing Enter on Add task button after tabbing", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
     await waitForTaskListReady();
 
     // Now tab to the Add task button
@@ -344,7 +343,7 @@ describe("TaskList", () => {
   });
 
   it("should delete task when title is cleared and Enter is pressed", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     // Add a task
     await addTasks(user, ["Task to delete"]);
@@ -387,7 +386,7 @@ describe("TaskList", () => {
 
   describe("Duplicate task names", () => {
     it("should complete the correct task when pressing Space on second duplicate task", async () => {
-      const { user } = renderWithDayProviders(<TaskList />);
+      const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
       // Add two tasks with same name
       await addTasks(user, ["Buy milk", "Buy milk"]);
@@ -426,7 +425,7 @@ describe("TaskList", () => {
     });
 
     it("should edit the correct task when pressing E on second duplicate task", async () => {
-      const { user } = renderWithDayProviders(<TaskList />);
+      const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
       // Add two tasks with same name
       await addTasks(user, ["Buy milk", "Buy milk"]);
