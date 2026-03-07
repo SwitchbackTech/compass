@@ -33,6 +33,47 @@ describe("useGoogleAuthWithOverlay", () => {
     expect(mockLogin).toHaveBeenCalledTimes(1);
   });
 
+  it("calls onError when login promise rejects", async () => {
+    const onError = jest.fn();
+    mockLogin.mockReturnValue(Promise.reject(new Error("Popup window closed")));
+
+    mockUseGoogleLogin.mockReturnValue({
+      login: mockLogin,
+      loading: false,
+      data: null,
+    });
+
+    const { result } = renderHook(() => useGoogleAuthWithOverlay({ onError }));
+
+    result.current.login();
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "Popup window closed" }),
+      );
+    });
+  });
+
+  it("calls onError when login throws synchronously", () => {
+    const onError = jest.fn();
+    const syncError = new Error("Blocked popup");
+    mockLogin.mockImplementation(() => {
+      throw syncError;
+    });
+
+    mockUseGoogleLogin.mockReturnValue({
+      login: mockLogin,
+      loading: false,
+      data: null,
+    });
+
+    const { result } = renderHook(() => useGoogleAuthWithOverlay({ onError }));
+
+    result.current.login();
+
+    expect(onError).toHaveBeenCalledWith(syncError);
+  });
+
   it("calls onSuccess when Google login succeeds", async () => {
     let onSuccessCallback: ((data: SignInUpInput) => Promise<void>) | undefined;
     const onSuccess = jest.fn();
