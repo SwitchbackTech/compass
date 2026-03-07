@@ -31,6 +31,7 @@ Primary instructions for AI agents and developers in the Compass monorepo.
   - [Common Tasks \& Timing](#common-tasks--timing)
     - [Repository Operations](#repository-operations)
     - [Development Workflow](#development-workflow)
+  - [Cursor Cloud specific instructions](#cursor-cloud-specific-instructions)
     - [Styling](#styling)
     - [CI/CD Integration](#cicd-integration)
   - [Troubleshooting](#troubleshooting)
@@ -172,6 +173,14 @@ packages/core/src/
 2. **Run Tests**: `yarn test:core && yarn test:web` (add `&& yarn test:backend` when credentials available)
 3. **Check Code Style**: `yarn prettier . --write`
 4. **Manual Validation**: Open <http://localhost:9080/> and verify login page loads
+
+## Cursor Cloud specific instructions
+
+- Prefer running scoped checks for changed areas: `yarn test:core`, `yarn test:web`, `yarn test:backend`, or `yarn test:scripts` as applicable.
+- Do not run `yarn test` in restricted environments unless explicitly required.
+- For UI-affecting changes in `packages/web`, validate with `yarn dev:web` and confirm behavior in the web dev server.
+- If backend work is required, ensure `packages/backend/.env` exists by copying `packages/backend/.env.local.example`.
+- Keep test runs reproducible by recording exact commands and outcomes in your handoff notes.
 
 ### Styling
 
