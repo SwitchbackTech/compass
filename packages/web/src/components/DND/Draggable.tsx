@@ -47,14 +47,21 @@ function CompassDraggable(
   >,
   _ref: ForwardedRef<HTMLElement | null>,
 ) {
-  const { as, asChild, style, onContextMenu, children, ...elementProps } =
-    props;
+  const {
+    as,
+    asChild,
+    children,
+    dndProps,
+    onContextMenu,
+    style,
+    ...elementProps
+  } = props;
 
   const { setNodeRef, attributes, listeners, transform, isDragging, over } =
     useDraggable({
-      ...props.dndProps,
-      id: props.dndProps.id ?? new ObjectId().toString(),
-      disabled: props.dndProps.disabled ?? false,
+      ...dndProps,
+      id: dndProps.id ?? new ObjectId().toString(),
+      disabled: dndProps.disabled ?? false,
     });
 
   const ref = useMergeRefs([_ref, setNodeRef]);
@@ -82,7 +89,7 @@ function CompassDraggable(
         ...children.props,
         dndProps: {
           over,
-          id: props.dndProps.id,
+          id: dndProps.id,
           listeners,
           isDragging,
           setDisabled: undefined,

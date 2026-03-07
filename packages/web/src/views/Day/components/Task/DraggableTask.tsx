@@ -7,6 +7,25 @@ import { getStyle } from "@web/views/Calendar/components/Sidebar/SomedayTab/Some
 import { Task } from "@web/views/Day/components/Task/Task";
 import { type useTasks } from "@web/views/Day/hooks/tasks/useTasks";
 
+function getFiniteFloatingStyles(
+  styles: ReturnType<typeof useFloating>["floatingStyles"],
+) {
+  const nextStyles = { ...styles };
+
+  if (
+    typeof nextStyles.left === "number" &&
+    !Number.isFinite(nextStyles.left)
+  ) {
+    delete nextStyles.left;
+  }
+
+  if (typeof nextStyles.top === "number" && !Number.isFinite(nextStyles.top)) {
+    delete nextStyles.top;
+  }
+
+  return nextStyles;
+}
+
 export function DraggableTask({
   task,
   index,
@@ -67,7 +86,11 @@ export function DraggableTask({
             <button
               {...draggableProvider.dragHandleProps}
               ref={isFloatingEnabled ? refs.setFloating : undefined}
-              style={isFloatingEnabled ? floatingStyles : undefined}
+              style={
+                isFloatingEnabled
+                  ? getFiniteFloatingStyles(floatingStyles)
+                  : undefined
+              }
               aria-label={`Reorder ${task.title}`}
               aria-describedby={`description-${task._id}`}
               onFocus={() => setSelectedTaskIndex(index)}

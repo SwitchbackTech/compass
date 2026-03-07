@@ -1,10 +1,58 @@
-import { fireEvent, screen } from "@testing-library/react";
+import { act } from "react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { NowCmdPalette } from "@web/views/Now/components/NowCmdPalette";
 
+jest.mock("react-cmdk", () => {
+  const React = require("react");
+
+  const CommandPalette = ({
+    children,
+    isOpen,
+    onChangeSearch,
+    placeholder,
+    search,
+  }: any) => {
+    if (!isOpen) {
+      return null;
+    }
+
+    return (
+      <div>
+        <input
+          onChange={(event) => onChangeSearch(event.target.value)}
+          placeholder={placeholder}
+          value={search}
+        />
+        {children}
+      </div>
+    );
+  };
+
+  CommandPalette.Page = ({ children }: any) => <div>{children}</div>;
+  CommandPalette.List = ({ children, heading }: any) => (
+    <section>
+      <h2>{heading}</h2>
+      {children}
+    </section>
+  );
+  CommandPalette.ListItem = ({ children, onClick }: any) => (
+    <button onClick={onClick}>{children}</button>
+  );
+  CommandPalette.FreeSearchAction = () => <div>No results</div>;
+
+  return {
+    __esModule: true,
+    default: CommandPalette,
+    filterItems: (items: unknown) => items,
+    getItemIndex: () => 0,
+  };
+});
+
 // Mock pressKey
 jest.mock("@web/common/utils/dom/event-emitter.util", () => ({
+  ...jest.requireActual("@web/common/utils/dom/event-emitter.util"),
   pressKey: jest.fn(),
 }));
 
@@ -70,28 +118,28 @@ describe("NowCmdPalette", () => {
     expect(screen.getByText("Log Out [z]")).toBeInTheDocument();
   });
 
-  it("should trigger pressKey('d') when 'Go to Day' is clicked", () => {
+  it("should trigger pressKey('d') when 'Go to Day' is clicked", async () => {
     render(<NowCmdPalette />, { state: initialState });
-    fireEvent.click(screen.getByText("Go to Day [d]"));
-    expect(pressKey).toHaveBeenCalledWith("d");
+    act(() => fireEvent.click(screen.getByText("Go to Day [d]")));
+    await waitFor(() => expect(pressKey).toHaveBeenCalledWith("d"));
   });
 
-  it("should trigger pressKey('w') when 'Go to Week' is clicked", () => {
+  it("should trigger pressKey('w') when 'Go to Week' is clicked", async () => {
     render(<NowCmdPalette />, { state: initialState });
-    fireEvent.click(screen.getByText("Go to Week [w]"));
-    expect(pressKey).toHaveBeenCalledWith("w");
+    act(() => fireEvent.click(screen.getByText("Go to Week [w]")));
+    await waitFor(() => expect(pressKey).toHaveBeenCalledWith("w"));
   });
 
-  it("should trigger pressKey('r') when 'Edit Reminder' is clicked", () => {
+  it("should trigger pressKey('r') when 'Edit Reminder' is clicked", async () => {
     render(<NowCmdPalette />, { state: initialState });
-    fireEvent.click(screen.getByText("Edit Reminder [r]"));
-    expect(pressKey).toHaveBeenCalledWith("r");
+    act(() => fireEvent.click(screen.getByText("Edit Reminder [r]")));
+    await waitFor(() => expect(pressKey).toHaveBeenCalledWith("r"));
   });
 
-  it("should trigger pressKey('z') when 'Log Out' is clicked", () => {
+  it("should trigger pressKey('z') when 'Log Out' is clicked", async () => {
     render(<NowCmdPalette />, { state: initialState });
-    fireEvent.click(screen.getByText("Log Out [z]"));
-    expect(pressKey).toHaveBeenCalledWith("z");
+    act(() => fireEvent.click(screen.getByText("Log Out [z]")));
+    await waitFor(() => expect(pressKey).toHaveBeenCalledWith("z"));
   });
 
   describe("Google Calendar authentication status", () => {
@@ -119,20 +167,19 @@ describe("NowCmdPalette", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("triggers login when 'Connect Google Calendar' is clicked and not authenticated", () => {
+    it("triggers login when 'Connect Google Calendar' is clicked and not authenticated", async () => {
       mockAuthenticated = false;
       render(<NowCmdPalette />, { state: initialState });
 
-      fireEvent.click(screen.getByText("Connect Google Calendar"));
-
-      expect(mockLogin).toHaveBeenCalled();
+      act(() => fireEvent.click(screen.getByText("Connect Google Calendar")));
+      await waitFor(() => expect(mockLogin).toHaveBeenCalled());
     });
 
-    it("does not trigger login when 'Google Calendar Connected' is clicked", () => {
+    it("does not trigger login when 'Google Calendar Connected' is clicked", async () => {
       mockAuthenticated = true;
       render(<NowCmdPalette />, { state: initialState });
 
-      fireEvent.click(screen.getByText("Google Calendar Connected"));
+      act(() => fireEvent.click(screen.getByText("Google Calendar Connected")));
 
       expect(mockLogin).not.toHaveBeenCalled();
     });

@@ -5,6 +5,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import dayjs from "@core/util/date/dayjs";
 import { render } from "@web/__tests__/__mocks__/mock.render";
+import { prepareEmptyStorageForTests } from "@web/__tests__/utils/storage/indexeddb.test.util";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
   loadDayData,
@@ -84,7 +85,10 @@ describe("TodayView Routing", () => {
       );
       return actual.useDayViewShortcuts(config);
     });
-    localStorage.clear();
+  });
+
+  beforeEach(async () => {
+    await prepareEmptyStorageForTests();
   });
 
   it("should show today's date when navigating to /day", async () => {

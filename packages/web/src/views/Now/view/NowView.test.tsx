@@ -10,6 +10,18 @@ jest.mock("../shortcuts/useNowShortcuts", () => ({
   useNowShortcuts: jest.fn(),
 }));
 
+jest.mock("@web/views/Now/view/NowViewContent", () => ({
+  NowViewContent: () => <div data-testid="now-view-content" />,
+}));
+
+jest.mock("@web/views/Now/hooks/useAvailableTasks", () => ({
+  useAvailableTasks: () => ({
+    availableTasks: [],
+    allTasks: [],
+    hasCompletedTasks: false,
+  }),
+}));
+
 describe("NowView", () => {
   it("renders the shortcuts overlay", async () => {
     await renderWithMemoryRouter(<NowView />, [ROOT_ROUTES.NOW]);

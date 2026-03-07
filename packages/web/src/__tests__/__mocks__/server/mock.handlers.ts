@@ -14,6 +14,9 @@ import { ENV_WEB } from "@web/common/constants/env.constants";
 import { freshenEventStartEndDate } from "@web/views/Calendar/calendar.render.test.utils";
 
 export const globalHandlers = [
+  rest.get("http://localhost/version.json", (_req, res, ctx) => {
+    return res(ctx.json({ version: "dev" }));
+  }),
   rest.get(`${ENV_WEB.API_BASEURL}/event`, (req, res, ctx) => {
     const getSomedayEvents = req.url.searchParams.get("someday");
     if (getSomedayEvents) {
@@ -75,13 +78,14 @@ export const globalHandlers = [
     return res(ctx.json({ isNewUser: true }));
   }),
   rest.post(`${ENV_WEB.API_BASEURL}/session/refresh`, (_req, res, ctx) => {
-    ctx.set("access-token", faker.internet.jwt());
-    ctx.set("front-token", faker.internet.jwt());
-    ctx.set("refresh-token", faker.internet.jwt());
-    ctx.cookie("sAccessToken", faker.internet.jwt());
-    ctx.cookie("sFrontendToken", faker.internet.jwt());
-    ctx.cookie("sRefreshToken", faker.internet.jwt());
-
-    return res(ctx.json({ ok: true }));
+    return res(
+      ctx.set("access-token", faker.internet.jwt()),
+      ctx.set("front-token", faker.internet.jwt()),
+      ctx.set("refresh-token", faker.internet.jwt()),
+      ctx.cookie("sAccessToken", faker.internet.jwt()),
+      ctx.cookie("sFrontendToken", faker.internet.jwt()),
+      ctx.cookie("sRefreshToken", faker.internet.jwt()),
+      ctx.json({ ok: true }),
+    );
   }),
 ];

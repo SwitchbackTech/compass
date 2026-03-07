@@ -18,6 +18,7 @@ test("start date picker opens and then closes when clicking the end input", asyn
   const mockOnSubmit = jest.fn();
   const mockSetEvent = jest.fn();
   const mockOnDelete = jest.fn();
+  const user = userEvent.setup({ skipHover: true });
 
   render(
     <div>
@@ -34,14 +35,14 @@ test("start date picker opens and then closes when clicking the end input", asyn
     </div>,
   );
 
-  await _clickStartInput();
+  await _clickStartInput(user);
 
   // Check if the date picker is open
   expect(
     screen.getByRole("combobox", { name: /datepicker/i }),
   ).toBeInTheDocument();
 
-  await _clickEndInput();
+  await _clickEndInput(user);
 
   // Check if the date picker is closed
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -61,6 +62,7 @@ test("should call onConvert when meta+< (meta + shift + comma) keyboard shortcut
   const mockSetEvent = jest.fn();
 
   const mockOnDelete = jest.fn();
+  const user = userEvent.setup({ skipHover: true });
 
   render(
     <div>
@@ -81,9 +83,7 @@ test("should call onConvert when meta+< (meta + shift + comma) keyboard shortcut
   expect(screen.getByRole("form")).toBeInTheDocument();
 
   await act(async () => {
-    // Simulate pressing & holding control then shift then left arrow
-
-    await userEvent.keyboard("{Control>}{Meta>}{ArrowLeft}");
+    await user.keyboard("{Control>}{Meta>}{ArrowLeft}");
   });
 
   expect(mockOnConvert).toHaveBeenCalledTimes(1);
@@ -107,6 +107,7 @@ test("should call onDuplicate when meta+d keyboard shortcut is used", async () =
   const mockSetEvent = jest.fn();
   const mockOnDelete = jest.fn();
   const mockOnDuplicate = jest.fn();
+  const user = userEvent.setup({ skipHover: true });
 
   render(
     <div>
@@ -128,8 +129,7 @@ test("should call onDuplicate when meta+d keyboard shortcut is used", async () =
   expect(screen.getByRole("form")).toBeInTheDocument();
 
   await act(async () => {
-    // Simulate pressing Meta + d
-    await userEvent.keyboard("{Meta>}d{/Meta}");
+    await user.keyboard("{Meta>}d{/Meta}");
   });
 
   expect(mockOnDuplicate).toHaveBeenCalledTimes(1);
@@ -142,7 +142,7 @@ test("should call onDuplicate when meta+d keyboard shortcut is used", async () =
 });
 
 test("should call duplicateEvent when duplicate icon btn is clicked", async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ skipHover: true });
 
   const sampleEvent: Schema_Event = {
     _id: "event123",
@@ -190,7 +190,9 @@ test("should call duplicateEvent when duplicate icon btn is clicked", async () =
   await waitFor(() => {
     expect(screen.getByText("Duplicate Event")).toBeInTheDocument();
   });
-  await user.click(screen.getByText("Duplicate Event"));
+  await act(async () => {
+    await user.click(screen.getByText("Duplicate Event"));
+  });
 
   expect(mockOnDuplicate).toHaveBeenCalledTimes(1);
   expect(mockOnDuplicate).toHaveBeenCalledWith(sampleEvent);
@@ -206,20 +208,20 @@ test("should call duplicateEvent when duplicate icon btn is clicked", async () =
   expect(mockOnConvert).not.toHaveBeenCalled();
 });
 
-const _clickStartInput = async () => {
+const _clickStartInput = async (user: ReturnType<typeof userEvent.setup>) => {
   const startDateInput = screen.getByRole("textbox", {
     name: /pick start date/i,
   });
   await act(async () => {
-    await userEvent.click(startDateInput);
+    await user.click(startDateInput);
   });
 };
 
-const _clickEndInput = async () => {
+const _clickEndInput = async (user: ReturnType<typeof userEvent.setup>) => {
   const endDateInput = screen.getByRole("textbox", {
     name: /pick end date/i,
   });
   await act(async () => {
-    await userEvent.click(endDateInput);
+    await user.click(endDateInput);
   });
 };
