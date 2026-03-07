@@ -9,6 +9,8 @@ Use this document to find the first files to inspect for common Compass changes.
 - Root authenticated shell: `packages/web/src/views/Root.tsx`
 - Router config: `packages/web/src/routers/index.tsx`
 - Router loaders: `packages/web/src/routers/loaders.ts`
+- Client version polling: `packages/web/src/common/hooks/useVersionCheck.ts`
+- Update CTA wiring: `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
 
 ## Authentication And Session
 
@@ -37,6 +39,7 @@ Use this document to find the first files to inspect for common Compass changes.
 - Shared task type used by local storage: `packages/web/src/common/types/task.types.ts`
 - Day task hooks: `packages/web/src/views/Day/hooks/tasks`
 - Task UI components: `packages/web/src/views/Day/components/TaskList`
+- Drag handle floating placement guard: `packages/web/src/views/Day/components/Task/DraggableTask.tsx`
 - Local storage for tasks: `packages/web/src/common/storage/adapter`
 
 ## Day / Week / Now Views
@@ -88,6 +91,8 @@ Use this document to find the first files to inspect for common Compass changes.
 - Root Jest project config: `jest.config.js`
 - Core test setup: `packages/core/src/__tests__`
 - Web test setup: `packages/web/src/__tests__`
+- Web mock server handlers: `packages/web/src/__tests__/__mocks__/server/mock.handlers.ts`
+- Web floating-ui test setup: `packages/web/src/__tests__/floating-ui.setup.ts`
 - Web memory-router test helper: `packages/web/src/__tests__/utils/providers/MemoryRouter.tsx`
 - Backend test setup: `packages/backend/src/__tests__`
 - E2E tests: `e2e`
