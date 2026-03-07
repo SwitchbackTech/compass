@@ -34,8 +34,14 @@ jest.mock("@web/ducks/events/slices/event.slice", () => ({
   },
   getCurrentMonthEventsSlice: { reducer: jest.fn(() => ({})) },
   getSomedayEventsSlice: { reducer: jest.fn(() => ({})) },
-  getWeekEventsSlice: { reducer: jest.fn(() => ({})) },
-  getDayEventsSlice: { reducer: jest.fn(() => ({})) },
+  getWeekEventsSlice: {
+    actions: { request: jest.fn() },
+    reducer: jest.fn(() => ({})),
+  },
+  getDayEventsSlice: {
+    actions: { request: jest.fn() },
+    reducer: jest.fn(() => ({})),
+  },
 }));
 
 describe("useSaveEventForm", () => {
