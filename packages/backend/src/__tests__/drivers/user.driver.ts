@@ -7,6 +7,8 @@ import userService from "../../user/services/user.service";
 
 interface CreateUserOptions {
   withGoogleRefreshToken?: boolean;
+  /** When false, creates a user with no Google data (never connected). */
+  withGoogle?: boolean;
 }
 
 export class UserDriver {
@@ -38,7 +40,7 @@ export class UserDriver {
   static async createUser(
     options: CreateUserOptions = {},
   ): Promise<WithId<Schema_User>> {
-    const { withGoogleRefreshToken = true } = options;
+    const { withGoogleRefreshToken = true, withGoogle = true } = options;
     const gUser = UserDriver.generateGoogleUser();
     const gRefreshToken = faker.internet.jwt();
 
@@ -48,6 +50,14 @@ export class UserDriver {
     );
 
     const _id = new ObjectId(userId);
+
+    // Simulate "user never connected Google" by removing all Google data
+    if (!withGoogle) {
+      await mongoService.user.updateOne({ _id }, { $unset: { google: "" } });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars -- intentionally omit google from returned user
+      const { google: _google, ...rest } = user;
+      return { ...rest, _id };
+    }
 
     // Remove refresh token if requested (simulates revoked token scenario)
     if (!withGoogleRefreshToken) {
@@ -67,6 +77,8 @@ export class UserDriver {
   }
 
   static async createUsers(count: number): Promise<Array<WithId<Schema_User>>> {
-    return Promise.all(Array.from({ length: count }, UserDriver.createUser));
+    return Promise.all(
+      Array.from({ length: count }, () => UserDriver.createUser()),
+    );
   }
 }

@@ -29,7 +29,7 @@
     "postinstall": "husky install | chmod ug+x .husky/*",
     "test": "cross-env TZ=Etc/UTC ./node_modules/.bin/jest",
     "test:e2e": "playwright test",
-    "test:backend": "yarn test backend",
+    "test:backend": "cross-env TZ=Etc/UTC ./node_modules/.bin/jest --selectProjects backend",
     "test:core": "yarn test core",
     "test:web": "cross-env TZ=Etc/UTC ./node_modules/.bin/jest web",
     "test:scripts": "yarn test scripts",

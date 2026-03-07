@@ -1,22 +1,20 @@
 import { renderHook } from "@testing-library/react";
-import * as googleAuthState from "@web/auth/google/google.auth.state";
 import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
-import { useSession } from "@web/auth/hooks/session/useSession";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
-import { useAppDispatch } from "@web/store/store.hooks";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
-jest.mock("@web/auth/google/google.auth.state");
-jest.mock("@web/auth/hooks/session/useSession");
 jest.mock("@web/auth/hooks/oauth/useGoogleAuth");
 jest.mock("@web/store/store.hooks");
 
-const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
 const mockUseGoogleAuth = useGoogleAuth as jest.MockedFunction<
   typeof useGoogleAuth
 >;
 const mockUseAppDispatch = useAppDispatch as jest.MockedFunction<
   typeof useAppDispatch
+>;
+const mockUseAppSelector = useAppSelector as jest.MockedFunction<
+  typeof useAppSelector
 >;
 
 describe("useConnectGoogle", () => {
@@ -29,52 +27,69 @@ describe("useConnectGoogle", () => {
     mockUseGoogleAuth.mockReturnValue({
       login: mockLogin,
     });
-    mockUseSession.mockReturnValue({
-      authenticated: false,
-      setAuthenticated: jest.fn(),
-    });
-    // Default: Google not revoked
-    jest.spyOn(googleAuthState, "isGoogleRevoked").mockReturnValue(false);
+    mockUseAppSelector.mockReturnValue(undefined);
   });
 
-  it("returns true when Google Calendar is connected", () => {
-    mockUseSession.mockReturnValue({
-      authenticated: true,
-      setAuthenticated: jest.fn(),
-    });
-
+  it("returns connect state when metadata is missing", () => {
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(result.current.isGoogleCalendarConnected).toBe(true);
+    expect(result.current.label).toBe("Connect Google Calendar");
+    expect(result.current.isDisabled).toBe(false);
   });
 
-  it("returns false when Google Calendar is not connected", () => {
-    mockUseSession.mockReturnValue({
-      authenticated: false,
-      setAuthenticated: jest.fn(),
+  it("returns connected state when metadata is healthy", () => {
+    mockUseAppSelector.mockReturnValue({
+      connectionStatus: "connected",
+      syncStatus: "healthy",
     });
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(result.current.isGoogleCalendarConnected).toBe(false);
+    expect(result.current.label).toBe("Google Calendar Connected");
+    expect(result.current.onSelect).toBeUndefined();
   });
 
-  it("returns false when authenticated but Google is revoked", () => {
-    mockUseSession.mockReturnValue({
-      authenticated: true,
-      setAuthenticated: jest.fn(),
+  it("returns reconnect state when refresh token is missing", () => {
+    mockUseAppSelector.mockReturnValue({
+      connectionStatus: "reconnect_required",
+      syncStatus: "none",
     });
-    jest.spyOn(googleAuthState, "isGoogleRevoked").mockReturnValue(true);
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(result.current.isGoogleCalendarConnected).toBe(false);
+    expect(result.current.label).toBe("Reconnect Google Calendar");
+    result.current.onSelect?.();
+
+    expect(mockLogin).toHaveBeenCalled();
+    expect(mockDispatch).toHaveBeenCalledWith(
+      settingsSlice.actions.closeCmdPalette(),
+    );
   });
 
-  it("logs in and closes the command palette on connect", () => {
+  it("returns syncing state while repair is running", () => {
+    mockUseAppSelector.mockReturnValue({
+      connectionStatus: "connected",
+      syncStatus: "repairing",
+    });
+
     const { result } = renderHook(() => useConnectGoogle());
 
-    result.current.onConnectGoogleCalendar();
+    expect(result.current.label).toBe("Syncing Google Calendar...");
+    expect(result.current.isDisabled).toBe(true);
+    expect(result.current.onSelect).toBeUndefined();
+  });
+
+  it("returns repair state when sync needs attention", () => {
+    mockUseAppSelector.mockReturnValue({
+      connectionStatus: "connected",
+      syncStatus: "attention",
+    });
+
+    const { result } = renderHook(() => useConnectGoogle());
+
+    expect(result.current.label).toBe("Repair Google Calendar");
+
+    result.current.onSelect?.();
 
     expect(mockLogin).toHaveBeenCalled();
     expect(mockDispatch).toHaveBeenCalledWith(
