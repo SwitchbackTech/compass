@@ -3,6 +3,7 @@ import SupertokensUserMetadata, {
   type JSONObject,
 } from "supertokens-node/recipe/usermetadata";
 import { type UserMetadata } from "@core/types/user.types";
+import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 class UserMetadataService {
   /*
@@ -42,7 +43,19 @@ class UserMetadataService {
 
     if (status !== "OK") throw new Error("Failed to fetch user metadata");
 
-    return metadata;
+    // Enrich with Google token status
+    const user = await findCompassUserBy("_id", userId);
+    const hasRefreshToken = Boolean(user?.google?.gRefreshToken);
+
+    const typedMetadata = metadata as UserMetadata;
+
+    return {
+      ...typedMetadata,
+      google: {
+        ...typedMetadata.google,
+        hasRefreshToken,
+      },
+    };
   };
 }
 

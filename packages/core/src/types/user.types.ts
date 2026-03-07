@@ -24,6 +24,9 @@ export interface UserMetadata extends SupertokensUserMetadata.JSONObject {
     importGCal?: SyncStatus;
     incrementalGCalSync?: SyncStatus;
   };
+  google?: {
+    hasRefreshToken?: boolean;
+  };
 }
 
 export interface UserProfile
