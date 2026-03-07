@@ -3,6 +3,7 @@ import { ObjectId } from "mongodb";
 import { ZodError } from "zod/v4";
 import { COMPASS_RESOURCE_HEADER } from "@core/constants/core.constants";
 import { GOOGLE_REVOKED } from "@core/constants/websocket.constants";
+import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import {
@@ -13,6 +14,7 @@ import {
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { WatchError } from "@backend/common/errors/sync/watch.errors";
+import { UserError } from "@backend/common/errors/user/user.errors";
 import {
   isFullSyncRequired,
   isGoogleError,
@@ -22,11 +24,149 @@ import mongoService from "@backend/common/services/mongo.service";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import syncService from "@backend/sync/services/sync.service";
 import { getSync } from "@backend/sync/util/sync.queries";
+import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
 
 const logger = Logger("app:sync.controller");
 
 export class SyncController {
+  private static handleMissingRefreshToken = async (
+    res: Response,
+    channelId: string,
+    resourceId: string,
+  ): Promise<void> => {
+    const _id = new ObjectId(channelId);
+    const watch = await mongoService.watch.findOne({ _id, resourceId });
+
+    if (watch) {
+      await pruneAndNotifyGoogleRevoked(watch.user, "missing refresh token");
+      res.status(Status.GONE).send({
+        code: GOOGLE_REVOKED,
+        message: "Missing refresh token, pruned Google data",
+      });
+      return;
+    }
+
+    logger.warn(
+      `Ignored notification - missing refresh token for channel: ${channelId}`,
+    );
+    res.status(Status.GONE).send("Missing refresh token");
+  };
+
+  private static handleInvalidGoogleToken = async (
+    res: Response,
+    channelId: string,
+    userId: string | undefined,
+  ): Promise<void> => {
+    if (userId) {
+      await pruneAndNotifyGoogleRevoked(userId, "revoked access");
+      res.status(Status.GONE).send({
+        code: GOOGLE_REVOKED,
+        message: "User revoked access, pruned Google data",
+      });
+      return;
+    }
+
+    const msg = `Ignored update due to revoked access for channelId: ${channelId}`;
+    logger.warn(msg);
+    res.status(Status.GONE).send(msg);
+  };
+
+  private static handleFullSyncRequired = (
+    res: Response,
+    userId: string,
+  ): void => {
+    // do not await this call
+    userService
+      .restartGoogleCalendarSync(userId, { force: true })
+      .catch((err) => {
+        logger.error(
+          `Something went wrong with resyncing google calendars for user: ${userId}`,
+          err,
+        );
+      });
+
+    res.status(Status.OK).send({ message: "Full sync in progress." });
+  };
+
+  private static handleMissingSyncToken = async (
+    res: Response,
+    channelId: string,
+    resourceId: string,
+  ): Promise<void> => {
+    const _id = new ObjectId(channelId); // convert to ObjectId for find command
+    const watch = await mongoService.watch.findOne({ _id, resourceId });
+
+    if (!watch) {
+      logger.warn(
+        `Ignored missing sync token recovery because no watch was found for channelId: ${channelId}`,
+      );
+      res.status(Status.NO_CONTENT).send();
+      return;
+    }
+
+    const { user: userId, gCalendarId } = watch;
+    logger.warn("Recovering Google sync after missing sync token", {
+      userId,
+      gCalendarId,
+      channelId,
+      resourceId,
+    });
+
+    const metadata = await userMetadataService.fetchUserMetadata(userId);
+
+    if (metadata.sync?.importGCal === "importing") {
+      logger.info(
+        `Skipped Google sync recovery because full import is already running for user: ${userId}`,
+      );
+      res.status(Status.NO_CONTENT).send();
+      return;
+    }
+
+    userService
+      .restartGoogleCalendarSync(userId, { force: true })
+      .catch((err) =>
+        logger.error(
+          `Something went wrong recovering Google calendars for user: ${userId}`,
+          err,
+        ),
+      );
+
+    res.status(Status.NO_CONTENT).send();
+  };
+
+  private static handleGoogleApiError = async (
+    res: Response,
+    e: unknown,
+    channelId: string,
+    resourceId: string,
+  ): Promise<void> => {
+    const _id = new ObjectId(channelId);
+    const watch = await mongoService.watch.findOne({ _id, resourceId });
+
+    if (!watch) {
+      throw error(
+        WatchError.NoWatchRecordForUser,
+        `Clean up failed because no watch record found for channel: ${channelId}`,
+      );
+    }
+
+    const sync = await getSync({
+      userId: watch.user,
+      gCalendarId: watch.gCalendarId,
+    });
+
+    const userId = sync?.user;
+
+    if (isInvalidGoogleToken(e)) {
+      await SyncController.handleInvalidGoogleToken(res, channelId, userId);
+    } else if (isFullSyncRequired(e) && userId) {
+      SyncController.handleFullSyncRequired(res, userId);
+    } else {
+      res.status(Status.BAD_REQUEST).send("Google API error");
+    }
+  };
+
   static handleGoogleNotification = async (
     req: Request,
     res: Response,
@@ -38,6 +178,7 @@ export class SyncController {
     >;
 
     const channelId = req.headers["x-goog-channel-id"] as string;
+    const resourceId = req.headers["x-goog-resource-id"] as string;
 
     res.removeHeader(COMPASS_RESOURCE_HEADER);
 
@@ -45,7 +186,7 @@ export class SyncController {
       const syncPayload: Payload_Sync_Notif = GcalNotificationSchema.parse({
         resource,
         channelId,
-        resourceId: req.headers["x-goog-resource-id"] as string,
+        resourceId,
         resourceState: req.headers["x-goog-resource-state"] as string,
         expiration: new Date(
           req.headers["x-goog-channel-expiration"] as string,
@@ -57,81 +198,35 @@ export class SyncController {
       res.promise(response);
     } catch (e) {
       logger.error(e);
-      const resourceId = req.headers["x-goog-resource-id"] as string;
 
       if (e instanceof ZodError) {
-        logger.error(e);
         res.status(Status.FORBIDDEN).send("Invalid notification payload");
         return;
       }
 
+      if (isMissingGoogleRefreshToken(e)) {
+        await SyncController.handleMissingRefreshToken(
+          res,
+          channelId,
+          resourceId,
+        );
+        return;
+      }
+
       if (isGoogleError(e)) {
-        const _id = new ObjectId(channelId);
-        const watch = await mongoService.watch.findOne({ _id, resourceId });
-
-        if (!watch) {
-          throw error(
-            WatchError.NoWatchRecordForUser,
-            `Clean up failed because no watch record found for channel: ${channelId}`,
-          );
-        }
-
-        const sync = await getSync({
-          userId: watch.user,
-          gCalendarId: watch.gCalendarId,
-        });
-
-        const userId = sync?.user;
-
-        if (isInvalidGoogleToken(e)) {
-          if (userId) {
-            logger.warn(
-              `Cleaning data after this user revoked access: ${userId}`,
-            );
-
-            await userService.pruneGoogleData(userId);
-            webSocketServer.handleGoogleRevoked(userId);
-
-            res.status(Status.GONE).send({
-              code: GOOGLE_REVOKED,
-              message: "User revoked access, pruned Google data",
-            });
-
-            return;
-          }
-
-          const msg = `Ignored update due to revoked access for channelId: ${channelId}`;
-
-          logger.warn(msg);
-
-          res.status(Status.GONE).send(msg);
-
-          return;
-        } else if (isFullSyncRequired(e) && userId) {
-          // do not await this call
-          userService
-            .restartGoogleCalendarSync(userId, { force: true })
-            .catch((err) => {
-              logger.error(
-                `Something went wrong with resyncing google calendars for user: ${userId}`,
-                err,
-              );
-            });
-
-          res.status(Status.OK).send({ message: "Full sync in progress." });
-
-          return;
-        } else {
-          res.status(Status.BAD_REQUEST).send("Google API error");
-          return;
-        }
+        await SyncController.handleGoogleApiError(
+          res,
+          e,
+          channelId,
+          resourceId,
+        );
+        return;
       }
 
       if (
         e instanceof Error &&
         e.message === SyncError.NoSyncRecordForUser.description
       ) {
-        logger.error(e);
         logger.debug(res);
         res.status(Status.BAD_REQUEST).send(SyncError.NoSyncRecordForUser);
         return;
@@ -141,12 +236,7 @@ export class SyncController {
         e instanceof Error &&
         e.message === SyncError.NoSyncToken.description
       ) {
-        logger.debug(
-          `Ignored notification due to missing sync token for channelId: ${channelId}`,
-        );
-        // returning 204 instead of 500 so client doesn't
-        // attempt to retry
-        res.status(Status.NO_CONTENT).send();
+        await SyncController.handleMissingSyncToken(res, channelId, resourceId);
         return;
       }
 
@@ -191,3 +281,23 @@ export class SyncController {
     res.status(Status.NO_CONTENT).send();
   };
 }
+
+const isMissingGoogleRefreshToken = (e: unknown): boolean => {
+  return (
+    e instanceof BaseError &&
+    e.description === UserError.MissingGoogleRefreshToken.description
+  );
+};
+
+/**
+ * Prunes Google data for a user and notifies connected clients.
+ * Used when Google access has been revoked or refresh token is missing.
+ */
+const pruneAndNotifyGoogleRevoked = async (
+  userId: string,
+  reason: string,
+): Promise<void> => {
+  logger.warn(`Cleaning data after ${reason} for user: ${userId}`);
+  await userService.pruneGoogleData(userId);
+  webSocketServer.handleGoogleRevoked(userId);
+};

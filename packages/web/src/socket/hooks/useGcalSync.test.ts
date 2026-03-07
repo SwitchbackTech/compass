@@ -38,6 +38,7 @@ jest.mock("@web/ducks/events/slices/sync.slice", () => ({
       clearImportResults: jest.fn(),
       setImportResults: jest.fn(),
       setImportError: jest.fn(),
+      setIsImportPending: jest.fn(),
       request: jest.fn(),
     },
   },
@@ -57,7 +58,7 @@ jest.mock("react-toastify", () => ({
     isActive: jest.fn(() => false),
   },
 }));
-jest.mock("@web/common/utils/auth/google-auth.util", () => ({
+jest.mock("@web/auth/google/google.auth.util", () => ({
   handleGoogleRevoked: jest.fn(),
 }));
 
@@ -107,7 +108,7 @@ describe("useGcalSync", () => {
     it("calls handleGoogleRevoked when socket event fires", () => {
       const {
         handleGoogleRevoked,
-      } = require("@web/common/utils/auth/google-auth.util");
+      } = require("@web/auth/google/google.auth.util");
       let onGoogleRevoked: (() => void) | undefined;
       (socket.on as jest.Mock).mockImplementation((event, handler) => {
         if (event === GOOGLE_REVOKED) {
@@ -120,6 +121,97 @@ describe("useGcalSync", () => {
       onGoogleRevoked?.();
 
       expect(handleGoogleRevoked).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("USER_METADATA", () => {
+    it("shows spinner when import is still in progress on backend", () => {
+      awaitingValue = true;
+
+      let metadataHandler: ((metadata: unknown) => void) | undefined;
+      (socket.on as jest.Mock).mockImplementation((event, handler) => {
+        if (event === USER_METADATA) {
+          metadataHandler = handler;
+        }
+      });
+
+      renderHook(() => useGcalSync());
+
+      // Simulate socket reconnecting while import is still running
+      metadataHandler?.({ sync: { importGCal: "importing" } });
+
+      expect(mockDispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.importing(true),
+      );
+      expect(importGCalSlice.actions.setIsImportPending).not.toHaveBeenCalled();
+    });
+
+    it("clears pending state and fetches when import completed before socket caught up", () => {
+      awaitingValue = true;
+
+      let metadataHandler: ((metadata: unknown) => void) | undefined;
+      (socket.on as jest.Mock).mockImplementation((event, handler) => {
+        if (event === USER_METADATA) {
+          metadataHandler = handler;
+        }
+      });
+
+      renderHook(() => useGcalSync());
+
+      metadataHandler?.({ sync: { importGCal: "completed" } });
+
+      expect(mockDispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.importing(false),
+      );
+      expect(mockDispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.setIsImportPending(false),
+      );
+      expect(triggerFetch).toHaveBeenCalledWith({
+        reason: "IMPORT_COMPLETE",
+      });
+    });
+
+    it("clears pending state when import failed before socket caught up", () => {
+      awaitingValue = true;
+
+      let metadataHandler: ((metadata: unknown) => void) | undefined;
+      (socket.on as jest.Mock).mockImplementation((event, handler) => {
+        if (event === USER_METADATA) {
+          metadataHandler = handler;
+        }
+      });
+
+      renderHook(() => useGcalSync());
+
+      metadataHandler?.({ sync: { importGCal: "errored" } });
+
+      expect(mockDispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.importing(false),
+      );
+      expect(mockDispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.setIsImportPending(false),
+      );
+      expect(triggerFetch).not.toHaveBeenCalled();
+    });
+
+    it("requests an import when metadata says one is needed", () => {
+      const { shouldImportGCal } = require("@core/util/event/event.util");
+      shouldImportGCal.mockReturnValue(true);
+
+      let metadataHandler: ((metadata: unknown) => void) | undefined;
+      (socket.on as jest.Mock).mockImplementation((event, handler) => {
+        if (event === USER_METADATA) {
+          metadataHandler = handler;
+        }
+      });
+
+      renderHook(() => useGcalSync());
+
+      metadataHandler?.({ sync: { importGCal: "restart" } });
+
+      expect(mockDispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.request(undefined as never),
+      );
     });
   });
 

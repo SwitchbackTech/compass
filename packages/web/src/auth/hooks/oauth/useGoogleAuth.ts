@@ -1,13 +1,13 @@
 import { batch } from "react-redux";
 import { toast } from "react-toastify";
-import { useGoogleAuthWithOverlay } from "@web/auth/hooks/oauth/useGoogleAuthWithOverlay";
-import { useSession } from "@web/auth/hooks/session/useSession";
-import { toastDefaultOptions } from "@web/common/constants/toast.constants";
 import {
   authenticate,
   syncLocalEvents,
-} from "@web/common/utils/auth/google-auth.util";
-import { markUserAsAuthenticated } from "@web/common/utils/storage/auth-state.util";
+} from "@web/auth/google/google.auth.util";
+import { useGoogleAuthWithOverlay } from "@web/auth/hooks/oauth/useGoogleAuthWithOverlay";
+import { useSession } from "@web/auth/hooks/session/useSession";
+import { markUserAsAuthenticated } from "@web/auth/state/auth.state.util";
+import { toastDefaultOptions } from "@web/common/constants/toast.constants";
 import {
   SESSION_EXPIRED_TOAST_ID,
   dismissErrorToast,

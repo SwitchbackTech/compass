@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { Priorities } from "@core/constants/core.constants";
-import { getUserId } from "@web/auth/auth.util";
+import { getUserId } from "@web/auth/session/session.util";
 import {
   CursorItem,
   openFloatingAtCursor,

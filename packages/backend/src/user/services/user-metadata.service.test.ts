@@ -45,5 +45,25 @@ describe("UserMetadataService", () => {
 
       expect(metadata.sync?.importGCal).toBe("restart");
     });
+
+    it("enriches metadata with hasRefreshToken = true when user has refresh token", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+
+      const metadata = await userMetadataService.fetchUserMetadata(userId);
+
+      expect(metadata.google?.hasRefreshToken).toBe(true);
+    });
+
+    it("enriches metadata with hasRefreshToken = false when user has no refresh token", async () => {
+      const user = await UserDriver.createUser({
+        withGoogleRefreshToken: false,
+      });
+      const userId = user._id.toString();
+
+      const metadata = await userMetadataService.fetchUserMetadata(userId);
+
+      expect(metadata.google?.hasRefreshToken).toBe(false);
+    });
   });
 });

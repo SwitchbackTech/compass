@@ -23,9 +23,9 @@ const onError = (error: unknown) => {
   console.error("Socket error:", error);
 };
 
-export const onceConnected = () => {
+export const onConnected = () => {
   socket.emit(FETCH_USER_METADATA);
 };
 
-socket.once("connect", onceConnected);
+socket.on("connect", onConnected);
 socket.on("error", onError);

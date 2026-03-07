@@ -4,11 +4,7 @@ import {
   DEFAULT_AUTH_STATE,
 } from "@web/common/constants/auth.constants";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
-
-/**
- * Utility for managing persistent authentication state.
- * Tracks whether a user has ever authenticated to determine repository selection.
- */
+import { clearGoogleRevokedState } from "../google/google.auth.state";
 
 /**
  * Get the current authentication state from localStorage.
@@ -61,12 +57,14 @@ export function updateAuthState(updates: Partial<AuthState>): void {
  * Marks that the user has authenticated at least once.
  * Once set, the app will always use RemoteEventRepository instead of LocalEventRepository.
  * This prevents the UX issue where events disappear after login due to cleared IndexedDB.
+ * Also clears any revoked state since user is re-authenticating.
  */
 export function markUserAsAuthenticated(): void {
   if (typeof window === "undefined") return;
 
   try {
     updateAuthState({ isGoogleAuthenticated: true });
+    clearGoogleRevokedState();
   } catch {
     // Silently fail if localStorage is unavailable
   }

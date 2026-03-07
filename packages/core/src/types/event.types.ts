@@ -104,15 +104,19 @@ export type Schema_Event_Regular = Omit<
   "recurrence" | "gRecurringEventId"
 >;
 
-export interface Schema_Event_Recur_Base
-  extends Omit<Schema_Event, "recurrence" | "gRecurringEventId"> {
+export interface Schema_Event_Recur_Base extends Omit<
+  Schema_Event,
+  "recurrence" | "gRecurringEventId"
+> {
   recurrence: {
     rule: string[]; // No eventId since this is the base recurring event
   };
 }
 
-export interface Schema_Event_Recur_Instance
-  extends Omit<Schema_Event, "recurrence"> {
+export interface Schema_Event_Recur_Instance extends Omit<
+  Schema_Event,
+  "recurrence"
+> {
   recurrence: {
     eventId: string; // No rule since this is an instance of the recurring event
   };

@@ -1,6 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { CompassCalendarSchema } from "@core/types/calendar.types";
 import { CalendarProvider } from "@core/types/event.types";
+import { WatchSchema } from "@core/types/watch.types";
 import { EmailDriver } from "@backend/__tests__/drivers/email.driver";
 import { SyncDriver } from "@backend/__tests__/drivers/sync.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
@@ -162,6 +163,58 @@ describe("UserService", () => {
       });
       expect(eventCount).toBeGreaterThan(0);
     });
+
+    it("starts Google watches only after full import succeeds", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+      const callOrder: string[] = [];
+      const importFull = syncService.importFull.bind(syncService);
+      const startWatching =
+        syncService.startWatchingGcalResources.bind(syncService);
+
+      const importFullSpy = jest
+        .spyOn(syncService, "importFull")
+        .mockImplementation(async (...args) => {
+          callOrder.push("importFull");
+          return importFull(...args);
+        });
+      const startWatchingSpy = jest
+        .spyOn(syncService, "startWatchingGcalResources")
+        .mockImplementation(async (...args) => {
+          callOrder.push("startWatching");
+          return startWatching(...args);
+        });
+
+      await userService.startGoogleCalendarSync(userId);
+
+      expect(callOrder).toEqual(["importFull", "startWatching"]);
+
+      importFullSpy.mockRestore();
+      startWatchingSpy.mockRestore();
+    });
+
+    it("does not create watches when full import fails before token persistence", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+      const importError = new Error("import failed before sync token");
+      const importFullSpy = jest
+        .spyOn(syncService, "importFull")
+        .mockRejectedValue(importError);
+      const startWatchingSpy = jest.spyOn(
+        syncService,
+        "startWatchingGcalResources",
+      );
+
+      await expect(userService.startGoogleCalendarSync(userId)).rejects.toThrow(
+        importError,
+      );
+
+      expect(startWatchingSpy).not.toHaveBeenCalled();
+      expect(await mongoService.watch.countDocuments({ user: userId })).toBe(0);
+
+      importFullSpy.mockRestore();
+      startWatchingSpy.mockRestore();
+    });
   });
 
   describe("stopGoogleCalendarSync", () => {
@@ -200,8 +253,36 @@ describe("UserService", () => {
     });
   });
 
+  describe("reconnectGoogleCredentials", () => {
+    it("updates the user's Google credentials and lastLoggedInAt", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+
+      const newGUser = UserDriver.generateGoogleUser({
+        sub: faker.string.uuid(),
+        picture: faker.image.urlPicsumPhotos(),
+      });
+      const newRefreshToken = faker.internet.jwt();
+
+      const updatedUser = await userService.reconnectGoogleCredentials(
+        userId,
+        newGUser,
+        newRefreshToken,
+      );
+
+      expect(updatedUser._id.toString()).toBe(userId);
+
+      const storedUser = await mongoService.user.findOne({ _id: user._id });
+
+      expect(storedUser?.google?.googleId).toBe(newGUser.sub);
+      expect(storedUser?.google?.picture).toBe(newGUser.picture ?? "");
+      expect(storedUser?.google?.gRefreshToken).toBe(newRefreshToken);
+      expect(storedUser?.lastLoggedInAt).toBeDefined();
+    });
+  });
+
   describe("pruneGoogleData", () => {
-    it("stops sync and removes google field from user document", async () => {
+    it("stops sync and clears the Google refresh token on the user document", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
       const stopWatchesSpy = jest.spyOn(syncService, "stopWatches");
@@ -222,7 +303,9 @@ describe("UserService", () => {
       expect(deleteWatchesSpy).toHaveBeenCalledWith(userId);
 
       const storedUser = await mongoService.user.findOne({ _id: user._id });
-      expect(storedUser?.google).toBeUndefined();
+      expect(storedUser?.google?.googleId).toBe(user.google?.googleId);
+      expect(storedUser?.google?.picture).toBe(user.google?.picture);
+      expect(storedUser?.google?.gRefreshToken).toBe("");
 
       expect(await mongoService.event.countDocuments({ user: userId })).toBe(0);
       expect(await mongoService.watch.countDocuments({ user: userId })).toBe(0);
@@ -299,6 +382,47 @@ describe("UserService", () => {
       expect(metadata.sync?.importGCal).toBe("completed");
 
       stopSpy.mockRestore();
+      startSpy.mockRestore();
+    });
+
+    it("cleans up partial watch state when restart fails", async () => {
+      const { user } = await UtilDriver.setupTestUser();
+      const userId = user._id.toString();
+      const stopWatchesSpy = jest
+        .spyOn(syncService, "stopWatches")
+        .mockImplementation(async (targetUserId) => {
+          await syncService.deleteWatchesByUser(targetUserId);
+          return [];
+        });
+      const startSpy = jest
+        .spyOn(userService, "startGoogleCalendarSync")
+        .mockImplementation(async () => {
+          await mongoService.watch.insertOne(
+            WatchSchema.parse({
+              _id: mongoService.objectId(),
+              user: userId,
+              resourceId: faker.string.uuid(),
+              expiration: faker.date.future(),
+              gCalendarId: faker.string.uuid(),
+              createdAt: new Date(),
+            }),
+          );
+
+          throw new Error("sync failed");
+        });
+
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: { sync: { importGCal: "restart" } },
+      });
+
+      await userService.restartGoogleCalendarSync(userId, { force: true });
+
+      const metadata = await userMetadataService.fetchUserMetadata(userId);
+      expect(metadata.sync?.importGCal).toBe("errored");
+      expect(await mongoService.watch.countDocuments({ user: userId })).toBe(0);
+
+      stopWatchesSpy.mockRestore();
       startSpy.mockRestore();
     });
   });

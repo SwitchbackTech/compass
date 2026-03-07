@@ -1,4 +1,3 @@
-import { type gSchema$EventBase } from "@core/types/gcal";
 import {
   mockRecurringGcalBaseEvent,
   mockRecurringGcalInstances,

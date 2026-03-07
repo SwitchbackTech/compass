@@ -1,10 +1,10 @@
 import { session } from "@web/common/classes/Session";
 import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
-import { getUserId } from "./auth.util";
+import { getUserId } from "./session.util";
 
 jest.mock("@web/common/classes/Session");
 
-describe("auth.util", () => {
+describe("session.util", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });

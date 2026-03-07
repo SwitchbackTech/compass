@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import { faker } from "@faker-js/faker";
+import { Resource_Sync, XGoogleResourceState } from "@core/types/sync.types";
 import { WatchSchema } from "@core/types/watch.types";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import {
@@ -9,6 +10,7 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { createGoogleError } from "@backend/__tests__/mocks.gcal/errors/error.google.factory";
 import { invalidGrant400Error } from "@backend/__tests__/mocks.gcal/errors/error.google.invalidGrant";
+import { missingRefreshTokenError } from "@backend/__tests__/mocks.gcal/errors/error.missingRefreshToken";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import syncService from "@backend/sync/services/sync.service";
@@ -111,6 +113,27 @@ describe("SyncService", () => {
       expect(await mongoService.watch.findOne({ _id: watch._id })).toBeNull();
     });
 
+    it("deletes the local watch record when the user is missing a refresh token", async () => {
+      const user = await UserDriver.createUser({
+        withGoogleRefreshToken: false,
+      });
+      const watch = await createWatch(user._id.toString());
+
+      jest
+        .spyOn(gcalService, "stopWatch")
+        .mockRejectedValue(missingRefreshTokenError);
+
+      await expect(
+        syncService.stopWatch(
+          user._id.toString(),
+          watch._id.toString(),
+          watch.resourceId,
+        ),
+      ).resolves.toBeUndefined();
+
+      expect(await mongoService.watch.findOne({ _id: watch._id })).toBeNull();
+    });
+
     it("preserves the existing delete behavior when Google returns 404", async () => {
       const user = await UserDriver.createUser();
       const watch = await createWatch(user._id.toString());
@@ -156,6 +179,26 @@ describe("SyncService", () => {
           resourceId: watch.resourceId,
         }),
       ).toEqual(expect.objectContaining({ user: user._id.toString() }));
+    });
+  });
+
+  describe("handleGcalNotification", () => {
+    it("ignores expired notifications when no local watch record remains", async () => {
+      const cleanupSpy = jest
+        .spyOn(syncService, "cleanupStaleWatchChannel")
+        .mockResolvedValue(false);
+
+      await expect(
+        syncService.handleGcalNotification({
+          resource: Resource_Sync.EVENTS,
+          channelId: new ObjectId().toString(),
+          resourceId: faker.string.uuid(),
+          resourceState: XGoogleResourceState.EXISTS,
+          expiration: faker.date.future(),
+        }),
+      ).resolves.toBe("IGNORED");
+
+      expect(cleanupSpy).toHaveBeenCalledTimes(1);
     });
   });
 });

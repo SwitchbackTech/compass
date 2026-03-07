@@ -1,22 +1,30 @@
 import { DEFAULT_AUTH_STATE } from "@web/common/constants/auth.constants";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import {
+  clearGoogleRevokedState,
+  isGoogleRevoked,
+  markGoogleAsRevoked,
+} from "../google/google.auth.state";
+import {
   clearAuthenticationState,
   getAuthState,
   hasUserEverAuthenticated,
   markUserAsAuthenticated,
   updateAuthState,
-} from "./auth-state.util";
+} from "./auth.state.util";
 
 describe("auth-state.util", () => {
   beforeEach(() => {
     // Clear localStorage before each test
     localStorage.clear();
+    // Clear in-memory revoked state
+    clearGoogleRevokedState();
   });
 
   afterEach(() => {
     // Clean up after each test
     localStorage.clear();
+    clearGoogleRevokedState();
   });
 
   describe("getAuthState", () => {
@@ -137,6 +145,18 @@ describe("auth-state.util", () => {
     });
   });
 
+  describe("markUserAsAuthenticated with revoked state", () => {
+    it("should clear revoked flag when re-authenticating", () => {
+      markGoogleAsRevoked();
+      expect(isGoogleRevoked()).toBe(true);
+
+      markUserAsAuthenticated();
+
+      expect(isGoogleRevoked()).toBe(false);
+      expect(hasUserEverAuthenticated()).toBe(true);
+    });
+  });
+
   describe("clearAuthenticationState", () => {
     it("should remove the authentication flag from localStorage", () => {
       updateAuthState({ isGoogleAuthenticated: true });
@@ -173,6 +193,17 @@ describe("auth-state.util", () => {
       // Clear authentication state
       clearAuthenticationState();
       expect(hasUserEverAuthenticated()).toBe(false);
+    });
+
+    it("should keep revoked state separate from localStorage auth state", () => {
+      markUserAsAuthenticated();
+      markGoogleAsRevoked();
+
+      // Auth state in localStorage should be unchanged
+      const state = getAuthState();
+      expect(state.isGoogleAuthenticated).toBe(true);
+      // Revoked state is in-memory only, not in localStorage
+      expect(isGoogleRevoked()).toBe(true);
     });
   });
 });

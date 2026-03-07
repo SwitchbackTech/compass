@@ -2,7 +2,12 @@ import { type TokenPayload } from "google-auth-library";
 import { ObjectId, type WithId } from "mongodb";
 import { faker } from "@faker-js/faker";
 import { type Schema_User } from "@core/types/user.types";
+import mongoService from "@backend/common/services/mongo.service";
 import userService from "../../user/services/user.service";
+
+interface CreateUserOptions {
+  withGoogleRefreshToken?: boolean;
+}
 
 export class UserDriver {
   static generateGoogleUser(
@@ -30,7 +35,10 @@ export class UserDriver {
     };
   }
 
-  static async createUser(): Promise<WithId<Schema_User>> {
+  static async createUser(
+    options: CreateUserOptions = {},
+  ): Promise<WithId<Schema_User>> {
+    const { withGoogleRefreshToken = true } = options;
     const gUser = UserDriver.generateGoogleUser();
     const gRefreshToken = faker.internet.jwt();
 
@@ -39,7 +47,23 @@ export class UserDriver {
       gRefreshToken,
     );
 
-    return { ...user, _id: new ObjectId(userId) };
+    const _id = new ObjectId(userId);
+
+    // Remove refresh token if requested (simulates revoked token scenario)
+    if (!withGoogleRefreshToken) {
+      await mongoService.user.updateOne(
+        { _id },
+        { $unset: { "google.gRefreshToken": "" } },
+      );
+      // Return user without the refresh token
+      const updatedUser = { ...user };
+      if (updatedUser.google) {
+        delete (updatedUser.google as { gRefreshToken?: string }).gRefreshToken;
+      }
+      return { ...updatedUser, _id };
+    }
+
+    return { ...user, _id };
   }
 
   static async createUsers(count: number): Promise<Array<WithId<Schema_User>>> {

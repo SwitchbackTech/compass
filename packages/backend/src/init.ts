@@ -2,7 +2,12 @@
 import dotenv from "dotenv";
 import moduleAlias from "module-alias";
 import path from "path";
-moduleAlias.addAliases({
+
+type AliasApi = {
+  addAliases(aliases: Record<string, string>): void;
+};
+const aliasApi = moduleAlias as unknown as AliasApi;
+aliasApi.addAliases({
   "@backend": `${__dirname}`,
   "@core": `${path.resolve(__dirname, "../../core/src")}`,
 });

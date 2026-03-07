@@ -1,5 +1,5 @@
 import { type TokenPayload } from "google-auth-library";
-import { type ClientSession, ObjectId } from "mongodb";
+import { type ClientSession, ObjectId, type WithId } from "mongodb";
 import SupertokensUserMetadata, {
   type JSONObject,
 } from "supertokens-node/recipe/usermetadata";
@@ -14,7 +14,7 @@ import {
 } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
-import { getGcalClient } from "@backend/auth/services/google.auth.service";
+import { getGcalClient } from "@backend/auth/services/google/google.auth.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
@@ -178,10 +178,35 @@ class UserService {
     await syncService.deleteByIntegration("google", userId);
   };
 
+  reconnectGoogleCredentials = async (
+    cUserId: string,
+    gUser: TokenPayload,
+    refreshToken: string,
+  ): Promise<WithId<Schema_User>> => {
+    const user = await mongoService.user.findOneAndUpdate(
+      { _id: zObjectId.parse(cUserId) },
+      {
+        $set: {
+          "google.googleId": gUser.sub ?? "",
+          "google.picture": gUser.picture ?? "",
+          "google.gRefreshToken": refreshToken,
+          lastLoggedInAt: new Date(),
+        },
+      },
+      { returnDocument: "after" },
+    );
+
+    zObjectId.parse(user?._id, { error: () => "Invalid credentials" });
+    return user as WithId<Schema_User>;
+  };
+
   pruneGoogleData = async (userId: string): Promise<void> => {
     const _id = zObjectId.parse(userId);
     await this.stopGoogleCalendarSync(userId, { skipGoogleWatchStop: true });
-    await mongoService.user.updateOne({ _id }, { $unset: { google: "" } });
+    await mongoService.user.updateOne(
+      { _id },
+      { $set: { "google.gRefreshToken": "" } },
+    );
   };
 
   startGoogleCalendarSync = async (
@@ -198,6 +223,12 @@ class UserService {
       .map(({ id }) => id)
       .filter((id) => id !== undefined && id !== null);
 
+    const importResults = await syncService.importFull(
+      gcal,
+      gCalendarIds,
+      user,
+    );
+
     await Promise.resolve(isUsingHttps()).then((yes) =>
       yes
         ? syncService.startWatchingGcalResources(
@@ -209,12 +240,6 @@ class UserService {
             gcal,
           )
         : [],
-    );
-
-    const importResults = await syncService.importFull(
-      gcal,
-      gCalendarIds,
-      user,
     );
 
     const eventsCount = importResults.reduce(
@@ -274,6 +299,15 @@ class UserService {
       );
       webSocketServer.handleBackgroundCalendarChange(userId);
     } catch (err) {
+      try {
+        await this.stopGoogleCalendarSync(userId);
+      } catch (cleanupError) {
+        logger.error(
+          `Failed to clean up partial Google Calendar sync state for user: ${userId}`,
+          cleanupError,
+        );
+      }
+
       await userMetadataService.updateUserMetadata({
         userId,
         data: { sync: { importGCal: "errored" } },

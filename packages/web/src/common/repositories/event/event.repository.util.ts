@@ -1,4 +1,5 @@
-import { hasUserEverAuthenticated } from "@web/common/utils/storage/auth-state.util";
+import { isGoogleRevoked } from "@web/auth/google/google.auth.state";
+import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
 import { type EventRepository } from "./event.repository.interface";
 import { LocalEventRepository } from "./local.event.repository";
 import { RemoteEventRepository } from "./remote.event.repository";
@@ -7,15 +8,23 @@ import { RemoteEventRepository } from "./remote.event.repository";
  * Factory function to get the appropriate event repository based on session and authentication state.
  *
  * Repository selection logic:
- * 1. If user has EVER authenticated: Always use RemoteEventRepository
+ * 1. If Google access was revoked: Use LocalEventRepository
+ *    - Graceful degradation until user re-authenticates
+ *    - Prevents API errors from failed Google token refresh
+ * 2. If user has EVER authenticated: Always use RemoteEventRepository
  *    - This prevents the UX issue where events disappear after login due to cleared IndexedDB
  *    - Even if session is temporarily invalid, we use remote (user will be prompted to re-auth)
- * 2. If user has NEVER authenticated: Use LocalEventRepository (IndexedDB)
+ * 3. If user has NEVER authenticated: Use LocalEventRepository (IndexedDB)
  *    - Events stored locally until user decides to sign in
  *
  * @param sessionExists - Whether a session currently exists (from session.doesSessionExist())
  */
 export function getEventRepository(sessionExists: boolean): EventRepository {
+  // If Google was revoked, use local storage until user re-authenticates
+  if (isGoogleRevoked()) {
+    return new LocalEventRepository();
+  }
+
   const hasAuthenticated = hasUserEverAuthenticated();
 
   // Once a user has authenticated, ALWAYS use remote repository

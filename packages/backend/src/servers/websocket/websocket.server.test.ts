@@ -10,13 +10,24 @@ import {
   EVENT_CHANGED,
   EVENT_CHANGE_PROCESSED,
   FETCH_USER_METADATA,
+  GOOGLE_REVOKED,
   SOMEDAY_EVENT_CHANGED,
   SOMEDAY_EVENT_CHANGE_PROCESSED,
   USER_METADATA,
 } from "@core/constants/websocket.constants";
 import { type UserMetadata } from "@core/types/user.types";
+import { type Schema_User } from "@core/types/user.types";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
+import { findCompassUserBy } from "@backend/user/queries/user.queries";
+
+jest.mock("@backend/user/queries/user.queries", () => ({
+  findCompassUserBy: jest.fn(),
+}));
+
+const mockFindCompassUserBy = findCompassUserBy as jest.MockedFunction<
+  typeof findCompassUserBy
+>;
 
 describe("WebSocket Server", () => {
   const baseDriver = new BaseDriver();
@@ -27,6 +38,10 @@ describe("WebSocket Server", () => {
     baseDriver.initWebsocketServer();
 
     await baseDriver.listen();
+  });
+
+  beforeEach(() => {
+    mockFindCompassUserBy.mockResolvedValue(null);
   });
 
   afterAll(async () => baseDriver.teardown());
@@ -102,6 +117,120 @@ describe("WebSocket Server", () => {
             connected: false,
           }),
         );
+      });
+    });
+
+    describe("checkGoogleTokenStatus on connection", () => {
+      it("emits GOOGLE_REVOKED to client when user has googleId but no gRefreshToken", async () => {
+        const userId = new ObjectId().toString();
+        const userWithRevokedGoogle: Schema_User & { _id: ObjectId } = {
+          _id: new ObjectId(userId),
+          email: "user@example.com",
+          firstName: "First",
+          lastName: "Last",
+          name: "First Last",
+          locale: "en",
+          google: {
+            googleId: "google-123",
+            picture: "https://example.com/pic.png",
+            gRefreshToken: "",
+          },
+        };
+        mockFindCompassUserBy.mockResolvedValue(userWithRevokedGoogle);
+
+        const client = baseDriver.createWebsocketClient(
+          { userId },
+          { autoConnect: false },
+        );
+
+        await expect(
+          baseDriver.waitUntilWebsocketEvent(client, GOOGLE_REVOKED, async () =>
+            client.connect(),
+          ),
+        ).resolves.toEqual([]);
+
+        expect(mockFindCompassUserBy).toHaveBeenCalledWith("_id", userId);
+      });
+
+      it("does not emit GOOGLE_REVOKED when user has gRefreshToken", async () => {
+        const userId = new ObjectId().toString();
+        const userWithValidGoogle: Schema_User & { _id: ObjectId } = {
+          _id: new ObjectId(userId),
+          email: "user@example.com",
+          firstName: "First",
+          lastName: "Last",
+          name: "First Last",
+          locale: "en",
+          google: {
+            googleId: "google-123",
+            picture: "https://example.com/pic.png",
+            gRefreshToken: "valid-refresh-token",
+          },
+        };
+        mockFindCompassUserBy.mockResolvedValue(userWithValidGoogle);
+
+        const client = baseDriver.createWebsocketClient(
+          { userId },
+          { autoConnect: false },
+        );
+        let receivedGoogleRevoked = false;
+        client.on(GOOGLE_REVOKED, () => {
+          receivedGoogleRevoked = true;
+        });
+
+        await baseDriver.waitUntilWebsocketEvent(client, "connect", async () =>
+          client.connect(),
+        );
+
+        await new Promise((r) => setTimeout(r, 400));
+
+        expect(receivedGoogleRevoked).toBe(false);
+        expect(mockFindCompassUserBy).toHaveBeenCalledWith("_id", userId);
+      });
+
+      it("does not emit GOOGLE_REVOKED when user is null", async () => {
+        const userId = new ObjectId().toString();
+        mockFindCompassUserBy.mockResolvedValue(null);
+
+        const client = baseDriver.createWebsocketClient(
+          { userId },
+          { autoConnect: false },
+        );
+        let receivedGoogleRevoked = false;
+        client.on(GOOGLE_REVOKED, () => {
+          receivedGoogleRevoked = true;
+        });
+
+        await baseDriver.waitUntilWebsocketEvent(client, "connect", async () =>
+          client.connect(),
+        );
+
+        await new Promise((r) => setTimeout(r, 400));
+
+        expect(receivedGoogleRevoked).toBe(false);
+        expect(mockFindCompassUserBy).toHaveBeenCalledWith("_id", userId);
+      });
+
+      it("does not emit GOOGLE_REVOKED when findCompassUserBy throws", async () => {
+        const userId = new ObjectId().toString();
+        mockFindCompassUserBy.mockRejectedValue(new Error("DB error"));
+
+        const client = baseDriver.createWebsocketClient(
+          { userId },
+          { autoConnect: false },
+        );
+        let receivedGoogleRevoked = false;
+        client.on(GOOGLE_REVOKED, () => {
+          receivedGoogleRevoked = true;
+        });
+
+        await baseDriver.waitUntilWebsocketEvent(client, "connect", async () =>
+          client.connect(),
+        );
+
+        await new Promise((r) => setTimeout(r, 400));
+
+        expect(receivedGoogleRevoked).toBe(false);
       });
     });
   });
@@ -380,7 +509,9 @@ describe("WebSocket Server", () => {
 
         await expect(
           baseDriver.waitUntilWebsocketEvent(client, USER_METADATA),
-        ).resolves.toEqual([userMetadata]);
+        ).resolves.toEqual([
+          { ...userMetadata, google: { hasRefreshToken: false } },
+        ]);
       });
     });
   });

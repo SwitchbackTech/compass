@@ -14,7 +14,7 @@ import { eventsStore, setDraft } from "@web/store/events";
 import { useOpenEventForm } from "@web/views/Forms/hooks/useOpenEventForm";
 
 // Mocks
-jest.mock("@web/auth/auth.util");
+jest.mock("@web/auth/session/session.util");
 jest.mock("@web/common/context/pointer-position");
 jest.mock("@web/common/utils/dom/event-emitter.util");
 jest.mock("@web/views/Day/hooks/navigation/useDateInView");
@@ -58,7 +58,7 @@ describe("useOpenEventForm", () => {
     (isElementInViewport as jest.Mock).mockReturnValue(true);
   });
 
-  const { getUserId } = jest.requireMock("@web/auth/auth.util");
+  const { getUserId } = jest.requireMock("@web/auth/session/session.util");
 
   const {
     getPointerPosition,

@@ -8,18 +8,18 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { Status } from "@core/errors/status.codes";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { UserProvider } from "@web/auth/context/UserProvider";
+import * as authStateUtil from "@web/auth/state/auth.state.util";
 import { UserApi } from "@web/common/apis/user.api";
 import { ENV_WEB } from "@web/common/constants/env.constants";
-import * as authStateUtil from "@web/common/utils/storage/auth-state.util";
 import { SessionExpiredToast } from "@web/common/utils/toast/session-expired.toast";
 
 jest.mock("posthog-js/react");
 const mockUsePostHog = jest.mocked(usePostHog);
 const mockToastError = jest.mocked(toast.error);
 
-jest.mock("@web/common/utils/storage/auth-state.util", () => {
-  const actual: typeof authStateUtil = jest.requireActual(
-    "@web/common/utils/storage/auth-state.util",
+jest.mock("@web/auth/state/auth.state.util", () => {
+  const actual = jest.requireActual<typeof authStateUtil>(
+    "@web/auth/state/auth.state.util",
   );
   return {
     ...actual,
@@ -30,6 +30,7 @@ const mockHasUserEverAuthenticated = jest.mocked(
   authStateUtil.hasUserEverAuthenticated,
 );
 
+// Mock AbsoluteOverflowLoader
 jest.mock("@web/components/AbsoluteOverflowLoader", () => ({
   AbsoluteOverflowLoader: () => <div>Loading...</div>,
 }));

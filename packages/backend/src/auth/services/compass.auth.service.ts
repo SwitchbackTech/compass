@@ -4,7 +4,8 @@ import Session from "supertokens-node/recipe/session";
 import { Logger } from "@core/logger/winston.logger";
 import { mapCompassUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
-import GoogleAuthService from "@backend/auth/services/google.auth.service";
+import { parseReconnectGoogleParams } from "@backend/auth/schemas/reconnect-google.schemas";
+import GoogleAuthService from "@backend/auth/services/google/google.auth.service";
 import { ENV } from "@backend/common/constants/env.constants";
 import { isMissingUserTagId } from "@backend/common/constants/env.util";
 import { error } from "@backend/common/errors/handlers/error.handler";
@@ -21,6 +22,15 @@ import userService from "@backend/user/services/user.service";
 const logger = Logger("app:auth.service");
 
 class CompassAuthService {
+  private restartGoogleCalendarSyncInBackground = (cUserId: string) => {
+    userService.restartGoogleCalendarSync(cUserId).catch((err) => {
+      logger.error(
+        `Something went wrong with starting calendar sync for user ${cUserId}`,
+        err,
+      );
+    });
+  };
+
   determineAuthMethod = async (gUserId: string) => {
     const user = await findCompassUserBy("google.googleId", gUserId);
 
@@ -107,17 +117,42 @@ class CompassAuthService {
         );
       }
 
-      userService.restartGoogleCalendarSync(cUser.userId).catch((err) => {
-        logger.error(
-          `Something went wrong with starting calendar sync for user ${cUser.userId}`,
-          err,
-        );
-      });
-
       return { cUserId: cUser.userId };
     });
 
+    // Fire-and-forget: full calendar import can exceed MongoDB transaction timeout (60s)
+    this.restartGoogleCalendarSyncInBackground(user.cUserId);
+
     return user;
+  }
+
+  async reconnectGoogleForSession(
+    sessionUserId: string,
+    gUser: TokenPayload,
+    oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">,
+  ) {
+    const {
+      cUserId,
+      gUser: validatedGUser,
+      refreshToken,
+    } = parseReconnectGoogleParams(sessionUserId, gUser, oAuthTokens);
+
+    await userService.reconnectGoogleCredentials(
+      cUserId,
+      validatedGUser,
+      refreshToken,
+    );
+
+    await userMetadataService.updateUserMetadata({
+      userId: cUserId,
+      data: {
+        sync: { importGCal: "restart", incrementalGCalSync: "restart" },
+      },
+    });
+
+    this.restartGoogleCalendarSyncInBackground(cUserId);
+
+    return { cUserId };
   }
 
   async googleSignin(
@@ -169,12 +204,7 @@ class CompassAuthService {
           data: { sync: { importGCal: "restart" } },
         });
 
-        userService.restartGoogleCalendarSync(cUserId).catch((err) => {
-          logger.error(
-            `Something went wrong with ${message.toLowerCase()}`,
-            err,
-          );
-        });
+        this.restartGoogleCalendarSyncInBackground(cUserId);
       } else {
         logger.error("Error during incremental sync:", e);
       }
