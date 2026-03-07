@@ -223,6 +223,12 @@ class UserService {
       .map(({ id }) => id)
       .filter((id) => id !== undefined && id !== null);
 
+    const importResults = await syncService.importFull(
+      gcal,
+      gCalendarIds,
+      user,
+    );
+
     await Promise.resolve(isUsingHttps()).then((yes) =>
       yes
         ? syncService.startWatchingGcalResources(
@@ -234,12 +240,6 @@ class UserService {
             gcal,
           )
         : [],
-    );
-
-    const importResults = await syncService.importFull(
-      gcal,
-      gCalendarIds,
-      user,
     );
 
     const eventsCount = importResults.reduce(
@@ -299,6 +299,15 @@ class UserService {
       );
       webSocketServer.handleBackgroundCalendarChange(userId);
     } catch (err) {
+      try {
+        await this.stopGoogleCalendarSync(userId);
+      } catch (cleanupError) {
+        logger.error(
+          `Failed to clean up partial Google Calendar sync state for user: ${userId}`,
+          cleanupError,
+        );
+      }
+
       await userMetadataService.updateUserMetadata({
         userId,
         data: { sync: { importGCal: "errored" } },

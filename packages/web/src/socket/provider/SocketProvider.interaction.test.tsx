@@ -6,6 +6,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import {
   IMPORT_GCAL_END,
   IMPORT_GCAL_START,
+  USER_METADATA,
 } from "@core/constants/websocket.constants";
 import { SyncEventsOverlay } from "@web/components/SyncEventsOverlay/SyncEventsOverlay";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
@@ -44,6 +45,9 @@ describe("GCal Re-Authentication Flow", () => {
   // Socket event callbacks captured during render
   let importEndCallback: ((data?: string) => void) | undefined;
   let importStartCallback: (() => void) | undefined;
+  let metadataCallback:
+    | ((data?: { sync?: { importGCal?: string } }) => void)
+    | undefined;
 
   // Default timeout for import operations (30 seconds is reasonable for GCal sync)
   const IMPORT_TIMEOUT_MS = 30_000;
@@ -92,6 +96,7 @@ describe("GCal Re-Authentication Flow", () => {
     document.body.removeAttribute("data-app-locked");
     importEndCallback = undefined;
     importStartCallback = undefined;
+    metadataCallback = undefined;
 
     // Capture socket event handlers when they're registered
     (socket.on as jest.Mock).mockImplementation((event, callback) => {
@@ -100,6 +105,9 @@ describe("GCal Re-Authentication Flow", () => {
       }
       if (event === IMPORT_GCAL_START) {
         importStartCallback = callback;
+      }
+      if (event === USER_METADATA) {
+        metadataCallback = callback;
       }
     });
   });
@@ -255,6 +263,39 @@ describe("GCal Re-Authentication Flow", () => {
         eventsCount: 0,
         calendarsCount: 1,
       });
+    });
+
+    it("hides spinner when reconnect metadata shows import already completed", async () => {
+      const store = createTestStore({ isImportPending: true, importing: true });
+
+      render(
+        <Provider store={store}>
+          <SocketProvider>
+            <SyncEventsOverlay />
+          </SocketProvider>
+        </Provider>,
+      );
+
+      await waitFor(() => {
+        expect(metadataCallback).toBeDefined();
+      });
+
+      await act(async () => {
+        metadataCallback?.({ sync: { importGCal: "completed" } });
+      });
+
+      await act(async () => {
+        jest.advanceTimersByTime(100);
+      });
+
+      expect(
+        screen.queryByText("Importing your Google Calendar events..."),
+      ).not.toBeInTheDocument();
+
+      const state = store.getState();
+      expect(state.sync.importGCal.importing).toBe(false);
+      expect(state.sync.importGCal.isImportPending).toBe(false);
+      expect(state.sync.importLatest.isFetchNeeded).toBe(true);
     });
   });
 

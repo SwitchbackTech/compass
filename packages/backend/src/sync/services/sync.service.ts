@@ -1,5 +1,6 @@
 import { type ClientSession, ObjectId } from "mongodb";
 import { RESULT_NOTIFIED_CLIENT } from "@core/constants/websocket.constants";
+import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 import { type gCalendar } from "@core/types/gcal";
 import {
@@ -17,6 +18,7 @@ import { Collections } from "@backend/common/constants/collections";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { WatchError } from "@backend/common/errors/sync/watch.errors";
+import { UserError } from "@backend/common/errors/user/user.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import {
   getGoogleErrorStatus,
@@ -119,9 +121,7 @@ class SyncService {
       }
     }
 
-    const possibleUserIds = new Set(channels.map((c) => c.user));
-
-    if (possibleUserIds.size === 0) {
+    if (channels.length === 0) {
       logger.error(
         `Stale watch cleanup failed. Couldn't find any watch based on this channelId: ${channelId} or resourceId: ${resourceId}`,
       );
@@ -130,22 +130,27 @@ class SyncService {
     }
 
     const deleted = await Promise.all(
-      [...possibleUserIds].map(async (user): Promise<boolean> => {
-        const result = await this.stopWatch(
-          user,
-          channelId.toString(),
-          resourceId,
-        );
+      channels.map(async (channel): Promise<boolean> => {
+        try {
+          await this.stopWatch(
+            channel.user,
+            channel._id.toString(),
+            channel.resourceId,
+          );
 
-        if (result) {
           logger.warn(
-            `Cleaned up stale watch for user: ${user} with channelId: ${channelId} with resourceId: ${resourceId}`,
+            `Cleaned up stale watch for user: ${channel.user} with channelId: ${channel._id.toString()} with resourceId: ${channel.resourceId}`,
           );
 
           return true;
-        }
+        } catch (error) {
+          logger.error(
+            `Failed to clean up stale watch for user: ${channel.user} with channelId: ${channel._id.toString()}`,
+            error,
+          );
 
-        return false;
+          return false;
+        }
       }),
     );
 
@@ -176,10 +181,11 @@ class SyncService {
 
       if (cleanedUp) return "IGNORED";
 
-      throw error(
-        WatchError.NoWatchRecordForUser,
-        `Notification not handled because no watch record found for channel: ${payload.channelId}`,
+      logger.warn(
+        `Ignoring notification because no active watch record exists for channel: ${payload.channelId}`,
       );
+
+      return "IGNORED";
     }
 
     const sync = await getSync({ userId: watch.user, resource });
@@ -190,10 +196,11 @@ class SyncService {
 
       if (cleanedUp) return "IGNORED";
 
-      throw error(
-        SyncError.NoSyncRecordForUser,
-        `Notification not handled because no sync record found with channel: ${payload.channelId}`,
+      logger.warn(
+        `Ignoring notification because no sync record exists for channel: ${payload.channelId}`,
       );
+
+      return "IGNORED";
     }
 
     const userId = sync.user;
@@ -630,11 +637,11 @@ class SyncService {
     quotaUser?: string,
     session?: ClientSession,
   ) => {
-    if (!gcal) gcal = await getGcalClient(user);
-
     const filter = { user, _id: new ObjectId(channelId), resourceId };
 
     try {
+      if (!gcal) gcal = await getGcalClient(user);
+
       await gcalService.stopWatch(gcal, {
         quotaUser,
         channelId,
@@ -662,6 +669,19 @@ class SyncService {
 
         logger.warn(
           "Google authorization is no longer valid. Corresponding sync record deleted",
+        );
+
+        return undefined;
+      }
+
+      if (
+        e instanceof BaseError &&
+        e.description === UserError.MissingGoogleRefreshToken.description
+      ) {
+        await mongoService.watch.deleteOne(filter, { session });
+
+        logger.warn(
+          "Google refresh token is missing. Corresponding watch record deleted",
         );
 
         return undefined;

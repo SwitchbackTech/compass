@@ -8,9 +8,13 @@ import { AuthApi } from "@web/common/apis/auth.api";
 import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
 import { type SignInUpInput } from "@web/components/oauth/ouath.types";
+import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
-import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
+import {
+  importGCalSlice,
+  triggerFetch,
+} from "@web/ducks/events/slices/sync.slice";
 import { store } from "@web/store";
 import {
   authenticate,
@@ -150,6 +154,20 @@ describe("google-auth.util", () => {
       );
     });
 
+    it("clears auth and import overlay state", () => {
+      handleGoogleRevoked();
+
+      expect(store.dispatch).toHaveBeenCalledWith(
+        authSlice.actions.resetAuth(),
+      );
+      expect(store.dispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.importing(false),
+      );
+      expect(store.dispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.setIsImportPending(false),
+      );
+    });
+
     it("dispatches triggerFetch with GOOGLE_REVOKED reason", () => {
       handleGoogleRevoked();
 
@@ -172,7 +190,7 @@ describe("google-auth.util", () => {
       handleGoogleRevoked();
 
       expect(toast.error).not.toHaveBeenCalled();
-      expect(store.dispatch).toHaveBeenCalledTimes(2);
+      expect(store.dispatch).toHaveBeenCalledTimes(5);
     });
   });
 });

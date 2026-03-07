@@ -5,9 +5,13 @@ import { AuthApi } from "@web/common/apis/auth.api";
 import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
 import { type SignInUpInput } from "@web/components/oauth/ouath.types";
+import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
-import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
+import {
+  importGCalSlice,
+  triggerFetch,
+} from "@web/ducks/events/slices/sync.slice";
 import { store } from "@web/store";
 
 export interface AuthenticateResult {
@@ -47,6 +51,10 @@ export const handleGoogleRevoked = () => {
   // Mark Google as revoked so the app uses LocalEventRepository
   // until user re-authenticates
   markGoogleAsRevoked();
+
+  store.dispatch(authSlice.actions.resetAuth());
+  store.dispatch(importGCalSlice.actions.importing(false));
+  store.dispatch(importGCalSlice.actions.setIsImportPending(false));
 
   store.dispatch(
     eventsEntitiesSlice.actions.removeEventsByOrigin({

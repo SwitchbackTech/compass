@@ -39,6 +39,7 @@ export const useGcalSync = () => {
   const onImportEnd = useCallback(
     (payload?: { eventsCount?: number; calendarsCount?: number } | string) => {
       dispatch(importGCalSlice.actions.importing(false));
+
       if (!isImportPendingRef.current) {
         return;
       }
@@ -47,7 +48,10 @@ export const useGcalSync = () => {
       let importResults: { eventsCount?: number; calendarsCount?: number } = {};
       if (typeof payload === "string") {
         try {
-          importResults = JSON.parse(payload);
+          importResults = JSON.parse(payload) as {
+            eventsCount?: number;
+            calendarsCount?: number;
+          };
         } catch (e) {
           console.error("Failed to parse import results:", e);
           dispatch(
@@ -81,11 +85,23 @@ export const useGcalSync = () => {
   const onMetadataFetch = useCallback(
     (metadata: UserMetadata) => {
       const importGcal = shouldImportGCal(metadata);
-      const isBackendImporting = metadata.sync?.importGCal === "importing";
+      const importStatus = metadata.sync?.importGCal;
+      const isBackendImporting = importStatus === "importing";
 
       if (isImportPendingRef.current) {
         if (isBackendImporting) {
           dispatch(importGCalSlice.actions.importing(true));
+        } else if (importStatus === "completed") {
+          dispatch(importGCalSlice.actions.importing(false));
+          dispatch(importGCalSlice.actions.setIsImportPending(false));
+          dispatch(
+            triggerFetch({
+              reason: Sync_AsyncStateContextReason.IMPORT_COMPLETE,
+            }),
+          );
+        } else if (importStatus === "errored") {
+          dispatch(importGCalSlice.actions.importing(false));
+          dispatch(importGCalSlice.actions.setIsImportPending(false));
         }
         return;
       }

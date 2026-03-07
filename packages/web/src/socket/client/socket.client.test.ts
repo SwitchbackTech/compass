@@ -50,9 +50,9 @@ describe("socket.client", () => {
   });
 
   it("sets up default listeners", () => {
-    expect(mockSocket.once).toHaveBeenCalledWith(
+    expect(mockSocket.on).toHaveBeenCalledWith(
       "connect",
-      socketClientModule.onceConnected,
+      socketClientModule.onConnected,
     );
     expect(mockSocket.on).toHaveBeenCalledWith("error", expect.any(Function));
   });
@@ -73,9 +73,9 @@ describe("socket.client", () => {
     });
   });
 
-  describe("onceConnected", () => {
+  describe("onConnected", () => {
     it("emits FETCH_USER_METADATA", () => {
-      socketClientModule.onceConnected();
+      socketClientModule.onConnected();
       expect(mockSocket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
     });
   });

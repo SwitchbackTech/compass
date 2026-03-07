@@ -96,7 +96,7 @@ describe("SyncController", () => {
   });
 
   describe("handleGoogleNotification", () => {
-    it("should throw error when no watch record found", async () => {
+    it("should ignore notification when no watch record found", async () => {
       const response = await syncDriver.handleGoogleNotification(
         {
           resource: Resource_Sync.EVENTS,
@@ -105,12 +105,10 @@ describe("SyncController", () => {
           resourceState: XGoogleResourceState.EXISTS,
           expiration: faker.date.future(),
         },
-        Status.BAD_REQUEST,
+        Status.OK,
       );
 
-      expect(response.text).toContain(
-        WatchError.NoWatchRecordForUser.description,
-      );
+      expect(response.text).toEqual("IGNORED");
     });
 
     it("should ignore notification when watch channel is initialized", async () => {
@@ -132,6 +130,9 @@ describe("SyncController", () => {
       // Setup
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
+      const restartSpy = jest
+        .spyOn(userService, "restartGoogleCalendarSync")
+        .mockResolvedValue();
 
       const watch = await mongoService.watch.findOne({
         user: userId,
@@ -163,6 +164,60 @@ describe("SyncController", () => {
       );
 
       expect(response.text).toEqual("");
+      expect(restartSpy).toHaveBeenCalledWith(userId, { force: true });
+
+      restartSpy.mockRestore();
+    });
+
+    it("should not schedule duplicate restart when import is already running", async () => {
+      const { user } = await UtilDriver.setupTestUser();
+      const userId = user._id.toString();
+      const restartSpy = jest
+        .spyOn(userService, "restartGoogleCalendarSync")
+        .mockResolvedValue();
+
+      const watch = await mongoService.watch.findOne({
+        user: userId,
+        gCalendarId: { $ne: Resource_Sync.CALENDAR },
+      });
+
+      expect(watch).toBeDefined();
+      expect(watch).not.toBeNull();
+
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: { sync: { importGCal: "importing" } },
+      });
+
+      await updateSync(Resource_Sync.EVENTS, userId, watch!.gCalendarId, {
+        nextSyncToken: undefined,
+      });
+
+      await syncDriver.handleGoogleNotification(
+        {
+          resource: Resource_Sync.EVENTS,
+          channelId: watch!._id,
+          resourceId: watch!.resourceId,
+          resourceState: XGoogleResourceState.EXISTS,
+          expiration: watch!.expiration,
+        },
+        Status.NO_CONTENT,
+      );
+
+      await syncDriver.handleGoogleNotification(
+        {
+          resource: Resource_Sync.EVENTS,
+          channelId: watch!._id,
+          resourceId: watch!.resourceId,
+          resourceState: XGoogleResourceState.EXISTS,
+          expiration: watch!.expiration,
+        },
+        Status.NO_CONTENT,
+      );
+
+      expect(restartSpy).not.toHaveBeenCalled();
+
+      restartSpy.mockRestore();
     });
 
     it("should cleanup stale gcal watches for unknown channels if resourceId exists", async () => {
@@ -191,6 +246,9 @@ describe("SyncController", () => {
       );
 
       expect(response.text).toEqual("IGNORED");
+      expect(
+        await mongoService.watch.findOne({ user: userId, resourceId }),
+      ).toBeNull();
     });
 
     it("should prune Google data, notify client via websocket, and return structured response when user revokes access", async () => {

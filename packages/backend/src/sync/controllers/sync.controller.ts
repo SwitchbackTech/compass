@@ -24,6 +24,7 @@ import mongoService from "@backend/common/services/mongo.service";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import syncService from "@backend/sync/services/sync.service";
 import { getSync } from "@backend/sync/util/sync.queries";
+import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
 
 const logger = Logger("app:sync.controller");
@@ -86,6 +87,52 @@ export class SyncController {
       });
 
     res.status(Status.OK).send({ message: "Full sync in progress." });
+  };
+
+  private static handleMissingSyncToken = async (
+    res: Response,
+    channelId: string,
+    resourceId: string,
+  ): Promise<void> => {
+    const _id = new ObjectId(channelId); // convert to ObjectId for find command
+    const watch = await mongoService.watch.findOne({ _id, resourceId });
+
+    if (!watch) {
+      logger.warn(
+        `Ignored missing sync token recovery because no watch was found for channelId: ${channelId}`,
+      );
+      res.status(Status.NO_CONTENT).send();
+      return;
+    }
+
+    const { user: userId, gCalendarId } = watch;
+    logger.warn("Recovering Google sync after missing sync token", {
+      userId,
+      gCalendarId,
+      channelId,
+      resourceId,
+    });
+
+    const metadata = await userMetadataService.fetchUserMetadata(userId);
+
+    if (metadata.sync?.importGCal === "importing") {
+      logger.info(
+        `Skipped Google sync recovery because full import is already running for user: ${userId}`,
+      );
+      res.status(Status.NO_CONTENT).send();
+      return;
+    }
+
+    userService
+      .restartGoogleCalendarSync(userId, { force: true })
+      .catch((err) =>
+        logger.error(
+          `Something went wrong recovering Google calendars for user: ${userId}`,
+          err,
+        ),
+      );
+
+    res.status(Status.NO_CONTENT).send();
   };
 
   private static handleGoogleApiError = async (
@@ -189,12 +236,7 @@ export class SyncController {
         e instanceof Error &&
         e.message === SyncError.NoSyncToken.description
       ) {
-        logger.debug(
-          `Ignored notification due to missing sync token for channelId: ${channelId}`,
-        );
-        // returning 204 instead of 500 so client doesn't
-        // attempt to retry
-        res.status(Status.NO_CONTENT).send();
+        await SyncController.handleMissingSyncToken(res, channelId, resourceId);
         return;
       }
 
