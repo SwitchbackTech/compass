@@ -190,13 +190,14 @@ packages/core/src/
 
 ### CI/CD Integration
 
-- GitHub Actions runs `yarn install` and `yarn test`
+- GitHub Actions unit tests run in `.github/workflows/test-unit.yml` as a matrix (`core`, `web`, `backend`, `scripts`) using `yarn test <project>` on `push`.
+- End-to-end tests run separately in `.github/workflows/test-e2e.yml` on pull requests to `main`.
 
 ## Troubleshooting
 
 ### Common Issues
 
-- **Test failures**: Run `yarn test:core`, `yarn test:web`, and `yarn test:backend` individually to narrow the scope of the failure
+- **Test failures**: Run `yarn test:core`, `yarn test:web`, `yarn test:backend`, and `yarn test:scripts` individually to narrow the scope of the failure
 - **Backend won't start**: Missing environment variables in `packages/backend/.env`, use web-only development (`yarn dev:web`)
 - Environment: Copy from `packages/backend/.env.local.example` to `packages/backend/.env` (there is no `.env.example`).
 - Webpack dev server warns about a missing `.env.local` file; this is harmless—it falls back to `process.env`.

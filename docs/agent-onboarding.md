@@ -79,5 +79,6 @@ Run the smallest relevant checks first:
 - Core-only changes: `yarn test:core`
 - Web-only changes: `yarn test:web`
 - Backend-only changes: `yarn test:backend`
+- Scripts-only changes: `yarn test:scripts`
 - Cross-package type changes: `yarn test:core && yarn test:web && yarn test:backend`
 - Before handoff: `yarn type-check`
