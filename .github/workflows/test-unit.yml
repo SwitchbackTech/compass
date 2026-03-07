@@ -5,6 +5,10 @@ on: [push]
 jobs:
   unit:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [core, web, backend, scripts]
 
     steps:
       - name: Check out Git repository
@@ -20,8 +24,8 @@ jobs:
         run: |
           yarn install --frozen-lockfile --network-timeout 300000
 
-      - name: Run tests
+      - name: Run ${{ matrix.project }} tests
         env:
           TZ: ${{ vars.TZ }}
         run: |
-          yarn test
+          yarn test ${{ matrix.project }}
