@@ -77,6 +77,7 @@ Use this document to find the first files to inspect for common Compass changes.
 - Backend env parsing: `packages/backend/src/common/constants/env.constants.ts`
 - Web env parsing: `packages/web/src/common/constants/env.constants.ts`
 - Express middleware order: `packages/backend/src/servers/express/express.server.ts`
+- Health endpoint route/controller/tests: `packages/backend/src/health/health.routes.config.ts`, `packages/backend/src/health/controllers/health.controller.ts`, `packages/backend/src/health/controllers/health.controller.test.ts`
 
 ## CLI / Maintenance
 
