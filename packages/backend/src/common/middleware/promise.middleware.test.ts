@@ -1,4 +1,4 @@
-import { type NextFunction, type Request, type Response } from "express";
+import { type NextFunction, type Request } from "express";
 import { Status } from "@core/errors/status.codes";
 import { requestMiddleware } from "@backend/common/middleware/promise.middleware";
 import { type Res_Promise } from "@backend/common/types/express.types";

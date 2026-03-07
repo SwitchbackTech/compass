@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useGoogleLogin as useGoogleLoginBase } from "@react-oauth/google";
-import { isGooglePopupClosedError } from "@web/common/utils/auth/google-oauth-error.util";
+import { isGooglePopupClosedError } from "@web/auth/google/google-oauth-error.util";
 import { type SignInUpInput } from "@web/components/oauth/ouath.types";
 
 const SCOPES_REQUIRED = [
