@@ -28,6 +28,11 @@
 
 ### /api/auth/session
 
+Development helper endpoint (guarded by `verifyIsDev`):
+
+- `POST /api/auth/session` creates a session for a provided Compass user id
+- `GET /api/auth/session` returns the current session user id
+
 ---
 
 ## User Routes
@@ -37,6 +42,25 @@
 ### /api/user/profile
 
 ### /api/user/metadata
+
+`/api/user/metadata` notes:
+
+- `GET` returns user metadata enriched with Google connection status.
+- `POST` merges partial metadata updates.
+
+Current metadata shape used by sync/auth flows:
+
+```ts
+{
+  sync?: {
+    importGCal?: "importing" | "errored" | "completed" | "restart" | null;
+    incrementalGCalSync?: "importing" | "errored" | "completed" | "restart" | null;
+  };
+  google?: {
+    hasRefreshToken?: boolean;
+  };
+}
+```
 
 ---
 
@@ -64,9 +88,24 @@ _Review the source file for route definitions_
 
 ### /api${GCAL_NOTIFICATION_ENDPOINT}
 
+Google push-notification ingress endpoint (Google-only caller).
+
+Observed outcomes:
+
+- `200` with `"INITIALIZED"` on channel handshake notifications
+- `200` with `"IGNORED"` for stale/missing watch or sync records
+- `204` when sync-token recovery is triggered or intentionally skipped
+- `410` with `GOOGLE_REVOKED` payload when Google credentials are missing/revoked and user data is pruned
+
 ### /api/sync/maintain-all
 
 ### /api/sync/import-gcal
+
+Authenticated user trigger for full import restart:
+
+- middleware: `verifySession()` + `requireGoogleConnectionSession`
+- response: `204 No Content`
+- import runs asynchronously; progress is surfaced via websocket `IMPORT_GCAL_START` / `IMPORT_GCAL_END`
 
 ### /api/event-change-demo
 
@@ -97,6 +136,12 @@ _Review the source file for route definitions_
 ### /api/event/delete-all/:userId
 
 ### /api/event/:id
+
+Write semantics:
+
+- `POST /api/event`, `PUT /api/event/:id`, `DELETE /api/event/:id` require Google connection middleware
+- controllers use `res.promise(...)` and return status-only payloads for `204 No Content` responses
+- errors are routed through centralized Express error handling (Google/API-specific handling included)
 
 ---
 
@@ -145,6 +190,17 @@ Standard error response format:
   "details": "Additional context (optional)"
 }
 ```
+
+Google revocation is a first-class error contract used by API and websocket flows:
+
+```json
+{
+  "code": "GOOGLE_REVOKED",
+  "message": "Google access revoked. Your Google data has been removed."
+}
+```
+
+When this payload accompanies `401` or `410`, web clients should keep the session, switch to local event behavior, and prompt reconnect instead of forcing sign-out.
 
 ## Key Endpoints
 

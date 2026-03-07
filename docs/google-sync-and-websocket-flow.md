@@ -58,6 +58,26 @@ Primary files:
 - `packages/backend/src/sync/services/notify/handler/gcal.notification.handler.ts`
 - `packages/backend/src/sync/services/sync/gcal.sync.processor.ts`
 
+### Notification Outcomes And Error Semantics
+
+`SyncService.handleGcalNotification()` and `SyncController.handleGoogleNotification()` intentionally treat several conditions as recoverable:
+
+- returns `"INITIALIZED"` when Google sends `resourceState=sync`
+- returns `"IGNORED"` when no active watch or sync record exists (stale notification)
+- returns `"PROCESSED..."` when a notification is handled and client notify logic runs
+
+Important error handling behavior:
+
+- missing refresh token:
+  - if a matching watch exists, backend prunes Google data and emits `GOOGLE_REVOKED`, then returns `410` with `{ code: "GOOGLE_REVOKED", ... }`
+  - if no watch exists, backend logs and returns `410` without pruning (notification ignored)
+- missing sync token:
+  - backend attempts forced resync in background
+  - resync is skipped if metadata already shows `sync.importGCal === "importing"`
+  - response is `204` either way
+- invalid/revoked Google token (`invalid_grant`):
+  - backend prunes Google data, emits `GOOGLE_REVOKED`, returns revoked payload
+
 ## Watch And Sync Records
 
 Two backend data concepts matter:
@@ -79,6 +99,7 @@ The websocket server:
 - tracks sockets by session and by user
 - emits events to one session or all active sessions for a user
 - responds to `FETCH_USER_METADATA` by returning `USER_METADATA`
+- checks token state on socket connection and immediately emits `GOOGLE_REVOKED` when a user has a Google ID but no refresh token
 
 ## Web Client Responsibilities
 
@@ -95,6 +116,47 @@ The client:
 - tracks Google import status
 - handles Google revocation
 - requests metadata used to decide whether import should start
+- reconciles import UI state from `USER_METADATA` when auth/import websocket events arrive out of order
+
+## Revoked Token And Reconnect Lifecycle
+
+Revocation and reconnect are handled across auth, sync, websocket, and repository selection:
+
+1. Backend detects missing/invalid Google refresh token (middleware, sync, or Google API error handling).
+2. Backend prunes Google-origin data and emits `GOOGLE_REVOKED`.
+3. Web app marks Google as revoked in session memory and temporarily switches to local repository behavior.
+4. OAuth connect while a session exists triggers reconnect logic (`reconnectGoogleForSession`) instead of normal signup/signin.
+5. Reconnect updates Google credentials, marks metadata sync flags as `"restart"`, and restarts sync in background.
+
+Primary files:
+
+- `packages/backend/src/common/middleware/supertokens.middleware.ts`
+- `packages/backend/src/auth/services/google/google.auth.success.service.ts`
+- `packages/backend/src/auth/services/compass.auth.service.ts`
+- `packages/web/src/auth/google/google.auth.state.ts`
+- `packages/web/src/auth/google/google.auth.util.ts`
+- `packages/web/src/common/repositories/event/event.repository.util.ts`
+
+## User Metadata Shape Used By Socket And UI
+
+`UserMetadata` now includes Google connection state alongside sync state:
+
+```ts
+{
+  sync?: {
+    importGCal?: "importing" | "errored" | "completed" | "restart" | null;
+    incrementalGCalSync?: "importing" | "errored" | "completed" | "restart" | null;
+  };
+  google?: {
+    hasRefreshToken?: boolean;
+  };
+}
+```
+
+`hasRefreshToken` is enriched server-side during metadata fetch and is available through:
+
+- `GET /api/user/metadata`
+- websocket `USER_METADATA` responses to `FETCH_USER_METADATA`
 
 ## Import Flow
 

@@ -71,6 +71,8 @@ Important detail:
 
 Once a user has ever authenticated, the app records that fact in local auth-state storage so repository selection can prefer remote data later.
 
+When a user re-authenticates with Google, auth-state utilities also clear any in-memory "Google revoked" flag so normal remote sync can resume.
+
 ## User Bootstrap
 
 File:
@@ -108,10 +110,17 @@ File:
 
 Repository choice:
 
-- never-authenticated users use local IndexedDB repositories
+- if Google access is revoked in-session, force local IndexedDB repository
+- otherwise, never-authenticated users use local IndexedDB repositories
 - authenticated or previously-authenticated users use remote repositories
 
 This is deliberate and prevents events from "disappearing" after login when local data is empty.
+
+Revoked state details:
+
+- stored in memory only (not persisted)
+- set when `GOOGLE_REVOKED` is detected from socket or API error responses
+- cleared when Google auth succeeds again
 
 ## Storage Initialization
 
@@ -144,6 +153,12 @@ Responsibilities:
 - refetch events when background event changes arrive
 - react to Google import progress and Google revocation events
 - request user metadata via socket when appropriate
+
+Runtime nuances:
+
+- `useGcalSync` keeps an `isImportPending` ref to avoid races with async socket events.
+- `USER_METADATA` is used to reconcile post-auth import UI state (importing/completed/errored).
+- On connect, backend may proactively emit `GOOGLE_REVOKED`; the client clears Google-origin events and falls back to local event storage until reconnect.
 
 ## What To Read Before Editing
 
