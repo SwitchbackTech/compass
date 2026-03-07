@@ -157,9 +157,16 @@ class SyncService {
     const affectedUsers = [...new Set(channels.map(({ user }) => user))];
 
     await Promise.all(
-      affectedUsers.map((userId) =>
-        userMetadataService.assessGoogleMetadata(userId),
-      ),
+      affectedUsers.map(async (userId) => {
+        try {
+          await userMetadataService.assessGoogleMetadata(userId);
+        } catch (error) {
+          logger.error(
+            `Failed to assess Google metadata after stale watch cleanup for user: ${userId}`,
+            error,
+          );
+        }
+      }),
     );
 
     return deleted.some((d) => d);
