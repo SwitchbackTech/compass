@@ -44,6 +44,16 @@ export const useConnectGoogle = () => {
     };
   }
 
+  if (connectionStatus === "connected") {
+    // Catch-all for connected users with unhandled sync status
+    return {
+      label: "Google Calendar Connected",
+      icon: "CheckCircleIcon",
+      isDisabled: false,
+      onSelect: undefined,
+    };
+  }
+
   if (connectionStatus === "reconnect_required") {
     return {
       label: "Reconnect Google Calendar",
