@@ -41,6 +41,8 @@ Use this document to find the first files to inspect for common Compass changes.
 - Day view route and content: `packages/web/src/views/Day/view`
 - Day view hooks: `packages/web/src/views/Day/hooks`
 - Week/calendar view: `packages/web/src/views/Calendar`
+- Week keyboard shortcuts: `packages/web/src/views/Calendar/hooks/shortcuts/useWeekShortcuts.ts`
+- Sidebar Someday draft actions: `packages/web/src/views/Calendar/components/Draft/sidebar/hooks/useSidebarActions.ts`
 - Now view: `packages/web/src/views/Now`
 
 ## Offline Storage
@@ -88,3 +90,4 @@ Use this document to find the first files to inspect for common Compass changes.
 - Web memory-router test helper: `packages/web/src/__tests__/utils/providers/MemoryRouter.tsx`
 - Backend test setup: `packages/backend/src/__tests__`
 - E2E tests: `e2e`
+- E2E event helpers: `e2e/utils/event-test-utils.ts`

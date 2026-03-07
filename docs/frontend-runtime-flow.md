@@ -145,6 +145,22 @@ Responsibilities:
 - react to Google import progress and Google revocation events
 - request user metadata via socket when appropriate
 
+## Week Shortcut -> Someday Draft Flow
+
+Files:
+
+- `packages/web/src/views/Calendar/hooks/shortcuts/useWeekShortcuts.ts`
+- `packages/web/src/views/Calendar/components/Draft/sidebar/hooks/useSidebarActions.ts`
+
+For the week view `w` shortcut:
+
+1. `useWeekShortcuts` handles keyup `w` and calls `createSomedayDraft(..., "createShortcut")`.
+2. `createSomedayDraft` dispatches the redux draft start action for Someday creation.
+3. For `activity === "createShortcut"`, it intentionally does **not** call `createDefaultSomeday()` directly.
+4. `handleChange()` then opens the Someday form from the redux draft state in one place.
+
+This one-path opening behavior prevents duplicate open paths and keeps shortcut behavior deterministic for both users and e2e tests.
+
 ## What To Read Before Editing
 
 - Auth/session issue: read session provider, user provider, router loaders.

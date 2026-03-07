@@ -167,6 +167,29 @@ Use them for:
 - integration between auth, UI, and persistence
 - regressions that unit tests cannot model cleanly
 
+### Calendar Someday Shortcut (`w`) Stability
+
+Relevant codepaths:
+
+- `e2e/utils/event-test-utils.ts`
+- `packages/web/src/views/Calendar/hooks/shortcuts/useWeekShortcuts.ts`
+- `packages/web/src/views/Calendar/components/Draft/sidebar/hooks/useSidebarActions.ts`
+
+When testing Someday creation from keyboard, use the existing helper:
+
+```ts
+await openSomedayEventFormWithKeyboard(page);
+```
+
+That helper intentionally:
+
+1. blurs the active element and ensures the sidebar is open
+2. dispatches the `w` shortcut
+3. waits for `form[name="Someday Event Form"]`
+4. waits for the Someday form `Title` field
+
+Do not rely on a generic `getByRole("form")` assertion immediately after `w`. During transitions, other form surfaces can exist and make the test flaky.
+
 ## Testing Realtime And Sync Changes
 
 For websocket or sync work:
