@@ -280,13 +280,13 @@ export const openAllDayEventFormWithKeyboard = async (page: Page) => {
 export const openSomedayEventFormWithKeyboard = async (page: Page) => {
   await blurActiveElement(page);
   await ensureSidebarOpen(page);
-  const addWeekSomedayButton = page
-    .locator("#sidebar")
-    .getByRole("button", { name: "+" })
-    .first();
-  await addWeekSomedayButton.focus();
-  await page.keyboard.press("Enter");
-  await getFormTitleInput(page).waitFor({ state: "visible", timeout: FORM_TIMEOUT });
+  await pressShortcut(page, "w");
+  const somedayForm = page.locator('form[name="Someday Event Form"]');
+  await somedayForm.waitFor({ state: "visible", timeout: FORM_TIMEOUT });
+  await somedayForm.getByPlaceholder("Title").waitFor({
+    state: "visible",
+    timeout: FORM_TIMEOUT,
+  });
 };
 
 export const openEventForEditingWithKeyboard = async (
