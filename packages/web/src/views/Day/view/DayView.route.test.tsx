@@ -198,8 +198,10 @@ describe("Navigation with URL updates", () => {
 
     await act(() => render(<></>, { router }));
 
-    // Find and click the next day button
-    const nextDayButton = screen.getByRole("button", { name: "Next day" });
+    // Wait for the component to render by finding a button
+    const nextDayButton = await screen.findByRole("button", {
+      name: "Next day",
+    });
 
     const nextDay = dayjs()
       .add(1, "day")
@@ -222,8 +224,10 @@ describe("Navigation with URL updates", () => {
 
     await act(() => render(<></>, { router }));
 
-    // Find and click the previous day button
-    const prevDayButton = screen.getByRole("button", { name: "Previous day" });
+    // Wait for the component to render by finding a button
+    const prevDayButton = await screen.findByRole("button", {
+      name: "Previous day",
+    });
 
     await act(() => user.click(prevDayButton));
 
@@ -253,9 +257,9 @@ describe("Navigation with URL updates", () => {
       `${ROOT_ROUTES.DAY}/${testDateString}`,
     );
 
-    // Should show October 20, 2025 (Monday)
-    expect(screen.getByText("Monday")).toBeInTheDocument();
-    expect(screen.getByText("October 20")).toBeInTheDocument();
+    // Wait for the component to render before checking for text
+    expect(await screen.findByText("Monday")).toBeInTheDocument();
+    expect(await screen.findByText("October 20")).toBeInTheDocument();
   });
 
   it("should show today indicator when viewing today", async () => {
