@@ -154,6 +154,14 @@ class SyncService {
       }),
     );
 
+    const affectedUsers = [...new Set(channels.map(({ user }) => user))];
+
+    await Promise.all(
+      affectedUsers.map((userId) =>
+        userMetadataService.assessGoogleMetadata(userId),
+      ),
+    );
+
     return deleted.some((d) => d);
   }
 

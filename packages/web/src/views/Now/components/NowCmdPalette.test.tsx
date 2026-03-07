@@ -37,8 +37,10 @@ jest.mock("react-cmdk", () => {
       {children}
     </section>
   );
-  CommandPalette.ListItem = ({ children, onClick }: any) => (
-    <button onClick={onClick}>{children}</button>
+  CommandPalette.ListItem = ({ children, disabled, onClick }: any) => (
+    <button disabled={disabled} onClick={onClick}>
+      {children}
+    </button>
   );
   CommandPalette.FreeSearchAction = () => <div>No results</div>;
 
@@ -59,16 +61,6 @@ jest.mock("@web/common/utils/dom/event-emitter.util", () => ({
 // Mock onEventTargetVisibility
 jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
   onEventTargetVisibility: (cb: () => void) => () => cb(),
-}));
-
-// Mock useSession for auth state tests
-const mockSetAuthenticated = jest.fn();
-let mockAuthenticated = false;
-jest.mock("@web/auth/hooks/session/useSession", () => ({
-  useSession: () => ({
-    authenticated: mockAuthenticated,
-    setAuthenticated: mockSetAuthenticated,
-  }),
 }));
 
 // Mock useGoogleAuth
@@ -147,8 +139,7 @@ describe("NowCmdPalette", () => {
       mockLogin.mockClear();
     });
 
-    it("shows 'Connect Google Calendar' when not authenticated", () => {
-      mockAuthenticated = false;
+    it("shows 'Connect Google Calendar' when metadata is missing", () => {
       render(<NowCmdPalette />, { state: initialState });
 
       expect(screen.getByText("Connect Google Calendar")).toBeInTheDocument();
@@ -157,9 +148,20 @@ describe("NowCmdPalette", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("shows 'Google Calendar Connected' when authenticated", () => {
-      mockAuthenticated = true;
-      render(<NowCmdPalette />, { state: initialState });
+    it("shows 'Google Calendar Connected' when metadata is healthy", () => {
+      render(<NowCmdPalette />, {
+        state: {
+          ...initialState,
+          userMetadata: {
+            current: {
+              google: {
+                connectionStatus: "connected",
+                syncStatus: "healthy",
+              },
+            },
+          },
+        },
+      });
 
       expect(screen.getByText("Google Calendar Connected")).toBeInTheDocument();
       expect(
@@ -167,21 +169,64 @@ describe("NowCmdPalette", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("triggers login when 'Connect Google Calendar' is clicked and not authenticated", async () => {
-      mockAuthenticated = false;
-      render(<NowCmdPalette />, { state: initialState });
+    it("shows reconnect and triggers login when needed", async () => {
+      render(<NowCmdPalette />, {
+        state: {
+          ...initialState,
+          userMetadata: {
+            current: {
+              google: {
+                connectionStatus: "reconnect_required",
+                syncStatus: "none",
+              },
+            },
+          },
+        },
+      });
 
-      act(() => fireEvent.click(screen.getByText("Connect Google Calendar")));
+      act(() => fireEvent.click(screen.getByText("Reconnect Google Calendar")));
       await waitFor(() => expect(mockLogin).toHaveBeenCalled());
     });
 
-    it("does not trigger login when 'Google Calendar Connected' is clicked", async () => {
-      mockAuthenticated = true;
-      render(<NowCmdPalette />, { state: initialState });
+    it("shows syncing state and disables clicks while repairing", async () => {
+      render(<NowCmdPalette />, {
+        state: {
+          ...initialState,
+          userMetadata: {
+            current: {
+              google: {
+                connectionStatus: "connected",
+                syncStatus: "repairing",
+              },
+            },
+          },
+        },
+      });
 
-      act(() => fireEvent.click(screen.getByText("Google Calendar Connected")));
+      const button = screen.getByRole("button", {
+        name: "Syncing Google Calendar...",
+      });
+      expect(button).toBeDisabled();
+    });
 
-      expect(mockLogin).not.toHaveBeenCalled();
+    it("shows repair action when sync needs attention", async () => {
+      render(<NowCmdPalette />, {
+        state: {
+          ...initialState,
+          userMetadata: {
+            current: {
+              google: {
+                connectionStatus: "connected",
+                syncStatus: "attention",
+              },
+            },
+          },
+        },
+      });
+
+      act(() => fireEvent.click(screen.getByText("Repair Google Calendar")));
+
+      await waitFor(() => expect(mockLogin).toHaveBeenCalled());
     });
   });
 });

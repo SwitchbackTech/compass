@@ -1,5 +1,6 @@
 import { toast } from "react-toastify";
 import { Origin } from "@core/constants/core.constants";
+import { FETCH_USER_METADATA } from "@core/constants/websocket.constants";
 import {
   clearGoogleRevokedState,
   isGoogleRevoked,
@@ -9,6 +10,7 @@ import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
 import { type SignInUpInput } from "@web/components/oauth/ouath.types";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
+import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
 import {
@@ -34,6 +36,13 @@ jest.mock("@web/store", () => ({
   store: {
     dispatch: jest.fn(),
   },
+}));
+jest.mock("@web/socket/client/socket.client", () => ({
+  socket: {
+    connected: true,
+    emit: jest.fn(),
+  },
+  reconnect: jest.fn(),
 }));
 
 const mockAuthApi = AuthApi as jest.Mocked<typeof AuthApi>;
@@ -161,6 +170,9 @@ describe("google-auth.util", () => {
         authSlice.actions.resetAuth(),
       );
       expect(store.dispatch).toHaveBeenCalledWith(
+        userMetadataSlice.actions.clear(),
+      );
+      expect(store.dispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.importing(false),
       );
       expect(store.dispatch).toHaveBeenCalledWith(
@@ -174,6 +186,14 @@ describe("google-auth.util", () => {
       expect(store.dispatch).toHaveBeenCalledWith(
         triggerFetch({ reason: Sync_AsyncStateContextReason.GOOGLE_REVOKED }),
       );
+    });
+
+    it("refreshes user metadata when the socket is connected", () => {
+      const { socket } = require("@web/socket/client/socket.client");
+
+      handleGoogleRevoked();
+
+      expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
     });
 
     it("marks Google as revoked in session state", () => {
@@ -190,7 +210,7 @@ describe("google-auth.util", () => {
       handleGoogleRevoked();
 
       expect(toast.error).not.toHaveBeenCalled();
-      expect(store.dispatch).toHaveBeenCalledTimes(5);
+      expect(store.dispatch).toHaveBeenCalledTimes(6);
     });
   });
 });

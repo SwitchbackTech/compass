@@ -7,8 +7,8 @@ import {
   USER_METADATA,
 } from "@core/constants/websocket.constants";
 import { type UserMetadata } from "@core/types/user.types";
-import { shouldImportGCal } from "@core/util/event/event.util";
 import { handleGoogleRevoked } from "@web/auth/google/google.auth.util";
+import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { selectIsImportPending } from "@web/ducks/events/selectors/sync.selector";
 import {
@@ -84,9 +84,11 @@ export const useGcalSync = () => {
 
   const onMetadataFetch = useCallback(
     (metadata: UserMetadata) => {
-      const importGcal = shouldImportGCal(metadata);
       const importStatus = metadata.sync?.importGCal;
       const isBackendImporting = importStatus === "importing";
+      const shouldAutoImport = importStatus === "restart";
+
+      dispatch(userMetadataSlice.actions.set(metadata));
 
       if (isImportPendingRef.current) {
         if (isBackendImporting) {
@@ -109,7 +111,7 @@ export const useGcalSync = () => {
       // Normal case (not in post-auth flow) - sync state with backend
       onImportStart(isBackendImporting);
 
-      if (importGcal) {
+      if (shouldAutoImport) {
         dispatch(importGCalSlice.actions.request(undefined as never));
       }
     },
