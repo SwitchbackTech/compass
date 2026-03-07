@@ -32,7 +32,10 @@ jest.mock("@web/ducks/events/slices/event.slice", () => ({
   eventsEntitiesSlice: {
     reducer: jest.fn(() => ({})),
   },
-  getCurrentMonthEventsSlice: { reducer: jest.fn(() => ({})) },
+  getCurrentMonthEventsSlice: {
+    actions: { request: jest.fn() },
+    reducer: jest.fn(() => ({})),
+  },
   getSomedayEventsSlice: { reducer: jest.fn(() => ({})) },
   getWeekEventsSlice: {
     actions: { request: jest.fn() },
