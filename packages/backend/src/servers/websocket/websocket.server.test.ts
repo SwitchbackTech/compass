@@ -20,6 +20,14 @@ import { type Schema_User } from "@core/types/user.types";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import googleSyncRepairService from "@backend/user/services/google/google.sync-repair.service";
+
+jest.mock("@backend/user/services/google/google.sync-repair.service", () => ({
+  __esModule: true,
+  default: {
+    ensureRepairScheduled: jest.fn().mockResolvedValue(false),
+  },
+}));
 
 jest.mock("@backend/user/queries/user.queries", () => ({
   findCompassUserBy: jest.fn(),
@@ -510,8 +518,18 @@ describe("WebSocket Server", () => {
         await expect(
           baseDriver.waitUntilWebsocketEvent(client, USER_METADATA),
         ).resolves.toEqual([
-          { ...userMetadata, google: { hasRefreshToken: false } },
+          {
+            ...userMetadata,
+            google: {
+              hasRefreshToken: false,
+              connectionStatus: "not_connected",
+              syncStatus: "none",
+            },
+          },
         ]);
+        expect(
+          googleSyncRepairService.ensureRepairScheduled,
+        ).toHaveBeenCalledWith(userId);
       });
     });
   });

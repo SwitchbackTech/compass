@@ -1,74 +1,104 @@
 import { renderHook } from "@testing-library/react";
-import * as googleAuthState from "@web/auth/google/google.auth.state";
 import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
-import { useSession } from "@web/auth/hooks/session/useSession";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
-import { useAppDispatch } from "@web/store/store.hooks";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
-jest.mock("@web/auth/google/google.auth.state");
-jest.mock("@web/auth/hooks/session/useSession");
 jest.mock("@web/auth/hooks/oauth/useGoogleAuth");
 jest.mock("@web/store/store.hooks");
 
-const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
 const mockUseGoogleAuth = useGoogleAuth as jest.MockedFunction<
   typeof useGoogleAuth
 >;
 const mockUseAppDispatch = useAppDispatch as jest.MockedFunction<
   typeof useAppDispatch
 >;
+const mockUseAppSelector = useAppSelector as jest.MockedFunction<
+  typeof useAppSelector
+>;
 
 describe("useConnectGoogle", () => {
   const mockDispatch = jest.fn();
   const mockLogin = jest.fn();
+  let googleStatus = {
+    connectionStatus: "not_connected" as const,
+    syncStatus: "none" as const,
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseAppDispatch.mockReturnValue(mockDispatch);
+    mockUseAppSelector.mockImplementation((selector) =>
+      selector({
+        auth: {
+          status: "idle",
+          error: null,
+          google: googleStatus,
+        },
+      } as never),
+    );
     mockUseGoogleAuth.mockReturnValue({
       login: mockLogin,
     });
-    mockUseSession.mockReturnValue({
-      authenticated: false,
-      setAuthenticated: jest.fn(),
-    });
-    // Default: Google not revoked
-    jest.spyOn(googleAuthState, "isGoogleRevoked").mockReturnValue(false);
+    googleStatus = {
+      connectionStatus: "not_connected",
+      syncStatus: "none",
+    };
   });
 
-  it("returns true when Google Calendar is connected", () => {
-    mockUseSession.mockReturnValue({
-      authenticated: true,
-      setAuthenticated: jest.fn(),
-    });
+  it("returns connected state when Google sync is healthy", () => {
+    googleStatus = {
+      connectionStatus: "connected",
+      syncStatus: "healthy",
+    };
 
     const { result } = renderHook(() => useConnectGoogle());
 
     expect(result.current.isGoogleCalendarConnected).toBe(true);
+    expect(result.current.googleCalendarLabel).toBe(
+      "Google Calendar Connected",
+    );
   });
 
-  it("returns false when Google Calendar is not connected", () => {
-    mockUseSession.mockReturnValue({
-      authenticated: false,
-      setAuthenticated: jest.fn(),
-    });
+  it("shows reconnect label when Google token must be reconnected", () => {
+    googleStatus = {
+      connectionStatus: "reconnect_required",
+      syncStatus: "none",
+    };
 
     const { result } = renderHook(() => useConnectGoogle());
 
     expect(result.current.isGoogleCalendarConnected).toBe(false);
+    expect(result.current.googleCalendarLabel).toBe(
+      "Reconnect Google Calendar",
+    );
   });
 
-  it("returns false when authenticated but Google is revoked", () => {
-    mockUseSession.mockReturnValue({
-      authenticated: true,
-      setAuthenticated: jest.fn(),
-    });
-    jest.spyOn(googleAuthState, "isGoogleRevoked").mockReturnValue(true);
+  it("shows syncing label and disables actions while repairing", () => {
+    googleStatus = {
+      connectionStatus: "connected",
+      syncStatus: "repairing",
+    };
 
     const { result } = renderHook(() => useConnectGoogle());
 
     expect(result.current.isGoogleCalendarConnected).toBe(false);
+    expect(result.current.googleCalendarLabel).toBe(
+      "Syncing Google Calendar...",
+    );
+    expect(result.current.isGoogleCalendarActionDisabled).toBe(true);
+  });
+
+  it("shows repair label when Google needs attention", () => {
+    googleStatus = {
+      connectionStatus: "connected",
+      syncStatus: "attention",
+    };
+
+    const { result } = renderHook(() => useConnectGoogle());
+
+    expect(result.current.googleCalendarLabel).toBe("Repair Google Calendar");
+    expect(result.current.isGoogleCalendarActionDisabled).toBe(false);
   });
 
   it("logs in and closes the command palette on connect", () => {

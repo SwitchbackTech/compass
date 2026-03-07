@@ -17,6 +17,11 @@ export interface Schema_User {
 }
 
 type SyncStatus = "importing" | "errored" | "completed" | "restart" | null;
+export type GoogleConnectionStatus =
+  | "not_connected"
+  | "connected"
+  | "reconnect_required";
+export type GoogleSyncStatus = "healthy" | "repairing" | "attention" | "none";
 
 export interface UserMetadata extends SupertokensUserMetadata.JSONObject {
   skipOnboarding?: boolean;
@@ -26,6 +31,8 @@ export interface UserMetadata extends SupertokensUserMetadata.JSONObject {
   };
   google?: {
     hasRefreshToken?: boolean;
+    connectionStatus?: GoogleConnectionStatus;
+    syncStatus?: GoogleSyncStatus;
   };
 }
 

@@ -16,8 +16,12 @@ export const NowCmdPalette = () => {
   const open = useAppSelector(selectIsCmdPaletteOpen);
   const [page] = useState<"root">("root");
   const [search, setSearch] = useState("");
-  const { isGoogleCalendarConnected, onConnectGoogleCalendar } =
-    useConnectGoogle();
+  const {
+    googleCalendarIcon,
+    googleCalendarLabel,
+    isGoogleCalendarActionDisabled,
+    onConnectGoogleCalendar,
+  } = useConnectGoogle();
   const authCmdItems = useAuthCmdItems();
 
   const filteredItems = filterItems(
@@ -52,13 +56,9 @@ export const NowCmdPalette = () => {
         items: [
           {
             id: "connect-google-calendar",
-            children: isGoogleCalendarConnected
-              ? "Google Calendar Connected"
-              : "Connect Google Calendar",
-            icon: isGoogleCalendarConnected
-              ? "CheckCircleIcon"
-              : "CloudArrowUpIcon",
-            onClick: isGoogleCalendarConnected
+            children: googleCalendarLabel,
+            icon: googleCalendarIcon,
+            onClick: isGoogleCalendarActionDisabled
               ? undefined
               : onConnectGoogleCalendar,
           },

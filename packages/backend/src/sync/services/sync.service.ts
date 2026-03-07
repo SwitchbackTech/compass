@@ -43,6 +43,7 @@ import {
   isUsingHttps,
 } from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import googleSyncRepairService from "@backend/user/services/google/google.sync-repair.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 
 const logger = Logger("app:sync.service");
@@ -141,6 +142,14 @@ class SyncService {
           logger.warn(
             `Cleaned up stale watch for user: ${channel.user} with channelId: ${channel._id.toString()} with resourceId: ${channel.resourceId}`,
           );
+          void googleSyncRepairService
+            .ensureRepairScheduled(channel.user)
+            .catch((repairError) =>
+              logger.error(
+                `Failed to schedule Google repair for user: ${channel.user}`,
+                repairError,
+              ),
+            );
 
           return true;
         } catch (error) {

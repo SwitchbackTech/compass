@@ -1,5 +1,6 @@
 import { toast } from "react-toastify";
 import { Origin } from "@core/constants/core.constants";
+import { FETCH_USER_METADATA } from "@core/constants/websocket.constants";
 import {
   clearGoogleRevokedState,
   isGoogleRevoked,
@@ -35,10 +36,18 @@ jest.mock("@web/store", () => ({
     dispatch: jest.fn(),
   },
 }));
+jest.mock("@web/socket/client/socket.client", () => ({
+  socket: {
+    emit: jest.fn(),
+  },
+}));
 
 const mockAuthApi = AuthApi as jest.Mocked<typeof AuthApi>;
 const mockSyncLocalEventsToCloud =
   syncLocalEventsToCloud as jest.MockedFunction<typeof syncLocalEventsToCloud>;
+const mockSocket = require("@web/socket/client/socket.client").socket as {
+  emit: jest.Mock;
+};
 
 describe("google-auth.util", () => {
   beforeEach(() => {
@@ -161,6 +170,12 @@ describe("google-auth.util", () => {
         authSlice.actions.resetAuth(),
       );
       expect(store.dispatch).toHaveBeenCalledWith(
+        authSlice.actions.setGoogleStatus({
+          connectionStatus: "reconnect_required",
+          syncStatus: "none",
+        }),
+      );
+      expect(store.dispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.importing(false),
       );
       expect(store.dispatch).toHaveBeenCalledWith(
@@ -174,6 +189,7 @@ describe("google-auth.util", () => {
       expect(store.dispatch).toHaveBeenCalledWith(
         triggerFetch({ reason: Sync_AsyncStateContextReason.GOOGLE_REVOKED }),
       );
+      expect(mockSocket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
     });
 
     it("marks Google as revoked in session state", () => {
@@ -190,7 +206,7 @@ describe("google-auth.util", () => {
       handleGoogleRevoked();
 
       expect(toast.error).not.toHaveBeenCalled();
-      expect(store.dispatch).toHaveBeenCalledTimes(5);
+      expect(store.dispatch).toHaveBeenCalledTimes(6);
     });
   });
 });

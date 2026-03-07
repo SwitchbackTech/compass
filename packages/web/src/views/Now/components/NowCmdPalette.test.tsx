@@ -13,16 +13,6 @@ jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
   onEventTargetVisibility: (cb: () => void) => () => cb(),
 }));
 
-// Mock useSession for auth state tests
-const mockSetAuthenticated = jest.fn();
-let mockAuthenticated = false;
-jest.mock("@web/auth/hooks/session/useSession", () => ({
-  useSession: () => ({
-    authenticated: mockAuthenticated,
-    setAuthenticated: mockSetAuthenticated,
-  }),
-}));
-
 // Mock useGoogleAuth
 const mockLogin = jest.fn();
 jest.mock("@web/auth/hooks/oauth/useGoogleAuth", () => ({
@@ -99,19 +89,47 @@ describe("NowCmdPalette", () => {
       mockLogin.mockClear();
     });
 
-    it("shows 'Connect Google Calendar' when not authenticated", () => {
-      mockAuthenticated = false;
+    it("shows 'Connect Google Calendar' when metadata says not connected", () => {
       render(<NowCmdPalette />, { state: initialState });
 
       expect(screen.getByText("Connect Google Calendar")).toBeInTheDocument();
+    });
+
+    it("shows 'Reconnect Google Calendar' when Google access was revoked", () => {
+      render(<NowCmdPalette />, {
+        state: {
+          ...initialState,
+          auth: {
+            status: "idle",
+            error: null,
+            google: {
+              connectionStatus: "reconnect_required",
+              syncStatus: "none",
+            },
+          },
+        },
+      });
+
+      expect(screen.getByText("Reconnect Google Calendar")).toBeInTheDocument();
       expect(
         screen.queryByText("Google Calendar Connected"),
       ).not.toBeInTheDocument();
     });
 
-    it("shows 'Google Calendar Connected' when authenticated", () => {
-      mockAuthenticated = true;
-      render(<NowCmdPalette />, { state: initialState });
+    it("shows 'Google Calendar Connected' when sync is healthy", () => {
+      render(<NowCmdPalette />, {
+        state: {
+          ...initialState,
+          auth: {
+            status: "idle",
+            error: null,
+            google: {
+              connectionStatus: "connected",
+              syncStatus: "healthy",
+            },
+          },
+        },
+      });
 
       expect(screen.getByText("Google Calendar Connected")).toBeInTheDocument();
       expect(
@@ -119,8 +137,27 @@ describe("NowCmdPalette", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("triggers login when 'Connect Google Calendar' is clicked and not authenticated", () => {
-      mockAuthenticated = false;
+    it("shows syncing label while Google repair is in progress", () => {
+      render(<NowCmdPalette />, {
+        state: {
+          ...initialState,
+          auth: {
+            status: "idle",
+            error: null,
+            google: {
+              connectionStatus: "connected",
+              syncStatus: "repairing",
+            },
+          },
+        },
+      });
+
+      expect(
+        screen.getByText("Syncing Google Calendar..."),
+      ).toBeInTheDocument();
+    });
+
+    it("triggers login when action is available", () => {
       render(<NowCmdPalette />, { state: initialState });
 
       fireEvent.click(screen.getByText("Connect Google Calendar"));
@@ -128,11 +165,22 @@ describe("NowCmdPalette", () => {
       expect(mockLogin).toHaveBeenCalled();
     });
 
-    it("does not trigger login when 'Google Calendar Connected' is clicked", () => {
-      mockAuthenticated = true;
-      render(<NowCmdPalette />, { state: initialState });
+    it("does not trigger login while syncing", () => {
+      render(<NowCmdPalette />, {
+        state: {
+          ...initialState,
+          auth: {
+            status: "idle",
+            error: null,
+            google: {
+              connectionStatus: "connected",
+              syncStatus: "repairing",
+            },
+          },
+        },
+      });
 
-      fireEvent.click(screen.getByText("Google Calendar Connected"));
+      fireEvent.click(screen.getByText("Syncing Google Calendar..."));
 
       expect(mockLogin).not.toHaveBeenCalled();
     });

@@ -64,6 +64,10 @@ export const createInitialState = (
     auth: {
       status: "idle",
       error: null,
+      google: {
+        connectionStatus: "not_connected",
+        syncStatus: "none",
+      },
     },
     events: {
       entities: { value: {} },

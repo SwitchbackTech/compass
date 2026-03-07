@@ -9,6 +9,10 @@ import {
 import { type UserMetadata } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
 import { handleGoogleRevoked } from "@web/auth/google/google.auth.util";
+import {
+  DEFAULT_GOOGLE_AUTH_STATUS,
+  authSlice,
+} from "@web/ducks/auth/slices/auth.slice";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { selectIsImportPending } from "@web/ducks/events/selectors/sync.selector";
 import {
@@ -84,6 +88,17 @@ export const useGcalSync = () => {
 
   const onMetadataFetch = useCallback(
     (metadata: UserMetadata) => {
+      dispatch(
+        authSlice.actions.setGoogleStatus({
+          connectionStatus:
+            metadata.google?.connectionStatus ??
+            DEFAULT_GOOGLE_AUTH_STATUS.connectionStatus,
+          syncStatus:
+            metadata.google?.syncStatus ??
+            DEFAULT_GOOGLE_AUTH_STATUS.syncStatus,
+        }),
+      );
+
       const importGcal = shouldImportGCal(metadata);
       const importStatus = metadata.sync?.importGCal;
       const isBackendImporting = importStatus === "importing";

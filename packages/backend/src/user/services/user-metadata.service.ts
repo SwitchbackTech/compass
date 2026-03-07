@@ -3,7 +3,14 @@ import SupertokensUserMetadata, {
   type JSONObject,
 } from "supertokens-node/recipe/usermetadata";
 import { type UserMetadata } from "@core/types/user.types";
+import mongoService from "@backend/common/services/mongo.service";
+import { getSync } from "@backend/sync/util/sync.queries";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import {
+  getGoogleConnectionStatus,
+  getGoogleSyncStatus,
+  hasHealthyGoogleSync,
+} from "@backend/user/services/google/google.status.util";
 
 class UserMetadataService {
   /*
@@ -46,14 +53,25 @@ class UserMetadataService {
     // Enrich with Google token status
     const user = await findCompassUserBy("_id", userId);
     const hasRefreshToken = Boolean(user?.google?.gRefreshToken);
-
     const typedMetadata = metadata as UserMetadata;
+    const connectionStatus = getGoogleConnectionStatus(user);
+    const sync = hasRefreshToken ? await getSync({ userId }) : null;
+    const watches = hasRefreshToken
+      ? await mongoService.watch.find({ user: userId }).toArray()
+      : [];
+    const syncStatus = getGoogleSyncStatus({
+      connectionStatus,
+      importStatus: typedMetadata.sync?.importGCal,
+      isHealthy: hasHealthyGoogleSync(sync, watches),
+    });
 
     return {
       ...typedMetadata,
       google: {
         ...typedMetadata.google,
         hasRefreshToken,
+        connectionStatus,
+        syncStatus,
       },
     };
   };

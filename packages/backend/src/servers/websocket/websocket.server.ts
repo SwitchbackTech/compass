@@ -31,6 +31,7 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import { SocketError } from "@backend/common/errors/socket/socket.errors";
 import { handleWsError } from "@backend/servers/websocket/websocket.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import googleSyncRepairService from "@backend/user/services/google/google.sync-repair.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 
 const logger = Logger("app:websocket.server");
@@ -79,8 +80,13 @@ class WebSocketServer {
     socket.on(
       FETCH_USER_METADATA,
       handleWsError(() =>
-        userMetadataService
-          .fetchUserMetadata(socket.data.session.getUserId())
+        googleSyncRepairService
+          .ensureRepairScheduled(socket.data.session.getUserId())
+          .then(() =>
+            userMetadataService.fetchUserMetadata(
+              socket.data.session.getUserId(),
+            ),
+          )
           .then((data) => this.handleUserMetadata(sessionId, data)),
       ),
     );

@@ -3,7 +3,6 @@ import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import * as useGoogleAuthModule from "@web/auth/hooks/oauth/useGoogleAuth";
-import * as useSessionModule from "@web/auth/hooks/session/useSession";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { keyPressed$ } from "@web/common/utils/dom/event-emitter.util";
 import * as eventUtil from "@web/common/utils/event/event.util";
@@ -246,15 +245,20 @@ describe("DayCmdPalette", () => {
       });
     });
 
-    it("shows 'Connect Google Calendar' when not authenticated", async () => {
-      jest.spyOn(useSessionModule, "useSession").mockReturnValue({
-        authenticated: false,
-        setAuthenticated: jest.fn(),
-      });
-
+    it("shows 'Connect Google Calendar' when metadata says not connected", async () => {
       await act(() =>
         render(<DayCmdPalette />, {
-          state: { settings: { isCmdPaletteOpen: true } },
+          state: {
+            settings: { isCmdPaletteOpen: true },
+            auth: {
+              status: "idle",
+              error: null,
+              google: {
+                connectionStatus: "not_connected",
+                syncStatus: "none",
+              },
+            },
+          },
         }),
       );
 
@@ -264,15 +268,20 @@ describe("DayCmdPalette", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("shows 'Google Calendar Connected' when authenticated", async () => {
-      jest.spyOn(useSessionModule, "useSession").mockReturnValue({
-        authenticated: true,
-        setAuthenticated: jest.fn(),
-      });
-
+    it("shows 'Google Calendar Connected' when metadata says healthy", async () => {
       await act(() =>
         render(<DayCmdPalette />, {
-          state: { settings: { isCmdPaletteOpen: true } },
+          state: {
+            settings: { isCmdPaletteOpen: true },
+            auth: {
+              status: "idle",
+              error: null,
+              google: {
+                connectionStatus: "connected",
+                syncStatus: "healthy",
+              },
+            },
+          },
         }),
       );
 
@@ -282,16 +291,41 @@ describe("DayCmdPalette", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("triggers login when 'Connect Google Calendar' is clicked and not authenticated", async () => {
-      jest.spyOn(useSessionModule, "useSession").mockReturnValue({
-        authenticated: false,
-        setAuthenticated: jest.fn(),
-      });
+    it("shows 'Reconnect Google Calendar' when token must be reconnected", async () => {
+      await act(() =>
+        render(<DayCmdPalette />, {
+          state: {
+            settings: { isCmdPaletteOpen: true },
+            auth: {
+              status: "idle",
+              error: null,
+              google: {
+                connectionStatus: "reconnect_required",
+                syncStatus: "none",
+              },
+            },
+          },
+        }),
+      );
 
+      expect(screen.getByText("Reconnect Google Calendar")).toBeInTheDocument();
+    });
+
+    it("triggers login when 'Connect Google Calendar' is clicked", async () => {
       const user = userEvent.setup();
       await act(() =>
         render(<DayCmdPalette />, {
-          state: { settings: { isCmdPaletteOpen: true } },
+          state: {
+            settings: { isCmdPaletteOpen: true },
+            auth: {
+              status: "idle",
+              error: null,
+              google: {
+                connectionStatus: "not_connected",
+                syncStatus: "none",
+              },
+            },
+          },
         }),
       );
 
@@ -303,21 +337,26 @@ describe("DayCmdPalette", () => {
       );
     });
 
-    it("does not trigger login when 'Google Calendar Connected' is clicked", async () => {
-      jest.spyOn(useSessionModule, "useSession").mockReturnValue({
-        authenticated: true,
-        setAuthenticated: jest.fn(),
-      });
-
+    it("does not trigger login when Google is repairing", async () => {
       const user = userEvent.setup();
       await act(() =>
         render(<DayCmdPalette />, {
-          state: { settings: { isCmdPaletteOpen: true } },
+          state: {
+            settings: { isCmdPaletteOpen: true },
+            auth: {
+              status: "idle",
+              error: null,
+              google: {
+                connectionStatus: "connected",
+                syncStatus: "repairing",
+              },
+            },
+          },
         }),
       );
 
       await act(() =>
-        user.click(screen.getByText("Google Calendar Connected")),
+        user.click(screen.getByText("Syncing Google Calendar...")),
       );
 
       expect(mockLogin).not.toHaveBeenCalled();

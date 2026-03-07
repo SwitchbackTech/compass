@@ -1,5 +1,6 @@
 import { toast } from "react-toastify";
 import { Origin } from "@core/constants/core.constants";
+import { FETCH_USER_METADATA } from "@core/constants/websocket.constants";
 import { markGoogleAsRevoked } from "@web/auth/google/google.auth.state";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
@@ -12,6 +13,7 @@ import {
   importGCalSlice,
   triggerFetch,
 } from "@web/ducks/events/slices/sync.slice";
+import { socket } from "@web/socket/client/socket.client";
 import { store } from "@web/store";
 
 export interface AuthenticateResult {
@@ -53,6 +55,12 @@ export const handleGoogleRevoked = () => {
   markGoogleAsRevoked();
 
   store.dispatch(authSlice.actions.resetAuth());
+  store.dispatch(
+    authSlice.actions.setGoogleStatus({
+      connectionStatus: "reconnect_required",
+      syncStatus: "none",
+    }),
+  );
   store.dispatch(importGCalSlice.actions.importing(false));
   store.dispatch(importGCalSlice.actions.setIsImportPending(false));
 
@@ -64,6 +72,7 @@ export const handleGoogleRevoked = () => {
   store.dispatch(
     triggerFetch({ reason: Sync_AsyncStateContextReason.GOOGLE_REVOKED }),
   );
+  socket.emit(FETCH_USER_METADATA);
 };
 
 /**

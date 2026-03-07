@@ -6,6 +6,7 @@ import {
   IMPORT_GCAL_START,
   USER_METADATA,
 } from "@core/constants/websocket.constants";
+import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import {
   selectImporting,
   selectIsImportPending,
@@ -47,6 +48,17 @@ jest.mock("@web/ducks/events/slices/sync.slice", () => ({
     actions: { resetIsFetchNeeded: jest.fn() },
   },
   triggerFetch: jest.fn(),
+}));
+jest.mock("@web/ducks/auth/slices/auth.slice", () => ({
+  DEFAULT_GOOGLE_AUTH_STATUS: {
+    connectionStatus: "not_connected",
+    syncStatus: "none",
+  },
+  authSlice: {
+    actions: {
+      setGoogleStatus: jest.fn(),
+    },
+  },
 }));
 // Mock shouldImportGCal util
 jest.mock("@core/util/event/event.util", () => ({
@@ -138,7 +150,20 @@ describe("useGcalSync", () => {
       renderHook(() => useGcalSync());
 
       // Simulate socket reconnecting while import is still running
-      metadataHandler?.({ sync: { importGCal: "importing" } });
+      metadataHandler?.({
+        sync: { importGCal: "importing" },
+        google: {
+          connectionStatus: "connected",
+          syncStatus: "repairing",
+        },
+      });
+
+      expect(mockDispatch).toHaveBeenCalledWith(
+        authSlice.actions.setGoogleStatus({
+          connectionStatus: "connected",
+          syncStatus: "repairing",
+        }),
+      );
 
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.importing(true),
@@ -158,7 +183,13 @@ describe("useGcalSync", () => {
 
       renderHook(() => useGcalSync());
 
-      metadataHandler?.({ sync: { importGCal: "completed" } });
+      metadataHandler?.({
+        sync: { importGCal: "completed" },
+        google: {
+          connectionStatus: "connected",
+          syncStatus: "healthy",
+        },
+      });
 
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.importing(false),
@@ -183,7 +214,13 @@ describe("useGcalSync", () => {
 
       renderHook(() => useGcalSync());
 
-      metadataHandler?.({ sync: { importGCal: "errored" } });
+      metadataHandler?.({
+        sync: { importGCal: "errored" },
+        google: {
+          connectionStatus: "connected",
+          syncStatus: "attention",
+        },
+      });
 
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.importing(false),
@@ -207,7 +244,13 @@ describe("useGcalSync", () => {
 
       renderHook(() => useGcalSync());
 
-      metadataHandler?.({ sync: { importGCal: "restart" } });
+      metadataHandler?.({
+        sync: { importGCal: "restart" },
+        google: {
+          connectionStatus: "connected",
+          syncStatus: "repairing",
+        },
+      });
 
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.request(undefined as never),
