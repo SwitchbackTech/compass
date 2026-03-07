@@ -59,11 +59,12 @@ Use this document to find the first files to inspect for common Compass changes.
 - Backend websocket server: `packages/backend/src/servers/websocket/websocket.server.ts`
 - Backend sync routes/services: `packages/backend/src/sync/sync.routes.config.ts`, `packages/backend/src/sync/services`
 
-## Users / Metadata / Waitlist
+## Users / Metadata / Priority
 
 - User queries/services: `packages/backend/src/user`
 - Priority feature: `packages/backend/src/priority`
-- Waitlist controllers/service/types: `packages/backend/src/waitlist`
+- User metadata service: `packages/backend/src/user/services/user-metadata.service.ts`
+- Mobile waitlist gate (web-only external link): `packages/web/src/components/MobileGate/MobileGate.tsx`
 
 ## Environment And Infra
 
