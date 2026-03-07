@@ -281,8 +281,9 @@ export const openSomedayEventFormWithKeyboard = async (page: Page) => {
   await blurActiveElement(page);
   await ensureSidebarOpen(page);
   await pressShortcut(page, "w");
-  // Wait for form to open
-  await getFormTitleInput(page).waitFor({
+  const somedayForm = page.locator('form[name="Someday Event Form"]');
+  await somedayForm.waitFor({ state: "visible", timeout: FORM_TIMEOUT });
+  await somedayForm.getByPlaceholder("Title").waitFor({
     state: "visible",
     timeout: FORM_TIMEOUT,
   });

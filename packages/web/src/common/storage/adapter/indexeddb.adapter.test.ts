@@ -12,14 +12,21 @@ import { LegacyCompassDB } from "./legacy-primary-key.migration";
 
 describe("IndexedDBAdapter", () => {
   let adapter: IndexedDBAdapter;
+  let consoleLogSpy: jest.SpyInstance;
+  let consoleWarnSpy: jest.SpyInstance;
 
   beforeEach(async () => {
+    consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
+    consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation();
     await clearCompassLocalDb();
     adapter = new IndexedDBAdapter();
   });
 
   afterEach(async () => {
+    adapter.close();
     await clearCompassLocalDb();
+    consoleLogSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
   });
 
   describe("initialize", () => {

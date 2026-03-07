@@ -150,11 +150,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
     }
 
     if (bulkInsert.batches.length > 0) {
-      const result = await bulkInsert.execute();
-
-      logger.info(
-        `Migrated ${result.insertedCount} events into ${collectionName}`,
-      );
+      await bulkInsert.execute();
     } else {
       logger.info(`No events to migrate into ${collectionName}`);
     }

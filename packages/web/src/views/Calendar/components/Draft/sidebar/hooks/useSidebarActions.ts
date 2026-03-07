@@ -359,6 +359,12 @@ export const useSidebarActions = (
       }),
     );
 
+    // For keyboard shortcuts, let handleChange() open the form from redux draft.
+    // This avoids opening the form through two different paths and makes "w" deterministic.
+    if (activity === "createShortcut") {
+      return;
+    }
+
     createDefaultSomeday();
   };
 

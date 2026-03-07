@@ -60,7 +60,6 @@ The CLI and database maintenance package. It owns:
 - build commands
 - delete flows
 - database migrations and seeders
-- waitlist invite tasks
 
 Entry point:
 

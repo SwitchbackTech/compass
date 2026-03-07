@@ -1,3 +1,4 @@
+import { act } from "react";
 import { renderHook } from "@testing-library/react";
 import { useIsMobile } from "./useIsMobile";
 
@@ -60,19 +61,21 @@ describe("useIsMobile", () => {
 
     // Simulate viewport change to mobile
     mockMediaQuery.matches = true;
-    if (changeHandler) {
-      changeHandler();
-    }
-    rerender();
+    act(() => {
+      if (changeHandler) {
+        changeHandler();
+      }
+    });
 
     expect(result.current).toBe(true);
 
     // Simulate viewport change back to desktop
     mockMediaQuery.matches = false;
-    if (changeHandler) {
-      changeHandler();
-    }
-    rerender();
+    act(() => {
+      if (changeHandler) {
+        changeHandler();
+      }
+    });
 
     expect(result.current).toBe(false);
   });

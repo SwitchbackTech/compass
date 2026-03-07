@@ -1,4 +1,3 @@
-import { type Event_Core } from "@core/types/event.types";
 import {
   ensureStorageReady,
   getStorageAdapter,

@@ -83,6 +83,13 @@ const button = container.querySelector('.add-button');
 
 Match existing test patterns in the repository. Review similar tests before writing new ones.
 
+Use `act` from `react`, not `react-testing-library`, to avoid warnings about updates not wrapped in `act`.
+Example:
+
+```
+import { act } from "react";
+```
+
 ## Summary
 
 - Run `yarn test:web`, `yarn test:backend`, or `yarn test:core` based on changes
