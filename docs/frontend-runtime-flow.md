@@ -73,6 +73,30 @@ Once a user has ever authenticated, the app records that fact in local auth-stat
 
 When a user re-authenticates with Google, auth-state utilities also clear any in-memory "Google revoked" flag so normal remote sync can resume.
 
+## Google OAuth Popup Cancellation Semantics
+
+Files:
+
+- `packages/web/src/auth/hooks/oauth/useGoogleAuth.ts`
+- `packages/web/src/components/oauth/google/useGoogleLogin.ts`
+- `packages/web/src/auth/google/google-oauth-error.util.ts`
+
+The web auth flow intentionally treats popup-close outcomes as cancellation, not authentication failure.
+
+Cancellation detection (`isGooglePopupClosedError`) returns true when any of these match:
+
+- `type === "popup_closed"`
+- `error`, `error_description`, or `message` equals `"popup_closed"` (case-insensitive)
+- `error`, `error_description`, or `message` contains `"popup window closed"` (case-insensitive)
+
+When cancellation is detected in the auth hooks:
+
+- auth state is reset (`resetAuth`)
+- import overlay/progress flags are cleared (`setIsImportPending(false)`, `importing(false)`)
+- generic auth failure state is not dispatched for that event
+
+For non-cancellation errors, normal auth-failure handling still applies.
+
 ## User Bootstrap
 
 File:
