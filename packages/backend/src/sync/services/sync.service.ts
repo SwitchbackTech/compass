@@ -321,7 +321,13 @@ class SyncService {
     try {
       webSocketServer.handleImportGCalStart(userId);
 
-      const userMeta = await userMetadataService.fetchUserMetadata(userId);
+      const userMeta = await userMetadataService.fetchUserMetadata(
+        userId,
+        undefined,
+        {
+          skipAssessment: true,
+        },
+      );
       const proceed = shouldDoIncrementalGCalSync(userMeta);
 
       if (!proceed) {

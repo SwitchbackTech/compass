@@ -211,8 +211,26 @@ class UserMetadataService {
   fetchUserMetadata = async (
     userId: string,
     userContext?: Record<string, JSONObject>,
+    options?: { skipAssessment?: boolean },
   ): Promise<UserMetadata> => {
     const metadata = await this.getStoredUserMetadata(userId, userContext);
+
+    if (options?.skipAssessment) {
+      const user = await findCompassUserBy("_id", userId);
+      const hasRefreshToken = Boolean(user?.google?.gRefreshToken);
+      const connectionStatus = this.getGoogleConnectionStatus(user);
+
+      return {
+        ...metadata,
+        google: {
+          ...metadata.google,
+          hasRefreshToken,
+          connectionStatus,
+          syncStatus: metadata.google?.syncStatus ?? "none",
+        },
+      };
+    }
+
     const google = await this.assessGoogleMetadata(userId, metadata);
 
     return {
