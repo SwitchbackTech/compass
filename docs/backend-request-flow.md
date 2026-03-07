@@ -57,6 +57,12 @@ The backend decorates `res` with `res.promise(...)` so controllers can pass:
 
 Errors funnel through shared Express error handling.
 
+Important response convention:
+
+- controllers can return `{ statusCode: 204 }` to emit a true empty `204 No Content` response
+- this is handled centrally in `promise.middleware.ts` (status-only payload special case)
+- avoids duplicating `res.status(...).send()` patterns in controllers
+
 ## Event Request Example
 
 Files:
@@ -72,7 +78,14 @@ For `POST /api/event`:
 3. controller adds the authenticated user id
 4. controller normalizes single vs array payloads
 5. controller forwards the change set to `CompassSyncProcessor`
-6. processor persists and syncs changes, then notifies clients
+6. controller returns a status-only payload (`{ statusCode: 204 }`) through `res.promise(...)`
+7. processor persists and syncs changes, then notifies clients
+
+`PUT /api/event/:id` and `DELETE /api/event/:id` follow the same write pattern:
+
+- route-level auth + Google connection guards
+- thin controller shaping into `CompassEvent`
+- `res.promise(...)`-based response and centralized error routing
 
 ## Common Auth Guards
 
