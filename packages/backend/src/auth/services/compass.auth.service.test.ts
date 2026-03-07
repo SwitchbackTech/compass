@@ -59,5 +59,38 @@ describe("CompassAuthService", () => {
 
       restartSpy.mockRestore();
     });
+
+    it("returns after persisting reconnect state even if the background sync fails", async () => {
+      const user = await UserDriver.createUser();
+      const sessionUserId = user._id.toString();
+      const gUser = UserDriver.generateGoogleUser({
+        sub: faker.string.uuid(),
+        picture: faker.image.url(),
+      });
+      const oAuthTokens: Pick<Credentials, "access_token" | "refresh_token"> = {
+        access_token: faker.internet.jwt(),
+        refresh_token: faker.string.uuid(),
+      };
+      const restartError = new Error("sync failed");
+      const restartSpy = jest
+        .spyOn(userService, "restartGoogleCalendarSync")
+        .mockRejectedValue(restartError);
+
+      await userService.pruneGoogleData(sessionUserId);
+
+      await expect(
+        compassAuthService.reconnectGoogleForSession(
+          sessionUserId,
+          gUser,
+          oAuthTokens,
+        ),
+      ).resolves.toEqual({ cUserId: sessionUserId });
+
+      await Promise.resolve();
+
+      expect(restartSpy).toHaveBeenCalledWith(sessionUserId);
+
+      restartSpy.mockRestore();
+    });
   });
 });
