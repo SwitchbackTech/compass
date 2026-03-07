@@ -84,6 +84,45 @@ Avoid:
 - implementation-detail assertions
 - unnecessary module-wide mocks
 
+### Warning-Free React Updates
+
+When a test drives React state updates outside simple one-off interactions, wrap the update sequence in `act` imported from `react`.
+
+```tsx
+import { act } from "react";
+```
+
+Use this pattern for:
+
+- grouped `user-event` interactions that trigger multiple updates
+- manual callback triggers (for example `matchMedia` change handlers)
+- awaiting async values returned from spies before asserting final UI state
+
+Example:
+
+```tsx
+await act(async () => {
+  await user.type(screen.getByLabelText(/email/i), "invalid");
+  await user.tab();
+});
+```
+
+### Route-Aware Component Tests
+
+For components that depend on routing context (`Outlet`, nested routes, route transitions), prefer the shared memory-router helper:
+
+- `packages/web/src/__tests__/utils/providers/MemoryRouter.tsx`
+
+Pass `initialEntries` when asserting nested or non-root routes.
+
+### Global And Console Cleanup
+
+If a test overrides globals (for example `window.location` or `window.indexedDB`) or spies on `console.*`, always restore them in teardown (`afterEach`/`afterAll`) to prevent cross-test leakage and noisy output.
+
+### Jest Unbound-Method Rule In Tests
+
+Test linting enforces `jest/unbound-method`. If you need to assert method calls on non-mock objects, spy on the method first so assertions are bound to a Jest mock/spy.
+
 Useful anchors:
 
 - `packages/web/src/__tests__`
