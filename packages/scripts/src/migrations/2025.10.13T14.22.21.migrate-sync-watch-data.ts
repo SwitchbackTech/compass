@@ -45,8 +45,6 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       { batchSize: MONGO_BATCH_SIZE },
     );
 
-    let migratedCount = 0;
-
     for await (const syncDoc of cursor) {
       if ((syncDoc?.google?.events?.length ?? 0) < 1) continue;
 
@@ -119,17 +117,11 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       ]);
 
       if (watchDocuments.length > 0) {
-        const result = await mongoService.watch.insertMany(watchDocuments, {
+        await mongoService.watch.insertMany(watchDocuments, {
           ordered: false,
         });
-
-        migratedCount += result.insertedCount;
       }
     }
-
-    logger.info(
-      `Migrated ${migratedCount} events watch channels to watch collection`,
-    );
   }
 
   async down(params: MigrationParams<MigrationContext>): Promise<void> {

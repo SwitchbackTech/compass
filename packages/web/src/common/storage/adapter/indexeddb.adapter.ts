@@ -113,6 +113,11 @@ export class IndexedDBAdapter implements StorageAdapter {
     return this.initialized && this.db.isOpen();
   }
 
+  close(): void {
+    this.db.close();
+    this.initialized = false;
+  }
+
   // ─── Task Operations ───────────────────────────────────────────────────────
 
   async getTasks(dateKey: string): Promise<Task[]> {

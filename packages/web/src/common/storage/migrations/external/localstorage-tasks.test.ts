@@ -163,6 +163,8 @@ describe("localStorageTasksMigration", () => {
   });
 
   it("skips invalid JSON entries and keeps them for retry", async () => {
+    jest.spyOn(console, "error").mockImplementation(() => {});
+
     const validTask = createMockTask({ _id: "task-1" });
     const dateKey = "2025-01-15";
     const validKey = `${TASK_KEY_PREFIX}${dateKey}`;

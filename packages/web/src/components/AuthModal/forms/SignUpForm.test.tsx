@@ -1,5 +1,6 @@
+import { act } from "react";
 import "@testing-library/jest-dom";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SignUpForm } from "./SignUpForm";
 
@@ -28,8 +29,10 @@ describe("SignUpForm", () => {
       renderSignUpForm();
 
       const emailInput = screen.getByLabelText(/email/i);
-      await user.click(emailInput);
-      await user.type(emailInput, "invalid");
+      await act(async () => {
+        await user.click(emailInput);
+        await user.type(emailInput, "invalid");
+      });
 
       expect(
         screen.queryByText(/please enter a valid email address/i),
@@ -40,28 +43,28 @@ describe("SignUpForm", () => {
       const user = userEvent.setup();
       renderSignUpForm();
 
-      await user.type(screen.getByLabelText(/email/i), "invalid-email");
-      await user.tab();
-
-      await waitFor(() => {
-        expect(
-          screen.getByText(/please enter a valid email address/i),
-        ).toBeInTheDocument();
+      await act(async () => {
+        await user.type(screen.getByLabelText(/email/i), "invalid-email");
+        await user.tab();
       });
+
+      expect(
+        screen.getByText(/please enter a valid email address/i),
+      ).toBeInTheDocument();
     });
 
     it("shows password error only after blur", async () => {
       const user = userEvent.setup();
       renderSignUpForm();
 
-      await user.type(screen.getByLabelText(/password/i), "short");
-      await user.tab();
-
-      await waitFor(() => {
-        expect(
-          screen.getByText(/password must be at least 8 characters/i),
-        ).toBeInTheDocument();
+      await act(async () => {
+        await user.type(screen.getByLabelText(/password/i), "short");
+        await user.tab();
       });
+
+      expect(
+        screen.getByText(/password must be at least 8 characters/i),
+      ).toBeInTheDocument();
     });
 
     it("clears error when user types after blur", async () => {
@@ -69,50 +72,54 @@ describe("SignUpForm", () => {
       renderSignUpForm();
 
       const passwordInput = screen.getByLabelText(/password/i);
-      await user.type(passwordInput, "short");
-      await user.tab();
-
-      await waitFor(() => {
-        expect(
-          screen.getByText(/password must be at least 8 characters/i),
-        ).toBeInTheDocument();
+      await act(async () => {
+        await user.type(passwordInput, "short");
+        await user.tab();
       });
 
-      await user.click(passwordInput);
-      await user.type(passwordInput, "er123456");
+      expect(
+        screen.getByText(/password must be at least 8 characters/i),
+      ).toBeInTheDocument();
 
-      await waitFor(() => {
-        expect(
-          screen.queryByText(/password must be at least 8 characters/i),
-        ).not.toBeInTheDocument();
+      await act(async () => {
+        await user.click(passwordInput);
+        await user.type(passwordInput, "er123456");
       });
+
+      expect(
+        screen.queryByText(/password must be at least 8 characters/i),
+      ).not.toBeInTheDocument();
     });
   });
 
   describe("submit validation", () => {
-    it("shows all field errors when submitting empty form", async () => {
+    it("shows all field errors when submitting empty form", () => {
       renderSignUpForm();
 
       const form = screen.getByLabelText(/name/i).closest("form");
-      if (form) fireEvent.submit(form);
-
-      await waitFor(() => {
-        expect(screen.getByText(/name is required/i)).toBeInTheDocument();
-        expect(screen.getByText(/email is required/i)).toBeInTheDocument();
-        expect(screen.getByText(/password is required/i)).toBeInTheDocument();
+      act(() => {
+        if (form) form.requestSubmit();
       });
+
+      expect(screen.getByText(/name is required/i)).toBeInTheDocument();
+      expect(screen.getByText(/email is required/i)).toBeInTheDocument();
+      expect(screen.getByText(/password is required/i)).toBeInTheDocument();
     });
 
     it("does not call onSubmit when form is invalid", async () => {
       const user = userEvent.setup();
       renderSignUpForm();
 
-      await user.type(screen.getByLabelText(/name/i), "Alex");
-      await user.type(screen.getByLabelText(/email/i), "invalid");
-      await user.type(screen.getByLabelText(/password/i), "short");
+      await act(async () => {
+        await user.type(screen.getByLabelText(/name/i), "Alex");
+        await user.type(screen.getByLabelText(/email/i), "invalid");
+        await user.type(screen.getByLabelText(/password/i), "short");
+      });
 
       const form = screen.getByLabelText(/name/i).closest("form");
-      if (form) fireEvent.submit(form);
+      act(() => {
+        if (form) form.requestSubmit();
+      });
 
       expect(mockOnSubmit).not.toHaveBeenCalled();
     });
@@ -121,17 +128,17 @@ describe("SignUpForm", () => {
       const user = userEvent.setup();
       renderSignUpForm();
 
-      await user.type(screen.getByLabelText(/name/i), "Alex Smith");
-      await user.type(screen.getByLabelText(/email/i), "alex@example.com");
-      await user.type(screen.getByLabelText(/password/i), "securepass123");
-      await user.click(screen.getByRole("button", { name: /sign up/i }));
+      await act(async () => {
+        await user.type(screen.getByLabelText(/name/i), "Alex Smith");
+        await user.type(screen.getByLabelText(/email/i), "alex@example.com");
+        await user.type(screen.getByLabelText(/password/i), "securepass123");
+        await user.click(screen.getByRole("button", { name: /sign up/i }));
+      });
 
-      await waitFor(() => {
-        expect(mockOnSubmit).toHaveBeenCalledWith({
-          name: "Alex Smith",
-          email: "alex@example.com",
-          password: "securepass123",
-        });
+      expect(mockOnSubmit).toHaveBeenCalledWith({
+        name: "Alex Smith",
+        email: "alex@example.com",
+        password: "securepass123",
       });
     });
 
@@ -139,23 +146,26 @@ describe("SignUpForm", () => {
       const user = userEvent.setup();
       renderSignUpForm();
 
-      await user.type(screen.getByLabelText(/name/i), "  Alex  ");
-      await user.type(screen.getByLabelText(/email/i), "  Alex@Example.COM  ");
-      await user.type(screen.getByLabelText(/password/i), "password123");
-      await user.click(screen.getByRole("button", { name: /sign up/i }));
+      await act(async () => {
+        await user.type(screen.getByLabelText(/name/i), "  Alex  ");
+        await user.type(
+          screen.getByLabelText(/email/i),
+          "  Alex@Example.COM  ",
+        );
+        await user.type(screen.getByLabelText(/password/i), "password123");
+        await user.click(screen.getByRole("button", { name: /sign up/i }));
+      });
 
-      await waitFor(() => {
-        expect(mockOnSubmit).toHaveBeenCalledWith({
-          name: "Alex",
-          email: "alex@example.com",
-          password: "password123",
-        });
+      expect(mockOnSubmit).toHaveBeenCalledWith({
+        name: "Alex",
+        email: "alex@example.com",
+        password: "password123",
       });
     });
   });
 
   describe("submit button state", () => {
-    it("disables submit when form is invalid", async () => {
+    it("disables submit when form is invalid", () => {
       renderSignUpForm();
 
       const submitButton = screen.getByRole("button", {
@@ -168,9 +178,11 @@ describe("SignUpForm", () => {
       const user = userEvent.setup();
       renderSignUpForm();
 
-      await user.type(screen.getByLabelText(/name/i), "Alex");
-      await user.type(screen.getByLabelText(/email/i), "alex@example.com");
-      await user.type(screen.getByLabelText(/password/i), "password123");
+      await act(async () => {
+        await user.type(screen.getByLabelText(/name/i), "Alex");
+        await user.type(screen.getByLabelText(/email/i), "alex@example.com");
+        await user.type(screen.getByLabelText(/password/i), "password123");
+      });
 
       const submitButton = screen.getByRole("button", {
         name: /sign up/i,
@@ -184,7 +196,9 @@ describe("SignUpForm", () => {
       const user = userEvent.setup();
       renderSignUpForm();
 
-      await user.type(screen.getByLabelText(/name/i), "Alex");
+      await act(async () => {
+        await user.type(screen.getByLabelText(/name/i), "Alex");
+      });
 
       expect(mockOnNameChange).toHaveBeenCalledWith("A");
       expect(mockOnNameChange).toHaveBeenCalledWith("Al");
