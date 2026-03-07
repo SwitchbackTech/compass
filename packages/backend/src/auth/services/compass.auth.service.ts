@@ -108,9 +108,15 @@ class CompassAuthService {
         );
       }
 
-      await userService.restartGoogleCalendarSync(cUser.userId);
-
       return { cUserId: cUser.userId };
+    });
+
+    // Fire-and-forget: full calendar import can exceed MongoDB transaction timeout (60s)
+    userService.restartGoogleCalendarSync(user.cUserId).catch((err) => {
+      logger.error(
+        `Something went wrong with starting calendar sync for user ${user.cUserId}`,
+        err,
+      );
     });
 
     return user;
