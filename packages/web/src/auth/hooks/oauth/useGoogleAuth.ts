@@ -1,5 +1,6 @@
 import { batch } from "react-redux";
 import { toast } from "react-toastify";
+import { isGooglePopupClosedError } from "@web/auth/google/google-oauth-error.util";
 import {
   authenticate,
   syncLocalEvents,
@@ -15,6 +16,7 @@ import {
 import {
   authError,
   authSuccess,
+  resetAuth,
   startAuthenticating,
 } from "@web/ducks/auth/slices/auth.slice";
 import {
@@ -96,6 +98,13 @@ export function useGoogleAuth() {
       }
     },
     onError: (error) => {
+      if (isGooglePopupClosedError(error)) {
+        dispatch(resetAuth());
+        dispatch(importGCalSlice.actions.setIsImportPending(false));
+        dispatch(importGCalSlice.actions.importing(false));
+        return;
+      }
+
       console.error(error);
       dispatch(
         authError(

@@ -1,8 +1,10 @@
+import { resetStorageAsync } from "@web/common/storage/adapter/adapter";
 import { DEMO_DATA_SEED_FLAG_KEY } from "@web/common/storage/migrations/external/demo-data-seed";
 
 const COMPASS_LOCAL_DB_NAME = "compass-local";
 
 export async function clearCompassLocalDb(): Promise<void> {
+  await resetStorageAsync();
   await new Promise<void>((resolve) => {
     const request = indexedDB.deleteDatabase(COMPASS_LOCAL_DB_NAME);
     request.onsuccess = () => resolve();

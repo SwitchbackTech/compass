@@ -9,7 +9,6 @@ import {
 import dayjs from "@core/util/date/dayjs";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { createMockStorageAdapter } from "@web/__tests__/utils/storage/mock-storage-adapter.util";
-import { type Task } from "@web/common/types/task.types";
 import {
   GridEventSchema,
   type Schema_GridEvent,
@@ -19,6 +18,10 @@ import { demoDataSeedMigration } from "./demo-data-seed";
 describe("demoDataSeedMigration", () => {
   beforeEach(() => {
     jest.spyOn(console, "log").mockImplementation(() => {});
+    jest.spyOn(console, "warn").mockImplementation(() => {});
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    jest.spyOn(console, "info").mockImplementation(() => {});
+    jest.spyOn(console, "debug").mockImplementation(() => {});
   });
 
   afterEach(() => {

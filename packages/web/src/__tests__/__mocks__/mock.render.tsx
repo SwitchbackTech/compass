@@ -2,7 +2,6 @@ import {
   type ComponentType,
   type PropsWithChildren,
   type ReactElement,
-  isValidElement,
 } from "react";
 import { RouterProvider, type RouterProviderProps } from "react-router-dom";
 import { configureStore } from "@reduxjs/toolkit";
@@ -50,12 +49,6 @@ const TestProviders = (props?: {
       );
     }
 
-    if (isValidElement(children)) {
-      console.warn(
-        "When providing a router, children is not a valid option and will be ignored.",
-      );
-    }
-
     return (
       <div id={ID_ROOT} data-testid={ID_ROOT}>
         <CompassRequiredProviders store={props?.store}>
@@ -91,6 +84,7 @@ const customRender = (
 
   const options: RenderOptions = { ...renderOptions };
   const BaseProviders = TestProviders({ store, router });
+  const renderUi = router ? <></> : ui;
 
   const Wrapper = ({ children }: PropsWithChildren) => {
     if (!CustomWrapper) return <BaseProviders>{children}</BaseProviders>;
@@ -103,7 +97,7 @@ const customRender = (
   };
 
   // wraps test component with providers
-  return render(ui, {
+  return render(renderUi, {
     wrapper: Wrapper,
     ...options,
   });

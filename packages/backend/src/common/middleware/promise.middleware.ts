@@ -27,10 +27,7 @@ const sendResponse = (res: express.Response, data: unknown) => {
     return;
   }
 
-  if (
-    isStatusOnlyPayload(data) &&
-    (data.statusCode as Status) === Status.NO_CONTENT
-  ) {
+  if (isStatusOnlyPayload(data) && data.statusCode === Status.NO_CONTENT) {
     res.status(Status.NO_CONTENT).send();
     return;
   }

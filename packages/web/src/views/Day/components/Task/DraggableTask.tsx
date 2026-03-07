@@ -16,15 +16,6 @@ export function DraggableTask({
   index: number;
   tasksProps: ReturnType<typeof useTasks>;
 }) {
-  const { refs, floatingStyles, update } = useFloating({
-    open: true,
-    whileElementsMounted: autoUpdate,
-    strategy: "fixed",
-    placement: "left",
-    transform: false,
-    middleware: [offset(8), inline({})],
-  });
-
   const {
     tasks,
     editingTaskId,
@@ -32,19 +23,29 @@ export function DraggableTask({
     setSelectedTaskIndex,
     onCheckboxKeyDown,
     onInputBlur,
-    focusOnInput,
     onInputClick,
     onInputKeyDown,
     onTitleChange,
     onStatusToggle,
     migrateTask,
   } = tasksProps;
+  const isDragHandleVisible = tasks.length > 1;
+  const isFloatingEnabled = isDragHandleVisible;
+
+  const { refs, floatingStyles } = useFloating({
+    open: isFloatingEnabled,
+    whileElementsMounted: autoUpdate,
+    strategy: "fixed",
+    placement: "left",
+    transform: false,
+    middleware: [offset(8), inline({})],
+  });
 
   return (
     <Draggable
       draggableId={task._id}
       index={index}
-      isDragDisabled={tasks.length === 1}
+      isDragDisabled={!isDragHandleVisible}
       disableInteractiveElementBlocking
     >
       {(draggableProvider, draggableSnapshot) => (
@@ -59,15 +60,14 @@ export function DraggableTask({
           )}
           ref={(e) => {
             draggableProvider.innerRef(e);
-            refs.setReference(e);
-            update();
+            refs.setReference(isFloatingEnabled ? e : null);
           }}
         >
-          {tasks.length > 1 ? (
+          {isDragHandleVisible ? (
             <button
               {...draggableProvider.dragHandleProps}
-              ref={refs.setFloating}
-              style={floatingStyles}
+              ref={isFloatingEnabled ? refs.setFloating : undefined}
+              style={isFloatingEnabled ? floatingStyles : undefined}
               aria-label={`Reorder ${task.title}`}
               aria-describedby={`description-${task._id}`}
               onFocus={() => setSelectedTaskIndex(index)}

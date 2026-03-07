@@ -1,16 +1,19 @@
 import "@testing-library/jest-dom";
 import { screen, within } from "@testing-library/react";
+import { prepareEmptyStorageForTests } from "@web/__tests__/utils/storage/indexeddb.test.util";
+import { waitForTaskListReady } from "@web/__tests__/utils/tasks/task.test.util";
 import { getModifierKeyTestId } from "@web/common/utils/shortcut/shortcut.util";
-import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
+import { renderWithDayProvidersAsync } from "@web/views/Day/util/day.test-util";
 import { DayViewContent } from "@web/views/Day/view/DayViewContent";
 
 describe("DayView", () => {
-  beforeEach(() => {
-    localStorage.clear();
+  beforeEach(async () => {
+    await prepareEmptyStorageForTests();
   });
 
   it("should render TaskList component", async () => {
-    renderWithDayProviders(<DayViewContent />);
+    await renderWithDayProvidersAsync(<DayViewContent />);
+    await waitForTaskListReady();
 
     const taskpanel = await screen.findByRole("region", {
       name: "daily-tasks",
@@ -20,13 +23,15 @@ describe("DayView", () => {
   });
 
   it("should render CalendarAgenda component", async () => {
-    renderWithDayProviders(<DayViewContent />);
+    await renderWithDayProvidersAsync(<DayViewContent />);
+    await waitForTaskListReady();
 
     expect(await screen.findByTestId("calendar-scroll")).toBeInTheDocument();
   });
 
   it("should render command palette shortcut", async () => {
-    renderWithDayProviders(<DayViewContent />);
+    await renderWithDayProvidersAsync(<DayViewContent />);
+    await waitForTaskListReady();
 
     // Check that CMD+K shortcut is displayed in the shortcuts overlay
     expect(await screen.findByText("Global")).toBeInTheDocument();
