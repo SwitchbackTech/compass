@@ -43,11 +43,9 @@ export async function runDataMigrations(
       continue;
     }
 
-    console.log(`[Migration] Running data migration: ${migration.id}`);
     try {
       await migration.migrate(adapter);
       await adapter.setMigrationRecord(migration.id);
-      console.log(`[Migration] Completed: ${migration.id}`);
     } catch (error) {
       console.error(`[Migration] Failed: ${migration.id}`, error);
       throw error; // Data migrations are critical - fail fast
@@ -76,7 +74,6 @@ export async function runExternalMigrations(
       continue;
     }
 
-    console.log(`[Migration] Running external migration: ${migration.id}`);
     try {
       await migration.migrate(adapter);
       const isComplete = migration.isComplete
@@ -89,7 +86,6 @@ export async function runExternalMigrations(
       }
 
       localStorage.setItem(flagKey, "completed");
-      console.log(`[Migration] Completed: ${migration.id}`);
     } catch (error) {
       // External migrations are non-blocking - data stays in source for retry
       console.error(

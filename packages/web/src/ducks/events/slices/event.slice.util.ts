@@ -12,8 +12,6 @@ export const insert = (
 ): void => {
   // payload is the event id
   if (state.value === null || state.value === undefined) {
-    console.warn("warning: state.value is not initialized, initializing...");
-
     state.value = {
       count: 1,
       pageSize: 1,

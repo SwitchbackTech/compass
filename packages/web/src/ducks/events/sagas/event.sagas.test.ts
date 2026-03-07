@@ -19,12 +19,23 @@ import {
   createEventSlice,
   editEventSlice,
 } from "@web/ducks/events/slices/event.slice";
-import { type RootState } from "@web/store";
 import { sagas } from "@web/store/sagas";
 import { OnSubmitParser } from "@web/views/Calendar/components/Draft/hooks/actions/submit.parser";
 
 jest.mock("@web/ducks/events/event.api");
 jest.mock("@web/common/classes/Session");
+
+beforeEach(() => {
+  jest.spyOn(console, "log").mockImplementation(() => {});
+  jest.spyOn(console, "warn").mockImplementation(() => {});
+  jest.spyOn(console, "error").mockImplementation(() => {});
+  jest.spyOn(console, "info").mockImplementation(() => {});
+  jest.spyOn(console, "debug").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
+});
 
 describe("createEvent saga - optimistic rendering", () => {
   let store: ReturnType<typeof createStoreWithEvents>;

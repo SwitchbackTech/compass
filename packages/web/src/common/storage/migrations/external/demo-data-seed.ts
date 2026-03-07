@@ -239,9 +239,6 @@ export const demoDataSeedMigration: ExternalMigration = {
     const existingTasks = await adapter.getAllTasks();
 
     if (existingEvents.length > 0 || existingTasks.length > 0) {
-      console.log(
-        "[Migration] Skipping demo data seed - user has existing data",
-      );
       return;
     }
 
@@ -254,10 +251,5 @@ export const demoDataSeedMigration: ExternalMigration = {
     for (const [dateKey, tasks] of Object.entries(demoData.tasks)) {
       await adapter.putTasks(dateKey, tasks);
     }
-
-    console.log(
-      `[Migration] Seeded demo data: ${demoData.events.length} events, ` +
-        `${Object.values(demoData.tasks).flat().length} tasks`,
-    );
   },
 };
