@@ -200,7 +200,12 @@ class CompassAuthService {
           data: { sync: { importGCal: "restart" } },
         });
 
-        await userService.restartGoogleCalendarSync(cUserId);
+        userService.restartGoogleCalendarSync(cUserId).catch((err) => {
+          logger.error(
+            `Something went wrong with starting calendar sync for user ${cUserId}`,
+            err,
+          );
+        });
       } else {
         logger.error("Error during incremental sync:", e);
       }
