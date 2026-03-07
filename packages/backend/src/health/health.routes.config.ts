@@ -20,7 +20,8 @@ export class HealthRoutes extends CommonRoutesConfig {
      * Health check endpoint that verifies basic system connectivity
      *
      * @returns {Object} Health status with timestamp
-     * @returns {200} OK - Always returns 200, verifies database connectivity
+     * @returns {200} OK - Database is reachable
+     * @returns {500} Internal Server Error - Database is unreachable
      */
     this.app.route(`/api/health`).get(healthController.check);
 

@@ -4,6 +4,7 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import mongoService from "@backend/common/services/mongo.service";
 
 describe("HealthController", () => {
   const baseDriver = new BaseDriver();
@@ -81,6 +82,26 @@ describe("HealthController", () => {
       });
     });
 
+    it("should return 500 when database connectivity check fails", async () => {
+      const pingSpy = jest
+        .spyOn(Object.getPrototypeOf(mongoService.db.admin()), "ping")
+        .mockRejectedValue(new Error("database unavailable"));
+
+      try {
+        const response = await baseDriver
+          .getServer()
+          .get("/api/health")
+          .expect(Status.INTERNAL_SERVER);
+
+        expect(response.body).toEqual({
+          status: "error",
+          timestamp: expect.any(String),
+        });
+      } finally {
+        pingSpy.mockRestore();
+      }
+    });
+
     it("should return consistent response structure", async () => {
       const response = await baseDriver
         .getServer()
@@ -103,10 +124,7 @@ describe("HealthController", () => {
           .expect(Status.OK)
           .catch((error) => {
             // Retry once on connection error
-            return baseDriver
-              .getServer()
-              .get("/api/health")
-              .expect(Status.OK);
+            return baseDriver.getServer().get("/api/health").expect(Status.OK);
           }),
       );
 
