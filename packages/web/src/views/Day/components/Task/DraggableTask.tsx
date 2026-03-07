@@ -30,8 +30,7 @@ export function DraggableTask({
     migrateTask,
   } = tasksProps;
   const isDragHandleVisible = tasks.length > 1;
-  const isFloatingEnabled =
-    isDragHandleVisible && process.env.NODE_ENV !== "test";
+  const isFloatingEnabled = isDragHandleVisible;
 
   const { refs, floatingStyles } = useFloating({
     open: isFloatingEnabled,
@@ -61,9 +60,7 @@ export function DraggableTask({
           )}
           ref={(e) => {
             draggableProvider.innerRef(e);
-            if (process.env.NODE_ENV !== "test") {
-              refs.setReference(isFloatingEnabled ? e : null);
-            }
+            refs.setReference(isFloatingEnabled ? e : null);
           }}
         >
           {isDragHandleVisible ? (
