@@ -5,6 +5,7 @@ import {
 } from "@web/auth/google/google.auth.util";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
 import { useSession } from "@web/auth/hooks/session/useSession";
+import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
 import { markUserAsAuthenticated } from "@web/auth/state/auth.state.util";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
 import { type SignInUpInput } from "@web/components/oauth/ouath.types";
@@ -12,6 +13,7 @@ import { type SignInUpInput } from "@web/components/oauth/ouath.types";
 // Mock dependencies
 jest.mock("@web/auth/google/google.auth.util");
 jest.mock("@web/auth/hooks/session/useSession");
+jest.mock("@web/auth/session/user-metadata.util");
 jest.mock("@web/components/oauth/google/useGoogleLogin");
 jest.mock("@web/auth/state/auth.state.util");
 jest.mock("@web/store/store.hooks", () => ({
@@ -38,8 +40,13 @@ const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
 const mockUseGoogleLogin = useGoogleLogin as jest.MockedFunction<
   typeof useGoogleLogin
 >;
-const mockUseAppDispatch = jest.requireMock("@web/store/store.hooks")
-  .useAppDispatch as jest.Mock;
+const mockRefreshUserMetadata = refreshUserMetadata as jest.MockedFunction<
+  typeof refreshUserMetadata
+>;
+const storeHooksMock = jest.requireMock("@web/store/store.hooks") as {
+  useAppDispatch: jest.Mock;
+};
+const mockUseAppDispatch = storeHooksMock.useAppDispatch;
 const mockMarkUserAsAuthenticated =
   markUserAsAuthenticated as jest.MockedFunction<
     typeof markUserAsAuthenticated
@@ -64,6 +71,7 @@ describe("useGoogleAuth", () => {
     });
     mockAuthenticate.mockResolvedValue({ success: true });
     mockSyncLocalEvents.mockResolvedValue({ syncedCount: 0, success: true });
+    mockRefreshUserMetadata.mockResolvedValue();
   });
 
   afterEach(() => {
@@ -141,6 +149,7 @@ describe("useGoogleAuth", () => {
 
     expect(mockMarkUserAsAuthenticated).toHaveBeenCalled();
     expect(mockSetAuthenticated).toHaveBeenCalledWith(true);
+    expect(mockRefreshUserMetadata).toHaveBeenCalledTimes(1);
   });
 
   describe("onStart callback", () => {

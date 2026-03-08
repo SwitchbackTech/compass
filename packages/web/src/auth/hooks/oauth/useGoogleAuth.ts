@@ -7,6 +7,7 @@ import {
 } from "@web/auth/google/google.auth.util";
 import { useGoogleAuthWithOverlay } from "@web/auth/hooks/oauth/useGoogleAuthWithOverlay";
 import { useSession } from "@web/auth/hooks/session/useSession";
+import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
 import { markUserAsAuthenticated } from "@web/auth/state/auth.state.util";
 import { toastDefaultOptions } from "@web/common/constants/toast.constants";
 import {
@@ -54,6 +55,7 @@ export function useGoogleAuth() {
         markUserAsAuthenticated();
 
         setAuthenticated(true);
+        void refreshUserMetadata();
 
         // Batch these dispatches to ensure they update in the same render cycle,
         // preventing a flash where isAuthenticating=false but importing=false

@@ -22,6 +22,7 @@ import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import * as socket from "@web/socket/provider/SocketProvider";
 import { store } from "@web/store";
 import { type CompassSession } from "./session.types";
+import { refreshUserMetadata } from "./user-metadata.util";
 
 SuperTokens.init({
   appInfo: {
@@ -65,6 +66,9 @@ async function checkIfSessionExists(): Promise<boolean> {
     // will be properly marked, and the flag persists even if their session expires later.
     if (exists) {
       markUserAsAuthenticated();
+      void refreshUserMetadata();
+    } else {
+      store.dispatch(userMetadataSlice.actions.clear());
     }
 
     authenticated$.next(exists);
@@ -95,6 +99,7 @@ export function sessionInit() {
         // Mark user as authenticated when session is created or refreshed
         // This ensures the flag is set even if markUserAsAuthenticated wasn't called during OAuth
         markUserAsAuthenticated();
+        void refreshUserMetadata();
         socket.reconnect();
         break;
       case "SIGN_OUT":
