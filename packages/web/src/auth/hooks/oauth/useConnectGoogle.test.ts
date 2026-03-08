@@ -84,7 +84,9 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(result.current.commandAction.label).toBe("Connect Google Calendar");
+    expect(result.current.commandAction.label).toBe(
+      "Google Calendar Connected",
+    );
     expect(result.current.commandAction.isDisabled).toBe(true);
     expect(result.current.commandAction.onSelect).toBeUndefined();
     expect(result.current.sidebarStatus.icon).toBe("CheckCircleIcon");
@@ -112,7 +114,9 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(result.current.commandAction.label).toBe("Connect Google Calendar");
+    expect(result.current.commandAction.label).toBe(
+      "Reconnect Google Calendar",
+    );
     expect(result.current.sidebarStatus.icon).toBe("LinkBreakIcon");
     result.current.commandAction.onSelect?.();
 
@@ -143,7 +147,7 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(result.current.commandAction.label).toBe("Connect Google Calendar");
+    expect(result.current.commandAction.label).toBe("Syncing Google Calendar…");
     expect(result.current.commandAction.isDisabled).toBe(true);
     expect(result.current.commandAction.onSelect).toBeUndefined();
     expect(result.current.sidebarStatus.icon).toBe("SpinnerIcon");
@@ -171,7 +175,7 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(result.current.commandAction.label).toBe("Connect Google Calendar");
+    expect(result.current.commandAction.label).toBe("Repair Google Calendar");
     expect(result.current.commandAction.isDisabled).toBe(false);
     expect(result.current.sidebarStatus.icon).toBe("CloudWarningIcon");
     expect(result.current.sidebarStatus.tooltip).toBe(

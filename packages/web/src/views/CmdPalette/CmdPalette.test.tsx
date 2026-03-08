@@ -114,7 +114,7 @@ describe("CmdPalette", () => {
     });
 
     expect(
-      screen.getByRole("button", { name: /connect google calendar/i }),
+      screen.getByRole("button", { name: "Google Calendar Connected" }),
     ).toBeDisabled();
   });
 
@@ -135,7 +135,7 @@ describe("CmdPalette", () => {
 
     act(() =>
       fireEvent.click(
-        screen.getByRole("button", { name: /connect google calendar/i }),
+        screen.getByRole("button", { name: "Repair Google Calendar" }),
       ),
     );
 

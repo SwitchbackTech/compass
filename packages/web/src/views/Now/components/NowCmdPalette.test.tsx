@@ -170,7 +170,7 @@ describe("NowCmdPalette", () => {
       });
 
       expect(
-        screen.getByRole("button", { name: "Connect Google Calendar" }),
+        screen.getByRole("button", { name: "Google Calendar Connected" }),
       ).toBeDisabled();
     });
 
@@ -191,7 +191,7 @@ describe("NowCmdPalette", () => {
 
       act(() =>
         fireEvent.click(
-          screen.getByRole("button", { name: "Connect Google Calendar" }),
+          screen.getByRole("button", { name: "Reconnect Google Calendar" }),
         ),
       );
       await waitFor(() => expect(mockLogin).toHaveBeenCalled());
@@ -213,7 +213,7 @@ describe("NowCmdPalette", () => {
       });
 
       const button = screen.getByRole("button", {
-        name: "Connect Google Calendar",
+        name: "Syncing Google Calendar…",
       });
       expect(button).toBeDisabled();
     });
@@ -235,7 +235,7 @@ describe("NowCmdPalette", () => {
 
       act(() =>
         fireEvent.click(
-          screen.getByRole("button", { name: "Connect Google Calendar" }),
+          screen.getByRole("button", { name: "Repair Google Calendar" }),
         ),
       );
 

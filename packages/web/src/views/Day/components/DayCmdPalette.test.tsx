@@ -280,7 +280,7 @@ describe("DayCmdPalette", () => {
       );
 
       expect(
-        screen.getByText("Connect Google Calendar").closest("button"),
+        screen.getByText("Google Calendar Connected").closest("button"),
       ).toHaveAttribute("aria-disabled", "true");
     });
 
@@ -302,7 +302,9 @@ describe("DayCmdPalette", () => {
         }),
       );
 
-      await act(() => user.click(screen.getByText("Connect Google Calendar")));
+      await act(() =>
+        user.click(screen.getByText("Reconnect Google Calendar")),
+      );
 
       expect(mockLogin).toHaveBeenCalled();
       expect(mockDispatch).toHaveBeenCalledWith(
@@ -328,7 +330,7 @@ describe("DayCmdPalette", () => {
       );
 
       expect(
-        screen.getByText("Connect Google Calendar").closest("button"),
+        screen.getByText("Syncing Google Calendar…").closest("button"),
       ).toHaveAttribute("aria-disabled", "true");
     });
 
@@ -350,7 +352,7 @@ describe("DayCmdPalette", () => {
         }),
       );
 
-      await act(() => user.click(screen.getByText("Connect Google Calendar")));
+      await act(() => user.click(screen.getByText("Repair Google Calendar")));
 
       expect(SyncApi.importGCal).toHaveBeenCalledWith({ force: true });
     });
