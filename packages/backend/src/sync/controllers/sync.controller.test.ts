@@ -33,6 +33,7 @@ import { missingRefreshTokenError } from "@backend/__tests__/mocks.gcal/errors/e
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
+import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/gcal.notification.handler";
 import syncService from "@backend/sync/services/sync.service";
 import * as syncQueries from "@backend/sync/util/sync.queries";
 import { updateSync } from "@backend/sync/util/sync.queries";
@@ -236,7 +237,12 @@ describe("SyncController", () => {
       const userId = user._id.toString();
       const restartSpy = jest
         .spyOn(userService, "restartGoogleCalendarSync")
-        .mockResolvedValue();
+        .mockImplementation(async () => {
+          await userMetadataService.updateUserMetadata({
+            userId,
+            data: { sync: { importGCal: "importing" } },
+          });
+        });
 
       const watch = await mongoService.watch.findOne({
         user: userId,
@@ -245,11 +251,6 @@ describe("SyncController", () => {
 
       expect(watch).toBeDefined();
       expect(watch).not.toBeNull();
-
-      await userMetadataService.updateUserMetadata({
-        userId,
-        data: { sync: { importGCal: "importing" } },
-      });
 
       await updateSync(Resource_Sync.EVENTS, userId, watch!.gCalendarId, {
         nextSyncToken: undefined,
@@ -277,14 +278,13 @@ describe("SyncController", () => {
         Status.NO_CONTENT,
       );
 
-      expect(restartSpy).toHaveBeenCalledTimes(2);
-      expect(restartSpy).toHaveBeenNthCalledWith(1, userId, { force: true });
-      expect(restartSpy).toHaveBeenNthCalledWith(2, userId, { force: true });
+      expect(restartSpy).toHaveBeenCalledTimes(1);
+      expect(restartSpy).toHaveBeenCalledWith(userId, { force: true });
 
       restartSpy.mockRestore();
     });
 
-    it("should cleanup stale gcal watches for unknown channels if resourceId exists", async () => {
+    it("should ignore stale notifications when only resourceId matches", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
       const calendarId = "test-calendar";
@@ -312,7 +312,66 @@ describe("SyncController", () => {
       expect(response.text).toEqual("IGNORED");
       expect(
         await mongoService.watch.findOne({ user: userId, resourceId }),
-      ).toBeNull();
+      ).toEqual(expect.objectContaining({ user: userId, resourceId }));
+    });
+
+    it("does not trigger a repair import for a late stale notification after a processed change", async () => {
+      const { user } = await UtilDriver.setupTestUser();
+      const userId = user._id.toString();
+      const watch = await mongoService.watch.findOne({
+        user: userId,
+        gCalendarId: { $ne: Resource_Sync.CALENDAR },
+      });
+
+      expect(watch).toBeDefined();
+      expect(watch).not.toBeNull();
+
+      const notificationSpy = jest
+        .spyOn(GCalNotificationHandler.prototype, "handleNotification")
+        .mockResolvedValue({ summary: "PROCESSED", changes: [] });
+      const backgroundChangeSpy = jest.spyOn(
+        webSocketServer,
+        "handleBackgroundCalendarChange",
+      );
+      const importStartSpy = jest.spyOn(
+        webSocketServer,
+        "handleImportGCalStart",
+      );
+
+      const activeResponse = await syncDriver.handleGoogleNotification(
+        {
+          resource: Resource_Sync.EVENTS,
+          channelId: watch!._id,
+          resourceId: watch!.resourceId,
+          resourceState: XGoogleResourceState.EXISTS,
+          expiration: watch!.expiration,
+        },
+        Status.OK,
+      );
+
+      const staleResponse = await syncDriver.handleGoogleNotification(
+        {
+          resource: Resource_Sync.EVENTS,
+          channelId: new ObjectId(),
+          resourceId: watch!.resourceId,
+          resourceState: XGoogleResourceState.EXISTS,
+          expiration: watch!.expiration,
+        },
+        Status.OK,
+      );
+
+      expect(activeResponse.text).toContain("PROCESSED");
+      expect(staleResponse.text).toEqual("IGNORED");
+      expect(notificationSpy).toHaveBeenCalledTimes(1);
+      expect(backgroundChangeSpy).toHaveBeenCalledTimes(1);
+      expect(importStartSpy).not.toHaveBeenCalled();
+      expect(
+        await mongoService.watch.findOne({ _id: watch!._id, user: userId }),
+      ).toEqual(expect.objectContaining({ user: userId }));
+
+      notificationSpy.mockRestore();
+      backgroundChangeSpy.mockRestore();
+      importStartSpy.mockRestore();
     });
 
     it("should prune Google data, notify client via websocket, and return structured response when user revokes access", async () => {

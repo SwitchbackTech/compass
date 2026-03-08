@@ -2,7 +2,6 @@ import mergeWith from "lodash.mergewith";
 import SupertokensUserMetadata, {
   type JSONObject,
 } from "supertokens-node/recipe/usermetadata";
-import { Logger } from "@core/logger/winston.logger";
 import { Resource_Sync } from "@core/types/sync.types";
 import {
   type GoogleConnectionStatus,
@@ -16,18 +15,13 @@ import { getSync } from "@backend/sync/util/sync.queries";
 import { isUsingHttps } from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
-const logger = Logger("app:user.metadata.service");
-
 type GoogleMetadataAssessment = {
   hasRefreshToken: boolean;
   connectionStatus: GoogleConnectionStatus;
   syncStatus: GoogleSyncStatus;
-  scheduledRepair: boolean;
 };
 
 class UserMetadataService {
-  private readonly pendingGoogleRepairs = new Map<string, Promise<void>>();
-
   private getStoredUserMetadata = async (
     userId: string,
     userContext?: Record<string, JSONObject>,
@@ -52,10 +46,6 @@ class UserMetadataService {
     if (!hasRefreshToken) return "reconnect_required";
 
     return "connected";
-  }
-
-  private hasPendingGoogleRepair(userId: string): boolean {
-    return this.pendingGoogleRepairs.has(userId);
   }
 
   private async isGoogleSyncHealthy(userId: string): Promise<boolean> {
@@ -99,30 +89,6 @@ class UserMetadataService {
     );
   }
 
-  private scheduleGoogleRepair(userId: string): boolean {
-    if (this.hasPendingGoogleRepair(userId)) {
-      return false;
-    }
-
-    const repair = import("@backend/user/services/user.service")
-      .then(({ default: userService }) =>
-        userService.restartGoogleCalendarSync(userId, { force: true }),
-      )
-      .catch((err) => {
-        logger.error(
-          `Failed to schedule Google Calendar repair for user: ${userId}`,
-          err,
-        );
-      })
-      .finally(() => {
-        this.pendingGoogleRepairs.delete(userId);
-      });
-
-    this.pendingGoogleRepairs.set(userId, repair);
-
-    return true;
-  }
-
   assessGoogleMetadata = async (
     userId: string,
     metadata?: UserMetadata,
@@ -138,22 +104,16 @@ class UserMetadataService {
         hasRefreshToken,
         connectionStatus,
         syncStatus: "none",
-        scheduledRepair: false,
       };
     }
 
     const importStatus = storedMetadata.sync?.importGCal;
 
-    if (
-      importStatus === "importing" ||
-      importStatus === "restart" ||
-      this.hasPendingGoogleRepair(userId)
-    ) {
+    if (importStatus === "importing" || importStatus === "restart") {
       return {
         hasRefreshToken,
         connectionStatus,
         syncStatus: "repairing",
-        scheduledRepair: false,
       };
     }
 
@@ -164,7 +124,6 @@ class UserMetadataService {
         hasRefreshToken,
         connectionStatus,
         syncStatus: "healthy",
-        scheduledRepair: false,
       };
     }
 
@@ -173,26 +132,13 @@ class UserMetadataService {
         hasRefreshToken,
         connectionStatus,
         syncStatus: "attention",
-        scheduledRepair: false,
       };
     }
-
-    if (this.hasPendingGoogleRepair(userId)) {
-      return {
-        hasRefreshToken,
-        connectionStatus,
-        syncStatus: "repairing",
-        scheduledRepair: false,
-      };
-    }
-
-    const scheduledRepair = this.scheduleGoogleRepair(userId);
 
     return {
       hasRefreshToken,
       connectionStatus,
-      syncStatus: scheduledRepair ? "repairing" : "attention",
-      scheduledRepair,
+      syncStatus: "attention",
     };
   };
 

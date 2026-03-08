@@ -113,6 +113,21 @@ export class SyncController {
       resourceId,
     });
 
+    const metadata = await userMetadataService.fetchUserMetadata(
+      userId,
+      undefined,
+      { skipAssessment: true },
+    );
+    const importStatus = metadata.sync?.importGCal;
+
+    if (importStatus === "importing" || importStatus === "restart") {
+      logger.info(
+        `Skipped Google sync recovery because full import is already active for user: ${userId}`,
+      );
+      res.status(Status.NO_CONTENT).send();
+      return;
+    }
+
     // Force-restart sync to recover from invalid sync token.
     // When Google returns 410 (sync token invalid), the token may still exist
     // in the database but is no longer valid. assessGoogleMetadata checks token

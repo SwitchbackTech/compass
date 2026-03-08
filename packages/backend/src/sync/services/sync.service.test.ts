@@ -14,7 +14,6 @@ import { missingRefreshTokenError } from "@backend/__tests__/mocks.gcal/errors/e
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import syncService from "@backend/sync/services/sync.service";
-import userMetadataService from "@backend/user/services/user-metadata.service";
 
 const createWatch = async (user: string) => {
   const watch = WatchSchema.parse({
@@ -192,7 +191,7 @@ describe("SyncService", () => {
       await expect(
         syncService.handleGcalNotification({
           resource: Resource_Sync.EVENTS,
-          channelId: new ObjectId().toString(),
+          channelId: new ObjectId(),
           resourceId: faker.string.uuid(),
           resourceState: XGoogleResourceState.EXISTS,
           expiration: faker.date.future(),
@@ -204,27 +203,25 @@ describe("SyncService", () => {
   });
 
   describe("cleanupStaleWatchChannel", () => {
-    it("returns deletion result even when metadata assessment fails", async () => {
+    it("ignores stale notifications when no exact watch record exists", async () => {
       const user = await UserDriver.createUser();
       const watch = await createWatch(user._id.toString());
-
-      jest.spyOn(syncService, "stopWatch").mockResolvedValue({
-        channelId: watch._id.toString(),
-        resourceId: watch.resourceId,
-      });
-      jest
-        .spyOn(userMetadataService, "assessGoogleMetadata")
-        .mockRejectedValue(new Error("metadata assessment failed"));
+      const stopWatchSpy = jest.spyOn(syncService, "stopWatch");
 
       await expect(
         syncService.cleanupStaleWatchChannel({
           resource: Resource_Sync.EVENTS,
-          channelId: watch._id.toString(),
+          channelId: new ObjectId(),
           resourceId: watch.resourceId,
           resourceState: XGoogleResourceState.EXISTS,
           expiration: faker.date.future(),
         }),
-      ).resolves.toBe(true);
+      ).resolves.toBe(false);
+
+      expect(stopWatchSpy).not.toHaveBeenCalled();
+      expect(await mongoService.watch.findOne({ _id: watch._id })).toEqual(
+        expect.objectContaining({ user: user._id.toString() }),
+      );
     });
   });
 });

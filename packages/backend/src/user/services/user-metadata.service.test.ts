@@ -102,7 +102,8 @@ describe("UserMetadataService", () => {
     it("returns healthy without active watches when running without https", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
-      (isUsingHttps as jest.Mock).mockReturnValueOnce(false);
+      const isUsingHttpsSpy = isUsingHttps as jest.Mock;
+      isUsingHttpsSpy.mockReturnValue(false);
 
       await WatchDriver.deleteManyByUser(userId);
 
@@ -113,9 +114,11 @@ describe("UserMetadataService", () => {
         connectionStatus: "connected",
         syncStatus: "healthy",
       });
+
+      isUsingHttpsSpy.mockRestore();
     });
 
-    it("schedules repair and returns repairing when connected sync state is broken", async () => {
+    it("returns attention without scheduling repair when connected sync state is broken", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
       const restartSpy = jest
@@ -127,9 +130,9 @@ describe("UserMetadataService", () => {
       expect(metadata.google).toMatchObject({
         hasRefreshToken: true,
         connectionStatus: "connected",
-        syncStatus: "repairing",
+        syncStatus: "attention",
       });
-      expect(restartSpy).toHaveBeenCalledWith(userId, { force: true });
+      expect(restartSpy).not.toHaveBeenCalled();
 
       restartSpy.mockRestore();
     });
@@ -152,7 +155,7 @@ describe("UserMetadataService", () => {
       });
     });
 
-    it("does not schedule duplicate repairs when an import is already running", async () => {
+    it("returns repairing while an import is already running without scheduling a repair", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
       const restartSpy = jest
