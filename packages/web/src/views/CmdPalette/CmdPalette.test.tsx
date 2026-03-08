@@ -2,6 +2,7 @@ import { act } from "react";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
 import { render } from "@web/__tests__/__mocks__/mock.render";
+import { SyncApi } from "@web/common/apis/sync.api";
 import CmdPalette from "@web/views/CmdPalette/CmdPalette";
 
 jest.mock("react-cmdk", () => {
@@ -63,6 +64,12 @@ jest.mock("@web/auth/hooks/oauth/useGoogleAuth", () => ({
   }),
 }));
 
+jest.mock("@web/common/apis/sync.api", () => ({
+  SyncApi: {
+    importGCal: jest.fn().mockResolvedValue(undefined),
+  },
+}));
+
 const baseProps = {
   today: dayjs(),
   isCurrentWeek: true,
@@ -111,7 +118,7 @@ describe("CmdPalette", () => {
     ).toBeDisabled();
   });
 
-  it("still triggers auth when Google Calendar needs repair", async () => {
+  it("starts a forced repair when Google Calendar needs repair", async () => {
     render(<CmdPalette {...baseProps} />, {
       state: {
         settings: { isCmdPaletteOpen: true },
@@ -132,6 +139,8 @@ describe("CmdPalette", () => {
       ),
     );
 
-    await waitFor(() => expect(mockLogin).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(SyncApi.importGCal).toHaveBeenCalledWith({ force: true }),
+    );
   });
 });

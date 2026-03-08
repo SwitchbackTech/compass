@@ -1,10 +1,15 @@
 import { renderHook } from "@testing-library/react";
 import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
+import { SyncApi } from "@web/common/apis/sync.api";
+import { selectGoogleMetadata } from "@web/ducks/auth/selectors/user-metadata.selectors";
+import { selectImportGCalState } from "@web/ducks/events/selectors/sync.selector";
+import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
 jest.mock("@web/auth/hooks/oauth/useGoogleAuth");
+jest.mock("@web/common/apis/sync.api");
 jest.mock("@web/store/store.hooks");
 
 const mockUseGoogleAuth = useGoogleAuth as jest.MockedFunction<
@@ -16,6 +21,7 @@ const mockUseAppDispatch = useAppDispatch as jest.MockedFunction<
 const mockUseAppSelector = useAppSelector as jest.MockedFunction<
   typeof useAppSelector
 >;
+const mockSyncApi = SyncApi as jest.Mocked<typeof SyncApi>;
 
 describe("useConnectGoogle", () => {
   const mockDispatch = jest.fn();
@@ -26,8 +32,24 @@ describe("useConnectGoogle", () => {
     mockUseAppDispatch.mockReturnValue(mockDispatch);
     mockUseGoogleAuth.mockReturnValue({
       login: mockLogin,
+      data: null,
+      loading: false,
     });
-    mockUseAppSelector.mockReturnValue(undefined);
+    mockSyncApi.importGCal.mockResolvedValue(undefined as never);
+    mockUseAppSelector.mockImplementation((selector) => {
+      if (selector === selectGoogleMetadata) {
+        return undefined;
+      }
+
+      if (selector === selectImportGCalState) {
+        return {
+          importing: false,
+          isImportPending: false,
+        };
+      }
+
+      return undefined;
+    });
   });
 
   it("returns connect state when metadata is missing", () => {
@@ -42,9 +64,22 @@ describe("useConnectGoogle", () => {
   });
 
   it("returns connected state when metadata is healthy", () => {
-    mockUseAppSelector.mockReturnValue({
-      connectionStatus: "connected",
-      syncStatus: "healthy",
+    mockUseAppSelector.mockImplementation((selector) => {
+      if (selector === selectGoogleMetadata) {
+        return {
+          connectionStatus: "connected",
+          syncStatus: "healthy",
+        };
+      }
+
+      if (selector === selectImportGCalState) {
+        return {
+          importing: false,
+          isImportPending: false,
+        };
+      }
+
+      return undefined;
     });
 
     const { result } = renderHook(() => useConnectGoogle());
@@ -57,9 +92,22 @@ describe("useConnectGoogle", () => {
   });
 
   it("returns reconnect state when refresh token is missing", () => {
-    mockUseAppSelector.mockReturnValue({
-      connectionStatus: "reconnect_required",
-      syncStatus: "none",
+    mockUseAppSelector.mockImplementation((selector) => {
+      if (selector === selectGoogleMetadata) {
+        return {
+          connectionStatus: "reconnect_required",
+          syncStatus: "none",
+        };
+      }
+
+      if (selector === selectImportGCalState) {
+        return {
+          importing: false,
+          isImportPending: false,
+        };
+      }
+
+      return undefined;
     });
 
     const { result } = renderHook(() => useConnectGoogle());
@@ -75,9 +123,22 @@ describe("useConnectGoogle", () => {
   });
 
   it("returns syncing state while repair is running", () => {
-    mockUseAppSelector.mockReturnValue({
-      connectionStatus: "connected",
-      syncStatus: "repairing",
+    mockUseAppSelector.mockImplementation((selector) => {
+      if (selector === selectGoogleMetadata) {
+        return {
+          connectionStatus: "connected",
+          syncStatus: "repairing",
+        };
+      }
+
+      if (selector === selectImportGCalState) {
+        return {
+          importing: false,
+          isImportPending: false,
+        };
+      }
+
+      return undefined;
     });
 
     const { result } = renderHook(() => useConnectGoogle());
@@ -90,9 +151,22 @@ describe("useConnectGoogle", () => {
   });
 
   it("returns repair state when sync needs attention", () => {
-    mockUseAppSelector.mockReturnValue({
-      connectionStatus: "connected",
-      syncStatus: "attention",
+    mockUseAppSelector.mockImplementation((selector) => {
+      if (selector === selectGoogleMetadata) {
+        return {
+          connectionStatus: "connected",
+          syncStatus: "attention",
+        };
+      }
+
+      if (selector === selectImportGCalState) {
+        return {
+          importing: false,
+          isImportPending: false,
+        };
+      }
+
+      return undefined;
     });
 
     const { result } = renderHook(() => useConnectGoogle());
@@ -100,12 +174,50 @@ describe("useConnectGoogle", () => {
     expect(result.current.commandAction.label).toBe("Connect Google Calendar");
     expect(result.current.commandAction.isDisabled).toBe(false);
     expect(result.current.sidebarStatus.icon).toBe("CloudWarningIcon");
+    expect(result.current.sidebarStatus.tooltip).toBe(
+      "Google Calendar needs repair. Click to repair.",
+    );
 
     result.current.sidebarStatus.onSelect?.();
 
-    expect(mockLogin).toHaveBeenCalled();
+    expect(mockSyncApi.importGCal).toHaveBeenCalledWith({ force: true });
+    expect(mockDispatch).toHaveBeenCalledWith(
+      importGCalSlice.actions.clearImportResults(undefined),
+    );
+    expect(mockDispatch).toHaveBeenCalledWith(
+      importGCalSlice.actions.setIsImportPending(true),
+    );
+    expect(mockDispatch).toHaveBeenCalledWith(
+      importGCalSlice.actions.importing(true),
+    );
     expect(mockDispatch).toHaveBeenCalledWith(
       settingsSlice.actions.closeCmdPalette(),
     );
+  });
+
+  it("uses repairing state while local import is pending even before metadata catches up", () => {
+    mockUseAppSelector.mockImplementation((selector) => {
+      if (selector === selectGoogleMetadata) {
+        return {
+          connectionStatus: "not_connected",
+          syncStatus: "none",
+        };
+      }
+
+      if (selector === selectImportGCalState) {
+        return {
+          importing: true,
+          isImportPending: true,
+        };
+      }
+
+      return undefined;
+    });
+
+    const { result } = renderHook(() => useConnectGoogle());
+
+    expect(result.current.commandAction.isDisabled).toBe(true);
+    expect(result.current.sidebarStatus.icon).toBe("SpinnerIcon");
+    expect(result.current.sidebarStatus.isDisabled).toBe(true);
   });
 });

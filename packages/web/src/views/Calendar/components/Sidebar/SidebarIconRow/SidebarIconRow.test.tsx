@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { fireEvent, screen } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
+import { SyncApi } from "@web/common/apis/sync.api";
 import { SidebarIconRow } from "@web/views/Calendar/components/Sidebar/SidebarIconRow";
 
 const mockLogin = jest.fn();
@@ -9,6 +10,12 @@ jest.mock("@web/auth/hooks/oauth/useGoogleAuth", () => ({
   useGoogleAuth: () => ({
     login: mockLogin,
   }),
+}));
+
+jest.mock("@web/common/apis/sync.api", () => ({
+  SyncApi: {
+    importGCal: jest.fn().mockResolvedValue(undefined),
+  },
 }));
 
 jest.mock("@web/common/hooks/useVersionCheck", () => ({
@@ -157,10 +164,10 @@ describe("SidebarIconRow", () => {
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Google Calendar needs repair. Click to reconnect.",
+        name: "Google Calendar needs repair. Click to repair.",
       }),
     );
 
-    expect(mockLogin).toHaveBeenCalled();
+    expect(SyncApi.importGCal).toHaveBeenCalledWith({ force: true });
   });
 });

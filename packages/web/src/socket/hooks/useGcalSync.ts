@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 import {
+  FETCH_USER_METADATA,
   GOOGLE_REVOKED,
   IMPORT_GCAL_END,
   IMPORT_GCAL_START,
@@ -39,6 +40,7 @@ export const useGcalSync = () => {
   const onImportEnd = useCallback(
     (payload?: { eventsCount?: number; calendarsCount?: number } | string) => {
       dispatch(importGCalSlice.actions.importing(false));
+      socket.emit(FETCH_USER_METADATA);
 
       if (!isImportPendingRef.current) {
         return;

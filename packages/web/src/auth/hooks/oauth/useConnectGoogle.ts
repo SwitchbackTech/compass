@@ -4,7 +4,10 @@ import {
   type GoogleSyncStatus,
 } from "@core/types/user.types";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
+import { SyncApi } from "@web/common/apis/sync.api";
 import { selectGoogleMetadata } from "@web/ducks/auth/selectors/user-metadata.selectors";
+import { selectImportGCalState } from "@web/ducks/events/selectors/sync.selector";
+import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
@@ -45,10 +48,16 @@ const COMMAND_ICON: CommandActionIcon = "CloudArrowUpIcon";
 const getGoogleUiState = ({
   connectionStatus,
   syncStatus,
+  isImporting,
 }: {
   connectionStatus: GoogleConnectionStatus;
   syncStatus: GoogleSyncStatus;
+  isImporting: boolean;
 }): GoogleUiState => {
+  if (isImporting) {
+    return "connected_repairing";
+  }
+
   if (connectionStatus === "reconnect_required") {
     return "reconnect_required";
   }
@@ -70,7 +79,8 @@ const getGoogleUiState = ({
 
 const getGoogleUiConfig = (
   state: GoogleUiState,
-  onOpenGoogleAuth: () => void,
+  onConnectGoogle: () => void,
+  onRepairGoogle: () => void,
 ): GoogleUiConfig => {
   switch (state) {
     case "not_connected":
@@ -79,13 +89,13 @@ const getGoogleUiConfig = (
           label: COMMAND_LABEL,
           icon: COMMAND_ICON,
           isDisabled: false,
-          onSelect: onOpenGoogleAuth,
+          onSelect: onConnectGoogle,
         },
         sidebarStatus: {
           icon: "CloudArrowUpIcon",
           tooltip: "Google Calendar not connected. Click to connect.",
           isDisabled: false,
-          onSelect: onOpenGoogleAuth,
+          onSelect: onConnectGoogle,
         },
       };
     case "reconnect_required":
@@ -94,13 +104,13 @@ const getGoogleUiConfig = (
           label: COMMAND_LABEL,
           icon: COMMAND_ICON,
           isDisabled: false,
-          onSelect: onOpenGoogleAuth,
+          onSelect: onConnectGoogle,
         },
         sidebarStatus: {
           icon: "LinkBreakIcon",
           tooltip: "Google Calendar needs reconnecting. Click to reconnect.",
           isDisabled: false,
-          onSelect: onOpenGoogleAuth,
+          onSelect: onConnectGoogle,
         },
       };
     case "connected_repairing":
@@ -122,13 +132,13 @@ const getGoogleUiConfig = (
           label: COMMAND_LABEL,
           icon: COMMAND_ICON,
           isDisabled: false,
-          onSelect: onOpenGoogleAuth,
+          onSelect: onRepairGoogle,
         },
         sidebarStatus: {
           icon: "CloudWarningIcon",
-          tooltip: "Google Calendar needs repair. Click to reconnect.",
+          tooltip: "Google Calendar needs repair. Click to repair.",
           isDisabled: false,
-          onSelect: onOpenGoogleAuth,
+          onSelect: onRepairGoogle,
         },
       };
     case "connected_healthy":
@@ -150,6 +160,7 @@ const getGoogleUiConfig = (
 export const useConnectGoogle = () => {
   const dispatch = useAppDispatch();
   const googleMetadata = useAppSelector(selectGoogleMetadata);
+  const importGCal = useAppSelector(selectImportGCalState);
   const { login } = useGoogleAuth();
 
   const onOpenGoogleAuth = useCallback(() => {
@@ -157,9 +168,36 @@ export const useConnectGoogle = () => {
     dispatch(settingsSlice.actions.closeCmdPalette());
   }, [dispatch, login]);
 
+  const onRepairGoogleCalendar = useCallback(() => {
+    const run = async () => {
+      dispatch(importGCalSlice.actions.clearImportResults(undefined));
+      dispatch(importGCalSlice.actions.setIsImportPending(true));
+      dispatch(importGCalSlice.actions.importing(true));
+      dispatch(settingsSlice.actions.closeCmdPalette());
+
+      try {
+        await SyncApi.importGCal({ force: true });
+      } catch (error) {
+        console.error("Failed to start Google Calendar repair:", error);
+        dispatch(importGCalSlice.actions.setIsImportPending(false));
+        dispatch(importGCalSlice.actions.importing(false));
+        dispatch(
+          importGCalSlice.actions.setImportError(
+            "Failed to start Google Calendar repair.",
+          ),
+        );
+      }
+    };
+    void run();
+  }, [dispatch]);
+
   const connectionStatus = googleMetadata?.connectionStatus ?? "not_connected";
   const syncStatus = googleMetadata?.syncStatus ?? "none";
-  const state = getGoogleUiState({ connectionStatus, syncStatus });
+  const state = getGoogleUiState({
+    connectionStatus,
+    syncStatus,
+    isImporting: importGCal.importing || importGCal.isImportPending,
+  });
 
-  return getGoogleUiConfig(state, onOpenGoogleAuth);
+  return getGoogleUiConfig(state, onOpenGoogleAuth, onRepairGoogleCalendar);
 };

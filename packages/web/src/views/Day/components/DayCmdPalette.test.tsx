@@ -3,6 +3,7 @@ import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import * as useGoogleAuthModule from "@web/auth/hooks/oauth/useGoogleAuth";
+import { SyncApi } from "@web/common/apis/sync.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { keyPressed$ } from "@web/common/utils/dom/event-emitter.util";
 import * as eventUtil from "@web/common/utils/event/event.util";
@@ -44,6 +45,12 @@ jest.mock("@web/common/utils/event/event.util");
 jest.mock("@web/store/store.hooks", () => ({
   useAppDispatch: () => mockDispatch,
   useAppSelector: jest.requireActual("@web/store/store.hooks").useAppSelector,
+}));
+
+jest.mock("@web/common/apis/sync.api", () => ({
+  SyncApi: {
+    importGCal: jest.fn().mockResolvedValue(undefined),
+  },
 }));
 
 function Component() {
@@ -345,7 +352,7 @@ describe("DayCmdPalette", () => {
 
       await act(() => user.click(screen.getByText("Connect Google Calendar")));
 
-      expect(mockLogin).toHaveBeenCalled();
+      expect(SyncApi.importGCal).toHaveBeenCalledWith({ force: true });
     });
   });
 });

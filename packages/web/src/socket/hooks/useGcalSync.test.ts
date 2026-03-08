@@ -1,6 +1,7 @@
 import { useDispatch } from "react-redux";
 import { renderHook } from "@testing-library/react";
 import {
+  FETCH_USER_METADATA,
   GOOGLE_REVOKED,
   IMPORT_GCAL_END,
   IMPORT_GCAL_START,
@@ -28,6 +29,7 @@ jest.mock("@web/store/store.hooks", () => ({
 }));
 jest.mock("../client/socket.client", () => ({
   socket: {
+    emit: jest.fn(),
     on: jest.fn(),
     removeListener: jest.fn(),
   },
@@ -292,6 +294,7 @@ describe("useGcalSync", () => {
           calendarsCount: 2,
         }),
       );
+      expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
       expect(triggerFetch).toHaveBeenCalledWith({
         reason: "IMPORT_COMPLETE",
       });
@@ -314,6 +317,7 @@ describe("useGcalSync", () => {
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.importing(false),
       );
+      expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
       expect(importGCalSlice.actions.setImportResults).not.toHaveBeenCalled();
     });
 
@@ -348,6 +352,7 @@ describe("useGcalSync", () => {
           calendarsCount: 2,
         }),
       );
+      expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
     });
   });
 
@@ -406,6 +411,7 @@ describe("useGcalSync", () => {
           calendarsCount: 3,
         }),
       );
+      expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
       // Fetch should be triggered to load new events
       expect(triggerFetch).toHaveBeenCalledWith({
         reason: "IMPORT_COMPLETE",
@@ -438,6 +444,7 @@ describe("useGcalSync", () => {
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.importing(false),
       );
+      expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
     });
 
     it("handles rapid start/end sequence without state inconsistency", () => {
@@ -466,6 +473,7 @@ describe("useGcalSync", () => {
       );
       expect(importGCalSlice.actions.importing).toHaveBeenCalledWith(true);
       expect(importGCalSlice.actions.importing).toHaveBeenCalledWith(false);
+      expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
       expect(importGCalSlice.actions.setImportResults).toHaveBeenCalledWith({
         eventsCount: 2,
         calendarsCount: 1,
@@ -494,6 +502,7 @@ describe("useGcalSync", () => {
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.setImportResults({}),
       );
+      expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
     });
 
     it("handles import end with object payload (non-string)", () => {
@@ -520,6 +529,7 @@ describe("useGcalSync", () => {
           calendarsCount: 4,
         }),
       );
+      expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
     });
 
     it("sets error state when backend returns malformed JSON", () => {
@@ -550,6 +560,7 @@ describe("useGcalSync", () => {
           "Failed to parse Google Calendar import results.",
         ),
       );
+      expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
       // Should NOT set results
       expect(importGCalSlice.actions.setImportResults).not.toHaveBeenCalled();
 

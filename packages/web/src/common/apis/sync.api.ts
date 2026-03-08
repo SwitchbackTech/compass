@@ -1,8 +1,8 @@
 import { CompassApi } from "./compass.api";
 
 const SyncApi = {
-  async importGCal() {
-    return CompassApi.post<void>(`/sync/import-gcal`);
+  async importGCal(options?: { force?: boolean }) {
+    return CompassApi.post<void>(`/sync/import-gcal`, options);
   },
 };
 

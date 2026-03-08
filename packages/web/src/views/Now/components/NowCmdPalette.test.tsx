@@ -1,6 +1,7 @@
 import { act } from "react";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
+import { SyncApi } from "@web/common/apis/sync.api";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { NowCmdPalette } from "@web/views/Now/components/NowCmdPalette";
 
@@ -69,6 +70,12 @@ jest.mock("@web/auth/hooks/oauth/useGoogleAuth", () => ({
   useGoogleAuth: () => ({
     login: mockLogin,
   }),
+}));
+
+jest.mock("@web/common/apis/sync.api", () => ({
+  SyncApi: {
+    importGCal: jest.fn().mockResolvedValue(undefined),
+  },
 }));
 
 describe("NowCmdPalette", () => {
@@ -211,7 +218,7 @@ describe("NowCmdPalette", () => {
       expect(button).toBeDisabled();
     });
 
-    it("keeps the generic action enabled when sync needs attention", async () => {
+    it("starts a forced repair when sync needs attention", async () => {
       render(<NowCmdPalette />, {
         state: {
           ...initialState,
@@ -232,7 +239,9 @@ describe("NowCmdPalette", () => {
         ),
       );
 
-      await waitFor(() => expect(mockLogin).toHaveBeenCalled());
+      await waitFor(() =>
+        expect(SyncApi.importGCal).toHaveBeenCalledWith({ force: true }),
+      );
     });
   });
 });
