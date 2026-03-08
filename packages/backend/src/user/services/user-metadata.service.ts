@@ -21,19 +21,25 @@ type GoogleMetadataAssessment = {
   syncStatus: GoogleSyncStatus;
 };
 
+type GetUserMetadataResponse = {
+  status: string;
+  metadata: UserMetadata;
+};
+
 class UserMetadataService {
   private getStoredUserMetadata = async (
     userId: string,
     userContext?: Record<string, JSONObject>,
   ): Promise<UserMetadata> => {
-    const { status, metadata } = await SupertokensUserMetadata.getUserMetadata(
+    const result = (await SupertokensUserMetadata.getUserMetadata(
       userId,
       userContext,
-    );
+    )) as GetUserMetadataResponse;
 
-    if (status !== "OK") throw new Error("Failed to fetch user metadata");
+    if (result.status !== "OK")
+      throw new Error("Failed to fetch user metadata");
 
-    return metadata as UserMetadata;
+    return result.metadata;
   };
 
   private getGoogleConnectionStatus(
@@ -158,14 +164,17 @@ class UserMetadataService {
     data: Partial<UserMetadata>;
   }): Promise<UserMetadata> => {
     const value = await this.getStoredUserMetadata(userId);
-    const update = mergeWith(value, data);
+    const update = mergeWith(value, data) as UserMetadata;
 
-    const { status, metadata } =
-      await SupertokensUserMetadata.updateUserMetadata(userId, update);
+    const result = (await SupertokensUserMetadata.updateUserMetadata(
+      userId,
+      update,
+    )) as GetUserMetadataResponse;
 
-    if (status !== "OK") throw new Error("Failed to update user metadata");
+    if (result.status !== "OK")
+      throw new Error("Failed to update user metadata");
 
-    return metadata;
+    return result.metadata;
   };
 
   fetchUserMetadata = async (
