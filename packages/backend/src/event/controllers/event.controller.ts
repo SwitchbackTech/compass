@@ -29,15 +29,21 @@ import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.p
  */
 class EventController {
   private async processEvents(_events: CompassEvent[]) {
-    const events = _events.map((e) => ({
-      ...e,
-      payload: CompassCoreEventSchema.parse({
-        ...e.payload,
-        _id:
-          e.payload._id?.replace(`${ID_OPTIMISTIC_PREFIX}-`, "") ??
-          new ObjectId().toString(),
-      }),
-    })) as CompassEvent[];
+    const events = _events.map((event) => {
+      const normalizedEvent = normalizeNullableRecurrence(event);
+
+      return {
+        ...normalizedEvent,
+        payload: CompassCoreEventSchema.parse({
+          ...normalizedEvent.payload,
+          _id:
+            normalizedEvent.payload._id?.replace(
+              `${ID_OPTIMISTIC_PREFIX}-`,
+              "",
+            ) ?? new ObjectId().toString(),
+        }),
+      };
+    }) as CompassEvent[];
 
     await CompassSyncProcessor.processEvents(events);
   }
@@ -152,3 +158,19 @@ class EventController {
 }
 
 export default new EventController();
+
+export const normalizeNullableRecurrence = (event: CompassEvent): CompassEvent => {
+  if (event.payload.recurrence !== null) return event;
+
+  if (event.applyTo === RecurringEventUpdateScope.ALL_EVENTS) {
+    return {
+      ...event,
+      payload: { ...event.payload, recurrence: { rule: null } },
+    };
+  }
+
+  const payload = { ...event.payload };
+  delete payload.recurrence;
+
+  return { ...event, payload };
+};
