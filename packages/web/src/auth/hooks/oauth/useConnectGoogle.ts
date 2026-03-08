@@ -42,7 +42,6 @@ type GoogleUiConfig = {
   };
 };
 
-const COMMAND_LABEL = "Connect Google Calendar";
 const COMMAND_ICON: CommandActionIcon = "CloudArrowUpIcon";
 
 const getGoogleUiState = ({
@@ -86,7 +85,7 @@ const getGoogleUiConfig = (
     case "not_connected":
       return {
         commandAction: {
-          label: COMMAND_LABEL,
+          label: "Connect Google Calendar",
           icon: COMMAND_ICON,
           isDisabled: false,
           onSelect: onConnectGoogle,
@@ -101,7 +100,7 @@ const getGoogleUiConfig = (
     case "reconnect_required":
       return {
         commandAction: {
-          label: COMMAND_LABEL,
+          label: "Reconnect Google Calendar",
           icon: COMMAND_ICON,
           isDisabled: false,
           onSelect: onConnectGoogle,
@@ -116,7 +115,7 @@ const getGoogleUiConfig = (
     case "connected_repairing":
       return {
         commandAction: {
-          label: COMMAND_LABEL,
+          label: "Syncing Google Calendar…",
           icon: COMMAND_ICON,
           isDisabled: true,
         },
@@ -129,7 +128,7 @@ const getGoogleUiConfig = (
     case "connected_attention":
       return {
         commandAction: {
-          label: COMMAND_LABEL,
+          label: "Repair Google Calendar",
           icon: COMMAND_ICON,
           isDisabled: false,
           onSelect: onRepairGoogle,
@@ -144,7 +143,7 @@ const getGoogleUiConfig = (
     case "connected_healthy":
       return {
         commandAction: {
-          label: COMMAND_LABEL,
+          label: "Google Calendar Connected",
           icon: COMMAND_ICON,
           isDisabled: true,
         },
