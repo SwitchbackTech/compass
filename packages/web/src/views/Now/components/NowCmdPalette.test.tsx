@@ -142,13 +142,12 @@ describe("NowCmdPalette", () => {
     it("shows 'Connect Google Calendar' when metadata is missing", () => {
       render(<NowCmdPalette />, { state: initialState });
 
-      expect(screen.getByText("Connect Google Calendar")).toBeInTheDocument();
       expect(
-        screen.queryByText("Google Calendar Connected"),
-      ).not.toBeInTheDocument();
+        screen.getByRole("button", { name: "Connect Google Calendar" }),
+      ).toBeEnabled();
     });
 
-    it("shows 'Google Calendar Connected' when metadata is healthy", () => {
+    it("disables the generic action when Google Calendar is healthy", () => {
       render(<NowCmdPalette />, {
         state: {
           ...initialState,
@@ -163,10 +162,9 @@ describe("NowCmdPalette", () => {
         },
       });
 
-      expect(screen.getByText("Google Calendar Connected")).toBeInTheDocument();
       expect(
-        screen.queryByText("Connect Google Calendar"),
-      ).not.toBeInTheDocument();
+        screen.getByRole("button", { name: "Connect Google Calendar" }),
+      ).toBeDisabled();
     });
 
     it("shows reconnect and triggers login when needed", async () => {
@@ -184,11 +182,15 @@ describe("NowCmdPalette", () => {
         },
       });
 
-      act(() => fireEvent.click(screen.getByText("Reconnect Google Calendar")));
+      act(() =>
+        fireEvent.click(
+          screen.getByRole("button", { name: "Connect Google Calendar" }),
+        ),
+      );
       await waitFor(() => expect(mockLogin).toHaveBeenCalled());
     });
 
-    it("shows syncing state and disables clicks while repairing", async () => {
+    it("disables the generic action while repairing", async () => {
       render(<NowCmdPalette />, {
         state: {
           ...initialState,
@@ -204,12 +206,12 @@ describe("NowCmdPalette", () => {
       });
 
       const button = screen.getByRole("button", {
-        name: "Syncing Google Calendar...",
+        name: "Connect Google Calendar",
       });
       expect(button).toBeDisabled();
     });
 
-    it("shows repair action when sync needs attention", async () => {
+    it("keeps the generic action enabled when sync needs attention", async () => {
       render(<NowCmdPalette />, {
         state: {
           ...initialState,
@@ -224,7 +226,11 @@ describe("NowCmdPalette", () => {
         },
       });
 
-      act(() => fireEvent.click(screen.getByText("Repair Google Calendar")));
+      act(() =>
+        fireEvent.click(
+          screen.getByRole("button", { name: "Connect Google Calendar" }),
+        ),
+      );
 
       await waitFor(() => expect(mockLogin).toHaveBeenCalled());
     });

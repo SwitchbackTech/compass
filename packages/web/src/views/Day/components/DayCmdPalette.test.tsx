@@ -253,12 +253,9 @@ describe("DayCmdPalette", () => {
       );
 
       expect(screen.getByText("Connect Google Calendar")).toBeInTheDocument();
-      expect(
-        screen.queryByText("Google Calendar Connected"),
-      ).not.toBeInTheDocument();
     });
 
-    it("shows 'Google Calendar Connected' when metadata is healthy", async () => {
+    it("disables the generic action when Google Calendar is healthy", async () => {
       await act(() =>
         render(<DayCmdPalette />, {
           state: {
@@ -275,10 +272,9 @@ describe("DayCmdPalette", () => {
         }),
       );
 
-      expect(screen.getByText("Google Calendar Connected")).toBeInTheDocument();
       expect(
-        screen.queryByText("Connect Google Calendar"),
-      ).not.toBeInTheDocument();
+        screen.getByText("Connect Google Calendar").closest("button"),
+      ).toHaveAttribute("aria-disabled", "true");
     });
 
     it("triggers login when reconnect is required", async () => {
@@ -299,9 +295,7 @@ describe("DayCmdPalette", () => {
         }),
       );
 
-      await act(() =>
-        user.click(screen.getByText("Reconnect Google Calendar")),
-      );
+      await act(() => user.click(screen.getByText("Connect Google Calendar")));
 
       expect(mockLogin).toHaveBeenCalled();
       expect(mockDispatch).toHaveBeenCalledWith(
@@ -309,7 +303,7 @@ describe("DayCmdPalette", () => {
       );
     });
 
-    it("shows syncing state while repair is running", async () => {
+    it("disables the generic action while repair is running", async () => {
       await act(() =>
         render(<DayCmdPalette />, {
           state: {
@@ -326,14 +320,12 @@ describe("DayCmdPalette", () => {
         }),
       );
 
-      const button = screen
-        .getByText("Syncing Google Calendar...")
-        .closest("button");
-
-      expect(button).toBeDisabled();
+      expect(
+        screen.getByText("Connect Google Calendar").closest("button"),
+      ).toHaveAttribute("aria-disabled", "true");
     });
 
-    it("shows repair action when sync needs attention", async () => {
+    it("keeps the generic action enabled when sync needs attention", async () => {
       const user = userEvent.setup();
       await act(() =>
         render(<DayCmdPalette />, {
@@ -351,7 +343,7 @@ describe("DayCmdPalette", () => {
         }),
       );
 
-      await act(() => user.click(screen.getByText("Repair Google Calendar")));
+      await act(() => user.click(screen.getByText("Connect Google Calendar")));
 
       expect(mockLogin).toHaveBeenCalled();
     });

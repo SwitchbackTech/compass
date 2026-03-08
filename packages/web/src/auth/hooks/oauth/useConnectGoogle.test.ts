@@ -33,8 +33,12 @@ describe("useConnectGoogle", () => {
   it("returns connect state when metadata is missing", () => {
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(result.current.label).toBe("Connect Google Calendar");
-    expect(result.current.isDisabled).toBe(false);
+    expect(result.current.commandAction.label).toBe("Connect Google Calendar");
+    expect(result.current.commandAction.isDisabled).toBe(false);
+    expect(result.current.sidebarStatus.icon).toBe("CloudArrowUpIcon");
+    expect(result.current.sidebarStatus.tooltip).toBe(
+      "Google Calendar not connected. Click to connect.",
+    );
   });
 
   it("returns connected state when metadata is healthy", () => {
@@ -45,8 +49,11 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(result.current.label).toBe("Google Calendar Connected");
-    expect(result.current.onSelect).toBeUndefined();
+    expect(result.current.commandAction.label).toBe("Connect Google Calendar");
+    expect(result.current.commandAction.isDisabled).toBe(true);
+    expect(result.current.commandAction.onSelect).toBeUndefined();
+    expect(result.current.sidebarStatus.icon).toBe("CheckCircleIcon");
+    expect(result.current.sidebarStatus.isDisabled).toBe(true);
   });
 
   it("returns reconnect state when refresh token is missing", () => {
@@ -57,8 +64,9 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(result.current.label).toBe("Reconnect Google Calendar");
-    result.current.onSelect?.();
+    expect(result.current.commandAction.label).toBe("Connect Google Calendar");
+    expect(result.current.sidebarStatus.icon).toBe("LinkBreakIcon");
+    result.current.commandAction.onSelect?.();
 
     expect(mockLogin).toHaveBeenCalled();
     expect(mockDispatch).toHaveBeenCalledWith(
@@ -74,9 +82,11 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(result.current.label).toBe("Syncing Google Calendar...");
-    expect(result.current.isDisabled).toBe(true);
-    expect(result.current.onSelect).toBeUndefined();
+    expect(result.current.commandAction.label).toBe("Connect Google Calendar");
+    expect(result.current.commandAction.isDisabled).toBe(true);
+    expect(result.current.commandAction.onSelect).toBeUndefined();
+    expect(result.current.sidebarStatus.icon).toBe("SpinnerIcon");
+    expect(result.current.sidebarStatus.isDisabled).toBe(true);
   });
 
   it("returns repair state when sync needs attention", () => {
@@ -87,9 +97,11 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(result.current.label).toBe("Repair Google Calendar");
+    expect(result.current.commandAction.label).toBe("Connect Google Calendar");
+    expect(result.current.commandAction.isDisabled).toBe(false);
+    expect(result.current.sidebarStatus.icon).toBe("CloudWarningIcon");
 
-    result.current.onSelect?.();
+    result.current.sidebarStatus.onSelect?.();
 
     expect(mockLogin).toHaveBeenCalled();
     expect(mockDispatch).toHaveBeenCalledWith(

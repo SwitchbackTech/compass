@@ -25,7 +25,7 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
   const [page] = useState<"root">("root");
   const [search, setSearch] = useState("");
   const today = dayjs();
-  const { label, icon, isDisabled, onSelect } = useConnectGoogle();
+  const { commandAction } = useConnectGoogle();
   const authCmdItems = useAuthCmdItems();
 
   const filteredItems = filterItems(
@@ -74,10 +74,10 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
         items: [
           {
             id: "connect-google-calendar",
-            children: label,
-            icon,
-            disabled: isDisabled,
-            onClick: onSelect,
+            children: commandAction.label,
+            icon: commandAction.icon,
+            disabled: commandAction.isDisabled,
+            onClick: commandAction.onSelect,
           },
           ...authCmdItems,
           {
