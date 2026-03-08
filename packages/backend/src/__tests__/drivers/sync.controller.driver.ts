@@ -1,9 +1,5 @@
 import request from "supertest";
 import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
-import {
-  IMPORT_GCAL_END,
-  IMPORT_GCAL_START,
-} from "@core/constants/websocket.constants";
 import { Status } from "@core/errors/status.codes";
 import { type Payload_Sync_Notif } from "@core/types/sync.types";
 import { type BaseDriver } from "@backend/__tests__/drivers/base.driver";
@@ -11,33 +7,6 @@ import { encodeChannelToken } from "@backend/sync/util/watch.util";
 
 export class SyncControllerDriver {
   constructor(private readonly baseDriver: BaseDriver) {}
-
-  async waitUntilImportGCalStart<Result = unknown[]>(
-    websocketClient: ReturnType<BaseDriver["createWebsocketClient"]>,
-    beforeEvent: () => Promise<unknown> = () => Promise.resolve(),
-    afterEvent: (...args: void[]) => Promise<Result> = (...args) =>
-      Promise.resolve(args as Result),
-  ): Promise<Result> {
-    return this.baseDriver.waitUntilWebsocketEvent<void[], Result>(
-      websocketClient,
-      IMPORT_GCAL_START,
-      beforeEvent,
-      afterEvent,
-    );
-  }
-
-  async waitUntilImportGCalEnd<Result = unknown[]>(
-    websocketClient: ReturnType<BaseDriver["createWebsocketClient"]>,
-    beforeEvent: () => Promise<unknown> = () => Promise.resolve(),
-    afterEvent: (...args: [string | undefined]) => Promise<Result> = (
-      ...args
-    ) => Promise.resolve(args as Result),
-  ): Promise<Result> {
-    return this.baseDriver.waitUntilWebsocketEvent<
-      [string | undefined],
-      Result
-    >(websocketClient, IMPORT_GCAL_END, beforeEvent, afterEvent);
-  }
 
   async handleGoogleNotification(
     {
