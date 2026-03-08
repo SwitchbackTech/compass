@@ -79,7 +79,10 @@ class UserService {
     return user as unknown as UserProfile;
   };
 
-  deleteCompassDataForUser = async (userId: string, gcalAccess = true) => {
+  deleteCompassDataForUser = async (
+    userId: string,
+    gcalAccess = true,
+  ): Promise<Summary_Delete> => {
     const _id = zObjectId.parse(userId);
     const summary: Summary_Delete = {};
     const session = await mongoService.startSession();

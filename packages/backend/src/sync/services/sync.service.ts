@@ -273,7 +273,7 @@ class SyncService {
     try {
       const syncImport = await createSyncImport(gcal);
 
-      const eventImports = Promise.all(
+      const eventImports = await Promise.all(
         gCalendarIds.map(async (gCalId) => {
           const { nextSyncToken, ...result } = await syncImport.importAllEvents(
             userId,
@@ -281,19 +281,13 @@ class SyncService {
             2500,
           );
 
-          if (isUsingHttps()) {
-            await updateSync(
-              Resource_Sync.EVENTS,
-              userId,
-              gCalId,
-              { nextSyncToken },
-              session,
-            );
-          } else {
-            logger.warn(
-              `Skipped updating sync token for user: ${userId} and gCalId: ${gCalId} because not using https`,
-            );
-          }
+          await updateSync(
+            Resource_Sync.EVENTS,
+            userId,
+            gCalId,
+            { nextSyncToken },
+            session,
+          );
 
           return { gCalId, ...result };
         }),

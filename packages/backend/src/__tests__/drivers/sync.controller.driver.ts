@@ -64,12 +64,14 @@ export class SyncControllerDriver {
 
   async importGCal(
     session?: { userId: string },
+    body?: { force?: boolean },
     status: Status = Status.NO_CONTENT,
   ): Promise<
     Omit<request.Response, "body"> & { body: { id: string; status: string } }
   > {
     return request(this.baseDriver.getServerUri())
       .post("/api/sync/import-gcal")
+      .send(body)
       .use(this.baseDriver.setSessionPlugin(session))
       .expect(status);
   }

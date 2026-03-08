@@ -1,13 +1,21 @@
 import { UserMetadataServiceDriver } from "@backend/__tests__/drivers/user-metadata.service.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
+import { WatchDriver } from "@backend/__tests__/drivers/watch.driver";
 import {
   cleanupCollections,
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
+import { isUsingHttps } from "@backend/sync/util/sync.util";
 import userService from "@backend/user/services/user.service";
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-return -- mock factory spreads requireActual
+jest.mock("@backend/sync/util/sync.util", () => ({
+  ...jest.requireActual("@backend/sync/util/sync.util"),
+  isUsingHttps: jest.fn(),
+}));
 
 describe("UserMetadataService", () => {
   const driver = new UserMetadataServiceDriver();
@@ -81,6 +89,22 @@ describe("UserMetadataService", () => {
     it("returns healthy when the account is connected and sync state is healthy", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
+
+      const metadata = await driver.fetchUserMetadata(userId);
+
+      expect(metadata.google).toMatchObject({
+        hasRefreshToken: true,
+        connectionStatus: "connected",
+        syncStatus: "healthy",
+      });
+    });
+
+    it("returns healthy without active watches when running without https", async () => {
+      const { user } = await UtilDriver.setupTestUser();
+      const userId = user._id.toString();
+      (isUsingHttps as jest.Mock).mockReturnValueOnce(false);
+
+      await WatchDriver.deleteManyByUser(userId);
 
       const metadata = await driver.fetchUserMetadata(userId);
 

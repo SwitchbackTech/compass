@@ -13,6 +13,7 @@ import {
 import dayjs from "@core/util/date/dayjs";
 import mongoService from "@backend/common/services/mongo.service";
 import { getSync } from "@backend/sync/util/sync.queries";
+import { isUsingHttps } from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 const logger = Logger("app:user.metadata.service");
@@ -77,6 +78,10 @@ class UserMetadataService {
 
     if (eventSyncs.some(({ nextSyncToken }) => !nextSyncToken)) {
       return false;
+    }
+
+    if (!isUsingHttps()) {
+      return true;
     }
 
     const activeWatchCalendarIds = new Set(

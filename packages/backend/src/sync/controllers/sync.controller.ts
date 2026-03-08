@@ -267,10 +267,18 @@ export class SyncController {
     }
   };
 
-  static importGCal = async (req: Request, res: Response) => {
+  static importGCal = (req: Request, res: Response): void => {
     const userId = req.session!.getUserId();
+    const isForce = req.body?.force === true;
 
-    userService.restartGoogleCalendarSync(userId);
+    userService
+      .restartGoogleCalendarSync(userId, { force: isForce })
+      .catch((err) => {
+        logger.error(
+          `Something went wrong starting Google Calendar import for user: ${userId}`,
+          err,
+        );
+      });
 
     res.status(Status.NO_CONTENT).send();
   };

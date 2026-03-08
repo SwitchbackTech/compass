@@ -578,6 +578,35 @@ describe("SyncController", () => {
     });
 
     describe("Import Status: ", () => {
+      it("should force a repair import even after a completed sync", async () => {
+        const { user, websocketClient } = await websocketUserFlow(true);
+        const userId = user._id.toString();
+
+        const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
+
+        const { sync } = await userMetadataService.fetchUserMetadata(userId);
+
+        expect(sync?.importGCal).toEqual("completed");
+
+        const result = await waitUntilImportGCalEnd(
+          websocketClient,
+          () => syncDriver.importGCal({ userId }, { force: true }),
+          (reason) => Promise.resolve(reason),
+        );
+
+        const parsed = parseImportResult(result as string);
+
+        expect(parsed).toHaveProperty("eventsCount");
+        expect(parsed).toHaveProperty("calendarsCount");
+        expect(getAllEventsSpy).toHaveBeenCalled();
+
+        await waitUntilEvent(websocketClient, "disconnect", 100, () =>
+          Promise.resolve(websocketClient.disconnect()),
+        );
+
+        getAllEventsSpy.mockRestore();
+      });
+
       it("should not retry import once it has completed", async () => {
         const { user, websocketClient } = await websocketUserFlow(true);
         const userId = user._id.toString();
