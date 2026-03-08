@@ -194,6 +194,15 @@ describe("useConnectGoogle", () => {
     expect(mockDispatch).toHaveBeenCalledWith(
       importGCalSlice.actions.importing(true),
     );
+    expect(mockDispatch).not.toHaveBeenCalledWith(
+      settingsSlice.actions.closeCmdPalette(),
+    );
+
+    jest.clearAllMocks();
+
+    result.current.commandAction.onSelect?.();
+
+    expect(mockSyncApi.importGCal).toHaveBeenCalledWith({ force: true });
     expect(mockDispatch).toHaveBeenCalledWith(
       settingsSlice.actions.closeCmdPalette(),
     );
@@ -223,5 +232,33 @@ describe("useConnectGoogle", () => {
     expect(result.current.commandAction.isDisabled).toBe(true);
     expect(result.current.sidebarStatus.icon).toBe("SpinnerIcon");
     expect(result.current.sidebarStatus.isDisabled).toBe(true);
+  });
+
+  it("prioritizes reconnect_required over importing state", () => {
+    mockUseAppSelector.mockImplementation((selector) => {
+      if (selector === selectGoogleMetadata) {
+        return {
+          connectionStatus: "reconnect_required",
+          syncStatus: "none",
+        };
+      }
+
+      if (selector === selectImportGCalState) {
+        return {
+          importing: true,
+          isImportPending: true,
+        };
+      }
+
+      return undefined;
+    });
+
+    const { result } = renderHook(() => useConnectGoogle());
+
+    expect(result.current.commandAction.label).toBe(
+      "Reconnect Google Calendar",
+    );
+    expect(result.current.sidebarStatus.icon).toBe("LinkBreakIcon");
+    expect(result.current.commandAction.isDisabled).toBe(false);
   });
 });

@@ -53,12 +53,12 @@ const getGoogleUiState = ({
   syncStatus: GoogleSyncStatus;
   isImporting: boolean;
 }): GoogleUiState => {
-  if (isImporting) {
-    return "connected_repairing";
-  }
-
   if (connectionStatus === "reconnect_required") {
     return "reconnect_required";
+  }
+
+  if (isImporting) {
+    return "connected_repairing";
   }
 
   if (connectionStatus === "connected" && syncStatus === "repairing") {
@@ -80,6 +80,7 @@ const getGoogleUiConfig = (
   state: GoogleUiState,
   onConnectGoogle: () => void,
   onRepairGoogle: () => void,
+  onRepairGoogleFromSidebar: () => void,
 ): GoogleUiConfig => {
   switch (state) {
     case "not_connected":
@@ -137,7 +138,7 @@ const getGoogleUiConfig = (
           icon: "CloudWarningIcon",
           tooltip: "Google Calendar needs repair. Click to repair.",
           isDisabled: false,
-          onSelect: onRepairGoogle,
+          onSelect: onRepairGoogleFromSidebar,
         },
       };
     case "connected_healthy":
@@ -167,12 +168,11 @@ export const useConnectGoogle = () => {
     dispatch(settingsSlice.actions.closeCmdPalette());
   }, [dispatch, login]);
 
-  const onRepairGoogleCalendar = useCallback(() => {
+  const onRepairGoogleCalendarBase = useCallback(() => {
     const run = async () => {
       dispatch(importGCalSlice.actions.clearImportResults(undefined));
       dispatch(importGCalSlice.actions.setIsImportPending(true));
       dispatch(importGCalSlice.actions.importing(true));
-      dispatch(settingsSlice.actions.closeCmdPalette());
 
       try {
         await SyncApi.importGCal({ force: true });
@@ -190,6 +190,15 @@ export const useConnectGoogle = () => {
     void run();
   }, [dispatch]);
 
+  const onRepairGoogleCalendar = useCallback(() => {
+    dispatch(settingsSlice.actions.closeCmdPalette());
+    onRepairGoogleCalendarBase();
+  }, [dispatch, onRepairGoogleCalendarBase]);
+
+  const onRepairGoogleCalendarFromSidebar = useCallback(() => {
+    onRepairGoogleCalendarBase();
+  }, [onRepairGoogleCalendarBase]);
+
   const connectionStatus = googleMetadata?.connectionStatus ?? "not_connected";
   const syncStatus = googleMetadata?.syncStatus ?? "none";
   const state = getGoogleUiState({
@@ -198,5 +207,10 @@ export const useConnectGoogle = () => {
     isImporting: importGCal.importing || importGCal.isImportPending,
   });
 
-  return getGoogleUiConfig(state, onOpenGoogleAuth, onRepairGoogleCalendar);
+  return getGoogleUiConfig(
+    state,
+    onOpenGoogleAuth,
+    onRepairGoogleCalendar,
+    onRepairGoogleCalendarFromSidebar,
+  );
 };

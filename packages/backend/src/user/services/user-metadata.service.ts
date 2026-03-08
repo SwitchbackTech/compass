@@ -177,6 +177,15 @@ class UserMetadataService {
       };
     }
 
+    if (this.hasPendingGoogleRepair(userId)) {
+      return {
+        hasRefreshToken,
+        connectionStatus,
+        syncStatus: "repairing",
+        scheduledRepair: false,
+      };
+    }
+
     const scheduledRepair = this.scheduleGoogleRepair(userId);
 
     return {
