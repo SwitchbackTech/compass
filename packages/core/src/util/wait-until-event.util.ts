@@ -42,15 +42,17 @@ export async function waitUntilEvent<
     }, timeoutMs);
 
     const listener = (...payload: Payload) => {
-      afterEvent(...payload).then(resolve);
+      afterEvent(...payload)
+        .then(resolve)
+        .catch(reject);
       clearTimeout(timeout);
     };
 
     eventEmitter.once(event as string, listener);
 
-    beforeEvent?.().catch((error) => {
+    beforeEvent?.().catch((error: unknown) => {
       eventEmitter.removeListener?.(event as string, listener);
-      reject(error);
+      reject(error instanceof Error ? error : new Error(String(error)));
     });
   });
 }
