@@ -43,7 +43,7 @@ export const editEventSlice = createAsyncSlice<Payload_EditEvent>({
 
 export const eventsEntitiesSlice = createSlice({
   name: "eventEntities",
-  initialState: {} as { value: Entities_Event },
+  initialState: { value: {} as Entities_Event },
   reducers: {
     delete: (state, action: Action_DeleteEvent) => {
       delete state.value[action.payload._id];
@@ -70,6 +70,9 @@ export const eventsEntitiesSlice = createSlice({
       state,
       action: PayloadAction<{ origins: readonly Origin[] }>,
     ) => {
+      if (!state.value) {
+        return;
+      }
       const origins = new Set(action.payload.origins);
       for (const id of Object.keys(state.value)) {
         const event = state.value[id] as Schema_Event | undefined;
