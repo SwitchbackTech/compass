@@ -44,16 +44,26 @@ export const useGcalSync = () => {
         return;
       }
 
-      // Parse payload if it's a string (from backend)
+      // Parse payload if it's a JSON string (from backend)
       let importResults: { eventsCount?: number; calendarsCount?: number } = {};
       if (typeof payload === "string") {
+        const trimmedPayload = payload.trim();
+
+        if (!trimmedPayload.startsWith("{")) {
+          dispatch(
+            importGCalSlice.actions.setImportError(
+              "Failed to parse Google Calendar import results.",
+            ),
+          );
+          return;
+        }
+
         try {
-          importResults = JSON.parse(payload) as {
+          importResults = JSON.parse(trimmedPayload) as {
             eventsCount?: number;
             calendarsCount?: number;
           };
-        } catch (e) {
-          console.error("Failed to parse import results:", e);
+        } catch {
           dispatch(
             importGCalSlice.actions.setImportError(
               "Failed to parse Google Calendar import results.",

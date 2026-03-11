@@ -498,9 +498,6 @@ describe("useGcalSync", () => {
       (socket.on as jest.Mock).mockImplementation((event, handler) => {
         handlers[event] = handler;
       });
-      const consoleErrorSpy = jest
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
 
       awaitingValue = true;
       renderHook(() => useGcalSync());
@@ -523,8 +520,31 @@ describe("useGcalSync", () => {
       );
       // Should NOT set results
       expect(importGCalSlice.actions.setImportResults).not.toHaveBeenCalled();
+    });
 
-      consoleErrorSpy.mockRestore();
+    it("sets error state when backend returns non-JSON string payload", () => {
+      const handlers: Record<string, (...args: unknown[]) => void> = {};
+      (socket.on as jest.Mock).mockImplementation((event, handler) => {
+        handlers[event] = handler;
+      });
+
+      awaitingValue = true;
+      renderHook(() => useGcalSync());
+
+      handlers[IMPORT_GCAL_START](true);
+      mockDispatch.mockClear();
+
+      handlers[IMPORT_GCAL_END]("Incremental import started");
+
+      expect(mockDispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.importing(false),
+      );
+      expect(mockDispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.setImportError(
+          "Failed to parse Google Calendar import results.",
+        ),
+      );
+      expect(importGCalSlice.actions.setImportResults).not.toHaveBeenCalled();
     });
   });
 });
