@@ -9,11 +9,14 @@ export interface DayLoaderData {
 }
 
 export async function loadAuthenticated() {
-  const { session } = await import("../common/classes/Session");
+  try {
+    const { session } = await import("../common/classes/Session");
+    const authenticated = await session.doesSessionExist();
 
-  const authenticated = await session.doesSessionExist();
-
-  return { authenticated };
+    return { authenticated };
+  } catch {
+    return { authenticated: false };
+  }
 }
 
 export async function loadLogoutData() {
