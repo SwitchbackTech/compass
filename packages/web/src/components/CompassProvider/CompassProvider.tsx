@@ -9,6 +9,7 @@ import { ENV_WEB } from "@web/common/constants/env.constants";
 import { CompassRefsProvider } from "@web/common/context/compass-refs";
 import { PointerPositionProvider } from "@web/common/context/pointer-position";
 import { theme } from "@web/common/styles/theme";
+import { isIgnorablePostHogException } from "@web/common/utils/posthog-error-filter.util";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
 import { DNDContext } from "@web/components/DND/DNDContext";
@@ -70,6 +71,13 @@ export const CompassOptionalProviders = ({ children }: PropsWithChildren) => {
         apiKey={ENV_WEB.POSTHOG_KEY as string}
         options={{
           api_host: ENV_WEB.POSTHOG_HOST!,
+          before_send: (event) => {
+            if (isIgnorablePostHogException(event)) {
+              return null;
+            }
+
+            return event;
+          },
           capture_exceptions: {
             capture_unhandled_errors: true,
             capture_unhandled_rejections: true,
