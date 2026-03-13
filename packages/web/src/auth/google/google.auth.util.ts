@@ -1,6 +1,5 @@
 import { toast } from "react-toastify";
 import { Origin } from "@core/constants/core.constants";
-import { FETCH_USER_METADATA } from "@core/constants/websocket.constants";
 import { markGoogleAsRevoked } from "@web/auth/google/google.auth.state";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
@@ -14,7 +13,7 @@ import {
   importGCalSlice,
   triggerFetch,
 } from "@web/ducks/events/slices/sync.slice";
-import { reconnect, socket } from "@web/socket/client/socket.client";
+import { reconnect } from "@web/socket/client/socket.client";
 import { store } from "@web/store";
 
 export interface AuthenticateResult {
@@ -69,11 +68,8 @@ export const handleGoogleRevoked = () => {
     triggerFetch({ reason: Sync_AsyncStateContextReason.GOOGLE_REVOKED }),
   );
 
-  if (socket.connected) {
-    socket.emit(FETCH_USER_METADATA);
-    return;
-  }
-
+  // Always reconnect so the socket gets a fresh session; the backend has pruned
+  // Google data and the current connection may carry stale auth state.
   reconnect();
 };
 

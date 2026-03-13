@@ -1,6 +1,5 @@
 import { toast } from "react-toastify";
 import { Origin } from "@core/constants/core.constants";
-import { FETCH_USER_METADATA } from "@core/constants/websocket.constants";
 import {
   clearGoogleRevokedState,
   isGoogleRevoked,
@@ -188,12 +187,12 @@ describe("google-auth.util", () => {
       );
     });
 
-    it("refreshes user metadata when the socket is connected", () => {
-      const { socket } = require("@web/socket/client/socket.client");
+    it("reconnects socket so the client gets a fresh session after revocation", () => {
+      const { reconnect } = require("@web/socket/client/socket.client");
 
       handleGoogleRevoked();
 
-      expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
+      expect(reconnect).toHaveBeenCalled();
     });
 
     it("marks Google as revoked in session state", () => {
