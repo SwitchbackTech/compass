@@ -1,10 +1,8 @@
 import clsx from "clsx";
 import { type InputHTMLAttributes, forwardRef, useId } from "react";
 
-interface AuthInputProps extends Omit<
-  InputHTMLAttributes<HTMLInputElement>,
-  "className"
-> {
+interface AuthInputProps
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, "className"> {
   /** Label text displayed above the input. Omit for placeholder-only style. */
   label?: string;
   /** Accessible name when label is hidden (required when label is omitted) */

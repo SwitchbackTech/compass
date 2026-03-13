@@ -10,7 +10,8 @@ import {
 import { useMenuContext } from "./ActionsMenu";
 import { StyledMenuItem } from "./styled";
 
-export interface MenuItemProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface MenuItemProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /**
    * Content to render inside the delayed tooltip. If omitted, the tooltip is disabled.
    */

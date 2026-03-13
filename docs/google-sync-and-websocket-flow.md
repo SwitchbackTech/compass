@@ -125,8 +125,25 @@ Revocation and reconnect are handled across auth, sync, websocket, and repositor
 1. Backend detects missing/invalid Google refresh token (middleware, sync, or Google API error handling).
 2. Backend prunes Google-origin data and emits `GOOGLE_REVOKED`.
 3. Web app marks Google as revoked in session memory and temporarily switches to local repository behavior.
-4. OAuth connect while a session exists triggers reconnect logic (`reconnectGoogleForSession`) instead of normal signup/signin.
-5. Reconnect updates Google credentials, marks metadata sync flags as `"restart"`, and restarts sync in background.
+4. User initiates re-consent via OAuth flow.
+5. Backend auth handler (`handleGoogleAuth`) determines auth mode server-side using:
+   - User existence (via `findCompassUserBy`)
+   - Refresh token presence (`user.google.gRefreshToken`)
+   - Sync health (`canDoIncrementalSync`)
+6. If user exists but refresh token is missing or sync is unhealthy → `reconnect_repair` path via `repairGoogleConnection()`.
+7. Reconnect updates Google credentials, marks metadata sync flags as `"restart"`, and restarts sync in background.
+
+### Auth Mode Classification
+
+The backend determines auth mode based on server-side state, not frontend intent:
+
+| Condition                                             | Auth Mode            | Handler                    |
+| ----------------------------------------------------- | -------------------- | -------------------------- |
+| No linked Compass user                                | `signup`             | `googleSignup()`           |
+| User exists + missing refresh token OR unhealthy sync | `reconnect_repair`   | `repairGoogleConnection()` |
+| User exists + valid refresh token + healthy sync      | `signin_incremental` | `googleSignin()`           |
+
+Note: The `googleAuthIntent` field from frontend is deprecated and no longer authoritative for routing.
 
 Primary files:
 

@@ -8,12 +8,12 @@ export type ParsedReconnectGoogleParams = {
 };
 
 export function parseReconnectGoogleParams(
-  sessionUserId: string,
+  compassUserId: string,
   gUser: TokenPayload,
   oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">,
 ): ParsedReconnectGoogleParams {
   const cUserId = zObjectId
-    .parse(sessionUserId, { error: () => "Invalid credentials" })
+    .parse(compassUserId, { error: () => "Invalid credentials" })
     .toString();
   StringV4Schema.parse(gUser.sub, { error: () => "Invalid Google user ID" });
   const refreshToken = StringV4Schema.parse(oAuthTokens.refresh_token, {
