@@ -1,5 +1,6 @@
 import { combineReducers } from "redux";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
+import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import {
@@ -42,5 +43,6 @@ export const reducers = {
   events: eventsReducer,
   settings: settingsSlice.reducer,
   sync: syncReducer,
+  userMetadata: userMetadataSlice.reducer,
   view: viewSlice.reducer,
 };

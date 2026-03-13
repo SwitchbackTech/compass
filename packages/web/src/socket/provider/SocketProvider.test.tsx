@@ -6,6 +6,7 @@ import {
   IMPORT_GCAL_END,
   IMPORT_GCAL_START,
 } from "@core/constants/websocket.constants";
+import { type ImportGCalEndPayload } from "@core/types/websocket.types";
 import { useUser } from "@web/auth/hooks/user/useUser";
 import {
   importGCalSlice,
@@ -32,8 +33,8 @@ const mockUseUser = useUser as jest.MockedFunction<typeof useUser>;
 
 describe("SocketProvider", () => {
   const mockUserId = "test-user-id";
-  let importEndCallback: ((data?: string) => void) | undefined;
-  let importStartCallback: ((data?: string) => void) | undefined;
+  let importEndCallback: ((data?: ImportGCalEndPayload) => void) | undefined;
+  let importStartCallback: (() => void) | undefined;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -80,9 +81,11 @@ describe("SocketProvider", () => {
     });
 
     await act(async () => {
-      importEndCallback?.(
-        JSON.stringify({ eventsCount: 10, calendarsCount: 2 }),
-      );
+      importEndCallback?.({
+        status: "completed",
+        eventsCount: 10,
+        calendarsCount: 2,
+      });
     });
 
     const state = store.getState();
@@ -117,7 +120,7 @@ describe("SocketProvider", () => {
       expect(importEndCallback).toBeDefined();
     });
 
-    importEndCallback?.();
+    importEndCallback?.({ status: "completed" });
 
     const state = store.getState();
     expect(state.sync.importGCal.importResults).toBeNull();

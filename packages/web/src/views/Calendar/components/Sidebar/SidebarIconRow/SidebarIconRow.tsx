@@ -1,3 +1,10 @@
+import {
+  CheckCircleIcon,
+  CloudArrowUpIcon,
+  CloudWarningIcon,
+  LinkBreakIcon,
+} from "@phosphor-icons/react";
+import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { useVersionCheck } from "@web/common/hooks/useVersionCheck";
 import { theme } from "@web/common/styles/theme";
 import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
@@ -19,12 +26,67 @@ import {
   LeftIconGroup,
 } from "@web/views/Calendar/components/Sidebar/styled";
 
+const getGoogleStatusIcon = ({
+  icon,
+}: {
+  icon:
+    | "CloudArrowUpIcon"
+    | "LinkBreakIcon"
+    | "CheckCircleIcon"
+    | "SpinnerIcon"
+    | "CloudWarningIcon";
+}) => {
+  switch (icon) {
+    case "LinkBreakIcon":
+      return (
+        <LinkBreakIcon
+          aria-label="Google Calendar needs reconnecting"
+          color={theme.color.status.warning}
+          size={24}
+        />
+      );
+    case "CheckCircleIcon":
+      return (
+        <CheckCircleIcon
+          aria-label="Google Calendar connected"
+          color={theme.color.status.success}
+          size={24}
+        />
+      );
+    case "SpinnerIcon":
+      return (
+        <SpinnerIcon
+          aria-label="Google Calendar syncing"
+          color={theme.color.status.info}
+          size={24}
+        />
+      );
+    case "CloudWarningIcon":
+      return (
+        <CloudWarningIcon
+          aria-label="Google Calendar needs repair"
+          color={theme.color.status.warning}
+          size={24}
+        />
+      );
+    case "CloudArrowUpIcon":
+      return (
+        <CloudArrowUpIcon
+          aria-label="Google Calendar not connected"
+          color={theme.color.text.darkPlaceholder}
+          size={24}
+        />
+      );
+  }
+};
+
 export const SidebarIconRow = () => {
   const dispatch = useAppDispatch();
   const tab = useAppSelector(selectSidebarTab);
   const gCalImport = useAppSelector(selectImportGCalState);
   const isCmdPaletteOpen = useAppSelector(selectIsCmdPaletteOpen);
   const { isUpdateAvailable } = useVersionCheck();
+  const { sidebarStatus } = useConnectGoogle();
 
   const handleUpdateReload = () => {
     window.location.reload();
@@ -89,6 +151,13 @@ export const SidebarIconRow = () => {
                 : theme.color.text.darkPlaceholder
             }
           />
+        </TooltipWrapper>
+        <TooltipWrapper
+          description={sidebarStatus.tooltip}
+          disabled={sidebarStatus.isDisabled}
+          onClick={sidebarStatus.onSelect}
+        >
+          {getGoogleStatusIcon({ icon: sidebarStatus.icon })}
         </TooltipWrapper>
         {gCalImport.importing ? (
           <TooltipWrapper description="Importing your calendar events in the background">

@@ -80,6 +80,10 @@ const triggerErrorResponse = async (
 };
 
 describe("CompassApi interceptor auth handling", () => {
+  it("sends cookies with cross-origin API requests", () => {
+    expect(CompassApi.defaults.withCredentials).toBe(true);
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     assignMock.mockReset();

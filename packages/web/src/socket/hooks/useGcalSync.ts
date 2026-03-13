@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 import {
+  FETCH_USER_METADATA,
   GOOGLE_REVOKED,
   IMPORT_GCAL_END,
   IMPORT_GCAL_START,
   USER_METADATA,
 } from "@core/constants/websocket.constants";
 import { type UserMetadata } from "@core/types/user.types";
-import { shouldImportGCal } from "@core/util/event/event.util";
+import { type ImportGCalEndPayload } from "@core/types/websocket.types";
 import { handleGoogleRevoked } from "@web/auth/google/google.auth.util";
+import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { selectIsImportPending } from "@web/ducks/events/selectors/sync.selector";
 import {
@@ -37,38 +39,32 @@ export const useGcalSync = () => {
   );
 
   const onImportEnd = useCallback(
-    (payload?: { eventsCount?: number; calendarsCount?: number } | string) => {
+    (payload?: ImportGCalEndPayload) => {
       dispatch(importGCalSlice.actions.importing(false));
+      socket.emit(FETCH_USER_METADATA);
 
       if (!isImportPendingRef.current) {
         return;
       }
 
-      // Parse payload if it's a string (from backend)
-      let importResults: { eventsCount?: number; calendarsCount?: number } = {};
-      if (typeof payload === "string") {
-        try {
-          importResults = JSON.parse(payload) as {
-            eventsCount?: number;
-            calendarsCount?: number;
-          };
-        } catch (e) {
-          console.error("Failed to parse import results:", e);
-          dispatch(
-            importGCalSlice.actions.setImportError(
-              "Failed to parse Google Calendar import results.",
-            ),
-          );
-          return;
-        }
-      } else if (payload) {
-        importResults = payload;
+      if (payload?.status === "errored") {
+        dispatch(importGCalSlice.actions.setImportError(payload.message));
+        return;
       }
 
-      // Set import results to trigger completion results display
-      dispatch(importGCalSlice.actions.setImportResults(importResults));
+      if (payload?.status === "ignored") {
+        return;
+      }
 
-      // Trigger refetch to load imported events (no page reload)
+      if (payload?.status === "completed") {
+        dispatch(
+          importGCalSlice.actions.setImportResults({
+            eventsCount: payload.eventsCount,
+            calendarsCount: payload.calendarsCount,
+          }),
+        );
+      }
+
       dispatch(
         triggerFetch({
           reason: Sync_AsyncStateContextReason.IMPORT_COMPLETE,
@@ -84,9 +80,11 @@ export const useGcalSync = () => {
 
   const onMetadataFetch = useCallback(
     (metadata: UserMetadata) => {
-      const importGcal = shouldImportGCal(metadata);
       const importStatus = metadata.sync?.importGCal;
       const isBackendImporting = importStatus === "importing";
+      const shouldAutoImport = importStatus === "restart";
+
+      dispatch(userMetadataSlice.actions.set(metadata));
 
       if (isImportPendingRef.current) {
         if (isBackendImporting) {
@@ -109,7 +107,7 @@ export const useGcalSync = () => {
       // Normal case (not in post-auth flow) - sync state with backend
       onImportStart(isBackendImporting);
 
-      if (importGcal) {
+      if (shouldAutoImport) {
         dispatch(importGCalSlice.actions.request(undefined as never));
       }
     },

@@ -22,6 +22,7 @@ import {
   type ClientToServerEvents,
   type CompassSocket,
   type CompassSocketServer,
+  type ImportGCalEndPayload,
   type InterServerEvents,
   type ServerToClientEvents,
   type SocketData,
@@ -30,7 +31,6 @@ import { ENV } from "@backend/common/constants/env.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SocketError } from "@backend/common/errors/socket/socket.errors";
 import { handleWsError } from "@backend/servers/websocket/websocket.util";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 
 const logger = Logger("app:websocket.server");
@@ -84,31 +84,6 @@ class WebSocketServer {
           .then((data) => this.handleUserMetadata(sessionId, data)),
       ),
     );
-
-    // Proactively check Google token status on connection (fire-and-forget)
-    void this.checkGoogleTokenStatus(socket, userId);
-  }
-
-  private async checkGoogleTokenStatus(
-    socket: CompassSocket,
-    userId: string,
-  ): Promise<void> {
-    try {
-      const user = await findCompassUserBy("_id", userId);
-
-      // User had Google connected (has googleId) but token is now missing
-      if (user && !user.google?.gRefreshToken && user.google?.googleId) {
-        logger.info(
-          `GOOGLE_REVOKED on connection - user has no refresh token: ${userId}`,
-        );
-        this.notifyClient(socket.id, GOOGLE_REVOKED);
-      }
-    } catch (err) {
-      logger.error(
-        `Failed to check Google token status for user: ${userId}`,
-        err,
-      );
-    }
   }
 
   private onDisconnect({
@@ -252,7 +227,7 @@ class WebSocketServer {
     return this.notifyUser(userId, IMPORT_GCAL_START);
   }
 
-  handleImportGCalEnd(userId: string, payload?: string) {
+  handleImportGCalEnd(userId: string, payload?: ImportGCalEndPayload) {
     return this.notifyUser(userId, IMPORT_GCAL_END, payload);
   }
 

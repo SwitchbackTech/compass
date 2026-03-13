@@ -6,10 +6,13 @@ import { faker } from "@faker-js/faker";
 import {
   EVENT_CHANGED,
   GOOGLE_REVOKED,
+  IMPORT_GCAL_END,
+  IMPORT_GCAL_START,
 } from "@core/constants/websocket.constants";
 import { Status } from "@core/errors/status.codes";
 import { Resource_Sync, XGoogleResourceState } from "@core/types/sync.types";
 import { type Schema_User } from "@core/types/user.types";
+import { type ImportGCalEndPayload } from "@core/types/websocket.types";
 import { isBase, isInstance } from "@core/util/event/event.util";
 import { waitUntilEvent } from "@core/util/wait-until-event.util";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
@@ -28,10 +31,10 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { invalidGrant400Error } from "@backend/__tests__/mocks.gcal/errors/error.google.invalidGrant";
 import { missingRefreshTokenError } from "@backend/__tests__/mocks.gcal/errors/error.missingRefreshToken";
-import { WatchError } from "@backend/common/errors/sync/watch.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
+import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/gcal.notification.handler";
 import syncService from "@backend/sync/services/sync.service";
 import * as syncQueries from "@backend/sync/util/sync.queries";
 import { updateSync } from "@backend/sync/util/sync.queries";
@@ -41,6 +44,77 @@ import userService from "@backend/user/services/user.service";
 describe("SyncController", () => {
   const baseDriver = new BaseDriver();
   const syncDriver = new SyncControllerDriver(baseDriver);
+  const importTimeoutMs = 7_000;
+
+  interface ImportSummary {
+    status: "completed";
+    eventsCount: number;
+    calendarsCount: number;
+  }
+
+  function parseImportResult(
+    result: ImportGCalEndPayload | undefined,
+  ): ImportSummary {
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        eventsCount: expect.any(Number) as number,
+        calendarsCount: expect.any(Number) as number,
+      }),
+    );
+
+    return result as ImportSummary;
+  }
+
+  async function waitUntilImportGCalStart<Result = unknown[]>(
+    websocketClient: Socket<DefaultEventsMap, DefaultEventsMap>,
+    beforeEvent: () => Promise<unknown> = () => Promise.resolve(),
+    afterEvent: (...args: void[]) => Promise<Result> = (...args) =>
+      Promise.resolve(args as Result),
+  ): Promise<Result> {
+    return waitUntilEvent(
+      websocketClient,
+      IMPORT_GCAL_START,
+      importTimeoutMs,
+      beforeEvent,
+      afterEvent,
+    );
+  }
+
+  async function waitUntilImportGCalEnd<Result = unknown[]>(
+    websocketClient: Socket<DefaultEventsMap, DefaultEventsMap>,
+    beforeEvent: () => Promise<unknown> = () => Promise.resolve(),
+    afterEvent: (
+      ...args: [ImportGCalEndPayload | undefined]
+    ) => Promise<Result> = (...args) => Promise.resolve(args as Result),
+  ): Promise<Result> {
+    return waitUntilEvent(
+      websocketClient,
+      IMPORT_GCAL_END,
+      importTimeoutMs,
+      beforeEvent,
+      afterEvent,
+    );
+  }
+
+  async function waitUntilUserWebsocketEvent<
+    Payload extends unknown[],
+    Result = Payload,
+  >(
+    websocketClient: Socket<DefaultEventsMap, DefaultEventsMap>,
+    event: string,
+    beforeEvent: () => Promise<unknown> = () => Promise.resolve(),
+    afterEvent: (...args: Payload) => Promise<Result> = (...args) =>
+      Promise.resolve(args as unknown as Result),
+  ): Promise<Result> {
+    return waitUntilEvent(
+      websocketClient,
+      event,
+      importTimeoutMs,
+      beforeEvent,
+      afterEvent,
+    );
+  }
 
   async function websocketUserFlow(waitForEventChanged = false): Promise<{
     user: WithId<Schema_User>;
@@ -58,20 +132,21 @@ describe("SyncController", () => {
     );
 
     const [importEnd, eventChanged] = await Promise.allSettled([
-      syncDriver.waitUntilImportGCalEnd(
+      waitUntilImportGCalEnd(
         websocketClient,
         () => syncDriver.importGCal({ userId: user._id.toString() }),
         (reason) => Promise.resolve(reason),
       ),
       ...(waitForEventChanged
-        ? [baseDriver.waitUntilWebsocketEvent(websocketClient, EVENT_CHANGED)]
+        ? [waitUntilUserWebsocketEvent(websocketClient, EVENT_CHANGED)]
         : []),
     ]);
 
     expect(importEnd.status).toEqual("fulfilled");
-    const importResult = (importEnd as { value: unknown })?.value as string;
-    // On success, the result is a JSON string with import summary (e.g., '{"eventsCount":5,"calendarsCount":1}')
-    const parsed = JSON.parse(importResult);
+    const importResult = (importEnd as { value: unknown })?.value as
+      | ImportGCalEndPayload
+      | undefined;
+    const parsed = parseImportResult(importResult);
     expect(parsed).toHaveProperty("eventsCount");
     expect(parsed).toHaveProperty("calendarsCount");
 
@@ -169,12 +244,17 @@ describe("SyncController", () => {
       restartSpy.mockRestore();
     });
 
-    it("should not schedule duplicate restart when import is already running", async () => {
+    it("should delegate repeated missing-sync-token recovery to the restart service", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
       const restartSpy = jest
         .spyOn(userService, "restartGoogleCalendarSync")
-        .mockResolvedValue();
+        .mockImplementation(async () => {
+          await userMetadataService.updateUserMetadata({
+            userId,
+            data: { sync: { importGCal: "importing" } },
+          });
+        });
 
       const watch = await mongoService.watch.findOne({
         user: userId,
@@ -183,11 +263,6 @@ describe("SyncController", () => {
 
       expect(watch).toBeDefined();
       expect(watch).not.toBeNull();
-
-      await userMetadataService.updateUserMetadata({
-        userId,
-        data: { sync: { importGCal: "importing" } },
-      });
 
       await updateSync(Resource_Sync.EVENTS, userId, watch!.gCalendarId, {
         nextSyncToken: undefined,
@@ -215,12 +290,13 @@ describe("SyncController", () => {
         Status.NO_CONTENT,
       );
 
-      expect(restartSpy).not.toHaveBeenCalled();
+      expect(restartSpy).toHaveBeenCalledTimes(1);
+      expect(restartSpy).toHaveBeenCalledWith(userId, { force: true });
 
       restartSpy.mockRestore();
     });
 
-    it("should cleanup stale gcal watches for unknown channels if resourceId exists", async () => {
+    it("should ignore stale notifications when only resourceId matches", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
       const calendarId = "test-calendar";
@@ -248,7 +324,66 @@ describe("SyncController", () => {
       expect(response.text).toEqual("IGNORED");
       expect(
         await mongoService.watch.findOne({ user: userId, resourceId }),
-      ).toBeNull();
+      ).toEqual(expect.objectContaining({ user: userId, resourceId }));
+    });
+
+    it("does not trigger a repair import for a late stale notification after a processed change", async () => {
+      const { user } = await UtilDriver.setupTestUser();
+      const userId = user._id.toString();
+      const watch = await mongoService.watch.findOne({
+        user: userId,
+        gCalendarId: { $ne: Resource_Sync.CALENDAR },
+      });
+
+      expect(watch).toBeDefined();
+      expect(watch).not.toBeNull();
+
+      const notificationSpy = jest
+        .spyOn(GCalNotificationHandler.prototype, "handleNotification")
+        .mockResolvedValue({ summary: "PROCESSED", changes: [] });
+      const backgroundChangeSpy = jest.spyOn(
+        webSocketServer,
+        "handleBackgroundCalendarChange",
+      );
+      const importStartSpy = jest.spyOn(
+        webSocketServer,
+        "handleImportGCalStart",
+      );
+
+      const activeResponse = await syncDriver.handleGoogleNotification(
+        {
+          resource: Resource_Sync.EVENTS,
+          channelId: watch!._id,
+          resourceId: watch!.resourceId,
+          resourceState: XGoogleResourceState.EXISTS,
+          expiration: watch!.expiration,
+        },
+        Status.OK,
+      );
+
+      const staleResponse = await syncDriver.handleGoogleNotification(
+        {
+          resource: Resource_Sync.EVENTS,
+          channelId: new ObjectId(),
+          resourceId: watch!.resourceId,
+          resourceState: XGoogleResourceState.EXISTS,
+          expiration: watch!.expiration,
+        },
+        Status.OK,
+      );
+
+      expect(activeResponse.text).toContain("PROCESSED");
+      expect(staleResponse.text).toEqual("IGNORED");
+      expect(notificationSpy).toHaveBeenCalledTimes(1);
+      expect(backgroundChangeSpy).toHaveBeenCalledTimes(1);
+      expect(importStartSpy).not.toHaveBeenCalled();
+      expect(
+        await mongoService.watch.findOne({ _id: watch!._id, user: userId }),
+      ).toEqual(expect.objectContaining({ user: userId }));
+
+      notificationSpy.mockRestore();
+      backgroundChangeSpy.mockRestore();
+      importStartSpy.mockRestore();
     });
 
     it("should prune Google data, notify client via websocket, and return structured response when user revokes access", async () => {
@@ -500,7 +635,7 @@ describe("SyncController", () => {
           data: { sync: { importGCal: "restart" } },
         });
 
-        await syncDriver.waitUntilImportGCalEnd(websocketClient, () =>
+        await waitUntilImportGCalEnd(websocketClient, () =>
           syncDriver.importGCal({ userId }),
         );
 
@@ -514,6 +649,35 @@ describe("SyncController", () => {
     });
 
     describe("Import Status: ", () => {
+      it("should force a repair import even after a completed sync", async () => {
+        const { user, websocketClient } = await websocketUserFlow(true);
+        const userId = user._id.toString();
+
+        const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
+
+        const { sync } = await userMetadataService.fetchUserMetadata(userId);
+
+        expect(sync?.importGCal).toEqual("completed");
+
+        const result = await waitUntilImportGCalEnd(
+          websocketClient,
+          () => syncDriver.importGCal({ userId }, { force: true }),
+          (reason) => Promise.resolve(reason),
+        );
+
+        const parsed = parseImportResult(result as ImportGCalEndPayload);
+
+        expect(parsed).toHaveProperty("eventsCount");
+        expect(parsed).toHaveProperty("calendarsCount");
+        expect(getAllEventsSpy).toHaveBeenCalled();
+
+        await waitUntilEvent(websocketClient, "disconnect", 100, () =>
+          Promise.resolve(websocketClient.disconnect()),
+        );
+
+        getAllEventsSpy.mockRestore();
+      });
+
       it("should not retry import once it has completed", async () => {
         const { user, websocketClient } = await websocketUserFlow(true);
         const userId = user._id.toString();
@@ -528,15 +692,16 @@ describe("SyncController", () => {
 
         const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
 
-        const failReason = await syncDriver.waitUntilImportGCalEnd(
+        const failReason = await waitUntilImportGCalEnd(
           websocketClient,
           () => syncDriver.importGCal({ userId }),
           (reason) => Promise.resolve(reason),
         );
 
-        expect(failReason).toEqual(
-          `User ${userId} gcal import is in progress or completed, ignoring this request`,
-        );
+        expect(failReason).toEqual({
+          status: "ignored",
+          message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
+        });
 
         expect(getAllEventsSpy).not.toHaveBeenCalled();
 
@@ -573,15 +738,16 @@ describe("SyncController", () => {
           data: { sync: { importGCal: "importing" } },
         });
 
-        const failReason = await syncDriver.waitUntilImportGCalEnd(
+        const failReason = await waitUntilImportGCalEnd(
           websocketClient,
           () => syncDriver.importGCal({ userId }),
           (reason) => Promise.resolve(reason),
         );
 
-        expect(failReason).toEqual(
-          `User ${userId} gcal import is in progress or completed, ignoring this request`,
-        );
+        expect(failReason).toEqual({
+          status: "ignored",
+          message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
+        });
 
         expect(getAllEventsSpy).not.toHaveBeenCalled();
 
@@ -618,14 +784,13 @@ describe("SyncController", () => {
           data: { sync: { importGCal: "restart" } },
         });
 
-        const result = await syncDriver.waitUntilImportGCalEnd(
+        const result = await waitUntilImportGCalEnd(
           websocketClient,
           () => syncDriver.importGCal({ userId }),
           (reason) => Promise.resolve(reason),
         );
 
-        // On success, result is a JSON string with import summary
-        const parsed = JSON.parse(result as string);
+        const parsed = parseImportResult(result as ImportGCalEndPayload);
         expect(parsed).toHaveProperty("eventsCount");
         expect(parsed).toHaveProperty("calendarsCount");
 
@@ -666,14 +831,13 @@ describe("SyncController", () => {
           data: { sync: { importGCal: "errored" } },
         });
 
-        const result = await syncDriver.waitUntilImportGCalEnd(
+        const result = await waitUntilImportGCalEnd(
           websocketClient,
           () => syncDriver.importGCal({ userId }),
           (reason) => Promise.resolve(reason),
         );
 
-        // On success, result is a JSON string with import summary
-        const parsed = JSON.parse(result as string);
+        const parsed = parseImportResult(result as ImportGCalEndPayload);
         expect(parsed).toHaveProperty("eventsCount");
         expect(parsed).toHaveProperty("calendarsCount");
 
@@ -707,7 +871,7 @@ describe("SyncController", () => {
         );
 
         await expect(
-          syncDriver.waitUntilImportGCalStart<boolean>(
+          waitUntilImportGCalStart<boolean>(
             websocketClient,
             () => syncDriver.importGCal({ userId }),
             () => Promise.resolve(true),
@@ -734,13 +898,12 @@ describe("SyncController", () => {
           Promise.resolve(websocketClient.connect()),
         );
 
-        const result = await syncDriver.waitUntilImportGCalEnd(
+        const result = await waitUntilImportGCalEnd(
           websocketClient,
           () => syncDriver.importGCal({ userId }),
           (reason) => Promise.resolve(reason),
         );
-        // On success, result is a JSON string with import summary
-        const parsed = JSON.parse(result as string);
+        const parsed = parseImportResult(result as ImportGCalEndPayload);
         expect(parsed).toHaveProperty("eventsCount");
         expect(parsed).toHaveProperty("calendarsCount");
 
@@ -765,7 +928,7 @@ describe("SyncController", () => {
         );
 
         await expect(
-          baseDriver.waitUntilWebsocketEvent(
+          waitUntilUserWebsocketEvent(
             websocketClient,
             EVENT_CHANGED,
             () => syncDriver.importGCal({ userId }),

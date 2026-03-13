@@ -79,7 +79,10 @@ class UserService {
     return user as unknown as UserProfile;
   };
 
-  deleteCompassDataForUser = async (userId: string, gcalAccess = true) => {
+  deleteCompassDataForUser = async (
+    userId: string,
+    gcalAccess = true,
+  ): Promise<Summary_Delete> => {
     const _id = zObjectId.parse(userId);
     const summary: Summary_Delete = {};
     const session = await mongoService.startSession();
@@ -207,6 +210,12 @@ class UserService {
       { _id },
       { $set: { "google.gRefreshToken": "" } },
     );
+    await userMetadataService.updateUserMetadata({
+      userId,
+      data: {
+        sync: { importGCal: "restart", incrementalGCalSync: "restart" },
+      },
+    });
   };
 
   startGoogleCalendarSync = async (
@@ -266,16 +275,16 @@ class UserService {
     try {
       webSocketServer.handleImportGCalStart(userId);
 
-      const userMeta = await userMetadataService.fetchUserMetadata(userId);
+      const userMeta = await this.fetchUserMetadata(userId);
       const importStatus = userMeta.sync?.importGCal;
       const isImporting = importStatus === "importing";
       const proceed = isForce ? !isImporting : shouldImportGCal(userMeta);
 
       if (!proceed) {
-        webSocketServer.handleImportGCalEnd(
-          userId,
-          `User ${userId} gcal import is in progress or completed, ignoring this request`,
-        );
+        webSocketServer.handleImportGCalEnd(userId, {
+          status: "ignored",
+          message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
+        });
 
         return;
       }
@@ -293,10 +302,10 @@ class UserService {
         data: { sync: { importGCal: "completed" } },
       });
 
-      webSocketServer.handleImportGCalEnd(
-        userId,
-        JSON.stringify(importResults),
-      );
+      webSocketServer.handleImportGCalEnd(userId, {
+        status: "completed",
+        ...importResults,
+      });
       webSocketServer.handleBackgroundCalendarChange(userId);
     } catch (err) {
       try {
@@ -315,10 +324,10 @@ class UserService {
 
       logger.error(`Re-sync failed for user: ${userId}`, err);
 
-      webSocketServer.handleImportGCalEnd(
-        userId,
-        `Import gCal failed for user: ${userId}`,
-      );
+      webSocketServer.handleImportGCalEnd(userId, {
+        status: "errored",
+        message: `Import gCal failed for user: ${userId}`,
+      });
     }
   };
 

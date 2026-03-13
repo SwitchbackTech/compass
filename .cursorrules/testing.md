@@ -73,6 +73,7 @@ const button = container.querySelector('.add-button');
 - Use async/await for asynchronous tests
 - Mock external services (Google Calendar API, MongoDB) appropriately
 - Test error handling and edge cases
+- **Do not import `mongoService` or other persistence layers directly in tests.** Use the test drivers in `packages/backend/src/__tests__/drivers/` (e.g. `UserDriver`, `WatchDriver`) so that tests stay agnostic of the backing store and switching away from Mongo later does not require test changes.
 
 **Real examples:**
 

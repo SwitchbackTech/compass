@@ -17,8 +17,17 @@ import { initSupertokens } from "@backend/common/middleware/supertokens.middlewa
 import mongoService from "@backend/common/services/mongo.service";
 import priorityService from "@backend/priority/services/priority.service";
 import syncService from "@backend/sync/services/sync.service";
+import { isUsingHttps } from "@backend/sync/util/sync.util";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
+import { type Summary_Delete } from "@backend/user/types/user.types";
+
+jest.mock("@backend/sync/util/sync.util", () => {
+  const actual = jest.requireActual<
+    typeof import("@backend/sync/util/sync.util")
+  >("@backend/sync/util/sync.util");
+  return { ...actual, isUsingHttps: jest.fn(actual.isUsingHttps) };
+});
 
 describe("UserService", () => {
   beforeAll(initSupertokens);
@@ -38,7 +47,7 @@ describe("UserService", () => {
 
       expect(storedUser).toEqual(
         expect.objectContaining({
-          email: gUser.email,
+          email: gUser.email as string,
           google: expect.objectContaining({
             gRefreshToken: refreshToken,
           }),
@@ -90,15 +99,16 @@ describe("UserService", () => {
       await SyncDriver.createSync(storedUser!, true);
       await userService.startGoogleCalendarSync(userId);
 
-      const summary = await userService.deleteCompassDataForUser(userId, false);
+      const summary: Summary_Delete =
+        await userService.deleteCompassDataForUser(userId, false);
 
       expect(summary).toEqual(
         expect.objectContaining({
-          priorities: expect.any(Number),
-          calendars: expect.any(Number),
-          events: expect.any(Number),
-          syncs: expect.any(Number),
-          eventWatches: expect.any(Number),
+          priorities: expect.any(Number) as number,
+          calendars: expect.any(Number) as number,
+          events: expect.any(Number) as number,
+          syncs: expect.any(Number) as number,
+          eventWatches: expect.any(Number) as number,
           user: 1,
         }),
       );
@@ -215,6 +225,27 @@ describe("UserService", () => {
       importFullSpy.mockRestore();
       startWatchingSpy.mockRestore();
     });
+
+    it("persists event sync tokens without https so local sync can settle healthy", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+      (isUsingHttps as jest.Mock).mockReturnValue(false);
+
+      await userService.startGoogleCalendarSync(userId);
+
+      const syncRecord = await mongoService.sync.findOne({ user: userId });
+      const metadata = await userMetadataService.fetchUserMetadata(userId);
+
+      expect(syncRecord?.google?.events?.length ?? 0).toBeGreaterThan(0);
+      expect(
+        syncRecord?.google?.events?.every(({ nextSyncToken }) =>
+          Boolean(nextSyncToken),
+        ),
+      ).toBe(true);
+      expect(metadata.google?.syncStatus).toBe("healthy");
+
+      (isUsingHttps as jest.Mock).mockRestore();
+    });
   });
 
   describe("stopGoogleCalendarSync", () => {
@@ -232,7 +263,9 @@ describe("UserService", () => {
         calendars.map((calendar) => CompassCalendarSchema.safeParse(calendar)),
       ).toEqual(
         expect.arrayContaining(
-          calendars.map(() => expect.objectContaining({ success: true })),
+          calendars.map((): unknown =>
+            expect.objectContaining({ success: true }),
+          ),
         ),
       );
 
@@ -282,7 +315,7 @@ describe("UserService", () => {
   });
 
   describe("pruneGoogleData", () => {
-    it("stops sync and clears the Google refresh token on the user document", async () => {
+    it("stops sync, clears the Google refresh token, and resets sync metadata", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
       const stopWatchesSpy = jest.spyOn(syncService, "stopWatches");
@@ -296,6 +329,13 @@ describe("UserService", () => {
         user: userId,
       });
       expect(eventCountBefore).toBeGreaterThan(0);
+
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: {
+          sync: { importGCal: "completed", incrementalGCalSync: "completed" },
+        },
+      });
 
       await userService.pruneGoogleData(userId);
 
@@ -311,6 +351,10 @@ describe("UserService", () => {
       expect(await mongoService.watch.countDocuments({ user: userId })).toBe(0);
       const sync = await mongoService.sync.findOne({ user: userId });
       expect(sync).not.toHaveProperty(CalendarProvider.GOOGLE);
+
+      const metadata = await userMetadataService.fetchUserMetadata(userId);
+      expect(metadata.sync?.importGCal).toBe("restart");
+      expect(metadata.sync?.incrementalGCalSync).toBe("restart");
     });
   });
 

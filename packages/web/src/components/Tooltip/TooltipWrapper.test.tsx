@@ -69,6 +69,19 @@ describe("TooltipWrapper", () => {
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
+  it("does not call onClick when disabled", () => {
+    const onClick = jest.fn();
+    render(
+      <TooltipWrapper disabled onClick={onClick}>
+        <button>Disabled</button>
+      </TooltipWrapper>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /disabled/i }));
+
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
   it("does not render tooltip content until opened", async () => {
     const user = userEvent.setup();
     render(

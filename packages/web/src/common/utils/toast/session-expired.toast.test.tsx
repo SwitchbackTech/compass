@@ -26,6 +26,9 @@ describe("SessionExpiredToast", () => {
   it("renders session-expired message and reconnect button", () => {
     render(<SessionExpiredToast toastId="session-expired-api" />);
 
+    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
+      googleAuthIntent: "reconnect",
+    });
     expect(
       screen.getByText("Google Calendar connection expired. Please reconnect."),
     ).toBeInTheDocument();

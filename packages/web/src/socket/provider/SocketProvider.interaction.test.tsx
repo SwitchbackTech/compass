@@ -8,6 +8,7 @@ import {
   IMPORT_GCAL_START,
   USER_METADATA,
 } from "@core/constants/websocket.constants";
+import { type ImportGCalEndPayload } from "@core/types/websocket.types";
 import { SyncEventsOverlay } from "@web/components/SyncEventsOverlay/SyncEventsOverlay";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import {
@@ -43,7 +44,7 @@ jest.mock("socket.io-client", () => ({
  */
 describe("GCal Re-Authentication Flow", () => {
   // Socket event callbacks captured during render
-  let importEndCallback: ((data?: string) => void) | undefined;
+  let importEndCallback: ((data?: ImportGCalEndPayload) => void) | undefined;
   let importStartCallback: (() => void) | undefined;
   let metadataCallback:
     | ((data?: { sync?: { importGCal?: string } }) => void)
@@ -198,9 +199,11 @@ describe("GCal Re-Authentication Flow", () => {
       });
 
       await act(async () => {
-        importEndCallback?.(
-          JSON.stringify({ eventsCount: 15, calendarsCount: 3 }),
-        );
+        importEndCallback?.({
+          status: "completed",
+          eventsCount: 15,
+          calendarsCount: 3,
+        });
       });
 
       // Allow buffered visibility to settle
@@ -244,9 +247,11 @@ describe("GCal Re-Authentication Flow", () => {
 
       // Backend sends IMPORT_GCAL_END with zero events (valid response)
       await act(async () => {
-        importEndCallback?.(
-          JSON.stringify({ eventsCount: 0, calendarsCount: 1 }),
-        );
+        importEndCallback?.({
+          status: "completed",
+          eventsCount: 0,
+          calendarsCount: 1,
+        });
       });
 
       await act(async () => {
@@ -353,9 +358,11 @@ describe("GCal Re-Authentication Flow", () => {
 
       // Backend completes import
       await act(async () => {
-        importEndCallback?.(
-          JSON.stringify({ eventsCount: 42, calendarsCount: 2 }),
-        );
+        importEndCallback?.({
+          status: "completed",
+          eventsCount: 42,
+          calendarsCount: 2,
+        });
       });
 
       await act(async () => {
@@ -408,9 +415,11 @@ describe("GCal Re-Authentication Flow", () => {
 
       // Backend responds successfully
       await act(async () => {
-        importEndCallback?.(
-          JSON.stringify({ eventsCount: 10, calendarsCount: 1 }),
-        );
+        importEndCallback?.({
+          status: "completed",
+          eventsCount: 10,
+          calendarsCount: 1,
+        });
       });
 
       await act(async () => {
@@ -426,7 +435,7 @@ describe("GCal Re-Authentication Flow", () => {
       expect(state.sync.importGCal.importResults).not.toBeNull();
     });
 
-    it("handles error response from backend", async () => {
+    it("handles errored payloads from the backend", async () => {
       const store = createTestStore({ isImportPending: true });
 
       render(
@@ -441,13 +450,12 @@ describe("GCal Re-Authentication Flow", () => {
         expect(importEndCallback).toBeDefined();
       });
 
-      // Backend sends malformed JSON (error case)
-      const consoleSpy = jest
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
-
       await act(async () => {
-        importEndCallback?.("invalid-json-{{{");
+        importEndCallback?.({
+          status: "errored",
+          message:
+            "Incremental Google Calendar sync failed for user: test-user",
+        });
       });
 
       await act(async () => {
@@ -462,11 +470,49 @@ describe("GCal Re-Authentication Flow", () => {
       // State should reflect error
       const state = store.getState();
       expect(state.sync.importGCal.importError).toBe(
-        "Failed to parse Google Calendar import results.",
+        "Incremental Google Calendar sync failed for user: test-user",
       );
       expect(state.sync.importGCal.isImportPending).toBe(false);
+    });
 
-      consoleSpy.mockRestore();
+    it("hides spinner when import end is ignored and metadata reports completion", async () => {
+      const store = createTestStore({ isImportPending: true, importing: true });
+
+      render(
+        <Provider store={store}>
+          <SocketProvider>
+            <SyncEventsOverlay />
+          </SocketProvider>
+        </Provider>,
+      );
+
+      await waitFor(() => {
+        expect(importEndCallback).toBeDefined();
+        expect(metadataCallback).toBeDefined();
+      });
+
+      await act(async () => {
+        importEndCallback?.({
+          status: "ignored",
+          message:
+            "User test-user gcal import is in progress or completed, ignoring this request",
+        });
+      });
+
+      expect(store.getState().sync.importGCal.isImportPending).toBe(true);
+
+      await act(async () => {
+        metadataCallback?.({ sync: { importGCal: "completed" } });
+      });
+
+      await act(async () => {
+        jest.advanceTimersByTime(100);
+      });
+
+      expect(
+        screen.queryByText("Importing your Google Calendar events..."),
+      ).not.toBeInTheDocument();
+      expect(store.getState().sync.importGCal.isImportPending).toBe(false);
     });
   });
 
@@ -507,9 +553,11 @@ describe("GCal Re-Authentication Flow", () => {
 
       // Event arrives - with the ref pattern fix, this should process correctly
       await act(async () => {
-        importEndCallback?.(
-          JSON.stringify({ eventsCount: 25, calendarsCount: 4 }),
-        );
+        importEndCallback?.({
+          status: "completed",
+          eventsCount: 25,
+          calendarsCount: 4,
+        });
       });
 
       await act(async () => {

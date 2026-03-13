@@ -117,6 +117,10 @@ export const createInitialState = (
     settings: {
       isCmdPaletteOpen: false,
     },
+    userMetadata: {
+      current: null,
+      status: "idle",
+    },
     sync: {
       importGCal: {
         importing: false,
@@ -131,7 +135,7 @@ export const createInitialState = (
       },
     },
     ...partialState,
-  };
+  } as InitialReduxState;
 };
 
 export const createStoreWithEvents = (

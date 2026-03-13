@@ -1,5 +1,4 @@
 import cors from "cors";
-import { type Credentials, type TokenPayload } from "google-auth-library";
 import { ObjectId } from "mongodb";
 import supertokens, { default as SuperTokens, User } from "supertokens-node";
 import Dashboard from "supertokens-node/recipe/dashboard";
@@ -15,9 +14,14 @@ import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { zObjectId } from "@core/types/type.utils";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
-import type { GoogleSignInSuccess } from "@backend/auth/services/google/google.auth.success.service";
 import { handleGoogleAuth } from "@backend/auth/services/google/google.auth.success.service";
 import { ENV } from "@backend/common/constants/env.constants";
+import {
+  type CreateGoogleSignInResponse,
+  type ThirdPartySignInUpInput,
+  createGoogleSignInSuccess,
+  getGoogleAuthIntent,
+} from "@backend/common/middleware/supertokens.middleware.util";
 import mongoService from "@backend/common/services/mongo.service";
 import syncService from "@backend/sync/services/sync.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
@@ -108,11 +112,36 @@ export const initSupertokens = () => {
                   }),
                 };
               },
-              async signInUp(
-                input: Parameters<typeof originalImplementation.signInUp>[0],
-              ) {
-                const response = await originalImplementation.signInUp(input);
-                await runGoogleAuth(response, input);
+            };
+          },
+          apis(originalImplementation) {
+            return {
+              ...originalImplementation,
+              async signInUpPOST(input: ThirdPartySignInUpInput) {
+                if (!originalImplementation.signInUpPOST) {
+                  throw new BaseError(
+                    "signInUpPOST not implemented",
+                    "signInUpPOST not implemented",
+                    Status.BAD_REQUEST,
+                    true,
+                  );
+                }
+
+                const response =
+                  await originalImplementation.signInUpPOST(input);
+                const body = (await input.options.req.getJSONBody()) as {
+                  googleAuthIntent?: unknown;
+                };
+                const success = createGoogleSignInSuccess(
+                  response as CreateGoogleSignInResponse,
+                  getGoogleAuthIntent(body?.googleAuthIntent),
+                  input.session?.getUserId() ?? null,
+                );
+
+                if (success) {
+                  await handleGoogleAuth(success, compassAuthService);
+                }
+
                 return response;
               },
             };
@@ -174,28 +203,3 @@ export const supertokensCors = () =>
     ],
     credentials: true,
   });
-
-function runGoogleAuth(
-  response: { status: string } & Record<string, unknown>,
-  input: { session?: { getUserId(): string } },
-): Promise<void> {
-  if (response.status !== "OK") return Promise.resolve();
-
-  const ok = response as unknown as {
-    rawUserInfoFromProvider: { fromIdTokenPayload: TokenPayload };
-    oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">;
-    createdNewRecipeUser: boolean;
-    user: { id: string; loginMethods: unknown[] };
-  };
-
-  const success: GoogleSignInSuccess = {
-    providerUser: ok.rawUserInfoFromProvider.fromIdTokenPayload,
-    oAuthTokens: ok.oAuthTokens,
-    createdNewRecipeUser: ok.createdNewRecipeUser,
-    recipeUserId: ok.user.id,
-    loginMethodsLength: ok.user.loginMethods.length,
-    sessionUserId: input.session ? input.session.getUserId() : null,
-  };
-
-  return handleGoogleAuth(success, compassAuthService);
-}

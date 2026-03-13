@@ -15,6 +15,7 @@ import { TooltipDescription } from "./Description/TooltipDescription";
 export interface Props {
   children: ReactNode;
   description?: string;
+  disabled?: boolean;
   onClick?: () => void;
   shortcut?: string | ReactNode;
 }
@@ -22,6 +23,7 @@ export interface Props {
 export const TooltipWrapper: React.FC<Props> = ({
   children,
   description,
+  disabled = false,
   onClick = () => {},
   shortcut,
 }) => {
@@ -29,7 +31,12 @@ export const TooltipWrapper: React.FC<Props> = ({
 
   return (
     <Tooltip open={isTooltipOpen} onOpenChange={setIsTooltipOpen}>
-      <TooltipTrigger onClick={onClick}>{children}</TooltipTrigger>
+      <TooltipTrigger
+        aria-disabled={disabled || undefined}
+        onClick={disabled ? undefined : onClick}
+      >
+        {children}
+      </TooltipTrigger>
 
       <TooltipContent
         className={`${description ? "bg-fg-primary" : ""} rounded p-1`}

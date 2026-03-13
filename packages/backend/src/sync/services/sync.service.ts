@@ -8,9 +8,10 @@ import {
   type Payload_Sync_Notif,
   Resource_Sync,
   type Result_Watch_Stop,
+  XGoogleResourceState,
 } from "@core/types/sync.types";
 import { ExpirationDateSchema } from "@core/types/type.utils";
-import { type Schema_Watch, WatchSchema } from "@core/types/watch.types";
+import { WatchSchema } from "@core/types/watch.types";
 import { shouldDoIncrementalGCalSync } from "@core/util/event/event.util";
 import { getGcalClient } from "@backend/auth/services/google/google.auth.service";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
@@ -38,10 +39,7 @@ import {
   isWatchingGoogleResource,
   updateSync,
 } from "@backend/sync/util/sync.queries";
-import {
-  getChannelExpiration,
-  isUsingHttps,
-} from "@backend/sync/util/sync.util";
+import { getChannelExpiration } from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 
@@ -94,76 +92,48 @@ class SyncService {
     channelId,
     resourceId,
   }: Payload_Sync_Notif): Promise<boolean> {
-    const channels: Schema_Watch[] = [];
-
     const channel = await mongoService.watch.findOne({
       _id: channelId,
       resourceId,
     });
 
-    if (channel) channels.push(channel);
-
     if (!channel) {
       logger.warn(
-        `Exact match not found for stale watch record cleanup: { channelId: ${channelId}, resourceId: ${resourceId}}. Extending Search using resourceId only.`,
-      );
-
-      const resourceMatchedChannels = await mongoService.watch
-        .find({ resourceId })
-        .toArray();
-
-      if (resourceMatchedChannels.length > 0) {
-        logger.warn(
-          `Found ${resourceMatchedChannels.length} watch records with resourceId: ${resourceId}.`,
-        );
-
-        channels.push(...resourceMatchedChannels);
-      }
-    }
-
-    if (channels.length === 0) {
-      logger.error(
-        `Stale watch cleanup failed. Couldn't find any watch based on this channelId: ${channelId} or resourceId: ${resourceId}`,
+        `Ignoring stale Google notification because no exact watch exists for channelId: ${channelId.toString()}, resourceId: ${resourceId}`,
       );
 
       return false;
     }
 
-    const deleted = await Promise.all(
-      channels.map(async (channel): Promise<boolean> => {
-        try {
-          await this.stopWatch(
-            channel.user,
-            channel._id.toString(),
-            channel.resourceId,
-          );
+    try {
+      await this.stopWatch(
+        channel.user,
+        channel._id.toString(),
+        channel.resourceId,
+      );
 
-          logger.warn(
-            `Cleaned up stale watch for user: ${channel.user} with channelId: ${channel._id.toString()} with resourceId: ${channel.resourceId}`,
-          );
+      logger.warn(
+        `Cleaned up stale watch for user: ${channel.user} with channelId: ${channel._id.toString()} with resourceId: ${channel.resourceId}`,
+      );
 
-          return true;
-        } catch (error) {
-          logger.error(
-            `Failed to clean up stale watch for user: ${channel.user} with channelId: ${channel._id.toString()}`,
-            error,
-          );
+      return true;
+    } catch (error) {
+      logger.error(
+        `Failed to clean up stale watch for user: ${channel.user} with channelId: ${channel._id.toString()}`,
+        error,
+      );
 
-          return false;
-        }
-      }),
-    );
-
-    return deleted.some((d) => d);
+      return false;
+    }
   }
 
   handleGcalNotification = async (payload: Payload_Sync_Notif) => {
     const { channelId, resourceId, resourceState, resource } = payload;
     const { expiration } = payload;
 
-    if (resourceState === "sync") {
+    if (resourceState === XGoogleResourceState.SYNC) {
       logger.info(
-        `${resource} sync initialized for channelId: ${payload.channelId}`,
+        `${resource} sync initialized for channelId: ${payload.channelId.toString()}`,
       );
 
       return "INITIALIZED";
@@ -182,7 +152,7 @@ class SyncService {
       if (cleanedUp) return "IGNORED";
 
       logger.warn(
-        `Ignoring notification because no active watch record exists for channel: ${payload.channelId}`,
+        `Ignoring notification because no active watch record exists for channel: ${payload.channelId.toString()}`,
       );
 
       return "IGNORED";
@@ -197,7 +167,7 @@ class SyncService {
       if (cleanedUp) return "IGNORED";
 
       logger.warn(
-        `Ignoring notification because no sync record exists for channel: ${payload.channelId}`,
+        `Ignoring notification because no sync record exists for channel: ${payload.channelId.toString()}`,
       );
 
       return "IGNORED";
@@ -258,7 +228,7 @@ class SyncService {
     try {
       const syncImport = await createSyncImport(gcal);
 
-      const eventImports = Promise.all(
+      const eventImports = await Promise.all(
         gCalendarIds.map(async (gCalId) => {
           const { nextSyncToken, ...result } = await syncImport.importAllEvents(
             userId,
@@ -266,19 +236,13 @@ class SyncService {
             2500,
           );
 
-          if (isUsingHttps()) {
-            await updateSync(
-              Resource_Sync.EVENTS,
-              userId,
-              gCalId,
-              { nextSyncToken },
-              session,
-            );
-          } else {
-            logger.warn(
-              `Skipped updating sync token for user: ${userId} and gCalId: ${gCalId} because not using https`,
-            );
-          }
+          await updateSync(
+            Resource_Sync.EVENTS,
+            userId,
+            gCalId,
+            { nextSyncToken },
+            session,
+          );
 
           return { gCalId, ...result };
         }),
@@ -306,14 +270,20 @@ class SyncService {
     try {
       webSocketServer.handleImportGCalStart(userId);
 
-      const userMeta = await userMetadataService.fetchUserMetadata(userId);
+      const userMeta = await userMetadataService.fetchUserMetadata(
+        userId,
+        undefined,
+        {
+          skipAssessment: true,
+        },
+      );
       const proceed = shouldDoIncrementalGCalSync(userMeta);
 
       if (!proceed) {
-        webSocketServer.handleImportGCalEnd(
-          userId,
-          `User ${userId} gcal incremental sync is in progress or completed, ignoring this request`,
-        );
+        webSocketServer.handleImportGCalEnd(userId, {
+          status: "ignored",
+          message: `User ${userId} gcal incremental sync is in progress or completed, ignoring this request`,
+        });
 
         return;
       }
@@ -334,7 +304,9 @@ class SyncService {
         data: { sync: { incrementalGCalSync: "completed" } },
       });
 
-      webSocketServer.handleImportGCalEnd(userId);
+      webSocketServer.handleImportGCalEnd(userId, {
+        status: "completed",
+      });
       webSocketServer.handleBackgroundCalendarChange(userId);
 
       return result;
@@ -349,10 +321,10 @@ class SyncService {
         error,
       );
 
-      webSocketServer.handleImportGCalEnd(
-        userId,
-        `Incremental Google Calendar sync failed for user: ${userId}`,
-      );
+      webSocketServer.handleImportGCalEnd(userId, {
+        status: "errored",
+        message: `Incremental Google Calendar sync failed for user: ${userId}`,
+      });
 
       throw error;
     }

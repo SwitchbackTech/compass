@@ -3,7 +3,7 @@ import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import * as useGoogleAuthModule from "@web/auth/hooks/oauth/useGoogleAuth";
-import * as useSessionModule from "@web/auth/hooks/session/useSession";
+import { SyncApi } from "@web/common/apis/sync.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { keyPressed$ } from "@web/common/utils/dom/event-emitter.util";
 import * as eventUtil from "@web/common/utils/event/event.util";
@@ -20,6 +20,77 @@ jest.mock("react-router-dom", () => ({
   useNavigate: jest.fn(),
   useLocation: jest.fn(),
 }));
+
+// Mock react-cmdk (ListItem must accept disabled and render a real button for toBeDisabled())
+jest.mock("react-cmdk", () => {
+  const React = require("react");
+
+  const CommandPalette = ({
+    children,
+    isOpen,
+    onChangeSearch,
+    placeholder,
+    search,
+  }: any) => {
+    if (!isOpen) {
+      return null;
+    }
+
+    return (
+      <div>
+        <input
+          onChange={(event) => onChangeSearch(event.target.value)}
+          placeholder={placeholder}
+          value={search}
+        />
+        {children}
+      </div>
+    );
+  };
+
+  CommandPalette.Page = ({ children }: any) => <div>{children}</div>;
+  CommandPalette.List = ({ children, heading }: any) => (
+    <section>
+      <h2>{heading}</h2>
+      {children}
+    </section>
+  );
+  CommandPalette.ListItem = ({ children, disabled, onClick }: any) => (
+    <button disabled={disabled} onClick={onClick}>
+      {children}
+    </button>
+  );
+  CommandPalette.FreeSearchAction = () => <div>No results</div>;
+
+  function filterItems(
+    items: Array<{
+      heading?: string;
+      id: string;
+      items: Array<{ children?: string }>;
+    }>,
+    search?: string,
+  ) {
+    if (!search?.trim()) return items;
+    const q = search.toLowerCase().trim();
+    return items
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) =>
+          String(item.children ?? "")
+            .toLowerCase()
+            .includes(q),
+        ),
+      }))
+      .filter((group) => group.items.length > 0);
+  }
+
+  return {
+    __esModule: true,
+    default: CommandPalette,
+    filterItems,
+    getItemIndex: () => 0,
+  };
+});
 
 // Mock dayjs
 jest.mock("@core/util/date/dayjs", () => ({
@@ -45,6 +116,12 @@ jest.mock("@web/common/utils/event/event.util");
 jest.mock("@web/store/store.hooks", () => ({
   useAppDispatch: () => mockDispatch,
   useAppSelector: jest.requireActual("@web/store/store.hooks").useAppSelector,
+}));
+
+jest.mock("@web/common/apis/sync.api", () => ({
+  SyncApi: {
+    importGCal: jest.fn().mockResolvedValue(undefined),
+  },
 }));
 
 function Component() {
@@ -246,12 +323,7 @@ describe("DayCmdPalette", () => {
       });
     });
 
-    it("shows 'Connect Google Calendar' when not authenticated", async () => {
-      jest.spyOn(useSessionModule, "useSession").mockReturnValue({
-        authenticated: false,
-        setAuthenticated: jest.fn(),
-      });
-
+    it("shows 'Connect Google Calendar' when metadata is missing", async () => {
       await act(() =>
         render(<DayCmdPalette />, {
           state: { settings: { isCmdPaletteOpen: true } },
@@ -259,43 +331,51 @@ describe("DayCmdPalette", () => {
       );
 
       expect(screen.getByText("Connect Google Calendar")).toBeInTheDocument();
-      expect(
-        screen.queryByText("Google Calendar Connected"),
-      ).not.toBeInTheDocument();
     });
 
-    it("shows 'Google Calendar Connected' when authenticated", async () => {
-      jest.spyOn(useSessionModule, "useSession").mockReturnValue({
-        authenticated: true,
-        setAuthenticated: jest.fn(),
-      });
-
+    it("disables the generic action when Google Calendar is healthy", async () => {
       await act(() =>
         render(<DayCmdPalette />, {
-          state: { settings: { isCmdPaletteOpen: true } },
+          state: {
+            settings: { isCmdPaletteOpen: true },
+            userMetadata: {
+              current: {
+                google: {
+                  connectionStatus: "connected",
+                  syncStatus: "healthy",
+                },
+              },
+            },
+          },
         }),
       );
 
-      expect(screen.getByText("Google Calendar Connected")).toBeInTheDocument();
       expect(
-        screen.queryByText("Connect Google Calendar"),
-      ).not.toBeInTheDocument();
+        screen.getByRole("button", { name: "Google Calendar Connected" }),
+      ).toBeDisabled();
     });
 
-    it("triggers login when 'Connect Google Calendar' is clicked and not authenticated", async () => {
-      jest.spyOn(useSessionModule, "useSession").mockReturnValue({
-        authenticated: false,
-        setAuthenticated: jest.fn(),
-      });
-
+    it("triggers login when reconnect is required", async () => {
       const user = userEvent.setup();
       await act(() =>
         render(<DayCmdPalette />, {
-          state: { settings: { isCmdPaletteOpen: true } },
+          state: {
+            settings: { isCmdPaletteOpen: true },
+            userMetadata: {
+              current: {
+                google: {
+                  connectionStatus: "reconnect_required",
+                  syncStatus: "none",
+                },
+              },
+            },
+          },
         }),
       );
 
-      await act(() => user.click(screen.getByText("Connect Google Calendar")));
+      await act(() =>
+        user.click(screen.getByText("Reconnect Google Calendar")),
+      );
 
       expect(mockLogin).toHaveBeenCalled();
       expect(mockDispatch).toHaveBeenCalledWith(
@@ -303,24 +383,49 @@ describe("DayCmdPalette", () => {
       );
     });
 
-    it("does not trigger login when 'Google Calendar Connected' is clicked", async () => {
-      jest.spyOn(useSessionModule, "useSession").mockReturnValue({
-        authenticated: true,
-        setAuthenticated: jest.fn(),
-      });
-
-      const user = userEvent.setup();
+    it("disables the generic action while repair is running", async () => {
       await act(() =>
         render(<DayCmdPalette />, {
-          state: { settings: { isCmdPaletteOpen: true } },
+          state: {
+            settings: { isCmdPaletteOpen: true },
+            userMetadata: {
+              current: {
+                google: {
+                  connectionStatus: "connected",
+                  syncStatus: "repairing",
+                },
+              },
+            },
+          },
         }),
       );
 
+      expect(
+        screen.getByRole("button", { name: "Syncing Google Calendar…" }),
+      ).toBeDisabled();
+    });
+
+    it("keeps the generic action enabled when sync needs attention", async () => {
+      const user = userEvent.setup();
       await act(() =>
-        user.click(screen.getByText("Google Calendar Connected")),
+        render(<DayCmdPalette />, {
+          state: {
+            settings: { isCmdPaletteOpen: true },
+            userMetadata: {
+              current: {
+                google: {
+                  connectionStatus: "connected",
+                  syncStatus: "attention",
+                },
+              },
+            },
+          },
+        }),
       );
 
-      expect(mockLogin).not.toHaveBeenCalled();
+      await act(() => user.click(screen.getByText("Repair Google Calendar")));
+
+      expect(SyncApi.importGCal).toHaveBeenCalledWith({ force: true });
     });
   });
 });

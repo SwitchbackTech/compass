@@ -41,8 +41,7 @@ const CmdPalette = ({
   const open = useAppSelector(selectIsCmdPaletteOpen);
   const [page] = useState<"root" | "projects">("root");
   const [search, setSearch] = useState("");
-  const { isGoogleCalendarConnected, onConnectGoogleCalendar } =
-    useConnectGoogle();
+  const { commandAction } = useConnectGoogle();
   const authCmdItems = useAuthCmdItems();
 
   const handleCreateSomedayDraft = async (
@@ -82,43 +81,43 @@ const CmdPalette = ({
             id: "create-event",
             children: "Create Event [c]",
             icon: "PlusIcon",
-            onClick: onEventTargetVisibility(() =>
-              createTimedDraft(
+            onClick: onEventTargetVisibility(() => {
+              void createTimedDraft(
                 isCurrentWeek,
                 startOfView,
                 "createShortcut",
                 dispatch,
-              ),
-            ),
+              );
+            }),
           },
           {
             id: "create-allday-event",
             children: "Create All-Day Event [a]",
             icon: "PlusIcon",
-            onClick: onEventTargetVisibility(() =>
-              createAlldayDraft(
+            onClick: onEventTargetVisibility(() => {
+              void createAlldayDraft(
                 startOfView,
                 endOfView,
                 "createShortcut",
                 dispatch,
-              ),
-            ),
+              );
+            }),
           },
           {
             id: "create-someday-week-event",
             children: "Create Week Event [w]",
             icon: "PlusIcon",
-            onClick: onEventTargetVisibility(() =>
-              handleCreateSomedayDraft(Categories_Event.SOMEDAY_WEEK),
-            ),
+            onClick: onEventTargetVisibility(() => {
+              void handleCreateSomedayDraft(Categories_Event.SOMEDAY_WEEK);
+            }),
           },
           {
             id: "create-someday-month-event",
             children: "Create Month Event [m]",
             icon: "PlusIcon",
-            onClick: onEventTargetVisibility(() =>
-              handleCreateSomedayDraft(Categories_Event.SOMEDAY_MONTH),
-            ),
+            onClick: onEventTargetVisibility(() => {
+              void handleCreateSomedayDraft(Categories_Event.SOMEDAY_MONTH);
+            }),
           },
           {
             id: "today",
@@ -138,15 +137,10 @@ const CmdPalette = ({
         items: [
           {
             id: "connect-google-calendar",
-            children: isGoogleCalendarConnected
-              ? "Google Calendar Connected"
-              : "Connect Google Calendar",
-            icon: isGoogleCalendarConnected
-              ? "CheckCircleIcon"
-              : "CloudArrowUpIcon",
-            onClick: isGoogleCalendarConnected
-              ? undefined
-              : onConnectGoogleCalendar,
+            children: commandAction.label,
+            icon: commandAction.icon,
+            disabled: commandAction.isDisabled,
+            onClick: commandAction.onSelect,
           },
           ...authCmdItems,
           {

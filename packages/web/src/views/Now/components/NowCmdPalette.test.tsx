@@ -1,6 +1,7 @@
 import { act } from "react";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
+import { SyncApi } from "@web/common/apis/sync.api";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { NowCmdPalette } from "@web/views/Now/components/NowCmdPalette";
 
@@ -37,8 +38,10 @@ jest.mock("react-cmdk", () => {
       {children}
     </section>
   );
-  CommandPalette.ListItem = ({ children, onClick }: any) => (
-    <button onClick={onClick}>{children}</button>
+  CommandPalette.ListItem = ({ children, disabled, onClick }: any) => (
+    <button disabled={disabled} onClick={onClick}>
+      {children}
+    </button>
   );
   CommandPalette.FreeSearchAction = () => <div>No results</div>;
 
@@ -61,22 +64,18 @@ jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
   onEventTargetVisibility: (cb: () => void) => () => cb(),
 }));
 
-// Mock useSession for auth state tests
-const mockSetAuthenticated = jest.fn();
-let mockAuthenticated = false;
-jest.mock("@web/auth/hooks/session/useSession", () => ({
-  useSession: () => ({
-    authenticated: mockAuthenticated,
-    setAuthenticated: mockSetAuthenticated,
-  }),
-}));
-
 // Mock useGoogleAuth
 const mockLogin = jest.fn();
 jest.mock("@web/auth/hooks/oauth/useGoogleAuth", () => ({
   useGoogleAuth: () => ({
     login: mockLogin,
   }),
+}));
+
+jest.mock("@web/common/apis/sync.api", () => ({
+  SyncApi: {
+    importGCal: jest.fn().mockResolvedValue(undefined),
+  },
 }));
 
 describe("NowCmdPalette", () => {
@@ -147,41 +146,102 @@ describe("NowCmdPalette", () => {
       mockLogin.mockClear();
     });
 
-    it("shows 'Connect Google Calendar' when not authenticated", () => {
-      mockAuthenticated = false;
+    it("shows 'Connect Google Calendar' when metadata is missing", () => {
       render(<NowCmdPalette />, { state: initialState });
 
-      expect(screen.getByText("Connect Google Calendar")).toBeInTheDocument();
       expect(
-        screen.queryByText("Google Calendar Connected"),
-      ).not.toBeInTheDocument();
+        screen.getByRole("button", { name: "Connect Google Calendar" }),
+      ).toBeEnabled();
     });
 
-    it("shows 'Google Calendar Connected' when authenticated", () => {
-      mockAuthenticated = true;
-      render(<NowCmdPalette />, { state: initialState });
+    it("disables the generic action when Google Calendar is healthy", () => {
+      render(<NowCmdPalette />, {
+        state: {
+          ...initialState,
+          userMetadata: {
+            current: {
+              google: {
+                connectionStatus: "connected",
+                syncStatus: "healthy",
+              },
+            },
+          },
+        },
+      });
 
-      expect(screen.getByText("Google Calendar Connected")).toBeInTheDocument();
       expect(
-        screen.queryByText("Connect Google Calendar"),
-      ).not.toBeInTheDocument();
+        screen.getByRole("button", { name: "Google Calendar Connected" }),
+      ).toBeDisabled();
     });
 
-    it("triggers login when 'Connect Google Calendar' is clicked and not authenticated", async () => {
-      mockAuthenticated = false;
-      render(<NowCmdPalette />, { state: initialState });
+    it("shows reconnect and triggers login when needed", async () => {
+      render(<NowCmdPalette />, {
+        state: {
+          ...initialState,
+          userMetadata: {
+            current: {
+              google: {
+                connectionStatus: "reconnect_required",
+                syncStatus: "none",
+              },
+            },
+          },
+        },
+      });
 
-      act(() => fireEvent.click(screen.getByText("Connect Google Calendar")));
+      act(() =>
+        fireEvent.click(
+          screen.getByRole("button", { name: "Reconnect Google Calendar" }),
+        ),
+      );
       await waitFor(() => expect(mockLogin).toHaveBeenCalled());
     });
 
-    it("does not trigger login when 'Google Calendar Connected' is clicked", async () => {
-      mockAuthenticated = true;
-      render(<NowCmdPalette />, { state: initialState });
+    it("disables the generic action while repairing", async () => {
+      render(<NowCmdPalette />, {
+        state: {
+          ...initialState,
+          userMetadata: {
+            current: {
+              google: {
+                connectionStatus: "connected",
+                syncStatus: "repairing",
+              },
+            },
+          },
+        },
+      });
 
-      act(() => fireEvent.click(screen.getByText("Google Calendar Connected")));
+      const button = screen.getByRole("button", {
+        name: "Syncing Google Calendar…",
+      });
+      expect(button).toBeDisabled();
+    });
 
-      expect(mockLogin).not.toHaveBeenCalled();
+    it("starts a forced repair when sync needs attention", async () => {
+      render(<NowCmdPalette />, {
+        state: {
+          ...initialState,
+          userMetadata: {
+            current: {
+              google: {
+                connectionStatus: "connected",
+                syncStatus: "attention",
+              },
+            },
+          },
+        },
+      });
+
+      act(() =>
+        fireEvent.click(
+          screen.getByRole("button", { name: "Repair Google Calendar" }),
+        ),
+      );
+
+      await waitFor(() =>
+        expect(SyncApi.importGCal).toHaveBeenCalledWith({ force: true }),
+      );
     });
   });
 });

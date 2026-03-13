@@ -1,11 +1,14 @@
 import { useDispatch } from "react-redux";
 import { renderHook } from "@testing-library/react";
 import {
+  FETCH_USER_METADATA,
   GOOGLE_REVOKED,
   IMPORT_GCAL_END,
   IMPORT_GCAL_START,
   USER_METADATA,
 } from "@core/constants/websocket.constants";
+import { type ImportGCalEndPayload } from "@core/types/websocket.types";
+import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import {
   selectImporting,
   selectIsImportPending,
@@ -27,6 +30,7 @@ jest.mock("@web/store/store.hooks", () => ({
 }));
 jest.mock("../client/socket.client", () => ({
   socket: {
+    emit: jest.fn(),
     on: jest.fn(),
     removeListener: jest.fn(),
   },
@@ -48,9 +52,13 @@ jest.mock("@web/ducks/events/slices/sync.slice", () => ({
   },
   triggerFetch: jest.fn(),
 }));
-// Mock shouldImportGCal util
-jest.mock("@core/util/event/event.util", () => ({
-  shouldImportGCal: jest.fn(() => false),
+jest.mock("@web/ducks/auth/slices/user-metadata.slice", () => ({
+  userMetadataSlice: {
+    actions: {
+      set: jest.fn((payload) => ({ type: "userMetadata/set", payload })),
+      clear: jest.fn(() => ({ type: "userMetadata/clear" })),
+    },
+  },
 }));
 jest.mock("react-toastify", () => ({
   toast: {
@@ -141,6 +149,9 @@ describe("useGcalSync", () => {
       metadataHandler?.({ sync: { importGCal: "importing" } });
 
       expect(mockDispatch).toHaveBeenCalledWith(
+        userMetadataSlice.actions.set({ sync: { importGCal: "importing" } }),
+      );
+      expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.importing(true),
       );
       expect(importGCalSlice.actions.setIsImportPending).not.toHaveBeenCalled();
@@ -160,6 +171,9 @@ describe("useGcalSync", () => {
 
       metadataHandler?.({ sync: { importGCal: "completed" } });
 
+      expect(mockDispatch).toHaveBeenCalledWith(
+        userMetadataSlice.actions.set({ sync: { importGCal: "completed" } }),
+      );
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.importing(false),
       );
@@ -186,6 +200,9 @@ describe("useGcalSync", () => {
       metadataHandler?.({ sync: { importGCal: "errored" } });
 
       expect(mockDispatch).toHaveBeenCalledWith(
+        userMetadataSlice.actions.set({ sync: { importGCal: "errored" } }),
+      );
+      expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.importing(false),
       );
       expect(mockDispatch).toHaveBeenCalledWith(
@@ -194,10 +211,7 @@ describe("useGcalSync", () => {
       expect(triggerFetch).not.toHaveBeenCalled();
     });
 
-    it("requests an import when metadata says one is needed", () => {
-      const { shouldImportGCal } = require("@core/util/event/event.util");
-      shouldImportGCal.mockReturnValue(true);
-
+    it("requests an import when metadata says restart is needed", () => {
       let metadataHandler: ((metadata: unknown) => void) | undefined;
       (socket.on as jest.Mock).mockImplementation((event, handler) => {
         if (event === USER_METADATA) {
@@ -212,6 +226,24 @@ describe("useGcalSync", () => {
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.request(undefined as never),
       );
+    });
+
+    it("does not auto-request an import when metadata says errored", () => {
+      let metadataHandler: ((metadata: unknown) => void) | undefined;
+      (socket.on as jest.Mock).mockImplementation((event, handler) => {
+        if (event === USER_METADATA) {
+          metadataHandler = handler;
+        }
+      });
+
+      renderHook(() => useGcalSync());
+
+      metadataHandler?.({
+        sync: { importGCal: "errored" },
+        google: { connectionStatus: "connected", syncStatus: "attention" },
+      });
+
+      expect(importGCalSlice.actions.request).not.toHaveBeenCalled();
     });
   });
 
@@ -241,18 +273,22 @@ describe("useGcalSync", () => {
     it("sets results when awaiting import results", () => {
       awaitingValue = true;
 
-      let importEndHandler: ((data: string) => void) | undefined;
-      (socket.on as jest.Mock).mockImplementation((event, handler) => {
-        if (event === IMPORT_GCAL_END) {
-          importEndHandler = handler;
-        }
-      });
+      let importEndHandler: ((data?: ImportGCalEndPayload) => void) | undefined;
+      (socket.on as jest.Mock).mockImplementation(
+        (event: string, handler: (data?: ImportGCalEndPayload) => void) => {
+          if (event === IMPORT_GCAL_END) {
+            importEndHandler = handler;
+          }
+        },
+      );
 
       renderHook(() => useGcalSync());
 
-      importEndHandler?.(
-        JSON.stringify({ eventsCount: 10, calendarsCount: 2 }),
-      );
+      importEndHandler?.({
+        status: "completed",
+        eventsCount: 10,
+        calendarsCount: 2,
+      });
 
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.importing(false),
@@ -263,6 +299,7 @@ describe("useGcalSync", () => {
           calendarsCount: 2,
         }),
       );
+      expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
       expect(triggerFetch).toHaveBeenCalledWith({
         reason: "IMPORT_COMPLETE",
       });
@@ -271,20 +308,23 @@ describe("useGcalSync", () => {
     it("does not set results when not awaiting import results", () => {
       awaitingValue = false;
 
-      let importEndHandler: ((data: string) => void) | undefined;
-      (socket.on as jest.Mock).mockImplementation((event, handler) => {
-        if (event === IMPORT_GCAL_END) {
-          importEndHandler = handler;
-        }
-      });
+      let importEndHandler: ((data?: ImportGCalEndPayload) => void) | undefined;
+      (socket.on as jest.Mock).mockImplementation(
+        (event: string, handler: (data?: ImportGCalEndPayload) => void) => {
+          if (event === IMPORT_GCAL_END) {
+            importEndHandler = handler;
+          }
+        },
+      );
 
       renderHook(() => useGcalSync());
 
-      importEndHandler?.(JSON.stringify({ eventsCount: 10 }));
+      importEndHandler?.({ status: "completed", eventsCount: 10 });
 
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.importing(false),
       );
+      expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
       expect(importGCalSlice.actions.setImportResults).not.toHaveBeenCalled();
     });
 
@@ -292,12 +332,14 @@ describe("useGcalSync", () => {
       // Simulate the race condition: starts false, changes to true,
       // then event arrives (testing ref pattern works correctly)
 
-      let importEndHandler: ((data: string) => void) | undefined;
-      (socket.on as jest.Mock).mockImplementation((event, handler) => {
-        if (event === IMPORT_GCAL_END) {
-          importEndHandler = handler;
-        }
-      });
+      let importEndHandler: ((data?: ImportGCalEndPayload) => void) | undefined;
+      (socket.on as jest.Mock).mockImplementation(
+        (event: string, handler: (data?: ImportGCalEndPayload) => void) => {
+          if (event === IMPORT_GCAL_END) {
+            importEndHandler = handler;
+          }
+        },
+      );
 
       // Start with awaitingImportResults = false
       awaitingValue = false;
@@ -308,9 +350,11 @@ describe("useGcalSync", () => {
       rerender();
 
       // Event arrives - should process correctly with ref pattern
-      importEndHandler?.(
-        JSON.stringify({ eventsCount: 10, calendarsCount: 2 }),
-      );
+      importEndHandler?.({
+        status: "completed",
+        eventsCount: 10,
+        calendarsCount: 2,
+      });
 
       // Verify setImportResults was called (not skipped due to stale closure)
       expect(mockDispatch).toHaveBeenCalledWith(
@@ -319,6 +363,35 @@ describe("useGcalSync", () => {
           calendarsCount: 2,
         }),
       );
+      expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
+    });
+
+    it("waits for metadata reconciliation when import end is ignored", () => {
+      awaitingValue = true;
+
+      let importEndHandler: ((data?: ImportGCalEndPayload) => void) | undefined;
+      (socket.on as jest.Mock).mockImplementation(
+        (event: string, handler: (data?: ImportGCalEndPayload) => void) => {
+          if (event === IMPORT_GCAL_END) {
+            importEndHandler = handler;
+          }
+        },
+      );
+
+      renderHook(() => useGcalSync());
+
+      importEndHandler?.({
+        status: "ignored",
+        message:
+          "User test-user gcal import is in progress or completed, ignoring this request",
+      });
+
+      expect(mockDispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.importing(false),
+      );
+      expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
+      expect(importGCalSlice.actions.setImportResults).not.toHaveBeenCalled();
+      expect(importGCalSlice.actions.setImportError).not.toHaveBeenCalled();
     });
   });
 
@@ -333,9 +406,11 @@ describe("useGcalSync", () => {
     it("shows spinner on import start and hides it on successful import end", () => {
       // Capture socket handlers to simulate backend events
       const handlers: Record<string, (...args: unknown[]) => void> = {};
-      (socket.on as jest.Mock).mockImplementation((event, handler) => {
-        handlers[event] = handler;
-      });
+      (socket.on as jest.Mock).mockImplementation(
+        (event: string, handler: (...args: unknown[]) => void) => {
+          handlers[event] = handler;
+        },
+      );
 
       awaitingValue = true;
       renderHook(() => useGcalSync());
@@ -360,10 +435,11 @@ describe("useGcalSync", () => {
       jest.advanceTimersByTime(2000);
 
       // Phase 3: Backend signals import complete with successful response
-      const successfulResponse = JSON.stringify({
+      const successfulResponse: ImportGCalEndPayload = {
+        status: "completed",
         eventsCount: 25,
         calendarsCount: 3,
-      });
+      };
       handlers[IMPORT_GCAL_END](successfulResponse);
 
       // Spinner should disappear (importing set to false)
@@ -377,6 +453,7 @@ describe("useGcalSync", () => {
           calendarsCount: 3,
         }),
       );
+      expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
       // Fetch should be triggered to load new events
       expect(triggerFetch).toHaveBeenCalledWith({
         reason: "IMPORT_COMPLETE",
@@ -385,9 +462,11 @@ describe("useGcalSync", () => {
 
     it("hides spinner when import completes successfully", () => {
       const handlers: Record<string, (...args: unknown[]) => void> = {};
-      (socket.on as jest.Mock).mockImplementation((event, handler) => {
-        handlers[event] = handler;
-      });
+      (socket.on as jest.Mock).mockImplementation(
+        (event: string, handler: (...args: unknown[]) => void) => {
+          handlers[event] = handler;
+        },
+      );
 
       awaitingValue = true;
       renderHook(() => useGcalSync());
@@ -401,21 +480,26 @@ describe("useGcalSync", () => {
       jest.advanceTimersByTime(REASONABLE_IMPORT_TIME_MS);
 
       // Import completes successfully
-      handlers[IMPORT_GCAL_END](
-        JSON.stringify({ eventsCount: 100, calendarsCount: 5 }),
-      );
+      handlers[IMPORT_GCAL_END]({
+        status: "completed",
+        eventsCount: 100,
+        calendarsCount: 5,
+      });
 
       // Verify spinner is hidden
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.importing(false),
       );
+      expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
     });
 
     it("handles rapid start/end sequence without state inconsistency", () => {
       const handlers: Record<string, (...args: unknown[]) => void> = {};
-      (socket.on as jest.Mock).mockImplementation((event, handler) => {
-        handlers[event] = handler;
-      });
+      (socket.on as jest.Mock).mockImplementation(
+        (event: string, handler: (...args: unknown[]) => void) => {
+          handlers[event] = handler;
+        },
+      );
 
       awaitingValue = true;
       renderHook(() => useGcalSync());
@@ -423,9 +507,11 @@ describe("useGcalSync", () => {
       // Rapid sequence: start → end (small import)
       handlers[IMPORT_GCAL_START](true);
       jest.advanceTimersByTime(100); // Very fast import
-      handlers[IMPORT_GCAL_END](
-        JSON.stringify({ eventsCount: 2, calendarsCount: 1 }),
-      );
+      handlers[IMPORT_GCAL_END]({
+        status: "completed",
+        eventsCount: 2,
+        calendarsCount: 1,
+      });
 
       // Verify the correct sequence of actions was dispatched:
       // 1. clearImportResults (on start)
@@ -437,6 +523,7 @@ describe("useGcalSync", () => {
       );
       expect(importGCalSlice.actions.importing).toHaveBeenCalledWith(true);
       expect(importGCalSlice.actions.importing).toHaveBeenCalledWith(false);
+      expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
       expect(importGCalSlice.actions.setImportResults).toHaveBeenCalledWith({
         eventsCount: 2,
         calendarsCount: 1,
@@ -445,9 +532,11 @@ describe("useGcalSync", () => {
 
     it("handles import end with empty payload gracefully", () => {
       const handlers: Record<string, (...args: unknown[]) => void> = {};
-      (socket.on as jest.Mock).mockImplementation((event, handler) => {
-        handlers[event] = handler;
-      });
+      (socket.on as jest.Mock).mockImplementation(
+        (event: string, handler: (...args: unknown[]) => void) => {
+          handlers[event] = handler;
+        },
+      );
 
       awaitingValue = true;
       renderHook(() => useGcalSync());
@@ -456,7 +545,7 @@ describe("useGcalSync", () => {
       mockDispatch.mockClear();
 
       // Backend sends empty response (edge case)
-      handlers[IMPORT_GCAL_END](JSON.stringify({}));
+      handlers[IMPORT_GCAL_END]({ status: "completed" });
 
       // Should still hide spinner and set empty results
       expect(mockDispatch).toHaveBeenCalledWith(
@@ -465,13 +554,16 @@ describe("useGcalSync", () => {
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.setImportResults({}),
       );
+      expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
     });
 
     it("handles import end with object payload (non-string)", () => {
       const handlers: Record<string, (...args: unknown[]) => void> = {};
-      (socket.on as jest.Mock).mockImplementation((event, handler) => {
-        handlers[event] = handler;
-      });
+      (socket.on as jest.Mock).mockImplementation(
+        (event: string, handler: (...args: unknown[]) => void) => {
+          handlers[event] = handler;
+        },
+      );
 
       awaitingValue = true;
       renderHook(() => useGcalSync());
@@ -479,8 +571,11 @@ describe("useGcalSync", () => {
       handlers[IMPORT_GCAL_START](true);
       mockDispatch.mockClear();
 
-      // Backend sends object directly (alternative format)
-      handlers[IMPORT_GCAL_END]({ eventsCount: 50, calendarsCount: 4 });
+      handlers[IMPORT_GCAL_END]({
+        status: "completed",
+        eventsCount: 50,
+        calendarsCount: 4,
+      });
 
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.importing(false),
@@ -491,16 +586,16 @@ describe("useGcalSync", () => {
           calendarsCount: 4,
         }),
       );
+      expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
     });
 
-    it("sets error state when backend returns malformed JSON", () => {
+    it("sets error state when backend returns an errored payload", () => {
       const handlers: Record<string, (...args: unknown[]) => void> = {};
-      (socket.on as jest.Mock).mockImplementation((event, handler) => {
-        handlers[event] = handler;
-      });
-      const consoleErrorSpy = jest
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+      (socket.on as jest.Mock).mockImplementation(
+        (event: string, handler: (...args: unknown[]) => void) => {
+          handlers[event] = handler;
+        },
+      );
 
       awaitingValue = true;
       renderHook(() => useGcalSync());
@@ -508,8 +603,10 @@ describe("useGcalSync", () => {
       handlers[IMPORT_GCAL_START](true);
       mockDispatch.mockClear();
 
-      // Backend sends malformed response
-      handlers[IMPORT_GCAL_END]("not valid json {{{");
+      handlers[IMPORT_GCAL_END]({
+        status: "errored",
+        message: "Incremental Google Calendar sync failed for user: test-user",
+      });
 
       // Should hide spinner
       expect(mockDispatch).toHaveBeenCalledWith(
@@ -518,13 +615,11 @@ describe("useGcalSync", () => {
       // Should set error
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.setImportError(
-          "Failed to parse Google Calendar import results.",
+          "Incremental Google Calendar sync failed for user: test-user",
         ),
       );
-      // Should NOT set results
+      expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
       expect(importGCalSlice.actions.setImportResults).not.toHaveBeenCalled();
-
-      consoleErrorSpy.mockRestore();
     });
   });
 });

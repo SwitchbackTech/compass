@@ -113,24 +113,33 @@ export class SyncController {
       resourceId,
     });
 
-    const metadata = await userMetadataService.fetchUserMetadata(userId);
+    const metadata = await userMetadataService.fetchUserMetadata(
+      userId,
+      undefined,
+      { skipAssessment: true },
+    );
+    const importStatus = metadata.sync?.importGCal;
 
-    if (metadata.sync?.importGCal === "importing") {
+    if (importStatus === "importing" || importStatus === "restart") {
       logger.info(
-        `Skipped Google sync recovery because full import is already running for user: ${userId}`,
+        `Skipped Google sync recovery because full import is already active for user: ${userId}`,
       );
       res.status(Status.NO_CONTENT).send();
       return;
     }
 
+    // Force-restart sync to recover from invalid sync token.
+    // When Google returns 410 (sync token invalid), the token may still exist
+    // in the database but is no longer valid. assessGoogleMetadata checks token
+    // existence, not validity, so we must force-restart directly.
     userService
       .restartGoogleCalendarSync(userId, { force: true })
-      .catch((err) =>
+      .catch((err) => {
         logger.error(
-          `Something went wrong recovering Google calendars for user: ${userId}`,
+          `Something went wrong with recovering google calendars for user: ${userId}`,
           err,
-        ),
-      );
+        );
+      });
 
     res.status(Status.NO_CONTENT).send();
   };
@@ -273,10 +282,18 @@ export class SyncController {
     }
   };
 
-  static importGCal = async (req: Request, res: Response) => {
+  static importGCal = (req: Request, res: Response): void => {
     const userId = req.session!.getUserId();
+    const isForce = req.body?.force === true;
 
-    userService.restartGoogleCalendarSync(userId);
+    userService
+      .restartGoogleCalendarSync(userId, { force: isForce })
+      .catch((err) => {
+        logger.error(
+          `Something went wrong starting Google Calendar import for user: ${userId}`,
+          err,
+        );
+      });
 
     res.status(Status.NO_CONTENT).send();
   };
