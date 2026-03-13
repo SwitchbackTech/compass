@@ -152,6 +152,44 @@ describe("useGoogleAuth", () => {
     expect(mockRefreshUserMetadata).toHaveBeenCalledTimes(1);
   });
 
+  it("passes reconnect intent through authentication when requested", async () => {
+    let onSuccessCallback: ((data: SignInUpInput) => Promise<void>) | undefined;
+
+    mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
+      onSuccessCallback = onSuccess;
+      return {
+        login: mockLogin,
+        loading: false,
+        data: null,
+      };
+    });
+
+    renderHook(() => useGoogleAuth({ googleAuthIntent: "reconnect" }));
+
+    if (onSuccessCallback) {
+      await onSuccessCallback({
+        clientType: "web",
+        thirdPartyId: "google",
+        redirectURIInfo: {
+          redirectURIOnProviderDashboard: "",
+          redirectURIQueryParams: {
+            code: "test-auth-code",
+            scope: "email profile",
+            state: undefined,
+          },
+        },
+      });
+    }
+
+    await waitFor(() => {
+      expect(mockAuthenticate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          googleAuthIntent: "reconnect",
+        }),
+      );
+    });
+  });
+
   describe("onStart callback", () => {
     it("shows overlay immediately when login starts and clears session-expired toast", () => {
       mockUseGoogleLogin.mockReturnValue({

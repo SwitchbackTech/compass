@@ -1,5 +1,6 @@
 import { batch } from "react-redux";
 import { toast } from "react-toastify";
+import { type GoogleAuthIntent } from "@core/types/google-auth.types";
 import { isGooglePopupClosedError } from "@web/auth/google/google-oauth-error.util";
 import {
   authenticate,
@@ -14,6 +15,7 @@ import {
   SESSION_EXPIRED_TOAST_ID,
   dismissErrorToast,
 } from "@web/common/utils/toast/error-toast.util";
+import { type SignInUpInput } from "@web/components/oauth/ouath.types";
 import {
   authError,
   authSuccess,
@@ -26,9 +28,14 @@ import {
 } from "@web/ducks/events/slices/sync.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 
-export function useGoogleAuth() {
+interface UseGoogleAuthOptions {
+  googleAuthIntent?: GoogleAuthIntent;
+}
+
+export function useGoogleAuth(options: UseGoogleAuthOptions = {}) {
   const dispatch = useAppDispatch();
   const { setAuthenticated } = useSession();
+  const { googleAuthIntent } = options;
 
   const googleLogin = useGoogleAuthWithOverlay({
     onStart: () => {
@@ -39,7 +46,11 @@ export function useGoogleAuth() {
     },
     onSuccess: async (data) => {
       try {
-        const authResult = await authenticate(data);
+        const authPayload: SignInUpInput =
+          googleAuthIntent === "reconnect"
+            ? { ...data, googleAuthIntent }
+            : data;
+        const authResult = await authenticate(authPayload);
         if (!authResult.success) {
           console.error(authResult.error);
           dispatch(

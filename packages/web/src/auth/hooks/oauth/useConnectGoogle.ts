@@ -199,7 +199,12 @@ export const useConnectGoogle = () => {
       state: RootState,
     ) => RootState["sync"]["importGCal"],
   );
-  const { login } = useGoogleAuth();
+  const connectionStatus = googleMetadata?.connectionStatus ?? "not_connected";
+  const syncStatus = googleMetadata?.syncStatus ?? "none";
+  const { login } = useGoogleAuth({
+    googleAuthIntent:
+      connectionStatus === "reconnect_required" ? "reconnect" : undefined,
+  });
 
   const onOpenGoogleAuth = useCallback(() => {
     login();
@@ -237,8 +242,6 @@ export const useConnectGoogle = () => {
     onRepairGoogleCalendarBase();
   }, [onRepairGoogleCalendarBase]);
 
-  const connectionStatus = googleMetadata?.connectionStatus ?? "not_connected";
-  const syncStatus = googleMetadata?.syncStatus ?? "none";
   const isCheckingStatus =
     !googleMetadata &&
     userMetadataStatus !== "loaded" &&
