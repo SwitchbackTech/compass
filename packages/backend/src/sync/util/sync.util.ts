@@ -42,11 +42,32 @@ export const hasGoogleHeaders = (headers: object) => {
   return hasHeaders;
 };
 
+/**
+ * Determines if incremental sync can be performed for a sync record.
+ *
+ * Returns true only if:
+ * - Sync record exists
+ * - Google events array exists and is not empty
+ * - Every calendar event has a non-null nextSyncToken
+ *
+ * Returns false if:
+ * - Sync record is missing Google events data
+ * - Any calendar event is missing a sync token
+ * - Events array is empty (no calendars to sync)
+ *
+ * This is used to determine if a user needs a full restart sync
+ * (reconnect_repair) vs incremental sync (signin_incremental).
+ */
 export const canDoIncrementalSync = (sync: Schema_Sync) => {
-  const everyCalendarHasSyncToken = sync.google?.events?.every(
-    (event) => event.nextSyncToken !== null,
-  );
-  return everyCalendarHasSyncToken;
+  const events = sync.google?.events;
+
+  // If no events array exists, cannot do incremental sync
+  if (!events || events.length === 0) {
+    return false;
+  }
+
+  // All events must have a sync token for incremental sync
+  return events.every((event) => event.nextSyncToken !== null);
 };
 
 export const isUsingHttps = () => getBaseURL().includes("https");
