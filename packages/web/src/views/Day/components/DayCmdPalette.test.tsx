@@ -21,6 +21,77 @@ jest.mock("react-router-dom", () => ({
   useLocation: jest.fn(),
 }));
 
+// Mock react-cmdk (ListItem must accept disabled and render a real button for toBeDisabled())
+jest.mock("react-cmdk", () => {
+  const React = require("react");
+
+  const CommandPalette = ({
+    children,
+    isOpen,
+    onChangeSearch,
+    placeholder,
+    search,
+  }: any) => {
+    if (!isOpen) {
+      return null;
+    }
+
+    return (
+      <div>
+        <input
+          onChange={(event) => onChangeSearch(event.target.value)}
+          placeholder={placeholder}
+          value={search}
+        />
+        {children}
+      </div>
+    );
+  };
+
+  CommandPalette.Page = ({ children }: any) => <div>{children}</div>;
+  CommandPalette.List = ({ children, heading }: any) => (
+    <section>
+      <h2>{heading}</h2>
+      {children}
+    </section>
+  );
+  CommandPalette.ListItem = ({ children, disabled, onClick }: any) => (
+    <button disabled={disabled} onClick={onClick}>
+      {children}
+    </button>
+  );
+  CommandPalette.FreeSearchAction = () => <div>No results</div>;
+
+  function filterItems(
+    items: Array<{
+      heading?: string;
+      id: string;
+      items: Array<{ children?: string }>;
+    }>,
+    search?: string,
+  ) {
+    if (!search?.trim()) return items;
+    const q = search.toLowerCase().trim();
+    return items
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) =>
+          String(item.children ?? "")
+            .toLowerCase()
+            .includes(q),
+        ),
+      }))
+      .filter((group) => group.items.length > 0);
+  }
+
+  return {
+    __esModule: true,
+    default: CommandPalette,
+    filterItems,
+    getItemIndex: () => 0,
+  };
+});
+
 // Mock dayjs
 jest.mock("@core/util/date/dayjs", () => ({
   __esModule: true,
@@ -280,8 +351,8 @@ describe("DayCmdPalette", () => {
       );
 
       expect(
-        screen.getByText("Google Calendar Connected").closest("button"),
-      ).toHaveAttribute("aria-disabled", "true");
+        screen.getByRole("button", { name: "Google Calendar Connected" }),
+      ).toBeDisabled();
     });
 
     it("triggers login when reconnect is required", async () => {
@@ -330,8 +401,8 @@ describe("DayCmdPalette", () => {
       );
 
       expect(
-        screen.getByText("Syncing Google Calendar…").closest("button"),
-      ).toHaveAttribute("aria-disabled", "true");
+        screen.getByRole("button", { name: "Syncing Google Calendar…" }),
+      ).toBeDisabled();
     });
 
     it("keeps the generic action enabled when sync needs attention", async () => {
