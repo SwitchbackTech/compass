@@ -154,9 +154,11 @@ export async function handleGoogleAuth(
       if (!isNewUser) {
         // Edge case: no Compass user found but SuperTokens says not new
         // This shouldn't happen in normal flow, treat as signup
-        logger.warn("No Compass user found but createdNewRecipeUser is false", {
+        logger.warn("No Compass user found but isNewUser is false", {
           google_user_id: googleUserId,
           recipe_user_id: recipeUserId,
+          created_new_recipe_user: createdNewRecipeUser,
+          login_methods_length: loginMethodsLength,
         });
       }
       const refreshToken = oAuthTokens.refresh_token;
