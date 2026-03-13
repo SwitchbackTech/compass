@@ -514,6 +514,41 @@ describe("GCal Re-Authentication Flow", () => {
       ).not.toBeInTheDocument();
       expect(store.getState().sync.importGCal.isImportPending).toBe(false);
     });
+
+    it("hides spinner and stores an error when reconnect lands in attention", async () => {
+      const store = createTestStore({ isImportPending: true, importing: true });
+
+      render(
+        <Provider store={store}>
+          <SocketProvider>
+            <SyncEventsOverlay />
+          </SocketProvider>
+        </Provider>,
+      );
+
+      await waitFor(() => {
+        expect(metadataCallback).toBeDefined();
+      });
+
+      await act(async () => {
+        metadataCallback?.({
+          sync: { importGCal: "completed" },
+          google: { connectionStatus: "connected", syncStatus: "attention" },
+        });
+      });
+
+      await act(async () => {
+        jest.advanceTimersByTime(100);
+      });
+
+      expect(
+        screen.queryByText("Importing your Google Calendar events..."),
+      ).not.toBeInTheDocument();
+      expect(store.getState().sync.importGCal.isImportPending).toBe(false);
+      expect(store.getState().sync.importGCal.importError).toBe(
+        "Google Calendar still needs repair after reconnect.",
+      );
+    });
   });
 
   describe("Race condition handling (ref pattern)", () => {

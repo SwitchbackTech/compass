@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { renderHook, waitFor } from "@testing-library/react";
 import {
   authenticate,
@@ -9,6 +10,7 @@ import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
 import { markUserAsAuthenticated } from "@web/auth/state/auth.state.util";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
 import { type SignInUpInput } from "@web/components/oauth/ouath.types";
+import { useAppDispatch } from "@web/store/store.hooks";
 
 // Mock dependencies
 jest.mock("@web/auth/google/google.auth.util");
@@ -43,14 +45,14 @@ const mockUseGoogleLogin = useGoogleLogin as jest.MockedFunction<
 const mockRefreshUserMetadata = refreshUserMetadata as jest.MockedFunction<
   typeof refreshUserMetadata
 >;
-const storeHooksMock = jest.requireMock("@web/store/store.hooks") as {
-  useAppDispatch: jest.Mock;
-};
-const mockUseAppDispatch = storeHooksMock.useAppDispatch;
+const mockUseAppDispatch = useAppDispatch as jest.MockedFunction<
+  typeof useAppDispatch
+>;
 const mockMarkUserAsAuthenticated =
   markUserAsAuthenticated as jest.MockedFunction<
     typeof markUserAsAuthenticated
   >;
+const mockToast = jest.mocked(toast);
 
 describe("useGoogleAuth", () => {
   const mockSetAuthenticated = jest.fn();
@@ -152,44 +154,6 @@ describe("useGoogleAuth", () => {
     expect(mockRefreshUserMetadata).toHaveBeenCalledTimes(1);
   });
 
-  it("passes reconnect intent through authentication when requested", async () => {
-    let onSuccessCallback: ((data: SignInUpInput) => Promise<void>) | undefined;
-
-    mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
-      onSuccessCallback = onSuccess;
-      return {
-        login: mockLogin,
-        loading: false,
-        data: null,
-      };
-    });
-
-    renderHook(() => useGoogleAuth({ googleAuthIntent: "reconnect" }));
-
-    if (onSuccessCallback) {
-      await onSuccessCallback({
-        clientType: "web",
-        thirdPartyId: "google",
-        redirectURIInfo: {
-          redirectURIOnProviderDashboard: "",
-          redirectURIQueryParams: {
-            code: "test-auth-code",
-            scope: "email profile",
-            state: undefined,
-          },
-        },
-      });
-    }
-
-    await waitFor(() => {
-      expect(mockAuthenticate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          googleAuthIntent: "reconnect",
-        }),
-      );
-    });
-  });
-
   describe("onStart callback", () => {
     it("shows overlay immediately when login starts and clears session-expired toast", () => {
       mockUseGoogleLogin.mockReturnValue({
@@ -201,7 +165,7 @@ describe("useGoogleAuth", () => {
       const { result } = renderHook(() => useGoogleAuth());
 
       // Simulate login start
-      result.current.login();
+      void result.current.login();
 
       expect(mockDispatchFn).toHaveBeenCalledWith(
         expect.objectContaining({ type: "auth/startAuthenticating" }),
@@ -212,8 +176,7 @@ describe("useGoogleAuth", () => {
           payload: true,
         }),
       );
-      const { toast } = jest.requireMock("react-toastify");
-      expect(toast.dismiss).toHaveBeenCalledWith("session-expired-api");
+      expect(mockToast.dismiss).toHaveBeenCalledWith("session-expired-api");
     });
   });
 

@@ -393,6 +393,32 @@ describe("useGcalSync", () => {
       expect(importGCalSlice.actions.setImportResults).not.toHaveBeenCalled();
       expect(importGCalSlice.actions.setImportError).not.toHaveBeenCalled();
     });
+
+    it("clears pending import when reconnect metadata settles in attention", () => {
+      awaitingValue = true;
+      let metadataHandler: ((metadata: unknown) => void) | undefined;
+      (socket.on as jest.Mock).mockImplementation((event, handler) => {
+        if (event === USER_METADATA) {
+          metadataHandler = handler;
+        }
+      });
+
+      renderHook(() => useGcalSync());
+
+      metadataHandler?.({
+        sync: { importGCal: "completed" },
+        google: { connectionStatus: "connected", syncStatus: "attention" },
+      });
+
+      expect(mockDispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.importing(false),
+      );
+      expect(mockDispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.setImportError(
+          "Google Calendar still needs repair after reconnect.",
+        ),
+      );
+    });
   });
 
   describe("import flow interaction", () => {
