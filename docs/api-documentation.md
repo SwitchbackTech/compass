@@ -10,6 +10,7 @@
 - [Priority Routes](#priority-routes)
 - [Sync Routes](#sync-routes)
 - [Event Routes](#event-routes)
+- [Operational Headers](#operational-headers)
 
 ---
 
@@ -54,7 +55,20 @@ Failure response:
 
 ### /api/calendars
 
+Authenticated calendar list endpoints:
+
+- `GET /api/calendars`
+  - middleware: `verifySession()`
+  - returns all calendar records available to the authenticated user
+- `POST /api/calendars`
+  - middleware: `verifySession()`
+  - creates a calendar record for the authenticated user
+
 ### /api/calendars/select
+
+- `PUT /api/calendars/select`
+  - middleware: `verifySession()`
+  - toggles selected calendars used for sync/display
 
 ---
 
@@ -64,10 +78,40 @@ Failure response:
 
 ### /api/auth/session
 
-Development helper endpoint (guarded by `verifyIsDev`):
+Compass-defined development helper endpoint (guarded by `verifyIsDev`):
 
 - `POST /api/auth/session` creates a session for a provided Compass user id
 - `GET /api/auth/session` returns the current session user id
+
+`POST /api/auth/session` request example:
+
+```json
+{
+  "cUserId": "67c9c6d49e2f3f65e0f44a1a"
+}
+```
+
+Behavior constraints:
+
+- route is intended for development workflows only
+- `cUserId` must be a valid Mongo ObjectId string
+- `GET` also requires `verifySession()`
+
+### SuperTokens-managed auth endpoints (runtime)
+
+Files:
+
+- `packages/backend/src/common/middleware/supertokens.middleware.ts`
+- `packages/web/src/auth/session/SessionProvider.tsx`
+- `packages/web/src/common/apis/auth.api.ts`
+
+The web app uses SuperTokens APIs mounted under `/api`:
+
+- `POST /api/signinup` (Google OAuth sign-in/up exchange used by `AuthApi.loginOrSignup`)
+- `POST /api/signout` (session sign-out)
+- `POST /api/session/refresh` (session refresh)
+
+These endpoints are framework-managed by the SuperTokens recipes configured in `initSupertokens()`, not by `auth.routes.config.ts`.
 
 ---
 
@@ -76,6 +120,10 @@ Development helper endpoint (guarded by `verifyIsDev`):
 **Source**: `packages/backend/src/user/user.routes.config.ts`
 
 ### /api/user/profile
+
+- `GET /api/user/profile`
+  - middleware: `verifySession()`
+  - returns current user profile for the active session user
 
 ### /api/user/metadata
 
@@ -104,7 +152,10 @@ Current metadata shape used by sync/auth flows:
 
 **Source**: `packages/backend/src/common/common.routes.config.ts`
 
-_Review the source file for route definitions_
+`CommonRoutesConfig` is an abstract base class for route modules.
+
+- no public API endpoints are defined in this module
+- endpoint paths live in feature route config files (`*.routes.config.ts`)
 
 ---
 
@@ -114,7 +165,23 @@ _Review the source file for route definitions_
 
 ### /api/priority
 
+- `GET /api/priority`
+  - middleware: `verifySession()`
+  - returns all priority entities for current user
+- `POST /api/priority`
+  - middleware: `verifySession()`
+  - creates a priority entity
+
 ### /api/priority/:id
+
+- `GET /api/priority/:id`
+- `PUT /api/priority/:id`
+- `DELETE /api/priority/:id`
+
+Shared middleware for `:id` routes:
+
+- `verifySession()`
+- `validateIdParam` (ensures `:id` is a valid ObjectId)
 
 ---
 
@@ -126,6 +193,11 @@ _Review the source file for route definitions_
 
 Google push-notification ingress endpoint (Google-only caller).
 
+Resolved path from `GCAL_NOTIFICATION_ENDPOINT`:
+
+- `POST /api/sync/gcal/notifications`
+- middleware: `authMiddleware.verifyIsFromGoogle`
+
 Observed outcomes:
 
 - `200` with `"INITIALIZED"` on channel handshake notifications
@@ -134,6 +206,11 @@ Observed outcomes:
 - `410` with `GOOGLE_REVOKED` payload when Google credentials are missing/revoked and user data is pruned
 
 ### /api/sync/maintain-all
+
+- `POST /api/sync/maintain-all`
+- middleware: `authMiddleware.verifyIsFromCompass`
+- intended caller: trusted internal job/function with `x-comp-token`
+- controller uses a 5-minute timeout guard and may return `504` on timeout while work continues
 
 ### /api/sync/import-gcal
 
@@ -145,17 +222,39 @@ Authenticated user trigger for full import restart:
 
 ### /api/event-change-demo
 
+- `POST /api/event-change-demo`
+- debug helper route used to dispatch event-change notifications to a configured demo socket user
+
 ### ${SYNC_DEBUG}/import-incremental/:userId
+
+- `POST /api/sync/debug/import-incremental/:userId`
+- middleware: `verifyIsFromCompass` + `requireGoogleConnectionFrom("userId")`
 
 ### ${SYNC_DEBUG}/maintain/:userId
 
+- `POST /api/sync/debug/maintain/:userId?dry=true|false`
+- middleware: `verifyIsFromCompass` + `requireGoogleConnectionFrom("userId")`
+- `dry` query controls dry-run mode
+
 ### ${SYNC_DEBUG}/refresh/:userId
+
+- `POST /api/sync/debug/refresh/:userId`
+- middleware: `verifyIsFromCompass` + `requireGoogleConnectionFrom("userId")`
 
 ### ${SYNC_DEBUG}/start
 
+- `POST /api/sync/debug/start`
+- middleware: `verifyIsFromCompass` + `verifySession()` + `requireGoogleConnectionSession`
+
 ### ${SYNC_DEBUG}/stop
 
+- `POST /api/sync/debug/stop`
+- middleware: `verifyIsFromCompass` + `verifySession()` + `requireGoogleConnectionSession`
+
 ### ${SYNC_DEBUG}/stop-all/:userId
+
+- `POST /api/sync/debug/stop-all/:userId`
+- middleware: `verifyIsFromCompass` + `requireGoogleConnectionFrom("userId")`
 
 ---
 
@@ -165,13 +264,34 @@ Authenticated user trigger for full import restart:
 
 ### /api/event
 
+- `GET /api/event`
+  - middleware: `verifySession()`
+- `POST /api/event`
+  - middleware: `verifySession()` + `requireGoogleConnectionSession`
+
 ### /api/event/deleteMany
+
+- `DELETE /api/event/deleteMany`
+  - middleware: `verifySession()`
 
 ### /api/event/reorder
 
+- `PUT /api/event/reorder`
+  - middleware: `verifySession()`
+
 ### /api/event/delete-all/:userId
 
+- `DELETE /api/event/delete-all/:userId`
+  - middleware: `verifySession()` + `authMiddleware.verifyIsDev`
+
 ### /api/event/:id
+
+- `GET /api/event/:id`
+  - middleware: `verifySession()`
+- `PUT /api/event/:id`
+  - middleware: `verifySession()` + `requireGoogleConnectionSession`
+- `DELETE /api/event/:id`
+  - middleware: `verifySession()` + `requireGoogleConnectionSession`
 
 Write semantics:
 
@@ -187,7 +307,7 @@ Most endpoints require authentication via Supertokens session management.
 
 **Authentication Flow**:
 
-1. Client initiates OAuth flow via `/api/auth`
+1. Client initiates OAuth exchange via SuperTokens endpoints (for example `POST /api/signinup`)
 2. User authenticates with Google
 3. Session cookie is set
 4. Subsequent requests include session cookie
@@ -196,6 +316,31 @@ Most endpoints require authentication via Supertokens session management.
 Authentication exceptions:
 
 - `GET /api/health` is intentionally unauthenticated for monitoring and load balancer probes
+
+## Operational Headers
+
+Source files:
+
+- `packages/backend/src/auth/middleware/auth.middleware.ts`
+- `packages/backend/src/sync/sync.routes.config.ts`
+- `packages/backend/src/sync/util/sync.util.ts`
+
+Important non-cookie auth headers:
+
+- `x-comp-token`
+  - required for Compass-internal sync routes guarded by `verifyIsFromCompass`
+  - must match `ENV.TOKEN_COMPASS_SYNC`
+- Google notification headers (`x-goog-*`)
+  - required for notification ingress guarded by `verifyIsFromGoogle`
+  - include channel metadata and signed channel token used to validate origin
+
+Operational example (`/api/sync/maintain-all`):
+
+```bash
+curl -i -X POST \
+  -H "x-comp-token: $TOKEN_COMPASS_SYNC" \
+  /api/sync/maintain-all
+```
 
 ## Common Patterns
 
@@ -244,7 +389,8 @@ When this payload accompanies `401` or `410`, web clients should keep the sessio
 
 ## Key Endpoints
 
-- `/api/auth/*` - Authentication and OAuth flows
+- `/api/auth/session` - dev session helper route
+- `/api/signinup`, `/api/signout`, `/api/session/*` - SuperTokens auth/session APIs
 - `/api/user/*` - User profile and metadata
 - `/api/event/*` - Calendar event CRUD operations
 - `/api/calendars/*` - Calendar list and selection
