@@ -126,8 +126,17 @@ class CompassAuthService {
     return user;
   }
 
-  async reconnectGoogleForSession(
-    sessionUserId: string,
+  /**
+   * Repairs a user's Google connection after revocation or disconnection.
+   * This method is called when the user has an existing Compass account but
+   * their refresh token is missing or their sync state is unhealthy.
+   *
+   * @param compassUserId - The Compass user ID (not session-based)
+   * @param gUser - Google user info from OAuth
+   * @param oAuthTokens - Fresh OAuth tokens from re-consent
+   */
+  async repairGoogleConnection(
+    compassUserId: string,
     gUser: TokenPayload,
     oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">,
   ) {
@@ -135,7 +144,7 @@ class CompassAuthService {
       cUserId,
       gUser: validatedGUser,
       refreshToken,
-    } = parseReconnectGoogleParams(sessionUserId, gUser, oAuthTokens);
+    } = parseReconnectGoogleParams(compassUserId, gUser, oAuthTokens);
 
     await userService.reconnectGoogleCredentials(
       cUserId,
