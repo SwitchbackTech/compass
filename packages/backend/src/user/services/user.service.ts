@@ -210,6 +210,12 @@ class UserService {
       { _id },
       { $set: { "google.gRefreshToken": "" } },
     );
+    await userMetadataService.updateUserMetadata({
+      userId,
+      data: {
+        sync: { importGCal: "restart", incrementalGCalSync: "restart" },
+      },
+    });
   };
 
   startGoogleCalendarSync = async (
@@ -275,10 +281,10 @@ class UserService {
       const proceed = isForce ? !isImporting : shouldImportGCal(userMeta);
 
       if (!proceed) {
-        webSocketServer.handleImportGCalEnd(
-          userId,
-          `User ${userId} gcal import is in progress or completed, ignoring this request`,
-        );
+        webSocketServer.handleImportGCalEnd(userId, {
+          status: "ignored",
+          message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
+        });
 
         return;
       }
@@ -296,10 +302,10 @@ class UserService {
         data: { sync: { importGCal: "completed" } },
       });
 
-      webSocketServer.handleImportGCalEnd(
-        userId,
-        JSON.stringify(importResults),
-      );
+      webSocketServer.handleImportGCalEnd(userId, {
+        status: "completed",
+        ...importResults,
+      });
       webSocketServer.handleBackgroundCalendarChange(userId);
     } catch (err) {
       try {
@@ -318,10 +324,10 @@ class UserService {
 
       logger.error(`Re-sync failed for user: ${userId}`, err);
 
-      webSocketServer.handleImportGCalEnd(
-        userId,
-        `Import gCal failed for user: ${userId}`,
-      );
+      webSocketServer.handleImportGCalEnd(userId, {
+        status: "errored",
+        message: `Import gCal failed for user: ${userId}`,
+      });
     }
   };
 

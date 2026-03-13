@@ -10,6 +10,7 @@ import { handleGoogleRevoked } from "../../auth/google/google.auth.util";
 
 export const CompassApi = axios.create({
   baseURL: ENV_WEB.API_BASEURL,
+  withCredentials: true,
 });
 
 type SignoutStatus = Status.UNAUTHORIZED | Status.NOT_FOUND | Status.GONE;

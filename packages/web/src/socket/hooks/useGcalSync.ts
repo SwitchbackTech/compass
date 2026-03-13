@@ -8,6 +8,7 @@ import {
   USER_METADATA,
 } from "@core/constants/websocket.constants";
 import { type UserMetadata } from "@core/types/user.types";
+import { type ImportGCalEndPayload } from "@core/types/websocket.types";
 import { handleGoogleRevoked } from "@web/auth/google/google.auth.util";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
@@ -38,7 +39,7 @@ export const useGcalSync = () => {
   );
 
   const onImportEnd = useCallback(
-    (payload?: { eventsCount?: number; calendarsCount?: number } | string) => {
+    (payload?: ImportGCalEndPayload) => {
       dispatch(importGCalSlice.actions.importing(false));
       socket.emit(FETCH_USER_METADATA);
 
@@ -46,31 +47,24 @@ export const useGcalSync = () => {
         return;
       }
 
-      // Parse payload if it's a string (from backend)
-      let importResults: { eventsCount?: number; calendarsCount?: number } = {};
-      if (typeof payload === "string") {
-        try {
-          importResults = JSON.parse(payload) as {
-            eventsCount?: number;
-            calendarsCount?: number;
-          };
-        } catch (e) {
-          console.error("Failed to parse import results:", e);
-          dispatch(
-            importGCalSlice.actions.setImportError(
-              "Failed to parse Google Calendar import results.",
-            ),
-          );
-          return;
-        }
-      } else if (payload) {
-        importResults = payload;
+      if (payload?.status === "errored") {
+        dispatch(importGCalSlice.actions.setImportError(payload.message));
+        return;
       }
 
-      // Set import results to trigger completion results display
-      dispatch(importGCalSlice.actions.setImportResults(importResults));
+      if (payload?.status === "ignored") {
+        return;
+      }
 
-      // Trigger refetch to load imported events (no page reload)
+      if (payload?.status === "completed") {
+        dispatch(
+          importGCalSlice.actions.setImportResults({
+            eventsCount: payload.eventsCount,
+            calendarsCount: payload.calendarsCount,
+          }),
+        );
+      }
+
       dispatch(
         triggerFetch({
           reason: Sync_AsyncStateContextReason.IMPORT_COMPLETE,

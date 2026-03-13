@@ -315,7 +315,7 @@ describe("UserService", () => {
   });
 
   describe("pruneGoogleData", () => {
-    it("stops sync and clears the Google refresh token on the user document", async () => {
+    it("stops sync, clears the Google refresh token, and resets sync metadata", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
       const stopWatchesSpy = jest.spyOn(syncService, "stopWatches");
@@ -329,6 +329,13 @@ describe("UserService", () => {
         user: userId,
       });
       expect(eventCountBefore).toBeGreaterThan(0);
+
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: {
+          sync: { importGCal: "completed", incrementalGCalSync: "completed" },
+        },
+      });
 
       await userService.pruneGoogleData(userId);
 
@@ -344,6 +351,10 @@ describe("UserService", () => {
       expect(await mongoService.watch.countDocuments({ user: userId })).toBe(0);
       const sync = await mongoService.sync.findOne({ user: userId });
       expect(sync).not.toHaveProperty(CalendarProvider.GOOGLE);
+
+      const metadata = await userMetadataService.fetchUserMetadata(userId);
+      expect(metadata.sync?.importGCal).toBe("restart");
+      expect(metadata.sync?.incrementalGCalSync).toBe("restart");
     });
   });
 

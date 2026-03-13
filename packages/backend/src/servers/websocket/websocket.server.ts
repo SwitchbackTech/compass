@@ -22,6 +22,7 @@ import {
   type ClientToServerEvents,
   type CompassSocket,
   type CompassSocketServer,
+  type ImportGCalEndPayload,
   type InterServerEvents,
   type ServerToClientEvents,
   type SocketData,
@@ -226,7 +227,7 @@ class WebSocketServer {
     return this.notifyUser(userId, IMPORT_GCAL_START);
   }
 
-  handleImportGCalEnd(userId: string, payload?: string) {
+  handleImportGCalEnd(userId: string, payload?: ImportGCalEndPayload) {
     return this.notifyUser(userId, IMPORT_GCAL_END, payload);
   }
 

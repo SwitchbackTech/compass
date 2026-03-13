@@ -12,6 +12,7 @@ import {
 import { Status } from "@core/errors/status.codes";
 import { Resource_Sync, XGoogleResourceState } from "@core/types/sync.types";
 import { type Schema_User } from "@core/types/user.types";
+import { type ImportGCalEndPayload } from "@core/types/websocket.types";
 import { isBase, isInstance } from "@core/util/event/event.util";
 import { waitUntilEvent } from "@core/util/wait-until-event.util";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
@@ -45,14 +46,24 @@ describe("SyncController", () => {
   const syncDriver = new SyncControllerDriver(baseDriver);
   const importTimeoutMs = 7_000;
 
-  /** Shape of the JSON string emitted on successful gcal import (IMPORT_GCAL_END). */
   interface ImportSummary {
+    status: "completed";
     eventsCount: number;
     calendarsCount: number;
   }
 
-  function parseImportResult(result: string): ImportSummary {
-    return JSON.parse(result) as ImportSummary;
+  function parseImportResult(
+    result: ImportGCalEndPayload | undefined,
+  ): ImportSummary {
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        eventsCount: expect.any(Number) as number,
+        calendarsCount: expect.any(Number) as number,
+      }),
+    );
+
+    return result as ImportSummary;
   }
 
   async function waitUntilImportGCalStart<Result = unknown[]>(
@@ -73,9 +84,9 @@ describe("SyncController", () => {
   async function waitUntilImportGCalEnd<Result = unknown[]>(
     websocketClient: Socket<DefaultEventsMap, DefaultEventsMap>,
     beforeEvent: () => Promise<unknown> = () => Promise.resolve(),
-    afterEvent: (...args: [string | undefined]) => Promise<Result> = (
-      ...args
-    ) => Promise.resolve(args as Result),
+    afterEvent: (
+      ...args: [ImportGCalEndPayload | undefined]
+    ) => Promise<Result> = (...args) => Promise.resolve(args as Result),
   ): Promise<Result> {
     return waitUntilEvent(
       websocketClient,
@@ -132,8 +143,9 @@ describe("SyncController", () => {
     ]);
 
     expect(importEnd.status).toEqual("fulfilled");
-    const importResult = (importEnd as { value: unknown })?.value as string;
-    // On success, the result is a JSON string with import summary (e.g., '{"eventsCount":5,"calendarsCount":1}')
+    const importResult = (importEnd as { value: unknown })?.value as
+      | ImportGCalEndPayload
+      | undefined;
     const parsed = parseImportResult(importResult);
     expect(parsed).toHaveProperty("eventsCount");
     expect(parsed).toHaveProperty("calendarsCount");
@@ -653,7 +665,7 @@ describe("SyncController", () => {
           (reason) => Promise.resolve(reason),
         );
 
-        const parsed = parseImportResult(result as string);
+        const parsed = parseImportResult(result as ImportGCalEndPayload);
 
         expect(parsed).toHaveProperty("eventsCount");
         expect(parsed).toHaveProperty("calendarsCount");
@@ -686,9 +698,10 @@ describe("SyncController", () => {
           (reason) => Promise.resolve(reason),
         );
 
-        expect(failReason).toEqual(
-          `User ${userId} gcal import is in progress or completed, ignoring this request`,
-        );
+        expect(failReason).toEqual({
+          status: "ignored",
+          message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
+        });
 
         expect(getAllEventsSpy).not.toHaveBeenCalled();
 
@@ -731,9 +744,10 @@ describe("SyncController", () => {
           (reason) => Promise.resolve(reason),
         );
 
-        expect(failReason).toEqual(
-          `User ${userId} gcal import is in progress or completed, ignoring this request`,
-        );
+        expect(failReason).toEqual({
+          status: "ignored",
+          message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
+        });
 
         expect(getAllEventsSpy).not.toHaveBeenCalled();
 
@@ -776,8 +790,7 @@ describe("SyncController", () => {
           (reason) => Promise.resolve(reason),
         );
 
-        // On success, result is a JSON string with import summary
-        const parsed = parseImportResult(result as string);
+        const parsed = parseImportResult(result as ImportGCalEndPayload);
         expect(parsed).toHaveProperty("eventsCount");
         expect(parsed).toHaveProperty("calendarsCount");
 
@@ -824,8 +837,7 @@ describe("SyncController", () => {
           (reason) => Promise.resolve(reason),
         );
 
-        // On success, result is a JSON string with import summary
-        const parsed = parseImportResult(result as string);
+        const parsed = parseImportResult(result as ImportGCalEndPayload);
         expect(parsed).toHaveProperty("eventsCount");
         expect(parsed).toHaveProperty("calendarsCount");
 
@@ -891,8 +903,7 @@ describe("SyncController", () => {
           () => syncDriver.importGCal({ userId }),
           (reason) => Promise.resolve(reason),
         );
-        // On success, result is a JSON string with import summary
-        const parsed = parseImportResult(result as string);
+        const parsed = parseImportResult(result as ImportGCalEndPayload);
         expect(parsed).toHaveProperty("eventsCount");
         expect(parsed).toHaveProperty("calendarsCount");
 
