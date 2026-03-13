@@ -83,11 +83,21 @@ export const useGcalSync = () => {
       const importStatus = metadata.sync?.importGCal;
       const isBackendImporting = importStatus === "importing";
       const shouldAutoImport = importStatus === "restart";
+      const isAttentionAfterReconnect =
+        metadata.google?.connectionStatus === "connected" &&
+        metadata.google?.syncStatus === "attention";
 
       dispatch(userMetadataSlice.actions.set(metadata));
 
       if (isImportPendingRef.current) {
-        if (isBackendImporting) {
+        if (isAttentionAfterReconnect) {
+          dispatch(importGCalSlice.actions.importing(false));
+          dispatch(
+            importGCalSlice.actions.setImportError(
+              "Google Calendar still needs repair after reconnect.",
+            ),
+          );
+        } else if (isBackendImporting) {
           dispatch(importGCalSlice.actions.importing(true));
         } else if (importStatus === "completed") {
           dispatch(importGCalSlice.actions.importing(false));
