@@ -20,6 +20,13 @@ export type CreateGoogleSignInResponse =
   | { status: Exclude<ThirdPartySignInUpResponse["status"], "OK"> }
   | GoogleThirdPartySignInUpSuccess;
 
+/**
+ * @deprecated This function is transitional. Auth mode is now determined
+ * server-side in handleGoogleAuth() based on refresh token presence and
+ * sync health. The googleAuthIntent is no longer authoritative for routing.
+ *
+ * Kept temporarily for backward compatibility during transition period.
+ */
 export function getGoogleAuthIntent(
   value: unknown,
 ): GoogleAuthIntent | undefined {
@@ -30,6 +37,14 @@ export function getGoogleAuthIntent(
   return undefined;
 }
 
+/**
+ * @deprecated This function is transitional. Auth mode determination has
+ * moved to handleGoogleAuth() where it uses server-side signals (refresh
+ * token presence, sync health) instead of frontend-provided intent.
+ *
+ * The sessionUserId is still passed through for logging purposes but is
+ * no longer the primary routing signal for reconnect flows.
+ */
 export function resolveGoogleSessionUserId({
   sessionUserId,
   googleAuthIntent,
@@ -41,6 +56,9 @@ export function resolveGoogleSessionUserId({
   createdNewRecipeUser: boolean;
   recipeUserId: string;
 }): string | null {
+  // Note: This function's return value is no longer used for auth routing.
+  // Auth mode is now determined server-side in handleGoogleAuth().
+  // We still pass sessionUserId through for observability/logging.
   if (sessionUserId) {
     return sessionUserId;
   }
