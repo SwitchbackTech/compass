@@ -31,28 +31,6 @@ class CompassAuthService {
     });
   };
 
-  determineAuthMethod = async (gUserId: string) => {
-    const user = await findCompassUserBy("google.googleId", gUserId);
-
-    if (!user) {
-      return { authMethod: "signup", user: null };
-    }
-    const userId = user._id.toString();
-
-    const sync = await getSync({ userId });
-    if (!sync) {
-      throw error(
-        SyncError.NoSyncRecordForUser,
-        "Did not verify sync record for user",
-      );
-    }
-
-    const canLogin = canDoIncrementalSync(sync);
-    const authMethod = user && canLogin ? "login" : "signup";
-
-    return { authMethod, user };
-  };
-
   createSessionForUser = async (cUserId: string) => {
     const userId = cUserId;
     const sUserId = supertokens.convertToRecipeUserId(cUserId);
