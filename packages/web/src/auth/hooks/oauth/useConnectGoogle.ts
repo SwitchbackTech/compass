@@ -201,13 +201,10 @@ export const useConnectGoogle = () => {
   );
   const connectionStatus = googleMetadata?.connectionStatus ?? "not_connected";
   const syncStatus = googleMetadata?.syncStatus ?? "none";
-  const { login } = useGoogleAuth({
-    googleAuthIntent:
-      connectionStatus === "reconnect_required" ? "reconnect" : undefined,
-  });
+  const { login } = useGoogleAuth();
 
   const onOpenGoogleAuth = useCallback(() => {
-    login();
+    void login();
     dispatch(settingsSlice.actions.closeCmdPalette());
   }, [dispatch, login]);
 

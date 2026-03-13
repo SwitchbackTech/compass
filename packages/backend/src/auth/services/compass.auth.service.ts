@@ -6,9 +6,12 @@ import { mapCompassUserToEmailSubscriber } from "@core/mappers/subscriber/map.su
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import { parseReconnectGoogleParams } from "@backend/auth/schemas/reconnect-google.schemas";
 import GoogleAuthService from "@backend/auth/services/google/google.auth.service";
+import {
+  type GoogleAuthDecision,
+  type GoogleSignInSuccess,
+} from "@backend/auth/services/google/google.auth.success.service";
 import { ENV } from "@backend/common/constants/env.constants";
 import { isMissingUserTagId } from "@backend/common/constants/env.util";
-import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import EmailService from "@backend/email/email.service";
@@ -31,26 +34,80 @@ class CompassAuthService {
     });
   };
 
-  determineAuthMethod = async (gUserId: string) => {
-    const user = await findCompassUserBy("google.googleId", gUserId);
+  private assessGoogleConnection = async (userId: string) => {
+    const user = await findCompassUserBy("_id", userId);
 
     if (!user) {
-      return { authMethod: "signup", user: null };
-    }
-    const userId = user._id.toString();
-
-    const sync = await getSync({ userId });
-    if (!sync) {
-      throw error(
-        SyncError.NoSyncRecordForUser,
-        "Did not verify sync record for user",
+      throw new Error(
+        `Could not resolve Compass user for Google auth: ${userId}`,
       );
     }
 
-    const canLogin = canDoIncrementalSync(sync);
-    const authMethod = user && canLogin ? "login" : "signup";
+    const hasStoredRefreshTokenBefore = Boolean(user.google?.gRefreshToken);
+    const sync = await getSync({ userId });
+    const isIncrementalReady = Boolean(sync && canDoIncrementalSync(sync));
+    const googleMetadata =
+      await userMetadataService.assessGoogleMetadata(userId);
+    const isHealthy =
+      googleMetadata.connectionStatus === "connected" &&
+      googleMetadata.syncStatus === "healthy";
 
-    return { authMethod, user };
+    return {
+      hasStoredRefreshTokenBefore,
+      isIncrementalReady,
+      isHealthy,
+      needsRepair:
+        !hasStoredRefreshTokenBefore || !isIncrementalReady || !isHealthy,
+    };
+  };
+
+  determineGoogleAuthMode = async (
+    success: GoogleSignInSuccess,
+  ): Promise<GoogleAuthDecision> => {
+    const {
+      createdNewRecipeUser,
+      loginMethodsLength,
+      providerUser,
+      recipeUserId,
+      sessionUserId,
+    } = success;
+    const isNewUser = createdNewRecipeUser && loginMethodsLength === 1;
+
+    if (isNewUser) {
+      return {
+        authMode: "signup",
+        cUserId: recipeUserId,
+        hasStoredRefreshTokenBefore: false,
+        hasSession: sessionUserId !== null,
+        isReconnectRepair: false,
+      };
+    }
+
+    const googleUserId = StringV4Schema.parse(providerUser.sub, {
+      error: () => "Invalid Google user ID",
+    });
+    const existingUser =
+      (await findCompassUserBy("_id", recipeUserId)) ??
+      (await findCompassUserBy("google.googleId", googleUserId));
+
+    if (!existingUser) {
+      throw new Error(
+        `Could not resolve Compass user for Google auth: ${recipeUserId}`,
+      );
+    }
+
+    const cUserId = existingUser._id.toString();
+    const assessment = await this.assessGoogleConnection(cUserId);
+
+    return {
+      authMode: assessment.needsRepair
+        ? "reconnect_repair"
+        : "signin_incremental",
+      cUserId,
+      hasStoredRefreshTokenBefore: assessment.hasStoredRefreshTokenBefore,
+      hasSession: sessionUserId !== null,
+      isReconnectRepair: assessment.needsRepair,
+    };
   };
 
   createSessionForUser = async (cUserId: string) => {
@@ -126,8 +183,8 @@ class CompassAuthService {
     return user;
   }
 
-  async reconnectGoogleForSession(
-    sessionUserId: string,
+  async repairGoogleConnection(
+    compassUserId: string,
     gUser: TokenPayload,
     oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">,
   ) {
@@ -135,7 +192,7 @@ class CompassAuthService {
       cUserId,
       gUser: validatedGUser,
       refreshToken,
-    } = parseReconnectGoogleParams(sessionUserId, gUser, oAuthTokens);
+    } = parseReconnectGoogleParams(compassUserId, gUser, oAuthTokens);
 
     await userService.reconnectGoogleCredentials(
       cUserId,
@@ -181,6 +238,20 @@ class CompassAuthService {
     const cUserId = zObjectId
       .parse(user?._id, { error: () => "Invalid credentials" })
       .toString();
+    const assessment = await this.assessGoogleConnection(cUserId);
+
+    if (assessment.needsRepair) {
+      await userMetadataService.updateUserMetadata({
+        userId: cUserId,
+        data: {
+          sync: { importGCal: "restart", incrementalGCalSync: "restart" },
+        },
+      });
+
+      this.restartGoogleCalendarSyncInBackground(cUserId);
+
+      return { cUserId };
+    }
 
     // start incremental sync - do not await
     const gAuthClient = new GoogleAuthService();

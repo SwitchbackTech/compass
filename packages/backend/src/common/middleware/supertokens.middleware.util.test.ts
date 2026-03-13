@@ -1,61 +1,8 @@
 import { type TokenPayload } from "google-auth-library";
 import { faker } from "@faker-js/faker";
-import {
-  createGoogleSignInSuccess,
-  resolveGoogleSessionUserId,
-} from "@backend/common/middleware/supertokens.middleware.util";
+import { createGoogleSignInSuccess } from "@backend/common/middleware/supertokens.middleware.util";
 
 describe("supertokens.middleware.util", () => {
-  describe("resolveGoogleSessionUserId", () => {
-    it("prefers the current session when one exists", () => {
-      const sessionUserId = faker.database.mongodbObjectId();
-      const recipeUserId = faker.database.mongodbObjectId();
-
-      expect(
-        resolveGoogleSessionUserId({
-          sessionUserId,
-          googleAuthIntent: "reconnect",
-          createdNewRecipeUser: false,
-          recipeUserId,
-        }),
-      ).toBe(sessionUserId);
-    });
-
-    it("uses the recipe user id for reconnects without a session", () => {
-      const recipeUserId = faker.database.mongodbObjectId();
-
-      expect(
-        resolveGoogleSessionUserId({
-          sessionUserId: null,
-          googleAuthIntent: "reconnect",
-          createdNewRecipeUser: false,
-          recipeUserId,
-        }),
-      ).toBe(recipeUserId);
-    });
-
-    it("keeps normal returning users on the sign-in path without reconnect intent", () => {
-      expect(
-        resolveGoogleSessionUserId({
-          sessionUserId: null,
-          createdNewRecipeUser: false,
-          recipeUserId: faker.database.mongodbObjectId(),
-        }),
-      ).toBeNull();
-    });
-
-    it("does not force reconnect behavior for new users", () => {
-      expect(
-        resolveGoogleSessionUserId({
-          sessionUserId: null,
-          googleAuthIntent: "reconnect",
-          createdNewRecipeUser: true,
-          recipeUserId: faker.database.mongodbObjectId(),
-        }),
-      ).toBeNull();
-    });
-  });
-
   describe("createGoogleSignInSuccess", () => {
     it("returns null for non-OK responses", () => {
       expect(
@@ -65,8 +12,9 @@ describe("supertokens.middleware.util", () => {
       ).toBeNull();
     });
 
-    it("embeds reconnect fallback user id into the auth success payload", () => {
+    it("preserves the current session user id in the auth success payload", () => {
       const recipeUserId = faker.database.mongodbObjectId();
+      const sessionUserId = faker.database.mongodbObjectId();
       const success = createGoogleSignInSuccess(
         {
           status: "OK",
@@ -86,14 +34,13 @@ describe("supertokens.middleware.util", () => {
             loginMethods: [{}],
           },
         } as Parameters<typeof createGoogleSignInSuccess>[0],
-        "reconnect",
-        null,
+        sessionUserId,
       );
 
       expect(success).toMatchObject({
         createdNewRecipeUser: false,
         recipeUserId,
-        sessionUserId: recipeUserId,
+        sessionUserId,
         loginMethodsLength: 1,
       });
     });

@@ -1,6 +1,7 @@
 import { type Credentials, type TokenPayload } from "google-auth-library";
 import { faker } from "@faker-js/faker";
 import {
+  type GoogleAuthDecision,
   type GoogleSignInSuccess,
   type GoogleSignInSuccessAuthService,
   handleGoogleAuth,
@@ -26,12 +27,22 @@ function makeOAuthTokens(): Pick<
 }
 
 function createMockAuthService(): GoogleSignInSuccessAuthService & {
-  reconnectGoogleForSession: jest.Mock;
+  determineGoogleAuthMode: jest.Mock;
+  repairGoogleConnection: jest.Mock;
   googleSignup: jest.Mock;
   googleSignin: jest.Mock;
 } {
+  const defaultDecision: GoogleAuthDecision = {
+    authMode: "signin_incremental",
+    cUserId: faker.database.mongodbObjectId(),
+    hasStoredRefreshTokenBefore: true,
+    hasSession: false,
+    isReconnectRepair: false,
+  };
+
   return {
-    reconnectGoogleForSession: jest
+    determineGoogleAuthMode: jest.fn().mockResolvedValue(defaultDecision),
+    repairGoogleConnection: jest
       .fn()
       .mockResolvedValue({ cUserId: "reconnect-id" }),
     googleSignup: jest.fn().mockResolvedValue({ cUserId: "signup-id" }),
@@ -41,11 +52,18 @@ function createMockAuthService(): GoogleSignInSuccessAuthService & {
 
 describe("handleGoogleSignInSuccess", () => {
   describe("reconnect path", () => {
-    it("calls reconnectGoogleForSession when sessionUserId is set", async () => {
+    it("calls repairGoogleConnection when auth mode is reconnect_repair", async () => {
       const authService = createMockAuthService();
       const providerUser = makeProviderUser();
       const oAuthTokens = makeOAuthTokens();
       const sessionUserId = faker.database.mongodbObjectId();
+      authService.determineGoogleAuthMode.mockResolvedValue({
+        authMode: "reconnect_repair",
+        cUserId: sessionUserId,
+        hasStoredRefreshTokenBefore: false,
+        hasSession: true,
+        isReconnectRepair: true,
+      });
 
       const success: GoogleSignInSuccess = {
         providerUser,
@@ -58,8 +76,9 @@ describe("handleGoogleSignInSuccess", () => {
 
       await handleGoogleAuth(success, authService);
 
-      expect(authService.reconnectGoogleForSession).toHaveBeenCalledTimes(1);
-      expect(authService.reconnectGoogleForSession).toHaveBeenCalledWith(
+      expect(authService.determineGoogleAuthMode).toHaveBeenCalledWith(success);
+      expect(authService.repairGoogleConnection).toHaveBeenCalledTimes(1);
+      expect(authService.repairGoogleConnection).toHaveBeenCalledWith(
         sessionUserId,
         providerUser,
         oAuthTokens,
@@ -75,6 +94,13 @@ describe("handleGoogleSignInSuccess", () => {
       const providerUser = makeProviderUser();
       const oAuthTokens = makeOAuthTokens();
       const recipeUserId = faker.database.mongodbObjectId();
+      authService.determineGoogleAuthMode.mockResolvedValue({
+        authMode: "signup",
+        cUserId: recipeUserId,
+        hasStoredRefreshTokenBefore: false,
+        hasSession: false,
+        isReconnectRepair: false,
+      });
 
       const success: GoogleSignInSuccess = {
         providerUser,
@@ -93,12 +119,19 @@ describe("handleGoogleSignInSuccess", () => {
         oAuthTokens.refresh_token,
         recipeUserId,
       );
-      expect(authService.reconnectGoogleForSession).not.toHaveBeenCalled();
+      expect(authService.repairGoogleConnection).not.toHaveBeenCalled();
       expect(authService.googleSignin).not.toHaveBeenCalled();
     });
 
     it("throws when refresh_token is missing for new user", async () => {
       const authService = createMockAuthService();
+      authService.determineGoogleAuthMode.mockResolvedValue({
+        authMode: "signup",
+        cUserId: faker.database.mongodbObjectId(),
+        hasStoredRefreshTokenBefore: false,
+        hasSession: false,
+        isReconnectRepair: false,
+      });
       const success: GoogleSignInSuccess = {
         providerUser: makeProviderUser(),
         oAuthTokens: { access_token: faker.internet.jwt() },
@@ -121,6 +154,13 @@ describe("handleGoogleSignInSuccess", () => {
       const authService = createMockAuthService();
       const providerUser = makeProviderUser();
       const oAuthTokens = makeOAuthTokens();
+      authService.determineGoogleAuthMode.mockResolvedValue({
+        authMode: "signin_incremental",
+        cUserId: faker.database.mongodbObjectId(),
+        hasStoredRefreshTokenBefore: true,
+        hasSession: false,
+        isReconnectRepair: false,
+      });
 
       const success: GoogleSignInSuccess = {
         providerUser,
@@ -138,7 +178,7 @@ describe("handleGoogleSignInSuccess", () => {
         providerUser,
         oAuthTokens,
       );
-      expect(authService.reconnectGoogleForSession).not.toHaveBeenCalled();
+      expect(authService.repairGoogleConnection).not.toHaveBeenCalled();
       expect(authService.googleSignup).not.toHaveBeenCalled();
     });
 
@@ -146,6 +186,13 @@ describe("handleGoogleSignInSuccess", () => {
       const authService = createMockAuthService();
       const providerUser = makeProviderUser();
       const oAuthTokens = makeOAuthTokens();
+      authService.determineGoogleAuthMode.mockResolvedValue({
+        authMode: "signin_incremental",
+        cUserId: faker.database.mongodbObjectId(),
+        hasStoredRefreshTokenBefore: true,
+        hasSession: false,
+        isReconnectRepair: false,
+      });
 
       const success: GoogleSignInSuccess = {
         providerUser,
