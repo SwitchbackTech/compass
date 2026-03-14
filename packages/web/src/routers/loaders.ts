@@ -11,9 +11,15 @@ export interface DayLoaderData {
 export async function loadAuthenticated() {
   const { session } = await import("../common/classes/Session");
 
-  const authenticated = await session.doesSessionExist();
+  try {
+    const authenticated = await session.doesSessionExist();
 
-  return { authenticated };
+    return { authenticated };
+  } catch {
+    // Session checks can fail transiently (network, ad blockers, etc.).
+    // The router should treat this as unauthenticated instead of crashing.
+    return { authenticated: false };
+  }
 }
 
 export async function loadLogoutData() {
