@@ -29,8 +29,7 @@ interface CustomRenderOptions extends RenderOptions {
 }
 
 interface CustomRenderHookOptions<Props>
-  extends CustomRenderOptions,
-    Omit<RenderHookOptions<Props>, "wrapper"> {}
+  extends CustomRenderOptions, Omit<RenderHookOptions<Props>, "wrapper"> {}
 
 const TestProviders = (props?: {
   router?: RouterProviderProps["router"];
