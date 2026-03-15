@@ -16,11 +16,11 @@ export type GoogleSignInSuccess = {
 
 /**
  * Auth modes for Google sign-in flow:
- * - signup: New user, no linked Compass account
- * - signin_incremental: Existing user with valid refresh token and healthy sync
- * - reconnect_repair: Existing user needing repair (missing refresh token or unhealthy sync)
+ * - SIGNUP: New user, no linked Compass account
+ * - SIGNIN_INCREMENTAL: Existing user with valid refresh token and healthy sync
+ * - RECONNECT_REPAIR: Existing user needing repair (missing refresh token or unhealthy sync)
  */
-export type AuthMode = "signup" | "signin_incremental" | "reconnect_repair";
+export type AuthMode = "SIGNUP" | "SIGNIN_INCREMENTAL" | "RECONNECT_REPAIR";
 
 export type AuthDecision = {
   authMode: AuthMode;
@@ -51,9 +51,9 @@ export interface GoogleSignInSuccessAuthService {
  * Determines the auth mode based on server-side state.
  *
  * Decision logic:
- * - If no linked Compass user exists → signup
- * - If user exists but refresh token is missing OR sync is unhealthy → reconnect_repair
- * - Otherwise → signin_incremental
+ * - If no linked Compass user exists → SIGNUP
+ * - If user exists but refresh token is missing OR sync is unhealthy → RECONNECT_REPAIR
+ * - Otherwise → SIGNIN_INCREMENTAL
  */
 async function determineAuthMode(
   googleUserId: string,
@@ -64,7 +64,7 @@ async function determineAuthMode(
 
   if (!user) {
     return {
-      authMode: "signup",
+      authMode: "SIGNUP",
       compassUserId: null,
       hasStoredRefreshToken: false,
       hasHealthySync: false,
@@ -82,7 +82,7 @@ async function determineAuthMode(
   // If missing refresh token OR unhealthy sync → needs repair
   if (!hasStoredRefreshToken || !hasHealthySync) {
     return {
-      authMode: "reconnect_repair",
+      authMode: "RECONNECT_REPAIR",
       compassUserId,
       hasStoredRefreshToken,
       hasHealthySync,
@@ -91,7 +91,7 @@ async function determineAuthMode(
   }
 
   return {
-    authMode: "signin_incremental",
+    authMode: "SIGNIN_INCREMENTAL",
     compassUserId,
     hasStoredRefreshToken,
     hasHealthySync,
@@ -120,7 +120,7 @@ export async function handleGoogleAuth(
   const decision = await determineAuthMode(googleUserId, createdNewRecipeUser);
 
   switch (decision.authMode) {
-    case "signup": {
+    case "SIGNUP": {
       const isNewUser = createdNewRecipeUser && loginMethodsLength === 1;
       if (!isNewUser) {
         // Edge case: no Compass user found but SuperTokens says not new
@@ -140,7 +140,7 @@ export async function handleGoogleAuth(
       return;
     }
 
-    case "reconnect_repair": {
+    case "RECONNECT_REPAIR": {
       // User exists but needs repair (missing refresh token or unhealthy sync)
       await authService.repairGoogleConnection(
         decision.compassUserId!,
@@ -150,7 +150,7 @@ export async function handleGoogleAuth(
       return;
     }
 
-    case "signin_incremental": {
+    case "SIGNIN_INCREMENTAL": {
       // Healthy returning user - attempt incremental sync
       await authService.googleSignin(providerUser, oAuthTokens);
       return;

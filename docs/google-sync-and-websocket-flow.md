@@ -130,7 +130,7 @@ Revocation and reconnect are handled across auth, sync, websocket, and repositor
    - User existence (via `findCompassUserBy`)
    - Refresh token presence (`user.google.gRefreshToken`)
    - Sync health (`canDoIncrementalSync`)
-6. If user exists but refresh token is missing or sync is unhealthy → `reconnect_repair` path via `repairGoogleConnection()`.
+6. If user exists but refresh token is missing or sync is unhealthy → `RECONNECT_REPAIR` path via `repairGoogleConnection()`.
 7. Reconnect updates Google credentials, marks metadata sync flags as `"restart"`, and restarts sync in background.
 
 ### Auth Mode Classification
@@ -139,9 +139,9 @@ The backend determines auth mode based on server-side state, not frontend intent
 
 | Condition                                             | Auth Mode            | Handler                    |
 | ----------------------------------------------------- | -------------------- | -------------------------- |
-| No linked Compass user                                | `signup`             | `googleSignup()`           |
-| User exists + missing refresh token OR unhealthy sync | `reconnect_repair`   | `repairGoogleConnection()` |
-| User exists + valid refresh token + healthy sync      | `signin_incremental` | `googleSignin()`           |
+| No linked Compass user                                | `SIGNUP`             | `googleSignup()`           |
+| User exists + missing refresh token OR unhealthy sync | `RECONNECT_REPAIR`   | `repairGoogleConnection()` |
+| User exists + valid refresh token + healthy sync      | `SIGNIN_INCREMENTAL` | `googleSignin()`           |
 
 Note: The `googleAuthIntent` field from frontend is deprecated and no longer authoritative for routing.
 

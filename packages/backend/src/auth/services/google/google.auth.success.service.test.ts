@@ -87,7 +87,6 @@ describe("handleGoogleAuth", () => {
         createdNewRecipeUser: true,
         recipeUserId,
         loginMethodsLength: 1,
-        sessionUserId: null,
       };
 
       await handleGoogleAuth(success, authService);
@@ -112,7 +111,6 @@ describe("handleGoogleAuth", () => {
         createdNewRecipeUser: true,
         recipeUserId: faker.database.mongodbObjectId(),
         loginMethodsLength: 1,
-        sessionUserId: null,
       };
 
       await expect(handleGoogleAuth(success, authService)).rejects.toThrow(
@@ -123,7 +121,7 @@ describe("handleGoogleAuth", () => {
     });
   });
 
-  describe("reconnect_repair path", () => {
+  describe("RECONNECT_REPAIR path", () => {
     it("calls repairGoogleConnection when user exists but refresh token is missing", async () => {
       const compassUser = makeCompassUser({ hasRefreshToken: false });
       const compassUserId = compassUser._id.toString();
@@ -143,7 +141,6 @@ describe("handleGoogleAuth", () => {
         createdNewRecipeUser: false,
         recipeUserId: compassUserId,
         loginMethodsLength: 1,
-        sessionUserId: null,
       };
 
       await handleGoogleAuth(success, authService);
@@ -177,7 +174,6 @@ describe("handleGoogleAuth", () => {
         createdNewRecipeUser: false,
         recipeUserId: compassUserId,
         loginMethodsLength: 1,
-        sessionUserId: null,
       };
 
       await handleGoogleAuth(success, authService);
@@ -211,7 +207,6 @@ describe("handleGoogleAuth", () => {
         createdNewRecipeUser: false,
         recipeUserId: compassUserId,
         loginMethodsLength: 1,
-        sessionUserId: null,
       };
 
       await handleGoogleAuth(success, authService);
@@ -239,7 +234,6 @@ describe("handleGoogleAuth", () => {
         createdNewRecipeUser: false,
         recipeUserId: compassUserId,
         loginMethodsLength: 1,
-        sessionUserId: null,
       };
 
       await handleGoogleAuth(success, authService);
@@ -250,7 +244,7 @@ describe("handleGoogleAuth", () => {
     });
   });
 
-  describe("signin_incremental path", () => {
+  describe("SIGNIN_INCREMENTAL path", () => {
     it("calls googleSignin when user exists with valid refresh token and healthy sync", async () => {
       const compassUser = makeCompassUser({ hasRefreshToken: true });
       mockFindCompassUserBy.mockResolvedValue(compassUser);
@@ -271,7 +265,6 @@ describe("handleGoogleAuth", () => {
         createdNewRecipeUser: false,
         recipeUserId: faker.database.mongodbObjectId(),
         loginMethodsLength: 1,
-        sessionUserId: null,
       };
 
       await handleGoogleAuth(success, authService);
@@ -293,7 +286,7 @@ describe("handleGoogleAuth", () => {
 
       const authService = createMockAuthService();
 
-      // Scenario 1: No user → signup
+      // Scenario 1: No user → SIGNUP
       mockFindCompassUserBy.mockResolvedValue(null);
       await handleGoogleAuth(
         {
@@ -302,7 +295,6 @@ describe("handleGoogleAuth", () => {
           createdNewRecipeUser: true,
           recipeUserId: faker.database.mongodbObjectId(),
           loginMethodsLength: 1,
-          sessionUserId: null,
         },
         authService,
       );
@@ -310,7 +302,7 @@ describe("handleGoogleAuth", () => {
 
       jest.clearAllMocks();
 
-      // Scenario 2: User exists but no refresh token → reconnect_repair
+      // Scenario 2: User exists but no refresh token → RECONNECT_REPAIR
       const userNoToken = makeCompassUser({ hasRefreshToken: false });
       mockFindCompassUserBy.mockResolvedValue(userNoToken);
       mockGetSync.mockResolvedValue({ google: { events: [] } });
@@ -322,7 +314,6 @@ describe("handleGoogleAuth", () => {
           createdNewRecipeUser: false,
           recipeUserId: userNoToken._id.toString(),
           loginMethodsLength: 1,
-          sessionUserId: null,
         },
         authService,
       );
@@ -330,7 +321,7 @@ describe("handleGoogleAuth", () => {
 
       jest.clearAllMocks();
 
-      // Scenario 3: User exists with token and healthy sync → signin_incremental
+      // Scenario 3: User exists with token and healthy sync → SIGNIN_INCREMENTAL
       const healthyUser = makeCompassUser({ hasRefreshToken: true });
       mockFindCompassUserBy.mockResolvedValue(healthyUser);
       mockGetSync.mockResolvedValue({
@@ -344,7 +335,6 @@ describe("handleGoogleAuth", () => {
           createdNewRecipeUser: false,
           recipeUserId: healthyUser._id.toString(),
           loginMethodsLength: 1,
-          sessionUserId: null,
         },
         authService,
       );

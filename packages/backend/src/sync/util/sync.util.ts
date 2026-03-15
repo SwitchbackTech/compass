@@ -56,7 +56,7 @@ export const hasGoogleHeaders = (headers: object) => {
  * - Events array is empty (no calendars to sync)
  *
  * This is used to determine if a user needs a full restart sync
- * (reconnect_repair) vs incremental sync (signin_incremental).
+ * (RECONNECT_REPAIR) vs incremental sync (SIGNIN_INCREMENTAL).
  */
 export const canDoIncrementalSync = (sync: Schema_Sync) => {
   const events = sync.google?.events;
