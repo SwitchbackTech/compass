@@ -221,11 +221,32 @@ describe("useGcalSync", () => {
 
       renderHook(() => useGcalSync());
 
-      metadataHandler?.({ sync: { importGCal: "restart" } });
+      metadataHandler?.({
+        sync: { importGCal: "restart" },
+        google: { connectionStatus: "connected" },
+      });
 
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.request(undefined as never),
       );
+    });
+
+    it("does not auto-request an import when reconnect is required", () => {
+      let metadataHandler: ((metadata: unknown) => void) | undefined;
+      (socket.on as jest.Mock).mockImplementation((event, handler) => {
+        if (event === USER_METADATA) {
+          metadataHandler = handler;
+        }
+      });
+
+      renderHook(() => useGcalSync());
+
+      metadataHandler?.({
+        sync: { importGCal: "restart" },
+        google: { connectionStatus: "reconnect_required" },
+      });
+
+      expect(importGCalSlice.actions.request).not.toHaveBeenCalled();
     });
 
     it("does not auto-request an import when metadata says errored", () => {
