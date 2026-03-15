@@ -135,7 +135,7 @@ Revocation and reconnect are handled across auth, sync, websocket, and repositor
 
 ### Auth Mode Classification
 
-The backend determines auth mode based on server-side state, not frontend intent:
+The backend determines auth mode based on server-side state, and the client only launches OAuth plus reacts to metadata/socket updates:
 
 | Condition                                             | Auth Mode            | Handler                    |
 | ----------------------------------------------------- | -------------------- | -------------------------- |
@@ -143,7 +143,7 @@ The backend determines auth mode based on server-side state, not frontend intent
 | User exists + missing refresh token OR unhealthy sync | `RECONNECT_REPAIR`   | `repairGoogleConnection()` |
 | User exists + valid refresh token + healthy sync      | `SIGNIN_INCREMENTAL` | `googleSignin()`           |
 
-Note: The `googleAuthIntent` field from frontend is deprecated and no longer authoritative for routing.
+Note: Frontend reconnect intent is no longer used for routing. The server is the source of truth for auth mode selection.
 
 Primary files:
 
@@ -181,7 +181,7 @@ Google import progress is also realtime:
 
 1. backend starts import
 2. websocket emits `IMPORT_GCAL_START`
-3. client marks import pending
+3. client waits for metadata/socket updates from the backend import flow
 4. backend completes import and emits `IMPORT_GCAL_END`
 5. client stores import results and triggers a refetch
 

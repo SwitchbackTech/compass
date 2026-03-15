@@ -19,23 +19,6 @@ export type CreateGoogleSignInResponse =
   | { status: Exclude<ThirdPartySignInUpResponse["status"], "OK"> }
   | GoogleThirdPartySignInUpSuccess;
 
-/**
- * @deprecated This function is transitional. Auth mode is now determined
- * server-side in handleGoogleAuth() based on refresh token presence and
- * sync health. The googleAuthIntent is no longer authoritative for routing.
- *
- * Kept temporarily for backward compatibility during transition period.
- */
-export function getGoogleAuthIntent(
-  value: unknown,
-): GoogleAuthIntent | undefined {
-  if (value === "connect" || value === "reconnect") {
-    return value;
-  }
-
-  return undefined;
-}
-
 export function createGoogleSignInSuccess(
   response: CreateGoogleSignInResponse,
 ): GoogleSignInSuccess | null {

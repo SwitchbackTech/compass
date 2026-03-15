@@ -10,7 +10,7 @@ export const refreshUserMetadata = async (): Promise<void> => {
     return refreshUserMetadataRequest;
   }
 
-  store.dispatch(userMetadataSlice.actions.setLoading());
+  store.dispatch(userMetadataSlice.actions.setLoading(undefined));
 
   refreshUserMetadataRequest = UserApi.getMetadata()
     .then((metadata) => {
@@ -23,12 +23,12 @@ export const refreshUserMetadata = async (): Promise<void> => {
         status === Status.UNAUTHORIZED || status === Status.FORBIDDEN;
 
       if (isUnauthorized) {
-        store.dispatch(userMetadataSlice.actions.clear());
+        store.dispatch(userMetadataSlice.actions.clear(undefined));
         return;
       }
 
       console.error("Failed to refresh user metadata", error);
-      store.dispatch(userMetadataSlice.actions.finishLoading());
+      store.dispatch(userMetadataSlice.actions.finishLoading(undefined));
     })
     .finally(() => {
       refreshUserMetadataRequest = null;

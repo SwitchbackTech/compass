@@ -35,7 +35,6 @@ export function useGoogleAuth() {
     onStart: () => {
       dismissErrorToast(SESSION_EXPIRED_TOAST_ID);
       dispatch(startAuthenticating());
-      dispatch(importGCalSlice.actions.setIsImportPending(true));
       dispatch(importGCalSlice.actions.clearImportResults(undefined));
     },
     onSuccess: async (data) => {
@@ -57,16 +56,13 @@ export function useGoogleAuth() {
         markUserAsAuthenticated();
 
         setAuthenticated(true);
-        void refreshUserMetadata();
 
-        // Batch these dispatches to ensure they update in the same render cycle,
-        // preventing a flash where isAuthenticating=false but importing=false
         batch(() => {
           dispatch(authSuccess());
-          // Now that OAuth is complete, indicate that calendar import is starting
-          dispatch(importGCalSlice.actions.importing(true));
           dispatch(importGCalSlice.actions.setIsImportPending(true));
         });
+
+        void refreshUserMetadata();
 
         const syncResult = await syncLocalEvents();
 
