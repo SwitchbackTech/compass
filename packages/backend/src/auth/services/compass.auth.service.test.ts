@@ -53,8 +53,8 @@ describe("CompassAuthService", () => {
       expect(updatedUser?.google?.gRefreshToken).toBe(
         oAuthTokens.refresh_token,
       );
-      expect(metadata.sync?.importGCal).toBe("restart");
-      expect(metadata.sync?.incrementalGCalSync).toBe("restart");
+      expect(metadata.sync?.importGCal).toBe("RESTART");
+      expect(metadata.sync?.incrementalGCalSync).toBe("RESTART");
       expect(restartSpy).toHaveBeenCalledWith(compassUserId);
 
       restartSpy.mockRestore();

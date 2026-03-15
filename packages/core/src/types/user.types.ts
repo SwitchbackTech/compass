@@ -16,12 +16,12 @@ export interface Schema_User {
   lastLoggedInAt?: Date;
 }
 
-type SyncStatus = "importing" | "errored" | "completed" | "restart" | null;
+type SyncStatus = "IMPORTING" | "ERRORED" | "COMPLETED" | "RESTART" | null;
 export type GoogleConnectionStatus =
   | "not_connected"
   | "connected"
   | "reconnect_required";
-export type GoogleSyncStatus = "healthy" | "repairing" | "attention" | "none";
+export type GoogleSyncStatus = "HEALTHY" | "REPAIRING" | "ATTENTION" | "NONE";
 
 export interface UserMetadata extends SupertokensUserMetadata.JSONObject {
   skipOnboarding?: boolean;

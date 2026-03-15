@@ -242,7 +242,7 @@ describe("UserService", () => {
           Boolean(nextSyncToken),
         ),
       ).toBe(true);
-      expect(metadata.google?.syncStatus).toBe("healthy");
+      expect(metadata.google?.syncStatus).toBe("HEALTHY");
 
       (isUsingHttps as jest.Mock).mockRestore();
     });
@@ -333,7 +333,7 @@ describe("UserService", () => {
       await userMetadataService.updateUserMetadata({
         userId,
         data: {
-          sync: { importGCal: "completed", incrementalGCalSync: "completed" },
+          sync: { importGCal: "COMPLETED", incrementalGCalSync: "COMPLETED" },
         },
       });
 
@@ -353,8 +353,8 @@ describe("UserService", () => {
       expect(sync).not.toHaveProperty(CalendarProvider.GOOGLE);
 
       const metadata = await userMetadataService.fetchUserMetadata(userId);
-      expect(metadata.sync?.importGCal).toBe("restart");
-      expect(metadata.sync?.incrementalGCalSync).toBe("restart");
+      expect(metadata.sync?.importGCal).toBe("RESTART");
+      expect(metadata.sync?.incrementalGCalSync).toBe("RESTART");
     });
   });
 
@@ -365,13 +365,13 @@ describe("UserService", () => {
 
       await userMetadataService.updateUserMetadata({
         userId,
-        data: { sync: { importGCal: "restart" } },
+        data: { sync: { importGCal: "RESTART" } },
       });
 
       await userService.restartGoogleCalendarSync(userId);
 
       const metadata = await userMetadataService.fetchUserMetadata(userId);
-      expect(metadata.sync?.importGCal).toBe("completed");
+      expect(metadata.sync?.importGCal).toBe("COMPLETED");
 
       const calendars = await calendarService.getByUser(userId);
       expect(calendars.length).toBeGreaterThan(0);
@@ -383,7 +383,7 @@ describe("UserService", () => {
 
       await userMetadataService.updateUserMetadata({
         userId,
-        data: { sync: { importGCal: "completed" } },
+        data: { sync: { importGCal: "COMPLETED" } },
       });
 
       const stopSpy = jest.spyOn(userService, "stopGoogleCalendarSync");
@@ -395,7 +395,7 @@ describe("UserService", () => {
       expect(startSpy).not.toHaveBeenCalled();
 
       const metadata = await userMetadataService.fetchUserMetadata(userId);
-      expect(metadata.sync?.importGCal).toBe("completed");
+      expect(metadata.sync?.importGCal).toBe("COMPLETED");
 
       stopSpy.mockRestore();
       startSpy.mockRestore();
@@ -407,7 +407,7 @@ describe("UserService", () => {
 
       await userMetadataService.updateUserMetadata({
         userId,
-        data: { sync: { importGCal: "completed" } },
+        data: { sync: { importGCal: "COMPLETED" } },
       });
 
       const stopSpy = jest
@@ -423,7 +423,7 @@ describe("UserService", () => {
       expect(startSpy).toHaveBeenCalledWith(userId);
 
       const metadata = await userMetadataService.fetchUserMetadata(userId);
-      expect(metadata.sync?.importGCal).toBe("completed");
+      expect(metadata.sync?.importGCal).toBe("COMPLETED");
 
       stopSpy.mockRestore();
       startSpy.mockRestore();
@@ -457,13 +457,13 @@ describe("UserService", () => {
 
       await userMetadataService.updateUserMetadata({
         userId,
-        data: { sync: { importGCal: "restart" } },
+        data: { sync: { importGCal: "RESTART" } },
       });
 
       await userService.restartGoogleCalendarSync(userId, { force: true });
 
       const metadata = await userMetadataService.fetchUserMetadata(userId);
-      expect(metadata.sync?.importGCal).toBe("errored");
+      expect(metadata.sync?.importGCal).toBe("ERRORED");
       expect(await mongoService.watch.countDocuments({ user: userId })).toBe(0);
 
       stopWatchesSpy.mockRestore();
@@ -478,14 +478,14 @@ describe("UserService", () => {
 
       const metadata = await userMetadataService.updateUserMetadata({
         userId,
-        data: { sync: { importGCal: "restart" } },
+        data: { sync: { importGCal: "RESTART" } },
       });
 
-      expect(metadata.sync?.importGCal).toBe("restart");
+      expect(metadata.sync?.importGCal).toBe("RESTART");
 
       const persisted = await userMetadataService.fetchUserMetadata(userId);
 
-      expect(persisted.sync?.importGCal).toBe("restart");
+      expect(persisted.sync?.importGCal).toBe("RESTART");
     });
   });
 
@@ -496,12 +496,12 @@ describe("UserService", () => {
 
       await userMetadataService.updateUserMetadata({
         userId,
-        data: { sync: { importGCal: "restart" } },
+        data: { sync: { importGCal: "RESTART" } },
       });
 
       const metadata = await userMetadataService.fetchUserMetadata(userId);
 
-      expect(metadata.sync?.importGCal).toBe("restart");
+      expect(metadata.sync?.importGCal).toBe("RESTART");
     });
   });
 });

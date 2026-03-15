@@ -32,14 +32,14 @@ describe("UserMetadataService", () => {
 
       const metadata = await driver.updateUserMetadata({
         userId,
-        data: { sync: { importGCal: "restart" } },
+        data: { sync: { importGCal: "RESTART" } },
       });
 
-      expect(metadata.sync?.importGCal).toBe("restart");
+      expect(metadata.sync?.importGCal).toBe("RESTART");
 
       const persisted = await driver.fetchUserMetadata(userId);
 
-      expect(persisted.sync?.importGCal).toBe("restart");
+      expect(persisted.sync?.importGCal).toBe("RESTART");
     });
   });
 
@@ -50,12 +50,12 @@ describe("UserMetadataService", () => {
 
       await driver.updateUserMetadata({
         userId,
-        data: { sync: { importGCal: "restart" } },
+        data: { sync: { importGCal: "RESTART" } },
       });
 
       const metadata = await driver.fetchUserMetadata(userId);
 
-      expect(metadata.sync?.importGCal).toBe("restart");
+      expect(metadata.sync?.importGCal).toBe("RESTART");
     });
 
     it("returns not_connected when the user never connected Google", async () => {
@@ -67,7 +67,7 @@ describe("UserMetadataService", () => {
       expect(metadata.google).toMatchObject({
         hasRefreshToken: false,
         connectionStatus: "not_connected",
-        syncStatus: "none",
+        syncStatus: "NONE",
       });
     });
 
@@ -82,7 +82,7 @@ describe("UserMetadataService", () => {
       expect(metadata.google).toMatchObject({
         hasRefreshToken: false,
         connectionStatus: "reconnect_required",
-        syncStatus: "none",
+        syncStatus: "NONE",
       });
     });
 
@@ -95,7 +95,7 @@ describe("UserMetadataService", () => {
       expect(metadata.google).toMatchObject({
         hasRefreshToken: true,
         connectionStatus: "connected",
-        syncStatus: "healthy",
+        syncStatus: "HEALTHY",
       });
     });
 
@@ -112,7 +112,7 @@ describe("UserMetadataService", () => {
       expect(metadata.google).toMatchObject({
         hasRefreshToken: true,
         connectionStatus: "connected",
-        syncStatus: "healthy",
+        syncStatus: "HEALTHY",
       });
 
       isUsingHttpsSpy.mockRestore();
@@ -130,7 +130,7 @@ describe("UserMetadataService", () => {
       expect(metadata.google).toMatchObject({
         hasRefreshToken: true,
         connectionStatus: "connected",
-        syncStatus: "attention",
+        syncStatus: "ATTENTION",
       });
       expect(restartSpy).not.toHaveBeenCalled();
 
@@ -143,7 +143,7 @@ describe("UserMetadataService", () => {
 
       await driver.updateUserMetadata({
         userId,
-        data: { sync: { importGCal: "errored" } },
+        data: { sync: { importGCal: "ERRORED" } },
       });
 
       const metadata = await driver.fetchUserMetadata(userId);
@@ -151,7 +151,7 @@ describe("UserMetadataService", () => {
       expect(metadata.google).toMatchObject({
         hasRefreshToken: true,
         connectionStatus: "connected",
-        syncStatus: "attention",
+        syncStatus: "ATTENTION",
       });
     });
 
@@ -164,14 +164,14 @@ describe("UserMetadataService", () => {
 
       await driver.updateUserMetadata({
         userId,
-        data: { sync: { importGCal: "importing" } },
+        data: { sync: { importGCal: "IMPORTING" } },
       });
 
       const metadata = await driver.fetchUserMetadata(userId);
 
       expect(metadata.google).toMatchObject({
         connectionStatus: "connected",
-        syncStatus: "repairing",
+        syncStatus: "REPAIRING",
       });
       expect(restartSpy).not.toHaveBeenCalled();
 

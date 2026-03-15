@@ -120,7 +120,7 @@ export class SyncController {
     );
     const importStatus = metadata.sync?.importGCal;
 
-    if (importStatus === "importing" || importStatus === "restart") {
+    if (importStatus === "IMPORTING" || importStatus === "RESTART") {
       logger.info(
         `Skipped Google sync recovery because full import is already active for user: ${userId}`,
       );

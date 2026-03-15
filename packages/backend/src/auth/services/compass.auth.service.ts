@@ -74,7 +74,7 @@ class CompassAuthService {
         userId,
         data: {
           skipOnboarding: false,
-          sync: { importGCal: "restart", incrementalGCalSync: "restart" },
+          sync: { importGCal: "RESTART", incrementalGCalSync: "RESTART" },
         },
       });
 
@@ -129,7 +129,7 @@ class CompassAuthService {
     await userMetadataService.updateUserMetadata({
       userId: cUserId,
       data: {
-        sync: { importGCal: "restart", incrementalGCalSync: "restart" },
+        sync: { importGCal: "RESTART", incrementalGCalSync: "RESTART" },
       },
     });
 
@@ -184,7 +184,7 @@ class CompassAuthService {
         // mark in metadata to restart full import
         await userMetadataService.updateUserMetadata({
           userId: cUserId,
-          data: { sync: { importGCal: "restart" } },
+          data: { sync: { importGCal: "RESTART" } },
         });
 
         this.restartGoogleCalendarSyncInBackground(cUserId);

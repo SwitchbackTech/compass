@@ -75,11 +75,11 @@ const getGoogleUiState = ({
     return "checking";
   }
 
-  if (connectionStatus === "connected" && syncStatus === "repairing") {
+  if (connectionStatus === "connected" && syncStatus === "REPAIRING") {
     return "connected_repairing";
   }
 
-  if (connectionStatus === "connected" && syncStatus === "attention") {
+  if (connectionStatus === "connected" && syncStatus === "ATTENTION") {
     return "connected_attention";
   }
 
@@ -200,7 +200,7 @@ export const useConnectGoogle = () => {
     ) => RootState["sync"]["importGCal"],
   );
   const connectionStatus = googleMetadata?.connectionStatus ?? "not_connected";
-  const syncStatus = googleMetadata?.syncStatus ?? "none";
+  const syncStatus = googleMetadata?.syncStatus ?? "NONE";
   const { login } = useGoogleAuth();
 
   const onOpenGoogleAuth = useCallback(() => {

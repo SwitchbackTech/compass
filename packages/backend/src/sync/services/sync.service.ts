@@ -281,7 +281,7 @@ class SyncService {
 
       if (!proceed) {
         webSocketServer.handleImportGCalEnd(userId, {
-          status: "ignored",
+          status: "IGNORED",
           message: `User ${userId} gcal incremental sync is in progress or completed, ignoring this request`,
         });
 
@@ -290,7 +290,7 @@ class SyncService {
 
       await userMetadataService.updateUserMetadata({
         userId,
-        data: { sync: { incrementalGCalSync: "importing" } },
+        data: { sync: { incrementalGCalSync: "IMPORTING" } },
       });
 
       const syncImport = gcal
@@ -301,11 +301,11 @@ class SyncService {
 
       await userMetadataService.updateUserMetadata({
         userId,
-        data: { sync: { incrementalGCalSync: "completed" } },
+        data: { sync: { incrementalGCalSync: "COMPLETED" } },
       });
 
       webSocketServer.handleImportGCalEnd(userId, {
-        status: "completed",
+        status: "COMPLETED",
       });
       webSocketServer.handleBackgroundCalendarChange(userId);
 
@@ -313,7 +313,7 @@ class SyncService {
     } catch (error) {
       await userMetadataService.updateUserMetadata({
         userId,
-        data: { sync: { incrementalGCalSync: "errored" } },
+        data: { sync: { incrementalGCalSync: "ERRORED" } },
       });
 
       logger.error(
@@ -322,7 +322,7 @@ class SyncService {
       );
 
       webSocketServer.handleImportGCalEnd(userId, {
-        status: "errored",
+        status: "ERRORED",
         message: `Incremental Google Calendar sync failed for user: ${userId}`,
       });
 

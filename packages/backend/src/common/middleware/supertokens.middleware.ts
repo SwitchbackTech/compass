@@ -169,7 +169,7 @@ export const initSupertokens = () => {
 
                 await userMetadataService.updateUserMetadata({
                   userId: userId.toString(),
-                  data: { sync: { incrementalGCalSync: "restart" } },
+                  data: { sync: { incrementalGCalSync: "RESTART" } },
                 });
 
                 if (lastActiveSession) {

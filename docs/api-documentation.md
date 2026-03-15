@@ -137,8 +137,8 @@ Current metadata shape used by sync/auth flows:
 ```ts
 {
   sync?: {
-    importGCal?: "importing" | "errored" | "completed" | "restart" | null;
-    incrementalGCalSync?: "importing" | "errored" | "completed" | "restart" | null;
+    importGCal?: "IMPORTING" | "ERRORED" | "COMPLETED" | "RESTART" | null;
+    incrementalGCalSync?: "IMPORTING" | "ERRORED" | "COMPLETED" | "RESTART" | null;
   };
   google?: {
     hasRefreshToken?: boolean;

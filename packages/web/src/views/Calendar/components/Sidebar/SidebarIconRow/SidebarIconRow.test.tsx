@@ -59,7 +59,7 @@ describe("SidebarIconRow", () => {
           current: {
             google: {
               connectionStatus: "not_connected",
-              syncStatus: "none",
+              syncStatus: "NONE",
             },
           },
         },
@@ -83,7 +83,7 @@ describe("SidebarIconRow", () => {
           current: {
             google: {
               connectionStatus: "reconnect_required",
-              syncStatus: "none",
+              syncStatus: "NONE",
             },
           },
         },
@@ -107,7 +107,7 @@ describe("SidebarIconRow", () => {
           current: {
             google: {
               connectionStatus: "connected",
-              syncStatus: "healthy",
+              syncStatus: "HEALTHY",
             },
           },
         },
@@ -131,7 +131,7 @@ describe("SidebarIconRow", () => {
           current: {
             google: {
               connectionStatus: "connected",
-              syncStatus: "repairing",
+              syncStatus: "REPAIRING",
             },
           },
         },
@@ -155,7 +155,7 @@ describe("SidebarIconRow", () => {
           current: {
             google: {
               connectionStatus: "connected",
-              syncStatus: "attention",
+              syncStatus: "ATTENTION",
             },
           },
         },

@@ -73,7 +73,7 @@ Important error handling behavior:
   - if no watch exists, backend logs and returns `410` without pruning (notification ignored)
 - missing sync token:
   - backend attempts forced resync in background
-  - resync is skipped if metadata already shows `sync.importGCal === "importing"`
+  - resync is skipped if metadata already shows `sync.importGCal === "IMPORTING"`
   - response is `204` either way
 - invalid/revoked Google token (`invalid_grant`):
   - backend prunes Google data, emits `GOOGLE_REVOKED`, returns revoked payload
@@ -161,8 +161,8 @@ Primary files:
 ```ts
 {
   sync?: {
-    importGCal?: "importing" | "errored" | "completed" | "restart" | null;
-    incrementalGCalSync?: "importing" | "errored" | "completed" | "restart" | null;
+    importGCal?: "IMPORTING" | "ERRORED" | "COMPLETED" | "RESTART" | null;
+    incrementalGCalSync?: "IMPORTING" | "ERRORED" | "COMPLETED" | "RESTART" | null;
   };
   google?: {
     hasRefreshToken?: boolean;

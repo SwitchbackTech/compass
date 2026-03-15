@@ -47,16 +47,16 @@ export const useGcalSync = () => {
         return;
       }
 
-      if (payload?.status === "errored") {
+      if (payload?.status === "ERRORED") {
         dispatch(importGCalSlice.actions.setImportError(payload.message));
         return;
       }
 
-      if (payload?.status === "ignored") {
+      if (payload?.status === "IGNORED") {
         return;
       }
 
-      if (payload?.status === "completed") {
+      if (payload?.status === "COMPLETED") {
         dispatch(
           importGCalSlice.actions.setImportResults({
             eventsCount: payload.eventsCount,
@@ -82,16 +82,16 @@ export const useGcalSync = () => {
     (metadata: UserMetadata) => {
       const importStatus = metadata.sync?.importGCal;
       const connectionStatus = metadata.google?.connectionStatus;
-      const isBackendImporting = importStatus === "importing";
+      const isBackendImporting = importStatus === "IMPORTING";
       const shouldAutoImport =
-        importStatus === "restart" && connectionStatus === "connected";
+        importStatus === "RESTART" && connectionStatus === "connected";
 
       dispatch(userMetadataSlice.actions.set(metadata));
 
       if (isImportPendingRef.current) {
         if (isBackendImporting) {
           dispatch(importGCalSlice.actions.importing(true));
-        } else if (importStatus === "completed") {
+        } else if (importStatus === "COMPLETED") {
           dispatch(importGCalSlice.actions.importing(false));
           dispatch(importGCalSlice.actions.setIsImportPending(false));
           dispatch(
@@ -99,7 +99,7 @@ export const useGcalSync = () => {
               reason: Sync_AsyncStateContextReason.IMPORT_COMPLETE,
             }),
           );
-        } else if (importStatus === "errored") {
+        } else if (importStatus === "ERRORED") {
           dispatch(importGCalSlice.actions.importing(false));
           dispatch(importGCalSlice.actions.setIsImportPending(false));
         }

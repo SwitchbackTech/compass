@@ -85,7 +85,7 @@ describe("useConnectGoogle", () => {
       if (selector === selectGoogleMetadata) {
         return {
           connectionStatus: "not_connected",
-          syncStatus: "none",
+          syncStatus: "NONE",
         };
       }
 
@@ -119,7 +119,7 @@ describe("useConnectGoogle", () => {
       if (selector === selectGoogleMetadata) {
         return {
           connectionStatus: "connected",
-          syncStatus: "healthy",
+          syncStatus: "HEALTHY",
         };
       }
 
@@ -154,7 +154,7 @@ describe("useConnectGoogle", () => {
       if (selector === selectGoogleMetadata) {
         return {
           connectionStatus: "reconnect_required",
-          syncStatus: "none",
+          syncStatus: "NONE",
         };
       }
 
@@ -192,7 +192,7 @@ describe("useConnectGoogle", () => {
       if (selector === selectGoogleMetadata) {
         return {
           connectionStatus: "connected",
-          syncStatus: "repairing",
+          syncStatus: "REPAIRING",
         };
       }
 
@@ -225,7 +225,7 @@ describe("useConnectGoogle", () => {
       if (selector === selectGoogleMetadata) {
         return {
           connectionStatus: "connected",
-          syncStatus: "attention",
+          syncStatus: "ATTENTION",
         };
       }
 
@@ -281,7 +281,7 @@ describe("useConnectGoogle", () => {
       if (selector === selectGoogleMetadata) {
         return {
           connectionStatus: "not_connected",
-          syncStatus: "none",
+          syncStatus: "NONE",
         };
       }
 
@@ -313,7 +313,7 @@ describe("useConnectGoogle", () => {
       if (selector === selectGoogleMetadata) {
         return {
           connectionStatus: "reconnect_required",
-          syncStatus: "none",
+          syncStatus: "NONE",
         };
       }
 

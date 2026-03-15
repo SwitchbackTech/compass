@@ -47,7 +47,7 @@ describe("SyncController", () => {
   const importTimeoutMs = 7_000;
 
   interface ImportSummary {
-    status: "completed";
+    status: "COMPLETED";
     eventsCount: number;
     calendarsCount: number;
   }
@@ -57,7 +57,7 @@ describe("SyncController", () => {
   ): ImportSummary {
     expect(result).toEqual(
       expect.objectContaining({
-        status: "completed",
+        status: "COMPLETED",
         eventsCount: expect.any(Number) as number,
         calendarsCount: expect.any(Number) as number,
       }),
@@ -252,7 +252,7 @@ describe("SyncController", () => {
         .mockImplementation(async () => {
           await userMetadataService.updateUserMetadata({
             userId,
-            data: { sync: { importGCal: "importing" } },
+            data: { sync: { importGCal: "IMPORTING" } },
           });
         });
 
@@ -628,11 +628,11 @@ describe("SyncController", () => {
 
         const { sync } = await userMetadataService.fetchUserMetadata(userId);
 
-        expect(sync?.importGCal).toEqual("completed");
+        expect(sync?.importGCal).toEqual("COMPLETED");
 
         await userMetadataService.updateUserMetadata({
           userId,
-          data: { sync: { importGCal: "restart" } },
+          data: { sync: { importGCal: "RESTART" } },
         });
 
         await waitUntilImportGCalEnd(websocketClient, () =>
@@ -657,7 +657,7 @@ describe("SyncController", () => {
 
         const { sync } = await userMetadataService.fetchUserMetadata(userId);
 
-        expect(sync?.importGCal).toEqual("completed");
+        expect(sync?.importGCal).toEqual("COMPLETED");
 
         const result = await waitUntilImportGCalEnd(
           websocketClient,
@@ -684,7 +684,7 @@ describe("SyncController", () => {
 
         const { sync } = await userMetadataService.fetchUserMetadata(userId);
 
-        expect(sync?.importGCal).toEqual("completed");
+        expect(sync?.importGCal).toEqual("COMPLETED");
 
         const getGCalEventsSyncPageTokenSpy = jest
           .spyOn(syncQueries, "getGCalEventsSyncPageToken")
@@ -699,7 +699,7 @@ describe("SyncController", () => {
         );
 
         expect(failReason).toEqual({
-          status: "ignored",
+          status: "IGNORED",
           message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
         });
 
@@ -735,7 +735,7 @@ describe("SyncController", () => {
 
         await userMetadataService.updateUserMetadata({
           userId,
-          data: { sync: { importGCal: "importing" } },
+          data: { sync: { importGCal: "IMPORTING" } },
         });
 
         const failReason = await waitUntilImportGCalEnd(
@@ -745,7 +745,7 @@ describe("SyncController", () => {
         );
 
         expect(failReason).toEqual({
-          status: "ignored",
+          status: "IGNORED",
           message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
         });
 
@@ -781,7 +781,7 @@ describe("SyncController", () => {
 
         await userMetadataService.updateUserMetadata({
           userId,
-          data: { sync: { importGCal: "restart" } },
+          data: { sync: { importGCal: "RESTART" } },
         });
 
         const result = await waitUntilImportGCalEnd(
@@ -828,7 +828,7 @@ describe("SyncController", () => {
 
         await userMetadataService.updateUserMetadata({
           userId,
-          data: { sync: { importGCal: "errored" } },
+          data: { sync: { importGCal: "ERRORED" } },
         });
 
         const result = await waitUntilImportGCalEnd(

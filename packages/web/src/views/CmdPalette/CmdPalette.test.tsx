@@ -106,7 +106,7 @@ describe("CmdPalette", () => {
           current: {
             google: {
               connectionStatus: "connected",
-              syncStatus: "healthy",
+              syncStatus: "HEALTHY",
             },
           },
         },
@@ -126,7 +126,7 @@ describe("CmdPalette", () => {
           current: {
             google: {
               connectionStatus: "connected",
-              syncStatus: "attention",
+              syncStatus: "ATTENTION",
             },
           },
         },
