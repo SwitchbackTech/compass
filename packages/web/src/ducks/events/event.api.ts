@@ -13,7 +13,11 @@ const EventApi = {
     return CompassApi.post<void>(`/event`, event);
   },
   delete: (_id: string, applyTo?: RecurringEventUpdateScope) => {
-    return CompassApi.delete<void>(`/event/${_id}?applyTo=${applyTo}`);
+    if (applyTo) {
+      return CompassApi.delete<void>(`/event/${_id}?applyTo=${applyTo}`);
+    }
+
+    return CompassApi.delete<void>(`/event/${_id}`);
   },
   edit: (
     _id: string,
