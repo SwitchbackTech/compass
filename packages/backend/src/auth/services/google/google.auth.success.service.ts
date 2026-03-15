@@ -12,12 +12,6 @@ export type GoogleSignInSuccess = {
   createdNewRecipeUser: boolean;
   recipeUserId: string;
   loginMethodsLength: number;
-  /**
-   * @deprecated This field is transitional. Auth mode is now determined
-   * server-side based on refresh token presence and sync health.
-   * Will be removed once frontend stops sending googleAuthIntent.
-   */
-  sessionUserId: string | null;
 };
 
 /**
@@ -105,25 +99,6 @@ async function determineAuthMode(
   };
 }
 
-/**
- * Logs the auth decision for observability.
- */
-function logAuthDecision(
-  decision: AuthDecision,
-  hasSession: boolean,
-  googleUserId: string,
-): void {
-  logger.info("Google auth decision", {
-    auth_mode: decision.authMode,
-    created_new_recipe_user: decision.createdNewRecipeUser,
-    has_stored_refresh_token: decision.hasStoredRefreshToken,
-    has_healthy_sync: decision.hasHealthySync,
-    has_session: hasSession,
-    compass_user_id: decision.compassUserId,
-    google_user_id: googleUserId,
-  });
-}
-
 export async function handleGoogleAuth(
   success: GoogleSignInSuccess,
   authService: GoogleSignInSuccessAuthService,
@@ -134,7 +109,6 @@ export async function handleGoogleAuth(
     createdNewRecipeUser,
     recipeUserId,
     loginMethodsLength,
-    sessionUserId,
   } = success;
 
   const googleUserId = providerUser.sub;
@@ -144,9 +118,6 @@ export async function handleGoogleAuth(
 
   // Determine auth mode based on server-side state
   const decision = await determineAuthMode(googleUserId, createdNewRecipeUser);
-
-  // Log the decision for observability
-  logAuthDecision(decision, sessionUserId !== null, googleUserId);
 
   switch (decision.authMode) {
     case "signup": {
