@@ -1,12 +1,12 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import EmailPassword from "supertokens-web-js/recipe/emailpassword";
+import { useCompleteAuthentication } from "@web/auth/hooks/useCompleteAuthentication";
 import {
   type ForgotPasswordFormData,
   type LogInFormData,
   type ResetPasswordFormData,
   type SignUpFormData,
 } from "@web/auth/schemas/auth.schemas";
-import { useCompleteAuthentication } from "@web/auth/hooks/useCompleteAuthentication";
 import { type AuthView } from "./useAuthModal";
 
 interface UseAuthFormHandlersOptions {
@@ -23,6 +23,10 @@ export function useAuthFormHandlers({
   const completeAuthentication = useCompleteAuthentication();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSubmitError(null);
+  }, [currentView]);
 
   const handleSignUp = useCallback(
     async (data: SignUpFormData) => {
@@ -115,12 +119,20 @@ export function useAuthFormHandlers({
         });
 
         if (response.status === "FIELD_ERROR") {
-          throw new Error(response.formFields[0]?.error ?? "Reset failed");
+          setSubmitError(
+            response.formFields[0]?.error ?? "Unable to send reset email",
+          );
+          return;
         }
 
         if (response.status === "PASSWORD_RESET_NOT_ALLOWED") {
-          throw new Error(response.reason);
+          setSubmitError(response.reason);
+          return;
         }
+      } catch (error) {
+        setSubmitError(
+          error instanceof Error ? error.message : "Unable to send reset email",
+        );
       } finally {
         setIsSubmitting(false);
       }
