@@ -5,7 +5,6 @@ import {
   CalendarProvider,
   Categories_Recurrence,
   type CompassAllEvents,
-  type CompassEvent,
   CompassEventStatus,
   type CompassThisEvent,
   RecurringEventUpdateScope,
@@ -20,7 +19,6 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import mongoService from "@backend/common/services/mongo.service";
-import { CompassEventParser } from "@backend/event/classes/compass.event.parser";
 import {
   testCompassSeries,
   testCompassSeriesInGcal,
@@ -1355,12 +1353,14 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             const status = CompassEventStatus.CONFIRMED;
             const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
             const payload = createMockBaseEvent({ recurrence, user });
-            const event = { payload, status } as CompassEvent;
-            const parser = new CompassEventParser(event);
 
-            await parser.init();
-
-            await parser.createEvent();
+            await CompassSyncProcessor.processEvents([
+              {
+                payload: payload as CompassThisEvent["payload"],
+                applyTo: RecurringEventUpdateScope.THIS_EVENT,
+                status,
+              },
+            ]);
 
             const { baseEvent, instances } = await testCompassSeries(
               payload,
@@ -1654,12 +1654,14 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
         const status = CompassEventStatus.CONFIRMED;
         const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
         const payload = createMockBaseEvent({ recurrence, user });
-        const event = { payload, status } as CompassEvent;
-        const parser = new CompassEventParser(event);
 
-        await parser.init();
-
-        await parser.createEvent();
+        await CompassSyncProcessor.processEvents([
+          {
+            payload: payload as CompassThisEvent["payload"],
+            applyTo: RecurringEventUpdateScope.THIS_EVENT,
+            status,
+          },
+        ]);
 
         const { baseEvent, instances } = await testCompassSeries(payload, 10);
 

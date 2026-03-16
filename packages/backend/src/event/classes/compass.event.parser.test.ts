@@ -1,321 +1,171 @@
+/** @jest-environment node */
+import { ObjectId, type WithId } from "mongodb";
 import { RRule } from "rrule";
-import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
 import {
-  CalendarProvider,
   Categories_Recurrence,
   type CompassEvent,
   CompassEventStatus,
-  type Schema_Event_Recur_Base,
-  type WithCompassId,
+  type Schema_Event,
 } from "@core/types/event.types";
 import {
   createMockBaseEvent,
   createMockStandaloneEvent,
 } from "@core/util/test/ccal.event.factory";
-import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import {
-  cleanupCollections,
-  cleanupTestDb,
-  setupTestDb,
-} from "@backend/__tests__/helpers/mock.db.setup";
-import { GenericError } from "@backend/common/errors/generic/generic.errors";
-import { CompassEventParser } from "@backend/event/classes/compass.event.parser";
-import {
-  testCompassEventInGcal,
-  testCompassEventNotInGcal,
-  testCompassSeries,
-  testCompassSeriesInGcal,
-  testCompassStandaloneEvent,
-} from "@backend/event/classes/compass.event.parser.test.util";
+  analyzeCompassTransition,
+  buildCompassTransitionContext,
+} from "@backend/event/classes/compass.event.parser";
 
-describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
-  "CompassEventParser - $calendarProvider calendar",
-  ({ calendarProvider }) => {
-    describe("Before Init", () => {
-      it("should be called before accessing these public members", () => {
-        const payload = createMockBaseEvent() as CompassEvent["payload"];
+function toDbEvent(event: Schema_Event): WithId<Omit<Schema_Event, "_id">> {
+  return {
+    ...event,
+    _id: new ObjectId(event._id),
+  } as WithId<Omit<Schema_Event, "_id">>;
+}
 
-        const event = {
-          payload,
-          status: CompassEventStatus.CONFIRMED,
-        } as CompassEvent;
+describe("compass.event.parser", () => {
+  it("builds an explicit transition context", () => {
+    const payload = createMockBaseEvent();
+    const event = {
+      payload,
+      status: CompassEventStatus.CONFIRMED,
+    } as CompassEvent;
 
-        const parser = new CompassEventParser(event);
-        const developerError = GenericError.DeveloperError.description;
+    const context = buildCompassTransitionContext(event, null);
 
-        expect(() => parser.category).toThrow(developerError);
-        expect(() => parser.isBase).toThrow(developerError);
-        expect(() => parser.isDbBase).toThrow(developerError);
-        expect(() => parser.isDbInstance).toThrow(developerError);
-        expect(() => parser.isDbStandalone).toThrow(developerError);
-        expect(() => parser.isInstance).toThrow(developerError);
-        expect(() => parser.isStandalone).toThrow(developerError);
-        expect(() => parser.rrule).toThrow(developerError);
-        expect(() => parser.summary).toThrow(developerError);
-        expect(() => parser.transition).toThrow(developerError);
-      });
+    expect(context.eventCategory).toBe(Categories_Recurrence.RECURRENCE_BASE);
+    expect(context.dbCategory).toBeNull();
+    expect(context.summary).toEqual({
+      title: payload.title ?? payload._id ?? "unknown",
+      transition: [null, "RECURRENCE_BASE_CONFIRMED"],
+      category: Categories_Recurrence.RECURRENCE_BASE,
     });
+    expect(context.transitionKey).toBe("NIL->>RECURRENCE_BASE_CONFIRMED");
+    expect(context.rrule).toBeInstanceOf(RRule);
+  });
 
-    describe("Init", () => {
-      beforeAll(setupTestDb);
+  it("plans a calendar create without Google work for someday events", () => {
+    const payload = createMockStandaloneEvent({ isSomeday: true });
+    const event = {
+      payload,
+      status: CompassEventStatus.CONFIRMED,
+    } as CompassEvent;
 
-      beforeEach(cleanupCollections);
+    const plan = analyzeCompassTransition(event, null);
 
-      afterAll(cleanupTestDb);
+    expect(plan.compassMutation).toBe("create");
+    expect(plan.operation).toBe("STANDALONE_SOMEDAY_CREATED");
+    expect(plan.googleEffect).toEqual({ type: "none" });
+    expect(plan.steps).toEqual([
+      expect.objectContaining({ type: "create", event: expect.any(Object) }),
+    ]);
+  });
 
-      it("should initialize these members after init", async () => {
-        const payload = createMockBaseEvent() as CompassEvent["payload"];
+  it("keeps the from-category in the summary when transitioning someday to calendar", () => {
+    const payload = createMockStandaloneEvent({ isSomeday: false });
+    const event = {
+      payload,
+      status: CompassEventStatus.CONFIRMED,
+    } as CompassEvent;
+    const dbEvent = toDbEvent({ ...payload, isSomeday: true });
 
-        const event = {
-          payload,
-          status: CompassEventStatus.CONFIRMED,
-        } as CompassEvent;
+    const plan = analyzeCompassTransition(event, dbEvent);
 
-        const parser = new CompassEventParser(event);
-        const developerError = GenericError.DeveloperError.description;
-        const status = event.status;
+    expect(plan.summary.category).toBe(
+      Categories_Recurrence.STANDALONE_SOMEDAY,
+    );
+    expect(plan.operation).toBe("STANDALONE_CREATED");
+    expect(plan.googleEffect).toEqual({ type: "create" });
+  });
 
-        await parser.init();
+  it("uses truncate_series when only the recurrence until changes", () => {
+    const dbPayload = createMockBaseEvent({
+      recurrence: {
+        rule: ["RRULE:FREQ=WEEKLY;UNTIL=20260131T170000Z"],
+      },
+    }) as Schema_Event;
+    const payload = {
+      ...dbPayload,
+      recurrence: {
+        rule: ["RRULE:FREQ=WEEKLY;UNTIL=20260124T170000Z"],
+      },
+    };
+    const event = {
+      payload,
+      status: CompassEventStatus.CONFIRMED,
+    } as CompassEvent;
 
-        expect(() => parser.category).not.toThrow(developerError);
-        expect(() => parser.isBase).not.toThrow(developerError);
-        expect(() => parser.isDbBase).not.toThrow(developerError);
-        expect(() => parser.isDbInstance).not.toThrow(developerError);
-        expect(() => parser.isDbStandalone).not.toThrow(developerError);
-        expect(() => parser.isInstance).not.toThrow(developerError);
-        expect(() => parser.isStandalone).not.toThrow(developerError);
-        expect(() => parser.rrule).not.toThrow(developerError);
-        expect(() => parser.summary).not.toThrow(developerError);
-        expect(() => parser.transition).not.toThrow(developerError);
+    const plan = analyzeCompassTransition(event, toDbEvent(dbPayload));
 
-        expect([
-          Categories_Recurrence.RECURRENCE_BASE,
-          Categories_Recurrence.RECURRENCE_INSTANCE,
-          Categories_Recurrence.STANDALONE,
-        ]).toContain(parser.category);
+    expect(plan.compassMutation).toBe("truncate_series");
+    expect(plan.steps.map(({ type }) => type)).toEqual([
+      "delete_instances_after_until",
+      "update_series",
+    ]);
+  });
 
-        expect([
-          parser.isBase,
-          parser.isDbBase,
-          parser.isDbInstance,
-          parser.isDbStandalone,
-          parser.isInstance,
-          parser.isStandalone,
-        ]).toContain(true);
+  it("uses recreate_series when recurrence semantics other than until change", () => {
+    const dbPayload = createMockBaseEvent({
+      recurrence: {
+        rule: ["RRULE:FREQ=WEEKLY;COUNT=10"],
+      },
+    }) as Schema_Event;
+    const payload = {
+      ...dbPayload,
+      recurrence: {
+        rule: ["RRULE:FREQ=DAILY;COUNT=5"],
+      },
+    };
+    const event = {
+      payload,
+      status: CompassEventStatus.CONFIRMED,
+    } as CompassEvent;
 
-        expect(parser.rrule).toBeInstanceOf(RRule);
+    const plan = analyzeCompassTransition(event, toDbEvent(dbPayload));
 
-        expect(parser.summary).toEqual({
-          title: event.payload.title ?? event.payload._id ?? "unknown",
-          transition: [null, `${parser.category}_${status}`],
-          category: parser.category,
-        });
+    expect(plan.compassMutation).toBe("recreate_series");
+    expect(plan.steps.map(({ type }) => type)).toEqual([
+      "delete_series",
+      "create",
+    ]);
+  });
 
-        expect(parser.getTransitionString()).toStrictEqual(
-          `NIL->>${parser.category}_${status}`,
-        );
-      });
+  it("marks series-to-standalone updates to clear recurrence before Google sync", () => {
+    const dbPayload = createMockBaseEvent({
+      recurrence: {
+        rule: ["RRULE:FREQ=WEEKLY;COUNT=10"],
+      },
+    }) as Schema_Event;
+    const payload = createMockStandaloneEvent({
+      _id: dbPayload._id,
+      user: dbPayload.user,
+      isSomeday: false,
     });
+    const event = {
+      payload,
+      status: CompassEventStatus.CONFIRMED,
+    } as CompassEvent;
 
-    describe("createEvent", () => {
-      beforeAll(setupTestDb);
+    const plan = analyzeCompassTransition(event, toDbEvent(dbPayload));
 
-      beforeEach(cleanupCollections);
+    expect(plan.operation).toBe("RECURRENCE_BASE_UPDATED");
+    expect(plan.googleEffect).toEqual({ type: "update" });
+    expect(plan.clearRecurrenceBeforeGoogleUpdate).toBe(true);
+  });
 
-      afterAll(cleanupTestDb);
+  it("prefers the persisted gEventId for delete-oriented Google effects", () => {
+    const payload = createMockStandaloneEvent();
+    const event = {
+      payload: { ...payload, gEventId: undefined },
+      status: CompassEventStatus.CANCELLED,
+    } as CompassEvent;
+    const dbEvent = toDbEvent({ ...payload, gEventId: "persisted-g-event-id" });
 
-      describe("Someday: ", () => {
-        it("should create a standalone event", async () => {
-          const _user = await UserDriver.createUser();
-          const user = _user._id.toString();
-          const status = CompassEventStatus.CONFIRMED;
-          const payload = createMockStandaloneEvent({ isSomeday: true, user });
-          const event = { payload, status } as CompassEvent;
-          const parser = new CompassEventParser(event);
+    const plan = analyzeCompassTransition(event, dbEvent);
 
-          await parser.init();
-
-          await parser.createEvent();
-
-          const { standaloneEvent } = await testCompassStandaloneEvent(payload);
-
-          switch (calendarProvider) {
-            case CalendarProvider.GOOGLE:
-              await testCompassEventNotInGcal(standaloneEvent);
-              break;
-          }
-        });
-
-        it("should create a base event", async () => {
-          const _user = await UserDriver.createUser();
-          const user = _user._id.toString();
-          const status = CompassEventStatus.CONFIRMED;
-          const payload = createMockBaseEvent({ isSomeday: true, user });
-          const event = { payload, status } as CompassEvent;
-          const parser = new CompassEventParser(event);
-
-          await parser.init();
-
-          await parser.createEvent();
-
-          const { baseEvent } = await testCompassSeries(
-            payload,
-            GCAL_MAX_RECURRENCES,
-          );
-
-          switch (calendarProvider) {
-            case CalendarProvider.GOOGLE:
-              await testCompassEventNotInGcal(baseEvent);
-              break;
-          }
-        });
-      });
-
-      describe("Calendar: ", () => {
-        it("should create a standalone event", async () => {
-          const _user = await UserDriver.createUser();
-          const user = _user._id.toString();
-          const status = CompassEventStatus.CONFIRMED;
-          const payload = createMockStandaloneEvent({ isSomeday: false, user });
-          const event = { payload, status } as CompassEvent;
-          const parser = new CompassEventParser(event);
-
-          await parser.init();
-
-          await parser.createEvent();
-
-          const { standaloneEvent } = await testCompassStandaloneEvent(payload);
-
-          switch (calendarProvider) {
-            case CalendarProvider.GOOGLE:
-              await testCompassEventInGcal(standaloneEvent);
-              break;
-          }
-        });
-
-        it("should create a base event", async () => {
-          const _user = await UserDriver.createUser();
-          const user = _user._id.toString();
-          const status = CompassEventStatus.CONFIRMED;
-          const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
-          const payload = createMockBaseEvent({ recurrence, user });
-          const event = { payload, status } as CompassEvent;
-          const parser = new CompassEventParser(event);
-
-          await parser.init();
-
-          await parser.createEvent();
-
-          const { baseEvent, instances } = await testCompassSeries(payload, 10);
-
-          switch (calendarProvider) {
-            case CalendarProvider.GOOGLE:
-              await testCompassSeriesInGcal(baseEvent, instances);
-              break;
-          }
-        });
-      });
-
-      describe("Transitions: ", () => {
-        it("should transition a someday standalone event to a standalone event", async () => {
-          const _user = await UserDriver.createUser();
-          const user = _user._id.toString();
-          const status = CompassEventStatus.CONFIRMED;
-          const payload = createMockStandaloneEvent({ isSomeday: true, user });
-          const event = { payload, status } as CompassEvent;
-          const parser = new CompassEventParser(event);
-
-          await parser.init();
-
-          await parser.createEvent();
-
-          const { standaloneEvent: somedayStandaloneEvent } =
-            await testCompassStandaloneEvent(payload);
-
-          switch (calendarProvider) {
-            case CalendarProvider.GOOGLE:
-              await testCompassEventNotInGcal(somedayStandaloneEvent);
-              break;
-          }
-
-          const transitionEvent = {
-            payload: {
-              ...payload,
-              _id: somedayStandaloneEvent._id.toString(),
-              isSomeday: false,
-            },
-            status,
-          } as CompassEvent;
-
-          const transitionParser = new CompassEventParser(transitionEvent);
-
-          await transitionParser.init();
-
-          await transitionParser.createEvent();
-
-          const { standaloneEvent } = await testCompassStandaloneEvent(
-            transitionEvent.payload,
-          );
-
-          switch (calendarProvider) {
-            case CalendarProvider.GOOGLE:
-              await testCompassEventInGcal(standaloneEvent);
-              break;
-          }
-        });
-
-        it("should transition a someday base event to a base event", async () => {
-          const _user = await UserDriver.createUser();
-          const user = _user._id.toString();
-          const status = CompassEventStatus.CONFIRMED;
-          const isSomeday = true;
-          const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
-          const payload = createMockBaseEvent({ isSomeday, user, recurrence });
-          const event = { payload, status } as CompassEvent;
-          const parser = new CompassEventParser(event);
-
-          await parser.init();
-
-          await parser.createEvent();
-
-          const { baseEvent: somedayBaseEvent } = await testCompassSeries(
-            payload,
-            10,
-          );
-
-          switch (calendarProvider) {
-            case CalendarProvider.GOOGLE:
-              await testCompassEventNotInGcal(somedayBaseEvent);
-              break;
-          }
-
-          const transitionEvent = {
-            payload: {
-              ...payload,
-              _id: somedayBaseEvent._id.toString(),
-              isSomeday: false,
-            },
-            status,
-          } as CompassEvent;
-
-          const transitionParser = new CompassEventParser(transitionEvent);
-
-          await transitionParser.init();
-
-          await transitionParser.createEvent();
-
-          const { baseEvent } = await testCompassSeries(
-            transitionEvent.payload as WithCompassId<Schema_Event_Recur_Base>,
-            10,
-          );
-
-          switch (calendarProvider) {
-            case CalendarProvider.GOOGLE:
-              await testCompassEventInGcal(baseEvent);
-              break;
-          }
-        });
-      });
+    expect(plan.googleEffect).toEqual({
+      type: "delete",
+      deleteEventId: "persisted-g-event-id",
     });
-  },
-);
+  });
+});

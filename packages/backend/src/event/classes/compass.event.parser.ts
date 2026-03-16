@@ -1,15 +1,12 @@
-import { type ClientSession, ObjectId, type WithId } from "mongodb";
-import { Logger } from "@core/logger/winston.logger";
+import { ObjectId, type WithId } from "mongodb";
 import {
   CalendarProvider,
   Categories_Recurrence,
   type CompassEvent,
   type Schema_Event,
-  type Schema_Event_Core,
   type Schema_Event_Recur_Base,
   type TransitionCategoriesRecurrence,
   type TransitionStatus,
-  type WithCompassId,
 } from "@core/types/event.types";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import {
@@ -19,570 +16,560 @@ import {
 } from "@core/util/event/event.util";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import mongoService from "@backend/common/services/mongo.service";
-import {
-  _createCompassEvent,
-  _createGcal,
-  _deleteGcal,
-  _deleteInstancesAfterUntil,
-  _deleteSeries,
-  _deleteSingleCompassEvent,
-  _updateCompassEvent,
-  _updateCompassSeries,
-  _updateGcal,
-} from "@backend/event/services/event.service";
 import {
   type Event_Transition,
   type Operation_Sync,
 } from "@backend/sync/sync.types";
 
-export class CompassEventParser {
-  #logger = Logger("app.event.classes.compass.event.parser");
-  #_event: CompassEvent;
-  #event!: WithId<Omit<Schema_Event, "_id">>;
-  #title!: string;
-  #dbEvent!: WithId<Omit<Schema_Event, "_id">> | null;
-  #isInstance!: boolean;
-  #isBase!: boolean;
-  #isStandalone!: boolean;
-  #isDbInstance!: boolean;
-  #isDbBase!: boolean;
-  #isDbStandalone!: boolean;
-  #rrule!: CompassEventRRule | null;
-  #dbRrule!: CompassEventRRule | null;
-  #transition!: Event_Transition["transition"];
-  #summary!: Omit<Event_Transition, "operation">;
+type NormalizedCompassEvent = WithId<Omit<Schema_Event, "_id">>;
+type CompassTransitionKey =
+  `${Categories_Recurrence | "NIL"}->>${TransitionCategoriesRecurrence}`;
 
-  constructor(event: CompassEvent) {
-    this.#_event = event;
+export type CompassMutation =
+  | "create"
+  | "update"
+  | "delete"
+  | "update_series"
+  | "recreate_series"
+  | "truncate_series";
 
-    this.#event = {
-      ...event.payload,
-      _id: new ObjectId(event.payload._id),
-    } as WithId<Omit<Schema_Event, "_id">>;
-  }
+export type GoogleEffectPlan =
+  | { type: "none" }
+  | { type: "create" }
+  | { type: "update" }
+  | { type: "delete"; deleteEventId?: string };
 
-  get isInstance(): boolean {
-    return this.#ensureInitInvoked(this.#isInstance);
-  }
-
-  get isBase(): boolean {
-    return this.#ensureInitInvoked(this.#isBase);
-  }
-
-  get isStandalone(): boolean {
-    return this.#ensureInitInvoked(this.#isStandalone);
-  }
-
-  get isDbInstance(): boolean {
-    return this.#ensureInitInvoked(this.#isDbInstance);
-  }
-
-  get isDbBase(): boolean {
-    return this.#ensureInitInvoked(this.#isDbBase);
-  }
-
-  get isDbStandalone(): boolean {
-    return this.#ensureInitInvoked(this.#isDbStandalone);
-  }
-
-  get rrule(): CompassEventRRule | null {
-    return this.#ensureInitInvoked(this.#rrule);
-  }
-
-  get dbRrule(): CompassEventRRule | null {
-    return this.#ensureInitInvoked(this.#dbRrule);
-  }
-
-  get transition(): Event_Transition["transition"] {
-    return this.#ensureInitInvoked(this.#transition);
-  }
-
-  get category(): Categories_Recurrence {
-    return this.#transition?.[0] ?? this.#getCategory();
-  }
-
-  get summary(): Omit<Event_Transition, "operation"> {
-    return this.#ensureInitInvoked(this.#summary);
-  }
-
-  getTransitionString(): `${Categories_Recurrence | "NIL"}->>${TransitionCategoriesRecurrence}` {
-    return `${this.#transition[0] ?? "NIL"}->>${this.#transition[1]}`;
-  }
-
-  /**
-   * init
-   *
-   * we need to fetch the compass event first to properly discriminate
-   * the event types since they can be ambiguous if interpreted from
-   * gcal sync watch  updates
-   */
-  async init(session?: ClientSession): Promise<void> {
-    if (this.#dbEvent === null || !!this.#dbEvent) return;
-
-    this.#title = this.#event.title ?? this.#event._id.toString() ?? "unknown";
-
-    const status: TransitionStatus = this.#_event.status;
-    const filter = { _id: this.#event._id, user: this.#event.user! };
-
-    const event = this.#event;
-    const cEvent = await mongoService.event.findOne(filter, { session });
-
-    this.#dbEvent = cEvent ?? null;
-
-    this.#isInstance = isInstance(event);
-    this.#isDbInstance = cEvent ? isInstance(cEvent) : false;
-
-    this.#isBase = isBase(event as Omit<Schema_Event, "_id">);
-    this.#isDbBase = cEvent ? isBase(cEvent) : false;
-
-    this.#isStandalone = isRegularEvent(event);
-    this.#isDbStandalone = cEvent ? isRegularEvent(cEvent) : false;
-
-    this.#rrule = this.#isBase
-      ? new CompassEventRRule(
-          event as WithId<Omit<Schema_Event_Recur_Base, "_id">>,
-        )
-      : null;
-
-    this.#dbRrule = this.#isDbBase
-      ? new CompassEventRRule(
-          this.#dbEvent! as WithId<Omit<Schema_Event_Recur_Base, "_id">>,
-        )
-      : null;
-
-    this.#transition = [
-      this.#getDbCategory(),
-      `${this.#getCategory()}_${status}`,
-    ];
-
-    this.#summary = {
-      title: this.#title,
-      transition: this.#transition,
-      category: this.category,
+export type CompassPersistenceStep =
+  | {
+      type: "create";
+      event: NormalizedCompassEvent;
+      rrule: CompassEventRRule | null;
+    }
+  | {
+      type: "update";
+      event: NormalizedCompassEvent;
+    }
+  | {
+      type: "update_series";
+      event: NormalizedCompassEvent;
+    }
+  | {
+      type: "delete_single";
+      event: NormalizedCompassEvent;
+    }
+  | {
+      type: "delete_series";
+      userId: string;
+      baseId: string;
+      keepBase: boolean;
+    }
+  | {
+      type: "delete_instances_after_until";
+      userId: string;
+      baseId: string;
+      until: Date;
     };
-  }
 
-  async createEvent(session?: ClientSession): Promise<Event_Transition[]> {
-    this.#logger.info(
-      `CREATING ${this.getTransitionString()}: ${this.#event._id.toString()} (Compass)`,
-    );
+export type CompassTransitionContext = {
+  event: NormalizedCompassEvent;
+  dbEvent: WithId<Omit<Schema_Event, "_id">> | null;
+  eventCategory: Categories_Recurrence;
+  dbCategory: Categories_Recurrence | null;
+  transition: [Categories_Recurrence | null, TransitionCategoriesRecurrence];
+  summary: Omit<Event_Transition, "operation">;
+  transitionKey: CompassTransitionKey;
+  isBase: boolean;
+  isInstance: boolean;
+  isStandalone: boolean;
+  isDbBase: boolean;
+  isDbInstance: boolean;
+  isDbStandalone: boolean;
+  rrule: CompassEventRRule | null;
+  dbRrule: CompassEventRRule | null;
+};
 
-    // create series in calendar providers
-    const { isSomeday } = this.#event;
-    const calendarProvider = CalendarProvider.GOOGLE;
-    const provider = isSomeday ? CalendarProvider.COMPASS : calendarProvider;
-    const userId = this.#event.user!;
+export type CompassOperationPlan = {
+  summary: Omit<Event_Transition, "operation">;
+  operation: Operation_Sync;
+  transitionKey: CompassTransitionKey;
+  provider: CalendarProvider;
+  compassMutation: CompassMutation;
+  googleEffect: GoogleEffectPlan;
+  event: NormalizedCompassEvent;
+  rrule: CompassEventRRule | null;
+  steps: CompassPersistenceStep[];
+  clearRecurrenceBeforeGoogleUpdate?: boolean;
+};
 
-    const compassEvent = (
-      this.isBase ? this.rrule?.base(provider) : this.#event
-    )!;
+type PlanBuilder = (context: CompassTransitionContext) => CompassOperationPlan;
 
-    const operation: Operation_Sync = `${this.#getCategory()}_CREATED`;
-    const operationSummary = this.#getOperationSummary(operation);
+function normalizeCompassEvent(event: CompassEvent): NormalizedCompassEvent {
+  return {
+    ...event.payload,
+    _id: new ObjectId(event.payload._id),
+  } as NormalizedCompassEvent;
+}
 
-    const cEvent = (await _createCompassEvent(
-      { ...compassEvent, user: userId },
-      calendarProvider,
-      this.rrule,
-      session,
-    )) as Schema_Event_Core | null;
-
-    if (!cEvent) return [];
-
-    if (isSomeday) return [operationSummary];
-
-    switch (calendarProvider) {
-      case CalendarProvider.GOOGLE: {
-        await _createGcal(userId, cEvent);
-
-        return [operationSummary];
-      }
-      default:
-        return [];
-    }
-  }
-
-  async updateEvent(session?: ClientSession): Promise<Event_Transition[]> {
-    this.#logger.info(
-      `UPDATING ${this.getTransitionString()}: ${this.#event._id.toString()} (Compass)`,
-    );
-
-    const calendarProvider = CalendarProvider.GOOGLE;
-    const userId = this.#event.user!;
-    const { isSomeday } = this.#event;
-    const operation: Operation_Sync = `${this.category}_UPDATED`;
-    const operationSummary = this.#getOperationSummary(operation);
-
-    const cEvent = await _updateCompassEvent(
-      { ...this.#event, user: userId },
-      session,
-    );
-
-    if (!cEvent) return [];
-
-    if (isSomeday) return [operationSummary];
-
-    switch (calendarProvider) {
-      case CalendarProvider.GOOGLE: {
-        await _updateGcal(userId, cEvent as Schema_Event_Core);
-
-        return [operationSummary];
-      }
-      default:
-        return [];
-    }
-  }
-
-  async updateSeries(session?: ClientSession): Promise<Event_Transition[]> {
-    this.#logger.info(
-      `UPDATING ${this.getTransitionString()}: ${this.#event._id.toString()} (Compass)`,
-    );
-
-    const { isSomeday } = this.#event;
-    const calendarProvider = CalendarProvider.GOOGLE;
-    const provider = isSomeday ? CalendarProvider.COMPASS : calendarProvider;
-    const compassEvent = this.rrule!.base(provider);
-    const userId = compassEvent.user!;
-    const operation: Operation_Sync = `${this.category}_UPDATED`;
-    const operationSummary = this.#getOperationSummary(operation);
-
-    const rruleDiff = this.rrule?.diffOptions(this.dbRrule!) ?? [];
-    const seriesSplit = rruleDiff.length > 0;
-
-    let cEvent: WithCompassId<Omit<Schema_Event, "_id">> | null = null;
-
-    if (seriesSplit) {
-      /***************************************************************************
-       * Series Split Logic ******************************************************
-       * *************************************************************************
-       * The path to follow if the db dates are stored uniformly eg. in UTC
-       * is to generate the instance dates using the new rrule
-       * and then:
-       * - delete the instances that are no longer in the set
-       * - create missing instances that are now present in the set
-       * based on these dates from the db. eg.
-       * *************************************************************************
-       * const instances = this.rrule!.instances();
-       * const availableStarts = instances.map((i) => i.startDate);
-       * await _deleteSeries(
-       *   userId,
-       *   this.#event._id.toString(),
-       *   { startDate: { $nin: availableStarts } },
-       *   session,
-       *   true,
-       * );
-       * *************************************************************************
-       * We will respect only the UNTIL recurrence rule param for now
-       * We will cancel instances after the UNTIL date for now
-       * assuming the recurrence rule has an UNTIL date
-       */
-      const diffLength = rruleDiff.length;
-
-      const untilOnlyChanged =
-        rruleDiff[0]?.[0] === "until" && diffLength === 1;
-
-      // until only changed
-      if (untilOnlyChanged) {
-        await _deleteInstancesAfterUntil(
-          userId,
-          this.#event._id.toString(),
-          this.rrule!.options.until!,
-          session,
-        );
-
-        cEvent = await _updateCompassSeries(
-          { ...compassEvent, user: userId },
-          session,
-        );
-      } else {
-        // recreate instances
-        await _deleteSeries(userId, this.#event._id.toString(), session, true);
-
-        cEvent = await _createCompassEvent(
-          { ...compassEvent, user: userId },
-          calendarProvider,
-          this.rrule,
-          session,
-        );
-      }
-    } else {
-      cEvent = await _updateCompassSeries(
-        { ...compassEvent, user: userId },
-        session,
+function getCategory(
+  event: Pick<Schema_Event, "isSomeday">,
+  {
+    isStandalone,
+    isBase,
+    isInstance,
+  }: Pick<CompassTransitionContext, "isStandalone" | "isBase" | "isInstance">,
+): Categories_Recurrence {
+  switch (true) {
+    case isStandalone && !!event.isSomeday:
+      return Categories_Recurrence.STANDALONE_SOMEDAY;
+    case isBase && !!event.isSomeday:
+      return Categories_Recurrence.RECURRENCE_BASE_SOMEDAY;
+    case isInstance && !!event.isSomeday:
+      return Categories_Recurrence.RECURRENCE_INSTANCE_SOMEDAY;
+    case isStandalone:
+      return Categories_Recurrence.STANDALONE;
+    case isBase:
+      return Categories_Recurrence.RECURRENCE_BASE;
+    case isInstance:
+      return Categories_Recurrence.RECURRENCE_INSTANCE;
+    default:
+      throw error(
+        GenericError.DeveloperError,
+        "could not determine event category",
       );
-    }
+  }
+}
 
-    if (!cEvent) return [];
+function getDbCategory(
+  dbEvent: WithId<Omit<Schema_Event, "_id">> | null,
+  context: Pick<
+    CompassTransitionContext,
+    "isDbStandalone" | "isDbBase" | "isDbInstance"
+  >,
+): Categories_Recurrence | null {
+  switch (true) {
+    case context.isDbStandalone && !!dbEvent?.isSomeday:
+      return Categories_Recurrence.STANDALONE_SOMEDAY;
+    case context.isDbBase && !!dbEvent?.isSomeday:
+      return Categories_Recurrence.RECURRENCE_BASE_SOMEDAY;
+    case context.isDbInstance && !!dbEvent?.isSomeday:
+      return Categories_Recurrence.RECURRENCE_INSTANCE_SOMEDAY;
+    case context.isDbStandalone:
+      return Categories_Recurrence.STANDALONE;
+    case context.isDbBase:
+      return Categories_Recurrence.RECURRENCE_BASE;
+    case context.isDbInstance:
+      return Categories_Recurrence.RECURRENCE_INSTANCE;
+    default:
+      return null;
+  }
+}
 
-    if (isSomeday) return [operationSummary];
+function getProvider(event: Pick<Schema_Event, "isSomeday">): CalendarProvider {
+  return event.isSomeday ? CalendarProvider.COMPASS : CalendarProvider.GOOGLE;
+}
 
-    switch (calendarProvider) {
-      case CalendarProvider.GOOGLE: {
-        await _updateGcal(userId, cEvent as Schema_Event_Core);
+function getGoogleDeleteEventId(
+  context: Pick<CompassTransitionContext, "dbEvent" | "event">,
+): string | undefined {
+  return context.dbEvent?.gEventId ?? context.event.gEventId;
+}
 
-        return [operationSummary];
-      }
-      default:
-        return [];
-    }
+function getSeriesEvent(
+  context: Pick<CompassTransitionContext, "rrule" | "event">,
+  provider: CalendarProvider,
+): NormalizedCompassEvent {
+  if (!context.rrule) {
+    throw error(
+      GenericError.DeveloperError,
+      "missing recurrence rule for series operation",
+    );
   }
 
-  async deleteEvent(session?: ClientSession): Promise<Event_Transition[]> {
-    this.#logger.info(
-      `DELETING ${this.getTransitionString()}: ${this.#event._id.toString()} (Compass)`,
-    );
+  return context.rrule.base(provider) as NormalizedCompassEvent;
+}
 
-    const calendarProvider = CalendarProvider.GOOGLE;
-    const userId = this.#event.user!;
-    const { isSomeday } = this.#event;
-    const operation: Operation_Sync = `${this.category}_DELETED`;
-    const operationSummary = this.#getOperationSummary(operation);
+function createPlan(
+  context: CompassTransitionContext,
+  config: Omit<CompassOperationPlan, "summary" | "transitionKey">,
+): CompassOperationPlan {
+  return {
+    ...config,
+    summary: context.summary,
+    transitionKey: context.transitionKey,
+  };
+}
 
-    const cEvent = (await _deleteSingleCompassEvent(
-      { ...this.#event, user: userId },
-      session,
-    )) as Schema_Event_Core | null;
+function buildCreatePlan(
+  context: CompassTransitionContext,
+): CompassOperationPlan {
+  const provider = getProvider(context.event);
+  const event = context.isBase
+    ? getSeriesEvent(context, provider)
+    : context.event;
+  const googleEffect = context.event.isSomeday
+    ? ({ type: "none" } as const)
+    : ({ type: "create" } as const);
 
-    if (!cEvent) return [];
+  return createPlan(context, {
+    provider,
+    compassMutation: "create",
+    googleEffect,
+    operation: `${context.eventCategory}_CREATED`,
+    event,
+    rrule: context.rrule,
+    steps: [{ type: "create", event, rrule: context.rrule }],
+  });
+}
 
-    if (isSomeday) return [operationSummary];
+function buildUpdatePlan(
+  context: CompassTransitionContext,
+): CompassOperationPlan {
+  return createPlan(context, {
+    provider: getProvider(context.event),
+    compassMutation: "update",
+    googleEffect: context.event.isSomeday
+      ? ({ type: "none" } as const)
+      : ({ type: "update" } as const),
+    operation: `${context.summary.category}_UPDATED`,
+    event: context.event,
+    rrule: context.rrule,
+    steps: [{ type: "update", event: context.event }],
+  });
+}
 
-    switch (calendarProvider) {
-      case CalendarProvider.GOOGLE: {
-        const ok = cEvent.gEventId
-          ? await _deleteGcal(userId, cEvent.gEventId)
-          : true;
+function buildDeletePlan(
+  context: CompassTransitionContext,
+): CompassOperationPlan {
+  return createPlan(context, {
+    provider: getProvider(context.event),
+    compassMutation: "delete",
+    googleEffect: context.event.isSomeday
+      ? ({ type: "none" } as const)
+      : ({
+          type: "delete",
+          deleteEventId: getGoogleDeleteEventId(context),
+        } as const),
+    operation: `${context.summary.category}_DELETED`,
+    event: context.event,
+    rrule: context.rrule,
+    steps: [{ type: "delete_single", event: context.event }],
+  });
+}
 
-        return ok ? [operationSummary] : [];
-      }
-      default:
-        return [];
-    }
-  }
+function buildStandaloneToSomedayPlan(
+  context: CompassTransitionContext,
+): CompassOperationPlan {
+  const event = {
+    ...context.event,
+    isSomeday: true,
+  } as NormalizedCompassEvent;
 
-  async standaloneToSomeday(
-    session?: ClientSession,
-  ): Promise<Event_Transition[]> {
-    this.#logger.info(
-      `UPDATING ${this.getTransitionString()}: ${this.#event._id.toString()} (Compass)`,
-    );
+  return createPlan(context, {
+    provider: CalendarProvider.COMPASS,
+    compassMutation: "create",
+    googleEffect: {
+      type: "delete",
+      deleteEventId: getGoogleDeleteEventId(context),
+    },
+    operation: `${context.summary.category}_UPDATED`,
+    event,
+    rrule: null,
+    steps: [{ type: "create", event, rrule: null }],
+  });
+}
 
-    const calendarProvider = CalendarProvider.GOOGLE;
-    const user = this.#event.user!;
-    const operation: Operation_Sync = `${this.category}_UPDATED`;
-    const operationSummary = this.#getOperationSummary(operation);
+function buildSeriesToSomedayPlan(
+  context: CompassTransitionContext,
+): CompassOperationPlan {
+  const event = {
+    ...getSeriesEvent(context, CalendarProvider.COMPASS),
+    isSomeday: true,
+  } as NormalizedCompassEvent;
 
-    const cEvent = await _createCompassEvent(
-      { ...this.#event, user, isSomeday: true },
-      calendarProvider,
-      null,
-      session,
-    );
-
-    if (!cEvent) return [];
-
-    switch (calendarProvider) {
-      case CalendarProvider.GOOGLE: {
-        const ok = this.#event.gEventId
-          ? await _deleteGcal(user, this.#event.gEventId)
-          : true;
-
-        return ok ? [operationSummary] : [];
-      }
-      default:
-        return [];
-    }
-  }
-
-  async seriesToSomedaySeries(
-    session?: ClientSession,
-  ): Promise<Event_Transition[]> {
-    this.#logger.info(
-      `UPDATING ${this.getTransitionString()}: ${this.#event._id.toString()} (Compass)`,
-    );
-
-    const calendarProvider = CalendarProvider.GOOGLE;
-    const user = this.#event.user!;
-    const operation: Operation_Sync = `${this.category}_UPDATED`;
-    const operationSummary = this.#getOperationSummary(operation);
-
-    await _deleteSeries(user, this.#event._id.toString(), session, true);
-
-    const cEvent = await _createCompassEvent(
+  return createPlan(context, {
+    provider: CalendarProvider.COMPASS,
+    compassMutation: "recreate_series",
+    googleEffect: {
+      type: "delete",
+      deleteEventId: getGoogleDeleteEventId(context),
+    },
+    operation: `${context.summary.category}_UPDATED`,
+    event,
+    rrule: context.rrule,
+    steps: [
       {
-        ...this.#event,
-        user,
-        recurrence: this.#event.recurrence,
-        isSomeday: true,
+        type: "delete_series",
+        userId: context.event.user!,
+        baseId: context.event._id.toString(),
+        keepBase: true,
       },
-      calendarProvider,
-      this.rrule,
-      session,
+      {
+        type: "create",
+        event,
+        rrule: context.rrule,
+      },
+    ],
+  });
+}
+
+function buildSeriesToStandalonePlan(
+  context: CompassTransitionContext,
+): CompassOperationPlan {
+  return createPlan(context, {
+    provider: getProvider(context.event),
+    compassMutation: "update",
+    googleEffect: context.event.isSomeday
+      ? ({ type: "none" } as const)
+      : ({ type: "update" } as const),
+    operation: `${context.summary.category}_UPDATED`,
+    event: context.event,
+    rrule: null,
+    steps: [
+      {
+        type: "delete_series",
+        userId: context.event.user!,
+        baseId: context.event._id.toString(),
+        keepBase: true,
+      },
+      { type: "update", event: context.event },
+    ],
+    clearRecurrenceBeforeGoogleUpdate: !context.event.isSomeday,
+  });
+}
+
+function buildStandaloneToSeriesPlan(
+  context: CompassTransitionContext,
+): CompassOperationPlan {
+  return createPlan(context, {
+    provider: getProvider(context.event),
+    compassMutation: "create",
+    googleEffect: context.event.isSomeday
+      ? ({ type: "none" } as const)
+      : ({ type: "update" } as const),
+    operation: `${context.summary.category}_UPDATED`,
+    event: context.event,
+    rrule: context.rrule,
+    steps: [{ type: "create", event: context.event, rrule: context.rrule }],
+  });
+}
+
+function buildUpdateSeriesPlan(
+  context: CompassTransitionContext,
+): CompassOperationPlan {
+  const provider = getProvider(context.event);
+  const event = getSeriesEvent(context, provider);
+  const rruleDiff = context.rrule?.diffOptions(context.dbRrule!) ?? [];
+  const isSeriesSplit = rruleDiff.length > 0;
+  const isUntilOnlyChange =
+    rruleDiff[0]?.[0] === "until" && rruleDiff.length === 1;
+
+  if (isUntilOnlyChange) {
+    return createPlan(context, {
+      provider,
+      compassMutation: "truncate_series",
+      googleEffect: context.event.isSomeday
+        ? ({ type: "none" } as const)
+        : ({ type: "update" } as const),
+      operation: `${context.summary.category}_UPDATED`,
+      event,
+      rrule: context.rrule,
+      steps: [
+        {
+          type: "delete_instances_after_until",
+          userId: context.event.user!,
+          baseId: context.event._id.toString(),
+          until: context.rrule!.options.until!,
+        },
+        {
+          type: "update_series",
+          event,
+        },
+      ],
+    });
+  }
+
+  if (isSeriesSplit) {
+    return createPlan(context, {
+      provider,
+      compassMutation: "recreate_series",
+      googleEffect: context.event.isSomeday
+        ? ({ type: "none" } as const)
+        : ({ type: "update" } as const),
+      operation: `${context.summary.category}_UPDATED`,
+      event,
+      rrule: context.rrule,
+      steps: [
+        {
+          type: "delete_series",
+          userId: context.event.user!,
+          baseId: context.event._id.toString(),
+          keepBase: true,
+        },
+        {
+          type: "create",
+          event,
+          rrule: context.rrule,
+        },
+      ],
+    });
+  }
+
+  return createPlan(context, {
+    provider,
+    compassMutation: "update_series",
+    googleEffect: context.event.isSomeday
+      ? ({ type: "none" } as const)
+      : ({ type: "update" } as const),
+    operation: `${context.summary.category}_UPDATED`,
+    event,
+    rrule: context.rrule,
+    steps: [{ type: "update_series", event }],
+  });
+}
+
+function buildCancelSeriesPlan(
+  context: CompassTransitionContext,
+): CompassOperationPlan {
+  return createPlan(context, {
+    provider: getProvider(context.event),
+    compassMutation: "delete",
+    googleEffect: context.event.isSomeday
+      ? ({ type: "none" } as const)
+      : ({
+          type: "delete",
+          deleteEventId: getGoogleDeleteEventId(context),
+        } as const),
+    operation: `${context.summary.category}_DELETED`,
+    event: context.event,
+    rrule: context.rrule,
+    steps: [
+      {
+        type: "delete_series",
+        userId: context.event.user!,
+        baseId: context.event._id.toString(),
+        keepBase: false,
+      },
+    ],
+  });
+}
+
+const PLAN_BUILDERS: Record<string, PlanBuilder> = {
+  "NIL->>STANDALONE_SOMEDAY_CONFIRMED": buildCreatePlan,
+  "NIL->>RECURRENCE_BASE_SOMEDAY_CONFIRMED": buildCreatePlan,
+  "NIL->>STANDALONE_CONFIRMED": buildCreatePlan,
+  "NIL->>RECURRENCE_BASE_CONFIRMED": buildCreatePlan,
+  "STANDALONE_SOMEDAY->>STANDALONE_CONFIRMED": buildCreatePlan,
+  "RECURRENCE_BASE_SOMEDAY->>RECURRENCE_BASE_CONFIRMED": buildCreatePlan,
+  "RECURRENCE_INSTANCE_SOMEDAY->>STANDALONE_CONFIRMED": buildCreatePlan,
+  "STANDALONE_SOMEDAY->>STANDALONE_SOMEDAY_CONFIRMED": buildUpdatePlan,
+  "STANDALONE->>STANDALONE_CONFIRMED": buildUpdatePlan,
+  "RECURRENCE_INSTANCE_SOMEDAY->>RECURRENCE_INSTANCE_SOMEDAY_CONFIRMED":
+    buildUpdatePlan,
+  "RECURRENCE_INSTANCE->>RECURRENCE_INSTANCE_CONFIRMED": buildUpdatePlan,
+  "NIL->>STANDALONE_SOMEDAY_CANCELLED": buildDeletePlan,
+  "NIL->>STANDALONE_CANCELLED": buildDeletePlan,
+  "NIL->>RECURRENCE_INSTANCE_CANCELLED": buildDeletePlan,
+  "NIL->>RECURRENCE_INSTANCE_SOMEDAY_CANCELLED": buildDeletePlan,
+  "STANDALONE_SOMEDAY->>STANDALONE_SOMEDAY_CANCELLED": buildDeletePlan,
+  "STANDALONE->>STANDALONE_CANCELLED": buildDeletePlan,
+  "RECURRENCE_INSTANCE->>RECURRENCE_INSTANCE_CANCELLED": buildDeletePlan,
+  "RECURRENCE_INSTANCE_SOMEDAY->>RECURRENCE_INSTANCE_SOMEDAY_CANCELLED":
+    buildDeletePlan,
+  "STANDALONE->>STANDALONE_SOMEDAY_CONFIRMED": buildStandaloneToSomedayPlan,
+  "RECURRENCE_BASE->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":
+    buildSeriesToSomedayPlan,
+  "RECURRENCE_BASE_SOMEDAY->>STANDALONE_SOMEDAY_CONFIRMED":
+    buildSeriesToStandalonePlan,
+  "RECURRENCE_BASE->>STANDALONE_CONFIRMED": buildSeriesToStandalonePlan,
+  "STANDALONE_SOMEDAY->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":
+    buildStandaloneToSeriesPlan,
+  "STANDALONE->>RECURRENCE_BASE_CONFIRMED": buildStandaloneToSeriesPlan,
+  "RECURRENCE_BASE->>RECURRENCE_BASE_CONFIRMED": buildUpdateSeriesPlan,
+  "RECURRENCE_BASE_SOMEDAY->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":
+    buildUpdateSeriesPlan,
+  "NIL->>RECURRENCE_BASE_SOMEDAY_CANCELLED": buildCancelSeriesPlan,
+  "NIL->>RECURRENCE_BASE_CANCELLED": buildCancelSeriesPlan,
+  "RECURRENCE_BASE_SOMEDAY->>RECURRENCE_BASE_SOMEDAY_CANCELLED":
+    buildCancelSeriesPlan,
+  "RECURRENCE_BASE->>RECURRENCE_BASE_CANCELLED": buildCancelSeriesPlan,
+};
+
+export function buildCompassTransitionContext(
+  eventInput: CompassEvent,
+  dbEvent: WithId<Omit<Schema_Event, "_id">> | null,
+): CompassTransitionContext {
+  const event = normalizeCompassEvent(eventInput);
+  const status: TransitionStatus = eventInput.status;
+  const isEventInstance = isInstance(event);
+  const isEventBase = isBase(event as Omit<Schema_Event, "_id">);
+  const isEventStandalone = isRegularEvent(event);
+  const isDatabaseInstance = dbEvent ? isInstance(dbEvent) : false;
+  const isDatabaseBase = dbEvent ? isBase(dbEvent) : false;
+  const isDatabaseStandalone = dbEvent ? isRegularEvent(dbEvent) : false;
+  const eventCategory = getCategory(event, {
+    isStandalone: isEventStandalone,
+    isBase: isEventBase,
+    isInstance: isEventInstance,
+  });
+  const dbCategory = getDbCategory(dbEvent, {
+    isDbStandalone: isDatabaseStandalone,
+    isDbBase: isDatabaseBase,
+    isDbInstance: isDatabaseInstance,
+  });
+  const rrule = isEventBase
+    ? new CompassEventRRule(
+        event as WithId<Omit<Schema_Event_Recur_Base, "_id">>,
+      )
+    : null;
+  const dbRrule = isDatabaseBase
+    ? new CompassEventRRule(
+        dbEvent as WithId<Omit<Schema_Event_Recur_Base, "_id">>,
+      )
+    : null;
+  const transition: CompassTransitionContext["transition"] = [
+    dbCategory,
+    `${eventCategory}_${status}`,
+  ];
+  const summaryCategory = dbCategory ?? eventCategory;
+  const transitionKey =
+    `${dbCategory ?? "NIL"}->>${transition[1]}` as CompassTransitionKey;
+
+  return {
+    event,
+    dbEvent,
+    eventCategory,
+    dbCategory,
+    transition,
+    transitionKey,
+    summary: {
+      title: event.title ?? event._id.toString() ?? "unknown",
+      transition,
+      category: summaryCategory,
+    },
+    isBase: isEventBase,
+    isInstance: isEventInstance,
+    isStandalone: isEventStandalone,
+    isDbBase: isDatabaseBase,
+    isDbInstance: isDatabaseInstance,
+    isDbStandalone: isDatabaseStandalone,
+    rrule,
+    dbRrule,
+  };
+}
+
+export function analyzeCompassTransition(
+  event: CompassEvent,
+  dbEvent: WithId<Omit<Schema_Event, "_id">> | null,
+): CompassOperationPlan {
+  const context = buildCompassTransitionContext(event, dbEvent);
+  const builder = PLAN_BUILDERS[context.transitionKey];
+
+  if (!builder) {
+    throw error(
+      GenericError.DeveloperError,
+      `Compass event handler failed: ${context.transitionKey}`,
     );
-
-    if (!cEvent) return [];
-
-    switch (calendarProvider) {
-      case CalendarProvider.GOOGLE: {
-        const ok = this.#event.gEventId
-          ? await _deleteGcal(user, this.#event.gEventId)
-          : true;
-
-        return ok ? [operationSummary] : [];
-      }
-      default:
-        return [];
-    }
   }
 
-  async seriesToStandalone(
-    session?: ClientSession,
-  ): Promise<Event_Transition[]> {
-    this.#logger.info(
-      `UPDATING ${this.getTransitionString()}: ${this.#event._id.toString()} (Compass)`,
-    );
-
-    const calendarProvider = CalendarProvider.GOOGLE;
-    const userId = this.#event.user!;
-    const { isSomeday } = this.#event;
-    const operation: Operation_Sync = `${this.category}_UPDATED`;
-    const operationSummary = this.#getOperationSummary(operation);
-
-    await _deleteSeries(userId, this.#event._id.toString(), session, true);
-
-    const cEvent = (await _updateCompassEvent(
-      { ...this.#event, user: userId },
-      session,
-    )) as Schema_Event_Core | null;
-
-    if (!cEvent) return [];
-
-    if (isSomeday) return [operationSummary];
-
-    switch (calendarProvider) {
-      case CalendarProvider.GOOGLE: {
-        Object.assign(cEvent, { recurrence: null });
-
-        await _updateGcal(userId, cEvent);
-
-        return [operationSummary];
-      }
-      default:
-        return [];
-    }
-  }
-
-  async standaloneToSeries(
-    session?: ClientSession,
-  ): Promise<Event_Transition[]> {
-    this.#logger.info(
-      `UPDATING ${this.getTransitionString()}: ${this.#event._id.toString()} (Compass)`,
-    );
-
-    const calendarProvider = CalendarProvider.GOOGLE;
-    const userId = this.#event.user!;
-    const { isSomeday } = this.#event;
-    const operation: Operation_Sync = `${this.category}_UPDATED`;
-    const operationSummary = this.#getOperationSummary(operation);
-
-    const cEvent = (await _createCompassEvent(
-      { ...this.#event, user: userId },
-      calendarProvider,
-      this.rrule,
-      session,
-    )) as Schema_Event_Core | null;
-
-    if (!cEvent) return [];
-
-    if (isSomeday) return [operationSummary];
-
-    switch (calendarProvider) {
-      case CalendarProvider.GOOGLE: {
-        await _updateGcal(userId, cEvent);
-
-        return [operationSummary];
-      }
-      default:
-        return [];
-    }
-  }
-
-  async cancelSeries(session?: ClientSession): Promise<Event_Transition[]> {
-    this.#logger.info(
-      `Cancelling SERIES: ${this.#event._id.toString()} (Gcal)`,
-    );
-
-    const calendarProvider = CalendarProvider.GOOGLE;
-    const userId = this.#event.user!;
-    const { isSomeday } = this.#event;
-    const operation: Operation_Sync = `${this.category}_DELETED`;
-    const operationSummary = this.#getOperationSummary(operation);
-
-    await _deleteSeries(userId, this.#event._id.toString(), session);
-
-    if (isSomeday) return [operationSummary];
-
-    switch (calendarProvider) {
-      case CalendarProvider.GOOGLE: {
-        const ok = this.#event.gEventId
-          ? await _deleteGcal(userId, this.#event.gEventId)
-          : true;
-
-        return ok ? [operationSummary] : [];
-      }
-      default:
-        return [];
-    }
-  }
-
-  #getCategory(): Categories_Recurrence {
-    switch (true) {
-      case this.#isStandalone && this.#event.isSomeday:
-        return Categories_Recurrence.STANDALONE_SOMEDAY;
-      case this.#isBase && this.#event.isSomeday:
-        return Categories_Recurrence.RECURRENCE_BASE_SOMEDAY;
-      case this.#isInstance && this.#event.isSomeday:
-        return Categories_Recurrence.RECURRENCE_INSTANCE_SOMEDAY;
-      case this.isStandalone:
-        return Categories_Recurrence.STANDALONE;
-      case this.isBase:
-        return Categories_Recurrence.RECURRENCE_BASE;
-      case this.isInstance:
-        return Categories_Recurrence.RECURRENCE_INSTANCE;
-      default:
-        throw new Error("could not determine event category");
-    }
-  }
-
-  #getDbCategory(): Categories_Recurrence | null {
-    switch (true) {
-      case this.#isDbStandalone && this.#dbEvent?.isSomeday:
-        return Categories_Recurrence.STANDALONE_SOMEDAY;
-      case this.#isDbBase && this.#dbEvent?.isSomeday:
-        return Categories_Recurrence.RECURRENCE_BASE_SOMEDAY;
-      case this.#isDbInstance && this.#dbEvent?.isSomeday:
-        return Categories_Recurrence.RECURRENCE_INSTANCE_SOMEDAY;
-      case this.#isDbStandalone:
-        return Categories_Recurrence.STANDALONE;
-      case this.#isDbBase:
-        return Categories_Recurrence.RECURRENCE_BASE;
-      case this.#isDbInstance:
-        return Categories_Recurrence.RECURRENCE_INSTANCE;
-      default:
-        return null;
-    }
-  }
-
-  #getOperationSummary(operation: Operation_Sync): Event_Transition {
-    return this.#ensureInitInvoked({ ...this.summary, operation });
-  }
-
-  #ensureInitInvoked<T = unknown>(value: T) {
-    if (this.#dbEvent === undefined) {
-      throw error(GenericError.DeveloperError, "did you call `init` yet");
-    }
-
-    return value;
-  }
+  return builder(context);
 }

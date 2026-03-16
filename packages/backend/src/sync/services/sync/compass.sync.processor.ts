@@ -1,15 +1,27 @@
-import { type ClientSession } from "mongodb";
+import { type ClientSession, ObjectId } from "mongodb";
 import {
   EVENT_CHANGED,
   SOMEDAY_EVENT_CHANGED,
 } from "@core/constants/websocket.constants";
 import { Logger } from "@core/logger/winston.logger";
-import { type CompassEvent } from "@core/types/event.types";
+import {
+  type CompassEvent,
+  type Schema_Event_Core,
+} from "@core/types/event.types";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
+import { applyCompassPlan } from "@backend/event/classes/compass.event.executor";
 import { CompassEventFactory } from "@backend/event/classes/compass.event.generator";
-import { CompassEventParser } from "@backend/event/classes/compass.event.parser";
+import {
+  type CompassOperationPlan,
+  analyzeCompassTransition,
+} from "@backend/event/classes/compass.event.parser";
+import {
+  _createGcal,
+  _deleteGcal,
+  _updateGcal,
+} from "@backend/event/services/event.service";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import { type Event_Transition } from "@backend/sync/sync.types";
 
@@ -114,59 +126,61 @@ export class CompassSyncProcessor {
     session?: ClientSession,
   ): Promise<Event_Transition[]> {
     const eventId = event.payload._id;
-    const parser = new CompassEventParser(event);
-
-    await parser.init(session);
-
-    const transition = parser.getTransitionString();
+    const dbEvent = await mongoService.event.findOne(
+      { _id: new ObjectId(eventId), user: event.payload.user! },
+      { session },
+    );
+    const plan = analyzeCompassTransition(event, dbEvent);
+    const transition = plan.transitionKey;
 
     logger.info(`Handle Compass event(${eventId}): ${transition}`);
 
-    switch (transition) {
-      case "NIL->>STANDALONE_SOMEDAY_CONFIRMED":
-      case "NIL->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":
-      case "NIL->>STANDALONE_CONFIRMED":
-      case "NIL->>RECURRENCE_BASE_CONFIRMED":
-      case "STANDALONE_SOMEDAY->>STANDALONE_CONFIRMED":
-      case "RECURRENCE_BASE_SOMEDAY->>RECURRENCE_BASE_CONFIRMED":
-      case "RECURRENCE_INSTANCE_SOMEDAY->>STANDALONE_CONFIRMED":
-        return parser.createEvent(session);
-      case "STANDALONE_SOMEDAY->>STANDALONE_SOMEDAY_CONFIRMED":
-      case "STANDALONE->>STANDALONE_CONFIRMED":
-      case "RECURRENCE_INSTANCE_SOMEDAY->>RECURRENCE_INSTANCE_SOMEDAY_CONFIRMED":
-      case "RECURRENCE_INSTANCE->>RECURRENCE_INSTANCE_CONFIRMED":
-        return parser.updateEvent(session);
-      case "NIL->>STANDALONE_SOMEDAY_CANCELLED":
-      case "NIL->>STANDALONE_CANCELLED":
-      case "NIL->>RECURRENCE_INSTANCE_CANCELLED":
-      case "NIL->>RECURRENCE_INSTANCE_SOMEDAY_CANCELLED":
-      case "STANDALONE_SOMEDAY->>STANDALONE_SOMEDAY_CANCELLED":
-      case "STANDALONE->>STANDALONE_CANCELLED":
-      case "RECURRENCE_INSTANCE->>RECURRENCE_INSTANCE_CANCELLED":
-      case "RECURRENCE_INSTANCE_SOMEDAY->>RECURRENCE_INSTANCE_SOMEDAY_CANCELLED":
-        return parser.deleteEvent(session);
-      case "STANDALONE->>STANDALONE_SOMEDAY_CONFIRMED":
-        return parser.standaloneToSomeday(session);
-      case "RECURRENCE_BASE->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":
-        return parser.seriesToSomedaySeries(session);
-      case "RECURRENCE_BASE_SOMEDAY->>STANDALONE_SOMEDAY_CONFIRMED":
-      case "RECURRENCE_BASE->>STANDALONE_CONFIRMED":
-        return parser.seriesToStandalone(session);
-      case "STANDALONE_SOMEDAY->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":
-      case "STANDALONE->>RECURRENCE_BASE_CONFIRMED":
-        return parser.standaloneToSeries(session);
-      case "RECURRENCE_BASE->>RECURRENCE_BASE_CONFIRMED":
-      case "RECURRENCE_BASE_SOMEDAY->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":
-        return parser.updateSeries(session);
-      case "NIL->>RECURRENCE_BASE_SOMEDAY_CANCELLED":
-      case "NIL->>RECURRENCE_BASE_CANCELLED":
-      case "RECURRENCE_BASE_SOMEDAY->>RECURRENCE_BASE_SOMEDAY_CANCELLED":
-      case "RECURRENCE_BASE->>RECURRENCE_BASE_CANCELLED":
-        return parser.cancelSeries(session);
+    const applyResult = await applyCompassPlan(plan, session);
+
+    if (!applyResult.applied) return [];
+
+    const didExecuteGoogleEffect =
+      await CompassSyncProcessor.executeGoogleEffect(plan, applyResult);
+
+    return didExecuteGoogleEffect ? [applyResult.summary] : [];
+  }
+
+  private static async executeGoogleEffect(
+    plan: CompassOperationPlan,
+    {
+      googleDeleteEventId,
+      persistedEvent,
+    }: Awaited<ReturnType<typeof applyCompassPlan>>,
+  ): Promise<boolean> {
+    switch (plan.googleEffect.type) {
+      case "none":
+        return true;
+      case "create":
+        if (!persistedEvent) return false;
+
+        await _createGcal(
+          persistedEvent.user!,
+          persistedEvent as Schema_Event_Core,
+        );
+
+        return true;
+      case "update":
+        if (!persistedEvent) return false;
+
+        await _updateGcal(
+          persistedEvent.user!,
+          persistedEvent as Schema_Event_Core,
+        );
+
+        return true;
+      case "delete":
+        return googleDeleteEventId
+          ? _deleteGcal(plan.event.user!, googleDeleteEventId)
+          : true;
       default:
         throw error(
           GenericError.DeveloperError,
-          `Compass event handler failed: ${transition}`,
+          `Unknown Google effect for Compass transition: ${plan.transitionKey}`,
         );
     }
   }
