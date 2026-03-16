@@ -1,4 +1,4 @@
-import { type Credentials } from "google-auth-library";
+import type { Credentials } from "google-auth-library";
 import { faker } from "@faker-js/faker";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import {
@@ -18,10 +18,10 @@ describe("CompassAuthService", () => {
   beforeEach(cleanupCollections);
   afterAll(cleanupTestDb);
 
-  describe("reconnectGoogleForSession", () => {
-    it("relinks Google to the current Compass user and schedules a full reimport", async () => {
+  describe("repairGoogleConnection", () => {
+    it("relinks Google to the Compass user and schedules a full reimport", async () => {
       const user = await UserDriver.createUser();
-      const sessionUserId = user._id.toString();
+      const compassUserId = user._id.toString();
       const gUser = UserDriver.generateGoogleUser({
         sub: faker.string.uuid(),
         picture: faker.image.url(),
@@ -34,35 +34,35 @@ describe("CompassAuthService", () => {
         .spyOn(userService, "restartGoogleCalendarSync")
         .mockResolvedValue();
 
-      await userService.pruneGoogleData(sessionUserId);
+      await userService.pruneGoogleData(compassUserId);
 
-      const result = await compassAuthService.reconnectGoogleForSession(
-        sessionUserId,
+      const result = await compassAuthService.repairGoogleConnection(
+        compassUserId,
         gUser,
         oAuthTokens,
       );
 
       const updatedUser = await mongoService.user.findOne({ _id: user._id });
       const metadata =
-        await userMetadataService.fetchUserMetadata(sessionUserId);
+        await userMetadataService.fetchUserMetadata(compassUserId);
 
-      expect(result).toEqual({ cUserId: sessionUserId });
-      expect(updatedUser?._id.toString()).toBe(sessionUserId);
+      expect(result).toEqual({ cUserId: compassUserId });
+      expect(updatedUser?._id.toString()).toBe(compassUserId);
       expect(updatedUser?.google?.googleId).toBe(gUser.sub);
       expect(updatedUser?.google?.picture).toBe(gUser.picture);
       expect(updatedUser?.google?.gRefreshToken).toBe(
         oAuthTokens.refresh_token,
       );
-      expect(metadata.sync?.importGCal).toBe("restart");
-      expect(metadata.sync?.incrementalGCalSync).toBe("restart");
-      expect(restartSpy).toHaveBeenCalledWith(sessionUserId);
+      expect(metadata.sync?.importGCal).toBe("RESTART");
+      expect(metadata.sync?.incrementalGCalSync).toBe("RESTART");
+      expect(restartSpy).toHaveBeenCalledWith(compassUserId);
 
       restartSpy.mockRestore();
     });
 
     it("returns after persisting reconnect state even if the background sync fails", async () => {
       const user = await UserDriver.createUser();
-      const sessionUserId = user._id.toString();
+      const compassUserId = user._id.toString();
       const gUser = UserDriver.generateGoogleUser({
         sub: faker.string.uuid(),
         picture: faker.image.url(),
@@ -76,19 +76,19 @@ describe("CompassAuthService", () => {
         .spyOn(userService, "restartGoogleCalendarSync")
         .mockRejectedValue(restartError);
 
-      await userService.pruneGoogleData(sessionUserId);
+      await userService.pruneGoogleData(compassUserId);
 
       await expect(
-        compassAuthService.reconnectGoogleForSession(
-          sessionUserId,
+        compassAuthService.repairGoogleConnection(
+          compassUserId,
           gUser,
           oAuthTokens,
         ),
-      ).resolves.toEqual({ cUserId: sessionUserId });
+      ).resolves.toEqual({ cUserId: compassUserId });
 
       await Promise.resolve();
 
-      expect(restartSpy).toHaveBeenCalledWith(sessionUserId);
+      expect(restartSpy).toHaveBeenCalledWith(compassUserId);
 
       restartSpy.mockRestore();
     });

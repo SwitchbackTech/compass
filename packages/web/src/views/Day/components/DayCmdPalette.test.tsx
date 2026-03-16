@@ -342,7 +342,7 @@ describe("DayCmdPalette", () => {
               current: {
                 google: {
                   connectionStatus: "connected",
-                  syncStatus: "healthy",
+                  syncStatus: "HEALTHY",
                 },
               },
             },
@@ -365,7 +365,7 @@ describe("DayCmdPalette", () => {
               current: {
                 google: {
                   connectionStatus: "reconnect_required",
-                  syncStatus: "none",
+                  syncStatus: "NONE",
                 },
               },
             },
@@ -392,7 +392,7 @@ describe("DayCmdPalette", () => {
               current: {
                 google: {
                   connectionStatus: "connected",
-                  syncStatus: "repairing",
+                  syncStatus: "REPAIRING",
                 },
               },
             },
@@ -415,7 +415,7 @@ describe("DayCmdPalette", () => {
               current: {
                 google: {
                   connectionStatus: "connected",
-                  syncStatus: "attention",
+                  syncStatus: "ATTENTION",
                 },
               },
             },

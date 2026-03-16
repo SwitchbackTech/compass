@@ -93,11 +93,11 @@ export const shouldImportGCal = (metadata: UserMetadata): boolean => {
   const sync = metadata.sync;
 
   switch (sync?.importGCal) {
-    case "importing":
-    case "completed":
+    case "IMPORTING":
+    case "COMPLETED":
       return false;
-    case "restart":
-    case "errored":
+    case "RESTART":
+    case "ERRORED":
     default:
       return true;
   }
@@ -109,11 +109,11 @@ export const shouldDoIncrementalGCalSync = (
   const sync = metadata.sync;
 
   switch (sync?.incrementalGCalSync) {
-    case "importing":
-    case "completed":
+    case "IMPORTING":
+    case "COMPLETED":
       return false;
-    case "restart":
-    case "errored":
+    case "RESTART":
+    case "ERRORED":
     default:
       return true;
   }

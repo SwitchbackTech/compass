@@ -6,7 +6,7 @@ interface SessionExpiredToastProps {
 }
 
 export const SessionExpiredToast = ({ toastId }: SessionExpiredToastProps) => {
-  const { login } = useGoogleAuth({ googleAuthIntent: "reconnect" });
+  const { login } = useGoogleAuth();
 
   const handleReconnect = () => {
     login();

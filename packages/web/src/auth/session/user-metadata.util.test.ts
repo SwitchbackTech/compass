@@ -30,7 +30,7 @@ describe("refreshUserMetadata", () => {
     const metadata = {
       google: {
         connectionStatus: "connected" as const,
-        syncStatus: "healthy" as const,
+        syncStatus: "HEALTHY" as const,
       },
     };
     api.getMetadata.mockResolvedValue(metadata);

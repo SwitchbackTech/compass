@@ -73,7 +73,7 @@ Important error handling behavior:
   - if no watch exists, backend logs and returns `410` without pruning (notification ignored)
 - missing sync token:
   - backend attempts forced resync in background
-  - resync is skipped if metadata already shows `sync.importGCal === "importing"`
+  - resync is skipped if metadata already shows `sync.importGCal === "IMPORTING"`
   - response is `204` either way
 - invalid/revoked Google token (`invalid_grant`):
   - backend prunes Google data, emits `GOOGLE_REVOKED`, returns revoked payload
@@ -125,8 +125,25 @@ Revocation and reconnect are handled across auth, sync, websocket, and repositor
 1. Backend detects missing/invalid Google refresh token (middleware, sync, or Google API error handling).
 2. Backend prunes Google-origin data and emits `GOOGLE_REVOKED`.
 3. Web app marks Google as revoked in session memory and temporarily switches to local repository behavior.
-4. OAuth connect while a session exists triggers reconnect logic (`reconnectGoogleForSession`) instead of normal signup/signin.
-5. Reconnect updates Google credentials, marks metadata sync flags as `"restart"`, and restarts sync in background.
+4. User initiates re-consent via OAuth flow.
+5. Backend auth handler (`handleGoogleAuth`) determines auth mode server-side using:
+   - User existence (via `findCompassUserBy`)
+   - Refresh token presence (`user.google.gRefreshToken`)
+   - Sync health (`canDoIncrementalSync`)
+6. If user exists but refresh token is missing or sync is unhealthy → `RECONNECT_REPAIR` path via `repairGoogleConnection()`.
+7. Reconnect updates Google credentials, marks metadata sync flags as `"restart"`, and restarts sync in background.
+
+### Auth Mode Classification
+
+The backend determines auth mode based on server-side state, and the client only launches OAuth plus reacts to metadata/socket updates:
+
+| Condition                                             | Auth Mode            | Handler                    |
+| ----------------------------------------------------- | -------------------- | -------------------------- |
+| No linked Compass user                                | `SIGNUP`             | `googleSignup()`           |
+| User exists + missing refresh token OR unhealthy sync | `RECONNECT_REPAIR`   | `repairGoogleConnection()` |
+| User exists + valid refresh token + healthy sync      | `SIGNIN_INCREMENTAL` | `googleSignin()`           |
+
+Note: Frontend reconnect intent is no longer used for routing. The server is the source of truth for auth mode selection.
 
 Primary files:
 
@@ -144,8 +161,8 @@ Primary files:
 ```ts
 {
   sync?: {
-    importGCal?: "importing" | "errored" | "completed" | "restart" | null;
-    incrementalGCalSync?: "importing" | "errored" | "completed" | "restart" | null;
+    importGCal?: "IMPORTING" | "ERRORED" | "COMPLETED" | "RESTART" | null;
+    incrementalGCalSync?: "IMPORTING" | "ERRORED" | "COMPLETED" | "RESTART" | null;
   };
   google?: {
     hasRefreshToken?: boolean;
@@ -164,7 +181,7 @@ Google import progress is also realtime:
 
 1. backend starts import
 2. websocket emits `IMPORT_GCAL_START`
-3. client marks import pending
+3. client waits for metadata/socket updates from the backend import flow
 4. backend completes import and emits `IMPORT_GCAL_END`
 5. client stores import results and triggers a refetch
 

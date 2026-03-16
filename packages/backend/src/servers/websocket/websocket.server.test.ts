@@ -399,7 +399,7 @@ describe("WebSocket Server", () => {
             google: {
               hasRefreshToken: false,
               connectionStatus: "not_connected",
-              syncStatus: "none",
+              syncStatus: "NONE",
             },
           },
         ]);

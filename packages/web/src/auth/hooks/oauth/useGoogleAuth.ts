@@ -1,6 +1,5 @@
 import { batch } from "react-redux";
 import { toast } from "react-toastify";
-import { type GoogleAuthIntent } from "@core/types/google-auth.types";
 import { isGooglePopupClosedError } from "@web/auth/google/google-oauth-error.util";
 import {
   authenticate,
@@ -28,28 +27,19 @@ import {
 } from "@web/ducks/events/slices/sync.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 
-interface UseGoogleAuthOptions {
-  googleAuthIntent?: GoogleAuthIntent;
-}
-
-export function useGoogleAuth(options: UseGoogleAuthOptions = {}) {
+export function useGoogleAuth() {
   const dispatch = useAppDispatch();
   const { setAuthenticated } = useSession();
-  const { googleAuthIntent } = options;
 
   const googleLogin = useGoogleAuthWithOverlay({
     onStart: () => {
       dismissErrorToast(SESSION_EXPIRED_TOAST_ID);
       dispatch(startAuthenticating());
-      dispatch(importGCalSlice.actions.setIsImportPending(true));
       dispatch(importGCalSlice.actions.clearImportResults(undefined));
     },
     onSuccess: async (data) => {
       try {
-        const authPayload: SignInUpInput =
-          googleAuthIntent === "reconnect"
-            ? { ...data, googleAuthIntent }
-            : data;
+        const authPayload: SignInUpInput = data;
         const authResult = await authenticate(authPayload);
         if (!authResult.success) {
           console.error(authResult.error);
@@ -66,16 +56,13 @@ export function useGoogleAuth(options: UseGoogleAuthOptions = {}) {
         markUserAsAuthenticated();
 
         setAuthenticated(true);
-        void refreshUserMetadata();
 
-        // Batch these dispatches to ensure they update in the same render cycle,
-        // preventing a flash where isAuthenticating=false but importing=false
         batch(() => {
           dispatch(authSuccess());
-          // Now that OAuth is complete, indicate that calendar import is starting
-          dispatch(importGCalSlice.actions.importing(true));
           dispatch(importGCalSlice.actions.setIsImportPending(true));
         });
+
+        void refreshUserMetadata();
 
         const syncResult = await syncLocalEvents();
 

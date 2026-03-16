@@ -213,7 +213,7 @@ class UserService {
     await userMetadataService.updateUserMetadata({
       userId,
       data: {
-        sync: { importGCal: "restart", incrementalGCalSync: "restart" },
+        sync: { importGCal: "RESTART", incrementalGCalSync: "RESTART" },
       },
     });
   };
@@ -277,12 +277,12 @@ class UserService {
 
       const userMeta = await this.fetchUserMetadata(userId);
       const importStatus = userMeta.sync?.importGCal;
-      const isImporting = importStatus === "importing";
+      const isImporting = importStatus === "IMPORTING";
       const proceed = isForce ? !isImporting : shouldImportGCal(userMeta);
 
       if (!proceed) {
         webSocketServer.handleImportGCalEnd(userId, {
-          status: "ignored",
+          status: "IGNORED",
           message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
         });
 
@@ -291,7 +291,7 @@ class UserService {
 
       await userMetadataService.updateUserMetadata({
         userId,
-        data: { sync: { importGCal: "importing" } },
+        data: { sync: { importGCal: "IMPORTING" } },
       });
 
       await this.stopGoogleCalendarSync(userId);
@@ -299,11 +299,11 @@ class UserService {
 
       await userMetadataService.updateUserMetadata({
         userId,
-        data: { sync: { importGCal: "completed" } },
+        data: { sync: { importGCal: "COMPLETED" } },
       });
 
       webSocketServer.handleImportGCalEnd(userId, {
-        status: "completed",
+        status: "COMPLETED",
         ...importResults,
       });
       webSocketServer.handleBackgroundCalendarChange(userId);
@@ -319,13 +319,13 @@ class UserService {
 
       await userMetadataService.updateUserMetadata({
         userId,
-        data: { sync: { importGCal: "errored" } },
+        data: { sync: { importGCal: "ERRORED" } },
       });
 
       logger.error(`Re-sync failed for user: ${userId}`, err);
 
       webSocketServer.handleImportGCalEnd(userId, {
-        status: "errored",
+        status: "ERRORED",
         message: `Import gCal failed for user: ${userId}`,
       });
     }

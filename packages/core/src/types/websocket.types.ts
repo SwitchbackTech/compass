@@ -5,12 +5,12 @@ import { type UserMetadata } from "@core/types/user.types";
 
 export type ImportGCalEndPayload =
   | {
-      status: "completed";
+      status: "COMPLETED";
       eventsCount?: number;
       calendarsCount?: number;
     }
   | {
-      status: "errored" | "ignored";
+      status: "ERRORED" | "IGNORED";
       message: string;
     };
 

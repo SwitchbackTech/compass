@@ -20,7 +20,6 @@ import {
   type CreateGoogleSignInResponse,
   type ThirdPartySignInUpInput,
   createGoogleSignInSuccess,
-  getGoogleAuthIntent,
 } from "@backend/common/middleware/supertokens.middleware.util";
 import mongoService from "@backend/common/services/mongo.service";
 import syncService from "@backend/sync/services/sync.service";
@@ -129,13 +128,8 @@ export const initSupertokens = () => {
 
                 const response =
                   await originalImplementation.signInUpPOST(input);
-                const body = (await input.options.req.getJSONBody()) as {
-                  googleAuthIntent?: unknown;
-                };
                 const success = createGoogleSignInSuccess(
                   response as CreateGoogleSignInResponse,
-                  getGoogleAuthIntent(body?.googleAuthIntent),
-                  input.session?.getUserId() ?? null,
                 );
 
                 if (success) {
@@ -175,7 +169,7 @@ export const initSupertokens = () => {
 
                 await userMetadataService.updateUserMetadata({
                   userId: userId.toString(),
-                  data: { sync: { incrementalGCalSync: "restart" } },
+                  data: { sync: { incrementalGCalSync: "RESTART" } },
                 });
 
                 if (lastActiveSession) {

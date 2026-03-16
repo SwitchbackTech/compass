@@ -69,9 +69,7 @@ describe("useConnectGoogle", () => {
   it("returns checking state when metadata is still loading", () => {
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
-      googleAuthIntent: undefined,
-    });
+    expect(mockUseGoogleAuth).toHaveBeenCalledWith();
     expect(result.current.commandAction.label).toBe(
       "Checking Google Calendar…",
     );
@@ -87,7 +85,7 @@ describe("useConnectGoogle", () => {
       if (selector === selectGoogleMetadata) {
         return {
           connectionStatus: "not_connected",
-          syncStatus: "none",
+          syncStatus: "NONE",
         };
       }
 
@@ -107,9 +105,7 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
-      googleAuthIntent: undefined,
-    });
+    expect(mockUseGoogleAuth).toHaveBeenCalledWith();
     expect(result.current.commandAction.label).toBe("Connect Google Calendar");
     expect(result.current.commandAction.isDisabled).toBe(false);
     expect(result.current.sidebarStatus.icon).toBe("CloudArrowUpIcon");
@@ -123,7 +119,7 @@ describe("useConnectGoogle", () => {
       if (selector === selectGoogleMetadata) {
         return {
           connectionStatus: "connected",
-          syncStatus: "healthy",
+          syncStatus: "HEALTHY",
         };
       }
 
@@ -143,9 +139,7 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
-      googleAuthIntent: undefined,
-    });
+    expect(mockUseGoogleAuth).toHaveBeenCalledWith();
     expect(result.current.commandAction.label).toBe(
       "Google Calendar Connected",
     );
@@ -160,7 +154,7 @@ describe("useConnectGoogle", () => {
       if (selector === selectGoogleMetadata) {
         return {
           connectionStatus: "reconnect_required",
-          syncStatus: "none",
+          syncStatus: "NONE",
         };
       }
 
@@ -180,9 +174,7 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
-      googleAuthIntent: "reconnect",
-    });
+    expect(mockUseGoogleAuth).toHaveBeenCalledWith();
     expect(result.current.commandAction.label).toBe(
       "Reconnect Google Calendar",
     );
@@ -200,7 +192,7 @@ describe("useConnectGoogle", () => {
       if (selector === selectGoogleMetadata) {
         return {
           connectionStatus: "connected",
-          syncStatus: "repairing",
+          syncStatus: "REPAIRING",
         };
       }
 
@@ -220,9 +212,7 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
-      googleAuthIntent: undefined,
-    });
+    expect(mockUseGoogleAuth).toHaveBeenCalledWith();
     expect(result.current.commandAction.label).toBe("Syncing Google Calendar…");
     expect(result.current.commandAction.isDisabled).toBe(true);
     expect(result.current.commandAction.onSelect).toBeUndefined();
@@ -235,7 +225,7 @@ describe("useConnectGoogle", () => {
       if (selector === selectGoogleMetadata) {
         return {
           connectionStatus: "connected",
-          syncStatus: "attention",
+          syncStatus: "ATTENTION",
         };
       }
 
@@ -255,9 +245,7 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
-      googleAuthIntent: undefined,
-    });
+    expect(mockUseGoogleAuth).toHaveBeenCalledWith();
     expect(result.current.commandAction.label).toBe("Repair Google Calendar");
     expect(result.current.commandAction.isDisabled).toBe(false);
     expect(result.current.sidebarStatus.icon).toBe("CloudWarningIcon");
@@ -274,9 +262,6 @@ describe("useConnectGoogle", () => {
     expect(mockDispatch).toHaveBeenCalledWith(
       importGCalSlice.actions.setIsImportPending(true),
     );
-    expect(mockDispatch).toHaveBeenCalledWith(
-      importGCalSlice.actions.importing(true),
-    );
     expect(mockDispatch).not.toHaveBeenCalledWith(
       settingsSlice.actions.closeCmdPalette(),
     );
@@ -291,12 +276,12 @@ describe("useConnectGoogle", () => {
     );
   });
 
-  it("uses repairing state while local import is pending even before metadata catches up", () => {
+  it("waits for server import state instead of treating pending repair as syncing", () => {
     mockUseAppSelector.mockImplementation((selector) => {
       if (selector === selectGoogleMetadata) {
         return {
           connectionStatus: "not_connected",
-          syncStatus: "none",
+          syncStatus: "NONE",
         };
       }
 
@@ -306,7 +291,7 @@ describe("useConnectGoogle", () => {
 
       if (selector === selectImportGCalState) {
         return {
-          importing: true,
+          importing: false,
           isImportPending: true,
         };
       }
@@ -316,12 +301,11 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
-      googleAuthIntent: undefined,
-    });
-    expect(result.current.commandAction.isDisabled).toBe(true);
-    expect(result.current.sidebarStatus.icon).toBe("SpinnerIcon");
-    expect(result.current.sidebarStatus.isDisabled).toBe(true);
+    expect(mockUseGoogleAuth).toHaveBeenCalledWith();
+    expect(result.current.commandAction.label).toBe("Connect Google Calendar");
+    expect(result.current.commandAction.isDisabled).toBe(false);
+    expect(result.current.sidebarStatus.icon).toBe("CloudArrowUpIcon");
+    expect(result.current.sidebarStatus.isDisabled).toBe(false);
   });
 
   it("prioritizes reconnect_required over importing state", () => {
@@ -329,7 +313,7 @@ describe("useConnectGoogle", () => {
       if (selector === selectGoogleMetadata) {
         return {
           connectionStatus: "reconnect_required",
-          syncStatus: "none",
+          syncStatus: "NONE",
         };
       }
 
@@ -349,9 +333,7 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
-      googleAuthIntent: "reconnect",
-    });
+    expect(mockUseGoogleAuth).toHaveBeenCalledWith();
     expect(result.current.commandAction.label).toBe(
       "Reconnect Google Calendar",
     );
@@ -382,9 +364,7 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
-      googleAuthIntent: undefined,
-    });
+    expect(mockUseGoogleAuth).toHaveBeenCalledWith();
     expect(result.current.commandAction.label).toBe("Connect Google Calendar");
     expect(result.current.sidebarStatus.icon).toBe("CloudArrowUpIcon");
   });

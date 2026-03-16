@@ -231,6 +231,7 @@ packages/core/src/
 
 - Use `is` prefix for boolean variables. For example, `isLoading`, `isError`, `isSuccess`
 - Do not use barrel (`index.ts`) files. Use named exports instead.
+- When creating constants, use uppercase and underscores. Example: `SIGNIN_INCREMENTAL`
 
 ## Branch Naming & Commit Message Conventions
 

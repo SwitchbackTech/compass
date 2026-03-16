@@ -8,14 +8,10 @@ import { parseReconnectGoogleParams } from "@backend/auth/schemas/reconnect-goog
 import GoogleAuthService from "@backend/auth/services/google/google.auth.service";
 import { ENV } from "@backend/common/constants/env.constants";
 import { isMissingUserTagId } from "@backend/common/constants/env.util";
-import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import EmailService from "@backend/email/email.service";
 import syncService from "@backend/sync/services/sync.service";
-import { getSync } from "@backend/sync/util/sync.queries";
-import { canDoIncrementalSync } from "@backend/sync/util/sync.util";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
 
@@ -29,28 +25,6 @@ class CompassAuthService {
         err,
       );
     });
-  };
-
-  determineAuthMethod = async (gUserId: string) => {
-    const user = await findCompassUserBy("google.googleId", gUserId);
-
-    if (!user) {
-      return { authMethod: "signup", user: null };
-    }
-    const userId = user._id.toString();
-
-    const sync = await getSync({ userId });
-    if (!sync) {
-      throw error(
-        SyncError.NoSyncRecordForUser,
-        "Did not verify sync record for user",
-      );
-    }
-
-    const canLogin = canDoIncrementalSync(sync);
-    const authMethod = user && canLogin ? "login" : "signup";
-
-    return { authMethod, user };
   };
 
   createSessionForUser = async (cUserId: string) => {
@@ -100,7 +74,7 @@ class CompassAuthService {
         userId,
         data: {
           skipOnboarding: false,
-          sync: { importGCal: "restart", incrementalGCalSync: "restart" },
+          sync: { importGCal: "RESTART", incrementalGCalSync: "RESTART" },
         },
       });
 
@@ -126,8 +100,17 @@ class CompassAuthService {
     return user;
   }
 
-  async reconnectGoogleForSession(
-    sessionUserId: string,
+  /**
+   * Repairs a user's Google connection after revocation or disconnection.
+   * This method is called when the user has an existing Compass account but
+   * their refresh token is missing or their sync state is unhealthy.
+   *
+   * @param compassUserId - The Compass user ID (not session-based)
+   * @param gUser - Google user info from OAuth
+   * @param oAuthTokens - Fresh OAuth tokens from re-consent
+   */
+  async repairGoogleConnection(
+    compassUserId: string,
     gUser: TokenPayload,
     oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">,
   ) {
@@ -135,7 +118,7 @@ class CompassAuthService {
       cUserId,
       gUser: validatedGUser,
       refreshToken,
-    } = parseReconnectGoogleParams(sessionUserId, gUser, oAuthTokens);
+    } = parseReconnectGoogleParams(compassUserId, gUser, oAuthTokens);
 
     await userService.reconnectGoogleCredentials(
       cUserId,
@@ -146,7 +129,7 @@ class CompassAuthService {
     await userMetadataService.updateUserMetadata({
       userId: cUserId,
       data: {
-        sync: { importGCal: "restart", incrementalGCalSync: "restart" },
+        sync: { importGCal: "RESTART", incrementalGCalSync: "RESTART" },
       },
     });
 
@@ -201,7 +184,7 @@ class CompassAuthService {
         // mark in metadata to restart full import
         await userMetadataService.updateUserMetadata({
           userId: cUserId,
-          data: { sync: { importGCal: "restart" } },
+          data: { sync: { importGCal: "RESTART" } },
         });
 
         this.restartGoogleCalendarSyncInBackground(cUserId);

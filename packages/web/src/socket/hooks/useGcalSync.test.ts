@@ -146,10 +146,10 @@ describe("useGcalSync", () => {
       renderHook(() => useGcalSync());
 
       // Simulate socket reconnecting while import is still running
-      metadataHandler?.({ sync: { importGCal: "importing" } });
+      metadataHandler?.({ sync: { importGCal: "IMPORTING" } });
 
       expect(mockDispatch).toHaveBeenCalledWith(
-        userMetadataSlice.actions.set({ sync: { importGCal: "importing" } }),
+        userMetadataSlice.actions.set({ sync: { importGCal: "IMPORTING" } }),
       );
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.importing(true),
@@ -169,10 +169,10 @@ describe("useGcalSync", () => {
 
       renderHook(() => useGcalSync());
 
-      metadataHandler?.({ sync: { importGCal: "completed" } });
+      metadataHandler?.({ sync: { importGCal: "COMPLETED" } });
 
       expect(mockDispatch).toHaveBeenCalledWith(
-        userMetadataSlice.actions.set({ sync: { importGCal: "completed" } }),
+        userMetadataSlice.actions.set({ sync: { importGCal: "COMPLETED" } }),
       );
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.importing(false),
@@ -197,10 +197,10 @@ describe("useGcalSync", () => {
 
       renderHook(() => useGcalSync());
 
-      metadataHandler?.({ sync: { importGCal: "errored" } });
+      metadataHandler?.({ sync: { importGCal: "ERRORED" } });
 
       expect(mockDispatch).toHaveBeenCalledWith(
-        userMetadataSlice.actions.set({ sync: { importGCal: "errored" } }),
+        userMetadataSlice.actions.set({ sync: { importGCal: "ERRORED" } }),
       );
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.importing(false),
@@ -221,11 +221,32 @@ describe("useGcalSync", () => {
 
       renderHook(() => useGcalSync());
 
-      metadataHandler?.({ sync: { importGCal: "restart" } });
+      metadataHandler?.({
+        sync: { importGCal: "RESTART" },
+        google: { connectionStatus: "connected" },
+      });
 
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.request(undefined as never),
       );
+    });
+
+    it("does not auto-request an import when reconnect is required", () => {
+      let metadataHandler: ((metadata: unknown) => void) | undefined;
+      (socket.on as jest.Mock).mockImplementation((event, handler) => {
+        if (event === USER_METADATA) {
+          metadataHandler = handler;
+        }
+      });
+
+      renderHook(() => useGcalSync());
+
+      metadataHandler?.({
+        sync: { importGCal: "RESTART" },
+        google: { connectionStatus: "reconnect_required" },
+      });
+
+      expect(importGCalSlice.actions.request).not.toHaveBeenCalled();
     });
 
     it("does not auto-request an import when metadata says errored", () => {
@@ -239,8 +260,8 @@ describe("useGcalSync", () => {
       renderHook(() => useGcalSync());
 
       metadataHandler?.({
-        sync: { importGCal: "errored" },
-        google: { connectionStatus: "connected", syncStatus: "attention" },
+        sync: { importGCal: "ERRORED" },
+        google: { connectionStatus: "connected", syncStatus: "ATTENTION" },
       });
 
       expect(importGCalSlice.actions.request).not.toHaveBeenCalled();
@@ -285,7 +306,7 @@ describe("useGcalSync", () => {
       renderHook(() => useGcalSync());
 
       importEndHandler?.({
-        status: "completed",
+        status: "COMPLETED",
         eventsCount: 10,
         calendarsCount: 2,
       });
@@ -319,7 +340,7 @@ describe("useGcalSync", () => {
 
       renderHook(() => useGcalSync());
 
-      importEndHandler?.({ status: "completed", eventsCount: 10 });
+      importEndHandler?.({ status: "COMPLETED", eventsCount: 10 });
 
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.importing(false),
@@ -351,7 +372,7 @@ describe("useGcalSync", () => {
 
       // Event arrives - should process correctly with ref pattern
       importEndHandler?.({
-        status: "completed",
+        status: "COMPLETED",
         eventsCount: 10,
         calendarsCount: 2,
       });
@@ -381,7 +402,7 @@ describe("useGcalSync", () => {
       renderHook(() => useGcalSync());
 
       importEndHandler?.({
-        status: "ignored",
+        status: "IGNORED",
         message:
           "User test-user gcal import is in progress or completed, ignoring this request",
       });
@@ -436,7 +457,7 @@ describe("useGcalSync", () => {
 
       // Phase 3: Backend signals import complete with successful response
       const successfulResponse: ImportGCalEndPayload = {
-        status: "completed",
+        status: "COMPLETED",
         eventsCount: 25,
         calendarsCount: 3,
       };
@@ -481,7 +502,7 @@ describe("useGcalSync", () => {
 
       // Import completes successfully
       handlers[IMPORT_GCAL_END]({
-        status: "completed",
+        status: "COMPLETED",
         eventsCount: 100,
         calendarsCount: 5,
       });
@@ -508,7 +529,7 @@ describe("useGcalSync", () => {
       handlers[IMPORT_GCAL_START](true);
       jest.advanceTimersByTime(100); // Very fast import
       handlers[IMPORT_GCAL_END]({
-        status: "completed",
+        status: "COMPLETED",
         eventsCount: 2,
         calendarsCount: 1,
       });
@@ -545,7 +566,7 @@ describe("useGcalSync", () => {
       mockDispatch.mockClear();
 
       // Backend sends empty response (edge case)
-      handlers[IMPORT_GCAL_END]({ status: "completed" });
+      handlers[IMPORT_GCAL_END]({ status: "COMPLETED" });
 
       // Should still hide spinner and set empty results
       expect(mockDispatch).toHaveBeenCalledWith(
@@ -572,7 +593,7 @@ describe("useGcalSync", () => {
       mockDispatch.mockClear();
 
       handlers[IMPORT_GCAL_END]({
-        status: "completed",
+        status: "COMPLETED",
         eventsCount: 50,
         calendarsCount: 4,
       });
@@ -604,7 +625,7 @@ describe("useGcalSync", () => {
       mockDispatch.mockClear();
 
       handlers[IMPORT_GCAL_END]({
-        status: "errored",
+        status: "ERRORED",
         message: "Incremental Google Calendar sync failed for user: test-user",
       });
 

@@ -200,7 +200,7 @@ describe("GCal Re-Authentication Flow", () => {
 
       await act(async () => {
         importEndCallback?.({
-          status: "completed",
+          status: "COMPLETED",
           eventsCount: 15,
           calendarsCount: 3,
         });
@@ -248,7 +248,7 @@ describe("GCal Re-Authentication Flow", () => {
       // Backend sends IMPORT_GCAL_END with zero events (valid response)
       await act(async () => {
         importEndCallback?.({
-          status: "completed",
+          status: "COMPLETED",
           eventsCount: 0,
           calendarsCount: 1,
         });
@@ -286,7 +286,7 @@ describe("GCal Re-Authentication Flow", () => {
       });
 
       await act(async () => {
-        metadataCallback?.({ sync: { importGCal: "completed" } });
+        metadataCallback?.({ sync: { importGCal: "COMPLETED" } });
       });
 
       await act(async () => {
@@ -359,7 +359,7 @@ describe("GCal Re-Authentication Flow", () => {
       // Backend completes import
       await act(async () => {
         importEndCallback?.({
-          status: "completed",
+          status: "COMPLETED",
           eventsCount: 42,
           calendarsCount: 2,
         });
@@ -416,7 +416,7 @@ describe("GCal Re-Authentication Flow", () => {
       // Backend responds successfully
       await act(async () => {
         importEndCallback?.({
-          status: "completed",
+          status: "COMPLETED",
           eventsCount: 10,
           calendarsCount: 1,
         });
@@ -452,7 +452,7 @@ describe("GCal Re-Authentication Flow", () => {
 
       await act(async () => {
         importEndCallback?.({
-          status: "errored",
+          status: "ERRORED",
           message:
             "Incremental Google Calendar sync failed for user: test-user",
         });
@@ -493,7 +493,7 @@ describe("GCal Re-Authentication Flow", () => {
 
       await act(async () => {
         importEndCallback?.({
-          status: "ignored",
+          status: "IGNORED",
           message:
             "User test-user gcal import is in progress or completed, ignoring this request",
         });
@@ -502,7 +502,7 @@ describe("GCal Re-Authentication Flow", () => {
       expect(store.getState().sync.importGCal.isImportPending).toBe(true);
 
       await act(async () => {
-        metadataCallback?.({ sync: { importGCal: "completed" } });
+        metadataCallback?.({ sync: { importGCal: "COMPLETED" } });
       });
 
       await act(async () => {
@@ -554,7 +554,7 @@ describe("GCal Re-Authentication Flow", () => {
       // Event arrives - with the ref pattern fix, this should process correctly
       await act(async () => {
         importEndCallback?.({
-          status: "completed",
+          status: "COMPLETED",
           eventsCount: 25,
           calendarsCount: 4,
         });

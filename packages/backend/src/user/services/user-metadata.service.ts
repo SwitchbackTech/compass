@@ -109,17 +109,17 @@ class UserMetadataService {
       return {
         hasRefreshToken,
         connectionStatus,
-        syncStatus: "none",
+        syncStatus: "NONE",
       };
     }
 
     const importStatus = storedMetadata.sync?.importGCal;
 
-    if (importStatus === "importing" || importStatus === "restart") {
+    if (importStatus === "IMPORTING" || importStatus === "RESTART") {
       return {
         hasRefreshToken,
         connectionStatus,
-        syncStatus: "repairing",
+        syncStatus: "REPAIRING",
       };
     }
 
@@ -129,22 +129,22 @@ class UserMetadataService {
       return {
         hasRefreshToken,
         connectionStatus,
-        syncStatus: "healthy",
+        syncStatus: "HEALTHY",
       };
     }
 
-    if (importStatus === "errored") {
+    if (importStatus === "ERRORED") {
       return {
         hasRefreshToken,
         connectionStatus,
-        syncStatus: "attention",
+        syncStatus: "ATTENTION",
       };
     }
 
     return {
       hasRefreshToken,
       connectionStatus,
-      syncStatus: "attention",
+      syncStatus: "ATTENTION",
     };
   };
 
@@ -195,7 +195,7 @@ class UserMetadataService {
           ...metadata.google,
           hasRefreshToken,
           connectionStatus,
-          syncStatus: metadata.google?.syncStatus ?? "none",
+          syncStatus: metadata.google?.syncStatus ?? "NONE",
         },
       };
     }

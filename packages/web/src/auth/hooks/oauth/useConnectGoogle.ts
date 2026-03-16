@@ -75,11 +75,11 @@ const getGoogleUiState = ({
     return "checking";
   }
 
-  if (connectionStatus === "connected" && syncStatus === "repairing") {
+  if (connectionStatus === "connected" && syncStatus === "REPAIRING") {
     return "connected_repairing";
   }
 
-  if (connectionStatus === "connected" && syncStatus === "attention") {
+  if (connectionStatus === "connected" && syncStatus === "ATTENTION") {
     return "connected_attention";
   }
 
@@ -200,14 +200,11 @@ export const useConnectGoogle = () => {
     ) => RootState["sync"]["importGCal"],
   );
   const connectionStatus = googleMetadata?.connectionStatus ?? "not_connected";
-  const syncStatus = googleMetadata?.syncStatus ?? "none";
-  const { login } = useGoogleAuth({
-    googleAuthIntent:
-      connectionStatus === "reconnect_required" ? "reconnect" : undefined,
-  });
+  const syncStatus = googleMetadata?.syncStatus ?? "NONE";
+  const { login } = useGoogleAuth();
 
   const onOpenGoogleAuth = useCallback(() => {
-    login();
+    void login();
     dispatch(settingsSlice.actions.closeCmdPalette());
   }, [dispatch, login]);
 
@@ -215,7 +212,6 @@ export const useConnectGoogle = () => {
     const run = async () => {
       dispatch(importGCalSlice.actions.clearImportResults(undefined));
       dispatch(importGCalSlice.actions.setIsImportPending(true));
-      dispatch(importGCalSlice.actions.importing(true));
 
       try {
         await SyncApi.importGCal({ force: true });
@@ -249,7 +245,7 @@ export const useConnectGoogle = () => {
   const state = getGoogleUiState({
     connectionStatus,
     syncStatus,
-    isImporting: importGCal.importing || importGCal.isImportPending,
+    isImporting: importGCal.importing,
     isCheckingStatus,
   });
 

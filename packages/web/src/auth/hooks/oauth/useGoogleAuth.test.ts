@@ -150,48 +150,22 @@ describe("useGoogleAuth", () => {
     expect(mockMarkUserAsAuthenticated).toHaveBeenCalled();
     expect(mockSetAuthenticated).toHaveBeenCalledWith(true);
     expect(mockRefreshUserMetadata).toHaveBeenCalledTimes(1);
-  });
-
-  it("passes reconnect intent through authentication when requested", async () => {
-    let onSuccessCallback: ((data: SignInUpInput) => Promise<void>) | undefined;
-
-    mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
-      onSuccessCallback = onSuccess;
-      return {
-        login: mockLogin,
-        loading: false,
-        data: null,
-      };
-    });
-
-    renderHook(() => useGoogleAuth({ googleAuthIntent: "reconnect" }));
-
-    if (onSuccessCallback) {
-      await onSuccessCallback({
-        clientType: "web",
-        thirdPartyId: "google",
-        redirectURIInfo: {
-          redirectURIOnProviderDashboard: "",
-          redirectURIQueryParams: {
-            code: "test-auth-code",
-            scope: "email profile",
-            state: undefined,
-          },
-        },
-      });
-    }
-
-    await waitFor(() => {
-      expect(mockAuthenticate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          googleAuthIntent: "reconnect",
-        }),
-      );
-    });
+    expect(mockDispatchFn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "async/importGCal/setIsImportPending",
+        payload: true,
+      }),
+    );
+    expect(mockDispatchFn).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "async/importGCal/importing",
+        payload: true,
+      }),
+    );
   });
 
   describe("onStart callback", () => {
-    it("shows overlay immediately when login starts and clears session-expired toast", () => {
+    it("shows overlay immediately when login starts and clears prior import results", () => {
       mockUseGoogleLogin.mockReturnValue({
         login: mockLogin,
         loading: false,
@@ -208,8 +182,7 @@ describe("useGoogleAuth", () => {
       );
       expect(mockDispatchFn).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: "async/importGCal/setIsImportPending",
-          payload: true,
+          type: "async/importGCal/clearImportResults",
         }),
       );
       const { toast } = jest.requireMock("react-toastify");
