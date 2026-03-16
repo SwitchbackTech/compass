@@ -105,7 +105,7 @@ describe("CmdPalette", () => {
         userMetadata: {
           current: {
             google: {
-              connectionStatus: "connected",
+              connectionStatus: "CONNECTED",
               syncStatus: "HEALTHY",
             },
           },
@@ -125,7 +125,7 @@ describe("CmdPalette", () => {
         userMetadata: {
           current: {
             google: {
-              connectionStatus: "connected",
+              connectionStatus: "CONNECTED",
               syncStatus: "ATTENTION",
             },
           },

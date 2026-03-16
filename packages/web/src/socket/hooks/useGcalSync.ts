@@ -84,7 +84,7 @@ export const useGcalSync = () => {
       const connectionStatus = metadata.google?.connectionStatus;
       const isBackendImporting = importStatus === "IMPORTING";
       const shouldAutoImport =
-        importStatus === "RESTART" && connectionStatus === "connected";
+        importStatus === "RESTART" && connectionStatus === "CONNECTED";
 
       dispatch(userMetadataSlice.actions.set(metadata));
 

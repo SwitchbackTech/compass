@@ -341,7 +341,7 @@ describe("DayCmdPalette", () => {
             userMetadata: {
               current: {
                 google: {
-                  connectionStatus: "connected",
+                  connectionStatus: "CONNECTED",
                   syncStatus: "HEALTHY",
                 },
               },
@@ -364,7 +364,7 @@ describe("DayCmdPalette", () => {
             userMetadata: {
               current: {
                 google: {
-                  connectionStatus: "reconnect_required",
+                  connectionStatus: "RECONNECT_REQUIRED",
                   syncStatus: "NONE",
                 },
               },
@@ -391,7 +391,7 @@ describe("DayCmdPalette", () => {
             userMetadata: {
               current: {
                 google: {
-                  connectionStatus: "connected",
+                  connectionStatus: "CONNECTED",
                   syncStatus: "REPAIRING",
                 },
               },
@@ -414,7 +414,7 @@ describe("DayCmdPalette", () => {
             userMetadata: {
               current: {
                 google: {
-                  connectionStatus: "connected",
+                  connectionStatus: "CONNECTED",
                   syncStatus: "ATTENTION",
                 },
               },

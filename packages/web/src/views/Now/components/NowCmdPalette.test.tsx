@@ -161,7 +161,7 @@ describe("NowCmdPalette", () => {
           userMetadata: {
             current: {
               google: {
-                connectionStatus: "connected",
+                connectionStatus: "CONNECTED",
                 syncStatus: "HEALTHY",
               },
             },
@@ -181,7 +181,7 @@ describe("NowCmdPalette", () => {
           userMetadata: {
             current: {
               google: {
-                connectionStatus: "reconnect_required",
+                connectionStatus: "RECONNECT_REQUIRED",
                 syncStatus: "NONE",
               },
             },
@@ -204,7 +204,7 @@ describe("NowCmdPalette", () => {
           userMetadata: {
             current: {
               google: {
-                connectionStatus: "connected",
+                connectionStatus: "CONNECTED",
                 syncStatus: "REPAIRING",
               },
             },
@@ -225,7 +225,7 @@ describe("NowCmdPalette", () => {
           userMetadata: {
             current: {
               google: {
-                connectionStatus: "connected",
+                connectionStatus: "CONNECTED",
                 syncStatus: "ATTENTION",
               },
             },

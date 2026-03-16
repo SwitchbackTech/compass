@@ -20,8 +20,8 @@ import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
 type GoogleUiState =
   | "checking"
-  | "not_connected"
-  | "reconnect_required"
+  | "NOT_CONNECTED"
+  | "RECONNECT_REQUIRED"
   | "connected_healthy"
   | "connected_repairing"
   | "connected_attention";
@@ -63,8 +63,8 @@ const getGoogleUiState = ({
   isImporting: boolean;
   isCheckingStatus: boolean;
 }): GoogleUiState => {
-  if (connectionStatus === "reconnect_required") {
-    return "reconnect_required";
+  if (connectionStatus === "RECONNECT_REQUIRED") {
+    return "RECONNECT_REQUIRED";
   }
 
   if (isImporting) {
@@ -75,19 +75,19 @@ const getGoogleUiState = ({
     return "checking";
   }
 
-  if (connectionStatus === "connected" && syncStatus === "REPAIRING") {
+  if (connectionStatus === "CONNECTED" && syncStatus === "REPAIRING") {
     return "connected_repairing";
   }
 
-  if (connectionStatus === "connected" && syncStatus === "ATTENTION") {
+  if (connectionStatus === "CONNECTED" && syncStatus === "ATTENTION") {
     return "connected_attention";
   }
 
-  if (connectionStatus === "connected") {
+  if (connectionStatus === "CONNECTED") {
     return "connected_healthy";
   }
 
-  return "not_connected";
+  return "NOT_CONNECTED";
 };
 
 const getGoogleUiConfig = (
@@ -110,7 +110,7 @@ const getGoogleUiConfig = (
           isDisabled: true,
         },
       };
-    case "not_connected":
+    case "NOT_CONNECTED":
       return {
         commandAction: {
           label: "Connect Google Calendar",
@@ -125,7 +125,7 @@ const getGoogleUiConfig = (
           onSelect: onConnectGoogle,
         },
       };
-    case "reconnect_required":
+    case "RECONNECT_REQUIRED":
       return {
         commandAction: {
           label: "Reconnect Google Calendar",
@@ -199,7 +199,7 @@ export const useConnectGoogle = () => {
       state: RootState,
     ) => RootState["sync"]["importGCal"],
   );
-  const connectionStatus = googleMetadata?.connectionStatus ?? "not_connected";
+  const connectionStatus = googleMetadata?.connectionStatus ?? "NOT_CONNECTED";
   const syncStatus = googleMetadata?.syncStatus ?? "NONE";
   const { login } = useGoogleAuth();
 
