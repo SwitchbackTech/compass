@@ -142,9 +142,19 @@ Current metadata shape used by sync/auth flows:
   };
   google?: {
     hasRefreshToken?: boolean;
+    connectionStatus?: "NOT_CONNECTED" | "CONNECTED" | "RECONNECT_REQUIRED";
+    syncStatus?: "HEALTHY" | "REPAIRING" | "ATTENTION" | "NONE";
   };
 }
 ```
+
+Behavior constraints:
+
+- `google.connectionStatus` and `google.syncStatus` are server-enriched fields and should be treated as read-only client contracts.
+- `google.connectionStatus` values are uppercase literals:
+  - `NOT_CONNECTED`: no linked Google account
+  - `RECONNECT_REQUIRED`: linked account without refresh token
+  - `CONNECTED`: linked account with refresh token
 
 ---
 
