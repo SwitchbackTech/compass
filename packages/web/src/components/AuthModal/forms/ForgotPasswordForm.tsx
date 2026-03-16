@@ -33,8 +33,13 @@ export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
     schema: ForgotPasswordSchema,
     initialValues: { email: "" },
     onSubmit: async (data) => {
-      await onSubmit(data);
-      setIsSubmitted(true);
+      try {
+        await onSubmit(data);
+        setIsSubmitted(true);
+      } catch {
+        // Error is handled by the parent component via submitError
+        // Don't show success message on error
+      }
     },
   });
 

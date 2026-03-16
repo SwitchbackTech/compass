@@ -119,20 +119,21 @@ export function useAuthFormHandlers({
         });
 
         if (response.status === "FIELD_ERROR") {
-          setSubmitError(
-            response.formFields[0]?.error ?? "Unable to send reset email",
-          );
-          return;
+          const errorMessage =
+            response.formFields[0]?.error ?? "Unable to send reset email";
+          setSubmitError(errorMessage);
+          throw new Error(errorMessage);
         }
 
         if (response.status === "PASSWORD_RESET_NOT_ALLOWED") {
           setSubmitError(response.reason);
-          return;
+          throw new Error(response.reason);
         }
       } catch (error) {
-        setSubmitError(
-          error instanceof Error ? error.message : "Unable to send reset email",
-        );
+        const errorMessage =
+          error instanceof Error ? error.message : "Unable to send reset email";
+        setSubmitError(errorMessage);
+        throw error;
       } finally {
         setIsSubmitting(false);
       }
