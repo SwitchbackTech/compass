@@ -127,6 +127,39 @@ Runtime behavior:
 
 When the server version differs from `BUILD_VERSION`, `isUpdateAvailable` becomes `true` and the sidebar shows a refresh action that triggers `window.location.reload()`.
 
+## Calendar Sidebar Footer Controls
+
+Files:
+
+- `packages/web/src/views/Calendar/components/Sidebar/Sidebar.tsx`
+- `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
+- `packages/web/src/views/Calendar/components/Sidebar/styled.ts`
+- `packages/web/src/auth/hooks/oauth/useConnectGoogle.ts`
+
+Layout contract:
+
+- the footer control row is pinned to the bottom of the sidebar (`ICON_ROW_HEIGHT = 40`)
+- `SidebarTabContainer` reserves space with `height: calc(100% - 40px)` so tab content does not overlap the footer row
+- the row uses `justify-content: space-between` and two explicit groups:
+  - `LeftIconGroup`: sidebar tab navigation actions
+  - `RightIconGroup`: utility and status actions
+
+Control mapping:
+
+- Left group:
+  - Tasks tab (`SHIFT + 1`) dispatches `viewSlice.actions.updateSidebarTab("tasks")`
+  - Month tab (`SHIFT + 2`) dispatches `viewSlice.actions.updateSidebarTab("monthWidget")`
+- Right group:
+  - Command palette toggle (`modifier + K`) dispatches open/close palette actions from `settingsSlice`
+  - Google status action is derived from `useConnectGoogle().sidebarStatus`
+  - background import spinner is shown while `selectImportGCalState(...).importing` is true
+  - update action (refresh icon) is shown when `useVersionCheck().isUpdateAvailable` is true and reloads the page
+
+Icon state constraints:
+
+- tab icons and command icon use `theme.color.text.light` when active and `theme.color.text.darkPlaceholder` when inactive
+- Google status icon tooltips and disabled/clickable behavior come from `useConnectGoogle` and should not be hardcoded in the row component
+
 ## State Systems
 
 The web app uses multiple state layers:
