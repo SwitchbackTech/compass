@@ -45,6 +45,8 @@ These are UI-facing categories, not storage categories.
 
 Many sync and parser decisions key off transitions between these states.
 
+For the full recurring-event lifecycle, see [recurrence-handling.md](./recurrence-handling.md).
+
 ## Update Scopes
 
 Recurring edits use `RecurringEventUpdateScope`:
@@ -72,6 +74,7 @@ Primary code:
 
 - `packages/backend/src/event/services/event.service.ts`
 - `packages/backend/src/event/classes/compass.event.parser.ts`
+- `packages/backend/src/event/classes/compass.event.executor.ts`
 - `packages/backend/src/event/classes/compass.event.generator.ts`
 
 ## Someday Semantics

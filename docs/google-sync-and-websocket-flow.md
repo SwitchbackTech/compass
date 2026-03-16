@@ -29,7 +29,11 @@ High-level path:
 3. The selected repository writes locally or remotely.
 4. Remote event writes hit backend event routes.
 5. `EventController` packages the change as a `CompassEvent`.
-6. `CompassSyncProcessor.processEvents()` parses the event transition and applies persistence/sync logic.
+6. `CompassSyncProcessor.processEvents()`:
+   - loads the current DB event
+   - analyzes the transition into a `CompassOperationPlan`
+   - applies Compass persistence steps
+   - executes any Google side effect implied by the plan
 7. After commit, the backend emits websocket notifications based on whether the change affected normal or someday events.
 
 Primary files:
@@ -37,6 +41,8 @@ Primary files:
 - `packages/web/src/ducks/events/sagas/event.sagas.ts`
 - `packages/web/src/common/repositories/event`
 - `packages/backend/src/event/controllers/event.controller.ts`
+- `packages/backend/src/event/classes/compass.event.parser.ts`
+- `packages/backend/src/event/classes/compass.event.executor.ts`
 - `packages/backend/src/sync/services/sync/compass.sync.processor.ts`
 
 ## Inbound Flow: Google Notifies Compass About Changes
