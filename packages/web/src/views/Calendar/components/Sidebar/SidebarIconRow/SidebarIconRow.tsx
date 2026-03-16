@@ -24,6 +24,7 @@ import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import {
   IconRow,
   LeftIconGroup,
+  RightIconGroup,
 } from "@web/views/Calendar/components/Sidebar/styled";
 
 const getGoogleStatusIcon = ({
@@ -112,19 +113,6 @@ export const SidebarIconRow = () => {
     <IconRow>
       <LeftIconGroup>
         <TooltipWrapper
-          description="Open command palette"
-          shortcut={getCommandPaletteShortcut()}
-          onClick={toggleCmdPalette}
-        >
-          <CommandIcon
-            color={
-              isCmdPaletteOpen
-                ? theme.color.text.darkPlaceholder
-                : theme.color.text.light
-            }
-          />
-        </TooltipWrapper>
-        <TooltipWrapper
           description="Open tasks"
           shortcut="SHIFT + 1"
           onClick={() => dispatch(viewSlice.actions.updateSidebarTab("tasks"))}
@@ -152,6 +140,21 @@ export const SidebarIconRow = () => {
             }
           />
         </TooltipWrapper>
+      </LeftIconGroup>
+      <RightIconGroup>
+        <TooltipWrapper
+          description="Open command palette"
+          shortcut={getCommandPaletteShortcut()}
+          onClick={toggleCmdPalette}
+        >
+          <CommandIcon
+            color={
+              isCmdPaletteOpen
+                ? theme.color.text.light
+                : theme.color.text.darkPlaceholder
+            }
+          />
+        </TooltipWrapper>
         <TooltipWrapper
           description={sidebarStatus.tooltip}
           disabled={sidebarStatus.isDisabled}
@@ -172,7 +175,7 @@ export const SidebarIconRow = () => {
             <RefreshIcon color={theme.color.text.accent} />
           </TooltipWrapper>
         ) : undefined}
-      </LeftIconGroup>
+      </RightIconGroup>
     </IconRow>
   );
 };
