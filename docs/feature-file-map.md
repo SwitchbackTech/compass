@@ -48,6 +48,10 @@ Use this document to find the first files to inspect for common Compass changes.
 - Day view hooks: `packages/web/src/views/Day/hooks`
 - Week/calendar view: `packages/web/src/views/Calendar`
 - Now view: `packages/web/src/views/Now`
+- Dedication dialog implementation (native `dialog` + hotkeys): `packages/web/src/views/Calendar/components/Dedication/Dedication.tsx`
+- Dedication dialog mount points:
+  - week view: `packages/web/src/views/Calendar/Calendar.tsx`
+  - day view: `packages/web/src/views/Day/view/DayViewContent.tsx`
 
 ## Calendar Sidebar
 

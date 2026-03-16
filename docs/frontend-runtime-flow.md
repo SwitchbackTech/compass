@@ -160,6 +160,32 @@ Icon state constraints:
 - tab icons and command icon use `theme.color.text.light` when active and `theme.color.text.darkPlaceholder` when inactive
 - Google status icon tooltips and disabled/clickable behavior come from `useConnectGoogle` and should not be hardcoded in the row component
 
+## Dedication Dialog Runtime
+
+Files:
+
+- `packages/web/src/views/Calendar/components/Dedication/Dedication.tsx`
+- `packages/web/src/views/Calendar/Calendar.tsx`
+- `packages/web/src/views/Day/view/DayViewContent.tsx`
+
+Runtime behavior:
+
+- the dialog is mounted in both day and week roots, so the same dedication UI is reachable in both views
+- `ctrl+shift+0` toggles the dialog
+- `escape` closes the dialog only when it is open
+- the component uses native `HTMLDialogElement` APIs (`showModal`, `close`) instead of `react-modal`
+
+Transition/close contract:
+
+- opening calls `showModal()` first, then sets `isVisible` in `requestAnimationFrame` so CSS transitions can animate from hidden -> visible
+- closing sets `isVisible` to `false` and waits for `onTransitionEnd` before calling `dialog.close()`
+- `onCancel` calls `preventDefault()` and routes through the same close path so Escape/cancel actions do not skip exit animations
+
+Pitfalls:
+
+- do not call `dialog.close()` directly in new close handlers unless you intentionally want to bypass the fade/scale exit animation
+- keep imports pointed at `.../Dedication/Dedication` (no barrel file in this folder)
+
 ## State Systems
 
 The web app uses multiple state layers:
