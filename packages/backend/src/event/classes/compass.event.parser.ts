@@ -26,12 +26,12 @@ type CompassTransitionKey =
   `${Categories_Recurrence | "NIL"}->>${TransitionCategoriesRecurrence}`;
 
 export type CompassMutation =
-  | "create"
-  | "update"
-  | "delete"
-  | "update_series"
-  | "recreate_series"
-  | "truncate_series";
+  | "CREATE"
+  | "UPDATE"
+  | "DELETE"
+  | "UPDATE_SERIES"
+  | "RECREATE_SERIES"
+  | "TRUNCATE_SERIES";
 
 export type GoogleEffectPlan =
   | { type: "none" }
@@ -212,7 +212,7 @@ function buildCreatePlan(
 
   return createPlan(context, {
     provider,
-    compassMutation: "create",
+    compassMutation: "CREATE",
     googleEffect,
     operation: `${context.eventCategory}_CREATED`,
     event,
@@ -226,7 +226,7 @@ function buildUpdatePlan(
 ): CompassOperationPlan {
   return createPlan(context, {
     provider: getProvider(context.event),
-    compassMutation: "update",
+    compassMutation: "UPDATE",
     googleEffect: context.event.isSomeday
       ? ({ type: "none" } as const)
       : ({ type: "update" } as const),
@@ -242,7 +242,7 @@ function buildDeletePlan(
 ): CompassOperationPlan {
   return createPlan(context, {
     provider: getProvider(context.event),
-    compassMutation: "delete",
+    compassMutation: "DELETE",
     googleEffect: context.event.isSomeday
       ? ({ type: "none" } as const)
       : ({
@@ -266,7 +266,7 @@ function buildStandaloneToSomedayPlan(
 
   return createPlan(context, {
     provider: CalendarProvider.COMPASS,
-    compassMutation: "create",
+    compassMutation: "CREATE",
     googleEffect: {
       type: "delete",
       deleteEventId: getGoogleDeleteEventId(context),
@@ -288,7 +288,7 @@ function buildSeriesToSomedayPlan(
 
   return createPlan(context, {
     provider: CalendarProvider.COMPASS,
-    compassMutation: "recreate_series",
+    compassMutation: "RECREATE_SERIES",
     googleEffect: {
       type: "delete",
       deleteEventId: getGoogleDeleteEventId(context),
@@ -317,7 +317,7 @@ function buildSeriesToStandalonePlan(
 ): CompassOperationPlan {
   return createPlan(context, {
     provider: getProvider(context.event),
-    compassMutation: "update",
+    compassMutation: "UPDATE",
     googleEffect: context.event.isSomeday
       ? ({ type: "none" } as const)
       : ({ type: "update" } as const),
@@ -342,7 +342,7 @@ function buildStandaloneToSeriesPlan(
 ): CompassOperationPlan {
   return createPlan(context, {
     provider: getProvider(context.event),
-    compassMutation: "create",
+    compassMutation: "CREATE",
     googleEffect: context.event.isSomeday
       ? ({ type: "none" } as const)
       : ({ type: "update" } as const),
@@ -366,7 +366,7 @@ function buildUpdateSeriesPlan(
   if (isUntilOnlyChange) {
     return createPlan(context, {
       provider,
-      compassMutation: "truncate_series",
+      compassMutation: "TRUNCATE_SERIES",
       googleEffect: context.event.isSomeday
         ? ({ type: "none" } as const)
         : ({ type: "update" } as const),
@@ -391,7 +391,7 @@ function buildUpdateSeriesPlan(
   if (isSeriesSplit) {
     return createPlan(context, {
       provider,
-      compassMutation: "recreate_series",
+      compassMutation: "RECREATE_SERIES",
       googleEffect: context.event.isSomeday
         ? ({ type: "none" } as const)
         : ({ type: "update" } as const),
@@ -416,7 +416,7 @@ function buildUpdateSeriesPlan(
 
   return createPlan(context, {
     provider,
-    compassMutation: "update_series",
+    compassMutation: "UPDATE_SERIES",
     googleEffect: context.event.isSomeday
       ? ({ type: "none" } as const)
       : ({ type: "update" } as const),
@@ -432,7 +432,7 @@ function buildCancelSeriesPlan(
 ): CompassOperationPlan {
   return createPlan(context, {
     provider: getProvider(context.event),
-    compassMutation: "delete",
+    compassMutation: "DELETE",
     googleEffect: context.event.isSomeday
       ? ({ type: "none" } as const)
       : ({

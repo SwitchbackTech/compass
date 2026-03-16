@@ -53,7 +53,7 @@ describe("compass.event.parser", () => {
 
     const plan = analyzeCompassTransition(event, null);
 
-    expect(plan.compassMutation).toBe("create");
+    expect(plan.compassMutation).toBe("CREATE");
     expect(plan.operation).toBe("STANDALONE_SOMEDAY_CREATED");
     expect(plan.googleEffect).toEqual({ type: "none" });
     expect(plan.steps).toEqual([
@@ -97,7 +97,7 @@ describe("compass.event.parser", () => {
 
     const plan = analyzeCompassTransition(event, toDbEvent(dbPayload));
 
-    expect(plan.compassMutation).toBe("truncate_series");
+    expect(plan.compassMutation).toBe("TRUNCATE_SERIES");
     expect(plan.steps.map(({ type }) => type)).toEqual([
       "delete_instances_after_until",
       "update_series",
@@ -123,7 +123,7 @@ describe("compass.event.parser", () => {
 
     const plan = analyzeCompassTransition(event, toDbEvent(dbPayload));
 
-    expect(plan.compassMutation).toBe("recreate_series");
+    expect(plan.compassMutation).toBe("RECREATE_SERIES");
     expect(plan.steps.map(({ type }) => type)).toEqual([
       "delete_series",
       "create",

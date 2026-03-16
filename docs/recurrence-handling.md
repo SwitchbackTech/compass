@@ -67,18 +67,18 @@ Primary file:
 
 The recurrence planner distinguishes several Compass mutation shapes:
 
-- `create`: create a standalone event or a new series
-- `update`: update one stored event
-- `delete`: delete one stored event or one full series
-- `update_series`: update base/instance shared fields without rebuilding the series
-- `truncate_series`: delete instances after a new `UNTIL` date, then update the base series
-- `recreate_series`: delete generated instances, then recreate the series from the new rule
+- `CREATE`: create a standalone event or a new series
+- `UPDATE`: update one stored event
+- `DELETE`: delete one stored event or one full series
+- `UPDATE_SERIES`: update base/instance shared fields without rebuilding the series
+- `TRUNCATE_SERIES`: delete instances after a new `UNTIL` date, then update the base series
+- `RECREATE_SERIES`: delete generated instances, then recreate the series from the new rule
 
 Current split rule:
 
-- if only the RRULE `UNTIL` changed, use `truncate_series`
-- if other recurrence options changed, use `recreate_series`
-- if no recurrence split is needed, use `update_series`
+- if only the RRULE `UNTIL` changed, use `TRUNCATE_SERIES`
+- if other recurrence options changed, use `RECREATE_SERIES`
+- if no recurrence split is needed, use `UPDATE_SERIES`
 
 This keeps the recurrence interpretation in the planner and the DB mutations in the executor.
 

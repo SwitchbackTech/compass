@@ -155,7 +155,7 @@ describe("CompassSyncProcessor.handleCompassChange", () => {
       operation: "STANDALONE_CREATED",
       transitionKey: "NIL->>STANDALONE_CONFIRMED",
       provider: CalendarProvider.GOOGLE,
-      compassMutation: "create",
+      compassMutation: "CREATE",
       googleEffect: { type: "none" },
       event: payload as never,
       rrule: null,
