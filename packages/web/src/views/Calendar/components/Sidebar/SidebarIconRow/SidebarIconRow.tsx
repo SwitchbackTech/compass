@@ -1,8 +1,8 @@
 import {
-  CheckCircleIcon,
   CloudArrowUpIcon,
   CloudWarningIcon,
   LinkBreakIcon,
+  LinkIcon,
 } from "@phosphor-icons/react";
 import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { useVersionCheck } from "@web/common/hooks/useVersionCheck";
@@ -32,7 +32,7 @@ const getGoogleStatusIcon = ({
   icon:
     | "CloudArrowUpIcon"
     | "LinkBreakIcon"
-    | "CheckCircleIcon"
+    | "LinkIcon"
     | "SpinnerIcon"
     | "CloudWarningIcon";
 }) => {
@@ -45,11 +45,11 @@ const getGoogleStatusIcon = ({
           size={24}
         />
       );
-    case "CheckCircleIcon":
+    case "LinkIcon":
       return (
-        <CheckCircleIcon
+        <LinkIcon
           aria-label="Google Calendar connected"
-          color={theme.color.status.success}
+          color={theme.color.text.darkPlaceholder}
           size={24}
         />
       );

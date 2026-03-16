@@ -16,7 +16,7 @@ jest.mock("@web/store", () => ({
 }));
 
 describe("refreshUserMetadata", () => {
-  const api = UserApi as {
+  const api = UserApi as unknown as {
     getMetadata: jest.MockedFunction<typeof UserApi.getMetadata>;
   };
   const getDispatchMock = () =>
@@ -29,7 +29,7 @@ describe("refreshUserMetadata", () => {
   it("loads metadata into the store", async () => {
     const metadata = {
       google: {
-        connectionStatus: "connected" as const,
+        connectionStatus: "CONNECTED" as const,
         syncStatus: "HEALTHY" as const,
       },
     };

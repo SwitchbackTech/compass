@@ -84,7 +84,7 @@ describe("useConnectGoogle", () => {
     mockUseAppSelector.mockImplementation((selector) => {
       if (selector === selectGoogleMetadata) {
         return {
-          connectionStatus: "not_connected",
+          connectionStatus: "NOT_CONNECTED",
           syncStatus: "NONE",
         };
       }
@@ -118,7 +118,7 @@ describe("useConnectGoogle", () => {
     mockUseAppSelector.mockImplementation((selector) => {
       if (selector === selectGoogleMetadata) {
         return {
-          connectionStatus: "connected",
+          connectionStatus: "CONNECTED",
           syncStatus: "HEALTHY",
         };
       }
@@ -145,7 +145,7 @@ describe("useConnectGoogle", () => {
     );
     expect(result.current.commandAction.isDisabled).toBe(true);
     expect(result.current.commandAction.onSelect).toBeUndefined();
-    expect(result.current.sidebarStatus.icon).toBe("CheckCircleIcon");
+    expect(result.current.sidebarStatus.icon).toBe("LinkIcon");
     expect(result.current.sidebarStatus.isDisabled).toBe(true);
   });
 
@@ -153,7 +153,7 @@ describe("useConnectGoogle", () => {
     mockUseAppSelector.mockImplementation((selector) => {
       if (selector === selectGoogleMetadata) {
         return {
-          connectionStatus: "reconnect_required",
+          connectionStatus: "RECONNECT_REQUIRED",
           syncStatus: "NONE",
         };
       }
@@ -191,7 +191,7 @@ describe("useConnectGoogle", () => {
     mockUseAppSelector.mockImplementation((selector) => {
       if (selector === selectGoogleMetadata) {
         return {
-          connectionStatus: "connected",
+          connectionStatus: "CONNECTED",
           syncStatus: "REPAIRING",
         };
       }
@@ -224,7 +224,7 @@ describe("useConnectGoogle", () => {
     mockUseAppSelector.mockImplementation((selector) => {
       if (selector === selectGoogleMetadata) {
         return {
-          connectionStatus: "connected",
+          connectionStatus: "CONNECTED",
           syncStatus: "ATTENTION",
         };
       }
@@ -280,7 +280,7 @@ describe("useConnectGoogle", () => {
     mockUseAppSelector.mockImplementation((selector) => {
       if (selector === selectGoogleMetadata) {
         return {
-          connectionStatus: "not_connected",
+          connectionStatus: "NOT_CONNECTED",
           syncStatus: "NONE",
         };
       }
@@ -312,7 +312,7 @@ describe("useConnectGoogle", () => {
     mockUseAppSelector.mockImplementation((selector) => {
       if (selector === selectGoogleMetadata) {
         return {
-          connectionStatus: "reconnect_required",
+          connectionStatus: "RECONNECT_REQUIRED",
           syncStatus: "NONE",
         };
       }

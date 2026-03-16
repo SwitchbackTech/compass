@@ -223,7 +223,7 @@ describe("useGcalSync", () => {
 
       metadataHandler?.({
         sync: { importGCal: "RESTART" },
-        google: { connectionStatus: "connected" },
+        google: { connectionStatus: "CONNECTED" },
       });
 
       expect(mockDispatch).toHaveBeenCalledWith(
@@ -243,7 +243,7 @@ describe("useGcalSync", () => {
 
       metadataHandler?.({
         sync: { importGCal: "RESTART" },
-        google: { connectionStatus: "reconnect_required" },
+        google: { connectionStatus: "RECONNECT_REQUIRED" },
       });
 
       expect(importGCalSlice.actions.request).not.toHaveBeenCalled();
@@ -261,7 +261,7 @@ describe("useGcalSync", () => {
 
       metadataHandler?.({
         sync: { importGCal: "ERRORED" },
-        google: { connectionStatus: "connected", syncStatus: "ATTENTION" },
+        google: { connectionStatus: "CONNECTED", syncStatus: "ATTENTION" },
       });
 
       expect(importGCalSlice.actions.request).not.toHaveBeenCalled();

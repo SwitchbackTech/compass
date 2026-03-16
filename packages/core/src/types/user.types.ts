@@ -18,9 +18,9 @@ export interface Schema_User {
 
 type SyncStatus = "IMPORTING" | "ERRORED" | "COMPLETED" | "RESTART" | null;
 export type GoogleConnectionStatus =
-  | "not_connected"
-  | "connected"
-  | "reconnect_required";
+  | "NOT_CONNECTED"
+  | "CONNECTED"
+  | "RECONNECT_REQUIRED";
 export type GoogleSyncStatus = "HEALTHY" | "REPAIRING" | "ATTENTION" | "NONE";
 
 export interface UserMetadata extends SupertokensUserMetadata.JSONObject {

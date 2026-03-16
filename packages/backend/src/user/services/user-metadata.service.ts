@@ -48,10 +48,10 @@ class UserMetadataService {
     const googleId = user?.google?.googleId;
     const hasRefreshToken = Boolean(user?.google?.gRefreshToken);
 
-    if (!googleId) return "not_connected";
-    if (!hasRefreshToken) return "reconnect_required";
+    if (!googleId) return "NOT_CONNECTED";
+    if (!hasRefreshToken) return "RECONNECT_REQUIRED";
 
-    return "connected";
+    return "CONNECTED";
   }
 
   private async isGoogleSyncHealthy(userId: string): Promise<boolean> {
@@ -105,7 +105,7 @@ class UserMetadataService {
     const hasRefreshToken = Boolean(user?.google?.gRefreshToken);
     const connectionStatus = this.getGoogleConnectionStatus(user);
 
-    if (connectionStatus !== "connected") {
+    if (connectionStatus !== "CONNECTED") {
       return {
         hasRefreshToken,
         connectionStatus,
