@@ -49,6 +49,14 @@ Use this document to find the first files to inspect for common Compass changes.
 - Week/calendar view: `packages/web/src/views/Calendar`
 - Now view: `packages/web/src/views/Now`
 
+## Calendar Sidebar
+
+- Sidebar shell and tab rendering: `packages/web/src/views/Calendar/components/Sidebar/Sidebar.tsx`
+- Footer icon row actions (tasks/month, command palette, sync/update): `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
+- Sidebar layout constants and icon group styling: `packages/web/src/views/Calendar/components/Sidebar/styled.ts`
+- Google connection/status UI contract for sidebar + command palette: `packages/web/src/auth/hooks/oauth/useConnectGoogle.ts`
+- Sidebar icon row behavior tests: `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.test.tsx`
+
 ## Offline Storage
 
 - Adapter singleton and readiness: `packages/web/src/common/storage/adapter/adapter.ts`
