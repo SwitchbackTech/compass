@@ -21,7 +21,7 @@ export function useAuthFeatureFlag(): boolean {
     }
   }
 
-  if (getLastKnownEmail() === "foo@bar.com") {
+  if (getLastKnownEmail() !== undefined) {
     return true;
   }
 

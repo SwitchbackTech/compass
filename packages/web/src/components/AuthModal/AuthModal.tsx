@@ -169,6 +169,10 @@ export const AuthModal: FC = () => {
         if (response.status === "PASSWORD_RESET_NOT_ALLOWED") {
           throw new Error(response.reason);
         }
+      } catch (error) {
+        setSubmitError(
+          error instanceof Error ? error.message : "Unable to send reset email",
+        );
       } finally {
         setIsSubmitting(false);
       }

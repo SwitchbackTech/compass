@@ -103,7 +103,7 @@ export const initSupertokens = () => {
 
           return {
             shouldAutomaticallyLink: true,
-            shouldRequireVerification: false,
+            shouldRequireVerification: true,
           };
         },
       }),
