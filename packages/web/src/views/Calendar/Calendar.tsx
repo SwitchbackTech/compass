@@ -2,7 +2,7 @@ import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuW
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { type RootProps } from "@web/views/Calendar/calendarView.types";
-import { Dedication } from "@web/views/Calendar/components/Dedication";
+import { Dedication } from "@web/views/Calendar/components/Dedication/Dedication";
 import { Draft } from "@web/views/Calendar/components/Draft/Draft";
 import { DraftProvider } from "@web/views/Calendar/components/Draft/context/DraftProvider";
 import { SidebarDraftProvider } from "@web/views/Calendar/components/Draft/sidebar/context/SidebarDraftProvider";
