@@ -47,11 +47,11 @@
     "@babel/preset-react": "^7.16.7",
     "@babel/preset-typescript": "^7.16.0",
     "@eslint/compat": "^1.2.6",
-    "@types/node": "^22.13.10",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.20.0",
     "@playwright/test": "^1.56.0",
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
+    "@types/node": "^22.13.10",
     "@types/node-fetch": "^2.6.13",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
@@ -78,11 +78,12 @@
     "glob": "^13.0.6",
     "rimraf": "^6.0.0"
   },
-  "workspaces": {
-    "packages": [
-      "packages/*"
-    ],
-    "nohoist": []
+  "overrides": {
+    "glob": "^13.0.6",
+    "rimraf": "^6.0.0"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  "workspaces": [
+    "packages/*"
+  ],
+  "packageManager": "yarn@4.9.1"
 }
