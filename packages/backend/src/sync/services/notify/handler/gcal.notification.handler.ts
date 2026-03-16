@@ -50,7 +50,6 @@ export class GCalNotificationHandler {
 
     const nextSyncToken = response.data.nextSyncToken;
 
-    console.log("LATEST CHANGES (from gcal):");
     console.log(JSON.stringify(response.data, null, 2));
 
     // If the nextSyncToken matches our current syncToken, we've already processed these changes

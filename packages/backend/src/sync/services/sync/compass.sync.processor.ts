@@ -47,9 +47,6 @@ export class CompassSyncProcessor {
         ),
       ).then((events) => events.flat());
 
-      console.log("LATEST CHANGES (from Compass):");
-      console.log(JSON.stringify(compassEvents, null, 2));
-
       for (const event of compassEvents) {
         const changes = await CompassSyncProcessor.handleCompassChange(
           event,
