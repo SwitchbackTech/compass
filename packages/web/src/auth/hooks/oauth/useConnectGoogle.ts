@@ -29,7 +29,7 @@ type GoogleUiState =
 type SidebarStatusIcon =
   | "CloudArrowUpIcon"
   | "LinkBreakIcon"
-  | "CheckCircleIcon"
+  | "LinkIcon"
   | "SpinnerIcon"
   | "CloudWarningIcon";
 
@@ -176,7 +176,7 @@ const getGoogleUiConfig = (
           isDisabled: true,
         },
         sidebarStatus: {
-          icon: "CheckCircleIcon",
+          icon: "LinkIcon",
           tooltip: "Google Calendar connected.",
           isDisabled: true,
         },
