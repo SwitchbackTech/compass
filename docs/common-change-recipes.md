@@ -58,6 +58,24 @@ Do not edit recurring behavior from one layer only.
 2. Inspect supporting UI in `packages/web/src/views/Day/components/TaskList`.
 3. If persistence changed, update storage adapter code and tests.
 
+## Change A Shared Hotkey Dialog (Day + Week)
+
+Use this for overlays mounted in both `CalendarView` and `DayViewContent` (for example Dedication).
+
+1. Update the shared dialog component in `packages/web/src/views/Calendar/components/Dedication/Dedication.tsx`.
+2. Confirm both mount points still render it:
+   - `packages/web/src/views/Calendar/Calendar.tsx`
+   - `packages/web/src/views/Day/view/DayViewContent.tsx`
+3. Keep keyboard behavior aligned:
+   - toggle hotkey (`ctrl+shift+0`)
+   - close hotkey (`escape` when open)
+4. Preserve the transition lifecycle:
+   - open with `showModal()` then set visible state
+   - close by state first, then `dialog.close()` in `onTransitionEnd`
+   - keep `onCancel(e.preventDefault())` so Escape uses the animated close path
+
+Common pitfall: calling `dialog.close()` directly in an event handler will skip the CSS exit transition and can produce abrupt UI changes.
+
 ## Add A Migration Or Seeder
 
 For database migrations:
