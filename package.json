@@ -47,6 +47,7 @@
     "@babel/preset-react": "^7.16.7",
     "@babel/preset-typescript": "^7.16.0",
     "@eslint/compat": "^1.2.6",
+    "@types/node": "^22.13.10",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.20.0",
     "@playwright/test": "^1.56.0",
@@ -54,7 +55,6 @@
     "@types/node-fetch": "^2.6.13",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
-    "babel-loader": "^9.1.0",
     "baseline-browser-mapping": "^2.9.11",
     "concurrently": "^8.0.1",
     "cross-env": "^7.0.3",
@@ -73,6 +73,10 @@
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.1.6",
     "typescript-eslint": "^8.24.0"
+  },
+  "resolutions": {
+    "glob": "^13.0.6",
+    "rimraf": "^6.0.0"
   },
   "workspaces": {
     "packages": [
