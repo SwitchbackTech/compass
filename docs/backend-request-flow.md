@@ -95,7 +95,12 @@ For `POST /api/event`:
 4. controller normalizes single vs array payloads
 5. controller forwards the change set to `CompassSyncProcessor`
 6. controller returns a status-only payload (`{ statusCode: 204 }`) through `res.promise(...)`
-7. processor persists and syncs changes, then notifies clients
+7. processor:
+   - loads current Compass DB state
+   - analyzes the transition into a persistence plan
+   - applies Compass DB mutations
+   - executes any Google side effect
+   - notifies clients after commit
 
 `PUT /api/event/:id` and `DELETE /api/event/:id` follow the same write pattern:
 

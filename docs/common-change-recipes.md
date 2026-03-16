@@ -24,10 +24,13 @@ Rule: never treat event shape as web-only unless the field is strictly presentat
 ## Change Recurring Event Behavior
 
 1. Read `packages/core/src/types/event.types.ts`.
-2. Read `packages/backend/src/sync/services/sync/compass.sync.processor.ts`.
-3. Read `packages/backend/src/event/classes/compass.event.parser.ts`.
-4. Update the relevant transition path.
-5. Add focused tests for the exact recurrence transition you changed.
+2. Read `docs/recurrence-handling.md`.
+3. Read `packages/backend/src/event/classes/compass.event.generator.ts`.
+4. Read `packages/backend/src/event/classes/compass.event.parser.ts`.
+5. Read `packages/backend/src/event/classes/compass.event.executor.ts`.
+6. Read `packages/backend/src/sync/services/sync/compass.sync.processor.ts`.
+7. Update the planner, executor, or scope-expansion path that actually owns the behavior.
+8. Add focused tests for the exact recurrence transition you changed.
 
 Do not edit recurring behavior from one layer only.
 
