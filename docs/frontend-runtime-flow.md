@@ -209,6 +209,25 @@ Runtime nuances:
 - `USER_METADATA` is used to reconcile post-auth import UI state (importing/completed/errored).
 - On connect, backend may proactively emit `GOOGLE_REVOKED`; the client clears Google-origin events and falls back to local event storage until reconnect.
 
+## Google Connection UI Contract
+
+Files:
+
+- `packages/web/src/auth/hooks/oauth/useConnectGoogle.ts`
+- `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
+
+UI state is derived from metadata plus import progress:
+
+- `NOT_CONNECTED` → connect action (`CloudArrowUpIcon`)
+- `RECONNECT_REQUIRED` → reconnect action (`LinkBreakIcon`)
+- `CONNECTED` + `HEALTHY` → disabled connected status (`LinkIcon`)
+- `CONNECTED` + `REPAIRING` (or active import) → disabled syncing status (`SpinnerIcon`)
+- `CONNECTED` + `ATTENTION` → repair action (`CloudWarningIcon`)
+
+Important constraint:
+
+- `connectionStatus` values are uppercase string literals shared with backend/core (`NOT_CONNECTED`, `CONNECTED`, `RECONNECT_REQUIRED`); lowercase variants will not match UI state guards.
+
 ## What To Read Before Editing
 
 - Auth/session issue: read session provider, user provider, router loaders.

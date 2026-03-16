@@ -131,7 +131,7 @@ Revocation and reconnect are handled across auth, sync, websocket, and repositor
    - Refresh token presence (`user.google.gRefreshToken`)
    - Sync health (`canDoIncrementalSync`)
 6. If user exists but refresh token is missing or sync is unhealthy → `RECONNECT_REPAIR` path via `repairGoogleConnection()`.
-7. Reconnect updates Google credentials, marks metadata sync flags as `"restart"`, and restarts sync in background.
+7. Reconnect updates Google credentials, marks metadata sync flags as `"RESTART"`, and restarts sync in background.
 
 ### Auth Mode Classification
 
@@ -156,7 +156,7 @@ Primary files:
 
 ## User Metadata Shape Used By Socket And UI
 
-`UserMetadata` now includes Google connection state alongside sync state:
+`UserMetadata` includes Google connection state alongside sync state:
 
 ```ts
 {
@@ -166,14 +166,42 @@ Primary files:
   };
   google?: {
     hasRefreshToken?: boolean;
+    connectionStatus?: "NOT_CONNECTED" | "CONNECTED" | "RECONNECT_REQUIRED";
+    syncStatus?: "HEALTHY" | "REPAIRING" | "ATTENTION" | "NONE";
   };
 }
 ```
 
-`hasRefreshToken` is enriched server-side during metadata fetch and is available through:
+Google metadata fields are enriched server-side during metadata fetch and are available through:
 
 - `GET /api/user/metadata`
 - websocket `USER_METADATA` responses to `FETCH_USER_METADATA`
+
+### Google Metadata Status Semantics
+
+Source files:
+
+- `packages/backend/src/user/services/user-metadata.service.ts`
+- `packages/core/src/types/user.types.ts`
+- `packages/web/src/socket/hooks/useGcalSync.ts`
+
+Connection status values are uppercase string literals shared across backend and web:
+
+- `NOT_CONNECTED`: no linked Google account
+- `RECONNECT_REQUIRED`: Google account linked but refresh token missing
+- `CONNECTED`: linked Google account with refresh token
+
+Sync status values describe the health of Google synchronization:
+
+- `NONE`: no active Google sync state yet (typically not connected/reconnect required)
+- `REPAIRING`: import or repair is currently running
+- `HEALTHY`: sync watches/tokens are healthy
+- `ATTENTION`: connected, but sync needs repair
+
+Auto-import guardrail in realtime flow:
+
+- client auto-starts import only when `sync.importGCal === "RESTART"` **and** `google.connectionStatus === "CONNECTED"`
+- if connection status casing drifts (for example lowercase values), this guard does not match and auto-import will not trigger
 
 ## Import Flow
 
