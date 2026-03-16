@@ -201,7 +201,10 @@ export const useConnectGoogle = () => {
   );
   const connectionStatus = googleMetadata?.connectionStatus ?? "NOT_CONNECTED";
   const syncStatus = googleMetadata?.syncStatus ?? "NONE";
-  const { login } = useGoogleAuth();
+  const { login } = useGoogleAuth({
+    shouldTryLinkingWithSessionUser: true,
+    prompt: "consent",
+  });
 
   const onOpenGoogleAuth = useCallback(() => {
     void login();

@@ -6,6 +6,42 @@ import {
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { clearGoogleRevokedState } from "../google/google.auth.state";
 
+function normalizeStoredAuthState(parsed: unknown): AuthState {
+  if (typeof parsed !== "object" || parsed === null) {
+    return DEFAULT_AUTH_STATE;
+  }
+
+  const legacyState = parsed as {
+    isGoogleAuthenticated?: unknown;
+    hasAuthenticated?: unknown;
+    lastKnownEmail?: unknown;
+  };
+
+  if ("isGoogleAuthenticated" in legacyState) {
+    const migratedResult = AuthStateSchema.safeParse({
+      hasAuthenticated:
+        typeof legacyState.hasAuthenticated === "boolean"
+          ? legacyState.hasAuthenticated
+          : legacyState.isGoogleAuthenticated,
+      lastKnownEmail: legacyState.lastKnownEmail,
+    });
+
+    return migratedResult.success ? migratedResult.data : DEFAULT_AUTH_STATE;
+  }
+
+  const result = AuthStateSchema.safeParse(parsed);
+  if (result.success) {
+    return result.data;
+  }
+
+  const migratedResult = AuthStateSchema.safeParse({
+    hasAuthenticated: legacyState.hasAuthenticated,
+    lastKnownEmail: legacyState.lastKnownEmail,
+  });
+
+  return migratedResult.success ? migratedResult.data : DEFAULT_AUTH_STATE;
+}
+
 /**
  * Get the current authentication state from localStorage.
  * Returns default state if not found or invalid.
@@ -17,10 +53,7 @@ export function getAuthState(): AuthState {
     const stored = localStorage.getItem(STORAGE_KEYS.AUTH);
     if (stored) {
       const parsed = JSON.parse(stored);
-      const result = AuthStateSchema.safeParse(parsed);
-      if (result.success) {
-        return result.data;
-      }
+      return normalizeStoredAuthState(parsed);
     }
 
     return DEFAULT_AUTH_STATE;
@@ -59,11 +92,14 @@ export function updateAuthState(updates: Partial<AuthState>): void {
  * This prevents the UX issue where events disappear after login due to cleared IndexedDB.
  * Also clears any revoked state since user is re-authenticating.
  */
-export function markUserAsAuthenticated(): void {
+export function markUserAsAuthenticated(lastKnownEmail?: string): void {
   if (typeof window === "undefined") return;
 
   try {
-    updateAuthState({ isGoogleAuthenticated: true });
+    updateAuthState({
+      hasAuthenticated: true,
+      ...(lastKnownEmail ? { lastKnownEmail } : {}),
+    });
     clearGoogleRevokedState();
   } catch {
     // Silently fail if localStorage is unavailable
@@ -78,9 +114,17 @@ export function markUserAsAuthenticated(): void {
  */
 export function hasUserEverAuthenticated(): boolean {
   try {
-    return getAuthState().isGoogleAuthenticated;
+    return getAuthState().hasAuthenticated;
   } catch {
     return false;
+  }
+}
+
+export function getLastKnownEmail(): string | undefined {
+  try {
+    return getAuthState().lastKnownEmail;
+  } catch {
+    return undefined;
   }
 }
 

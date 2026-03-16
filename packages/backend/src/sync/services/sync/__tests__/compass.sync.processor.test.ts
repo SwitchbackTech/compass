@@ -15,6 +15,7 @@ import {
   createMockBaseEvent,
   createMockStandaloneEvent,
 } from "@core/util/test/ccal.event.factory";
+import { missingRefreshTokenError } from "@backend/__tests__/mocks.gcal/errors/error.missingRefreshToken";
 import mongoService from "@backend/common/services/mongo.service";
 import { type CompassApplyResult } from "@backend/event/classes/compass.event.executor";
 import * as compassExecutor from "@backend/event/classes/compass.event.executor";
@@ -247,5 +248,59 @@ describe("CompassSyncProcessor.handleCompassChange", () => {
       payload.user!,
       "persisted-google-id",
     );
+  });
+
+  it("keeps the Compass mutation when Google sync fails due to no refresh token", async () => {
+    const payload = createMockStandaloneEvent();
+    const event = {
+      payload,
+      status: CompassEventStatus.CONFIRMED,
+      applyTo: RecurringEventUpdateScope.THIS_EVENT,
+    } as CompassEvent;
+
+    jest
+      .spyOn(mongoService, "event", "get")
+      .mockReturnValue({
+        findOne: jest.fn().mockResolvedValueOnce(null),
+      } as never);
+    jest.spyOn(compassParser, "analyzeCompassTransition").mockReturnValueOnce({
+      summary: {
+        title: payload.title!,
+        transition: [null, "STANDALONE_CONFIRMED"],
+        category: Categories_Recurrence.STANDALONE,
+      },
+      operation: "STANDALONE_CREATED",
+      transitionKey: "NIL->>STANDALONE_CONFIRMED",
+      provider: CalendarProvider.GOOGLE,
+      compassMutation: "CREATE",
+      googleEffect: { type: "update" },
+      event: payload as never,
+      rrule: null,
+      steps: [],
+    } as compassParser.CompassOperationPlan);
+    jest.spyOn(compassExecutor, "applyCompassPlan").mockResolvedValueOnce({
+      applied: true,
+      persistedEvent: payload,
+      summary: {
+        title: payload.title!,
+        transition: [null, "STANDALONE_CONFIRMED"],
+        category: Categories_Recurrence.STANDALONE,
+        operation: "STANDALONE_CREATED",
+      },
+    } as CompassApplyResult);
+    jest
+      .spyOn(eventService, "_updateGcal")
+      .mockRejectedValueOnce(missingRefreshTokenError);
+
+    await expect(
+      CompassSyncProcessor["handleCompassChange"](event),
+    ).resolves.toEqual([
+      {
+        title: payload.title!,
+        transition: [null, "STANDALONE_CONFIRMED"],
+        category: Categories_Recurrence.STANDALONE,
+        operation: "STANDALONE_CREATED",
+      },
+    ]);
   });
 });

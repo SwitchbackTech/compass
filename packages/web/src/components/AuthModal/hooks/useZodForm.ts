@@ -24,7 +24,7 @@ export interface UseZodFormConfig<TValues extends Record<string, string>> {
   /** Zod schema - output type must match TValues */
   schema: z.ZodType<TValues, z.ZodTypeDef, unknown>;
   initialValues: TValues;
-  onSubmit: (data: TValues) => void;
+  onSubmit: (data: TValues) => void | Promise<void>;
 }
 
 export interface UseZodFormReturn<TValues extends Record<string, string>> {
@@ -104,7 +104,7 @@ export function useZodForm<TValues extends Record<string, string>>({
   );
 
   const handleSubmit = useCallback(
-    (e: FormEvent) => {
+    async (e: FormEvent) => {
       e.preventDefault();
 
       const allTouched = Object.keys(initialValues).reduce(
@@ -115,7 +115,7 @@ export function useZodForm<TValues extends Record<string, string>>({
 
       const result = schema.safeParse(values);
       if (result.success) {
-        onSubmit(result.data);
+        await onSubmit(result.data);
       } else {
         setErrors(
           getFieldErrors(result.error) as Partial<

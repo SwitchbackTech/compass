@@ -9,7 +9,7 @@ import { useZodForm } from "../hooks/useZodForm";
 
 interface ForgotPasswordFormProps {
   /** Callback when form is submitted with valid data */
-  onSubmit: (data: ForgotPasswordFormData) => void;
+  onSubmit: (data: ForgotPasswordFormData) => void | Promise<void>;
   /** Callback when "Back to sign in" is clicked */
   onBackToSignIn: () => void;
   /** Whether form submission is in progress */
@@ -32,8 +32,8 @@ export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
   const form = useZodForm({
     schema: ForgotPasswordSchema,
     initialValues: { email: "" },
-    onSubmit: (data) => {
-      onSubmit(data);
+    onSubmit: async (data) => {
+      await onSubmit(data);
       setIsSubmitted(true);
     },
   });

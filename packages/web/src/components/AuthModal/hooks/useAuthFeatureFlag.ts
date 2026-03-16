@@ -1,4 +1,4 @@
-import { useSearchParams } from "react-router-dom";
+import { getLastKnownEmail } from "@web/auth/state/auth.state.util";
 
 /**
  * Feature flag hook for email/password authentication UI
@@ -13,6 +13,17 @@ import { useSearchParams } from "react-router-dom";
  * const isAuthEnabled = useAuthFeatureFlag();
  */
 export function useAuthFeatureFlag(): boolean {
-  const [searchParams] = useSearchParams();
-  return searchParams.has("auth");
+  if (typeof window !== "undefined") {
+    const searchParams = new URLSearchParams(window.location.search);
+
+    if (searchParams.has("auth")) {
+      return true;
+    }
+  }
+
+  if (getLastKnownEmail() === "foo@bar.com") {
+    return true;
+  }
+
+  return false;
 }

@@ -2,49 +2,49 @@ import { toast } from "react-toastify";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
 import { SessionExpiredToast } from "@web/common/utils/toast/session-expired.toast";
+import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 
-jest.mock("@web/auth/hooks/oauth/useGoogleAuth");
+jest.mock("@web/components/AuthModal/hooks/useAuthModal");
 
-const mockUseGoogleAuth = useGoogleAuth as jest.MockedFunction<
-  typeof useGoogleAuth
+const mockUseAuthModal = useAuthModal as jest.MockedFunction<
+  typeof useAuthModal
 >;
 
 describe("SessionExpiredToast", () => {
-  const mockLogin = jest.fn();
+  const mockOpenModal = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseGoogleAuth.mockReturnValue({
-      login: mockLogin,
-      data: null,
-      loading: false,
+    mockUseAuthModal.mockReturnValue({
+      isOpen: false,
+      currentView: "login",
+      openModal: mockOpenModal,
+      closeModal: jest.fn(),
+      setView: jest.fn(),
     });
   });
 
-  it("renders session-expired message and reconnect button", () => {
+  it("renders session-expired message and sign-in button", () => {
     render(<SessionExpiredToast toastId="session-expired-api" />);
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith();
+    expect(mockUseAuthModal).toHaveBeenCalledWith();
     expect(
-      screen.getByText("Google Calendar connection expired. Please reconnect."),
+      screen.getByText("Session expired. Please sign in again."),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /reconnect google calendar/i }),
+      screen.getByRole("button", { name: /sign in/i }),
     ).toBeInTheDocument();
   });
 
-  it("triggers reconnect and dismisses toast when button is clicked", async () => {
+  it("opens the auth modal and dismisses toast when button is clicked", async () => {
     const user = userEvent.setup();
 
     render(<SessionExpiredToast toastId="session-expired-api" />);
 
-    await user.click(
-      screen.getByRole("button", { name: /reconnect google calendar/i }),
-    );
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
 
-    expect(mockLogin).toHaveBeenCalledTimes(1);
+    expect(mockOpenModal).toHaveBeenCalledWith("login");
     expect(toast.dismiss).toHaveBeenCalledWith("session-expired-api");
   });
 });

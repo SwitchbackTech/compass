@@ -8,6 +8,7 @@ import {
 import {
   clearAuthenticationState,
   getAuthState,
+  getLastKnownEmail,
   hasUserEverAuthenticated,
   markUserAsAuthenticated,
   updateAuthState,
@@ -34,11 +35,20 @@ describe("auth-state.util", () => {
     });
 
     it("should return stored state from localStorage", () => {
-      const testState = { isGoogleAuthenticated: true };
+      const testState = { hasAuthenticated: true };
       localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(testState));
 
       const state = getAuthState();
       expect(state).toEqual(testState);
+    });
+
+    it("should migrate legacy stored state from isGoogleAuthenticated", () => {
+      localStorage.setItem(
+        STORAGE_KEYS.AUTH,
+        JSON.stringify({ isGoogleAuthenticated: true }),
+      );
+
+      expect(getAuthState()).toEqual({ hasAuthenticated: true });
     });
 
     it("should handle invalid JSON gracefully", () => {
@@ -59,20 +69,32 @@ describe("auth-state.util", () => {
 
   describe("updateAuthState", () => {
     it("should update authentication state in localStorage", () => {
-      updateAuthState({ isGoogleAuthenticated: true });
+      updateAuthState({ hasAuthenticated: true });
 
       const stored = localStorage.getItem(STORAGE_KEYS.AUTH);
       expect(stored).toBeTruthy();
       const parsed = JSON.parse(stored!);
-      expect(parsed.isGoogleAuthenticated).toBe(true);
+      expect(parsed.hasAuthenticated).toBe(true);
     });
 
     it("should merge partial updates into existing state", () => {
-      updateAuthState({ isGoogleAuthenticated: true });
-      updateAuthState({ isGoogleAuthenticated: false });
+      updateAuthState({ hasAuthenticated: true });
+      updateAuthState({ hasAuthenticated: false });
 
       const state = getAuthState();
-      expect(state.isGoogleAuthenticated).toBe(false);
+      expect(state.hasAuthenticated).toBe(false);
+    });
+
+    it("should store the last known email", () => {
+      updateAuthState({
+        hasAuthenticated: true,
+        lastKnownEmail: "foo@bar.com",
+      });
+
+      expect(getAuthState()).toEqual({
+        hasAuthenticated: true,
+        lastKnownEmail: "foo@bar.com",
+      });
     });
 
     it("should handle localStorage errors gracefully", () => {
@@ -83,9 +105,7 @@ describe("auth-state.util", () => {
         });
 
       // Should not throw
-      expect(() =>
-        updateAuthState({ isGoogleAuthenticated: true }),
-      ).not.toThrow();
+      expect(() => updateAuthState({ hasAuthenticated: true })).not.toThrow();
 
       setItemSpy.mockRestore();
     });
@@ -96,7 +116,13 @@ describe("auth-state.util", () => {
       markUserAsAuthenticated();
 
       const state = getAuthState();
-      expect(state.isGoogleAuthenticated).toBe(true);
+      expect(state.hasAuthenticated).toBe(true);
+    });
+
+    it("should persist the provided email", () => {
+      markUserAsAuthenticated("foo@bar.com");
+
+      expect(getLastKnownEmail()).toBe("foo@bar.com");
     });
 
     it("should handle localStorage errors gracefully", () => {
@@ -115,7 +141,7 @@ describe("auth-state.util", () => {
 
   describe("hasUserEverAuthenticated", () => {
     it("should return true when authentication flag is set", () => {
-      updateAuthState({ isGoogleAuthenticated: true });
+      updateAuthState({ hasAuthenticated: true });
 
       expect(hasUserEverAuthenticated()).toBe(true);
     });
@@ -125,7 +151,7 @@ describe("auth-state.util", () => {
     });
 
     it("should return false when authentication flag is set to false", () => {
-      updateAuthState({ isGoogleAuthenticated: false });
+      updateAuthState({ hasAuthenticated: false });
 
       expect(hasUserEverAuthenticated()).toBe(false);
     });
@@ -159,7 +185,7 @@ describe("auth-state.util", () => {
 
   describe("clearAuthenticationState", () => {
     it("should remove the authentication flag from localStorage", () => {
-      updateAuthState({ isGoogleAuthenticated: true });
+      updateAuthState({ hasAuthenticated: true });
 
       clearAuthenticationState();
 
@@ -201,7 +227,7 @@ describe("auth-state.util", () => {
 
       // Auth state in localStorage should be unchanged
       const state = getAuthState();
-      expect(state.isGoogleAuthenticated).toBe(true);
+      expect(state.hasAuthenticated).toBe(true);
       // Revoked state is in-memory only, not in localStorage
       expect(isGoogleRevoked()).toBe(true);
     });

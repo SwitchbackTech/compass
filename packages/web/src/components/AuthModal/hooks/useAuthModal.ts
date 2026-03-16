@@ -6,7 +6,7 @@ import {
   useState,
 } from "react";
 
-export type AuthView = "login" | "signUp" | "forgotPassword";
+export type AuthView = "login" | "signUp" | "forgotPassword" | "resetPassword";
 
 interface AuthModalContextValue {
   isOpen: boolean;

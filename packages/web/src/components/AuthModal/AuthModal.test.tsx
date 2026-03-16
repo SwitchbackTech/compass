@@ -1,6 +1,7 @@
 import { type ReactElement, type ReactNode } from "react";
 import { act } from "react";
 import { MemoryRouter } from "react-router-dom";
+import EmailPassword from "supertokens-web-js/recipe/emailpassword";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -26,6 +27,13 @@ jest.mock("@web/auth/hooks/oauth/useGoogleAuth", () => ({
     login: mockGoogleLogin,
   }),
 }));
+
+const mockCompleteAuthentication = jest.fn();
+jest.mock("@web/auth/hooks/useCompleteAuthentication", () => ({
+  useCompleteAuthentication: () => mockCompleteAuthentication,
+}));
+
+jest.mock("supertokens-web-js/recipe/emailpassword");
 
 // Mock GoogleButton - uses button with label for semantic queries (matches real component's aria-label)
 jest.mock("@web/components/oauth/google/GoogleButton", () => ({
@@ -81,10 +89,24 @@ const ModalTrigger = () => {
   return <button onClick={() => openModal("login")}>Open Modal</button>;
 };
 
+const mockEmailPassword = EmailPassword as jest.Mocked<typeof EmailPassword>;
+
 const renderWithProviders = (
   component: ReactElement,
   initialRoute: string = "/day",
 ) => {
+  const urlObj = new URL(initialRoute, "http://localhost");
+  Object.defineProperty(window, "location", {
+    value: {
+      pathname: urlObj.pathname,
+      search: urlObj.search,
+      hash: urlObj.hash,
+      href: urlObj.href,
+    },
+    writable: true,
+    configurable: true,
+  });
+
   return render(
     <MemoryRouter
       initialEntries={[initialRoute]}
@@ -114,6 +136,21 @@ describe("AuthModal", () => {
       authenticated: false,
       setAuthenticated: jest.fn(),
     });
+    mockEmailPassword.signUp.mockResolvedValue({
+      status: "OK",
+      user: { emails: ["test@example.com"] },
+    } as never);
+    mockEmailPassword.signIn.mockResolvedValue({
+      status: "OK",
+      user: { emails: ["test@example.com"] },
+    } as never);
+    mockEmailPassword.sendPasswordResetEmail.mockResolvedValue({
+      status: "OK",
+    } as never);
+    mockEmailPassword.getResetPasswordTokenFromURL.mockReturnValue("token");
+    mockEmailPassword.submitNewPassword.mockResolvedValue({
+      status: "OK",
+    } as never);
   });
 
   describe("Modal Open/Close", () => {
@@ -826,7 +863,7 @@ describe("AccountIcon", () => {
 
     renderWithProviders(<AccountIcon />, "/day?auth=signup");
 
-    expect(screen.getByText("Log in")).toBeInTheDocument();
+    expect(screen.getAllByText("Log in").length).toBeGreaterThan(0);
   });
 
   it("does not render when feature flag is disabled", () => {

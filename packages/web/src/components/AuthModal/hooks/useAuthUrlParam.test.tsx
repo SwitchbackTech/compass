@@ -57,6 +57,15 @@ describe("useAuthUrlParam", () => {
       expect(openModal).toHaveBeenCalledWith("forgotPassword");
       expect(openModal).toHaveBeenCalledTimes(1);
     });
+
+    it("opens resetPassword view for ?auth=reset", () => {
+      setWindowLocation("/?auth=reset&token=test-token");
+      const openModal = jest.fn();
+      renderHook(() => useAuthUrlParam(openModal));
+
+      expect(openModal).toHaveBeenCalledWith("resetPassword");
+      expect(openModal).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("case-insensitive handling", () => {
@@ -67,6 +76,8 @@ describe("useAuthUrlParam", () => {
       ["SignUp", "signUp"],
       ["FORGOT", "forgotPassword"],
       ["Forgot", "forgotPassword"],
+      ["RESET", "resetPassword"],
+      ["Reset", "resetPassword"],
     ] as const)("handles %s as %s", (param, expectedView) => {
       setWindowLocation(`/?auth=${param}`);
       const openModal = jest.fn();

@@ -1,4 +1,5 @@
 import { type Credentials, type TokenPayload } from "google-auth-library";
+import type { SessionContainerInterface } from "supertokens-node/recipe/session/types";
 import type { APIInterface } from "supertokens-node/recipe/thirdparty/types";
 import type { GoogleSignInSuccess } from "@backend/auth/services/google/google.auth.success.service";
 
@@ -12,6 +13,7 @@ type GoogleThirdPartySignInUpSuccess = ThirdPartySignInUpSuccess & {
   rawUserInfoFromProvider: { fromIdTokenPayload: TokenPayload };
   oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">;
   user: { id: string; loginMethods: unknown[] };
+  session?: SessionContainerInterface;
 };
 
 export type ThirdPartySignInUpInput = Parameters<ThirdPartySignInUpPost>[0];
@@ -28,7 +30,7 @@ export function createGoogleSignInSuccess(
     providerUser: response.rawUserInfoFromProvider.fromIdTokenPayload,
     oAuthTokens: response.oAuthTokens,
     createdNewRecipeUser: response.createdNewRecipeUser,
-    recipeUserId: response.user.id,
+    recipeUserId: response.session?.getUserId() ?? response.user.id,
     loginMethodsLength: response.user.loginMethods.length,
   };
 }

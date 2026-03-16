@@ -3,6 +3,7 @@ import {
   EVENT_CHANGED,
   SOMEDAY_EVENT_CHANGED,
 } from "@core/constants/websocket.constants";
+import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 import {
   type CompassEvent,
@@ -10,6 +11,7 @@ import {
 } from "@core/types/event.types";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { UserError } from "@backend/common/errors/user/user.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import { applyCompassPlan } from "@backend/event/classes/compass.event.executor";
 import { CompassEventFactory } from "@backend/event/classes/compass.event.generator";
@@ -26,6 +28,13 @@ import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import { type Event_Transition } from "@backend/sync/sync.types";
 
 const logger = Logger("app.compass.sync.processor");
+
+function isMissingGoogleRefreshToken(error: unknown): error is BaseError {
+  return (
+    error instanceof BaseError &&
+    error.description === UserError.MissingGoogleRefreshToken.description
+  );
+}
 
 export class CompassSyncProcessor {
   static async processEvents(
@@ -149,36 +158,47 @@ export class CompassSyncProcessor {
       persistedEvent,
     }: Awaited<ReturnType<typeof applyCompassPlan>>,
   ): Promise<boolean> {
-    switch (plan.googleEffect.type) {
-      case "none":
-        return true;
-      case "create":
-        if (!persistedEvent) return false;
+    try {
+      switch (plan.googleEffect.type) {
+        case "none":
+          return true;
+        case "create":
+          if (!persistedEvent) return false;
 
-        await _createGcal(
-          persistedEvent.user!,
-          persistedEvent as Schema_Event_Core,
+          await _createGcal(
+            persistedEvent.user!,
+            persistedEvent as Schema_Event_Core,
+          );
+
+          return true;
+        case "update":
+          if (!persistedEvent) return false;
+
+          await _updateGcal(
+            persistedEvent.user!,
+            persistedEvent as Schema_Event_Core,
+          );
+
+          return true;
+        case "delete":
+          return googleDeleteEventId
+            ? _deleteGcal(plan.event.user!, googleDeleteEventId)
+            : true;
+        default:
+          throw error(
+            GenericError.DeveloperError,
+            `Unknown Google effect for Compass transition: ${plan.transitionKey}`,
+          );
+      }
+    } catch (err) {
+      if (isMissingGoogleRefreshToken(err)) {
+        logger.info(
+          `Skipping Google effect for user ${plan.event.user} because Google is not connected.`,
         );
-
         return true;
-      case "update":
-        if (!persistedEvent) return false;
+      }
 
-        await _updateGcal(
-          persistedEvent.user!,
-          persistedEvent as Schema_Event_Core,
-        );
-
-        return true;
-      case "delete":
-        return googleDeleteEventId
-          ? _deleteGcal(plan.event.user!, googleDeleteEventId)
-          : true;
-      default:
-        throw error(
-          GenericError.DeveloperError,
-          `Unknown Google effect for Compass transition: ${plan.transitionKey}`,
-        );
+      throw err;
     }
   }
 }

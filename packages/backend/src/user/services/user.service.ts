@@ -31,6 +31,14 @@ import { type Summary_Delete } from "@backend/user/types/user.types";
 const logger = Logger("app:user.service");
 
 class UserService {
+  private splitName(name: string): { firstName: string; lastName: string } {
+    const trimmedName = name.trim();
+    const [firstName = "Mystery", ...rest] = trimmedName.split(/\s+/);
+    const lastName = rest.join(" ") || "Person";
+
+    return { firstName, lastName };
+  }
+
   createUser = async (
     gUser: TokenPayload,
     gRefreshToken: string,
@@ -76,7 +84,72 @@ class UserService {
     if (!user)
       throw error(UserError.UserNotFound, "Failed to return user profile");
 
-    return user as unknown as UserProfile;
+    return {
+      ...(user as unknown as UserProfile),
+      picture: (user as { picture?: string }).picture ?? "",
+    };
+  };
+
+  upsertUserFromAuth = async (
+    input: {
+      userId: string;
+      email: string;
+      name?: string;
+      locale?: string;
+      google?: Schema_User["google"];
+    },
+    session?: ClientSession,
+  ): Promise<{
+    user: Schema_User & { userId: string };
+    isNewUser: boolean;
+  }> => {
+    const userId = zObjectId.parse(input.userId, {
+      error: () => "Invalid user ID",
+    });
+    const email = input.email.trim().toLowerCase();
+    const existingUser = await mongoService.user.findOne(
+      { _id: userId },
+      { session },
+    );
+
+    const name = input.name?.trim() || existingUser?.name || "Mystery Person";
+    const { firstName, lastName } = this.splitName(name);
+    const locale = input.locale ?? existingUser?.locale ?? "not provided";
+    const signedUpAt = existingUser?.signedUpAt ?? new Date();
+
+    const nextUser: Schema_User = {
+      email,
+      name,
+      firstName,
+      lastName,
+      locale,
+      signedUpAt,
+      lastLoggedInAt: new Date(),
+      ...(existingUser?.google ? { google: existingUser.google } : {}),
+      ...(input.google ? { google: input.google } : {}),
+    };
+    const { signedUpAt: nextSignedUpAt, ...updatableUser } = nextUser;
+
+    await mongoService.user.updateOne(
+      { _id: userId },
+      {
+        $set: updatableUser,
+        $setOnInsert: { signedUpAt: nextSignedUpAt },
+      },
+      { upsert: true, session },
+    );
+
+    if (!existingUser) {
+      await priorityService.createDefaultPriorities(userId.toString(), session);
+    }
+
+    return {
+      user: {
+        ...nextUser,
+        userId: userId.toString(),
+      },
+      isNewUser: !existingUser,
+    };
   };
 
   deleteCompassDataForUser = async (

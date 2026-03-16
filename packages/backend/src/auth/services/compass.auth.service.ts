@@ -62,12 +62,20 @@ class CompassAuthService {
   ) {
     const session = await mongoService.startSession();
 
-    const user = await session.withTransaction(async (session) => {
-      const cUser = await userService.initUserData(
-        gUser,
-        refreshToken,
-        userId,
-        session,
+    const user = await session.withTransaction(async (transactionSession) => {
+      const cUser = await userService.upsertUserFromAuth(
+        {
+          userId,
+          email: gUser.email ?? "",
+          name: gUser.name || undefined,
+          locale: gUser.locale || undefined,
+          google: {
+            googleId: gUser.sub ?? "",
+            picture: gUser.picture || "not provided",
+            gRefreshToken: refreshToken,
+          },
+        },
+        transactionSession,
       );
 
       await userMetadataService.updateUserMetadata({
@@ -82,8 +90,8 @@ class CompassAuthService {
         logger.warn(
           "Did not tag subscriber due to missing EMAILER_ ENV value(s)",
         );
-      } else {
-        const subscriber = mapCompassUserToEmailSubscriber(cUser);
+      } else if (cUser.isNewUser) {
+        const subscriber = mapCompassUserToEmailSubscriber(cUser.user);
 
         await EmailService.addTagToSubscriber(
           subscriber,
@@ -91,7 +99,7 @@ class CompassAuthService {
         );
       }
 
-      return { cUserId: cUser.userId };
+      return { cUserId: cUser.user.userId };
     });
 
     // Fire-and-forget: full calendar import can exceed MongoDB transaction timeout (60s)
@@ -155,6 +163,7 @@ class CompassAuthService {
       {
         $set: {
           "google.gRefreshToken": refreshToken,
+          "google.picture": gUser.picture || "not provided",
           lastLoggedInAt: new Date(),
         },
       },

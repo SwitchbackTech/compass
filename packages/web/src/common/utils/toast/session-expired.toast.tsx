@@ -1,29 +1,29 @@
 import { type Id, toast } from "react-toastify";
-import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
+import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 
 interface SessionExpiredToastProps {
   toastId: Id;
 }
 
 export const SessionExpiredToast = ({ toastId }: SessionExpiredToastProps) => {
-  const { login } = useGoogleAuth();
+  const { openModal } = useAuthModal();
 
-  const handleReconnect = () => {
-    login();
+  const handleSignIn = () => {
+    openModal("login");
     toast.dismiss(toastId);
   };
 
   return (
     <div className="flex w-full flex-col gap-2">
       <p className="text-sm text-white">
-        Google Calendar connection expired. Please reconnect.
+        Session expired. Please sign in again.
       </p>
       <button
         className="bg-fg-primary-dark text-text-lighter w-full rounded px-3 py-2 text-sm font-medium transition-colors hover:bg-[color-mix(in_srgb,var(--color-fg-primary-dark)_90%,white)]"
-        onClick={handleReconnect}
+        onClick={handleSignIn}
         type="button"
       >
-        Reconnect Google Calendar
+        Sign in
       </button>
     </div>
   );

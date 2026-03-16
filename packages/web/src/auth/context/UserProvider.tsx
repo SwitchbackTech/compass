@@ -8,7 +8,10 @@ import {
 } from "react";
 import { Status } from "@core/errors/status.codes";
 import { type UserProfile } from "@core/types/user.types";
-import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
+import {
+  hasUserEverAuthenticated,
+  markUserAsAuthenticated,
+} from "@web/auth/state/auth.state.util";
 import { UserApi } from "@web/common/apis/user.api";
 import { showSessionExpiredToast } from "@web/common/utils/toast/error-toast.util";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
@@ -24,7 +27,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   useLayoutEffect(() => {
     if (profile.current) return;
 
-    // Only fetch profile if user has authenticated with Google Calendar
+    // Only fetch profile if user has authenticated before.
     if (!hasUserEverAuthenticated()) {
       return;
     }
@@ -34,6 +37,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     UserApi.getProfile()
       .then((userProfile) => {
         profile.current = userProfile;
+        markUserAsAuthenticated(userProfile.email);
       })
       .catch((e) => {
         // Existing authenticated users can hit this when their session expires.
