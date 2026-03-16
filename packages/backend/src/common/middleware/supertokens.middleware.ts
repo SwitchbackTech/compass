@@ -41,12 +41,14 @@ const logger = Logger("app:supertokens.middleware");
 const getFormFieldValue = (
   formFields: Array<{ id: string; value: unknown }>,
   id: string,
-) => {
+): string | undefined => {
   const field = formFields.find((item) => item.id === id);
   return typeof field?.value === "string" ? field.value : undefined;
 };
 
-const ensureExternalUserIdMapping = async (recipeUserId: string) => {
+const ensureExternalUserIdMapping = async (
+  recipeUserId: string,
+): Promise<string> => {
   const existingMapping = await getUserIdMapping({
     userId: recipeUserId,
     userIdType: "SUPERTOKENS",
@@ -65,7 +67,7 @@ const ensureExternalUserIdMapping = async (recipeUserId: string) => {
   return externalUserId;
 };
 
-const buildResetPasswordLink = (passwordResetLink: string) => {
+const buildResetPasswordLink = (passwordResetLink: string): string => {
   const url = new URL(passwordResetLink);
   const token = url.searchParams.get("token");
 

@@ -29,12 +29,12 @@ import { type Event_Transition } from "@backend/sync/sync.types";
 
 const logger = Logger("app.compass.sync.processor");
 
-function isMissingGoogleRefreshToken(error: unknown): error is BaseError {
+const isMissingGoogleRefreshToken = (error: unknown): error is BaseError => {
   return (
     error instanceof BaseError &&
     error.description === UserError.MissingGoogleRefreshToken.description
   );
-}
+};
 
 export class CompassSyncProcessor {
   static async processEvents(
@@ -159,37 +159,11 @@ export class CompassSyncProcessor {
     }: Awaited<ReturnType<typeof applyCompassPlan>>,
   ): Promise<boolean> {
     try {
-      switch (plan.googleEffect.type) {
-        case "none":
-          return true;
-        case "create":
-          if (!persistedEvent) return false;
-
-          await _createGcal(
-            persistedEvent.user!,
-            persistedEvent as Schema_Event_Core,
-          );
-
-          return true;
-        case "update":
-          if (!persistedEvent) return false;
-
-          await _updateGcal(
-            persistedEvent.user!,
-            persistedEvent as Schema_Event_Core,
-          );
-
-          return true;
-        case "delete":
-          return googleDeleteEventId
-            ? _deleteGcal(plan.event.user!, googleDeleteEventId)
-            : true;
-        default:
-          throw error(
-            GenericError.DeveloperError,
-            `Unknown Google effect for Compass transition: ${plan.transitionKey}`,
-          );
-      }
+      return await CompassSyncProcessor.handleGoogleEffectByType(
+        plan,
+        persistedEvent,
+        googleDeleteEventId,
+      );
     } catch (err) {
       if (isMissingGoogleRefreshToken(err)) {
         logger.info(
@@ -199,6 +173,34 @@ export class CompassSyncProcessor {
       }
 
       throw err;
+    }
+  }
+
+  private static async handleGoogleEffectByType(
+    plan: CompassOperationPlan,
+    persistedEvent: Schema_Event_Core | undefined,
+    googleDeleteEventId: string | undefined,
+  ): Promise<boolean> {
+    switch (plan.googleEffect.type) {
+      case "none":
+        return true;
+      case "create":
+        if (!persistedEvent) return false;
+        await _createGcal(persistedEvent.user!, persistedEvent);
+        return true;
+      case "update":
+        if (!persistedEvent) return false;
+        await _updateGcal(persistedEvent.user!, persistedEvent);
+        return true;
+      case "delete":
+        return googleDeleteEventId
+          ? _deleteGcal(plan.event.user!, googleDeleteEventId)
+          : true;
+      default:
+        throw error(
+          GenericError.DeveloperError,
+          `Unknown Google effect for Compass transition: ${plan.transitionKey}`,
+        );
     }
   }
 }

@@ -12,3 +12,9 @@ export const DEFAULT_AUTH_STATE: AuthState = {
 };
 
 export const UNAUTHENTICATED_USER = "UNAUTHENTICATED_USER";
+
+/**
+ * Test email used for feature flag gating during development
+ * TODO: Remove this once auth feature is fully rolled out
+ */
+export const AUTH_FEATURE_FLAG_TEST_EMAIL = "foo@bar.com";

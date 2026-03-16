@@ -55,33 +55,37 @@ let isCheckingSession = false;
 
 const $authenticated = authenticated$.pipe(skip(1), distinctUntilChanged());
 
+const handleSessionExists = () => {
+  markUserAsAuthenticated();
+  void refreshUserMetadata();
+};
+
+const handleSessionMissing = () => {
+  store.dispatch(userMetadataSlice.actions.clear());
+};
+
 async function checkIfSessionExists(): Promise<boolean> {
+  if (isCheckingSession) return false;
+
+  isCheckingSession = true;
+
   try {
-    if (isCheckingSession) return false;
-    isCheckingSession = true;
-
     const exists = await session.doesSessionExist();
-    const socketConnected = socket.socket.connected;
 
-    // If a session exists, mark the user as authenticated.
-    // This ensures existing users who authenticated before the flag was introduced
-    // will be properly marked, and the flag persists even if their session expires later.
     if (exists) {
-      markUserAsAuthenticated();
-      void refreshUserMetadata();
+      handleSessionExists();
+      if (!socket.socket.connected) {
+        socket.socket.connect();
+      }
     } else {
-      store.dispatch(userMetadataSlice.actions.clear());
+      handleSessionMissing();
     }
 
     authenticated$.next(exists);
-
-    if (exists && !socketConnected) socket.socket.connect();
-
     return exists;
   } catch (error) {
     console.error("Error checking auth status:", error);
     authenticated$.next(false);
-
     return false;
   } finally {
     isCheckingSession = false;

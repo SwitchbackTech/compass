@@ -17,29 +17,21 @@ function normalizeStoredAuthState(parsed: unknown): AuthState {
     lastKnownEmail?: unknown;
   };
 
-  if ("isGoogleAuthenticated" in legacyState) {
-    const migratedResult = AuthStateSchema.safeParse({
-      hasAuthenticated:
-        typeof legacyState.hasAuthenticated === "boolean"
-          ? legacyState.hasAuthenticated
-          : legacyState.isGoogleAuthenticated,
-      lastKnownEmail: legacyState.lastKnownEmail,
-    });
+  // Migrate legacy isGoogleAuthenticated to hasAuthenticated
+  const hasAuthenticated =
+    typeof legacyState.hasAuthenticated === "boolean"
+      ? legacyState.hasAuthenticated
+      : typeof legacyState.isGoogleAuthenticated === "boolean"
+        ? legacyState.isGoogleAuthenticated
+        : false;
 
-    return migratedResult.success ? migratedResult.data : DEFAULT_AUTH_STATE;
-  }
-
-  const result = AuthStateSchema.safeParse(parsed);
-  if (result.success) {
-    return result.data;
-  }
-
-  const migratedResult = AuthStateSchema.safeParse({
-    hasAuthenticated: legacyState.hasAuthenticated,
+  const migratedState = {
+    hasAuthenticated,
     lastKnownEmail: legacyState.lastKnownEmail,
-  });
+  };
 
-  return migratedResult.success ? migratedResult.data : DEFAULT_AUTH_STATE;
+  const result = AuthStateSchema.safeParse(migratedState);
+  return result.success ? result.data : DEFAULT_AUTH_STATE;
 }
 
 /**

@@ -13,7 +13,28 @@ import {
   startAuthenticating,
 } from "@web/ducks/auth/slices/auth.slice";
 import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
+import { type AppDispatch } from "@web/store";
 import { useAppDispatch } from "@web/store/store.hooks";
+
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return "Authentication failed";
+};
+
+const handleAuthError = (dispatch: AppDispatch, error: unknown) => {
+  console.error(error);
+  dispatch(authError(getErrorMessage(error)));
+  dispatch(importGCalSlice.actions.setIsImportPending(false));
+  dispatch(importGCalSlice.actions.importing(false));
+};
+
+const resetAuthState = (dispatch: AppDispatch) => {
+  dispatch(resetAuth());
+  dispatch(importGCalSlice.actions.setIsImportPending(false));
+  dispatch(importGCalSlice.actions.importing(false));
+};
 
 export function useGoogleAuth(
   options: {
@@ -40,12 +61,7 @@ export function useGoogleAuth(
         };
         const authResult = await authenticate(authPayload);
         if (!authResult.success) {
-          console.error(authResult.error);
-          dispatch(
-            authError(authResult.error?.message || "Authentication failed"),
-          );
-          dispatch(importGCalSlice.actions.setIsImportPending(false));
-          dispatch(importGCalSlice.actions.importing(false));
+          handleAuthError(dispatch, authResult.error);
           return;
         }
 
@@ -53,35 +69,17 @@ export function useGoogleAuth(
           email: authResult.data?.user?.emails?.[0],
         });
       } catch (error) {
-        // Ensure overlay is dismissed if any error occurs during the auth flow
-        // This handles cases where authenticate() or other operations throw unexpected errors
-        console.error("Error during authentication flow:", error);
-        dispatch(
-          authError(
-            error instanceof Error ? error.message : "Authentication failed",
-          ),
-        );
-        dispatch(importGCalSlice.actions.setIsImportPending(false));
-        dispatch(importGCalSlice.actions.importing(false));
-        throw error; // Re-throw so useGoogleLoginWithSyncOverlay can handle it via onError
+        handleAuthError(dispatch, error);
+        throw error;
       }
     },
     onError: (error) => {
       if (isGooglePopupClosedError(error)) {
-        dispatch(resetAuth());
-        dispatch(importGCalSlice.actions.setIsImportPending(false));
-        dispatch(importGCalSlice.actions.importing(false));
+        resetAuthState(dispatch);
         return;
       }
 
-      console.error(error);
-      dispatch(
-        authError(
-          error instanceof Error ? error.message : "Authentication failed",
-        ),
-      );
-      dispatch(importGCalSlice.actions.setIsImportPending(false));
-      dispatch(importGCalSlice.actions.importing(false));
+      handleAuthError(dispatch, error);
     },
   });
 

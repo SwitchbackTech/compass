@@ -112,10 +112,14 @@ class UserService {
       { session },
     );
 
+    const isNewUser = !existingUser;
     const name = input.name?.trim() || existingUser?.name || "Mystery Person";
     const { firstName, lastName } = this.splitName(name);
     const locale = input.locale ?? existingUser?.locale ?? "not provided";
     const signedUpAt = existingUser?.signedUpAt ?? new Date();
+
+    // Preserve existing Google data, but allow override from input
+    const google = input.google ?? existingUser?.google;
 
     const nextUser: Schema_User = {
       email,
@@ -125,9 +129,9 @@ class UserService {
       locale,
       signedUpAt,
       lastLoggedInAt: new Date(),
-      ...(existingUser?.google ? { google: existingUser.google } : {}),
-      ...(input.google ? { google: input.google } : {}),
+      ...(google ? { google } : {}),
     };
+
     const { signedUpAt: nextSignedUpAt, ...updatableUser } = nextUser;
 
     await mongoService.user.updateOne(
@@ -139,7 +143,7 @@ class UserService {
       { upsert: true, session },
     );
 
-    if (!existingUser) {
+    if (isNewUser) {
       await priorityService.createDefaultPriorities(userId.toString(), session);
     }
 
@@ -148,7 +152,7 @@ class UserService {
         ...nextUser,
         userId: userId.toString(),
       },
-      isNewUser: !existingUser,
+      isNewUser,
     };
   };
 
