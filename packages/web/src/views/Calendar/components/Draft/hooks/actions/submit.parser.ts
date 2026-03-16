@@ -26,11 +26,21 @@ export class OnSubmitParser {
   }
 }
 
+const normalizeNullableRecurrence = (
+  event: { recurrence?: unknown | null },
+): void => {
+  // Some legacy drafts can still carry recurrence: null from old storage/state.
+  // Drop it before zod validation so recurrence behaves like an omitted field.
+  if (event.recurrence === null) {
+    delete event.recurrence;
+  }
+};
+
 export const parseSomedayEventBeforeSubmit = (
   draft: Schema_SomedayEvent,
   userId: string,
 ): Schema_SomedayEvent => {
-  const _event: Omit<Schema_SomedayEvent, "recurrence"> = {
+  const _event: Schema_SomedayEvent & { recurrence?: unknown | null } = {
     ...draft,
     origin: Origin.COMPASS,
     user: userId,
@@ -39,10 +49,11 @@ export const parseSomedayEventBeforeSubmit = (
     endDate: draft.endDate,
     priority: draft.priority ?? Priorities.UNASSIGNED,
   };
+  normalizeNullableRecurrence(_event);
 
   if (draft.recurrence) Object.assign(_event, { recurrence: draft.recurrence });
 
-  const event = validateSomedayEvent(_event);
+  const event = validateSomedayEvent(_event as Schema_SomedayEvent);
 
   return event;
 };
@@ -51,11 +62,12 @@ export const prepEventBeforeSubmit = (
   draft: Schema_GridEvent,
   userId: string,
 ): Schema_WebEvent => {
-  const _event = {
+  const _event: Schema_WebEvent & { recurrence?: unknown | null } = {
     ...draft,
     origin: draft.origin ?? Origin.COMPASS,
     user: userId,
   };
+  normalizeNullableRecurrence(_event);
 
   if (draft.recurrence) Object.assign(_event, { recurrence: draft.recurrence });
 

@@ -177,6 +177,24 @@ describe("submit.parser", () => {
 
       expect(result.recurrence).toEqual({ rule: null });
     });
+
+    it("should drop legacy null recurrence before validation", () => {
+      const { validateSomedayEvent } = require("@web/common/validators/someday.event.validator");
+      validateSomedayEvent.mockClear();
+
+      const draft = {
+        ...createMockSomedayEvent(),
+        recurrence: null,
+      } as unknown as Schema_SomedayEvent;
+      const userId = "test-user-id";
+
+      const result = parseSomedayEventBeforeSubmit(draft, userId);
+
+      expect(result.recurrence).toBeUndefined();
+      expect(validateSomedayEvent).toHaveBeenCalledWith(
+        expect.not.objectContaining({ recurrence: null }),
+      );
+    });
   });
 
   describe("prepEventBeforeSubmit", () => {
@@ -241,6 +259,24 @@ describe("submit.parser", () => {
       const result = prepEventBeforeSubmit(draft, userId);
 
       expect(result.recurrence).toEqual({ rule: null });
+    });
+
+    it("should drop legacy null recurrence before validation", () => {
+      const { validateGridEvent } = require("@web/common/validators/grid.event.validator");
+      validateGridEvent.mockClear();
+
+      const draft = {
+        ...createMockGridEvent(),
+        recurrence: null,
+      } as unknown as Schema_GridEvent;
+      const userId = "test-user-id";
+
+      const result = prepEventBeforeSubmit(draft, userId);
+
+      expect(result.recurrence).toBeUndefined();
+      expect(validateGridEvent).toHaveBeenCalledWith(
+        expect.not.objectContaining({ recurrence: null }),
+      );
     });
 
     it("should assemble grid event when position is missing", () => {
