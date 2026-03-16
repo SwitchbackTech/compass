@@ -47,12 +47,18 @@ export const IconRow = styled(Flex)<SectionProps>`
   border-top: 1px solid ${({ theme }) => theme.color.border.primary};
   height: ${ICON_ROW_HEIGHT}px;
   flex-direction: ${FlexDirections.ROW};
+  justify-content: space-between;
   padding: 0 25px;
   position: absolute;
   width: 100%;
 `;
 
 export const LeftIconGroup = styled.div`
+  gap: 20px;
+  display: flex;
+`;
+
+export const RightIconGroup = styled.div`
   gap: 20px;
   display: flex;
 `;
