@@ -38,14 +38,12 @@ export const DayViewContent = memo(() => {
     () => window.innerWidth >= XL_BREAKPOINT,
   );
 
-  // Auto-collapse sidebar when screen is too narrow
+  // Auto-collapse/expand sidebar based on screen width
   useEffect(() => {
     const mediaQuery = window.matchMedia(`(min-width: ${XL_BREAKPOINT}px)`);
 
     const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
-      if (!e.matches) {
-        setIsSidebarOpen(false);
-      }
+      setIsSidebarOpen(e.matches);
     };
 
     // Check initial state
