@@ -13,7 +13,7 @@ import {
   type UserProfile,
 } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
-import compassAuthService from "@backend/auth/services/compass.auth.service";
+import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import { getGcalClient } from "@backend/auth/services/google/google.calendar.client";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { error } from "@backend/common/errors/handlers/error.handler";

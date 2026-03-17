@@ -5,7 +5,7 @@ import { getApiBaseUrl, log } from "@scripts/common/cli.utils";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
-import compassAuthService from "@backend/auth/services/compass.auth.service";
+import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
