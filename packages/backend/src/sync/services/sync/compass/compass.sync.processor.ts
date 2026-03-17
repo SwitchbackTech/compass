@@ -1,16 +1,11 @@
 import { type ClientSession, ObjectId } from "mongodb";
-import { z } from "zod";
 import {
   EVENT_CHANGED,
   SOMEDAY_EVENT_CHANGED,
 } from "@core/constants/websocket.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
-import {
-  type CompassEvent,
-  CoreEventSchema,
-  type Schema_Event_Core,
-} from "@core/types/event.types";
+import { type CompassEvent } from "@core/types/event.types";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
@@ -28,6 +23,10 @@ import {
 } from "@backend/event/services/event.service";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import { type Event_Transition } from "@backend/sync/sync.types";
+import {
+  type PersistedCompassEvent,
+  isPersistedCoreEvent,
+} from "./compass.sync.processor.util";
 
 const logger = Logger("app.compass.sync.processor");
 
@@ -37,24 +36,6 @@ const isMissingGoogleRefreshToken = (error: unknown): error is BaseError => {
     error.description === UserError.MissingGoogleRefreshToken.description
   );
 };
-
-type PersistedCompassEvent = Awaited<
-  ReturnType<typeof applyCompassPlan>
->["persistedEvent"];
-type PersistedCoreEvent = NonNullable<PersistedCompassEvent> &
-  Pick<
-    Schema_Event_Core,
-    "startDate" | "endDate" | "origin" | "priority" | "user"
-  >;
-
-const GoogleSyncEventSchema = CoreEventSchema.extend({
-  recurrence: CoreEventSchema.shape.recurrence.or(z.null()).optional(),
-});
-
-const isPersistedCoreEvent = (
-  event: PersistedCompassEvent,
-): event is PersistedCoreEvent =>
-  GoogleSyncEventSchema.safeParse(event).success;
 
 export class CompassSyncProcessor {
   static async processEvents(
