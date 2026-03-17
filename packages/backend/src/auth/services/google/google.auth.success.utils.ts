@@ -1,16 +1,7 @@
 import { getSync } from "@backend/sync/util/sync.queries";
 import { canDoIncrementalSync } from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
-
-export type AuthMode = "SIGNUP" | "SIGNIN_INCREMENTAL" | "RECONNECT_REPAIR";
-
-export type AuthDecision = {
-  authMode: AuthMode;
-  compassUserId: string | null;
-  hasStoredRefreshToken: boolean;
-  hasHealthySync: boolean;
-  createdNewRecipeUser: boolean;
-};
+import { type AuthDecision } from "./google.auth.types";
 
 export async function determineGoogleAuthMode(
   googleUserId: string,

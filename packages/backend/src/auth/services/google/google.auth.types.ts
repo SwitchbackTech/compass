@@ -1,6 +1,15 @@
 import { type Credentials, type TokenPayload } from "google-auth-library";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 
+export type AuthMode = "SIGNUP" | "SIGNIN_INCREMENTAL" | "RECONNECT_REPAIR";
+export type AuthDecision = {
+  authMode: AuthMode;
+  compassUserId: string | null;
+  hasStoredRefreshToken: boolean;
+  hasHealthySync: boolean;
+  createdNewRecipeUser: boolean;
+};
+
 export type ParsedReconnectGoogleParams = {
   cUserId: string;
   gUser: TokenPayload;

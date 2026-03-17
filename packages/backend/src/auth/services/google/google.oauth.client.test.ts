@@ -86,7 +86,7 @@ describe("GoogleOAuthClient", () => {
     });
   });
 
-  it("returns the access token when refreshAccessToken receives a valid uuid", async () => {
+  it("returns the access token when refreshAccessToken receives a non-empty token", async () => {
     const client = new GoogleOAuthClient();
     const mockOAuthClient = getMockOAuthClient(client);
     const token = faker.string.uuid();
@@ -95,10 +95,10 @@ describe("GoogleOAuthClient", () => {
     await expect(client.refreshAccessToken()).resolves.toBe(token);
   });
 
-  it("throws AuthError.NoGAuthAccessToken when refreshAccessToken returns an invalid token", async () => {
+  it("throws AuthError.NoGAuthAccessToken when refreshAccessToken returns an empty token", async () => {
     const client = new GoogleOAuthClient();
     const mockOAuthClient = getMockOAuthClient(client);
-    mockOAuthClient.getAccessToken.mockResolvedValue({ token: "not-a-uuid" });
+    mockOAuthClient.getAccessToken.mockResolvedValue({ token: "" });
 
     await expect(client.refreshAccessToken()).rejects.toMatchObject({
       description: AuthError.NoGAuthAccessToken.description,
