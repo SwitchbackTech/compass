@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import EmailPassword from "supertokens-web-js/recipe/emailpassword";
+import { z } from "zod";
 import { useCompleteAuthentication } from "@web/auth/hooks/useCompleteAuthentication";
 import {
   type ForgotPasswordFormData,
@@ -9,20 +10,45 @@ import {
 } from "@web/auth/schemas/auth.schemas";
 import { type AuthView } from "./useAuthModal";
 
+const RESET_PASSWORD_QUERY_SCHEMA = z.object({
+  token: z.string().min(1).optional(),
+});
+
+function getResetPasswordQueryParams(): z.infer<
+  typeof RESET_PASSWORD_QUERY_SCHEMA
+> {
+  if (typeof window === "undefined") return {};
+  const searchParams = new URLSearchParams(window.location.search);
+  const parsed = RESET_PASSWORD_QUERY_SCHEMA.safeParse({
+    token: searchParams.get("token") ?? undefined,
+  });
+  return parsed.success ? parsed.data : {};
+}
+
 interface UseAuthFormHandlersOptions {
   currentView: AuthView;
   closeModal: () => void;
+  resetPasswordToken?: string;
   setView: (view: AuthView) => void;
 }
 
 export function useAuthFormHandlers({
   currentView,
   closeModal,
+  resetPasswordToken,
   setView,
 }: UseAuthFormHandlersOptions) {
   const completeAuthentication = useCompleteAuthentication();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const initialResetPasswordToken = useMemo(() => {
+    const propToken = z
+      .string()
+      .min(1)
+      .safeParse(resetPasswordToken ?? "");
+    if (propToken.success) return propToken.data;
+    return getResetPasswordQueryParams().token;
+  }, [resetPasswordToken]);
 
   useEffect(() => {
     setSubmitError(null);
@@ -144,10 +170,17 @@ export function useAuthFormHandlers({
       setSubmitError(null);
 
       try {
-        const token = EmailPassword.getResetPasswordTokenFromURL();
+        // `supertokens-web-js` reads the reset token from the URL query param.
+        // We keep the first token we saw (from props or URL) so the flow still works even if the URL changes.
+        const token = initialResetPasswordToken;
+
+        if (token && typeof window !== "undefined") {
+          const url = new URL(window.location.href);
+          url.searchParams.set("token", token);
+          window.history.replaceState(window.history.state, "", url.toString());
+        }
         const response = await EmailPassword.submitNewPassword({
           formFields: [{ id: "password", value: data.password }],
-          token,
         });
 
         switch (response.status) {
@@ -173,7 +206,7 @@ export function useAuthFormHandlers({
         setIsSubmitting(false);
       }
     },
-    [setView],
+    [initialResetPasswordToken, setView],
   );
 
   return {

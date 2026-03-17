@@ -881,6 +881,40 @@ describe("URL Parameter Support", () => {
       ).toBeInTheDocument();
     });
   });
+
+  it("submits reset password with the initial token after the URL changes", async () => {
+    const user = userEvent.setup();
+    mockWindowLocation("/day?auth=reset&token=reset-token");
+    renderWithProviders(<div />, "/day?auth=reset&token=reset-token");
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /set new password/i }),
+      ).toBeInTheDocument();
+    });
+
+    mockWindowLocation("/day");
+
+    await act(async () => {
+      await user.type(
+        screen.getByLabelText(/new password/i),
+        "updatedpassword",
+      );
+      await user.click(
+        screen.getByRole("button", { name: /set new password/i }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(mockEmailPassword.submitNewPassword).toHaveBeenCalledWith({
+        formFields: [{ id: "password", value: "updatedpassword" }],
+      });
+    });
+
+    expect(
+      mockEmailPassword.getResetPasswordTokenFromURL,
+    ).not.toHaveBeenCalled();
+  });
 });
 
 describe("AccountIcon", () => {

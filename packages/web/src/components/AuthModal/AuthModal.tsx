@@ -12,6 +12,20 @@ import { useAuthFormHandlers } from "./hooks/useAuthFormHandlers";
 import { useAuthModal } from "./hooks/useAuthModal";
 import { useAuthUrlParam } from "./hooks/useAuthUrlParam";
 
+function getInitialResetPasswordToken(): string | undefined {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  const searchParams = new URLSearchParams(window.location.search);
+
+  if (searchParams.get("auth")?.toLowerCase() !== "reset") {
+    return undefined;
+  }
+
+  return searchParams.get("token") ?? undefined;
+}
+
 /**
  * Authentication modal with Sign In, Sign Up, and Forgot Password views
  *
@@ -26,6 +40,7 @@ export const AuthModal: FC = () => {
   const { isOpen, currentView, openModal, closeModal, setView } =
     useAuthModal();
   const googleAuth = useGoogleAuth();
+  const resetPasswordToken = useRef(getInitialResetPasswordToken()).current;
   const {
     isSubmitting,
     submitError,
@@ -33,7 +48,12 @@ export const AuthModal: FC = () => {
     handleLogin,
     handleForgotPassword,
     handleResetPassword,
-  } = useAuthFormHandlers({ currentView, closeModal, setView });
+  } = useAuthFormHandlers({
+    currentView,
+    closeModal,
+    resetPasswordToken,
+    setView,
+  });
 
   // Handle URL-based auth modal triggers (e.g., ?auth=signup)
   useAuthUrlParam(openModal);
