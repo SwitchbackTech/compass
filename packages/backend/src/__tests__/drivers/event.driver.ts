@@ -4,7 +4,7 @@ import Migration from "@scripts/migrations/2025.10.18T20.01.14.migrate-events-to
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
-import { getGcalClient } from "@backend/auth/services/google/google.auth.service";
+import { getGcalClient } from "@backend/auth/services/google/google.calendar.client";
 import calendarService from "@backend/calendar/services/calendar.service";
 import mongoService from "@backend/common/services/mongo.service";
 

@@ -22,7 +22,7 @@ import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { zObjectId } from "@core/types/type.utils";
-import compassAuthService from "@backend/auth/services/compass.auth.service";
+import googleAuthService from "@backend/auth/services/google/google.auth.service";
 import { handleGoogleAuth } from "@backend/auth/services/google/google.auth.success.service";
 import { IS_DEV } from "@backend/common/constants/env.constants";
 import { ENV } from "@backend/common/constants/env.constants";
@@ -202,7 +202,7 @@ export const initSupertokens = () => {
                 );
 
                 if (success) {
-                  await handleGoogleAuth(success, compassAuthService);
+                  await handleGoogleAuth(success, googleAuthService);
                 }
 
                 return response;

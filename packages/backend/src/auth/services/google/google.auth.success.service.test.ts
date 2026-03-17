@@ -1,9 +1,9 @@
-import { Credentials, TokenPayload } from "google-auth-library";
+import type { Credentials, TokenPayload } from "google-auth-library";
 import { ObjectId } from "mongodb";
 import { faker } from "@faker-js/faker";
 import {
-  GoogleSignInSuccess,
-  GoogleSignInSuccessAuthService,
+  type GoogleSignInSuccess,
+  type GoogleSignInSuccessAuthService,
   handleGoogleAuth,
 } from "@backend/auth/services/google/google.auth.success.service";
 import * as syncQueries from "@backend/sync/util/sync.queries";

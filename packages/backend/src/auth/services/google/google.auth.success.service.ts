@@ -1,8 +1,6 @@
 import { type Credentials, type TokenPayload } from "google-auth-library";
 import { Logger } from "@core/logger/winston.logger";
-import { getSync } from "@backend/sync/util/sync.queries";
-import { canDoIncrementalSync } from "@backend/sync/util/sync.util";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import { determineGoogleAuthMode } from "@backend/auth/services/google/google.auth.success.utils";
 
 const logger = Logger("app:google.auth.success");
 
@@ -12,22 +10,6 @@ export type GoogleSignInSuccess = {
   createdNewRecipeUser: boolean;
   recipeUserId: string;
   loginMethodsLength: number;
-};
-
-/**
- * Auth modes for Google sign-in flow:
- * - SIGNUP: New user, no linked Compass account
- * - SIGNIN_INCREMENTAL: Existing user with valid refresh token and healthy sync
- * - RECONNECT_REPAIR: Existing user needing repair (missing refresh token or unhealthy sync)
- */
-export type AuthMode = "SIGNUP" | "SIGNIN_INCREMENTAL" | "RECONNECT_REPAIR";
-
-export type AuthDecision = {
-  authMode: AuthMode;
-  compassUserId: string | null;
-  hasStoredRefreshToken: boolean;
-  hasHealthySync: boolean;
-  createdNewRecipeUser: boolean;
 };
 
 export interface GoogleSignInSuccessAuthService {
@@ -45,58 +27,6 @@ export interface GoogleSignInSuccessAuthService {
     gUser: TokenPayload,
     oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">,
   ): Promise<{ cUserId: string }>;
-}
-
-/**
- * Determines the auth mode based on server-side state.
- *
- * Decision logic:
- * - If no linked Compass user exists → SIGNUP
- * - If user exists but refresh token is missing OR sync is unhealthy → RECONNECT_REPAIR
- * - Otherwise → SIGNIN_INCREMENTAL
- */
-async function determineAuthMode(
-  googleUserId: string,
-  createdNewRecipeUser: boolean,
-): Promise<AuthDecision> {
-  // Look up existing user by Google ID
-  const user = await findCompassUserBy("google.googleId", googleUserId);
-
-  if (!user) {
-    return {
-      authMode: "SIGNUP",
-      compassUserId: null,
-      hasStoredRefreshToken: false,
-      hasHealthySync: false,
-      createdNewRecipeUser,
-    };
-  }
-
-  const compassUserId = user._id.toString();
-  const hasStoredRefreshToken = !!user.google?.gRefreshToken;
-
-  // Check sync health
-  const sync = await getSync({ userId: compassUserId });
-  const hasHealthySync = sync ? !!canDoIncrementalSync(sync) : false;
-
-  // If missing refresh token OR unhealthy sync → needs repair
-  if (!hasStoredRefreshToken || !hasHealthySync) {
-    return {
-      authMode: "RECONNECT_REPAIR",
-      compassUserId,
-      hasStoredRefreshToken,
-      hasHealthySync,
-      createdNewRecipeUser,
-    };
-  }
-
-  return {
-    authMode: "SIGNIN_INCREMENTAL",
-    compassUserId,
-    hasStoredRefreshToken,
-    hasHealthySync,
-    createdNewRecipeUser,
-  };
 }
 
 export async function handleGoogleAuth(
@@ -117,7 +47,10 @@ export async function handleGoogleAuth(
   }
 
   // Determine auth mode based on server-side state
-  const decision = await determineAuthMode(googleUserId, createdNewRecipeUser);
+  const decision = await determineGoogleAuthMode(
+    googleUserId,
+    createdNewRecipeUser,
+  );
 
   switch (decision.authMode) {
     case "SIGNUP": {

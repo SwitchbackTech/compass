@@ -1,73 +1,95 @@
-import { GaxiosError } from "gaxios";
-import { ObjectId } from "mongodb";
+import type { Credentials } from "google-auth-library";
 import { faker } from "@faker-js/faker";
-import { type Schema_User } from "@core/types/user.types";
-import { getGcalClient } from "@backend/auth/services/google/google.auth.service";
-import { UserError } from "@backend/common/errors/user/user.errors";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import { UserDriver } from "@backend/__tests__/drivers/user.driver";
+import {
+  cleanupCollections,
+  cleanupTestDb,
+  setupTestDb,
+} from "@backend/__tests__/helpers/mock.db.setup";
+import mongoService from "@backend/common/services/mongo.service";
+import userMetadataService from "@backend/user/services/user-metadata.service";
+import userService from "@backend/user/services/user.service";
+import googleAuthService from "./google.auth.service";
 
-jest.mock("@backend/user/queries/user.queries", () => ({
-  findCompassUserBy: jest.fn(),
-}));
+describe("GoogleAuthService", () => {
+  beforeEach(setupTestDb);
+  beforeEach(cleanupCollections);
+  afterAll(cleanupTestDb);
 
-const mockFindCompassUserBy = findCompassUserBy as jest.MockedFunction<
-  typeof findCompassUserBy
->;
-
-describe("getGcalClient", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it("throws UserError.MissingGoogleRefreshToken when user exists but has no google", async () => {
-    const userId = new ObjectId().toString();
-    const userWithoutGoogle: Schema_User & { _id: ObjectId } = {
-      _id: new ObjectId(userId),
-      email: faker.internet.email(),
-      firstName: faker.person.firstName(),
-      lastName: faker.person.lastName(),
-      name: faker.person.fullName(),
-      locale: "en",
-      // google is undefined - user signed up with email/password
-    };
-
-    mockFindCompassUserBy.mockResolvedValue(userWithoutGoogle);
-
-    await expect(getGcalClient(userId)).rejects.toMatchObject({
-      description: UserError.MissingGoogleRefreshToken.description,
-    });
-
-    expect(mockFindCompassUserBy).toHaveBeenCalledWith("_id", userId);
-  });
-
-  it("throws UserError.MissingGoogleRefreshToken when user has google but no gRefreshToken", async () => {
-    const userId = new ObjectId().toString();
-    const userWithEmptyGoogle = {
-      _id: new ObjectId(userId),
-      email: faker.internet.email(),
-      firstName: faker.person.firstName(),
-      lastName: faker.person.lastName(),
-      name: faker.person.fullName(),
-      locale: "en",
-      google: {
-        googleId: faker.string.uuid(),
+  describe("repairGoogleConnection", () => {
+    it("relinks Google to the Compass user and schedules a full reimport", async () => {
+      const user = await UserDriver.createUser();
+      const compassUserId = user._id.toString();
+      const gUser = UserDriver.generateGoogleUser({
+        sub: faker.string.uuid(),
         picture: faker.image.url(),
-        gRefreshToken: "", // empty token - invalid
-      },
-    };
+      });
+      const oAuthTokens: Pick<Credentials, "access_token" | "refresh_token"> = {
+        access_token: faker.internet.jwt(),
+        refresh_token: faker.string.uuid(),
+      };
+      const restartSpy = jest
+        .spyOn(userService, "restartGoogleCalendarSync")
+        .mockResolvedValue();
 
-    mockFindCompassUserBy.mockResolvedValue(userWithEmptyGoogle);
+      await userService.pruneGoogleData(compassUserId);
 
-    await expect(getGcalClient(userId)).rejects.toMatchObject({
-      description: UserError.MissingGoogleRefreshToken.description,
+      const result: { cUserId: string } =
+        await googleAuthService.repairGoogleConnection(
+          compassUserId,
+          gUser,
+          oAuthTokens,
+        );
+
+      const updatedUser = await mongoService.user.findOne({ _id: user._id });
+      const metadata =
+        await userMetadataService.fetchUserMetadata(compassUserId);
+
+      expect(result).toEqual({ cUserId: compassUserId });
+      expect(updatedUser?._id.toString()).toBe(compassUserId);
+      expect(updatedUser?.google?.googleId).toBe(gUser.sub);
+      expect(updatedUser?.google?.picture).toBe(gUser.picture);
+      expect(updatedUser?.google?.gRefreshToken).toBe(
+        oAuthTokens.refresh_token,
+      );
+      expect(metadata.sync?.importGCal).toBe("RESTART");
+      expect(metadata.sync?.incrementalGCalSync).toBe("RESTART");
+      expect(restartSpy).toHaveBeenCalledWith(compassUserId);
+
+      restartSpy.mockRestore();
     });
-  });
 
-  it("throws GaxiosError when user is not found", async () => {
-    const userId = new ObjectId().toString();
-    mockFindCompassUserBy.mockResolvedValue(null);
+    it("returns after persisting reconnect state even if the background sync fails", async () => {
+      const user = await UserDriver.createUser();
+      const compassUserId = user._id.toString();
+      const gUser = UserDriver.generateGoogleUser({
+        sub: faker.string.uuid(),
+        picture: faker.image.url(),
+      });
+      const oAuthTokens: Pick<Credentials, "access_token" | "refresh_token"> = {
+        access_token: faker.internet.jwt(),
+        refresh_token: faker.string.uuid(),
+      };
+      const restartError = new Error("sync failed");
+      const restartSpy = jest
+        .spyOn(userService, "restartGoogleCalendarSync")
+        .mockRejectedValue(restartError);
 
-    await expect(getGcalClient(userId)).rejects.toThrow(GaxiosError);
-    expect(mockFindCompassUserBy).toHaveBeenCalledWith("_id", userId);
+      await userService.pruneGoogleData(compassUserId);
+
+      await expect(
+        googleAuthService.repairGoogleConnection(
+          compassUserId,
+          gUser,
+          oAuthTokens,
+        ),
+      ).resolves.toEqual({ cUserId: compassUserId });
+
+      await Promise.resolve();
+
+      expect(restartSpy).toHaveBeenCalledWith(compassUserId);
+
+      restartSpy.mockRestore();
+    });
   });
 });

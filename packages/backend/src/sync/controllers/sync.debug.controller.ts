@@ -1,7 +1,7 @@
 import { type Request, type Response } from "express";
 import { type SessionRequest } from "supertokens-node/framework/express";
 import { type BaseError } from "@core/errors/errors.base";
-import { getGcalClient } from "@backend/auth/services/google/google.auth.service";
+import { getGcalClient } from "@backend/auth/services/google/google.calendar.client";
 import {
   type Res_Promise,
   type SReqBody,
