@@ -107,7 +107,7 @@ Delete-oriented Google effects should prefer the persisted DB `gEventId` when av
 
 The planner dispatch key is:
 
-- ``${dbCategory ?? "NIL"}->>${eventCategory}_${status}``
+- `${dbCategory ?? "NIL"}->>${eventCategory}_${status}`
 
 Concrete examples from current tests:
 

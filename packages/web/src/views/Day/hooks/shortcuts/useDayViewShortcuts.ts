@@ -34,6 +34,9 @@ interface KeyboardShortcutsConfig {
   // General
   onEscape?: () => void;
 
+  // Sidebar
+  onToggleSidebar?: () => void;
+
   // Agenda navigation
   onFocusAgenda?: () => void;
 
@@ -69,6 +72,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     onGoToToday,
     onFocusAgenda,
     onEditEvent,
+    onToggleSidebar,
     isEditingTask,
     hasFocusedTask,
     undoToastId,
@@ -120,6 +124,9 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   useKeyUpEvent({ combination: ["k"], handler: onNextDay });
 
   useKeyUpEvent({ combination: ["t"], handler: onGoToToday });
+
+  // Sidebar shortcut
+  useKeyUpEvent({ combination: ["["], handler: onToggleSidebar });
 
   // Tasks shortcuts
   useKeyUpEvent({ combination: ["u"], handler: onFocusTasks });

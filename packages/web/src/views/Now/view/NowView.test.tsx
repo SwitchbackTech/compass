@@ -22,16 +22,49 @@ jest.mock("@web/views/Now/hooks/useAvailableTasks", () => ({
   }),
 }));
 
+// Mock matchMedia to simulate wide screen (sidebar visible)
+const mockMatchMedia = (matches: boolean) => ({
+  matches,
+  media: "",
+  onchange: null,
+  addListener: jest.fn(),
+  removeListener: jest.fn(),
+  addEventListener: jest.fn(),
+  removeEventListener: jest.fn(),
+  dispatchEvent: jest.fn(),
+});
+
 describe("NowView", () => {
-  it("renders the shortcuts overlay", async () => {
+  const originalMatchMedia = window.matchMedia;
+  const originalInnerWidth = window.innerWidth;
+
+  beforeEach(() => {
+    // Simulate wide screen so sidebar is visible
+    Object.defineProperty(window, "innerWidth", {
+      writable: true,
+      configurable: true,
+      value: 1400,
+    });
+    window.matchMedia = jest.fn().mockReturnValue(mockMatchMedia(true));
+  });
+
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia;
+    Object.defineProperty(window, "innerWidth", {
+      writable: true,
+      configurable: true,
+      value: originalInnerWidth,
+    });
+  });
+  it("renders the shortcuts sidebar", async () => {
     await renderWithMemoryRouter(<NowView />, [ROOT_ROUTES.NOW]);
 
     // jest cannot actively determine applied pseudo-classes
     // a browser environment should be used for this test
     // move to playwright
-    const overlay = screen.getByRole("complementary", { hidden: true });
-    expect(overlay).toBeInTheDocument();
-    expect(overlay).toHaveAttribute("aria-label", "Shortcut overlay");
+    const sidebar = screen.getByRole("complementary", { hidden: true });
+    expect(sidebar).toBeInTheDocument();
+    expect(sidebar).toHaveAttribute("aria-label", "Shortcuts sidebar");
     expect(screen.getByText("Shortcuts")).toBeInTheDocument();
   });
 

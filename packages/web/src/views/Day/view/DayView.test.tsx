@@ -6,9 +6,40 @@ import { getModifierKeyTestId } from "@web/common/utils/shortcut/shortcut.util";
 import { renderWithDayProvidersAsync } from "@web/views/Day/util/day.test-util";
 import { DayViewContent } from "@web/views/Day/view/DayViewContent";
 
+// Mock matchMedia to simulate wide screen (sidebar visible)
+const mockMatchMedia = (matches: boolean) => ({
+  matches,
+  media: "",
+  onchange: null,
+  addListener: jest.fn(),
+  removeListener: jest.fn(),
+  addEventListener: jest.fn(),
+  removeEventListener: jest.fn(),
+  dispatchEvent: jest.fn(),
+});
+
 describe("DayView", () => {
+  const originalMatchMedia = window.matchMedia;
+  const originalInnerWidth = window.innerWidth;
+
   beforeEach(async () => {
+    // Simulate wide screen so sidebar is visible
+    Object.defineProperty(window, "innerWidth", {
+      writable: true,
+      configurable: true,
+      value: 1400,
+    });
+    window.matchMedia = jest.fn().mockReturnValue(mockMatchMedia(true));
     await prepareEmptyStorageForTests();
+  });
+
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia;
+    Object.defineProperty(window, "innerWidth", {
+      writable: true,
+      configurable: true,
+      value: originalInnerWidth,
+    });
   });
 
   it("should render TaskList component", async () => {
