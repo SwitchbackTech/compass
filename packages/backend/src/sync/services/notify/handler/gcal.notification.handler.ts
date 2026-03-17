@@ -2,7 +2,7 @@ import { Logger } from "@core/logger/winston.logger";
 import { type gCalendar } from "@core/types/gcal";
 import { Resource_Sync } from "@core/types/sync.types";
 import gcalService from "@backend/common/services/gcal/gcal.service";
-import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
+import { GcalSyncProcessor } from "@backend/sync/services/sync/google/gcal.sync.processor";
 import { type Summary_Sync } from "@backend/sync/sync.types";
 import { updateSync } from "@backend/sync/util/sync.queries";
 

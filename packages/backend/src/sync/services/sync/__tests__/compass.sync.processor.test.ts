@@ -22,7 +22,7 @@ import * as compassExecutor from "@backend/event/classes/compass.event.executor"
 import * as compassParser from "@backend/event/classes/compass.event.parser";
 import * as eventService from "@backend/event/services/event.service";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
-import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.processor";
+import { CompassSyncProcessor } from "@backend/sync/services/sync/compass/compass.sync.processor";
 import { type Event_Transition } from "@backend/sync/sync.types";
 
 // Import the enum
@@ -258,11 +258,9 @@ describe("CompassSyncProcessor.handleCompassChange", () => {
       applyTo: RecurringEventUpdateScope.THIS_EVENT,
     } as CompassEvent;
 
-    jest
-      .spyOn(mongoService, "event", "get")
-      .mockReturnValue({
-        findOne: jest.fn().mockResolvedValueOnce(null),
-      } as never);
+    jest.spyOn(mongoService, "event", "get").mockReturnValue({
+      findOne: jest.fn().mockResolvedValueOnce(null),
+    } as never);
     jest.spyOn(compassParser, "analyzeCompassTransition").mockReturnValueOnce({
       summary: {
         title: payload.title!,

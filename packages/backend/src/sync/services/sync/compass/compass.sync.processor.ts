@@ -1,4 +1,5 @@
 import { type ClientSession, ObjectId } from "mongodb";
+import { z } from "zod";
 import {
   EVENT_CHANGED,
   SOMEDAY_EVENT_CHANGED,
@@ -7,6 +8,7 @@ import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 import {
   type CompassEvent,
+  CoreEventSchema,
   type Schema_Event_Core,
 } from "@core/types/event.types";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
@@ -35,6 +37,24 @@ const isMissingGoogleRefreshToken = (error: unknown): error is BaseError => {
     error.description === UserError.MissingGoogleRefreshToken.description
   );
 };
+
+type PersistedCompassEvent = Awaited<
+  ReturnType<typeof applyCompassPlan>
+>["persistedEvent"];
+type PersistedCoreEvent = NonNullable<PersistedCompassEvent> &
+  Pick<
+    Schema_Event_Core,
+    "startDate" | "endDate" | "origin" | "priority" | "user"
+  >;
+
+const GoogleSyncEventSchema = CoreEventSchema.extend({
+  recurrence: CoreEventSchema.shape.recurrence.or(z.null()).optional(),
+});
+
+const isPersistedCoreEvent = (
+  event: PersistedCompassEvent,
+): event is PersistedCoreEvent =>
+  GoogleSyncEventSchema.safeParse(event).success;
 
 export class CompassSyncProcessor {
   static async processEvents(
@@ -77,11 +97,10 @@ export class CompassSyncProcessor {
     return summary;
   }
 
-  private static getNotificationType({
-    transition: [from, to],
-  }: Event_Transition): Array<
-    typeof EVENT_CHANGED | typeof SOMEDAY_EVENT_CHANGED
-  > {
+  private static getNotificationType(
+    this: void,
+    { transition: [from, to] }: Event_Transition,
+  ): Array<typeof EVENT_CHANGED | typeof SOMEDAY_EVENT_CHANGED> {
     const notifications: Array<
       typeof EVENT_CHANGED | typeof SOMEDAY_EVENT_CHANGED
     > = [];
@@ -119,9 +138,7 @@ export class CompassSyncProcessor {
             webSocketServer.handleBackgroundSomedayChange(userId);
             break;
           default:
-            logger.error(
-              `Unknown notification type: ${notification} for user: ${userId}`,
-            );
+            logger.error(`Unknown notification type for user: ${userId}`);
         }
       });
     });
@@ -133,7 +150,7 @@ export class CompassSyncProcessor {
   ): Promise<Event_Transition[]> {
     const eventId = event.payload._id;
     const dbEvent = await mongoService.event.findOne(
-      { _id: new ObjectId(eventId), user: event.payload.user! },
+      { _id: new ObjectId(eventId), user: event.payload.user },
       { session },
     );
     const plan = analyzeCompassTransition(event, dbEvent);
@@ -178,19 +195,19 @@ export class CompassSyncProcessor {
 
   private static async handleGoogleEffectByType(
     plan: CompassOperationPlan,
-    persistedEvent: Schema_Event_Core | undefined,
+    persistedEvent: PersistedCompassEvent,
     googleDeleteEventId: string | undefined,
   ): Promise<boolean> {
     switch (plan.googleEffect.type) {
       case "none":
         return true;
       case "create":
-        if (!persistedEvent) return false;
-        await _createGcal(persistedEvent.user!, persistedEvent);
+        if (!isPersistedCoreEvent(persistedEvent)) return false;
+        await _createGcal(persistedEvent.user, persistedEvent);
         return true;
       case "update":
-        if (!persistedEvent) return false;
-        await _updateGcal(persistedEvent.user!, persistedEvent);
+        if (!isPersistedCoreEvent(persistedEvent)) return false;
+        await _updateGcal(persistedEvent.user, persistedEvent);
         return true;
       case "delete":
         return googleDeleteEventId

@@ -18,7 +18,7 @@ import {
   noInstancesAfterSplitDate,
   updateBasePayloadToExpireOneDayAfterFirstInstance,
 } from "@backend/sync/services/sync/__tests__/gcal.sync.processor.test.util";
-import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
+import { GcalSyncProcessor } from "@backend/sync/services/sync/google/gcal.sync.processor";
 
 describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
   beforeAll(setupTestDb);
