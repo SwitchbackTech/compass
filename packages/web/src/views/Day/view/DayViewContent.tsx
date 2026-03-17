@@ -1,10 +1,11 @@
-import { memo, useCallback, useEffect, useState } from "react";
+import { memo, useCallback } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
 import { useEventDNDActions } from "@web/common/hooks/useEventDNDActions";
 import { useGridOrganization } from "@web/common/hooks/useGridOrganization";
 import { useMainGridSelection } from "@web/common/hooks/useMainGridSelection";
 import { useMainGridSelectionActions } from "@web/common/hooks/useMainGridSelectionActions";
+import { useSidebarState } from "@web/common/hooks/useSidebarState";
 import {
   CompassDOMEvents,
   compassEventEmitter,
@@ -30,28 +31,8 @@ import {
   focusOnFirstTask,
 } from "@web/views/Day/util/day.shortcut.util";
 
-// Tailwind xl breakpoint
-const XL_BREAKPOINT = 1280;
-
 export const DayViewContent = memo(() => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(
-    () => window.innerWidth >= XL_BREAKPOINT,
-  );
-
-  // Auto-collapse/expand sidebar based on screen width
-  useEffect(() => {
-    const mediaQuery = window.matchMedia(`(min-width: ${XL_BREAKPOINT}px)`);
-
-    const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
-      setIsSidebarOpen(e.matches);
-    };
-
-    // Check initial state
-    handleChange(mediaQuery);
-
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
+  const { isSidebarOpen, toggleSidebar } = useSidebarState();
 
   const selectionActions = useMainGridSelectionActions();
   const { timedEventsGridRef } = useCompassRefs();
@@ -134,10 +115,6 @@ export const DayViewContent = memo(() => {
     }
   }, [dateInView, navigateToToday]);
 
-  const handleToggleSidebar = useCallback(() => {
-    setIsSidebarOpen((prev) => !prev);
-  }, []);
-
   useDayViewShortcuts({
     onAddTask: focusOnAddTaskInput,
     onEditTask: handleEditTask,
@@ -150,7 +127,7 @@ export const DayViewContent = memo(() => {
     onNextDay: navigateToNextDay,
     onPrevDay: navigateToPreviousDay,
     onGoToToday: handleGoToToday,
-    onToggleSidebar: handleToggleSidebar,
+    onToggleSidebar: toggleSidebar,
     hasFocusedTask,
     undoToastId,
   });
@@ -164,7 +141,7 @@ export const DayViewContent = memo(() => {
         <Header
           showReminder={false}
           isSidebarOpen={isSidebarOpen}
-          onToggleSidebar={handleToggleSidebar}
+          onToggleSidebar={toggleSidebar}
         />
 
         <div className="flex w-full flex-1 justify-center gap-8 overflow-hidden xl:max-w-4/7 xl:self-center">

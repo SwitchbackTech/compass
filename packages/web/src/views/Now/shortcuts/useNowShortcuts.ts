@@ -19,6 +19,7 @@ interface Props {
   onPreviousTask?: () => void;
   onNextTask?: () => void;
   onCompleteTask?: () => void;
+  onToggleSidebar?: () => void;
 }
 
 /**
@@ -32,6 +33,7 @@ export function useNowShortcuts(props?: Props) {
     onPreviousTask,
     onNextTask,
     onCompleteTask,
+    onToggleSidebar,
   } = props || {};
 
   const navigate = useNavigate();
@@ -96,4 +98,7 @@ export function useNowShortcuts(props?: Props) {
     deps: [navigate],
     handler: () => navigate(ROOT_ROUTES.DAY),
   });
+
+  // Sidebar shortcut
+  useKeyUpEvent({ combination: ["["], handler: onToggleSidebar });
 }
