@@ -93,6 +93,66 @@ Two backend data concepts matter:
 
 If notification handling fails because a watch or sync record is stale, the backend attempts cleanup before failing hard.
 
+### Watch Channel Persistence Model
+
+Source files:
+
+- `packages/core/src/types/watch.types.ts`
+- `packages/backend/src/sync/services/sync.service.ts`
+- `packages/backend/src/sync/controllers/sync.controller.ts`
+
+Current contract:
+
+- `watch` collection is the source of truth for active Google push channels
+- each watch stores:
+  - `_id` (Mongo ObjectId) -> Google channel id (`x-goog-channel-id`)
+  - `resourceId` -> Google resource id (`x-goog-resource-id`)
+  - `gCalendarId` -> watched calendar id (or `Resource_Sync.CALENDAR` for calendar-list watches)
+  - `expiration` -> channel expiry timestamp
+  - `user` -> owning Compass user id
+- `sync` collection remains the source of sync tokens (`nextSyncToken`) and resource state
+
+Runtime correlation rules:
+
+- notification handling first matches `watch` by `_id`, `resourceId`, and non-expired channel
+- if no matching watch exists, backend attempts stale-watch cleanup and returns `"IGNORED"`
+- if watch exists but no sync record exists, backend also attempts stale-watch cleanup and returns `"IGNORED"`
+- if watch + sync exist but no `nextSyncToken` exists, controller triggers forced background resync and returns `204`
+
+### Watch Lifecycle Operations
+
+Primary write paths:
+
+- create calendar watch: `startWatchingGcalCalendars(...)`
+- create events watch: `startWatchingGcalEvents(...)`
+- stop one watch: `stopWatch(...)`
+- stop all user watches: `stopWatches(...)`
+
+Error semantics during stop:
+
+- Google `404` channel-not-found -> delete watch record locally and continue
+- Google `401` / invalid token -> delete watch record locally and continue
+- missing refresh token -> delete watch record locally and continue
+
+This makes watch cleanup idempotent for stale or already-invalid Google channels.
+
+### Watch Triage Checklist
+
+When Google notifications repeatedly return `"IGNORED"` or no client refresh occurs:
+
+1. verify watch exists for the incoming channel/resource pair:
+   - `_id == x-goog-channel-id`
+   - `resourceId == x-goog-resource-id`
+2. verify watch `expiration` is still valid
+3. verify matching sync entry has `nextSyncToken` for that `gCalendarId` in:
+   - `google.events[*]` for event notifications
+   - `google.calendarlist[*]` for calendar-list notifications
+4. check for cleanup/recovery logs:
+   - `Cleaned up stale watch...`
+   - `Ignoring notification because no active watch record exists...`
+   - `Recovering Google sync after missing sync token`
+5. if channels are broadly stale, run maintenance (`/api/sync/maintain-all`) or re-run full import for affected users
+
 ## Websocket Server Responsibilities
 
 Source:
