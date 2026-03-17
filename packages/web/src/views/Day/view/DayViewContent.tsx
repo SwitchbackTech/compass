@@ -1,4 +1,4 @@
-import { memo, useCallback } from "react";
+import { memo, useCallback, useState } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
 import { useEventDNDActions } from "@web/common/hooks/useEventDNDActions";
@@ -11,13 +11,13 @@ import {
 } from "@web/common/utils/dom/event-emitter.util";
 import { openEventFormEditEvent } from "@web/common/utils/event/event.util";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
-import { ShortcutsOverlay } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
 import { Dedication } from "@web/views/Calendar/components/Dedication/Dedication";
 import { useRefetch } from "@web/views/Calendar/hooks/useRefetch";
 import { StyledCalendar } from "@web/views/Calendar/styled";
 import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
 import { Header } from "@web/views/Day/components/Header/Header";
+import { ShortcutsSidebar } from "@web/views/Day/components/ShortcutsSidebar/ShortcutsSidebar";
 import { TaskList } from "@web/views/Day/components/TaskList/TaskList";
 import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
@@ -31,6 +31,8 @@ import {
 } from "@web/views/Day/util/day.shortcut.util";
 
 export const DayViewContent = memo(() => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
   const selectionActions = useMainGridSelectionActions();
   const { timedEventsGridRef } = useCompassRefs();
   const grid = timedEventsGridRef.current;
@@ -112,6 +114,10 @@ export const DayViewContent = memo(() => {
     }
   }, [dateInView, navigateToToday]);
 
+  const handleToggleSidebar = useCallback(() => {
+    setIsSidebarOpen((prev) => !prev);
+  }, []);
+
   useDayViewShortcuts({
     onAddTask: focusOnAddTaskInput,
     onEditTask: handleEditTask,
@@ -124,6 +130,7 @@ export const DayViewContent = memo(() => {
     onNextDay: navigateToNextDay,
     onPrevDay: navigateToPreviousDay,
     onGoToToday: handleGoToToday,
+    onToggleSidebar: handleToggleSidebar,
     hasFocusedTask,
     undoToastId,
   });
@@ -134,18 +141,21 @@ export const DayViewContent = memo(() => {
       <Dedication />
 
       <StyledCalendar>
-        <Header showReminder={false} />
+        <Header
+          showReminder={false}
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={handleToggleSidebar}
+        />
 
-        <div
-          className={`flex max-w-4/7 min-w-4/7 flex-1 justify-center gap-8 self-center overflow-hidden`}
-        >
+        <div className="flex max-w-4/7 min-w-4/7 flex-1 justify-center gap-8 self-center overflow-hidden">
           <TaskList />
 
           <Agenda />
         </div>
       </StyledCalendar>
 
-      <ShortcutsOverlay
+      <ShortcutsSidebar
+        isOpen={isSidebarOpen}
         sections={[
           { title: "Day", shortcuts: shortcuts.dayShortcuts },
           { title: "Tasks", shortcuts: shortcuts.dayTaskShortcuts },
