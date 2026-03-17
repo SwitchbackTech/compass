@@ -13,7 +13,9 @@ const EventApi = {
     return CompassApi.post<void>(`/event`, event);
   },
   delete: (_id: string, applyTo?: RecurringEventUpdateScope) => {
-    return CompassApi.delete<void>(`/event/${_id}?applyTo=${applyTo}`);
+    const query = applyTo ? `?applyTo=${applyTo}` : "";
+
+    return CompassApi.delete<void>(`/event/${_id}${query}`);
   },
   edit: (
     _id: string,
