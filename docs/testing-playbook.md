@@ -171,6 +171,29 @@ await act(async () => {
 });
 ```
 
+### Testing Responsive Sidebar State (`useSidebarState`)
+
+Files:
+
+- `packages/web/src/common/hooks/useSidebarState.ts`
+- `packages/web/src/views/Day/components/ShortcutsSidebar/ShortcutsSidebar.tsx`
+- `packages/web/src/views/Day/view/DayViewContent.tsx`
+- `packages/web/src/views/Now/view/NowView.tsx`
+
+Reliable setup pattern:
+
+- set `window.innerWidth` explicitly in each test scenario (`>= 1280` for open, `< 1280` for closed)
+- mock `window.matchMedia` with `addEventListener`/`removeEventListener` support
+- expose a small test helper to trigger media-query changes and wrap the trigger in `act`
+
+Assertions to prefer:
+
+- query the sidebar by landmark role and label (`role="complementary"`, `name: "Shortcuts sidebar"`)
+- when asserting presence in JSDOM for desktop-only markup (`hidden xl:flex`), use role queries that allow hidden elements where needed
+- verify both pathways for toggle behavior:
+  - user interaction (header toggle button)
+  - keyboard interaction (`[` shortcut via view shortcut hooks)
+
 ### Route-Aware Component Tests
 
 For components that depend on routing context (`Outlet`, nested routes, route transitions), prefer the shared memory-router helper:

@@ -186,6 +186,38 @@ Pitfalls:
 - do not call `dialog.close()` directly in new close handlers unless you intentionally want to bypass the fade/scale exit animation
 - keep imports pointed at `.../Dedication/Dedication` (no barrel file in this folder)
 
+## Day/Now Shortcuts Sidebar Runtime
+
+Files:
+
+- `packages/web/src/common/hooks/useSidebarState.ts`
+- `packages/web/src/views/Day/components/ShortcutsSidebar/ShortcutsSidebar.tsx`
+- `packages/web/src/views/Day/components/Header/Header.tsx`
+- `packages/web/src/views/Day/view/DayViewContent.tsx`
+- `packages/web/src/views/Now/view/NowView.tsx`
+- `packages/web/src/views/Day/hooks/shortcuts/useDayViewShortcuts.ts`
+- `packages/web/src/views/Now/shortcuts/useNowShortcuts.ts`
+
+Runtime behavior:
+
+- sidebar state is responsive-first: `useSidebarState` sets open/closed from `window.innerWidth >= 1280` (`xl`) and subscribes to `matchMedia("(min-width: 1280px)")`
+- breakpoint transitions are authoritative: crossing the `xl` boundary re-syncs the sidebar state even if the user manually toggled it earlier
+- users can toggle via:
+  - header sidebar button (`Header` tooltip + `SidebarIcon`)
+  - `[` keyboard shortcut in both Day and Now views
+- the sidebar is desktop-only in layout (`hidden xl:flex`), so on sub-`xl` widths toggling updates state but the sidebar content remains visually hidden
+- `ShortcutsSidebar` filters out empty sections and returns `null` when no section has shortcuts
+
+Animation and visibility contract:
+
+- opening uses `requestAnimationFrame` to set visible state so entry transition classes apply (`translate-x-0 opacity-100`)
+- closing sets hidden classes (`-translate-x-4 opacity-0`) and unmounts when closed/not visible
+
+Pitfalls:
+
+- `useSidebarState` reads `window` during state initialization and uses `window.matchMedia`; browser-like globals must exist in tests/non-browser runtimes
+- when adding sidebar-driven interactions, verify both Day and Now routes to keep keyboard behavior aligned (`[` should work in both)
+
 ## State Systems
 
 The web app uses multiple state layers:
