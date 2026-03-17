@@ -1,4 +1,4 @@
-import { type FC, useState } from "react";
+import { type ChangeEvent, type FC, useState } from "react";
 import {
   type ForgotPasswordFormData,
   ForgotPasswordSchema,
@@ -28,20 +28,29 @@ export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
   isSubmitting,
 }) => {
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const form = useZodForm({
     schema: ForgotPasswordSchema,
     initialValues: { email: "" },
     onSubmit: async (data) => {
+      setSubmitError(null);
+
       try {
         await onSubmit(data);
         setIsSubmitted(true);
-      } catch {
-        // Error is handled by the parent component via submitError
-        // Don't show success message on error
+      } catch (error) {
+        setSubmitError(
+          error instanceof Error ? error.message : "Unable to send reset email",
+        );
       }
     },
   });
+
+  const handleEmailChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setSubmitError(null);
+    form.handleChange("email")(event);
+  };
 
   if (isSubmitted) {
     return (
@@ -72,12 +81,17 @@ export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
         placeholder="Email"
         ariaLabel="Email"
         value={form.values.email}
-        onChange={form.handleChange("email")}
+        onChange={handleEmailChange}
         onBlur={form.handleBlur("email")}
         error={form.errors.email}
         hasError={!!form.touched.email && !!form.errors.email}
         autoComplete="email"
       />
+      {submitError ? (
+        <p className="text-status-error text-center text-sm" role="alert">
+          {submitError}
+        </p>
+      ) : null}
 
       <AuthButton
         type="submit"

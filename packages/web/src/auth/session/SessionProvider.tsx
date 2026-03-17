@@ -15,7 +15,10 @@ import EmailPassword from "supertokens-web-js/recipe/emailpassword";
 import Session from "supertokens-web-js/recipe/session";
 import ThirdParty from "supertokens-web-js/recipe/thirdparty";
 import { APP_NAME } from "@core/constants/core.constants";
-import { markUserAsAuthenticated } from "@web/auth/state/auth.state.util";
+import {
+  getLastKnownEmail,
+  markUserAsAuthenticated,
+} from "@web/auth/state/auth.state.util";
 import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
@@ -56,7 +59,7 @@ let isCheckingSession = false;
 const $authenticated = authenticated$.pipe(skip(1), distinctUntilChanged());
 
 const handleSessionExists = () => {
-  markUserAsAuthenticated();
+  markUserAsAuthenticated(getLastKnownEmail());
   void refreshUserMetadata();
 };
 
@@ -104,7 +107,7 @@ export function sessionInit() {
       case "SESSION_CREATED":
         // Mark user as authenticated when session is created or refreshed
         // This ensures the flag is set even if markUserAsAuthenticated wasn't called during OAuth
-        markUserAsAuthenticated();
+        markUserAsAuthenticated(getLastKnownEmail());
         void refreshUserMetadata();
         socket.reconnect();
         break;

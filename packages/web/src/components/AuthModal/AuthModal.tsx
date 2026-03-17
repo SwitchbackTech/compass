@@ -75,6 +75,9 @@ export const AuthModal: FC = () => {
 
   const showAuthSwitch = currentView === "login" || currentView === "signUp";
   const showGoogleAuth = currentView !== "resetPassword";
+  const showSubmitError =
+    submitError !== null &&
+    (currentView === "login" || currentView === "signUp");
   const trimmedName = signUpName.trim();
   const title =
     currentView === "forgotPassword"
@@ -120,7 +123,7 @@ export const AuthModal: FC = () => {
             error={submitError}
           />
         )}
-        {submitError && currentView !== "resetPassword" ? (
+        {showSubmitError ? (
           <p className="text-status-error text-center text-sm" role="alert">
             {submitError}
           </p>

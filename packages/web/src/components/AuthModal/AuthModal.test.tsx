@@ -551,6 +551,52 @@ describe("AuthModal", () => {
       });
     });
 
+    it("shows forgot password errors inline without the shared auth banner", async () => {
+      mockEmailPassword.sendPasswordResetEmail.mockResolvedValue({
+        status: "PASSWORD_RESET_NOT_ALLOWED",
+        reason: "Password reset disabled",
+      } as never);
+
+      const user = userEvent.setup();
+      renderWithProviders(<ModalTrigger />);
+
+      await act(async () => {
+        await user.click(screen.getByRole("button", { name: /open modal/i }));
+      });
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole("button", { name: /forgot password/i }),
+        ).toBeInTheDocument();
+      });
+
+      await act(async () => {
+        await user.click(
+          screen.getByRole("button", { name: /forgot password/i }),
+        );
+      });
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+      });
+
+      await act(async () => {
+        await user.type(screen.getByLabelText(/email/i), "test@example.com");
+        await user.click(
+          screen.getByRole("button", { name: /send reset link/i }),
+        );
+      });
+
+      await waitFor(() => {
+        expect(screen.getByRole("alert")).toHaveTextContent(
+          "Password reset disabled",
+        );
+      });
+
+      expect(screen.queryByText(/check your email/i)).not.toBeInTheDocument();
+      expect(screen.queryAllByText("Password reset disabled")).toHaveLength(1);
+    });
+
     it("navigates back to sign in when link is clicked", async () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);

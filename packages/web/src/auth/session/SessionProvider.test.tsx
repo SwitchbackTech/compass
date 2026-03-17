@@ -14,6 +14,7 @@ describe("SessionProvider sessionInit", () => {
     const disconnect = jest.fn();
     const dispatch = jest.fn();
     const markUserAsAuthenticated = jest.fn();
+    const getLastKnownEmail = jest.fn().mockReturnValue("test@example.com");
 
     jest.doMock("@web/auth/session/user-metadata.util", () => ({
       refreshUserMetadata,
@@ -33,6 +34,7 @@ describe("SessionProvider sessionInit", () => {
       },
     }));
     jest.doMock("@web/auth/state/auth.state.util", () => ({
+      getLastKnownEmail,
       markUserAsAuthenticated,
     }));
 
@@ -45,7 +47,9 @@ describe("SessionProvider sessionInit", () => {
       sessionInit();
 
       await waitFor(() => {
-        expect(markUserAsAuthenticated).toHaveBeenCalledTimes(1);
+        expect(markUserAsAuthenticated).toHaveBeenCalledWith(
+          "test@example.com",
+        );
         expect(refreshUserMetadata).toHaveBeenCalledTimes(1);
       });
       expect(connect).toHaveBeenCalledTimes(1);
@@ -59,6 +63,7 @@ describe("SessionProvider sessionInit", () => {
     const disconnect = jest.fn();
     const dispatch = jest.fn();
     const markUserAsAuthenticated = jest.fn();
+    const getLastKnownEmail = jest.fn().mockReturnValue("test@example.com");
 
     jest.doMock("@web/auth/session/user-metadata.util", () => ({
       refreshUserMetadata,
@@ -78,6 +83,7 @@ describe("SessionProvider sessionInit", () => {
       },
     }));
     jest.doMock("@web/auth/state/auth.state.util", () => ({
+      getLastKnownEmail,
       markUserAsAuthenticated,
     }));
 
@@ -94,7 +100,9 @@ describe("SessionProvider sessionInit", () => {
       });
 
       await waitFor(() => {
-        expect(markUserAsAuthenticated).toHaveBeenCalledTimes(1);
+        expect(markUserAsAuthenticated).toHaveBeenCalledWith(
+          "test@example.com",
+        );
         expect(refreshUserMetadata).toHaveBeenCalledTimes(1);
       });
       expect(reconnect).toHaveBeenCalledTimes(1);

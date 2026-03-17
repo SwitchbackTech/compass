@@ -111,29 +111,26 @@ export function useAuthFormHandlers({
   const handleForgotPassword = useCallback(
     async (data: ForgotPasswordFormData) => {
       setIsSubmitting(true);
-      setSubmitError(null);
 
       try {
         const response = await EmailPassword.sendPasswordResetEmail({
           formFields: [{ id: "email", value: data.email }],
         });
 
-        if (response.status === "FIELD_ERROR") {
-          const errorMessage =
-            response.formFields[0]?.error ?? "Unable to send reset email";
-          setSubmitError(errorMessage);
-          throw new Error(errorMessage);
-        }
-
-        if (response.status === "PASSWORD_RESET_NOT_ALLOWED") {
-          setSubmitError(response.reason);
-          throw new Error(response.reason);
+        switch (response.status) {
+          case "OK":
+            return;
+          case "FIELD_ERROR":
+            throw new Error(
+              response.formFields[0]?.error ?? "Unable to send reset email",
+            );
+          case "PASSWORD_RESET_NOT_ALLOWED":
+            throw new Error(response.reason);
         }
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Unable to send reset email";
-        setSubmitError(errorMessage);
-        throw error;
+        throw error instanceof Error
+          ? error
+          : new Error("Unable to send reset email");
       } finally {
         setIsSubmitting(false);
       }

@@ -125,6 +125,13 @@ describe("auth-state.util", () => {
       expect(getLastKnownEmail()).toBe("foo@bar.com");
     });
 
+    it("should preserve the existing email when no new email is provided", () => {
+      markUserAsAuthenticated("foo@bar.com");
+      markUserAsAuthenticated();
+
+      expect(getLastKnownEmail()).toBe("foo@bar.com");
+    });
+
     it("should handle localStorage errors gracefully", () => {
       const setItemSpy = jest
         .spyOn(Storage.prototype, "setItem")

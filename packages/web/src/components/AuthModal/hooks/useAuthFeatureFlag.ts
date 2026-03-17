@@ -1,4 +1,3 @@
-import { AUTH_FEATURE_FLAG_TEST_EMAIL } from "@web/common/constants/auth.constants";
 import { getLastKnownEmail } from "@web/auth/state/auth.state.util";
 
 /**
@@ -22,13 +21,5 @@ export function useAuthFeatureFlag(): boolean {
     }
   }
 
-  const lastKnownEmail = getLastKnownEmail();
-  if (
-    lastKnownEmail !== undefined &&
-    lastKnownEmail === AUTH_FEATURE_FLAG_TEST_EMAIL
-  ) {
-    return true;
-  }
-
-  return false;
+  return getLastKnownEmail() !== undefined;
 }
