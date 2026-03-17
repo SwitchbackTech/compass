@@ -3,9 +3,7 @@ import { ObjectId } from "mongodb";
 import supertokens, {
   default as SuperTokens,
   User,
-  createUserIdMapping,
   getUser,
-  getUserIdMapping,
 } from "supertokens-node";
 import AccountLinking from "supertokens-node/recipe/accountlinking";
 import Dashboard from "supertokens-node/recipe/dashboard";
@@ -29,7 +27,10 @@ import { ENV } from "@backend/common/constants/env.constants";
 import {
   type CreateGoogleSignInResponse,
   type ThirdPartySignInUpInput,
+  buildResetPasswordLink,
   createGoogleSignInSuccess,
+  ensureExternalUserIdMapping,
+  getFormFieldValue,
 } from "@backend/common/middleware/supertokens.middleware.util";
 import mongoService from "@backend/common/services/mongo.service";
 import syncService from "@backend/sync/services/sync.service";
@@ -37,50 +38,6 @@ import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
 
 const logger = Logger("app:supertokens.middleware");
-
-const getFormFieldValue = (
-  formFields: Array<{ id: string; value: unknown }>,
-  id: string,
-): string | undefined => {
-  const field = formFields.find((item) => item.id === id);
-  return typeof field?.value === "string" ? field.value : undefined;
-};
-
-const ensureExternalUserIdMapping = async (
-  recipeUserId: string,
-): Promise<string> => {
-  const existingMapping = await getUserIdMapping({
-    userId: recipeUserId,
-    userIdType: "SUPERTOKENS",
-  });
-
-  if (existingMapping.status === "OK") {
-    return existingMapping.externalUserId;
-  }
-
-  const externalUserId = new ObjectId().toString();
-  await createUserIdMapping({
-    superTokensUserId: recipeUserId,
-    externalUserId,
-  });
-
-  return externalUserId;
-};
-
-const buildResetPasswordLink = (passwordResetLink: string): string => {
-  const url = new URL(passwordResetLink);
-  const token = url.searchParams.get("token");
-
-  if (!token) {
-    return passwordResetLink;
-  }
-
-  const appUrl = new URL(`http://localhost:${PORT_DEFAULT_WEB}/day`);
-  appUrl.searchParams.set("auth", "reset");
-  appUrl.searchParams.set("token", token);
-
-  return appUrl.toString();
-};
 
 export const initSupertokens = () => {
   SuperTokens.init({
