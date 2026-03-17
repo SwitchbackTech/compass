@@ -1,28 +1,38 @@
 import { faker } from "@faker-js/faker";
+import { calendar } from "@googleapis/calendar";
 import { BaseError } from "@core/errors/errors.base";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import GoogleOAuthClient from "./google.oauth.client";
 
-const mockCalendar = jest.fn<unknown, [unknown]>();
-const mockVerifyIdToken = jest.fn();
-const mockGetAccessToken = jest.fn();
-
 jest.mock("@googleapis/calendar", () => ({
-  calendar: mockCalendar,
+  calendar: jest.fn(),
 }));
 
 jest.mock("google-auth-library", () => {
   class MockOAuth2Client {
     credentials: Record<string, unknown> = {};
     _clientId = "mock-client-id";
-    verifyIdToken = mockVerifyIdToken;
-    getAccessToken = mockGetAccessToken;
+    verifyIdToken = jest.fn();
+    getAccessToken = jest.fn();
   }
 
   return {
     OAuth2Client: jest.fn(() => new MockOAuth2Client()),
   };
 });
+
+type MockOAuthClientInstance = {
+  credentials: Record<string, unknown>;
+  _clientId: string;
+  verifyIdToken: jest.Mock;
+  getAccessToken: jest.Mock;
+};
+
+const mockCalendar = jest.mocked(calendar);
+const getMockOAuthClient = (
+  client: GoogleOAuthClient,
+): MockOAuthClientInstance =>
+  client.oauthClient as unknown as MockOAuthClientInstance;
 
 describe("GoogleOAuthClient", () => {
   beforeEach(() => {
@@ -54,22 +64,23 @@ describe("GoogleOAuthClient", () => {
 
   it("returns decoded user info and stored tokens when an id token is present", async () => {
     const client = new GoogleOAuthClient();
+    const mockOAuthClient = getMockOAuthClient(client);
     const payload = {
       sub: faker.string.uuid(),
       email: faker.internet.email(),
     };
 
-    client.oauthClient.credentials = { id_token: "token", access_token: "abc" };
-    mockVerifyIdToken.mockResolvedValue({
+    mockOAuthClient.credentials = { id_token: "token", access_token: "abc" };
+    mockOAuthClient.verifyIdToken.mockResolvedValue({
       getPayload: () => payload,
     });
 
     await expect(client.getGoogleUserInfo()).resolves.toEqual({
       gUser: payload,
-      tokens: client.oauthClient.credentials,
+      tokens: mockOAuthClient.credentials,
     });
 
-    expect(mockVerifyIdToken).toHaveBeenCalledWith({
+    expect(mockOAuthClient.verifyIdToken).toHaveBeenCalledWith({
       idToken: "token",
       audience: "mock-client-id",
     });
@@ -77,15 +88,17 @@ describe("GoogleOAuthClient", () => {
 
   it("returns the access token when refreshAccessToken receives a valid uuid", async () => {
     const client = new GoogleOAuthClient();
+    const mockOAuthClient = getMockOAuthClient(client);
     const token = faker.string.uuid();
-    mockGetAccessToken.mockResolvedValue({ token });
+    mockOAuthClient.getAccessToken.mockResolvedValue({ token });
 
     await expect(client.refreshAccessToken()).resolves.toBe(token);
   });
 
   it("throws AuthError.NoGAuthAccessToken when refreshAccessToken returns an invalid token", async () => {
     const client = new GoogleOAuthClient();
-    mockGetAccessToken.mockResolvedValue({ token: "not-a-uuid" });
+    const mockOAuthClient = getMockOAuthClient(client);
+    mockOAuthClient.getAccessToken.mockResolvedValue({ token: "not-a-uuid" });
 
     await expect(client.refreshAccessToken()).rejects.toMatchObject({
       description: AuthError.NoGAuthAccessToken.description,
