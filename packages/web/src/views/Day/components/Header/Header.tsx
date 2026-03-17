@@ -35,21 +35,19 @@ export const Header: FC<Props> = ({
 
   return (
     <StyledHeaderRow alignItems={AlignItems.BASELINE}>
-      <div className="hidden md:block">
-        <TooltipWrapper
-          description={isSidebarOpen ? "Hide shortcuts" : "Show shortcuts"}
-          onClick={onToggleSidebar}
-          shortcut="["
-        >
-          <SidebarIcon
-            color={
-              isSidebarOpen
-                ? theme.color.text.light
-                : theme.color.text.lightInactive
-            }
-          />
-        </TooltipWrapper>
-      </div>
+      <TooltipWrapper
+        description={isSidebarOpen ? "Hide shortcuts" : "Show shortcuts"}
+        onClick={onToggleSidebar}
+        shortcut="["
+      >
+        <SidebarIcon
+          color={
+            isSidebarOpen
+              ? theme.color.text.light
+              : theme.color.text.lightInactive
+          }
+        />
+      </TooltipWrapper>
       <StyledLeftGroup />
 
       {showReminder && <Reminder ref={reminderRef} />}

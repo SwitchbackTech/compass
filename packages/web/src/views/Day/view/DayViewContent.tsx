@@ -1,4 +1,4 @@
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
 import { useEventDNDActions } from "@web/common/hooks/useEventDNDActions";
@@ -30,8 +30,30 @@ import {
   focusOnFirstTask,
 } from "@web/views/Day/util/day.shortcut.util";
 
+// Tailwind xl breakpoint
+const XL_BREAKPOINT = 1280;
+
 export const DayViewContent = memo(() => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(
+    () => window.innerWidth >= XL_BREAKPOINT,
+  );
+
+  // Auto-collapse sidebar when screen is too narrow
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(`(min-width: ${XL_BREAKPOINT}px)`);
+
+    const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      if (!e.matches) {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    // Check initial state
+    handleChange(mediaQuery);
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
 
   const selectionActions = useMainGridSelectionActions();
   const { timedEventsGridRef } = useCompassRefs();
@@ -147,7 +169,7 @@ export const DayViewContent = memo(() => {
           onToggleSidebar={handleToggleSidebar}
         />
 
-        <div className="flex max-w-4/7 min-w-4/7 flex-1 justify-center gap-8 self-center overflow-hidden">
+        <div className="flex w-full flex-1 justify-center gap-8 overflow-hidden xl:max-w-4/7 xl:self-center">
           <TaskList />
 
           <Agenda />

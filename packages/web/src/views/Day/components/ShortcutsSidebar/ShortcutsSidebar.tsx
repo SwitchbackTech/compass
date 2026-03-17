@@ -34,7 +34,7 @@ export const ShortcutsSidebar = ({
     <aside
       aria-label="Shortcuts sidebar"
       className={classNames(
-        "fixed top-24 left-3 hidden flex-col md:flex",
+        "fixed top-24 left-3 hidden flex-col xl:flex",
         "bg-bg-secondary border-border-primary",
         "w-[240px] rounded-lg border p-3 shadow-lg backdrop-blur-sm",
         "transition-all duration-300 ease-out",
