@@ -185,13 +185,18 @@ export const CompassEventRecurrence = z.object({
   eventId: z.string().optional(),
 });
 
-export const EventUpdateSchema = z.object({
-  description: z.string().nullable().optional(),
-  priority: z.nativeEnum(Priorities).optional(),
-  recurrence: z.union([
+const EventUpdateRecurrenceSchema = z.preprocess(
+  (value) => (value === null ? { rule: null } : value),
+  z.union([
     CompassEventRecurrence.extend({ rule: z.null() }),
     CompassEventRecurrence,
   ]),
+);
+
+export const EventUpdateSchema = z.object({
+  description: z.string().nullable().optional(),
+  priority: z.nativeEnum(Priorities).optional(),
+  recurrence: EventUpdateRecurrenceSchema,
   startDate: eventDateSchema.optional(),
   endDate: eventDateSchema.optional(),
   title: z.string().optional(),
