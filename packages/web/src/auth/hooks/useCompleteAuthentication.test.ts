@@ -67,7 +67,7 @@ describe("useCompleteAuthentication", () => {
       expect.objectContaining({ type: "auth/authSuccess" }),
     );
     expect(mockDispatch).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "sync/importLatest/triggerFetch" }),
+      expect.objectContaining({ type: "importLatest/triggerFetch" }),
     );
     expect(mockRefreshUserMetadata).toHaveBeenCalled();
   });
