@@ -24,9 +24,8 @@ import { type Summary_Delete } from "@backend/user/types/user.types";
 
 jest.mock("@backend/sync/util/sync.util", () => {
   const actual = jest.requireActual("@backend/sync/util/sync.util") as unknown;
-  const actualObject = actual as {
+  const actualObject = actual as Record<string, unknown> & {
     isUsingHttps: (...args: unknown[]) => unknown;
-    [key: string]: unknown;
   };
 
   return {
