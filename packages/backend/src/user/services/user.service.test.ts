@@ -23,10 +23,16 @@ import userService from "@backend/user/services/user.service";
 import { type Summary_Delete } from "@backend/user/types/user.types";
 
 jest.mock("@backend/sync/util/sync.util", () => {
-  const actual = jest.requireActual<
-    typeof import("@backend/sync/util/sync.util")
-  >("@backend/sync/util/sync.util");
-  return { ...actual, isUsingHttps: jest.fn(actual.isUsingHttps) };
+  const actual = jest.requireActual("@backend/sync/util/sync.util") as unknown;
+  const actualObject = actual as {
+    isUsingHttps: (...args: unknown[]) => unknown;
+    [key: string]: unknown;
+  };
+
+  return {
+    ...actualObject,
+    isUsingHttps: jest.fn(actualObject.isUsingHttps),
+  };
 });
 
 describe("UserService", () => {
@@ -48,9 +54,12 @@ describe("UserService", () => {
       expect(storedUser).toEqual(
         expect.objectContaining({
           email: gUser.email as string,
-          google: expect.objectContaining({
-            gRefreshToken: refreshToken,
-          }),
+        }),
+      );
+
+      expect(storedUser?.google).toEqual(
+        expect.objectContaining({
+          gRefreshToken: refreshToken,
         }),
       );
     });
@@ -133,10 +142,13 @@ describe("UserService", () => {
         expect.objectContaining({
           email: "updated@example.com",
           name: user.name,
-          google: expect.objectContaining({
-            googleId: user.google?.googleId,
-            gRefreshToken: user.google?.gRefreshToken,
-          }),
+        }),
+      );
+
+      expect(storedUser?.google).toEqual(
+        expect.objectContaining({
+          googleId: user.google?.googleId,
+          gRefreshToken: user.google?.gRefreshToken,
         }),
       );
     });
