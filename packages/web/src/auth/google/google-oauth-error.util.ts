@@ -8,26 +8,50 @@ type GoogleOAuthErrorLike = {
   message?: unknown;
 };
 
+const isPopupClosedString = (value: string): boolean => {
+  const normalizedValue = value.toLowerCase();
+
+  return (
+    normalizedValue === POPUP_CLOSED_ERROR_TYPE ||
+    normalizedValue.includes(POPUP_CLOSED_ERROR_MESSAGE)
+  );
+};
+
+const isPopupClosedUnknown = (value: unknown): boolean => {
+  if (typeof value === "string") {
+    return isPopupClosedString(value);
+  }
+
+  if (value instanceof Error) {
+    return isPopupClosedString(value.message);
+  }
+
+  if (value && typeof value === "object" && "message" in value) {
+    const objectWithMessage = value as { message?: unknown };
+    if (typeof objectWithMessage.message === "string") {
+      return isPopupClosedString(objectWithMessage.message);
+    }
+  }
+
+  return false;
+};
+
 export const isGooglePopupClosedError = (error: unknown): boolean => {
+  if (isPopupClosedUnknown(error)) {
+    return true;
+  }
+
   if (!error || typeof error !== "object") {
     return false;
   }
 
   const maybeGoogleError = error as GoogleOAuthErrorLike;
-
-  if (maybeGoogleError.type === POPUP_CLOSED_ERROR_TYPE) {
-    return true;
-  }
-
-  const errorMessages = [
+  const possibleErrorValues = [
+    maybeGoogleError.type,
     maybeGoogleError.error,
     maybeGoogleError.error_description,
     maybeGoogleError.message,
-  ].filter((value): value is string => typeof value === "string");
+  ];
 
-  return errorMessages.some(
-    (value) =>
-      value.toLowerCase() === POPUP_CLOSED_ERROR_TYPE ||
-      value.toLowerCase().includes(POPUP_CLOSED_ERROR_MESSAGE),
-  );
+  return possibleErrorValues.some(isPopupClosedUnknown);
 };

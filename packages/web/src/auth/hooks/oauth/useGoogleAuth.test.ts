@@ -267,6 +267,49 @@ describe("useGoogleAuth", () => {
         }),
       );
     });
+
+    it("treats popup-closed string as cancellation without auth error", () => {
+      let onErrorCallback: ((error: unknown) => void) | undefined;
+
+      mockUseGoogleLogin.mockImplementation(({ onError }) => {
+        onErrorCallback = onError;
+        return {
+          login: mockLogin,
+          loading: false,
+          data: null,
+        };
+      });
+
+      renderHook(() => useGoogleAuth());
+
+      expect(onErrorCallback).toBeDefined();
+
+      onErrorCallback?.("Popup window closed by user");
+
+      expect(console.error).not.toHaveBeenCalled();
+      expect(mockDispatchFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "auth/resetAuth",
+        }),
+      );
+      expect(mockDispatchFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "async/importGCal/setIsImportPending",
+          payload: false,
+        }),
+      );
+      expect(mockDispatchFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "async/importGCal/importing",
+          payload: false,
+        }),
+      );
+      expect(mockDispatchFn).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "auth/authError",
+        }),
+      );
+    });
   });
 
   describe("authentication failure handling", () => {
