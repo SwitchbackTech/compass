@@ -1,5 +1,6 @@
 import { toast } from "react-toastify";
 import { Origin } from "@core/constants/core.constants";
+import { type Result_Auth_Compass } from "@core/types/auth.types";
 import { markGoogleAsRevoked } from "@web/auth/google/google.auth.state";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
@@ -18,6 +19,7 @@ import { store } from "@web/store";
 
 export interface AuthenticateResult {
   success: boolean;
+  data?: Result_Auth_Compass;
   error?: Error;
 }
 
@@ -34,8 +36,8 @@ export async function authenticate(
   data: SignInUpInput,
 ): Promise<AuthenticateResult> {
   try {
-    await AuthApi.loginOrSignup(data);
-    return { success: true };
+    const response = await AuthApi.loginOrSignup(data);
+    return { success: true, data: response };
   } catch (error) {
     return { success: false, error: error as Error };
   }

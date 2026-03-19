@@ -86,6 +86,62 @@ describe("UserService", () => {
     });
   });
 
+  describe("upsertUserFromAuth", () => {
+    it("creates a password user with normalized fields and default priorities", async () => {
+      const userId = mongoService.objectId().toString();
+
+      const result = await userService.upsertUserFromAuth({
+        userId,
+        email: "  Foo@Bar.com ",
+        name: "  Tyler Durden ",
+      });
+
+      expect(result.isNewUser).toBe(true);
+      expect(result.user).toEqual(
+        expect.objectContaining({
+          userId,
+          email: "foo@bar.com",
+          name: "Tyler Durden",
+          firstName: "Tyler",
+          lastName: "Durden",
+        }),
+      );
+
+      const storedUser = await mongoService.user.findOne({
+        _id: mongoService.objectId(userId),
+      });
+      expect(storedUser?.google).toBeUndefined();
+
+      const priorities = await mongoService.priority
+        .find({ user: userId })
+        .toArray();
+      expect(priorities.length).toBeGreaterThan(0);
+    });
+
+    it("updates an existing user without removing stored Google data", async () => {
+      const user = await UserDriver.createUser();
+
+      const result = await userService.upsertUserFromAuth({
+        userId: user._id.toString(),
+        email: "updated@example.com",
+      });
+
+      expect(result.isNewUser).toBe(false);
+
+      const storedUser = await mongoService.user.findOne({ _id: user._id });
+      expect(storedUser).toEqual(
+        expect.objectContaining({
+          email: "updated@example.com",
+          name: user.name,
+          google: expect.objectContaining({
+            googleId: user.google?.googleId,
+            gRefreshToken: user.google?.gRefreshToken,
+          }),
+        }),
+      );
+    });
+  });
+
   describe("deleteCompassDataForUser", () => {
     it("removes all compass data and deletes the user", async () => {
       const user = await UserDriver.createUser();

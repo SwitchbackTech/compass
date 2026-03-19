@@ -23,7 +23,7 @@ import {
 import mongoService from "@backend/common/services/mongo.service";
 import { testCompassSeries } from "@backend/event/classes/compass.event.parser.test.util";
 import { getReadAllFilter } from "@backend/event/services/event.service.util";
-import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.processor";
+import { CompassSyncProcessor } from "@backend/sync/services/sync/compass/compass.sync.processor";
 
 describe("Jan 2022: Many Formats", () => {
   const gBase = mockRecurringGcalBaseEvent({}, false, { count: 10 });

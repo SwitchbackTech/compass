@@ -15,7 +15,7 @@ import {
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 import { mockRecurringGcalBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { createCompassSeriesFromGcalBase } from "@backend/sync/services/sync/__tests__/gcal.sync.processor.test.util";
-import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
+import { GcalSyncProcessor } from "@backend/sync/services/sync/google/gcal.sync.processor";
 
 describe("GcalSyncProcessor: DELETE", () => {
   beforeAll(setupTestDb);

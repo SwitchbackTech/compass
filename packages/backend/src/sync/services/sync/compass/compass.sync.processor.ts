@@ -3,13 +3,12 @@ import {
   EVENT_CHANGED,
   SOMEDAY_EVENT_CHANGED,
 } from "@core/constants/websocket.constants";
+import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
-import {
-  type CompassEvent,
-  type Schema_Event_Core,
-} from "@core/types/event.types";
+import { type CompassEvent } from "@core/types/event.types";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { UserError } from "@backend/common/errors/user/user.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import { applyCompassPlan } from "@backend/event/classes/compass.event.executor";
 import { CompassEventFactory } from "@backend/event/classes/compass.event.generator";
@@ -24,8 +23,19 @@ import {
 } from "@backend/event/services/event.service";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import { type Event_Transition } from "@backend/sync/sync.types";
+import {
+  type PersistedCompassEvent,
+  isPersistedCoreEvent,
+} from "./compass.sync.processor.util";
 
 const logger = Logger("app.compass.sync.processor");
+
+const isMissingGoogleRefreshToken = (error: unknown): error is BaseError => {
+  return (
+    error instanceof BaseError &&
+    error.description === UserError.MissingGoogleRefreshToken.description
+  );
+};
 
 export class CompassSyncProcessor {
   static async processEvents(
@@ -68,11 +78,10 @@ export class CompassSyncProcessor {
     return summary;
   }
 
-  private static getNotificationType({
-    transition: [from, to],
-  }: Event_Transition): Array<
-    typeof EVENT_CHANGED | typeof SOMEDAY_EVENT_CHANGED
-  > {
+  private static getNotificationType(
+    this: void,
+    { transition: [from, to] }: Event_Transition,
+  ): Array<typeof EVENT_CHANGED | typeof SOMEDAY_EVENT_CHANGED> {
     const notifications: Array<
       typeof EVENT_CHANGED | typeof SOMEDAY_EVENT_CHANGED
     > = [];
@@ -110,9 +119,7 @@ export class CompassSyncProcessor {
             webSocketServer.handleBackgroundSomedayChange(userId);
             break;
           default:
-            logger.error(
-              `Unknown notification type: ${notification} for user: ${userId}`,
-            );
+            logger.error(`Unknown notification type for user: ${userId}`);
         }
       });
     });
@@ -124,7 +131,7 @@ export class CompassSyncProcessor {
   ): Promise<Event_Transition[]> {
     const eventId = event.payload._id;
     const dbEvent = await mongoService.event.findOne(
-      { _id: new ObjectId(eventId), user: event.payload.user! },
+      { _id: new ObjectId(eventId), user: event.payload.user },
       { session },
     );
     const plan = analyzeCompassTransition(event, dbEvent);
@@ -149,26 +156,39 @@ export class CompassSyncProcessor {
       persistedEvent,
     }: Awaited<ReturnType<typeof applyCompassPlan>>,
   ): Promise<boolean> {
+    try {
+      return await CompassSyncProcessor.handleGoogleEffectByType(
+        plan,
+        persistedEvent,
+        googleDeleteEventId,
+      );
+    } catch (err) {
+      if (isMissingGoogleRefreshToken(err)) {
+        logger.info(
+          `Skipping Google effect for user ${plan.event.user} because Google is not connected.`,
+        );
+        return true;
+      }
+
+      throw err;
+    }
+  }
+
+  private static async handleGoogleEffectByType(
+    plan: CompassOperationPlan,
+    persistedEvent: PersistedCompassEvent,
+    googleDeleteEventId: string | undefined,
+  ): Promise<boolean> {
     switch (plan.googleEffect.type) {
       case "none":
         return true;
       case "create":
-        if (!persistedEvent) return false;
-
-        await _createGcal(
-          persistedEvent.user!,
-          persistedEvent as Schema_Event_Core,
-        );
-
+        if (!isPersistedCoreEvent(persistedEvent)) return false;
+        await _createGcal(persistedEvent.user, persistedEvent);
         return true;
       case "update":
-        if (!persistedEvent) return false;
-
-        await _updateGcal(
-          persistedEvent.user!,
-          persistedEvent as Schema_Event_Core,
-        );
-
+        if (!isPersistedCoreEvent(persistedEvent)) return false;
+        await _updateGcal(persistedEvent.user, persistedEvent);
         return true;
       case "delete":
         return googleDeleteEventId

@@ -1,18 +1,30 @@
 import { type FC, useCallback, useEffect, useRef, useState } from "react";
 import { DotIcon } from "@phosphor-icons/react";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
-import {
-  type LogInFormData,
-  type SignUpFormData,
-} from "@web/auth/schemas/auth.schemas";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { GoogleButton } from "@web/components/oauth/google/GoogleButton";
 import { AuthButton } from "./components/AuthButton";
 import { ForgotPasswordForm } from "./forms/ForgotPasswordForm";
 import { LogInForm } from "./forms/LogInForm";
+import { ResetPasswordForm } from "./forms/ResetPasswordForm";
 import { SignUpForm } from "./forms/SignUpForm";
+import { useAuthFormHandlers } from "./hooks/useAuthFormHandlers";
 import { useAuthModal } from "./hooks/useAuthModal";
 import { useAuthUrlParam } from "./hooks/useAuthUrlParam";
+
+function getInitialResetPasswordToken(): string | undefined {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  const searchParams = new URLSearchParams(window.location.search);
+
+  if (searchParams.get("auth")?.toLowerCase() !== "reset") {
+    return undefined;
+  }
+
+  return searchParams.get("token") ?? undefined;
+}
 
 /**
  * Authentication modal with Sign In, Sign Up, and Forgot Password views
@@ -28,6 +40,20 @@ export const AuthModal: FC = () => {
   const { isOpen, currentView, openModal, closeModal, setView } =
     useAuthModal();
   const googleAuth = useGoogleAuth();
+  const resetPasswordToken = useRef(getInitialResetPasswordToken()).current;
+  const {
+    isSubmitting,
+    submitError,
+    handleSignUp,
+    handleLogin,
+    handleForgotPassword,
+    handleResetPassword,
+  } = useAuthFormHandlers({
+    currentView,
+    closeModal,
+    resetPasswordToken,
+    setView,
+  });
 
   // Handle URL-based auth modal triggers (e.g., ?auth=signup)
   useAuthUrlParam(openModal);
@@ -51,17 +77,7 @@ export const AuthModal: FC = () => {
     closeModal();
   }, [googleAuth, closeModal]);
 
-  const handleSignUp = useCallback((data: SignUpFormData) => {
-    // TODO: Implement email/password sign up API call in Phase 2
-    // For now, this is UI-only - backend integration will be added later
-  }, []);
-
-  const handleLogin = useCallback((data: LogInFormData) => {
-    // TODO: Implement email/password sign in API call in Phase 2
-    // For now, this is UI-only - backend integration will be added later
-  }, []);
-
-  const handleForgotPassword = useCallback(() => {
+  const navigateToForgotPassword = useCallback(() => {
     setView("forgotPassword");
   }, [setView]);
 
@@ -69,45 +85,69 @@ export const AuthModal: FC = () => {
     setView("login");
   }, [setView]);
 
-  const handleForgotPasswordSubmit = useCallback((_data: { email: string }) => {
-    // TODO: Implement forgot password API call in Phase 2
-    // For now, this is UI-only - backend integration will be added later
-  }, []);
+  const handleBackToForgotPassword = useCallback(() => {
+    setView("forgotPassword");
+  }, [setView]);
 
   if (!isOpen) {
     return null;
   }
 
-  const showAuthSwitch = currentView !== "forgotPassword";
+  const showAuthSwitch = currentView === "login" || currentView === "signUp";
+  const showGoogleAuth = currentView !== "resetPassword";
+  const showSubmitError =
+    submitError !== null &&
+    (currentView === "login" || currentView === "signUp");
   const trimmedName = signUpName.trim();
   const title =
     currentView === "forgotPassword"
       ? "Reset Password"
-      : currentView === "signUp"
-        ? trimmedName
-          ? `Nice to meet you, ${trimmedName}`
-          : "Nice to meet you"
-        : "Hey, welcome back";
+      : currentView === "resetPassword"
+        ? "Set New Password"
+        : currentView === "signUp"
+          ? trimmedName
+            ? `Nice to meet you, ${trimmedName}`
+            : "Nice to meet you"
+          : "Hey, welcome back";
 
   return (
     <OverlayPanel title={title} onDismiss={closeModal} variant="modal">
       <div className="flex w-full flex-col gap-6">
         {/* Form based on current view */}
         {currentView === "signUp" && (
-          <SignUpForm onSubmit={handleSignUp} onNameChange={setSignUpName} />
+          <SignUpForm
+            onSubmit={handleSignUp}
+            onNameChange={setSignUpName}
+            isSubmitting={isSubmitting}
+          />
         )}
         {currentView === "login" && (
           <LogInForm
             onSubmit={handleLogin}
-            onForgotPassword={handleForgotPassword}
+            onForgotPassword={navigateToForgotPassword}
+            isSubmitting={isSubmitting}
           />
         )}
         {currentView === "forgotPassword" && (
           <ForgotPasswordForm
-            onSubmit={handleForgotPasswordSubmit}
+            onSubmit={handleForgotPassword}
             onBackToSignIn={handleBackToSignIn}
+            isSubmitting={isSubmitting}
           />
         )}
+        {currentView === "resetPassword" && (
+          <ResetPasswordForm
+            onSubmit={handleResetPassword}
+            onBackToForgotPassword={handleBackToForgotPassword}
+            isSubmitting={isSubmitting}
+            error={submitError}
+          />
+        )}
+        {showSubmitError ? (
+          <p className="text-status-error text-center text-sm" role="alert">
+            {submitError}
+          </p>
+        ) : null}
         {/* Auth switch (Sign In / Sign Up) - only for signIn and signUp views */}
         {showAuthSwitch && (
           <>
@@ -126,18 +166,20 @@ export const AuthModal: FC = () => {
           </>
         )}
         {/* Google Sign In - at bottom */}
-        <>
-          <div className="flex items-center gap-3">
-            <div className="bg-border-primary h-px flex-1" />
-            <span className="text-text-light text-sm">or</span>
-            <div className="bg-border-primary h-px flex-1" />
-          </div>
-          <GoogleButton
-            onClick={handleGoogleSignIn}
-            label="Continue with Google"
-            style={{ width: "100%" }}
-          />
-        </>
+        {showGoogleAuth ? (
+          <>
+            <div className="flex items-center gap-3">
+              <div className="bg-border-primary h-px flex-1" />
+              <span className="text-text-light text-sm">or</span>
+              <div className="bg-border-primary h-px flex-1" />
+            </div>
+            <GoogleButton
+              onClick={handleGoogleSignIn}
+              label="Continue with Google"
+              style={{ width: "100%" }}
+            />
+          </>
+        ) : null}
         {/* Privacy & Terms links */}
         <div className="text-text-light-inactive flex items-center justify-center text-center text-xs">
           <a

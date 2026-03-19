@@ -5,7 +5,6 @@ import { ENV, IS_DEV } from "@backend/common/constants/env.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
-import { type SReqBody } from "@backend/common/types/express.types";
 import { hasGoogleHeaders } from "@backend/sync/util/sync.util";
 import { decodeChannelToken } from "@backend/sync/util/watch.util";
 
@@ -55,20 +54,6 @@ class AuthMiddleware {
     } catch (e) {
       next(e);
     }
-  };
-
-  verifyGoogleOauthCode = (
-    req: SReqBody<{ code: string }>,
-    res: Response,
-    next: NextFunction,
-  ) => {
-    const { code } = req.body;
-    if (!code || typeof code !== "string") {
-      res
-        .status(Status.FORBIDDEN)
-        .json({ error: error(GcalError.CodeMissing, "gAPI Auth Failed") });
-    }
-    next();
   };
 }
 

@@ -24,7 +24,7 @@ export interface UseZodFormConfig<TValues extends Record<string, string>> {
   /** Zod schema - output type must match TValues */
   schema: z.ZodType<TValues, z.ZodTypeDef, unknown>;
   initialValues: TValues;
-  onSubmit: (data: TValues) => void;
+  onSubmit: (data: TValues) => void | Promise<void>;
 }
 
 export interface UseZodFormReturn<TValues extends Record<string, string>> {
@@ -35,7 +35,7 @@ export interface UseZodFormReturn<TValues extends Record<string, string>> {
     field: keyof TValues & string,
   ) => (e: ChangeEvent<HTMLInputElement>) => void;
   handleBlur: (field: keyof TValues & string) => () => void;
-  handleSubmit: (e: FormEvent) => void;
+  handleSubmit: (e: FormEvent) => Promise<void>;
   isValid: boolean;
 }
 
@@ -104,7 +104,7 @@ export function useZodForm<TValues extends Record<string, string>>({
   );
 
   const handleSubmit = useCallback(
-    (e: FormEvent) => {
+    async (e: FormEvent) => {
       e.preventDefault();
 
       const allTouched = Object.keys(initialValues).reduce(
@@ -115,7 +115,13 @@ export function useZodForm<TValues extends Record<string, string>>({
 
       const result = schema.safeParse(values);
       if (result.success) {
-        onSubmit(result.data);
+        try {
+          await onSubmit(result.data);
+        } catch (error) {
+          // Error is handled by the onSubmit callback
+          // Swallow the error to prevent unhandled promise rejection
+          // since React form handlers don't await the returned promise
+        }
       } else {
         setErrors(
           getFieldErrors(result.error) as Partial<

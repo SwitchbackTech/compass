@@ -13,8 +13,8 @@ import {
   type UserProfile,
 } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
-import compassAuthService from "@backend/auth/services/compass.auth.service";
-import { getGcalClient } from "@backend/auth/services/google/google.auth.service";
+import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
+import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
@@ -31,6 +31,14 @@ import { type Summary_Delete } from "@backend/user/types/user.types";
 const logger = Logger("app:user.service");
 
 class UserService {
+  private splitName(name: string): { firstName: string; lastName: string } {
+    const trimmedName = name.trim();
+    const [firstName = "Mystery", ...rest] = trimmedName.split(/\s+/);
+    const lastName = rest.join(" ") || "Person";
+
+    return { firstName, lastName };
+  }
+
   createUser = async (
     gUser: TokenPayload,
     gRefreshToken: string,
@@ -76,7 +84,76 @@ class UserService {
     if (!user)
       throw error(UserError.UserNotFound, "Failed to return user profile");
 
-    return user as unknown as UserProfile;
+    return {
+      ...(user as unknown as UserProfile),
+      picture: (user as { picture?: string }).picture ?? "",
+    };
+  };
+
+  upsertUserFromAuth = async (
+    input: {
+      userId: string;
+      email: string;
+      name?: string;
+      locale?: string;
+      google?: Schema_User["google"];
+    },
+    session?: ClientSession,
+  ): Promise<{
+    user: Schema_User & { userId: string };
+    isNewUser: boolean;
+  }> => {
+    const userId = zObjectId.parse(input.userId, {
+      error: () => "Invalid user ID",
+    });
+    const email = input.email.trim().toLowerCase();
+    const existingUser = await mongoService.user.findOne(
+      { _id: userId },
+      { session },
+    );
+
+    const isNewUser = !existingUser;
+    const name = input.name?.trim() || existingUser?.name || "Mystery Person";
+    const { firstName, lastName } = this.splitName(name);
+    const locale = input.locale ?? existingUser?.locale ?? "not provided";
+    const signedUpAt = existingUser?.signedUpAt ?? new Date();
+
+    // Preserve existing Google data, but allow override from input
+    const google = input.google ?? existingUser?.google;
+
+    const nextUser: Schema_User = {
+      email,
+      name,
+      firstName,
+      lastName,
+      locale,
+      signedUpAt,
+      lastLoggedInAt: new Date(),
+      ...(google ? { google } : {}),
+    };
+
+    const { signedUpAt: nextSignedUpAt, ...updatableUser } = nextUser;
+
+    await mongoService.user.updateOne(
+      { _id: userId },
+      {
+        $set: updatableUser,
+        $setOnInsert: { signedUpAt: nextSignedUpAt },
+      },
+      { upsert: true, session },
+    );
+
+    if (isNewUser) {
+      await priorityService.createDefaultPriorities(userId.toString(), session);
+    }
+
+    return {
+      user: {
+        ...nextUser,
+        userId: userId.toString(),
+      },
+      isNewUser,
+    };
   };
 
   deleteCompassDataForUser = async (

@@ -2,7 +2,6 @@ import type express from "express";
 import { verifySession } from "supertokens-node/recipe/session/framework/express";
 import authMiddleware from "@backend/auth/middleware/auth.middleware";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
-import { requireGoogleConnectionSession } from "@backend/common/middleware/google.required.middleware";
 import eventController from "./controllers/event.controller";
 
 /**
@@ -36,7 +35,7 @@ export class EventRoutes extends CommonRoutesConfig {
       .route(`/api/event`)
       .all(verifySession())
       .get(eventController.readAll)
-      .post(requireGoogleConnectionSession, eventController.create);
+      .post(eventController.create);
 
     /**
      * DELETE /api/event/deleteMany
@@ -107,8 +106,8 @@ export class EventRoutes extends CommonRoutesConfig {
       .route(`/api/event/:id`)
       .all(verifySession())
       .get(eventController.readById)
-      .put(requireGoogleConnectionSession, eventController.update)
-      .delete(requireGoogleConnectionSession, eventController.delete);
+      .put(eventController.update)
+      .delete(eventController.delete);
 
     return this.app;
   }

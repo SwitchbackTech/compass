@@ -1,7 +1,13 @@
 import cors from "cors";
 import { ObjectId } from "mongodb";
-import supertokens, { default as SuperTokens, User } from "supertokens-node";
+import supertokens, {
+  default as SuperTokens,
+  User,
+  getUser,
+} from "supertokens-node";
+import AccountLinking from "supertokens-node/recipe/accountlinking";
 import Dashboard from "supertokens-node/recipe/dashboard";
+import EmailPassword from "supertokens-node/recipe/emailpassword";
 import Session from "supertokens-node/recipe/session";
 import ThirdParty from "supertokens-node/recipe/thirdparty";
 import UserMetadata from "supertokens-node/recipe/usermetadata";
@@ -12,18 +18,25 @@ import {
 } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
+import { Logger } from "@core/logger/winston.logger";
 import { zObjectId } from "@core/types/type.utils";
-import compassAuthService from "@backend/auth/services/compass.auth.service";
-import { handleGoogleAuth } from "@backend/auth/services/google/google.auth.success.service";
+import googleAuthService from "@backend/auth/services/google/google.auth.service";
+import { IS_DEV } from "@backend/common/constants/env.constants";
 import { ENV } from "@backend/common/constants/env.constants";
 import {
   type CreateGoogleSignInResponse,
   type ThirdPartySignInUpInput,
+  buildResetPasswordLink,
   createGoogleSignInSuccess,
+  ensureExternalUserIdMapping,
+  getFormFieldValue,
 } from "@backend/common/middleware/supertokens.middleware.util";
 import mongoService from "@backend/common/services/mongo.service";
 import syncService from "@backend/sync/services/sync.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
+import userService from "@backend/user/services/user.service";
+
+const logger = Logger("app:supertokens.middleware");
 
 export const initSupertokens = () => {
   SuperTokens.init({
@@ -40,6 +53,18 @@ export const initSupertokens = () => {
     },
     framework: "express",
     recipeList: [
+      AccountLinking.init({
+        shouldDoAutomaticAccountLinking: async (newAccountInfo) => {
+          if (!newAccountInfo.email) {
+            return { shouldAutomaticallyLink: false };
+          }
+
+          return {
+            shouldAutomaticallyLink: true,
+            shouldRequireVerification: true,
+          };
+        },
+      }),
       // see added endpoints
       // https://app.swaggerhub.com/apis/supertokens/FDI/3.0.0
       // https://supertokens.com/docs/references/fdi/introduction
@@ -133,7 +158,124 @@ export const initSupertokens = () => {
                 );
 
                 if (success) {
-                  await handleGoogleAuth(success, compassAuthService);
+                  await googleAuthService.handleGoogleAuth(success);
+                }
+
+                return response;
+              },
+            };
+          },
+        },
+      }),
+      EmailPassword.init({
+        signUpFeature: {
+          formFields: [
+            {
+              id: "name",
+              validate: async (value) => {
+                if (typeof value !== "string" || !value.trim()) {
+                  return "Name is required";
+                }
+                return undefined;
+              },
+            },
+          ],
+        },
+        emailDelivery: {
+          service: {
+            sendEmail: async (input) => {
+              const resetLink = buildResetPasswordLink(input.passwordResetLink);
+
+              if (ENV.NODE_ENV === "test" || IS_DEV) {
+                logger.info(
+                  `Password reset link for ${input.user.email}: ${resetLink}`,
+                );
+                return;
+              }
+
+              logger.info(
+                `Password reset requested for ${input.user.email}; email delivery is disabled in this environment.`,
+              );
+            },
+          },
+        },
+        override: {
+          functions(originalImplementation) {
+            return {
+              ...originalImplementation,
+              async createNewRecipeUser(input) {
+                const response =
+                  await originalImplementation.createNewRecipeUser(input);
+
+                if (response.status !== "OK") {
+                  return response;
+                }
+
+                await ensureExternalUserIdMapping(
+                  response.recipeUserId.getAsString(),
+                );
+
+                const updatedUser = await getUser(
+                  response.recipeUserId.getAsString(),
+                );
+
+                return {
+                  ...response,
+                  user: updatedUser ?? response.user,
+                };
+              },
+            };
+          },
+          apis(originalImplementation) {
+            return {
+              ...originalImplementation,
+              async signUpPOST(input) {
+                if (!originalImplementation.signUpPOST) {
+                  throw new BaseError(
+                    "signUpPOST not implemented",
+                    "signUpPOST not implemented",
+                    Status.BAD_REQUEST,
+                    true,
+                  );
+                }
+
+                const response = await originalImplementation.signUpPOST(input);
+
+                if (response.status === "OK") {
+                  const email = getFormFieldValue(input.formFields, "email");
+                  const name = getFormFieldValue(input.formFields, "name");
+                  const userId = response.session.getUserId();
+
+                  if (email) {
+                    await userService.upsertUserFromAuth({
+                      userId,
+                      email,
+                      name,
+                    });
+                  }
+                }
+
+                return response;
+              },
+              async signInPOST(input) {
+                if (!originalImplementation.signInPOST) {
+                  throw new BaseError(
+                    "signInPOST not implemented",
+                    "signInPOST not implemented",
+                    Status.BAD_REQUEST,
+                    true,
+                  );
+                }
+
+                const response = await originalImplementation.signInPOST(input);
+
+                if (response.status === "OK") {
+                  const email = getFormFieldValue(input.formFields, "email");
+                  const userId = response.session.getUserId();
+
+                  if (email) {
+                    await userService.upsertUserFromAuth({ userId, email });
+                  }
                 }
 
                 return response;

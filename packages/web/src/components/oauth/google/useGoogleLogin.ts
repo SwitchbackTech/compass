@@ -19,10 +19,12 @@ export const useGoogleLogin = ({
   onStart,
   onSuccess,
   onError,
+  prompt,
 }: {
   onStart?: () => void;
   onSuccess?: (res: SignInUpInput) => Promise<void>;
   onError?: (error: unknown) => void;
+  prompt?: "consent" | "none" | "select_account";
 }) => {
   const [data, setData] = useState<{
     code: string;
@@ -36,6 +38,7 @@ export const useGoogleLogin = ({
   const login = useGoogleLoginBase({
     flow: "auth-code",
     scope: SCOPES_REQUIRED.join(" "),
+    prompt,
     state: antiCsrfToken,
     onNonOAuthError(nonOAuthError) {
       setLoading(false);

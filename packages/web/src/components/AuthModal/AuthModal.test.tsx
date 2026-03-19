@@ -1,6 +1,7 @@
 import { type ReactElement, type ReactNode } from "react";
 import { act } from "react";
 import { MemoryRouter } from "react-router-dom";
+import EmailPassword from "supertokens-web-js/recipe/emailpassword";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -26,6 +27,13 @@ jest.mock("@web/auth/hooks/oauth/useGoogleAuth", () => ({
     login: mockGoogleLogin,
   }),
 }));
+
+const mockCompleteAuthentication = jest.fn();
+jest.mock("@web/auth/hooks/useCompleteAuthentication", () => ({
+  useCompleteAuthentication: () => mockCompleteAuthentication,
+}));
+
+jest.mock("supertokens-web-js/recipe/emailpassword");
 
 // Mock GoogleButton - uses button with label for semantic queries (matches real component's aria-label)
 jest.mock("@web/components/oauth/google/GoogleButton", () => ({
@@ -81,10 +89,24 @@ const ModalTrigger = () => {
   return <button onClick={() => openModal("login")}>Open Modal</button>;
 };
 
+const mockEmailPassword = EmailPassword as jest.Mocked<typeof EmailPassword>;
+
 const renderWithProviders = (
   component: ReactElement,
   initialRoute: string = "/day",
 ) => {
+  const urlObj = new URL(initialRoute, "http://localhost");
+  Object.defineProperty(window, "location", {
+    value: {
+      pathname: urlObj.pathname,
+      search: urlObj.search,
+      hash: urlObj.hash,
+      href: urlObj.href,
+    },
+    writable: true,
+    configurable: true,
+  });
+
   return render(
     <MemoryRouter
       initialEntries={[initialRoute]}
@@ -114,6 +136,21 @@ describe("AuthModal", () => {
       authenticated: false,
       setAuthenticated: jest.fn(),
     });
+    mockEmailPassword.signUp.mockResolvedValue({
+      status: "OK",
+      user: { emails: ["test@example.com"] },
+    } as never);
+    mockEmailPassword.signIn.mockResolvedValue({
+      status: "OK",
+      user: { emails: ["test@example.com"] },
+    } as never);
+    mockEmailPassword.sendPasswordResetEmail.mockResolvedValue({
+      status: "OK",
+    } as never);
+    mockEmailPassword.getResetPasswordTokenFromURL.mockReturnValue("token");
+    mockEmailPassword.submitNewPassword.mockResolvedValue({
+      status: "OK",
+    } as never);
   });
 
   describe("Modal Open/Close", () => {
@@ -514,6 +551,52 @@ describe("AuthModal", () => {
       });
     });
 
+    it("shows forgot password errors inline without the shared auth banner", async () => {
+      mockEmailPassword.sendPasswordResetEmail.mockResolvedValue({
+        status: "PASSWORD_RESET_NOT_ALLOWED",
+        reason: "Password reset disabled",
+      } as never);
+
+      const user = userEvent.setup();
+      renderWithProviders(<ModalTrigger />);
+
+      await act(async () => {
+        await user.click(screen.getByRole("button", { name: /open modal/i }));
+      });
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole("button", { name: /forgot password/i }),
+        ).toBeInTheDocument();
+      });
+
+      await act(async () => {
+        await user.click(
+          screen.getByRole("button", { name: /forgot password/i }),
+        );
+      });
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+      });
+
+      await act(async () => {
+        await user.type(screen.getByLabelText(/email/i), "test@example.com");
+        await user.click(
+          screen.getByRole("button", { name: /send reset link/i }),
+        );
+      });
+
+      await waitFor(() => {
+        expect(screen.getByRole("alert")).toHaveTextContent(
+          "Password reset disabled",
+        );
+      });
+
+      expect(screen.queryByText(/check your email/i)).not.toBeInTheDocument();
+      expect(screen.queryAllByText("Password reset disabled")).toHaveLength(1);
+    });
+
     it("navigates back to sign in when link is clicked", async () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
@@ -798,6 +881,40 @@ describe("URL Parameter Support", () => {
       ).toBeInTheDocument();
     });
   });
+
+  it("submits reset password with the initial token after the URL changes", async () => {
+    const user = userEvent.setup();
+    mockWindowLocation("/day?auth=reset&token=reset-token");
+    renderWithProviders(<div />, "/day?auth=reset&token=reset-token");
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /set new password/i }),
+      ).toBeInTheDocument();
+    });
+
+    mockWindowLocation("/day");
+
+    await act(async () => {
+      await user.type(
+        screen.getByLabelText(/new password/i),
+        "updatedpassword",
+      );
+      await user.click(
+        screen.getByRole("button", { name: /set new password/i }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(mockEmailPassword.submitNewPassword).toHaveBeenCalledWith({
+        formFields: [{ id: "password", value: "updatedpassword" }],
+      });
+    });
+
+    expect(
+      mockEmailPassword.getResetPasswordTokenFromURL,
+    ).not.toHaveBeenCalled();
+  });
 });
 
 describe("AccountIcon", () => {
@@ -826,7 +943,7 @@ describe("AccountIcon", () => {
 
     renderWithProviders(<AccountIcon />, "/day?auth=signup");
 
-    expect(screen.getByText("Log in")).toBeInTheDocument();
+    expect(screen.getAllByText("Log in").length).toBeGreaterThan(0);
   });
 
   it("does not render when feature flag is disabled", () => {

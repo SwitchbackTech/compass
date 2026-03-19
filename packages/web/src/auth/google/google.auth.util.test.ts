@@ -93,7 +93,15 @@ describe("google-auth.util", () => {
 
       const result = await authenticate(mockSignInUpInput);
 
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual({
+        success: true,
+        data: expect.objectContaining({
+          status: "OK",
+          user: expect.objectContaining({
+            emails: ["test@example.com"],
+          }),
+        }),
+      });
       expect(mockAuthApi.loginOrSignup).toHaveBeenCalledWith(mockSignInUpInput);
     });
 

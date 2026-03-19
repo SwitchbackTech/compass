@@ -8,7 +8,7 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 import { mockRegularGcalEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
-import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
+import { GcalSyncProcessor } from "@backend/sync/services/sync/google/gcal.sync.processor";
 
 describe("GcalSyncProcessor UPSERT: STANDALONE", () => {
   beforeAll(setupTestDb);

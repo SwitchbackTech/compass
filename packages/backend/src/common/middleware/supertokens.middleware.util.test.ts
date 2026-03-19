@@ -1,8 +1,112 @@
 import { type TokenPayload } from "google-auth-library";
+import { createUserIdMapping, getUserIdMapping } from "supertokens-node";
 import { faker } from "@faker-js/faker";
-import { createGoogleSignInSuccess } from "@backend/common/middleware/supertokens.middleware.util";
+import {
+  buildResetPasswordLink,
+  createGoogleSignInSuccess,
+  ensureExternalUserIdMapping,
+  getFormFieldValue,
+} from "@backend/common/middleware/supertokens.middleware.util";
+
+jest.mock("supertokens-node", () => ({
+  createUserIdMapping: jest.fn(),
+  getUserIdMapping: jest.fn(),
+}));
 
 describe("supertokens.middleware.util", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
+
+  describe("ensureExternalUserIdMapping", () => {
+    it("returns the existing external user id mapping", async () => {
+      const recipeUserId = faker.database.mongodbObjectId();
+      const externalUserId = faker.database.mongodbObjectId();
+
+      jest.mocked(getUserIdMapping).mockResolvedValue({
+        status: "OK",
+        externalUserId,
+        superTokensUserId: recipeUserId,
+      } as Awaited<ReturnType<typeof getUserIdMapping>>);
+
+      await expect(ensureExternalUserIdMapping(recipeUserId)).resolves.toBe(
+        externalUserId,
+      );
+      expect(createUserIdMapping).not.toHaveBeenCalled();
+    });
+
+    it("creates a new external user id mapping when one does not exist", async () => {
+      const recipeUserId = faker.database.mongodbObjectId();
+
+      jest.mocked(getUserIdMapping).mockResolvedValue({
+        status: "UNKNOWN_MAPPING_ERROR",
+      } as Awaited<ReturnType<typeof getUserIdMapping>>);
+      jest
+        .mocked(createUserIdMapping)
+        .mockResolvedValue({ status: "OK" } as Awaited<
+          ReturnType<typeof createUserIdMapping>
+        >);
+
+      const externalUserId = await ensureExternalUserIdMapping(recipeUserId);
+
+      expect(createUserIdMapping).toHaveBeenCalledWith({
+        superTokensUserId: recipeUserId,
+        externalUserId,
+      });
+      expect(externalUserId).toMatch(/^[a-f0-9]{24}$/);
+    });
+  });
+
+  describe("getFormFieldValue", () => {
+    it("returns the string value for the matching field", () => {
+      const email = faker.internet.email();
+      const name = faker.person.fullName();
+
+      expect(
+        getFormFieldValue(
+          [
+            { id: "email", value: email },
+            { id: "name", value: name },
+          ],
+          "name",
+        ),
+      ).toBe(name);
+    });
+
+    it("returns undefined for missing or non-string fields", () => {
+      expect(
+        getFormFieldValue(
+          [
+            { id: "email", value: faker.internet.email() },
+            { id: "name", value: 123 },
+          ],
+          "name",
+        ),
+      ).toBeUndefined();
+
+      expect(getFormFieldValue([], "name")).toBeUndefined();
+    });
+  });
+
+  describe("buildResetPasswordLink", () => {
+    it("rewrites reset links into the app auth flow", () => {
+      const token = faker.string.alphanumeric(32);
+
+      expect(
+        buildResetPasswordLink(
+          `http://localhost:3567/auth/reset-password?token=${token}`,
+        ),
+      ).toBe(`http://localhost:9080/day?auth=reset&token=${token}`);
+    });
+
+    it("returns the original link when the token is missing", () => {
+      const passwordResetLink =
+        "http://localhost:3567/auth/reset-password?foo=bar";
+
+      expect(buildResetPasswordLink(passwordResetLink)).toBe(passwordResetLink);
+    });
+  });
+
   describe("createGoogleSignInSuccess", () => {
     it("returns null for non-OK responses", () => {
       expect(
