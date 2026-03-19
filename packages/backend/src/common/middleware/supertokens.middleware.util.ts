@@ -4,7 +4,7 @@ import { createUserIdMapping, getUserIdMapping } from "supertokens-node";
 import type { SessionContainerInterface } from "supertokens-node/recipe/session/types";
 import type { APIInterface } from "supertokens-node/recipe/thirdparty/types";
 import { PORT_DEFAULT_WEB } from "@core/constants/core.constants";
-import type { GoogleSignInSuccess } from "@backend/auth/services/google/google.auth.success.service";
+import { type GoogleSignInSuccess } from "@backend/auth/services/google/google.auth.types";
 
 type ThirdPartySignInUpPost = NonNullable<APIInterface["signInUpPOST"]>;
 type ThirdPartySignInUpResponse = Awaited<ReturnType<ThirdPartySignInUpPost>>;

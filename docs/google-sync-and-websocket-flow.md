@@ -214,7 +214,7 @@ Note: Frontend reconnect intent is no longer used for routing. The server is the
 Primary files:
 
 - `packages/backend/src/common/middleware/supertokens.middleware.ts`
-- `packages/backend/src/auth/services/google/google.auth.success.service.ts`
+- `packages/backend/src/auth/services/google/google.auth.service.ts`
 - `packages/backend/src/auth/services/compass.auth.service.ts`
 - `packages/web/src/auth/google/google.auth.state.ts`
 - `packages/web/src/auth/google/google.auth.util.ts`

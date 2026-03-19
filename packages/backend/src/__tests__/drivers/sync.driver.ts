@@ -4,7 +4,7 @@ import { Resource_Sync, type Schema_Sync } from "@core/types/sync.types";
 import { type Schema_User } from "@core/types/user.types";
 import dayjs from "@core/util/date/dayjs";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
-import { getGcalClient } from "@backend/auth/services/google/google.calendar.client";
+import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import mongoService from "@backend/common/services/mongo.service";
 import syncService from "@backend/sync/services/sync.service";
 import { updateSync } from "@backend/sync/util/sync.queries";

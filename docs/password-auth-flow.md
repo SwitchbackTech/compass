@@ -1,6 +1,6 @@
 # Password Auth Flow
 
-This document explains how the email/password auth flow works on the `feat/pw-flow` branch, how it intersects with the existing Google flow, and where the main responsibilities live.
+This document explains how the email/password auth flow works
 
 ## Scope
 
@@ -21,7 +21,6 @@ Primary files:
 - `packages/backend/src/common/middleware/supertokens.middleware.ts`
 - `packages/backend/src/common/middleware/supertokens.middleware.util.ts`
 - `packages/backend/src/user/services/user.service.ts`
-- `packages/backend/src/auth/services/google/google.auth.success.service.ts`
 - `packages/backend/src/auth/services/google/google.auth.service.ts`
 
 ## Identity Model

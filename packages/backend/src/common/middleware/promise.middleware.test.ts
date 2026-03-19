@@ -9,7 +9,7 @@ const flushPromises = async () => {
 
 describe("promise.middleware", () => {
   let mockReq: Partial<Request>;
-  let mockRes: Partial<Res_Promise>;
+  let mockRes: Res_Promise;
   let mockNext: jest.MockedFunction<NextFunction>;
 
   beforeEach(() => {
@@ -18,9 +18,12 @@ describe("promise.middleware", () => {
     mockRes = {
       status: jest.fn().mockReturnThis(),
       send: jest.fn().mockReturnThis(),
-    };
+      // The middleware overwrites this in `requestMiddleware()`, but we define
+      // it so TypeScript knows it's callable.
+      promise: jest.fn() as Res_Promise["promise"],
+    } as unknown as Res_Promise;
 
-    requestMiddleware()(mockReq as Request, mockRes as Res_Promise, mockNext);
+    requestMiddleware()(mockReq as Request, mockRes, mockNext);
   });
 
   it("sends an empty body for NO_CONTENT status-only payloads", async () => {

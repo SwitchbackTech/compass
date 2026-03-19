@@ -2,8 +2,11 @@ import { type Credentials, type TokenPayload } from "google-auth-library";
 import { Logger } from "@core/logger/winston.logger";
 import { mapCompassUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
-import { parseReconnectGoogleParams } from "@backend/auth/services/google/google.auth.service.util";
-import GoogleOAuthClient from "@backend/auth/services/google/google.oauth.client";
+import GoogleOAuthClient from "@backend/auth/services/google/clients/google.oauth.client";
+import {
+  determineGoogleAuthMode,
+  parseReconnectGoogleParams,
+} from "@backend/auth/services/google/util/google.auth.util";
 import { ENV } from "@backend/common/constants/env.constants";
 import { isMissingUserTagId } from "@backend/common/constants/env.util";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
@@ -12,6 +15,7 @@ import EmailService from "@backend/email/email.service";
 import syncService from "@backend/sync/services/sync.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
+import { type GoogleSignInSuccess } from "./google.auth.types";
 
 const logger = Logger("app:auth.google.service");
 
@@ -160,6 +164,67 @@ class GoogleAuthService {
       });
 
     return { cUserId };
+  }
+
+  async handleGoogleAuth(success: GoogleSignInSuccess): Promise<void> {
+    const {
+      providerUser,
+      oAuthTokens,
+      createdNewRecipeUser,
+      recipeUserId,
+      loginMethodsLength,
+    } = success;
+
+    const googleUserId = providerUser.sub;
+    if (!googleUserId) {
+      throw new Error("Google user ID (sub) is required");
+    }
+
+    // Determine auth mode based on server-side state
+    const decision = await determineGoogleAuthMode(
+      googleUserId,
+      createdNewRecipeUser,
+    );
+
+    switch (decision.authMode) {
+      case "SIGNUP": {
+        const isNewUser = createdNewRecipeUser && loginMethodsLength === 1;
+        if (!isNewUser) {
+          // Edge case: no Compass user found but SuperTokens says not new
+          // This shouldn't happen in normal flow, treat as signup
+          logger.warn("No Compass user found but isNewUser is false", {
+            google_user_id: googleUserId,
+            recipe_user_id: recipeUserId,
+            created_new_recipe_user: createdNewRecipeUser,
+            login_methods_length: loginMethodsLength,
+          });
+        }
+
+        const refreshToken = oAuthTokens.refresh_token;
+        if (!refreshToken) {
+          throw new Error("Refresh token expected for new user sign-up");
+        }
+
+        await this.googleSignup(providerUser, refreshToken, recipeUserId);
+        return;
+      }
+
+      case "RECONNECT_REPAIR": {
+        // User exists but needs repair (missing refresh token or unhealthy sync)
+        await this.repairGoogleConnection(
+          decision.compassUserId!,
+          providerUser,
+          oAuthTokens,
+        );
+        return;
+      }
+
+      case "SIGNIN_INCREMENTAL": {
+        // Healthy returning user - attempt incremental sync
+        await this.googleSignin(providerUser, oAuthTokens);
+        return;
+      }
+    }
   }
 }
 

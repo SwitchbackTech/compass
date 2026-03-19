@@ -3,7 +3,7 @@ import { Logger } from "@core/logger/winston.logger";
 import { type Result_Watch_Stop } from "@core/types/sync.types";
 import { type Schema_Watch } from "@core/types/watch.types";
 import dayjs from "@core/util/date/dayjs";
-import { getGcalClient } from "@backend/auth/services/google/google.calendar.client";
+import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import {
   isFullSyncRequired,
   isInvalidGoogleToken,

@@ -2,7 +2,7 @@ import { GaxiosError } from "gaxios";
 import { ObjectId } from "mongodb";
 import { faker } from "@faker-js/faker";
 import { type Schema_User } from "@core/types/user.types";
-import { getGcalClient } from "@backend/auth/services/google/google.calendar.client";
+import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 

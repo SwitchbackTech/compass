@@ -14,7 +14,7 @@ import {
 } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
-import { getGcalClient } from "@backend/auth/services/google/google.calendar.client";
+import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
