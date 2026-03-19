@@ -214,13 +214,12 @@ export const useConnectGoogle = () => {
   const onRepairGoogleCalendarBase = useCallback(() => {
     const run = async () => {
       dispatch(importGCalSlice.actions.clearImportResults(undefined));
-      dispatch(importGCalSlice.actions.setIsImportPending(true));
+      dispatch(importGCalSlice.actions.importing(true));
 
       try {
         await SyncApi.importGCal({ force: true });
       } catch (error) {
         console.error("Failed to start Google Calendar repair:", error);
-        dispatch(importGCalSlice.actions.setIsImportPending(false));
         dispatch(importGCalSlice.actions.importing(false));
         dispatch(
           importGCalSlice.actions.setImportError(

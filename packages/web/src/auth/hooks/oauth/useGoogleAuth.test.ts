@@ -151,16 +151,7 @@ describe("useGoogleAuth", () => {
     expect(mockSetAuthenticated).toHaveBeenCalledWith(true);
     expect(mockRefreshUserMetadata).toHaveBeenCalledTimes(1);
     expect(mockDispatchFn).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: "async/importGCal/setIsImportPending",
-        payload: true,
-      }),
-    );
-    expect(mockDispatchFn).not.toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: "async/importGCal/importing",
-        payload: true,
-      }),
+      expect.objectContaining({ type: "auth/authSuccess" }),
     );
   });
 
@@ -213,12 +204,6 @@ describe("useGoogleAuth", () => {
 
       expect(mockDispatchFn).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: "async/importGCal/setIsImportPending",
-          payload: false,
-        }),
-      );
-      expect(mockDispatchFn).toHaveBeenCalledWith(
-        expect.objectContaining({
           type: "async/importGCal/importing",
           payload: false,
         }),
@@ -247,12 +232,6 @@ describe("useGoogleAuth", () => {
       expect(mockDispatchFn).toHaveBeenCalledWith(
         expect.objectContaining({
           type: "auth/resetAuth",
-        }),
-      );
-      expect(mockDispatchFn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "async/importGCal/setIsImportPending",
-          payload: false,
         }),
       );
       expect(mockDispatchFn).toHaveBeenCalledWith(
@@ -315,7 +294,7 @@ describe("useGoogleAuth", () => {
       expect(mockSetAuthenticated).not.toHaveBeenCalled();
       expect(mockDispatchFn).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: "async/importGCal/setIsImportPending",
+          type: "async/importGCal/importing",
           payload: false,
         }),
       );
@@ -361,7 +340,7 @@ describe("useGoogleAuth", () => {
 
       expect(mockDispatchFn).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: "async/importGCal/setIsImportPending",
+          type: "async/importGCal/importing",
           payload: false,
         }),
       );

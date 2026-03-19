@@ -36,13 +36,14 @@ jest.mock("socket.io-client", () => ({
 }));
 
 /**
- * Integration tests for the Google Calendar re-authentication flow.
+ * Integration tests for the Google Calendar authentication and import flow.
  *
- * These tests validate the complete user experience when re-authenticating
- * after a session expires, ensuring the spinner appears during import
- * and disappears correctly when the import completes or times out.
+ * These tests validate the complete user experience, ensuring:
+ * - OAuth popup blocks the app with "Complete Google sign-in" overlay
+ * - Import runs in background with sidebar spinner (non-blocking)
+ * - Overlay disappears immediately after OAuth completes
  */
-describe("GCal Re-Authentication Flow", () => {
+describe("GCal Authentication Flow", () => {
   // Socket event callbacks captured during render
   let importEndCallback: ((data?: ImportGCalEndPayload) => void) | undefined;
   let importStartCallback: (() => void) | undefined;
@@ -50,11 +51,7 @@ describe("GCal Re-Authentication Flow", () => {
     | ((data?: { sync?: { importGCal?: string } }) => void)
     | undefined;
 
-  // Default timeout for import operations (30 seconds is reasonable for GCal sync)
-  const IMPORT_TIMEOUT_MS = 30_000;
-
   const createTestStore = (preloadedState?: {
-    isImportPending?: boolean;
     importing?: boolean;
     isAuthenticating?: boolean;
   }) => {
@@ -72,7 +69,6 @@ describe("GCal Re-Authentication Flow", () => {
             importing: preloadedState?.importing ?? false,
             importResults: null,
             pendingLocalEventsSynced: null,
-            isImportPending: preloadedState?.isImportPending ?? false,
             importError: null,
             isLoading: false,
             value: undefined,
@@ -118,10 +114,9 @@ describe("GCal Re-Authentication Flow", () => {
     document.body.removeAttribute("data-app-locked");
   });
 
-  describe("Spinner visibility during import", () => {
-    it("shows spinner when user initiates re-authentication", async () => {
-      // User clicks "Reconnect Google Calendar" which sets isImportPending = true
-      const store = createTestStore({ isImportPending: true });
+  describe("OAuth phase (blocking)", () => {
+    it("shows blocking overlay during OAuth popup", async () => {
+      const store = createTestStore({ isAuthenticating: true });
 
       render(
         <Provider store={store}>
@@ -131,22 +126,19 @@ describe("GCal Re-Authentication Flow", () => {
         </Provider>,
       );
 
-      // Spinner should be visible with import message
       expect(
-        screen.getByText("Importing your Google Calendar events..."),
+        screen.getByText("Complete Google sign-in..."),
       ).toBeInTheDocument();
       expect(
-        screen.getByText("Please hang tight while we sync your calendar"),
+        screen.getByText("Please complete authorization in the popup window"),
       ).toBeInTheDocument();
-
-      // App should be locked (no interactions allowed)
       expect(document.body.getAttribute("data-app-locked")).toBe("true");
     });
 
-    it("keeps spinner visible when IMPORT_GCAL_START event arrives", async () => {
-      const store = createTestStore({ isImportPending: true });
+    it("dismisses overlay immediately when OAuth completes", async () => {
+      const store = createTestStore({ isAuthenticating: true });
 
-      render(
+      const { rerender, container } = render(
         <Provider store={store}>
           <SocketProvider>
             <SyncEventsOverlay />
@@ -154,27 +146,41 @@ describe("GCal Re-Authentication Flow", () => {
         </Provider>,
       );
 
-      await waitFor(() => {
-        expect(importStartCallback).toBeDefined();
-      });
-
-      // Backend sends IMPORT_GCAL_START
-      await act(async () => {
-        importStartCallback?.();
-      });
-
-      // Spinner should still be visible
       expect(
-        screen.getByText("Importing your Google Calendar events..."),
+        screen.getByText("Complete Google sign-in..."),
       ).toBeInTheDocument();
 
-      // State should now have importing = true
-      const state = store.getState();
-      expect(state.sync.importGCal.importing).toBe(true);
-    });
+      // OAuth completes (auth state resets)
+      await act(async () => {
+        store.dispatch(authSlice.actions.resetAuth());
+      });
 
-    it("hides spinner when import completes successfully", async () => {
-      const store = createTestStore({ isImportPending: true });
+      rerender(
+        <Provider store={store}>
+          <SocketProvider>
+            <SyncEventsOverlay />
+          </SocketProvider>
+        </Provider>,
+      );
+
+      // Wait for buffered visibility to settle
+      await act(async () => {
+        jest.advanceTimersByTime(100);
+      });
+
+      // Overlay should be dismissed
+      expect(
+        screen.queryByText("Complete Google sign-in..."),
+      ).not.toBeInTheDocument();
+      expect(container.firstChild).toBeNull();
+      expect(document.body.getAttribute("data-app-locked")).toBeNull();
+    });
+  });
+
+  describe("Import phase (non-blocking)", () => {
+    it("does not show blocking overlay during background import", async () => {
+      // Import is running but user is not in OAuth flow
+      const store = createTestStore({ importing: true });
 
       const { container } = render(
         <Provider store={store}>
@@ -184,94 +190,17 @@ describe("GCal Re-Authentication Flow", () => {
         </Provider>,
       );
 
-      await waitFor(() => {
-        expect(importEndCallback).toBeDefined();
-      });
-
-      // Verify spinner is initially visible
-      expect(
-        screen.getByText("Importing your Google Calendar events..."),
-      ).toBeInTheDocument();
-
-      // Backend sends IMPORT_GCAL_START then IMPORT_GCAL_END with success
-      await act(async () => {
-        importStartCallback?.();
-      });
-
-      await act(async () => {
-        importEndCallback?.({
-          status: "COMPLETED",
-          eventsCount: 15,
-          calendarsCount: 3,
-        });
-      });
-
-      // Allow buffered visibility to settle
       await act(async () => {
         jest.advanceTimersByTime(100);
       });
 
-      // Spinner should be hidden
-      expect(
-        screen.queryByText("Importing your Google Calendar events..."),
-      ).not.toBeInTheDocument();
-
-      // App should be unlocked
+      // No blocking overlay should be shown
       expect(container.firstChild).toBeNull();
       expect(document.body.getAttribute("data-app-locked")).toBeNull();
-
-      // State should reflect successful import
-      const state = store.getState();
-      expect(state.sync.importGCal.importResults).toEqual({
-        eventsCount: 15,
-        calendarsCount: 3,
-      });
-      expect(state.sync.importGCal.importing).toBe(false);
-      expect(state.sync.importGCal.isImportPending).toBe(false);
     });
 
-    it("hides spinner when import completes with zero events", async () => {
-      const store = createTestStore({ isImportPending: true });
-
-      render(
-        <Provider store={store}>
-          <SocketProvider>
-            <SyncEventsOverlay />
-          </SocketProvider>
-        </Provider>,
-      );
-
-      await waitFor(() => {
-        expect(importEndCallback).toBeDefined();
-      });
-
-      // Backend sends IMPORT_GCAL_END with zero events (valid response)
-      await act(async () => {
-        importEndCallback?.({
-          status: "COMPLETED",
-          eventsCount: 0,
-          calendarsCount: 1,
-        });
-      });
-
-      await act(async () => {
-        jest.advanceTimersByTime(100);
-      });
-
-      // Spinner should be hidden even with zero events
-      expect(
-        screen.queryByText("Importing your Google Calendar events..."),
-      ).not.toBeInTheDocument();
-
-      const state = store.getState();
-      expect(state.sync.importGCal.importResults).toEqual({
-        eventsCount: 0,
-        calendarsCount: 1,
-      });
-    });
-
-    it("hides spinner when reconnect metadata shows import already completed", async () => {
-      const store = createTestStore({ isImportPending: true, importing: true });
+    it("syncs importing state with server metadata", async () => {
+      const store = createTestStore({ importing: false });
 
       render(
         <Provider store={store}>
@@ -285,34 +214,22 @@ describe("GCal Re-Authentication Flow", () => {
         expect(metadataCallback).toBeDefined();
       });
 
+      // Server indicates import is in progress
       await act(async () => {
-        metadataCallback?.({ sync: { importGCal: "COMPLETED" } });
+        metadataCallback?.({ sync: { importGCal: "IMPORTING" } });
       });
-
-      await act(async () => {
-        jest.advanceTimersByTime(100);
-      });
-
-      expect(
-        screen.queryByText("Importing your Google Calendar events..."),
-      ).not.toBeInTheDocument();
 
       const state = store.getState();
-      expect(state.sync.importGCal.importing).toBe(false);
-      expect(state.sync.importGCal.isImportPending).toBe(false);
-      expect(state.sync.importLatest.isFetchNeeded).toBe(true);
+      expect(state.sync.importGCal.importing).toBe(true);
     });
   });
 
-  describe("Complete re-authentication flow", () => {
-    it("handles full flow: OAuth → import start → import end", async () => {
-      // Start with OAuth in progress (user clicked Connect/Reconnect)
-      const store = createTestStore({
-        isAuthenticating: true,
-        isImportPending: true,
-      });
+  describe("Complete authentication flow", () => {
+    it("handles OAuth → import transition without stale state", async () => {
+      // Start with OAuth in progress
+      const store = createTestStore({ isAuthenticating: true });
 
-      const { rerender } = render(
+      const { rerender, container } = render(
         <Provider store={store}>
           <SocketProvider>
             <SyncEventsOverlay />
@@ -320,7 +237,7 @@ describe("GCal Re-Authentication Flow", () => {
         </Provider>,
       );
 
-      // Phase 1: OAuth in progress - should show sign-in message
+      // Phase 1: OAuth in progress
       expect(
         screen.getByText("Complete Google sign-in..."),
       ).toBeInTheDocument();
@@ -329,7 +246,7 @@ describe("GCal Re-Authentication Flow", () => {
         expect(importStartCallback).toBeDefined();
       });
 
-      // OAuth completes, transition to import phase
+      // OAuth completes, auth state resets
       await act(async () => {
         store.dispatch(authSlice.actions.resetAuth());
       });
@@ -342,19 +259,24 @@ describe("GCal Re-Authentication Flow", () => {
         </Provider>,
       );
 
-      // Phase 2: Import in progress - should show import message
-      expect(
-        screen.getByText("Importing your Google Calendar events..."),
-      ).toBeInTheDocument();
+      await act(async () => {
+        jest.advanceTimersByTime(100);
+      });
 
-      // Backend starts import
+      // Phase 2: Overlay should be dismissed (import runs in background)
+      expect(
+        screen.queryByText("Complete Google sign-in..."),
+      ).not.toBeInTheDocument();
+      expect(container.firstChild).toBeNull();
+
+      // Backend starts import (background, non-blocking)
       await act(async () => {
         importStartCallback?.();
       });
 
-      expect(
-        screen.getByText("Importing your Google Calendar events..."),
-      ).toBeInTheDocument();
+      // Still no blocking overlay
+      expect(container.firstChild).toBeNull();
+      expect(store.getState().sync.importGCal.importing).toBe(true);
 
       // Backend completes import
       await act(async () => {
@@ -365,78 +287,20 @@ describe("GCal Re-Authentication Flow", () => {
         });
       });
 
-      await act(async () => {
-        jest.advanceTimersByTime(100);
-      });
-
-      // Phase 3: Complete - spinner should be gone
-      expect(
-        screen.queryByText("Importing your Google Calendar events..."),
-      ).not.toBeInTheDocument();
-      expect(
-        screen.queryByText("Complete Google sign-in..."),
-      ).not.toBeInTheDocument();
-
       // Verify final state
       const state = store.getState();
       expect(state.sync.importGCal.importResults).toEqual({
         eventsCount: 42,
         calendarsCount: 2,
       });
+      expect(state.sync.importGCal.importing).toBe(false);
       expect(state.sync.importLatest.isFetchNeeded).toBe(true);
     });
   });
 
-  describe("Timeout handling", () => {
-    it("import should complete within sensible timeout", async () => {
-      const store = createTestStore({ isImportPending: true });
-
-      render(
-        <Provider store={store}>
-          <SocketProvider>
-            <SyncEventsOverlay />
-          </SocketProvider>
-        </Provider>,
-      );
-
-      await waitFor(() => {
-        expect(importEndCallback).toBeDefined();
-      });
-
-      // Simulate time passing but import completes before timeout
-      await act(async () => {
-        jest.advanceTimersByTime(IMPORT_TIMEOUT_MS / 2); // 15 seconds
-      });
-
-      // Spinner should still be visible (waiting for backend)
-      expect(
-        screen.getByText("Importing your Google Calendar events..."),
-      ).toBeInTheDocument();
-
-      // Backend responds successfully
-      await act(async () => {
-        importEndCallback?.({
-          status: "COMPLETED",
-          eventsCount: 10,
-          calendarsCount: 1,
-        });
-      });
-
-      await act(async () => {
-        jest.advanceTimersByTime(100);
-      });
-
-      // Should complete successfully
-      expect(
-        screen.queryByText("Importing your Google Calendar events..."),
-      ).not.toBeInTheDocument();
-
-      const state = store.getState();
-      expect(state.sync.importGCal.importResults).not.toBeNull();
-    });
-
-    it("handles errored payloads from the backend", async () => {
-      const store = createTestStore({ isImportPending: true });
+  describe("Error handling", () => {
+    it("handles import errors gracefully", async () => {
+      const store = createTestStore({});
 
       render(
         <Provider store={store}>
@@ -458,123 +322,11 @@ describe("GCal Re-Authentication Flow", () => {
         });
       });
 
-      await act(async () => {
-        jest.advanceTimersByTime(100);
-      });
-
-      // Spinner should be hidden (error state also hides spinner)
-      expect(
-        screen.queryByText("Importing your Google Calendar events..."),
-      ).not.toBeInTheDocument();
-
-      // State should reflect error
       const state = store.getState();
       expect(state.sync.importGCal.importError).toBe(
         "Incremental Google Calendar sync failed for user: test-user",
       );
-      expect(state.sync.importGCal.isImportPending).toBe(false);
-    });
-
-    it("hides spinner when import end is ignored and metadata reports completion", async () => {
-      const store = createTestStore({ isImportPending: true, importing: true });
-
-      render(
-        <Provider store={store}>
-          <SocketProvider>
-            <SyncEventsOverlay />
-          </SocketProvider>
-        </Provider>,
-      );
-
-      await waitFor(() => {
-        expect(importEndCallback).toBeDefined();
-        expect(metadataCallback).toBeDefined();
-      });
-
-      await act(async () => {
-        importEndCallback?.({
-          status: "IGNORED",
-          message:
-            "User test-user gcal import is in progress or completed, ignoring this request",
-        });
-      });
-
-      expect(store.getState().sync.importGCal.isImportPending).toBe(true);
-
-      await act(async () => {
-        metadataCallback?.({ sync: { importGCal: "COMPLETED" } });
-      });
-
-      await act(async () => {
-        jest.advanceTimersByTime(100);
-      });
-
-      expect(
-        screen.queryByText("Importing your Google Calendar events..."),
-      ).not.toBeInTheDocument();
-      expect(store.getState().sync.importGCal.isImportPending).toBe(false);
-    });
-  });
-
-  describe("Race condition handling (ref pattern)", () => {
-    it("processes import end correctly when state changes between renders", async () => {
-      // Start with isImportPending = false
-      const store = createTestStore({ isImportPending: false });
-
-      const { rerender } = render(
-        <Provider store={store}>
-          <SocketProvider>
-            <SyncEventsOverlay />
-          </SocketProvider>
-        </Provider>,
-      );
-
-      await waitFor(() => {
-        expect(importEndCallback).toBeDefined();
-      });
-
-      // User clicks Reconnect - state changes to isImportPending = true
-      await act(async () => {
-        store.dispatch(importGCalSlice.actions.setIsImportPending(true));
-      });
-
-      rerender(
-        <Provider store={store}>
-          <SocketProvider>
-            <SyncEventsOverlay />
-          </SocketProvider>
-        </Provider>,
-      );
-
-      // Spinner should now be visible
-      expect(
-        screen.getByText("Importing your Google Calendar events..."),
-      ).toBeInTheDocument();
-
-      // Event arrives - with the ref pattern fix, this should process correctly
-      await act(async () => {
-        importEndCallback?.({
-          status: "COMPLETED",
-          eventsCount: 25,
-          calendarsCount: 4,
-        });
-      });
-
-      await act(async () => {
-        jest.advanceTimersByTime(100);
-      });
-
-      // Spinner should be hidden (fix prevents stale closure issue)
-      expect(
-        screen.queryByText("Importing your Google Calendar events..."),
-      ).not.toBeInTheDocument();
-
-      // Results should be set correctly
-      const state = store.getState();
-      expect(state.sync.importGCal.importResults).toEqual({
-        eventsCount: 25,
-        calendarsCount: 4,
-      });
+      expect(state.sync.importGCal.importing).toBe(false);
     });
   });
 });

@@ -58,7 +58,6 @@ describe("useConnectGoogle", () => {
       if (selector === selectImportGCalState) {
         return {
           importing: false,
-          isImportPending: false,
         };
       }
 
@@ -99,7 +98,6 @@ describe("useConnectGoogle", () => {
       if (selector === selectImportGCalState) {
         return {
           importing: false,
-          isImportPending: false,
         };
       }
 
@@ -136,7 +134,6 @@ describe("useConnectGoogle", () => {
       if (selector === selectImportGCalState) {
         return {
           importing: false,
-          isImportPending: false,
         };
       }
 
@@ -174,7 +171,6 @@ describe("useConnectGoogle", () => {
       if (selector === selectImportGCalState) {
         return {
           importing: false,
-          isImportPending: false,
         };
       }
 
@@ -215,7 +211,6 @@ describe("useConnectGoogle", () => {
       if (selector === selectImportGCalState) {
         return {
           importing: false,
-          isImportPending: false,
         };
       }
 
@@ -251,7 +246,6 @@ describe("useConnectGoogle", () => {
       if (selector === selectImportGCalState) {
         return {
           importing: false,
-          isImportPending: false,
         };
       }
 
@@ -278,7 +272,7 @@ describe("useConnectGoogle", () => {
       importGCalSlice.actions.clearImportResults(undefined),
     );
     expect(mockDispatch).toHaveBeenCalledWith(
-      importGCalSlice.actions.setIsImportPending(true),
+      importGCalSlice.actions.importing(true),
     );
     expect(mockDispatch).not.toHaveBeenCalledWith(
       settingsSlice.actions.closeCmdPalette(),
@@ -310,7 +304,6 @@ describe("useConnectGoogle", () => {
       if (selector === selectImportGCalState) {
         return {
           importing: false,
-          isImportPending: true,
         };
       }
 
@@ -345,7 +338,6 @@ describe("useConnectGoogle", () => {
       if (selector === selectImportGCalState) {
         return {
           importing: true,
-          isImportPending: true,
         };
       }
 
@@ -379,7 +371,6 @@ describe("useConnectGoogle", () => {
       if (selector === selectImportGCalState) {
         return {
           importing: false,
-          isImportPending: false,
         };
       }
 

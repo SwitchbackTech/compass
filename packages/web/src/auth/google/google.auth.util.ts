@@ -57,9 +57,8 @@ export const handleGoogleRevoked = () => {
   markGoogleAsRevoked();
 
   store.dispatch(authSlice.actions.resetAuth());
-  store.dispatch(userMetadataSlice.actions.clear());
+  store.dispatch(userMetadataSlice.actions.clear(undefined));
   store.dispatch(importGCalSlice.actions.importing(false));
-  store.dispatch(importGCalSlice.actions.setIsImportPending(false));
 
   store.dispatch(
     eventsEntitiesSlice.actions.removeEventsByOrigin({

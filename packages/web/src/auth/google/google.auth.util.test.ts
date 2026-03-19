@@ -177,13 +177,10 @@ describe("google-auth.util", () => {
         authSlice.actions.resetAuth(),
       );
       expect(store.dispatch).toHaveBeenCalledWith(
-        userMetadataSlice.actions.clear(),
+        userMetadataSlice.actions.clear(undefined),
       );
       expect(store.dispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.importing(false),
-      );
-      expect(store.dispatch).toHaveBeenCalledWith(
-        importGCalSlice.actions.setIsImportPending(false),
       );
     });
 
@@ -217,7 +214,7 @@ describe("google-auth.util", () => {
       handleGoogleRevoked();
 
       expect(toast.error).not.toHaveBeenCalled();
-      expect(store.dispatch).toHaveBeenCalledTimes(6);
+      expect(store.dispatch).toHaveBeenCalledTimes(5);
     });
   });
 });

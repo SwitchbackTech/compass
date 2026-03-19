@@ -26,7 +26,7 @@ describe("refreshUserMetadata", () => {
     jest.clearAllMocks();
   });
 
-  it("loads metadata into the store", async () => {
+  it("loads metadata into the store and syncs importing state", async () => {
     const metadata = {
       google: {
         connectionStatus: "CONNECTED" as const,
@@ -44,6 +44,35 @@ describe("refreshUserMetadata", () => {
     expect(getDispatchMock()).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({ type: "userMetadata/set", payload: metadata }),
+    );
+    expect(getDispatchMock()).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({
+        type: "async/importGCal/importing",
+        payload: false,
+      }),
+    );
+  });
+
+  it("sets importing to true when metadata shows import in progress", async () => {
+    const metadata = {
+      google: {
+        connectionStatus: "CONNECTED" as const,
+        syncStatus: "HEALTHY" as const,
+      },
+      sync: {
+        importGCal: "IMPORTING" as const,
+      },
+    };
+    api.getMetadata.mockResolvedValue(metadata);
+
+    await refreshUserMetadata();
+
+    expect(getDispatchMock()).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "async/importGCal/importing",
+        payload: true,
+      }),
     );
   });
 
