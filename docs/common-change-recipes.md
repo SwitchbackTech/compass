@@ -28,7 +28,7 @@ Rule: never treat event shape as web-only unless the field is strictly presentat
 3. Read `packages/backend/src/event/classes/compass.event.generator.ts`.
 4. Read `packages/backend/src/event/classes/compass.event.parser.ts`.
 5. Read `packages/backend/src/event/classes/compass.event.executor.ts`.
-6. Read `packages/backend/src/sync/services/sync/compass.sync.processor.ts`.
+6. Read `packages/backend/src/sync/services/sync/compass/compass.sync.processor.ts`.
 7. Update the planner, executor, or scope-expansion path that actually owns the behavior.
 8. Add focused tests for the exact recurrence transition you changed.
 

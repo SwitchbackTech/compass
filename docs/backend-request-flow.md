@@ -90,30 +90,32 @@ Files:
 For `POST /api/event`:
 
 1. route requires `verifySession()`
-2. route also requires `requireGoogleConnectionSession` for create
-3. controller adds the authenticated user id
-4. controller normalizes single vs array payloads
-5. controller forwards the change set to `CompassSyncProcessor`
-6. controller returns a status-only payload (`{ statusCode: 204 }`) through `res.promise(...)`
-7. processor:
+2. controller adds the authenticated user id
+3. controller normalizes single vs array payloads
+4. controller forwards the change set to `CompassSyncProcessor`
+5. controller returns a status-only payload (`{ statusCode: 204 }`) through `res.promise(...)`
+6. processor:
    - loads current Compass DB state
    - analyzes the transition into a persistence plan
-   - applies Compass DB mutations
-   - executes any Google side effect
+   - applies Compass DB mutations first
+   - executes any Google side effect implied by the transition
+   - if Google is not connected (`MissingGoogleRefreshToken`), keeps the Compass mutation and skips the Google side effect
    - notifies clients after commit
 
 `PUT /api/event/:id` and `DELETE /api/event/:id` follow the same write pattern:
 
-- route-level auth + Google connection guards
+- route-level auth guard (`verifySession()`) without route-level Google-connection middleware
 - thin controller shaping into `CompassEvent`
 - `res.promise(...)`-based response and centralized error routing
+
+This allows password-authenticated users to mutate Compass events even when no Google connection is present.
 
 ## Common Auth Guards
 
 Frequently used middleware:
 
 - `verifySession()`: authenticated Compass session required
-- `requireGoogleConnectionSession`: active Google connection required
+- `requireGoogleConnectionSession`: active Google connection required for routes that call Google directly (for example `/api/sync/import-gcal`)
 - `authMiddleware.verifyIsDev`: development-only route
 - `authMiddleware.verifyIsFromCompass`: trusted internal caller
 - `authMiddleware.verifyIsFromGoogle`: trusted Google notification source
