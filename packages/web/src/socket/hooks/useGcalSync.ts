@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import {
   FETCH_USER_METADATA,
@@ -12,21 +12,14 @@ import { type ImportGCalEndPayload } from "@core/types/websocket.types";
 import { handleGoogleRevoked } from "@web/auth/google/google.auth.util";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
-import { selectIsImportPending } from "@web/ducks/events/selectors/sync.selector";
 import {
   importGCalSlice,
   triggerFetch,
 } from "@web/ducks/events/slices/sync.slice";
-import { useAppSelector } from "@web/store/store.hooks";
 import { socket } from "../client/socket.client";
 
 export const useGcalSync = () => {
   const dispatch = useDispatch();
-  const isImportPending = useAppSelector(selectIsImportPending);
-
-  // Keep ref in sync synchronously during render to avoid race with socket events
-  const isImportPendingRef = useRef(isImportPending);
-  isImportPendingRef.current = isImportPending;
 
   const onImportStart = useCallback(
     (importing = true) => {
@@ -42,10 +35,6 @@ export const useGcalSync = () => {
     (payload?: ImportGCalEndPayload) => {
       dispatch(importGCalSlice.actions.importing(false));
       socket.emit(FETCH_USER_METADATA);
-
-      if (!isImportPendingRef.current) {
-        return;
-      }
 
       if (payload?.status === "ERRORED") {
         dispatch(importGCalSlice.actions.setImportError(payload.message));
@@ -88,32 +77,14 @@ export const useGcalSync = () => {
 
       dispatch(userMetadataSlice.actions.set(metadata));
 
-      if (isImportPendingRef.current) {
-        if (isBackendImporting) {
-          dispatch(importGCalSlice.actions.importing(true));
-        } else if (importStatus === "COMPLETED") {
-          dispatch(importGCalSlice.actions.importing(false));
-          dispatch(importGCalSlice.actions.setIsImportPending(false));
-          dispatch(
-            triggerFetch({
-              reason: Sync_AsyncStateContextReason.IMPORT_COMPLETE,
-            }),
-          );
-        } else if (importStatus === "ERRORED") {
-          dispatch(importGCalSlice.actions.importing(false));
-          dispatch(importGCalSlice.actions.setIsImportPending(false));
-        }
-        return;
-      }
-
-      // Normal case (not in post-auth flow) - sync state with backend
-      onImportStart(isBackendImporting);
+      // Sync importing state with server metadata
+      dispatch(importGCalSlice.actions.importing(isBackendImporting));
 
       if (shouldAutoImport) {
         dispatch(importGCalSlice.actions.request(undefined as never));
       }
     },
-    [dispatch, onImportStart],
+    [dispatch],
   );
 
   useEffect(() => {

@@ -26,13 +26,11 @@ const getErrorMessage = (error: unknown): string => {
 const handleAuthError = (dispatch: AppDispatch, error: unknown) => {
   console.error(error);
   dispatch(authError(getErrorMessage(error)));
-  dispatch(importGCalSlice.actions.setIsImportPending(false));
   dispatch(importGCalSlice.actions.importing(false));
 };
 
 const resetAuthState = (dispatch: AppDispatch) => {
   dispatch(resetAuth());
-  dispatch(importGCalSlice.actions.setIsImportPending(false));
   dispatch(importGCalSlice.actions.importing(false));
 };
 
@@ -64,10 +62,8 @@ export function useGoogleAuth(
           handleAuthError(dispatch, authResult.error);
           return;
         }
-
-        await completeAuthentication({
-          email: authResult.data?.user?.emails?.[0],
-        });
+        const email = authResult.data?.user?.emails?.[0];
+        await completeAuthentication({ email });
       } catch (error) {
         handleAuthError(dispatch, error);
         throw error;

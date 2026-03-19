@@ -52,7 +52,7 @@ describe("SocketProvider", () => {
     });
   });
 
-  it("sets import results and triggers refetch when awaiting import results", async () => {
+  it("sets import results and triggers refetch on import completion", async () => {
     const store = configureStore({
       reducer: {
         sync: combineReducers({
@@ -61,8 +61,6 @@ describe("SocketProvider", () => {
         }),
       },
     });
-
-    store.dispatch(importGCalSlice.actions.setIsImportPending(true));
 
     render(
       <Provider store={store}>
@@ -94,37 +92,7 @@ describe("SocketProvider", () => {
       calendarsCount: 2,
     });
     expect(state.sync.importGCal.importing).toBe(false);
-    expect(state.sync.importGCal.isImportPending).toBe(false);
     expect(state.sync.importLatest.isFetchNeeded).toBe(true);
-  });
-
-  it("does not set import results when not awaiting import results", async () => {
-    const store = configureStore({
-      reducer: {
-        sync: combineReducers({
-          importGCal: importGCalSlice.reducer,
-          importLatest: importLatestSlice.reducer,
-        }),
-      },
-    });
-
-    render(
-      <Provider store={store}>
-        <SocketProvider>
-          <div>Test</div>
-        </SocketProvider>
-      </Provider>,
-    );
-
-    await waitFor(() => {
-      expect(importEndCallback).toBeDefined();
-    });
-
-    importEndCallback?.({ status: "COMPLETED" });
-
-    const state = store.getState();
-    expect(state.sync.importGCal.importResults).toBeNull();
-    expect(state.sync.importLatest.isFetchNeeded).toBe(false);
   });
 
   it("clears previous import results when new import starts", async () => {

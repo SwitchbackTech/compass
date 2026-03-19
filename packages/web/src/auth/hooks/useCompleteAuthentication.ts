@@ -1,4 +1,3 @@
-import { batch } from "react-redux";
 import { toast } from "react-toastify";
 import { syncLocalEvents } from "@web/auth/google/google.auth.util";
 import { useSession } from "@web/auth/hooks/session/useSession";
@@ -25,11 +24,7 @@ export function useCompleteAuthentication() {
   }) => {
     markUserAsAuthenticated(email);
     setAuthenticated(true);
-
-    batch(() => {
-      dispatch(authSuccess());
-      dispatch(importGCalSlice.actions.setIsImportPending(true));
-    });
+    dispatch(authSuccess());
 
     void refreshUserMetadata();
 
