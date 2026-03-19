@@ -1,10 +1,6 @@
 import cors from "cors";
 import { ObjectId } from "mongodb";
-import supertokens, {
-  default as SuperTokens,
-  User,
-  getUser,
-} from "supertokens-node";
+import supertokens, { default as SuperTokens, User } from "supertokens-node";
 import AccountLinking from "supertokens-node/recipe/accountlinking";
 import Dashboard from "supertokens-node/recipe/dashboard";
 import EmailPassword from "supertokens-node/recipe/emailpassword";
@@ -214,15 +210,7 @@ export const initSupertokens = () => {
                 await ensureExternalUserIdMapping(
                   response.recipeUserId.getAsString(),
                 );
-
-                const updatedUser = await getUser(
-                  response.recipeUserId.getAsString(),
-                );
-
-                return {
-                  ...response,
-                  user: updatedUser ?? response.user,
-                };
+                return response;
               },
             };
           },

@@ -21,6 +21,7 @@ import {
 import {
   buildResetPasswordLink,
   createGoogleSignInSuccess,
+  ensureExternalUserIdMapping,
 } from "@backend/common/middleware/supertokens.middleware.util";
 import syncService from "@backend/sync/services/sync.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
@@ -38,7 +39,6 @@ jest.mock("supertokens-node", () => ({
     convertToRecipeUserId: jest.fn((id: string) => `recipe_${id}`),
   },
   User: jest.fn(),
-  getUser: jest.fn(),
 }));
 
 jest.mock("supertokens-node/recipe/accountlinking", () => ({
@@ -265,6 +265,43 @@ describe("supertokens.middleware", () => {
       expect(buildResetPasswordLink).toHaveBeenCalledWith(
         "http://localhost:1234/auth/reset-password?token=abc",
       );
+    });
+
+    it("keeps the original createNewRecipeUser response after ensuring the external id mapping", async () => {
+      const recipeUserId = new ObjectId().toString();
+      const responsePayload = {
+        status: "OK" as const,
+        recipeUserId: {
+          getAsString: () => recipeUserId,
+        },
+        user: { id: "original-user" },
+      };
+
+      initSupertokens();
+
+      const emailPasswordConfig = (EmailPassword.init as jest.Mock).mock
+        .calls[0][0] as {
+        override: {
+          functions: (originalImplementation: {
+            createNewRecipeUser: (input: unknown) => Promise<unknown>;
+          }) => {
+            createNewRecipeUser: (input: unknown) => Promise<unknown>;
+          };
+        };
+      };
+
+      const originalImplementation = {
+        createNewRecipeUser: jest.fn().mockResolvedValue(responsePayload),
+      };
+
+      const overridden = emailPasswordConfig.override.functions(
+        originalImplementation,
+      );
+
+      await expect(
+        overridden.createNewRecipeUser({ some: "input" }),
+      ).resolves.toBe(responsePayload);
+      expect(ensureExternalUserIdMapping).toHaveBeenCalledWith(recipeUserId);
     });
 
     it("calls googleAuthService.handleGoogleAuth when ThirdParty signInUpPOST succeeds", async () => {
