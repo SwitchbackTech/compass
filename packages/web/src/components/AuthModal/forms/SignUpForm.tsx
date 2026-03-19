@@ -1,4 +1,10 @@
-import { type ChangeEvent, type FC, useCallback } from "react";
+import {
+  type ChangeEvent,
+  type FC,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import {
   type SignUpFormData,
   SignUpSchema,
@@ -26,23 +32,29 @@ export const SignUpForm: FC<SignUpFormProps> = ({
   onNameChange,
   isSubmitting,
 }) => {
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const form = useZodForm({
     schema: SignUpSchema,
     initialValues: { name: "", email: "", password: "" },
     onSubmit,
   });
 
+  useEffect(() => {
+    nameInputRef.current?.focus();
+  }, []);
+
   const handleNameChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
       form.handleChange("name")(e);
       onNameChange?.(e.target.value);
     },
-    [form.handleChange, onNameChange],
+    [form, onNameChange],
   );
 
   return (
     <form onSubmit={form.handleSubmit} className="flex w-full flex-col gap-4">
       <AuthInput
+        ref={nameInputRef}
         type="text"
         placeholder="Name"
         ariaLabel="Name"

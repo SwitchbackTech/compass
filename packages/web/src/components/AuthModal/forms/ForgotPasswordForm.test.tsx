@@ -21,6 +21,12 @@ describe("ForgotPasswordForm", () => {
     jest.clearAllMocks();
   });
 
+  it("autofocuses the email field on mount", () => {
+    renderForgotPasswordForm();
+
+    expect(screen.getByLabelText(/email/i)).toHaveFocus();
+  });
+
   describe("blur-only validation", () => {
     it("does not show email error while user is typing", async () => {
       const user = userEvent.setup();

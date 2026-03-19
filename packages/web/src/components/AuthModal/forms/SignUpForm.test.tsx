@@ -23,6 +23,12 @@ describe("SignUpForm", () => {
     jest.clearAllMocks();
   });
 
+  it("autofocuses the name field on mount", () => {
+    renderSignUpForm();
+
+    expect(screen.getByLabelText(/name/i)).toHaveFocus();
+  });
+
   describe("blur-only validation", () => {
     it("does not show email error while user is typing", async () => {
       const user = userEvent.setup();

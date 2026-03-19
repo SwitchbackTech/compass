@@ -1,4 +1,4 @@
-import { type ChangeEvent, type FC, useState } from "react";
+import { type ChangeEvent, type FC, useEffect, useRef, useState } from "react";
 import {
   type ForgotPasswordFormData,
   ForgotPasswordSchema,
@@ -27,6 +27,7 @@ export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
   onBackToSignIn,
   isSubmitting,
 }) => {
+  const emailInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -46,6 +47,10 @@ export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
       }
     },
   });
+
+  useEffect(() => {
+    emailInputRef.current?.focus();
+  }, []);
 
   const handleEmailChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSubmitError(null);
@@ -77,6 +82,7 @@ export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
       </p>
 
       <AuthInput
+        ref={emailInputRef}
         type="email"
         placeholder="Email"
         ariaLabel="Email"

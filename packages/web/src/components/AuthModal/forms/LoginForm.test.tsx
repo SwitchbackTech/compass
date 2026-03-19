@@ -21,6 +21,12 @@ describe("LogInForm", () => {
     jest.clearAllMocks();
   });
 
+  it("autofocuses the email field on mount", () => {
+    renderSignInForm();
+
+    expect(screen.getByLabelText(/email/i)).toHaveFocus();
+  });
+
   describe("blur-only validation", () => {
     it("does not show email error while user is typing", async () => {
       const user = userEvent.setup();

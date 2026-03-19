@@ -1,4 +1,4 @@
-import { type FC } from "react";
+import { type FC, useEffect, useRef } from "react";
 import {
   type LogInFormData,
   LogInSchema,
@@ -26,15 +26,21 @@ export const LogInForm: FC<SignInFormProps> = ({
   onForgotPassword,
   isSubmitting,
 }) => {
+  const emailInputRef = useRef<HTMLInputElement>(null);
   const form = useZodForm({
     schema: LogInSchema,
     initialValues: { email: "", password: "" },
     onSubmit,
   });
 
+  useEffect(() => {
+    emailInputRef.current?.focus();
+  }, []);
+
   return (
     <form onSubmit={form.handleSubmit} className="flex w-full flex-col gap-4">
       <AuthInput
+        ref={emailInputRef}
         type="email"
         placeholder="Email"
         ariaLabel="Email"

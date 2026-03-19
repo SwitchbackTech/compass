@@ -1,4 +1,4 @@
-import { type FC } from "react";
+import { type FC, useEffect, useRef } from "react";
 import {
   type ResetPasswordFormData,
   ResetPasswordSchema,
@@ -20,11 +20,16 @@ export const ResetPasswordForm: FC<ResetPasswordFormProps> = ({
   isSubmitting,
   error,
 }) => {
+  const passwordInputRef = useRef<HTMLInputElement>(null);
   const form = useZodForm({
     schema: ResetPasswordSchema,
     initialValues: { password: "" },
     onSubmit,
   });
+
+  useEffect(() => {
+    passwordInputRef.current?.focus();
+  }, []);
 
   return (
     <form onSubmit={form.handleSubmit} className="flex w-full flex-col gap-4">
@@ -33,6 +38,7 @@ export const ResetPasswordForm: FC<ResetPasswordFormProps> = ({
       </p>
 
       <AuthInput
+        ref={passwordInputRef}
         type="password"
         placeholder="New password"
         ariaLabel="New password"
