@@ -100,9 +100,12 @@ export const updateEventTitle = (prefix: string) =>
   `${prefix} Updated ${Date.now()}`;
 
 export const prepareCalendarPage = async (page: Page) => {
-  await page.goto("/week", { waitUntil: "networkidle" });
+  // Use "load" instead of "networkidle": webpack HMR keeps connections open and
+  // lazy-loaded React chunks can create HTTP requests between networkidle checks,
+  // causing networkidle to fire before the calendar is actually rendered.
+  await page.goto("/week", { waitUntil: "load" });
 
-  // Wait for React app to mount by checking for root element with content
+  // Wait for React to mount (any content in #root means scripts have executed)
   await page.waitForFunction(
     () => {
       const root = document.querySelector("#root");
@@ -112,19 +115,13 @@ export const prepareCalendarPage = async (page: Page) => {
   );
 
   await resetLocalEventDb(page);
-  await page.reload({ waitUntil: "networkidle" });
+  await page.reload({ waitUntil: "load" });
 
-  // Wait again after reload for React to mount
-  await page.waitForFunction(
-    () => {
-      const root = document.querySelector("#root");
-      return root && root.children.length > 0;
-    },
-    { timeout: 10000 },
-  );
+  // Wait for the calendar grid specifically — this confirms the full React tree
+  // has rendered, not just a loading indicator or partial bundle state.
+  await page.locator("#mainGrid").waitFor({ state: "visible", timeout: 20000 });
 
   await ensureWeekView(page);
-  await page.locator("#mainGrid").waitFor({ state: "visible", timeout: 15000 });
   await blurActiveElement(page);
   await page.locator("#mainGrid").focus();
 };
