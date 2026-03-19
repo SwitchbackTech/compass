@@ -2,6 +2,7 @@ import { type Credentials, type TokenPayload } from "google-auth-library";
 import { Logger } from "@core/logger/winston.logger";
 import { mapCompassUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
+import { parseReconnectGoogleParams } from "@backend/auth/services/google/google.auth.service.util";
 import GoogleOAuthClient from "@backend/auth/services/google/google.oauth.client";
 import { ENV } from "@backend/common/constants/env.constants";
 import { isMissingUserTagId } from "@backend/common/constants/env.util";
@@ -11,7 +12,6 @@ import EmailService from "@backend/email/email.service";
 import syncService from "@backend/sync/services/sync.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
-import { parseReconnectGoogleParams } from "./google.auth.types";
 
 const logger = Logger("app:auth.google.service");
 

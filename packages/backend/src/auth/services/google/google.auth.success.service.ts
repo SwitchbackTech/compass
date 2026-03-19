@@ -1,16 +1,9 @@
 import { type Credentials, type TokenPayload } from "google-auth-library";
 import { Logger } from "@core/logger/winston.logger";
 import { determineGoogleAuthMode } from "@backend/auth/services/google/google.auth.success.utils";
+import { type GoogleSignInSuccess } from "./google.auth.types";
 
 const logger = Logger("app:google.auth.success");
-
-export type GoogleSignInSuccess = {
-  providerUser: TokenPayload;
-  oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">;
-  createdNewRecipeUser: boolean;
-  recipeUserId: string;
-  loginMethodsLength: number;
-};
 
 export interface GoogleSignInSuccessAuthService {
   repairGoogleConnection(
