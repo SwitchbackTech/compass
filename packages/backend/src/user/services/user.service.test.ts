@@ -298,7 +298,7 @@ describe("UserService", () => {
           Boolean(nextSyncToken),
         ),
       ).toBe(true);
-      expect(metadata.google?.syncStatus).toBe("HEALTHY");
+      expect(metadata.google?.connectionState).toBe("HEALTHY");
 
       (isUsingHttps as jest.Mock).mockRestore();
     });

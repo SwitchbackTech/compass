@@ -182,7 +182,7 @@ describe("useGoogleAuth", () => {
   });
 
   describe("onError callback", () => {
-    it("hides overlay when login fails", () => {
+    it("dispatches auth error when login fails", () => {
       let onErrorCallback: ((error: unknown) => void) | undefined;
 
       mockUseGoogleLogin.mockImplementation(({ onError }) => {
@@ -204,8 +204,7 @@ describe("useGoogleAuth", () => {
 
       expect(mockDispatchFn).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: "async/importGCal/importing",
-          payload: false,
+          type: "auth/authError",
         }),
       );
     });
@@ -234,12 +233,6 @@ describe("useGoogleAuth", () => {
           type: "auth/resetAuth",
         }),
       );
-      expect(mockDispatchFn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "async/importGCal/importing",
-          payload: false,
-        }),
-      );
       expect(mockDispatchFn).not.toHaveBeenCalledWith(
         expect.objectContaining({
           type: "auth/authError",
@@ -249,7 +242,7 @@ describe("useGoogleAuth", () => {
   });
 
   describe("authentication failure handling", () => {
-    it("clears import flow and does not proceed when authentication fails", async () => {
+    it("does not proceed when authentication fails", async () => {
       mockAuthenticate.mockResolvedValue({
         success: false,
         error: new Error("Auth failed"),
@@ -292,15 +285,9 @@ describe("useGoogleAuth", () => {
       // Should not proceed with auth flow
       expect(mockMarkUserAsAuthenticated).not.toHaveBeenCalled();
       expect(mockSetAuthenticated).not.toHaveBeenCalled();
-      expect(mockDispatchFn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "async/importGCal/importing",
-          payload: false,
-        }),
-      );
     });
 
-    it("clears import flow when authenticate throws an unexpected error", async () => {
+    it("does not proceed when authenticate throws an unexpected error", async () => {
       const authError = new Error("Network error");
       mockAuthenticate.mockRejectedValue(authError);
 
@@ -337,13 +324,6 @@ describe("useGoogleAuth", () => {
       await waitFor(() => {
         expect(mockAuthenticate).toHaveBeenCalled();
       });
-
-      expect(mockDispatchFn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "async/importGCal/importing",
-          payload: false,
-        }),
-      );
 
       // Should not proceed with auth flow
       expect(mockMarkUserAsAuthenticated).not.toHaveBeenCalled();

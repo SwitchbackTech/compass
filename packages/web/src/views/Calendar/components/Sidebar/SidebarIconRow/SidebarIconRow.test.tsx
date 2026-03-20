@@ -58,8 +58,7 @@ describe("SidebarIconRow", () => {
         userMetadata: {
           current: {
             google: {
-              connectionStatus: "NOT_CONNECTED",
-              syncStatus: "NONE",
+              connectionState: "NOT_CONNECTED",
             },
           },
         },
@@ -82,8 +81,7 @@ describe("SidebarIconRow", () => {
         userMetadata: {
           current: {
             google: {
-              connectionStatus: "RECONNECT_REQUIRED",
-              syncStatus: "NONE",
+              connectionState: "RECONNECT_REQUIRED",
             },
           },
         },
@@ -106,8 +104,7 @@ describe("SidebarIconRow", () => {
         userMetadata: {
           current: {
             google: {
-              connectionStatus: "CONNECTED",
-              syncStatus: "HEALTHY",
+              connectionState: "HEALTHY",
             },
           },
         },
@@ -124,14 +121,13 @@ describe("SidebarIconRow", () => {
     ).toBeInTheDocument();
   });
 
-  it("disables the sidebar action while Google Calendar is repairing", () => {
+  it("disables the sidebar action while Google Calendar is importing", () => {
     render(<SidebarIconRow />, {
       state: {
         userMetadata: {
           current: {
             google: {
-              connectionStatus: "CONNECTED",
-              syncStatus: "REPAIRING",
+              connectionState: "IMPORTING",
             },
           },
         },
@@ -154,8 +150,7 @@ describe("SidebarIconRow", () => {
         userMetadata: {
           current: {
             google: {
-              connectionStatus: "CONNECTED",
-              syncStatus: "ATTENTION",
+              connectionState: "ATTENTION",
             },
           },
         },

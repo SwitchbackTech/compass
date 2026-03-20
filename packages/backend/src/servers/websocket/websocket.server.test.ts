@@ -397,9 +397,7 @@ describe("WebSocket Server", () => {
           {
             ...userMetadata,
             google: {
-              hasRefreshToken: false,
-              connectionStatus: "NOT_CONNECTED",
-              syncStatus: "NONE",
+              connectionState: "NOT_CONNECTED",
             },
           },
         ]);
