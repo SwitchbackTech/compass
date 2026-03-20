@@ -1,11 +1,17 @@
 import { Status } from "@core/errors/status.codes";
 import { UserApi } from "@web/common/apis/user.api";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
-import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
 import { store } from "@web/store";
 
 let refreshUserMetadataRequest: Promise<void> | null = null;
 
+/**
+ * Refreshes user metadata from the server.
+ *
+ * Note: The server-computed connectionState in metadata.google.connectionState
+ * will indicate IMPORTING when a sync is in progress. The client reads this
+ * via selectGoogleConnectionState/selectIsGoogleSyncing selectors.
+ */
 export const refreshUserMetadata = async (): Promise<void> => {
   if (refreshUserMetadataRequest) {
     return refreshUserMetadataRequest;
@@ -15,10 +21,8 @@ export const refreshUserMetadata = async (): Promise<void> => {
 
   refreshUserMetadataRequest = UserApi.getMetadata()
     .then((metadata) => {
+      // Metadata includes connectionState computed by the server
       store.dispatch(userMetadataSlice.actions.set(metadata));
-      // Sync importing state with server metadata
-      const isImporting = metadata.sync?.importGCal === "IMPORTING";
-      store.dispatch(importGCalSlice.actions.importing(isImporting));
     })
     .catch((error) => {
       const status = (error as { response?: { status?: number } })?.response

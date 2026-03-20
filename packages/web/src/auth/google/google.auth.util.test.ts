@@ -12,10 +12,7 @@ import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
-import {
-  importGCalSlice,
-  triggerFetch,
-} from "@web/ducks/events/slices/sync.slice";
+import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { store } from "@web/store";
 import {
   authenticate,
@@ -170,7 +167,7 @@ describe("google-auth.util", () => {
       );
     });
 
-    it("clears auth and import overlay state", () => {
+    it("clears auth and user metadata state", () => {
       handleGoogleRevoked();
 
       expect(store.dispatch).toHaveBeenCalledWith(
@@ -179,9 +176,8 @@ describe("google-auth.util", () => {
       expect(store.dispatch).toHaveBeenCalledWith(
         userMetadataSlice.actions.clear(undefined),
       );
-      expect(store.dispatch).toHaveBeenCalledWith(
-        importGCalSlice.actions.importing(false),
-      );
+      // Note: No importing(false) dispatch needed - clearing metadata resets
+      // connectionState to NOT_CONNECTED via selectGoogleConnectionState
     });
 
     it("dispatches triggerFetch with GOOGLE_REVOKED reason", () => {
@@ -214,7 +210,8 @@ describe("google-auth.util", () => {
       handleGoogleRevoked();
 
       expect(toast.error).not.toHaveBeenCalled();
-      expect(store.dispatch).toHaveBeenCalledTimes(5);
+      // 4 dispatches: resetAuth, clear metadata, removeEventsByOrigin, triggerFetch
+      expect(store.dispatch).toHaveBeenCalledTimes(4);
     });
   });
 });

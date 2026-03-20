@@ -26,12 +26,14 @@ const getErrorMessage = (error: unknown): string => {
 const handleAuthError = (dispatch: AppDispatch, error: unknown) => {
   console.error(error);
   dispatch(authError(getErrorMessage(error)));
-  dispatch(importGCalSlice.actions.importing(false));
+  // Note: No need to dispatch importing(false) - the server's connectionState
+  // will reflect the actual state, and auth errors don't affect import status
 };
 
 const resetAuthState = (dispatch: AppDispatch) => {
   dispatch(resetAuth());
-  dispatch(importGCalSlice.actions.importing(false));
+  // Note: No need to dispatch importing(false) - resetting auth doesn't
+  // affect the server's import state
 };
 
 export function useGoogleAuth(

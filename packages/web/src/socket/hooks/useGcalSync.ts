@@ -4,7 +4,6 @@ import {
   FETCH_USER_METADATA,
   GOOGLE_REVOKED,
   IMPORT_GCAL_END,
-  IMPORT_GCAL_START,
   USER_METADATA,
 } from "@core/constants/websocket.constants";
 import { type UserMetadata } from "@core/types/user.types";
@@ -18,22 +17,19 @@ import {
 } from "@web/ducks/events/slices/sync.slice";
 import { socket } from "../client/socket.client";
 
+/**
+ * Hook to handle Google Calendar sync socket events.
+ *
+ * Note: The importing state is now derived from the server's connectionState
+ * (via USER_METADATA). We no longer listen to IMPORT_GCAL_START since the
+ * server metadata already contains the IMPORTING state.
+ */
 export const useGcalSync = () => {
   const dispatch = useDispatch();
 
-  const onImportStart = useCallback(
-    (importing = true) => {
-      if (importing) {
-        dispatch(importGCalSlice.actions.clearImportResults(undefined));
-      }
-      dispatch(importGCalSlice.actions.importing(importing));
-    },
-    [dispatch],
-  );
-
   const onImportEnd = useCallback(
     (payload?: ImportGCalEndPayload) => {
-      dispatch(importGCalSlice.actions.importing(false));
+      // Request fresh metadata from server to update connectionState
       socket.emit(FETCH_USER_METADATA);
 
       if (payload?.status === "ERRORED") {
@@ -70,16 +66,14 @@ export const useGcalSync = () => {
   const onMetadataFetch = useCallback(
     (metadata: UserMetadata) => {
       const importStatus = metadata.sync?.importGCal;
-      const connectionStatus = metadata.google?.connectionStatus;
-      const isBackendImporting = importStatus === "IMPORTING";
+      const connectionState = metadata.google?.connectionState;
       const shouldAutoImport =
-        importStatus === "RESTART" && connectionStatus === "CONNECTED";
+        importStatus === "RESTART" && connectionState !== "RECONNECT_REQUIRED";
 
+      // Update Redux with server metadata (includes connectionState)
       dispatch(userMetadataSlice.actions.set(metadata));
 
-      // Sync importing state with server metadata
-      dispatch(importGCalSlice.actions.importing(isBackendImporting));
-
+      // Auto-trigger import if server indicates RESTART is needed
       if (shouldAutoImport) {
         dispatch(importGCalSlice.actions.request(undefined as never));
       }
@@ -93,13 +87,6 @@ export const useGcalSync = () => {
       socket.removeListener(USER_METADATA, onMetadataFetch);
     };
   }, [onMetadataFetch]);
-
-  useEffect(() => {
-    socket.on(IMPORT_GCAL_START, onImportStart);
-    return () => {
-      socket.removeListener(IMPORT_GCAL_START, onImportStart);
-    };
-  }, [onImportStart]);
 
   useEffect(() => {
     socket.on(IMPORT_GCAL_END, onImportEnd);

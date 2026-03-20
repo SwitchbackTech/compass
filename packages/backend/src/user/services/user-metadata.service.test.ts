@@ -65,6 +65,7 @@ describe("UserMetadataService", () => {
       const metadata = await driver.fetchUserMetadata(userId);
 
       expect(metadata.google).toMatchObject({
+        connectionState: "NOT_CONNECTED",
         hasRefreshToken: false,
         connectionStatus: "NOT_CONNECTED",
         syncStatus: "NONE",
@@ -80,6 +81,7 @@ describe("UserMetadataService", () => {
       const metadata = await driver.fetchUserMetadata(userId);
 
       expect(metadata.google).toMatchObject({
+        connectionState: "RECONNECT_REQUIRED",
         hasRefreshToken: false,
         connectionStatus: "RECONNECT_REQUIRED",
         syncStatus: "NONE",
@@ -93,6 +95,7 @@ describe("UserMetadataService", () => {
       const metadata = await driver.fetchUserMetadata(userId);
 
       expect(metadata.google).toMatchObject({
+        connectionState: "HEALTHY",
         hasRefreshToken: true,
         connectionStatus: "CONNECTED",
         syncStatus: "HEALTHY",
@@ -110,6 +113,7 @@ describe("UserMetadataService", () => {
       const metadata = await driver.fetchUserMetadata(userId);
 
       expect(metadata.google).toMatchObject({
+        connectionState: "HEALTHY",
         hasRefreshToken: true,
         connectionStatus: "CONNECTED",
         syncStatus: "HEALTHY",
@@ -128,6 +132,7 @@ describe("UserMetadataService", () => {
       const metadata = await driver.fetchUserMetadata(userId);
 
       expect(metadata.google).toMatchObject({
+        connectionState: "ATTENTION",
         hasRefreshToken: true,
         connectionStatus: "CONNECTED",
         syncStatus: "ATTENTION",
@@ -149,13 +154,14 @@ describe("UserMetadataService", () => {
       const metadata = await driver.fetchUserMetadata(userId);
 
       expect(metadata.google).toMatchObject({
+        connectionState: "ATTENTION",
         hasRefreshToken: true,
         connectionStatus: "CONNECTED",
         syncStatus: "ATTENTION",
       });
     });
 
-    it("returns repairing while an import is already running without scheduling a repair", async () => {
+    it("returns importing while an import is already running without scheduling a repair", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
       const restartSpy = jest
@@ -170,6 +176,7 @@ describe("UserMetadataService", () => {
       const metadata = await driver.fetchUserMetadata(userId);
 
       expect(metadata.google).toMatchObject({
+        connectionState: "IMPORTING",
         connectionStatus: "CONNECTED",
         syncStatus: "REPAIRING",
       });

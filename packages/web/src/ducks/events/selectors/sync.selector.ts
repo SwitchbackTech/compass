@@ -5,9 +5,6 @@ export const selectImportLatestState = ({ sync }: RootState) =>
 
 export const selectImportGCalState = ({ sync }: RootState) => sync.importGCal;
 
-export const selectImporting = ({ sync }: RootState) =>
-  sync.importGCal.importing;
-
 export const selectImportResults = ({ sync }: RootState) =>
   sync.importGCal.importResults;
 

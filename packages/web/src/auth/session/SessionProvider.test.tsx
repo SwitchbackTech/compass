@@ -115,9 +115,6 @@ describe("SessionProvider sessionInit", () => {
 
       expect(dispatch).toHaveBeenCalledWith(authSlice.actions.resetAuth());
       expect(dispatch).toHaveBeenCalledWith(
-        importGCalSlice.actions.importing(false),
-      );
-      expect(dispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.clearImportResults(undefined),
       );
       expect(dispatch).toHaveBeenCalledWith(

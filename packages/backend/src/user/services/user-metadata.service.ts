@@ -4,6 +4,7 @@ import SupertokensUserMetadata, {
 } from "supertokens-node/recipe/usermetadata";
 import { Resource_Sync } from "@core/types/sync.types";
 import {
+  type GoogleConnectionState,
   type GoogleConnectionStatus,
   type GoogleSyncStatus,
   type Schema_User,
@@ -16,8 +17,12 @@ import { isUsingHttps } from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 type GoogleMetadataAssessment = {
+  connectionState: GoogleConnectionState;
+  /** @deprecated Use connectionState instead */
   hasRefreshToken: boolean;
+  /** @deprecated Use connectionState instead */
   connectionStatus: GoogleConnectionStatus;
+  /** @deprecated Use connectionState instead */
   syncStatus: GoogleSyncStatus;
 };
 
@@ -105,8 +110,20 @@ class UserMetadataService {
     const hasRefreshToken = Boolean(user?.google?.gRefreshToken);
     const connectionStatus = this.getGoogleConnectionStatus(user);
 
-    if (connectionStatus !== "CONNECTED") {
+    // NOT_CONNECTED: No Google account linked
+    if (connectionStatus === "NOT_CONNECTED") {
       return {
+        connectionState: "NOT_CONNECTED",
+        hasRefreshToken,
+        connectionStatus,
+        syncStatus: "NONE",
+      };
+    }
+
+    // RECONNECT_REQUIRED: Has googleId but no refresh token
+    if (connectionStatus === "RECONNECT_REQUIRED") {
+      return {
+        connectionState: "RECONNECT_REQUIRED",
         hasRefreshToken,
         connectionStatus,
         syncStatus: "NONE",
@@ -115,8 +132,10 @@ class UserMetadataService {
 
     const importStatus = storedMetadata.sync?.importGCal;
 
+    // IMPORTING: Full sync in progress
     if (importStatus === "IMPORTING" || importStatus === "RESTART") {
       return {
+        connectionState: "IMPORTING",
         hasRefreshToken,
         connectionStatus,
         syncStatus: "REPAIRING",
@@ -125,23 +144,19 @@ class UserMetadataService {
 
     const isHealthy = await this.isGoogleSyncHealthy(userId);
 
+    // HEALTHY: Connected and all watches active
     if (isHealthy) {
       return {
+        connectionState: "HEALTHY",
         hasRefreshToken,
         connectionStatus,
         syncStatus: "HEALTHY",
       };
     }
 
-    if (importStatus === "ERRORED") {
-      return {
-        hasRefreshToken,
-        connectionStatus,
-        syncStatus: "ATTENTION",
-      };
-    }
-
+    // ATTENTION: Connected but needs repair
     return {
+      connectionState: "ATTENTION",
       hasRefreshToken,
       connectionStatus,
       syncStatus: "ATTENTION",
@@ -188,11 +203,19 @@ class UserMetadataService {
       const user = await findCompassUserBy("_id", userId);
       const hasRefreshToken = Boolean(user?.google?.gRefreshToken);
       const connectionStatus = this.getGoogleConnectionStatus(user);
+      // Derive connectionState from connectionStatus for skipAssessment path
+      const connectionState =
+        connectionStatus === "NOT_CONNECTED"
+          ? "NOT_CONNECTED"
+          : connectionStatus === "RECONNECT_REQUIRED"
+            ? "RECONNECT_REQUIRED"
+            : (metadata.google?.connectionState ?? "ATTENTION");
 
       return {
         ...metadata,
         google: {
           ...metadata.google,
+          connectionState,
           hasRefreshToken,
           connectionStatus,
           syncStatus: metadata.google?.syncStatus ?? "NONE",
@@ -206,6 +229,7 @@ class UserMetadataService {
       ...metadata,
       google: {
         ...metadata.google,
+        connectionState: google.connectionState,
         hasRefreshToken: google.hasRefreshToken,
         connectionStatus: google.connectionStatus,
         syncStatus: google.syncStatus,
