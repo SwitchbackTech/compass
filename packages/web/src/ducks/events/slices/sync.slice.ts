@@ -22,12 +22,6 @@ export interface ImportResults {
   localEventsSynced?: number;
 }
 
-/**
- * Slice for managing import results and transient UI feedback.
- * Note: The "importing" state is now derived from the server's connectionState
- * via selectIsGoogleSyncing selector. This eliminates race conditions from
- * multiple code paths setting the importing flag.
- */
 export const importGCalSlice = createAsyncSlice<
   never,
   undefined,

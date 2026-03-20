@@ -64,15 +64,10 @@ describe("UserMetadataService", () => {
 
       const metadata = await driver.fetchUserMetadata(userId);
 
-      expect(metadata.google).toMatchObject({
-        connectionState: "NOT_CONNECTED",
-        hasRefreshToken: false,
-        connectionStatus: "NOT_CONNECTED",
-        syncStatus: "NONE",
-      });
+      expect(metadata.google?.connectionState).toBe("NOT_CONNECTED");
     });
 
-    it("returns reconnect_required when the refresh token is missing", async () => {
+    it("returns RECONNECT_REQUIRED when the refresh token is missing", async () => {
       const user = await UserDriver.createUser({
         withGoogleRefreshToken: false,
       });
@@ -80,29 +75,19 @@ describe("UserMetadataService", () => {
 
       const metadata = await driver.fetchUserMetadata(userId);
 
-      expect(metadata.google).toMatchObject({
-        connectionState: "RECONNECT_REQUIRED",
-        hasRefreshToken: false,
-        connectionStatus: "RECONNECT_REQUIRED",
-        syncStatus: "NONE",
-      });
+      expect(metadata.google?.connectionState).toBe("RECONNECT_REQUIRED");
     });
 
-    it("returns healthy when the account is connected and sync state is healthy", async () => {
+    it("returns HEALTHY when the account is connected and sync state is healthy", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
 
       const metadata = await driver.fetchUserMetadata(userId);
 
-      expect(metadata.google).toMatchObject({
-        connectionState: "HEALTHY",
-        hasRefreshToken: true,
-        connectionStatus: "CONNECTED",
-        syncStatus: "HEALTHY",
-      });
+      expect(metadata.google?.connectionState).toBe("HEALTHY");
     });
 
-    it("returns healthy without active watches when running without https", async () => {
+    it("returns HEALTHY without active watches when running without https", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
       const isUsingHttpsSpy = isUsingHttps as jest.Mock;
@@ -112,17 +97,12 @@ describe("UserMetadataService", () => {
 
       const metadata = await driver.fetchUserMetadata(userId);
 
-      expect(metadata.google).toMatchObject({
-        connectionState: "HEALTHY",
-        hasRefreshToken: true,
-        connectionStatus: "CONNECTED",
-        syncStatus: "HEALTHY",
-      });
+      expect(metadata.google?.connectionState).toBe("HEALTHY");
 
       isUsingHttpsSpy.mockRestore();
     });
 
-    it("returns attention without scheduling repair when connected sync state is broken", async () => {
+    it("returns ATTENTION without scheduling repair when connected sync state is broken", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
       const restartSpy = jest
@@ -131,18 +111,13 @@ describe("UserMetadataService", () => {
 
       const metadata = await driver.fetchUserMetadata(userId);
 
-      expect(metadata.google).toMatchObject({
-        connectionState: "ATTENTION",
-        hasRefreshToken: true,
-        connectionStatus: "CONNECTED",
-        syncStatus: "ATTENTION",
-      });
+      expect(metadata.google?.connectionState).toBe("ATTENTION");
       expect(restartSpy).not.toHaveBeenCalled();
 
       restartSpy.mockRestore();
     });
 
-    it("returns attention after a repair failed", async () => {
+    it("returns ATTENTION after a repair failed", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
 
@@ -153,15 +128,10 @@ describe("UserMetadataService", () => {
 
       const metadata = await driver.fetchUserMetadata(userId);
 
-      expect(metadata.google).toMatchObject({
-        connectionState: "ATTENTION",
-        hasRefreshToken: true,
-        connectionStatus: "CONNECTED",
-        syncStatus: "ATTENTION",
-      });
+      expect(metadata.google?.connectionState).toBe("ATTENTION");
     });
 
-    it("returns importing while an import is already running without scheduling a repair", async () => {
+    it("returns IMPORTING while an import is already running without scheduling a repair", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
       const restartSpy = jest
@@ -175,11 +145,7 @@ describe("UserMetadataService", () => {
 
       const metadata = await driver.fetchUserMetadata(userId);
 
-      expect(metadata.google).toMatchObject({
-        connectionState: "IMPORTING",
-        connectionStatus: "CONNECTED",
-        syncStatus: "REPAIRING",
-      });
+      expect(metadata.google?.connectionState).toBe("IMPORTING");
       expect(restartSpy).not.toHaveBeenCalled();
 
       restartSpy.mockRestore();

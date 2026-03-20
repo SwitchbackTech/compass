@@ -17,19 +17,11 @@ import {
 } from "@web/ducks/events/slices/sync.slice";
 import { socket } from "../client/socket.client";
 
-/**
- * Hook to handle Google Calendar sync socket events.
- *
- * Note: The importing state is now derived from the server's connectionState
- * (via USER_METADATA). We no longer listen to IMPORT_GCAL_START since the
- * server metadata already contains the IMPORTING state.
- */
 export const useGcalSync = () => {
   const dispatch = useDispatch();
 
   const onImportEnd = useCallback(
     (payload?: ImportGCalEndPayload) => {
-      // Request fresh metadata from server to update connectionState
       socket.emit(FETCH_USER_METADATA);
 
       if (payload?.status === "ERRORED") {
@@ -70,10 +62,8 @@ export const useGcalSync = () => {
       const shouldAutoImport =
         importStatus === "RESTART" && connectionState !== "RECONNECT_REQUIRED";
 
-      // Update Redux with server metadata (includes connectionState)
       dispatch(userMetadataSlice.actions.set(metadata));
 
-      // Auto-trigger import if server indicates RESTART is needed
       if (shouldAutoImport) {
         dispatch(importGCalSlice.actions.request(undefined as never));
       }

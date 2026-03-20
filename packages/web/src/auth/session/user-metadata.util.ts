@@ -5,13 +5,6 @@ import { store } from "@web/store";
 
 let refreshUserMetadataRequest: Promise<void> | null = null;
 
-/**
- * Refreshes user metadata from the server.
- *
- * Note: The server-computed connectionState in metadata.google.connectionState
- * will indicate IMPORTING when a sync is in progress. The client reads this
- * via selectGoogleConnectionState/selectIsGoogleSyncing selectors.
- */
 export const refreshUserMetadata = async (): Promise<void> => {
   if (refreshUserMetadataRequest) {
     return refreshUserMetadataRequest;
@@ -21,7 +14,6 @@ export const refreshUserMetadata = async (): Promise<void> => {
 
   refreshUserMetadataRequest = UserApi.getMetadata()
     .then((metadata) => {
-      // Metadata includes connectionState computed by the server
       store.dispatch(userMetadataSlice.actions.set(metadata));
     })
     .catch((error) => {

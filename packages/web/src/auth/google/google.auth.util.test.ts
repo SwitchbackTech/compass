@@ -176,8 +176,6 @@ describe("google-auth.util", () => {
       expect(store.dispatch).toHaveBeenCalledWith(
         userMetadataSlice.actions.clear(undefined),
       );
-      // Note: No importing(false) dispatch needed - clearing metadata resets
-      // connectionState to NOT_CONNECTED via selectGoogleConnectionState
     });
 
     it("dispatches triggerFetch with GOOGLE_REVOKED reason", () => {

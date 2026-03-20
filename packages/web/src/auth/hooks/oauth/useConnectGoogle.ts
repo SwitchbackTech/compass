@@ -161,9 +161,6 @@ export const useConnectGoogle = () => {
   const onRepairGoogleCalendarBase = useCallback(() => {
     const run = async () => {
       dispatch(importGCalSlice.actions.clearImportResults(undefined));
-      // Note: We no longer set importing=true here. The server will update
-      // connectionState to IMPORTING when the import starts, and the client
-      // will read that via selectGoogleConnectionState.
       try {
         await SyncApi.importGCal({ force: true });
       } catch (error) {

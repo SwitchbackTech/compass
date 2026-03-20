@@ -55,8 +55,6 @@ export const handleGoogleRevoked = () => {
 
   store.dispatch(authSlice.actions.resetAuth());
   store.dispatch(userMetadataSlice.actions.clear(undefined));
-  // Note: No need to dispatch importing(false) - clearing metadata will reset
-  // connectionState to NOT_CONNECTED via selectGoogleConnectionState
 
   store.dispatch(
     eventsEntitiesSlice.actions.removeEventsByOrigin({

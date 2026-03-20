@@ -69,8 +69,6 @@ const handleSessionMissing = () => {
   store.dispatch(authSlice.actions.resetAuth());
   store.dispatch(importGCalSlice.actions.clearImportResults(undefined));
   store.dispatch(userMetadataSlice.actions.clear(undefined));
-  // Note: No need to dispatch importing(false) - clearing metadata will reset
-  // connectionState to NOT_CONNECTED via selectGoogleConnectionState
 };
 
 async function checkIfSessionExists(): Promise<boolean> {
