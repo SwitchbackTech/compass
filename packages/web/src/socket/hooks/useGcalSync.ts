@@ -60,7 +60,9 @@ export const useGcalSync = () => {
       const importStatus = metadata.sync?.importGCal;
       const connectionState = metadata.google?.connectionState;
       const shouldAutoImport =
-        importStatus === "RESTART" && connectionState !== "RECONNECT_REQUIRED";
+        importStatus === "RESTART" &&
+        connectionState !== "RECONNECT_REQUIRED" &&
+        connectionState !== "NOT_CONNECTED";
 
       dispatch(userMetadataSlice.actions.set(metadata));
 

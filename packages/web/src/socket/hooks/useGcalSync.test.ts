@@ -162,6 +162,24 @@ describe("useGcalSync", () => {
 
       expect(importGCalSlice.actions.request).not.toHaveBeenCalled();
     });
+
+    it("does not auto-request an import when account is not connected", () => {
+      let metadataHandler: ((metadata: unknown) => void) | undefined;
+      (socket.on as jest.Mock).mockImplementation((event, handler) => {
+        if (event === USER_METADATA) {
+          metadataHandler = handler;
+        }
+      });
+
+      renderHook(() => useGcalSync());
+
+      metadataHandler?.({
+        sync: { importGCal: "RESTART" },
+        google: { connectionState: "NOT_CONNECTED" },
+      });
+
+      expect(importGCalSlice.actions.request).not.toHaveBeenCalled();
+    });
   });
 
   describe("IMPORT_GCAL_END", () => {
