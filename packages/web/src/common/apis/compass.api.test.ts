@@ -136,6 +136,17 @@ describe("CompassApi interceptor auth handling", () => {
     expect(assignMock).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
   });
 
+  it("continues to reject unauthorized requests after sign-out handling", async () => {
+    const axiosError = createAxiosError(Status.UNAUTHORIZED);
+    const adapter: AxiosAdapter = () => Promise.reject(axiosError);
+    CompassApi.defaults.adapter = adapter;
+
+    await expect(CompassApi.get("/test")).rejects.toBe(axiosError);
+
+    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(assignMock).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
+  });
+
   it("does not enqueue duplicate session-expired toasts when already active", async () => {
     (toast.isActive as jest.Mock)
       .mockReturnValueOnce(false)

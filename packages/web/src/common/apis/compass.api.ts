@@ -1,7 +1,10 @@
 import axios, { type AxiosError } from "axios";
 import { GOOGLE_REVOKED } from "@core/constants/websocket.constants";
 import { Status } from "@core/errors/status.codes";
-import { getApiErrorCode } from "@web/common/apis/compass.api.util";
+import {
+  createHandledRejection,
+  getApiErrorCode,
+} from "@web/common/apis/compass.api.util";
 import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
@@ -70,6 +73,7 @@ CompassApi.interceptors.response.use(
       status === Status.UNAUTHORIZED
     ) {
       await signOut(status);
+      return createHandledRejection(error);
     } else {
       console.error(error);
     }

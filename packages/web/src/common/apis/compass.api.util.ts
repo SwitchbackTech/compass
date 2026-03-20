@@ -10,3 +10,14 @@ export const getApiErrorCode = (error: AxiosError): string | undefined => {
   const code = (data as { code?: unknown }).code;
   return typeof code === "string" ? code : undefined;
 };
+
+/**
+ * Returns a rejected promise while marking the rejection as handled.
+ * This prevents expected control-flow rejections (like auth sign-out)
+ * from being reported as unhandled promise rejections.
+ */
+export const createHandledRejection = <T>(error: unknown): Promise<T> => {
+  const rejectedPromise = Promise.reject(error) as Promise<T>;
+  void rejectedPromise.catch(() => undefined);
+  return rejectedPromise;
+};

@@ -3,7 +3,10 @@ import type {
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from "axios";
-import { getApiErrorCode } from "./compass.api.util";
+import {
+  createHandledRejection,
+  getApiErrorCode,
+} from "./compass.api.util";
 
 const createAxiosError = (response: { data?: unknown } | null): AxiosError =>
   ({
@@ -71,5 +74,25 @@ describe("getApiErrorCode", () => {
       data: { code: "GOOGLE_REVOKED", message: "Google access revoked." },
     });
     expect(getApiErrorCode(error)).toBe("GOOGLE_REVOKED");
+  });
+});
+
+describe("createHandledRejection", () => {
+  it("rejects with the original error", async () => {
+    const error = new Error("expected auth rejection");
+
+    await expect(createHandledRejection(error)).rejects.toBe(error);
+  });
+
+  it("marks rejection as handled for fire-and-forget usage", async () => {
+    const unhandledRejectionSpy = jest.fn();
+    process.once("unhandledRejection", unhandledRejectionSpy);
+
+    createHandledRejection(new Error("ignored rejection"));
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(unhandledRejectionSpy).not.toHaveBeenCalled();
   });
 });
