@@ -20,6 +20,7 @@ function normalizeKey(key: string): string {
     Alt: "alt",
     Shift: "shift",
     Escape: "esc",
+    Esc: "esc",
     ArrowUp: "arrowup",
     ArrowDown: "arrowdown",
     ArrowLeft: "arrowleft",

@@ -218,12 +218,6 @@ export const Reminder = forwardRef(
       handler: handleEscKey,
     });
 
-    useKeyDownEvent({
-      combination: ["Esc"],
-      listenWhileEditing: true,
-      handler: handleEscKey,
-    });
-
     const handleReminderClick = () => {
       cursorPositionRef.current = null; // Reset cursor position
       setIsEditing(true);

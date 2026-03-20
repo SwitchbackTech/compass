@@ -238,7 +238,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         onDelete();
       },
       hotkeysOptions,
-      [onDelete],
+      [onDelete, isDraft, onClose],
     );
 
     useHotkey(
@@ -264,7 +264,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     );
 
     useHotkey(
-      "$mod+enter",
+      "mod+enter",
       (e) => {
         e.preventDefault();
         onSubmitForm();
@@ -287,7 +287,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       {
         enabled: isFormOpen,
       },
-      [isFormOpen, onConvert],
+      [isFormOpen, isDraft, onConvert],
     );
 
     return (

@@ -192,4 +192,76 @@ describe("SomedayEventForm shortcuts hook", () => {
       );
     });
   });
+
+  test("$mod+enter calls onSubmit", async () => {
+    const modifierKey = getModifierKey();
+    const isCtrl = modifierKey === "Control";
+
+    render(<TestComponent {...defaultProps} />);
+
+    dispatchKeyEvent(modifierKey, "keydown", {
+      ctrlKey: isCtrl,
+      metaKey: !isCtrl,
+    });
+    dispatchKeyEvent("Enter", "keydown", {
+      ctrlKey: isCtrl,
+      metaKey: !isCtrl,
+    });
+    dispatchKeyEvent("Enter", "keyup", {
+      ctrlKey: isCtrl,
+      metaKey: !isCtrl,
+    });
+
+    await waitFor(() => {
+      expect(defaultProps.onSubmit).toHaveBeenCalled();
+    });
+  });
+
+  test("enter does not call onSubmit when target is a menu item", async () => {
+    render(<TestComponent {...defaultProps} />);
+
+    const menuItem = document.createElement("div");
+    menuItem.setAttribute("role", "menuitem");
+    document.body.appendChild(menuItem);
+
+    const event = new KeyboardEvent("keyup", {
+      key: "Enter",
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+    });
+    Object.defineProperty(event, "target", { value: menuItem });
+    document.dispatchEvent(event);
+
+    await waitFor(() => {
+      expect(defaultProps.onSubmit).not.toHaveBeenCalled();
+    });
+
+    document.body.removeChild(menuItem);
+  });
+
+  test("enter does not call onSubmit when target is inside a combobox", async () => {
+    render(<TestComponent {...defaultProps} />);
+
+    const comboboxContainer = document.createElement("div");
+    comboboxContainer.setAttribute("role", "combobox");
+    const input = document.createElement("input");
+    comboboxContainer.appendChild(input);
+    document.body.appendChild(comboboxContainer);
+
+    const event = new KeyboardEvent("keyup", {
+      key: "Enter",
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+    });
+    Object.defineProperty(event, "target", { value: input });
+    document.dispatchEvent(event);
+
+    await waitFor(() => {
+      expect(defaultProps.onSubmit).not.toHaveBeenCalled();
+    });
+
+    document.body.removeChild(comboboxContainer);
+  });
 });

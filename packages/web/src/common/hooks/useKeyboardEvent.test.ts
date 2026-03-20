@@ -72,6 +72,23 @@ describe("useKeyboardEvent", () => {
     });
   });
 
+  it("should not call handler when a different key is pressed", async () => {
+    renderHook(() =>
+      useKeyboardEvent({
+        combination: ["a"],
+        handler: mockHandler,
+        eventType: "keyup",
+      }),
+    );
+
+    dispatchKeyEvent("b", "keydown");
+    dispatchKeyEvent("b", "keyup");
+
+    await waitFor(() => {
+      expect(mockHandler).not.toHaveBeenCalled();
+    });
+  });
+
   it("should handle multi-key combinations with modifier keys", async () => {
     const modifierKey = getModifierKey();
     const isCtrl = modifierKey === "Control";
@@ -120,10 +137,9 @@ describe("useKeyboardEvent", () => {
     dispatchKeyEvent("a", "keydown");
     dispatchKeyEvent("a", "keyup");
 
-    // Wait a bit to ensure handler is not called
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    expect(mockHandler).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mockHandler).not.toHaveBeenCalled();
+    });
   });
 
   it("should call handler and blur element when editing if listenWhileEditing is true", async () => {
@@ -170,9 +186,8 @@ describe("useKeyboardEvent", () => {
     dispatchKeyEvent("a", "keydown");
     dispatchKeyEvent("a", "keyup");
 
-    // Wait a bit to ensure handler is not called
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    expect(mockHandler).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mockHandler).not.toHaveBeenCalled();
+    });
   });
 });

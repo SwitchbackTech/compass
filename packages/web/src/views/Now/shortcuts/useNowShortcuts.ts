@@ -93,12 +93,6 @@ export function useNowShortcuts(props?: Props) {
     handler: () => navigate(ROOT_ROUTES.DAY),
   });
 
-  useKeyUpEvent({
-    combination: ["Esc"],
-    deps: [navigate],
-    handler: () => navigate(ROOT_ROUTES.DAY),
-  });
-
   // Sidebar shortcut
   useKeyUpEvent({ combination: ["["], handler: onToggleSidebar });
 }

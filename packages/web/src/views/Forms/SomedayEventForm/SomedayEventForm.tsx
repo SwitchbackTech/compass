@@ -63,6 +63,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
 
     if (e.metaKey || !isTextArea) {
       e.preventDefault();
+      e.stopPropagation();
       _onSubmit();
     }
   };

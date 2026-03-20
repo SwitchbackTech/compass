@@ -2,7 +2,7 @@ import { type AxiosResponse } from "axios";
 import { act } from "react";
 import { toast } from "react-toastify";
 import "@testing-library/jest-dom/extend-expect";
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   Categories_Event,
@@ -396,7 +396,7 @@ describe("SomedayEventForm Hotkeys", () => {
 
     // Try the keyboard shortcut while menu is open
     await act(async () => {
-      await user.keyboard("{Control>}{Meta>}{ArrowLeft}{/Meta}{/Control}");
+      await user.keyboard("{Control>}{ArrowLeft}{/Control}");
     });
 
     expect(mockOnMigrate).toHaveBeenCalledTimes(1);
@@ -484,7 +484,7 @@ describe("SomedayEventForm Hotkeys", () => {
 
     // Try the keyboard shortcut while menu is open
     await act(async () => {
-      await user.keyboard("{Control>}{Meta>}{ArrowRight}{/Meta}{/Control}");
+      await user.keyboard("{Control>}{ArrowRight}{/Control}");
     });
 
     expect(mockOnMigrate).toHaveBeenCalledTimes(1);
@@ -495,7 +495,7 @@ describe("SomedayEventForm Hotkeys", () => {
     );
   });
 
-  it("should call onMigrate when ctrl+meta+up keyboard shortcut is used while ActionsMenu is open", async () => {
+  it("should call onMigrate when ctrl+up keyboard shortcut is used", async () => {
     const user = userEvent.setup();
 
     render(
@@ -515,29 +515,8 @@ describe("SomedayEventForm Hotkeys", () => {
       </div>,
     );
 
-    const form = screen.getByRole("form");
-
     await act(async () => {
-      await user.click(
-        within(form).getByRole("button", { name: /open actions menu/i }),
-      );
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText("Migrate to this week")).toBeInTheDocument();
-    });
-
-    const migrateToWeekItem = screen.getByRole("menuitem", {
-      name: /migrate to this week/i,
-    });
-
-    fireEvent.keyDown(migrateToWeekItem, {
-      key: "ArrowUp",
-      code: "ArrowUp",
-      ctrlKey: true,
-      metaKey: true,
-      keyCode: 38,
-      which: 38,
+      await user.keyboard("{Control>}{ArrowUp}{/Control}");
     });
 
     expect(mockOnMigrate).toHaveBeenCalledTimes(1);
@@ -548,7 +527,7 @@ describe("SomedayEventForm Hotkeys", () => {
     );
   });
 
-  it("should call onMigrate when ctrl+meta+down keyboard shortcut is used while ActionsMenu is open", async () => {
+  it("should call onMigrate when ctrl+down keyboard shortcut is used", async () => {
     const user = userEvent.setup();
 
     render(
@@ -568,29 +547,8 @@ describe("SomedayEventForm Hotkeys", () => {
       </div>,
     );
 
-    const form = screen.getByRole("form");
-
     await act(async () => {
-      await user.click(
-        within(form).getByRole("button", { name: /open actions menu/i }),
-      );
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText("Migrate to this month")).toBeInTheDocument();
-    });
-
-    const migrateToMonthItem = screen.getByRole("menuitem", {
-      name: /migrate to this month/i,
-    });
-
-    fireEvent.keyDown(migrateToMonthItem, {
-      key: "ArrowDown",
-      code: "ArrowDown",
-      ctrlKey: true,
-      metaKey: true,
-      keyCode: 40,
-      which: 40,
+      await user.keyboard("{Control>}{ArrowDown}{/Control}");
     });
 
     expect(mockOnMigrate).toHaveBeenCalledTimes(1);

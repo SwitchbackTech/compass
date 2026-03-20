@@ -5,7 +5,6 @@ import {
   type Schema_Event,
 } from "@core/types/event.types";
 import { isComboboxInteraction } from "@web/common/utils/form/form.util";
-import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 
 export const SOMEDAY_HOTKEY_OPTIONS = {
   enabled: true,
@@ -71,7 +70,7 @@ export const useSomedayFormShortcuts = ({
   useHotkey(
     "delete",
     stopPropagationWrapper(onDelete),
-    SOMEDAY_HOTKEY_OPTIONS,
+    { ...SOMEDAY_HOTKEY_OPTIONS, ignoreInputs: false },
     [onDelete],
   );
   useHotkey(
@@ -93,7 +92,7 @@ export const useSomedayFormShortcuts = ({
     [onSubmit],
   );
   useHotkey(
-    "$mod+enter",
+    "mod+enter",
     (keyboardEvent) => {
       keyboardEvent.preventDefault();
       keyboardEvent.stopPropagation();
@@ -111,28 +110,28 @@ export const useSomedayFormShortcuts = ({
   );
 
   useHotkey(
-    `${getModifierKey().toLowerCase()}+arrowup`,
+    "mod+arrowup",
     handleMigration("up", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
     [event, category, onMigrate],
   );
 
   useHotkey(
-    `${getModifierKey().toLowerCase()}+arrowdown`,
+    "mod+arrowdown",
     handleMigration("down", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
     [event, category, onMigrate],
   );
 
   useHotkey(
-    `${getModifierKey().toLowerCase()}+arrowright`,
+    "mod+arrowright",
     handleMigration("forward", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
     [event, category, onMigrate],
   );
 
   useHotkey(
-    `${getModifierKey().toLowerCase()}+arrowleft`,
+    "mod+arrowleft",
     handleMigration("back", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
     [event, category, onMigrate],
