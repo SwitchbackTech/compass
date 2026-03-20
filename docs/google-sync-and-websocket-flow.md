@@ -43,7 +43,7 @@ Primary files:
 - `packages/backend/src/event/controllers/event.controller.ts`
 - `packages/backend/src/event/classes/compass.event.parser.ts`
 - `packages/backend/src/event/classes/compass.event.executor.ts`
-- `packages/backend/src/sync/services/sync/compass.sync.processor.ts`
+- `packages/backend/src/sync/services/sync/compass/compass.sync.processor.ts`
 
 ## Inbound Flow: Google Notifies Compass About Changes
 
@@ -62,7 +62,7 @@ Primary files:
 - `packages/backend/src/sync/sync.routes.config.ts`
 - `packages/backend/src/sync/services/sync.service.ts`
 - `packages/backend/src/sync/services/notify/handler/gcal.notification.handler.ts`
-- `packages/backend/src/sync/services/sync/gcal.sync.processor.ts`
+- `packages/backend/src/sync/services/sync/google/gcal.sync.processor.ts`
 
 ### Notification Outcomes And Error Semantics
 
@@ -215,7 +215,7 @@ Primary files:
 
 - `packages/backend/src/common/middleware/supertokens.middleware.ts`
 - `packages/backend/src/auth/services/google/google.auth.service.ts`
-- `packages/backend/src/auth/services/compass.auth.service.ts`
+- `packages/backend/src/auth/services/compass/compass.auth.service.ts`
 - `packages/web/src/auth/google/google.auth.state.ts`
 - `packages/web/src/auth/google/google.auth.util.ts`
 - `packages/web/src/common/repositories/event/event.repository.util.ts`

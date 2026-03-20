@@ -65,7 +65,7 @@ sed -n '1,260p' packages/core/src/types/event.types.ts
 
 ## If You Are Touching...
 
-- Auth or session behavior: read `docs/frontend-runtime-flow.md` and `docs/env-and-dev-modes.md`.
+- Auth or session behavior: read `docs/frontend-runtime-flow.md`, `docs/password-auth-flow.md`, and `docs/env-and-dev-modes.md`.
 - Backend endpoints: read `docs/backend-request-flow.md`.
 - Google sync or websocket behavior: read `docs/google-sync-and-websocket-flow.md`.
 - Local persistence: read `docs/offline-storage-and-migrations.md`.

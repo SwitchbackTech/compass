@@ -39,7 +39,7 @@ Primary files:
 
 - `packages/backend/src/event/classes/compass.event.parser.ts`
 - `packages/backend/src/event/classes/compass.event.executor.ts`
-- `packages/backend/src/sync/services/sync/compass.sync.processor.ts`
+- `packages/backend/src/sync/services/sync/compass/compass.sync.processor.ts`
 
 ## Update Scopes
 

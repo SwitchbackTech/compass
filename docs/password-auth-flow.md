@@ -256,7 +256,7 @@ Relevant changes:
 
 That lets password-auth users use Compass without blocking on Google connectivity.
 
-## Known Caveats On This Branch
+## Known Caveats
 
 - The rollout gate is not limited to `lastKnownEmail`; any `?auth=` URL currently enables the auth UI.
 - Reset password delivery is still dev/test-oriented because links are logged in dev and not actually sent elsewhere.
