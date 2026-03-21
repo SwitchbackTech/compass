@@ -140,3 +140,80 @@ export const expectNoOverlay = async (page: Page) => {
   await expect(page.getByText(OVERLAY_TEXT.oauthTitle)).not.toBeVisible();
   await expectBodyLocked(page, false);
 };
+
+/**
+ * Google connection states that can be set via Redux.
+ */
+export type GoogleConnectionState =
+  | "NOT_CONNECTED"
+  | "RECONNECT_REQUIRED"
+  | "IMPORTING"
+  | "HEALTHY"
+  | "ATTENTION";
+
+/**
+ * Set the Google connection state via Redux userMetadata slice.
+ * This updates the sidebar icon to reflect the given connection state.
+ */
+export const setGoogleConnectionState = async (
+  page: Page,
+  state: GoogleConnectionState,
+) => {
+  // Wait for store to be fully available
+  await page.waitForFunction(
+    () => typeof (window as any).__COMPASS_STORE__?.dispatch === "function",
+    { timeout: 5000 },
+  );
+
+  await page.evaluate((connectionState) => {
+    const store = (window as any).__COMPASS_STORE__;
+    if (!store) return;
+    store.dispatch({
+      type: "userMetadata/set",
+      payload: { google: { connectionState } },
+    });
+  }, state);
+
+  // Wait for the icon to reflect the new state by checking the store
+  await page.waitForFunction(
+    (expectedState) => {
+      const store = (window as any).__COMPASS_STORE__;
+      return (
+        store?.getState()?.userMetadata?.current?.google?.connectionState ===
+        expectedState
+      );
+    },
+    state,
+    { timeout: 5000 },
+  );
+
+  // Small additional delay for React to re-render
+  await page.waitForTimeout(50);
+};
+
+/**
+ * Mark user as having previously authenticated (sets localStorage flag).
+ * This is required for the "checking" state to appear when metadata is loading.
+ */
+export const markUserAsAuthenticated = async (page: Page) => {
+  await page.evaluate(() => {
+    // Must match STORAGE_KEYS.AUTH from storage.constants.ts
+    const AUTH_STATE_KEY = "compass.auth";
+    const existing = localStorage.getItem(AUTH_STATE_KEY);
+    const state = existing ? JSON.parse(existing) : {};
+    state.hasAuthenticated = true;
+    localStorage.setItem(AUTH_STATE_KEY, JSON.stringify(state));
+  });
+};
+
+/**
+ * Icon aria-labels for each Google connection state in the sidebar.
+ * These match the aria-labels defined in SidebarIconRow.tsx's getGoogleStatusIcon.
+ */
+export const SIDEBAR_ICON_LABELS = {
+  notConnected: "Google Calendar not connected",
+  reconnectRequired: "Google Calendar needs reconnecting",
+  syncing: "Google Calendar syncing", // Used for both "checking" and "IMPORTING" states
+  connected: "Google Calendar connected",
+  needsRepair: "Google Calendar needs repair",
+};
