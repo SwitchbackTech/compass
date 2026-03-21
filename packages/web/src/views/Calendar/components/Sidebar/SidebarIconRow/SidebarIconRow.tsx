@@ -42,7 +42,7 @@ const getGoogleStatusIcon = ({
       return (
         <LinkBreakIcon
           aria-label="Google Calendar needs reconnecting"
-          color={theme.color.status.warning}
+          color={theme.color.status.error}
           size={24}
         />
       );
