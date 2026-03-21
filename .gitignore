@@ -24,6 +24,7 @@ packages/**/yarn.lock
 .mcp.json
 .vscode/
 .yarn-cache/
+.yarn/install-state.gz
 
 build/
 buildcache/

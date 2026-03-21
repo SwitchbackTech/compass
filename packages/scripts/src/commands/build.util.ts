@@ -65,12 +65,6 @@ export const installDependencies = () => {
 
   shell.cd(`${COMPASS_BUILD_DEV}/node`);
 
-  // Copy .yarnrc.yml if it exists (needed for yarn 4+)
-  const yarnrcPath = `${COMPASS_ROOT_DEV}/.yarnrc.yml`;
-  if (fileExists(yarnrcPath)) {
-    shell.cp(yarnrcPath, `${COMPASS_BUILD_DEV}/node/.yarnrc.yml`);
-  }
-
   // Use npm for production install (more reliable across yarn versions)
   // --loglevel=error suppresses deprecation warnings from transitive dependencies
   shell.exec(
