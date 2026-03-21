@@ -4,6 +4,7 @@ import { render } from "@web/__tests__/__mocks__/mock.render";
 import { mockNavigatorPlatform } from "@web/__tests__/utils/navigator.test.util";
 import {
   ShortCutLabel,
+  expandModInShortcutDisplay,
   getModifierKeyIcon,
   getModifierKeyTestId,
 } from "@web/common/utils/shortcut/shortcut.util";
@@ -11,6 +12,47 @@ import {
 describe("shortcut.util", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  describe("expandModInShortcutDisplay", () => {
+    it("resolves Mod to Meta on macOS", () => {
+      mockNavigatorPlatform("mac");
+
+      expect(expandModInShortcutDisplay("Mod+k")).toBe("Meta+k");
+    });
+
+    it("resolves Mod to Control on Windows", () => {
+      mockNavigatorPlatform("windows");
+
+      expect(expandModInShortcutDisplay("Mod+k")).toBe("Control+k");
+    });
+
+    it("resolves Mod to Control on Linux", () => {
+      mockNavigatorPlatform("linux");
+
+      expect(expandModInShortcutDisplay("Mod+k")).toBe("Control+k");
+    });
+
+    it("matches Mod case-insensitively and preserves other segment casing", () => {
+      mockNavigatorPlatform("mac");
+
+      expect(expandModInShortcutDisplay("mod+K")).toBe("Meta+K");
+      expect(expandModInShortcutDisplay("MOD+k")).toBe("Meta+k");
+    });
+
+    it("trims segments and leaves non-Mod keys unchanged", () => {
+      mockNavigatorPlatform("windows");
+
+      expect(expandModInShortcutDisplay(" Mod + Shift + a ")).toBe(
+        "Control+Shift+a",
+      );
+    });
+
+    it("does not replace substrings that are not the Mod token", () => {
+      mockNavigatorPlatform("mac");
+
+      expect(expandModInShortcutDisplay("Mode+k")).toBe("Mode+k");
+    });
   });
 
   describe("getModifierKeyIcon", () => {

@@ -17,7 +17,7 @@ const keyIconMap: Record<string, Icon> = {
 };
 
 /** Resolves TanStack `Mod` tokens to `Meta` / `Control` for icons and labels. */
-function expandModInShortcutDisplay(k: string): string {
+export function expandModInShortcutDisplay(k: string): string {
   const resolvedMod = resolveModifier("Mod");
   return k
     .split("+")
