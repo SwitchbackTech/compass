@@ -1,5 +1,4 @@
 import { ObjectId } from "bson";
-import { act } from "react";
 import { renderHook } from "@testing-library/react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
@@ -120,14 +119,12 @@ describe("useOpenEventForm", () => {
 
     const { result } = renderHook(() => useOpenEventForm());
 
-    await act(async () => {
-      result.current(
-        new CustomEvent("click", {
-          detail: { create: true },
-        }) as unknown as React.PointerEvent<HTMLElement>,
-      );
-      await Promise.resolve();
-    });
+    await result.current(
+      new CustomEvent("click", {
+        detail: { create: true },
+      }) as unknown as React.PointerEvent<HTMLElement>,
+    );
+    await Promise.resolve();
 
     expect(getCalendarEventElementFromGrid).toHaveBeenCalled();
     expect(mockSetDraft).toHaveBeenCalledWith(
@@ -148,14 +145,12 @@ describe("useOpenEventForm", () => {
 
     const { result } = renderHook(useOpenEventForm);
 
-    await act(async () => {
-      await result.current(
-        new CustomEvent("click", {
-          bubbles: true,
-          detail: { create: true },
-        }) as unknown as React.PointerEvent<HTMLElement>,
-      );
-    });
+    await result.current(
+      new CustomEvent("click", {
+        bubbles: true,
+        detail: { create: true },
+      }) as unknown as React.PointerEvent<HTMLElement>,
+    );
 
     expect(mockSetDraft).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -185,14 +180,12 @@ describe("useOpenEventForm", () => {
 
     const { result } = renderHook(useOpenEventForm);
 
-    await act(async () => {
-      await result.current(
-        new CustomEvent("click", {
-          bubbles: true,
-          detail: { create: false, id: mockEvent._id },
-        }) as unknown as React.PointerEvent<HTMLElement>,
-      );
-    });
+    await result.current(
+      new CustomEvent("click", {
+        bubbles: true,
+        detail: { create: false, id: mockEvent._id },
+      }) as unknown as React.PointerEvent<HTMLElement>,
+    );
 
     expect(mockSetDraft).toHaveBeenCalledWith(mockEvent);
   });
@@ -232,14 +225,12 @@ describe("useOpenEventForm", () => {
 
     const { result } = renderHook(useOpenEventForm);
 
-    await act(async () => {
-      await result.current(
-        new CustomEvent("click", {
-          bubbles: true,
-          detail: { create: false, id: pendingEventId },
-        }) as unknown as React.PointerEvent<HTMLElement>,
-      );
-    });
+    await result.current(
+      new CustomEvent("click", {
+        bubbles: true,
+        detail: { create: false, id: pendingEventId },
+      }) as unknown as React.PointerEvent<HTMLElement>,
+    );
 
     expect(eventsStore.query).toHaveBeenCalled();
     expect(mockSetDraft).not.toHaveBeenCalled();

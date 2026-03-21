@@ -310,10 +310,8 @@ describe("useAvailableTasks", () => {
       expect(result.current.allTasks).toEqual(freshTasks);
     });
 
-    await act(async () => {
-      resolveStaleLoad?.(staleTasks);
-      await Promise.resolve();
-    });
+    resolveStaleLoad?.(staleTasks);
+    await Promise.resolve();
 
     expect(result.current.allTasks).toEqual(freshTasks);
   });

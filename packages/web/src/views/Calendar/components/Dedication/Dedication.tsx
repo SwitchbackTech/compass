@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
-import { useHotkey } from "@tanstack/react-hotkeys";
 import { XIcon } from "@phosphor-icons/react";
+import { useHotkey } from "@tanstack/react-hotkeys";
 import derekImg from "@web/assets/png/derek.png";
 
 export const Dedication = () => {

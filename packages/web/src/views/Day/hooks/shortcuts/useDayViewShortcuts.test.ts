@@ -1,4 +1,3 @@
-import { act } from "react";
 import { fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
@@ -84,7 +83,7 @@ describe.each([
 
   it("should call onFocusTasks when 'u' is pressed", async () => {
     const config = { ...defaultConfig };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     pressKey("u");
 
@@ -93,7 +92,7 @@ describe.each([
 
   it("should call onAddTask when 'c' is pressed", async () => {
     const config = { ...defaultConfig };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     pressKey("c");
 
@@ -102,7 +101,7 @@ describe.each([
 
   it("should call onEditTask when 'e' is pressed", async () => {
     const config = { ...defaultConfig };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     pressKey("e");
 
@@ -111,7 +110,7 @@ describe.each([
 
   it("should call onEscape when 'Escape' is pressed", async () => {
     const config = { ...defaultConfig };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     pressKey("Escape");
 
@@ -120,7 +119,7 @@ describe.each([
 
   it("should call onCompleteTask when Enter is pressed on a focused task", async () => {
     const config = { ...defaultConfig, hasFocusedTask: true };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     // Mock document.activeElement to not be a task button
     Object.defineProperty(document, "activeElement", {
@@ -135,7 +134,7 @@ describe.each([
 
   it("should not call onCompleteTask when Enter is pressed on a task button", async () => {
     const config = { ...defaultConfig, hasFocusedTask: true };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     // Mock document.activeElement to be a task button
     const taskButton = document.createElement("button");
@@ -157,7 +156,7 @@ describe.each([
       hasFocusedTask: true,
       isEditingTask: true,
     };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     pressKey("Enter");
 
@@ -166,7 +165,7 @@ describe.each([
 
   it("should not call onCompleteTask when Enter is pressed without focused task", async () => {
     const config = { ...defaultConfig, hasFocusedTask: false };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     pressKey("Enter");
 
@@ -175,7 +174,7 @@ describe.each([
 
   it("should not handle shortcuts when typing in input elements", async () => {
     const config = { ...defaultConfig };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     const input = document.createElement("input");
 
@@ -190,7 +189,7 @@ describe.each([
 
   it("should not handle shortcuts when typing in textarea elements", async () => {
     const config = { ...defaultConfig };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     const textarea = document.createElement("textarea");
 
@@ -205,7 +204,7 @@ describe.each([
 
   it("should not handle shortcuts when typing in contenteditable elements", async () => {
     const config = { ...defaultConfig };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     const div = document.createElement("div");
 
@@ -224,7 +223,7 @@ describe.each([
   it("should still handle Escape when typing in input elements", async () => {
     const config = { ...defaultConfig };
 
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     const input = document.createElement("input");
 
@@ -240,7 +239,7 @@ describe.each([
   it("should handle case insensitive key presses", async () => {
     const config = { ...defaultConfig };
 
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     pressKey("U");
 
@@ -250,7 +249,7 @@ describe.each([
   it("should call onDeleteTask when Delete is pressed on a focused checkbox", async () => {
     const config = { ...defaultConfig, hasFocusedTask: true };
 
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     isFocusedOnTaskCheckbox.mockReturnValue(true);
 
@@ -270,7 +269,7 @@ describe.each([
 
   it("should NOT call onDeleteTask when Delete is pressed on an input field", async () => {
     const config = { ...defaultConfig, hasFocusedTask: true };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     const input = document.createElement("input");
 
@@ -286,7 +285,7 @@ describe.each([
   it("should NOT call onDeleteTask when no task is focused", async () => {
     const config = { ...defaultConfig, hasFocusedTask: false };
 
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     pressKey("Delete");
 
@@ -298,7 +297,7 @@ describe.each([
       const onMigrateTask = jest.fn();
       const config = { ...defaultConfig, onMigrateTask };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
       // Mock utility functions to return task-focused state
       isFocusedWithinTask.mockReturnValue(true);
@@ -313,7 +312,7 @@ describe.each([
       const onMigrateTask = jest.fn();
       const config = { ...defaultConfig, onMigrateTask };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
       // Mock utility functions to return task-focused state
       isFocusedWithinTask.mockReturnValue(true);
@@ -328,7 +327,7 @@ describe.each([
       const onMigrateTask = jest.fn();
       const config = { ...defaultConfig, onMigrateTask };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
       await userEvent.keyboard("{Control>}{ArrowRight}");
 
@@ -339,7 +338,7 @@ describe.each([
       const onMigrateTask = jest.fn();
       const config = { ...defaultConfig, onMigrateTask };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
       await userEvent.keyboard("{Meta>}{ArrowRight}");
 
@@ -350,7 +349,7 @@ describe.each([
       const onMigrateTask = jest.fn();
       const config = { ...defaultConfig, onMigrateTask };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
       // Mock utility functions to return task-focused state
       isFocusedWithinTask.mockReturnValue(true);
@@ -380,7 +379,7 @@ describe.each([
       const undoToastId = "task-toast-123";
       const config = { ...defaultConfig, onRestoreTask, undoToastId };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
       pressModifierShortcut("z");
 
@@ -392,7 +391,7 @@ describe.each([
       const undoToastId = "undo-toast-123";
       const config = { ...defaultConfig, onRestoreTask, undoToastId };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
       pressModifierShortcut("z");
 
@@ -405,7 +404,7 @@ describe.each([
       const undoToastId = "task-toast-123";
       const config = { ...defaultConfig, onRestoreTask, undoToastId };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
       pressModifierShortcut("Z", { shiftKey: true });
 
@@ -416,7 +415,7 @@ describe.each([
       const onRestoreTask = jest.fn();
       const config = { ...defaultConfig, onRestoreTask };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
       pressKey("z");
 
@@ -436,7 +435,7 @@ describe.each([
         eventUndoToastId,
       };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
       pressModifierShortcut("z");
 
@@ -453,7 +452,7 @@ describe.each([
       const eventUndoToastId = "event-toast-789";
       const config = { ...defaultConfig, onRestoreEvent, eventUndoToastId };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
       pressModifierShortcut("z");
 
@@ -474,7 +473,7 @@ describe.each([
         undoToastId,
       };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
       pressModifierShortcut("z");
 

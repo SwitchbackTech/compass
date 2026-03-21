@@ -1,8 +1,7 @@
 import { type AxiosResponse } from "axios";
-import { act } from "react";
 import { toast } from "react-toastify";
 import "@testing-library/jest-dom/extend-expect";
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   Categories_Event,
@@ -106,9 +105,7 @@ describe("SomedayEventForm Hotkeys", () => {
     // Ensure the form is rendered (good sanity check)
     expect(screen.getByRole("form")).toBeInTheDocument();
 
-    await act(async () => {
-      await userEvent.keyboard("{Enter}");
-    });
+    await userEvent.keyboard("{Enter}");
 
     expect(mockOnClose).not.toHaveBeenCalled();
     expect(mockOnSubmit).toHaveBeenCalledTimes(1);
@@ -146,9 +143,7 @@ describe("SomedayEventForm Hotkeys", () => {
 
     expect(screen.getByRole("form")).toBeInTheDocument();
 
-    await act(async () => {
-      await userEvent.keyboard("{Delete}");
-    });
+    await userEvent.keyboard("{Delete}");
 
     expect(mockConfirm).toHaveBeenCalledTimes(1);
     expect(mockConfirm).toHaveBeenCalledWith(
@@ -194,9 +189,7 @@ describe("SomedayEventForm Hotkeys", () => {
 
     expect(screen.getByRole("form")).toBeInTheDocument();
 
-    await act(async () => {
-      await userEvent.keyboard("{Delete}");
-    });
+    await userEvent.keyboard("{Delete}");
 
     expect(mockConfirm).toHaveBeenCalledTimes(1);
     expect(mockConfirm).toHaveBeenCalledWith(
@@ -233,18 +226,14 @@ describe("SomedayEventForm Hotkeys", () => {
 
     const form = screen.getByRole("form");
 
-    await act(async () => {
-      await user.click(
-        within(form).getByRole("button", { name: /open actions menu/i }),
-      );
-    });
+    await user.click(
+      within(form).getByRole("button", { name: /open actions menu/i }),
+    );
 
     await waitFor(() => {
       expect(screen.getByText("Duplicate Event")).toBeInTheDocument();
     });
-    await act(async () => {
-      await user.click(screen.getByText("Duplicate Event"));
-    });
+    await user.click(screen.getByText("Duplicate Event"));
 
     expect(mockDuplicateEvent).toHaveBeenCalledTimes(1);
 
@@ -272,18 +261,14 @@ describe("SomedayEventForm Hotkeys", () => {
 
     const form = screen.getByRole("form");
 
-    await act(async () => {
-      await user.click(
-        within(form).getByRole("button", { name: /open actions menu/i }),
-      );
-    });
+    await user.click(
+      within(form).getByRole("button", { name: /open actions menu/i }),
+    );
 
     await waitFor(() => {
       expect(screen.getByText("Migrate to previous week")).toBeInTheDocument();
     });
-    await act(async () => {
-      await user.click(screen.getByText("Migrate to previous week"));
-    });
+    await user.click(screen.getByText("Migrate to previous week"));
 
     expect(mockOnMigrate).toHaveBeenCalledTimes(1);
     expect(mockOnMigrate).toHaveBeenCalledWith(
@@ -313,18 +298,14 @@ describe("SomedayEventForm Hotkeys", () => {
 
     const form = screen.getByRole("form");
 
-    await act(async () => {
-      await user.click(
-        within(form).getByRole("button", { name: /open actions menu/i }),
-      );
-    });
+    await user.click(
+      within(form).getByRole("button", { name: /open actions menu/i }),
+    );
 
     await waitFor(() => {
       expect(screen.getByText("Migrate to next week")).toBeInTheDocument();
     });
-    await act(async () => {
-      await user.click(screen.getByText("Migrate to next week"));
-    });
+    await user.click(screen.getByText("Migrate to next week"));
 
     expect(mockOnMigrate).toHaveBeenCalledTimes(1);
     expect(mockOnMigrate).toHaveBeenCalledWith(
@@ -356,7 +337,7 @@ describe("SomedayEventForm Hotkeys", () => {
     // Ensure the form is rendered (good sanity check)
     expect(screen.getByRole("form")).toBeInTheDocument();
 
-    await act(async () => userEvent.keyboard(getModifierShortcut("d")));
+    await userEvent.keyboard(getModifierShortcut("d"));
 
     expect(mockDuplicateEvent).toHaveBeenCalledTimes(1);
     expect(mockOnClose).toHaveBeenCalledTimes(1);
@@ -389,11 +370,9 @@ describe("SomedayEventForm Hotkeys", () => {
     const form = screen.getByRole("form");
 
     // Open the actions menu
-    await act(async () => {
-      await user.click(
-        within(form).getByRole("button", { name: /open actions menu/i }),
-      );
-    });
+    await user.click(
+      within(form).getByRole("button", { name: /open actions menu/i }),
+    );
 
     // Wait for menu to be open
     await waitFor(() => {
@@ -401,9 +380,7 @@ describe("SomedayEventForm Hotkeys", () => {
     });
 
     // Try the keyboard shortcut while menu is open
-    await act(async () => {
-      await user.keyboard(getModifierShortcut("{ArrowLeft}"));
-    });
+    await user.keyboard(getModifierShortcut("{ArrowLeft}"));
 
     expect(mockOnMigrate).toHaveBeenCalledTimes(1);
     expect(mockOnMigrate).toHaveBeenCalledWith(
@@ -435,11 +412,9 @@ describe("SomedayEventForm Hotkeys", () => {
     const form = screen.getByRole("form");
 
     // Open the actions menu
-    await act(async () => {
-      await user.click(
-        within(form).getByRole("button", { name: /open actions menu/i }),
-      );
-    });
+    await user.click(
+      within(form).getByRole("button", { name: /open actions menu/i }),
+    );
 
     // Wait for menu to be open
     await waitFor(() => {
@@ -447,9 +422,7 @@ describe("SomedayEventForm Hotkeys", () => {
     });
 
     // Try the keyboard shortcut while menu is open
-    await act(async () => {
-      await user.keyboard(getModifierShortcut("d"));
-    });
+    await user.keyboard(getModifierShortcut("d"));
 
     expect(mockDuplicateEvent).toHaveBeenCalledTimes(1);
     expect(mockOnClose).toHaveBeenCalledTimes(1);
@@ -477,11 +450,9 @@ describe("SomedayEventForm Hotkeys", () => {
     const form = screen.getByRole("form");
 
     // Open the actions menu
-    await act(async () => {
-      await user.click(
-        within(form).getByRole("button", { name: /open actions menu/i }),
-      );
-    });
+    await user.click(
+      within(form).getByRole("button", { name: /open actions menu/i }),
+    );
 
     // Wait for menu to be open
     await waitFor(() => {
@@ -489,9 +460,7 @@ describe("SomedayEventForm Hotkeys", () => {
     });
 
     // Try the keyboard shortcut while menu is open
-    await act(async () => {
-      await user.keyboard(getModifierShortcut("{ArrowRight}"));
-    });
+    await user.keyboard(getModifierShortcut("{ArrowRight}"));
 
     expect(mockOnMigrate).toHaveBeenCalledTimes(1);
     expect(mockOnMigrate).toHaveBeenCalledWith(
@@ -521,9 +490,7 @@ describe("SomedayEventForm Hotkeys", () => {
       </div>,
     );
 
-    await act(async () => {
-      await user.keyboard(getModifierShortcut("{ArrowUp}"));
-    });
+    await user.keyboard(getModifierShortcut("{ArrowUp}"));
 
     expect(mockOnMigrate).toHaveBeenCalledTimes(1);
     expect(mockOnMigrate).toHaveBeenCalledWith(
@@ -553,9 +520,7 @@ describe("SomedayEventForm Hotkeys", () => {
       </div>,
     );
 
-    await act(async () => {
-      await user.keyboard(getModifierShortcut("{ArrowDown}"));
-    });
+    await user.keyboard(getModifierShortcut("{ArrowDown}"));
 
     expect(mockOnMigrate).toHaveBeenCalledTimes(1);
     expect(mockOnMigrate).toHaveBeenCalledWith(
@@ -588,11 +553,9 @@ describe("SomedayEventForm Hotkeys", () => {
     const form = screen.getByRole("form");
 
     // Open the actions menu
-    await act(async () => {
-      await user.click(
-        within(form).getByRole("button", { name: /open actions menu/i }),
-      );
-    });
+    await user.click(
+      within(form).getByRole("button", { name: /open actions menu/i }),
+    );
 
     // Wait for menu to be open
     await waitFor(() => {
@@ -600,9 +563,7 @@ describe("SomedayEventForm Hotkeys", () => {
     });
 
     // Try the keyboard shortcut while menu is open
-    await act(async () => {
-      await user.keyboard("{Delete}");
-    });
+    await user.keyboard("{Delete}");
 
     expect(mockOnDelete).toHaveBeenCalledTimes(1);
     expect(mockOnClose).toHaveBeenCalledTimes(1);
@@ -630,31 +591,25 @@ describe("SomedayEventForm Hotkeys", () => {
 
     const titleInput = screen.getByPlaceholderText("Title");
 
-    await act(async () => {
-      await user.clear(titleInput);
-      await user.type(titleInput, "title-changed");
-    });
+    await user.clear(titleInput);
+    await user.type(titleInput, "title-changed");
 
     const form = screen.getByRole("form");
 
-    await act(async () => {
-      await user.click(
-        within(form).getByRole("button", { name: /open actions menu/i }),
-      );
-    });
+    await user.click(
+      within(form).getByRole("button", { name: /open actions menu/i }),
+    );
 
     await waitFor(() => {
       expect(screen.getByText("Delete")).toBeInTheDocument();
     });
 
     const deleteMenuItem = screen.getByRole("menuitem", { name: /delete/i });
-    await act(async () => {
+    act(() => {
       deleteMenuItem.focus();
     });
 
-    await act(async () => {
-      await user.keyboard("{Enter}");
-    });
+    await user.keyboard("{Enter}");
 
     expect(mockOnDelete).toHaveBeenCalledTimes(1);
     expect(mockOnSubmit).not.toHaveBeenCalled();

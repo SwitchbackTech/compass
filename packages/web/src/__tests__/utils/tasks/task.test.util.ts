@@ -30,11 +30,9 @@ export const addTasks = async (user: User, taskTitles: string[]) => {
       screen.getByPlaceholderText("Enter task title..."),
     )) as HTMLInputElement;
 
-    await act(async () => {
-      await user.clear(input);
-      await user.type(input, title);
-      await user.keyboard("{Enter}");
-    });
+    await user.clear(input);
+    await user.type(input, title);
+    await user.keyboard("{Enter}");
 
     // Wait for the task to be created and appear in the DOM
     await waitFor(
@@ -60,9 +58,7 @@ export const clickCreateTaskButton = async (user: User) => {
     { timeout: 5000 },
   );
 
-  await act(async () => {
-    await user.click(addButton);
-  });
+  await user.click(addButton);
 
   return waitFor(() => screen.getByRole("textbox", { name: /task title/i }), {
     timeout: 5000,

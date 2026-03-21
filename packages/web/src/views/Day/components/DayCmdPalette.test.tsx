@@ -1,4 +1,3 @@
-import { act } from "react";
 import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
@@ -151,11 +150,9 @@ describe("DayCmdPalette", () => {
   });
 
   it("renders navigation items when open", async () => {
-    await act(() =>
-      render(<Component />, {
-        state: { settings: { isCmdPaletteOpen: true } },
-      }),
-    );
+    render(<Component />, {
+      state: { settings: { isCmdPaletteOpen: true } },
+    });
 
     expect(screen.getByText("Navigation")).toBeInTheDocument();
     expect(screen.getByText("Go to Now [n]")).toBeInTheDocument();
@@ -169,27 +166,21 @@ describe("DayCmdPalette", () => {
   });
 
   it("does not render when closed", async () => {
-    await act(() =>
-      render(<Component />, {
-        state: { settings: { isCmdPaletteOpen: false } },
-      }),
-    );
+    render(<Component />, {
+      state: { settings: { isCmdPaletteOpen: false } },
+    });
 
     expect(screen.queryByText("Navigation")).not.toBeInTheDocument();
   });
 
   it("closes the command palette when Escape key is pressed", async () => {
     const user = userEvent.setup();
-    await act(() =>
-      render(<Component />, {
-        state: { settings: { isCmdPaletteOpen: true } },
-      }),
-    );
+    render(<Component />, {
+      state: { settings: { isCmdPaletteOpen: true } },
+    });
 
     // Simulate CMD+k key press to open
-    await act(() =>
-      user.keyboard(`{${getModifierKey()}>}k{/${getModifierKey()}}`),
-    );
+    await user.keyboard(`{${getModifierKey()}>}k{/${getModifierKey()}}`);
 
     expect(screen.getByText("Navigation")).toBeInTheDocument();
 
@@ -203,26 +194,22 @@ describe("DayCmdPalette", () => {
 
   it("navigates to now when Go to Now is clicked", async () => {
     const user = userEvent.setup();
-    await act(() =>
-      render(<Component />, {
-        state: { settings: { isCmdPaletteOpen: true } },
-      }),
-    );
+    render(<Component />, {
+      state: { settings: { isCmdPaletteOpen: true } },
+    });
 
-    await act(() => user.click(screen.getByText("Go to Now [n]")));
+    await user.click(screen.getByText("Go to Now [n]"));
 
     expect(mockNavigate).toHaveBeenCalledWith("/now");
   });
 
   it("navigates to week when Go to Week is clicked", async () => {
     const user = userEvent.setup();
-    await act(() =>
-      render(<Component />, {
-        state: { settings: { isCmdPaletteOpen: true } },
-      }),
-    );
+    render(<Component />, {
+      state: { settings: { isCmdPaletteOpen: true } },
+    });
 
-    await act(() => user.click(screen.getByText("Go to Week [w]")));
+    await user.click(screen.getByText("Go to Week [w]"));
 
     expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.WEEK);
   });
@@ -230,28 +217,22 @@ describe("DayCmdPalette", () => {
   it("calls onGoToToday when Go to Today is clicked", async () => {
     const mockOnGoToToday = jest.fn();
     const user = userEvent.setup();
-    await act(() =>
-      render(<DayCmdPalette onGoToToday={mockOnGoToToday} />, {
-        state: { settings: { isCmdPaletteOpen: true } },
-      }),
-    );
+    render(<DayCmdPalette onGoToToday={mockOnGoToToday} />, {
+      state: { settings: { isCmdPaletteOpen: true } },
+    });
 
-    await act(() =>
-      user.click(screen.getByText("Go to Today (Monday, November 24) [t]")),
-    );
+    await user.click(screen.getByText("Go to Today (Monday, November 24) [t]"));
 
     expect(mockOnGoToToday).toHaveBeenCalled();
   });
 
   it("navigates to logout when Log Out is clicked", async () => {
     const user = userEvent.setup();
-    await act(() =>
-      render(<Component />, {
-        state: { settings: { isCmdPaletteOpen: true } },
-      }),
-    );
+    render(<Component />, {
+      state: { settings: { isCmdPaletteOpen: true } },
+    });
 
-    await act(() => user.click(screen.getByText("Log Out [z]")));
+    await user.click(screen.getByText("Log Out [z]"));
 
     expect(mockNavigate).toHaveBeenCalledWith("/logout");
   });
@@ -259,17 +240,15 @@ describe("DayCmdPalette", () => {
   it("calls openEventFormEditEvent when Edit event is clicked", async () => {
     const user = userEvent.setup();
 
-    await act(() =>
-      render(<Component />, {
-        state: { settings: { isCmdPaletteOpen: true } },
-      }),
-    );
+    render(<Component />, {
+      state: { settings: { isCmdPaletteOpen: true } },
+    });
 
     const editEventBtn = await screen.findByRole("button", {
       name: /edit event \[m\]/i,
     });
 
-    await act(() => user.click(editEventBtn));
+    await user.click(editEventBtn);
 
     expect(mockOpenEventFormEditEvent).toHaveBeenCalled();
   });
@@ -277,36 +256,30 @@ describe("DayCmdPalette", () => {
   it("calls openEventFormCreateEvent when Create event is clicked", async () => {
     const user = userEvent.setup();
 
-    await act(() =>
-      render(<Component />, {
-        state: { settings: { isCmdPaletteOpen: true } },
-      }),
-    );
+    render(<Component />, {
+      state: { settings: { isCmdPaletteOpen: true } },
+    });
 
     const createEventBtn = await screen.findByRole("button", {
       name: /create event/i,
     });
 
-    await act(() => user.click(createEventBtn));
+    await user.click(createEventBtn);
 
     expect(mockOpenEventFormCreateEvent).toHaveBeenCalled();
   });
 
   it("filters items based on search input", async () => {
     const user = userEvent.setup();
-    await act(() =>
-      render(<Component />, {
-        state: { settings: { isCmdPaletteOpen: true } },
-      }),
-    );
+    render(<Component />, {
+      state: { settings: { isCmdPaletteOpen: true } },
+    });
 
     const searchInput = screen.getByPlaceholderText(
       "Try: 'now', 'week', 'today', 'bug', or 'code'",
     );
 
-    await act(async () => {
-      await user.type(searchInput, "now");
-    });
+    await user.type(searchInput, "now");
 
     expect(screen.getByText("Go to Now [n]")).toBeInTheDocument();
     expect(screen.queryByText("Go to Week [w]")).not.toBeInTheDocument();
@@ -322,30 +295,26 @@ describe("DayCmdPalette", () => {
     });
 
     it("shows 'Connect Google Calendar' when metadata is missing", async () => {
-      await act(() =>
-        render(<DayCmdPalette />, {
-          state: { settings: { isCmdPaletteOpen: true } },
-        }),
-      );
+      render(<DayCmdPalette />, {
+        state: { settings: { isCmdPaletteOpen: true } },
+      });
 
       expect(screen.getByText("Connect Google Calendar")).toBeInTheDocument();
     });
 
     it("disables the generic action when Google Calendar is healthy", async () => {
-      await act(() =>
-        render(<DayCmdPalette />, {
-          state: {
-            settings: { isCmdPaletteOpen: true },
-            userMetadata: {
-              current: {
-                google: {
-                  connectionState: "HEALTHY",
-                },
+      render(<DayCmdPalette />, {
+        state: {
+          settings: { isCmdPaletteOpen: true },
+          userMetadata: {
+            current: {
+              google: {
+                connectionState: "HEALTHY",
               },
             },
           },
-        }),
-      );
+        },
+      });
 
       expect(
         screen.getByRole("button", { name: "Google Calendar Connected" }),
@@ -354,24 +323,20 @@ describe("DayCmdPalette", () => {
 
     it("triggers login when reconnect is required", async () => {
       const user = userEvent.setup();
-      await act(() =>
-        render(<DayCmdPalette />, {
-          state: {
-            settings: { isCmdPaletteOpen: true },
-            userMetadata: {
-              current: {
-                google: {
-                  connectionState: "RECONNECT_REQUIRED",
-                },
+      render(<DayCmdPalette />, {
+        state: {
+          settings: { isCmdPaletteOpen: true },
+          userMetadata: {
+            current: {
+              google: {
+                connectionState: "RECONNECT_REQUIRED",
               },
             },
           },
-        }),
-      );
+        },
+      });
 
-      await act(() =>
-        user.click(screen.getByText("Reconnect Google Calendar")),
-      );
+      await user.click(screen.getByText("Reconnect Google Calendar"));
 
       expect(mockLogin).toHaveBeenCalled();
       expect(mockDispatch).toHaveBeenCalledWith(
@@ -380,20 +345,18 @@ describe("DayCmdPalette", () => {
     });
 
     it("disables the generic action while import is running", async () => {
-      await act(() =>
-        render(<DayCmdPalette />, {
-          state: {
-            settings: { isCmdPaletteOpen: true },
-            userMetadata: {
-              current: {
-                google: {
-                  connectionState: "IMPORTING",
-                },
+      render(<DayCmdPalette />, {
+        state: {
+          settings: { isCmdPaletteOpen: true },
+          userMetadata: {
+            current: {
+              google: {
+                connectionState: "IMPORTING",
               },
             },
           },
-        }),
-      );
+        },
+      });
 
       expect(
         screen.getByRole("button", { name: "Syncing Google Calendar…" }),
@@ -402,22 +365,20 @@ describe("DayCmdPalette", () => {
 
     it("keeps the generic action enabled when sync needs attention", async () => {
       const user = userEvent.setup();
-      await act(() =>
-        render(<DayCmdPalette />, {
-          state: {
-            settings: { isCmdPaletteOpen: true },
-            userMetadata: {
-              current: {
-                google: {
-                  connectionState: "ATTENTION",
-                },
+      render(<DayCmdPalette />, {
+        state: {
+          settings: { isCmdPaletteOpen: true },
+          userMetadata: {
+            current: {
+              google: {
+                connectionState: "ATTENTION",
               },
             },
           },
-        }),
-      );
+        },
+      });
 
-      await act(() => user.click(screen.getByText("Repair Google Calendar")));
+      await user.click(screen.getByText("Repair Google Calendar"));
 
       expect(SyncApi.importGCal).toHaveBeenCalledWith({ force: true });
     });

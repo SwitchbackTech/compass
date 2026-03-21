@@ -33,6 +33,18 @@ function createDeferred<T>(): Deferred<T> {
   return { promise, resolve };
 }
 
+/**
+ * Drain microtasks so useLoadTasksByDateEffect's async chain (ensureStorageReady → get →
+ * .then / .catch) runs inside act. Two ticks are not always enough across environments.
+ */
+async function flushTaskLoadFromRepository() {
+  await act(async () => {
+    for (let i = 0; i < 4; i++) {
+      await Promise.resolve();
+    }
+  });
+}
+
 describe("useTaskState", () => {
   const dayOneDate = new Date("2025-10-27T12:00:00.000Z");
   const dayTwoDate = new Date("2025-10-28T12:00:00.000Z");
@@ -66,12 +78,16 @@ describe("useTaskState", () => {
       { initialProps: { currentDate: dayOneDate } },
     );
 
+    await flushTaskLoadFromRepository();
+
     await waitFor(() => {
       expect(result.current.isLoadingTasks).toBe(false);
       expect(result.current.tasks).toHaveLength(1);
     });
 
-    rerender({ currentDate: dayTwoDate });
+    act(() => {
+      rerender({ currentDate: dayTwoDate });
+    });
 
     expect(result.current.isLoadingTasks).toBe(true);
     expect(result.current.tasks).toEqual([]);
@@ -79,6 +95,8 @@ describe("useTaskState", () => {
     await act(async () => {
       dayTwoLoad.resolve([]);
       await dayTwoLoad.promise;
+      await Promise.resolve();
+      await Promise.resolve();
     });
 
     await waitFor(() => {
@@ -101,6 +119,8 @@ describe("useTaskState", () => {
       },
     );
 
+    await flushTaskLoadFromRepository();
+
     await waitFor(() => {
       expect(result.current.isLoadingTasks).toBe(false);
     });
@@ -117,12 +137,15 @@ describe("useTaskState", () => {
 
     mockSave.mockClear();
 
-    rerender({
-      currentDate: dayTwoDate,
-      taskRepository: mockTaskRepository,
+    act(() => {
+      rerender({
+        currentDate: dayTwoDate,
+        taskRepository: mockTaskRepository,
+      });
     });
 
     await act(async () => {
+      await Promise.resolve();
       await Promise.resolve();
     });
 
@@ -132,6 +155,8 @@ describe("useTaskState", () => {
     await act(async () => {
       dayTwoLoad.resolve([]);
       await dayTwoLoad.promise;
+      await Promise.resolve();
+      await Promise.resolve();
     });
   });
 
@@ -145,6 +170,8 @@ describe("useTaskState", () => {
         taskRepository: mockTaskRepository,
       }),
     );
+
+    await flushTaskLoadFromRepository();
 
     await waitFor(() => {
       expect(result.current.isLoadingTasks).toBe(false);

@@ -1,6 +1,5 @@
-import { act } from "react";
 import "@testing-library/jest-dom";
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import { type Schema_Event } from "@core/types/event.types";
 import {
   renderAgenda,
@@ -272,7 +271,9 @@ describe("CalendarAgenda", () => {
     const { user } = renderAgenda();
 
     const timedSection = await screen.findByLabelText("Timed events section");
-    timedSection.focus();
+    act(() => {
+      timedSection.focus();
+    });
     await user.keyboard("{Enter}");
 
     expect(openEventFormMock).toHaveBeenCalled();
@@ -287,7 +288,9 @@ describe("CalendarAgenda", () => {
     const allDaySection = await screen.findByLabelText(
       "All-day events section",
     );
-    allDaySection.focus();
+    act(() => {
+      allDaySection.focus();
+    });
     await user.keyboard("{Enter}");
 
     expect(openEventFormMock).toHaveBeenCalled();

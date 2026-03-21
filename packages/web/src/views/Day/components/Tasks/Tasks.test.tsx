@@ -81,9 +81,10 @@ describe("Tasks Keyboard Drag and Drop", () => {
 
     // Verify the first drag handle can receive focus
     const firstDragHandle = dragHandles[0];
-    await act(async () => {
+    act(() => {
       firstDragHandle.focus();
     });
+
     expect(firstDragHandle).toHaveFocus();
   }, 10000);
 

@@ -94,28 +94,30 @@ describe("TodayView Routing", () => {
   it("should show today's date when navigating to /day", async () => {
     const router = createRouter();
 
-    await act(() => render(<></>, { router }));
+    render(<></>, { router });
 
     // Should show today's date in the header
     const todayHeading = new Date().toLocaleDateString("en-US", {
       weekday: "long",
     });
 
-    expect(screen.getByText(todayHeading)).toBeInTheDocument();
+    expect(await screen.findByText(todayHeading)).toBeInTheDocument();
   });
 
   it("should show next day label when clicking next day button", async () => {
     const user = userEvent.setup();
     const router = createRouter();
 
-    await act(() => render(<></>, { router }));
+    render(<></>, { router });
 
     await act(async () => {
       await router.navigate(`${ROOT_ROUTES.DAY}/${dateString}`);
     });
 
     // Find and click the next day button
-    const nextDayButton = screen.getByRole("button", { name: "Next day" });
+    const nextDayButton = await screen.findByRole("button", {
+      name: "Next day",
+    });
 
     await user.click(nextDayButton);
 
@@ -132,14 +134,16 @@ describe("TodayView Routing", () => {
     const user = userEvent.setup();
     const router = createRouter();
 
-    await act(() => render(<></>, { router }));
+    render(<></>, { router });
 
     await act(async () => {
       await router.navigate(`${ROOT_ROUTES.DAY}/${dateString}`);
     });
 
     // Find and click the previous day button
-    const prevDayButton = screen.getByRole("button", { name: "Previous day" });
+    const prevDayButton = await screen.findByRole("button", {
+      name: "Previous day",
+    });
 
     await user.click(prevDayButton);
 
@@ -156,14 +160,16 @@ describe("TodayView Routing", () => {
     const user = userEvent.setup();
     const router = createRouter();
 
-    await act(() => render(<></>, { router }));
+    render(<></>, { router });
 
     await act(async () => {
       await router.navigate(`${ROOT_ROUTES.DAY}/${dateString}`);
     });
 
     // Go to different day to make the "Go to today" button visible
-    const prevDayButton = screen.getByRole("button", { name: "Previous day" });
+    const prevDayButton = await screen.findByRole("button", {
+      name: "Previous day",
+    });
 
     await user.click(prevDayButton);
 
@@ -193,10 +199,10 @@ describe("TodayView Routing", () => {
 
     const router = createRouter();
 
-    await act(() => render(<></>, { router }));
+    render(<></>, { router });
 
-    expect(screen.getByText("Monday")).toBeInTheDocument();
-    expect(screen.getByText("October 20")).toBeInTheDocument();
+    expect(await screen.findByText("Monday")).toBeInTheDocument();
+    expect(await screen.findByText("October 20")).toBeInTheDocument();
 
     jest.useRealTimers();
   });
@@ -206,7 +212,7 @@ describe("Navigation with URL updates", () => {
     const user = userEvent.setup();
     const router = createRouter();
 
-    await act(() => render(<></>, { router }));
+    render(<></>, { router });
 
     // Wait for the component to render by finding a button
     const nextDayButton = await screen.findByRole("button", {
@@ -232,7 +238,7 @@ describe("Navigation with URL updates", () => {
     const user = userEvent.setup();
     const router = createRouter();
 
-    await act(() => render(<></>, { router }));
+    render(<></>, { router });
 
     // Wait for the component to render by finding a button
     const prevDayButton = await screen.findByRole("button", {
@@ -262,7 +268,7 @@ describe("Navigation with URL updates", () => {
       dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
     );
 
-    await act(() => render(<></>, { router }));
+    render(<></>, { router });
     await act(async () => {
       await router.navigate(`${ROOT_ROUTES.DAY}/${testDateString}`);
     });
@@ -282,7 +288,7 @@ describe("Navigation with URL updates", () => {
 
     const router = createRouter();
 
-    await act(() => render(<></>, { router }));
+    render(<></>, { router });
 
     // Should show today's date
     const todayWeekday = today.format(DAY_HEADING_FORMAT);

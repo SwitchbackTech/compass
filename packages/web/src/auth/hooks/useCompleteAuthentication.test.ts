@@ -55,9 +55,7 @@ describe("useCompleteAuthentication", () => {
   it("completes authentication and triggers fetch", async () => {
     const { result } = renderHook(() => useCompleteAuthentication());
 
-    await act(async () => {
-      await result.current({ email: "test@example.com" });
-    });
+    await result.current({ email: "test@example.com" });
 
     expect(mockMarkUserAsAuthenticated).toHaveBeenCalledWith(
       "test@example.com",
@@ -76,9 +74,7 @@ describe("useCompleteAuthentication", () => {
     mockSyncLocalEvents.mockResolvedValue({ success: true, syncedCount: 5 });
     const { result } = renderHook(() => useCompleteAuthentication());
 
-    await act(async () => {
-      await result.current({ email: "test@example.com" });
-    });
+    await result.current({ email: "test@example.com" });
 
     expect(mockDispatch).toHaveBeenCalledWith(
       expect.objectContaining({

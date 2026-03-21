@@ -1,5 +1,4 @@
 import { type ReactElement, type ReactNode } from "react";
-import { act } from "react";
 import { MemoryRouter } from "react-router-dom";
 import EmailPassword from "supertokens-web-js/recipe/emailpassword";
 import "@testing-library/jest-dom";
@@ -124,9 +123,7 @@ const renderWithProviders = (
 };
 
 async function flushEffects() {
-  await act(async () => {
-    await Promise.resolve();
-  });
+  await Promise.resolve();
 }
 
 describe("AuthModal", () => {

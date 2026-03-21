@@ -30,7 +30,7 @@ describe("Calendar Interactions", () => {
       const alertMock = jest.spyOn(window, "alert").mockImplementation();
       const consoleMock = (console.error = jest.fn()); // mock so doesnt clutter test logs
 
-      await act(() => render(<></>, { router }));
+      render(<></>, { router });
 
       await waitFor(() => {
         expect(alertMock).toHaveBeenCalled();
@@ -43,20 +43,18 @@ describe("Calendar Interactions", () => {
     it("appears/disappears when viewing future or past week", async () => {
       const user = userEvent.setup();
 
-      await act(() => render(<></>, { router }));
+      render(<></>, { router });
 
       // Check current week
       const nowLine = screen.queryByRole("separator", { name: /now line/i });
       expect(nowLine).toBeInTheDocument();
 
       // Check future week
-      await act(async () => {
-        await user.click(
-          screen.getByRole("navigation", {
-            name: /next week/i,
-          }),
-        );
-      });
+      await user.click(
+        screen.getByRole("navigation", {
+          name: /next week/i,
+        }),
+      );
 
       expect(nowLine).not.toBeInTheDocument();
     });
