@@ -92,7 +92,7 @@ Cancellation detection (`isGooglePopupClosedError`) returns true when any of the
 When cancellation is detected in the auth hooks:
 
 - auth state is reset (`resetAuth`)
-- import overlay/progress flags are cleared (`setIsImportPending(false)`, `importing(false)`)
+- OAuth overlay closes because `selectIsAuthenticating` becomes false
 - generic auth failure state is not dispatched for that event
 
 For non-cancellation errors, normal auth-failure handling still applies.
@@ -296,8 +296,8 @@ Responsibilities:
 
 Runtime nuances:
 
-- `useGcalSync` keeps an `isImportPending` ref to avoid races with async socket events.
-- `USER_METADATA` is used to reconcile post-auth import UI state (importing/completed/errored).
+- `useGcalSync` uses `USER_METADATA` as the source of truth for sync metadata and Google connection status.
+- auto-import is triggered only when `sync.importGCal === "RESTART"` and `google.connectionState` is neither `NOT_CONNECTED` nor `RECONNECT_REQUIRED`.
 - On connect, backend may proactively emit `GOOGLE_REVOKED`; the client clears Google-origin events and falls back to local event storage until reconnect.
 
 ## Google Connection UI Contract
@@ -307,17 +307,18 @@ Files:
 - `packages/web/src/auth/hooks/oauth/useConnectGoogle.ts`
 - `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
 
-UI state is derived from metadata plus import progress:
+UI state comes from a single server-enriched metadata field (`google.connectionState`) plus one client-only loading state:
 
+- `checking` (client-only) → disabled checking status (`SpinnerIcon`)
 - `NOT_CONNECTED` → connect action (`CloudArrowUpIcon`)
 - `RECONNECT_REQUIRED` → reconnect action (`LinkBreakIcon`)
-- `CONNECTED` + `HEALTHY` → disabled connected status (`LinkIcon`)
-- `CONNECTED` + `REPAIRING` (or active import) → disabled syncing status (`SpinnerIcon`)
-- `CONNECTED` + `ATTENTION` → repair action (`CloudWarningIcon`)
+- `IMPORTING` → disabled syncing status (`SpinnerIcon`)
+- `HEALTHY` → disabled connected status (`LinkIcon`)
+- `ATTENTION` → repair action (`CloudWarningIcon`)
 
 Important constraint:
 
-- `connectionStatus` values are uppercase string literals shared with backend/core (`NOT_CONNECTED`, `CONNECTED`, `RECONNECT_REQUIRED`); lowercase variants will not match UI state guards.
+- `connectionState` values are uppercase string literals shared with backend/core (`NOT_CONNECTED`, `RECONNECT_REQUIRED`, `IMPORTING`, `HEALTHY`, `ATTENTION`); lowercase variants will not match UI state guards.
 
 ## What To Read Before Editing
 

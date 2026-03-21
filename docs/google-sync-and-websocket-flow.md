@@ -181,8 +181,8 @@ The client:
 - refetches events after background changes
 - tracks Google import status
 - handles Google revocation
-- requests metadata used to decide whether import should start
-- reconciles import UI state from `USER_METADATA` when auth/import websocket events arrive out of order
+- requests `USER_METADATA` to drive connection-state UI and import restart decisions
+- auto-starts import only when metadata says `sync.importGCal === "RESTART"` and the Google connection is usable
 
 ## Revoked Token And Reconnect Lifecycle
 
@@ -231,9 +231,12 @@ Primary files:
     incrementalGCalSync?: "IMPORTING" | "ERRORED" | "COMPLETED" | "RESTART" | null;
   };
   google?: {
-    hasRefreshToken?: boolean;
-    connectionStatus?: "NOT_CONNECTED" | "CONNECTED" | "RECONNECT_REQUIRED";
-    syncStatus?: "HEALTHY" | "REPAIRING" | "ATTENTION" | "NONE";
+    connectionState?:
+      | "NOT_CONNECTED"
+      | "RECONNECT_REQUIRED"
+      | "IMPORTING"
+      | "HEALTHY"
+      | "ATTENTION";
   };
 }
 ```
@@ -251,23 +254,18 @@ Source files:
 - `packages/core/src/types/user.types.ts`
 - `packages/web/src/socket/hooks/useGcalSync.ts`
 
-Connection status values are uppercase string literals shared across backend and web:
+`connectionState` values are uppercase string literals shared across backend and web:
 
 - `NOT_CONNECTED`: no linked Google account
 - `RECONNECT_REQUIRED`: Google account linked but refresh token missing
-- `CONNECTED`: linked Google account with refresh token
-
-Sync status values describe the health of Google synchronization:
-
-- `NONE`: no active Google sync state yet (typically not connected/reconnect required)
-- `REPAIRING`: import or repair is currently running
+- `IMPORTING`: import or repair is currently running (`sync.importGCal` is `"IMPORTING"` or `"RESTART"`)
 - `HEALTHY`: sync watches/tokens are healthy
-- `ATTENTION`: connected, but sync needs repair
+- `ATTENTION`: Google is linked, but sync needs repair
 
 Auto-import guardrail in realtime flow:
 
-- client auto-starts import only when `sync.importGCal === "RESTART"` **and** `google.connectionStatus === "CONNECTED"`
-- if connection status casing drifts (for example lowercase values), this guard does not match and auto-import will not trigger
+- client auto-starts import only when `sync.importGCal === "RESTART"` **and** `google.connectionState` is not `NOT_CONNECTED` or `RECONNECT_REQUIRED`
+- if connection-state casing drifts (for example lowercase values), this guard does not match and auto-import will not trigger
 
 ## Import Flow
 
