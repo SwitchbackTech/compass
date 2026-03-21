@@ -14,6 +14,7 @@ import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { setupDraftState } from "@web/__tests__/utils/state/draft.test.util";
 import { type Schema_WebEvent } from "@web/common/types/web.event.types";
+import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { EventApi } from "@web/ducks/events/event.api";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
 import * as storeHooks from "@web/store/store.hooks";
@@ -33,6 +34,11 @@ const mockDuplicateEvent = jest.fn();
 const isDraft = true;
 const isExistingEvent = true;
 let dispatchSpy: jest.Mock;
+
+const getModifierShortcut = (key: string) =>
+  getModifierKey() === "Meta"
+    ? `{Meta>}${key}{/Meta}`
+    : `{Control>}${key}{/Control}`;
 
 describe("SomedayEventForm Hotkeys", () => {
   beforeEach(() => {
@@ -331,7 +337,7 @@ describe("SomedayEventForm Hotkeys", () => {
   /**
    * Test validates that the duplicate shortcut is now implemented
    */
-  it("should call duplicateEvent when meta+d keyboard shortcut is used", async () => {
+  it("should call duplicateEvent when mod+d keyboard shortcut is used", async () => {
     render(
       <SomedayEventForm
         event={sampleSomedayEvent}
@@ -350,7 +356,7 @@ describe("SomedayEventForm Hotkeys", () => {
     // Ensure the form is rendered (good sanity check)
     expect(screen.getByRole("form")).toBeInTheDocument();
 
-    await act(async () => userEvent.keyboard("{Meta>}d{/Meta}"));
+    await act(async () => userEvent.keyboard(getModifierShortcut("d")));
 
     expect(mockDuplicateEvent).toHaveBeenCalledTimes(1);
     expect(mockOnClose).toHaveBeenCalledTimes(1);
@@ -396,7 +402,7 @@ describe("SomedayEventForm Hotkeys", () => {
 
     // Try the keyboard shortcut while menu is open
     await act(async () => {
-      await user.keyboard("{Control>}{ArrowLeft}{/Control}");
+      await user.keyboard(getModifierShortcut("{ArrowLeft}"));
     });
 
     expect(mockOnMigrate).toHaveBeenCalledTimes(1);
@@ -407,7 +413,7 @@ describe("SomedayEventForm Hotkeys", () => {
     );
   });
 
-  it("should call duplicateEvent when meta+d keyboard shortcut is used while ActionsMenu is open", async () => {
+  it("should call duplicateEvent when mod+d keyboard shortcut is used while ActionsMenu is open", async () => {
     const user = userEvent.setup();
     render(
       <div>
@@ -442,7 +448,7 @@ describe("SomedayEventForm Hotkeys", () => {
 
     // Try the keyboard shortcut while menu is open
     await act(async () => {
-      await user.keyboard("{Meta>}d{/Meta}");
+      await user.keyboard(getModifierShortcut("d"));
     });
 
     expect(mockDuplicateEvent).toHaveBeenCalledTimes(1);
@@ -484,7 +490,7 @@ describe("SomedayEventForm Hotkeys", () => {
 
     // Try the keyboard shortcut while menu is open
     await act(async () => {
-      await user.keyboard("{Control>}{ArrowRight}{/Control}");
+      await user.keyboard(getModifierShortcut("{ArrowRight}"));
     });
 
     expect(mockOnMigrate).toHaveBeenCalledTimes(1);
@@ -495,7 +501,7 @@ describe("SomedayEventForm Hotkeys", () => {
     );
   });
 
-  it("should call onMigrate when ctrl+up keyboard shortcut is used", async () => {
+  it("should call onMigrate when mod+up keyboard shortcut is used", async () => {
     const user = userEvent.setup();
 
     render(
@@ -516,7 +522,7 @@ describe("SomedayEventForm Hotkeys", () => {
     );
 
     await act(async () => {
-      await user.keyboard("{Control>}{ArrowUp}{/Control}");
+      await user.keyboard(getModifierShortcut("{ArrowUp}"));
     });
 
     expect(mockOnMigrate).toHaveBeenCalledTimes(1);
@@ -527,7 +533,7 @@ describe("SomedayEventForm Hotkeys", () => {
     );
   });
 
-  it("should call onMigrate when ctrl+down keyboard shortcut is used", async () => {
+  it("should call onMigrate when mod+down keyboard shortcut is used", async () => {
     const user = userEvent.setup();
 
     render(
@@ -548,7 +554,7 @@ describe("SomedayEventForm Hotkeys", () => {
     );
 
     await act(async () => {
-      await user.keyboard("{Control>}{ArrowDown}{/Control}");
+      await user.keyboard(getModifierShortcut("{ArrowDown}"));
     });
 
     expect(mockOnMigrate).toHaveBeenCalledTimes(1);

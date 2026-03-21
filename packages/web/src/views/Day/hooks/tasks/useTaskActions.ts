@@ -1,5 +1,5 @@
 import type dayjs from "dayjs";
-import { useCallback } from "react";
+import { type MutableRefObject, useCallback } from "react";
 import { toast } from "react-toastify";
 import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
 import { type TaskRepository } from "@web/common/repositories/task/task.repository";
@@ -19,6 +19,7 @@ interface UseTaskActionsProps {
   setEditingTitle?: (title: string) => void;
   setEditingTaskId?: (taskId: string | null) => void;
   isCancellingEdit?: boolean;
+  isCancellingEditRef?: MutableRefObject<boolean>;
   setIsCancellingEdit?: (isCancelling: boolean) => void;
   undoState?: UndoOperation | null;
   setUndoState?: (state: UndoOperation | null) => void;
@@ -38,6 +39,7 @@ export function useTaskActions({
   setEditingTitle,
   setEditingTaskId,
   isCancellingEdit,
+  isCancellingEditRef,
   setIsCancellingEdit,
   undoState,
   setUndoState,
@@ -237,8 +239,11 @@ export function useTaskActions({
   const onInputBlur = (taskId: string) => {
     if (isEditingBlocked) return;
 
-    if (isCancellingEdit) {
+    if (isCancellingEditRef?.current || isCancellingEdit) {
       // Don't update the task title if we're canceling the edit
+      if (isCancellingEditRef) {
+        isCancellingEditRef.current = false;
+      }
       setIsCancellingEdit?.(false);
       return;
     }
@@ -281,14 +286,10 @@ export function useTaskActions({
       focusOnCheckbox(taskId);
     } else if (e.key === "Escape") {
       e.preventDefault();
-      // Get the original task title and revert to it
-      const originalTask = tasks.find((task) => task._id === taskId);
-      if (originalTask) {
-        // Use setTimeout to ensure this runs after the blur event
-        setTimeout(() => {
-          updateTaskTitle(taskId, originalTask.title);
-        }, 0);
+      if (isCancellingEditRef) {
+        isCancellingEditRef.current = true;
       }
+      setIsCancellingEdit?.(true);
       // Clear editing state
       setEditingTaskId?.(null);
       setEditingTitle?.("");

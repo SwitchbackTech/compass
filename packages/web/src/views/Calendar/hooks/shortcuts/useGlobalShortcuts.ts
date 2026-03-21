@@ -1,11 +1,8 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { type RegisterableHotkey } from "@tanstack/react-hotkeys";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
-import {
-  useKeyDownEvent,
-  useKeyUpEvent,
-} from "@web/common/hooks/useKeyboardEvent";
-import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
+import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
@@ -17,60 +14,56 @@ export function useGlobalShortcuts() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const nowHotkey = VIEW_SHORTCUTS.now.key.toUpperCase() as RegisterableHotkey;
+  const dayHotkey = VIEW_SHORTCUTS.day.key.toUpperCase() as RegisterableHotkey;
+  const weekHotkey =
+    VIEW_SHORTCUTS.week.key.toUpperCase() as RegisterableHotkey;
 
-  useKeyUpEvent({
-    combination: [VIEW_SHORTCUTS.now.key],
-    deps: [navigate, location.pathname],
-    handler: () => {
-      if (location.pathname !== VIEW_SHORTCUTS.now.route) {
-        navigate(VIEW_SHORTCUTS.now.route);
-      }
+  useAppHotkeyUp(nowHotkey, () => {
+    if (location.pathname !== VIEW_SHORTCUTS.now.route) {
+      navigate(VIEW_SHORTCUTS.now.route);
+    }
+  });
+
+  useAppHotkeyUp(dayHotkey, () => {
+    if (!location.pathname.startsWith(VIEW_SHORTCUTS.day.route)) {
+      navigate(VIEW_SHORTCUTS.day.route);
+    }
+  });
+
+  useAppHotkeyUp(weekHotkey, () => {
+    if (location.pathname !== VIEW_SHORTCUTS.week.route) {
+      navigate(VIEW_SHORTCUTS.week.route);
+    }
+  });
+
+  useAppHotkeyUp("Z", () => {
+    navigate(ROOT_ROUTES.LOGOUT);
+  });
+
+  useAppHotkeyUp("R", () => {
+    dispatch(viewSlice.actions.updateReminder(true));
+  });
+
+  useAppHotkey(
+    "Mod+K",
+    () => {
+      dispatch(settingsSlice.actions.toggleCmdPalette());
     },
-  });
-
-  useKeyUpEvent({
-    combination: [VIEW_SHORTCUTS.day.key],
-    deps: [navigate, location.pathname],
-    handler: () => {
-      if (!location.pathname.startsWith(VIEW_SHORTCUTS.day.route)) {
-        navigate(VIEW_SHORTCUTS.day.route);
-      }
+    {
+      ignoreInputs: false,
+      blurOnTrigger: true,
     },
-  });
+  );
 
-  useKeyUpEvent({
-    combination: [VIEW_SHORTCUTS.week.key],
-    deps: [navigate, location.pathname],
-    handler: () => {
-      if (location.pathname !== VIEW_SHORTCUTS.week.route) {
-        navigate(VIEW_SHORTCUTS.week.route);
-      }
+  useAppHotkey(
+    "Escape",
+    () => {
+      dispatch(settingsSlice.actions.closeCmdPalette());
     },
-  });
-
-  useKeyUpEvent({
-    combination: ["z"],
-    deps: [navigate],
-    handler: () => navigate(ROOT_ROUTES.LOGOUT),
-  });
-
-  useKeyUpEvent({
-    combination: ["r"],
-    deps: [dispatch],
-    handler: () => dispatch(viewSlice.actions.updateReminder(true)),
-  });
-
-  useKeyDownEvent({
-    combination: [getModifierKey(), "k"],
-    deps: [dispatch],
-    listenWhileEditing: true,
-    handler: () => dispatch(settingsSlice.actions.toggleCmdPalette()),
-  });
-
-  useKeyDownEvent({
-    combination: ["Escape"],
-    deps: [dispatch],
-    listenWhileEditing: true,
-    handler: () => dispatch(settingsSlice.actions.closeCmdPalette()),
-  });
+    {
+      ignoreInputs: false,
+      blurOnTrigger: true,
+    },
+  );
 }

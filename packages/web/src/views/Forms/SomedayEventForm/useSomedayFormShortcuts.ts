@@ -1,9 +1,9 @@
-import { useHotkey } from "@tanstack/react-hotkeys";
 import {
   type Categories_Event,
   type Direction_Migrate,
   type Schema_Event,
 } from "@core/types/event.types";
+import { useAppHotkey } from "@web/common/hooks/useAppHotkey";
 import { isComboboxInteraction } from "@web/common/utils/form/form.util";
 
 export const SOMEDAY_HOTKEY_OPTIONS = {
@@ -69,13 +69,13 @@ export const useSomedayFormShortcuts = ({
   onDuplicate,
   onMigrate,
 }: SomedayFormShortcutsProps) => {
-  useHotkey("delete", stopPropagationWrapper(onDelete), {
+  useAppHotkey("Delete", stopPropagationWrapper(onDelete), {
     ...SOMEDAY_HOTKEY_OPTIONS,
     ignoreInputs: false,
   });
 
-  useHotkey(
-    "enter",
+  useAppHotkey(
+    "Enter",
     (keyboardEvent) => {
       if (
         isMenuInteraction(keyboardEvent) ||
@@ -92,8 +92,8 @@ export const useSomedayFormShortcuts = ({
     SOMEDAY_HOTKEY_OPTIONS,
   );
 
-  useHotkey(
-    "mod+enter",
+  useAppHotkey(
+    "Mod+Enter",
     (keyboardEvent) => {
       keyboardEvent.preventDefault();
       keyboardEvent.stopPropagation();
@@ -102,32 +102,32 @@ export const useSomedayFormShortcuts = ({
     SOMEDAY_HOTKEY_OPTIONS,
   );
 
-  useHotkey(
-    "meta+d",
+  useAppHotkey(
+    "Mod+D",
     stopPropagationWrapper(onDuplicate),
     SOMEDAY_HOTKEY_OPTIONS,
   );
 
-  useHotkey(
-    "mod+arrowup",
+  useAppHotkey(
+    "Mod+ArrowUp",
     handleMigration("up", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
   );
 
-  useHotkey(
-    "mod+arrowdown",
+  useAppHotkey(
+    "Mod+ArrowDown",
     handleMigration("down", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
   );
 
-  useHotkey(
-    "mod+arrowright",
+  useAppHotkey(
+    "Mod+ArrowRight",
     handleMigration("forward", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
   );
 
-  useHotkey(
-    "mod+arrowleft",
+  useAppHotkey(
+    "Mod+ArrowLeft",
     handleMigration("back", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
   );

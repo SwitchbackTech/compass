@@ -1,6 +1,6 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { prepareEmptyStorageForTests } from "@web/__tests__/utils/storage/indexeddb.test.util";
 import { addTasks } from "@web/__tests__/utils/tasks/task.test.util";
 import { renderWithDayProvidersAsync } from "@web/views/Day/util/day.test-util";
@@ -9,7 +9,7 @@ import { DayViewContent } from "@web/views/Day/view/DayViewContent";
 // Helper to create a mock matchMedia
 const createMatchMedia = (matches: boolean) => {
   const listeners: Array<(e: MediaQueryListEvent) => void> = [];
-  return {
+  const mediaQuery = {
     matches,
     media: "",
     onchange: null,
@@ -24,11 +24,14 @@ const createMatchMedia = (matches: boolean) => {
     dispatchEvent: jest.fn(),
     // Helper to simulate resize
     _triggerChange: (newMatches: boolean) => {
+      mediaQuery.matches = newMatches;
       listeners.forEach((listener) =>
         listener({ matches: newMatches } as MediaQueryListEvent),
       );
     },
   };
+
+  return mediaQuery;
 };
 
 // Mock the Agenda component
@@ -336,9 +339,11 @@ describe("TodayViewContent", () => {
       await renderWithDayProvidersAsync(<DayViewContent />);
 
       // Sidebar should be visible initially
-      expect(
-        screen.queryByRole("complementary", { name: "Shortcuts sidebar" }),
-      ).toBeInTheDocument();
+      await waitFor(() => {
+        expect(
+          screen.queryByRole("complementary", { name: "Shortcuts sidebar" }),
+        ).toBeInTheDocument();
+      });
 
       // Simulate resize to narrow
       act(() => {
@@ -346,9 +351,11 @@ describe("TodayViewContent", () => {
       });
 
       // Sidebar should now be hidden
-      expect(
-        screen.queryByRole("complementary", { name: "Shortcuts sidebar" }),
-      ).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(
+          screen.queryByRole("complementary", { name: "Shortcuts sidebar" }),
+        ).not.toBeInTheDocument();
+      });
     });
 
     it("should open sidebar when screen resizes from narrow to wide", async () => {
@@ -374,9 +381,11 @@ describe("TodayViewContent", () => {
       });
 
       // Sidebar should now be visible
-      expect(
-        screen.queryByRole("complementary", { name: "Shortcuts sidebar" }),
-      ).toBeInTheDocument();
+      await waitFor(() => {
+        expect(
+          screen.queryByRole("complementary", { name: "Shortcuts sidebar" }),
+        ).toBeInTheDocument();
+      });
     });
   });
 });

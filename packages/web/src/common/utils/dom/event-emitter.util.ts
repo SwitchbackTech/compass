@@ -1,13 +1,7 @@
 import { EventEmitter2 } from "eventemitter2";
 import { type PointerEvent } from "react";
 import { BehaviorSubject, Subject } from "rxjs";
-import { StringV4Schema } from "@core/types/type.utils";
 import { isLeftClick } from "../mouse/mouse.util";
-
-export interface KeyCombination {
-  event: KeyboardEvent;
-  sequence: string[];
-}
 
 export interface DomMovement {
   event: PointerEvent;
@@ -30,10 +24,6 @@ export const compassEventEmitter = new EventEmitter2({
   verboseMemoryLeak: true,
 });
 
-export const keyPressed$ = new BehaviorSubject<KeyCombination | null>(null);
-
-export const keyReleased$ = new Subject<KeyCombination>();
-
 export const domMovement$ = new Subject<DomMovement>();
 
 export const pointerdown$ = new BehaviorSubject<boolean>(false);
@@ -41,42 +31,6 @@ export const pointerdown$ = new BehaviorSubject<boolean>(false);
 export const selectionStart$ = new BehaviorSubject<
   DomMovement["selectionStart"]
 >(null);
-
-export function globalOnKeyPressHandler(e: KeyboardEvent) {
-  const { event, sequence = [] } = keyPressed$.getValue() ?? {};
-  const lastKey = sequence[sequence.length - 1];
-  const repeat = e.key === lastKey || e.repeat;
-  const nextSequence = repeat ? sequence : [...sequence, e.key];
-  const hasMeta = nextSequence.includes("Meta");
-  const hasCtrl = nextSequence.includes("Control");
-  const hasAlt = nextSequence.includes("Alt");
-  const hasShift = nextSequence.includes("Shift");
-  const resetMeta = !e.metaKey && hasMeta;
-  const resetCtrl = !e.ctrlKey && hasCtrl;
-  const resetAlt = !e.altKey && hasAlt;
-  const resetShift = !e.shiftKey && hasShift;
-  const reset = resetMeta || resetCtrl || resetAlt || resetShift;
-
-  if (event) {
-    keyPressed$.next({ event: e, sequence: reset ? [e.key] : nextSequence });
-  } else {
-    keyPressed$.next({ event: e, sequence: [e.key] });
-  }
-}
-
-export function globalOnKeyUpHandler(e: KeyboardEvent) {
-  const { event, sequence = [] } = keyPressed$.getValue() ?? {};
-
-  if (event) {
-    const firstKeyInSequence = sequence[0];
-    const releasedKey = StringV4Schema.safeParse(e.key).data;
-    const firstKeyReleased = releasedKey === firstKeyInSequence;
-
-    if (firstKeyReleased) keyPressed$.next(null);
-  }
-
-  keyReleased$.next({ event: e, sequence });
-}
 
 export function getElementAtPoint({
   clientX,
@@ -140,10 +94,22 @@ export function pressKey(
   target: Element | Node | Window | Document = document,
 ) {
   target.dispatchEvent(
-    new KeyboardEvent("keydown", { ...keyDownInit, key, composed: true }),
+    new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      ...keyDownInit,
+      key,
+    }),
   );
 
   target.dispatchEvent(
-    new KeyboardEvent("keyup", { ...keyUpInit, key, composed: true }),
+    new KeyboardEvent("keyup", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      ...keyUpInit,
+      key,
+    }),
   );
 }

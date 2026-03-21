@@ -5,7 +5,6 @@ import { render } from "@web/__tests__/__mocks__/mock.render";
 import * as useGoogleAuthModule from "@web/auth/hooks/oauth/useGoogleAuth";
 import { SyncApi } from "@web/common/apis/sync.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { keyPressed$ } from "@web/common/utils/dom/event-emitter.util";
 import * as eventUtil from "@web/common/utils/event/event.util";
 import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
@@ -142,7 +141,6 @@ describe("DayCmdPalette", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    keyPressed$.next(null);
 
     (require("react-router-dom").useNavigate as jest.Mock).mockReturnValue(
       mockNavigate,

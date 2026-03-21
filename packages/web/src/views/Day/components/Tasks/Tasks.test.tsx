@@ -6,7 +6,7 @@ import { addTasks } from "@web/__tests__/utils/tasks/task.test.util";
 import { TaskList } from "@web/views/Day/components/TaskList/TaskList";
 import { Tasks } from "@web/views/Day/components/Tasks/Tasks";
 import { DNDTasksProvider } from "@web/views/Day/context/DNDTasksContext";
-import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
+import { renderWithDayProvidersAsync } from "@web/views/Day/util/day.test-util";
 
 describe("Tasks Tab Navigation", () => {
   beforeEach(async () => {
@@ -14,7 +14,7 @@ describe("Tasks Tab Navigation", () => {
   });
 
   it("should render empty state initially", async () => {
-    renderWithDayProviders(
+    await renderWithDayProvidersAsync(
       <DNDTasksProvider>
         <Tasks />
       </DNDTasksProvider>,
@@ -26,7 +26,7 @@ describe("Tasks Tab Navigation", () => {
   });
 
   it("should render the tasks container", async () => {
-    renderWithDayProviders(
+    await renderWithDayProvidersAsync(
       <DNDTasksProvider>
         <Tasks />
       </DNDTasksProvider>,
@@ -46,7 +46,7 @@ describe("Tasks Keyboard Drag and Drop", () => {
   });
 
   it("should render drag handles when there are multiple tasks", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     // Add multiple tasks
     await addTasks(user, ["First task", "Second task"]);
@@ -58,7 +58,7 @@ describe("Tasks Keyboard Drag and Drop", () => {
   }, 10000);
 
   it("should not render drag handles when there is only one task", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     // Add only one task
     await addTasks(user, ["Single task"]);
@@ -70,7 +70,7 @@ describe("Tasks Keyboard Drag and Drop", () => {
   });
 
   it("should have focusable drag handles for keyboard navigation", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     // Add multiple tasks
     await addTasks(user, ["First task", "Second task"]);
@@ -88,7 +88,7 @@ describe("Tasks Keyboard Drag and Drop", () => {
   }, 10000);
 
   it("should have accessible description for drag handles", async () => {
-    const { user } = renderWithDayProviders(<TaskList />);
+    const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     // Add multiple tasks
     await addTasks(user, ["First task", "Second task"]);

@@ -70,15 +70,20 @@ describe("SomedayEventForm shortcuts hook", () => {
     });
   });
 
-  test("meta+d shortcut calls onDuplicate", async () => {
+  test("mod+d shortcut calls onDuplicate", async () => {
+    const modifierKey = getModifierKey();
+    const isCtrl = modifierKey === "Control";
+
     render(<TestComponent {...defaultProps} />);
 
-    // Press Meta key
-    dispatchKeyEvent("Meta", "keydown", { metaKey: true });
-
-    // Press 'd' while holding Meta
-    dispatchKeyEvent("d", "keydown", { metaKey: true });
-    dispatchKeyEvent("d", "keyup", { metaKey: true });
+    dispatchKeyEvent("d", "keydown", {
+      ctrlKey: isCtrl,
+      metaKey: !isCtrl,
+    });
+    dispatchKeyEvent("d", "keyup", {
+      ctrlKey: isCtrl,
+      metaKey: !isCtrl,
+    });
 
     await waitFor(() => {
       expect(defaultProps.onDuplicate).toHaveBeenCalled();
@@ -224,7 +229,7 @@ describe("SomedayEventForm shortcuts hook", () => {
     menuItem.setAttribute("role", "menuitem");
     document.body.appendChild(menuItem);
 
-    const event = new KeyboardEvent("keyup", {
+    const event = new KeyboardEvent("keydown", {
       key: "Enter",
       bubbles: true,
       cancelable: true,
@@ -249,7 +254,7 @@ describe("SomedayEventForm shortcuts hook", () => {
     comboboxContainer.appendChild(input);
     document.body.appendChild(comboboxContainer);
 
-    const event = new KeyboardEvent("keyup", {
+    const event = new KeyboardEvent("keydown", {
       key: "Enter",
       bubbles: true,
       cancelable: true,

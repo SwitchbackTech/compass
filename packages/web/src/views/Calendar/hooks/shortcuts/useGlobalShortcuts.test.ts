@@ -2,7 +2,6 @@ import { act } from "react";
 import { useNavigate } from "react-router-dom";
 import { configureStore } from "@reduxjs/toolkit";
 import { fireEvent } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import {
   mockLinuxUserAgent,
@@ -30,6 +29,31 @@ const { useLocation } = jest.requireMock("react-router-dom");
 
 const mockNavigate = jest.fn();
 const mockLocation = (pathname: string) => ({ pathname });
+
+const pressModifierShortcut = () => {
+  const modifierKey = getModifierKey();
+  const modifierProps =
+    modifierKey === "Meta" ? { metaKey: true } : { ctrlKey: true };
+
+  fireEvent.keyDown(document, {
+    key: modifierKey,
+    ...modifierProps,
+    bubbles: true,
+    cancelable: true,
+  });
+
+  pressKey("k", {
+    keyDownInit: modifierProps,
+    keyUpInit: modifierProps,
+  });
+
+  fireEvent.keyUp(document, {
+    key: modifierKey,
+    ...modifierProps,
+    bubbles: true,
+    cancelable: true,
+  });
+};
 
 const createTestStore = () => {
   const store = configureStore({
@@ -130,8 +154,8 @@ describe("useGlobalShortcuts", () => {
 
       act(() => renderHook(() => useGlobalShortcuts(), { store }));
 
-      await act(async () => {
-        await userEvent.keyboard(`{${getModifierKey()}>}{k}`);
+      act(() => {
+        pressModifierShortcut();
       });
 
       expect(dispatchSpy).toHaveBeenCalledWith(
@@ -148,23 +172,18 @@ describe("useGlobalShortcuts", () => {
 
     act(() => renderHook(() => useGlobalShortcuts(), { store }));
 
-    const modifierKey = getModifierKey();
-    const isMetaKey = modifierKey === "Meta";
-    const modifierProps = isMetaKey ? { metaKey: true } : { ctrlKey: true };
+    return act(async () => {
+      pressModifierShortcut();
 
-    act(() => {
-      fireEvent.keyDown(window, { key: modifierKey, ...modifierProps });
-      fireEvent.keyDown(window, { key: "k", ...modifierProps });
+      expect(dispatchSpy).toHaveBeenCalledWith(
+        settingsSlice.actions.toggleCmdPalette(),
+      );
+
+      pressKey("Escape");
+
+      expect(dispatchSpy).toHaveBeenCalledWith(
+        settingsSlice.actions.closeCmdPalette(),
+      );
     });
-
-    expect(dispatchSpy).toHaveBeenCalledWith(
-      settingsSlice.actions.toggleCmdPalette(),
-    );
-
-    act(() => pressKey("Escape"));
-
-    expect(dispatchSpy).toHaveBeenCalledWith(
-      settingsSlice.actions.closeCmdPalette(),
-    );
   });
 });

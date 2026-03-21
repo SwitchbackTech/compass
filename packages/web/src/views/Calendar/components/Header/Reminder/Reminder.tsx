@@ -10,7 +10,7 @@ import {
 } from "react";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { ID_REMINDER_INPUT } from "@web/common/constants/web.constants";
-import { useKeyDownEvent } from "@web/common/hooks/useKeyboardEvent";
+import { useAppHotkey } from "@web/common/hooks/useAppHotkey";
 import { theme } from "@web/common/styles/theme";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectReminder } from "@web/ducks/events/selectors/view.selectors";
@@ -212,10 +212,9 @@ export const Reminder = forwardRef(
     }, [isEditing]);
 
     // Effect to handle ESC key
-    useKeyDownEvent({
-      combination: ["Escape"],
-      listenWhileEditing: true,
-      handler: handleEscKey,
+    useAppHotkey("Escape", handleEscKey, {
+      ignoreInputs: false,
+      blurOnTrigger: true,
     });
 
     const handleReminderClick = () => {

@@ -26,6 +26,7 @@ export function useTaskState({
   const [selectedTaskIndex, setSelectedTaskIndex] = useState(-1);
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [isCancellingEdit, setIsCancellingEdit] = useState(false);
+  const isCancellingEditRef = useRef(false);
   const [undoState, setUndoState] = useState<UndoOperation | null>(null);
   const [undoToastId, setUndoToastId] = useState<string | number | null>(null);
 
@@ -75,6 +76,7 @@ export function useTaskState({
     isAddingTask,
     setIsAddingTask,
     isCancellingEdit,
+    isCancellingEditRef,
     setIsCancellingEdit,
     undoState,
     setUndoState,

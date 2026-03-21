@@ -1,6 +1,6 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
-import { screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import "@web/__tests__/floating-ui.setup";
 import { prepareEmptyStorageForTests } from "@web/__tests__/utils/storage/indexeddb.test.util";
 import {
@@ -8,7 +8,10 @@ import {
   clickCreateTaskButton,
   waitForTaskListReady,
 } from "@web/__tests__/utils/tasks/task.test.util";
-import { renderWithDayProvidersAsync } from "../../util/day.test-util";
+import {
+  TaskProviderWrapper,
+  renderWithDayProvidersAsync,
+} from "../../util/day.test-util";
 import { TaskList } from "./TaskList";
 
 describe("TaskList", () => {

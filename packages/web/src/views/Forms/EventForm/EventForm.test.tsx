@@ -4,7 +4,14 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type Schema_Event } from "@core/types/event.types";
 import { render } from "@web/__tests__/__mocks__/mock.render";
+import { pressKey } from "@web/common/utils/dom/event-emitter.util";
+import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { EventForm } from "./EventForm";
+
+const getModifierShortcut = (key: string) =>
+  getModifierKey() === "Meta"
+    ? `{Meta>}${key}{/Meta}`
+    : `{Control>}${key}{/Control}`;
 
 test("start date picker opens and then closes when clicking the end input", async () => {
   const allDayEvent: Schema_Event = {
@@ -48,7 +55,7 @@ test("start date picker opens and then closes when clicking the end input", asyn
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
 
-test("should call onConvert when meta+< (meta + shift + comma) keyboard shortcut is used", async () => {
+test("should call onConvert when mod+arrowleft keyboard shortcut is used", async () => {
   const sampleEvent: Schema_Event = {
     _id: "event123",
     title: "Test Event for Hotkey",
@@ -83,7 +90,7 @@ test("should call onConvert when meta+< (meta + shift + comma) keyboard shortcut
   expect(screen.getByRole("form")).toBeInTheDocument();
 
   await act(async () => {
-    await user.keyboard("{Control>}{Meta>}{ArrowLeft}");
+    await user.keyboard(getModifierShortcut("{ArrowLeft}"));
   });
 
   expect(mockOnConvert).toHaveBeenCalledTimes(1);
@@ -93,7 +100,7 @@ test("should call onConvert when meta+< (meta + shift + comma) keyboard shortcut
   expect(mockOnDelete).not.toHaveBeenCalled();
 });
 
-test("should call onDuplicate when meta+d keyboard shortcut is used", async () => {
+test("should call onDuplicate when mod+d keyboard shortcut is used", async () => {
   const sampleEvent: Schema_Event = {
     _id: "event123",
     title: "Test Event for Duplication",
@@ -128,8 +135,14 @@ test("should call onDuplicate when meta+d keyboard shortcut is used", async () =
   // Ensure the form is rendered
   expect(screen.getByRole("form")).toBeInTheDocument();
 
-  await act(async () => {
-    await user.keyboard("{Meta>}d{/Meta}");
+  const modifierProps =
+    getModifierKey() === "Meta" ? { metaKey: true } : { ctrlKey: true };
+
+  act(() => {
+    pressKey("d", {
+      keyDownInit: modifierProps,
+      keyUpInit: modifierProps,
+    });
   });
 
   expect(mockOnDuplicate).toHaveBeenCalledTimes(1);
@@ -139,6 +152,49 @@ test("should call onDuplicate when meta+d keyboard shortcut is used", async () =
   expect(mockOnSubmit).not.toHaveBeenCalled();
   expect(mockOnDelete).not.toHaveBeenCalled();
   expect(mockOnConvert).not.toHaveBeenCalled();
+});
+
+test("should submit when Enter is pressed while title input is focused", async () => {
+  const sampleEvent: Schema_Event = {
+    _id: "event123",
+    title: "Focused title",
+    startDate: "2025-04-10T09:00:00.000Z",
+    endDate: "2025-04-10T10:00:00.000Z",
+    isAllDay: false,
+  };
+  const mockOnClose = jest.fn();
+  const mockOnConvert = jest.fn();
+  const mockOnSubmit = jest.fn();
+  const mockSetEvent = jest.fn();
+  const mockOnDelete = jest.fn();
+  const user = userEvent.setup({ skipHover: true });
+
+  render(
+    <div>
+      <EventForm
+        event={sampleEvent}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mockOnClose}
+        onConvert={mockOnConvert}
+        onSubmit={mockOnSubmit}
+        setEvent={mockSetEvent}
+        onDelete={mockOnDelete}
+      />
+    </div>,
+  );
+
+  const titleInput = screen.getByPlaceholderText("Title");
+
+  await act(async () => {
+    await user.click(titleInput);
+    await user.keyboard("{Enter}");
+  });
+
+  expect(mockOnSubmit).toHaveBeenCalledTimes(1);
+  expect(mockOnDelete).not.toHaveBeenCalled();
+  expect(mockOnConvert).not.toHaveBeenCalled();
+  expect(mockOnClose).not.toHaveBeenCalled();
 });
 
 test("should call duplicateEvent when duplicate icon btn is clicked", async () => {

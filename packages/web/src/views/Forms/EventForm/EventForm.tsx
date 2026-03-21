@@ -3,11 +3,11 @@ import { type KeyboardEvent } from "react";
 import type React from "react";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { Key } from "ts-key-enum";
-import { useHotkey } from "@tanstack/react-hotkeys";
 import { Priorities } from "@core/constants/core.constants";
 import { darken } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
+import { useAppHotkey } from "@web/common/hooks/useAppHotkey";
 import {
   colorByPriority,
   hoverColorByPriority,
@@ -33,9 +33,10 @@ import {
   type SetEventFormField,
 } from "@web/views/Forms/EventForm/types";
 
-const hotkeysOptions = {
+const EVENT_FORM_PLAIN_HOTKEY_OPTIONS = {
   enabled: true,
-};
+  ignoreInputs: false,
+} as const;
 
 export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
   ({
@@ -227,10 +228,8 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       setEvent,
     };
 
-    // TanStack Hotkeys automatically syncs callbacks on every render,
-    // so callbacks always have access to latest values (no stale closures)
-    useHotkey(
-      "delete",
+    useAppHotkey(
+      "Delete",
       () => {
         if (isDraft) {
           onClose();
@@ -239,11 +238,11 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
 
         onDelete();
       },
-      hotkeysOptions,
+      EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
     );
 
-    useHotkey(
-      "enter",
+    useAppHotkey(
+      "Enter",
       (keyboardEvent) => {
         if (isComboboxInteraction(keyboardEvent)) {
           return;
@@ -251,19 +250,19 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
 
         onSubmitForm();
       },
-      hotkeysOptions,
+      EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
     );
 
-    useHotkey(
-      "meta+d",
+    useAppHotkey(
+      "Mod+D",
       () => {
         onDuplicate?.(event);
       },
-      hotkeysOptions,
+      { enabled: true },
     );
 
-    useHotkey(
-      "mod+enter",
+    useAppHotkey(
+      "Mod+Enter",
       (e) => {
         e.preventDefault();
         onSubmitForm();
@@ -273,8 +272,8 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       },
     );
 
-    useHotkey(
-      "mod+arrowleft",
+    useAppHotkey(
+      "Mod+ArrowLeft",
       () => {
         if (isDraft) {
           return;
