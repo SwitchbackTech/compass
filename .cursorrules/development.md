@@ -12,7 +12,7 @@ This rule defines development commands, setup, and workflow for the Compass code
 ### Install Dependencies
 
 ```bash
-yarn install --frozen-lockfile --network-timeout 300000
+yarn install --immutable
 ```
 
 - Takes ~3.5 minutes
@@ -139,7 +139,7 @@ packages/
 
 ## Summary
 
-- Install with `yarn install --frozen-lockfile --network-timeout 300000`
+- Install with `yarn install --immutable` (`httpTimeout` is in `.yarnrc.yml`)
 - Start frontend: `yarn dev:web` (recommended)
 - Run tests: `yarn test:web`, `yarn test:backend`, `yarn test:core`
 - Format code: `yarn prettier . --write`
