@@ -265,6 +265,33 @@ Use them for:
 - integration between auth, UI, and persistence
 - regressions that unit tests cannot model cleanly
 
+### Sidebar Google Connection Status (Jest + Playwright)
+
+Primary files:
+
+- `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.test.tsx`
+- `e2e/oauth/sidebar-connection-status.spec.ts`
+- `e2e/utils/oauth-test-utils.ts`
+
+Selector contract:
+
+- assert the Google status using `role="status"` and accessible name (`aria-label`)
+- do not key tests off icon implementation details
+- expected labels come from `useConnectGoogle().sidebarStatus.tooltip`
+
+Playwright setup constraints:
+
+- call `prepareOAuthTestPage(page)` before navigation
+- this helper mocks `**/api/**`, including forcing `/api/user/metadata` to `401`
+  - intent: prevent startup metadata fetches from overwriting state injected by tests
+- call `waitForAppReady(page)` before dispatching Redux state changes
+- use helper state setters (`setGoogleConnectionState`, `setIsSyncing`) that wait on semantic DOM state instead of fixed sleeps
+
+Covered statuses:
+
+- `NOT_CONNECTED`, `RECONNECT_REQUIRED`, `IMPORTING`, `HEALTHY`, `ATTENTION`
+- client-only `"checking"` state when user metadata is loading and user has authenticated before
+
 ## Testing Realtime And Sync Changes
 
 For websocket or sync work:

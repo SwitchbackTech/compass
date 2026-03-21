@@ -34,6 +34,24 @@ Use for:
 - production-style web builds
 - compiled node package output
 
+Build internals and constraints:
+
+- web build executes from `packages/web` using:
+  - `yarn webpack --mode=production --node-env=<environment>`
+- node build flow:
+  1. removes previous `build/node` artifacts
+  2. compiles TypeScript with `yarn tsc --project tsconfig.build.json`
+  3. copies root/backend/core `package.json` files into `build/node`
+  4. copies environment file to `build/node/.env` (`.env.local`, `.env.staging`, or `.env.production`)
+  5. installs production dependencies with:
+     - `npm install --omit=dev --ignore-scripts --loglevel=error`
+
+Operational notes:
+
+- node production install intentionally uses `npm` for better cross-Yarn reliability in generated build artifacts
+- `--ignore-scripts` means lifecycle scripts are not executed during build-time dependency install
+- if the expected backend env file is missing, CLI prompts for confirmation unless `--force` is passed
+
 ### Delete
 
 Example:

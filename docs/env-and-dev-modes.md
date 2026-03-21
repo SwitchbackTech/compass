@@ -2,6 +2,27 @@
 
 Compass has multiple workable development modes. Pick the lightest mode that supports the feature you are changing.
 
+## Package Manager Runtime (Yarn 4)
+
+Use Corepack-managed Yarn from the repo's `packageManager` field:
+
+```bash
+corepack enable
+yarn install --immutable
+```
+
+Why this matters:
+
+- CI enables Corepack before installs (`.github/workflows/test-unit.yml`, `.github/workflows/test-e2e.yml`)
+- `--immutable` fails fast when lockfile/workspace state is out of sync
+- `.yarnrc.yml` sets `httpTimeout: 300000` for slow networks and large monorepo installs
+
+Peer dependency warning policy:
+
+- `.yarnrc.yml` `packageExtensions` is used to silence known-missing peer declarations from third-party packages
+- prefer updating `packageExtensions` only when warnings are reproducible and verified from install output
+- keep each extension narrowly scoped and documented inline
+
 ## Frontend-Only Mode
 
 Command:
@@ -132,20 +153,21 @@ When testing changes around event loading, explicitly decide which user state yo
 
 Ngrok is optional for general local development but relevant for Google notification/watch flows. The backend env schema requires both ngrok auth token and static domain together if ngrok is enabled.
 
-## Repo-Local Yarn Cache
+## Yarn Config And Cache Files
 
 Files:
 
 - `.yarnrc`
+- `.yarnrc.yml`
 - `.gitignore`
 
-Yarn is configured to use a repo-local cache folder:
+Current setup:
 
-```text
---cache-folder .yarn-cache
-```
+- `.yarnrc` keeps the legacy repo-local cache setting (`--cache-folder .yarn-cache`)
+- `.yarnrc.yml` is the Yarn 4+ config used by modern installs
+- both `.yarn/` and `.yarn-cache/` are ignored in git
 
-This keeps cache writes inside the workspace (instead of relying on a user-level global cache path) and reduces cache-permission noise in CI/sandboxed environments. The cache directory is ignored by git.
+This keeps cache writes inside the workspace (instead of relying on a user-level global cache path) and reduces cache-permission noise in CI/sandboxed environments.
 
 ## Common Failure Modes
 

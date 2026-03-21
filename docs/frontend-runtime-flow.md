@@ -316,8 +316,16 @@ UI state comes from a single server-enriched metadata field (`google.connectionS
 - `HEALTHY` → disabled connected status (`LinkIcon`)
 - `ATTENTION` → repair action (`CloudWarningIcon`)
 
-Important constraint:
+`useConnectGoogle` returns this as a sidebar status model (icon, tooltip, disabled/clickable behavior), so the row component should stay presentational and avoid re-deriving Google state locally.
 
+Accessibility/testing contract:
+
+- sidebar status is wrapped in a live region container:
+  - `role="status"`
+  - `aria-live="polite"`
+  - `aria-label=<sidebar tooltip text>`
+- icon elements are decorative (`aria-hidden="true"`)
+- tests should assert status by role/name (`getByRole("status", { name: ... })`) instead of icon identity
 - `connectionState` values are uppercase string literals shared with backend/core (`NOT_CONNECTED`, `RECONNECT_REQUIRED`, `IMPORTING`, `HEALTHY`, `ATTENTION`); lowercase variants will not match UI state guards.
 
 ## What To Read Before Editing
