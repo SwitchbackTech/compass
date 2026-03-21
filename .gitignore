@@ -23,6 +23,7 @@ packages/**/yarn.lock
 .idea/
 .mcp.json
 .vscode/
+.yarn/
 .yarn-cache/
 
 build/

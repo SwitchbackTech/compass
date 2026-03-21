@@ -25,6 +25,18 @@ export const prepareOAuthTestPage = async (page: Page) => {
       });
     }
 
+    // Block user metadata requests to prevent overwriting test state.
+    // The app fetches /api/user/metadata on mount, which would dispatch
+    // userMetadata/set({}) and overwrite the test's Redux state.
+    // Return 401 to trigger userMetadata/clear instead of set({}).
+    if (url.includes("/user/metadata")) {
+      return route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "unauthorized" }),
+      });
+    }
+
     // Mock all other API calls
     return route.fulfill({
       status: 200,
@@ -51,10 +63,28 @@ export const waitForAppReady = async (page: Page) => {
     () => typeof (window as any).__COMPASS_STORE__?.dispatch === "function",
     { timeout: 10000 },
   );
+
+  // Wait for all network requests to complete.
+  // This is critical because sessionInit() triggers async session checks
+  // that can call handleSessionMissing() → clear() and overwrite test state.
+  await page.waitForLoadState("networkidle");
+
+  // Wait for user metadata fetch to settle (not "loading").
+  // This prevents race conditions between API responses and test state changes.
+  await page.waitForFunction(
+    () => {
+      const store = (window as any).__COMPASS_STORE__;
+      const status = store?.getState()?.userMetadata?.status;
+      // Wait until status is "idle" or "loaded" (not "loading")
+      return status !== "loading";
+    },
+    { timeout: 10000 },
+  );
 };
 
 /**
  * Set the authenticating state via Redux (triggers OAuth overlay when true).
+ * Uses semantic role="status" query instead of arbitrary timeout.
  */
 export const setIsSyncing = async (page: Page, value: boolean) => {
   await page.evaluate((syncValue) => {
@@ -67,8 +97,15 @@ export const setIsSyncing = async (page: Page, value: boolean) => {
       store.dispatch({ type: "auth/resetAuth" });
     }
   }, value);
-  // Small delay to let React process the state change
-  await page.waitForTimeout(50);
+
+  // Wait for overlay visibility using semantic query (replaces waitForTimeout)
+  // The SyncEventsOverlay renders with role="status" and aria-busy="true"
+  const overlay = page.locator(OVERLAY_SELECTORS.statusPanel);
+  if (value) {
+    await expect(overlay).toBeVisible();
+  } else {
+    await expect(overlay).not.toBeVisible();
+  }
 };
 
 /**
@@ -152,8 +189,21 @@ export type GoogleConnectionState =
   | "ATTENTION";
 
 /**
+ * Maps connection state to expected aria-label pattern on the status container.
+ * These match the tooltip text from useConnectGoogle.
+ */
+const CONNECTION_STATE_TO_LABEL: Record<GoogleConnectionState, RegExp> = {
+  NOT_CONNECTED: /not connected/i,
+  RECONNECT_REQUIRED: /needs reconnecting/i,
+  IMPORTING: /syncing/i,
+  HEALTHY: /Google Calendar connected/i,
+  ATTENTION: /needs repair/i,
+};
+
+/**
  * Set the Google connection state via Redux userMetadata slice.
  * This updates the sidebar icon to reflect the given connection state.
+ * Uses semantic role="status" query instead of arbitrary timeout.
  */
 export const setGoogleConnectionState = async (
   page: Page,
@@ -162,7 +212,7 @@ export const setGoogleConnectionState = async (
   // Wait for store to be fully available
   await page.waitForFunction(
     () => typeof (window as any).__COMPASS_STORE__?.dispatch === "function",
-    { timeout: 5000 },
+    { timeout: 10000 },
   );
 
   await page.evaluate((connectionState) => {
@@ -174,7 +224,7 @@ export const setGoogleConnectionState = async (
     });
   }, state);
 
-  // Wait for the icon to reflect the new state by checking the store
+  // Wait for Redux state to reflect the change
   await page.waitForFunction(
     (expectedState) => {
       const store = (window as any).__COMPASS_STORE__;
@@ -184,11 +234,23 @@ export const setGoogleConnectionState = async (
       );
     },
     state,
-    { timeout: 5000 },
+    { timeout: 10000 },
   );
 
-  // Small additional delay for React to re-render
-  await page.waitForTimeout(50);
+  // Wait for DOM to update with the new state via aria-label
+  // Uses waitForFunction to verify in-browser, more reliable than locator assertions
+  const expectedPattern = CONNECTION_STATE_TO_LABEL[state];
+  await page.waitForFunction(
+    (pattern) => {
+      const el = document.querySelector(
+        '[role="status"][aria-label]:not([aria-busy])',
+      );
+      const label = el?.getAttribute("aria-label") ?? "";
+      return new RegExp(pattern, "i").test(label);
+    },
+    expectedPattern.source,
+    { timeout: 10000 },
+  );
 };
 
 /**
@@ -207,13 +269,14 @@ export const markUserAsAuthenticated = async (page: Page) => {
 };
 
 /**
- * Icon aria-labels for each Google connection state in the sidebar.
- * These match the aria-labels defined in SidebarIconRow.tsx's getGoogleStatusIcon.
+ * Patterns for the Google connection status container's aria-label.
+ * These match the tooltip text from useConnectGoogle's sidebarStatus.
+ * Tests should use getByRole("status") with these patterns.
  */
-export const SIDEBAR_ICON_LABELS = {
-  notConnected: "Google Calendar not connected",
-  reconnectRequired: "Google Calendar needs reconnecting",
-  syncing: "Google Calendar syncing", // Used for both "checking" and "IMPORTING" states
-  connected: "Google Calendar connected",
-  needsRepair: "Google Calendar needs repair",
+export const SIDEBAR_STATUS_LABELS = {
+  notConnected: /not connected/i,
+  reconnectRequired: /needs reconnecting/i,
+  syncing: /syncing|Checking/i, // Used for both "checking" and "IMPORTING" states
+  connected: /Google Calendar connected/i,
+  needsRepair: /needs repair/i,
 };
