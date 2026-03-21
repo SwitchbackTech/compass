@@ -1,11 +1,12 @@
 import { type DependencyList } from "react";
-import { useHotkey } from "@tanstack/react-hotkeys";
+import { type RegisterableHotkey, useHotkey } from "@tanstack/react-hotkeys";
 import { isEditable } from "@web/views/Day/util/day.shortcut.util";
 
 interface Options {
   combination: string[];
   handler?: (e: KeyboardEvent) => void;
   listenWhileEditing?: boolean;
+  /** @deprecated TanStack Hotkeys auto-syncs callbacks, so deps are no longer needed */
   deps?: DependencyList;
   eventType: "keydown" | "keyup";
 }
@@ -44,13 +45,18 @@ export function useKeyboardEvent({
   combination,
   handler,
   listenWhileEditing,
-  deps = [],
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  deps: _deps, // Kept for API compatibility - TanStack auto-syncs callbacks
   eventType = "keyup",
 }: Options) {
   // Convert combination array to TanStack hotkey format
   // Normalize keys like "Control" -> "ctrl", "ArrowRight" -> "arrowright"
-  const hotkeyString = combination.map(normalizeKey).join("+");
+  const hotkeyString = combination
+    .map(normalizeKey)
+    .join("+") as RegisterableHotkey;
 
+  // TanStack Hotkeys automatically syncs callbacks on every render,
+  // so no dependency array is needed - callbacks always have access to latest values
   useHotkey(
     hotkeyString,
     (event) => {
@@ -82,12 +88,9 @@ export function useKeyboardEvent({
       handler(event);
     },
     {
-      keydown: eventType === "keydown",
-      keyup: eventType === "keyup",
+      eventType,
       enabled: true,
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [hotkeyString, handler, listenWhileEditing, ...(deps ?? [])],
   );
 }
 

@@ -85,7 +85,7 @@ describe("SomedayEventForm shortcuts hook", () => {
     });
   });
 
-  test("ctrl+meta+arrowup calls onMigrate with 'up'", async () => {
+  test("mod+arrowup calls onMigrate with 'up'", async () => {
     const modifierKey = getModifierKey();
     const isCtrl = modifierKey === "Control";
 
@@ -112,7 +112,7 @@ describe("SomedayEventForm shortcuts hook", () => {
     });
   });
 
-  test("ctrl+meta+arrowdown calls onMigrate with 'down'", async () => {
+  test("mod+arrowdown calls onMigrate with 'down'", async () => {
     const modifierKey = getModifierKey();
     const isCtrl = modifierKey === "Control";
 
@@ -139,7 +139,7 @@ describe("SomedayEventForm shortcuts hook", () => {
     });
   });
 
-  test("ctrl+meta+arrowright calls onMigrate with 'forward'", async () => {
+  test("mod+arrowright calls onMigrate with 'forward'", async () => {
     const modifierKey = getModifierKey();
     const isCtrl = modifierKey === "Control";
 
@@ -166,7 +166,7 @@ describe("SomedayEventForm shortcuts hook", () => {
     });
   });
 
-  test("ctrl+meta+arrowleft calls onMigrate with 'back'", async () => {
+  test("mod+arrowleft calls onMigrate with 'back'", async () => {
     const modifierKey = getModifierKey();
     const isCtrl = modifierKey === "Control";
 

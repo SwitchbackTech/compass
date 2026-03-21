@@ -59,6 +59,8 @@ export const stopPropagationWrapper =
     callback();
   };
 
+// TanStack Hotkeys automatically syncs callbacks on every render,
+// so callbacks always have access to latest values (no stale closures)
 export const useSomedayFormShortcuts = ({
   event,
   category,
@@ -67,12 +69,11 @@ export const useSomedayFormShortcuts = ({
   onDuplicate,
   onMigrate,
 }: SomedayFormShortcutsProps) => {
-  useHotkey(
-    "delete",
-    stopPropagationWrapper(onDelete),
-    { ...SOMEDAY_HOTKEY_OPTIONS, ignoreInputs: false },
-    [onDelete],
-  );
+  useHotkey("delete", stopPropagationWrapper(onDelete), {
+    ...SOMEDAY_HOTKEY_OPTIONS,
+    ignoreInputs: false,
+  });
+
   useHotkey(
     "enter",
     (keyboardEvent) => {
@@ -89,8 +90,8 @@ export const useSomedayFormShortcuts = ({
       onSubmit();
     },
     SOMEDAY_HOTKEY_OPTIONS,
-    [onSubmit],
   );
+
   useHotkey(
     "mod+enter",
     (keyboardEvent) => {
@@ -99,41 +100,35 @@ export const useSomedayFormShortcuts = ({
       onSubmit();
     },
     SOMEDAY_HOTKEY_OPTIONS,
-    [onSubmit],
   );
 
   useHotkey(
     "meta+d",
     stopPropagationWrapper(onDuplicate),
     SOMEDAY_HOTKEY_OPTIONS,
-    [onDuplicate],
   );
 
   useHotkey(
     "mod+arrowup",
     handleMigration("up", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
-    [event, category, onMigrate],
   );
 
   useHotkey(
     "mod+arrowdown",
     handleMigration("down", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
-    [event, category, onMigrate],
   );
 
   useHotkey(
     "mod+arrowright",
     handleMigration("forward", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
-    [event, category, onMigrate],
   );
 
   useHotkey(
     "mod+arrowleft",
     handleMigration("back", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
-    [event, category, onMigrate],
   );
 };

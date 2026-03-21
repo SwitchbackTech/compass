@@ -2,9 +2,11 @@ import { useHotkey } from "@tanstack/react-hotkeys";
 
 export const useReminderHotkey = (
   callback: () => void,
-  dependencies: unknown[] = [],
+  _dependencies: unknown[] = [],
   enabled = true,
 ) =>
+  // TanStack Hotkeys automatically syncs callbacks on every render,
+  // so callbacks always have access to latest values (no stale closures)
   useHotkey(
     "r",
     (event) => {
@@ -14,5 +16,4 @@ export const useReminderHotkey = (
       callback();
     },
     { enabled },
-    dependencies,
   );

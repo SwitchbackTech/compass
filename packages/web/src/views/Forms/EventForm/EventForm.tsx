@@ -227,6 +227,8 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       setEvent,
     };
 
+    // TanStack Hotkeys automatically syncs callbacks on every render,
+    // so callbacks always have access to latest values (no stale closures)
     useHotkey(
       "delete",
       () => {
@@ -238,7 +240,6 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         onDelete();
       },
       hotkeysOptions,
-      [onDelete, isDraft, onClose],
     );
 
     useHotkey(
@@ -251,7 +252,6 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         onSubmitForm();
       },
       hotkeysOptions,
-      [onSubmitForm],
     );
 
     useHotkey(
@@ -260,7 +260,6 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         onDuplicate?.(event);
       },
       hotkeysOptions,
-      [onDuplicate, event],
     );
 
     useHotkey(
@@ -272,11 +271,10 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       {
         enabled: isFormOpen,
       },
-      [isFormOpen, onSubmitForm],
     );
 
     useHotkey(
-      "ctrl+meta+arrowleft",
+      "mod+arrowleft",
       () => {
         if (isDraft) {
           return;
@@ -287,7 +285,6 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       {
         enabled: isFormOpen,
       },
-      [isFormOpen, isDraft, onConvert],
     );
 
     return (

@@ -361,7 +361,7 @@ describe("SomedayEventForm Hotkeys", () => {
     expect(mockConfirm).not.toHaveBeenCalled();
   });
 
-  it("should call onMigrate when ctrl+meta+left keyboard shortcut is used while ActionsMenu is open", async () => {
+  it("should call onMigrate when mod+left keyboard shortcut is used while ActionsMenu is open", async () => {
     const user = userEvent.setup();
     render(
       <div>
@@ -449,7 +449,7 @@ describe("SomedayEventForm Hotkeys", () => {
     expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
 
-  it("should call onMigrate when ctrl+meta+right keyboard shortcut is used while ActionsMenu is open", async () => {
+  it("should call onMigrate when mod+right keyboard shortcut is used while ActionsMenu is open", async () => {
     const user = userEvent.setup();
     render(
       <div>
