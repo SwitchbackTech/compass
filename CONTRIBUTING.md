@@ -17,7 +17,7 @@ This section provides specific guidelines for AI coding agents working on Compas
 2. **Environment Setup**
 
    ```bash
-   yarn install --frozen-lockfile --network-timeout 300000
+   yarn install --immutable
    cp packages/backend/.env.local.example packages/backend/.env
    yarn dev:web  # Verify frontend works
    ```

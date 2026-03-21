@@ -25,7 +25,7 @@ jobs:
           cache: yarn
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile --network-timeout 300000
+        run: yarn install --immutable
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
