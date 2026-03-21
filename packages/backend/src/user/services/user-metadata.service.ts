@@ -4,9 +4,7 @@ import SupertokensUserMetadata, {
 } from "supertokens-node/recipe/usermetadata";
 import { Resource_Sync } from "@core/types/sync.types";
 import {
-  type GoogleConnectionStatus,
-  type GoogleSyncStatus,
-  type Schema_User,
+  type GoogleConnectionState,
   type UserMetadata,
 } from "@core/types/user.types";
 import dayjs from "@core/util/date/dayjs";
@@ -16,9 +14,7 @@ import { isUsingHttps } from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 type GoogleMetadataAssessment = {
-  hasRefreshToken: boolean;
-  connectionStatus: GoogleConnectionStatus;
-  syncStatus: GoogleSyncStatus;
+  connectionState: GoogleConnectionState;
 };
 
 type GetUserMetadataResponse = {
@@ -41,18 +37,6 @@ class UserMetadataService {
 
     return result.metadata;
   };
-
-  private getGoogleConnectionStatus(
-    user?: Schema_User | null,
-  ): GoogleConnectionStatus {
-    const googleId = user?.google?.googleId;
-    const hasRefreshToken = Boolean(user?.google?.gRefreshToken);
-
-    if (!googleId) return "NOT_CONNECTED";
-    if (!hasRefreshToken) return "RECONNECT_REQUIRED";
-
-    return "CONNECTED";
-  }
 
   private async isGoogleSyncHealthy(userId: string): Promise<boolean> {
     const sync = await getSync({ userId });
@@ -102,50 +86,28 @@ class UserMetadataService {
     const storedMetadata =
       metadata ?? (await this.getStoredUserMetadata(userId));
     const user = await findCompassUserBy("_id", userId);
+    const googleId = user?.google?.googleId;
     const hasRefreshToken = Boolean(user?.google?.gRefreshToken);
-    const connectionStatus = this.getGoogleConnectionStatus(user);
 
-    if (connectionStatus !== "CONNECTED") {
-      return {
-        hasRefreshToken,
-        connectionStatus,
-        syncStatus: "NONE",
-      };
+    if (!googleId) {
+      return { connectionState: "NOT_CONNECTED" };
+    }
+
+    if (!hasRefreshToken) {
+      return { connectionState: "RECONNECT_REQUIRED" };
     }
 
     const importStatus = storedMetadata.sync?.importGCal;
-
     if (importStatus === "IMPORTING" || importStatus === "RESTART") {
-      return {
-        hasRefreshToken,
-        connectionStatus,
-        syncStatus: "REPAIRING",
-      };
+      return { connectionState: "IMPORTING" };
     }
 
     const isHealthy = await this.isGoogleSyncHealthy(userId);
-
     if (isHealthy) {
-      return {
-        hasRefreshToken,
-        connectionStatus,
-        syncStatus: "HEALTHY",
-      };
+      return { connectionState: "HEALTHY" };
     }
 
-    if (importStatus === "ERRORED") {
-      return {
-        hasRefreshToken,
-        connectionStatus,
-        syncStatus: "ATTENTION",
-      };
-    }
-
-    return {
-      hasRefreshToken,
-      connectionStatus,
-      syncStatus: "ATTENTION",
-    };
+    return { connectionState: "ATTENTION" };
   };
 
   /*
@@ -186,30 +148,29 @@ class UserMetadataService {
 
     if (options?.skipAssessment) {
       const user = await findCompassUserBy("_id", userId);
+      const googleId = user?.google?.googleId;
       const hasRefreshToken = Boolean(user?.google?.gRefreshToken);
-      const connectionStatus = this.getGoogleConnectionStatus(user);
+
+      const connectionState: GoogleConnectionState = !googleId
+        ? "NOT_CONNECTED"
+        : !hasRefreshToken
+          ? "RECONNECT_REQUIRED"
+          : (metadata.google?.connectionState ?? "ATTENTION");
 
       return {
         ...metadata,
-        google: {
-          ...metadata.google,
-          hasRefreshToken,
-          connectionStatus,
-          syncStatus: metadata.google?.syncStatus ?? "NONE",
-        },
+        google: { connectionState },
       };
     }
 
-    const google = await this.assessGoogleMetadata(userId, metadata);
+    const { connectionState } = await this.assessGoogleMetadata(
+      userId,
+      metadata,
+    );
 
     return {
       ...metadata,
-      google: {
-        ...metadata.google,
-        hasRefreshToken: google.hasRefreshToken,
-        connectionStatus: google.connectionStatus,
-        syncStatus: google.syncStatus,
-      },
+      google: { connectionState },
     };
   };
 }

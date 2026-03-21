@@ -69,7 +69,7 @@ Want to poke around or self-host?
 
 ```bash
 # Quick start
-yarn install --frozen-lockfile --network-timeout 300000
+yarn install --immutable
 cp packages/backend/.env.local.example packages/backend/.env
 yarn dev:web  # Frontend on http://localhost:9080
 yarn dev:backend # Backend on http://localhost:3000

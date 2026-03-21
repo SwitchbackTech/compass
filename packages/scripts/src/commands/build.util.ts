@@ -64,8 +64,11 @@ export const installDependencies = () => {
   log.info("Installing dependencies...");
 
   shell.cd(`${COMPASS_BUILD_DEV}/node`);
+
+  // Use npm for production install (more reliable across yarn versions)
+  // --loglevel=error suppresses deprecation warnings from transitive dependencies
   shell.exec(
-    "yarn install --production --ignore-scripts",
+    "npm install --omit=dev --ignore-scripts --loglevel=error",
     function (code: number) {
       if (code !== 0) {
         log.error("Exiting cuz error during compiliation");

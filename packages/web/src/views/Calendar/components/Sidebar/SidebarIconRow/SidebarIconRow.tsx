@@ -27,6 +27,11 @@ import {
   RightIconGroup,
 } from "@web/views/Calendar/components/Sidebar/styled";
 
+/**
+ * Returns the icon for the current Google connection state.
+ * Icons are decorative (aria-hidden) since the parent status container
+ * provides the accessible name via aria-label.
+ */
 const getGoogleStatusIcon = ({
   icon,
 }: {
@@ -41,15 +46,15 @@ const getGoogleStatusIcon = ({
     case "LinkBreakIcon":
       return (
         <LinkBreakIcon
-          aria-label="Google Calendar needs reconnecting"
-          color={theme.color.status.warning}
+          aria-hidden="true"
+          color={theme.color.status.error}
           size={24}
         />
       );
     case "LinkIcon":
       return (
         <LinkIcon
-          aria-label="Google Calendar connected"
+          aria-hidden="true"
           color={theme.color.text.darkPlaceholder}
           size={24}
         />
@@ -57,7 +62,7 @@ const getGoogleStatusIcon = ({
     case "SpinnerIcon":
       return (
         <SpinnerIcon
-          aria-label="Google Calendar syncing"
+          aria-hidden="true"
           color={theme.color.status.info}
           size={24}
         />
@@ -65,7 +70,7 @@ const getGoogleStatusIcon = ({
     case "CloudWarningIcon":
       return (
         <CloudWarningIcon
-          aria-label="Google Calendar needs repair"
+          aria-hidden="true"
           color={theme.color.status.warning}
           size={24}
         />
@@ -73,7 +78,7 @@ const getGoogleStatusIcon = ({
     case "CloudArrowUpIcon":
       return (
         <CloudArrowUpIcon
-          aria-label="Google Calendar not connected"
+          aria-hidden="true"
           color={theme.color.text.darkPlaceholder}
           size={24}
         />
@@ -155,13 +160,19 @@ export const SidebarIconRow = () => {
             }
           />
         </TooltipWrapper>
-        <TooltipWrapper
-          description={sidebarStatus.tooltip}
-          disabled={sidebarStatus.isDisabled}
-          onClick={sidebarStatus.onSelect}
+        <div
+          role="status"
+          aria-live="polite"
+          aria-label={sidebarStatus.tooltip}
         >
-          {getGoogleStatusIcon({ icon: sidebarStatus.icon })}
-        </TooltipWrapper>
+          <TooltipWrapper
+            description={sidebarStatus.tooltip}
+            disabled={sidebarStatus.isDisabled}
+            onClick={sidebarStatus.onSelect}
+          >
+            {getGoogleStatusIcon({ icon: sidebarStatus.icon })}
+          </TooltipWrapper>
+        </div>
         {gCalImport.importing ? (
           <TooltipWrapper description="Importing your calendar events in the background">
             <SpinnerIcon />

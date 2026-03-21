@@ -190,7 +190,7 @@ describe("supertokens.middleware", () => {
       ]);
     });
 
-    it("wires AccountLinking.shouldDoAutomaticAccountLinking email logic", async () => {
+    it("wires AccountLinking.shouldDoAutomaticAccountLinking to disable automatic linking", async () => {
       initSupertokens();
 
       const shouldDoAutomaticAccountLinking = (AccountLinking.init as jest.Mock)
@@ -201,16 +201,14 @@ describe("supertokens.middleware", () => {
         shouldRequireVerification?: boolean;
       }>;
 
-      await expect(shouldDoAutomaticAccountLinking({})).resolves.toEqual({
-        shouldAutomaticallyLink: false,
-      });
+      const disabled = { shouldAutomaticallyLink: false };
 
+      await expect(shouldDoAutomaticAccountLinking({})).resolves.toEqual(
+        disabled,
+      );
       await expect(
         shouldDoAutomaticAccountLinking({ email: "a@example.com" }),
-      ).resolves.toEqual({
-        shouldAutomaticallyLink: true,
-        shouldRequireVerification: true,
-      });
+      ).resolves.toEqual(disabled);
     });
 
     it("wires EmailPassword name validation", async () => {

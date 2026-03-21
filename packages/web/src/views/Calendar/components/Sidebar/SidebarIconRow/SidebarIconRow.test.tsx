@@ -58,8 +58,7 @@ describe("SidebarIconRow", () => {
         userMetadata: {
           current: {
             google: {
-              connectionStatus: "NOT_CONNECTED",
-              syncStatus: "NONE",
+              connectionState: "NOT_CONNECTED",
             },
           },
         },
@@ -72,7 +71,9 @@ describe("SidebarIconRow", () => {
       }),
     ).toBeEnabled();
     expect(
-      screen.getByLabelText("Google Calendar not connected"),
+      screen.getByRole("status", {
+        name: "Google Calendar not connected. Click to connect.",
+      }),
     ).toBeInTheDocument();
   });
 
@@ -82,8 +83,7 @@ describe("SidebarIconRow", () => {
         userMetadata: {
           current: {
             google: {
-              connectionStatus: "RECONNECT_REQUIRED",
-              syncStatus: "NONE",
+              connectionState: "RECONNECT_REQUIRED",
             },
           },
         },
@@ -96,7 +96,9 @@ describe("SidebarIconRow", () => {
       }),
     ).toBeEnabled();
     expect(
-      screen.getByLabelText("Google Calendar needs reconnecting"),
+      screen.getByRole("status", {
+        name: "Google Calendar needs reconnecting. Click to reconnect.",
+      }),
     ).toBeInTheDocument();
   });
 
@@ -106,8 +108,7 @@ describe("SidebarIconRow", () => {
         userMetadata: {
           current: {
             google: {
-              connectionStatus: "CONNECTED",
-              syncStatus: "HEALTHY",
+              connectionState: "HEALTHY",
             },
           },
         },
@@ -120,18 +121,19 @@ describe("SidebarIconRow", () => {
       }),
     ).toBeDisabled();
     expect(
-      screen.getByLabelText("Google Calendar connected"),
+      screen.getByRole("status", {
+        name: "Google Calendar connected.",
+      }),
     ).toBeInTheDocument();
   });
 
-  it("disables the sidebar action while Google Calendar is repairing", () => {
+  it("disables the sidebar action while Google Calendar is importing", () => {
     render(<SidebarIconRow />, {
       state: {
         userMetadata: {
           current: {
             google: {
-              connectionStatus: "CONNECTED",
-              syncStatus: "REPAIRING",
+              connectionState: "IMPORTING",
             },
           },
         },
@@ -144,7 +146,9 @@ describe("SidebarIconRow", () => {
       }),
     ).toBeDisabled();
     expect(
-      screen.getByLabelText("Google Calendar syncing"),
+      screen.getByRole("status", {
+        name: "Google Calendar is syncing in the background.",
+      }),
     ).toBeInTheDocument();
   });
 
@@ -154,8 +158,7 @@ describe("SidebarIconRow", () => {
         userMetadata: {
           current: {
             google: {
-              connectionStatus: "CONNECTED",
-              syncStatus: "ATTENTION",
+              connectionState: "ATTENTION",
             },
           },
         },

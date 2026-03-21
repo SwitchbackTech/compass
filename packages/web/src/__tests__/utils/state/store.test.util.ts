@@ -126,7 +126,6 @@ export const createInitialState = (
         importing: false,
         importResults: null,
         pendingLocalEventsSynced: null,
-        isImportPending: false,
         importError: null,
       },
       importLatest: {

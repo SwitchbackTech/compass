@@ -161,8 +161,7 @@ describe("NowCmdPalette", () => {
           userMetadata: {
             current: {
               google: {
-                connectionStatus: "CONNECTED",
-                syncStatus: "HEALTHY",
+                connectionState: "HEALTHY",
               },
             },
           },
@@ -181,8 +180,7 @@ describe("NowCmdPalette", () => {
           userMetadata: {
             current: {
               google: {
-                connectionStatus: "RECONNECT_REQUIRED",
-                syncStatus: "NONE",
+                connectionState: "RECONNECT_REQUIRED",
               },
             },
           },
@@ -197,15 +195,14 @@ describe("NowCmdPalette", () => {
       await waitFor(() => expect(mockLogin).toHaveBeenCalled());
     });
 
-    it("disables the generic action while repairing", async () => {
+    it("disables the generic action while importing", async () => {
       render(<NowCmdPalette />, {
         state: {
           ...initialState,
           userMetadata: {
             current: {
               google: {
-                connectionStatus: "CONNECTED",
-                syncStatus: "REPAIRING",
+                connectionState: "IMPORTING",
               },
             },
           },
@@ -225,8 +222,7 @@ describe("NowCmdPalette", () => {
           userMetadata: {
             current: {
               google: {
-                connectionStatus: "CONNECTED",
-                syncStatus: "ATTENTION",
+                connectionState: "ATTENTION",
               },
             },
           },

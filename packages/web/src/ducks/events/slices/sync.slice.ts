@@ -27,31 +27,18 @@ export const importGCalSlice = createAsyncSlice<
   undefined,
   undefined,
   {
-    importing: boolean;
     importResults: ImportResults | null;
     pendingLocalEventsSynced: number | null;
-    isImportPending: boolean;
     importError: string | null;
   }
 >({
   name: "importGCal",
   initialState: {
-    importing: false,
     importResults: null,
     pendingLocalEventsSynced: null,
-    isImportPending: false,
     importError: null,
   },
   reducers: {
-    importing: (state, action: PayloadAction<boolean>) => {
-      state.importing = action.payload;
-    },
-    setIsImportPending: (state, action: PayloadAction<boolean>) => {
-      state.isImportPending = action.payload;
-      if (action.payload) {
-        state.importError = null;
-      }
-    },
     setLocalEventsSynced: (state, action: PayloadAction<number>) => {
       state.pendingLocalEventsSynced = action.payload;
     },
@@ -62,8 +49,6 @@ export const importGCalSlice = createAsyncSlice<
         calendarsCount?: number;
       }>,
     ) => {
-      state.importing = false;
-      state.isImportPending = false;
       state.importError = null;
       state.importResults = {
         ...action.payload,
@@ -72,8 +57,6 @@ export const importGCalSlice = createAsyncSlice<
       state.pendingLocalEventsSynced = null;
     },
     setImportError: (state, action: PayloadAction<string>) => {
-      state.importing = false;
-      state.isImportPending = false;
       state.importError = action.payload;
       state.importResults = null;
       state.pendingLocalEventsSynced = null;

@@ -25,6 +25,18 @@ export const prepareOAuthTestPage = async (page: Page) => {
       });
     }
 
+    // Block user metadata requests to prevent overwriting test state.
+    // The app fetches /api/user/metadata on mount, which would dispatch
+    // userMetadata/set({}) and overwrite the test's Redux state.
+    // Return 401 to trigger userMetadata/clear instead of set({}).
+    if (url.includes("/user/metadata")) {
+      return route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "unauthorized" }),
+      });
+    }
+
     // Mock all other API calls
     return route.fulfill({
       status: 200,
@@ -51,10 +63,28 @@ export const waitForAppReady = async (page: Page) => {
     () => typeof (window as any).__COMPASS_STORE__?.dispatch === "function",
     { timeout: 10000 },
   );
+
+  // Wait for all network requests to complete.
+  // This is critical because sessionInit() triggers async session checks
+  // that can call handleSessionMissing() → clear() and overwrite test state.
+  await page.waitForLoadState("networkidle");
+
+  // Wait for user metadata fetch to settle (not "loading").
+  // This prevents race conditions between API responses and test state changes.
+  await page.waitForFunction(
+    () => {
+      const store = (window as any).__COMPASS_STORE__;
+      const status = store?.getState()?.userMetadata?.status;
+      // Wait until status is "idle" or "loaded" (not "loading")
+      return status !== "loading";
+    },
+    { timeout: 10000 },
+  );
 };
 
 /**
  * Set the authenticating state via Redux (triggers OAuth overlay when true).
+ * Uses semantic role="status" query instead of arbitrary timeout.
  */
 export const setIsSyncing = async (page: Page, value: boolean) => {
   await page.evaluate((syncValue) => {
@@ -67,43 +97,15 @@ export const setIsSyncing = async (page: Page, value: boolean) => {
       store.dispatch({ type: "auth/resetAuth" });
     }
   }, value);
-  // Small delay to let React process the state change
-  await page.waitForTimeout(50);
-};
 
-/**
- * Set the awaitingImportResults state in Redux (triggers import phase when true).
- */
-export const setIsImportPending = async (page: Page, value: boolean) => {
-  await page.evaluate((isImportPendingValue) => {
-    const store = (window as any).__COMPASS_STORE__;
-    if (store) {
-      store.dispatch({
-        type: "async/importGCal/setIsImportPending",
-        payload: isImportPendingValue,
-      });
-    }
-  }, value);
-  await page.waitForTimeout(50);
-};
-
-/**
- * Set the importing state in Redux store (triggers import phase overlay when true).
- */
-export const setImporting = async (page: Page, value: boolean) => {
-  await page.evaluate((importValue) => {
-    const store = (window as any).__COMPASS_STORE__;
-    if (store) {
-      // Dispatch the importing action from importGCalSlice
-      // The createAsyncSlice helper prefixes the slice name with "async/"
-      store.dispatch({
-        type: "async/importGCal/importing",
-        payload: importValue,
-      });
-    }
-  }, value);
-  // Small delay to let React process the state change
-  await page.waitForTimeout(50);
+  // Wait for overlay visibility using semantic query (replaces waitForTimeout)
+  // The SyncEventsOverlay renders with role="status" and aria-busy="true"
+  const overlay = page.locator(OVERLAY_SELECTORS.statusPanel);
+  if (value) {
+    await expect(overlay).toBeVisible();
+  } else {
+    await expect(overlay).not.toBeVisible();
+  }
 };
 
 /**
@@ -117,13 +119,12 @@ export const OVERLAY_SELECTORS = {
 };
 
 /**
- * Text content for different overlay phases.
+ * Text content for OAuth overlay phase.
+ * Note: Import phase overlay was removed - import now happens in background.
  */
 export const OVERLAY_TEXT = {
   oauthTitle: "Complete Google sign-in...",
   oauthMessage: "Please complete authorization in the popup window",
-  importTitle: "Importing your Google Calendar events...",
-  importMessage: "Please hang tight while we sync your calendar",
 };
 
 /**
@@ -146,18 +147,16 @@ export const expectBodyLocked = async (page: Page, locked: boolean) => {
 
 /**
  * Wait for overlay phase to match expected value (with retry).
+ * Note: Import phase overlay was removed - import now happens in background.
  */
 export const expectOverlayPhase = async (
   page: Page,
-  phase: "oauth" | "import" | "none",
+  phase: "oauth" | "none",
 ) => {
   if (phase === "oauth") {
     await expect(page.getByText(OVERLAY_TEXT.oauthTitle)).toBeVisible();
-  } else if (phase === "import") {
-    await expect(page.getByText(OVERLAY_TEXT.importTitle)).toBeVisible();
   } else {
     await expect(page.getByText(OVERLAY_TEXT.oauthTitle)).not.toBeVisible();
-    await expect(page.getByText(OVERLAY_TEXT.importTitle)).not.toBeVisible();
   }
 };
 
@@ -172,20 +171,112 @@ export const expectOAuthOverlayVisible = async (page: Page) => {
 };
 
 /**
- * Assert that the import phase overlay is visible.
- */
-export const expectImportOverlayVisible = async (page: Page) => {
-  await expect(page.getByText(OVERLAY_TEXT.importTitle)).toBeVisible();
-  await expect(page.getByText(OVERLAY_TEXT.importMessage)).toBeVisible();
-  await expect(page.locator(OVERLAY_SELECTORS.spinner)).toBeVisible();
-  await expectBodyLocked(page, true);
-};
-
-/**
  * Assert that no overlay is visible.
  */
 export const expectNoOverlay = async (page: Page) => {
   await expect(page.getByText(OVERLAY_TEXT.oauthTitle)).not.toBeVisible();
-  await expect(page.getByText(OVERLAY_TEXT.importTitle)).not.toBeVisible();
   await expectBodyLocked(page, false);
+};
+
+/**
+ * Google connection states that can be set via Redux.
+ */
+export type GoogleConnectionState =
+  | "NOT_CONNECTED"
+  | "RECONNECT_REQUIRED"
+  | "IMPORTING"
+  | "HEALTHY"
+  | "ATTENTION";
+
+/**
+ * Maps connection state to expected aria-label pattern on the status container.
+ * These match the tooltip text from useConnectGoogle.
+ */
+const CONNECTION_STATE_TO_LABEL: Record<GoogleConnectionState, RegExp> = {
+  NOT_CONNECTED: /not connected/i,
+  RECONNECT_REQUIRED: /needs reconnecting/i,
+  IMPORTING: /syncing/i,
+  HEALTHY: /Google Calendar connected/i,
+  ATTENTION: /needs repair/i,
+};
+
+/**
+ * Set the Google connection state via Redux userMetadata slice.
+ * This updates the sidebar icon to reflect the given connection state.
+ * Uses semantic role="status" query instead of arbitrary timeout.
+ */
+export const setGoogleConnectionState = async (
+  page: Page,
+  state: GoogleConnectionState,
+) => {
+  // Wait for store to be fully available
+  await page.waitForFunction(
+    () => typeof (window as any).__COMPASS_STORE__?.dispatch === "function",
+    { timeout: 10000 },
+  );
+
+  await page.evaluate((connectionState) => {
+    const store = (window as any).__COMPASS_STORE__;
+    if (!store) return;
+    store.dispatch({
+      type: "userMetadata/set",
+      payload: { google: { connectionState } },
+    });
+  }, state);
+
+  // Wait for Redux state to reflect the change
+  await page.waitForFunction(
+    (expectedState) => {
+      const store = (window as any).__COMPASS_STORE__;
+      return (
+        store?.getState()?.userMetadata?.current?.google?.connectionState ===
+        expectedState
+      );
+    },
+    state,
+    { timeout: 10000 },
+  );
+
+  // Wait for DOM to update with the new state via aria-label
+  // Uses waitForFunction to verify in-browser, more reliable than locator assertions
+  const expectedPattern = CONNECTION_STATE_TO_LABEL[state];
+  await page.waitForFunction(
+    (pattern) => {
+      const el = document.querySelector(
+        '[role="status"][aria-label]:not([aria-busy])',
+      );
+      const label = el?.getAttribute("aria-label") ?? "";
+      return new RegExp(pattern, "i").test(label);
+    },
+    expectedPattern.source,
+    { timeout: 10000 },
+  );
+};
+
+/**
+ * Mark user as having previously authenticated (sets localStorage flag).
+ * This is required for the "checking" state to appear when metadata is loading.
+ */
+export const markUserAsAuthenticated = async (page: Page) => {
+  await page.evaluate(() => {
+    // Must match STORAGE_KEYS.AUTH from storage.constants.ts
+    const AUTH_STATE_KEY = "compass.auth";
+    const existing = localStorage.getItem(AUTH_STATE_KEY);
+    const state = existing ? JSON.parse(existing) : {};
+    state.hasAuthenticated = true;
+    localStorage.setItem(AUTH_STATE_KEY, JSON.stringify(state));
+  });
+};
+
+/**
+ * Patterns for the Google connection status container's aria-label.
+ * These match the tooltip text from useConnectGoogle's sidebarStatus.
+ * Tests should use getByRole("status") with these patterns.
+ */
+export const SIDEBAR_STATUS_LABELS = {
+  notConnected: /not connected/i,
+  reconnectRequired: /needs reconnecting/i,
+  syncing: /syncing|Checking/i, // Used for both "checking" and "IMPORTING" states
+  connected: /Google Calendar connected/i,
+  needsRepair: /needs repair/i,
 };

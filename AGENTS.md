@@ -4,7 +4,7 @@ Primary instructions for AI agents and developers in the Compass monorepo.
 
 ## Quick Start
 
-1. `yarn install --frozen-lockfile --network-timeout 300000` (takes ~3.5 min, do not cancel)
+1. `yarn install --immutable` (Do not cancel; `httpTimeout` is set in `.yarnrc.yml`)
 2. `cp packages/backend/.env.local.example packages/backend/.env`
 3. `yarn dev:web` (frontend on http://localhost:9080/)
 
@@ -69,7 +69,7 @@ Example: `import { foo } from '@compass/core'` not `import { foo } from '../../.
 
 ### Initial Setup
 
-- Install dependencies: `yarn install --frozen-lockfile --network-timeout 300000`
+- Install dependencies: `yarn install --immutable` (`httpTimeout` is set in `.yarnrc.yml`)
   - Takes ~3.5 minutes. Set timeout to 10+ minutes.
 - Copy environment template: `cp packages/backend/.env.local.example packages/backend/.env`
 

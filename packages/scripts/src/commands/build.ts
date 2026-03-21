@@ -52,7 +52,7 @@ const buildWeb = async (options: Options_Cli) => {
 
   log.info("Compiling web files...");
   shell.cd(`${COMPASS_ROOT_DEV}/packages/web`);
-  shell.exec(`webpack --mode=production --node-env=${environment}`);
+  shell.exec(`yarn webpack --mode=production --node-env=${environment}`);
 
   log.success(`Done building web files.`);
   log.tip(`
