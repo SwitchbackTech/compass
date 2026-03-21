@@ -23,8 +23,8 @@ packages/**/yarn.lock
 .idea/
 .mcp.json
 .vscode/
+.yarn/
 .yarn-cache/
-.yarn/install-state.gz
 
 build/
 buildcache/
