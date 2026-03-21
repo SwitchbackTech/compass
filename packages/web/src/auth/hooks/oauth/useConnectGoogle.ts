@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { type GoogleConnectionState } from "@core/types/user.types";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
+import { useSession } from "@web/auth/hooks/session/useSession";
 import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
 import { SyncApi } from "@web/common/apis/sync.api";
 import {
@@ -142,6 +143,7 @@ const getGoogleUiConfig = (
 
 export const useConnectGoogle = () => {
   const dispatch = useAppDispatch();
+  const { authenticated } = useSession();
   const connectionState = useAppSelector(
     selectGoogleConnectionState as (state: RootState) => GoogleConnectionState,
   );
@@ -149,7 +151,7 @@ export const useConnectGoogle = () => {
     selectUserMetadataStatus as (state: RootState) => UserMetadataStatus,
   );
   const { login } = useGoogleAuth({
-    shouldTryLinkingWithSessionUser: true,
+    shouldTryLinkingWithSessionUser: authenticated,
     prompt: "consent",
   });
 

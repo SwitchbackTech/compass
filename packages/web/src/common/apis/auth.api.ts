@@ -7,6 +7,7 @@ const AuthApi = {
     const response = await CompassApi.post<Result_Auth_Compass>(
       `/signinup`,
       data,
+      { headers: { rid: "thirdparty" } },
     );
 
     return response.data;

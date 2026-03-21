@@ -1,7 +1,9 @@
+import { toast } from "react-toastify";
 import { isGooglePopupClosedError } from "@web/auth/google/google-oauth-error.util";
 import { authenticate } from "@web/auth/google/google.auth.util";
 import { useGoogleAuthWithOverlay } from "@web/auth/hooks/oauth/useGoogleAuthWithOverlay";
 import { useCompleteAuthentication } from "@web/auth/hooks/useCompleteAuthentication";
+import { toastDefaultOptions } from "@web/common/constants/toast.constants";
 import {
   SESSION_EXPIRED_TOAST_ID,
   dismissErrorToast,
@@ -57,7 +59,19 @@ export function useGoogleAuth(
         };
         const authResult = await authenticate(authPayload);
         if (!authResult.success) {
+          toast.error(
+            "Failed to connect Google Calendar. Please try again.",
+            toastDefaultOptions,
+          );
           handleAuthError(dispatch, authResult.error);
+          return;
+        }
+        if (authResult.data !== undefined && authResult.data.status !== "OK") {
+          toast.error(
+            "Could not link Google Calendar to your account. Please try again.",
+            toastDefaultOptions,
+          );
+          dispatch(resetAuth());
           return;
         }
         const email = authResult.data?.user?.emails?.[0];

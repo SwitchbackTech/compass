@@ -64,13 +64,17 @@ CompassApi.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // Don't sign out for auth endpoint failures — let the caller handle them
+    const isAuthEndpoint = requestUrl?.includes("/signinup");
+
     if (
-      status === Status.GONE ||
-      status === Status.NOT_FOUND ||
-      status === Status.UNAUTHORIZED
+      !isAuthEndpoint &&
+      (status === Status.GONE ||
+        status === Status.NOT_FOUND ||
+        status === Status.UNAUTHORIZED)
     ) {
       await signOut(status);
-    } else {
+    } else if (!isAuthEndpoint) {
       console.error(error);
     }
 

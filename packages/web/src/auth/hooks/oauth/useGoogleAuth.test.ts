@@ -8,7 +8,7 @@ import { useSession } from "@web/auth/hooks/session/useSession";
 import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
 import { markUserAsAuthenticated } from "@web/auth/state/auth.state.util";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
-import { type SignInUpInput } from "@web/components/oauth/ouath.types";
+import { SignInUpInput } from "@web/components/oauth/ouath.types";
 
 // Mock dependencies
 jest.mock("@web/auth/google/google.auth.util");
@@ -285,6 +285,59 @@ describe("useGoogleAuth", () => {
       // Should not proceed with auth flow
       expect(mockMarkUserAsAuthenticated).not.toHaveBeenCalled();
       expect(mockSetAuthenticated).not.toHaveBeenCalled();
+
+      // Should show error toast so user knows what went wrong
+      const { toast } = jest.requireMock("react-toastify");
+      expect(toast.error).toHaveBeenCalledWith(
+        "Failed to connect Google Calendar. Please try again.",
+        expect.anything(),
+      );
+    });
+
+    it("shows error toast and resets auth when SuperTokens returns non-OK status", async () => {
+      mockAuthenticate.mockResolvedValue({
+        success: true,
+        data: { status: "SIGN_IN_UP_NOT_ALLOWED" } as never,
+      });
+
+      let onSuccessCallback:
+        | ((data: SignInUpInput) => Promise<void>)
+        | undefined;
+
+      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
+        onSuccessCallback = onSuccess;
+        return { login: mockLogin, loading: false, data: null };
+      });
+
+      renderHook(() => useGoogleAuth());
+
+      if (onSuccessCallback) {
+        await onSuccessCallback({
+          clientType: "web",
+          thirdPartyId: "google",
+          redirectURIInfo: {
+            redirectURIOnProviderDashboard: "",
+            redirectURIQueryParams: {
+              code: "test-auth-code",
+              scope: "email profile",
+              state: undefined,
+            },
+          },
+        });
+      }
+
+      await waitFor(() => {
+        expect(mockAuthenticate).toHaveBeenCalled();
+      });
+
+      expect(mockMarkUserAsAuthenticated).not.toHaveBeenCalled();
+      expect(mockSetAuthenticated).not.toHaveBeenCalled();
+
+      const { toast } = jest.requireMock("react-toastify");
+      expect(toast.error).toHaveBeenCalledWith(
+        "Could not link Google Calendar to your account. Please try again.",
+        expect.anything(),
+      );
     });
 
     it("does not proceed when authenticate throws an unexpected error", async () => {
