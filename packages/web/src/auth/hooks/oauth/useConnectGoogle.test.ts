@@ -70,7 +70,6 @@ describe("useConnectGoogle", () => {
 
     expect(mockUseGoogleAuth).toHaveBeenCalledWith({
       prompt: "consent",
-      shouldTryLinkingWithSessionUser: true,
     });
     expect(result.current.commandAction.label).toBe(
       "Checking Google Calendar…",
@@ -99,7 +98,6 @@ describe("useConnectGoogle", () => {
 
     expect(mockUseGoogleAuth).toHaveBeenCalledWith({
       prompt: "consent",
-      shouldTryLinkingWithSessionUser: true,
     });
     expect(result.current.commandAction.label).toBe("Connect Google Calendar");
     expect(result.current.commandAction.isDisabled).toBe(false);
@@ -126,7 +124,6 @@ describe("useConnectGoogle", () => {
 
     expect(mockUseGoogleAuth).toHaveBeenCalledWith({
       prompt: "consent",
-      shouldTryLinkingWithSessionUser: true,
     });
     expect(result.current.commandAction.label).toBe(
       "Google Calendar Connected",
@@ -154,7 +151,6 @@ describe("useConnectGoogle", () => {
 
     expect(mockUseGoogleAuth).toHaveBeenCalledWith({
       prompt: "consent",
-      shouldTryLinkingWithSessionUser: true,
     });
     expect(result.current.commandAction.label).toBe(
       "Reconnect Google Calendar",
@@ -185,7 +181,6 @@ describe("useConnectGoogle", () => {
 
     expect(mockUseGoogleAuth).toHaveBeenCalledWith({
       prompt: "consent",
-      shouldTryLinkingWithSessionUser: true,
     });
     expect(result.current.commandAction.label).toBe("Syncing Google Calendar…");
     expect(result.current.commandAction.isDisabled).toBe(true);
@@ -211,7 +206,6 @@ describe("useConnectGoogle", () => {
 
     expect(mockUseGoogleAuth).toHaveBeenCalledWith({
       prompt: "consent",
-      shouldTryLinkingWithSessionUser: true,
     });
     expect(result.current.commandAction.label).toBe("Repair Google Calendar");
     expect(result.current.commandAction.isDisabled).toBe(false);
@@ -257,7 +251,6 @@ describe("useConnectGoogle", () => {
 
     expect(mockUseGoogleAuth).toHaveBeenCalledWith({
       prompt: "consent",
-      shouldTryLinkingWithSessionUser: true,
     });
     expect(result.current.commandAction.label).toBe("Connect Google Calendar");
     expect(result.current.commandAction.isDisabled).toBe(false);
@@ -282,7 +275,6 @@ describe("useConnectGoogle", () => {
 
     expect(mockUseGoogleAuth).toHaveBeenCalledWith({
       prompt: "consent",
-      shouldTryLinkingWithSessionUser: true,
     });
     expect(result.current.commandAction.label).toBe(
       "Reconnect Google Calendar",
@@ -309,7 +301,6 @@ describe("useConnectGoogle", () => {
 
     expect(mockUseGoogleAuth).toHaveBeenCalledWith({
       prompt: "consent",
-      shouldTryLinkingWithSessionUser: true,
     });
     expect(result.current.commandAction.label).toBe("Connect Google Calendar");
     expect(result.current.sidebarStatus.icon).toBe("CloudArrowUpIcon");

@@ -36,13 +36,12 @@ const resetAuthState = (dispatch: AppDispatch) => {
 
 export function useGoogleAuth(
   options: {
-    shouldTryLinkingWithSessionUser?: boolean;
     prompt?: "consent" | "none" | "select_account";
   } = {},
 ) {
   const dispatch = useAppDispatch();
   const completeAuthentication = useCompleteAuthentication();
-  const { shouldTryLinkingWithSessionUser, prompt } = options;
+  const { prompt } = options;
 
   const googleLogin = useGoogleAuthWithOverlay({
     prompt,
@@ -55,7 +54,6 @@ export function useGoogleAuth(
       try {
         const authPayload: SignInUpInput = {
           ...data,
-          shouldTryLinkingWithSessionUser,
         };
         const authResult = await authenticate(authPayload);
         if (!authResult.success) {

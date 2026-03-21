@@ -54,15 +54,8 @@ export const initSupertokens = () => {
     framework: "express",
     recipeList: [
       AccountLinking.init({
-        shouldDoAutomaticAccountLinking: async (newAccountInfo) => {
-          if (!newAccountInfo.email) {
-            return { shouldAutomaticallyLink: false };
-          }
-
-          return {
-            shouldAutomaticallyLink: true,
-            shouldRequireVerification: true,
-          };
+        shouldDoAutomaticAccountLinking: () => {
+          return Promise.resolve({ shouldAutomaticallyLink: false });
         },
       }),
       // see added endpoints
