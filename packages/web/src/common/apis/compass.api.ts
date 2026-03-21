@@ -41,6 +41,11 @@ CompassApi.interceptors.response.use(
   async (error: AxiosError) => {
     const status = error?.response?.status;
     const requestUrl = error?.config?.url;
+    const isSignInUpClientError =
+      requestUrl?.includes("/signinup") &&
+      (status === Status.BAD_REQUEST ||
+        status === Status.UNAUTHORIZED ||
+        status === Status.FORBIDDEN);
 
     if (status === Status.REDUX_REFRESH_NEEDED) {
       window.location.reload();
@@ -61,6 +66,10 @@ CompassApi.interceptors.response.use(
       getApiErrorCode(error) === GOOGLE_REVOKED
     ) {
       handleGoogleRevoked();
+      return Promise.reject(error);
+    }
+
+    if (isSignInUpClientError) {
       return Promise.reject(error);
     }
 

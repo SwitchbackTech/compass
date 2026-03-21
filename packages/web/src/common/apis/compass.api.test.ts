@@ -136,6 +136,23 @@ describe("CompassApi interceptor auth handling", () => {
     expect(assignMock).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
   });
 
+  it("does not log or force sign out for expected /signinup denials", async () => {
+    for (const status of [
+      Status.BAD_REQUEST,
+      Status.UNAUTHORIZED,
+      Status.FORBIDDEN,
+    ]) {
+      jest.clearAllMocks();
+      await triggerErrorResponse(status, "/signinup");
+
+      expect(console.error).not.toHaveBeenCalled();
+      expect(window.alert).not.toHaveBeenCalled();
+      expect(toast.error).not.toHaveBeenCalled();
+      expect(signOut).not.toHaveBeenCalled();
+      expect(assignMock).not.toHaveBeenCalled();
+    }
+  });
+
   it("does not enqueue duplicate session-expired toasts when already active", async () => {
     (toast.isActive as jest.Mock)
       .mockReturnValueOnce(false)
