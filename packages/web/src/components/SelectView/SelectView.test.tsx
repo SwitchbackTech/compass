@@ -1,4 +1,3 @@
-import { act } from "react";
 import { MemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor, within } from "@testing-library/react";
@@ -81,9 +80,7 @@ describe("SelectView", () => {
       renderWithRouter(<SelectView />);
 
       const button = screen.getByRole("button");
-      await act(async () => {
-        user.click(button);
-      });
+      await user.click(button);
 
       await waitFor(() => {
         const dropdown = screen.getByTestId("view-select-dropdown");
@@ -154,9 +151,7 @@ describe("SelectView", () => {
       const button = screen.getByRole("button");
       expect(button).toHaveAttribute("aria-expanded", "false");
 
-      await act(async () => {
-        user.click(button);
-      });
+      await user.click(button);
 
       await waitFor(() => {
         expect(button).toHaveAttribute("aria-expanded", "true");
@@ -169,18 +164,14 @@ describe("SelectView", () => {
       renderWithRouter(<SelectView />);
 
       const button = screen.getByRole("button");
-      await act(async () => {
-        await user.click(button);
-      });
+      await user.click(button);
 
       await waitFor(() => {
         expect(screen.getByText("Now")).toBeInTheDocument();
       });
 
       // Click outside the dropdown
-      await act(async () => {
-        await user.click(document.body);
-      });
+      await user.click(document.body);
 
       await waitFor(() => {
         expect(screen.queryByText("Now")).not.toBeInTheDocument();
@@ -193,9 +184,7 @@ describe("SelectView", () => {
       renderWithRouter(<SelectView />);
 
       const button = screen.getByRole("button");
-      await act(async () => {
-        await user.click(button);
-      });
+      await user.click(button);
 
       await waitFor(() => {
         const dropdown = screen.getByTestId("view-select-dropdown");
@@ -203,9 +192,7 @@ describe("SelectView", () => {
         expect(button).toHaveAttribute("aria-expanded", "true");
       });
 
-      await act(async () => {
-        await user.keyboard("{Escape}");
-      });
+      await user.keyboard("{Escape}");
 
       await waitFor(() => {
         expect(
@@ -220,9 +207,7 @@ describe("SelectView", () => {
       renderWithRouter(<SelectView />, ROOT_ROUTES.NOW);
 
       const button = screen.getByRole("button");
-      await act(async () => {
-        user.click(button);
-      });
+      await user.click(button);
 
       await waitFor(() => {
         const nowOption = screen.getByRole("option", { name: /now/i });
@@ -242,9 +227,7 @@ describe("SelectView", () => {
       renderWithRouter(<SelectView />);
 
       const button = screen.getByRole("button");
-      await act(async () => {
-        user.click(button);
-      });
+      await user.click(button);
 
       await waitFor(() => {
         const dropdown = screen.getByTestId("view-select-dropdown");
@@ -263,9 +246,7 @@ describe("SelectView", () => {
       renderWithRouter(<SelectView />);
 
       const button = screen.getByRole("button");
-      await act(async () => {
-        user.click(button);
-      });
+      await user.click(button);
 
       await waitFor(() => {
         const dropdown = screen.getByTestId("view-select-dropdown");
@@ -275,9 +256,7 @@ describe("SelectView", () => {
       const dropdown = screen.getByTestId("view-select-dropdown");
       const withinDropdown = within(dropdown);
       const nowOption = withinDropdown.getByRole("option", { name: /now/i });
-      await act(async () => {
-        await user.click(nowOption);
-      });
+      await user.click(nowOption);
 
       expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.NOW);
       expect(mockNavigate).toHaveBeenCalledTimes(1);
@@ -288,9 +267,7 @@ describe("SelectView", () => {
       renderWithRouter(<SelectView />);
 
       const button = screen.getByRole("button");
-      await act(async () => {
-        user.click(button);
-      });
+      await user.click(button);
 
       await waitFor(() => {
         const dropdown = screen.getByTestId("view-select-dropdown");
@@ -300,9 +277,7 @@ describe("SelectView", () => {
       const dropdown = screen.getByTestId("view-select-dropdown");
       const withinDropdown = within(dropdown);
       const dayOption = withinDropdown.getByRole("option", { name: /day/i });
-      await act(async () => {
-        await user.click(dayOption);
-      });
+      await user.click(dayOption);
 
       expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
       expect(mockNavigate).toHaveBeenCalledTimes(1);
@@ -313,9 +288,7 @@ describe("SelectView", () => {
       renderWithRouter(<SelectView />);
 
       const button = screen.getByRole("button");
-      await act(async () => {
-        user.click(button);
-      });
+      await user.click(button);
 
       await waitFor(() => {
         const dropdown = screen.getByTestId("view-select-dropdown");
@@ -325,9 +298,7 @@ describe("SelectView", () => {
       const dropdown = screen.getByTestId("view-select-dropdown");
       const withinDropdown = within(dropdown);
       const weekOption = withinDropdown.getByRole("option", { name: /week/i });
-      await act(async () => {
-        await user.click(weekOption);
-      });
+      await user.click(weekOption);
 
       expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.WEEK);
       expect(mockNavigate).toHaveBeenCalledTimes(1);
@@ -338,18 +309,14 @@ describe("SelectView", () => {
       renderWithRouter(<SelectView />);
 
       const button = screen.getByRole("button");
-      await act(async () => {
-        user.click(button);
-      });
+      await user.click(button);
 
       await waitFor(() => {
         expect(screen.getByText("Now")).toBeInTheDocument();
       });
 
       const nowOption = screen.getByRole("option", { name: /now/i });
-      await act(async () => {
-        user.click(nowOption);
-      });
+      await user.click(nowOption);
 
       await waitFor(() => {
         expect(screen.queryByText("Now")).not.toBeInTheDocument();
@@ -364,9 +331,7 @@ describe("SelectView", () => {
       renderWithRouter(<SelectView />);
 
       const button = screen.getByRole("button");
-      await act(async () => {
-        user.click(button);
-      });
+      await user.click(button);
 
       await waitFor(() => {
         const nowOption = screen.getByRole("option", { name: /now/i });
@@ -382,9 +347,7 @@ describe("SelectView", () => {
       renderWithRouter(<SelectView />);
 
       const button = screen.getByRole("button");
-      await act(async () => {
-        user.click(button);
-      });
+      await user.click(button);
 
       await waitFor(() => {
         const dayOption = screen.getByRole("option", { name: /day/i });
@@ -400,9 +363,7 @@ describe("SelectView", () => {
       renderWithRouter(<SelectView />);
 
       const button = screen.getByRole("button");
-      await act(async () => {
-        user.click(button);
-      });
+      await user.click(button);
 
       await waitFor(() => {
         const weekOption = screen.getByRole("option", { name: /week/i });
@@ -420,9 +381,7 @@ describe("SelectView", () => {
       renderWithRouter(<SelectView />, ROOT_ROUTES.WEEK);
 
       const button = screen.getByRole("button");
-      await act(async () => {
-        await user.click(button);
-      });
+      await user.click(button);
 
       await waitFor(() => {
         expect(screen.getByTestId("view-select-dropdown")).toBeInTheDocument();
@@ -433,9 +392,7 @@ describe("SelectView", () => {
       weekOption.focus();
 
       // Press ArrowDown - should wrap to Now (index 0)
-      await act(async () => {
-        await user.keyboard("{ArrowDown}");
-      });
+      await user.keyboard("{ArrowDown}");
 
       await waitFor(() => {
         const nowOption = screen.getByRole("option", { name: /now/i });
@@ -449,9 +406,7 @@ describe("SelectView", () => {
       renderWithRouter(<SelectView />, ROOT_ROUTES.NOW);
 
       const button = screen.getByRole("button");
-      await act(async () => {
-        await user.click(button);
-      });
+      await user.click(button);
 
       await waitFor(() => {
         expect(screen.getByTestId("view-select-dropdown")).toBeInTheDocument();
@@ -462,9 +417,7 @@ describe("SelectView", () => {
       nowOption.focus();
 
       // Press ArrowUp - should wrap to Week (index 2)
-      await act(async () => {
-        await user.keyboard("{ArrowUp}");
-      });
+      await user.keyboard("{ArrowUp}");
 
       await waitFor(() => {
         const weekOption = screen.getByRole("option", { name: /week/i });
@@ -478,9 +431,7 @@ describe("SelectView", () => {
       renderWithRouter(<SelectView />, ROOT_ROUTES.WEEK);
 
       const button = screen.getByRole("button");
-      await act(async () => {
-        await user.click(button);
-      });
+      await user.click(button);
 
       await waitFor(() => {
         expect(screen.getByTestId("view-select-dropdown")).toBeInTheDocument();
@@ -491,18 +442,14 @@ describe("SelectView", () => {
       weekOption.focus();
 
       // Navigate to Day option (Week -> Now -> Day)
-      await act(async () => {
-        await user.keyboard("{ArrowDown}");
-      });
+      await user.keyboard("{ArrowDown}");
 
       await waitFor(() => {
         const nowOption = screen.getByRole("option", { name: /now/i });
         expect(nowOption.className).toContain("ring-1");
       });
 
-      await act(async () => {
-        await user.keyboard("{ArrowDown}");
-      });
+      await user.keyboard("{ArrowDown}");
 
       await waitFor(() => {
         const dayOption = screen.getByRole("option", { name: /day/i });
@@ -510,9 +457,7 @@ describe("SelectView", () => {
       });
 
       // Press Enter to select Day
-      await act(async () => {
-        await user.keyboard("{Enter}");
-      });
+      await user.keyboard("{Enter}");
 
       await waitFor(() => {
         expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
@@ -524,9 +469,7 @@ describe("SelectView", () => {
       renderWithRouter(<SelectView />, ROOT_ROUTES.WEEK);
 
       const button = screen.getByRole("button");
-      await act(async () => {
-        await user.click(button);
-      });
+      await user.click(button);
 
       await waitFor(() => {
         expect(screen.getByTestId("view-select-dropdown")).toBeInTheDocument();
@@ -537,14 +480,10 @@ describe("SelectView", () => {
       weekOption.focus();
 
       // Navigate to Now option
-      await act(async () => {
-        await user.keyboard("{ArrowDown}");
-      });
+      await user.keyboard("{ArrowDown}");
 
       // Press Space to select Now
-      await act(async () => {
-        await user.keyboard(" ");
-      });
+      await user.keyboard(" ");
 
       await waitFor(() => {
         expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.NOW);
@@ -556,9 +495,7 @@ describe("SelectView", () => {
       renderWithRouter(<SelectView />, ROOT_ROUTES.DAY);
 
       const button = screen.getByRole("button");
-      await act(async () => {
-        await user.click(button);
-      });
+      await user.click(button);
 
       await waitFor(() => {
         const dropdown = screen.getByTestId("view-select-dropdown");
@@ -574,9 +511,7 @@ describe("SelectView", () => {
       expect(dayOption).toHaveClass("bg-fg-primary");
 
       // Pressing ArrowDown from Day should move to Week
-      await act(async () => {
-        await user.keyboard("{ArrowDown}");
-      });
+      await user.keyboard("{ArrowDown}");
 
       await waitFor(() => {
         const weekOption = screen.getByRole("option", { name: /week/i });
@@ -589,9 +524,7 @@ describe("SelectView", () => {
       renderWithRouter(<SelectView />, ROOT_ROUTES.WEEK);
 
       const button = screen.getByRole("button");
-      await act(async () => {
-        await user.click(button);
-      });
+      await user.click(button);
 
       await waitFor(() => {
         expect(screen.getByTestId("view-select-dropdown")).toBeInTheDocument();
@@ -602,9 +535,7 @@ describe("SelectView", () => {
       weekOption.focus();
 
       // Start at Week (index 2), press ArrowDown to wrap to Now (index 0)
-      await act(async () => {
-        await user.keyboard("{ArrowDown}");
-      });
+      await user.keyboard("{ArrowDown}");
 
       await waitFor(() => {
         const nowOption = screen.getByRole("option", { name: /now/i });
@@ -617,9 +548,7 @@ describe("SelectView", () => {
       renderWithRouter(<SelectView />, ROOT_ROUTES.NOW);
 
       const button = screen.getByRole("button");
-      await act(async () => {
-        await user.click(button);
-      });
+      await user.click(button);
 
       await waitFor(() => {
         expect(screen.getByTestId("view-select-dropdown")).toBeInTheDocument();
@@ -630,9 +559,7 @@ describe("SelectView", () => {
       nowOption.focus();
 
       // Start at Now (index 0), press ArrowUp to wrap to Week (index 2)
-      await act(async () => {
-        await user.keyboard("{ArrowUp}");
-      });
+      await user.keyboard("{ArrowUp}");
 
       await waitFor(() => {
         const weekOption = screen.getByRole("option", { name: /week/i });

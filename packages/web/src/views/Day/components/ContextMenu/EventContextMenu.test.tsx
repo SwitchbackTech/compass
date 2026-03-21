@@ -1,5 +1,4 @@
 import { ObjectId } from "bson";
-import { act } from "react";
 import { screen, waitFor } from "@testing-library/react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
@@ -30,9 +29,7 @@ describe("EventContextMenu", () => {
       name: "Test Event",
     });
 
-    await act(async () => {
-      await user.pointer({ target: eventButton, keys: "[MouseRight]" });
-    });
+    await user.pointer({ target: eventButton, keys: "[MouseRight]" });
 
     await waitFor(() => {
       expect(screen.getByText("Delete Event")).toBeInTheDocument();
@@ -45,9 +42,7 @@ describe("EventContextMenu", () => {
     const eventButton = await screen.findByRole("button", {
       name: "Test Event",
     });
-    await act(async () => {
-      await user.pointer({ target: eventButton, keys: "[MouseRight]" });
-    });
+    await user.pointer({ target: eventButton, keys: "[MouseRight]" });
 
     await waitFor(() => {
       const deleteMenuItem = screen.getByText("Delete Event");
@@ -61,9 +56,7 @@ describe("EventContextMenu", () => {
     const eventButton = await screen.findByRole("button", {
       name: "Test Event",
     });
-    await act(async () => {
-      await user.pointer({ target: eventButton, keys: "[MouseRight]" });
-    });
+    await user.pointer({ target: eventButton, keys: "[MouseRight]" });
 
     await waitFor(() => {
       expect(screen.getByText("Delete Event")).toBeInTheDocument();
@@ -71,9 +64,7 @@ describe("EventContextMenu", () => {
 
     const timedAgendas = screen.getByTestId("timed-agendas");
 
-    await act(async () => {
-      await user.click(timedAgendas);
-    });
+    await user.click(timedAgendas);
 
     await waitFor(() => {
       expect(screen.queryByText("Delete Event")).not.toBeInTheDocument();
@@ -86,17 +77,13 @@ describe("EventContextMenu", () => {
     const eventButton = await screen.findByRole("button", {
       name: "Test Event",
     });
-    await act(async () => {
-      await user.pointer({ target: eventButton, keys: "[MouseRight]" });
-    });
+    await user.pointer({ target: eventButton, keys: "[MouseRight]" });
 
     await waitFor(() => {
       expect(screen.getByText("Delete Event")).toBeInTheDocument();
     });
 
-    await act(async () => {
-      await user.keyboard("{Escape}");
-    });
+    await user.keyboard("{Escape}");
 
     await waitFor(() => {
       expect(screen.queryByText("Delete Event")).not.toBeInTheDocument();
@@ -110,9 +97,7 @@ describe("EventContextMenu", () => {
 
     const timedAgendas = screen.getByTestId("timed-agendas");
 
-    await act(async () => {
-      await user.pointer({ target: timedAgendas, keys: "[MouseRight]" });
-    });
+    await user.pointer({ target: timedAgendas, keys: "[MouseRight]" });
 
     expect(screen.queryByText("Delete Event")).not.toBeInTheDocument();
   });
@@ -139,9 +124,7 @@ describe("EventContextMenu", () => {
       name: "First Event",
     });
 
-    await act(async () => {
-      await user.pointer({ target: firstEventButton, keys: "[MouseRight]" });
-    });
+    await user.pointer({ target: firstEventButton, keys: "[MouseRight]" });
 
     await waitFor(() => {
       expect(screen.getByText("Delete Event")).toBeInTheDocument();
@@ -149,9 +132,7 @@ describe("EventContextMenu", () => {
 
     const deleteButton = screen.getByText("Delete Event");
 
-    await act(async () => {
-      await user.click(deleteButton);
-    });
+    await user.click(deleteButton);
 
     expect(mockDispatchFn).toHaveBeenCalledWith(
       expect.objectContaining({

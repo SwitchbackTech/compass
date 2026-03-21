@@ -29,10 +29,9 @@ describe("SignUpForm", () => {
       renderSignUpForm();
 
       const emailInput = screen.getByLabelText(/email/i);
-      await act(async () => {
-        await user.click(emailInput);
-        await user.type(emailInput, "invalid");
-      });
+      await user.click(emailInput);
+
+      await user.type(emailInput, "invalid");
 
       expect(
         screen.queryByText(/please enter a valid email address/i),
@@ -43,10 +42,9 @@ describe("SignUpForm", () => {
       const user = userEvent.setup();
       renderSignUpForm();
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/email/i), "invalid-email");
-        await user.tab();
-      });
+      await user.type(screen.getByLabelText(/email/i), "invalid-email");
+
+      await user.tab();
 
       expect(
         screen.getByText(/please enter a valid email address/i),
@@ -57,10 +55,9 @@ describe("SignUpForm", () => {
       const user = userEvent.setup();
       renderSignUpForm();
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/password/i), "short");
-        await user.tab();
-      });
+      await user.type(screen.getByLabelText(/password/i), "short");
+
+      await user.tab();
 
       expect(
         screen.getByText(/password must be at least 8 characters/i),
@@ -72,19 +69,17 @@ describe("SignUpForm", () => {
       renderSignUpForm();
 
       const passwordInput = screen.getByLabelText(/password/i);
-      await act(async () => {
-        await user.type(passwordInput, "short");
-        await user.tab();
-      });
+      await user.type(passwordInput, "short");
+
+      await user.tab();
 
       expect(
         screen.getByText(/password must be at least 8 characters/i),
       ).toBeInTheDocument();
 
-      await act(async () => {
-        await user.click(passwordInput);
-        await user.type(passwordInput, "er123456");
-      });
+      await user.click(passwordInput);
+
+      await user.type(passwordInput, "er123456");
 
       expect(
         screen.queryByText(/password must be at least 8 characters/i),
@@ -110,11 +105,11 @@ describe("SignUpForm", () => {
       const user = userEvent.setup();
       renderSignUpForm();
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/name/i), "Alex");
-        await user.type(screen.getByLabelText(/email/i), "invalid");
-        await user.type(screen.getByLabelText(/password/i), "short");
-      });
+      await user.type(screen.getByLabelText(/name/i), "Alex");
+
+      await user.type(screen.getByLabelText(/email/i), "invalid");
+
+      await user.type(screen.getByLabelText(/password/i), "short");
 
       const form = screen.getByLabelText(/name/i).closest("form");
       act(() => {
@@ -128,12 +123,13 @@ describe("SignUpForm", () => {
       const user = userEvent.setup();
       renderSignUpForm();
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/name/i), "Alex Smith");
-        await user.type(screen.getByLabelText(/email/i), "alex@example.com");
-        await user.type(screen.getByLabelText(/password/i), "securepass123");
-        await user.click(screen.getByRole("button", { name: /sign up/i }));
-      });
+      await user.type(screen.getByLabelText(/name/i), "Alex Smith");
+
+      await user.type(screen.getByLabelText(/email/i), "alex@example.com");
+
+      await user.type(screen.getByLabelText(/password/i), "securepass123");
+
+      await user.click(screen.getByRole("button", { name: /sign up/i }));
 
       expect(mockOnSubmit).toHaveBeenCalledWith({
         name: "Alex Smith",
@@ -146,15 +142,10 @@ describe("SignUpForm", () => {
       const user = userEvent.setup();
       renderSignUpForm();
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/name/i), "  Alex  ");
-        await user.type(
-          screen.getByLabelText(/email/i),
-          "  Alex@Example.COM  ",
-        );
-        await user.type(screen.getByLabelText(/password/i), "password123");
-        await user.click(screen.getByRole("button", { name: /sign up/i }));
-      });
+      await user.type(screen.getByLabelText(/name/i), "  Alex  ");
+      await user.type(screen.getByLabelText(/email/i), "  Alex@Example.COM  ");
+      await user.type(screen.getByLabelText(/password/i), "password123");
+      await user.click(screen.getByRole("button", { name: /sign up/i }));
 
       expect(mockOnSubmit).toHaveBeenCalledWith({
         name: "Alex",
@@ -178,11 +169,11 @@ describe("SignUpForm", () => {
       const user = userEvent.setup();
       renderSignUpForm();
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/name/i), "Alex");
-        await user.type(screen.getByLabelText(/email/i), "alex@example.com");
-        await user.type(screen.getByLabelText(/password/i), "password123");
-      });
+      await user.type(screen.getByLabelText(/name/i), "Alex");
+
+      await user.type(screen.getByLabelText(/email/i), "alex@example.com");
+
+      await user.type(screen.getByLabelText(/password/i), "password123");
 
       const submitButton = screen.getByRole("button", {
         name: /sign up/i,
@@ -196,9 +187,7 @@ describe("SignUpForm", () => {
       const user = userEvent.setup();
       renderSignUpForm();
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/name/i), "Alex");
-      });
+      await user.type(screen.getByLabelText(/name/i), "Alex");
 
       expect(mockOnNameChange).toHaveBeenCalledWith("A");
       expect(mockOnNameChange).toHaveBeenCalledWith("Al");

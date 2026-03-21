@@ -1,4 +1,3 @@
-import { act } from "react";
 import type { PropsWithChildren } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor, within } from "@testing-library/react";
@@ -61,13 +60,11 @@ afterAll(() => {
 });
 
 describe("Sidebar: Display without State", () => {
-  it("renders sidebar with sections and icons when no events exist", async () => {
-    await act(() =>
-      render(<Sidebar {...mockProps} />, {
-        state: {},
-        wrapper: SidebarTestProviders,
-      }),
-    );
+  it("renders sidebar with sections and icons when no events exist", () => {
+    render(<Sidebar {...mockProps} />, {
+      state: {},
+      wrapper: SidebarTestProviders,
+    });
 
     expect(
       screen.getByRole("heading", { name: /this week/i }),
@@ -89,12 +86,10 @@ describe("Sidebar: Display without State", () => {
 
 describe("Sidebar: Display with State", () => {
   it("displays pre-existing someday event", async () => {
-    await act(() =>
-      render(<Sidebar {...mockProps} />, {
-        state: preloadedState,
-        wrapper: SidebarTestProviders,
-      }),
-    );
+    render(<Sidebar {...mockProps} />, {
+      state: preloadedState,
+      wrapper: SidebarTestProviders,
+    });
 
     await waitFor(() => {
       expect(

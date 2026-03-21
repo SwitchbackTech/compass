@@ -50,9 +50,7 @@ describe("useZodForm", () => {
     const user = userEvent.setup();
     render(<TestForm />);
 
-    await act(async () => {
-      await user.type(screen.getByLabelText(/email/i), "invalid");
-    });
+    await user.type(screen.getByLabelText(/email/i), "invalid");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
@@ -60,10 +58,9 @@ describe("useZodForm", () => {
     const user = userEvent.setup();
     render(<TestForm />);
 
-    await act(async () => {
-      await user.type(screen.getByLabelText(/email/i), "invalid");
-      await user.tab();
-    });
+    await user.type(screen.getByLabelText(/email/i), "invalid");
+
+    await user.tab();
 
     await waitFor(() => {
       expect(screen.getByRole("alert")).toHaveTextContent(/invalid email/i);
@@ -75,19 +72,17 @@ describe("useZodForm", () => {
     render(<TestForm />);
 
     const emailInput = screen.getByLabelText(/email/i);
-    await act(async () => {
-      await user.type(emailInput, "invalid");
-      await user.tab();
-    });
+    await user.type(emailInput, "invalid");
+
+    await user.tab();
 
     await waitFor(() => {
       expect(screen.getByRole("alert")).toHaveTextContent(/invalid email/i);
     });
 
-    await act(async () => {
-      await user.click(emailInput);
-      await user.type(emailInput, "@example.com");
-    });
+    await user.click(emailInput);
+
+    await user.type(emailInput, "@example.com");
 
     await waitFor(() => {
       expect(screen.queryByRole("alert")).not.toBeInTheDocument();
@@ -117,10 +112,9 @@ describe("useZodForm", () => {
     const user = userEvent.setup();
     render(<TestForm />);
 
-    await act(async () => {
-      await user.type(screen.getByLabelText(/email/i), "test@example.com");
-      await user.type(screen.getByLabelText(/name/i), "Alex");
-    });
+    await user.type(screen.getByLabelText(/email/i), "test@example.com");
+
+    await user.type(screen.getByLabelText(/name/i), "Alex");
 
     expect(screen.getByRole("button", { name: /submit/i })).not.toBeDisabled();
   });

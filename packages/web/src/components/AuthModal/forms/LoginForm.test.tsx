@@ -27,10 +27,9 @@ describe("LogInForm", () => {
       renderSignInForm();
 
       const emailInput = screen.getByLabelText(/email/i);
-      await act(async () => {
-        await user.click(emailInput);
-        await user.type(emailInput, "invalid");
-      });
+      await user.click(emailInput);
+
+      await user.type(emailInput, "invalid");
 
       expect(
         screen.queryByText(/please enter a valid email address/i),
@@ -41,10 +40,9 @@ describe("LogInForm", () => {
       const user = userEvent.setup();
       renderSignInForm();
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/email/i), "invalid-email");
-        await user.tab();
-      });
+      await user.type(screen.getByLabelText(/email/i), "invalid-email");
+
+      await user.tab();
 
       await waitFor(() => {
         expect(
@@ -58,10 +56,9 @@ describe("LogInForm", () => {
       renderSignInForm();
 
       const emailInput = screen.getByLabelText(/email/i);
-      await act(async () => {
-        await user.type(emailInput, "invalid");
-        await user.tab();
-      });
+      await user.type(emailInput, "invalid");
+
+      await user.tab();
 
       await waitFor(() => {
         expect(
@@ -69,10 +66,9 @@ describe("LogInForm", () => {
         ).toBeInTheDocument();
       });
 
-      await act(async () => {
-        await user.click(emailInput);
-        await user.type(emailInput, "@example.com");
-      });
+      await user.click(emailInput);
+
+      await user.type(emailInput, "@example.com");
 
       await waitFor(() => {
         expect(
@@ -112,11 +108,11 @@ describe("LogInForm", () => {
       const user = userEvent.setup();
       renderSignInForm();
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/email/i), "test@example.com");
-        await user.type(screen.getByLabelText(/password/i), "password123");
-        await user.click(screen.getByRole("button", { name: /^log in$/i }));
-      });
+      await user.type(screen.getByLabelText(/email/i), "test@example.com");
+
+      await user.type(screen.getByLabelText(/password/i), "password123");
+
+      await user.click(screen.getByRole("button", { name: /^log in$/i }));
 
       await waitFor(() => {
         expect(mockOnSubmit).toHaveBeenCalledWith({
@@ -130,11 +126,11 @@ describe("LogInForm", () => {
       const user = userEvent.setup();
       renderSignInForm();
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/email/i), "Test@Example.COM");
-        await user.type(screen.getByLabelText(/password/i), "password123");
-        await user.click(screen.getByRole("button", { name: /^log in$/i }));
-      });
+      await user.type(screen.getByLabelText(/email/i), "Test@Example.COM");
+
+      await user.type(screen.getByLabelText(/password/i), "password123");
+
+      await user.click(screen.getByRole("button", { name: /^log in$/i }));
 
       await waitFor(() => {
         expect(mockOnSubmit).toHaveBeenCalledWith({
@@ -157,10 +153,9 @@ describe("LogInForm", () => {
       const user = userEvent.setup();
       renderSignInForm();
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/email/i), "test@example.com");
-        await user.type(screen.getByLabelText(/password/i), "password123");
-      });
+      await user.type(screen.getByLabelText(/email/i), "test@example.com");
+
+      await user.type(screen.getByLabelText(/password/i), "password123");
 
       const submitButton = screen.getByRole("button", { name: /^log in$/i });
       expect(submitButton).not.toBeDisabled();
@@ -172,11 +167,9 @@ describe("LogInForm", () => {
       const user = userEvent.setup();
       renderSignInForm();
 
-      await act(async () => {
-        await user.click(
-          screen.getByRole("button", { name: /forgot password/i }),
-        );
-      });
+      await user.click(
+        screen.getByRole("button", { name: /forgot password/i }),
+      );
 
       expect(mockOnForgotPassword).toHaveBeenCalled();
     });

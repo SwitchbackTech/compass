@@ -1,4 +1,3 @@
-import { act } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
@@ -55,14 +54,9 @@ describe("TaskListHeader", () => {
     });
     expect(headingButton).toHaveTextContent(expectedInitialDate);
 
-    // Click the next day button
     const nextButton = await screen.findByRole("button", { name: "Next day" });
-    await act(async () => {
-      await user.click(nextButton);
-    });
-
-    // Verify heading updates to next day
     const expectedNextDate = format(createUtcDate(testDate, 1));
+    await user.click(nextButton);
     await waitFor(() => {
       expect(headingButton).toHaveTextContent(expectedNextDate);
     });
@@ -79,16 +73,11 @@ describe("TaskListHeader", () => {
     });
     expect(headingButton).toHaveTextContent(expectedInitialDate);
 
-    // Click the previous day button
     const prevButton = await screen.findByRole("button", {
       name: "Previous day",
     });
-    await act(async () => {
-      await user.click(prevButton);
-    });
-
-    // Verify heading updates to previous day
     const expectedPrevDate = format(createUtcDate(testDate, -1));
+    await user.click(prevButton);
     await waitFor(() => {
       expect(headingButton).toHaveTextContent(expectedPrevDate);
     });
@@ -106,28 +95,20 @@ describe("TaskListHeader", () => {
       name: "Previous day",
     });
 
-    // Click next day twice
-    await act(async () => {
-      await user.click(nextButton);
-    });
     const expectedAfterFirstNext = format(createUtcDate(testDate, 1));
+    await user.click(nextButton);
     await waitFor(() => {
       expect(headingButton).toHaveTextContent(expectedAfterFirstNext);
     });
 
-    await act(async () => {
-      await user.click(nextButton);
-    });
     const expectedAfterSecondNext = format(createUtcDate(testDate, 2));
+    await user.click(nextButton);
     await waitFor(() => {
       expect(headingButton).toHaveTextContent(expectedAfterSecondNext);
     });
 
-    // Click previous day once
-    await act(async () => {
-      await user.click(prevButton);
-    });
     const expectedAfterPrev = format(createUtcDate(testDate, 1));
+    await user.click(prevButton);
     await waitFor(() => {
       expect(headingButton).toHaveTextContent(expectedAfterPrev);
     });
@@ -146,13 +127,8 @@ describe("TaskListHeader", () => {
     // Verify initial date is end of January
     expect(headingButton).toHaveTextContent(initialDate);
 
-    // Click next day to go to February
-    await act(async () => {
-      await user.click(nextButton);
-    });
-
-    // Verify heading shows February 1st
     const nextDate = format(createUtcDate(testDate, 1));
+    await user.click(nextButton);
     await waitFor(() => {
       expect(headingButton).toHaveTextContent(nextDate);
     });
@@ -193,13 +169,8 @@ describe("TaskListHeader", () => {
     // Verify initial heading shows the test date
     expect(headingButton).toHaveTextContent(expectedInitialDate);
 
-    // Click the go to today button
-    await act(async () => {
-      await user.click(goToTodayButton);
-    });
-
-    // Verify heading updates to today's date
     const expectedTodayDate = format(createUtcDate(new Date()));
+    await user.click(goToTodayButton);
     await waitFor(() => {
       expect(headingButton).toHaveTextContent(expectedTodayDate);
     });
@@ -216,14 +187,8 @@ describe("TaskListHeader", () => {
 
     expect(goToTodayButton).toBeInTheDocument();
 
-    // Click the go to today button
-    await act(async () => {
-      await user.click(goToTodayButton);
-    });
-
-    // Wait for the navigation to complete and state to update
+    await user.click(goToTodayButton);
     await waitFor(() => {
-      // The button should no longer be in the view
       expect(
         screen.queryByRole("button", { name: "Go to today" }),
       ).not.toBeInTheDocument();

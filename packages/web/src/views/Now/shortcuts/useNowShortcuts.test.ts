@@ -27,7 +27,7 @@ describe("useNowShortcuts", () => {
 
   describe("global navigation shortcuts", () => {
     it("should navigate to Day when 'Escape' is pressed", async () => {
-      await act(() => renderHook(useNowShortcuts));
+      renderHook(useNowShortcuts);
 
       pressKey("Escape");
 
@@ -35,7 +35,7 @@ describe("useNowShortcuts", () => {
     });
 
     it("should not handle unknown keys", async () => {
-      await act(() => renderHook(useNowShortcuts));
+      renderHook(useNowShortcuts);
 
       pressKey("x");
 

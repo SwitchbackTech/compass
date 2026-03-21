@@ -162,9 +162,7 @@ describe("AuthModal", () => {
         screen.queryByRole("heading", { name: /hey, welcome back/i }),
       ).not.toBeInTheDocument();
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
       await flushEffects();
 
       await waitFor(() => {
@@ -178,9 +176,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
       await flushEffects();
 
       await waitFor(() => {
@@ -193,9 +189,7 @@ describe("AuthModal", () => {
       const backdrop = screen.getByRole("presentation");
       expect(backdrop).toBeInTheDocument();
 
-      await act(async () => {
-        await user.click(backdrop);
-      });
+      await user.click(backdrop);
       await flushEffects();
 
       await waitFor(() => {
@@ -209,9 +203,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
       await flushEffects();
 
       await waitFor(() => {
@@ -224,9 +216,7 @@ describe("AuthModal", () => {
       const backdrop = screen.getByRole("presentation");
       backdrop.focus();
 
-      await act(async () => {
-        await user.keyboard("{Escape}");
-      });
+      await user.keyboard("{Escape}");
       await flushEffects();
 
       await waitFor(() => {
@@ -242,9 +232,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         const signUpSwitch = screen.getByRole("button", { name: /^sign up$/i });
@@ -256,9 +244,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(
@@ -266,9 +252,7 @@ describe("AuthModal", () => {
         ).toBeInTheDocument();
       });
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /^sign up$/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /^sign up$/i }));
 
       await waitFor(() => {
         expect(
@@ -284,9 +268,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       // Login form - no Name field
       await waitFor(() => {
@@ -295,9 +277,7 @@ describe("AuthModal", () => {
       });
 
       // Switch to sign up
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /^sign up$/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /^sign up$/i }));
 
       await waitFor(() => {
         expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
@@ -310,9 +290,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
@@ -324,9 +302,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         // Look for the submit button by type - CTA is "login"
@@ -340,18 +316,15 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
       });
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/email/i), "invalid-email");
-        await user.tab();
-      });
+      await user.type(screen.getByLabelText(/email/i), "invalid-email");
+
+      await user.tab();
 
       await waitFor(() => {
         expect(
@@ -364,9 +337,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(
@@ -374,11 +345,9 @@ describe("AuthModal", () => {
         ).toBeInTheDocument();
       });
 
-      await act(async () => {
-        await user.click(
-          screen.getByRole("button", { name: /forgot password/i }),
-        );
-      });
+      await user.click(
+        screen.getByRole("button", { name: /forgot password/i }),
+      );
 
       await waitFor(() => {
         expect(
@@ -391,20 +360,18 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
         expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
       });
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/email/i), "test@example.com");
-        await user.type(screen.getByLabelText(/password/i), "password123");
-        await user.click(screen.getByRole("button", { name: /^log in$/i }));
-      });
+      await user.type(screen.getByLabelText(/email/i), "test@example.com");
+
+      await user.type(screen.getByLabelText(/password/i), "password123");
+
+      await user.click(screen.getByRole("button", { name: /^log in$/i }));
 
       await waitFor(() => {
         expect(mockCompleteAuthentication).toHaveBeenCalledWith(
@@ -421,9 +388,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(
@@ -431,9 +396,7 @@ describe("AuthModal", () => {
         ).toBeInTheDocument();
       });
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /^sign up$/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /^sign up$/i }));
 
       await waitFor(() => {
         expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
@@ -446,9 +409,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(
@@ -456,18 +417,15 @@ describe("AuthModal", () => {
         ).toBeInTheDocument();
       });
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /^sign up$/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /^sign up$/i }));
 
       await waitFor(() => {
         expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
       });
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/password/i), "short");
-        await user.tab();
-      });
+      await user.type(screen.getByLabelText(/password/i), "short");
+
+      await user.tab();
 
       await waitFor(() => {
         expect(
@@ -480,9 +438,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(
@@ -490,9 +446,7 @@ describe("AuthModal", () => {
         ).toBeInTheDocument();
       });
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /^sign up$/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /^sign up$/i }));
 
       await waitFor(() => {
         expect(
@@ -500,9 +454,7 @@ describe("AuthModal", () => {
         ).toBeInTheDocument();
       });
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/name/i), "Alex");
-      });
+      await user.type(screen.getByLabelText(/name/i), "Alex");
 
       await waitFor(() => {
         expect(
@@ -517,9 +469,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(
@@ -527,9 +477,7 @@ describe("AuthModal", () => {
         ).toBeInTheDocument();
       });
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /^sign up$/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /^sign up$/i }));
 
       await waitFor(() => {
         expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
@@ -537,12 +485,13 @@ describe("AuthModal", () => {
         expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
       });
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/name/i), "Alex");
-        await user.type(screen.getByLabelText(/email/i), "test@example.com");
-        await user.type(screen.getByLabelText(/password/i), "password123");
-        await user.click(screen.getByRole("button", { name: /^sign up$/i }));
-      });
+      await user.type(screen.getByLabelText(/name/i), "Alex");
+
+      await user.type(screen.getByLabelText(/email/i), "test@example.com");
+
+      await user.type(screen.getByLabelText(/password/i), "password123");
+
+      await user.click(screen.getByRole("button", { name: /^sign up$/i }));
 
       await waitFor(() => {
         expect(mockCompleteAuthentication).toHaveBeenCalledWith(
@@ -559,9 +508,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(
@@ -569,11 +516,9 @@ describe("AuthModal", () => {
         ).toBeInTheDocument();
       });
 
-      await act(async () => {
-        await user.click(
-          screen.getByRole("button", { name: /forgot password/i }),
-        );
-      });
+      await user.click(
+        screen.getByRole("button", { name: /forgot password/i }),
+      );
 
       await waitFor(() => {
         expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
@@ -587,9 +532,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(
@@ -597,22 +540,18 @@ describe("AuthModal", () => {
         ).toBeInTheDocument();
       });
 
-      await act(async () => {
-        await user.click(
-          screen.getByRole("button", { name: /forgot password/i }),
-        );
-      });
+      await user.click(
+        screen.getByRole("button", { name: /forgot password/i }),
+      );
 
       await waitFor(() => {
         expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
       });
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/email/i), "test@example.com");
-        await user.click(
-          screen.getByRole("button", { name: /send reset link/i }),
-        );
-      });
+      await user.type(screen.getByLabelText(/email/i), "test@example.com");
+      await user.click(
+        screen.getByRole("button", { name: /send reset link/i }),
+      );
 
       await waitFor(() => {
         expect(screen.getByText(/check your email/i)).toBeInTheDocument();
@@ -628,9 +567,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(
@@ -638,22 +575,18 @@ describe("AuthModal", () => {
         ).toBeInTheDocument();
       });
 
-      await act(async () => {
-        await user.click(
-          screen.getByRole("button", { name: /forgot password/i }),
-        );
-      });
+      await user.click(
+        screen.getByRole("button", { name: /forgot password/i }),
+      );
 
       await waitFor(() => {
         expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
       });
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/email/i), "test@example.com");
-        await user.click(
-          screen.getByRole("button", { name: /send reset link/i }),
-        );
-      });
+      await user.type(screen.getByLabelText(/email/i), "test@example.com");
+      await user.click(
+        screen.getByRole("button", { name: /send reset link/i }),
+      );
 
       await waitFor(() => {
         expect(screen.getByRole("alert")).toHaveTextContent(
@@ -669,9 +602,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(
@@ -679,11 +610,9 @@ describe("AuthModal", () => {
         ).toBeInTheDocument();
       });
 
-      await act(async () => {
-        await user.click(
-          screen.getByRole("button", { name: /forgot password/i }),
-        );
-      });
+      await user.click(
+        screen.getByRole("button", { name: /forgot password/i }),
+      );
 
       await waitFor(() => {
         expect(
@@ -691,11 +620,9 @@ describe("AuthModal", () => {
         ).toBeInTheDocument();
       });
 
-      await act(async () => {
-        await user.click(
-          screen.getByRole("button", { name: /back to sign in/i }),
-        );
-      });
+      await user.click(
+        screen.getByRole("button", { name: /back to sign in/i }),
+      );
 
       await waitFor(() => {
         expect(
@@ -713,9 +640,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         const googleButton = screen.getByRole("button", {
@@ -730,9 +655,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(
@@ -740,11 +663,9 @@ describe("AuthModal", () => {
         ).toBeInTheDocument();
       });
 
-      await act(async () => {
-        await user.click(
-          screen.getByRole("button", { name: /continue with google/i }),
-        );
-      });
+      await user.click(
+        screen.getByRole("button", { name: /continue with google/i }),
+      );
 
       expect(mockGoogleLogin).toHaveBeenCalled();
     });
@@ -753,9 +674,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(
@@ -763,9 +682,7 @@ describe("AuthModal", () => {
         ).toHaveTextContent(/continue with google/i);
       });
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /^sign up$/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /^sign up$/i }));
 
       // Google button label stays consistent as "Continue with Google"
       await waitFor(() => {
@@ -781,9 +698,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         expect(
@@ -799,9 +714,7 @@ describe("AuthModal", () => {
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /open modal/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
         const termsLink = screen.getByRole("link", {
@@ -963,15 +876,8 @@ describe("URL Parameter Support", () => {
 
     mockWindowLocation("/day");
 
-    await act(async () => {
-      await user.type(
-        screen.getByLabelText(/new password/i),
-        "updatedpassword",
-      );
-      await user.click(
-        screen.getByRole("button", { name: /set new password/i }),
-      );
-    });
+    await user.type(screen.getByLabelText(/new password/i), "updatedpassword");
+    await user.click(screen.getByRole("button", { name: /set new password/i }));
 
     await waitFor(() => {
       expect(mockEmailPassword.submitNewPassword).toHaveBeenCalledWith({
@@ -1038,9 +944,7 @@ describe("AccountIcon", () => {
       expect(screen.getByLabelText(/log in/i)).toBeInTheDocument();
     });
 
-    await act(async () => {
-      await user.click(screen.getByLabelText(/log in/i));
-    });
+    await user.click(screen.getByLabelText(/log in/i));
 
     await waitFor(() => {
       expect(

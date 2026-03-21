@@ -1,5 +1,4 @@
 import { rest } from "msw";
-import { act } from "react";
 import { createMemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
@@ -52,15 +51,11 @@ describe("Sidebar: Interactions", () => {
     const existing = await screen.findByRole("button", {
       name: /europe trip/i,
     });
-    await act(async () => {
-      await user.click(existing);
-    });
+    await user.click(existing);
 
     expect(await screen.findByRole("form")).toBeInTheDocument();
 
-    await act(async () => {
-      await user.keyboard("{Escape}");
-    });
+    await user.keyboard("{Escape}");
 
     await waitFor(() => {
       expect(screen.queryByRole("form")).not.toBeInTheDocument();
@@ -76,18 +71,12 @@ describe("Sidebar: Interactions", () => {
     const user = userEvent.setup();
     render(<></>, { state: preloadedState, router });
 
-    await act(async () => {
-      await user.click(screen.getAllByText("+")[0]);
-    });
+    await user.click(screen.getAllByText("+")[0]);
 
     const formTitle = await screen.findByRole("input");
-    await act(async () => {
-      await user.type(formTitle, LEARN_CHINESE.title!);
-    });
+    await user.type(formTitle, LEARN_CHINESE.title!);
 
-    await act(async () => {
-      await user.click(screen.getByText(/save/i));
-    });
+    await user.click(screen.getByText(/save/i));
 
     await waitFor(() => {
       expect(

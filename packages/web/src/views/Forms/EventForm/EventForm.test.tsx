@@ -89,9 +89,7 @@ test("should call onConvert when mod+arrowleft keyboard shortcut is used", async
   // Ensure the form is rendered (optional, good sanity check)
   expect(screen.getByRole("form")).toBeInTheDocument();
 
-  await act(async () => {
-    await user.keyboard(getModifierShortcut("{ArrowLeft}"));
-  });
+  await user.keyboard(getModifierShortcut("{ArrowLeft}"));
 
   expect(mockOnConvert).toHaveBeenCalledTimes(1);
 
@@ -186,10 +184,8 @@ test("should submit when Enter is pressed while title input is focused", async (
 
   const titleInput = screen.getByPlaceholderText("Title");
 
-  await act(async () => {
-    await user.click(titleInput);
-    await user.keyboard("{Enter}");
-  });
+  await user.click(titleInput);
+  await user.keyboard("{Enter}");
 
   expect(mockOnSubmit).toHaveBeenCalledTimes(1);
   expect(mockOnDelete).not.toHaveBeenCalled();
@@ -237,18 +233,14 @@ test("should call duplicateEvent when duplicate icon btn is clicked", async () =
 
   const form = screen.getByRole("form");
 
-  await act(async () => {
-    await user.click(
-      within(form).getByRole("button", { name: /open actions menu/i }),
-    );
-  });
+  await user.click(
+    within(form).getByRole("button", { name: /open actions menu/i }),
+  );
 
   await waitFor(() => {
     expect(screen.getByText("Duplicate Event")).toBeInTheDocument();
   });
-  await act(async () => {
-    await user.click(screen.getByText("Duplicate Event"));
-  });
+  await user.click(screen.getByText("Duplicate Event"));
 
   expect(mockOnDuplicate).toHaveBeenCalledTimes(1);
   expect(mockOnDuplicate).toHaveBeenCalledWith(sampleEvent);
@@ -268,16 +260,12 @@ const _clickStartInput = async (user: ReturnType<typeof userEvent.setup>) => {
   const startDateInput = screen.getByRole("textbox", {
     name: /pick start date/i,
   });
-  await act(async () => {
-    await user.click(startDateInput);
-  });
+  await user.click(startDateInput);
 };
 
 const _clickEndInput = async (user: ReturnType<typeof userEvent.setup>) => {
   const endDateInput = screen.getByRole("textbox", {
     name: /pick end date/i,
   });
-  await act(async () => {
-    await user.click(endDateInput);
-  });
+  await user.click(endDateInput);
 };
