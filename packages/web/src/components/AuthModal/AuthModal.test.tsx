@@ -386,6 +386,34 @@ describe("AuthModal", () => {
         ).toBeInTheDocument();
       });
     });
+
+    it("does not await Google import after email/password login", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<ModalTrigger />);
+
+      await act(async () => {
+        await user.click(screen.getByRole("button", { name: /open modal/i }));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+      });
+
+      await act(async () => {
+        await user.type(screen.getByLabelText(/email/i), "test@example.com");
+        await user.type(screen.getByLabelText(/password/i), "password123");
+        await user.click(screen.getByRole("button", { name: /^log in$/i }));
+      });
+
+      await waitFor(() => {
+        expect(mockCompleteAuthentication).toHaveBeenCalledWith(
+          expect.objectContaining({
+            email: "test@example.com",
+          }),
+        );
+      });
+    });
   });
 
   describe("Sign Up Form", () => {
@@ -482,6 +510,46 @@ describe("AuthModal", () => {
             name: /nice to meet you, alex/i,
           }),
         ).toBeInTheDocument();
+      });
+    });
+
+    it("does not await Google import after email/password signup", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<ModalTrigger />);
+
+      await act(async () => {
+        await user.click(screen.getByRole("button", { name: /open modal/i }));
+      });
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole("button", { name: /^sign up$/i }),
+        ).toBeInTheDocument();
+      });
+
+      await act(async () => {
+        await user.click(screen.getByRole("button", { name: /^sign up$/i }));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+      });
+
+      await act(async () => {
+        await user.type(screen.getByLabelText(/name/i), "Alex");
+        await user.type(screen.getByLabelText(/email/i), "test@example.com");
+        await user.type(screen.getByLabelText(/password/i), "password123");
+        await user.click(screen.getByRole("button", { name: /^sign up$/i }));
+      });
+
+      await waitFor(() => {
+        expect(mockCompleteAuthentication).toHaveBeenCalledWith(
+          expect.objectContaining({
+            email: "test@example.com",
+          }),
+        );
       });
     });
   });

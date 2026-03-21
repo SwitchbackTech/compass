@@ -1,30 +1,24 @@
 import { useCallback } from "react";
-import {
-  type GoogleConnectionStatus,
-  type GoogleSyncStatus,
-  type UserMetadata,
-} from "@core/types/user.types";
+import { type GoogleConnectionState } from "@core/types/user.types";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
 import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
 import { SyncApi } from "@web/common/apis/sync.api";
 import {
-  selectGoogleMetadata,
+  selectGoogleConnectionState,
   selectUserMetadataStatus,
 } from "@web/ducks/auth/selectors/user-metadata.selectors";
 import type { UserMetadataStatus } from "@web/ducks/auth/slices/user-metadata.slice";
-import { selectImportGCalState } from "@web/ducks/events/selectors/sync.selector";
 import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import type { RootState } from "@web/store";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
-type GoogleUiState =
-  | "checking"
-  | "NOT_CONNECTED"
-  | "RECONNECT_REQUIRED"
-  | "connected_healthy"
-  | "connected_repairing"
-  | "connected_attention";
+/**
+ * UI state for Google Calendar connection.
+ * "checking" is a client-only state for loading, the rest map directly
+ * to GoogleConnectionState from the server.
+ */
+type GoogleUiState = "checking" | GoogleConnectionState;
 
 type SidebarStatusIcon =
   | "CloudArrowUpIcon"
@@ -51,44 +45,6 @@ type GoogleUiConfig = {
 };
 
 const COMMAND_ICON: CommandActionIcon = "CloudArrowUpIcon";
-
-const getGoogleUiState = ({
-  connectionStatus,
-  syncStatus,
-  isImporting,
-  isCheckingStatus,
-}: {
-  connectionStatus: GoogleConnectionStatus;
-  syncStatus: GoogleSyncStatus;
-  isImporting: boolean;
-  isCheckingStatus: boolean;
-}): GoogleUiState => {
-  if (connectionStatus === "RECONNECT_REQUIRED") {
-    return "RECONNECT_REQUIRED";
-  }
-
-  if (isImporting) {
-    return "connected_repairing";
-  }
-
-  if (isCheckingStatus) {
-    return "checking";
-  }
-
-  if (connectionStatus === "CONNECTED" && syncStatus === "REPAIRING") {
-    return "connected_repairing";
-  }
-
-  if (connectionStatus === "CONNECTED" && syncStatus === "ATTENTION") {
-    return "connected_attention";
-  }
-
-  if (connectionStatus === "CONNECTED") {
-    return "connected_healthy";
-  }
-
-  return "NOT_CONNECTED";
-};
 
 const getGoogleUiConfig = (
   state: GoogleUiState,
@@ -140,7 +96,7 @@ const getGoogleUiConfig = (
           onSelect: onConnectGoogle,
         },
       };
-    case "connected_repairing":
+    case "IMPORTING":
       return {
         commandAction: {
           label: "Syncing Google Calendar…",
@@ -153,7 +109,7 @@ const getGoogleUiConfig = (
           isDisabled: true,
         },
       };
-    case "connected_attention":
+    case "ATTENTION":
       return {
         commandAction: {
           label: "Repair Google Calendar",
@@ -168,7 +124,7 @@ const getGoogleUiConfig = (
           onSelect: onRepairGoogleFromSidebar,
         },
       };
-    case "connected_healthy":
+    case "HEALTHY":
       return {
         commandAction: {
           label: "Google Calendar Connected",
@@ -186,23 +142,13 @@ const getGoogleUiConfig = (
 
 export const useConnectGoogle = () => {
   const dispatch = useAppDispatch();
-  const googleMetadata = useAppSelector(
-    selectGoogleMetadata as (
-      state: RootState,
-    ) => UserMetadata["google"] | undefined,
+  const connectionState = useAppSelector(
+    selectGoogleConnectionState as (state: RootState) => GoogleConnectionState,
   );
   const userMetadataStatus = useAppSelector(
     selectUserMetadataStatus as (state: RootState) => UserMetadataStatus,
   );
-  const importGCal = useAppSelector(
-    selectImportGCalState as (
-      state: RootState,
-    ) => RootState["sync"]["importGCal"],
-  );
-  const connectionStatus = googleMetadata?.connectionStatus ?? "NOT_CONNECTED";
-  const syncStatus = googleMetadata?.syncStatus ?? "NONE";
   const { login } = useGoogleAuth({
-    shouldTryLinkingWithSessionUser: true,
     prompt: "consent",
   });
 
@@ -214,14 +160,10 @@ export const useConnectGoogle = () => {
   const onRepairGoogleCalendarBase = useCallback(() => {
     const run = async () => {
       dispatch(importGCalSlice.actions.clearImportResults(undefined));
-      dispatch(importGCalSlice.actions.setIsImportPending(true));
-
       try {
         await SyncApi.importGCal({ force: true });
       } catch (error) {
         console.error("Failed to start Google Calendar repair:", error);
-        dispatch(importGCalSlice.actions.setIsImportPending(false));
-        dispatch(importGCalSlice.actions.importing(false));
         dispatch(
           importGCalSlice.actions.setImportError(
             "Failed to start Google Calendar repair.",
@@ -241,16 +183,13 @@ export const useConnectGoogle = () => {
     onRepairGoogleCalendarBase();
   }, [onRepairGoogleCalendarBase]);
 
+  // "checking" is a UI-only state until we have loaded metadata from the server.
+  // Covers both "idle" (before refreshUserMetadata dispatches setLoading) and
+  // "loading" so returning users do not briefly see NOT_CONNECTED from the selector default.
   const isCheckingStatus =
-    !googleMetadata &&
-    userMetadataStatus !== "loaded" &&
-    hasUserEverAuthenticated();
-  const state = getGoogleUiState({
-    connectionStatus,
-    syncStatus,
-    isImporting: importGCal.importing,
-    isCheckingStatus,
-  });
+    hasUserEverAuthenticated() && userMetadataStatus !== "loaded";
+
+  const state: GoogleUiState = isCheckingStatus ? "checking" : connectionState;
 
   return getGoogleUiConfig(
     state,

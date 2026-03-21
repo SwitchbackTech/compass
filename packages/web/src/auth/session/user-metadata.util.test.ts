@@ -29,8 +29,7 @@ describe("refreshUserMetadata", () => {
   it("loads metadata into the store", async () => {
     const metadata = {
       google: {
-        connectionStatus: "CONNECTED" as const,
-        syncStatus: "HEALTHY" as const,
+        connectionState: "HEALTHY" as const,
       },
     };
     api.getMetadata.mockResolvedValue(metadata);
@@ -45,6 +44,7 @@ describe("refreshUserMetadata", () => {
       2,
       expect.objectContaining({ type: "userMetadata/set", payload: metadata }),
     );
+    expect(getDispatchMock()).toHaveBeenCalledTimes(2);
   });
 
   it("clears metadata when the request is unauthorized", async () => {
