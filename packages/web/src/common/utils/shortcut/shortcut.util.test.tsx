@@ -5,6 +5,7 @@ import { mockNavigatorPlatform } from "@web/__tests__/utils/navigator.test.util"
 import {
   ShortCutLabel,
   expandModInShortcutDisplay,
+  getMetaKeyIcon,
   getModifierKeyIcon,
   getModifierKeyTestId,
 } from "@web/common/utils/shortcut/shortcut.util";
@@ -127,6 +128,29 @@ describe("shortcut.util", () => {
       expect(commandIcon).toBeInTheDocument();
       expect(commandIcon).toHaveAttribute("width", "14");
       expect(commandIcon).toHaveAttribute("height", "14");
+    });
+  });
+
+  describe("getMetaKeyIcon", () => {
+    it("renders Command icon on macOS", () => {
+      mockNavigatorPlatform("mac");
+
+      render(getMetaKeyIcon());
+      expect(screen.getByTestId("mac-icon")).toBeInTheDocument();
+    });
+
+    it("renders Windows logo icon on Windows", () => {
+      mockNavigatorPlatform("windows");
+
+      render(getMetaKeyIcon());
+      expect(screen.getByTestId("windows-icon")).toBeInTheDocument();
+    });
+
+    it("renders Windows logo icon on Linux", () => {
+      mockNavigatorPlatform("linux");
+
+      render(getMetaKeyIcon());
+      expect(screen.getByTestId("linux-icon")).toBeInTheDocument();
     });
   });
 

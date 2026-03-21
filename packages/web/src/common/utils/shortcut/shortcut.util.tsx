@@ -9,7 +9,6 @@ import {
   formatWithLabels,
   resolveModifier,
 } from "@tanstack/react-hotkeys";
-import { DesktopOS, getDesktopOS } from "@web/common/utils/device/device.util";
 
 const keyIconMap: Record<string, Icon> = {
   Meta: CommandIcon,
@@ -67,14 +66,12 @@ export const getModifierKeyIcon = ({ size = 14 }: { size?: number } = {}) => {
 };
 
 export const getMetaKeyIcon = ({ size = 14 }: { size?: number } = {}) => {
-  const desktopOS = getDesktopOS();
-  const testId = `${desktopOS?.toLowerCase()}-icon`;
+  const platform = detectPlatform();
+  const testId = `${platform}-icon`;
 
-  switch (desktopOS) {
-    case DesktopOS.MacOS:
-      return <CommandIcon size={size} data-testid={testId} />;
-    case DesktopOS.Windows:
-    default:
-      return <WindowsLogoIcon size={size} data-testid={testId} />;
+  if (platform === "mac") {
+    return <CommandIcon size={size} data-testid={testId} />;
   }
+
+  return <WindowsLogoIcon size={size} data-testid={testId} />;
 };
