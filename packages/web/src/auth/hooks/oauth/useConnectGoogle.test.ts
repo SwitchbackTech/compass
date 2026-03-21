@@ -81,6 +81,27 @@ describe("useConnectGoogle", () => {
     );
   });
 
+  it("returns checking state when metadata is idle before refresh (returning user)", () => {
+    mockUseAppSelector.mockImplementation((selector) => {
+      if (selector === selectGoogleConnectionState) {
+        return "NOT_CONNECTED";
+      }
+
+      if (selector === selectUserMetadataStatus) {
+        return "idle";
+      }
+
+      return undefined;
+    });
+
+    const { result } = renderHook(() => useConnectGoogle());
+
+    expect(result.current.commandAction.label).toBe(
+      "Checking Google Calendar…",
+    );
+    expect(result.current.sidebarStatus.icon).toBe("SpinnerIcon");
+  });
+
   it("returns connect state when metadata is loaded and Google is not connected", () => {
     mockUseAppSelector.mockImplementation((selector) => {
       if (selector === selectGoogleConnectionState) {

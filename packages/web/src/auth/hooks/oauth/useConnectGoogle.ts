@@ -183,9 +183,11 @@ export const useConnectGoogle = () => {
     onRepairGoogleCalendarBase();
   }, [onRepairGoogleCalendarBase]);
 
-  // "checking" is a UI-only state shown while metadata is loading
+  // "checking" is a UI-only state until we have loaded metadata from the server.
+  // Covers both "idle" (before refreshUserMetadata dispatches setLoading) and
+  // "loading" so returning users do not briefly see NOT_CONNECTED from the selector default.
   const isCheckingStatus =
-    userMetadataStatus === "loading" && hasUserEverAuthenticated();
+    hasUserEverAuthenticated() && userMetadataStatus !== "loaded";
 
   const state: GoogleUiState = isCheckingStatus ? "checking" : connectionState;
 
