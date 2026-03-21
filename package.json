@@ -75,12 +75,10 @@
     "typescript-eslint": "^8.24.0"
   },
   "resolutions": {
-    "glob": "^13.0.6",
-    "rimraf": "^6.0.0"
+    "glob": "^13.0.6"
   },
   "overrides": {
-    "glob": "^13.0.6",
-    "rimraf": "^6.0.0"
+    "glob": "^13.0.6"
   },
   "workspaces": [
     "packages/*"
