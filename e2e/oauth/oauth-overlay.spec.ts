@@ -3,12 +3,10 @@ import {
   OVERLAY_SELECTORS,
   OVERLAY_TEXT,
   expectBodyLocked,
-  expectImportOverlayVisible,
   expectNoOverlay,
   expectOAuthOverlayVisible,
   expectOverlayPhase,
   prepareOAuthTestPage,
-  setImporting,
   setIsSyncing,
   waitForAppReady,
 } from "../utils/oauth-test-utils";
@@ -19,9 +17,11 @@ import {
  * These tests validate the SyncEventsOverlay component behavior during
  * the Google OAuth flow by using test hooks to control session state.
  *
- * The overlay shows two phases:
- * 1. OAuth phase: "Complete Google sign-in..." - when isSyncing=true, importing=false
- * 2. Import phase: "Importing your Google Calendar..." - when importing=true
+ * The overlay shows during OAuth popup phase:
+ * - OAuth phase: "Complete Google sign-in..." - when isSyncing=true
+ *
+ * Note: Calendar import now happens in the background with a sidebar spinner,
+ * not a blocking overlay. The import phase overlay was removed.
  *
  * NOTE: These tests are skipped on mobile because the MobileGate component
  * blocks the entire app on mobile viewports, preventing the OAuth overlay
@@ -56,27 +56,17 @@ test.describe("OAuth Overlay", () => {
     await expect(page.getByText(OVERLAY_TEXT.oauthMessage)).toBeVisible();
   });
 
-  test("shows import phase message after user accepts OAuth prompt", async ({
-    page,
-  }) => {
+  test("hides overlay after user completes OAuth prompt", async ({ page }) => {
     // Start OAuth phase
     await setIsSyncing(page, true);
     await expectOAuthOverlayVisible(page);
 
-    // Simulate OAuth completion - user accepted, now importing
-    // When importing starts, isSyncing should be cleared and importing should be true
+    // Simulate OAuth completion - user accepted
+    // The overlay should disappear (import happens in background with sidebar spinner)
     await setIsSyncing(page, false);
-    await setImporting(page, true);
 
-    // Verify overlay updates to import phase
-    await expectImportOverlayVisible(page);
-
-    // Verify the specific text content changed
-    await expect(page.getByText(OVERLAY_TEXT.importTitle)).toBeVisible();
-    await expect(page.getByText(OVERLAY_TEXT.importMessage)).toBeVisible();
-
-    // OAuth text should no longer be visible
-    await expect(page.getByText(OVERLAY_TEXT.oauthTitle)).not.toBeVisible();
+    // Verify overlay is gone
+    await expectNoOverlay(page);
   });
 
   test("locks the app (body data-app-locked) when overlay is active", async ({
@@ -130,13 +120,8 @@ test.describe("OAuth Overlay", () => {
     await setIsSyncing(page, true);
     await expectBodyLocked(page, true);
 
-    // Complete import phase
-    await setImporting(page, true);
-    await expectBodyLocked(page, true);
-
-    // Clear all states (simulating completion)
+    // Clear OAuth state (simulating completion)
     await setIsSyncing(page, false);
-    await setImporting(page, false);
 
     // Overlay should be gone and body unlocked
     await expectNoOverlay(page);
@@ -151,13 +136,8 @@ test.describe("OAuth Overlay", () => {
     await setIsSyncing(page, true);
     await expectOverlayPhase(page, "oauth");
 
-    // Import phase
+    // Back to none after OAuth completes
     await setIsSyncing(page, false);
-    await setImporting(page, true);
-    await expectOverlayPhase(page, "import");
-
-    // Back to none
-    await setImporting(page, false);
     await expectOverlayPhase(page, "none");
   });
 
@@ -177,20 +157,15 @@ test.describe("OAuth Overlay", () => {
     await expect(statusPanel).toHaveAttribute("aria-live", "polite");
   });
 
-  test("displays spinner during both phases", async ({ page }) => {
+  test("displays spinner during OAuth phase", async ({ page }) => {
     const spinner = page.locator(OVERLAY_SELECTORS.spinner);
 
     // OAuth phase
     await setIsSyncing(page, true);
     await expect(spinner).toBeVisible();
 
-    // Import phase
+    // No overlay after OAuth completes
     await setIsSyncing(page, false);
-    await setImporting(page, true);
-    await expect(spinner).toBeVisible();
-
-    // No overlay
-    await setImporting(page, false);
     await expect(spinner).not.toBeVisible();
   });
 });
@@ -211,25 +186,13 @@ test.describe("OAuth Overlay - Edge Cases", () => {
   test("handles rapid state changes without visual glitches", async ({
     page,
   }) => {
-    // Rapidly toggle states
+    // Rapidly toggle OAuth states
     await setIsSyncing(page, true);
     await setIsSyncing(page, false);
     await setIsSyncing(page, true);
-    await setImporting(page, true);
-    await setImporting(page, false);
     await setIsSyncing(page, false);
 
     // Should settle to no overlay
     await expectNoOverlay(page);
-  });
-
-  test("shows OAuth phase when authenticating even if importing is true", async ({
-    page,
-  }) => {
-    // When authenticating is true, OAuth messaging takes precedence.
-    await setIsSyncing(page, true);
-    await setImporting(page, true);
-
-    await expect(page.getByText(OVERLAY_TEXT.oauthTitle)).toBeVisible();
   });
 });

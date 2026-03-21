@@ -18,10 +18,3 @@ export const selectGoogleConnectionState = (
   state: RootState,
 ): GoogleConnectionState =>
   state.userMetadata.current?.google?.connectionState ?? "NOT_CONNECTED";
-
-/**
- * Convenience selector to check if Google Calendar sync is in progress.
- * Derives from the server-computed connectionState.
- */
-export const selectIsGoogleSyncing = (state: RootState): boolean =>
-  selectGoogleConnectionState(state) === "IMPORTING";

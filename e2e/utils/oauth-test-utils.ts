@@ -72,41 +72,6 @@ export const setIsSyncing = async (page: Page, value: boolean) => {
 };
 
 /**
- * Set the awaitingImportResults state in Redux (triggers import phase when true).
- */
-export const setIsImportPending = async (page: Page, value: boolean) => {
-  await page.evaluate((isImportPendingValue) => {
-    const store = (window as any).__COMPASS_STORE__;
-    if (store) {
-      store.dispatch({
-        type: "async/importGCal/setIsImportPending",
-        payload: isImportPendingValue,
-      });
-    }
-  }, value);
-  await page.waitForTimeout(50);
-};
-
-/**
- * Set the importing state in Redux store (triggers import phase overlay when true).
- */
-export const setImporting = async (page: Page, value: boolean) => {
-  await page.evaluate((importValue) => {
-    const store = (window as any).__COMPASS_STORE__;
-    if (store) {
-      // Dispatch the importing action from importGCalSlice
-      // The createAsyncSlice helper prefixes the slice name with "async/"
-      store.dispatch({
-        type: "async/importGCal/importing",
-        payload: importValue,
-      });
-    }
-  }, value);
-  // Small delay to let React process the state change
-  await page.waitForTimeout(50);
-};
-
-/**
  * Selectors for OAuth overlay elements.
  */
 export const OVERLAY_SELECTORS = {
@@ -117,13 +82,12 @@ export const OVERLAY_SELECTORS = {
 };
 
 /**
- * Text content for different overlay phases.
+ * Text content for OAuth overlay phase.
+ * Note: Import phase overlay was removed - import now happens in background.
  */
 export const OVERLAY_TEXT = {
   oauthTitle: "Complete Google sign-in...",
   oauthMessage: "Please complete authorization in the popup window",
-  importTitle: "Importing your Google Calendar events...",
-  importMessage: "Please hang tight while we sync your calendar",
 };
 
 /**
@@ -146,18 +110,16 @@ export const expectBodyLocked = async (page: Page, locked: boolean) => {
 
 /**
  * Wait for overlay phase to match expected value (with retry).
+ * Note: Import phase overlay was removed - import now happens in background.
  */
 export const expectOverlayPhase = async (
   page: Page,
-  phase: "oauth" | "import" | "none",
+  phase: "oauth" | "none",
 ) => {
   if (phase === "oauth") {
     await expect(page.getByText(OVERLAY_TEXT.oauthTitle)).toBeVisible();
-  } else if (phase === "import") {
-    await expect(page.getByText(OVERLAY_TEXT.importTitle)).toBeVisible();
   } else {
     await expect(page.getByText(OVERLAY_TEXT.oauthTitle)).not.toBeVisible();
-    await expect(page.getByText(OVERLAY_TEXT.importTitle)).not.toBeVisible();
   }
 };
 
@@ -172,20 +134,9 @@ export const expectOAuthOverlayVisible = async (page: Page) => {
 };
 
 /**
- * Assert that the import phase overlay is visible.
- */
-export const expectImportOverlayVisible = async (page: Page) => {
-  await expect(page.getByText(OVERLAY_TEXT.importTitle)).toBeVisible();
-  await expect(page.getByText(OVERLAY_TEXT.importMessage)).toBeVisible();
-  await expect(page.locator(OVERLAY_SELECTORS.spinner)).toBeVisible();
-  await expectBodyLocked(page, true);
-};
-
-/**
  * Assert that no overlay is visible.
  */
 export const expectNoOverlay = async (page: Page) => {
   await expect(page.getByText(OVERLAY_TEXT.oauthTitle)).not.toBeVisible();
-  await expect(page.getByText(OVERLAY_TEXT.importTitle)).not.toBeVisible();
   await expectBodyLocked(page, false);
 };
