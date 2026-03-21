@@ -54,7 +54,9 @@ const TestProviders = (props?: {
             router={props.router}
             fallbackElement={<AbsoluteOverflowLoader />}
             future={{
-              v7_startTransition: true,
+              // Test-only: sync RouterProvider state updates (no startTransition).
+              // Matches initial render + client navigations with RTL act() without globals.
+              v7_startTransition: false,
             }}
           />
         </CompassRequiredProviders>
