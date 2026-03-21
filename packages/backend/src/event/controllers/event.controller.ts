@@ -17,7 +17,7 @@ import {
   type SReqBody,
 } from "@backend/common/types/express.types";
 import eventService from "@backend/event/services/event.service";
-import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.processor";
+import { CompassSyncProcessor } from "@backend/sync/services/sync/compass/compass.sync.processor";
 
 /**
  * Event controller for CRUD operations on Compass events.

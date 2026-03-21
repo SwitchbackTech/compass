@@ -24,7 +24,7 @@ import {
   testCompassSeriesInGcal,
 } from "@backend/event/classes/compass.event.parser.test.util";
 import eventService, { _getGcal } from "@backend/event/services/event.service";
-import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.processor";
+import { CompassSyncProcessor } from "@backend/sync/services/sync/compass/compass.sync.processor";
 
 describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
   `CompassSyncProcessor - $calendarProvider calendar: ${RecurringEventUpdateScope.ALL_EVENTS}`,

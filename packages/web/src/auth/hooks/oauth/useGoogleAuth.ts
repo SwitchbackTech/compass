@@ -1,14 +1,8 @@
-import { batch } from "react-redux";
 import { toast } from "react-toastify";
 import { isGooglePopupClosedError } from "@web/auth/google/google-oauth-error.util";
-import {
-  authenticate,
-  syncLocalEvents,
-} from "@web/auth/google/google.auth.util";
+import { authenticate } from "@web/auth/google/google.auth.util";
 import { useGoogleAuthWithOverlay } from "@web/auth/hooks/oauth/useGoogleAuthWithOverlay";
-import { useSession } from "@web/auth/hooks/session/useSession";
-import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
-import { markUserAsAuthenticated } from "@web/auth/state/auth.state.util";
+import { useCompleteAuthentication } from "@web/auth/hooks/useCompleteAuthentication";
 import { toastDefaultOptions } from "@web/common/constants/toast.constants";
 import {
   SESSION_EXPIRED_TOAST_ID,
@@ -17,21 +11,40 @@ import {
 import { type SignInUpInput } from "@web/components/oauth/ouath.types";
 import {
   authError,
-  authSuccess,
   resetAuth,
   startAuthenticating,
 } from "@web/ducks/auth/slices/auth.slice";
-import {
-  importGCalSlice,
-  triggerFetch,
-} from "@web/ducks/events/slices/sync.slice";
+import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
+import { type AppDispatch } from "@web/store";
 import { useAppDispatch } from "@web/store/store.hooks";
 
-export function useGoogleAuth() {
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return "Authentication failed";
+};
+
+const handleAuthError = (dispatch: AppDispatch, error: unknown) => {
+  console.error(error);
+  dispatch(authError(getErrorMessage(error)));
+};
+
+const resetAuthState = (dispatch: AppDispatch) => {
+  dispatch(resetAuth());
+};
+
+export function useGoogleAuth(
+  options: {
+    prompt?: "consent" | "none" | "select_account";
+  } = {},
+) {
   const dispatch = useAppDispatch();
-  const { setAuthenticated } = useSession();
+  const completeAuthentication = useCompleteAuthentication();
+  const { prompt } = options;
 
   const googleLogin = useGoogleAuthWithOverlay({
+    prompt,
     onStart: () => {
       dismissErrorToast(SESSION_EXPIRED_TOAST_ID);
       dispatch(startAuthenticating());
@@ -39,80 +52,40 @@ export function useGoogleAuth() {
     },
     onSuccess: async (data) => {
       try {
-        const authPayload: SignInUpInput = data;
+        const authPayload: SignInUpInput = {
+          ...data,
+        };
         const authResult = await authenticate(authPayload);
         if (!authResult.success) {
-          console.error(authResult.error);
-          dispatch(
-            authError(authResult.error?.message || "Authentication failed"),
-          );
-          dispatch(importGCalSlice.actions.setIsImportPending(false));
-          dispatch(importGCalSlice.actions.importing(false));
-          return;
-        }
-
-        // Mark user as authenticated in localStorage
-        // This ensures the app always uses RemoteEventRepository going forward
-        markUserAsAuthenticated();
-
-        setAuthenticated(true);
-
-        batch(() => {
-          dispatch(authSuccess());
-          dispatch(importGCalSlice.actions.setIsImportPending(true));
-        });
-
-        void refreshUserMetadata();
-
-        const syncResult = await syncLocalEvents();
-
-        if (syncResult.success && syncResult.syncedCount > 0) {
-          dispatch(
-            importGCalSlice.actions.setLocalEventsSynced(
-              syncResult.syncedCount,
-            ),
-          );
-        } else if (!syncResult.success) {
           toast.error(
-            "We could not sync your local events. Your changes are still saved on this device.",
+            "Failed to connect Google Calendar. Please try again.",
             toastDefaultOptions,
           );
-          console.error(syncResult.error);
+          handleAuthError(dispatch, authResult.error);
+          return;
         }
-
-        // Trigger a refetch to load events from the cloud
-        // This ensures the UI displays events after authentication
-        dispatch(triggerFetch());
+        if (authResult.data !== undefined && authResult.data.status !== "OK") {
+          toast.error(
+            "Could not link Google Calendar to your account. Please try again.",
+            toastDefaultOptions,
+          );
+          dispatch(resetAuth());
+          return;
+        }
+        const email = authResult.data?.user?.emails?.[0];
+        await completeAuthentication({ email });
       } catch (error) {
-        // Ensure overlay is dismissed if any error occurs during the auth flow
-        // This handles cases where authenticate() or other operations throw unexpected errors
-        console.error("Error during authentication flow:", error);
-        dispatch(
-          authError(
-            error instanceof Error ? error.message : "Authentication failed",
-          ),
-        );
-        dispatch(importGCalSlice.actions.setIsImportPending(false));
-        dispatch(importGCalSlice.actions.importing(false));
-        throw error; // Re-throw so useGoogleLoginWithSyncOverlay can handle it via onError
+        handleAuthError(dispatch, error);
+        throw error;
       }
     },
     onError: (error) => {
       if (isGooglePopupClosedError(error)) {
-        dispatch(resetAuth());
-        dispatch(importGCalSlice.actions.setIsImportPending(false));
-        dispatch(importGCalSlice.actions.importing(false));
+        resetAuthState(dispatch);
         return;
       }
 
-      console.error(error);
-      dispatch(
-        authError(
-          error instanceof Error ? error.message : "Authentication failed",
-        ),
-      );
-      dispatch(importGCalSlice.actions.setIsImportPending(false));
-      dispatch(importGCalSlice.actions.importing(false));
+      handleAuthError(dispatch, error);
     },
   });
 

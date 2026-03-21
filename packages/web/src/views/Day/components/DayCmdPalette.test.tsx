@@ -341,8 +341,7 @@ describe("DayCmdPalette", () => {
             userMetadata: {
               current: {
                 google: {
-                  connectionStatus: "CONNECTED",
-                  syncStatus: "HEALTHY",
+                  connectionState: "HEALTHY",
                 },
               },
             },
@@ -364,8 +363,7 @@ describe("DayCmdPalette", () => {
             userMetadata: {
               current: {
                 google: {
-                  connectionStatus: "RECONNECT_REQUIRED",
-                  syncStatus: "NONE",
+                  connectionState: "RECONNECT_REQUIRED",
                 },
               },
             },
@@ -383,7 +381,7 @@ describe("DayCmdPalette", () => {
       );
     });
 
-    it("disables the generic action while repair is running", async () => {
+    it("disables the generic action while import is running", async () => {
       await act(() =>
         render(<DayCmdPalette />, {
           state: {
@@ -391,8 +389,7 @@ describe("DayCmdPalette", () => {
             userMetadata: {
               current: {
                 google: {
-                  connectionStatus: "CONNECTED",
-                  syncStatus: "REPAIRING",
+                  connectionState: "IMPORTING",
                 },
               },
             },
@@ -414,8 +411,7 @@ describe("DayCmdPalette", () => {
             userMetadata: {
               current: {
                 google: {
-                  connectionStatus: "CONNECTED",
-                  syncStatus: "ATTENTION",
+                  connectionState: "ATTENTION",
                 },
               },
             },

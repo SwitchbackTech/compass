@@ -1,5 +1,6 @@
 import { type JsonStructureItem } from "react-cmdk";
 import { useSession } from "@web/auth/hooks/session/useSession";
+import { useAuthFeatureFlag } from "@web/components/AuthModal/hooks/useAuthFeatureFlag";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 
 /**
@@ -9,9 +10,7 @@ import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 export const useAuthCmdItems = (): JsonStructureItem[] => {
   const { authenticated } = useSession();
   const { openModal } = useAuthModal();
-  const isAuthFeatureEnabled =
-    typeof window !== "undefined" &&
-    new URLSearchParams(window.location.search).has("auth");
+  const isAuthFeatureEnabled = useAuthFeatureFlag();
 
   if (authenticated || !isAuthFeatureEnabled) {
     return [];

@@ -29,7 +29,7 @@ import { type gSchema$Event } from "@core/types/gcal";
 import { IDSchema } from "@core/types/type.utils";
 import { type CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { isInstance, parseCompassEventDate } from "@core/util/event/event.util";
-import { getGcalClient } from "@backend/auth/services/google/google.auth.service";
+import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import { Collections } from "@backend/common/constants/collections";
 import { EventError } from "@backend/common/errors/event/event.errors";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";

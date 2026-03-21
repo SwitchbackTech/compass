@@ -28,11 +28,22 @@ Rule: never treat event shape as web-only unless the field is strictly presentat
 3. Read `packages/backend/src/event/classes/compass.event.generator.ts`.
 4. Read `packages/backend/src/event/classes/compass.event.parser.ts`.
 5. Read `packages/backend/src/event/classes/compass.event.executor.ts`.
-6. Read `packages/backend/src/sync/services/sync/compass.sync.processor.ts`.
+6. Read `packages/backend/src/sync/services/sync/compass/compass.sync.processor.ts`.
 7. Update the planner, executor, or scope-expansion path that actually owns the behavior.
 8. Add focused tests for the exact recurrence transition you changed.
 
 Do not edit recurring behavior from one layer only.
+
+## Triage A Recurrence Sync Regression
+
+1. Reproduce with one event and one expected transition outcome.
+2. Capture processor logs for the transition key:
+   - `Handle Compass event(<id>): <transitionKey>`
+3. Find the key in `PLAN_BUILDERS` in `packages/backend/src/event/classes/compass.event.parser.ts`.
+4. Confirm planned `steps` and `googleEffect` match expected behavior.
+5. Confirm executor step mapping in `packages/backend/src/event/classes/compass.event.executor.ts`.
+6. Run focused tests:
+   - `yarn test:backend --runTestsByPath packages/backend/src/event/classes/compass.event.parser.test.ts packages/backend/src/event/classes/compass.event.executor.test.ts packages/backend/src/sync/services/sync/__tests__/compass.sync.processor.test.ts --runInBand`
 
 ## Add A Websocket Event
 

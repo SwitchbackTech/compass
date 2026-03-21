@@ -1,18 +1,19 @@
 import { renderHook } from "@testing-library/react";
 import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
+import { useSession } from "@web/auth/hooks/session/useSession";
 import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
 import { SyncApi } from "@web/common/apis/sync.api";
 import {
-  selectGoogleMetadata,
+  selectGoogleConnectionState,
   selectUserMetadataStatus,
 } from "@web/ducks/auth/selectors/user-metadata.selectors";
-import { selectImportGCalState } from "@web/ducks/events/selectors/sync.selector";
 import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
 jest.mock("@web/auth/hooks/oauth/useGoogleAuth");
+jest.mock("@web/auth/hooks/session/useSession");
 jest.mock("@web/auth/state/auth.state.util");
 jest.mock("@web/common/apis/sync.api");
 jest.mock("@web/store/store.hooks");
@@ -26,6 +27,7 @@ const mockUseAppDispatch = useAppDispatch as jest.MockedFunction<
 const mockUseAppSelector = useAppSelector as jest.MockedFunction<
   typeof useAppSelector
 >;
+const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
 const mockHasUserEverAuthenticated =
   hasUserEverAuthenticated as jest.MockedFunction<
     typeof hasUserEverAuthenticated
@@ -39,6 +41,10 @@ describe("useConnectGoogle", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseAppDispatch.mockReturnValue(mockDispatch);
+    mockUseSession.mockReturnValue({
+      authenticated: true,
+      setAuthenticated: jest.fn(),
+    });
     mockUseGoogleAuth.mockReturnValue({
       login: mockLogin,
       data: null,
@@ -47,19 +53,12 @@ describe("useConnectGoogle", () => {
     mockHasUserEverAuthenticated.mockReturnValue(true);
     mockSyncApi.importGCal.mockResolvedValue(undefined as never);
     mockUseAppSelector.mockImplementation((selector) => {
-      if (selector === selectGoogleMetadata) {
-        return undefined;
+      if (selector === selectGoogleConnectionState) {
+        return "NOT_CONNECTED";
       }
 
       if (selector === selectUserMetadataStatus) {
         return "loading";
-      }
-
-      if (selector === selectImportGCalState) {
-        return {
-          importing: false,
-          isImportPending: false,
-        };
       }
 
       return undefined;
@@ -69,7 +68,9 @@ describe("useConnectGoogle", () => {
   it("returns checking state when metadata is still loading", () => {
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith();
+    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
+      prompt: "consent",
+    });
     expect(result.current.commandAction.label).toBe(
       "Checking Google Calendar…",
     );
@@ -80,24 +81,14 @@ describe("useConnectGoogle", () => {
     );
   });
 
-  it("returns connect state when metadata is loaded and Google is not connected", () => {
+  it("returns checking state when metadata is idle before refresh (returning user)", () => {
     mockUseAppSelector.mockImplementation((selector) => {
-      if (selector === selectGoogleMetadata) {
-        return {
-          connectionStatus: "NOT_CONNECTED",
-          syncStatus: "NONE",
-        };
+      if (selector === selectGoogleConnectionState) {
+        return "NOT_CONNECTED";
       }
 
       if (selector === selectUserMetadataStatus) {
-        return "loaded";
-      }
-
-      if (selector === selectImportGCalState) {
-        return {
-          importing: false,
-          isImportPending: false,
-        };
+        return "idle";
       }
 
       return undefined;
@@ -105,7 +96,30 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith();
+    expect(result.current.commandAction.label).toBe(
+      "Checking Google Calendar…",
+    );
+    expect(result.current.sidebarStatus.icon).toBe("SpinnerIcon");
+  });
+
+  it("returns connect state when metadata is loaded and Google is not connected", () => {
+    mockUseAppSelector.mockImplementation((selector) => {
+      if (selector === selectGoogleConnectionState) {
+        return "NOT_CONNECTED";
+      }
+
+      if (selector === selectUserMetadataStatus) {
+        return "loaded";
+      }
+
+      return undefined;
+    });
+
+    const { result } = renderHook(() => useConnectGoogle());
+
+    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
+      prompt: "consent",
+    });
     expect(result.current.commandAction.label).toBe("Connect Google Calendar");
     expect(result.current.commandAction.isDisabled).toBe(false);
     expect(result.current.sidebarStatus.icon).toBe("CloudArrowUpIcon");
@@ -116,22 +130,12 @@ describe("useConnectGoogle", () => {
 
   it("returns connected state when metadata is healthy", () => {
     mockUseAppSelector.mockImplementation((selector) => {
-      if (selector === selectGoogleMetadata) {
-        return {
-          connectionStatus: "CONNECTED",
-          syncStatus: "HEALTHY",
-        };
+      if (selector === selectGoogleConnectionState) {
+        return "HEALTHY";
       }
 
       if (selector === selectUserMetadataStatus) {
         return "loaded";
-      }
-
-      if (selector === selectImportGCalState) {
-        return {
-          importing: false,
-          isImportPending: false,
-        };
       }
 
       return undefined;
@@ -139,7 +143,9 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith();
+    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
+      prompt: "consent",
+    });
     expect(result.current.commandAction.label).toBe(
       "Google Calendar Connected",
     );
@@ -151,22 +157,12 @@ describe("useConnectGoogle", () => {
 
   it("returns reconnect state when refresh token is missing", () => {
     mockUseAppSelector.mockImplementation((selector) => {
-      if (selector === selectGoogleMetadata) {
-        return {
-          connectionStatus: "RECONNECT_REQUIRED",
-          syncStatus: "NONE",
-        };
+      if (selector === selectGoogleConnectionState) {
+        return "RECONNECT_REQUIRED";
       }
 
       if (selector === selectUserMetadataStatus) {
         return "loaded";
-      }
-
-      if (selector === selectImportGCalState) {
-        return {
-          importing: false,
-          isImportPending: false,
-        };
       }
 
       return undefined;
@@ -174,7 +170,9 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith();
+    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
+      prompt: "consent",
+    });
     expect(result.current.commandAction.label).toBe(
       "Reconnect Google Calendar",
     );
@@ -187,24 +185,14 @@ describe("useConnectGoogle", () => {
     );
   });
 
-  it("returns syncing state while repair is running", () => {
+  it("returns syncing state while import is running", () => {
     mockUseAppSelector.mockImplementation((selector) => {
-      if (selector === selectGoogleMetadata) {
-        return {
-          connectionStatus: "CONNECTED",
-          syncStatus: "REPAIRING",
-        };
+      if (selector === selectGoogleConnectionState) {
+        return "IMPORTING";
       }
 
       if (selector === selectUserMetadataStatus) {
         return "loaded";
-      }
-
-      if (selector === selectImportGCalState) {
-        return {
-          importing: false,
-          isImportPending: false,
-        };
       }
 
       return undefined;
@@ -212,7 +200,9 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith();
+    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
+      prompt: "consent",
+    });
     expect(result.current.commandAction.label).toBe("Syncing Google Calendar…");
     expect(result.current.commandAction.isDisabled).toBe(true);
     expect(result.current.commandAction.onSelect).toBeUndefined();
@@ -222,22 +212,12 @@ describe("useConnectGoogle", () => {
 
   it("returns repair state when sync needs attention", () => {
     mockUseAppSelector.mockImplementation((selector) => {
-      if (selector === selectGoogleMetadata) {
-        return {
-          connectionStatus: "CONNECTED",
-          syncStatus: "ATTENTION",
-        };
+      if (selector === selectGoogleConnectionState) {
+        return "ATTENTION";
       }
 
       if (selector === selectUserMetadataStatus) {
         return "loaded";
-      }
-
-      if (selector === selectImportGCalState) {
-        return {
-          importing: false,
-          isImportPending: false,
-        };
       }
 
       return undefined;
@@ -245,7 +225,9 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith();
+    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
+      prompt: "consent",
+    });
     expect(result.current.commandAction.label).toBe("Repair Google Calendar");
     expect(result.current.commandAction.isDisabled).toBe(false);
     expect(result.current.sidebarStatus.icon).toBe("CloudWarningIcon");
@@ -258,9 +240,6 @@ describe("useConnectGoogle", () => {
     expect(mockSyncApi.importGCal).toHaveBeenCalledWith({ force: true });
     expect(mockDispatch).toHaveBeenCalledWith(
       importGCalSlice.actions.clearImportResults(undefined),
-    );
-    expect(mockDispatch).toHaveBeenCalledWith(
-      importGCalSlice.actions.setIsImportPending(true),
     );
     expect(mockDispatch).not.toHaveBeenCalledWith(
       settingsSlice.actions.closeCmdPalette(),
@@ -276,24 +255,14 @@ describe("useConnectGoogle", () => {
     );
   });
 
-  it("waits for server import state instead of treating pending repair as syncing", () => {
+  it("shows connect state when server says not connected", () => {
     mockUseAppSelector.mockImplementation((selector) => {
-      if (selector === selectGoogleMetadata) {
-        return {
-          connectionStatus: "NOT_CONNECTED",
-          syncStatus: "NONE",
-        };
+      if (selector === selectGoogleConnectionState) {
+        return "NOT_CONNECTED";
       }
 
       if (selector === selectUserMetadataStatus) {
         return "loaded";
-      }
-
-      if (selector === selectImportGCalState) {
-        return {
-          importing: false,
-          isImportPending: true,
-        };
       }
 
       return undefined;
@@ -301,31 +270,23 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith();
+    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
+      prompt: "consent",
+    });
     expect(result.current.commandAction.label).toBe("Connect Google Calendar");
     expect(result.current.commandAction.isDisabled).toBe(false);
     expect(result.current.sidebarStatus.icon).toBe("CloudArrowUpIcon");
     expect(result.current.sidebarStatus.isDisabled).toBe(false);
   });
 
-  it("prioritizes reconnect_required over importing state", () => {
+  it("shows reconnect_required state from server", () => {
     mockUseAppSelector.mockImplementation((selector) => {
-      if (selector === selectGoogleMetadata) {
-        return {
-          connectionStatus: "RECONNECT_REQUIRED",
-          syncStatus: "NONE",
-        };
+      if (selector === selectGoogleConnectionState) {
+        return "RECONNECT_REQUIRED";
       }
 
       if (selector === selectUserMetadataStatus) {
         return "loaded";
-      }
-
-      if (selector === selectImportGCalState) {
-        return {
-          importing: true,
-          isImportPending: true,
-        };
       }
 
       return undefined;
@@ -333,7 +294,9 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith();
+    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
+      prompt: "consent",
+    });
     expect(result.current.commandAction.label).toBe(
       "Reconnect Google Calendar",
     );
@@ -344,19 +307,12 @@ describe("useConnectGoogle", () => {
   it("returns connect state when metadata is missing for a never-authenticated user", () => {
     mockHasUserEverAuthenticated.mockReturnValue(false);
     mockUseAppSelector.mockImplementation((selector) => {
-      if (selector === selectGoogleMetadata) {
-        return undefined;
+      if (selector === selectGoogleConnectionState) {
+        return "NOT_CONNECTED";
       }
 
       if (selector === selectUserMetadataStatus) {
         return "idle";
-      }
-
-      if (selector === selectImportGCalState) {
-        return {
-          importing: false,
-          isImportPending: false,
-        };
       }
 
       return undefined;
@@ -364,7 +320,9 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith();
+    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
+      prompt: "consent",
+    });
     expect(result.current.commandAction.label).toBe("Connect Google Calendar");
     expect(result.current.sidebarStatus.icon).toBe("CloudArrowUpIcon");
   });

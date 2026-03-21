@@ -1,6 +1,8 @@
 import { act } from "react";
 import { waitFor } from "@testing-library/react";
+import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
+import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
 
 describe("SessionProvider sessionInit", () => {
   beforeEach(() => {
@@ -14,6 +16,7 @@ describe("SessionProvider sessionInit", () => {
     const disconnect = jest.fn();
     const dispatch = jest.fn();
     const markUserAsAuthenticated = jest.fn();
+    const getLastKnownEmail = jest.fn().mockReturnValue("test@example.com");
 
     jest.doMock("@web/auth/session/user-metadata.util", () => ({
       refreshUserMetadata,
@@ -33,6 +36,7 @@ describe("SessionProvider sessionInit", () => {
       },
     }));
     jest.doMock("@web/auth/state/auth.state.util", () => ({
+      getLastKnownEmail,
       markUserAsAuthenticated,
     }));
 
@@ -45,7 +49,9 @@ describe("SessionProvider sessionInit", () => {
       sessionInit();
 
       await waitFor(() => {
-        expect(markUserAsAuthenticated).toHaveBeenCalledTimes(1);
+        expect(markUserAsAuthenticated).toHaveBeenCalledWith(
+          "test@example.com",
+        );
         expect(refreshUserMetadata).toHaveBeenCalledTimes(1);
       });
       expect(connect).toHaveBeenCalledTimes(1);
@@ -59,6 +65,7 @@ describe("SessionProvider sessionInit", () => {
     const disconnect = jest.fn();
     const dispatch = jest.fn();
     const markUserAsAuthenticated = jest.fn();
+    const getLastKnownEmail = jest.fn().mockReturnValue("test@example.com");
 
     jest.doMock("@web/auth/session/user-metadata.util", () => ({
       refreshUserMetadata,
@@ -78,6 +85,7 @@ describe("SessionProvider sessionInit", () => {
       },
     }));
     jest.doMock("@web/auth/state/auth.state.util", () => ({
+      getLastKnownEmail,
       markUserAsAuthenticated,
     }));
 
@@ -94,7 +102,9 @@ describe("SessionProvider sessionInit", () => {
       });
 
       await waitFor(() => {
-        expect(markUserAsAuthenticated).toHaveBeenCalledTimes(1);
+        expect(markUserAsAuthenticated).toHaveBeenCalledWith(
+          "test@example.com",
+        );
         expect(refreshUserMetadata).toHaveBeenCalledTimes(1);
       });
       expect(reconnect).toHaveBeenCalledTimes(1);
@@ -103,7 +113,13 @@ describe("SessionProvider sessionInit", () => {
         session.emit("SIGN_OUT", { action: "SIGN_OUT" } as never);
       });
 
-      expect(dispatch).toHaveBeenCalledWith(userMetadataSlice.actions.clear());
+      expect(dispatch).toHaveBeenCalledWith(authSlice.actions.resetAuth());
+      expect(dispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.clearImportResults(undefined),
+      );
+      expect(dispatch).toHaveBeenCalledWith(
+        userMetadataSlice.actions.clear(undefined),
+      );
       expect(disconnect).toHaveBeenCalledTimes(1);
     });
   });

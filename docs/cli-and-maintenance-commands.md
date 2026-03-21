@@ -62,6 +62,33 @@ Implementation:
 
 This command wraps Umzug and uses Mongo-backed migration storage.
 
+Verified subcommands (`yarn cli migrate --help`):
+
+- `up` - apply pending migrations
+- `down` - revert migrations
+- `pending` - list pending migrations
+- `executed` - list already applied migrations
+- `create` - scaffold a new migration file
+
+Common examples:
+
+```bash
+# inspect migration state
+yarn cli migrate pending
+yarn cli migrate executed
+
+# apply everything pending
+yarn cli migrate up
+
+# apply a specific migration only
+yarn cli migrate up --name 2025.10.13T14.22.21.migrate-sync-watch-data
+
+# revert the most recent migration
+yarn cli migrate down
+```
+
+`up` and `down` also support `--to` and `--step` for bounded execution.
+
 ### Seed
 
 Example shape:
@@ -82,6 +109,46 @@ The migration command:
 - stores execution state in Mongo collections
 
 There is also a separate web-local migration system under `packages/web/src/common/storage/migrations`; do not confuse the two.
+
+## Runbook: Sync Watch Data Migration
+
+Source migration:
+
+- `packages/scripts/src/migrations/2025.10.13T14.22.21.migrate-sync-watch-data.ts`
+
+Intent:
+
+- move Google watch-channel management to the dedicated `watch` collection
+- recreate active Google watches from sync-derived event watch entries
+- leave sync token data in `sync` records
+
+What the migration does in `up`:
+
+1. clears existing `watch` collection entries
+2. scans `sync` records with Google event watch metadata and valid expirations
+3. creates a Google client per user (`getGcalClient`)
+4. stops old watch channels referenced in sync data
+5. creates fresh event watches (per calendar) and one calendar-list watch
+6. inserts rebuilt watch records via `WatchSchema`
+
+Operational constraints:
+
+- this migration performs live Google watch API calls; valid Google credentials are required per user
+- execution can consume API quota on large datasets because channels are stopped and recreated
+- `down` is intentionally non-destructive and does not rebuild old sync-embedded watch state
+
+Recommended execution pattern:
+
+```bash
+# verify target migration is pending
+yarn cli migrate pending
+
+# run only the watch migration
+yarn cli migrate up --name 2025.10.13T14.22.21.migrate-sync-watch-data
+
+# confirm it is now recorded as executed
+yarn cli migrate executed
+```
 
 ## Safety Guidance
 

@@ -17,11 +17,17 @@ export interface Schema_User {
 }
 
 type SyncStatus = "IMPORTING" | "ERRORED" | "COMPLETED" | "RESTART" | null;
-export type GoogleConnectionStatus =
+
+/**
+ * Unified Google connection state computed by the server.
+ * Clients read this value directly instead of deriving state from multiple sources.
+ */
+export type GoogleConnectionState =
   | "NOT_CONNECTED"
-  | "CONNECTED"
-  | "RECONNECT_REQUIRED";
-export type GoogleSyncStatus = "HEALTHY" | "REPAIRING" | "ATTENTION" | "NONE";
+  | "RECONNECT_REQUIRED"
+  | "IMPORTING"
+  | "HEALTHY"
+  | "ATTENTION";
 
 export interface UserMetadata extends SupertokensUserMetadata.JSONObject {
   skipOnboarding?: boolean;
@@ -30,9 +36,7 @@ export interface UserMetadata extends SupertokensUserMetadata.JSONObject {
     incrementalGCalSync?: SyncStatus;
   };
   google?: {
-    hasRefreshToken?: boolean;
-    connectionStatus?: GoogleConnectionStatus;
-    syncStatus?: GoogleSyncStatus;
+    connectionState?: GoogleConnectionState;
   };
 }
 

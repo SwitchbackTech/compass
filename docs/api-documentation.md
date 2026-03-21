@@ -104,14 +104,26 @@ Files:
 - `packages/backend/src/common/middleware/supertokens.middleware.ts`
 - `packages/web/src/auth/session/SessionProvider.tsx`
 - `packages/web/src/common/apis/auth.api.ts`
+- `packages/web/src/components/AuthModal/hooks/useAuthFormHandlers.ts`
 
 The web app uses SuperTokens APIs mounted under `/api`:
 
 - `POST /api/signinup` (Google OAuth sign-in/up exchange used by `AuthApi.loginOrSignup`)
 - `POST /api/signout` (session sign-out)
 - `POST /api/session/refresh` (session refresh)
+- Email/password flows are also recipe-managed by SuperTokens and called through `supertokens-web-js`:
+  - `EmailPassword.signUp(...)`
+  - `EmailPassword.signIn(...)`
+  - `EmailPassword.sendPasswordResetEmail(...)`
+  - `EmailPassword.submitNewPassword(...)`
 
 These endpoints are framework-managed by the SuperTokens recipes configured in `initSupertokens()`, not by `auth.routes.config.ts`.
+
+Runtime constraints from recipe overrides:
+
+- successful password `signUpPOST` and `signInPOST` upsert the Compass user via `userService.upsertUserFromAuth(...)`
+- password `createNewRecipeUser` ensures SuperTokens external user-id mapping exists and points to a Mongo `ObjectId` string
+- password-reset emails are currently logged (dev/test) or logged as disabled (non-dev), not delivered by an external provider
 
 ---
 
@@ -277,7 +289,7 @@ Authenticated user trigger for full import restart:
 - `GET /api/event`
   - middleware: `verifySession()`
 - `POST /api/event`
-  - middleware: `verifySession()` + `requireGoogleConnectionSession`
+  - middleware: `verifySession()`
 
 ### /api/event/deleteMany
 
@@ -299,13 +311,15 @@ Authenticated user trigger for full import restart:
 - `GET /api/event/:id`
   - middleware: `verifySession()`
 - `PUT /api/event/:id`
-  - middleware: `verifySession()` + `requireGoogleConnectionSession`
+  - middleware: `verifySession()`
 - `DELETE /api/event/:id`
-  - middleware: `verifySession()` + `requireGoogleConnectionSession`
+  - middleware: `verifySession()`
 
 Write semantics:
 
-- `POST /api/event`, `PUT /api/event/:id`, `DELETE /api/event/:id` require Google connection middleware
+- event writes (`POST`, `PUT`, `DELETE`) require only `verifySession()` at the route layer
+- `CompassSyncProcessor` applies Compass mutations first, then attempts Google side effects
+- if Google side effects fail only because refresh token is missing, Compass writes are preserved and Google effects are skipped
 - controllers use `res.promise(...)` and return status-only payloads for `204 No Content` responses
 - errors are routed through centralized Express error handling (Google/API-specific handling included)
 
@@ -317,11 +331,12 @@ Most endpoints require authentication via Supertokens session management.
 
 **Authentication Flow**:
 
-1. Client initiates OAuth exchange via SuperTokens endpoints (for example `POST /api/signinup`)
-2. User authenticates with Google
-3. Session cookie is set
-4. Subsequent requests include session cookie
-5. Backend validates session with `verifySession()` middleware
+1. Client completes SuperTokens auth via either:
+   - Google OAuth (`POST /api/signinup`)
+   - email/password recipe flows (`signUp`, `signIn`, password reset actions via SDK)
+2. Session cookie is set
+3. Subsequent requests include session cookie
+4. Backend validates session with `verifySession()` middleware
 
 Authentication exceptions:
 
@@ -371,7 +386,7 @@ this.app
 ### Middleware
 
 - `verifySession()` - Requires valid Supertokens session
-- `requireGoogleConnectionSession` - Requires Google OAuth connection
+- `requireGoogleConnectionSession` - Requires Google OAuth connection for Google-dependent routes
 - `verifyIsDev` - Development environment only
 
 ## Error Responses
@@ -400,7 +415,8 @@ When this payload accompanies `401` or `410`, web clients should keep the sessio
 ## Key Endpoints
 
 - `/api/auth/session` - dev session helper route
-- `/api/signinup`, `/api/signout`, `/api/session/*` - SuperTokens auth/session APIs
+- `/api/signinup`, `/api/signout`, `/api/session/*` - SuperTokens OAuth/session APIs
+- SuperTokens EmailPassword APIs (invoked through SDK methods in auth form hooks)
 - `/api/user/*` - User profile and metadata
 - `/api/event/*` - Calendar event CRUD operations
 - `/api/calendars/*` - Calendar list and selection

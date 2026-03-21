@@ -59,7 +59,7 @@ If you change recurring edit behavior, check:
 
 - `packages/core/src/types/event.types.ts`
 - `packages/backend/src/event/controllers/event.controller.ts`
-- `packages/backend/src/sync/services/sync/compass.sync.processor.ts`
+- `packages/backend/src/sync/services/sync/compass/compass.sync.processor.ts`
 
 ## Backend Event Shape Semantics
 

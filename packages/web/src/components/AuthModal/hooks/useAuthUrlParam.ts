@@ -9,6 +9,7 @@ const VIEW_MAP: Record<string, AuthView> = {
   login: "login",
   signup: "signUp",
   forgot: "forgotPassword",
+  reset: "resetPassword",
 };
 
 /**

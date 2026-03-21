@@ -9,7 +9,7 @@ import { useZodForm } from "../hooks/useZodForm";
 
 interface SignInFormProps {
   /** Callback when form is submitted with valid data */
-  onSubmit: (data: LogInFormData) => void;
+  onSubmit: (data: LogInFormData) => void | Promise<void>;
   /** Callback when "Forgot password" is clicked */
   onForgotPassword: () => void;
   /** Whether form submission is in progress */

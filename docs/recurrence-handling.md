@@ -39,7 +39,7 @@ Primary files:
 
 - `packages/backend/src/event/classes/compass.event.parser.ts`
 - `packages/backend/src/event/classes/compass.event.executor.ts`
-- `packages/backend/src/sync/services/sync/compass.sync.processor.ts`
+- `packages/backend/src/sync/services/sync/compass/compass.sync.processor.ts`
 
 ## Update Scopes
 
@@ -102,6 +102,56 @@ Instead:
 - `CompassSyncProcessor` executes Google create/update/delete after Compass persistence succeeds
 
 Delete-oriented Google effects should prefer the persisted DB `gEventId` when available, then fall back to the incoming payload `gEventId`.
+
+## Transition Key And Plan Contract
+
+The planner dispatch key is:
+
+- `${dbCategory ?? "NIL"}->>${eventCategory}_${status}`
+
+Concrete examples from current tests:
+
+- `NIL->>RECURRENCE_BASE_CONFIRMED`
+- `STANDALONE->>STANDALONE_CANCELLED`
+- `RECURRENCE_BASE->>STANDALONE_CONFIRMED`
+
+`analyzeCompassTransition(...)` returns a `CompassOperationPlan` with:
+
+- transition metadata (`summary`, `operation`, `transitionKey`)
+- Compass persistence intent (`compassMutation`, `steps`, `provider`)
+- Google side-effect intent (`googleEffect`)
+- optional `clearRecurrenceBeforeGoogleUpdate` guard for series -> standalone updates
+
+`applyCompassPlan(...)` executes the `steps` in order, then returns:
+
+- transition summary (`Event_Transition`)
+- last persisted Compass event when a step returns one
+- `googleDeleteEventId` resolved from persisted event first, otherwise planner fallback
+
+The processor executes Google effects only after Compass persistence succeeds.
+
+## Recurrence Sync Triage Runbook
+
+Use this sequence when recurring edits behave unexpectedly:
+
+1. Capture the transition key from backend logs:
+   - `Handle Compass event(<id>): <transitionKey>`
+2. Look up the key in `PLAN_BUILDERS` in `compass.event.parser.ts`.
+3. Verify the planned `steps` order and `googleEffect` in unit tests:
+   - `compass.event.parser.test.ts`
+   - `compass.event.executor.test.ts`
+   - `compass.sync.processor.test.ts`
+4. Map each step to persistence calls in `executeStep(...)`:
+   - `create` -> `_createCompassEvent`
+   - `update` -> `_updateCompassEvent`
+   - `update_series` -> `_updateCompassSeries`
+   - `delete_single` -> `_deleteSingleCompassEvent`
+   - `delete_series` -> `_deleteSeries`
+   - `delete_instances_after_until` -> `_deleteInstancesAfterUntil`
+5. For unexpected Google deletes, confirm `googleDeleteEventId` came from persisted DB `gEventId` before payload fallback.
+6. For series -> standalone updates, verify the recurrence-clearing guard:
+   - planner sets `clearRecurrenceBeforeGoogleUpdate`
+   - executor clears `persistedEvent.recurrence` before `_updateGcal(...)`
 
 ## What To Verify When Changing Recurrence Logic
 

@@ -8,7 +8,7 @@ import { useSession } from "@web/auth/hooks/session/useSession";
 import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
 import { markUserAsAuthenticated } from "@web/auth/state/auth.state.util";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
-import { type SignInUpInput } from "@web/components/oauth/ouath.types";
+import { SignInUpInput } from "@web/components/oauth/ouath.types";
 
 // Mock dependencies
 jest.mock("@web/auth/google/google.auth.util");
@@ -151,16 +151,7 @@ describe("useGoogleAuth", () => {
     expect(mockSetAuthenticated).toHaveBeenCalledWith(true);
     expect(mockRefreshUserMetadata).toHaveBeenCalledTimes(1);
     expect(mockDispatchFn).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: "async/importGCal/setIsImportPending",
-        payload: true,
-      }),
-    );
-    expect(mockDispatchFn).not.toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: "async/importGCal/importing",
-        payload: true,
-      }),
+      expect.objectContaining({ type: "auth/authSuccess" }),
     );
   });
 
@@ -191,7 +182,7 @@ describe("useGoogleAuth", () => {
   });
 
   describe("onError callback", () => {
-    it("hides overlay when login fails", () => {
+    it("dispatches auth error when login fails", () => {
       let onErrorCallback: ((error: unknown) => void) | undefined;
 
       mockUseGoogleLogin.mockImplementation(({ onError }) => {
@@ -213,14 +204,7 @@ describe("useGoogleAuth", () => {
 
       expect(mockDispatchFn).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: "async/importGCal/setIsImportPending",
-          payload: false,
-        }),
-      );
-      expect(mockDispatchFn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "async/importGCal/importing",
-          payload: false,
+          type: "auth/authError",
         }),
       );
     });
@@ -249,18 +233,6 @@ describe("useGoogleAuth", () => {
           type: "auth/resetAuth",
         }),
       );
-      expect(mockDispatchFn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "async/importGCal/setIsImportPending",
-          payload: false,
-        }),
-      );
-      expect(mockDispatchFn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "async/importGCal/importing",
-          payload: false,
-        }),
-      );
       expect(mockDispatchFn).not.toHaveBeenCalledWith(
         expect.objectContaining({
           type: "auth/authError",
@@ -270,7 +242,7 @@ describe("useGoogleAuth", () => {
   });
 
   describe("authentication failure handling", () => {
-    it("clears import flow and does not proceed when authentication fails", async () => {
+    it("does not proceed when authentication fails", async () => {
       mockAuthenticate.mockResolvedValue({
         success: false,
         error: new Error("Auth failed"),
@@ -313,15 +285,62 @@ describe("useGoogleAuth", () => {
       // Should not proceed with auth flow
       expect(mockMarkUserAsAuthenticated).not.toHaveBeenCalled();
       expect(mockSetAuthenticated).not.toHaveBeenCalled();
-      expect(mockDispatchFn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "async/importGCal/setIsImportPending",
-          payload: false,
-        }),
+
+      // Should show error toast so user knows what went wrong
+      const { toast } = jest.requireMock("react-toastify");
+      expect(toast.error).toHaveBeenCalledWith(
+        "Failed to connect Google Calendar. Please try again.",
+        expect.anything(),
       );
     });
 
-    it("clears import flow when authenticate throws an unexpected error", async () => {
+    it("shows error toast and resets auth when SuperTokens returns non-OK status", async () => {
+      mockAuthenticate.mockResolvedValue({
+        success: true,
+        data: { status: "SIGN_IN_UP_NOT_ALLOWED" } as never,
+      });
+
+      let onSuccessCallback:
+        | ((data: SignInUpInput) => Promise<void>)
+        | undefined;
+
+      mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
+        onSuccessCallback = onSuccess;
+        return { login: mockLogin, loading: false, data: null };
+      });
+
+      renderHook(() => useGoogleAuth());
+
+      if (onSuccessCallback) {
+        await onSuccessCallback({
+          clientType: "web",
+          thirdPartyId: "google",
+          redirectURIInfo: {
+            redirectURIOnProviderDashboard: "",
+            redirectURIQueryParams: {
+              code: "test-auth-code",
+              scope: "email profile",
+              state: undefined,
+            },
+          },
+        });
+      }
+
+      await waitFor(() => {
+        expect(mockAuthenticate).toHaveBeenCalled();
+      });
+
+      expect(mockMarkUserAsAuthenticated).not.toHaveBeenCalled();
+      expect(mockSetAuthenticated).not.toHaveBeenCalled();
+
+      const { toast } = jest.requireMock("react-toastify");
+      expect(toast.error).toHaveBeenCalledWith(
+        "Could not link Google Calendar to your account. Please try again.",
+        expect.anything(),
+      );
+    });
+
+    it("does not proceed when authenticate throws an unexpected error", async () => {
       const authError = new Error("Network error");
       mockAuthenticate.mockRejectedValue(authError);
 
@@ -358,13 +377,6 @@ describe("useGoogleAuth", () => {
       await waitFor(() => {
         expect(mockAuthenticate).toHaveBeenCalled();
       });
-
-      expect(mockDispatchFn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "async/importGCal/setIsImportPending",
-          payload: false,
-        }),
-      );
 
       // Should not proceed with auth flow
       expect(mockMarkUserAsAuthenticated).not.toHaveBeenCalled();

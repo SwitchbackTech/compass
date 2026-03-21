@@ -43,7 +43,7 @@ Primary files:
 - `packages/backend/src/event/controllers/event.controller.ts`
 - `packages/backend/src/event/classes/compass.event.parser.ts`
 - `packages/backend/src/event/classes/compass.event.executor.ts`
-- `packages/backend/src/sync/services/sync/compass.sync.processor.ts`
+- `packages/backend/src/sync/services/sync/compass/compass.sync.processor.ts`
 
 ## Inbound Flow: Google Notifies Compass About Changes
 
@@ -62,7 +62,7 @@ Primary files:
 - `packages/backend/src/sync/sync.routes.config.ts`
 - `packages/backend/src/sync/services/sync.service.ts`
 - `packages/backend/src/sync/services/notify/handler/gcal.notification.handler.ts`
-- `packages/backend/src/sync/services/sync/gcal.sync.processor.ts`
+- `packages/backend/src/sync/services/sync/google/gcal.sync.processor.ts`
 
 ### Notification Outcomes And Error Semantics
 
@@ -92,6 +92,66 @@ Two backend data concepts matter:
 - sync records track sync tokens and per-resource state
 
 If notification handling fails because a watch or sync record is stale, the backend attempts cleanup before failing hard.
+
+### Watch Channel Persistence Model
+
+Source files:
+
+- `packages/core/src/types/watch.types.ts`
+- `packages/backend/src/sync/services/sync.service.ts`
+- `packages/backend/src/sync/controllers/sync.controller.ts`
+
+Current contract:
+
+- `watch` collection is the source of truth for active Google push channels
+- each watch stores:
+  - `_id` (Mongo ObjectId) -> Google channel id (`x-goog-channel-id`)
+  - `resourceId` -> Google resource id (`x-goog-resource-id`)
+  - `gCalendarId` -> watched calendar id (or `Resource_Sync.CALENDAR` for calendar-list watches)
+  - `expiration` -> channel expiry timestamp
+  - `user` -> owning Compass user id
+- `sync` collection remains the source of sync tokens (`nextSyncToken`) and resource state
+
+Runtime correlation rules:
+
+- notification handling first matches `watch` by `_id`, `resourceId`, and non-expired channel
+- if no matching watch exists, backend attempts stale-watch cleanup and returns `"IGNORED"`
+- if watch exists but no sync record exists, backend also attempts stale-watch cleanup and returns `"IGNORED"`
+- if watch + sync exist but no `nextSyncToken` exists, controller triggers forced background resync and returns `204`
+
+### Watch Lifecycle Operations
+
+Primary write paths:
+
+- create calendar watch: `startWatchingGcalCalendars(...)`
+- create events watch: `startWatchingGcalEvents(...)`
+- stop one watch: `stopWatch(...)`
+- stop all user watches: `stopWatches(...)`
+
+Error semantics during stop:
+
+- Google `404` channel-not-found -> delete watch record locally and continue
+- Google `401` / invalid token -> delete watch record locally and continue
+- missing refresh token -> delete watch record locally and continue
+
+This makes watch cleanup idempotent for stale or already-invalid Google channels.
+
+### Watch Triage Checklist
+
+When Google notifications repeatedly return `"IGNORED"` or no client refresh occurs:
+
+1. verify watch exists for the incoming channel/resource pair:
+   - `_id == x-goog-channel-id`
+   - `resourceId == x-goog-resource-id`
+2. verify watch `expiration` is still valid
+3. verify matching sync entry has `nextSyncToken` for that `gCalendarId` in:
+   - `google.events[*]` for event notifications
+   - `google.calendarlist[*]` for calendar-list notifications
+4. check for cleanup/recovery logs:
+   - `Cleaned up stale watch...`
+   - `Ignoring notification because no active watch record exists...`
+   - `Recovering Google sync after missing sync token`
+5. if channels are broadly stale, run maintenance (`/api/sync/maintain-all`) or re-run full import for affected users
 
 ## Websocket Server Responsibilities
 
@@ -154,8 +214,8 @@ Note: Frontend reconnect intent is no longer used for routing. The server is the
 Primary files:
 
 - `packages/backend/src/common/middleware/supertokens.middleware.ts`
-- `packages/backend/src/auth/services/google/google.auth.success.service.ts`
-- `packages/backend/src/auth/services/compass.auth.service.ts`
+- `packages/backend/src/auth/services/google/google.auth.service.ts`
+- `packages/backend/src/auth/services/compass/compass.auth.service.ts`
 - `packages/web/src/auth/google/google.auth.state.ts`
 - `packages/web/src/auth/google/google.auth.util.ts`
 - `packages/web/src/common/repositories/event/event.repository.util.ts`

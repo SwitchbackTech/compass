@@ -6,14 +6,42 @@ import { addTasks } from "@web/__tests__/utils/tasks/task.test.util";
 import { renderWithDayProvidersAsync } from "@web/views/Day/util/day.test-util";
 import { DayViewContent } from "@web/views/Day/view/DayViewContent";
 
+// Helper to create a mock matchMedia
+const createMatchMedia = (matches: boolean) => {
+  const listeners: Array<(e: MediaQueryListEvent) => void> = [];
+  return {
+    matches,
+    media: "",
+    onchange: null,
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    addEventListener: jest.fn(
+      (_event: string, listener: (e: MediaQueryListEvent) => void) => {
+        listeners.push(listener);
+      },
+    ),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+    // Helper to simulate resize
+    _triggerChange: (newMatches: boolean) => {
+      listeners.forEach((listener) =>
+        listener({ matches: newMatches } as MediaQueryListEvent),
+      );
+    },
+  };
+};
+
 // Mock the Agenda component
 jest.mock("../components/Agenda/Agenda", () => ({
   Agenda: () => <div className="h-96">Calendar Content</div>,
 }));
 
-// Mock the ShortcutsOverlay component
-jest.mock("@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay", () => ({
-  ShortcutsOverlay: () => <div data-testid="shortcuts-overlay" />,
+// Mock the ShortcutsSidebar component
+jest.mock("../components/ShortcutsSidebar/ShortcutsSidebar", () => ({
+  ShortcutsSidebar: ({ isOpen }: { isOpen: boolean }) =>
+    isOpen ? (
+      <aside aria-label="Shortcuts sidebar" data-testid="shortcuts-sidebar" />
+    ) : null,
 }));
 
 // Mock the keyboard shortcuts hook
@@ -242,5 +270,113 @@ describe("TodayViewContent", () => {
         firstTaskId,
       );
     }, 10000);
+  });
+
+  describe("Sidebar responsive behavior", () => {
+    const originalMatchMedia = window.matchMedia;
+    const originalInnerWidth = window.innerWidth;
+
+    afterEach(() => {
+      window.matchMedia = originalMatchMedia;
+      Object.defineProperty(window, "innerWidth", {
+        writable: true,
+        configurable: true,
+        value: originalInnerWidth,
+      });
+    });
+
+    it("should open sidebar when screen is wide (>=1280px)", async () => {
+      // Mock wide screen
+      Object.defineProperty(window, "innerWidth", {
+        writable: true,
+        configurable: true,
+        value: 1400,
+      });
+      const mockMediaQuery = createMatchMedia(true);
+      window.matchMedia = jest.fn().mockReturnValue(mockMediaQuery);
+
+      await renderWithDayProvidersAsync(<DayViewContent />);
+
+      // Sidebar should be visible (check for shortcuts sidebar)
+      const sidebar = screen.queryByRole("complementary", {
+        name: "Shortcuts sidebar",
+      });
+      expect(sidebar).toBeInTheDocument();
+    });
+
+    it("should close sidebar when screen is narrow (<1280px)", async () => {
+      // Mock narrow screen
+      Object.defineProperty(window, "innerWidth", {
+        writable: true,
+        configurable: true,
+        value: 1000,
+      });
+      const mockMediaQuery = createMatchMedia(false);
+      window.matchMedia = jest.fn().mockReturnValue(mockMediaQuery);
+
+      await renderWithDayProvidersAsync(<DayViewContent />);
+
+      // Sidebar should not be visible
+      const sidebar = screen.queryByRole("complementary", {
+        name: "Shortcuts sidebar",
+      });
+      expect(sidebar).not.toBeInTheDocument();
+    });
+
+    it("should close sidebar when screen resizes from wide to narrow", async () => {
+      // Start with wide screen
+      Object.defineProperty(window, "innerWidth", {
+        writable: true,
+        configurable: true,
+        value: 1400,
+      });
+      const mockMediaQuery = createMatchMedia(true);
+      window.matchMedia = jest.fn().mockReturnValue(mockMediaQuery);
+
+      await renderWithDayProvidersAsync(<DayViewContent />);
+
+      // Sidebar should be visible initially
+      expect(
+        screen.queryByRole("complementary", { name: "Shortcuts sidebar" }),
+      ).toBeInTheDocument();
+
+      // Simulate resize to narrow
+      act(() => {
+        mockMediaQuery._triggerChange(false);
+      });
+
+      // Sidebar should now be hidden
+      expect(
+        screen.queryByRole("complementary", { name: "Shortcuts sidebar" }),
+      ).not.toBeInTheDocument();
+    });
+
+    it("should open sidebar when screen resizes from narrow to wide", async () => {
+      // Start with narrow screen
+      Object.defineProperty(window, "innerWidth", {
+        writable: true,
+        configurable: true,
+        value: 1000,
+      });
+      const mockMediaQuery = createMatchMedia(false);
+      window.matchMedia = jest.fn().mockReturnValue(mockMediaQuery);
+
+      await renderWithDayProvidersAsync(<DayViewContent />);
+
+      // Sidebar should be hidden initially
+      expect(
+        screen.queryByRole("complementary", { name: "Shortcuts sidebar" }),
+      ).not.toBeInTheDocument();
+
+      // Simulate resize to wide
+      act(() => {
+        mockMediaQuery._triggerChange(true);
+      });
+
+      // Sidebar should now be visible
+      expect(
+        screen.queryByRole("complementary", { name: "Shortcuts sidebar" }),
+      ).toBeInTheDocument();
+    });
   });
 });

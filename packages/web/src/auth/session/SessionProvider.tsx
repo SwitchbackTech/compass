@@ -11,14 +11,20 @@ import {
   skip,
 } from "rxjs/operators";
 import SuperTokens from "supertokens-web-js";
+import EmailPassword from "supertokens-web-js/recipe/emailpassword";
 import Session from "supertokens-web-js/recipe/session";
 import ThirdParty from "supertokens-web-js/recipe/thirdparty";
 import { APP_NAME } from "@core/constants/core.constants";
-import { markUserAsAuthenticated } from "@web/auth/state/auth.state.util";
+import {
+  getLastKnownEmail,
+  markUserAsAuthenticated,
+} from "@web/auth/state/auth.state.util";
 import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
+import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
 import * as socket from "@web/socket/provider/SocketProvider";
 import { store } from "@web/store";
 import { type CompassSession } from "./session.types";
@@ -32,6 +38,7 @@ SuperTokens.init({
   },
   recipeList: [
     ThirdParty.init(),
+    EmailPassword.init(),
     Session.init({
       postAPIHook: async (context) => {
         session.emit(context.action, context);
@@ -53,33 +60,39 @@ let isCheckingSession = false;
 
 const $authenticated = authenticated$.pipe(skip(1), distinctUntilChanged());
 
+const handleSessionExists = () => {
+  markUserAsAuthenticated(getLastKnownEmail());
+  void refreshUserMetadata();
+};
+
+const handleSessionMissing = () => {
+  store.dispatch(authSlice.actions.resetAuth());
+  store.dispatch(importGCalSlice.actions.clearImportResults(undefined));
+  store.dispatch(userMetadataSlice.actions.clear(undefined));
+};
+
 async function checkIfSessionExists(): Promise<boolean> {
+  if (isCheckingSession) return false;
+
+  isCheckingSession = true;
+
   try {
-    if (isCheckingSession) return false;
-    isCheckingSession = true;
-
     const exists = await session.doesSessionExist();
-    const socketConnected = socket.socket.connected;
 
-    // If a session exists, mark the user as authenticated.
-    // This ensures existing users who authenticated before the flag was introduced
-    // will be properly marked, and the flag persists even if their session expires later.
     if (exists) {
-      markUserAsAuthenticated();
-      void refreshUserMetadata();
+      handleSessionExists();
+      if (!socket.socket.connected) {
+        socket.socket.connect();
+      }
     } else {
-      store.dispatch(userMetadataSlice.actions.clear());
+      handleSessionMissing();
     }
 
     authenticated$.next(exists);
-
-    if (exists && !socketConnected) socket.socket.connect();
-
     return exists;
   } catch (error) {
     console.error("Error checking auth status:", error);
     authenticated$.next(false);
-
     return false;
   } finally {
     isCheckingSession = false;
@@ -98,12 +111,12 @@ export function sessionInit() {
       case "SESSION_CREATED":
         // Mark user as authenticated when session is created or refreshed
         // This ensures the flag is set even if markUserAsAuthenticated wasn't called during OAuth
-        markUserAsAuthenticated();
+        markUserAsAuthenticated(getLastKnownEmail());
         void refreshUserMetadata();
         socket.reconnect();
         break;
       case "SIGN_OUT":
-        store.dispatch(userMetadataSlice.actions.clear());
+        store.dispatch(userMetadataSlice.actions.clear(undefined));
         socket.disconnect();
         break;
     }

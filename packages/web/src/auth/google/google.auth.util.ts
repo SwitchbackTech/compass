@@ -1,5 +1,6 @@
 import { toast } from "react-toastify";
 import { Origin } from "@core/constants/core.constants";
+import { type Result_Auth_Compass } from "@core/types/auth.types";
 import { markGoogleAsRevoked } from "@web/auth/google/google.auth.state";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
@@ -9,15 +10,13 @@ import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
-import {
-  importGCalSlice,
-  triggerFetch,
-} from "@web/ducks/events/slices/sync.slice";
+import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { reconnect } from "@web/socket/client/socket.client";
 import { store } from "@web/store";
 
 export interface AuthenticateResult {
   success: boolean;
+  data?: Result_Auth_Compass;
   error?: Error;
 }
 
@@ -34,8 +33,8 @@ export async function authenticate(
   data: SignInUpInput,
 ): Promise<AuthenticateResult> {
   try {
-    await AuthApi.loginOrSignup(data);
-    return { success: true };
+    const response = await AuthApi.loginOrSignup(data);
+    return { success: true, data: response };
   } catch (error) {
     return { success: false, error: error as Error };
   }
@@ -55,9 +54,7 @@ export const handleGoogleRevoked = () => {
   markGoogleAsRevoked();
 
   store.dispatch(authSlice.actions.resetAuth());
-  store.dispatch(userMetadataSlice.actions.clear());
-  store.dispatch(importGCalSlice.actions.importing(false));
-  store.dispatch(importGCalSlice.actions.setIsImportPending(false));
+  store.dispatch(userMetadataSlice.actions.clear(undefined));
 
   store.dispatch(
     eventsEntitiesSlice.actions.removeEventsByOrigin({

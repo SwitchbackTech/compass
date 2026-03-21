@@ -16,7 +16,7 @@ import {
 } from "@core/types/gcal";
 import { Resource_Sync, type SyncDetails } from "@core/types/sync.types";
 import { isBaseGCalEvent } from "@core/util/event/gcal.event.util";
-import { getGcalClient } from "@backend/auth/services/google/google.auth.service";
+import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import { Collections } from "@backend/common/constants/collections";
 import { ENV } from "@backend/common/constants/env.constants";
 import { EventError } from "@backend/common/errors/event/event.errors";

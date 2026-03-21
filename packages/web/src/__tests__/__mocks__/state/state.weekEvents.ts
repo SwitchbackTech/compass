@@ -84,6 +84,7 @@ export const preloadedState: InitialReduxState = {
       importing: false,
       importResults: null,
       pendingLocalEventsSynced: null,
+      importError: null,
     },
     importLatest: {
       isFetchNeeded: false,

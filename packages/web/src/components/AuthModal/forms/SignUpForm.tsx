@@ -9,7 +9,7 @@ import { useZodForm } from "../hooks/useZodForm";
 
 interface SignUpFormProps {
   /** Callback when form is submitted with valid data */
-  onSubmit: (data: SignUpFormData) => void;
+  onSubmit: (data: SignUpFormData) => void | Promise<void>;
   /** Callback when name field changes (for dynamic greeting) */
   onNameChange?: (name: string) => void;
   /** Whether form submission is in progress */

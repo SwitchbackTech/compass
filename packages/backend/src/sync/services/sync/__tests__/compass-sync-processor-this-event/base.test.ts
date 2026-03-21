@@ -23,7 +23,7 @@ import {
   testCompassSeries,
   testCompassSeriesInGcal,
 } from "@backend/event/classes/compass.event.parser.test.util";
-import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.processor";
+import { CompassSyncProcessor } from "@backend/sync/services/sync/compass/compass.sync.processor";
 
 describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
   `CompassSyncProcessor  - $calendarProvider calendar: ${RecurringEventUpdateScope.THIS_EVENT} - Base Event: `,

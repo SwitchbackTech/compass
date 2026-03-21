@@ -13,7 +13,7 @@ import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { ENV } from "@backend/common/constants/env.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
-import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.processor";
+import { CompassSyncProcessor } from "@backend/sync/services/sync/compass/compass.sync.processor";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 export default class Seeder implements RunnableMigration<MigrationContext> {

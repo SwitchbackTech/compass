@@ -1,196 +1,231 @@
-import { GaxiosError } from "gaxios";
-import { OAuth2Client, type TokenPayload } from "google-auth-library";
-import { type WithId } from "mongodb";
-import { calendar } from "@googleapis/calendar";
-import { BaseError } from "@core/errors/errors.base";
-import { Status } from "@core/errors/status.codes";
+import { type Credentials, type TokenPayload } from "google-auth-library";
 import { Logger } from "@core/logger/winston.logger";
-import { type UserInfo_Google } from "@core/types/auth.types";
-import { type gCalendar } from "@core/types/gcal";
-import { StringV4Schema } from "@core/types/type.utils";
-import { type Schema_User } from "@core/types/user.types";
+import { mapCompassUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
+import { StringV4Schema, zObjectId } from "@core/types/type.utils";
+import GoogleOAuthClient from "@backend/auth/services/google/clients/google.oauth.client";
+import {
+  determineGoogleAuthMode,
+  parseReconnectGoogleParams,
+} from "@backend/auth/services/google/util/google.auth.util";
 import { ENV } from "@backend/common/constants/env.constants";
-import { AuthError } from "@backend/common/errors/auth/auth.errors";
-import { error } from "@backend/common/errors/handlers/error.handler";
-import { UserError } from "@backend/common/errors/user/user.errors";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import { isMissingUserTagId } from "@backend/common/constants/env.util";
+import { SyncError } from "@backend/common/errors/sync/sync.errors";
+import mongoService from "@backend/common/services/mongo.service";
+import EmailService from "@backend/email/email.service";
+import syncService from "@backend/sync/services/sync.service";
+import userMetadataService from "@backend/user/services/user-metadata.service";
+import userService from "@backend/user/services/user.service";
+import { type GoogleSignInSuccess } from "./google.auth.types";
 
-const logger = Logger("app:google.auth.service");
-
-export const getGAuthClientForUser = async (
-  user: WithId<Schema_User> | { _id: string },
-) => {
-  const gAuthClient = new GoogleAuthService();
-
-  let gRefreshToken: string | undefined;
-
-  if ("google" in user && user.google) {
-    gRefreshToken = user.google.gRefreshToken;
-  }
-
-  if (!gRefreshToken) {
-    const userId =
-      "_id" in user
-        ? typeof user._id === "string"
-          ? user._id
-          : user._id.toString()
-        : undefined;
-
-    if (!userId) {
-      logger.error(`Expected to either get a user or a userId.`);
-      throw error(UserError.InvalidValue, "User id is required");
-    }
-
-    const _user = await findCompassUserBy("_id", userId);
-
-    if (!_user) {
-      logger.error(`Couldn't find user with this id: ${userId}`);
-      throw error(UserError.UserNotFound, "User not found");
-    }
-
-    if (!_user?.google?.gRefreshToken) {
-      throw error(
-        UserError.MissingGoogleRefreshToken,
-        "User has not connected Google Calendar",
-      );
-    }
-
-    gRefreshToken = _user.google.gRefreshToken;
-  }
-
-  gAuthClient.oauthClient.setCredentials({
-    refresh_token: gRefreshToken,
-  });
-
-  return gAuthClient;
-};
-
-export const getGcalClient = async (userId: string): Promise<gCalendar> => {
-  const user = await findCompassUserBy("_id", userId);
-
-  if (!user) {
-    logger.error(`getGcalClient: Couldn't find user with this id: ${userId}`);
-
-    // throw gaxios error here to trigger specific session invalidation
-    // see error.express.handler.ts
-    const gaxiosErr = new GaxiosError(
-      "invalid_grant",
-      {
-        headers: new Headers(),
-        url: new URL("https://www.googleapis.com/calendar/v3"),
-      },
-      {
-        status: Status.BAD_REQUEST,
-        data: { userId },
-        config: {
-          headers: new Headers(),
-          url: new URL("https://www.googleapis.com/calendar/v3"),
-        },
-        statusText: "BAD_REQUEST Cannot initialize Gcal client",
-        headers: new Headers(),
-        ok: false,
-        redirected: false,
-        type: "error" as ResponseType,
-        url: "https://www.googleapis.com/calendar/v3",
-        body: null,
-        bodyUsed: false,
-        clone: () => {
-          throw new Error("Not implemented");
-        },
-        arrayBuffer: async () => {
-          throw new Error("Not implemented");
-        },
-        blob: async () => {
-          throw new Error("Not implemented");
-        },
-        formData: async () => {
-          throw new Error("Not implemented");
-        },
-        json: async () => ({ userId }),
-        text: async () => JSON.stringify({ userId }),
-        bytes: async () => {
-          throw new Error("Not implemented");
-        },
-      },
-    );
-    gaxiosErr.code = "400";
-    throw gaxiosErr;
-  }
-
-  if (!user.google?.gRefreshToken) {
-    throw error(
-      UserError.MissingGoogleRefreshToken,
-      "User has not connected Google Calendar",
-    );
-  }
-
-  const gAuthClient = await getGAuthClientForUser(user);
-
-  const calendarClient = calendar({
-    version: "v3",
-    auth: gAuthClient.oauthClient,
-  });
-
-  return calendarClient;
-};
+const logger = Logger("app:auth.google.service");
 
 class GoogleAuthService {
-  oauthClient: OAuth2Client;
+  private restartGoogleCalendarSyncInBackground = (cUserId: string) => {
+    userService.restartGoogleCalendarSync(cUserId).catch((err) => {
+      logger.error(
+        `Something went wrong with starting calendar sync for user ${cUserId}`,
+        err,
+      );
+    });
+  };
 
-  constructor() {
-    this.oauthClient = new OAuth2Client(
-      ENV.GOOGLE_CLIENT_ID,
-      ENV.GOOGLE_CLIENT_SECRET,
-      "postmessage",
+  async googleSignup(
+    gUser: TokenPayload,
+    refreshToken: string,
+    userId: string,
+  ) {
+    const session = await mongoService.startSession();
+
+    const user = await session.withTransaction(async (transactionSession) => {
+      const cUser = await userService.upsertUserFromAuth(
+        {
+          userId,
+          email: gUser.email ?? "",
+          name: gUser.name || undefined,
+          locale: gUser.locale || undefined,
+          google: {
+            googleId: gUser.sub ?? "",
+            picture: gUser.picture || "not provided",
+            gRefreshToken: refreshToken,
+          },
+        },
+        transactionSession,
+      );
+
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: {
+          skipOnboarding: false,
+          sync: { importGCal: "RESTART", incrementalGCalSync: "RESTART" },
+        },
+      });
+
+      if (isMissingUserTagId()) {
+        logger.warn(
+          "Did not tag subscriber due to missing EMAILER_ ENV value(s)",
+        );
+      } else if (cUser.isNewUser) {
+        const subscriber = mapCompassUserToEmailSubscriber(cUser.user);
+
+        await EmailService.addTagToSubscriber(
+          subscriber,
+          ENV.EMAILER_USER_TAG_ID!,
+        );
+      }
+
+      return { cUserId: cUser.user.userId };
+    });
+
+    this.restartGoogleCalendarSyncInBackground(user.cUserId);
+
+    return user;
+  }
+
+  async repairGoogleConnection(
+    compassUserId: string,
+    gUser: TokenPayload,
+    oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">,
+  ) {
+    const {
+      cUserId,
+      gUser: validatedGUser,
+      refreshToken,
+    } = parseReconnectGoogleParams(compassUserId, gUser, oAuthTokens);
+
+    await userService.reconnectGoogleCredentials(
+      cUserId,
+      validatedGUser,
+      refreshToken,
     );
-  }
 
-  getGcalClient(): gCalendar {
-    const gcal = calendar({
-      version: "v3",
-      auth: this.oauthClient,
+    await userMetadataService.updateUserMetadata({
+      userId: cUserId,
+      data: {
+        sync: { importGCal: "RESTART", incrementalGCalSync: "RESTART" },
+      },
     });
-    return gcal;
+
+    this.restartGoogleCalendarSyncInBackground(cUserId);
+
+    return { cUserId };
   }
 
-  async getGoogleUserInfo(): Promise<UserInfo_Google> {
-    const idToken = this.oauthClient.credentials.id_token;
+  async googleSignin(
+    gUser: TokenPayload,
+    oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">,
+  ) {
+    const gUserId = StringV4Schema.parse(gUser.sub, {
+      error: () => "Invalid Google user ID",
+    });
+    const refreshToken = StringV4Schema.parse(oAuthTokens.refresh_token, {
+      error: () => "Invalid or missing Google refresh token",
+    });
 
-    if (!idToken) {
-      throw new BaseError(
-        "No id_token",
-        "oauth client is missing id_token, so couldn't verify user",
-        Status.BAD_REQUEST,
-        false,
-      );
+    const user = await mongoService.user.findOneAndUpdate(
+      { "google.googleId": gUserId },
+      {
+        $set: {
+          "google.gRefreshToken": refreshToken,
+          "google.picture": gUser.picture || "not provided",
+          lastLoggedInAt: new Date(),
+        },
+      },
+      { returnDocument: "after" },
+    );
+
+    const cUserId = zObjectId
+      .parse(user?._id, { error: () => "Invalid credentials" })
+      .toString();
+
+    const googleOAuthClient = new GoogleOAuthClient();
+    googleOAuthClient.oauthClient.setCredentials(oAuthTokens);
+
+    syncService
+      .importIncremental(cUserId, googleOAuthClient.getGcalClient())
+      .catch(async (err) => {
+        if (
+          err instanceof Error &&
+          err.message === SyncError.NoSyncToken.description
+        ) {
+          logger.info(
+            `Resyncing google data due to missing sync for user: ${cUserId}`,
+          );
+
+          await userMetadataService.updateUserMetadata({
+            userId: cUserId,
+            data: { sync: { importGCal: "RESTART" } },
+          });
+
+          this.restartGoogleCalendarSyncInBackground(cUserId);
+          return;
+        }
+
+        logger.error("Error during incremental sync:", err);
+      });
+
+    return { cUserId };
+  }
+
+  async handleGoogleAuth(success: GoogleSignInSuccess): Promise<void> {
+    const {
+      providerUser,
+      oAuthTokens,
+      createdNewRecipeUser,
+      recipeUserId,
+      loginMethodsLength,
+    } = success;
+
+    const googleUserId = providerUser.sub;
+    if (!googleUserId) {
+      throw new Error("Google user ID (sub) is required");
     }
 
-    const gUser = await this._decodeUserInfo(idToken);
+    // Determine auth mode based on server-side state
+    const decision = await determineGoogleAuthMode(
+      googleUserId,
+      createdNewRecipeUser,
+    );
 
-    return { gUser, tokens: this.oauthClient.credentials };
-  }
+    switch (decision.authMode) {
+      case "SIGNUP": {
+        const isNewUser = createdNewRecipeUser && loginMethodsLength === 1;
+        if (!isNewUser) {
+          // Edge case: no Compass user found but SuperTokens says not new
+          // This shouldn't happen in normal flow, treat as signup
+          logger.warn("No Compass user found but isNewUser is false", {
+            google_user_id: googleUserId,
+            recipe_user_id: recipeUserId,
+            created_new_recipe_user: createdNewRecipeUser,
+            login_methods_length: loginMethodsLength,
+          });
+        }
 
-  async _decodeUserInfo(idToken: string) {
-    const ticket = await this.oauthClient.verifyIdToken({
-      idToken,
-      audience: this.oauthClient._clientId,
-    });
-    const payload = ticket.getPayload() as TokenPayload;
-    return payload;
-  }
+        const refreshToken = oAuthTokens.refresh_token;
+        if (!refreshToken) {
+          throw new Error("Refresh token expected for new user sign-up");
+        }
 
-  async refreshAccessToken() {
-    const { token } = await this.oauthClient.getAccessToken();
+        await this.googleSignup(providerUser, refreshToken, recipeUserId);
+        return;
+      }
 
-    if (!StringV4Schema.safeParse(token).success) {
-      throw error(
-        AuthError.NoGAuthAccessToken,
-        "Google auth access token not returned",
-      );
+      case "RECONNECT_REPAIR": {
+        // User exists but needs repair (missing refresh token or unhealthy sync)
+        await this.repairGoogleConnection(
+          decision.compassUserId!,
+          providerUser,
+          oAuthTokens,
+        );
+        return;
+      }
+
+      case "SIGNIN_INCREMENTAL": {
+        // Healthy returning user - attempt incremental sync
+        await this.googleSignin(providerUser, oAuthTokens);
+        return;
+      }
     }
-
-    return token;
   }
 }
 
-export default GoogleAuthService;
+export default new GoogleAuthService();

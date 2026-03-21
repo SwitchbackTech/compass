@@ -7,7 +7,7 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
-import { getGcalClient } from "@backend/auth/services/google/google.auth.service";
+import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { getCalendarsToSync } from "@backend/sync/services/init/sync.init";
 

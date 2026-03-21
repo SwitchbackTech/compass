@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 import { type SessionRequest } from "supertokens-node/framework/express";
 import { zObjectId } from "@core/types/type.utils";
-import compassAuthService from "@backend/auth/services/compass.auth.service";
+import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import {
   type ReqBody,
   type Res_Promise,
