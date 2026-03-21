@@ -1,6 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
+import { useSession } from "@web/auth/hooks/session/useSession";
 import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
 import { SyncApi } from "@web/common/apis/sync.api";
 import {
@@ -12,6 +13,7 @@ import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
 jest.mock("@web/auth/hooks/oauth/useGoogleAuth");
+jest.mock("@web/auth/hooks/session/useSession");
 jest.mock("@web/auth/state/auth.state.util");
 jest.mock("@web/common/apis/sync.api");
 jest.mock("@web/store/store.hooks");
@@ -25,6 +27,7 @@ const mockUseAppDispatch = useAppDispatch as jest.MockedFunction<
 const mockUseAppSelector = useAppSelector as jest.MockedFunction<
   typeof useAppSelector
 >;
+const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
 const mockHasUserEverAuthenticated =
   hasUserEverAuthenticated as jest.MockedFunction<
     typeof hasUserEverAuthenticated
@@ -38,6 +41,10 @@ describe("useConnectGoogle", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseAppDispatch.mockReturnValue(mockDispatch);
+    mockUseSession.mockReturnValue({
+      authenticated: true,
+      setAuthenticated: jest.fn(),
+    });
     mockUseGoogleAuth.mockReturnValue({
       login: mockLogin,
       data: null,
