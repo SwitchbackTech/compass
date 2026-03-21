@@ -1,6 +1,5 @@
 import dayjs from "@core/util/date/dayjs";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
-import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 
 describe("shortcuts.data", () => {
   describe("getShortcuts", () => {
@@ -17,7 +16,7 @@ describe("shortcuts.data", () => {
       });
       expect(shortcuts.globalShortcuts[4]).toEqual({ k: "z", label: "Logout" });
       expect(shortcuts.globalShortcuts[5]).toEqual({
-        k: `${getModifierKey()}+k`,
+        k: "Mod+k",
         label: "Command Palette",
       });
 
@@ -121,7 +120,7 @@ describe("shortcuts.data", () => {
         label: "Edit description",
       });
       expect(shortcuts.nowShortcuts[1]).toEqual({
-        k: `${getModifierKey()}+Enter`,
+        k: "Mod+Enter",
         label: "Save description",
       });
       expect(shortcuts.nowShortcuts[2]).toEqual({

@@ -1,24 +1,16 @@
-import { type RegisterableHotkey, useHotkey } from "@tanstack/react-hotkeys";
-import { DesktopOS, getDesktopOS } from "@web/common/utils/device/device.util";
+import {
+  type ConflictBehavior,
+  type RegisterableHotkey,
+  useHotkey,
+} from "@tanstack/react-hotkeys";
 
 export interface UseAppHotkeyOptions {
   enabled?: boolean;
   ignoreInputs?: boolean;
   blurOnTrigger?: boolean;
   eventType?: "keydown" | "keyup";
-}
-
-function getHotkeyPlatform(): "linux" | "mac" | "windows" | undefined {
-  switch (getDesktopOS()) {
-    case DesktopOS.MacOS:
-      return "mac";
-    case DesktopOS.Windows:
-      return "windows";
-    case DesktopOS.Linux:
-      return "linux";
-    default:
-      return undefined;
-  }
+  /** @default 'allow' — multiple features often register the same global key (e.g. Escape). */
+  conflictBehavior?: ConflictBehavior;
 }
 
 export function useAppHotkey(
@@ -31,6 +23,7 @@ export function useAppHotkey(
     ignoreInputs,
     blurOnTrigger = false,
     eventType = "keydown",
+    conflictBehavior = "allow",
   } = options;
 
   useHotkey(
@@ -50,7 +43,7 @@ export function useAppHotkey(
       enabled,
       ignoreInputs,
       eventType,
-      platform: getHotkeyPlatform(),
+      conflictBehavior,
     },
   );
 }

@@ -1,7 +1,8 @@
+import { HotkeyManager } from "@tanstack/react-hotkeys";
+import { resolveModifier } from "@tanstack/react-hotkeys";
 import { render, waitFor } from "@testing-library/react";
 import { Categories_Event } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
-import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import {
   type SomedayFormShortcutsProps,
   useSomedayFormShortcuts,
@@ -46,6 +47,7 @@ describe("SomedayEventForm shortcuts hook", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    HotkeyManager.resetInstance();
   });
 
   test("delete shortcut calls onDelete", async () => {
@@ -71,7 +73,7 @@ describe("SomedayEventForm shortcuts hook", () => {
   });
 
   test("mod+d shortcut calls onDuplicate", async () => {
-    const modifierKey = getModifierKey();
+    const modifierKey = resolveModifier("Mod");
     const isCtrl = modifierKey === "Control";
 
     render(<TestComponent {...defaultProps} />);
@@ -91,7 +93,7 @@ describe("SomedayEventForm shortcuts hook", () => {
   });
 
   test("mod+arrowup calls onMigrate with 'up'", async () => {
-    const modifierKey = getModifierKey();
+    const modifierKey = resolveModifier("Mod");
     const isCtrl = modifierKey === "Control";
 
     render(<TestComponent {...defaultProps} />);
@@ -118,7 +120,7 @@ describe("SomedayEventForm shortcuts hook", () => {
   });
 
   test("mod+arrowdown calls onMigrate with 'down'", async () => {
-    const modifierKey = getModifierKey();
+    const modifierKey = resolveModifier("Mod");
     const isCtrl = modifierKey === "Control";
 
     render(<TestComponent {...defaultProps} />);
@@ -145,7 +147,7 @@ describe("SomedayEventForm shortcuts hook", () => {
   });
 
   test("mod+arrowright calls onMigrate with 'forward'", async () => {
-    const modifierKey = getModifierKey();
+    const modifierKey = resolveModifier("Mod");
     const isCtrl = modifierKey === "Control";
 
     render(<TestComponent {...defaultProps} />);
@@ -172,7 +174,7 @@ describe("SomedayEventForm shortcuts hook", () => {
   });
 
   test("mod+arrowleft calls onMigrate with 'back'", async () => {
-    const modifierKey = getModifierKey();
+    const modifierKey = resolveModifier("Mod");
     const isCtrl = modifierKey === "Control";
 
     render(<TestComponent {...defaultProps} />);
@@ -199,7 +201,7 @@ describe("SomedayEventForm shortcuts hook", () => {
   });
 
   test("$mod+enter calls onSubmit", async () => {
-    const modifierKey = getModifierKey();
+    const modifierKey = resolveModifier("Mod");
     const isCtrl = modifierKey === "Control";
 
     render(<TestComponent {...defaultProps} />);

@@ -1,7 +1,7 @@
 import { act } from "react";
 import { useNavigate } from "react-router-dom";
 import { configureStore } from "@reduxjs/toolkit";
-import { fireEvent } from "@testing-library/react";
+import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import {
   mockLinuxUserAgent,
@@ -11,7 +11,6 @@ import {
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
-import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { reducers } from "@web/store/reducers";
@@ -31,27 +30,13 @@ const mockNavigate = jest.fn();
 const mockLocation = (pathname: string) => ({ pathname });
 
 const pressModifierShortcut = () => {
-  const modifierKey = getModifierKey();
   const modifierProps =
-    modifierKey === "Meta" ? { metaKey: true } : { ctrlKey: true };
+    resolveModifier("Mod") === "Meta" ? { metaKey: true } : { ctrlKey: true };
 
-  fireEvent.keyDown(document, {
-    key: modifierKey,
-    ...modifierProps,
-    bubbles: true,
-    cancelable: true,
-  });
-
+  // Single chord (no separate Meta/Ctrl keydown): TanStack matches Mod from modifier flags on the key event.
   pressKey("k", {
     keyDownInit: modifierProps,
     keyUpInit: modifierProps,
-  });
-
-  fireEvent.keyUp(document, {
-    key: modifierKey,
-    ...modifierProps,
-    bubbles: true,
-    cancelable: true,
   });
 };
 
@@ -149,6 +134,7 @@ describe("useGlobalShortcuts", () => {
     `should toggle command palette when '$modifier+k' is pressed - $os`,
     async ({ mockFn }) => {
       const osSpy = mockFn();
+      HotkeyManager.resetInstance();
       const store = createTestStore();
       const dispatchSpy = jest.spyOn(store, "dispatch");
 
@@ -167,6 +153,8 @@ describe("useGlobalShortcuts", () => {
   );
 
   it("should close command palette when 'Escape' is pressed", () => {
+    const osSpy = mockMacOSUserAgent();
+    HotkeyManager.resetInstance();
     const store = createTestStore();
     const dispatchSpy = jest.spyOn(store, "dispatch");
 
@@ -184,6 +172,8 @@ describe("useGlobalShortcuts", () => {
       expect(dispatchSpy).toHaveBeenCalledWith(
         settingsSlice.actions.closeCmdPalette(),
       );
+
+      osSpy.mockRestore();
     });
   });
 });

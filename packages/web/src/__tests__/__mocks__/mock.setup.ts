@@ -7,20 +7,53 @@ export function mockUserAgent(userAgent: string) {
     .mockReturnValue(userAgent);
 }
 
+function mockNavigatorPlatformValue(platform: string) {
+  return jest
+    .spyOn(window.navigator, "platform", "get")
+    .mockReturnValue(platform);
+}
+
+/**
+ * Mocks UA + `navigator.platform` so TanStack Hotkeys' `detectPlatform()` matches the OS
+ * (it checks both; jsdom's default platform can confuse macOS detection).
+ */
 export function mockWindowsUserAgent() {
-  return mockUserAgent(
+  const uaSpy = mockUserAgent(
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
   );
+  const platformSpy = mockNavigatorPlatformValue("Win32");
+  const originalUaRestore = uaSpy.mockRestore.bind(uaSpy);
+  uaSpy.mockRestore = () => {
+    platformSpy.mockRestore();
+    originalUaRestore();
+  };
+  return uaSpy;
 }
 
 export function mockMacOSUserAgent() {
-  return mockUserAgent(
+  const uaSpy = mockUserAgent(
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
   );
+  const platformSpy = mockNavigatorPlatformValue("MacIntel");
+  const originalUaRestore = uaSpy.mockRestore.bind(uaSpy);
+  uaSpy.mockRestore = () => {
+    platformSpy.mockRestore();
+    originalUaRestore();
+  };
+  return uaSpy;
 }
 
 export function mockLinuxUserAgent() {
-  return mockUserAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36");
+  const uaSpy = mockUserAgent(
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
+  );
+  const platformSpy = mockNavigatorPlatformValue("Linux x86_64");
+  const originalUaRestore = uaSpy.mockRestore.bind(uaSpy);
+  uaSpy.mockRestore = () => {
+    platformSpy.mockRestore();
+    originalUaRestore();
+  };
+  return uaSpy;
 }
 
 export function mockUseGoogleLogin() {

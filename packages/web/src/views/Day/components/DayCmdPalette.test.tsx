@@ -1,3 +1,4 @@
+import { resolveModifier } from "@tanstack/react-hotkeys";
 import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
@@ -5,7 +6,6 @@ import * as useGoogleAuthModule from "@web/auth/hooks/oauth/useGoogleAuth";
 import { SyncApi } from "@web/common/apis/sync.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import * as eventUtil from "@web/common/utils/event/event.util";
-import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
@@ -180,7 +180,8 @@ describe("DayCmdPalette", () => {
     });
 
     // Simulate CMD+k key press to open
-    await user.keyboard(`{${getModifierKey()}>}k{/${getModifierKey()}}`);
+    const mod = resolveModifier("Mod");
+    await user.keyboard(`{${mod}>}k{/${mod}}`);
 
     expect(screen.getByText("Navigation")).toBeInTheDocument();
 

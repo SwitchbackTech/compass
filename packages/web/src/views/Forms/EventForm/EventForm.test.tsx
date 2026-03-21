@@ -1,15 +1,15 @@
 import { act } from "react";
+import { resolveModifier } from "@tanstack/react-hotkeys";
 import "@testing-library/jest-dom/extend-expect";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type Schema_Event } from "@core/types/event.types";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
-import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { EventForm } from "./EventForm";
 
 const getModifierShortcut = (key: string) =>
-  getModifierKey() === "Meta"
+  resolveModifier("Mod") === "Meta"
     ? `{Meta>}${key}{/Meta}`
     : `{Control>}${key}{/Control}`;
 
@@ -134,7 +134,7 @@ test("should call onDuplicate when mod+d keyboard shortcut is used", async () =>
   expect(screen.getByRole("form")).toBeInTheDocument();
 
   const modifierProps =
-    getModifierKey() === "Meta" ? { metaKey: true } : { ctrlKey: true };
+    resolveModifier("Mod") === "Meta" ? { metaKey: true } : { ctrlKey: true };
 
   act(() => {
     pressKey("d", {

@@ -1,5 +1,6 @@
 import { type AxiosResponse } from "axios";
 import { toast } from "react-toastify";
+import { resolveModifier } from "@tanstack/react-hotkeys";
 import "@testing-library/jest-dom/extend-expect";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -13,7 +14,6 @@ import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { setupDraftState } from "@web/__tests__/utils/state/draft.test.util";
 import { type Schema_WebEvent } from "@web/common/types/web.event.types";
-import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { EventApi } from "@web/ducks/events/event.api";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
 import * as storeHooks from "@web/store/store.hooks";
@@ -35,7 +35,7 @@ const isExistingEvent = true;
 let dispatchSpy: jest.Mock;
 
 const getModifierShortcut = (key: string) =>
-  getModifierKey() === "Meta"
+  resolveModifier("Mod") === "Meta"
     ? `{Meta>}${key}{/Meta}`
     : `{Control>}${key}{/Control}`;
 

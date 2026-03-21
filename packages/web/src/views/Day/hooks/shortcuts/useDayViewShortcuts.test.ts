@@ -1,4 +1,4 @@
-import { fireEvent } from "@testing-library/react";
+import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
 import userEvent from "@testing-library/user-event";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import {
@@ -7,7 +7,6 @@ import {
   mockWindowsUserAgent,
 } from "@web/__tests__/__mocks__/mock.setup";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
-import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
 
 // Mock shortcut utility functions
@@ -26,6 +25,7 @@ describe.each([
 
   beforeEach(() => {
     jest.clearAllMocks();
+    HotkeyManager.resetInstance();
 
     // Set default mock implementations
     isFocusedOnTaskCheckbox.mockReturnValue(false);
@@ -42,16 +42,8 @@ describe.each([
     keyOptions: KeyboardEventInit = {},
     target: Element | Node | Window | Document = document,
   ) => {
-    const modifierKey = getModifierKey();
     const modifierProps =
-      modifierKey === "Meta" ? { metaKey: true } : { ctrlKey: true };
-
-    fireEvent.keyDown(document, {
-      key: modifierKey,
-      ...modifierProps,
-      bubbles: true,
-      cancelable: true,
-    });
+      resolveModifier("Mod") === "Meta" ? { metaKey: true } : { ctrlKey: true };
 
     pressKey(
       key,
@@ -61,13 +53,6 @@ describe.each([
       },
       target,
     );
-
-    fireEvent.keyUp(document, {
-      key: modifierKey,
-      ...modifierProps,
-      bubbles: true,
-      cancelable: true,
-    });
   };
 
   const defaultConfig = {

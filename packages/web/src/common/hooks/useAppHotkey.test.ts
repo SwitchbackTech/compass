@@ -1,6 +1,6 @@
+import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
 import { renderHook, waitFor } from "@web/__tests__/__mocks__/mock.render";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
-import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 
 function dispatchKeyEvent(
   key: string,
@@ -24,6 +24,7 @@ describe("useAppHotkey", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    HotkeyManager.resetInstance();
     document.body.removeAttribute("data-app-locked");
   });
 
@@ -50,7 +51,7 @@ describe("useAppHotkey", () => {
   });
 
   it("supports modifier hotkeys", async () => {
-    const modifierKey = getModifierKey();
+    const modifierKey = resolveModifier("Mod");
     const isCtrl = modifierKey === "Control";
 
     renderHook(() => useAppHotkeyUp("Mod+A", mockHandler));
