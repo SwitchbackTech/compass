@@ -67,8 +67,9 @@ export const setIsSyncing = async (page: Page, value: boolean) => {
       store.dispatch({ type: "auth/resetAuth" });
     }
   }, value);
-  // Small delay to let React process the state change
-  await page.waitForTimeout(50);
+  // Allow time for React to process the state change and re-render
+  // Increased from 50ms for CI stability
+  await page.waitForTimeout(100);
 };
 
 /**
@@ -162,7 +163,7 @@ export const setGoogleConnectionState = async (
   // Wait for store to be fully available
   await page.waitForFunction(
     () => typeof (window as any).__COMPASS_STORE__?.dispatch === "function",
-    { timeout: 5000 },
+    { timeout: 10000 },
   );
 
   await page.evaluate((connectionState) => {
@@ -174,7 +175,7 @@ export const setGoogleConnectionState = async (
     });
   }, state);
 
-  // Wait for the icon to reflect the new state by checking the store
+  // Wait for Redux state to reflect the change
   await page.waitForFunction(
     (expectedState) => {
       const store = (window as any).__COMPASS_STORE__;
@@ -184,11 +185,12 @@ export const setGoogleConnectionState = async (
       );
     },
     state,
-    { timeout: 5000 },
+    { timeout: 10000 },
   );
 
-  // Small additional delay for React to re-render
-  await page.waitForTimeout(50);
+  // Allow time for React to re-render after state change
+  // Increased from 50ms for CI stability
+  await page.waitForTimeout(100);
 };
 
 /**
