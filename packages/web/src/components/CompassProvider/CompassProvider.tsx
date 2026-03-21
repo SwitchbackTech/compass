@@ -16,9 +16,19 @@ import { DNDContext } from "@web/components/DND/DNDContext";
 import { DNDOverlay } from "@web/components/DND/DNDOverlay";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
 import { store } from "@web/store";
+import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
 
 function isPosthogEnabled() {
   return !!ENV_WEB.POSTHOG_HOST && !!ENV_WEB.POSTHOG_KEY;
+}
+
+/**
+ * Mount once under {@link HotkeysProvider} and inside React Router so
+ * {@link useGlobalShortcuts} can register app hotkeys (via useAppHotkey).
+ */
+export function GlobalShortcutsHost() {
+  useGlobalShortcuts();
+  return null;
 }
 
 export const CompassRequiredProviders = (
