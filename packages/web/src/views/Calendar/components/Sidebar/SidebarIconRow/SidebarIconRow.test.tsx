@@ -71,7 +71,9 @@ describe("SidebarIconRow", () => {
       }),
     ).toBeEnabled();
     expect(
-      screen.getByLabelText("Google Calendar not connected"),
+      screen.getByRole("status", {
+        name: "Google Calendar not connected. Click to connect.",
+      }),
     ).toBeInTheDocument();
   });
 
@@ -94,7 +96,9 @@ describe("SidebarIconRow", () => {
       }),
     ).toBeEnabled();
     expect(
-      screen.getByLabelText("Google Calendar needs reconnecting"),
+      screen.getByRole("status", {
+        name: "Google Calendar needs reconnecting. Click to reconnect.",
+      }),
     ).toBeInTheDocument();
   });
 
@@ -117,7 +121,9 @@ describe("SidebarIconRow", () => {
       }),
     ).toBeDisabled();
     expect(
-      screen.getByLabelText("Google Calendar connected"),
+      screen.getByRole("status", {
+        name: "Google Calendar connected.",
+      }),
     ).toBeInTheDocument();
   });
 
@@ -140,7 +146,9 @@ describe("SidebarIconRow", () => {
       }),
     ).toBeDisabled();
     expect(
-      screen.getByLabelText("Google Calendar syncing"),
+      screen.getByRole("status", {
+        name: "Google Calendar is syncing in the background.",
+      }),
     ).toBeInTheDocument();
   });
 
