@@ -1446,7 +1446,6 @@ __metadata:
     "@types/supertest": "npm:^6.0.3"
     chalk: "npm:4.1.2"
     cors: "npm:^2.8.5"
-    dotenv: "npm:^16.0.0"
     exponential-backoff: "npm:^3.1.2"
     express: "npm:^4.17.1"
     helmet: "npm:^7.0.0"
@@ -1495,7 +1494,6 @@ __metadata:
     "@types/node": "npm:^24.7.2"
     "@types/shelljs": "npm:^0.8.15"
     commander: "npm:^10.0.0"
-    dotenv: "npm:^16.0.1"
     inquirer: "npm:^8.0.0"
     open: "npm:^10.1.0"
     shelljs: "npm:^0.8.5"
@@ -7946,7 +7944,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dotenv@npm:^16.0.0, dotenv@npm:^16.0.1, dotenv@npm:^16.4.2":
+"dotenv@npm:^16.4.2":
   version: 16.6.1
   resolution: "dotenv@npm:16.6.1"
   checksum: 10c0/15ce56608326ea0d1d9414a5c8ee6dcf0fffc79d2c16422b4ac2268e7e2d76ff5a572d37ffe747c377de12005f14b3cc22361e79fc7f1061cce81f77d2c973dc

@@ -18,14 +18,14 @@
     "@compass/scripts": "packages/scripts/src"
   },
   "scripts": {
-    "cli": "cross-env TZ=Etc/UTC yarn ts-node  --pretty --transpile-only -r tsconfig-paths/register packages/scripts/src/cli",
+    "cli": "cross-env TZ=Etc/UTC node --env-file=packages/backend/.env.local -r ts-node/register/transpile-only -r tsconfig-paths/register packages/scripts/src/cli.ts",
     "debug:supertokens": "export DEBUG=com.supertokens && yarn dev:backend",
     "debug:web": "http-server build/web/",
     "dev:backend": "yarn dev:backend-start",
     "dev:backend -verbose": "export DEBUG=* && yarn dev:backend",
-    "dev:backend-start": "cd packages/backend && cross-env-shell TZ=Etc/UTC ts-node-dev --respawn --pretty --exit-child --debounce --transpile-only -r tsconfig-paths/register src/app.ts",
+    "dev:backend-start": "cd packages/backend && cross-env TZ=Etc/UTC node --env-file=.env ../../node_modules/ts-node-dev/lib/bin.js --respawn --pretty --exit-child --debounce --transpile-only -r tsconfig-paths/register src/app.ts",
     "dev:update": "git checkout main && git pull && yarn",
-    "dev:web": "cd packages/web && yarn webpack serve --mode=development --node-env=local",
+    "dev:web": "cd packages/web && node --env-file=../backend/.env.local ../../node_modules/.bin/webpack serve --mode=development --node-env=local",
     "postinstall": "husky install | chmod ug+x .husky/*",
     "test": "cross-env TZ=Etc/UTC ./node_modules/.bin/jest",
     "test:e2e": "playwright test",
