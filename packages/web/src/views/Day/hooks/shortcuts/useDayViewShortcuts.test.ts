@@ -55,6 +55,21 @@ describe.each([
     );
   };
 
+  const pressMigrationShortcut = (
+    key: string,
+    keyOptions: KeyboardEventInit = {},
+    target: Element | Node | Window | Document = document,
+  ) => {
+    pressKey(
+      key,
+      {
+        keyDownInit: { ctrlKey: true, metaKey: true, ...keyOptions },
+        keyUpInit: { ctrlKey: true, metaKey: true, ...keyOptions },
+      },
+      target,
+    );
+  };
+
   const defaultConfig = {
     onAddTask: jest.fn(),
     onEditTask: jest.fn(),
@@ -278,7 +293,7 @@ describe.each([
   });
 
   describe("migration shortcuts", () => {
-    it("should call onMigrateTask when Mod+ArrowRight is pressed within a task", async () => {
+    it("should call onMigrateTask when Ctrl+Meta+ArrowRight is pressed within a task", async () => {
       const onMigrateTask = jest.fn();
       const config = { ...defaultConfig, onMigrateTask };
 
@@ -288,12 +303,12 @@ describe.each([
       isFocusedWithinTask.mockReturnValue(true);
       getFocusedTaskId.mockReturnValue("task-123");
 
-      pressModifierShortcut("ArrowRight");
+      pressMigrationShortcut("ArrowRight");
 
       expect(onMigrateTask).toHaveBeenCalledWith("task-123", "forward");
     });
 
-    it("should call onMigrateTask when Mod+ArrowLeft is pressed within a task", async () => {
+    it("should call onMigrateTask when Ctrl+Meta+ArrowLeft is pressed within a task", async () => {
       const onMigrateTask = jest.fn();
       const config = { ...defaultConfig, onMigrateTask };
 
@@ -303,7 +318,7 @@ describe.each([
       isFocusedWithinTask.mockReturnValue(true);
       getFocusedTaskId.mockReturnValue("task-456");
 
-      pressModifierShortcut("ArrowLeft");
+      pressMigrationShortcut("ArrowLeft");
 
       expect(onMigrateTask).toHaveBeenCalledWith("task-456", "backward");
     });
@@ -346,7 +361,7 @@ describe.each([
 
       input.focus();
 
-      pressModifierShortcut("ArrowRight", {}, input);
+      pressMigrationShortcut("ArrowRight", {}, input);
 
       document.body.removeChild(input);
 

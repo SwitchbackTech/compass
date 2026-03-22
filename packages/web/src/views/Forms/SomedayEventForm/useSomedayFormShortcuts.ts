@@ -109,25 +109,25 @@ export const useSomedayFormShortcuts = ({
   );
 
   useAppHotkey(
-    "Mod+ArrowUp",
+    "Control+Meta+ArrowUp",
     handleMigration("up", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
   );
 
   useAppHotkey(
-    "Mod+ArrowDown",
+    "Control+Meta+ArrowDown",
     handleMigration("down", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
   );
 
   useAppHotkey(
-    "Mod+ArrowRight",
+    "Control+Meta+ArrowRight",
     handleMigration("forward", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
   );
 
   useAppHotkey(
-    "Mod+ArrowLeft",
+    "Control+Meta+ArrowLeft",
     handleMigration("back", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
   );

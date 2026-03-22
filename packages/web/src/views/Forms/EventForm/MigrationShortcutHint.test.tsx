@@ -11,21 +11,21 @@ describe.each([
   {
     os: "Windows",
     mockUserAgent: mockWindowsUserAgent,
-    expectedModifierTestId: "control-icon",
+    expectedMetaKeyTestId: "windows-icon",
   },
   {
     os: "Linux",
     mockUserAgent: mockLinuxUserAgent,
-    expectedModifierTestId: "control-icon",
+    expectedMetaKeyTestId: "linux-icon",
   },
   {
     os: "MacOS",
     mockUserAgent: mockMacOSUserAgent,
-    expectedModifierTestId: "meta-icon",
+    expectedMetaKeyTestId: "mac-icon",
   },
 ])(
   "MigrationShortcutHint - $os",
-  ({ mockUserAgent, expectedModifierTestId }) => {
+  ({ mockUserAgent, expectedMetaKeyTestId }) => {
     beforeEach(() => {
       mockUserAgent();
     });
@@ -34,14 +34,15 @@ describe.each([
       jest.resetAllMocks();
     });
 
-    it("renders the platform modifier icon", () => {
+    it("renders the Ctrl+Meta migration chord", () => {
       render(
         <MigrationShortcutHint>
           <span data-testid="arrow-icon">Arrow</span>
         </MigrationShortcutHint>,
       );
 
-      expect(screen.getByTestId(expectedModifierTestId)).toBeInTheDocument();
+      expect(screen.getByText("CTRL")).toBeInTheDocument();
+      expect(screen.getByTestId(expectedMetaKeyTestId)).toBeInTheDocument();
       expect(screen.getByTestId("arrow-icon")).toBeInTheDocument();
     });
   },

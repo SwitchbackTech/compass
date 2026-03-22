@@ -92,22 +92,12 @@ describe("SomedayEventForm shortcuts hook", () => {
     });
   });
 
-  test("mod+arrowup calls onMigrate with 'up'", async () => {
-    const modifierKey = resolveModifier("Mod");
-    const isCtrl = modifierKey === "Control";
-
+  test("ctrl+meta+arrowup calls onMigrate with 'up'", async () => {
     render(<TestComponent {...defaultProps} />);
 
-    // Press modifier key
-    dispatchKeyEvent(modifierKey, "keydown", {
-      ctrlKey: isCtrl,
-      metaKey: !isCtrl,
-    });
-
-    // Press ArrowUp while holding modifier
     dispatchKeyEvent("ArrowUp", "keydown", {
-      ctrlKey: isCtrl,
-      metaKey: !isCtrl,
+      ctrlKey: true,
+      metaKey: true,
     });
 
     await waitFor(() => {
@@ -119,22 +109,12 @@ describe("SomedayEventForm shortcuts hook", () => {
     });
   });
 
-  test("mod+arrowdown calls onMigrate with 'down'", async () => {
-    const modifierKey = resolveModifier("Mod");
-    const isCtrl = modifierKey === "Control";
-
+  test("ctrl+meta+arrowdown calls onMigrate with 'down'", async () => {
     render(<TestComponent {...defaultProps} />);
 
-    // Press modifier key
-    dispatchKeyEvent(modifierKey, "keydown", {
-      ctrlKey: isCtrl,
-      metaKey: !isCtrl,
-    });
-
-    // Press ArrowDown while holding modifier
     dispatchKeyEvent("ArrowDown", "keydown", {
-      ctrlKey: isCtrl,
-      metaKey: !isCtrl,
+      ctrlKey: true,
+      metaKey: true,
     });
 
     await waitFor(() => {
@@ -146,22 +126,12 @@ describe("SomedayEventForm shortcuts hook", () => {
     });
   });
 
-  test("mod+arrowright calls onMigrate with 'forward'", async () => {
-    const modifierKey = resolveModifier("Mod");
-    const isCtrl = modifierKey === "Control";
-
+  test("ctrl+meta+arrowright calls onMigrate with 'forward'", async () => {
     render(<TestComponent {...defaultProps} />);
 
-    // Press modifier key
-    dispatchKeyEvent(modifierKey, "keydown", {
-      ctrlKey: isCtrl,
-      metaKey: !isCtrl,
-    });
-
-    // Press ArrowRight while holding modifier
     dispatchKeyEvent("ArrowRight", "keydown", {
-      ctrlKey: isCtrl,
-      metaKey: !isCtrl,
+      ctrlKey: true,
+      metaKey: true,
     });
 
     await waitFor(() => {
@@ -173,22 +143,12 @@ describe("SomedayEventForm shortcuts hook", () => {
     });
   });
 
-  test("mod+arrowleft calls onMigrate with 'back'", async () => {
-    const modifierKey = resolveModifier("Mod");
-    const isCtrl = modifierKey === "Control";
-
+  test("ctrl+meta+arrowleft calls onMigrate with 'back'", async () => {
     render(<TestComponent {...defaultProps} />);
 
-    // Press modifier key
-    dispatchKeyEvent(modifierKey, "keydown", {
-      ctrlKey: isCtrl,
-      metaKey: !isCtrl,
-    });
-
-    // Press ArrowLeft while holding modifier
     dispatchKeyEvent("ArrowLeft", "keydown", {
-      ctrlKey: isCtrl,
-      metaKey: !isCtrl,
+      ctrlKey: true,
+      metaKey: true,
     });
 
     await waitFor(() => {

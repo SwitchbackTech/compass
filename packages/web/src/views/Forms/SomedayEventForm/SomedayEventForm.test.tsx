@@ -39,6 +39,10 @@ const getModifierShortcut = (key: string) =>
     ? `{Meta>}${key}{/Meta}`
     : `{Control>}${key}{/Control}`;
 
+/** Matches `useSomedayFormShortcuts` migration chords `Control+Meta+Arrow*` (see EventForm tests). */
+const getCtrlMetaArrowShortcut = (arrowWithBraces: string) =>
+  `{Control>}{Meta>}${arrowWithBraces}{/Meta}{/Control}`;
+
 describe("SomedayEventForm Hotkeys", () => {
   beforeEach(() => {
     jest.resetAllMocks();
@@ -380,7 +384,7 @@ describe("SomedayEventForm Hotkeys", () => {
     });
 
     // Try the keyboard shortcut while menu is open
-    await user.keyboard(getModifierShortcut("{ArrowLeft}"));
+    await user.keyboard(getCtrlMetaArrowShortcut("{ArrowLeft}"));
 
     expect(mockOnMigrate).toHaveBeenCalledTimes(1);
     expect(mockOnMigrate).toHaveBeenCalledWith(
@@ -460,7 +464,7 @@ describe("SomedayEventForm Hotkeys", () => {
     });
 
     // Try the keyboard shortcut while menu is open
-    await user.keyboard(getModifierShortcut("{ArrowRight}"));
+    await user.keyboard(getCtrlMetaArrowShortcut("{ArrowRight}"));
 
     expect(mockOnMigrate).toHaveBeenCalledTimes(1);
     expect(mockOnMigrate).toHaveBeenCalledWith(
@@ -490,7 +494,7 @@ describe("SomedayEventForm Hotkeys", () => {
       </div>,
     );
 
-    await user.keyboard(getModifierShortcut("{ArrowUp}"));
+    await user.keyboard(getCtrlMetaArrowShortcut("{ArrowUp}"));
 
     expect(mockOnMigrate).toHaveBeenCalledTimes(1);
     expect(mockOnMigrate).toHaveBeenCalledWith(
@@ -520,7 +524,7 @@ describe("SomedayEventForm Hotkeys", () => {
       </div>,
     );
 
-    await user.keyboard(getModifierShortcut("{ArrowDown}"));
+    await user.keyboard(getCtrlMetaArrowShortcut("{ArrowDown}"));
 
     expect(mockOnMigrate).toHaveBeenCalledTimes(1);
     expect(mockOnMigrate).toHaveBeenCalledWith(

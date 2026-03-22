@@ -165,15 +165,23 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     },
   );
 
-  useAppHotkey("Mod+ArrowRight", handleMigrationNavigation("forward"), {
-    ignoreInputs: false,
-    blurOnTrigger: true,
-  });
+  useAppHotkey(
+    "Control+Meta+ArrowRight",
+    handleMigrationNavigation("forward"),
+    {
+      ignoreInputs: false,
+      blurOnTrigger: true,
+    },
+  );
 
-  useAppHotkey("Mod+ArrowLeft", handleMigrationNavigation("backward"), {
-    ignoreInputs: false,
-    blurOnTrigger: true,
-  });
+  useAppHotkey(
+    "Control+Meta+ArrowLeft",
+    handleMigrationNavigation("backward"),
+    {
+      ignoreInputs: false,
+      blurOnTrigger: true,
+    },
+  );
 
   // Agenda shortcuts
   useAppHotkeyUp("I", () => {
