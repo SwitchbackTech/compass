@@ -141,7 +141,7 @@ Runtime constraints from recipe overrides:
 
 `/api/user/metadata` notes:
 
-- `GET` returns user metadata enriched with Google connection status.
+- `GET` returns user metadata enriched with server-computed Google connection state.
 - `POST` merges partial metadata updates.
 
 Current metadata shape used by sync/auth flows:
@@ -153,20 +153,25 @@ Current metadata shape used by sync/auth flows:
     incrementalGCalSync?: "IMPORTING" | "ERRORED" | "COMPLETED" | "RESTART" | null;
   };
   google?: {
-    hasRefreshToken?: boolean;
-    connectionStatus?: "NOT_CONNECTED" | "CONNECTED" | "RECONNECT_REQUIRED";
-    syncStatus?: "HEALTHY" | "REPAIRING" | "ATTENTION" | "NONE";
+    connectionState?:
+      | "NOT_CONNECTED"
+      | "RECONNECT_REQUIRED"
+      | "IMPORTING"
+      | "HEALTHY"
+      | "ATTENTION";
   };
 }
 ```
 
 Behavior constraints:
 
-- `google.connectionStatus` and `google.syncStatus` are server-enriched fields and should be treated as read-only client contracts.
-- `google.connectionStatus` values are uppercase literals:
+- `google.connectionState` is server-enriched and should be treated as a read-only client contract.
+- `google.connectionState` values are uppercase literals:
   - `NOT_CONNECTED`: no linked Google account
   - `RECONNECT_REQUIRED`: linked account without refresh token
-  - `CONNECTED`: linked account with refresh token
+  - `IMPORTING`: import or repair is in progress
+  - `HEALTHY`: linked account and sync health checks passed
+  - `ATTENTION`: linked account but sync needs repair
 
 ---
 
