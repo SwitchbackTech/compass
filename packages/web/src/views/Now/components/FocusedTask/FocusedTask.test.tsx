@@ -1,9 +1,12 @@
 import "@testing-library/jest-dom";
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
-import { Task } from "@web/common/types/task.types";
+import {
+  CompassDOMEvents,
+  compassEventEmitter,
+} from "@web/common/utils/dom/event-emitter.util";
 import { FocusedTask } from "./FocusedTask";
 
 describe("FocusedTask", () => {
@@ -18,36 +21,37 @@ describe("FocusedTask", () => {
   const mockOnCompleteTask = jest.fn();
   const mockOnPreviousTask = jest.fn();
   const mockOnNextTask = jest.fn();
+  const mockOnUpdateTitle = jest.fn();
   const mockOnUpdateDescription = jest.fn();
+
+  const renderFocusedTask = (task = mockTask) =>
+    render(
+      <FocusedTask
+        task={task}
+        onCompleteTask={mockOnCompleteTask}
+        onPreviousTask={mockOnPreviousTask}
+        onNextTask={mockOnNextTask}
+        onUpdateTitle={mockOnUpdateTitle}
+        onUpdateDescription={mockOnUpdateDescription}
+      />,
+    );
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
+  afterEach(() => {
+    compassEventEmitter.removeAllListeners();
+  });
+
   it("renders the task title", () => {
-    render(
-      <FocusedTask
-        task={mockTask}
-        onCompleteTask={mockOnCompleteTask}
-        onPreviousTask={mockOnPreviousTask}
-        onNextTask={mockOnNextTask}
-        onUpdateDescription={mockOnUpdateDescription}
-      />,
-    );
+    renderFocusedTask();
 
     expect(screen.getByText("Test Task")).toBeInTheDocument();
   });
 
   it("renders the task title in a heading", () => {
-    render(
-      <FocusedTask
-        task={mockTask}
-        onCompleteTask={mockOnCompleteTask}
-        onPreviousTask={mockOnPreviousTask}
-        onNextTask={mockOnNextTask}
-        onUpdateDescription={mockOnUpdateDescription}
-      />,
-    );
+    renderFocusedTask();
 
     const heading = screen.getByRole("heading", { level: 2 });
     expect(heading).toBeInTheDocument();
@@ -55,15 +59,7 @@ describe("FocusedTask", () => {
   });
 
   it("renders task with completed status", () => {
-    render(
-      <FocusedTask
-        task={mockCompletedTask}
-        onCompleteTask={mockOnCompleteTask}
-        onPreviousTask={mockOnPreviousTask}
-        onNextTask={mockOnNextTask}
-        onUpdateDescription={mockOnUpdateDescription}
-      />,
-    );
+    renderFocusedTask(mockCompletedTask);
 
     expect(screen.getByText("Completed Task")).toBeInTheDocument();
     const heading = screen.getByRole("heading", { level: 2 });
@@ -76,15 +72,7 @@ describe("FocusedTask", () => {
       title: "This is a very long task title that might wrap to multiple lines",
     });
 
-    render(
-      <FocusedTask
-        task={longTitleTask}
-        onCompleteTask={mockOnCompleteTask}
-        onPreviousTask={mockOnPreviousTask}
-        onNextTask={mockOnNextTask}
-        onUpdateDescription={mockOnUpdateDescription}
-      />,
-    );
+    renderFocusedTask(longTitleTask);
 
     expect(
       screen.getByText(
@@ -100,15 +88,7 @@ describe("FocusedTask", () => {
       status: "todo",
     });
 
-    render(
-      <FocusedTask
-        task={specialCharTask}
-        onCompleteTask={mockOnCompleteTask}
-        onPreviousTask={mockOnPreviousTask}
-        onNextTask={mockOnNextTask}
-        onUpdateDescription={mockOnUpdateDescription}
-      />,
-    );
+    renderFocusedTask(specialCharTask);
 
     expect(
       screen.getByText("Task with @#$%^&*() special chars!"),
@@ -122,15 +102,7 @@ describe("FocusedTask", () => {
       status: "todo",
     });
 
-    render(
-      <FocusedTask
-        task={emptyTitleTask}
-        onCompleteTask={mockOnCompleteTask}
-        onPreviousTask={mockOnPreviousTask}
-        onNextTask={mockOnNextTask}
-        onUpdateDescription={mockOnUpdateDescription}
-      />,
-    );
+    renderFocusedTask(emptyTitleTask);
 
     const heading = screen.getByRole("heading", { level: 2 });
     expect(heading).toHaveTextContent("");
@@ -138,15 +110,7 @@ describe("FocusedTask", () => {
 
   it("calls onCompleteTask when CheckCircle is clicked", async () => {
     const user = userEvent.setup();
-    render(
-      <FocusedTask
-        task={mockTask}
-        onCompleteTask={mockOnCompleteTask}
-        onPreviousTask={mockOnPreviousTask}
-        onNextTask={mockOnNextTask}
-        onUpdateDescription={mockOnUpdateDescription}
-      />,
-    );
+    renderFocusedTask();
 
     const checkButton = screen.getByRole("button", {
       name: "Mark task as complete",
@@ -156,17 +120,98 @@ describe("FocusedTask", () => {
     expect(mockOnCompleteTask).toHaveBeenCalledTimes(1);
   });
 
+  it("enters title edit mode from the focus-title event", () => {
+    renderFocusedTask();
+
+    act(() => {
+      compassEventEmitter.emit(CompassDOMEvents.FOCUS_TASK_TITLE);
+    });
+
+    const input = screen.getByRole("textbox", { name: "Edit task title" });
+
+    expect(input).toHaveValue("Test Task");
+    expect(input).toHaveFocus();
+    expect((input as HTMLInputElement).selectionStart).toBe("Test Task".length);
+    expect((input as HTMLInputElement).selectionEnd).toBe("Test Task".length);
+  });
+
+  it("saves the edited title on blur", async () => {
+    const user = userEvent.setup();
+
+    renderFocusedTask();
+
+    act(() => {
+      compassEventEmitter.emit(CompassDOMEvents.FOCUS_TASK_TITLE);
+    });
+
+    const input = screen.getByRole("textbox", { name: "Edit task title" });
+
+    await user.clear(input);
+    await user.type(input, "Updated title");
+    await user.tab();
+
+    expect(mockOnUpdateTitle).toHaveBeenCalledWith("Updated title");
+    expect(mockOnUpdateTitle).toHaveBeenCalledTimes(1);
+  });
+
+  it("saves the edited title on Enter", async () => {
+    const user = userEvent.setup();
+
+    renderFocusedTask();
+
+    act(() => {
+      compassEventEmitter.emit(CompassDOMEvents.FOCUS_TASK_TITLE);
+    });
+
+    const input = screen.getByRole("textbox", { name: "Edit task title" });
+
+    await user.clear(input);
+    await user.type(input, "Renamed task");
+    await user.keyboard("{Enter}");
+
+    expect(mockOnUpdateTitle).toHaveBeenCalledWith("Renamed task");
+    expect(mockOnUpdateTitle).toHaveBeenCalledTimes(1);
+  });
+
+  it("cancels title edits on Escape", async () => {
+    const user = userEvent.setup();
+
+    renderFocusedTask();
+
+    act(() => {
+      compassEventEmitter.emit(CompassDOMEvents.FOCUS_TASK_TITLE);
+    });
+
+    const input = screen.getByRole("textbox", { name: "Edit task title" });
+
+    await user.type(input, " updated");
+    await user.keyboard("{Escape}");
+
+    expect(mockOnUpdateTitle).not.toHaveBeenCalled();
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(
+      "Test Task",
+    );
+  });
+
+  it("only calls the title update callback when the title changes", async () => {
+    const user = userEvent.setup();
+
+    renderFocusedTask();
+
+    act(() => {
+      compassEventEmitter.emit(CompassDOMEvents.FOCUS_TASK_TITLE);
+    });
+
+    const input = screen.getByRole("textbox", { name: "Edit task title" });
+
+    await user.tab();
+
+    expect(mockOnUpdateTitle).not.toHaveBeenCalled();
+  });
+
   describe("Tooltip Hints", () => {
     it("does not show tooltip initially", () => {
-      render(
-        <FocusedTask
-          task={mockTask}
-          onCompleteTask={mockOnCompleteTask}
-          onPreviousTask={mockOnPreviousTask}
-          onNextTask={mockOnNextTask}
-          onUpdateDescription={mockOnUpdateDescription}
-        />,
-      );
+      renderFocusedTask();
 
       // Tooltips should not be visible initially
       expect(screen.queryByText("Mark Done")).not.toBeInTheDocument();
@@ -179,15 +224,7 @@ describe("FocusedTask", () => {
 
     it("shows tooltip on hover for complete button", async () => {
       const user = userEvent.setup();
-      render(
-        <FocusedTask
-          task={mockTask}
-          onCompleteTask={mockOnCompleteTask}
-          onPreviousTask={mockOnPreviousTask}
-          onNextTask={mockOnNextTask}
-          onUpdateDescription={mockOnUpdateDescription}
-        />,
-      );
+      renderFocusedTask();
 
       const completeButton = screen.getByRole("button", {
         name: "Mark task as complete",
@@ -212,15 +249,7 @@ describe("FocusedTask", () => {
 
     it("shows tooltip on hover for previous button", async () => {
       const user = userEvent.setup();
-      render(
-        <FocusedTask
-          task={mockTask}
-          onCompleteTask={mockOnCompleteTask}
-          onPreviousTask={mockOnPreviousTask}
-          onNextTask={mockOnNextTask}
-          onUpdateDescription={mockOnUpdateDescription}
-        />,
-      );
+      renderFocusedTask();
 
       const previousButton = screen.getByRole("button", {
         name: "Previous task",
@@ -245,15 +274,7 @@ describe("FocusedTask", () => {
 
     it("shows tooltip on hover for next button", async () => {
       const user = userEvent.setup();
-      render(
-        <FocusedTask
-          task={mockTask}
-          onCompleteTask={mockOnCompleteTask}
-          onPreviousTask={mockOnPreviousTask}
-          onNextTask={mockOnNextTask}
-          onUpdateDescription={mockOnUpdateDescription}
-        />,
-      );
+      renderFocusedTask();
 
       const nextButton = screen.getByRole("button", {
         name: "Next task",
@@ -278,15 +299,7 @@ describe("FocusedTask", () => {
 
     it("hides tooltip when mouse leaves complete button", async () => {
       const user = userEvent.setup();
-      render(
-        <FocusedTask
-          task={mockTask}
-          onCompleteTask={mockOnCompleteTask}
-          onPreviousTask={mockOnPreviousTask}
-          onNextTask={mockOnNextTask}
-          onUpdateDescription={mockOnUpdateDescription}
-        />,
-      );
+      renderFocusedTask();
 
       const completeButton = screen.getByRole("button", {
         name: "Mark task as complete",

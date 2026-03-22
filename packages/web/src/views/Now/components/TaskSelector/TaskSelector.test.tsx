@@ -2,6 +2,7 @@ import { MemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
 import {
   type RenderOptions,
+  act,
   render,
   screen,
   waitFor,
@@ -11,6 +12,10 @@ import dayjs from "@core/util/date/dayjs";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { getTaskRepository } from "@web/common/repositories/task/task.repository.util";
 import { type Task } from "@web/common/types/task.types";
+import {
+  CompassDOMEvents,
+  compassEventEmitter,
+} from "@web/common/utils/dom/event-emitter.util";
 import * as storageUtil from "@web/common/utils/storage/storage.util";
 import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
 import { useAvailableTasks } from "@web/views/Now/hooks/useAvailableTasks";
@@ -114,6 +119,7 @@ describe("TaskSelector", () => {
   });
 
   afterEach(() => {
+    compassEventEmitter.removeAllListeners();
     jest.useRealTimers();
   });
 
@@ -282,6 +288,42 @@ describe("TaskSelector", () => {
   });
 
   describe("Complete task behavior", () => {
+    it("persists title updates for the focused task", async () => {
+      const user = userEvent.setup({ delay: null });
+
+      mockUseFocusedTask.mockReturnValue({
+        focusedTask: mockTasks[0],
+        setFocusedTask: mockSetFocusedTask,
+      });
+      mockUseAvailableTasks.mockReturnValue({
+        availableTasks: mockTasks,
+        allTasks: mockTasks,
+        hasCompletedTasks: false,
+      });
+
+      renderWithNowProvider(<TaskSelector />);
+
+      act(() => {
+        compassEventEmitter.emit(CompassDOMEvents.FOCUS_TASK_TITLE);
+      });
+
+      const input = screen.getByRole("textbox", { name: "Edit task title" });
+
+      await user.clear(input);
+      await user.type(input, "Updated Task");
+      await user.tab();
+
+      await waitFor(() => {
+        expect(getMockSave()).toHaveBeenCalledWith(
+          mockDateKey,
+          expect.objectContaining({
+            _id: "task-1",
+            title: "Updated Task",
+          }),
+        );
+      });
+    });
+
     it("marks task as complete and navigates to next incomplete task when CheckCircle is clicked", async () => {
       const user = userEvent.setup({ delay: null });
       const tasks: Task[] = [

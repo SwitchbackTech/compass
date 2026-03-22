@@ -29,8 +29,11 @@ export function expandModInShortcutDisplay(k: string): string {
 
 export function ShortCutLabel({ k, size = 14 }: { k: string; size?: number }) {
   const display = expandModInShortcutDisplay(k);
+  const segments = display.includes("+")
+    ? display.split("+")
+    : display.split(/\s+/).filter(Boolean);
 
-  return display.split("+").map((_key) => {
+  return segments.map((_key) => {
     const key = _key.trim();
     const testId = `${key.toLowerCase()}-icon`;
     const IconComponent = keyIconMap[key];

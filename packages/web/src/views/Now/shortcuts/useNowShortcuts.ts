@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useHotkeySequence } from "@tanstack/react-hotkeys";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { ID_REMINDER_INPUT } from "@web/common/constants/web.constants";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
@@ -33,6 +34,7 @@ export function useNowShortcuts(props?: Props) {
   } = props || {};
 
   const navigate = useNavigate();
+  const isTaskEditingEnabled = Boolean(focusedTask);
 
   const handleTaskNavigation = useCallback(
     (handler?: () => void) => {
@@ -43,9 +45,39 @@ export function useNowShortcuts(props?: Props) {
     [focusedTask, availableTasks.length],
   );
 
-  useAppHotkeyUp("D", () => {
-    compassEventEmitter.emit(CompassDOMEvents.FOCUS_TASK_DESCRIPTION);
-  });
+  useHotkeySequence(
+    ["E", "D"],
+    () => {
+      if (document.body.dataset.appLocked === "true") {
+        return;
+      }
+
+      compassEventEmitter.emit(CompassDOMEvents.FOCUS_TASK_DESCRIPTION);
+    },
+    {
+      enabled: isTaskEditingEnabled,
+      eventType: "keyup",
+      ignoreInputs: true,
+      conflictBehavior: "allow",
+    },
+  );
+
+  useHotkeySequence(
+    ["E", "T"],
+    () => {
+      if (document.body.dataset.appLocked === "true") {
+        return;
+      }
+
+      compassEventEmitter.emit(CompassDOMEvents.FOCUS_TASK_TITLE);
+    },
+    {
+      enabled: isTaskEditingEnabled,
+      eventType: "keyup",
+      ignoreInputs: true,
+      conflictBehavior: "allow",
+    },
+  );
 
   useAppHotkey(
     "Mod+Enter",

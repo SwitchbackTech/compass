@@ -20,6 +20,7 @@ interface NowViewContextValue {
   handleNextTask: () => void;
   handleCompleteTask: () => void;
   updateTaskDescription: (task: Task, description: string) => void;
+  updateTaskTitle: (task: Task, title: string) => void;
 }
 
 export const NowViewContext = createContext<NowViewContextValue | undefined>(
@@ -45,19 +46,37 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
     [allTasks],
   );
 
-  const updateTaskDescription = useCallback(
-    (task: Task, description: string) => {
+  const persistTaskUpdate = useCallback(
+    (task: Task, updates: Partial<Task>, errorMessage: string) => {
       void (async () => {
         await ensureStorageReady();
         await getTaskRepository("local").save(getDateKey(), {
           ...task,
-          description,
+          ...updates,
         });
       })().catch((error) => {
-        console.error("Failed to update task description:", error);
+        console.error(errorMessage, error);
       });
     },
     [],
+  );
+
+  const updateTaskDescription = useCallback(
+    (task: Task, description: string) => {
+      persistTaskUpdate(
+        task,
+        { description },
+        "Failed to update task description:",
+      );
+    },
+    [persistTaskUpdate],
+  );
+
+  const updateTaskTitle = useCallback(
+    (task: Task, title: string) => {
+      persistTaskUpdate(task, { title }, "Failed to update task title:");
+    },
+    [persistTaskUpdate],
   );
 
   const handlePreviousTask = useCallback(() => {
@@ -149,6 +168,7 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
     handleNextTask,
     handleCompleteTask,
     updateTaskDescription,
+    updateTaskTitle,
   };
 
   return (

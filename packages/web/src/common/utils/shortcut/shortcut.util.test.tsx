@@ -266,6 +266,13 @@ describe("shortcut.util", () => {
       expect(screen.getByText("Delete")).toBeInTheDocument();
     });
 
+    it("should render sequence shortcuts as separate keys", () => {
+      render(<ShortCutLabel k="e d" />);
+
+      expect(screen.getByTestId("e-icon")).toBeInTheDocument();
+      expect(screen.getByTestId("d-icon")).toBeInTheDocument();
+    });
+
     it("should handle arrow key combinations", () => {
       mockNavigatorPlatform("mac");
 
