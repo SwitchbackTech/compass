@@ -5,10 +5,7 @@ import {
 } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { type Dayjs } from "@core/util/date/dayjs";
-import {
-  useKeyDownEvent,
-  useKeyUpEvent,
-} from "@web/common/hooks/useKeyboardEvent";
+import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
 import {
   createAlldayDraft,
   createTimedDraft,
@@ -58,7 +55,7 @@ export const useWeekShortcuts = ({
   const { scrollToNow } = scrollUtil;
 
   const _createSomedayDraft = useCallback(
-    async (
+    (
       category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
     ) => {
       if (category === Categories_Event.SOMEDAY_WEEK && isAtWeeklyLimit) {
@@ -70,7 +67,7 @@ export const useWeekShortcuts = ({
         return;
       }
 
-      context?.actions.createSomedayDraft(category, "createShortcut");
+      void context?.actions.createSomedayDraft(category, "createShortcut");
 
       // If sidebar is closed, open it first
       if (!isSidebarOpen) {
@@ -120,14 +117,17 @@ export const useWeekShortcuts = ({
   );
 
   const createAllDayDraftEvent = useCallback(() => {
-    createAlldayDraft(startOfView, endOfView, "createShortcut", dispatch);
+    void createAlldayDraft(startOfView, endOfView, "createShortcut", dispatch);
   }, [dispatch, startOfView, endOfView]);
 
-  const createTimedDraftEvent = useCallback(
-    () =>
-      createTimedDraft(isCurrentWeek, startOfView, "createShortcut", dispatch),
-    [isCurrentWeek, startOfView, dispatch],
-  );
+  const createTimedDraftEvent = useCallback(() => {
+    void createTimedDraft(
+      isCurrentWeek,
+      startOfView,
+      "createShortcut",
+      dispatch,
+    );
+  }, [isCurrentWeek, startOfView, dispatch]);
 
   const createSomedayMonthDraft = useCallback(() => {
     _createSomedayDraft(Categories_Event.SOMEDAY_MONTH);
@@ -137,16 +137,14 @@ export const useWeekShortcuts = ({
     _createSomedayDraft(Categories_Event.SOMEDAY_WEEK);
   }, [_createSomedayDraft]);
 
-  useKeyDownEvent({ combination: ["Shift", "1"], handler: openTasks });
-  useKeyDownEvent({ combination: ["Shift", "2"], handler: openMonthWidget });
-  useKeyDownEvent({ combination: ["Shift", "!"], handler: openTasks });
-  useKeyDownEvent({ combination: ["Shift", "@"], handler: openMonthWidget });
-  useKeyUpEvent({ combination: ["["], handler: openSidebar });
-  useKeyUpEvent({ combination: ["j"], handler: goToPreviousWeek });
-  useKeyUpEvent({ combination: ["k"], handler: goToNextWeek });
-  useKeyUpEvent({ combination: ["t"], handler: toToday });
-  useKeyUpEvent({ combination: ["a"], handler: createAllDayDraftEvent });
-  useKeyUpEvent({ combination: ["c"], handler: createTimedDraftEvent });
-  useKeyUpEvent({ combination: ["m"], handler: createSomedayMonthDraft });
-  useKeyUpEvent({ combination: ["w"], handler: createSomedayWeekDraft });
+  useAppHotkey("Shift+1", openTasks);
+  useAppHotkey("Shift+2", openMonthWidget);
+  useAppHotkeyUp("[", openSidebar);
+  useAppHotkeyUp("J", goToPreviousWeek);
+  useAppHotkeyUp("K", goToNextWeek);
+  useAppHotkeyUp("T", toToday);
+  useAppHotkeyUp("A", createAllDayDraftEvent);
+  useAppHotkeyUp("C", createTimedDraftEvent);
+  useAppHotkeyUp("M", createSomedayMonthDraft);
+  useAppHotkeyUp("W", createSomedayWeekDraft);
 };

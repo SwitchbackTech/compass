@@ -1,4 +1,5 @@
 import classNames from "classnames";
+import { useLayoutEffect, useRef } from "react";
 import { autoUpdate, inline, offset, useFloating } from "@floating-ui/react";
 import { Draggable } from "@hello-pangea/dnd";
 import { DotsSixVerticalIcon } from "@phosphor-icons/react";
@@ -60,6 +61,12 @@ export function DraggableTask({
     middleware: [offset(8), inline({})],
   });
 
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  useLayoutEffect(() => {
+    refs.setReference(isFloatingEnabled ? rootRef.current : null);
+  }, [isFloatingEnabled, refs]);
+
   return (
     <Draggable
       draggableId={task._id}
@@ -78,8 +85,8 @@ export function DraggableTask({
             draggableProvider.draggableProps.style,
           )}
           ref={(e) => {
+            rootRef.current = e;
             draggableProvider.innerRef(e);
-            refs.setReference(isFloatingEnabled ? e : null);
           }}
         >
           {isDragHandleVisible ? (

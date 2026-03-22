@@ -131,7 +131,7 @@ describe("GCal Authentication Flow", () => {
       ).toBeInTheDocument();
 
       // OAuth completes (auth state resets)
-      await act(async () => {
+      act(() => {
         store.dispatch(authSlice.actions.resetAuth());
       });
 
@@ -144,7 +144,7 @@ describe("GCal Authentication Flow", () => {
       );
 
       // Wait for buffered visibility to settle
-      await act(async () => {
+      act(() => {
         jest.advanceTimersByTime(100);
       });
 
@@ -169,7 +169,7 @@ describe("GCal Authentication Flow", () => {
         </Provider>,
       );
 
-      await act(async () => {
+      act(() => {
         jest.advanceTimersByTime(100);
       });
 
@@ -202,7 +202,7 @@ describe("GCal Authentication Flow", () => {
       });
 
       // OAuth completes, auth state resets
-      await act(async () => {
+      act(() => {
         store.dispatch(authSlice.actions.resetAuth());
       });
 
@@ -214,7 +214,7 @@ describe("GCal Authentication Flow", () => {
         </Provider>,
       );
 
-      await act(async () => {
+      act(() => {
         jest.advanceTimersByTime(100);
       });
 
@@ -225,7 +225,7 @@ describe("GCal Authentication Flow", () => {
       expect(container.firstChild).toBeNull();
 
       // Backend completes import
-      await act(async () => {
+      act(() => {
         importEndCallback?.({
           status: "COMPLETED",
           eventsCount: 42,
@@ -259,7 +259,7 @@ describe("GCal Authentication Flow", () => {
         expect(importEndCallback).toBeDefined();
       });
 
-      await act(async () => {
+      act(() => {
         importEndCallback?.({
           status: "ERRORED",
           message:

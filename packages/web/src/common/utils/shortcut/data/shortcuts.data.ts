@@ -1,7 +1,6 @@
 import dayjs from "@core/util/date/dayjs";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { type Shortcut } from "@web/common/types/global.shortcut.types";
-import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
 
 interface ShortcutsConfig {
   isHome?: boolean;
@@ -19,7 +18,7 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
     { k: VIEW_SHORTCUTS.week.key, label: VIEW_SHORTCUTS.week.label },
     { k: "r", label: "Edit reminder" },
     { k: "z", label: "Logout" },
-    { k: `${getModifierKey()}+k`, label: "Command Palette" },
+    { k: "Mod+k", label: "Command Palette" },
   ];
 
   let homeShortcuts: Shortcut[] = [];
@@ -66,7 +65,7 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
   if (isNow) {
     nowShortcuts = [
       { k: "d", label: "Edit description" },
-      { k: `${getModifierKey()}+Enter`, label: "Save description" },
+      { k: "Mod+Enter", label: "Save description" },
       { k: "j", label: "Previous task" },
       { k: "k", label: "Next task" },
       { k: "Enter", label: "Mark complete" },

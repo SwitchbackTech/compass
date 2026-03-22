@@ -1,10 +1,10 @@
 import { type PropsWithChildren } from "react";
-import type React from "react";
 import { createMemoryRouter } from "react-router-dom";
 import { type Store } from "redux";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { render } from "@web/__tests__/__mocks__/mock.render";
+import { render, waitFor } from "@web/__tests__/__mocks__/mock.render";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { loadSpecificDayData, loadTodayData } from "@web/routers/loaders";
 import { store as defaultStore } from "@web/store";
@@ -54,20 +54,9 @@ const createDayRouter = (
 
 const createUser = () => userEvent.setup({ skipHover: true });
 
-const waitForRouterToInitialize = async (
-  router: ReturnType<typeof createMemoryRouter>,
-) => {
-  if (router.state.initialized && router.state.navigation.state === "idle") {
-    return;
-  }
-
-  await new Promise<void>((resolve) => {
-    const unsubscribe = router.subscribe((state) => {
-      if (state.initialized && state.navigation.state === "idle") {
-        unsubscribe();
-        resolve();
-      }
-    });
+const waitForTaskLoadToSettle = async () => {
+  await waitFor(() => {
+    expect(screen.queryByText("Loading tasks...")).not.toBeInTheDocument();
   });
 };
 
@@ -87,8 +76,18 @@ export const renderWithDayProvidersAsync = async (
 ) => {
   const store = opts?.store ?? defaultStore;
   const router = createDayRouter(component, opts);
+  const user = createUser();
 
-  await waitForRouterToInitialize(router);
+  const rtlResult = render(<></>, { store, router });
 
-  return { user: createUser(), ...render(<></>, { store, router }) };
+  // Poll router + task UI with waitFor (RTL act) instead of await act(async () => …) around
+  // router.subscribe, which can trip React 18’s act warning in JSDOM.
+  await waitFor(() => {
+    expect(router.state.initialized).toBe(true);
+    expect(router.state.navigation.state).toBe("idle");
+  });
+
+  await waitForTaskLoadToSettle();
+
+  return { user, router, ...rtlResult };
 };

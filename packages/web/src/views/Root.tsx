@@ -1,6 +1,7 @@
 import { UserProvider } from "@web/auth/context/UserProvider";
 import { useIsMobile } from "@web/common/hooks/useIsMobile";
 import { AuthenticatedLayout } from "@web/components/AuthenticatedLayout/AuthenticatedLayout";
+import { GlobalShortcutsHost } from "@web/components/CompassProvider/CompassProvider";
 import { MobileGate } from "@web/components/MobileGate/MobileGate";
 import SocketProvider from "@web/socket/provider/SocketProvider";
 
@@ -14,6 +15,7 @@ export const RootView = () => {
   return (
     <UserProvider>
       <SocketProvider>
+        <GlobalShortcutsHost />
         <AuthenticatedLayout />
       </SocketProvider>
     </UserProvider>

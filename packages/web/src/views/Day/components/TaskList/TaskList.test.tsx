@@ -1,6 +1,6 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
-import { screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import "@web/__tests__/floating-ui.setup";
 import { prepareEmptyStorageForTests } from "@web/__tests__/utils/storage/indexeddb.test.util";
 import {
@@ -8,7 +8,10 @@ import {
   clickCreateTaskButton,
   waitForTaskListReady,
 } from "@web/__tests__/utils/tasks/task.test.util";
-import { renderWithDayProvidersAsync } from "../../util/day.test-util";
+import {
+  TaskProviderWrapper,
+  renderWithDayProvidersAsync,
+} from "../../util/day.test-util";
 import { TaskList } from "./TaskList";
 
 describe("TaskList", () => {
@@ -40,9 +43,8 @@ describe("TaskList", () => {
     const input = screen.getByRole("textbox", { name: /task title/i });
     expect(input).toHaveFocus();
 
-    await act(async () => {
-      await user.type(input, "My new task");
-    });
+    await user.type(input, "My new task");
+
     expect(input).toHaveValue("My new task");
   });
 
@@ -58,9 +60,7 @@ describe("TaskList", () => {
 
     await clickCreateTaskButton(user);
 
-    await act(async () => {
-      await user.keyboard("{Enter}");
-    });
+    await user.keyboard("{Enter}");
 
     // Input should remain open but no task should be added
     expect(
@@ -78,12 +78,9 @@ describe("TaskList", () => {
     await clickCreateTaskButton(user);
 
     const input = screen.getByPlaceholderText("Enter task title...");
-    await act(async () => {
-      await user.type(input, "Some text");
-    });
-    await act(async () => {
-      await user.keyboard("{Escape}");
-    });
+    await user.type(input, "Some text");
+
+    await user.keyboard("{Escape}");
 
     // Add button should be visible again
     await waitFor(() => {
@@ -101,9 +98,7 @@ describe("TaskList", () => {
     const checkbox = screen.getByRole("checkbox", {
       name: "Toggle Task to complete",
     });
-    await act(async () => {
-      await user.click(checkbox);
-    });
+    await user.click(checkbox);
 
     // Check that checkbox is now checked
     expect(checkbox).toHaveAttribute("aria-checked", "true");
@@ -117,9 +112,7 @@ describe("TaskList", () => {
 
     // Click on the task input
     const taskInput = screen.getByDisplayValue("Edit me");
-    await act(async () => {
-      await user.click(taskInput);
-    });
+    await user.click(taskInput);
 
     // Should show input with current value
     const editInput = screen.getByDisplayValue("Edit me");
@@ -134,15 +127,16 @@ describe("TaskList", () => {
 
     // Edit the task
     const taskInput = screen.getByDisplayValue("Original title");
-    await act(async () => {
-      await user.click(taskInput);
-    });
+    await user.click(taskInput);
 
     const editInput = screen.getByDisplayValue("Original title");
-    await act(async () => {
-      await user.clear(editInput);
-      await user.type(editInput, "Updated title{Enter}");
+    fireEvent.change(editInput, { target: { value: "Updated title" } });
+
+    await waitFor(() => {
+      expect(editInput).toHaveValue("Updated title");
     });
+
+    fireEvent.blur(editInput);
 
     await waitFor(() => {
       expect(screen.getByDisplayValue("Updated title")).toBeInTheDocument();
@@ -157,17 +151,12 @@ describe("TaskList", () => {
 
     // Start editing
     const taskInput = screen.getByDisplayValue("Original");
-    await act(async () => {
-      await user.click(taskInput);
-    });
+    await user.click(taskInput);
 
     const editInput = screen.getByDisplayValue("Original");
-    await act(async () => {
-      await user.type(editInput, " changed");
-    });
-    await act(async () => {
-      await user.keyboard("{Escape}");
-    });
+    await user.type(editInput, " changed");
+
+    await user.keyboard("{Escape}");
 
     // Should show original text
     await waitFor(() => {
@@ -179,9 +168,7 @@ describe("TaskList", () => {
     const { user } = await renderWithDayProvidersAsync(<TaskList />);
 
     const addTaskArea = await screen.findByText("Create task");
-    await act(async () => {
-      await user.hover(addTaskArea.parentElement!);
-    });
+    await user.hover(addTaskArea.parentElement!);
 
     await waitFor(() => {
       expect(screen.getByText("C")).toBeInTheDocument();
@@ -198,9 +185,7 @@ describe("TaskList", () => {
     const checkbox = screen.getByRole("checkbox", {
       name: "Toggle Complete me",
     });
-    await act(async () => {
-      await user.click(checkbox);
-    });
+    await user.click(checkbox);
 
     // Check for opacity class - need to go up to the task container div
     const taskInput = screen.getByDisplayValue("Complete me");
@@ -218,9 +203,7 @@ describe("TaskList", () => {
     const checkbox = screen.getByRole("checkbox", {
       name: "Toggle First task",
     });
-    await act(async () => {
-      await user.click(checkbox);
-    });
+    await user.click(checkbox);
 
     // Add a second task
     await addTasks(user, ["Second task"]);
@@ -248,15 +231,14 @@ describe("TaskList", () => {
     const checkbox = screen.getByRole("checkbox", {
       name: /Toggle Test task/i,
     });
-    await act(async () => {
+    act(() => {
       checkbox.focus();
     });
+
     expect(checkbox).toHaveFocus();
 
     // Press 'e' directly on the button
-    await act(async () => {
-      await user.keyboard("e");
-    });
+    await user.keyboard("e");
 
     await waitFor(() => {
       const editInput = screen.getByDisplayValue("Test task");
@@ -265,9 +247,7 @@ describe("TaskList", () => {
     });
 
     // Press ESC
-    await act(async () => {
-      await user.keyboard("{Escape}");
-    });
+    await user.keyboard("{Escape}");
 
     // Button should have focus again
     await waitFor(() => {
@@ -278,9 +258,7 @@ describe("TaskList", () => {
     expect(screen.getByDisplayValue("Test task")).toBeInTheDocument();
 
     // Press 'e' again on the button
-    await act(async () => {
-      await user.keyboard("e");
-    });
+    await user.keyboard("e");
 
     await waitFor(() => {
       const editInput2 = screen.getByDisplayValue("Test task");
@@ -297,15 +275,12 @@ describe("TaskList", () => {
     const addTaskButton = await screen.findByRole("button", {
       name: /create new task/i,
     });
-    await act(async () => {
-      addTaskButton.focus();
-    });
+    addTaskButton.focus();
+
     expect(addTaskButton).toHaveFocus();
 
     // Press Enter on the Add task button
-    await act(async () => {
-      await user.keyboard("{Enter}");
-    });
+    await user.keyboard("{Enter}");
 
     // Verify the input is activated and focused
     await waitFor(() => {
@@ -315,17 +290,13 @@ describe("TaskList", () => {
     });
 
     // Type a new task title
-    await act(async () => {
-      await user.type(
-        screen.getByPlaceholderText("Enter task title..."),
-        "New task via Enter",
-      );
-    });
+    await user.type(
+      screen.getByPlaceholderText("Enter task title..."),
+      "New task via Enter",
+    );
 
     // Press Enter to submit the task
-    await act(async () => {
-      await user.keyboard("{Enter}");
-    });
+    await user.keyboard("{Enter}");
 
     // Verify the task is created and no longer in edit mode
     await waitFor(() => {
@@ -354,14 +325,10 @@ describe("TaskList", () => {
 
     // Focus on the task input
     const taskInput = screen.getByDisplayValue("Task to delete");
-    await act(async () => {
-      await user.click(taskInput);
-    });
+    await user.click(taskInput);
 
     // Clear the input (making title "")
-    await act(async () => {
-      await user.clear(taskInput);
-    });
+    await user.clear(taskInput);
 
     // Verify input is cleared before pressing Enter
     await waitFor(() => {
@@ -369,9 +336,7 @@ describe("TaskList", () => {
     });
 
     // Press Enter
-    await act(async () => {
-      await user.keyboard("{Enter}");
-    });
+    await user.keyboard("{Enter}");
 
     // Assert that the task is gone (deleted)
     await waitFor(() => {
@@ -408,14 +373,12 @@ describe("TaskList", () => {
 
       // Focus on the second task checkbox
       const secondCheckbox = checkboxes[1];
-      await act(async () => {
+      act(() => {
         secondCheckbox.focus();
       });
 
       // Press Space to complete the task
-      await act(async () => {
-        await user.keyboard(" ");
-      });
+      await user.keyboard(" ");
 
       // Verify the second task is completed (aria-checked="true")
       // This test verifies that our fix works - the focused task should be completed
@@ -447,14 +410,12 @@ describe("TaskList", () => {
 
       // Focus on the second task checkbox
       const secondCheckbox = checkboxes[1];
-      await act(async () => {
+      act(() => {
         secondCheckbox.focus();
       });
 
       // Press E to edit the task
-      await act(async () => {
-        await user.keyboard("e");
-      });
+      await user.keyboard("e");
 
       // Get both inputs and identify them by their data-task-id
       const inputs = screen.getAllByDisplayValue("Buy milk");

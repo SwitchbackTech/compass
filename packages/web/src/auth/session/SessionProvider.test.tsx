@@ -97,9 +97,7 @@ describe("SessionProvider sessionInit", () => {
 
       sessionInit();
 
-      await act(async () => {
-        session.emit("SESSION_CREATED", { action: "SESSION_CREATED" } as never);
-      });
+      session.emit("SESSION_CREATED", { action: "SESSION_CREATED" } as never);
 
       await waitFor(() => {
         expect(markUserAsAuthenticated).toHaveBeenCalledWith(
@@ -109,9 +107,7 @@ describe("SessionProvider sessionInit", () => {
       });
       expect(reconnect).toHaveBeenCalledTimes(1);
 
-      await act(async () => {
-        session.emit("SIGN_OUT", { action: "SIGN_OUT" } as never);
-      });
+      session.emit("SIGN_OUT", { action: "SIGN_OUT" } as never);
 
       expect(dispatch).toHaveBeenCalledWith(authSlice.actions.resetAuth());
       expect(dispatch).toHaveBeenCalledWith(

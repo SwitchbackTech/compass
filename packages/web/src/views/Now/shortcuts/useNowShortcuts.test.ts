@@ -2,10 +2,7 @@ import { act } from "react";
 import { useNavigate } from "react-router-dom";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
-import {
-  keyPressed$,
-  pressKey,
-} from "@web/common/utils/dom/event-emitter.util";
+import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { useNowShortcuts } from "@web/views/Now/shortcuts/useNowShortcuts";
 
 // Mock react-router-dom
@@ -13,15 +10,7 @@ jest.mock("react-router-dom", () => ({
   useNavigate: jest.fn(),
 }));
 
-// Mock the shortcut utility
-jest.mock("@web/views/Day/util/day.shortcut.util", () => ({
-  isEditable: jest.fn(),
-}));
-
 const mockNavigate = jest.fn();
-const mockIsEditable = jest.requireMock(
-  "@web/views/Day/util/day.shortcut.util",
-).isEditable;
 
 describe("useNowShortcuts", () => {
   const mockTask1 = createMockTask();
@@ -29,9 +18,7 @@ describe("useNowShortcuts", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    keyPressed$.next(null);
     (useNavigate as jest.Mock).mockReturnValue(mockNavigate);
-    mockIsEditable.mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -40,7 +27,7 @@ describe("useNowShortcuts", () => {
 
   describe("global navigation shortcuts", () => {
     it("should navigate to Day when 'Escape' is pressed", async () => {
-      await act(() => renderHook(useNowShortcuts));
+      renderHook(useNowShortcuts);
 
       pressKey("Escape");
 
@@ -48,7 +35,7 @@ describe("useNowShortcuts", () => {
     });
 
     it("should not handle unknown keys", async () => {
-      await act(() => renderHook(useNowShortcuts));
+      renderHook(useNowShortcuts);
 
       pressKey("x");
 
@@ -156,15 +143,13 @@ describe("useNowShortcuts", () => {
     it("should not handle shortcuts when typing in input elements", () => {
       renderHook(() => useNowShortcuts(defaultProps));
 
-      mockIsEditable.mockReturnValue(true);
-
       const input = document.createElement("input");
 
       document.body.appendChild(input);
 
       input.focus();
 
-      pressKey("j");
+      pressKey("j", {}, input);
 
       expect(defaultProps.onPreviousTask).not.toHaveBeenCalled();
     });
@@ -172,15 +157,13 @@ describe("useNowShortcuts", () => {
     it("should not handle shortcuts when typing in textarea elements", () => {
       renderHook(() => useNowShortcuts(defaultProps));
 
-      mockIsEditable.mockReturnValue(true);
-
       const textarea = document.createElement("textarea");
 
       document.body.appendChild(textarea);
 
       textarea.focus();
 
-      pressKey("k");
+      pressKey("k", {}, textarea);
 
       expect(defaultProps.onNextTask).not.toHaveBeenCalled();
     });
@@ -188,17 +171,16 @@ describe("useNowShortcuts", () => {
     it("should not handle shortcuts when typing in contenteditable elements", () => {
       renderHook(() => useNowShortcuts(defaultProps));
 
-      mockIsEditable.mockReturnValue(true);
-
       const div = document.createElement("div");
 
       div.setAttribute("contenteditable", "true");
+      Object.defineProperty(div, "isContentEditable", { value: true });
 
       document.body.appendChild(div);
 
       div.focus();
 
-      pressKey("j");
+      pressKey("j", {}, div);
 
       expect(defaultProps.onPreviousTask).not.toHaveBeenCalled();
     });

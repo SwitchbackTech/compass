@@ -1,6 +1,5 @@
-import { act } from "react";
 import "@testing-library/jest-dom";
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import { type Schema_Event } from "@core/types/event.types";
 import {
   renderAgenda,
@@ -222,53 +221,43 @@ describe("CalendarAgenda", () => {
       (e) => !e.isAllDay,
     );
 
-    const { user } = await act(() => renderAgenda(mockEvents));
+    const { user } = renderAgenda(mockEvents);
+
+    await screen.findByLabelText("All-day events section");
 
     // Focus all-day section
-    await act(async () => {
-      await user.tab();
-    });
+    await user.tab();
     expect(document.activeElement).toHaveAttribute(
       "aria-label",
       "All-day events section",
     );
 
-    await act(async () => {
-      await user.tab();
-    });
+    await user.tab();
 
     expect(document.activeElement).toHaveTextContent(
       mockAllDayEventsByStartDate[0].title!,
     );
 
-    await act(async () => {
-      await user.tab();
-    });
+    await user.tab();
 
     expect(document.activeElement).toHaveTextContent(
       mockAllDayEventsByStartDate[1].title!,
     );
 
     // Focus timed section
-    await act(async () => {
-      await user.tab();
-    });
+    await user.tab();
     expect(document.activeElement).toHaveAttribute(
       "aria-label",
       "Timed events section",
     );
 
-    await act(async () => {
-      await user.tab();
-    });
+    await user.tab();
 
     expect(document.activeElement).toHaveTextContent(
       mockTimedEventsByStartDate[0].title!,
     );
 
-    await act(async () => {
-      await user.tab();
-    });
+    await user.tab();
 
     expect(document.activeElement).toHaveTextContent(
       mockTimedEventsByStartDate[1].title!,
@@ -279,13 +268,13 @@ describe("CalendarAgenda", () => {
     const openEventFormMock = jest.fn();
     (useOpenEventForm as jest.Mock).mockReturnValue(openEventFormMock);
 
-    const { user } = await act(() => renderAgenda());
+    const { user } = renderAgenda();
 
-    const timedSection = screen.getByLabelText("Timed events section");
-    await act(async () => {
+    const timedSection = await screen.findByLabelText("Timed events section");
+    act(() => {
       timedSection.focus();
-      await user.keyboard("{Enter}");
     });
+    await user.keyboard("{Enter}");
 
     expect(openEventFormMock).toHaveBeenCalled();
   });
@@ -294,13 +283,15 @@ describe("CalendarAgenda", () => {
     const openEventFormMock = jest.fn();
     (useOpenEventForm as jest.Mock).mockReturnValue(openEventFormMock);
 
-    const { user } = await act(() => renderAgenda());
+    const { user } = renderAgenda();
 
-    const allDaySection = screen.getByLabelText("All-day events section");
-    await act(async () => {
+    const allDaySection = await screen.findByLabelText(
+      "All-day events section",
+    );
+    act(() => {
       allDaySection.focus();
-      await user.keyboard("{Enter}");
     });
+    await user.keyboard("{Enter}");
 
     expect(openEventFormMock).toHaveBeenCalled();
   });
@@ -323,14 +314,14 @@ describe("CalendarAgenda", () => {
       },
     ];
 
-    const firstRender = await act(() => renderAgenda(mockEvents));
+    const firstRender = renderAgenda(mockEvents);
 
     expect(await screen.findByText("Event 1")).toBeInTheDocument();
     expect(await screen.findByText("Event 2")).toBeInTheDocument();
 
     firstRender.unmount();
 
-    await act(() => renderAgenda(mockEvents.slice(0, 1)));
+    renderAgenda(mockEvents.slice(0, 1));
 
     expect(await screen.findByText("Event 1")).toBeInTheDocument();
     expect(screen.queryByText("Event 2")).not.toBeInTheDocument();

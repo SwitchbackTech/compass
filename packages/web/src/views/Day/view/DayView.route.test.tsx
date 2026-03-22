@@ -1,7 +1,7 @@
 import { act } from "react";
 import { createMemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import dayjs from "@core/util/date/dayjs";
 import { render } from "@web/__tests__/__mocks__/mock.render";
@@ -94,28 +94,32 @@ describe("TodayView Routing", () => {
   it("should show today's date when navigating to /day", async () => {
     const router = createRouter();
 
-    await act(() => render(<></>, { router }));
+    render(<></>, { router });
 
     // Should show today's date in the header
     const todayHeading = new Date().toLocaleDateString("en-US", {
       weekday: "long",
     });
 
-    expect(screen.getByText(todayHeading)).toBeInTheDocument();
+    expect(await screen.findByText(todayHeading)).toBeInTheDocument();
   });
 
   it("should show next day label when clicking next day button", async () => {
     const user = userEvent.setup();
     const router = createRouter();
 
-    await act(() => render(<></>, { router }));
+    render(<></>, { router });
 
-    await act(() => router.navigate(`${ROOT_ROUTES.DAY}/${dateString}`));
+    await act(async () => {
+      await router.navigate(`${ROOT_ROUTES.DAY}/${dateString}`);
+    });
 
     // Find and click the next day button
-    const nextDayButton = screen.getByRole("button", { name: "Next day" });
+    const nextDayButton = await screen.findByRole("button", {
+      name: "Next day",
+    });
 
-    await act(() => user.click(nextDayButton));
+    await user.click(nextDayButton);
 
     // Should show tomorrow's date (Monday, October 20)
     const tomorrow = testDate.add(1, "day");
@@ -130,14 +134,18 @@ describe("TodayView Routing", () => {
     const user = userEvent.setup();
     const router = createRouter();
 
-    await act(() => render(<></>, { router }));
+    render(<></>, { router });
 
-    await act(() => router.navigate(`${ROOT_ROUTES.DAY}/${dateString}`));
+    await act(async () => {
+      await router.navigate(`${ROOT_ROUTES.DAY}/${dateString}`);
+    });
 
     // Find and click the previous day button
-    const prevDayButton = screen.getByRole("button", { name: "Previous day" });
+    const prevDayButton = await screen.findByRole("button", {
+      name: "Previous day",
+    });
 
-    await act(() => user.click(prevDayButton));
+    await user.click(prevDayButton);
 
     // Should show yesterday's date (Saturday, October 18)
     const yesterday = testDate.subtract(1, "day");
@@ -152,14 +160,18 @@ describe("TodayView Routing", () => {
     const user = userEvent.setup();
     const router = createRouter();
 
-    await act(() => render(<></>, { router }));
+    render(<></>, { router });
 
-    await act(() => router.navigate(`${ROOT_ROUTES.DAY}/${dateString}`));
+    await act(async () => {
+      await router.navigate(`${ROOT_ROUTES.DAY}/${dateString}`);
+    });
 
     // Go to different day to make the "Go to today" button visible
-    const prevDayButton = screen.getByRole("button", { name: "Previous day" });
+    const prevDayButton = await screen.findByRole("button", {
+      name: "Previous day",
+    });
 
-    await act(() => user.click(prevDayButton));
+    await user.click(prevDayButton);
 
     // Wait for the navigation to complete and verify we're on yesterday
     const yesterday = testDate.subtract(1, "day");
@@ -170,7 +182,7 @@ describe("TodayView Routing", () => {
     // Find and click the go to today button (it should be visible when not viewing today)
     const goToTodayButton = screen.getByRole("button", { name: "Go to today" });
 
-    await act(() => user.click(goToTodayButton));
+    await user.click(goToTodayButton);
 
     // Should show today's date (the actual current date, not the test date)
     const today = dayjs().utc();
@@ -187,10 +199,10 @@ describe("TodayView Routing", () => {
 
     const router = createRouter();
 
-    await act(() => render(<></>, { router }));
+    render(<></>, { router });
 
-    expect(screen.getByText("Monday")).toBeInTheDocument();
-    expect(screen.getByText("October 20")).toBeInTheDocument();
+    expect(await screen.findByText("Monday")).toBeInTheDocument();
+    expect(await screen.findByText("October 20")).toBeInTheDocument();
 
     jest.useRealTimers();
   });
@@ -200,7 +212,7 @@ describe("Navigation with URL updates", () => {
     const user = userEvent.setup();
     const router = createRouter();
 
-    await act(() => render(<></>, { router }));
+    render(<></>, { router });
 
     // Wait for the component to render by finding a button
     const nextDayButton = await screen.findByRole("button", {
@@ -211,13 +223,13 @@ describe("Navigation with URL updates", () => {
       .add(1, "day")
       .format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
 
-    await act(async () => {
-      await user.click(nextDayButton);
-    });
+    await user.click(nextDayButton);
 
-    expect(router.state.location.pathname).toEqual(
-      `${ROOT_ROUTES.DAY}/${nextDay}`,
-    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toEqual(
+        `${ROOT_ROUTES.DAY}/${nextDay}`,
+      );
+    });
 
     expect(nextDayButton).toBeInTheDocument();
   });
@@ -226,14 +238,14 @@ describe("Navigation with URL updates", () => {
     const user = userEvent.setup();
     const router = createRouter();
 
-    await act(() => render(<></>, { router }));
+    render(<></>, { router });
 
     // Wait for the component to render by finding a button
     const prevDayButton = await screen.findByRole("button", {
       name: "Previous day",
     });
 
-    await act(() => user.click(prevDayButton));
+    await user.click(prevDayButton);
 
     const prevDay = dayjs()
       .subtract(1, "day")
@@ -242,9 +254,11 @@ describe("Navigation with URL updates", () => {
     // Verify the button click works
     expect(prevDayButton).toBeInTheDocument();
 
-    expect(router.state.location.pathname).toEqual(
-      `${ROOT_ROUTES.DAY}/${prevDay}`,
-    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toEqual(
+        `${ROOT_ROUTES.DAY}/${prevDay}`,
+      );
+    });
   });
 
   it("should display correct date in header when viewing specific date", async () => {
@@ -254,8 +268,10 @@ describe("Navigation with URL updates", () => {
       dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
     );
 
-    await act(() => render(<></>, { router }));
-    await act(() => router.navigate(`${ROOT_ROUTES.DAY}/${testDateString}`));
+    render(<></>, { router });
+    await act(async () => {
+      await router.navigate(`${ROOT_ROUTES.DAY}/${testDateString}`);
+    });
 
     expect(router.state.location.pathname).toEqual(
       `${ROOT_ROUTES.DAY}/${testDateString}`,
@@ -272,7 +288,7 @@ describe("Navigation with URL updates", () => {
 
     const router = createRouter();
 
-    await act(() => render(<></>, { router }));
+    render(<></>, { router });
 
     // Should show today's date
     const todayWeekday = today.format(DAY_HEADING_FORMAT);

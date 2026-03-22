@@ -1,17 +1,13 @@
-import { useHotkeys } from "react-hotkeys-hook";
-import { type OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
 import {
   type Categories_Event,
   type Direction_Migrate,
   type Schema_Event,
 } from "@core/types/event.types";
+import { useAppHotkey } from "@web/common/hooks/useAppHotkey";
 import { isComboboxInteraction } from "@web/common/utils/form/form.util";
 
-export const SOMEDAY_HOTKEY_OPTIONS: OptionsOrDependencyArray = {
-  enableOnFormTags: ["input"],
-  enableOnContentEditable: true,
+export const SOMEDAY_HOTKEY_OPTIONS = {
   enabled: true,
-  eventListenerOptions: { capture: true },
 };
 
 export interface SomedayFormShortcutsProps {
@@ -30,7 +26,7 @@ export interface SomedayFormShortcutsProps {
 const isMenuInteraction = (keyboardEvent: KeyboardEvent) => {
   const target = keyboardEvent.target as HTMLElement | null;
 
-  if (!target) {
+  if (!target || !(target instanceof HTMLElement)) {
     return false;
   }
 
@@ -63,6 +59,8 @@ export const stopPropagationWrapper =
     callback();
   };
 
+// TanStack Hotkeys automatically syncs callbacks on every render,
+// so callbacks always have access to latest values (no stale closures)
 export const useSomedayFormShortcuts = ({
   event,
   category,
@@ -71,14 +69,13 @@ export const useSomedayFormShortcuts = ({
   onDuplicate,
   onMigrate,
 }: SomedayFormShortcutsProps) => {
-  useHotkeys(
-    "delete",
-    stopPropagationWrapper(onDelete),
-    SOMEDAY_HOTKEY_OPTIONS,
-    [onDelete],
-  );
-  useHotkeys(
-    "enter",
+  useAppHotkey("Delete", stopPropagationWrapper(onDelete), {
+    ...SOMEDAY_HOTKEY_OPTIONS,
+    ignoreInputs: false,
+  });
+
+  useAppHotkey(
+    "Enter",
     (keyboardEvent) => {
       if (
         isMenuInteraction(keyboardEvent) ||
@@ -93,51 +90,45 @@ export const useSomedayFormShortcuts = ({
       onSubmit();
     },
     SOMEDAY_HOTKEY_OPTIONS,
-    [onSubmit],
   );
-  useHotkeys(
-    "mod+enter",
+
+  useAppHotkey(
+    "Mod+Enter",
     (keyboardEvent) => {
       keyboardEvent.preventDefault();
       keyboardEvent.stopPropagation();
       onSubmit();
     },
     SOMEDAY_HOTKEY_OPTIONS,
-    [onSubmit],
   );
 
-  useHotkeys(
-    "meta+d",
+  useAppHotkey(
+    "Mod+D",
     stopPropagationWrapper(onDuplicate),
     SOMEDAY_HOTKEY_OPTIONS,
-    [onDuplicate],
   );
 
-  useHotkeys(
-    "ctrl+meta+up",
+  useAppHotkey(
+    "Control+Meta+ArrowUp",
     handleMigration("up", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
-    [event, category, onMigrate],
   );
 
-  useHotkeys(
-    "ctrl+meta+down",
+  useAppHotkey(
+    "Control+Meta+ArrowDown",
     handleMigration("down", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
-    [event, category, onMigrate],
   );
 
-  useHotkeys(
-    "ctrl+meta+right",
+  useAppHotkey(
+    "Control+Meta+ArrowRight",
     handleMigration("forward", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
-    [event, category, onMigrate],
   );
 
-  useHotkeys(
-    "ctrl+meta+left",
+  useAppHotkey(
+    "Control+Meta+ArrowLeft",
     handleMigration("back", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
-    [event, category, onMigrate],
   );
 };

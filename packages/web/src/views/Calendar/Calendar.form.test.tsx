@@ -1,4 +1,4 @@
-import { type SyntheticEvent, act } from "react";
+import { type SyntheticEvent } from "react";
 import { createMemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
 import { screen, waitFor, within } from "@testing-library/react";
@@ -67,20 +67,16 @@ describe("Event Form", () => {
     jest.resetAllMocks();
   });
   it("closes after clicking outside", async () => {
-    await act(() => render(<></>, { router, state: preloadedState }));
+    render(<></>, { router, state: preloadedState });
 
     const user = userEvent.setup();
 
-    await act(async () => {
-      const climbBtn = document.querySelector(
-        `[data-event-id="${CLIMB._id}"]`,
-      ) as HTMLElement;
-      await user.click(climbBtn);
-    });
+    const climbBtn = document.querySelector(
+      `[data-event-id="${CLIMB._id}"]`,
+    ) as HTMLElement;
+    await user.click(climbBtn);
 
-    await act(async () => {
-      await user.click(document.body);
-    });
+    await user.click(document.body);
 
     expect(screen.queryByRole("form")).not.toBeInTheDocument();
   });
@@ -89,16 +85,12 @@ describe("Event Form", () => {
     it("does not open dialog by default", async () => {
       const user = userEvent.setup();
 
-      const { container } = await act(() =>
-        render(<></>, { router, state: preloadedState }),
-      );
+      const { container } = render(<></>, { router, state: preloadedState });
 
-      await act(async () => {
-        const climbBtn = document.querySelector(
-          `[data-event-id="${CLIMB._id}"]`,
-        ) as HTMLElement;
-        await user.click(climbBtn);
-      });
+      const climbBtn = document.querySelector(
+        `[data-event-id="${CLIMB._id}"]`,
+      ) as HTMLElement;
+      await user.click(climbBtn);
 
       expect(container.getElementsByClassName("startDatePicker")).toHaveLength(
         0,

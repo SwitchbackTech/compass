@@ -101,28 +101,22 @@ describe("useLoadTasksByDateEffect", () => {
       { initialProps: { dateKey: "2025-10-27" } },
     );
 
-    await act(async () => {
-      rerender({ dateKey: "2025-10-28" });
-    });
+    rerender({ dateKey: "2025-10-28" });
 
     expect(result.current.isLoadingTasks).toBe(true);
     expect(result.current.tasks).toEqual([]);
 
-    await act(async () => {
-      firstLoad.resolve([
-        createMockTask({ _id: "stale-task", status: "todo", order: 0 }),
-      ]);
-      await Promise.resolve();
-    });
+    firstLoad.resolve([
+      createMockTask({ _id: "stale-task", status: "todo", order: 0 }),
+    ]);
+    await Promise.resolve();
 
     expect(result.current.tasks).toEqual([]);
 
-    await act(async () => {
-      secondLoad.resolve([
-        createMockTask({ _id: "fresh-task", status: "todo", order: 0 }),
-      ]);
-      await secondLoad.promise;
-    });
+    secondLoad.resolve([
+      createMockTask({ _id: "fresh-task", status: "todo", order: 0 }),
+    ]);
+    await secondLoad.promise;
 
     await waitFor(() => {
       expect(result.current.isLoadingTasks).toBe(false);

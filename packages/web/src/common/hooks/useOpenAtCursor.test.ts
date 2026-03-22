@@ -110,9 +110,7 @@ describe("useOpenAtCursor", () => {
       expect(open$.getValue()).toBe(false);
 
       // Fast-forward microtasks and timers
-      await act(async () => {
-        jest.runAllTimers();
-      });
+      jest.runAllTimers();
 
       expect(nodeId$.getValue()).toBe(config.nodeId);
       expect(placement$.getValue()).toBe(config.placement);
@@ -140,9 +138,7 @@ describe("useOpenAtCursor", () => {
       expect(nodeId$.getValue()).toBe(null);
 
       // Then opened after delay
-      await act(async () => {
-        jest.runAllTimers();
-      });
+      jest.runAllTimers();
 
       expect(open$.getValue()).toBe(true);
       expect(nodeId$.getValue()).toBe(CursorItem.EventPreview);

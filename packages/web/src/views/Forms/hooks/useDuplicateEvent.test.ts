@@ -49,16 +49,12 @@ describe("useDuplicateEvent Integration", () => {
 
     const { result } = renderHook(() => useDuplicateEvent(mockEventId));
 
-    await act(async () => {
-      result.current();
-    });
+    result.current();
 
     // Advance timer for lastValueFrom(timer(10))
-    await act(async () => {
-      jest.advanceTimersByTime(10);
-      // Allow promise resolution (then block)
-      await Promise.resolve();
-    });
+    jest.advanceTimersByTime(10);
+    // Allow promise resolution (then block)
+    await Promise.resolve();
 
     // Now draft should be set. Get the new ID.
     const draft = eventsStore.query(getDraft);
@@ -72,21 +68,15 @@ describe("useDuplicateEvent Integration", () => {
     gridMain.appendChild(newEventElement);
 
     // Allow queueMicrotask to run
-    await act(async () => {
-      await Promise.resolve();
-    });
+    await Promise.resolve();
 
     // Advance timer for second timer(10)
-    await act(async () => {
-      jest.advanceTimersByTime(10);
-      await Promise.resolve();
-    });
+    jest.advanceTimersByTime(10);
+    await Promise.resolve();
 
     // Advance timer for openFloatingAtCursor (setTimeout 10ms)
-    await act(async () => {
-      jest.advanceTimersByTime(10);
-      await Promise.resolve();
-    });
+    jest.advanceTimersByTime(10);
+    await Promise.resolve();
 
     // Assert Floating State
     expect(open$.getValue()).toBe(true);
@@ -105,15 +95,11 @@ describe("useDuplicateEvent Integration", () => {
 
     const { result } = renderHook(() => useDuplicateEvent(mockEventId));
 
-    await act(async () => {
-      result.current();
-    });
+    result.current();
 
     // Advance timer for lastValueFrom(timer(10))
-    await act(async () => {
-      jest.advanceTimersByTime(10);
-      await Promise.resolve();
-    });
+    jest.advanceTimersByTime(10);
+    await Promise.resolve();
 
     // Assert Draft (should still be created)
     const draft = eventsStore.query(getDraft);
@@ -121,14 +107,11 @@ describe("useDuplicateEvent Integration", () => {
     expect(draft?._id).not.toBe(mockEventId);
 
     // Allow queueMicrotask to run
-    await act(async () => {
-      await Promise.resolve();
-    });
+    await Promise.resolve();
 
     // Advance timer for openFloatingAtCursor (setTimeout 10ms)
-    await act(async () => {
-      jest.advanceTimersByTime(10);
-    });
+    jest.advanceTimersByTime(10);
+    await Promise.resolve();
 
     // Assert Floating State (should NOT be open)
     expect(open$.getValue()).toBe(false);
@@ -140,15 +123,11 @@ describe("useDuplicateEvent Integration", () => {
 
     const { result } = renderHook(() => useDuplicateEvent(mockEventId));
 
-    await act(async () => {
-      result.current();
-    });
+    result.current();
 
     // Advance timer
-    await act(async () => {
-      jest.advanceTimersByTime(10);
-      await Promise.resolve();
-    });
+    jest.advanceTimersByTime(10);
+    await Promise.resolve();
 
     // Assert Draft
     const draft = eventsStore.query(getDraft);

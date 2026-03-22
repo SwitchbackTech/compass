@@ -12,7 +12,6 @@ import {
   renderHook,
 } from "@testing-library/react";
 import { ID_ROOT } from "@web/common/constants/web.constants";
-import { useSetupKeyboardEvents } from "@web/common/hooks/useKeyboardEvent";
 import { useSetupMovementEvents } from "@web/common/hooks/useMovementEvent";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
@@ -36,7 +35,6 @@ const TestProviders = (props?: {
   store?: typeof compassStore;
 }) => {
   return function TestProvidersWrapper({ children }: PropsWithChildren) {
-    useSetupKeyboardEvents();
     useSetupMovementEvents();
 
     if (!props?.router) {
@@ -56,7 +54,9 @@ const TestProviders = (props?: {
             router={props.router}
             fallbackElement={<AbsoluteOverflowLoader />}
             future={{
-              v7_startTransition: true,
+              // Test-only: sync RouterProvider state updates (no startTransition).
+              // Matches initial render + client navigations with RTL act() without globals.
+              v7_startTransition: false,
             }}
           />
         </CompassRequiredProviders>
@@ -124,7 +124,6 @@ const customRenderHook = <ReturnType, Props>(
   const BaseProviders = TestProviders({ store, router });
 
   const Wrapper = (props: PropsWithChildren) => {
-    useSetupKeyboardEvents();
     useSetupMovementEvents();
 
     if (!WrapperComponent) return <BaseProviders {...props} />;

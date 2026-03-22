@@ -135,9 +135,7 @@ describe("UserProvider", () => {
       );
 
       await waitFor(() => expect(getProfileSpy).toHaveBeenCalled());
-      await act(async () => {
-        await getProfileSpy.mock.results[0].value;
-      });
+      await getProfileSpy.mock.results[0].value;
 
       expect(mockIdentify).not.toHaveBeenCalled();
       getProfileSpy.mockRestore();
@@ -215,13 +213,11 @@ describe("UserProvider", () => {
       );
 
       await waitFor(() => expect(getProfileSpy).toHaveBeenCalled());
-      await act(async () => {
-        try {
-          await getProfileSpy.mock.results[0].value;
-        } catch {
-          // expected — profile fetch rejects on 401
-        }
-      });
+      try {
+        await getProfileSpy.mock.results[0].value;
+      } catch {
+        // expected — profile fetch rejects on 401
+      }
 
       expect(mockToastError).toHaveBeenCalled();
       const latestToastCall =

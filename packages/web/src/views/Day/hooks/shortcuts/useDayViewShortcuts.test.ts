@@ -1,5 +1,4 @@
-import { act } from "react";
-import { fireEvent } from "@testing-library/react";
+import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
 import userEvent from "@testing-library/user-event";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import {
@@ -7,11 +6,7 @@ import {
   mockMacOSUserAgent,
   mockWindowsUserAgent,
 } from "@web/__tests__/__mocks__/mock.setup";
-import {
-  keyPressed$,
-  pressKey,
-} from "@web/common/utils/dom/event-emitter.util";
-import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
+import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
 
 // Mock shortcut utility functions
@@ -25,19 +20,14 @@ describe.each([
   beforeAll(mockFn);
   afterAll(() => jest.resetAllMocks());
 
-  const {
-    isEditable,
-    isFocusedOnTaskCheckbox,
-    isFocusedWithinTask,
-    getFocusedTaskId,
-  } = jest.requireMock("@web/views/Day/util/day.shortcut.util");
+  const { isFocusedOnTaskCheckbox, isFocusedWithinTask, getFocusedTaskId } =
+    jest.requireMock("@web/views/Day/util/day.shortcut.util");
 
   beforeEach(() => {
     jest.clearAllMocks();
-    keyPressed$.next(null);
+    HotkeyManager.resetInstance();
 
     // Set default mock implementations
-    isEditable.mockReturnValue(false);
     isFocusedOnTaskCheckbox.mockReturnValue(false);
     isFocusedWithinTask.mockReturnValue(false);
     getFocusedTaskId.mockReturnValue(null);
@@ -46,6 +36,39 @@ describe.each([
   afterEach(() => {
     jest.clearAllMocks();
   });
+
+  const pressModifierShortcut = (
+    key: string,
+    keyOptions: KeyboardEventInit = {},
+    target: Element | Node | Window | Document = document,
+  ) => {
+    const modifierProps =
+      resolveModifier("Mod") === "Meta" ? { metaKey: true } : { ctrlKey: true };
+
+    pressKey(
+      key,
+      {
+        keyDownInit: { ...modifierProps, ...keyOptions },
+        keyUpInit: { ...modifierProps, ...keyOptions },
+      },
+      target,
+    );
+  };
+
+  const pressMigrationShortcut = (
+    key: string,
+    keyOptions: KeyboardEventInit = {},
+    target: Element | Node | Window | Document = document,
+  ) => {
+    pressKey(
+      key,
+      {
+        keyDownInit: { ctrlKey: true, metaKey: true, ...keyOptions },
+        keyUpInit: { ctrlKey: true, metaKey: true, ...keyOptions },
+      },
+      target,
+    );
+  };
 
   const defaultConfig = {
     onAddTask: jest.fn(),
@@ -60,7 +83,7 @@ describe.each([
 
   it("should call onFocusTasks when 'u' is pressed", async () => {
     const config = { ...defaultConfig };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     pressKey("u");
 
@@ -69,7 +92,7 @@ describe.each([
 
   it("should call onAddTask when 'c' is pressed", async () => {
     const config = { ...defaultConfig };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     pressKey("c");
 
@@ -78,7 +101,7 @@ describe.each([
 
   it("should call onEditTask when 'e' is pressed", async () => {
     const config = { ...defaultConfig };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     pressKey("e");
 
@@ -87,7 +110,7 @@ describe.each([
 
   it("should call onEscape when 'Escape' is pressed", async () => {
     const config = { ...defaultConfig };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     pressKey("Escape");
 
@@ -96,7 +119,7 @@ describe.each([
 
   it("should call onCompleteTask when Enter is pressed on a focused task", async () => {
     const config = { ...defaultConfig, hasFocusedTask: true };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     // Mock document.activeElement to not be a task button
     Object.defineProperty(document, "activeElement", {
@@ -111,7 +134,7 @@ describe.each([
 
   it("should not call onCompleteTask when Enter is pressed on a task button", async () => {
     const config = { ...defaultConfig, hasFocusedTask: true };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     // Mock document.activeElement to be a task button
     const taskButton = document.createElement("button");
@@ -133,7 +156,7 @@ describe.each([
       hasFocusedTask: true,
       isEditingTask: true,
     };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     pressKey("Enter");
 
@@ -142,7 +165,7 @@ describe.each([
 
   it("should not call onCompleteTask when Enter is pressed without focused task", async () => {
     const config = { ...defaultConfig, hasFocusedTask: false };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     pressKey("Enter");
 
@@ -151,9 +174,7 @@ describe.each([
 
   it("should not handle shortcuts when typing in input elements", async () => {
     const config = { ...defaultConfig };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
-
-    isEditable.mockReturnValue(true);
+    renderHook(() => useDayViewShortcuts(config));
 
     const input = document.createElement("input");
 
@@ -168,9 +189,7 @@ describe.each([
 
   it("should not handle shortcuts when typing in textarea elements", async () => {
     const config = { ...defaultConfig };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
-
-    isEditable.mockReturnValue(true);
+    renderHook(() => useDayViewShortcuts(config));
 
     const textarea = document.createElement("textarea");
 
@@ -185,13 +204,12 @@ describe.each([
 
   it("should not handle shortcuts when typing in contenteditable elements", async () => {
     const config = { ...defaultConfig };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
-
-    isEditable.mockReturnValue(true);
+    renderHook(() => useDayViewShortcuts(config));
 
     const div = document.createElement("div");
 
     div.setAttribute("contenteditable", "true");
+    Object.defineProperty(div, "isContentEditable", { value: true });
 
     document.body.appendChild(div);
 
@@ -205,7 +223,7 @@ describe.each([
   it("should still handle Escape when typing in input elements", async () => {
     const config = { ...defaultConfig };
 
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     const input = document.createElement("input");
 
@@ -221,7 +239,7 @@ describe.each([
   it("should handle case insensitive key presses", async () => {
     const config = { ...defaultConfig };
 
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     pressKey("U");
 
@@ -231,7 +249,7 @@ describe.each([
   it("should call onDeleteTask when Delete is pressed on a focused checkbox", async () => {
     const config = { ...defaultConfig, hasFocusedTask: true };
 
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     isFocusedOnTaskCheckbox.mockReturnValue(true);
 
@@ -251,7 +269,7 @@ describe.each([
 
   it("should NOT call onDeleteTask when Delete is pressed on an input field", async () => {
     const config = { ...defaultConfig, hasFocusedTask: true };
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     const input = document.createElement("input");
 
@@ -267,7 +285,7 @@ describe.each([
   it("should NOT call onDeleteTask when no task is focused", async () => {
     const config = { ...defaultConfig, hasFocusedTask: false };
 
-    await act(() => renderHook(() => useDayViewShortcuts(config)));
+    renderHook(() => useDayViewShortcuts(config));
 
     pressKey("Delete");
 
@@ -279,19 +297,13 @@ describe.each([
       const onMigrateTask = jest.fn();
       const config = { ...defaultConfig, onMigrateTask };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
       // Mock utility functions to return task-focused state
       isFocusedWithinTask.mockReturnValue(true);
       getFocusedTaskId.mockReturnValue("task-123");
 
-      fireEvent.keyDown(window, { key: "Control", ctrlKey: true });
-      fireEvent.keyDown(window, { key: "Meta", ctrlKey: true, metaKey: true });
-      fireEvent.keyDown(window, {
-        key: "ArrowRight",
-        ctrlKey: true,
-        metaKey: true,
-      });
+      pressMigrationShortcut("ArrowRight");
 
       expect(onMigrateTask).toHaveBeenCalledWith("task-123", "forward");
     });
@@ -300,19 +312,13 @@ describe.each([
       const onMigrateTask = jest.fn();
       const config = { ...defaultConfig, onMigrateTask };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
       // Mock utility functions to return task-focused state
       isFocusedWithinTask.mockReturnValue(true);
       getFocusedTaskId.mockReturnValue("task-456");
 
-      fireEvent.keyDown(window, { key: "Control", ctrlKey: true });
-      fireEvent.keyDown(window, { key: "Meta", ctrlKey: true, metaKey: true });
-      fireEvent.keyDown(window, {
-        key: "ArrowLeft",
-        ctrlKey: true,
-        metaKey: true,
-      });
+      pressMigrationShortcut("ArrowLeft");
 
       expect(onMigrateTask).toHaveBeenCalledWith("task-456", "backward");
     });
@@ -321,7 +327,7 @@ describe.each([
       const onMigrateTask = jest.fn();
       const config = { ...defaultConfig, onMigrateTask };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
       await userEvent.keyboard("{Control>}{ArrowRight}");
 
@@ -332,7 +338,7 @@ describe.each([
       const onMigrateTask = jest.fn();
       const config = { ...defaultConfig, onMigrateTask };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
       await userEvent.keyboard("{Meta>}{ArrowRight}");
 
@@ -343,7 +349,7 @@ describe.each([
       const onMigrateTask = jest.fn();
       const config = { ...defaultConfig, onMigrateTask };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
       // Mock utility functions to return task-focused state
       isFocusedWithinTask.mockReturnValue(true);
@@ -355,13 +361,7 @@ describe.each([
 
       input.focus();
 
-      fireEvent.keyDown(window, { key: "Control", ctrlKey: true });
-      fireEvent.keyDown(window, { key: "Meta", ctrlKey: true, metaKey: true });
-      fireEvent.keyDown(window, {
-        key: "ArrowRight",
-        ctrlKey: true,
-        metaKey: true,
-      });
+      pressMigrationShortcut("ArrowRight", {}, input);
 
       document.body.removeChild(input);
 
@@ -379,18 +379,9 @@ describe.each([
       const undoToastId = "task-toast-123";
       const config = { ...defaultConfig, onRestoreTask, undoToastId };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
-      const modifier = getModifierKey();
-      const isCtrl = modifier === "Control";
-      const isMeta = modifier === "Meta";
-      fireEvent.keyDown(window, {
-        key: modifier,
-        ctrlKey: isCtrl,
-        metaKey: isMeta,
-      });
-      fireEvent.keyDown(window, { key: "z", ctrlKey: isCtrl, metaKey: isMeta });
-      fireEvent.keyUp(window, { key: "z", ctrlKey: isCtrl, metaKey: isMeta });
+      pressModifierShortcut("z");
 
       expect(onRestoreTask).toHaveBeenCalled();
     });
@@ -400,18 +391,9 @@ describe.each([
       const undoToastId = "undo-toast-123";
       const config = { ...defaultConfig, onRestoreTask, undoToastId };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
-      const modifier = getModifierKey();
-      const isCtrl = modifier === "Control";
-      const isMeta = modifier === "Meta";
-      fireEvent.keyDown(window, {
-        key: modifier,
-        ctrlKey: isCtrl,
-        metaKey: isMeta,
-      });
-      fireEvent.keyDown(window, { key: "z", ctrlKey: isCtrl, metaKey: isMeta });
-      fireEvent.keyUp(window, { key: "z", ctrlKey: isCtrl, metaKey: isMeta });
+      pressModifierShortcut("z");
 
       expect(onRestoreTask).toHaveBeenCalled();
       expect(toast.dismiss).toHaveBeenCalledWith(undoToastId);
@@ -422,28 +404,9 @@ describe.each([
       const undoToastId = "task-toast-123";
       const config = { ...defaultConfig, onRestoreTask, undoToastId };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
-      const modifier = getModifierKey();
-      const isCtrl = modifier === "Control";
-      const isMeta = modifier === "Meta";
-      fireEvent.keyDown(window, {
-        key: modifier,
-        ctrlKey: isCtrl,
-        metaKey: isMeta,
-      });
-      fireEvent.keyDown(window, {
-        key: "Z",
-        ctrlKey: isCtrl,
-        metaKey: isMeta,
-        shiftKey: true,
-      });
-      fireEvent.keyUp(window, {
-        key: "Z",
-        ctrlKey: isCtrl,
-        metaKey: isMeta,
-        shiftKey: true,
-      });
+      pressModifierShortcut("Z", { shiftKey: true });
 
       expect(onRestoreTask).toHaveBeenCalled();
     });
@@ -452,7 +415,7 @@ describe.each([
       const onRestoreTask = jest.fn();
       const config = { ...defaultConfig, onRestoreTask };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
       pressKey("z");
 
@@ -472,18 +435,9 @@ describe.each([
         eventUndoToastId,
       };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
-      const modifier = getModifierKey();
-      const isCtrl = modifier === "Control";
-      const isMeta = modifier === "Meta";
-      fireEvent.keyDown(window, {
-        key: modifier,
-        ctrlKey: isCtrl,
-        metaKey: isMeta,
-      });
-      fireEvent.keyDown(window, { key: "z", ctrlKey: isCtrl, metaKey: isMeta });
-      fireEvent.keyUp(window, { key: "z", ctrlKey: isCtrl, metaKey: isMeta });
+      pressModifierShortcut("z");
 
       // Should call event restore, not task restore
       expect(onRestoreEvent).toHaveBeenCalled();
@@ -498,18 +452,9 @@ describe.each([
       const eventUndoToastId = "event-toast-789";
       const config = { ...defaultConfig, onRestoreEvent, eventUndoToastId };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
-      const modifier = getModifierKey();
-      const isCtrl = modifier === "Control";
-      const isMeta = modifier === "Meta";
-      fireEvent.keyDown(window, {
-        key: modifier,
-        ctrlKey: isCtrl,
-        metaKey: isMeta,
-      });
-      fireEvent.keyDown(window, { key: "z", ctrlKey: isCtrl, metaKey: isMeta });
-      fireEvent.keyUp(window, { key: "z", ctrlKey: isCtrl, metaKey: isMeta });
+      pressModifierShortcut("z");
 
       expect(onRestoreEvent).toHaveBeenCalled();
       expect(toast.dismiss).toHaveBeenCalledWith(eventUndoToastId);
@@ -528,18 +473,9 @@ describe.each([
         undoToastId,
       };
 
-      await act(() => renderHook(() => useDayViewShortcuts(config)));
+      renderHook(() => useDayViewShortcuts(config));
 
-      const modifier = getModifierKey();
-      const isCtrl = modifier === "Control";
-      const isMeta = modifier === "Meta";
-      fireEvent.keyDown(window, {
-        key: modifier,
-        ctrlKey: isCtrl,
-        metaKey: isMeta,
-      });
-      fireEvent.keyDown(window, { key: "z", ctrlKey: isCtrl, metaKey: isMeta });
-      fireEvent.keyUp(window, { key: "z", ctrlKey: isCtrl, metaKey: isMeta });
+      pressModifierShortcut("z");
 
       // Should call task restore since no event undo exists
       expect(onRestoreTask).toHaveBeenCalled();

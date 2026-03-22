@@ -1,4 +1,3 @@
-import { act } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import "@web/__tests__/floating-ui.setup";
@@ -33,9 +32,7 @@ describe("TaskContextMenu", () => {
     const taskElement = screen.getByDisplayValue("Test task").closest(".group");
     expect(taskElement).toBeInTheDocument();
 
-    await act(async () => {
-      await user.pointer({ target: taskElement!, keys: "[MouseRight]" });
-    });
+    await user.pointer({ target: taskElement!, keys: "[MouseRight]" });
 
     // Check that context menu appears
     await waitFor(async () => {
@@ -54,9 +51,7 @@ describe("TaskContextMenu", () => {
 
     // Right-click on the task
     const taskElement = screen.getByDisplayValue("Test task").closest(".group");
-    await act(async () => {
-      await user.pointer({ target: taskElement!, keys: "[MouseRight]" });
-    });
+    await user.pointer({ target: taskElement!, keys: "[MouseRight]" });
 
     // Check that Delete Task menu item is visible
     await waitFor(async () => {
@@ -79,9 +74,7 @@ describe("TaskContextMenu", () => {
     const taskElement = screen
       .getByDisplayValue("Task to delete")
       .closest(".group");
-    await act(async () => {
-      await user.pointer({ target: taskElement!, keys: "[MouseRight]" });
-    });
+    await user.pointer({ target: taskElement!, keys: "[MouseRight]" });
 
     // Click Delete Task
     await waitFor(async () => {
@@ -89,9 +82,7 @@ describe("TaskContextMenu", () => {
     });
 
     const deleteButton = await screen.findByText("Delete Task");
-    await act(async () => {
-      await user.click(deleteButton);
-    });
+    await user.click(deleteButton);
 
     // Check that task is removed from the list
     await waitFor(() => {
@@ -110,9 +101,7 @@ describe("TaskContextMenu", () => {
 
     // Right-click on the task
     const taskElement = screen.getByDisplayValue("Test task").closest(".group");
-    await act(async () => {
-      await user.pointer({ target: taskElement!, keys: "[MouseRight]" });
-    });
+    await user.pointer({ target: taskElement!, keys: "[MouseRight]" });
 
     // Check that menu is open
     await waitFor(async () => {
@@ -121,9 +110,7 @@ describe("TaskContextMenu", () => {
 
     // Click outside the menu (on the heading button)
     const headingButton = screen.getByRole("button", { name: /select view/i });
-    await act(async () => {
-      await user.click(headingButton);
-    });
+    await user.click(headingButton);
 
     // Check that menu is closed
     await waitFor(() => {
@@ -142,9 +129,7 @@ describe("TaskContextMenu", () => {
 
     // Right-click on the task
     const taskElement = screen.getByDisplayValue("Test task").closest(".group");
-    await act(async () => {
-      await user.pointer({ target: taskElement!, keys: "[MouseRight]" });
-    });
+    await user.pointer({ target: taskElement!, keys: "[MouseRight]" });
 
     // Check that menu is open
     await waitFor(async () => {
@@ -152,9 +137,7 @@ describe("TaskContextMenu", () => {
     });
 
     // Press Escape key
-    await act(async () => {
-      await user.keyboard("{Escape}");
-    });
+    await user.keyboard("{Escape}");
 
     // Check that menu is closed
     await waitFor(() => {
@@ -167,9 +150,7 @@ describe("TaskContextMenu", () => {
 
     // Right-click on the add task button
     const addButton = await screen.findByText("Create task");
-    await act(async () => {
-      await user.pointer({ target: addButton, keys: "[MouseRight]" });
-    });
+    await user.pointer({ target: addButton, keys: "[MouseRight]" });
 
     // Check that no context menu appears
     expect(screen.queryByText("Delete Task")).not.toBeInTheDocument();
@@ -188,9 +169,7 @@ describe("TaskContextMenu", () => {
     const firstTaskElement = screen
       .getByDisplayValue("First task")
       .closest(".group");
-    await act(async () => {
-      await user.pointer({ target: firstTaskElement!, keys: "[MouseRight]" });
-    });
+    await user.pointer({ target: firstTaskElement!, keys: "[MouseRight]" });
 
     // Check that menu appears and shows correct task
     await waitFor(async () => {
@@ -199,9 +178,7 @@ describe("TaskContextMenu", () => {
 
     // Click Delete Task
     const deleteButton = await screen.findByText("Delete Task");
-    await act(async () => {
-      await user.click(deleteButton);
-    });
+    await user.click(deleteButton);
 
     // Check that only the first task is deleted
     await waitFor(() => {

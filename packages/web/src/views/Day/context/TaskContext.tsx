@@ -66,6 +66,7 @@ export function TaskProvider({ children }: TaskProviderProps) {
     setEditingTitle: state.setEditingTitle,
     setEditingTaskId: state.setEditingTaskId,
     isCancellingEdit: state.isCancellingEdit,
+    isCancellingEditRef: state.isCancellingEditRef,
     setIsCancellingEdit: state.setIsCancellingEdit,
     undoState: state.undoState,
     setUndoState: state.setUndoState,

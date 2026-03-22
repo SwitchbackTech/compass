@@ -1,10 +1,6 @@
 import { useCallback } from "react";
 import { toast } from "react-toastify";
-import {
-  useKeyDownEvent,
-  useKeyUpEvent,
-} from "@web/common/hooks/useKeyboardEvent";
-import { getModifierKey } from "@web/common/utils/shortcut/shortcut.util";
+import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
 import {
   getFocusedTaskId,
   isFocusedOnTaskCheckbox,
@@ -119,55 +115,80 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     }
   }, [onRestoreTask, onRestoreEvent, undoToastId, eventUndoToastId]);
 
-  useKeyUpEvent({ combination: ["j"], handler: onPrevDay });
+  useAppHotkeyUp("J", () => {
+    onPrevDay?.();
+  });
 
-  useKeyUpEvent({ combination: ["k"], handler: onNextDay });
+  useAppHotkeyUp("K", () => {
+    onNextDay?.();
+  });
 
-  useKeyUpEvent({ combination: ["t"], handler: onGoToToday });
+  useAppHotkeyUp("T", () => {
+    onGoToToday?.();
+  });
 
   // Sidebar shortcut
-  useKeyUpEvent({ combination: ["["], handler: onToggleSidebar });
+  useAppHotkeyUp("[", () => {
+    onToggleSidebar?.();
+  });
 
   // Tasks shortcuts
-  useKeyUpEvent({ combination: ["u"], handler: onFocusTasks });
-
-  useKeyUpEvent({ combination: ["c"], handler: onAddTask });
-
-  useKeyUpEvent({ combination: ["e"], handler: onEditTask });
-
-  useKeyUpEvent({ combination: ["Delete"], handler: handleDeleteTask });
-
-  useKeyUpEvent({ combination: ["Backspace"], handler: handleDeleteTask });
-
-  useKeyUpEvent({ combination: ["Enter"], handler: handleEnterKey });
-
-  useKeyUpEvent({
-    combination: [getModifierKey(), "z"],
-    handler: handleRestore,
+  useAppHotkeyUp("U", () => {
+    onFocusTasks?.();
   });
 
-  useKeyDownEvent({
-    combination: ["Escape"],
-    listenWhileEditing: true,
-    handler: onEscape,
+  useAppHotkeyUp("C", () => {
+    onAddTask?.();
   });
 
-  useKeyDownEvent({
-    combination: ["Control", "Meta", "ArrowRight"],
-    exactMatch: false,
-    listenWhileEditing: true,
-    handler: handleMigrationNavigation("forward"),
+  useAppHotkeyUp("E", () => {
+    onEditTask?.();
   });
 
-  useKeyDownEvent({
-    combination: ["Control", "Meta", "ArrowLeft"],
-    exactMatch: false,
-    listenWhileEditing: true,
-    handler: handleMigrationNavigation("backward"),
-  });
+  useAppHotkeyUp("Delete", handleDeleteTask);
+
+  useAppHotkeyUp("Backspace", handleDeleteTask);
+
+  useAppHotkeyUp("Enter", handleEnterKey);
+
+  useAppHotkeyUp("Mod+Z", handleRestore);
+  useAppHotkeyUp("Mod+Shift+Z", handleRestore);
+
+  useAppHotkey(
+    "Escape",
+    () => {
+      onEscape?.();
+    },
+    {
+      ignoreInputs: false,
+      blurOnTrigger: true,
+    },
+  );
+
+  useAppHotkey(
+    "Control+Meta+ArrowRight",
+    handleMigrationNavigation("forward"),
+    {
+      ignoreInputs: false,
+      blurOnTrigger: true,
+    },
+  );
+
+  useAppHotkey(
+    "Control+Meta+ArrowLeft",
+    handleMigrationNavigation("backward"),
+    {
+      ignoreInputs: false,
+      blurOnTrigger: true,
+    },
+  );
 
   // Agenda shortcuts
-  useKeyUpEvent({ combination: ["i"], handler: onFocusAgenda });
+  useAppHotkeyUp("I", () => {
+    onFocusAgenda?.();
+  });
 
-  useKeyUpEvent({ combination: ["m"], handler: onEditEvent });
+  useAppHotkeyUp("M", () => {
+    onEditEvent?.();
+  });
 }

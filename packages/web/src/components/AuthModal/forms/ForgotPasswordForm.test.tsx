@@ -27,10 +27,9 @@ describe("ForgotPasswordForm", () => {
       renderForgotPasswordForm();
 
       const emailInput = screen.getByLabelText(/email/i);
-      await act(async () => {
-        await user.click(emailInput);
-        await user.type(emailInput, "invalid");
-      });
+      await user.click(emailInput);
+
+      await user.type(emailInput, "invalid");
 
       expect(
         screen.queryByText(/please enter a valid email address/i),
@@ -41,10 +40,9 @@ describe("ForgotPasswordForm", () => {
       const user = userEvent.setup();
       renderForgotPasswordForm();
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/email/i), "invalid-email");
-        await user.tab();
-      });
+      await user.type(screen.getByLabelText(/email/i), "invalid-email");
+
+      await user.tab();
 
       expect(
         screen.getByText(/please enter a valid email address/i),
@@ -56,19 +54,17 @@ describe("ForgotPasswordForm", () => {
       renderForgotPasswordForm();
 
       const emailInput = screen.getByLabelText(/email/i);
-      await act(async () => {
-        await user.type(emailInput, "invalid");
-        await user.tab();
-      });
+      await user.type(emailInput, "invalid");
+
+      await user.tab();
 
       expect(
         screen.getByText(/please enter a valid email address/i),
       ).toBeInTheDocument();
 
-      await act(async () => {
-        await user.click(emailInput);
-        await user.type(emailInput, "@example.com");
-      });
+      await user.click(emailInput);
+
+      await user.type(emailInput, "@example.com");
 
       expect(
         screen.queryByText(/please enter a valid email address/i),
@@ -92,12 +88,10 @@ describe("ForgotPasswordForm", () => {
       const user = userEvent.setup();
       renderForgotPasswordForm();
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/email/i), "not-an-email");
-        await user.click(
-          screen.getByRole("button", { name: /send reset link/i }),
-        );
-      });
+      await user.type(screen.getByLabelText(/email/i), "not-an-email");
+      await user.click(
+        screen.getByRole("button", { name: /send reset link/i }),
+      );
 
       expect(
         screen.getByText(/please enter a valid email address/i),
@@ -119,12 +113,10 @@ describe("ForgotPasswordForm", () => {
       const user = userEvent.setup();
       renderForgotPasswordForm();
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/email/i), "test@example.com");
-        await user.click(
-          screen.getByRole("button", { name: /send reset link/i }),
-        );
-      });
+      await user.type(screen.getByLabelText(/email/i), "test@example.com");
+      await user.click(
+        screen.getByRole("button", { name: /send reset link/i }),
+      );
 
       expect(mockOnSubmit).toHaveBeenCalledWith({
         email: "test@example.com",
@@ -147,9 +139,7 @@ describe("ForgotPasswordForm", () => {
       const user = userEvent.setup();
       renderForgotPasswordForm();
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/email/i), "test@example.com");
-      });
+      await user.type(screen.getByLabelText(/email/i), "test@example.com");
 
       const submitButton = screen.getByRole("button", {
         name: /send reset link/i,
@@ -163,12 +153,10 @@ describe("ForgotPasswordForm", () => {
       const user = userEvent.setup();
       renderForgotPasswordForm();
 
-      await act(async () => {
-        await user.type(screen.getByLabelText(/email/i), "user@example.com");
-        await user.click(
-          screen.getByRole("button", { name: /send reset link/i }),
-        );
-      });
+      await user.type(screen.getByLabelText(/email/i), "user@example.com");
+      await user.click(
+        screen.getByRole("button", { name: /send reset link/i }),
+      );
 
       expect(
         screen.getByText(/if an account exists for user@example.com/i),
@@ -181,11 +169,9 @@ describe("ForgotPasswordForm", () => {
       const user = userEvent.setup();
       renderForgotPasswordForm();
 
-      await act(async () => {
-        await user.click(
-          screen.getByRole("button", { name: /back to sign in/i }),
-        );
-      });
+      await user.click(
+        screen.getByRole("button", { name: /back to sign in/i }),
+      );
 
       expect(mockOnBackToSignIn).toHaveBeenCalled();
     });

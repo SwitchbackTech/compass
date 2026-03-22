@@ -66,12 +66,10 @@ describe("SocketProvider", () => {
       expect(importEndCallback).toBeDefined();
     });
 
-    await act(async () => {
-      importEndCallback?.({
-        status: "COMPLETED",
-        eventsCount: 10,
-        calendarsCount: 2,
-      });
+    importEndCallback?.({
+      status: "COMPLETED",
+      eventsCount: 10,
+      calendarsCount: 2,
     });
 
     const state = store.getState();

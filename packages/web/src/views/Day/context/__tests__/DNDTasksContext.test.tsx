@@ -53,12 +53,10 @@ describe("DNDTasksProvider", () => {
       }
     };
 
-    await act(() =>
-      render(
-        <DNDTasksProvider>
-          <TestComponent />
-        </DNDTasksProvider>,
-      ),
+    render(
+      <DNDTasksProvider>
+        <TestComponent />
+      </DNDTasksProvider>,
     );
 
     expect(screen.getByTestId("context-value")).toHaveTextContent(

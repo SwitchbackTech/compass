@@ -72,9 +72,7 @@ describe("useGridOrganization", () => {
       toJSON: () => {},
     });
 
-    await act(async () => {
-      mainGrid.appendChild(node);
-    });
+    mainGrid.appendChild(node);
 
     await waitFor(() => {
       expect(node.style.width).not.toBe("");

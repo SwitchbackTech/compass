@@ -1,4 +1,3 @@
-import { act } from "react";
 import { createMemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
@@ -16,7 +15,7 @@ describe("Scroll", () => {
   it("only scrolls once", async () => {
     const scrollSpy = jest.spyOn(window.HTMLElement.prototype, "scroll");
 
-    await act(() => render(<></>, { router }));
+    render(<></>, { router });
 
     expect(scrollSpy).toHaveBeenCalledTimes(1);
   });
@@ -24,7 +23,7 @@ describe("Scroll", () => {
 
 describe("Calendar: Display without State", () => {
   it("displays all the things that a user needs to see", async () => {
-    await act(() => render(<></>, { router }));
+    render(<></>, { router });
 
     /* week nav arrows */
     expect(

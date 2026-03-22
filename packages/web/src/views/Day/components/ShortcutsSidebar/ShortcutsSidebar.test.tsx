@@ -69,9 +69,7 @@ describe("ShortcutsSidebar", () => {
     render(<ShortcutsSidebar isOpen={true} sections={baseSections} />);
 
     // Wait for requestAnimationFrame to trigger
-    await act(async () => {
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-    });
+    await new Promise((resolve) => requestAnimationFrame(resolve));
 
     const sidebar = screen.getByRole("complementary", { hidden: true });
     expect(sidebar).toHaveClass("translate-x-0");
@@ -85,9 +83,7 @@ describe("ShortcutsSidebar", () => {
     );
 
     // Wait for open animation
-    await act(async () => {
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-    });
+    await new Promise((resolve) => requestAnimationFrame(resolve));
 
     // Rerender with isOpen=false to trigger close animation
     // The component stays mounted briefly during the transition

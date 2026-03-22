@@ -2,13 +2,12 @@ import fastDeepEqual from "fast-deep-equal/react";
 import { type KeyboardEvent } from "react";
 import type React from "react";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { useHotkeys } from "react-hotkeys-hook";
-import { type OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
 import { Key } from "ts-key-enum";
 import { Priorities } from "@core/constants/core.constants";
 import { darken } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
+import { useAppHotkey } from "@web/common/hooks/useAppHotkey";
 import {
   colorByPriority,
   hoverColorByPriority,
@@ -34,9 +33,10 @@ import {
   type SetEventFormField,
 } from "@web/views/Forms/EventForm/types";
 
-const hotkeysOptions: OptionsOrDependencyArray = {
-  enableOnFormTags: ["input"],
-};
+const EVENT_FORM_PLAIN_HOTKEY_OPTIONS = {
+  enabled: true,
+  ignoreInputs: false,
+} as const;
 
 export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
   ({
@@ -228,8 +228,8 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       setEvent,
     };
 
-    useHotkeys(
-      "delete",
+    useAppHotkey(
+      "Delete",
       () => {
         if (isDraft) {
           onClose();
@@ -238,12 +238,11 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
 
         onDelete();
       },
-      hotkeysOptions,
-      [onDelete],
+      EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
     );
 
-    useHotkeys(
-      "enter",
+    useAppHotkey(
+      "Enter",
       (keyboardEvent) => {
         if (isComboboxInteraction(keyboardEvent)) {
           return;
@@ -251,33 +250,30 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
 
         onSubmitForm();
       },
-      hotkeysOptions,
-      [onSubmitForm],
+      EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
     );
 
-    useHotkeys(
-      "meta+d",
+    useAppHotkey(
+      "Mod+D",
       () => {
         onDuplicate?.(event);
       },
-      hotkeysOptions,
+      { enabled: true },
     );
 
-    useHotkeys(
-      "mod+enter",
+    useAppHotkey(
+      "Mod+Enter",
       (e) => {
         e.preventDefault();
         onSubmitForm();
       },
       {
         enabled: isFormOpen,
-        enableOnFormTags: true,
       },
-      [isFormOpen, onSubmitForm],
     );
 
-    useHotkeys(
-      "ctrl+meta+left",
+    useAppHotkey(
+      "Control+Meta+ArrowLeft",
       () => {
         if (isDraft) {
           return;
@@ -287,9 +283,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       },
       {
         enabled: isFormOpen,
-        enableOnFormTags: true,
       },
-      [isFormOpen],
     );
 
     return (

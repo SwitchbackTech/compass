@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
-import { useHotkeys } from "react-hotkeys-hook";
 import { XIcon } from "@phosphor-icons/react";
 import derekImg from "@web/assets/png/derek.png";
+import { useAppHotkey } from "@web/common/hooks/useAppHotkey";
 
 export const Dedication = () => {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -22,7 +22,7 @@ export const Dedication = () => {
     }
   };
 
-  useHotkeys("ctrl+shift+0", () => {
+  useAppHotkey("Control+Shift+0", () => {
     if (dialogRef.current?.open) {
       close();
     } else {
@@ -30,7 +30,7 @@ export const Dedication = () => {
     }
   });
 
-  useHotkeys("escape", () => {
+  useAppHotkey("Escape", () => {
     if (dialogRef.current?.open) {
       close();
     }

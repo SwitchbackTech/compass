@@ -1,5 +1,4 @@
 import React from "react";
-import { useSetupKeyboardEvents } from "@web/common/hooks/useKeyboardEvent";
 import { useSetupMovementEvents } from "@web/common/hooks/useMovementEvent";
 import {
   CompassOptionalProviders,
@@ -8,7 +7,6 @@ import {
 import { CompassRouterProvider } from "@web/routers";
 
 export const App = () => {
-  useSetupKeyboardEvents();
   useSetupMovementEvents();
 
   return (

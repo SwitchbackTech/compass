@@ -1,13 +1,14 @@
-import { useHotkeys } from "react-hotkeys-hook";
+import { useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
 
 export const useReminderHotkey = (
   callback: () => void,
-  dependencies: unknown[] = [],
+  _dependencies: unknown[] = [],
   enabled = true,
 ) =>
-  useHotkeys(
+  useAppHotkeyUp(
     "R",
-    callback,
-    { description: "reminder", preventDefault: true, enabled },
-    dependencies,
+    () => {
+      callback();
+    },
+    { enabled },
   );
