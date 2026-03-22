@@ -45,6 +45,10 @@ const getDomainAnswer = async (env: string) => {
   const isLocal = env === "local";
   const isStaging = env === "staging";
 
+  if (isLocal) {
+    return new URL(CLI_ENV.LOCAL_WEB_URL).host;
+  }
+
   if (isStaging && CLI_ENV.STAGING_WEB_URL !== undefined) {
     return new URL(CLI_ENV.STAGING_WEB_URL).host;
   }
