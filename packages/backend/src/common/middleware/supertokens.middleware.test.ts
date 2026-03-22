@@ -245,7 +245,7 @@ describe("supertokens.middleware", () => {
       const emailPasswordConfig = (EmailPassword.init as jest.Mock).mock
         .calls[0][0] as {
         emailDelivery: {
-          service: {
+          override: (originalImplementation: { sendEmail: jest.Mock }) => {
             sendEmail: (input: {
               passwordResetLink: string;
               user: { email: string };
@@ -254,7 +254,12 @@ describe("supertokens.middleware", () => {
         };
       };
 
-      await emailPasswordConfig.emailDelivery.service.sendEmail({
+      const originalSendEmail = jest.fn().mockResolvedValue(undefined);
+      const overridden = emailPasswordConfig.emailDelivery.override({
+        sendEmail: originalSendEmail,
+      });
+
+      await overridden.sendEmail({
         passwordResetLink:
           "http://localhost:1234/auth/reset-password?token=abc",
         user: { email: "user@example.com" },
@@ -262,7 +267,10 @@ describe("supertokens.middleware", () => {
 
       expect(buildResetPasswordLink).toHaveBeenCalledWith(
         "http://localhost:1234/auth/reset-password?token=abc",
+        ENV.LOCAL_WEB_URL,
       );
+      // In test env, sending is suppressed — originalSendEmail must not be called
+      expect(originalSendEmail).not.toHaveBeenCalled();
     });
 
     it("calls googleAuthService.handleGoogleAuth when ThirdParty signInUpPOST succeeds", async () => {

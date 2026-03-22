@@ -45,16 +45,12 @@ const getDomainAnswer = async (env: string) => {
   const isLocal = env === "local";
   const isStaging = env === "staging";
 
-  if (isLocal && CLI_ENV.LOCAL_DOMAIN !== undefined) {
-    return CLI_ENV.LOCAL_DOMAIN;
+  if (isStaging && CLI_ENV.STAGING_WEB_URL !== undefined) {
+    return new URL(CLI_ENV.STAGING_WEB_URL).host;
   }
 
-  if (isStaging && CLI_ENV.STAGING_DOMAIN !== undefined) {
-    return CLI_ENV.STAGING_DOMAIN;
-  }
-
-  if (!isStaging && CLI_ENV.PROD_DOMAIN !== undefined) {
-    return CLI_ENV.PROD_DOMAIN;
+  if (!isLocal && !isStaging && CLI_ENV.PROD_WEB_URL !== undefined) {
+    return new URL(CLI_ENV.PROD_WEB_URL).host;
   }
 
   const q = `Enter the domain of the VM that will be used.

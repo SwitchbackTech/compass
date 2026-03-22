@@ -3,7 +3,6 @@ import { ObjectId } from "mongodb";
 import { createUserIdMapping, getUserIdMapping } from "supertokens-node";
 import type { SessionContainerInterface } from "supertokens-node/recipe/session/types";
 import type { APIInterface } from "supertokens-node/recipe/thirdparty/types";
-import { PORT_DEFAULT_WEB } from "@core/constants/core.constants";
 import { type GoogleSignInSuccess } from "@backend/auth/services/google/google.auth.types";
 
 type ThirdPartySignInUpPost = NonNullable<APIInterface["signInUpPOST"]>;
@@ -33,7 +32,10 @@ export function getFormFieldValue(
   return typeof field?.value === "string" ? field.value : undefined;
 }
 
-export function buildResetPasswordLink(passwordResetLink: string): string {
+export function buildResetPasswordLink(
+  passwordResetLink: string,
+  frontendUrl: string,
+): string {
   const url = new URL(passwordResetLink);
   const token = url.searchParams.get("token");
 
@@ -41,7 +43,7 @@ export function buildResetPasswordLink(passwordResetLink: string): string {
     return passwordResetLink;
   }
 
-  const appUrl = new URL(`http://localhost:${PORT_DEFAULT_WEB}/day`);
+  const appUrl = new URL(`${frontendUrl}/day`);
   appUrl.searchParams.set("auth", "reset");
   appUrl.searchParams.set("token", token);
 
