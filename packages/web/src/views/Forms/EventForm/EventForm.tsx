@@ -273,7 +273,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     );
 
     useAppHotkey(
-      "Mod+ArrowLeft",
+      "Control+Meta+ArrowLeft",
       () => {
         if (isDraft) {
           return;

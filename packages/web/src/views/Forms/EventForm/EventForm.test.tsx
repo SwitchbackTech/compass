@@ -8,10 +8,9 @@ import { render } from "@web/__tests__/__mocks__/mock.render";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { EventForm } from "./EventForm";
 
-const getModifierShortcut = (key: string) =>
-  resolveModifier("Mod") === "Meta"
-    ? `{Meta>}${key}{/Meta}`
-    : `{Control>}${key}{/Control}`;
+/** Matches EventForm `Control+Meta+ArrowLeft` (Ctrl+Cmd/Win+←). */
+const MOVE_TO_SIDEBAR_KEYBOARD =
+  "{Control>}{Meta>}{ArrowLeft}{/Meta}{/Control}";
 
 test("start date picker opens and then closes when clicking the end input", async () => {
   const allDayEvent: Schema_Event = {
@@ -55,7 +54,7 @@ test("start date picker opens and then closes when clicking the end input", asyn
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
 
-test("should call onConvert when mod+arrowleft keyboard shortcut is used", async () => {
+test("should call onConvert when control+meta+arrowleft keyboard shortcut is used", async () => {
   const sampleEvent: Schema_Event = {
     _id: "event123",
     title: "Test Event for Hotkey",
@@ -89,7 +88,7 @@ test("should call onConvert when mod+arrowleft keyboard shortcut is used", async
   // Ensure the form is rendered (optional, good sanity check)
   expect(screen.getByRole("form")).toBeInTheDocument();
 
-  await user.keyboard(getModifierShortcut("{ArrowLeft}"));
+  await user.keyboard(MOVE_TO_SIDEBAR_KEYBOARD);
 
   expect(mockOnConvert).toHaveBeenCalledTimes(1);
 
