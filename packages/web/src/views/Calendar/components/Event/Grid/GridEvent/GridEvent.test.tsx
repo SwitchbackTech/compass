@@ -382,5 +382,39 @@ describe("GridEvent", () => {
       const icon = screen.queryByLabelText("Recurring event");
       expect(icon).not.toBeInTheDocument();
     });
+
+    it("should not render repeat icon when recurrence rule is an empty array", () => {
+      const event = createMockGridEvent({
+        _id: "empty-rule-1",
+        title: "Cleared Recurring Meeting",
+        recurrence: { rule: [] },
+      });
+
+      const initialState = createInitialState({
+        events: {
+          pendingEvents: {
+            eventIds: [],
+          },
+        },
+      });
+
+      render(
+        <GridEventMemo
+          event={event}
+          isDraft={false}
+          isDragging={false}
+          isPlaceholder={false}
+          isResizing={false}
+          measurements={mockMeasurements}
+          onEventMouseDown={mockOnEventMouseDown}
+          onScalerMouseDown={mockOnScalerMouseDown}
+          weekProps={mockWeekProps}
+        />,
+        { state: initialState },
+      );
+
+      const icon = screen.queryByLabelText("Recurring event");
+      expect(icon).not.toBeInTheDocument();
+    });
   });
 });

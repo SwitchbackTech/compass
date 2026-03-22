@@ -78,7 +78,8 @@ const _GridEvent = (
   const rule = event.recurrence?.rule;
   const recurrenceEventId = event.recurrence?.eventId;
   const isRecurring =
-    Array.isArray(rule) || typeof recurrenceEventId === "string";
+    (Array.isArray(rule) && rule.length > 0) ||
+    typeof recurrenceEventId === "string";
 
   const position = getEventPosition(
     event,

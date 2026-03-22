@@ -189,5 +189,38 @@ describe("AllDayEvent - Repeat Icon", () => {
         screen.queryByLabelText("Recurring event"),
       ).not.toBeInTheDocument();
     });
+
+    it("should not render repeat icon when recurrence rule is an empty array", () => {
+      const event = createMockGridEvent({
+        _id: "empty-rule-2",
+        title: "Cleared All-Day Event",
+        recurrence: { rule: [] },
+      });
+
+      const initialState = createInitialState({
+        events: {
+          pendingEvents: {
+            eventIds: [],
+          },
+        },
+      });
+
+      render(
+        <AllDayEventMemo
+          endOfView="2024-01-21T23:59:59Z"
+          event={event}
+          isPlaceholder={false}
+          measurements={mockMeasurements}
+          onMouseDown={mockOnMouseDown}
+          onScalerMouseDown={mockOnScalerMouseDown}
+          startOfView="2024-01-15T00:00:00Z"
+        />,
+        { state: initialState },
+      );
+
+      expect(
+        screen.queryByLabelText("Recurring event"),
+      ).not.toBeInTheDocument();
+    });
   });
 });

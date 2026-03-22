@@ -119,6 +119,29 @@ describe("SomedayEventRectangle - Repeat Icon", () => {
       ).not.toBeInTheDocument();
       expect(screen.getByText("One-time Task")).toBeInTheDocument();
     });
+
+    it("should not render repeat icon when recurrence rule is an empty array", () => {
+      const event = createMockStandaloneEvent({
+        _id: "standalone-5",
+        title: "Cleared Recurring Task",
+        recurrence: { rule: [] },
+      }) as Schema_Event;
+
+      render(
+        <SomedayEventRectangle
+          category={Categories_Event.SOMEDAY_WEEK}
+          event={event}
+          formProps={mockFormProps}
+          onMigrate={mockOnMigrate}
+        />,
+      );
+
+      expect(
+        screen.queryByLabelText("Recurring event"),
+      ).not.toBeInTheDocument();
+      const arrows = screen.getAllByRole("button");
+      expect(arrows).toHaveLength(2);
+    });
   });
 
   describe("migration controls", () => {

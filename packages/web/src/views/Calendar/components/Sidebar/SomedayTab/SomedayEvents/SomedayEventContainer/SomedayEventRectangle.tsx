@@ -20,7 +20,8 @@ export const SomedayEventRectangle = ({
   const rule = event.recurrence?.rule;
   const recurrenceEventId = event.recurrence?.eventId;
   const isRecurring =
-    Array.isArray(rule) || typeof recurrenceEventId === "string";
+    (Array.isArray(rule) && rule.length > 0) ||
+    typeof recurrenceEventId === "string";
   const canMigrate = !isRecurring;
 
   return (
@@ -41,41 +42,39 @@ export const SomedayEventRectangle = ({
 
         {canMigrate ? (
           <div className="flex items-center">
-            <span
+            <button
               className="hover:bg-bg-primary hover:text-text-lighter cursor-pointer px-[7px] transition-colors duration-300 select-none hover:rounded-full"
               onClick={(e) => {
                 e.stopPropagation();
                 onMigrate(event, category, "back");
               }}
-              role="button"
               title={`Migrate to previous ${target}`}
+              type="button"
             >
               {"<"}
-            </span>
-            <span
+            </button>
+            <button
               className="hover:bg-bg-primary hover:text-text-lighter cursor-pointer px-[7px] transition-colors duration-300 select-none hover:rounded-full"
               onClick={(e) => {
                 e.stopPropagation();
                 onMigrate(event, category, "forward");
               }}
-              role="button"
               title={`Migrate to next ${target}`}
+              type="button"
             >
               {">"}
-            </span>
+            </button>
           </div>
         ) : (
           <div className="flex items-center">
-            <span
-              className="cursor-not-allowed rounded-[2px] border border-transparent px-1 py-0.5 text-[10px] opacity-50 transition-opacity duration-200 hover:opacity-70"
-              onClick={(e) => {
-                e.stopPropagation();
-                alert("Can't migrate recurring events");
-              }}
+            <button
+              className="cursor-not-allowed rounded-[2px] border border-transparent px-1 py-0.5 text-[10px] opacity-50"
+              disabled
               title="Can't migrate recurring events"
+              type="button"
             >
               ☝️
-            </span>
+            </button>
           </div>
         )}
       </div>
