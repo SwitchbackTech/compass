@@ -143,16 +143,18 @@ const _GridEvent = (
         direction={FlexDirections.COLUMN}
         flexWrap={FlexWrap.WRAP}
       >
-        <StyledEventTitle eventHeight={position.height} role="textbox">
+        <div className="flex max-w-full items-start gap-1 overflow-hidden">
           {isRecurring && (
             <RepeatIcon
               aria-label="Recurring event"
               size={12}
-              style={{ marginRight: "4px", verticalAlign: "middle" }}
+              className="mt-[1px] shrink-0"
             />
           )}
-          {event.title}
-        </StyledEventTitle>
+          <StyledEventTitle eventHeight={position.height} role="textbox">
+            {event.title}
+          </StyledEventTitle>
+        </div>
         {!event.isAllDay && (
           <>
             {(isDraft || !isInPast) && (
