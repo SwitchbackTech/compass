@@ -152,7 +152,11 @@ const _GridEvent = (
               className="mt-[1px] shrink-0"
             />
           )}
-          <StyledEventTitle eventHeight={position.height} role="textbox">
+          <StyledEventTitle
+            eventHeight={position.height}
+            lineClamp={lineClamp}
+            role="textbox"
+          >
             {event.title}
           </StyledEventTitle>
         </div>

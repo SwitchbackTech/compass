@@ -43,22 +43,26 @@ export const SomedayEventRectangle = ({
         {canMigrate ? (
           <div className="flex items-center">
             <button
+              aria-label={`Migrate to previous ${target}`}
               className="hover:bg-bg-primary hover:text-text-lighter cursor-pointer px-[7px] transition-colors duration-300 select-none hover:rounded-full"
               onClick={(e) => {
                 e.stopPropagation();
                 onMigrate(event, category, "back");
               }}
+              onKeyDown={(e) => e.stopPropagation()}
               title={`Migrate to previous ${target}`}
               type="button"
             >
               {"<"}
             </button>
             <button
+              aria-label={`Migrate to next ${target}`}
               className="hover:bg-bg-primary hover:text-text-lighter cursor-pointer px-[7px] transition-colors duration-300 select-none hover:rounded-full"
               onClick={(e) => {
                 e.stopPropagation();
                 onMigrate(event, category, "forward");
               }}
+              onKeyDown={(e) => e.stopPropagation()}
               title={`Migrate to next ${target}`}
               type="button"
             >

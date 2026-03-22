@@ -111,10 +111,19 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   }
 `;
 
-export const StyledEventTitle = styled(Text)<{ eventHeight: number }>`
+export const StyledEventTitle = styled(Text)<{
+  eventHeight: number;
+  lineClamp: number;
+}>`
   font-size: ${({ eventHeight }) => (eventHeight <= 15 ? "10px" : "13px")};
   line-height: ${({ eventHeight }) => (eventHeight <= 15 ? "1.1" : "")};
   min-height: 3px;
+  display: -webkit-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-all;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: ${({ lineClamp }) => lineClamp};
 `;
 
 export interface ScalerProps {
