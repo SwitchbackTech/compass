@@ -97,13 +97,24 @@ export const useGoogleLogin = ({
   });
 
   return {
-    login: useCallback(async () => {
+    login: useCallback(() => {
       onStart?.();
       setData(null);
       setLoading(true);
 
-      return login();
-    }, [login, onStart, setData, setLoading]),
+      try {
+        return login();
+      } catch (error) {
+        setLoading(false);
+
+        if (!isGooglePopupClosedError(error)) {
+          console.error(error);
+        }
+
+        onError?.(error);
+        return undefined;
+      }
+    }, [login, onError, onStart, setData, setLoading]),
     data,
     loading,
   };
