@@ -115,6 +115,8 @@ export const StyledEventTitle = styled(Text)<{
   eventHeight: number;
   lineClamp: number;
 }>`
+  flex: 1 1 0;
+  min-width: 0;
   font-size: ${({ eventHeight }) => (eventHeight <= 15 ? "10px" : "13px")};
   line-height: ${({ eventHeight }) => (eventHeight <= 15 ? "1.1" : "")};
   min-height: 3px;

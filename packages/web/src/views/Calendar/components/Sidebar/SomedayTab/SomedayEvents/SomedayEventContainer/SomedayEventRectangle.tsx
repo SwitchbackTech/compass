@@ -27,17 +27,15 @@ export const SomedayEventRectangle = ({
   return (
     <div ref={formProps.refs.setReference} {...formProps.getReferenceProps()}>
       <div className="flex items-start justify-between gap-2">
-        <div className="text-l min-w-0 leading-tight">
-          <span className="inline-flex items-center gap-1 align-top">
-            {isRecurring && (
-              <RepeatIcon
-                aria-label="Recurring event"
-                size={14}
-                className="shrink-0"
-              />
-            )}
-            <span className="truncate">{event.title}</span>
-          </span>
+        <div className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
+          {isRecurring && (
+            <RepeatIcon
+              aria-label="Recurring event"
+              size={14}
+              className="shrink-0"
+            />
+          )}
+          <span className="text-l truncate leading-tight">{event.title}</span>
         </div>
 
         {canMigrate ? (
