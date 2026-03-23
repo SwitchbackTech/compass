@@ -70,6 +70,7 @@ export const SomedayEventRectangle = ({
         ) : (
           <div className="flex items-center">
             <button
+              aria-label="Can't migrate recurring events"
               className="cursor-not-allowed rounded-[2px] border border-transparent px-1 py-0.5 text-[10px] opacity-50"
               disabled
               title="Can't migrate recurring events"
