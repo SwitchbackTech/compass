@@ -27,6 +27,13 @@ Command:
 yarn dev:backend
 ```
 
+The backend dev script loads env from `packages/backend/.env.local` (`node --env-file=.env.local ...`).
+Create it from the example before starting backend work:
+
+```bash
+cp packages/backend/.env.local.example packages/backend/.env.local
+```
+
 Use this for:
 
 - authenticated API work
@@ -53,6 +60,7 @@ Important variables:
 - `MONGO_URI`
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
+- `LOCAL_WEB_URL` (used for app reset-password links)
 - `SUPERTOKENS_URI`
 - `SUPERTOKENS_KEY`
 - `TOKEN_GCAL_NOTIFICATION`
@@ -69,6 +77,7 @@ Optional but behavior-changing:
 Source:
 
 - `packages/web/src/common/constants/env.constants.ts`
+- `packages/web/webpack.config.mjs`
 
 Important variables:
 
@@ -79,6 +88,25 @@ Important variables:
 - `POSTHOG_HOST`
 
 `BACKEND_BASEURL` is derived from `API_BASEURL`.
+
+Practical note:
+
+- in local dev, `yarn dev:web` runs webpack with `--env-file=../backend/.env.local`
+- webpack also has fallback env-file loading (`.env.local`, `.env.staging`, `.env.production`) relative to `packages/backend`
+- if a mapped env file is missing, webpack warns and continues with `process.env`
+
+## CLI Environment URL Contract
+
+Source:
+
+- `packages/scripts/src/common/cli.constants.ts`
+- `packages/scripts/src/commands/delete.ts`
+
+Variables used by scripts:
+
+- `LOCAL_WEB_URL` (default cleanup target in local mode)
+- `STAGING_WEB_URL` (required for `NODE_ENV=staging` cleanup/delete flows)
+- `PROD_WEB_URL` (required for `NODE_ENV=production` cleanup/delete flows)
 
 ## Practical Mode Matrix
 

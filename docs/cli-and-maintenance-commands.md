@@ -14,6 +14,8 @@ Root command:
 yarn cli <command>
 ```
 
+The root script loads env from `packages/backend/.env.local` (`node --env-file=...`), so CLI flows depend on that file being present and current.
+
 ## Supported Commands
 
 ### Build
@@ -34,6 +36,13 @@ Use for:
 - production-style web builds
 - compiled node package output
 
+Environment URL behavior (scripts/common):
+
+- local API calls use `BASEURL` (from `getApiBaseUrl("local")`)
+- staging domain defaults to `STAGING_WEB_URL` when present
+- production domain defaults to `PROD_WEB_URL` when present
+- if staging/production URL env vars are missing, the CLI prompts for a domain interactively
+
 ### Delete
 
 Example:
@@ -47,6 +56,16 @@ Implementation:
 - `packages/scripts/src/commands/delete.ts`
 
 Use with care; this is user-data deletion logic.
+
+Cleanup URL selection:
+
+- `NODE_ENV=production` -> `${PROD_WEB_URL}/cleanup` (fails fast if `PROD_WEB_URL` is missing)
+- `NODE_ENV=staging` -> `${STAGING_WEB_URL}/cleanup` (fails fast if `STAGING_WEB_URL` is missing)
+- otherwise -> `${LOCAL_WEB_URL}/cleanup`
+
+Browser override:
+
+- optional `DEV_BROWSER` chooses which browser app is opened for cleanup (`chrome`, `firefox`, `brave`, `edge`, `safari`)
 
 ### Migrate
 

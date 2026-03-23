@@ -5,7 +5,7 @@ Primary instructions for AI agents and developers in the Compass monorepo.
 ## Quick Start
 
 1. `yarn install --immutable` (Do not cancel; `httpTimeout` is set in `.yarnrc.yml`)
-2. `cp packages/backend/.env.local.example packages/backend/.env`
+2. `cp packages/backend/.env.local.example packages/backend/.env.local`
 3. `yarn dev:web` (frontend on http://localhost:9080/)
 
 ## Table of Contents
@@ -71,7 +71,7 @@ Example: `import { foo } from '@compass/core'` not `import { foo } from '../../.
 
 - Install dependencies: `yarn install --immutable` (`httpTimeout` is set in `.yarnrc.yml`)
   - Takes ~3.5 minutes. Set timeout to 10+ minutes.
-- Copy environment template: `cp packages/backend/.env.local.example packages/backend/.env`
+- Copy environment template: `cp packages/backend/.env.local.example packages/backend/.env.local`
 
 ### Development Servers
 
@@ -79,7 +79,7 @@ Example: `import { foo } from '@compass/core'` not `import { foo } from '../../.
   - yarn dev:web - Takes ~10 seconds to build. Serves on http://localhost:9080/
   - Frontend works standalone without backend services
 - **Backend Development**:
-  - `yarn dev:backend` - Fails without proper .env configuration
+  - `yarn dev:backend` - Fails without proper `.env.local` configuration
 
 ### Testing
 
@@ -179,7 +179,7 @@ packages/core/src/
 - Prefer running scoped checks for changed areas: `yarn test:core`, `yarn test:web`, `yarn test:backend`, or `yarn test:scripts` as applicable.
 - Do not run `yarn test` in restricted environments unless explicitly required.
 - For UI-affecting changes in `packages/web`, validate with `yarn dev:web` and confirm behavior in the web dev server.
-- If backend work is required, ensure `packages/backend/.env` exists by copying `packages/backend/.env.local.example`.
+- If backend work is required, ensure `packages/backend/.env.local` exists by copying `packages/backend/.env.local.example`.
 - Keep test runs reproducible by recording exact commands and outcomes in your handoff notes.
 
 ### Styling
@@ -198,9 +198,9 @@ packages/core/src/
 ### Common Issues
 
 - **Test failures**: Run `yarn test:core`, `yarn test:web`, `yarn test:backend`, and `yarn test:scripts` individually to narrow the scope of the failure
-- **Backend won't start**: Missing environment variables in `packages/backend/.env`, use web-only development (`yarn dev:web`)
-- Environment: Copy from `packages/backend/.env.local.example` to `packages/backend/.env` (there is no `.env.example`).
-- Webpack dev server warns about a missing `.env.local` file; this is harmless—it falls back to `process.env`.
+- **Backend won't start**: Missing environment variables in `packages/backend/.env.local`, use web-only development (`yarn dev:web`)
+- Environment: Copy from `packages/backend/.env.local.example` to `packages/backend/.env.local` (there is no `.env.example`).
+- If `.env.local` is missing, webpack can fall back to `process.env`, but required keys (for example `GOOGLE_CLIENT_ID`) must still be provided.
 - Husky pre-push hook runs `yarn prettier . --write`, which can modify files. Ensure working tree is clean or committed before pushing.
 
 ### Network Limitations

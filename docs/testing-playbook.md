@@ -59,6 +59,11 @@ Projects:
 
 Each project has its own setup files and module alias mapping.
 
+Mongo global setup behavior:
+
+- `jest.config.js` enables `@shelf/jest-mongodb` global setup/teardown only when running all projects, `backend`, or `scripts`
+- running `core` or `web` alone skips Mongo bootstrap to keep those lanes lightweight
+
 ## What To Run By Change Type
 
 ### Shared type or schema change

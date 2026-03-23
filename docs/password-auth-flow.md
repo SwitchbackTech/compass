@@ -233,14 +233,20 @@ For a linked account, this writes to the existing Compass user instead of creati
 
 ## Reset Password Delivery
 
-Password reset emails are not sent by a real mail provider in this branch.
+Password reset links are normalized before delivery so users land inside the Compass app reset flow.
 
 Current behavior in `supertokens.middleware.ts`:
 
-- in `test` and local dev, the reset link is rewritten into the app flow and logged
-- in other environments, the request is logged but email delivery is explicitly disabled
+- the incoming SuperTokens reset URL is rewritten with `buildResetPasswordLink()`
+- the rewrite target uses `ENV.LOCAL_WEB_URL` and `/day?auth=reset&token=...`
+- in `NODE_ENV=test`, the rewritten link is logged and delivery is skipped
+- in non-test environments, delivery continues through SuperTokens with the rewritten link
 
-The rewritten link shape comes from `buildResetPasswordLink()` and currently points to:
+The rewritten link shape is:
+
+`LOCAL_WEB_URL` is required by backend env validation (`env.constants.ts`) and must be a valid URL.
+
+Example for a local value:
 
 - `http://localhost:9080/day?auth=reset&token=...`
 
@@ -259,5 +265,5 @@ That lets password-auth users use Compass without blocking on Google connectivit
 ## Known Caveats
 
 - The rollout gate is not limited to `lastKnownEmail`; any `?auth=` URL currently enables the auth UI.
-- Reset password delivery is still dev/test-oriented because links are logged in dev and not actually sent elsewhere.
-- `buildResetPasswordLink()` currently hardcodes the local web origin and `/day` route when rewriting reset URLs.
+- in `NODE_ENV=test`, reset links are logged instead of delivered
+- `buildResetPasswordLink()` always rewrites links to the `/day` route
