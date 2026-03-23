@@ -154,13 +154,20 @@ export const useConnectGoogle = () => {
   });
 
   const onOpenGoogleAuth = useCallback(() => {
-    void login().catch((error) => {
+    const handleGoogleAuthError = (error: unknown) => {
       if (isGooglePopupClosedError(error)) {
         return;
       }
 
       console.error("Failed to start Google auth flow:", error);
-    });
+    };
+
+    try {
+      void Promise.resolve(login()).catch(handleGoogleAuthError);
+    } catch (error) {
+      handleGoogleAuthError(error);
+    }
+
     dispatch(settingsSlice.actions.closeCmdPalette());
   }, [dispatch, login]);
 
