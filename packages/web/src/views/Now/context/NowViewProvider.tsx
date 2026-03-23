@@ -9,7 +9,6 @@ import { getDateKey } from "@web/common/utils/storage/storage.util";
 import { getIncompleteTasksSorted } from "@web/common/utils/task/sort.task";
 import { useAvailableTasks } from "../hooks/useAvailableTasks";
 import { useFocusedTask } from "../hooks/useFocusedTask";
-import { useNowShortcuts } from "../shortcuts/useNowShortcuts";
 
 interface NowViewContextValue {
   focusedTask: Task | null;
@@ -149,16 +148,6 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
     navigate,
     setFocusedTask,
   ]);
-
-  // Single call to useNowShortcuts at provider level
-  useNowShortcuts({
-    focusedTask,
-    availableTasks,
-    onPreviousTask: handlePreviousTask,
-    onNextTask: handleNextTask,
-    onCompleteTask: handleCompleteTask,
-  });
-
   const value: NowViewContextValue = {
     focusedTask,
     setFocusedTask,

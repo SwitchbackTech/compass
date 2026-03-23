@@ -12,10 +12,7 @@ import dayjs from "@core/util/date/dayjs";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { getTaskRepository } from "@web/common/repositories/task/task.repository.util";
 import { type Task } from "@web/common/types/task.types";
-import {
-  CompassDOMEvents,
-  compassEventEmitter,
-} from "@web/common/utils/dom/event-emitter.util";
+import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import * as storageUtil from "@web/common/utils/storage/storage.util";
 import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
 import { useAvailableTasks } from "@web/views/Now/hooks/useAvailableTasks";
@@ -119,7 +116,6 @@ describe("TaskSelector", () => {
   });
 
   afterEach(() => {
-    compassEventEmitter.removeAllListeners();
     jest.useRealTimers();
   });
 
@@ -304,7 +300,8 @@ describe("TaskSelector", () => {
       renderWithNowProvider(<TaskSelector />);
 
       act(() => {
-        compassEventEmitter.emit(CompassDOMEvents.FOCUS_TASK_TITLE);
+        pressKey("e");
+        pressKey("t");
       });
 
       const input = screen.getByRole("textbox", { name: "Edit task title" });

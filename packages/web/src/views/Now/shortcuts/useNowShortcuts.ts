@@ -5,10 +5,6 @@ import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { ID_REMINDER_INPUT } from "@web/common/constants/web.constants";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
 import { type Task } from "@web/common/types/task.types";
-import {
-  CompassDOMEvents,
-  compassEventEmitter,
-} from "@web/common/utils/dom/event-emitter.util";
 
 interface Props {
   focusedTask?: Task | null;
@@ -16,6 +12,9 @@ interface Props {
   onPreviousTask?: () => void;
   onNextTask?: () => void;
   onCompleteTask?: () => void;
+  onEditDescription?: () => void;
+  onEditTitle?: () => void;
+  onSaveDescription?: () => void;
   onToggleSidebar?: () => void;
 }
 
@@ -30,6 +29,9 @@ export function useNowShortcuts(props?: Props) {
     onPreviousTask,
     onNextTask,
     onCompleteTask,
+    onEditDescription,
+    onEditTitle,
+    onSaveDescription,
     onToggleSidebar,
   } = props || {};
 
@@ -48,11 +50,7 @@ export function useNowShortcuts(props?: Props) {
   useHotkeySequence(
     ["E", "D"],
     () => {
-      if (document.body.dataset.appLocked === "true") {
-        return;
-      }
-
-      compassEventEmitter.emit(CompassDOMEvents.FOCUS_TASK_DESCRIPTION);
+      onEditDescription?.();
     },
     {
       enabled: isTaskEditingEnabled,
@@ -65,11 +63,7 @@ export function useNowShortcuts(props?: Props) {
   useHotkeySequence(
     ["E", "T"],
     () => {
-      if (document.body.dataset.appLocked === "true") {
-        return;
-      }
-
-      compassEventEmitter.emit(CompassDOMEvents.FOCUS_TASK_TITLE);
+      onEditTitle?.();
     },
     {
       enabled: isTaskEditingEnabled,
@@ -79,16 +73,10 @@ export function useNowShortcuts(props?: Props) {
     },
   );
 
-  useAppHotkey(
-    "Mod+Enter",
-    () => {
-      compassEventEmitter.emit(CompassDOMEvents.SAVE_TASK_DESCRIPTION);
-    },
-    {
-      ignoreInputs: false,
-      blurOnTrigger: true,
-    },
-  );
+  useAppHotkey("Mod+Enter", () => onSaveDescription?.(), {
+    ignoreInputs: false,
+    blurOnTrigger: true,
+  });
 
   useAppHotkeyUp("J", () => {
     handleTaskNavigation(onPreviousTask)?.();

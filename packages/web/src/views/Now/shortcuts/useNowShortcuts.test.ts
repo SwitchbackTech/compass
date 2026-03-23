@@ -1,11 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
-import {
-  CompassDOMEvents,
-  compassEventEmitter,
-  pressKey,
-} from "@web/common/utils/dom/event-emitter.util";
+import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { useNowShortcuts } from "@web/views/Now/shortcuts/useNowShortcuts";
 
 // Mock react-router-dom
@@ -26,7 +22,6 @@ describe("useNowShortcuts", () => {
 
   afterEach(() => {
     (document.activeElement as HTMLElement | null)?.blur?.();
-    compassEventEmitter.removeAllListeners();
     jest.clearAllMocks();
   });
 
@@ -55,6 +50,9 @@ describe("useNowShortcuts", () => {
       onPreviousTask: jest.fn(),
       onNextTask: jest.fn(),
       onCompleteTask: jest.fn(),
+      onEditDescription: jest.fn(),
+      onEditTitle: jest.fn(),
+      onSaveDescription: jest.fn(),
     };
 
     it("should call onPreviousTask when 'j' is pressed", () => {
@@ -126,47 +124,29 @@ describe("useNowShortcuts", () => {
     });
 
     it("emits the description focus event when 'e' then 'd' is pressed", () => {
-      const onFocusDescription = jest.fn();
-
-      compassEventEmitter.on(
-        CompassDOMEvents.FOCUS_TASK_DESCRIPTION,
-        onFocusDescription,
-      );
-
       renderHook(() => useNowShortcuts(defaultProps));
 
       pressKey("e");
       pressKey("d");
 
-      expect(onFocusDescription).toHaveBeenCalledTimes(1);
+      expect(defaultProps.onEditDescription).toHaveBeenCalledTimes(1);
     });
 
     it("emits the title focus event when 'e' then 't' is pressed", () => {
-      const onFocusTitle = jest.fn();
-
-      compassEventEmitter.on(CompassDOMEvents.FOCUS_TASK_TITLE, onFocusTitle);
-
       renderHook(() => useNowShortcuts(defaultProps));
 
       pressKey("e");
       pressKey("t");
 
-      expect(onFocusTitle).toHaveBeenCalledTimes(1);
+      expect(defaultProps.onEditTitle).toHaveBeenCalledTimes(1);
     });
 
     it("does not emit the description focus event when only 'd' is pressed", () => {
-      const onFocusDescription = jest.fn();
-
-      compassEventEmitter.on(
-        CompassDOMEvents.FOCUS_TASK_DESCRIPTION,
-        onFocusDescription,
-      );
-
       renderHook(() => useNowShortcuts(defaultProps));
 
       pressKey("d");
 
-      expect(onFocusDescription).not.toHaveBeenCalled();
+      expect(defaultProps.onEditDescription).not.toHaveBeenCalled();
     });
 
     it("should not handle Enter shortcut when there is no focused task", () => {
@@ -187,6 +167,9 @@ describe("useNowShortcuts", () => {
       onPreviousTask: jest.fn(),
       onNextTask: jest.fn(),
       onCompleteTask: jest.fn(),
+      onEditDescription: jest.fn(),
+      onEditTitle: jest.fn(),
+      onSaveDescription: jest.fn(),
     };
 
     it("should not handle shortcuts when typing in input elements", () => {
@@ -208,14 +191,6 @@ describe("useNowShortcuts", () => {
 
     it("does not fire edit sequences when there is no focused task", () => {
       const props = { ...defaultProps, focusedTask: null };
-      const onFocusDescription = jest.fn();
-      const onFocusTitle = jest.fn();
-
-      compassEventEmitter.on(
-        CompassDOMEvents.FOCUS_TASK_DESCRIPTION,
-        onFocusDescription,
-      );
-      compassEventEmitter.on(CompassDOMEvents.FOCUS_TASK_TITLE, onFocusTitle);
 
       renderHook(() => useNowShortcuts(props));
 
@@ -224,20 +199,11 @@ describe("useNowShortcuts", () => {
       pressKey("e");
       pressKey("t");
 
-      expect(onFocusDescription).not.toHaveBeenCalled();
-      expect(onFocusTitle).not.toHaveBeenCalled();
+      expect(props.onEditDescription).not.toHaveBeenCalled();
+      expect(props.onEditTitle).not.toHaveBeenCalled();
     });
 
     it("does not fire edit sequences when typing in editable inputs", () => {
-      const onFocusDescription = jest.fn();
-      const onFocusTitle = jest.fn();
-
-      compassEventEmitter.on(
-        CompassDOMEvents.FOCUS_TASK_DESCRIPTION,
-        onFocusDescription,
-      );
-      compassEventEmitter.on(CompassDOMEvents.FOCUS_TASK_TITLE, onFocusTitle);
-
       renderHook(() => useNowShortcuts(defaultProps));
 
       const input = document.createElement("input");
@@ -251,8 +217,8 @@ describe("useNowShortcuts", () => {
         pressKey("e", {}, input);
         pressKey("t", {}, input);
 
-        expect(onFocusDescription).not.toHaveBeenCalled();
-        expect(onFocusTitle).not.toHaveBeenCalled();
+        expect(defaultProps.onEditDescription).not.toHaveBeenCalled();
+        expect(defaultProps.onEditTitle).not.toHaveBeenCalled();
       } finally {
         input.remove();
       }

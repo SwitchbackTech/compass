@@ -6,10 +6,6 @@ import {
   CheckCircleIcon,
 } from "@phosphor-icons/react";
 import { type Task } from "@web/common/types/task.types";
-import {
-  CompassDOMEvents,
-  compassEventEmitter,
-} from "@web/common/utils/dom/event-emitter.util";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { TaskDescription } from "../TaskDescription/TaskDescription";
 
@@ -18,6 +14,9 @@ interface FocusedTaskProps {
   onCompleteTask: () => void;
   onPreviousTask: () => void;
   onNextTask: () => void;
+  titleEditRequestKey?: number;
+  descriptionEditRequestKey?: number;
+  descriptionSaveRequestKey?: number;
   onUpdateTitle: (title: string) => void;
   onUpdateDescription: (description: string) => void;
 }
@@ -27,6 +26,9 @@ export const FocusedTask = ({
   onCompleteTask,
   onPreviousTask,
   onNextTask,
+  titleEditRequestKey = 0,
+  descriptionEditRequestKey = 0,
+  descriptionSaveRequestKey = 0,
   onUpdateTitle,
   onUpdateDescription,
 }: FocusedTaskProps) => {
@@ -34,6 +36,7 @@ export const FocusedTask = ({
   const [titleValue, setTitleValue] = useState(task.title);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const originalTitleRef = useRef(task.title);
+  const previousTitleEditRequestKeyRef = useRef(titleEditRequestKey);
 
   useEffect(() => {
     setIsEditingTitle(false);
@@ -52,16 +55,12 @@ export const FocusedTask = ({
   }, [isEditingTitle]);
 
   useEffect(() => {
-    if (isEditingTitle) return;
+    if (titleEditRequestKey === previousTitleEditRequestKeyRef.current) return;
 
-    const handler = () => setIsEditingTitle(true);
+    previousTitleEditRequestKeyRef.current = titleEditRequestKey;
 
-    compassEventEmitter.on(CompassDOMEvents.FOCUS_TASK_TITLE, handler);
-
-    return () => {
-      compassEventEmitter.off(CompassDOMEvents.FOCUS_TASK_TITLE, handler);
-    };
-  }, [isEditingTitle]);
+    setIsEditingTitle(true);
+  }, [titleEditRequestKey]);
 
   const saveTitle = () => {
     const trimmedTitle = titleValue.trim();
@@ -119,6 +118,8 @@ export const FocusedTask = ({
       </div>
       <TaskDescription
         description={task.description}
+        editRequestKey={descriptionEditRequestKey}
+        saveRequestKey={descriptionSaveRequestKey}
         onSave={onUpdateDescription}
       />
       <div className="flex items-center justify-center gap-3">
