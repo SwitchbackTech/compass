@@ -36,6 +36,16 @@ Use this for:
 
 This requires valid env config.
 
+Bootstrap once from repo root:
+
+```bash
+cp packages/backend/.env.local.example packages/backend/.env.local
+```
+
+Runtime note:
+
+- `yarn dev:backend`, `yarn dev:web`, and `yarn cli ...` load variables from `packages/backend/.env.local` via Node's `--env-file`.
+
 ## Backend Environment Contract
 
 Source:
@@ -57,12 +67,30 @@ Important variables:
 - `SUPERTOKENS_KEY`
 - `TOKEN_GCAL_NOTIFICATION`
 - `TOKEN_COMPASS_SYNC`
+- `LOCAL_WEB_URL`
 
 Optional but behavior-changing:
 
 - `NGROK_AUTHTOKEN`
 - `NGROK_DOMAIN`
 - emailer-related variables
+
+## CLI And Build URL Variables
+
+Primary files:
+
+- `packages/scripts/src/common/cli.constants.ts`
+- `packages/scripts/src/common/cli.utils.ts`
+- `packages/web/webpack.config.mjs`
+
+Variables used by CLI/build flows:
+
+- `BASEURL` (required for local CLI operations; returned as-is for local API base URL)
+- `LOCAL_WEB_URL` (required; used by backend auth email flows)
+- `STAGING_WEB_URL` (optional; used to derive `https://<host>/api` for staging CLI runs)
+- `PROD_WEB_URL` (optional; used to derive `https://<host>/api` for production CLI runs)
+
+If staging/production URL variables are not set, the CLI prompts for a VM domain and builds the API URL from that input.
 
 ## Web Environment Contract
 
@@ -79,6 +107,12 @@ Important variables:
 - `POSTHOG_HOST`
 
 `BACKEND_BASEURL` is derived from `API_BASEURL`.
+
+Webpack behavior (`packages/web/webpack.config.mjs`):
+
+- local/staging/production builds try to load `packages/backend/.env.<environment>`
+- missing env files are a warning, not a hard failure; values can come from `process.env`
+- test mode skips env-file loading entirely
 
 ## Practical Mode Matrix
 
@@ -150,6 +184,7 @@ This keeps cache writes inside the workspace (instead of relying on a user-level
 ## Common Failure Modes
 
 - backend exits immediately because required env is missing
+- backend/web/cli read from `.env.local`; using `.env` instead leaves required variables unset
 - web points at the wrong API base URL
 - session exists but user profile fetch fails
 - sync endpoints work but notification/watch setup fails due to incomplete Google/ngrok setup
