@@ -185,6 +185,36 @@ describe("useConnectGoogle", () => {
     );
   });
 
+  it("does not surface popup-open failures as unhandled errors", async () => {
+    const consoleErrorSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    mockUseAppSelector.mockImplementation((selector) => {
+      if (selector === selectGoogleConnectionState) {
+        return "RECONNECT_REQUIRED";
+      }
+
+      if (selector === selectUserMetadataStatus) {
+        return "loaded";
+      }
+
+      return undefined;
+    });
+    mockLogin.mockRejectedValueOnce(new Error("Failed to open popup window"));
+
+    const { result } = renderHook(() => useConnectGoogle());
+    result.current.commandAction.onSelect?.();
+    await Promise.resolve();
+
+    expect(mockDispatch).toHaveBeenCalledWith(
+      settingsSlice.actions.closeCmdPalette(),
+    );
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+
+    consoleErrorSpy.mockRestore();
+  });
+
   it("returns syncing state while import is running", () => {
     mockUseAppSelector.mockImplementation((selector) => {
       if (selector === selectGoogleConnectionState) {

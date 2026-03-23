@@ -1,6 +1,7 @@
 import { type LoaderFunctionArgs, redirect } from "react-router-dom";
 import { zYearMonthDayString } from "@core/types/type.utils";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { isExpectedSessionAuthError } from "@web/auth/session/session.error.util";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 
 export interface DayLoaderData {
@@ -10,10 +11,16 @@ export interface DayLoaderData {
 
 export async function loadAuthenticated() {
   const { session } = await import("../common/classes/Session");
+  try {
+    const authenticated = await session.doesSessionExist();
+    return { authenticated };
+  } catch (error) {
+    if (!isExpectedSessionAuthError(error)) {
+      console.error("Error checking auth status in route loader:", error);
+    }
 
-  const authenticated = await session.doesSessionExist();
-
-  return { authenticated };
+    return { authenticated: false };
+  }
 }
 
 export async function loadLogoutData() {

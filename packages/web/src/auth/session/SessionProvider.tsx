@@ -28,6 +28,7 @@ import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
 import * as socket from "@web/socket/provider/SocketProvider";
 import { store } from "@web/store";
 import { type CompassSession } from "./session.types";
+import { isExpectedSessionAuthError } from "./session.error.util";
 import { refreshUserMetadata } from "./user-metadata.util";
 
 SuperTokens.init({
@@ -91,7 +92,10 @@ async function checkIfSessionExists(): Promise<boolean> {
     authenticated$.next(exists);
     return exists;
   } catch (error) {
-    console.error("Error checking auth status:", error);
+    if (!isExpectedSessionAuthError(error)) {
+      console.error("Error checking auth status:", error);
+    }
+    handleSessionMissing();
     authenticated$.next(false);
     return false;
   } finally {

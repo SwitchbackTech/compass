@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { type GoogleConnectionState } from "@core/types/user.types";
+import { isGooglePopupClosedError } from "@web/auth/google/google-oauth-error.util";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
 import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
 import { SyncApi } from "@web/common/apis/sync.api";
@@ -153,7 +154,13 @@ export const useConnectGoogle = () => {
   });
 
   const onOpenGoogleAuth = useCallback(() => {
-    void login();
+    void login().catch((error) => {
+      if (isGooglePopupClosedError(error)) {
+        return;
+      }
+
+      console.error("Failed to start Google auth flow:", error);
+    });
     dispatch(settingsSlice.actions.closeCmdPalette());
   }, [dispatch, login]);
 
