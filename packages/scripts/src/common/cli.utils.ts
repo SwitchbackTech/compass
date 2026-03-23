@@ -10,13 +10,20 @@ export const fileExists = (file: string) => {
   return shell.test("-e", file);
 };
 
-export const getApiBaseUrl = async (environment: Environment_Cli) => {
+export const getApiBaseUrl = async (
+  environment: Environment_Cli,
+): Promise<string> => {
   const category = environment ? environment : await getEnvironmentAnswer();
-  const domain = await getDomainAnswer(category);
-  const baseUrl =
-    environment === "local" ? `http://${domain}/api` : `https://${domain}/api`;
 
-  return baseUrl;
+  if (category === "local") {
+    const baseUrl: string = (
+      process.env["BASEURL"] || `http://localhost:3000/api`
+    ).replace(/\/$/, "");
+    return baseUrl;
+  }
+
+  const domain = await getDomainAnswer(category);
+  return `https://${domain}/api`;
 };
 
 export const getClientId = async (environment: Environment_Cli) => {
@@ -45,16 +52,12 @@ const getDomainAnswer = async (env: string) => {
   const isLocal = env === "local";
   const isStaging = env === "staging";
 
-  if (isLocal && CLI_ENV.LOCAL_DOMAIN !== undefined) {
-    return CLI_ENV.LOCAL_DOMAIN;
+  if (isStaging && CLI_ENV.STAGING_WEB_URL !== undefined) {
+    return new URL(CLI_ENV.STAGING_WEB_URL).host;
   }
 
-  if (isStaging && CLI_ENV.STAGING_DOMAIN !== undefined) {
-    return CLI_ENV.STAGING_DOMAIN;
-  }
-
-  if (!isStaging && CLI_ENV.PROD_DOMAIN !== undefined) {
-    return CLI_ENV.PROD_DOMAIN;
+  if (!isLocal && !isStaging && CLI_ENV.PROD_WEB_URL !== undefined) {
+    return new URL(CLI_ENV.PROD_WEB_URL).host;
   }
 
   const q = `Enter the domain of the VM that will be used.

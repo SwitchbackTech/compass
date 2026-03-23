@@ -41,29 +41,24 @@ const getCleanupUrl = (): string => {
   const env = process.env["NODE_ENV"] as Environment_Cli;
 
   if (env === ENVIRONMENT.PROD) {
-    if (!CLI_ENV.PROD_DOMAIN) {
+    if (!CLI_ENV.PROD_WEB_URL) {
       throw new Error(
-        'Unable to determine cleanup URL. NODE_ENV="production" but PROD_DOMAIN is not set.',
+        'Unable to determine cleanup URL. NODE_ENV="production" but PROD_WEB_URL is not set.',
       );
     }
-    return `https://${CLI_ENV.PROD_DOMAIN}/cleanup`;
+    return `${CLI_ENV.PROD_WEB_URL}/cleanup`;
   }
 
   if (env === ENVIRONMENT.STAG) {
-    if (!CLI_ENV.STAGING_DOMAIN) {
+    if (!CLI_ENV.STAGING_WEB_URL) {
       throw new Error(
-        'Unable to determine cleanup URL. NODE_ENV="staging" but STAGING_DOMAIN is not set.',
+        'Unable to determine cleanup URL. NODE_ENV="staging" but STAGING_WEB_URL is not set.',
       );
     }
-    return `https://${CLI_ENV.STAGING_DOMAIN}/cleanup`;
+    return `${CLI_ENV.STAGING_WEB_URL}/cleanup`;
   }
 
-  if (!CLI_ENV.LOCAL_WEB_DOMAIN) {
-    throw new Error(
-      'Unable to determine cleanup URL. NODE_ENV="local" but LOCAL_WEB_DOMAIN is not set.',
-    );
-  }
-  return `http://${CLI_ENV.LOCAL_WEB_DOMAIN}/cleanup`;
+  return `${CLI_ENV.LOCAL_WEB_URL}/cleanup`;
 };
 
 /**

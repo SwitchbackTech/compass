@@ -21,7 +21,6 @@ import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { zObjectId } from "@core/types/type.utils";
 import googleAuthService from "@backend/auth/services/google/google.auth.service";
-import { IS_DEV } from "@backend/common/constants/env.constants";
 import { ENV } from "@backend/common/constants/env.constants";
 import {
   type CreateGoogleSignInResponse,
@@ -175,22 +174,27 @@ export const initSupertokens = () => {
           ],
         },
         emailDelivery: {
-          service: {
+          override: (originalImplementation) => ({
+            ...originalImplementation,
             sendEmail: async (input) => {
-              const resetLink = buildResetPasswordLink(input.passwordResetLink);
+              const resetLink = buildResetPasswordLink(
+                input.passwordResetLink,
+                ENV.LOCAL_WEB_URL,
+              );
 
-              if (ENV.NODE_ENV === "test" || IS_DEV) {
+              if (ENV.NODE_ENV === "test") {
                 logger.info(
                   `Password reset link for ${input.user.email}: ${resetLink}`,
                 );
                 return;
               }
 
-              logger.info(
-                `Password reset requested for ${input.user.email}; email delivery is disabled in this environment.`,
-              );
+              await originalImplementation.sendEmail({
+                ...input,
+                passwordResetLink: resetLink,
+              });
             },
-          },
+          }),
         },
         override: {
           functions(originalImplementation) {
