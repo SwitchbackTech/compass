@@ -1,3 +1,10 @@
+type CliEnv = {
+  LOCAL_WEB_URL: string;
+  STAGING_WEB_URL: string | undefined;
+  PROD_WEB_URL: string | undefined;
+  DEV_BROWSER: string | undefined;
+};
+
 export const ALL_PACKAGES = ["nodePckgs", "web"];
 
 export const COMPASS_ROOT_DEV = process.cwd();
@@ -15,7 +22,7 @@ export const ENVIRONMENT = {
   PROD: "production",
 };
 
-export const CLI_ENV = {
+export const CLI_ENV: CliEnv = {
   LOCAL_WEB_URL: process.env["LOCAL_WEB_URL"] || `http://localhost:9080`,
   STAGING_WEB_URL: process.env["STAGING_WEB_URL"],
   PROD_WEB_URL: process.env["PROD_WEB_URL"],
