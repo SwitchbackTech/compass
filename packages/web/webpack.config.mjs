@@ -1,5 +1,4 @@
 import { execSync } from "child_process";
-import dotenv from "dotenv";
 import fs from "fs";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import MiniCssExtractPlugin from "mini-css-extract-plugin";
@@ -19,19 +18,18 @@ const loadEnvFile = (envName) => {
     local: ".env.local",
     staging: ".env.staging",
     production: ".env.production",
-    test: null, // test environment doesn't require env file
+    test: null,
   };
 
   const envFile = map[envName];
 
-  // Handle unmapped environment names explicitly
   if (typeof envFile === "undefined") {
     logger.error(
       `Error: Unrecognized environment name '${envName}'. Valid options are: ${Object.keys(map).join(", ")}.`,
     );
     return;
   }
-  // Skip file loading for test environment or if file is explicitly null
+
   if (envName === "test" || envFile === null) {
     logger.log(
       `Skipping env file load for ${envName} environment (using process.env)`,
@@ -48,14 +46,24 @@ const loadEnvFile = (envName) => {
     envFile,
   );
 
-  if (fs.existsSync(fullPath)) {
-    logger.log(`Creating a ${envName} build using ${envFile} ...`);
-    dotenv.config({ path: fullPath, override: true });
-  } else {
-    // Only warn, don't exit - allow environment variables to be provided via process.env (e.g., in CI)
+  if (!fs.existsSync(fullPath)) {
     logger.warn(
       `Warning: Env file not found: ${fullPath}. Using environment variables from process.env`,
     );
+    return;
+  }
+
+  logger.log(`Creating a ${envName} build using ${envFile} ...`);
+  for (const line of fs.readFileSync(fullPath, "utf8").split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eqIdx = trimmed.indexOf("=");
+    if (eqIdx < 0) continue;
+    const key = trimmed.slice(0, eqIdx).trim();
+    process.env[key] = trimmed
+      .slice(eqIdx + 1)
+      .trim()
+      .replace(/^(['"])(.*)\1$/, "$2");
   }
 };
 

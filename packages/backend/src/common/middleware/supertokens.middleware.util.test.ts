@@ -91,10 +91,12 @@ describe("supertokens.middleware.util", () => {
   describe("buildResetPasswordLink", () => {
     it("rewrites reset links into the app auth flow", () => {
       const token = faker.string.alphanumeric(32);
+      const frontendUrl = "http://localhost:9080";
 
       expect(
         buildResetPasswordLink(
           `http://localhost:3567/auth/reset-password?token=${token}`,
+          frontendUrl,
         ),
       ).toBe(`http://localhost:9080/day?auth=reset&token=${token}`);
     });
@@ -103,7 +105,9 @@ describe("supertokens.middleware.util", () => {
       const passwordResetLink =
         "http://localhost:3567/auth/reset-password?foo=bar";
 
-      expect(buildResetPasswordLink(passwordResetLink)).toBe(passwordResetLink);
+      expect(
+        buildResetPasswordLink(passwordResetLink, "http://localhost:9080"),
+      ).toBe(passwordResetLink);
     });
   });
 

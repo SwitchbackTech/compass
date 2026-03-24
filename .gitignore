@@ -20,6 +20,7 @@ packages/**/yarn.lock
 ########
 # root
 .claude/settings.local.json
+.claude/worktrees/
 .idea/
 .mcp.json
 .vscode/

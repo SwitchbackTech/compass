@@ -119,8 +119,17 @@ const requestedProject = process.argv.find((arg) =>
   Object.prototype.hasOwnProperty.call(projectMap, arg),
 );
 
+const mongoProjects = ["backend", "scripts"];
+const needsMongoSetup =
+  !requestedProject || mongoProjects.includes(requestedProject);
+
 /** @type { import("jest").Config } */
 const config = {
+  globalSetup: needsMongoSetup ? "@shelf/jest-mongodb/lib/setup" : undefined,
+  globalTeardown: needsMongoSetup
+    ? "@shelf/jest-mongodb/lib/teardown"
+    : undefined,
+
   // All imported modules in your tests should be mocked automatically
   // automock: false,
 

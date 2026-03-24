@@ -22,10 +22,10 @@ yarn install --immutable
 ### Environment Configuration
 
 ```bash
-cp packages/backend/.env.local.example packages/backend/.env
+cp packages/backend/.env.local.example packages/backend/.env.local
 ```
 
-Edit `packages/backend/.env` with your credentials.
+Edit `packages/backend/.env.local` with your credentials.
 
 ## Development Servers
 
@@ -74,7 +74,7 @@ yarn cli --help     # Shows all available CLI commands
 
 ## Environment Requirements
 
-### Required Environment Variables (backend/.env)
+### Required Environment Variables (backend/.env.local)
 
 ```bash
 BASEURL=http://localhost:3000/api

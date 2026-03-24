@@ -4,7 +4,6 @@ import {
   type ClientSessionOptions,
   type Collection,
   type ConnectionClosedEvent,
-  type ConnectionReadyEvent,
   type Db,
   MongoClient,
   ObjectId,
@@ -108,10 +107,6 @@ class MongoService {
     logger.error(error.message, error);
   }
 
-  private onReady(event: ConnectionReadyEvent): void {
-    logger.debug(`Connected to database: '${event.address}'`);
-  }
-
   private onClose(event: ConnectionClosedEvent): void {
     logger.debug(`Connection to database: '${event.address}' closed`);
   }
@@ -175,7 +170,6 @@ class MongoService {
     client.on("close", this.onDisconnect.bind(this));
     client.on("error", this.onError.bind(this));
     client.on("connectionClosed", this.onClose.bind(this));
-    client.on("connectionReady", this.onReady.bind(this));
 
     return waitUntilEvent<MongoClient[], MongoService>(
       client,
