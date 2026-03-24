@@ -141,7 +141,11 @@ export const deleteCompassDataForMatchingUsers = async (user: string) => {
   const totalSummary: Summary_Delete[] = [];
   for (const user of users) {
     const userId = user?._id.toString();
-    const summary = await userService.deleteCompassDataForUser(userId);
+    const gcalAccess = !!user.google?.gRefreshToken;
+    const summary = await userService.deleteCompassDataForUser(
+      userId,
+      gcalAccess,
+    );
     totalSummary.push(summary);
   }
 
