@@ -44,12 +44,21 @@ interface UseAuthFormHandlersOptions {
   setView: (view: AuthView) => void;
 }
 
+export interface UseAuthFormHandlersResult {
+  isSubmitting: boolean;
+  submitError: string | null;
+  handleSignUp: (data: SignUpFormData) => Promise<void>;
+  handleLogin: (data: LogInFormData) => Promise<void>;
+  handleForgotPassword: (data: ForgotPasswordFormData) => Promise<void>;
+  handleResetPassword: (data: ResetPasswordFormData) => Promise<void>;
+}
+
 export function useAuthFormHandlers({
   currentView,
   closeModal,
   resetPasswordToken,
   setView,
-}: UseAuthFormHandlersOptions) {
+}: UseAuthFormHandlersOptions): UseAuthFormHandlersResult {
   const completeAuthentication = useCompleteAuthentication();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -200,7 +209,7 @@ export function useAuthFormHandlers({
             updateCurrentUrlSearchParams((searchParams) => {
               searchParams.delete("token");
             });
-            setView("login");
+            setView("loginAfterReset");
             return;
           case "FIELD_ERROR":
             setSubmitError(

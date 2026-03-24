@@ -35,7 +35,7 @@ export interface UseZodFormReturn<TValues extends Record<string, string>> {
     field: keyof TValues & string,
   ) => (e: ChangeEvent<HTMLInputElement>) => void;
   handleBlur: (field: keyof TValues & string) => () => void;
-  handleSubmit: (e: FormEvent) => Promise<void>;
+  handleSubmit: (e: FormEvent) => void;
   isValid: boolean;
 }
 
@@ -104,7 +104,7 @@ export function useZodForm<TValues extends Record<string, string>>({
   );
 
   const handleSubmit = useCallback(
-    async (e: FormEvent) => {
+    (e: FormEvent): void => {
       e.preventDefault();
 
       const allTouched = Object.keys(initialValues).reduce(
@@ -115,13 +115,15 @@ export function useZodForm<TValues extends Record<string, string>>({
 
       const result = schema.safeParse(values);
       if (result.success) {
-        try {
-          await onSubmit(result.data);
-        } catch (error) {
-          // Error is handled by the onSubmit callback
-          // Swallow the error to prevent unhandled promise rejection
-          // since React form handlers don't await the returned promise
-        }
+        void (async () => {
+          try {
+            await onSubmit(result.data);
+          } catch {
+            // Error is handled by the onSubmit callback
+            // Swallow the error to prevent unhandled promise rejection
+            // since React form handlers don't await the returned promise
+          }
+        })();
       } else {
         setErrors(
           getFieldErrors(result.error) as Partial<

@@ -966,6 +966,9 @@ describe("URL Parameter Support", () => {
     });
 
     expect(mockReplaceState).toHaveBeenLastCalledWith(undefined, "", "/day");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Password reset successful. Log in with your new password.",
+    );
     expect(
       screen.getByRole("heading", { name: /hey, welcome back/i }),
     ).toBeInTheDocument();
