@@ -74,6 +74,9 @@ CompassApi.interceptors.response.use(
         status === Status.UNAUTHORIZED)
     ) {
       await signOut(status);
+      // Sign-out/redirect is the terminal action for these responses.
+      // Resolve to avoid bubbling an unhandled rejection for expected auth-expiry flows.
+      return Promise.resolve();
     } else if (!isAuthEndpoint) {
       console.error(error);
     }

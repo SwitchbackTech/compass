@@ -79,6 +79,18 @@ const triggerErrorResponse = async (
   await CompassApi.get("/test").catch(() => undefined);
 };
 
+const requestWithErrorResponse = (
+  status: number,
+  url?: string,
+  data?: unknown,
+) => {
+  const axiosError = createAxiosError(status, url, data);
+  const adapter: AxiosAdapter = () => Promise.reject(axiosError);
+  CompassApi.defaults.adapter = adapter;
+
+  return CompassApi.get("/test");
+};
+
 describe("CompassApi interceptor auth handling", () => {
   it("sends cookies with cross-origin API requests", () => {
     expect(CompassApi.defaults.withCredentials).toBe(true);
@@ -132,6 +144,15 @@ describe("CompassApi interceptor auth handling", () => {
       }),
     );
     expect(window.alert).not.toHaveBeenCalled();
+    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(assignMock).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
+  });
+
+  it("treats unauthorized API responses as handled after sign-out", async () => {
+    await expect(
+      requestWithErrorResponse(Status.UNAUTHORIZED),
+    ).resolves.toBeUndefined();
+
     expect(signOut).toHaveBeenCalledTimes(1);
     expect(assignMock).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
   });
