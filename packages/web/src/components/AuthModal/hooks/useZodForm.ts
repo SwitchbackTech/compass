@@ -118,10 +118,13 @@ export function useZodForm<TValues extends Record<string, string>>({
         void (async () => {
           try {
             await onSubmit(result.data);
-          } catch {
+          } catch (error) {
             // Error is handled by the onSubmit callback
             // Swallow the error to prevent unhandled promise rejection
             // since React form handlers don't await the returned promise
+            if (process.env.NODE_ENV === "development") {
+              console.error(error);
+            }
           }
         })();
       } else {

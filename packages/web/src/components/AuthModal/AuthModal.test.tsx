@@ -977,6 +977,38 @@ describe("URL Parameter Support", () => {
       mockEmailPassword.getResetPasswordTokenFromURL,
     ).not.toHaveBeenCalled();
   });
+
+  it("switches to signUp (not back to loginAfterReset) when Sign up is clicked after reset", async () => {
+    const user = userEvent.setup();
+    mockWindowLocation("/day?auth=reset&token=reset-token");
+    mockEmailPassword.submitNewPassword.mockResolvedValue({
+      status: "OK",
+    } as never);
+    renderWithProviders(<div />, "/day?auth=reset&token=reset-token");
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /set new password/i }),
+      ).toBeInTheDocument();
+    });
+
+    await user.type(screen.getByLabelText(/new password/i), "newpassword123");
+    await user.click(screen.getByRole("button", { name: /set new password/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "Password reset successful. Log in with your new password.",
+      );
+    });
+
+    await user.click(screen.getByRole("button", { name: /^sign up$/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /nice to meet you/i }),
+      ).toBeInTheDocument();
+    });
+  });
 });
 
 describe("AccountIcon", () => {
