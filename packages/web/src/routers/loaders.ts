@@ -29,14 +29,21 @@ export function loadTodayData(): DayLoaderData {
   return { dateInView, dateString: dateInView.format(dateFormat) };
 }
 
-export async function loadDayData() {
+function buildTodayRedirectUrl(request: Request): string {
   const { dateString } = loadTodayData();
+  const url = new URL(request.url);
 
-  return redirect(`${ROOT_ROUTES.DAY}/${dateString}`);
+  return `${ROOT_ROUTES.DAY}/${dateString}${url.search}`;
 }
 
-export async function loadRootData() {
-  return loadDayData();
+export function loadDayData({
+  request,
+}: LoaderFunctionArgs<unknown>): Response {
+  return redirect(buildTodayRedirectUrl(request));
+}
+
+export function loadRootData(args: LoaderFunctionArgs<unknown>): Response {
+  return loadDayData(args);
 }
 
 export async function loadSpecificDayData({
