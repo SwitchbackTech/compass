@@ -70,7 +70,7 @@ Want to poke around or self-host?
 ```bash
 # Quick start
 yarn install --immutable
-cp packages/backend/.env.local.example packages/backend/.env
+cp packages/backend/.env.local.example packages/backend/.env.local
 yarn dev:web  # Frontend on http://localhost:9080
 yarn dev:backend # Backend on http://localhost:3000
 

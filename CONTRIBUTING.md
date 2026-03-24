@@ -18,7 +18,7 @@ This section provides specific guidelines for AI coding agents working on Compas
 
    ```bash
    yarn install --immutable
-   cp packages/backend/.env.local.example packages/backend/.env
+   cp packages/backend/.env.local.example packages/backend/.env.local
    yarn dev:web  # Verify frontend works
    ```
 

@@ -14,6 +14,28 @@ Root command:
 yarn cli <command>
 ```
 
+Environment loading:
+
+- `yarn cli` runs Node with `--env-file=packages/backend/.env.local`.
+- Keep local development variables in `packages/backend/.env.local` (bootstrap from `.env.local.example`).
+
+## CLI URL Resolution Contract
+
+Primary source:
+
+- `packages/scripts/src/common/cli.utils.ts`
+
+How API base URLs are resolved:
+
+- local (`--environment local`): returns `BASEURL` directly (trailing slash removed)
+- staging (`--environment staging`): uses host from `STAGING_WEB_URL` and builds `https://<host>/api`
+- production (`--environment production`): uses host from `PROD_WEB_URL` and builds `https://<host>/api`
+
+Fallback behavior:
+
+- if `STAGING_WEB_URL`/`PROD_WEB_URL` are missing, CLI prompts for a domain and builds `https://<domain>/api`
+- local mode does not prompt for a domain; it depends on `BASEURL`
+
 ## Supported Commands
 
 ### Build
