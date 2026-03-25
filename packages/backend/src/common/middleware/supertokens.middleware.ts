@@ -179,7 +179,7 @@ export const initSupertokens = () => {
             sendEmail: async (input) => {
               const resetLink = buildResetPasswordLink(
                 input.passwordResetLink,
-                ENV.LOCAL_WEB_URL,
+                ENV.FRONTEND_URL,
               );
 
               if (ENV.NODE_ENV === "test") {

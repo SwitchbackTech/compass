@@ -58,7 +58,7 @@ const getCleanupUrl = (): string => {
     return `${CLI_ENV.STAGING_WEB_URL}/cleanup`;
   }
 
-  return `${CLI_ENV.LOCAL_WEB_URL}/cleanup`;
+  return `${CLI_ENV.FRONTEND_URL}/cleanup`;
 };
 
 /**

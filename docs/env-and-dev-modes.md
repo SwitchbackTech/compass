@@ -67,7 +67,7 @@ Important variables:
 - `SUPERTOKENS_KEY`
 - `TOKEN_GCAL_NOTIFICATION`
 - `TOKEN_COMPASS_SYNC`
-- `LOCAL_WEB_URL`
+- `FRONTEND_URL`
 
 Optional but behavior-changing:
 
@@ -86,7 +86,7 @@ Primary files:
 Variables used by CLI/build flows:
 
 - `BASEURL` (required for local CLI operations; returned as-is for local API base URL)
-- `LOCAL_WEB_URL` (required; used by backend auth email flows)
+- `FRONTEND_URL` (required; used by backend auth email flows — set to the public-facing frontend URL for this deployment)
 - `STAGING_WEB_URL` (optional; used to derive `https://<host>/api` for staging CLI runs)
 - `PROD_WEB_URL` (optional; used to derive `https://<host>/api` for production CLI runs)
 

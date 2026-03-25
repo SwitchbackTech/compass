@@ -267,7 +267,7 @@ describe("supertokens.middleware", () => {
 
       expect(buildResetPasswordLink).toHaveBeenCalledWith(
         "http://localhost:1234/auth/reset-password?token=abc",
-        ENV.LOCAL_WEB_URL,
+        ENV.FRONTEND_URL,
       );
       // In test env, sending is suppressed — originalSendEmail must not be called
       expect(originalSendEmail).not.toHaveBeenCalled();

@@ -241,7 +241,7 @@ Current behavior in `supertokens.middleware.ts`:
 
 The rewritten link shape comes from `buildResetPasswordLink()` and looks like:
 
-The host/origin portion is taken from backend env (`LOCAL_WEB_URL`), and the route is always `/day` with `auth=reset` plus the token.
+The host/origin portion is taken from backend env (`FRONTEND_URL`), and the route is always `/day` with `auth=reset` plus the token.
 
 - `http://localhost:9080/day?auth=reset&token=...`
 
@@ -260,4 +260,4 @@ That lets password-auth users use Compass without blocking on Google connectivit
 ## Known Caveats
 
 - The rollout gate is not limited to `lastKnownEmail`; any `?auth=` URL currently enables the auth UI.
-- Reset password links always target the `/day` route and require a valid `LOCAL_WEB_URL` in backend env.
+- Reset password links always target the `/day` route and require a valid `FRONTEND_URL` in backend env.

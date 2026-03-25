@@ -19,8 +19,7 @@ packages/**/yarn.lock
 # DIRS #
 ########
 # root
-.claude/settings.local.json
-.claude/worktrees/
+.claude/
 .idea/
 .mcp.json
 .vscode/
