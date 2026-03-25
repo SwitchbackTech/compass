@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { isGooglePopupClosedError } from "@web/auth/google/google-oauth-error.util";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
 import { type SignInUpInput } from "@web/components/oauth/ouath.types";
 
@@ -31,8 +32,19 @@ export const useGoogleAuthWithOverlay = (
 
   const login = useCallback(() => {
     onStart?.();
-    return googleLogin.login();
-  }, [googleLogin, onStart]);
+    try {
+      return googleLogin.login();
+    } catch (error) {
+      // Some popup blockers throw synchronously before OAuth callbacks fire.
+      // Normalize that path through onError so auth state can recover safely.
+      if (isGooglePopupClosedError(error)) {
+        onError?.(error);
+        return;
+      }
+
+      throw error;
+    }
+  }, [googleLogin, onError, onStart]);
 
   return {
     ...googleLogin,
