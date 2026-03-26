@@ -234,6 +234,32 @@ Read these together for event work:
 - `packages/web/src/ducks/events/sagas`
 - `packages/web/src/store/events.ts`
 
+## Event Flow
+
+The old "frontend data flow" doc is now folded into this section.
+
+Typical event flow:
+
+1. a route view, hook, or component dispatches a Redux action
+2. redux-saga handles the async side effect
+3. the selected repository writes locally or remotely
+4. reducers and/or Elf stores update client state
+5. websocket events can trigger refetch or metadata refresh later
+
+Important consequence:
+
+- event behavior is not owned by a single state system
+- when debugging, inspect the action, saga, repository, and store layer together
+
+## Styling Systems
+
+The web app currently uses two styling systems in parallel:
+
+- longstanding `styled-components` for much of the existing UI
+- Tailwind v4 utilities and semantic theme tokens from `packages/web/src/index.css` for newer or migrated surfaces
+
+Do not describe the frontend as Tailwind-only or styled-components-only. Follow the local pattern of the area you are editing unless the change is explicitly migrating that area.
+
 ## Day Task Drag Handle Positioning
 
 File:

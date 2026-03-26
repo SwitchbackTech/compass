@@ -16,6 +16,16 @@ const renderSignInForm = () => {
   );
 };
 
+const renderSignInFormWithStatus = (statusMessage: string) => {
+  render(
+    <LogInForm
+      onSubmit={mockOnSubmit}
+      onForgotPassword={mockOnForgotPassword}
+      statusMessage={statusMessage}
+    />,
+  );
+};
+
 describe("LogInForm", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -172,6 +182,18 @@ describe("LogInForm", () => {
       );
 
       expect(mockOnForgotPassword).toHaveBeenCalled();
+    });
+  });
+
+  describe("status message", () => {
+    it("shows a status message above the form when provided", () => {
+      renderSignInFormWithStatus(
+        "Password reset successful. Log in with your new password.",
+      );
+
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "Password reset successful. Log in with your new password.",
+      );
     });
   });
 });

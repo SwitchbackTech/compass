@@ -24,7 +24,7 @@ Rule: never treat event shape as web-only unless the field is strictly presentat
 ## Change Recurring Event Behavior
 
 1. Read `packages/core/src/types/event.types.ts`.
-2. Read `docs/recurrence-handling.md`.
+2. Read `docs/features/recurring-events-handling.md`.
 3. Read `packages/backend/src/event/classes/compass.event.generator.ts`.
 4. Read `packages/backend/src/event/classes/compass.event.parser.ts`.
 5. Read `packages/backend/src/event/classes/compass.event.executor.ts`.

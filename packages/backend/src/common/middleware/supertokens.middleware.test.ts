@@ -21,6 +21,7 @@ import {
 import {
   buildResetPasswordLink,
   createGoogleSignInSuccess,
+  ensureExternalUserIdMapping,
 } from "@backend/common/middleware/supertokens.middleware.util";
 import syncService from "@backend/sync/services/sync.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
@@ -267,10 +268,117 @@ describe("supertokens.middleware", () => {
 
       expect(buildResetPasswordLink).toHaveBeenCalledWith(
         "http://localhost:1234/auth/reset-password?token=abc",
-        ENV.LOCAL_WEB_URL,
+        ENV.FRONTEND_URL,
       );
       // In test env, sending is suppressed — originalSendEmail must not be called
       expect(originalSendEmail).not.toHaveBeenCalled();
+    });
+
+    it("preserves EmailPassword API method context in signUpPOST and signInPOST overrides", async () => {
+      initSupertokens();
+
+      const emailPasswordConfig = (EmailPassword.init as jest.Mock).mock
+        .calls[0][0] as {
+        override: {
+          apis: (originalImplementation: {
+            signUpPOST?: (input: unknown) => Promise<unknown>;
+            signInPOST?: (input: unknown) => Promise<unknown>;
+          }) => {
+            signUpPOST: (input: unknown) => Promise<unknown>;
+            signInPOST: (input: unknown) => Promise<unknown>;
+          };
+        };
+      };
+
+      let signUpThis: unknown;
+      let signInThis: unknown;
+
+      const originalImplementation = {
+        signUpPOST: jest.fn(function (this: unknown, input: unknown) {
+          signUpThis = this;
+          return Promise.resolve({
+            status: "EMAIL_ALREADY_EXISTS_ERROR",
+            input,
+          });
+        }),
+        signInPOST: jest.fn(function (this: unknown, input: unknown) {
+          signInThis = this;
+          return Promise.resolve({
+            status: "WRONG_CREDENTIALS_ERROR",
+            input,
+          });
+        }),
+      };
+
+      const overridden = emailPasswordConfig.override.apis(
+        originalImplementation,
+      );
+
+      await overridden.signUpPOST({ email: "user@example.com" });
+      await overridden.signInPOST({ email: "user@example.com" });
+
+      expect(originalImplementation.signUpPOST).toHaveBeenCalledWith({
+        email: "user@example.com",
+      });
+      expect(originalImplementation.signInPOST).toHaveBeenCalledWith({
+        email: "user@example.com",
+      });
+      expect(signUpThis).toBe(originalImplementation);
+      expect(signInThis).toBe(originalImplementation);
+    });
+
+    it("keeps the original EmailPassword recipe user during createNewRecipeUser", async () => {
+      initSupertokens();
+
+      const emailPasswordConfig = (EmailPassword.init as jest.Mock).mock
+        .calls[0][0] as {
+        override: {
+          functions: (originalImplementation: {
+            createNewRecipeUser: (input: unknown) => Promise<unknown>;
+          }) => {
+            createNewRecipeUser: (input: unknown) => Promise<unknown>;
+          };
+        };
+      };
+
+      const originalUser = {
+        id: "recipe-user-id",
+        loginMethods: [
+          {
+            recipeUserId: {
+              getAsString: () => "recipe-user-id",
+            },
+          },
+        ],
+      };
+
+      const responsePayload = {
+        status: "OK" as const,
+        recipeUserId: {
+          getAsString: () => "recipe-user-id",
+        },
+        user: originalUser,
+      };
+
+      const originalImplementation = {
+        createNewRecipeUser: jest.fn().mockResolvedValue(responsePayload),
+      };
+
+      const overridden = emailPasswordConfig.override.functions(
+        originalImplementation,
+      );
+
+      const result = await overridden.createNewRecipeUser({
+        email: "user@example.com",
+      });
+
+      expect(originalImplementation.createNewRecipeUser).toHaveBeenCalledWith({
+        email: "user@example.com",
+      });
+      expect(ensureExternalUserIdMapping).toHaveBeenCalledWith(
+        "recipe-user-id",
+      );
+      expect(result).toBe(responsePayload);
     });
 
     it("calls googleAuthService.handleGoogleAuth when ThirdParty signInUpPOST succeeds", async () => {

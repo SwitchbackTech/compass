@@ -1,9 +1,16 @@
-import { type ReactElement, type ReactNode } from "react";
-import { MemoryRouter } from "react-router-dom";
+import { type ReactElement, type ReactNode, useLayoutEffect } from "react";
+import {
+  MemoryRouter,
+  Outlet,
+  RouterProvider,
+  createMemoryRouter,
+  useLocation,
+} from "react-router-dom";
 import EmailPassword from "supertokens-web-js/recipe/emailpassword";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { loadDayData, loadTodayData } from "@web/routers/loaders";
 import { AccountIcon } from "./AccountIcon";
 import { AuthModal } from "./AuthModal";
 import { AuthModalProvider } from "./AuthModalProvider";
@@ -125,6 +132,63 @@ const renderWithProviders = (
 async function flushEffects() {
   await Promise.resolve();
 }
+
+const RouteLocationMirror = ({ children }: { children: ReactNode }) => {
+  const location = useLocation();
+
+  useLayoutEffect(() => {
+    mockWindowLocation(
+      `${location.pathname}${location.search}${location.hash}`,
+    );
+  }, [location]);
+
+  return <>{children}</>;
+};
+
+const DayRedirectShell = () => (
+  <RouteLocationMirror>
+    <AuthModalProvider>
+      <AuthModal />
+      <Outlet />
+    </AuthModalProvider>
+  </RouteLocationMirror>
+);
+
+const renderWithDayRedirectRoute = (initialRoute: string) => {
+  mockWindowLocation(initialRoute);
+
+  const router = createMemoryRouter(
+    [
+      {
+        path: "/day",
+        Component: DayRedirectShell,
+        children: [
+          {
+            index: true,
+            loader: loadDayData,
+          },
+          {
+            path: ":dateString",
+            element: <div>Day route loaded</div>,
+          },
+        ],
+      },
+    ],
+    {
+      initialEntries: [initialRoute],
+      future: {
+        v7_relativeSplatPath: true,
+      },
+    },
+  );
+
+  return {
+    router,
+    ...render(
+      <RouterProvider router={router} future={{ v7_startTransition: true }} />,
+    ),
+  };
+};
 
 describe("AuthModal", () => {
   beforeEach(() => {
@@ -860,6 +924,25 @@ describe("URL Parameter Support", () => {
     });
   });
 
+  it("opens reset password after the /day redirect preserves auth params", async () => {
+    const { dateString } = loadTodayData();
+
+    renderWithDayRedirectRoute("/day?auth=reset&token=reset-token");
+
+    await waitFor(() => {
+      expect(screen.getByText("Day route loaded")).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: /set new password/i }),
+      ).toBeInTheDocument();
+    });
+
+    expect(mockReplaceState).toHaveBeenCalledWith(
+      null,
+      "",
+      `/day/${dateString}?token=reset-token`,
+    );
+  });
+
   it("submits reset password with the initial token after the URL changes", async () => {
     const user = userEvent.setup();
     mockWindowLocation("/day?auth=reset&token=reset-token");
@@ -882,9 +965,49 @@ describe("URL Parameter Support", () => {
       });
     });
 
+    expect(mockReplaceState).toHaveBeenLastCalledWith(undefined, "", "/day");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Password reset successful. Log in with your new password.",
+    );
+    expect(
+      screen.getByRole("heading", { name: /hey, welcome back/i }),
+    ).toBeInTheDocument();
+    expect(mockCompleteAuthentication).not.toHaveBeenCalled();
     expect(
       mockEmailPassword.getResetPasswordTokenFromURL,
     ).not.toHaveBeenCalled();
+  });
+
+  it("switches to signUp (not back to loginAfterReset) when Sign up is clicked after reset", async () => {
+    const user = userEvent.setup();
+    mockWindowLocation("/day?auth=reset&token=reset-token");
+    mockEmailPassword.submitNewPassword.mockResolvedValue({
+      status: "OK",
+    } as never);
+    renderWithProviders(<div />, "/day?auth=reset&token=reset-token");
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /set new password/i }),
+      ).toBeInTheDocument();
+    });
+
+    await user.type(screen.getByLabelText(/new password/i), "newpassword123");
+    await user.click(screen.getByRole("button", { name: /set new password/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "Password reset successful. Log in with your new password.",
+      );
+    });
+
+    await user.click(screen.getByRole("button", { name: /^sign up$/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /nice to meet you/i }),
+      ).toBeInTheDocument();
+    });
   });
 });
 

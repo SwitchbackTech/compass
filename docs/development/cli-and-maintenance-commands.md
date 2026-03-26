@@ -28,12 +28,12 @@ Primary source:
 How API base URLs are resolved:
 
 - local (`--environment local`): returns `BASEURL` directly (trailing slash removed)
-- staging (`--environment staging`): uses host from `STAGING_WEB_URL` and builds `https://<host>/api`
-- production (`--environment production`): uses host from `PROD_WEB_URL` and builds `https://<host>/api`
+- staging/production: derives `https://<domain>/api` from `FRONTEND_URL`
 
 Fallback behavior:
 
-- if `STAGING_WEB_URL`/`PROD_WEB_URL` are missing, CLI prompts for a domain and builds `https://<domain>/api`
+- if `FRONTEND_URL` points at `localhost`, CLI prompts for a domain and builds `https://<domain>/api`
+- if `FRONTEND_URL` is already a non-localhost URL, CLI uses that hostname directly
 - local mode does not prompt for a domain; it depends on `BASEURL`
 
 ## Supported Commands
@@ -178,6 +178,7 @@ yarn cli migrate executed
 - Treat delete flows as destructive unless proven otherwise.
 - For migration work, inspect existing migration naming and ordering first.
 - For build work, confirm whether you need `web` or `nodePckgs`.
+- `yarn cli` always loads `packages/backend/.env.local` through the root script; build-time environment selection changes which backend env file is copied or loaded by the underlying command.
 
 ## Quick Reference
 

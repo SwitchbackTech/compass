@@ -25,6 +25,18 @@ function getResetPasswordQueryParams(): z.infer<
   return parsed.success ? parsed.data : {};
 }
 
+function updateCurrentUrlSearchParams(
+  updateSearchParams: (searchParams: URLSearchParams) => void,
+): void {
+  if (typeof window === "undefined") return;
+
+  const url = new URL(window.location.href);
+  updateSearchParams(url.searchParams);
+  const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+
+  window.history.replaceState(window.history.state, "", nextUrl);
+}
+
 interface UseAuthFormHandlersOptions {
   currentView: AuthView;
   closeModal: () => void;
@@ -32,12 +44,21 @@ interface UseAuthFormHandlersOptions {
   setView: (view: AuthView) => void;
 }
 
+export interface UseAuthFormHandlersResult {
+  isSubmitting: boolean;
+  submitError: string | null;
+  handleSignUp: (data: SignUpFormData) => Promise<void>;
+  handleLogin: (data: LogInFormData) => Promise<void>;
+  handleForgotPassword: (data: ForgotPasswordFormData) => Promise<void>;
+  handleResetPassword: (data: ResetPasswordFormData) => Promise<void>;
+}
+
 export function useAuthFormHandlers({
   currentView,
   closeModal,
   resetPasswordToken,
   setView,
-}: UseAuthFormHandlersOptions) {
+}: UseAuthFormHandlersOptions): UseAuthFormHandlersResult {
   const completeAuthentication = useCompleteAuthentication();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -174,10 +195,10 @@ export function useAuthFormHandlers({
         // We keep the first token we saw (from props or URL) so the flow still works even if the URL changes.
         const token = initialResetPasswordToken;
 
-        if (token && typeof window !== "undefined") {
-          const url = new URL(window.location.href);
-          url.searchParams.set("token", token);
-          window.history.replaceState(window.history.state, "", url.toString());
+        if (token) {
+          updateCurrentUrlSearchParams((searchParams) => {
+            searchParams.set("token", token);
+          });
         }
         const response = await EmailPassword.submitNewPassword({
           formFields: [{ id: "password", value: data.password }],
@@ -185,7 +206,10 @@ export function useAuthFormHandlers({
 
         switch (response.status) {
           case "OK":
-            setView("login");
+            updateCurrentUrlSearchParams((searchParams) => {
+              searchParams.delete("token");
+            });
+            setView("loginAfterReset");
             return;
           case "FIELD_ERROR":
             setSubmitError(

@@ -1,14 +1,11 @@
 import { type Credentials, type TokenPayload } from "google-auth-library";
 import { Logger } from "@core/logger/winston.logger";
-import { mapCompassUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import GoogleOAuthClient from "@backend/auth/services/google/clients/google.oauth.client";
 import {
   determineGoogleAuthMode,
   parseReconnectGoogleParams,
 } from "@backend/auth/services/google/util/google.auth.util";
-import { ENV } from "@backend/common/constants/env.constants";
-import { isMissingUserTagId } from "@backend/common/constants/env.util";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import EmailService from "@backend/email/email.service";
@@ -60,18 +57,7 @@ class GoogleAuthService {
         },
       });
 
-      if (isMissingUserTagId()) {
-        logger.warn(
-          "Did not tag subscriber due to missing EMAILER_ ENV value(s)",
-        );
-      } else if (cUser.isNewUser) {
-        const subscriber = mapCompassUserToEmailSubscriber(cUser.user);
-
-        await EmailService.addTagToSubscriber(
-          subscriber,
-          ENV.EMAILER_USER_TAG_ID!,
-        );
-      }
+      await EmailService.tagNewUserIfEnabled(cUser.user, cUser.isNewUser);
 
       return { cUserId: cUser.user.userId };
     });

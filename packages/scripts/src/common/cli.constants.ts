@@ -1,7 +1,5 @@
 type CliEnv = {
-  LOCAL_WEB_URL: string;
-  STAGING_WEB_URL: string | undefined;
-  PROD_WEB_URL: string | undefined;
+  FRONTEND_URL: string;
   DEV_BROWSER: string | undefined;
 };
 
@@ -23,8 +21,6 @@ export const ENVIRONMENT = {
 };
 
 export const CLI_ENV: CliEnv = {
-  LOCAL_WEB_URL: process.env["LOCAL_WEB_URL"] || `http://localhost:9080`,
-  STAGING_WEB_URL: process.env["STAGING_WEB_URL"],
-  PROD_WEB_URL: process.env["PROD_WEB_URL"],
+  FRONTEND_URL: process.env["FRONTEND_URL"] || `http://localhost:9080`,
   DEV_BROWSER: process.env["DEV_BROWSER"],
 };

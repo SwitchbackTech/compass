@@ -52,7 +52,7 @@ Source:
 
 - `packages/backend/src/common/constants/env.constants.ts`
 
-The backend validates required env at startup with Zod.
+The backend validates env at startup with Zod.
 
 Important variables:
 
@@ -67,13 +67,20 @@ Important variables:
 - `SUPERTOKENS_KEY`
 - `TOKEN_GCAL_NOTIFICATION`
 - `TOKEN_COMPASS_SYNC`
-- `LOCAL_WEB_URL`
+- `FRONTEND_URL`
+- `CORS` (parsed into `ENV.ORIGINS_ALLOWED`)
 
 Optional but behavior-changing:
 
 - `NGROK_AUTHTOKEN`
 - `NGROK_DOMAIN`
-- emailer-related variables
+- `EMAILER_API_SECRET`
+- `EMAILER_USER_TAG_ID`
+
+Derived backend values:
+
+- `DB` is not supplied directly; backend derives it from `NODE_ENV`
+- `ORIGINS_ALLOWED` is derived by splitting the comma-separated `CORS` env var
 
 ## CLI And Build URL Variables
 
@@ -85,12 +92,10 @@ Primary files:
 
 Variables used by CLI/build flows:
 
-- `BASEURL` (required for local CLI operations; returned as-is for local API base URL)
-- `LOCAL_WEB_URL` (required; used by backend auth email flows)
-- `STAGING_WEB_URL` (optional; used to derive `https://<host>/api` for staging CLI runs)
-- `PROD_WEB_URL` (optional; used to derive `https://<host>/api` for production CLI runs)
+- `BASEURL` (used for local CLI operations and injected into the web build as `API_BASEURL`)
+- `FRONTEND_URL` (used by backend auth email flows and CLI domain resolution)
 
-If staging/production URL variables are not set, the CLI prompts for a VM domain and builds the API URL from that input.
+If `FRONTEND_URL` points to localhost, the CLI prompts for a VM/public domain and builds the API URL from that input.
 
 ## Web Environment Contract
 
@@ -110,7 +115,7 @@ Important variables:
 
 Webpack behavior (`packages/web/webpack.config.mjs`):
 
-- local/staging/production builds try to load `packages/backend/.env.<environment>`
+- local/staging/production builds load `packages/backend/.env.local`, `.env.staging`, or `.env.production`
 - missing env files are a warning, not a hard failure; values can come from `process.env`
 - test mode skips env-file loading entirely
 

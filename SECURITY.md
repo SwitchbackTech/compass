@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in this project, please send an email to **tyler@switchback.tech** with the following details:
+If you discover a security vulnerability in this project, please send an email to <tyler@switchback.tech> with the following details:
 
 - A description of the vulnerability
 - Steps to reproduce (if applicable)

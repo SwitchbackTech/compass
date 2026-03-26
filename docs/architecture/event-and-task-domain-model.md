@@ -45,7 +45,7 @@ These are UI-facing categories, not storage categories.
 
 Many sync and parser decisions key off transitions between these states.
 
-For the full recurring-event lifecycle, see [recurrence-handling.md](./recurrence-handling.md).
+For the full recurring-event lifecycle, see [Recurrence Handling](../features/recurring-events-handling.md).
 
 ## Update Scopes
 
