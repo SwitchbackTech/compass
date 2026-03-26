@@ -1,6 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
 import { useGoogleLogin as useGoogleLoginBase } from "@react-oauth/google";
-import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
 
 jest.mock("@react-oauth/google", () => ({
   useGoogleLogin: jest.fn(),
@@ -9,6 +8,9 @@ jest.mock("@react-oauth/google", () => ({
 const mockUseGoogleLoginBase = useGoogleLoginBase as jest.MockedFunction<
   typeof useGoogleLoginBase
 >;
+const { useGoogleLogin } = jest.requireActual(
+  "@web/components/oauth/google/useGoogleLogin",
+) as typeof import("@web/components/oauth/google/useGoogleLogin");
 
 describe("useGoogleLogin", () => {
   const mockOnStart = jest.fn();
