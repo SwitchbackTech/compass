@@ -111,10 +111,6 @@ export const AuthModal: FC = () => {
     setView("forgotPassword");
   }, [setView]);
 
-  const handleBackToLogin = useCallback(() => {
-    setView("login");
-  }, [setView]);
-
   if (!isOpen) {
     return null;
   }
@@ -191,7 +187,7 @@ export const AuthModal: FC = () => {
               <AuthButton
                 type="button"
                 variant={submitError ? "primary" : "outline"}
-                onClick={handleBackToLogin}
+                onClick={handleBackToSignIn}
               >
                 Back to log in
               </AuthButton>

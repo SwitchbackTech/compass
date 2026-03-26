@@ -13,7 +13,6 @@ This flow adds first-party auth on top of the existing Google OAuth setup:
 - account linking so Google and password auth for the same verified email resolve to the same Compass user
 - SuperTokens user-to-Compass-user mapping via Mongo `ObjectId` external ids
 
-
 Primary files:
 
 - `packages/web/src/components/AuthModal/AuthModal.tsx`
@@ -210,10 +209,10 @@ the user stuck on a blank or broken state.
 ### Account linking
 
 `AccountLinking.init()` is configured to:
+
 - decline automatic linking when the new account has no email
 - automatically link verified same-email accounts when there is no active session
 - allow linking without email verification when the user is already authenticated in-session
-
 
 This means middleware-level automatic linking is disabled for all sign-in/up paths.
 
