@@ -1,10 +1,5 @@
 import cors from "cors";
-import { ObjectId } from "mongodb";
-import supertokens, {
-  default as SuperTokens,
-  User,
-  getUser,
-} from "supertokens-node";
+import SuperTokens from "supertokens-node";
 import AccountLinking from "supertokens-node/recipe/accountlinking";
 import Dashboard from "supertokens-node/recipe/dashboard";
 import EmailPassword from "supertokens-node/recipe/emailpassword";
@@ -18,25 +13,16 @@ import {
 } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
-import { Logger } from "@core/logger/winston.logger";
-import { zObjectId } from "@core/types/type.utils";
-import googleAuthService from "@backend/auth/services/google/google.auth.service";
 import { ENV } from "@backend/common/constants/env.constants";
 import {
-  type CreateGoogleSignInResponse,
-  type ThirdPartySignInUpInput,
-  buildResetPasswordLink,
-  createGoogleSignInSuccess,
-  ensureExternalUserIdMapping,
-  getFormFieldValue,
-} from "@backend/common/middleware/supertokens.middleware.util";
-import mongoService from "@backend/common/services/mongo.service";
-import EmailService from "@backend/email/email.service";
-import syncService from "@backend/sync/services/sync.service";
-import userMetadataService from "@backend/user/services/user-metadata.service";
-import userService from "@backend/user/services/user.service";
-
-const logger = Logger("app:supertokens.middleware");
+  createEmailPasswordUser,
+  createGoogleUser,
+  handleEmailPasswordSignIn,
+  handleEmailPasswordSignUp,
+  handleGoogleSignInUp,
+  handleSessionSignOut,
+  sendPasswordResetEmail,
+} from "@backend/common/middleware/supertokens.middleware.handlers";
 
 export const initSupertokens = () => {
   SuperTokens.init({
@@ -88,53 +74,14 @@ export const initSupertokens = () => {
             return {
               ...originalImplementation,
               async manuallyCreateOrUpdateUser(input) {
-                const user = await mongoService.user.findOne(
-                  { "google.googleId": input.thirdPartyUserId },
-                  { projection: { _id: 1, signedUpAt: 1, email: 1 } },
-                );
-
-                const id = user?._id.toString() ?? new ObjectId().toString();
-                const timeJoined = user?.signedUpAt?.getTime() ?? Date.now();
-                const thirdParty = [
-                  { id: input.thirdPartyId, userId: input.thirdPartyUserId },
-                ];
-
-                return {
-                  status: "OK",
-                  createdNewRecipeUser: user === null,
-                  recipeUserId: supertokens.convertToRecipeUserId(id),
-                  timeJoined,
-                  thirdParty,
-                  user: new User({
-                    emails: [user?.email ?? input.email],
-                    id,
-                    isPrimaryUser: false,
-                    thirdParty,
-                    timeJoined,
-                    loginMethods: [
-                      {
-                        recipeId: "thirdparty",
-                        recipeUserId: id,
-                        tenantIds: [input.tenantId],
-                        timeJoined,
-                        verified: input.isVerified,
-                        email: input.email,
-                        thirdParty: thirdParty[0],
-                        webauthn: { credentialIds: [] },
-                      },
-                    ],
-                    phoneNumbers: [],
-                    tenantIds: [input.tenantId],
-                    webauthn: { credentialIds: [] },
-                  }),
-                };
+                return createGoogleUser(input);
               },
             };
           },
           apis(originalImplementation) {
             return {
               ...originalImplementation,
-              async signInUpPOST(input: ThirdPartySignInUpInput) {
+              async signInUpPOST(input) {
                 if (!originalImplementation.signInUpPOST) {
                   throw new BaseError(
                     "signInUpPOST not implemented",
@@ -143,18 +90,10 @@ export const initSupertokens = () => {
                     true,
                   );
                 }
-
-                const response =
-                  await originalImplementation.signInUpPOST(input);
-                const success = createGoogleSignInSuccess(
-                  response as CreateGoogleSignInResponse,
+                return handleGoogleSignInUp(
+                  input,
+                  originalImplementation.signInUpPOST,
                 );
-
-                if (success) {
-                  await googleAuthService.handleGoogleAuth(success);
-                }
-
-                return response;
               },
             };
           },
@@ -177,24 +116,8 @@ export const initSupertokens = () => {
         emailDelivery: {
           override: (originalImplementation) => ({
             ...originalImplementation,
-            sendEmail: async (input) => {
-              const resetLink = buildResetPasswordLink(
-                input.passwordResetLink,
-                ENV.FRONTEND_URL,
-              );
-
-              if (ENV.NODE_ENV === "test") {
-                logger.info(
-                  `Password reset link for ${input.user.email}: ${resetLink}`,
-                );
-                return;
-              }
-
-              await originalImplementation.sendEmail({
-                ...input,
-                passwordResetLink: resetLink,
-              });
-            },
+            sendEmail: (input) =>
+              sendPasswordResetEmail(input, originalImplementation.sendEmail),
           }),
         },
         override: {
@@ -202,25 +125,10 @@ export const initSupertokens = () => {
             return {
               ...originalImplementation,
               async createNewRecipeUser(input) {
-                const response =
-                  await originalImplementation.createNewRecipeUser(input);
-
-                if (response.status !== "OK") {
-                  return response;
-                }
-
-                await ensureExternalUserIdMapping(
-                  response.recipeUserId.getAsString(),
+                return createEmailPasswordUser(
+                  input,
+                  originalImplementation.createNewRecipeUser,
                 );
-
-                const updatedUser = await getUser(
-                  response.recipeUserId.getAsString(),
-                );
-
-                return {
-                  ...response,
-                  user: updatedUser ?? response.user,
-                };
               },
             };
           },
@@ -236,26 +144,10 @@ export const initSupertokens = () => {
                     true,
                   );
                 }
-
-                const response = await originalImplementation.signUpPOST(input);
-
-                if (response.status === "OK") {
-                  const email = getFormFieldValue(input.formFields, "email");
-                  const name = getFormFieldValue(input.formFields, "name");
-                  const userId = response.session.getUserId();
-
-                  if (email) {
-                    const { user, isNewUser } =
-                      await userService.upsertUserFromAuth({
-                        userId,
-                        email,
-                        name,
-                      });
-                    await EmailService.tagNewUserIfEnabled(user, isNewUser);
-                  }
-                }
-
-                return response;
+                return handleEmailPasswordSignUp(
+                  input,
+                  originalImplementation.signUpPOST,
+                );
               },
               async signInPOST(input) {
                 if (!originalImplementation.signInPOST) {
@@ -266,19 +158,10 @@ export const initSupertokens = () => {
                     true,
                   );
                 }
-
-                const response = await originalImplementation.signInPOST(input);
-
-                if (response.status === "OK") {
-                  const email = getFormFieldValue(input.formFields, "email");
-                  const userId = response.session.getUserId();
-
-                  if (email) {
-                    await userService.upsertUserFromAuth({ userId, email });
-                  }
-                }
-
-                return response;
+                return handleEmailPasswordSignIn(
+                  input,
+                  originalImplementation.signInPOST,
+                );
               },
             };
           },
@@ -299,26 +182,10 @@ export const initSupertokens = () => {
                     true,
                   );
                 }
-                const userId = zObjectId.parse(input.session.getUserId());
-
-                const userSessions = await Session.getAllSessionHandlesForUser(
-                  userId.toString(),
+                return handleSessionSignOut(
+                  input,
+                  originalImplementation.signOutPOST,
                 );
-
-                const lastActiveSession = userSessions.length < 2;
-
-                const res = await originalImplementation.signOutPOST(input);
-
-                await userMetadataService.updateUserMetadata({
-                  userId: userId.toString(),
-                  data: { sync: { incrementalGCalSync: "RESTART" } },
-                });
-
-                if (lastActiveSession) {
-                  await syncService.stopWatches(userId.toString());
-                }
-
-                return res;
               },
             };
           },
