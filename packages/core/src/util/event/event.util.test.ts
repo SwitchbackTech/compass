@@ -30,7 +30,7 @@ describe("categorizeEvents", () => {
 
 describe("diffRRuleOptions", () => {
   it("should return the differences between two rrule options", () => {
-    const until = dayjs();
+    const until = dayjs("2026-01-15T12:34:56Z");
     const untilRule = `UNTIL=${until.toRRuleDTSTARTString()}`;
     const rule = `RRULE:FREQ=DAILY;COUNT=10;BYDAY=MO,WE,FR;${untilRule}`;
     const rrule = rrulestr(rule);
