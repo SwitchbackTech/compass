@@ -239,6 +239,37 @@ describe("useGoogleAuth", () => {
         }),
       );
     });
+
+    it("treats popup-open failures as cancellation without auth error", () => {
+      let onErrorCallback: ((error: unknown) => void) | undefined;
+
+      mockUseGoogleLogin.mockImplementation(({ onError }) => {
+        onErrorCallback = onError;
+        return {
+          login: mockLogin,
+          loading: false,
+          data: null,
+        };
+      });
+
+      renderHook(() => useGoogleAuth());
+
+      expect(onErrorCallback).toBeDefined();
+
+      onErrorCallback?.(new Error("Failed to open popup window"));
+
+      expect(console.error).not.toHaveBeenCalled();
+      expect(mockDispatchFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "auth/resetAuth",
+        }),
+      );
+      expect(mockDispatchFn).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "auth/authError",
+        }),
+      );
+    });
   });
 
   describe("authentication failure handling", () => {
