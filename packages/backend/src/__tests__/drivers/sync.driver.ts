@@ -17,19 +17,18 @@ export class SyncDriver {
     const gCalendarId = defaultUser ? "test-calendar" : faker.string.uuid();
     const gcal = await getGcalClient(user._id.toString());
 
-    await Promise.all([
-      updateSync(Resource_Sync.CALENDAR, user._id.toString(), gCalendarId, {
-        nextSyncToken: faker.string.ulid(),
-      }),
-      updateSync(Resource_Sync.EVENTS, user._id.toString(), gCalendarId, {
-        nextSyncToken: faker.string.ulid(),
-      }),
-      syncService.startWatchingGcalResources(
-        user._id.toString(),
-        [{ gCalendarId }, { gCalendarId: Resource_Sync.CALENDAR }], // Watch all selected calendars and calendar list
-        gcal,
-      ),
-    ]);
+    // Avoid racing multiple upserts for the same user's sync document in tests.
+    await updateSync(Resource_Sync.CALENDAR, user._id.toString(), gCalendarId, {
+      nextSyncToken: faker.string.ulid(),
+    });
+    await updateSync(Resource_Sync.EVENTS, user._id.toString(), gCalendarId, {
+      nextSyncToken: faker.string.ulid(),
+    });
+    await syncService.startWatchingGcalResources(
+      user._id.toString(),
+      [{ gCalendarId }, { gCalendarId: Resource_Sync.CALENDAR }], // Watch all selected calendars and calendar list
+      gcal,
+    );
   }
 
   static async generateV0Data(
