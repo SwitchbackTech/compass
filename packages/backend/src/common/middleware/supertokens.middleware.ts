@@ -31,6 +31,7 @@ import {
   getFormFieldValue,
 } from "@backend/common/middleware/supertokens.middleware.util";
 import mongoService from "@backend/common/services/mongo.service";
+import EmailService from "@backend/email/email.service";
 import syncService from "@backend/sync/services/sync.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
@@ -244,11 +245,13 @@ export const initSupertokens = () => {
                   const userId = response.session.getUserId();
 
                   if (email) {
-                    await userService.upsertUserFromAuth({
-                      userId,
-                      email,
-                      name,
-                    });
+                    const { user, isNewUser } =
+                      await userService.upsertUserFromAuth({
+                        userId,
+                        email,
+                        name,
+                      });
+                    await EmailService.tagNewUserIfEnabled(user, isNewUser);
                   }
                 }
 
