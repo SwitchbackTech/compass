@@ -7,3 +7,4 @@ The principles that we believe in.
 - Remove more than you add
 - Prefer simple abstractions over complex ones
 - Prefer language built-ins over libraries (example: es6 > lodash)
+- Minimize dependencies

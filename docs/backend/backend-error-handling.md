@@ -1,6 +1,6 @@
-# Error Handling
+# Backend Error Handling
 
-## Error Handling Philosophy
+## Backend Error Handling Philosophy
 
 - **Keep descriptions user-friendly**: Don't include too many implementation details in the result string
 - **Use debug logs for technical details**: Instead of "Probably needs a new refresh token to obtain a new access token" in the error message, include that information in a debug log
