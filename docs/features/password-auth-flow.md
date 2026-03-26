@@ -9,7 +9,7 @@ This flow adds first-party auth on top of the existing Google OAuth setup:
 - sign up with email and password
 - sign in with email and password
 - forgot/reset password
-- account linking so Google and password auth for the same verified email resolve to the same Compass user
+- SuperTokens user-to-Compass-user mapping via Mongo `ObjectId` external ids
 
 Primary files:
 
@@ -29,11 +29,11 @@ Compass still treats the MongoDB `userId` as the canonical identity.
 
 SuperTokens is configured so that:
 
-- Google auth and email/password auth both create or attach to the same primary user when the email can be linked
 - password sign-up ensures there is an external user id mapping, and that external id is a Mongo `ObjectId` string
-- backend user upserts always write against that canonical Compass user id
+- backend user upserts always write against the session user id (`response.session.getUserId()`)
+- Google sign-in/up uses `google.googleId` lookup for existing Compass users before creating a new id
 
-The key consequence is that auth method changes should not fork a user into multiple Compass records.
+Important constraint: automatic account linking is currently disabled, so matching emails across Google and password auth are **not** auto-merged by middleware configuration.
 
 ## Web Entry Points
 
@@ -162,7 +162,9 @@ Important detail:
 
 That prevents the reset flow from breaking if the URL changes while the modal is open.
 
-On success, the modal returns to the login view.
+On success, the modal switches to `loginAfterReset`, which renders the login form and a success status message:
+
+- `"Password reset successful. Log in with your new password."`
 
 ## Backend Runtime Flow
 
@@ -179,11 +181,9 @@ On success, the modal returns to the login view.
 
 `AccountLinking.init()` is configured to:
 
-- decline automatic linking when the new account has no email
-- automatically link when an email exists
-- require verification before linking
+- always return `{ shouldAutomaticallyLink: false }`
 
-That means same-email Google and password accounts should collapse onto one canonical Compass user once SuperTokens has enough verified identity information to link safely.
+This means middleware-level automatic linking is disabled for all sign-in/up paths.
 
 ### Google sign-in/up
 
@@ -229,7 +229,7 @@ This is the step that makes the Compass user record line up with the SuperTokens
 - updates `lastLoggedInAt`
 - creates default priorities only for a new Compass user
 
-For a linked account, this writes to the existing Compass user instead of creating a duplicate record.
+For repeated auth on the same session user id, this writes to the existing Compass user instead of creating a duplicate record.
 
 ## Reset Password Delivery
 
@@ -238,6 +238,7 @@ Current behavior in `supertokens.middleware.ts`:
 - all environments rewrite the incoming SuperTokens reset link into Compass app URL shape
 - `test` environment logs the rewritten link and skips provider delivery
 - non-test environments pass the rewritten link to SuperTokens' original email sender (`originalImplementation.sendEmail`)
+- if the incoming link has no `token` query param, backend keeps the original link unchanged
 
 The rewritten link shape comes from `buildResetPasswordLink()` and looks like:
 
@@ -261,3 +262,4 @@ That lets password-auth users use Compass without blocking on Google connectivit
 
 - The rollout gate is not limited to `lastKnownEmail`; any `?auth=` URL currently enables the auth UI.
 - Reset password links always target the `/day` route and require a valid `FRONTEND_URL` in backend env.
+- With automatic account linking disabled, same-email Google and email/password identities are not merged automatically.
