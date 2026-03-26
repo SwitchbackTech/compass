@@ -86,11 +86,9 @@ Primary files:
 Variables used by CLI/build flows:
 
 - `BASEURL` (required for local CLI operations; returned as-is for local API base URL)
-- `FRONTEND_URL` (required; used by backend auth email flows — set to the public-facing frontend URL for this deployment)
-- `STAGING_WEB_URL` (optional; used to derive `https://<host>/api` for staging CLI runs)
-- `PROD_WEB_URL` (optional; used to derive `https://<host>/api` for production CLI runs)
+- `FRONTEND_URL` (required; used by backend auth email flows and CLI — set to the public-facing frontend URL for this deployment; CLI will prompt for a domain if this is localhost)
 
-If staging/production URL variables are not set, the CLI prompts for a VM domain and builds the API URL from that input.
+If `FRONTEND_URL` points to localhost, the CLI prompts for a VM domain and builds the API URL from that input.
 
 ## Web Environment Contract
 

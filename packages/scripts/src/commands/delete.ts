@@ -1,7 +1,6 @@
 import pkg from "inquirer";
 import open, { apps } from "open";
-import { CLI_ENV, ENVIRONMENT } from "@scripts/common/cli.constants";
-import { type Environment_Cli } from "@scripts/common/cli.types";
+import { CLI_ENV } from "@scripts/common/cli.constants";
 import { log } from "@scripts/common/cli.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { findCompassUsersBy } from "@backend/user/queries/user.queries";
@@ -34,30 +33,7 @@ const getBrowserApp = (): { name: string | readonly string[] } | undefined => {
   return { name: browserApp };
 };
 
-/**
- * Gets the appropriate cleanup URL based on NODE_ENV
- */
 const getCleanupUrl = (): string => {
-  const env = process.env["NODE_ENV"] as Environment_Cli;
-
-  if (env === ENVIRONMENT.PROD) {
-    if (!CLI_ENV.PROD_WEB_URL) {
-      throw new Error(
-        'Unable to determine cleanup URL. NODE_ENV="production" but PROD_WEB_URL is not set.',
-      );
-    }
-    return `${CLI_ENV.PROD_WEB_URL}/cleanup`;
-  }
-
-  if (env === ENVIRONMENT.STAG) {
-    if (!CLI_ENV.STAGING_WEB_URL) {
-      throw new Error(
-        'Unable to determine cleanup URL. NODE_ENV="staging" but STAGING_WEB_URL is not set.',
-      );
-    }
-    return `${CLI_ENV.STAGING_WEB_URL}/cleanup`;
-  }
-
   return `${CLI_ENV.FRONTEND_URL}/cleanup`;
 };
 
