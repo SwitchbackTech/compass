@@ -3,6 +3,7 @@ import SuperTokens from "supertokens-node";
 import AccountLinking from "supertokens-node/recipe/accountlinking";
 import Dashboard from "supertokens-node/recipe/dashboard";
 import EmailPassword from "supertokens-node/recipe/emailpassword";
+import EmailVerification from "supertokens-node/recipe/emailverification";
 import Session from "supertokens-node/recipe/session";
 import ThirdParty from "supertokens-node/recipe/thirdparty";
 import UserMetadata from "supertokens-node/recipe/usermetadata";
@@ -21,6 +22,7 @@ import {
   handleEmailPasswordSignUp,
   handleGoogleSignInUp,
   handleSessionSignOut,
+  sendEmailVerificationEmail,
   sendPasswordResetEmail,
 } from "@backend/common/middleware/supertokens.middleware.handlers";
 
@@ -40,8 +42,22 @@ export const initSupertokens = () => {
     framework: "express",
     recipeList: [
       AccountLinking.init({
-        shouldDoAutomaticAccountLinking: () => {
-          return Promise.resolve({ shouldAutomaticallyLink: false });
+        shouldDoAutomaticAccountLinking: (newAccountInfo, _user, session) => {
+          if (session) {
+            return Promise.resolve({
+              shouldAutomaticallyLink: true,
+              shouldRequireVerification: false,
+            });
+          }
+
+          if (!newAccountInfo.email) {
+            return Promise.resolve({ shouldAutomaticallyLink: false });
+          }
+
+          return Promise.resolve({
+            shouldAutomaticallyLink: true,
+            shouldRequireVerification: true,
+          });
         },
       }),
       // see added endpoints
@@ -74,7 +90,12 @@ export const initSupertokens = () => {
             return {
               ...originalImplementation,
               async manuallyCreateOrUpdateUser(input) {
-                return createGoogleUser(input);
+                return createGoogleUser(
+                  input,
+                  originalImplementation.manuallyCreateOrUpdateUser.bind(
+                    originalImplementation,
+                  ),
+                );
               },
             };
           },
@@ -175,6 +196,18 @@ export const initSupertokens = () => {
               },
             };
           },
+        },
+      }),
+      EmailVerification.init({
+        mode: "OPTIONAL",
+        emailDelivery: {
+          override: (originalImplementation) => ({
+            ...originalImplementation,
+            sendEmail: (input) =>
+              sendEmailVerificationEmail(input, (emailInput) =>
+                originalImplementation.sendEmail(emailInput),
+              ),
+          }),
         },
       }),
       Dashboard.init(),

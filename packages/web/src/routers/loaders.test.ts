@@ -46,4 +46,16 @@ describe("loadDayData", () => {
       `${ROOT_ROUTES.DAY}/${dateString}?auth=reset&token=abc`,
     );
   });
+
+  it("preserves verify auth query params when redirecting to the dated route", async () => {
+    const { dateString } = loadTodayData();
+    const response = await loadDayData(
+      createLoaderArgs("http://localhost/day?auth=verify&token=abc"),
+    );
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toBe(
+      `${ROOT_ROUTES.DAY}/${dateString}?auth=verify&token=abc`,
+    );
+  });
 });

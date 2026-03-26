@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
 import EmailPassword from "supertokens-web-js/recipe/emailpassword";
+import EmailVerification from "supertokens-web-js/recipe/emailverification";
 import { z } from "zod";
 import { useCompleteAuthentication } from "@web/auth/hooks/useCompleteAuthentication";
 import {
@@ -8,18 +10,17 @@ import {
   type ResetPasswordFormData,
   type SignUpFormData,
 } from "@web/auth/schemas/auth.schemas";
+import { toastDefaultOptions } from "@web/common/constants/toast.constants";
 import { type AuthView } from "./useAuthModal";
 
-const RESET_PASSWORD_QUERY_SCHEMA = z.object({
+const AUTH_TOKEN_QUERY_SCHEMA = z.object({
   token: z.string().min(1).optional(),
 });
 
-function getResetPasswordQueryParams(): z.infer<
-  typeof RESET_PASSWORD_QUERY_SCHEMA
-> {
+function getAuthTokenQueryParams(): z.infer<typeof AUTH_TOKEN_QUERY_SCHEMA> {
   if (typeof window === "undefined") return {};
   const searchParams = new URLSearchParams(window.location.search);
-  const parsed = RESET_PASSWORD_QUERY_SCHEMA.safeParse({
+  const parsed = AUTH_TOKEN_QUERY_SCHEMA.safeParse({
     token: searchParams.get("token") ?? undefined,
   });
   return parsed.success ? parsed.data : {};
@@ -40,7 +41,7 @@ function updateCurrentUrlSearchParams(
 interface UseAuthFormHandlersOptions {
   currentView: AuthView;
   closeModal: () => void;
-  resetPasswordToken?: string;
+  authToken?: string;
   setView: (view: AuthView) => void;
 }
 
@@ -51,25 +52,26 @@ export interface UseAuthFormHandlersResult {
   handleLogin: (data: LogInFormData) => Promise<void>;
   handleForgotPassword: (data: ForgotPasswordFormData) => Promise<void>;
   handleResetPassword: (data: ResetPasswordFormData) => Promise<void>;
+  handleVerifyEmail: () => Promise<void>;
 }
 
 export function useAuthFormHandlers({
   currentView,
   closeModal,
-  resetPasswordToken,
+  authToken,
   setView,
 }: UseAuthFormHandlersOptions): UseAuthFormHandlersResult {
   const completeAuthentication = useCompleteAuthentication();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const initialResetPasswordToken = useMemo(() => {
+  const initialAuthToken = useMemo(() => {
     const propToken = z
       .string()
       .min(1)
-      .safeParse(resetPasswordToken ?? "");
+      .safeParse(authToken ?? "");
     if (propToken.success) return propToken.data;
-    return getResetPasswordQueryParams().token;
-  }, [resetPasswordToken]);
+    return getAuthTokenQueryParams().token;
+  }, [authToken]);
 
   useEffect(() => {
     setSubmitError(null);
@@ -93,8 +95,30 @@ export function useAuthFormHandlers({
           case "OK":
             await completeAuthentication({
               email: response.user.emails[0] ?? data.email,
-              onComplete: closeModal,
             });
+
+            try {
+              const verificationResponse =
+                await EmailVerification.sendVerificationEmail();
+
+              if (verificationResponse.status === "OK") {
+                toast.success(
+                  "Check your inbox to verify your email.",
+                  toastDefaultOptions,
+                );
+              }
+            } catch (verificationError) {
+              console.error(
+                "Failed to send verification email after sign up:",
+                verificationError,
+              );
+              toast.error(
+                "Your account was created, but we could not send a verification email.",
+                toastDefaultOptions,
+              );
+            }
+
+            closeModal();
             return;
           case "FIELD_ERROR":
             setSubmitError(response.formFields[0]?.error ?? "Sign up failed");
@@ -193,7 +217,7 @@ export function useAuthFormHandlers({
       try {
         // `supertokens-web-js` reads the reset token from the URL query param.
         // We keep the first token we saw (from props or URL) so the flow still works even if the URL changes.
-        const token = initialResetPasswordToken;
+        const token = initialAuthToken;
 
         if (token) {
           updateCurrentUrlSearchParams((searchParams) => {
@@ -230,8 +254,45 @@ export function useAuthFormHandlers({
         setIsSubmitting(false);
       }
     },
-    [initialResetPasswordToken, setView],
+    [initialAuthToken, setView],
   );
+
+  const handleVerifyEmail = useCallback(async () => {
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      const token = initialAuthToken;
+
+      if (token) {
+        updateCurrentUrlSearchParams((searchParams) => {
+          searchParams.set("token", token);
+        });
+      }
+
+      const response = await EmailVerification.verifyEmail();
+
+      switch (response.status) {
+        case "OK":
+          updateCurrentUrlSearchParams((searchParams) => {
+            searchParams.delete("token");
+          });
+          setView("loginAfterVerify");
+          return;
+        case "EMAIL_VERIFICATION_INVALID_TOKEN_ERROR":
+          setSubmitError(
+            "This verification link is invalid or expired. Sign in to request a new one.",
+          );
+          return;
+      }
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : "Unable to verify email",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [initialAuthToken, setView]);
 
   return {
     isSubmitting,
@@ -240,5 +301,6 @@ export function useAuthFormHandlers({
     handleLogin,
     handleForgotPassword,
     handleResetPassword,
+    handleVerifyEmail,
   };
 }

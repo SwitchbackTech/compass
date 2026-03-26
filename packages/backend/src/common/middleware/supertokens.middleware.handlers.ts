@@ -1,9 +1,8 @@
-import { ObjectId } from "mongodb";
-import supertokens, { User } from "supertokens-node";
 import type {
   APIInterface as EmailPasswordAPIInterface,
   RecipeInterface as EmailPasswordRecipeInterface,
 } from "supertokens-node/recipe/emailpassword/types";
+import type { TypeEmailVerificationEmailDeliveryInput } from "supertokens-node/recipe/emailverification/types";
 import Session from "supertokens-node/recipe/session";
 import type { APIInterface as SessionAPIInterface } from "supertokens-node/recipe/session/types";
 import type {
@@ -18,12 +17,12 @@ import { ENV } from "@backend/common/constants/env.constants";
 import {
   type CreateGoogleSignInResponse,
   type ThirdPartySignInUpInput,
+  buildEmailVerificationLink,
   buildResetPasswordLink,
   createGoogleSignInSuccess,
   ensureExternalUserIdMapping,
   getFormFieldValue,
 } from "@backend/common/middleware/supertokens.middleware.util";
-import mongoService from "@backend/common/services/mongo.service";
 import EmailService from "@backend/email/email.service";
 import syncService from "@backend/sync/services/sync.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
@@ -31,13 +30,12 @@ import userService from "@backend/user/services/user.service";
 
 const logger = Logger("app:supertokens.middleware");
 
-type ManuallyCreateOrUpdateUserInput = Parameters<
-  ThirdPartyRecipeInterface["manuallyCreateOrUpdateUser"]
->[0];
-
 type ThirdPartySignInUpPostFn = NonNullable<
   ThirdPartyAPIInterface["signInUpPOST"]
 >;
+
+type CreateGoogleUserFn =
+  ThirdPartyRecipeInterface["manuallyCreateOrUpdateUser"];
 
 type CreateNewRecipeUserFn =
   EmailPasswordRecipeInterface["createNewRecipeUser"];
@@ -49,48 +47,20 @@ type SignInPOSTFn = NonNullable<EmailPasswordAPIInterface["signInPOST"]>;
 type SessionSignOutPOSTFn = NonNullable<SessionAPIInterface["signOutPOST"]>;
 
 export async function createGoogleUser(
-  input: ManuallyCreateOrUpdateUserInput,
+  input: Parameters<CreateGoogleUserFn>[0],
+  originalCreateGoogleUser: CreateGoogleUserFn,
 ): Promise<
   Awaited<ReturnType<ThirdPartyRecipeInterface["manuallyCreateOrUpdateUser"]>>
 > {
-  const user = await mongoService.user.findOne(
-    { "google.googleId": input.thirdPartyUserId },
-    { projection: { _id: 1, signedUpAt: 1, email: 1 } },
-  );
+  const response = await originalCreateGoogleUser(input);
 
-  const id = user?._id.toString() ?? new ObjectId().toString();
-  const timeJoined = user?.signedUpAt?.getTime() ?? Date.now();
-  const thirdParty = [
-    { id: input.thirdPartyId, userId: input.thirdPartyUserId },
-  ];
+  if (response.status !== "OK") {
+    return response;
+  }
 
-  return {
-    status: "OK",
-    createdNewRecipeUser: user === null,
-    recipeUserId: supertokens.convertToRecipeUserId(id),
-    user: new User({
-      emails: [user?.email ?? input.email],
-      id,
-      isPrimaryUser: false,
-      thirdParty,
-      timeJoined,
-      loginMethods: [
-        {
-          recipeId: "thirdparty",
-          recipeUserId: id,
-          tenantIds: [input.tenantId],
-          timeJoined,
-          verified: input.isVerified,
-          email: input.email,
-          thirdParty: thirdParty[0],
-          webauthn: { credentialIds: [] },
-        },
-      ],
-      phoneNumbers: [],
-      tenantIds: [input.tenantId],
-      webauthn: { credentialIds: [] },
-    }),
-  };
+  await ensureExternalUserIdMapping(response.recipeUserId.getAsString());
+
+  return response;
 }
 
 export async function handleGoogleSignInUp(
@@ -123,6 +93,27 @@ export async function sendPasswordResetEmail<
   }
 
   await originalSendEmail({ ...input, passwordResetLink: resetLink });
+}
+
+export async function sendEmailVerificationEmail(
+  input: TypeEmailVerificationEmailDeliveryInput,
+  originalSendEmail: (
+    input: TypeEmailVerificationEmailDeliveryInput,
+  ) => Promise<void>,
+): Promise<void> {
+  const verificationLink = buildEmailVerificationLink(
+    input.emailVerifyLink,
+    ENV.FRONTEND_URL,
+  );
+
+  if (ENV.NODE_ENV === NodeEnv.Test) {
+    logger.info(
+      `Email verification link for ${input.user.email}: ${verificationLink}`,
+    );
+    return;
+  }
+
+  await originalSendEmail({ ...input, emailVerifyLink: verificationLink });
 }
 
 export async function createEmailPasswordUser(

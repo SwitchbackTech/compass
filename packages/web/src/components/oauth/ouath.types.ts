@@ -3,6 +3,7 @@ import { type CodeResponse } from "@react-oauth/google";
 export interface SignInUpInput {
   thirdPartyId: string;
   clientType: "web";
+  shouldTryLinkingWithSessionUser?: boolean;
   redirectURIInfo: {
     redirectURIOnProviderDashboard: string;
     redirectURIQueryParams: Omit<
