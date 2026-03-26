@@ -82,7 +82,9 @@ export const initSupertokens = () => {
             return {
               ...originalImplementation,
               async signInUpPOST(input) {
-                if (!originalImplementation.signInUpPOST) {
+                const signInUpPOST = originalImplementation.signInUpPOST;
+
+                if (!signInUpPOST) {
                   throw new BaseError(
                     "signInUpPOST not implemented",
                     "signInUpPOST not implemented",
@@ -90,9 +92,10 @@ export const initSupertokens = () => {
                     true,
                   );
                 }
+
                 return handleGoogleSignInUp(
                   input,
-                  originalImplementation.signInUpPOST,
+                  signInUpPOST.bind(originalImplementation),
                 );
               },
             };
@@ -117,7 +120,9 @@ export const initSupertokens = () => {
           override: (originalImplementation) => ({
             ...originalImplementation,
             sendEmail: (input) =>
-              sendPasswordResetEmail(input, originalImplementation.sendEmail),
+              sendPasswordResetEmail(input, (emailInput) =>
+                originalImplementation.sendEmail(emailInput),
+              ),
           }),
         },
         override: {
@@ -125,9 +130,8 @@ export const initSupertokens = () => {
             return {
               ...originalImplementation,
               async createNewRecipeUser(input) {
-                return createEmailPasswordUser(
-                  input,
-                  originalImplementation.createNewRecipeUser,
+                return createEmailPasswordUser(input, (recipeInput) =>
+                  originalImplementation.createNewRecipeUser(recipeInput),
                 );
               },
             };
@@ -136,7 +140,9 @@ export const initSupertokens = () => {
             return {
               ...originalImplementation,
               async signUpPOST(input) {
-                if (!originalImplementation.signUpPOST) {
+                const signUpPOST = originalImplementation.signUpPOST;
+
+                if (!signUpPOST) {
                   throw new BaseError(
                     "signUpPOST not implemented",
                     "signUpPOST not implemented",
@@ -144,13 +150,16 @@ export const initSupertokens = () => {
                     true,
                   );
                 }
+
                 return handleEmailPasswordSignUp(
                   input,
-                  originalImplementation.signUpPOST,
+                  signUpPOST.bind(originalImplementation),
                 );
               },
               async signInPOST(input) {
-                if (!originalImplementation.signInPOST) {
+                const signInPOST = originalImplementation.signInPOST;
+
+                if (!signInPOST) {
                   throw new BaseError(
                     "signInPOST not implemented",
                     "signInPOST not implemented",
@@ -158,9 +167,10 @@ export const initSupertokens = () => {
                     true,
                   );
                 }
+
                 return handleEmailPasswordSignIn(
                   input,
-                  originalImplementation.signInPOST,
+                  signInPOST.bind(originalImplementation),
                 );
               },
             };
@@ -174,7 +184,9 @@ export const initSupertokens = () => {
             return {
               ...originalImplementation,
               async signOutPOST(input) {
-                if (!originalImplementation.signOutPOST) {
+                const signOutPOST = originalImplementation.signOutPOST;
+
+                if (!signOutPOST) {
                   throw new BaseError(
                     "signOutPOST not implemented",
                     "signOutPOST not implemented",
@@ -182,9 +194,10 @@ export const initSupertokens = () => {
                     true,
                   );
                 }
+
                 return handleSessionSignOut(
                   input,
-                  originalImplementation.signOutPOST,
+                  signOutPOST.bind(originalImplementation),
                 );
               },
             };

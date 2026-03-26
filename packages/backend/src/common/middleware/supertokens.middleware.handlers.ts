@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import supertokens, { User, getUser } from "supertokens-node";
+import supertokens, { User } from "supertokens-node";
 import type {
   APIInterface as EmailPasswordAPIInterface,
   RecipeInterface as EmailPasswordRecipeInterface,
@@ -137,9 +137,7 @@ export async function createEmailPasswordUser(
 
   await ensureExternalUserIdMapping(response.recipeUserId.getAsString());
 
-  const updatedUser = await getUser(response.recipeUserId.getAsString());
-
-  return { ...response, user: updatedUser ?? response.user };
+  return response;
 }
 
 export async function handleEmailPasswordSignUp(
