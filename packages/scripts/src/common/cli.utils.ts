@@ -49,10 +49,10 @@ export const getClientId = async (environment: Environment_Cli) => {
 };
 
 const getDomainAnswer = async () => {
-  const { hostname } = new URL(CLI_ENV.FRONTEND_URL);
+  const { hostname, host } = new URL(CLI_ENV.FRONTEND_URL);
 
   if (hostname !== "localhost") {
-    return hostname;
+    return host;
   }
 
   const q = `Enter the domain of the VM that will be used.
