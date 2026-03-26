@@ -44,7 +44,7 @@ describe("useGoogleLogin", () => {
     );
 
     await act(async () => {
-      await expect(result.current.login()).resolves.toBeUndefined();
+      await result.current.login();
     });
 
     expect(mockOnStart).toHaveBeenCalledTimes(1);
@@ -69,7 +69,7 @@ describe("useGoogleLogin", () => {
     );
 
     await act(async () => {
-      await expect(result.current.login()).resolves.toBeUndefined();
+      await result.current.login();
     });
 
     expect(mockOnError).toHaveBeenCalledWith(unexpectedError);
