@@ -102,7 +102,16 @@ export const useGoogleLogin = ({
       setData(null);
       setLoading(true);
 
-      return login();
+      try {
+        return login();
+      } catch (error) {
+        setLoading(false);
+        if (!isGooglePopupClosedError(error)) {
+          console.error(error);
+        }
+        onError?.(error);
+        return;
+      }
     }, [login, onStart, setData, setLoading]),
     data,
     loading,

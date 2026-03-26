@@ -5,9 +5,21 @@ describe("isGooglePopupClosedError", () => {
     expect(isGooglePopupClosedError({ type: "popup_closed" })).toBe(true);
   });
 
+  it("returns true for non-oauth popup_failed_to_open type", () => {
+    expect(isGooglePopupClosedError({ type: "popup_failed_to_open" })).toBe(
+      true,
+    );
+  });
+
   it("returns true for popup-closed error messages", () => {
     expect(
       isGooglePopupClosedError({ message: "Popup window closed by user" }),
+    ).toBe(true);
+  });
+
+  it("returns true for popup-open failure messages", () => {
+    expect(
+      isGooglePopupClosedError({ message: "Failed to open popup window" }),
     ).toBe(true);
   });
 
