@@ -123,7 +123,9 @@ Runtime constraints from recipe overrides:
 
 - successful password `signUpPOST` and `signInPOST` upsert the Compass user via `userService.upsertUserFromAuth(...)`
 - password `createNewRecipeUser` ensures SuperTokens external user-id mapping exists and points to a Mongo `ObjectId` string
-- password-reset emails are currently logged (dev/test) or logged as disabled (non-dev), not delivered by an external provider
+- password-reset links are rewritten to Compass app URLs before delivery
+- in `test`, reset links are logged instead of sent
+- outside `test`, delivery goes through SuperTokens email delivery
 
 ---
 

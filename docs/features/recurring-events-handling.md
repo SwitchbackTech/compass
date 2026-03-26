@@ -82,6 +82,21 @@ Current split rule:
 
 This keeps the recurrence interpretation in the planner and the DB mutations in the executor.
 
+## Google Series Splits
+
+Google "this and following" edits and deletes can split a series into multiple changes across incremental sync payloads.
+
+Treat these as independent updates derived from event shape, not as one ordered bundle of related payloads.
+
+Useful heuristics during Google sync:
+
+- base event with a shortened `UNTIL` usually means the original series was truncated
+- a new recurring base may represent the follow-on series
+- cancelled instances should be handled as instance-level deletions
+- payload ordering is not reliable enough to infer user intent by itself
+
+This is why Compass sync logic keys off persisted state plus event properties instead of trying to reconstruct a single high-level Google UI action.
+
 ## Someday And Provider Semantics
 
 `isSomeday` changes who is treated as the provider of record:

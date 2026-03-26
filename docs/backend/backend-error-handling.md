@@ -1,47 +1,50 @@
 # Backend Error Handling
 
-## Backend Error Handling Philosophy
+Compass uses typed operational errors plus a centralized Express error handler.
 
-- **Keep descriptions user-friendly**: Don't include too many implementation details in the result string
-- **Use debug logs for technical details**: Instead of "Probably needs a new refresh token to obtain a new access token" in the error message, include that information in a debug log
-- **Be specific but concise**: The description should help the client understand what happened and what they might need to do
-- **Follow existing patterns**: Look at existing error constants to understand the naming and organization
+## Source Files
 
-## Custom Error Handling Pattern: Backend
+- `packages/backend/src/common/errors/handlers/error.handler.ts`
+- `packages/backend/src/common/errors/handlers/error.express.handler.ts`
+- feature error metadata files under `packages/backend/src/common/errors/**`
+- `packages/core/src/errors/errors.base.ts`
 
-Compass uses a centralized error handling system to ensure consistent error responses and easier debugging.
+## Main Pattern
 
-### How to Use the Error Handler
+Preferred backend pattern:
 
-Rather than throwing a new `Error` or `BaseError` directly, you should:
+1. define reusable error metadata in the relevant feature file
+2. create a `BaseError` through `error(...)`
+3. let controller/service code throw that error
+4. let centralized Express handling turn it into the client payload
 
-1. **Define the error in `error.constants`** for your scenario (if it doesn't already exist)
-2. **Throw it using the `error()` function** with the appropriate error constant and description
+Example:
 
-### Example
+```ts
+import { AuthError } from "@backend/common/errors/auth/auth.errors";
+import { error } from "@backend/common/errors/handlers/error.handler";
 
-```typescript
-import { AuthError } from "./error.constants";
-import { error } from "./error.utils";
-
-// Throw an error
-throw error(AuthError.YourNewAuthError, "Access token not retrieved");
+throw error(AuthError.MissingRefreshToken, "Google connection required");
 ```
 
-### Error Function Parameters
+## Client Payload Rules
 
-The `error()` function takes two parameters:
+For `BaseError`, backend responses are intentionally small:
 
-1. **Error constant**: The error type from `error.constants` (e.g., `AuthError.YourNewAuthError`)
-2. **Description**: A message explaining what went wrong or what the result would be if the error didn't occur
+- `result`: short result string
+- `message`: safe user-facing description
 
-The `description` property in the error provides more information about the error that can be used by the client to determine next steps.
+Internal details such as stack traces and operational flags stay server-side.
 
-### Benefits
+## Unexpected Error Rules
 
-This approach makes it easier to:
+- non-`BaseError` values are routed through `handleExpressError(...)`
+- Google API errors get special handling for revoked tokens, invalid values, and full-sync recovery
+- programmer errors can terminate the process after logging
 
-- **Test**: Errors are typed and predictable
-- **Typecheck**: TypeScript can catch error handling issues
-- **Prevent bugs**: Centralized error handling reduces inconsistencies
-- **Debug**: All errors follow the same structure
+## Guidance
+
+- Keep `result` short and stable.
+- Put technical detail in logs, not in the client payload.
+- Prefer reusing existing feature error metadata before inventing new names.
+- If the error should trigger special auth/sync behavior, verify both API handling and websocket side effects.

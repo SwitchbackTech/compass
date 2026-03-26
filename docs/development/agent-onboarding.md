@@ -1,23 +1,23 @@
 # Agent Onboarding
 
-This is the fastest accurate path into the Compass codebase for AI agents.
+Fastest accurate path into the Compass repo for internal engineers and agents.
 
-## Start Here
+## Read In This Order
 
-Read these in order:
-
-1. `AGENTS.md` for repo rules, test commands, and naming conventions.
-2. `docs/repo-architecture.md` for package boundaries and startup paths.
-3. `docs/feature-file-map.md` for "where do I edit?" lookups.
-4. `docs/common-change-recipes.md` for safe implementation patterns.
+1. [AGENTS.md](../../AGENTS.md) for repo rules, naming, and command defaults.
+2. [Docs Index](../README.md) for topic navigation.
+3. [Repo Architecture](../architecture/repo-architecture.md) for package boundaries and startup paths.
+4. [Feature File Map](./feature-file-map.md) for "where do I edit?" lookups.
+5. [Common Change Recipes](./common-change-recipes.md) for safe implementation patterns.
 
 ## Current Ground Truth
 
-- The monorepo has four active packages: `packages/web`, `packages/backend`, `packages/core`, and `packages/scripts`.
-- The frontend can run standalone with `yarn dev:web`.
-- The backend requires valid env configuration and external services.
-- Shared domain types and validation live primarily in `packages/core/src`.
-- Event behavior spans all three runtime packages: `core`, `web`, and `backend`.
+- Active packages are `packages/web`, `packages/backend`, `packages/core`, and `packages/scripts`.
+- `yarn dev:web` works without backend services.
+- Backend, sync, and auth work require valid env plus external services.
+- Shared domain contracts live mostly in `packages/core/src`.
+- Event behavior crosses `core`, `web`, and `backend`.
+- Use Tailwind for new styles (we're moving away from `styled-components`).
 
 ## First Commands To Run
 
@@ -47,34 +47,33 @@ sed -n '1,260p' packages/core/src/types/event.types.ts
 - Shared event types: `packages/core/src/types/event.types.ts`
 - Shared websocket constants: `packages/core/src/constants/websocket.constants.ts`
 
-## Working Rules That Matter In Practice
+## If You Are Touching...
 
-- Use module aliases instead of deep relative imports.
-- Prefer adding or updating Zod schemas next to shared types in `core`.
-- For web changes, test from user behavior, not implementation details.
-- For backend routes, follow `routes.config -> controller -> service -> query` flow.
-- For event changes, inspect both sync directions before editing only one side.
-- Be careful with authenticated vs unauthenticated behavior; Compass supports both local-only and remote-backed flows.
+- Auth or session behavior:
+  [Frontend Runtime Flow](../frontend/frontend-runtime-flow.md),
+  [Password Auth Flow](../features/password-auth-flow.md),
+  [Env And Dev Modes](./env-and-dev-modes.md)
+- Backend endpoints:
+  [Backend Request Flow](../backend/backend-request-flow.md),
+  [API Documentation](../backend/api-documentation.md)
+- Google sync or websocket behavior:
+  [Google Sync And Websocket Flow](../features/google-sync-and-websocket-flow.md)
+- Local persistence:
+  [Offline Storage And Migrations](../features/offline-storage-and-migrations.md)
+- Event or task shape:
+  [Event And Task Domain Model](../architecture/event-and-task-domain-model.md),
+  [Recurrence Handling](../features/recurring-events-handling.md)
+- Shared schemas:
+  [Types And Validation](./types-and-validation.md)
 
 ## Known Friction Points
 
-- Web event state is split between Redux slices/sagas and an Elf event store.
-- Event recurrence rules and someday behavior have several transition paths.
+- Web event state is split across Redux, redux-saga, Elf stores, and IndexedDB-backed repositories.
+- Recurrence and someday transitions have several planner paths.
 - IndexedDB initialization and migrations happen before the app fully boots.
-- Once a user has authenticated, event repository selection intentionally prefers remote access even if the current session is gone.
-
-## If You Are Touching...
-
-- Auth or session behavior: read `docs/frontend-runtime-flow.md`, `docs/password-auth-flow.md`, and `docs/env-and-dev-modes.md`.
-- Backend endpoints: read `docs/backend-request-flow.md`.
-- Google sync or websocket behavior: read `docs/google-sync-and-websocket-flow.md`.
-- Local persistence: read `docs/offline-storage-and-migrations.md`.
-- Event or task shape: read `docs/event-and-task-domain-model.md`.
-- Shared schemas: read `docs/types-and-validation.md`.
+- Once a user has authenticated, repository selection prefers remote access unless Google is explicitly in a revoked state.
 
 ## Validation Defaults
-
-Run the smallest relevant checks first:
 
 - Core-only changes: `yarn test:core`
 - Web-only changes: `yarn test:web`

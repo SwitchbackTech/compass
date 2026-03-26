@@ -22,12 +22,12 @@ Definition of terms used in the source code and documentation.
 
 **Calendar List**: Also known as sub-calendars. A calendar list is a collection of calendars. In Google Calendar, users can have multiple calendars (e.g., "Work", "Personal", "Holidays").
 
-**Calendar View**: A calendar view is a way to view a calendar. Compass supports:
+**Calendar View**: A calendar view is a way to view a calendar. Compass currently centers on:
 
 - Day view
 - Week view
-- Month view
 - Now mode (focus on current task)
+- sidebar month widget / someday-month workflows
 
 **Primary Calendar**: The main calendar associated with a user's Google account. Compass currently syncs only the primary calendar.
 

@@ -1,6 +1,6 @@
 # Engineering Principles
 
-The principles that we believe in.
+These principles mirror the repo guidance in [AGENTS.md](../AGENTS.md).
 
 ## As simple as possible
 

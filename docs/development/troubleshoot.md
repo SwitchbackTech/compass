@@ -35,7 +35,7 @@ When you encounter a mismatch user id, the user in your mongo collection is not 
 yarn cli delete -u <email>
 ```
 
-See the [CLI guide](./cli.md#cleaning-user-data) for more details on deleting user data.
+See [CLI And Maintenance Commands](./cli-and-maintenance-commands.md) for the current delete flow.
 
 ### Invalid domain name
 

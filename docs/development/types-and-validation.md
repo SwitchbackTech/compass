@@ -63,7 +63,7 @@ The codebase currently uses both:
 - `zod/v4`
 - `zod/v4-mini`
 
-Be consistent with nearby code when editing, especially inside `core` types.
+Be consistent with nearby code when editing. Do not assume the repo is on a single Zod import style yet.
 
 ## When To Put A Type In `core`
 
