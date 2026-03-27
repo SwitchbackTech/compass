@@ -74,6 +74,12 @@ const handleSessionMissing = () => {
 };
 
 async function checkIfSessionExists(): Promise<boolean> {
+  // Skip real session check in e2e tests — tests control auth state via Redux dispatch.
+  // Running SuperTokens session checks races against those dispatches and resets state.
+  if (typeof window !== "undefined" && window.__COMPASS_E2E_TEST__) {
+    return false;
+  }
+
   if (isCheckingSession) return false;
 
   isCheckingSession = true;
@@ -138,8 +144,8 @@ export function SessionProvider({ children }: PropsWithChildren<{}>) {
 
   // Expose test hooks for e2e testing
   useEffect(() => {
-    if (typeof window !== "undefined" && (window as any).__COMPASS_E2E_TEST__) {
-      (window as any).__COMPASS_TEST_HOOKS__ = {
+    if (typeof window !== "undefined" && window.__COMPASS_E2E_TEST__) {
+      window.__COMPASS_E2E_HOOKS__ = {
         setAuthenticated: (value: boolean) => authenticated$.next(value),
       };
     }

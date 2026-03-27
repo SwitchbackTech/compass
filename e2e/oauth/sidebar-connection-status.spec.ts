@@ -70,7 +70,7 @@ test.describe("Sidebar Connection Status", () => {
 
     // Force the loading state by dispatching both clear and setLoading
     await page.evaluate(() => {
-      const store = (window as any).__COMPASS_STORE__;
+      const store = window.__COMPASS_E2E_STORE__;
       if (!store) return;
       // Clear any existing metadata
       store.dispatch({ type: "userMetadata/clear" });
@@ -80,10 +80,9 @@ test.describe("Sidebar Connection Status", () => {
 
     // Wait for state to be in loading
     await page.waitForFunction(
-      () => {
-        const store = (window as any).__COMPASS_STORE__;
-        return store?.getState()?.userMetadata?.status === "loading";
-      },
+      () =>
+        window.__COMPASS_E2E_STORE__?.getState()?.userMetadata?.status ===
+        "loading",
       { timeout: 5000 },
     );
 

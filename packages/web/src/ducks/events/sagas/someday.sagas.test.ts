@@ -1,4 +1,5 @@
 import { type AxiosResponse } from "axios";
+import { type AnyAction } from "redux";
 import { runSaga } from "redux-saga";
 import { configureStore } from "@reduxjs/toolkit";
 import { Origin, Priorities } from "@core/constants/core.constants";
@@ -354,7 +355,7 @@ describe("deleteSomedayEvent saga", () => {
             error: null,
             reason: null,
           },
-        },
+        } as unknown as RootState["events"],
       }),
       middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
@@ -375,7 +376,7 @@ describe("deleteSomedayEvent saga", () => {
     await runSaga(
       {
         dispatch: (action) => {
-          store.dispatch(action);
+          store.dispatch(action as AnyAction);
         },
         getState: () => store.getState(),
       },
@@ -386,5 +387,31 @@ describe("deleteSomedayEvent saga", () => {
     const state = store.getState() as RootState;
     expect(state.events.entities.value?.[eventId]).toBeDefined();
     expect(state.events.getSomedayEvents.value?.data).toContain(eventId);
+  });
+
+  it("removes event entity and someday list ID on successful delete", async () => {
+    const eventId = "delete-fail-evt";
+
+    // Override to success (beforeEach sets up rejection by default)
+    getEventRepositorySpy.mockReturnValue({
+      create: jest.fn(),
+      get: jest.fn(),
+      edit: jest.fn(),
+      delete: jest.fn().mockResolvedValue(undefined),
+      reorder: jest.fn(),
+    } as unknown as EventRepository);
+
+    await runSaga(
+      {
+        dispatch: (action) => store.dispatch(action as AnyAction),
+        getState: () => store.getState(),
+      },
+      deleteSomedayEvent,
+      getSomedayEventsSlice.actions.delete({ _id: eventId }),
+    ).toPromise();
+
+    const state = store.getState() as RootState;
+    expect(state.events.entities.value?.[eventId]).toBeUndefined();
+    expect(state.events.getSomedayEvents.value?.data).not.toContain(eventId);
   });
 });
