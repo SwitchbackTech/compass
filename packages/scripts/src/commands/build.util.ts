@@ -67,24 +67,22 @@ export const installDependencies = () => {
 
   // Use npm for production install (more reliable across yarn versions)
   // --loglevel=error suppresses deprecation warnings from transitive dependencies
-  shell.exec(
+  const result = shell.exec(
     "npm install --omit=dev --ignore-scripts --loglevel=error",
-    function (code: number) {
-      if (code !== 0) {
-        log.error("Exiting cuz error during compiliation");
-        process.exit(code);
-      }
+  );
+  if (result.code !== 0) {
+    log.error("Exiting due to error during dependency installation");
+    process.exit(result.code);
+  }
 
-      log.success(`Done building node packages.`);
-      log.tip(`
+  log.success(`Done building node packages.`);
+  log.tip(`
     Now you'll probably want to:
       - zip the build/node dir
       - copy it to your prod server
       - unzip it
       - run it`);
-      process.exit(0);
-    },
-  );
+  process.exit(0);
 };
 
 export const removeOldBuildFor = (pckg: string) => {
