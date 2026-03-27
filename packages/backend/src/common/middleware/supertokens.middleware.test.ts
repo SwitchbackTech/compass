@@ -492,7 +492,13 @@ describe("supertokens.middleware", () => {
       ]);
 
       const originalImplementation = {
-        signOutPOST: jest.fn().mockResolvedValue({ res: "ok" }),
+        marker: "ok",
+        signOutPOST: jest.fn(function (
+          this: { marker: string },
+          _input: unknown,
+        ) {
+          return Promise.resolve({ res: this.marker });
+        }),
       };
 
       (userService.handleLogoutCleanup as jest.Mock).mockResolvedValue(

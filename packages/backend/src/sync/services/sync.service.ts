@@ -702,14 +702,15 @@ class SyncService {
     quotaUser?: string,
     session?: ClientSession,
   ): Promise<Result_Watch_Stop> => {
-    logger.debug(`Stopping all gcal event watches for user: ${user}`);
-
     const prepared = await this.prepareStopWatches(user, gcal, session);
 
     if (prepared.watches.length === 0) {
       return [];
     }
 
+    logger.debug(
+      `Stopping ${prepared.watches.length} gcal event watches for user: ${user}`,
+    );
     const result = await Promise.all(
       prepared.watches.map(async ({ _id, resourceId }) =>
         this.stopWatch(

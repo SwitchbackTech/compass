@@ -207,9 +207,10 @@ export const initSupertokens = () => {
                   );
                 }
 
-                return handleSessionSignOut(input, async (signOutInput) =>
-                  signOutPOST(signOutInput),
-                );
+                const invokeSignOutPOST: typeof signOutPOST = (signOutInput) =>
+                  signOutPOST.call(originalImplementation, signOutInput);
+
+                return handleSessionSignOut(input, invokeSignOutPOST);
               },
             };
           },
