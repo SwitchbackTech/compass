@@ -628,7 +628,7 @@ class SyncService {
   ) => {
     return Promise.all(
       watchParams.map(async (params) => {
-        if (params.gCalendarId === "calendarlist") {
+        if (params.gCalendarId === (Resource_Sync.CALENDAR as string)) {
           return this.startWatchingGcalCalendars(userId, params, gcal);
         }
 
