@@ -9,8 +9,7 @@ This flow adds first-party auth on top of the existing Google OAuth setup:
 - sign up with email and password
 - sign in with email and password
 - forgot/reset password
-- email verification
-- account linking so Google and password auth for the same verified email resolve to the same Compass user
+- account linking for explicit in-session Google connect from an authenticated password session
 - SuperTokens user-to-Compass-user mapping via Mongo `ObjectId` external ids
 
 Primary files:
@@ -35,7 +34,7 @@ SuperTokens is configured so that:
 - backend user upserts always write against the session user id (`response.session.getUserId()`)
 - Google sign-in/up uses `google.googleId` lookup for existing Compass users before creating a new id
 
-Important constraint: automatic account linking is currently disabled, so matching emails across Google and password auth are **not** auto-merged by middleware configuration.
+Important constraint: account linking is only enabled when an active session exists. Logged-out sign-in/up paths do not automatically merge same-email Google and password identities.
 
 ## Web Entry Points
 
@@ -50,7 +49,6 @@ Supported URL entry points:
 - `?auth=signup`
 - `?auth=forgot`
 - `?auth=reset&token=...`
-- `?auth=verify&token=...`
 
 The temporary feature gate currently comes from `useAuthFeatureFlag()`:
 
@@ -91,6 +89,9 @@ Files:
 - `EmailVerification`
 - `Session`
 
+`EmailVerification` is currently initialized on the web client, but there is no
+first-class `?auth=verify` modal flow in the auth UI.
+
 At runtime it:
 
 - checks whether a session already exists
@@ -124,7 +125,6 @@ This keeps Google sign-in and password sign-in aligned after the backend session
 - `signUp`
 - `forgotPassword`
 - `resetPassword`
-- `verifyEmail`
 
 `useAuthFormHandlers.ts` owns the actual submits.
 
@@ -137,12 +137,6 @@ This keeps Google sign-in and password sign-in aligned after the backend session
 - `password`
 
 On success it calls `completeAuthentication()` with the resolved email and closes the modal.
-
-After the session is created, the web client immediately calls
-`EmailVerification.sendVerificationEmail()`.
-
-That keeps signup usable without blocking the first session, while still making
-same-email Google linking safe once the email is verified.
 
 ### Log in
 
@@ -173,26 +167,10 @@ Important detail:
 
 That prevents the reset flow from breaking if the URL changes while the modal is open.
 
-On success, the modal switches to `loginAfterReset`, which renders the login form and a success status message:
+On success, the modal switches to `loginAfterReset`, which renders the login
+form and a success status message:
 
 - `"Password reset successful. Log in with your new password."`
-
-### Verify email
-
-Verification starts from a link shaped like:
-
-- `/day?auth=verify&token=...`
-
-It uses the same token-preservation pattern as reset password:
-
-- `useAuthUrlParam()` opens the modal from the query param
-- `AuthModal` captures the first verification token it sees
-- `handleVerifyEmail()` restores that token into the URL before calling
-  `EmailVerification.verifyEmail()`
-
-On success, the modal returns to the login view with a success state.
-On invalid or expired tokens, the modal shows retry guidance instead of leaving
-the user stuck on a blank or broken state.
 
 ## Backend Runtime Flow
 
@@ -201,20 +179,18 @@ the user stuck on a blank or broken state.
 - `AccountLinking`
 - `ThirdParty`
 - `EmailPassword`
-- `EmailVerification`
 - `Dashboard`
 - `Session`
 - `UserMetadata`
 
 ### Account linking
 
-`AccountLinking.init()` is configured to:
+`AccountLinking.init()` only enables automatic linking when an active session is already present:
 
-- decline automatic linking when the new account has no email
-- automatically link verified same-email accounts when there is no active session
-- allow linking without email verification when the user is already authenticated in-session
+- with an active session, linking is allowed (`shouldAutomaticallyLink: true`) and does not require extra verification (`shouldRequireVerification: false`)
+- without an active session, automatic linking is disabled (`shouldAutomaticallyLink: false`)
 
-This means middleware-level automatic linking is disabled for all sign-in/up paths.
+In practice, this supports the explicit in-session "Connect Google Calendar" flow, while logged-out auth flows do not auto-merge identities by email.
 
 ### Google sign-in/up
 
@@ -272,20 +248,19 @@ For repeated auth on the same session user id, this writes to the existing Compa
 
 Current behavior in `supertokens.middleware.ts`:
 
-- all environments rewrite the incoming SuperTokens reset link into Compass app URL shape
-- all environments rewrite the incoming SuperTokens verification link into Compass app URL shape
-- `test` environment logs the rewritten link and skips provider delivery
+- all environments rewrite incoming SuperTokens password-reset links into Compass app URL shape
+- `test` environment logs the rewritten reset link and skips provider delivery
 - non-test environments pass the rewritten link to SuperTokens' original email sender (`originalImplementation.sendEmail`)
 - if the incoming link has no `token` query param, backend keeps the original link unchanged
 
-The rewritten link shape comes from `buildResetPasswordLink()` and
-`buildEmailVerificationLink()`.
+The rewritten reset link shape comes from `buildResetPasswordLink()`.
 
 The host/origin portion is taken from backend env (`FRONTEND_URL`), and the
 route is always `/day`.
 
-- Reset: `http://localhost:9080/day?auth=reset&token=...`
-- Verify: `http://localhost:9080/day?auth=verify&token=...`
+- Reset: `http://[REDACTED]/day?auth=reset&token=...`
+
+Email verification links are not currently rewritten into `?auth=verify` by backend middleware.
 
 ## Event And Sync Behavior After Password Auth
 
@@ -313,4 +288,5 @@ events stranded outside Google Calendar.
 
 - The rollout gate is not limited to `lastKnownEmail`; any `?auth=` URL currently enables the auth UI.
 - Reset password links always target the `/day` route and require a valid `FRONTEND_URL` in backend env.
-- With automatic account linking disabled, same-email Google and email/password identities are not merged automatically.
+- Automatic account linking is only enabled when an active session exists. Logged-out same-email Google/password identities are not auto-merged.
+- Dated-route redirects preserve existing query params (including `auth=verify`), but `useAuthUrlParam()` only handles `login`, `signup`, `forgot`, and `reset`.

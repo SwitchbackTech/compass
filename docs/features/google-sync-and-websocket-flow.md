@@ -211,6 +211,29 @@ The backend determines auth mode based on server-side state, and the client only
 
 Note: Frontend reconnect intent is no longer used for routing. The server is the source of truth for auth mode selection.
 
+### Connect Google Later (After Password-Only Usage)
+
+When a user authenticates with email/password first and connects Google later
+from an existing session:
+
+1. the web client sends Google OAuth with
+   `shouldTryLinkingWithSessionUser: true` (explicit in-session linking intent)
+2. `AccountLinking` allows linking because a session exists
+3. backend `googleSignup()` attaches Google credentials to the existing Compass user
+4. `syncCompassEventsToGoogle(userId)` backfills eligible Compass-only base events
+   that do not have `gEventId` yet
+5. for recurring events, the same backfill pass updates instance provider data so
+   recurrence instances map to the new Google base event id
+6. background import/watch sync is then restarted
+
+Operational constraints:
+
+- backfill only includes non-someday base events without existing `gEventId`
+- each backfilled event is written to Google first, then Compass is updated with
+  returned provider ids
+- restart still follows the same metadata/socket lifecycle (`IMPORT_GCAL_START`,
+  metadata transitions, `IMPORT_GCAL_END`)
+
 Primary files:
 
 - `packages/backend/src/common/middleware/supertokens.middleware.ts`
