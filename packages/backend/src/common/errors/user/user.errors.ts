@@ -2,6 +2,7 @@ import { Status } from "@core/errors/status.codes";
 import { type ErrorMetadata } from "@backend/common/types/error.types";
 
 interface UserErrors {
+  DeleteCleanupFailed: ErrorMetadata;
   InvalidValue: ErrorMetadata;
   MissingGoogleRefreshToken: ErrorMetadata;
   MissingUserIdField: ErrorMetadata;
@@ -9,6 +10,11 @@ interface UserErrors {
 }
 
 export const UserError: UserErrors = {
+  DeleteCleanupFailed: {
+    description: "Failed to fully delete the user's auth state",
+    status: Status.INTERNAL_SERVER,
+    isOperational: true,
+  },
   InvalidValue: {
     description: "User has an invalid value",
     status: Status.BAD_REQUEST,

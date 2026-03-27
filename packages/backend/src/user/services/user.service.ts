@@ -15,10 +15,10 @@ import {
 import { shouldImportGCal } from "@core/util/event/event.util";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
+import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
-import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
@@ -162,9 +162,11 @@ class UserService {
   ): Promise<Summary_Delete> => {
     const _id = zObjectId.parse(userId);
     const summary: Summary_Delete = {};
+    const authCleanupTarget =
+      await supertokensUserCleanupService.resolveByExternalUserId(userId);
     const session = await mongoService.startSession();
 
-    const result = await session.withTransaction(async (session) => {
+    await session.withTransaction(async (session) => {
       const user = await mongoService.user.findOne({ _id }, { session });
 
       if (!user) {
@@ -206,27 +208,21 @@ class UserService {
         summary.syncs += staleSyncs.deletedCount;
       }
 
-      // revoke all sessions
-      initSupertokens();
-      const { sessionsRevoked } = await compassAuthService
-        .revokeSessionsByUser(userId)
-        .catch((err) => {
-          logger.error(
-            `Failed to revoke sessions for user: ${userId} during data deletion`,
-            err,
-          );
-          return { sessionsRevoked: 0 };
-        });
-      summary.sessions = sessionsRevoked;
-
       // delete user
       const userDel = await mongoService.user.deleteOne({ _id }, { session });
       summary.user = userDel.deletedCount;
-
-      return summary;
     });
 
-    return result;
+    const { sessionsRevoked } =
+      await compassAuthService.revokeSessionsByUser(userId);
+    summary.sessions = sessionsRevoked;
+
+    const authSummary =
+      await supertokensUserCleanupService.cleanupResolvedTarget(
+        authCleanupTarget,
+      );
+
+    return { ...summary, ...authSummary };
   };
 
   initUserData = async (
