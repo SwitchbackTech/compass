@@ -10,8 +10,8 @@ export enum Status {
   BAD_REQUEST = 400,
   UNAUTHORIZED = 401,
   FORBIDDEN = 403,
-  CONFLICT = 409,
   NOT_FOUND = 404,
+  CONFLICT = 409,
   GONE = 410,
 
   /* 5xx - Server Error */

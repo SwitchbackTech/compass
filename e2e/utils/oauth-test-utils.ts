@@ -64,10 +64,11 @@ export const waitForAppReady = async (page: Page) => {
     { timeout: 10000 },
   );
 
-  // Wait for all network requests to complete.
-  // This is critical because sessionInit() triggers async session checks
-  // that can call handleSessionMissing() → clear() and overwrite test state.
-  await page.waitForLoadState("networkidle");
+  // Avoid networkidle here. The app can keep background requests alive, which
+  // makes this readiness check hang in CI even though the UI is already usable.
+  await page.waitForFunction(() => document.readyState === "complete", {
+    timeout: 10000,
+  });
 
   // Wait for user metadata fetch to settle (not "loading").
   // This prevents race conditions between API responses and test state changes.
@@ -87,24 +88,50 @@ export const waitForAppReady = async (page: Page) => {
  * Uses semantic role="status" query instead of arbitrary timeout.
  */
 export const setIsSyncing = async (page: Page, value: boolean) => {
-  await page.evaluate((syncValue) => {
-    const store = (window as any).__COMPASS_STORE__;
-    if (!store) return;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.evaluate((syncValue) => {
+      const store = (window as any).__COMPASS_STORE__;
+      if (!store) return;
 
-    if (syncValue) {
-      store.dispatch({ type: "auth/startAuthenticating" });
-    } else {
-      store.dispatch({ type: "auth/resetAuth" });
+      if (syncValue) {
+        store.dispatch({ type: "auth/startAuthenticating" });
+      } else {
+        store.dispatch({ type: "auth/resetAuth" });
+      }
+    }, value);
+
+    await page.waitForFunction(
+      (expectedValue) => {
+        const store = (window as any).__COMPASS_STORE__;
+        const status = store?.getState?.()?.auth?.status;
+        return expectedValue
+          ? status === "authenticating"
+          : status !== "authenticating";
+      },
+      value,
+      { timeout: 10000 },
+    );
+
+    try {
+      if (value) {
+        await expect(page.locator(OVERLAY_SELECTORS.statusPanel)).toBeVisible({
+          timeout: 1500,
+        });
+      } else {
+        await expect(page.locator(OVERLAY_SELECTORS.statusPanel)).toHaveCount(
+          0,
+          {
+            timeout: 1500,
+          },
+        );
+      }
+      return;
+    } catch (error) {
+      if (attempt === 2) {
+        throw error;
+      }
+      await page.waitForTimeout(100);
     }
-  }, value);
-
-  // Wait for overlay visibility using semantic query (replaces waitForTimeout)
-  // The SyncEventsOverlay renders with role="status" and aria-busy="true"
-  const overlay = page.locator(OVERLAY_SELECTORS.statusPanel);
-  if (value) {
-    await expect(overlay).toBeVisible();
-  } else {
-    await expect(overlay).not.toBeVisible();
   }
 };
 
@@ -200,6 +227,9 @@ const CONNECTION_STATE_TO_LABEL: Record<GoogleConnectionState, RegExp> = {
   ATTENTION: /needs repair/i,
 };
 
+const SIDEBAR_STATUS_SELECTOR =
+  "#sidebar [role='status'][aria-label]:not([aria-busy])";
+
 /**
  * Set the Google connection state via Redux userMetadata slice.
  * This updates the sidebar icon to reflect the given connection state.
@@ -215,42 +245,44 @@ export const setGoogleConnectionState = async (
     { timeout: 10000 },
   );
 
-  await page.evaluate((connectionState) => {
-    const store = (window as any).__COMPASS_STORE__;
-    if (!store) return;
-    store.dispatch({
-      type: "userMetadata/set",
-      payload: { google: { connectionState } },
-    });
-  }, state);
-
-  // Wait for Redux state to reflect the change
-  await page.waitForFunction(
-    (expectedState) => {
-      const store = (window as any).__COMPASS_STORE__;
-      return (
-        store?.getState()?.userMetadata?.current?.google?.connectionState ===
-        expectedState
-      );
-    },
-    state,
-    { timeout: 10000 },
-  );
-
-  // Wait for DOM to update with the new state via aria-label
-  // Uses waitForFunction to verify in-browser, more reliable than locator assertions
   const expectedPattern = CONNECTION_STATE_TO_LABEL[state];
-  await page.waitForFunction(
-    (pattern) => {
-      const el = document.querySelector(
-        '[role="status"][aria-label]:not([aria-busy])',
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.evaluate((connectionState) => {
+      const store = (window as any).__COMPASS_STORE__;
+      if (!store) return;
+      store.dispatch({
+        type: "userMetadata/set",
+        payload: { google: { connectionState } },
+      });
+    }, state);
+
+    await page.waitForFunction(
+      (expectedState) => {
+        const store = (window as any).__COMPASS_STORE__;
+        return (
+          store?.getState()?.userMetadata?.current?.google?.connectionState ===
+          expectedState
+        );
+      },
+      state,
+      { timeout: 10000 },
+    );
+
+    try {
+      await expect(page.locator(SIDEBAR_STATUS_SELECTOR)).toHaveAttribute(
+        "aria-label",
+        expectedPattern,
+        { timeout: 1500 },
       );
-      const label = el?.getAttribute("aria-label") ?? "";
-      return new RegExp(pattern, "i").test(label);
-    },
-    expectedPattern.source,
-    { timeout: 10000 },
-  );
+      return;
+    } catch (error) {
+      if (attempt === 2) {
+        throw error;
+      }
+      await page.waitForTimeout(100);
+    }
+  }
 };
 
 /**

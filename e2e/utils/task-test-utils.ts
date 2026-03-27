@@ -2,7 +2,10 @@ import { type Page, expect } from "@playwright/test";
 import { resetLocalEventDb } from "./event-test-utils";
 
 export const prepareTaskPage = async (page: Page) => {
-  await page.goto("/day", { waitUntil: "networkidle" });
+  await page.goto("/day", { waitUntil: "domcontentloaded" });
+  await page.evaluate(() => {
+    localStorage.removeItem("compass.auth");
+  });
   await page.waitForURL(/\/day\/\d{4}-\d{2}-\d{2}$/);
   await page.waitForFunction(
     () => {
@@ -13,7 +16,7 @@ export const prepareTaskPage = async (page: Page) => {
   );
 
   await resetLocalEventDb(page);
-  await page.reload({ waitUntil: "networkidle" });
+  await page.reload({ waitUntil: "domcontentloaded" });
   await page.waitForURL(/\/day\/\d{4}-\d{2}-\d{2}$/);
   await page.waitForFunction(
     () => {
