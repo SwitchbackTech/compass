@@ -1,8 +1,10 @@
+import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 import type { Schema_Sync } from "@core/types/sync.types";
 import dayjs from "@core/util/date/dayjs";
 import { SYNC_BUFFER_DAYS } from "@backend/common/constants/backend.constants";
 import { ENV } from "@backend/common/constants/env.constants";
+import { UserError } from "@backend/common/errors/user/user.errors";
 import { getBaseURL } from "@backend/servers/ngrok/ngrok.utils";
 
 const logger = Logger("app:sync.helpers");
@@ -88,4 +90,13 @@ export const syncExpiresSoon = (expiration: Date) => {
   const deadline = dayjs().add(SYNC_BUFFER_DAYS, "days");
 
   return dayjs(expiration).isSameOrBefore(deadline);
+};
+
+export const isMissingGoogleRefreshToken = (
+  error: unknown,
+): error is BaseError => {
+  return (
+    error instanceof BaseError &&
+    error.description === UserError.MissingGoogleRefreshToken.description
+  );
 };

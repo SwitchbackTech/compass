@@ -26,7 +26,10 @@ import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import syncService from "@backend/sync/services/sync.service";
 import { isUsingHttps } from "@backend/sync/util/sync.util";
 import userMetadataService from "@backend/user/services/user-metadata.service";
-import { type Summary_Delete } from "@backend/user/types/user.types";
+import {
+  type GetUserMetadataResponse,
+  type Summary_Delete,
+} from "@backend/user/types/user.types";
 
 const logger = Logger("app:user.service");
 
@@ -254,6 +257,34 @@ class UserService {
     await syncService.deleteByIntegration("google", userId);
   };
 
+  handleLogoutCleanup = async (
+    userId: string,
+    options: { isLastActiveSession: boolean },
+  ): Promise<void> => {
+    const _id = zObjectId.parse(userId);
+    const user = await mongoService.user.findOne({ _id });
+
+    if (!user) {
+      logger.warn(`User(${userId}) not found during logout cleanup`);
+      return;
+    }
+
+    const hasGoogleConnection = Boolean(
+      user.google?.googleId || user.google?.gRefreshToken,
+    );
+
+    if (hasGoogleConnection) {
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: { sync: { incrementalGCalSync: "RESTART" } },
+      });
+    }
+
+    if (options.isLastActiveSession) {
+      await syncService.stopWatches(userId);
+    }
+  };
+
   reconnectGoogleCredentials = async (
     cUserId: string,
     gUser: TokenPayload,
@@ -408,10 +439,10 @@ class UserService {
     userId: string,
     userContext?: Record<string, JSONObject>,
   ): Promise<UserMetadata> => {
-    const { status, metadata } = await SupertokensUserMetadata.getUserMetadata(
+    const { status, metadata } = (await SupertokensUserMetadata.getUserMetadata(
       userId,
       userContext,
-    );
+    )) as GetUserMetadataResponse;
 
     if (status !== "OK") throw new Error("Failed to fetch user metadata");
 

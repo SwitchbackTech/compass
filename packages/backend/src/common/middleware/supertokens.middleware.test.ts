@@ -23,8 +23,7 @@ import {
   createGoogleSignInSuccess,
   ensureExternalUserIdMapping,
 } from "@backend/common/middleware/supertokens.middleware.util";
-import syncService from "@backend/sync/services/sync.service";
-import userMetadataService from "@backend/user/services/user-metadata.service";
+import userService from "@backend/user/services/user.service";
 
 jest.mock("cors", () => ({
   __esModule: true,
@@ -101,23 +100,10 @@ jest.mock("@backend/common/services/mongo.service", () => ({
   },
 }));
 
-jest.mock("@backend/sync/services/sync.service", () => ({
-  __esModule: true,
-  default: {
-    stopWatches: jest.fn(),
-  },
-}));
-
-jest.mock("@backend/user/services/user-metadata.service", () => ({
-  __esModule: true,
-  default: {
-    updateUserMetadata: jest.fn(),
-  },
-}));
-
 jest.mock("@backend/user/services/user.service", () => ({
   __esModule: true,
   default: {
+    handleLogoutCleanup: jest.fn(),
     upsertUserFromAuth: jest.fn(),
   },
 }));
@@ -499,20 +485,25 @@ describe("supertokens.middleware", () => {
       expect(googleAuthService.handleGoogleAuth).not.toHaveBeenCalled();
     });
 
-    it("updates sync metadata and stops watches for last active Session in signOutPOST", async () => {
+    it("delegates logout cleanup for the last active Session in signOutPOST", async () => {
       const userId = new ObjectId().toString();
       (Session.getAllSessionHandlesForUser as jest.Mock).mockResolvedValue([
         { handle: "h1" },
       ]);
 
       const originalImplementation = {
-        signOutPOST: jest.fn().mockResolvedValue({ res: "ok" }),
+        marker: "ok",
+        signOutPOST: jest.fn(function (
+          this: { marker: string },
+          _input: unknown,
+        ) {
+          return Promise.resolve({ res: this.marker });
+        }),
       };
 
-      (userMetadataService.updateUserMetadata as jest.Mock).mockResolvedValue(
-        {},
+      (userService.handleLogoutCleanup as jest.Mock).mockResolvedValue(
+        undefined,
       );
-      (syncService.stopWatches as jest.Mock).mockResolvedValue(undefined);
 
       initSupertokens();
 
@@ -535,15 +526,48 @@ describe("supertokens.middleware", () => {
       expect(originalImplementation.signOutPOST).toHaveBeenCalledWith({
         session: { getUserId: expect.any(Function) },
       });
-      expect(userMetadataService.updateUserMetadata).toHaveBeenCalledWith({
-        userId,
-        data: { sync: { incrementalGCalSync: "RESTART" } },
+      expect(userService.handleLogoutCleanup).toHaveBeenCalledWith(userId, {
+        isLastActiveSession: true,
       });
-      expect(syncService.stopWatches).toHaveBeenCalledWith(userId);
       expect(result).toEqual({ res: "ok" });
     });
 
-    it("does not stop watches when Session.signOutPOST is not last active session", async () => {
+    it("returns the sign-out response when logout cleanup fails", async () => {
+      const userId = new ObjectId().toString();
+      (Session.getAllSessionHandlesForUser as jest.Mock).mockResolvedValue([
+        { handle: "h1" },
+      ]);
+
+      const originalImplementation = {
+        signOutPOST: jest.fn().mockResolvedValue({ res: "ok" }),
+      };
+
+      (userService.handleLogoutCleanup as jest.Mock).mockRejectedValue(
+        new Error("cleanup failed"),
+      );
+
+      initSupertokens();
+
+      const sessionConfig = (Session.init as jest.Mock).mock.calls[0][0] as {
+        override: {
+          apis: (original: typeof originalImplementation) => {
+            signOutPOST: (input: unknown) => Promise<unknown>;
+          };
+        };
+      };
+
+      const overridden = sessionConfig.override.apis(originalImplementation);
+
+      await expect(
+        overridden.signOutPOST({
+          session: {
+            getUserId: () => userId,
+          },
+        }),
+      ).resolves.toEqual({ res: "ok" });
+    });
+
+    it("passes non-last-session state to logout cleanup", async () => {
       const userId = new ObjectId().toString();
       (Session.getAllSessionHandlesForUser as jest.Mock).mockResolvedValue([
         { handle: "h1" },
@@ -554,8 +578,8 @@ describe("supertokens.middleware", () => {
         signOutPOST: jest.fn().mockResolvedValue({ res: "ok" }),
       };
 
-      (userMetadataService.updateUserMetadata as jest.Mock).mockResolvedValue(
-        {},
+      (userService.handleLogoutCleanup as jest.Mock).mockResolvedValue(
+        undefined,
       );
 
       initSupertokens();
@@ -576,11 +600,9 @@ describe("supertokens.middleware", () => {
         },
       });
 
-      expect(userMetadataService.updateUserMetadata).toHaveBeenCalledWith({
-        userId,
-        data: { sync: { incrementalGCalSync: "RESTART" } },
+      expect(userService.handleLogoutCleanup).toHaveBeenCalledWith(userId, {
+        isLastActiveSession: false,
       });
-      expect(syncService.stopWatches).not.toHaveBeenCalled();
     });
   });
 

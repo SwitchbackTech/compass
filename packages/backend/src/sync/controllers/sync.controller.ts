@@ -3,7 +3,6 @@ import { ObjectId } from "mongodb";
 import { ZodError } from "zod/v4";
 import { COMPASS_RESOURCE_HEADER } from "@core/constants/core.constants";
 import { GOOGLE_REVOKED } from "@core/constants/websocket.constants";
-import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import {
@@ -14,7 +13,6 @@ import {
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { WatchError } from "@backend/common/errors/sync/watch.errors";
-import { UserError } from "@backend/common/errors/user/user.errors";
 import {
   isFullSyncRequired,
   isGoogleError,
@@ -24,8 +22,10 @@ import mongoService from "@backend/common/services/mongo.service";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import syncService from "@backend/sync/services/sync.service";
 import { getSync } from "@backend/sync/util/sync.queries";
+import { isMissingGoogleRefreshToken } from "@backend/sync/util/sync.util";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
+import { ImportGCalRequestSchema } from "../sync.types";
 
 const logger = Logger("app:sync.controller");
 
@@ -284,7 +284,8 @@ export class SyncController {
 
   static importGCal = (req: Request, res: Response): void => {
     const userId = req.session!.getUserId();
-    const isForce = req.body?.force === true;
+    const { force } = ImportGCalRequestSchema.parse(req.body);
+    const isForce = force === true;
 
     userService
       .restartGoogleCalendarSync(userId, { force: isForce })
@@ -298,13 +299,6 @@ export class SyncController {
     res.status(Status.NO_CONTENT).send();
   };
 }
-
-const isMissingGoogleRefreshToken = (e: unknown): boolean => {
-  return (
-    e instanceof BaseError &&
-    e.description === UserError.MissingGoogleRefreshToken.description
-  );
-};
 
 /**
  * Prunes Google data for a user and notifies connected clients.

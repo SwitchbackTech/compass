@@ -3,12 +3,10 @@ import {
   EVENT_CHANGED,
   SOMEDAY_EVENT_CHANGED,
 } from "@core/constants/websocket.constants";
-import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 import { type CompassEvent } from "@core/types/event.types";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import { UserError } from "@backend/common/errors/user/user.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import { applyCompassPlan } from "@backend/event/classes/compass.event.executor";
 import { CompassEventFactory } from "@backend/event/classes/compass.event.generator";
@@ -23,19 +21,13 @@ import {
 } from "@backend/event/services/event.service";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import { type Event_Transition } from "@backend/sync/sync.types";
+import { isMissingGoogleRefreshToken } from "@backend/sync/util/sync.util";
 import {
   type PersistedCompassEvent,
   isPersistedCoreEvent,
 } from "./compass.sync.processor.util";
 
 const logger = Logger("app.compass.sync.processor");
-
-const isMissingGoogleRefreshToken = (error: unknown): error is BaseError => {
-  return (
-    error instanceof BaseError &&
-    error.description === UserError.MissingGoogleRefreshToken.description
-  );
-};
 
 export class CompassSyncProcessor {
   static async processEvents(
