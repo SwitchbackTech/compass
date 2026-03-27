@@ -2,7 +2,10 @@ import { OAuth2Client, type TokenPayload } from "google-auth-library";
 import { calendar } from "@googleapis/calendar";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
-import { type UserInfo_Google } from "@core/types/auth.types";
+import {
+  type GoogleAuthCodeRequest,
+  type UserInfo_Google,
+} from "@core/types/auth.types";
 import { type gCalendar } from "@core/types/gcal";
 import { StringV4Schema } from "@core/types/type.utils";
 import { ENV } from "@backend/common/constants/env.constants";
@@ -42,6 +45,19 @@ class GoogleOAuthClient {
     const gUser = await this.decodeUserInfo(idToken);
 
     return { gUser, tokens: this.oauthClient.credentials };
+  }
+
+  async exchangeAuthCode(
+    input: GoogleAuthCodeRequest,
+  ): Promise<UserInfo_Google> {
+    const response = await this.oauthClient.getToken({
+      code: input.redirectURIInfo.redirectURIQueryParams.code,
+      codeVerifier: input.redirectURIInfo.pkceCodeVerifier,
+    });
+
+    this.oauthClient.setCredentials(response.tokens);
+
+    return this.getGoogleUserInfo();
   }
 
   async decodeUserInfo(idToken: string) {

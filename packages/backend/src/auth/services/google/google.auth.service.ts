@@ -1,16 +1,20 @@
 import { type Credentials, type TokenPayload } from "google-auth-library";
 import { Logger } from "@core/logger/winston.logger";
+import { type GoogleAuthCodeRequest } from "@core/types/auth.types";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import GoogleOAuthClient from "@backend/auth/services/google/clients/google.oauth.client";
 import {
   determineGoogleAuthMode,
   parseReconnectGoogleParams,
 } from "@backend/auth/services/google/util/google.auth.util";
+import { AuthError } from "@backend/common/errors/auth/auth.errors";
+import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import EmailService from "@backend/email/email.service";
 import { syncCompassEventsToGoogle } from "@backend/event/services/event.service";
 import syncService from "@backend/sync/services/sync.service";
+import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
 import { type GoogleSignInSuccess } from "./google.auth.types";
@@ -18,6 +22,29 @@ import { type GoogleSignInSuccess } from "./google.auth.types";
 const logger = Logger("app:auth.google.service");
 
 class GoogleAuthService {
+  private persistGoogleConnection = async (
+    compassUserId: string,
+    gUser: TokenPayload,
+    refreshToken: string,
+  ) => {
+    await userService.reconnectGoogleCredentials(
+      compassUserId,
+      gUser,
+      refreshToken,
+    );
+
+    await userMetadataService.updateUserMetadata({
+      userId: compassUserId,
+      data: {
+        sync: { importGCal: "RESTART", incrementalGCalSync: "RESTART" },
+      },
+    });
+
+    this.restartGoogleCalendarSyncInBackground(compassUserId);
+
+    return { cUserId: compassUserId };
+  };
+
   private restartGoogleCalendarSyncInBackground = (cUserId: string) => {
     userService.restartGoogleCalendarSync(cUserId).catch((err) => {
       logger.error(
@@ -80,22 +107,44 @@ class GoogleAuthService {
       refreshToken,
     } = parseReconnectGoogleParams(compassUserId, gUser, oAuthTokens);
 
-    await userService.reconnectGoogleCredentials(
+    return this.persistGoogleConnection(cUserId, validatedGUser, refreshToken);
+  }
+
+  async getConnectedCompassUserId(
+    googleUserId: string | null | undefined,
+  ): Promise<string | null> {
+    if (!googleUserId) {
+      return null;
+    }
+
+    const user = await findCompassUserBy("google.googleId", googleUserId);
+    return user?._id.toString() ?? null;
+  }
+
+  async connectGoogleToCurrentUser(
+    compassUserId: string,
+    input: GoogleAuthCodeRequest,
+  ) {
+    const googleOAuthClient = new GoogleOAuthClient();
+    const { gUser, tokens } = await googleOAuthClient.exchangeAuthCode(input);
+    const {
       cUserId,
-      validatedGUser,
+      gUser: validatedGUser,
       refreshToken,
+    } = parseReconnectGoogleParams(compassUserId, gUser, tokens);
+
+    const existingCompassUserId = await this.getConnectedCompassUserId(
+      validatedGUser.sub,
     );
 
-    await userMetadataService.updateUserMetadata({
-      userId: cUserId,
-      data: {
-        sync: { importGCal: "RESTART", incrementalGCalSync: "RESTART" },
-      },
-    });
+    if (existingCompassUserId && existingCompassUserId !== cUserId) {
+      throw error(
+        AuthError.GoogleAccountAlreadyConnected,
+        "Google account is already connected to another Compass user",
+      );
+    }
 
-    this.restartGoogleCalendarSyncInBackground(cUserId);
-
-    return { cUserId };
+    return this.persistGoogleConnection(cUserId, validatedGUser, refreshToken);
   }
 
   async googleSignin(

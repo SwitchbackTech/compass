@@ -1,5 +1,6 @@
 import { type Credentials, type TokenPayload } from "google-auth-library";
 import type { User } from "supertokens-node";
+import { z } from "zod";
 
 export interface Result_Auth_Compass {
   status: "OK";
@@ -11,3 +12,25 @@ export interface UserInfo_Google {
   gUser: TokenPayload;
   tokens: Credentials;
 }
+
+export const GoogleAuthCodeRequestSchema = z.object({
+  thirdPartyId: z.literal("google"),
+  clientType: z.literal("web"),
+  redirectURIInfo: z.object({
+    redirectURIOnProviderDashboard: z.string().nonempty(),
+    redirectURIQueryParams: z.object({
+      code: z.string().nonempty(),
+      scope: z.string().optional(),
+      state: z.string().optional(),
+    }),
+    pkceCodeVerifier: z.string().optional(),
+  }),
+});
+
+export type GoogleAuthCodeRequest = z.infer<typeof GoogleAuthCodeRequestSchema>;
+
+export const GoogleConnectResponseSchema = z.object({
+  status: z.literal("OK"),
+});
+
+export type GoogleConnectResponse = z.infer<typeof GoogleConnectResponseSchema>;

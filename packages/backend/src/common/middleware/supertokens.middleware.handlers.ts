@@ -1,9 +1,13 @@
+import supertokens from "supertokens-node";
 import type {
   APIInterface as EmailPasswordAPIInterface,
   RecipeInterface as EmailPasswordRecipeInterface,
 } from "supertokens-node/recipe/emailpassword/types";
 import Session from "supertokens-node/recipe/session";
-import type { APIInterface as SessionAPIInterface } from "supertokens-node/recipe/session/types";
+import type {
+  APIInterface as SessionAPIInterface,
+  SessionContainerInterface,
+} from "supertokens-node/recipe/session/types";
 import type {
   APIInterface as ThirdPartyAPIInterface,
   RecipeInterface as ThirdPartyRecipeInterface,
@@ -42,6 +46,23 @@ type SignInPOSTFn = NonNullable<EmailPasswordAPIInterface["signInPOST"]>;
 
 type SessionSignOutPOSTFn = NonNullable<SessionAPIInterface["signOutPOST"]>;
 
+async function replaceGoogleSignInSession(
+  input: ThirdPartySignInUpInput,
+  currentSession: SessionContainerInterface,
+  compassUserId: string,
+) {
+  const compassSession = await Session.createNewSession(
+    input.options.req,
+    input.options.res,
+    "public",
+    supertokens.convertToRecipeUserId(compassUserId),
+  );
+
+  await Session.revokeSession(currentSession.getHandle());
+
+  return compassSession;
+}
+
 export async function createGoogleUser(
   input: Parameters<CreateGoogleUserFn>[0],
   originalCreateGoogleUser: CreateGoogleUserFn,
@@ -63,12 +84,32 @@ export async function handleGoogleSignInUp(
   input: ThirdPartySignInUpInput,
   originalSignInUpPOST: ThirdPartySignInUpPostFn,
 ): Promise<Awaited<ReturnType<ThirdPartySignInUpPostFn>>> {
-  const response = await originalSignInUpPOST(input);
+  let response = await originalSignInUpPOST(input);
   const success = createGoogleSignInSuccess(
     response as CreateGoogleSignInResponse,
   );
 
   if (success) {
+    const connectedCompassUserId =
+      await googleAuthService.getConnectedCompassUserId(
+        success.providerUser.sub,
+      );
+
+    if (
+      !input.session &&
+      connectedCompassUserId &&
+      response.status === "OK" &&
+      response.session.getUserId() !== connectedCompassUserId
+    ) {
+      const session = await replaceGoogleSignInSession(
+        input,
+        response.session,
+        connectedCompassUserId,
+      );
+
+      response = { ...response, session };
+    }
+
     await googleAuthService.handleGoogleAuth(success);
   }
 

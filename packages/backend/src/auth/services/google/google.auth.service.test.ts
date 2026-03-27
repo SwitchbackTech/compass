@@ -7,7 +7,10 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import GoogleOAuthClient from "@backend/auth/services/google/clients/google.oauth.client";
+import type * as GoogleAuthUtilModule from "@backend/auth/services/google/util/google.auth.util";
 import { determineGoogleAuthMode } from "@backend/auth/services/google/util/google.auth.util";
+import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import EmailService from "@backend/email/email.service";
 import * as eventService from "@backend/event/services/event.service";
@@ -17,7 +20,7 @@ import googleAuthService from "./google.auth.service";
 import type { AuthDecision, GoogleSignInSuccess } from "./google.auth.types";
 
 jest.mock("@backend/auth/services/google/util/google.auth.util", () => {
-  const actual = jest.requireActual(
+  const actual = jest.requireActual<typeof GoogleAuthUtilModule>(
     "@backend/auth/services/google/util/google.auth.util",
   );
 
@@ -274,6 +277,98 @@ describe("GoogleAuthService", () => {
 
       expect(restartSpy).toHaveBeenCalledWith(compassUserId);
 
+      restartSpy.mockRestore();
+    });
+  });
+
+  describe("connectGoogleToCurrentUser", () => {
+    it("connects Google to an email/password user and restarts sync", async () => {
+      const user = await UserDriver.createUser({ withGoogle: false });
+      const compassUserId = user._id.toString();
+      const gUser = UserDriver.generateGoogleUser({
+        sub: faker.string.uuid(),
+        picture: faker.image.url(),
+      });
+      const refreshToken = faker.string.uuid();
+      const restartSpy = jest
+        .spyOn(userService, "restartGoogleCalendarSync")
+        .mockResolvedValue();
+      const exchangeSpy = jest
+        .spyOn(GoogleOAuthClient.prototype, "exchangeAuthCode")
+        .mockResolvedValue({
+          gUser,
+          tokens: {
+            access_token: faker.internet.jwt(),
+            refresh_token: refreshToken,
+          },
+        } as never);
+
+      const result = await googleAuthService.connectGoogleToCurrentUser(
+        compassUserId,
+        {
+          clientType: "web",
+          thirdPartyId: "google",
+          redirectURIInfo: {
+            redirectURIOnProviderDashboard: "http://localhost:9080",
+            redirectURIQueryParams: { code: "auth-code" },
+          },
+        },
+      );
+
+      const updatedUser = await mongoService.user.findOne({ _id: user._id });
+      const metadata =
+        await userMetadataService.fetchUserMetadata(compassUserId);
+
+      expect(result).toEqual({ cUserId: compassUserId });
+      expect(updatedUser?.google?.googleId).toBe(gUser.sub);
+      expect(updatedUser?.google?.gRefreshToken).toBe(refreshToken);
+      expect(metadata.sync?.importGCal).toBe("RESTART");
+      expect(metadata.sync?.incrementalGCalSync).toBe("RESTART");
+      expect(restartSpy).toHaveBeenCalledWith(compassUserId);
+
+      exchangeSpy.mockRestore();
+      restartSpy.mockRestore();
+    });
+
+    it("rejects when the Google account belongs to another Compass user", async () => {
+      const connectedUser = await UserDriver.createUser();
+      const emailPasswordUser = await UserDriver.createUser({
+        withGoogle: false,
+      });
+      const restartSpy = jest
+        .spyOn(userService, "restartGoogleCalendarSync")
+        .mockResolvedValue();
+      const exchangeSpy = jest
+        .spyOn(GoogleOAuthClient.prototype, "exchangeAuthCode")
+        .mockResolvedValue({
+          gUser: UserDriver.generateGoogleUser({
+            sub: connectedUser.google?.googleId,
+          }),
+          tokens: {
+            access_token: faker.internet.jwt(),
+            refresh_token: faker.string.uuid(),
+          },
+        } as never);
+
+      await expect(
+        googleAuthService.connectGoogleToCurrentUser(
+          emailPasswordUser._id.toString(),
+          {
+            clientType: "web",
+            thirdPartyId: "google",
+            redirectURIInfo: {
+              redirectURIOnProviderDashboard: "http://localhost:9080",
+              redirectURIQueryParams: { code: "auth-code" },
+            },
+          },
+        ),
+      ).rejects.toMatchObject({
+        description: AuthError.GoogleAccountAlreadyConnected.description,
+      });
+
+      expect(restartSpy).not.toHaveBeenCalled();
+
+      exchangeSpy.mockRestore();
       restartSpy.mockRestore();
     });
   });

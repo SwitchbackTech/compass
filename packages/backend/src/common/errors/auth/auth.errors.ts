@@ -3,6 +3,7 @@ import { type ErrorMetadata } from "@backend/common/types/error.types";
 
 interface AuthErrors {
   DevOnly: ErrorMetadata;
+  GoogleAccountAlreadyConnected: ErrorMetadata;
   InadequatePermissions: ErrorMetadata;
   MissingRefreshToken: ErrorMetadata;
   NoUserId: ErrorMetadata;
@@ -13,6 +14,11 @@ export const AuthError: AuthErrors = {
   DevOnly: {
     description: "Only available during development",
     status: Status.FORBIDDEN,
+    isOperational: true,
+  },
+  GoogleAccountAlreadyConnected: {
+    description: "Google account is already connected to another Compass user",
+    status: Status.CONFLICT,
     isOperational: true,
   },
   InadequatePermissions: {

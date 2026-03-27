@@ -1,14 +1,19 @@
 import { useCallback } from "react";
 import { type GoogleConnectionState } from "@core/types/user.types";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
+import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
 import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
+import { AuthApi } from "@web/common/apis/auth.api";
 import { SyncApi } from "@web/common/apis/sync.api";
 import {
   selectGoogleConnectionState,
   selectUserMetadataStatus,
 } from "@web/ducks/auth/selectors/user-metadata.selectors";
 import type { UserMetadataStatus } from "@web/ducks/auth/slices/user-metadata.slice";
-import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
+import {
+  importGCalSlice,
+  triggerFetch,
+} from "@web/ducks/events/slices/sync.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import type { RootState } from "@web/store";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
@@ -149,8 +154,12 @@ export const useConnectGoogle = () => {
     selectUserMetadataStatus as (state: RootState) => UserMetadataStatus,
   );
   const { login } = useGoogleAuth({
+    onSuccess: async (data) => {
+      await AuthApi.connectGoogle(data);
+      await refreshUserMetadata();
+      dispatch(triggerFetch());
+    },
     prompt: "consent",
-    shouldTryLinkingWithSessionUser: true,
   });
 
   const onOpenGoogleAuth = useCallback(() => {

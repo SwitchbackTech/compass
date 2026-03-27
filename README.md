@@ -1,4 +1,4 @@
-# 🧭 Compass Calendar
+# Compass Calendar
 
 **A minimalist task manager designed for engineers.**
 
