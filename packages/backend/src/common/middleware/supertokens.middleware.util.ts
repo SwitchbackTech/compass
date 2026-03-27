@@ -32,22 +32,30 @@ export function getFormFieldValue(
   return typeof field?.value === "string" ? field.value : undefined;
 }
 
+function buildFrontendAuthLink(
+  originalLink: string,
+  frontendUrl: string,
+  authView: "reset" | "verify",
+): string {
+  const url = new URL(originalLink);
+  const token = url.searchParams.get("token");
+
+  if (!token) {
+    return originalLink;
+  }
+
+  const appUrl = new URL(`${frontendUrl}/day`);
+  appUrl.searchParams.set("auth", authView);
+  appUrl.searchParams.set("token", token);
+
+  return appUrl.toString();
+}
+
 export function buildResetPasswordLink(
   passwordResetLink: string,
   frontendUrl: string,
 ): string {
-  const url = new URL(passwordResetLink);
-  const token = url.searchParams.get("token");
-
-  if (!token) {
-    return passwordResetLink;
-  }
-
-  const appUrl = new URL(`${frontendUrl}/day`);
-  appUrl.searchParams.set("auth", "reset");
-  appUrl.searchParams.set("token", token);
-
-  return appUrl.toString();
+  return buildFrontendAuthLink(passwordResetLink, frontendUrl, "reset");
 }
 
 export async function ensureExternalUserIdMapping(

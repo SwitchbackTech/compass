@@ -1,4 +1,6 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-yarn prettier . --write
+echo "Formatting code ..."
+yarn prettier . --write --log-level silent
+echo "Code formatted"

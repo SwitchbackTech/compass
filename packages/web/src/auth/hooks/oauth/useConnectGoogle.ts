@@ -150,6 +150,7 @@ export const useConnectGoogle = () => {
   );
   const { login } = useGoogleAuth({
     prompt: "consent",
+    shouldTryLinkingWithSessionUser: true,
   });
 
   const onOpenGoogleAuth = useCallback(() => {

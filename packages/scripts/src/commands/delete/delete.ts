@@ -1,23 +1,19 @@
-import pkg from "inquirer";
-import open, { apps } from "open";
+import inquirer from "inquirer";
+import type { QuestionCollection } from "inquirer";
+import open from "open";
 import { CLI_ENV } from "@scripts/common/cli.constants";
 import { log } from "@scripts/common/cli.utils";
+import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { findCompassUsersBy } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
 import { type Summary_Delete } from "@backend/user/types/user.types";
-
-const { prompt } = pkg;
-
-type SupportedBrowser = "chrome" | "firefox" | "brave" | "edge" | "safari";
-
-const BROWSER_MAP: Record<SupportedBrowser, string | readonly string[]> = {
-  chrome: apps.chrome,
-  firefox: apps.firefox,
-  brave: apps.brave,
-  edge: apps.edge,
-  safari: "safari",
-};
+import { BROWSER_MAP } from "./delete.constants";
+import type {
+  BrowserCleanupPromptAnswers,
+  DeleteConfirmPromptAnswers,
+  SupportedBrowser,
+} from "./delete.types";
 
 const getBrowserApp = (): { name: string | readonly string[] } | undefined => {
   const browserName = CLI_ENV.DEV_BROWSER?.toLowerCase();
@@ -35,6 +31,16 @@ const getBrowserApp = (): { name: string | readonly string[] } | undefined => {
 
 const getCleanupUrl = (): string => {
   return `${CLI_ENV.FRONTEND_URL}/cleanup`;
+};
+
+const normalizeEmail = (value: string): string => value.trim().toLowerCase();
+
+const summarizeDeleteError = (error: unknown): { message: string } => {
+  if (error instanceof Error) {
+    return { message: error.message };
+  }
+
+  return { message: "Unknown delete failure" };
 };
 
 /**
@@ -66,14 +72,14 @@ const promptBrowserCleanup = async (): Promise<void> => {
 
   log.info("\n[Browser Data Cleanup]");
   log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  log.info("Your account has been deleted from the backend.");
+  log.info("Your account has been deleted from Compass backend services.");
   log.info("However, browser storage may still contain:");
   log.info("  • Session cookies (SuperTokens)");
   log.info("  • LocalStorage data (preferences)");
   log.info("  • IndexedDB (compass-local database with tasks and events)");
   log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
-  const questions = [
+  const questions: QuestionCollection<BrowserCleanupPromptAnswers> = [
     {
       type: "confirm",
       name: "cleanup",
@@ -82,9 +88,10 @@ const promptBrowserCleanup = async (): Promise<void> => {
     },
   ];
 
-  const answers = await prompt(questions);
+  const promptResult =
+    await inquirer.prompt<BrowserCleanupPromptAnswers>(questions);
 
-  if (answers.cleanup) {
+  if (promptResult.cleanup) {
     const browserApp = getBrowserApp();
     const browserName = CLI_ENV.DEV_BROWSER || "default";
 
@@ -107,25 +114,65 @@ const promptBrowserCleanup = async (): Promise<void> => {
 };
 
 export const deleteCompassDataForMatchingUsers = async (user: string) => {
-  log.info(`Deleting Compass data for users matching: ${user}`);
+  log.info(`Deleting Compass account data for users matching: ${user}`);
 
   const isEmail = user.includes("@");
+  const normalizedUser = isEmail ? normalizeEmail(user) : user;
   const idKeyword = isEmail ? "email" : "_id";
 
-  const users = await findCompassUsersBy(idKeyword, user);
+  const users = await findCompassUsersBy(idKeyword, normalizedUser);
 
   const totalSummary: Summary_Delete[] = [];
+  const failures: Array<{ message: string }> = [];
   for (const user of users) {
     const userId = user?._id.toString();
     const gcalAccess = !!user.google?.gRefreshToken;
-    const summary = await userService.deleteCompassDataForUser(
-      userId,
-      gcalAccess,
-    );
-    totalSummary.push(summary);
+
+    try {
+      const summary = await userService.deleteCompassDataForUser(
+        userId,
+        gcalAccess,
+      );
+      totalSummary.push(summary);
+    } catch (error) {
+      const failure = summarizeDeleteError(error);
+      failures.push(failure);
+    }
+  }
+
+  const cleanupOrphanedAuthData = async () => {
+    const summary = isEmail
+      ? await supertokensUserCleanupService.cleanupByEmail(normalizedUser)
+      : await supertokensUserCleanupService.cleanupByExternalUserId(
+          normalizedUser,
+        );
+
+    const hasCleanup =
+      (summary.superTokensUsers ?? 0) > 0 ||
+      (summary.superTokensMappings ?? 0) > 0 ||
+      (summary.superTokensMetadata ?? 0) > 0;
+
+    if (hasCleanup || totalSummary.length === 0) {
+      totalSummary.push(summary);
+    }
+  };
+
+  try {
+    await cleanupOrphanedAuthData();
+  } catch (error) {
+    const failure = summarizeDeleteError(error);
+    failures.push(failure);
   }
 
   log.success(`Deleted: ${JSON.stringify(totalSummary, null, 2)}`);
+
+  if (failures.length > 0) {
+    failures.forEach(({ message }) => {
+      log.error(message);
+    });
+
+    throw new Error("Delete completed with auth cleanup failures.");
+  }
 };
 
 export const startDeleteFlow = async (user: string, force = false) => {
@@ -138,32 +185,40 @@ export const startDeleteFlow = async (user: string, force = false) => {
     log.warning("All data will be deleted immediately.");
     log.warning("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
-    log.info(`Deleting ${user}'s Compass data ...`);
-    await deleteCompassDataForMatchingUsers(user);
-    await forceBrowserCleanup();
-    process.exit(0);
+    try {
+      log.info(`Deleting ${user}'s Compass account data ...`);
+      await deleteCompassDataForMatchingUsers(user);
+      await forceBrowserCleanup();
+      process.exit(0);
+    } catch (error) {
+      console.error(error);
+      process.exit(1);
+    }
   }
 
-  const questions = [
+  const questions: QuestionCollection<DeleteConfirmPromptAnswers> = [
     {
       type: "confirm",
       name: "delete",
-      message: `This will delete all Compass data for all users matching: >> ${user} <<\nContinue?`,
+      message: `This will delete all Compass account and auth data for all users matching: >> ${user} <<\nContinue?`,
     },
   ];
 
-  prompt(questions)
-    .then((a: { delete: boolean }) => {
-      if (a.delete) {
-        log.info(`Okie dokie, deleting ${user}'s Compass data ...`);
-        deleteCompassDataForMatchingUsers(user)
-          .then(() => promptBrowserCleanup())
-          .catch((e) => console.log(e))
-          .finally(() => process.exit(0));
-      } else {
-        log.info("No worries, see ya next time");
-        process.exit(0);
-      }
-    })
-    .catch((err) => console.log(err));
+  try {
+    const promptResult =
+      await inquirer.prompt<DeleteConfirmPromptAnswers>(questions);
+
+    if (!promptResult.delete) {
+      log.info("No worries, see ya next time");
+      process.exit(0);
+    }
+
+    log.info(`Okie dokie, deleting ${user}'s Compass account data ...`);
+    await deleteCompassDataForMatchingUsers(user);
+    await promptBrowserCleanup();
+    process.exit(0);
+  } catch (error) {
+    console.error(error);
+    process.exit(1);
+  }
 };

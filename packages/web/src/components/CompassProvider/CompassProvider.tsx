@@ -46,22 +46,21 @@ export const CompassRequiredProviders = (
                     <AuthModalProvider>
                       {props.children}
                       <AuthModal />
+                      <ToastContainer
+                        position="bottom-left"
+                        autoClose={5000}
+                        hideProgressBar={false}
+                        newestOnTop={false}
+                        closeOnClick
+                        rtl={false}
+                        pauseOnFocusLoss
+                        draggable
+                        pauseOnHover
+                        theme="dark"
+                        limit={1}
+                      />
                     </AuthModalProvider>
                   </IconProvider>
-
-                  <ToastContainer
-                    position="bottom-left"
-                    autoClose={5000}
-                    hideProgressBar={false}
-                    newestOnTop={false}
-                    closeOnClick
-                    rtl={false}
-                    pauseOnFocusLoss
-                    draggable
-                    pauseOnHover
-                    theme="dark"
-                    limit={1}
-                  />
 
                   <DNDOverlay />
                 </DNDContext>

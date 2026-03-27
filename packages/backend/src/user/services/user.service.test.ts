@@ -1,3 +1,5 @@
+import * as supertokensNode from "supertokens-node";
+import SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
 import { faker } from "@faker-js/faker";
 import { CompassCalendarSchema } from "@core/types/calendar.types";
 import { CalendarProvider } from "@core/types/event.types";
@@ -11,8 +13,11 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
+import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { UserError } from "@backend/common/errors/user/user.errors";
+import * as supertokensMiddleware from "@backend/common/middleware/supertokens.middleware";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
 import priorityService from "@backend/priority/services/priority.service";
@@ -29,10 +34,40 @@ jest.mock("@backend/sync/util/sync.util", () => {
   return { ...actual, isUsingHttps: jest.fn(actual.isUsingHttps) };
 });
 
+const createSupertokensUser = (userId: string, recipeUserIds: string[]) => ({
+  id: userId,
+  loginMethods: recipeUserIds.map((recipeUserId) => ({
+    recipeUserId: {
+      getAsString: () => recipeUserId,
+    },
+  })),
+});
+
 describe("UserService", () => {
   beforeAll(initSupertokens);
   beforeEach(setupTestDb);
   beforeEach(cleanupCollections);
+  beforeEach(() => {
+    jest
+      .spyOn(compassAuthService, "revokeSessionsByUser")
+      .mockResolvedValue({ sessionsRevoked: 0 });
+    jest
+      .spyOn(supertokensUserCleanupService, "resolveByExternalUserId")
+      .mockResolvedValue({
+        externalUserIds: [],
+        superTokensUserIds: [],
+      });
+    jest
+      .spyOn(supertokensUserCleanupService, "cleanupResolvedTarget")
+      .mockResolvedValue({
+        superTokensUsers: 0,
+        superTokensMappings: 0,
+        superTokensMetadata: 0,
+      });
+  });
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
   afterAll(cleanupTestDb);
 
   describe("createUser", () => {
@@ -165,6 +200,10 @@ describe("UserService", () => {
           events: expect.any(Number) as number,
           syncs: expect.any(Number) as number,
           eventWatches: expect.any(Number) as number,
+          sessions: expect.any(Number) as number,
+          superTokensUsers: 0,
+          superTokensMappings: 0,
+          superTokensMetadata: 0,
           user: 1,
         }),
       );
@@ -184,6 +223,216 @@ describe("UserService", () => {
           ],
         }),
       ).toBeNull();
+    });
+
+    it("includes SuperTokens cleanup results after deleting the Compass user", async () => {
+      const userId = mongoService.objectId().toString();
+      await userService.upsertUserFromAuth({
+        userId,
+        email: faker.internet.email().toLowerCase(),
+        name: "Tyler Durden",
+      });
+
+      const resolveSpy = jest
+        .spyOn(supertokensUserCleanupService, "resolveByExternalUserId")
+        .mockResolvedValue({
+          externalUserIds: [userId],
+          superTokensUserIds: ["st-user-id"],
+        });
+      const revokeSpy = jest
+        .spyOn(compassAuthService, "revokeSessionsByUser")
+        .mockResolvedValue({ sessionsRevoked: 2 });
+      const cleanupSpy = jest
+        .spyOn(supertokensUserCleanupService, "cleanupResolvedTarget")
+        .mockResolvedValue({
+          superTokensUsers: 1,
+          superTokensMappings: 1,
+          superTokensMetadata: 1,
+        });
+
+      const summary = await userService.deleteCompassDataForUser(userId, false);
+
+      expect(resolveSpy).toHaveBeenCalledWith(userId);
+      expect(revokeSpy).toHaveBeenCalledWith(userId);
+      expect(cleanupSpy).toHaveBeenCalledWith({
+        externalUserIds: [userId],
+        superTokensUserIds: ["st-user-id"],
+      });
+      expect(summary).toEqual(
+        expect.objectContaining({
+          priorities: expect.any(Number) as number,
+          sessions: 2,
+          superTokensUsers: 1,
+          superTokensMappings: 1,
+          superTokensMetadata: 1,
+          user: 1,
+        }),
+      );
+      expect(
+        await mongoService.user.findOne({ _id: mongoService.objectId(userId) }),
+      ).toBeNull();
+    });
+  });
+
+  describe("supertokens auth cleanup", () => {
+    it("removes orphaned SuperTokens users by email", async () => {
+      jest.restoreAllMocks();
+
+      const initSpy = jest
+        .spyOn(supertokensMiddleware, "initSupertokens")
+        .mockImplementation(() => undefined);
+      const listUsersSpy = jest
+        .spyOn(supertokensNode, "listUsersByAccountInfo")
+        .mockResolvedValue([
+          createSupertokensUser("st-primary-user", ["recipe-user-1"]) as never,
+        ]);
+      const getUserIdMappingSpy = jest
+        .spyOn(supertokensNode, "getUserIdMapping")
+        .mockImplementation(
+          async ({
+            userId,
+            userIdType,
+          }: {
+            userId: string;
+            userIdType?: "EXTERNAL" | "SUPERTOKENS" | "ANY";
+          }) => {
+            if (userIdType === "SUPERTOKENS") {
+              return {
+                externalUserId: "external-user-1",
+                externalUserIdInfo: undefined,
+                status: "OK" as const,
+                superTokensUserId: userId,
+              };
+            }
+
+            return {
+              externalUserId: userId,
+              externalUserIdInfo: undefined,
+              status: "OK" as const,
+              superTokensUserId: "recipe-user-1",
+            };
+          },
+        );
+      const getUserMetadataSpy = jest
+        .spyOn(SupertokensUserMetadata, "getUserMetadata")
+        .mockResolvedValue({
+          metadata: { skipOnboarding: true },
+          status: "OK",
+        });
+      const clearUserMetadataSpy = jest
+        .spyOn(SupertokensUserMetadata, "clearUserMetadata")
+        .mockResolvedValue({ status: "OK" });
+      const deleteUserSpy = jest
+        .spyOn(supertokensNode, "deleteUser")
+        .mockResolvedValue({ status: "OK" });
+      const deleteUserIdMappingSpy = jest
+        .spyOn(supertokensNode, "deleteUserIdMapping")
+        .mockResolvedValue({
+          didMappingExist: true,
+          status: "OK",
+        });
+
+      const summary =
+        await supertokensUserCleanupService.cleanupByEmail("User@example.com");
+
+      expect(initSpy).toHaveBeenCalled();
+      expect(listUsersSpy).toHaveBeenCalledWith("public", {
+        email: "user@example.com",
+      });
+      expect(getUserIdMappingSpy).toHaveBeenCalled();
+      expect(getUserMetadataSpy).toHaveBeenCalledWith("external-user-1");
+      expect(clearUserMetadataSpy).toHaveBeenCalledWith("external-user-1");
+      expect(deleteUserSpy).toHaveBeenCalledWith("st-primary-user");
+      expect(deleteUserIdMappingSpy).toHaveBeenCalledWith({
+        force: true,
+        userId: "external-user-1",
+        userIdType: "EXTERNAL",
+      });
+      expect(summary).toEqual({
+        superTokensMappings: 1,
+        superTokensMetadata: 1,
+        superTokensUsers: 1,
+      });
+    });
+
+    it("removes mapped SuperTokens users by external user id", async () => {
+      jest.restoreAllMocks();
+
+      const initSpy = jest
+        .spyOn(supertokensMiddleware, "initSupertokens")
+        .mockImplementation(() => undefined);
+      const getUserIdMappingSpy = jest
+        .spyOn(supertokensNode, "getUserIdMapping")
+        .mockImplementation(
+          async ({
+            userId,
+            userIdType,
+          }: {
+            userId: string;
+            userIdType?: "EXTERNAL" | "SUPERTOKENS" | "ANY";
+          }) => {
+            if (userIdType === "SUPERTOKENS") {
+              return {
+                externalUserId: "external-user-1",
+                externalUserIdInfo: undefined,
+                status: "OK" as const,
+                superTokensUserId: userId,
+              };
+            }
+
+            return {
+              externalUserId: userId,
+              externalUserIdInfo: undefined,
+              status: "OK" as const,
+              superTokensUserId: "recipe-user-1",
+            };
+          },
+        );
+      const getUserSpy = jest
+        .spyOn(supertokensNode, "getUser")
+        .mockResolvedValue(
+          createSupertokensUser("st-primary-user", ["recipe-user-1"]) as never,
+        );
+      const getUserMetadataSpy = jest
+        .spyOn(SupertokensUserMetadata, "getUserMetadata")
+        .mockResolvedValue({
+          metadata: { skipOnboarding: true },
+          status: "OK",
+        });
+      const clearUserMetadataSpy = jest
+        .spyOn(SupertokensUserMetadata, "clearUserMetadata")
+        .mockResolvedValue({ status: "OK" });
+      const deleteUserSpy = jest
+        .spyOn(supertokensNode, "deleteUser")
+        .mockResolvedValue({ status: "OK" });
+      const deleteUserIdMappingSpy = jest
+        .spyOn(supertokensNode, "deleteUserIdMapping")
+        .mockResolvedValue({
+          didMappingExist: true,
+          status: "OK",
+        });
+
+      const summary =
+        await supertokensUserCleanupService.cleanupByExternalUserId(
+          "external-user-1",
+        );
+
+      expect(initSpy).toHaveBeenCalled();
+      expect(getUserIdMappingSpy).toHaveBeenCalled();
+      expect(getUserSpy).toHaveBeenCalledWith("recipe-user-1");
+      expect(getUserMetadataSpy).toHaveBeenCalledWith("external-user-1");
+      expect(clearUserMetadataSpy).toHaveBeenCalledWith("external-user-1");
+      expect(deleteUserSpy).toHaveBeenCalledWith("st-primary-user");
+      expect(deleteUserIdMappingSpy).toHaveBeenCalledWith({
+        force: true,
+        userId: "external-user-1",
+        userIdType: "EXTERNAL",
+      });
+      expect(summary).toEqual({
+        superTokensMappings: 1,
+        superTokensMetadata: 1,
+        superTokensUsers: 1,
+      });
     });
   });
 

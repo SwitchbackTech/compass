@@ -191,25 +191,32 @@ describe("supertokens.middleware", () => {
       ]);
     });
 
-    it("wires AccountLinking.shouldDoAutomaticAccountLinking to disable automatic linking", async () => {
+    it("wires AccountLinking.shouldDoAutomaticAccountLinking for session linking only", async () => {
       initSupertokens();
 
       const shouldDoAutomaticAccountLinking = (AccountLinking.init as jest.Mock)
-        .mock.calls[0][0].shouldDoAutomaticAccountLinking as (newAccountInfo: {
-        email?: string;
-      }) => Promise<{
+        .mock.calls[0][0].shouldDoAutomaticAccountLinking as (
+        newAccountInfo: unknown,
+        user?: unknown,
+        session?: unknown,
+      ) => Promise<{
         shouldAutomaticallyLink: boolean;
         shouldRequireVerification?: boolean;
       }>;
 
-      const disabled = { shouldAutomaticallyLink: false };
-
-      await expect(shouldDoAutomaticAccountLinking({})).resolves.toEqual(
-        disabled,
-      );
       await expect(
-        shouldDoAutomaticAccountLinking({ email: "a@example.com" }),
-      ).resolves.toEqual(disabled);
+        shouldDoAutomaticAccountLinking({}, undefined, undefined),
+      ).resolves.toEqual({
+        shouldAutomaticallyLink: false,
+      });
+      await expect(
+        shouldDoAutomaticAccountLinking({}, undefined, {
+          getUserId: () => "user-id",
+        }),
+      ).resolves.toEqual({
+        shouldAutomaticallyLink: true,
+        shouldRequireVerification: false,
+      });
     });
 
     it("wires EmailPassword name validation", async () => {
@@ -373,6 +380,54 @@ describe("supertokens.middleware", () => {
       });
 
       expect(originalImplementation.createNewRecipeUser).toHaveBeenCalledWith({
+        email: "user@example.com",
+      });
+      expect(ensureExternalUserIdMapping).toHaveBeenCalledWith(
+        "recipe-user-id",
+      );
+      expect(result).toBe(responsePayload);
+    });
+
+    it("preserves ThirdParty linking behavior while ensuring a user id mapping", async () => {
+      initSupertokens();
+
+      const thirdPartyConfig = (ThirdParty.init as jest.Mock).mock
+        .calls[0][0] as {
+        override: {
+          functions: (originalImplementation: {
+            manuallyCreateOrUpdateUser: (input: unknown) => Promise<unknown>;
+          }) => {
+            manuallyCreateOrUpdateUser: (input: unknown) => Promise<unknown>;
+          };
+        };
+      };
+
+      const responsePayload = {
+        status: "OK" as const,
+        recipeUserId: {
+          getAsString: () => "recipe-user-id",
+        },
+        user: { id: "recipe-user-id" },
+        createdNewRecipeUser: false,
+      };
+
+      const originalImplementation = {
+        manuallyCreateOrUpdateUser: jest
+          .fn()
+          .mockResolvedValue(responsePayload),
+      };
+
+      const overridden = thirdPartyConfig.override.functions(
+        originalImplementation,
+      );
+
+      const result = await overridden.manuallyCreateOrUpdateUser({
+        email: "user@example.com",
+      });
+
+      expect(
+        originalImplementation.manuallyCreateOrUpdateUser,
+      ).toHaveBeenCalledWith({
         email: "user@example.com",
       });
       expect(ensureExternalUserIdMapping).toHaveBeenCalledWith(

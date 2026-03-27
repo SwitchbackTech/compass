@@ -9,6 +9,8 @@ This flow adds first-party auth on top of the existing Google OAuth setup:
 - sign up with email and password
 - sign in with email and password
 - forgot/reset password
+- email verification
+- account linking so Google and password auth for the same verified email resolve to the same Compass user
 - SuperTokens user-to-Compass-user mapping via Mongo `ObjectId` external ids
 
 Primary files:
@@ -48,6 +50,7 @@ Supported URL entry points:
 - `?auth=signup`
 - `?auth=forgot`
 - `?auth=reset&token=...`
+- `?auth=verify&token=...`
 
 The temporary feature gate currently comes from `useAuthFeatureFlag()`:
 
@@ -85,6 +88,7 @@ Files:
 
 - `ThirdParty`
 - `EmailPassword`
+- `EmailVerification`
 - `Session`
 
 At runtime it:
@@ -120,6 +124,7 @@ This keeps Google sign-in and password sign-in aligned after the backend session
 - `signUp`
 - `forgotPassword`
 - `resetPassword`
+- `verifyEmail`
 
 `useAuthFormHandlers.ts` owns the actual submits.
 
@@ -132,6 +137,12 @@ This keeps Google sign-in and password sign-in aligned after the backend session
 - `password`
 
 On success it calls `completeAuthentication()` with the resolved email and closes the modal.
+
+After the session is created, the web client immediately calls
+`EmailVerification.sendVerificationEmail()`.
+
+That keeps signup usable without blocking the first session, while still making
+same-email Google linking safe once the email is verified.
 
 ### Log in
 
@@ -166,6 +177,23 @@ On success, the modal switches to `loginAfterReset`, which renders the login for
 
 - `"Password reset successful. Log in with your new password."`
 
+### Verify email
+
+Verification starts from a link shaped like:
+
+- `/day?auth=verify&token=...`
+
+It uses the same token-preservation pattern as reset password:
+
+- `useAuthUrlParam()` opens the modal from the query param
+- `AuthModal` captures the first verification token it sees
+- `handleVerifyEmail()` restores that token into the URL before calling
+  `EmailVerification.verifyEmail()`
+
+On success, the modal returns to the login view with a success state.
+On invalid or expired tokens, the modal shows retry guidance instead of leaving
+the user stuck on a blank or broken state.
+
 ## Backend Runtime Flow
 
 `initSupertokens()` configures these recipes:
@@ -173,6 +201,7 @@ On success, the modal switches to `loginAfterReset`, which renders the login for
 - `AccountLinking`
 - `ThirdParty`
 - `EmailPassword`
+- `EmailVerification`
 - `Dashboard`
 - `Session`
 - `UserMetadata`
@@ -181,7 +210,9 @@ On success, the modal switches to `loginAfterReset`, which renders the login for
 
 `AccountLinking.init()` is configured to:
 
-- always return `{ shouldAutomaticallyLink: false }`
+- decline automatic linking when the new account has no email
+- automatically link verified same-email accounts when there is no active session
+- allow linking without email verification when the user is already authenticated in-session
 
 This means middleware-level automatic linking is disabled for all sign-in/up paths.
 
@@ -201,6 +232,12 @@ The auth-mode decision is server-side and depends on:
 - whether a Compass user already exists for the Google id
 - whether a refresh token is stored
 - whether sync health is good enough for incremental sync
+
+When the user explicitly chooses "Connect Google Calendar" from an existing
+password-authenticated session, the web client includes
+`shouldTryLinkingWithSessionUser` in the Google sign-in payload. SuperTokens can
+then link that new Google login method onto the active session user instead of
+creating a second account.
 
 ### Email/password sign-up and sign-in
 
@@ -236,15 +273,19 @@ For repeated auth on the same session user id, this writes to the existing Compa
 Current behavior in `supertokens.middleware.ts`:
 
 - all environments rewrite the incoming SuperTokens reset link into Compass app URL shape
+- all environments rewrite the incoming SuperTokens verification link into Compass app URL shape
 - `test` environment logs the rewritten link and skips provider delivery
 - non-test environments pass the rewritten link to SuperTokens' original email sender (`originalImplementation.sendEmail`)
 - if the incoming link has no `token` query param, backend keeps the original link unchanged
 
-The rewritten link shape comes from `buildResetPasswordLink()` and looks like:
+The rewritten link shape comes from `buildResetPasswordLink()` and
+`buildEmailVerificationLink()`.
 
-The host/origin portion is taken from backend env (`FRONTEND_URL`), and the route is always `/day` with `auth=reset` plus the token.
+The host/origin portion is taken from backend env (`FRONTEND_URL`), and the
+route is always `/day`.
 
-- `http://localhost:9080/day?auth=reset&token=...`
+- Reset: `http://localhost:9080/day?auth=reset&token=...`
+- Verify: `http://localhost:9080/day?auth=verify&token=...`
 
 ## Event And Sync Behavior After Password Auth
 
@@ -257,6 +298,16 @@ Relevant changes:
 - if the Google side effect fails only because the user has no Google refresh token, the processor keeps the Compass mutation and skips the Google effect
 
 That lets password-auth users use Compass without blocking on Google connectivity.
+
+When a password-only user later connects Google:
+
+- `googleSignup()` first attaches Google credentials to the existing Compass user
+- `syncCompassEventsToGoogle()` backfills eligible Compass-only events that do
+  not yet have Google ids
+- background Google sync is then restarted as normal
+
+This prevents the "connect Google later" path from leaving pre-existing Compass
+events stranded outside Google Calendar.
 
 ## Known Caveats
 

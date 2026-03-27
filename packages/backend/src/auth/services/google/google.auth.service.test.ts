@@ -9,6 +9,8 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { determineGoogleAuthMode } from "@backend/auth/services/google/util/google.auth.util";
 import mongoService from "@backend/common/services/mongo.service";
+import EmailService from "@backend/email/email.service";
+import * as eventService from "@backend/event/services/event.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
 import googleAuthService from "./google.auth.service";
@@ -272,6 +274,43 @@ describe("GoogleAuthService", () => {
 
       expect(restartSpy).toHaveBeenCalledWith(compassUserId);
 
+      restartSpy.mockRestore();
+    });
+  });
+
+  describe("googleSignup", () => {
+    it("syncs existing Compass-only events to Google after attaching Google auth", async () => {
+      const recipeUserId = faker.database.mongodbObjectId();
+      const providerUser = {
+        sub: faker.string.uuid(),
+        email: faker.internet.email(),
+        name: faker.person.fullName(),
+        picture: faker.image.url(),
+      } as TokenPayload;
+      const refreshToken = faker.string.uuid();
+      const syncSpy = jest
+        .spyOn(eventService, "syncCompassEventsToGoogle")
+        .mockResolvedValue(2);
+      const tagNewUserSpy = jest
+        .spyOn(EmailService, "tagNewUserIfEnabled")
+        .mockResolvedValue();
+      const restartSpy = jest
+        .spyOn(userService, "restartGoogleCalendarSync")
+        .mockResolvedValue();
+
+      const result = await googleAuthService.googleSignup(
+        providerUser,
+        refreshToken,
+        recipeUserId,
+      );
+
+      expect(result.cUserId).toBe(recipeUserId);
+      expect(syncSpy).toHaveBeenCalledWith(recipeUserId);
+      expect(tagNewUserSpy).toHaveBeenCalled();
+      expect(restartSpy).toHaveBeenCalledWith(recipeUserId);
+
+      syncSpy.mockRestore();
+      tagNewUserSpy.mockRestore();
       restartSpy.mockRestore();
     });
   });

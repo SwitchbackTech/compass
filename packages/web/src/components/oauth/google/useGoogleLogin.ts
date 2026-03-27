@@ -20,11 +20,13 @@ export const useGoogleLogin = ({
   onSuccess,
   onError,
   prompt,
+  shouldTryLinkingWithSessionUser,
 }: {
   onStart?: () => void;
   onSuccess?: (res: SignInUpInput) => Promise<void>;
   onError?: (error: unknown) => void;
   prompt?: "consent" | "none" | "select_account";
+  shouldTryLinkingWithSessionUser?: boolean;
 }) => {
   const [data, setData] = useState<{
     code: string;
@@ -67,6 +69,7 @@ export const useGoogleLogin = ({
         await onSuccess?.({
           thirdPartyId: "google",
           clientType: "web",
+          shouldTryLinkingWithSessionUser,
           redirectURIInfo: {
             redirectURIOnProviderDashboard: window.location.origin,
             redirectURIQueryParams: { code, state, scope },

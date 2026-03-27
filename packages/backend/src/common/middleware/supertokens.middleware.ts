@@ -40,7 +40,14 @@ export const initSupertokens = () => {
     framework: "express",
     recipeList: [
       AccountLinking.init({
-        shouldDoAutomaticAccountLinking: () => {
+        shouldDoAutomaticAccountLinking: (_newAccountInfo, _user, session) => {
+          if (session) {
+            return Promise.resolve({
+              shouldAutomaticallyLink: true,
+              shouldRequireVerification: false,
+            });
+          }
+
           return Promise.resolve({ shouldAutomaticallyLink: false });
         },
       }),
@@ -74,7 +81,12 @@ export const initSupertokens = () => {
             return {
               ...originalImplementation,
               async manuallyCreateOrUpdateUser(input) {
-                return createGoogleUser(input);
+                return createGoogleUser(
+                  input,
+                  originalImplementation.manuallyCreateOrUpdateUser.bind(
+                    originalImplementation,
+                  ),
+                );
               },
             };
           },

@@ -6,4 +6,7 @@ export interface Summary_Delete {
   syncs?: number;
   user?: number;
   sessions?: number;
+  superTokensUsers?: number;
+  superTokensMappings?: number;
+  superTokensMetadata?: number;
 }

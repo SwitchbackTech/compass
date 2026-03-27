@@ -35,6 +35,10 @@ When you encounter a mismatch user id, the user in your mongo collection is not 
 yarn cli delete -u <email>
 ```
 
+The delete flow removes both Compass data and SuperTokens auth state. The
+browser cleanup screen only clears local browser storage after the server-side
+purge is complete.
+
 See [CLI And Maintenance Commands](./cli-and-maintenance-commands.md) for the current delete flow.
 
 ### Invalid domain name

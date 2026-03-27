@@ -561,6 +561,39 @@ describe("AuthModal", () => {
           }),
         );
       });
+      expect(mockEmailPassword.signUp).toHaveBeenCalledWith({
+        formFields: [
+          { id: "name", value: "Alex" },
+          { id: "email", value: "test@example.com" },
+          { id: "password", value: "password123" },
+        ],
+      });
+    });
+
+    it("skips existing-session linking during email/password sign in", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<ModalTrigger />);
+
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+      });
+
+      await user.type(screen.getByLabelText(/email/i), "test@example.com");
+      await user.type(screen.getByLabelText(/password/i), "password123");
+      await user.click(screen.getByRole("button", { name: /^log in$/i }));
+
+      await waitFor(() => {
+        expect(mockEmailPassword.signIn).toHaveBeenCalledWith({
+          shouldTryLinkingWithSessionUser: false,
+          formFields: [
+            { id: "email", value: "test@example.com" },
+            { id: "password", value: "password123" },
+          ],
+        });
+      });
     });
   });
 
@@ -965,7 +998,11 @@ describe("URL Parameter Support", () => {
       });
     });
 
-    expect(mockReplaceState).toHaveBeenLastCalledWith(undefined, "", "/day");
+    expect(mockReplaceState).toHaveBeenLastCalledWith(
+      undefined,
+      "",
+      expect.not.stringContaining("token="),
+    );
     expect(screen.getByRole("status")).toHaveTextContent(
       "Password reset successful. Log in with your new password.",
     );

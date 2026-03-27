@@ -12,14 +12,15 @@ import { useAuthFormHandlers } from "./hooks/useAuthFormHandlers";
 import { useAuthModal } from "./hooks/useAuthModal";
 import { useAuthUrlParam } from "./hooks/useAuthUrlParam";
 
-function getInitialResetPasswordToken(): string | undefined {
+function getInitialAuthToken(): string | undefined {
   if (typeof window === "undefined") {
     return undefined;
   }
 
   const searchParams = new URLSearchParams(window.location.search);
+  const authParam = searchParams.get("auth")?.toLowerCase();
 
-  if (searchParams.get("auth")?.toLowerCase() !== "reset") {
+  if (authParam !== "reset" && authParam !== "verify") {
     return undefined;
   }
 
@@ -42,7 +43,7 @@ export const AuthModal: FC = () => {
   const googleAuth = useGoogleAuth();
   const isLoginView =
     currentView === "login" || currentView === "loginAfterReset";
-  const resetPasswordToken = useRef(getInitialResetPasswordToken()).current;
+  const authToken = useRef(getInitialAuthToken()).current;
   const {
     isSubmitting,
     submitError,
@@ -53,7 +54,7 @@ export const AuthModal: FC = () => {
   } = useAuthFormHandlers({
     currentView,
     closeModal,
-    resetPasswordToken,
+    authToken,
     setView,
   });
 

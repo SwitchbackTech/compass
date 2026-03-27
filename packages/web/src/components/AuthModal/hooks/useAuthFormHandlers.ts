@@ -10,16 +10,14 @@ import {
 } from "@web/auth/schemas/auth.schemas";
 import { type AuthView } from "./useAuthModal";
 
-const RESET_PASSWORD_QUERY_SCHEMA = z.object({
+const AUTH_TOKEN_QUERY_SCHEMA = z.object({
   token: z.string().min(1).optional(),
 });
 
-function getResetPasswordQueryParams(): z.infer<
-  typeof RESET_PASSWORD_QUERY_SCHEMA
-> {
+function getAuthTokenQueryParams(): z.infer<typeof AUTH_TOKEN_QUERY_SCHEMA> {
   if (typeof window === "undefined") return {};
   const searchParams = new URLSearchParams(window.location.search);
-  const parsed = RESET_PASSWORD_QUERY_SCHEMA.safeParse({
+  const parsed = AUTH_TOKEN_QUERY_SCHEMA.safeParse({
     token: searchParams.get("token") ?? undefined,
   });
   return parsed.success ? parsed.data : {};
@@ -40,7 +38,7 @@ function updateCurrentUrlSearchParams(
 interface UseAuthFormHandlersOptions {
   currentView: AuthView;
   closeModal: () => void;
-  resetPasswordToken?: string;
+  authToken?: string;
   setView: (view: AuthView) => void;
 }
 
@@ -56,20 +54,20 @@ export interface UseAuthFormHandlersResult {
 export function useAuthFormHandlers({
   currentView,
   closeModal,
-  resetPasswordToken,
+  authToken,
   setView,
 }: UseAuthFormHandlersOptions): UseAuthFormHandlersResult {
   const completeAuthentication = useCompleteAuthentication();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const initialResetPasswordToken = useMemo(() => {
+  const initialAuthToken = useMemo(() => {
     const propToken = z
       .string()
       .min(1)
-      .safeParse(resetPasswordToken ?? "");
+      .safeParse(authToken ?? "");
     if (propToken.success) return propToken.data;
-    return getResetPasswordQueryParams().token;
-  }, [resetPasswordToken]);
+    return getAuthTokenQueryParams().token;
+  }, [authToken]);
 
   useEffect(() => {
     setSubmitError(null);
@@ -93,8 +91,8 @@ export function useAuthFormHandlers({
           case "OK":
             await completeAuthentication({
               email: response.user.emails[0] ?? data.email,
-              onComplete: closeModal,
             });
+            closeModal();
             return;
           case "FIELD_ERROR":
             setSubmitError(response.formFields[0]?.error ?? "Sign up failed");
@@ -121,6 +119,7 @@ export function useAuthFormHandlers({
 
       try {
         const response = await EmailPassword.signIn({
+          shouldTryLinkingWithSessionUser: false,
           formFields: [
             { id: "email", value: data.email },
             { id: "password", value: data.password },
@@ -193,7 +192,7 @@ export function useAuthFormHandlers({
       try {
         // `supertokens-web-js` reads the reset token from the URL query param.
         // We keep the first token we saw (from props or URL) so the flow still works even if the URL changes.
-        const token = initialResetPasswordToken;
+        const token = initialAuthToken;
 
         if (token) {
           updateCurrentUrlSearchParams((searchParams) => {
@@ -230,7 +229,7 @@ export function useAuthFormHandlers({
         setIsSubmitting(false);
       }
     },
-    [initialResetPasswordToken, setView],
+    [initialAuthToken, setView],
   );
 
   return {

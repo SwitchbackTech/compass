@@ -181,6 +181,28 @@ describe("useGoogleAuth", () => {
     });
   });
 
+  it("passes the session-link flag through to Google login setup", () => {
+    mockUseGoogleLogin.mockReturnValue({
+      login: mockLogin,
+      loading: false,
+      data: null,
+    });
+
+    renderHook(() =>
+      useGoogleAuth({
+        prompt: "consent",
+        shouldTryLinkingWithSessionUser: true,
+      }),
+    );
+
+    expect(mockUseGoogleLogin).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: "consent",
+        shouldTryLinkingWithSessionUser: true,
+      }),
+    );
+  });
+
   describe("onError callback", () => {
     it("dispatches auth error when login fails", () => {
       let onErrorCallback: ((error: unknown) => void) | undefined;

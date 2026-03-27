@@ -37,14 +37,16 @@ const resetAuthState = (dispatch: AppDispatch) => {
 export function useGoogleAuth(
   options: {
     prompt?: "consent" | "none" | "select_account";
+    shouldTryLinkingWithSessionUser?: boolean;
   } = {},
 ) {
   const dispatch = useAppDispatch();
   const completeAuthentication = useCompleteAuthentication();
-  const { prompt } = options;
+  const { prompt, shouldTryLinkingWithSessionUser } = options;
 
   const googleLogin = useGoogleAuthWithOverlay({
     prompt,
+    shouldTryLinkingWithSessionUser,
     onStart: () => {
       dismissErrorToast(SESSION_EXPIRED_TOAST_ID);
       dispatch(startAuthenticating());

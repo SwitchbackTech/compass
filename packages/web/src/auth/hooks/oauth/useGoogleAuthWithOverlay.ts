@@ -7,15 +7,23 @@ interface UseGoogleAuthWithOverlayOptions {
   onSuccess?: (res: SignInUpInput) => Promise<void>;
   onError?: (error: unknown) => void;
   prompt?: "consent" | "none" | "select_account";
+  shouldTryLinkingWithSessionUser?: boolean;
 }
 
 export const useGoogleAuthWithOverlay = (
   options: UseGoogleAuthWithOverlayOptions = {},
 ) => {
-  const { onStart, onSuccess, onError, prompt } = options;
+  const {
+    onStart,
+    onSuccess,
+    onError,
+    prompt,
+    shouldTryLinkingWithSessionUser,
+  } = options;
 
   const googleLogin = useGoogleLogin({
     prompt,
+    shouldTryLinkingWithSessionUser,
     onSuccess: async (data) => {
       try {
         await onSuccess?.(data);
