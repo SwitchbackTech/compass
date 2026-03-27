@@ -481,7 +481,7 @@ export const syncCompassEventsToGoogle = async (
         { gEventId: null },
         { gEventId: "" },
       ],
-    })
+    } as Filter<Omit<Schema_Event, "_id">>)
     .sort({ startDate: 1 })
     .toArray();
 

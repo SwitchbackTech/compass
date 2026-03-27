@@ -80,7 +80,6 @@ export function useAuthFormHandlers({
 
       try {
         const response = await EmailPassword.signUp({
-          // shouldTryLinkingWithSessionUser: false,
           formFields: [
             { id: "name", value: data.name },
             { id: "email", value: data.email },
