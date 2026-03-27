@@ -123,6 +123,11 @@ Runtime constraints from recipe overrides:
 
 - successful password `signUpPOST` and `signInPOST` upsert the Compass user via `userService.upsertUserFromAuth(...)`
 - password `createNewRecipeUser` ensures SuperTokens external user-id mapping exists and points to a Mongo `ObjectId` string
+- `POST /api/signout` runs `userService.handleLogoutCleanup(...)` after SuperTokens sign-out:
+  - users without Google connection data skip metadata updates
+  - users with Google connection data get `sync.incrementalGCalSync = "RESTART"`
+  - last-active-session logout attempts to stop Google watches
+  - cleanup failures are logged and do not change sign-out response shape
 - password-reset links are rewritten to Compass app URLs before delivery
 - in `test`, reset links are logged instead of sent
 - outside `test`, delivery goes through SuperTokens email delivery
@@ -248,6 +253,11 @@ Authenticated user trigger for full import restart:
 - middleware: `verifySession()` + `requireGoogleConnectionSession`
 - response: `204 No Content`
 - import runs asynchronously; progress is surfaced via websocket `IMPORT_GCAL_START` / `IMPORT_GCAL_END`
+- body schema (`ImportGCalRequestSchema` in `packages/backend/src/sync/sync.types.ts`):
+  - optional `force: boolean`
+- behavior:
+  - `{ "force": true }` triggers forced restart unless a full import is already `IMPORTING`
+  - omitted/false follows normal metadata guardrails (`shouldImportGCal`) and may no-op when already completed or in progress
 
 ### /api/event-change-demo
 

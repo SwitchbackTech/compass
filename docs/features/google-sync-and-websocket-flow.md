@@ -136,6 +136,28 @@ Error semantics during stop:
 
 This makes watch cleanup idempotent for stale or already-invalid Google channels.
 
+### Logout Cleanup and Watch Teardown
+
+Source files:
+
+- `packages/backend/src/common/middleware/supertokens.middleware.handlers.ts`
+- `packages/backend/src/user/services/user.service.ts`
+
+On `POST /api/signout`, backend cleanup is intentionally decoupled from the sign-out response:
+
+1. SuperTokens `signOutPOST` runs first.
+2. Backend calls `userService.handleLogoutCleanup(userId, { isLastActiveSession })`.
+3. Cleanup behavior:
+   - for users with Google connection data (`googleId` or `gRefreshToken`), set:
+     - `sync.incrementalGCalSync = "RESTART"`
+   - if this is the last active session, stop all user watches (`syncService.stopWatches`)
+4. If cleanup throws, backend logs the error and still returns the sign-out response.
+
+Operational implication:
+
+- logout remains reliable even when downstream watch cleanup fails
+- the next authenticated flow can re-enter incremental sync from a known metadata state
+
 ### Watch Triage Checklist
 
 When Google notifications repeatedly return `"IGNORED"` or no client refresh occurs:
@@ -299,6 +321,28 @@ Google import progress is also realtime:
 3. client waits for metadata/socket updates from the backend import flow
 4. backend completes import and emits `IMPORT_GCAL_END`
 5. client stores import results and triggers a refetch
+
+### Manual Import Trigger Contract
+
+Source files:
+
+- `packages/backend/src/sync/sync.routes.config.ts`
+- `packages/backend/src/sync/controllers/sync.controller.ts`
+- `packages/backend/src/sync/sync.types.ts`
+- `packages/backend/src/user/services/user.service.ts`
+
+`POST /api/sync/import-gcal` request body is validated with:
+
+```ts
+{ force?: boolean }
+```
+
+Behavior:
+
+- `force: true` calls `restartGoogleCalendarSync(userId, { force: true })`
+- forced restarts still do **not** start if an import is already `"IMPORTING"`
+- omitted/false uses standard metadata guardrails (`shouldImportGCal`)
+- endpoint returns `204` immediately; import progress is asynchronous via websocket events
 
 ## Rules Of Thumb For Changes
 
