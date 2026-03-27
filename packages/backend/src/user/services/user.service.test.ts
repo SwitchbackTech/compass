@@ -591,6 +591,46 @@ describe("UserService", () => {
     });
   });
 
+  describe("handleLogoutCleanup", () => {
+    it("skips Google metadata updates for email/password-only users", async () => {
+      const user = await UserDriver.createUser({ withGoogle: false });
+      const stopWatchesSpy = jest
+        .spyOn(syncService, "stopWatches")
+        .mockResolvedValue([]);
+      const updateMetadataSpy = jest.spyOn(
+        userMetadataService,
+        "updateUserMetadata",
+      );
+
+      await userService.handleLogoutCleanup(user._id.toString(), {
+        isLastActiveSession: true,
+      });
+
+      expect(updateMetadataSpy).not.toHaveBeenCalled();
+      expect(stopWatchesSpy).toHaveBeenCalledWith(user._id.toString());
+    });
+
+    it("updates Google metadata and stops watches for last active Google sessions", async () => {
+      const user = await UserDriver.createUser();
+      const stopWatchesSpy = jest
+        .spyOn(syncService, "stopWatches")
+        .mockResolvedValue([]);
+      const updateMetadataSpy = jest
+        .spyOn(userMetadataService, "updateUserMetadata")
+        .mockResolvedValue({} as never);
+
+      await userService.handleLogoutCleanup(user._id.toString(), {
+        isLastActiveSession: true,
+      });
+
+      expect(updateMetadataSpy).toHaveBeenCalledWith({
+        userId: user._id.toString(),
+        data: { sync: { incrementalGCalSync: "RESTART" } },
+      });
+      expect(stopWatchesSpy).toHaveBeenCalledWith(user._id.toString());
+    });
+  });
+
   describe("reconnectGoogleCredentials", () => {
     it("updates the user's Google credentials and lastLoggedInAt", async () => {
       const user = await UserDriver.createUser();

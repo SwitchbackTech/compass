@@ -108,6 +108,7 @@ Run `yarn test:core`, `yarn test:web`, and `yarn test:backend` after making chan
 
 ### Linting
 
+- Run `./node_modules/.bin/eslint <changed app files>` before finishing. Treat eslint as required validation for changed implementation files, not an optional follow-up.
 - `yarn prettier . --write`
 
 ## Validation
@@ -171,12 +172,14 @@ packages/core/src/
 
 1. **Start Development**: `yarn dev:web` (frontend only, always works)
 2. **Run Tests**: `yarn test:core && yarn test:web` (add `&& yarn test:backend` when credentials available)
-3. **Check Code Style**: `yarn prettier . --write`
-4. **Manual Validation**: Open <http://localhost:9080/> and verify login page loads
+3. **Run Eslint On Changed Implementation Files**: `./node_modules/.bin/eslint <changed app files>`
+4. **Check Code Style**: `yarn prettier . --write`
+5. **Manual Validation**: Open <http://localhost:9080/> and verify login page loads
 
 ## Cursor Cloud specific instructions
 
 - Prefer running scoped checks for changed areas: `yarn test:core`, `yarn test:web`, `yarn test:backend`, or `yarn test:scripts` as applicable.
+- Run `./node_modules/.bin/eslint <changed app files>` before handing off work.
 - Do not run `yarn test` in restricted environments unless explicitly required.
 - For UI-affecting changes in `packages/web`, validate with `yarn dev:web` and confirm behavior in the web dev server.
 - If backend work is required, ensure `packages/backend/.env.local` exists by copying `packages/backend/.env.local.example`.

@@ -1,6 +1,5 @@
 import { type ClientSession, ObjectId } from "mongodb";
 import { RESULT_NOTIFIED_CLIENT } from "@core/constants/websocket.constants";
-import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 import { type gCalendar } from "@core/types/gcal";
 import {
@@ -39,7 +38,10 @@ import {
   isWatchingGoogleResource,
   updateSync,
 } from "@backend/sync/util/sync.queries";
-import { getChannelExpiration } from "@backend/sync/util/sync.util";
+import {
+  getChannelExpiration,
+  isMissingGoogleRefreshToken,
+} from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 
@@ -86,6 +88,41 @@ class SyncService {
       channelId: _id.toString(),
       resourceId,
     }));
+  };
+
+  private prepareStopWatches = async (
+    user: string,
+    gcal?: gCalendar,
+    session?: ClientSession,
+  ) => {
+    const watches = await mongoService.watch
+      .find({ user }, { session })
+      .toArray();
+
+    if (watches.length === 0 || gcal) {
+      return { watches, gcal };
+    }
+
+    const compassUser = await findCompassUserBy("_id", user);
+
+    if (!compassUser) {
+      throw error(UserError.UserNotFound, "User not found");
+    }
+
+    if (!compassUser.google?.gRefreshToken) {
+      await mongoService.watch.deleteMany({ user }, { session });
+
+      logger.warn(
+        "Google refresh token is missing. Corresponding watch records deleted",
+      );
+
+      return { watches: [], gcal };
+    }
+
+    return {
+      watches,
+      gcal: await getGcalClient(user),
+    };
   };
 
   async cleanupStaleWatchChannel({
@@ -454,8 +491,8 @@ class SyncService {
     if (params?.log) {
       logger.debug(`Sync Maintenance Results:
         IGNORED: ${ignore.length}
-        PRUNED: ${pruned.flatMap((p) => p.results).toString()}
-        REFRESHED: ${refreshed.flatMap((r) => r.results.filter((r) => r.success)).toString()}
+        PRUNED: ${pruned.flatMap((p) => p.results).length}
+        REFRESHED: ${refreshed.flatMap((r) => r.results.filter((r) => r.success)).length}
 
         DELETED DURING PRUNE: ${deletedDuringPrune.map((r) => r.user).toString()}
         RESYNCED DURING REFRESH: ${resynced.map((r) => r.user).toString()}
@@ -591,12 +628,11 @@ class SyncService {
   ) => {
     return Promise.all(
       watchParams.map(async (params) => {
-        switch (params.gCalendarId) {
-          case Resource_Sync.CALENDAR:
-            return this.startWatchingGcalCalendars(userId, params, gcal);
-          default:
-            return this.startWatchingGcalEvents(userId, params, gcal);
+        if (params.gCalendarId === "calendarlist") {
+          return this.startWatchingGcalCalendars(userId, params, gcal);
         }
+
+        return this.startWatchingGcalEvents(userId, params, gcal);
       }),
     ).then((results) => results.filter((r) => r !== undefined));
   };
@@ -646,10 +682,7 @@ class SyncService {
         return undefined;
       }
 
-      if (
-        e instanceof BaseError &&
-        e.description === UserError.MissingGoogleRefreshToken.description
-      ) {
+      if (isMissingGoogleRefreshToken(e)) {
         await mongoService.watch.deleteOne(filter, { session });
 
         logger.warn(
@@ -671,19 +704,19 @@ class SyncService {
   ): Promise<Result_Watch_Stop> => {
     logger.debug(`Stopping all gcal event watches for user: ${user}`);
 
-    if (!gcal) gcal = await getGcalClient(user);
+    const prepared = await this.prepareStopWatches(user, gcal, session);
 
-    const watches = await mongoService.watch
-      .find({ user }, { session })
-      .toArray();
+    if (prepared.watches.length === 0) {
+      return [];
+    }
 
     const result = await Promise.all(
-      watches.map(async ({ _id, resourceId }) =>
+      prepared.watches.map(async ({ _id, resourceId }) =>
         this.stopWatch(
           user,
           _id.toString(),
           resourceId,
-          gcal,
+          prepared.gcal,
           quotaUser,
           session,
         ).catch((error) => {

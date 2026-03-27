@@ -119,11 +119,11 @@ export const initSupertokens = () => {
           formFields: [
             {
               id: "name",
-              validate: async (value) => {
+              validate: (value) => {
                 if (typeof value !== "string" || !value.trim()) {
-                  return "Name is required";
+                  return Promise.resolve("Name is required");
                 }
-                return undefined;
+                return Promise.resolve(undefined);
               },
             },
           ],
@@ -207,9 +207,8 @@ export const initSupertokens = () => {
                   );
                 }
 
-                return handleSessionSignOut(
-                  input,
-                  signOutPOST.bind(originalImplementation),
+                return handleSessionSignOut(input, async (signOutInput) =>
+                  signOutPOST(signOutInput),
                 );
               },
             };

@@ -22,8 +22,6 @@ import {
   getFormFieldValue,
 } from "@backend/common/middleware/supertokens.middleware.util";
 import EmailService from "@backend/email/email.service";
-import syncService from "@backend/sync/services/sync.service";
-import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
 
 const logger = Logger("app:supertokens.middleware");
@@ -164,13 +162,12 @@ export async function handleSessionSignOut(
 
   const res = await originalSignOutPOST(input);
 
-  await userMetadataService.updateUserMetadata({
-    userId: userId.toString(),
-    data: { sync: { incrementalGCalSync: "RESTART" } },
-  });
-
-  if (lastActiveSession) {
-    await syncService.stopWatches(userId.toString());
+  try {
+    await userService.handleLogoutCleanup(userId.toString(), {
+      isLastActiveSession: lastActiveSession,
+    });
+  } catch (error) {
+    logger.error(`Failed logout cleanup for user: ${userId.toString()}`, error);
   }
 
   return res;

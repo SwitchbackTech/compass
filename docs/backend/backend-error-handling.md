@@ -2,6 +2,10 @@
 
 Compass uses typed operational errors plus a centralized Express error handler.
 
+## Principles
+
+- Minimize the number of `try/catch` blocks in the code.
+
 ## Source Files
 
 - `packages/backend/src/common/errors/handlers/error.handler.ts`

@@ -11,6 +11,7 @@ import {
 import { createGoogleError } from "@backend/__tests__/mocks.gcal/errors/error.google.factory";
 import { invalidGrant400Error } from "@backend/__tests__/mocks.gcal/errors/error.google.invalidGrant";
 import { missingRefreshTokenError } from "@backend/__tests__/mocks.gcal/errors/error.missingRefreshToken";
+import * as googleCalendarClient from "@backend/auth/services/google/clients/google.calendar.client";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import syncService from "@backend/sync/services/sync.service";
@@ -179,6 +180,40 @@ describe("SyncService", () => {
           resourceId: watch.resourceId,
         }),
       ).toEqual(expect.objectContaining({ user: user._id.toString() }));
+    });
+  });
+
+  describe("stopWatches", () => {
+    it("returns early when the user has no stored watches", async () => {
+      const user = await UserDriver.createUser({ withGoogle: false });
+      const getGcalClientSpy = jest.spyOn(
+        googleCalendarClient,
+        "getGcalClient",
+      );
+
+      await expect(
+        syncService.stopWatches(user._id.toString()),
+      ).resolves.toEqual([]);
+
+      expect(getGcalClientSpy).not.toHaveBeenCalled();
+    });
+
+    it("deletes local watch records when the user is missing a refresh token", async () => {
+      const user = await UserDriver.createUser({
+        withGoogleRefreshToken: false,
+      });
+      const watch = await createWatch(user._id.toString());
+      const getGcalClientSpy = jest.spyOn(
+        googleCalendarClient,
+        "getGcalClient",
+      );
+
+      await expect(
+        syncService.stopWatches(user._id.toString()),
+      ).resolves.toEqual([]);
+
+      expect(await mongoService.watch.findOne({ _id: watch._id })).toBeNull();
+      expect(getGcalClientSpy).not.toHaveBeenCalled();
     });
   });
 
