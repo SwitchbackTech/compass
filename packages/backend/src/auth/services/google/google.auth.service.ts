@@ -140,7 +140,7 @@ class GoogleAuthService {
     if (existingCompassUserId && existingCompassUserId !== cUserId) {
       throw error(
         AuthError.GoogleAccountAlreadyConnected,
-        "Google account is already connected to another Compass user",
+        "User not connected",
       );
     }
 

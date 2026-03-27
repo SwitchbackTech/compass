@@ -11,6 +11,7 @@ import {
 import { type SignInUpInput } from "@web/components/oauth/ouath.types";
 import {
   authError,
+  authSuccess,
   resetAuth,
   startAuthenticating,
 } from "@web/ducks/auth/slices/auth.slice";
@@ -57,6 +58,7 @@ export function useGoogleAuth(
       try {
         if (onSuccess) {
           await onSuccess(data);
+          dispatch(authSuccess());
           return;
         }
 

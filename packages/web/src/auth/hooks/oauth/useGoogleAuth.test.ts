@@ -244,6 +244,9 @@ describe("useGoogleAuth", () => {
     expect(customOnSuccess).toHaveBeenCalledWith(payload);
     expect(mockAuthenticate).not.toHaveBeenCalled();
     expect(mockSetAuthenticated).not.toHaveBeenCalled();
+    expect(mockDispatchFn).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "auth/authSuccess" }),
+    );
   });
 
   describe("onError callback", () => {
