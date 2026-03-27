@@ -3,7 +3,6 @@ import SuperTokens from "supertokens-node";
 import AccountLinking from "supertokens-node/recipe/accountlinking";
 import Dashboard from "supertokens-node/recipe/dashboard";
 import EmailPassword from "supertokens-node/recipe/emailpassword";
-import EmailVerification from "supertokens-node/recipe/emailverification";
 import Session from "supertokens-node/recipe/session";
 import ThirdParty from "supertokens-node/recipe/thirdparty";
 import UserMetadata from "supertokens-node/recipe/usermetadata";
@@ -22,7 +21,6 @@ import {
   handleEmailPasswordSignUp,
   handleGoogleSignInUp,
   handleSessionSignOut,
-  sendEmailVerificationEmail,
   sendPasswordResetEmail,
 } from "@backend/common/middleware/supertokens.middleware.handlers";
 
@@ -42,7 +40,7 @@ export const initSupertokens = () => {
     framework: "express",
     recipeList: [
       AccountLinking.init({
-        shouldDoAutomaticAccountLinking: (newAccountInfo, _user, session) => {
+        shouldDoAutomaticAccountLinking: (_newAccountInfo, _user, session) => {
           if (session) {
             return Promise.resolve({
               shouldAutomaticallyLink: true,
@@ -50,14 +48,7 @@ export const initSupertokens = () => {
             });
           }
 
-          if (!newAccountInfo.email) {
-            return Promise.resolve({ shouldAutomaticallyLink: false });
-          }
-
-          return Promise.resolve({
-            shouldAutomaticallyLink: true,
-            shouldRequireVerification: true,
-          });
+          return Promise.resolve({ shouldAutomaticallyLink: false });
         },
       }),
       // see added endpoints
@@ -196,18 +187,6 @@ export const initSupertokens = () => {
               },
             };
           },
-        },
-      }),
-      EmailVerification.init({
-        mode: "OPTIONAL",
-        emailDelivery: {
-          override: (originalImplementation) => ({
-            ...originalImplementation,
-            sendEmail: (input) =>
-              sendEmailVerificationEmail(input, (emailInput) =>
-                originalImplementation.sendEmail(emailInput),
-              ),
-          }),
         },
       }),
       Dashboard.init(),

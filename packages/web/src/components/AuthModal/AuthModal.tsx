@@ -42,9 +42,7 @@ export const AuthModal: FC = () => {
     useAuthModal();
   const googleAuth = useGoogleAuth();
   const isLoginView =
-    currentView === "login" ||
-    currentView === "loginAfterReset" ||
-    currentView === "loginAfterVerify";
+    currentView === "login" || currentView === "loginAfterReset";
   const authToken = useRef(getInitialAuthToken()).current;
   const {
     isSubmitting,
@@ -53,7 +51,6 @@ export const AuthModal: FC = () => {
     handleLogin,
     handleForgotPassword,
     handleResetPassword,
-    handleVerifyEmail,
   } = useAuthFormHandlers({
     currentView,
     closeModal,
@@ -72,22 +69,6 @@ export const AuthModal: FC = () => {
     }
     prevViewRef.current = currentView;
   }, [currentView]);
-
-  const hasAttemptedEmailVerificationRef = useRef(false);
-
-  useEffect(() => {
-    if (currentView !== "verifyEmail") {
-      hasAttemptedEmailVerificationRef.current = false;
-      return;
-    }
-
-    if (hasAttemptedEmailVerificationRef.current) {
-      return;
-    }
-
-    hasAttemptedEmailVerificationRef.current = true;
-    void handleVerifyEmail();
-  }, [currentView, handleVerifyEmail]);
 
   const handleSwitchAuth = useCallback(
     () => setView(currentView === "signUp" ? "login" : "signUp"),
@@ -116,8 +97,7 @@ export const AuthModal: FC = () => {
   }
 
   const showAuthSwitch = isLoginView || currentView === "signUp";
-  const showGoogleAuth =
-    currentView !== "resetPassword" && currentView !== "verifyEmail";
+  const showGoogleAuth = currentView !== "resetPassword";
   const showSubmitError =
     submitError !== null && (isLoginView || currentView === "signUp");
   const trimmedName = signUpName.trim();
@@ -126,13 +106,11 @@ export const AuthModal: FC = () => {
       ? "Reset Password"
       : currentView === "resetPassword"
         ? "Set New Password"
-        : currentView === "verifyEmail"
-          ? "Verify Email"
-          : currentView === "signUp"
-            ? trimmedName
-              ? `Nice to meet you, ${trimmedName}`
-              : "Nice to meet you"
-            : "Hey, welcome back";
+        : currentView === "signUp"
+          ? trimmedName
+            ? `Nice to meet you, ${trimmedName}`
+            : "Nice to meet you"
+          : "Hey, welcome back";
 
   return (
     <OverlayPanel title={title} onDismiss={closeModal} variant="modal">
@@ -153,9 +131,7 @@ export const AuthModal: FC = () => {
             statusMessage={
               currentView === "loginAfterReset"
                 ? "Password reset successful. Log in with your new password."
-                : currentView === "loginAfterVerify"
-                  ? "Email verified. Log in to continue."
-                  : null
+                : null
             }
           />
         )}
@@ -173,26 +149,6 @@ export const AuthModal: FC = () => {
             isSubmitting={isSubmitting}
             error={submitError}
           />
-        )}
-        {currentView === "verifyEmail" && (
-          <div className="flex flex-col items-center gap-4 text-center">
-            <p className="text-text-light text-sm">
-              {isSubmitting
-                ? "Verifying your email..."
-                : submitError
-                  ? submitError
-                  : "Preparing verification..."}
-            </p>
-            {!isSubmitting && (
-              <AuthButton
-                type="button"
-                variant={submitError ? "primary" : "outline"}
-                onClick={handleBackToSignIn}
-              >
-                Back to log in
-              </AuthButton>
-            )}
-          </div>
         )}
         {showSubmitError ? (
           <p className="text-status-error text-center text-sm" role="alert">

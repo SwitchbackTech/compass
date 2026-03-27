@@ -58,13 +58,6 @@ export function buildResetPasswordLink(
   return buildFrontendAuthLink(passwordResetLink, frontendUrl, "reset");
 }
 
-export function buildEmailVerificationLink(
-  emailVerificationLink: string,
-  frontendUrl: string,
-): string {
-  return buildFrontendAuthLink(emailVerificationLink, frontendUrl, "verify");
-}
-
 export async function ensureExternalUserIdMapping(
   recipeUserId: string,
 ): Promise<string> {

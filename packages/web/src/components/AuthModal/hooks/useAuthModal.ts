@@ -9,11 +9,9 @@ import {
 export type AuthView =
   | "login"
   | "loginAfterReset"
-  | "loginAfterVerify"
   | "signUp"
   | "forgotPassword"
-  | "resetPassword"
-  | "verifyEmail";
+  | "resetPassword";
 
 interface AuthModalContextValue {
   isOpen: boolean;

@@ -12,7 +12,13 @@ import { TODAY_TASKS_STORAGE_KEY_PREFIX } from "@web/common/utils/storage/storag
 export async function clearAllBrowserStorage(): Promise<void> {
   try {
     // 1. Sign out from SuperTokens session (clears session cookies)
-    await session.signOut();
+    try {
+      await session.signOut();
+    } catch (error) {
+      // Deleted users can have stale auth cookies that no longer map to a
+      // server-side session. Continue clearing local browser state anyway.
+      console.warn("Failed to sign out during browser cleanup:", error);
+    }
 
     // 2. Clear all localStorage keys that start with 'compass.'
     const keysToRemove: string[] = [];

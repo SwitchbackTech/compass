@@ -2,7 +2,6 @@ import { type TokenPayload } from "google-auth-library";
 import { createUserIdMapping, getUserIdMapping } from "supertokens-node";
 import { faker } from "@faker-js/faker";
 import {
-  buildEmailVerificationLink,
   buildResetPasswordLink,
   createGoogleSignInSuccess,
   ensureExternalUserIdMapping,
@@ -109,32 +108,6 @@ describe("supertokens.middleware.util", () => {
       expect(
         buildResetPasswordLink(passwordResetLink, "http://localhost:9080"),
       ).toBe(passwordResetLink);
-    });
-  });
-
-  describe("buildEmailVerificationLink", () => {
-    it("rewrites verification links into the app auth flow", () => {
-      const token = faker.string.alphanumeric(32);
-      const frontendUrl = "http://localhost:9080";
-
-      expect(
-        buildEmailVerificationLink(
-          `http://localhost:3567/auth/verify-email?token=${token}`,
-          frontendUrl,
-        ),
-      ).toBe(`http://localhost:9080/day?auth=verify&token=${token}`);
-    });
-
-    it("returns the original link when the token is missing", () => {
-      const emailVerificationLink =
-        "http://localhost:3567/auth/verify-email?foo=bar";
-
-      expect(
-        buildEmailVerificationLink(
-          emailVerificationLink,
-          "http://localhost:9080",
-        ),
-      ).toBe(emailVerificationLink);
     });
   });
 

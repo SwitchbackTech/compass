@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "react-toastify";
 import EmailPassword from "supertokens-web-js/recipe/emailpassword";
-import EmailVerification from "supertokens-web-js/recipe/emailverification";
 import { z } from "zod";
 import { useCompleteAuthentication } from "@web/auth/hooks/useCompleteAuthentication";
 import {
@@ -10,7 +8,6 @@ import {
   type ResetPasswordFormData,
   type SignUpFormData,
 } from "@web/auth/schemas/auth.schemas";
-import { toastDefaultOptions } from "@web/common/constants/toast.constants";
 import { type AuthView } from "./useAuthModal";
 
 const AUTH_TOKEN_QUERY_SCHEMA = z.object({
@@ -52,7 +49,6 @@ export interface UseAuthFormHandlersResult {
   handleLogin: (data: LogInFormData) => Promise<void>;
   handleForgotPassword: (data: ForgotPasswordFormData) => Promise<void>;
   handleResetPassword: (data: ResetPasswordFormData) => Promise<void>;
-  handleVerifyEmail: () => Promise<void>;
 }
 
 export function useAuthFormHandlers({
@@ -84,6 +80,7 @@ export function useAuthFormHandlers({
 
       try {
         const response = await EmailPassword.signUp({
+          // shouldTryLinkingWithSessionUser: false,
           formFields: [
             { id: "name", value: data.name },
             { id: "email", value: data.email },
@@ -96,28 +93,6 @@ export function useAuthFormHandlers({
             await completeAuthentication({
               email: response.user.emails[0] ?? data.email,
             });
-
-            try {
-              const verificationResponse =
-                await EmailVerification.sendVerificationEmail();
-
-              if (verificationResponse.status === "OK") {
-                toast.success(
-                  "Check your inbox to verify your email.",
-                  toastDefaultOptions,
-                );
-              }
-            } catch (verificationError) {
-              console.error(
-                "Failed to send verification email after sign up:",
-                verificationError,
-              );
-              toast.error(
-                "Your account was created, but we could not send a verification email.",
-                toastDefaultOptions,
-              );
-            }
-
             closeModal();
             return;
           case "FIELD_ERROR":
@@ -145,6 +120,7 @@ export function useAuthFormHandlers({
 
       try {
         const response = await EmailPassword.signIn({
+          shouldTryLinkingWithSessionUser: false,
           formFields: [
             { id: "email", value: data.email },
             { id: "password", value: data.password },
@@ -257,43 +233,6 @@ export function useAuthFormHandlers({
     [initialAuthToken, setView],
   );
 
-  const handleVerifyEmail = useCallback(async () => {
-    setIsSubmitting(true);
-    setSubmitError(null);
-
-    try {
-      const token = initialAuthToken;
-
-      if (token) {
-        updateCurrentUrlSearchParams((searchParams) => {
-          searchParams.set("token", token);
-        });
-      }
-
-      const response = await EmailVerification.verifyEmail();
-
-      switch (response.status) {
-        case "OK":
-          updateCurrentUrlSearchParams((searchParams) => {
-            searchParams.delete("token");
-          });
-          setView("loginAfterVerify");
-          return;
-        case "EMAIL_VERIFICATION_INVALID_TOKEN_ERROR":
-          setSubmitError(
-            "This verification link is invalid or expired. Sign in to request a new one.",
-          );
-          return;
-      }
-    } catch (error) {
-      setSubmitError(
-        error instanceof Error ? error.message : "Unable to verify email",
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [initialAuthToken, setView]);
-
   return {
     isSubmitting,
     submitError,
@@ -301,6 +240,5 @@ export function useAuthFormHandlers({
     handleLogin,
     handleForgotPassword,
     handleResetPassword,
-    handleVerifyEmail,
   };
 }

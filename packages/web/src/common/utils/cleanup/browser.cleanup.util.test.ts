@@ -72,13 +72,20 @@ describe("browser.cleanup.util", () => {
       expect(localStorage.getItem("other.key")).toBe("value");
     });
 
-    it("should handle errors gracefully", async () => {
-      const spy = jest.spyOn(console, "error").mockImplementation();
+    it("continues cleanup when sign out fails", async () => {
+      const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
       const mockSignOut = session.signOut as jest.Mock;
+      localStorage.setItem("compass.test", "value");
+
       mockSignOut.mockRejectedValueOnce(new Error("Sign out failed"));
 
-      await expect(clearAllBrowserStorage()).rejects.toThrow("Sign out failed");
-      spy.mockRestore();
+      await expect(clearAllBrowserStorage()).resolves.not.toThrow();
+      expect(localStorage.getItem("compass.test")).toBeNull();
+      expect(warnSpy).toHaveBeenCalledWith(
+        "Failed to sign out during browser cleanup:",
+        expect.any(Error),
+      );
+      warnSpy.mockRestore();
     });
 
     it("should not fail when no Compass storage exists", async () => {

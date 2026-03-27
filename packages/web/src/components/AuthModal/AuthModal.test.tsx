@@ -7,7 +7,6 @@ import {
   useLocation,
 } from "react-router-dom";
 import EmailPassword from "supertokens-web-js/recipe/emailpassword";
-import EmailVerification from "supertokens-web-js/recipe/emailverification";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -41,7 +40,6 @@ jest.mock("@web/auth/hooks/useCompleteAuthentication", () => ({
 }));
 
 jest.mock("supertokens-web-js/recipe/emailpassword");
-jest.mock("supertokens-web-js/recipe/emailverification");
 
 // Mock GoogleButton - uses button with label for semantic queries (matches real component's aria-label)
 jest.mock("@web/components/oauth/google/GoogleButton", () => ({
@@ -98,9 +96,6 @@ const ModalTrigger = () => {
 };
 
 const mockEmailPassword = EmailPassword as jest.Mocked<typeof EmailPassword>;
-const mockEmailVerification = EmailVerification as jest.Mocked<
-  typeof EmailVerification
->;
 
 const renderWithProviders = (
   component: ReactElement,
@@ -215,12 +210,6 @@ describe("AuthModal", () => {
     } as never);
     mockEmailPassword.getResetPasswordTokenFromURL.mockReturnValue("token");
     mockEmailPassword.submitNewPassword.mockResolvedValue({
-      status: "OK",
-    } as never);
-    mockEmailVerification.sendVerificationEmail.mockResolvedValue({
-      status: "OK",
-    } as never);
-    mockEmailVerification.verifyEmail.mockResolvedValue({
       status: "OK",
     } as never);
   });
@@ -572,7 +561,39 @@ describe("AuthModal", () => {
           }),
         );
       });
-      expect(mockEmailVerification.sendVerificationEmail).toHaveBeenCalled();
+      expect(mockEmailPassword.signUp).toHaveBeenCalledWith({
+        formFields: [
+          { id: "name", value: "Alex" },
+          { id: "email", value: "test@example.com" },
+          { id: "password", value: "password123" },
+        ],
+      });
+    });
+
+    it("skips existing-session linking during email/password sign in", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<ModalTrigger />);
+
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+      });
+
+      await user.type(screen.getByLabelText(/email/i), "test@example.com");
+      await user.type(screen.getByLabelText(/password/i), "password123");
+      await user.click(screen.getByRole("button", { name: /^log in$/i }));
+
+      await waitFor(() => {
+        expect(mockEmailPassword.signIn).toHaveBeenCalledWith({
+          shouldTryLinkingWithSessionUser: false,
+          formFields: [
+            { id: "email", value: "test@example.com" },
+            { id: "password", value: "password123" },
+          ],
+        });
+      });
     });
   });
 
@@ -992,71 +1013,6 @@ describe("URL Parameter Support", () => {
     expect(
       mockEmailPassword.getResetPasswordTokenFromURL,
     ).not.toHaveBeenCalled();
-  });
-
-  it("opens verify email after the /day redirect preserves auth params", async () => {
-    const { dateString } = loadTodayData();
-
-    renderWithDayRedirectRoute("/day?auth=verify&token=verify-token");
-
-    await waitFor(() => {
-      expect(screen.getByText("Day route loaded")).toBeInTheDocument();
-      expect(
-        screen.getByRole("heading", { name: /verify email/i }),
-      ).toBeInTheDocument();
-    });
-
-    expect(mockReplaceState).toHaveBeenCalledWith(
-      null,
-      "",
-      `/day/${dateString}?token=verify-token`,
-    );
-  });
-
-  it("verifies email with the initial token after the URL changes", async () => {
-    mockWindowLocation("/day?auth=verify&token=verify-token");
-    renderWithProviders(<div />, "/day?auth=verify&token=verify-token");
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole("heading", { name: /verify email/i }),
-      ).toBeInTheDocument();
-    });
-
-    mockWindowLocation("/day");
-
-    await waitFor(() => {
-      expect(mockEmailVerification.verifyEmail).toHaveBeenCalled();
-    });
-
-    expect(mockReplaceState).toHaveBeenLastCalledWith(
-      undefined,
-      "",
-      expect.not.stringContaining("token="),
-    );
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Email verified. Log in to continue.",
-    );
-  });
-
-  it("shows retry guidance when the verification token is invalid", async () => {
-    mockEmailVerification.verifyEmail.mockResolvedValue({
-      status: "EMAIL_VERIFICATION_INVALID_TOKEN_ERROR",
-    } as never);
-
-    renderWithProviders(<div />, "/day?auth=verify&token=verify-token");
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(
-          "This verification link is invalid or expired. Sign in to request a new one.",
-        ),
-      ).toBeInTheDocument();
-    });
-
-    expect(
-      screen.getByRole("button", { name: /back to log in/i }),
-    ).toBeInTheDocument();
   });
 
   it("switches to signUp (not back to loginAfterReset) when Sign up is clicked after reset", async () => {

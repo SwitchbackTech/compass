@@ -2,7 +2,6 @@ import type {
   APIInterface as EmailPasswordAPIInterface,
   RecipeInterface as EmailPasswordRecipeInterface,
 } from "supertokens-node/recipe/emailpassword/types";
-import type { TypeEmailVerificationEmailDeliveryInput } from "supertokens-node/recipe/emailverification/types";
 import Session from "supertokens-node/recipe/session";
 import type { APIInterface as SessionAPIInterface } from "supertokens-node/recipe/session/types";
 import type {
@@ -17,7 +16,6 @@ import { ENV } from "@backend/common/constants/env.constants";
 import {
   type CreateGoogleSignInResponse,
   type ThirdPartySignInUpInput,
-  buildEmailVerificationLink,
   buildResetPasswordLink,
   createGoogleSignInSuccess,
   ensureExternalUserIdMapping,
@@ -93,27 +91,6 @@ export async function sendPasswordResetEmail<
   }
 
   await originalSendEmail({ ...input, passwordResetLink: resetLink });
-}
-
-export async function sendEmailVerificationEmail(
-  input: TypeEmailVerificationEmailDeliveryInput,
-  originalSendEmail: (
-    input: TypeEmailVerificationEmailDeliveryInput,
-  ) => Promise<void>,
-): Promise<void> {
-  const verificationLink = buildEmailVerificationLink(
-    input.emailVerifyLink,
-    ENV.FRONTEND_URL,
-  );
-
-  if (ENV.NODE_ENV === NodeEnv.Test) {
-    logger.info(
-      `Email verification link for ${input.user.email}: ${verificationLink}`,
-    );
-    return;
-  }
-
-  await originalSendEmail({ ...input, emailVerifyLink: verificationLink });
 }
 
 export async function createEmailPasswordUser(

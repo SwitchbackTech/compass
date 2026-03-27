@@ -4,7 +4,6 @@ import superTokensNode from "supertokens-node";
 import AccountLinking from "supertokens-node/recipe/accountlinking";
 import Dashboard from "supertokens-node/recipe/dashboard";
 import EmailPassword from "supertokens-node/recipe/emailpassword";
-import EmailVerification from "supertokens-node/recipe/emailverification";
 import Session from "supertokens-node/recipe/session";
 import ThirdParty from "supertokens-node/recipe/thirdparty";
 import UserMetadata from "supertokens-node/recipe/usermetadata";
@@ -20,7 +19,6 @@ import {
   supertokensCors,
 } from "@backend/common/middleware/supertokens.middleware";
 import {
-  buildEmailVerificationLink,
   buildResetPasswordLink,
   createGoogleSignInSuccess,
   ensureExternalUserIdMapping,
@@ -59,13 +57,6 @@ jest.mock("supertokens-node/recipe/dashboard", () => ({
 }));
 
 jest.mock("supertokens-node/recipe/emailpassword", () => ({
-  __esModule: true,
-  default: {
-    init: jest.fn(),
-  },
-}));
-
-jest.mock("supertokens-node/recipe/emailverification", () => ({
   __esModule: true,
   default: {
     init: jest.fn(),
@@ -137,7 +128,6 @@ jest.mock("@backend/common/middleware/supertokens.middleware.util", () => {
   );
   return {
     ...actual,
-    buildEmailVerificationLink: jest.fn(),
     buildResetPasswordLink: jest.fn(),
     createGoogleSignInSuccess: jest.fn(),
     ensureExternalUserIdMapping: jest.fn(),
@@ -161,9 +151,6 @@ describe("supertokens.middleware", () => {
     (ThirdParty.init as jest.Mock).mockReturnValue({ recipe: "thirdparty" });
     (EmailPassword.init as jest.Mock).mockReturnValue({
       recipe: "emailpassword",
-    });
-    (EmailVerification.init as jest.Mock).mockReturnValue({
-      recipe: "emailverification",
     });
     (Dashboard.init as jest.Mock).mockReturnValue({ recipe: "dashboard" });
     (Session.init as jest.Mock).mockReturnValue({ recipe: "session" });
@@ -198,21 +185,18 @@ describe("supertokens.middleware", () => {
         { recipe: "accountlinking" },
         { recipe: "thirdparty" },
         { recipe: "emailpassword" },
-        { recipe: "emailverification" },
         { recipe: "dashboard" },
         { recipe: "session" },
         { recipe: "usermetadata" },
       ]);
     });
 
-    it("wires AccountLinking.shouldDoAutomaticAccountLinking for session linking and verified auto-linking", async () => {
+    it("wires AccountLinking.shouldDoAutomaticAccountLinking for session linking only", async () => {
       initSupertokens();
 
       const shouldDoAutomaticAccountLinking = (AccountLinking.init as jest.Mock)
         .mock.calls[0][0].shouldDoAutomaticAccountLinking as (
-        newAccountInfo: {
-          email?: string;
-        },
+        newAccountInfo: unknown,
         user?: unknown,
         session?: unknown,
       ) => Promise<{
@@ -226,17 +210,7 @@ describe("supertokens.middleware", () => {
         shouldAutomaticallyLink: false,
       });
       await expect(
-        shouldDoAutomaticAccountLinking(
-          { email: "a@example.com" },
-          undefined,
-          undefined,
-        ),
-      ).resolves.toEqual({
-        shouldAutomaticallyLink: true,
-        shouldRequireVerification: true,
-      });
-      await expect(
-        shouldDoAutomaticAccountLinking({ email: "a@example.com" }, undefined, {
+        shouldDoAutomaticAccountLinking({}, undefined, {
           getUserId: () => "user-id",
         }),
       ).resolves.toEqual({
@@ -304,48 +278,6 @@ describe("supertokens.middleware", () => {
         ENV.FRONTEND_URL,
       );
       // In test env, sending is suppressed — originalSendEmail must not be called
-      expect(originalSendEmail).not.toHaveBeenCalled();
-    });
-
-    it("rewrites verification links in EmailVerification sendEmail", async () => {
-      (buildEmailVerificationLink as jest.Mock).mockReturnValue(
-        "http://app/verify?token=rewritten",
-      );
-
-      initSupertokens();
-
-      const emailVerificationConfig = (EmailVerification.init as jest.Mock).mock
-        .calls[0][0] as {
-        emailDelivery: {
-          override: (originalImplementation: { sendEmail: jest.Mock }) => {
-            sendEmail: (input: {
-              emailVerifyLink: string;
-              user: { email: string };
-            }) => Promise<void>;
-          };
-        };
-      };
-
-      const originalSendEmail = jest.fn().mockResolvedValue(undefined);
-      const overridden = emailVerificationConfig.emailDelivery.override({
-        sendEmail: originalSendEmail,
-      });
-
-      await overridden.sendEmail({
-        type: "EMAIL_VERIFICATION",
-        emailVerifyLink: "http://localhost:1234/auth/verify-email?token=abc",
-        user: {
-          id: "user-id",
-          recipeUserId: { getAsString: () => "recipe-user-id" } as never,
-          email: "user@example.com",
-        },
-        tenantId: "public",
-      });
-
-      expect(buildEmailVerificationLink).toHaveBeenCalledWith(
-        "http://localhost:1234/auth/verify-email?token=abc",
-        ENV.FRONTEND_URL,
-      );
       expect(originalSendEmail).not.toHaveBeenCalled();
     });
 
