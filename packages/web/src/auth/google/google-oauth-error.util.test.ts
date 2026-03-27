@@ -11,6 +11,12 @@ describe("isGooglePopupClosedError", () => {
     ).toBe(true);
   });
 
+  it("returns true for popup-open failure message", () => {
+    expect(
+      isGooglePopupClosedError({ message: "Failed to open popup window" }),
+    ).toBe(true);
+  });
+
   it("returns false for non-popup auth failures", () => {
     expect(isGooglePopupClosedError({ error: "access_denied" })).toBe(false);
     expect(isGooglePopupClosedError(new Error("network down"))).toBe(false);

@@ -31,8 +31,16 @@ export const useGoogleAuthWithOverlay = (
 
   const login = useCallback(() => {
     onStart?.();
-    return googleLogin.login();
-  }, [googleLogin, onStart]);
+
+    try {
+      return Promise.resolve(googleLogin.login()).catch((error) => {
+        onError?.(error);
+      });
+    } catch (error) {
+      onError?.(error);
+      return Promise.resolve();
+    }
+  }, [googleLogin, onError, onStart]);
 
   return {
     ...googleLogin,
