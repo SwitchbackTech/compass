@@ -1,6 +1,6 @@
 import CompassCLI from "@scripts/cli";
 import { runBuild } from "@scripts/commands/build";
-import { startDeleteFlow } from "@scripts/commands/delete";
+import { startDeleteFlow } from "@scripts/commands/delete/delete";
 import { NodeEnv } from "../../core/src/constants/core.constants";
 import { MigratorType } from "./common/cli.types";
 
@@ -30,7 +30,7 @@ jest.mock("@scripts/cli.validator", () => {
 
 jest.mock("@scripts/commands/build.util");
 jest.mock("@scripts/commands/build");
-jest.mock("@scripts/commands/delete");
+jest.mock("@scripts/commands/delete/delete");
 
 jest.mock("@scripts/commands/migrate", () => ({
   runMigrator: jest

@@ -68,7 +68,10 @@ Implementation:
 
 - `packages/scripts/src/commands/delete.ts`
 
-Use with care; this is user-data deletion logic.
+Use with care; this is full user purge logic. It removes Compass Mongo data,
+SuperTokens auth identities, user-id mappings, and SuperTokens metadata.
+Browser cleanup is still a separate local-only step for cookies, localStorage,
+and IndexedDB.
 
 ### Migrate
 

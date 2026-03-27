@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { CliValidator } from "@scripts/cli.validator";
 import { runBuild } from "@scripts/commands/build";
-import { startDeleteFlow } from "@scripts/commands/delete";
+import { startDeleteFlow } from "@scripts/commands/delete/delete";
 import { runMigrator } from "@scripts/commands/migrate";
 import { ALL_PACKAGES, ENVIRONMENT } from "@scripts/common/cli.constants";
 import { MigratorType } from "@scripts/common/cli.types";
