@@ -102,6 +102,7 @@ export function* deleteSomedayEvent({
         [payload._id]: event as Schema_Event,
       }),
     );
+    yield put(getSomedayEventsSlice.actions.insert(payload._id));
   }
 }
 
