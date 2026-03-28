@@ -112,6 +112,23 @@ Authenticated Compass-defined Google attach/reconnect endpoint:
 }
 ```
 
+`POST /api/auth/google/connect` request example:
+
+```json
+{
+  "thirdPartyId": "google",
+  "clientType": "web",
+  "redirectURIInfo": {
+    "redirectURIOnProviderDashboard": "https://example.com/day",
+    "redirectURIQueryParams": {
+      "code": "oauth-authorization-code",
+      "scope": "openid email profile",
+      "state": "opaque-state"
+    }
+  }
+}
+```
+
 Behavior:
 
 - intended only for users who already have an active Compass session
@@ -120,6 +137,23 @@ Behavior:
 - rejects the request if that Google account is already attached to a different
   Compass user
 - marks Google sync metadata for restart and starts background sync
+
+Conflict contract (Google account already owned by another Compass user):
+
+- status code: `409 CONFLICT`
+- payload shape (BaseError client payload):
+
+```json
+{
+  "result": "User not connected",
+  "message": "Google account is already connected to another Compass user"
+}
+```
+
+Operational notes:
+
+- conflict exits before credential persistence, so no sync restart is triggered
+- clients should treat this as an ownership conflict and keep the current Compass session
 
 ### SuperTokens-managed auth endpoints (runtime)
 

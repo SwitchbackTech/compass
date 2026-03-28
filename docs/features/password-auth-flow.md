@@ -266,6 +266,35 @@ When a logged-in password user chooses `Connect Google Calendar`:
 This path does not call SuperTokens `signInUpPOST` and does not depend on
 SuperTokens account linking.
 
+### Google connect conflict contract
+
+If a logged-in user attempts to connect a Google account that is already linked
+to a different Compass user, backend connect intentionally fails with a conflict
+instead of reassigning ownership.
+
+Source path:
+
+- `googleAuthService.connectGoogleToCurrentUser(...)`
+
+Response contract:
+
+- status: `409 CONFLICT`
+- payload shape:
+
+```json
+{
+  "result": "User not connected",
+  "message": "Google account is already connected to another Compass user"
+}
+```
+
+Operational implications:
+
+- no Google credentials are persisted for the current session user on conflict
+- metadata sync flags are not set to `"RESTART"` for that failed request
+- clients should keep the current Compass session and prompt users to sign in
+  with the account that already owns the Google connection
+
 ### Email/password sign-up and sign-in
 
 The `EmailPassword` recipe is overridden in two places.
