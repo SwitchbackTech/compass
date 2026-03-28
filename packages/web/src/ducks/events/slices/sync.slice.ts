@@ -53,7 +53,6 @@ const importGCalReducers = {
       calendarsCount?: number;
     }>,
   ) => {
-    state.isRepairing = false;
     state.importError = null;
     state.importResults = {
       ...action.payload,
@@ -65,7 +64,6 @@ const importGCalReducers = {
     state: AsyncState<undefined, undefined> & ImportGCalExtraState,
     action: PayloadAction<string>,
   ) => {
-    state.isRepairing = false;
     state.importError = action.payload;
     state.importResults = null;
     state.pendingLocalEventsSynced = null;

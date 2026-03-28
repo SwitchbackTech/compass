@@ -234,6 +234,34 @@ describe("useGcalSync", () => {
       });
     });
 
+    it("does not clear repair state for incremental import completion", () => {
+      let importEndHandler: ((data?: ImportGCalEndPayload) => void) | undefined;
+      (socket.on as jest.Mock).mockImplementation(
+        (event: string, handler: (data?: ImportGCalEndPayload) => void) => {
+          if (event === IMPORT_GCAL_END) {
+            importEndHandler = handler;
+          }
+        },
+      );
+
+      renderHook(() => useGcalSync());
+
+      importEndHandler?.({
+        operation: "INCREMENTAL",
+        status: "COMPLETED",
+        eventsCount: 10,
+        calendarsCount: 2,
+      });
+
+      expect(importGCalSlice.actions.stopRepair).not.toHaveBeenCalled();
+      expect(mockDispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.setImportResults({
+          eventsCount: 10,
+          calendarsCount: 2,
+        }),
+      );
+    });
+
     it("does not trigger fetch when import is ignored", () => {
       let importEndHandler: ((data?: ImportGCalEndPayload) => void) | undefined;
       (socket.on as jest.Mock).mockImplementation(
@@ -318,6 +346,7 @@ describe("useGcalSync", () => {
           "Incremental Google Calendar sync failed for user: 123",
         ),
       );
+      expect(importGCalSlice.actions.stopRepair).not.toHaveBeenCalled();
       expect(mockShowErrorToast).not.toHaveBeenCalled();
     });
   });

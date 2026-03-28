@@ -24,7 +24,9 @@ export const useGcalSync = () => {
 
   const onImportEnd = useCallback(
     (payload?: ImportGCalEndPayload) => {
-      dispatch(importGCalSlice.actions.stopRepair());
+      if (payload?.operation === "REPAIR") {
+        dispatch(importGCalSlice.actions.stopRepair());
+      }
       socket.emit(FETCH_USER_METADATA);
 
       if (payload?.status === "ERRORED") {
