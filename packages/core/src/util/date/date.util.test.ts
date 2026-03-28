@@ -215,4 +215,11 @@ describe("isSameMonth", () => {
       true,
     );
   });
+
+  it("compares in UTC to avoid timezone boundary shifts", () => {
+    // 2024-03-01T00:00:00Z is still March in UTC, not February
+    expect(isSameMonth("2024-03-01T00:00:00Z", "2024-03-15T00:00:00Z")).toBe(
+      true,
+    );
+  });
 });
