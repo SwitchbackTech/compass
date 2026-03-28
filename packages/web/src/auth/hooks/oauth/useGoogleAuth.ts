@@ -55,39 +55,34 @@ export function useGoogleAuth(
       dispatch(importGCalSlice.actions.clearImportResults(undefined));
     },
     onSuccess: async (data) => {
-      try {
-        if (onSuccess) {
-          await onSuccess(data);
-          dispatch(authSuccess());
-          return;
-        }
-
-        const authPayload: SignInUpInput = {
-          ...data,
-        };
-        const authResult = await authenticate(authPayload);
-        if (!authResult.success) {
-          toast.error(
-            "Failed to connect Google Calendar. Please try again.",
-            toastDefaultOptions,
-          );
-          handleAuthError(dispatch, authResult.error);
-          return;
-        }
-        if (authResult.data !== undefined && authResult.data.status !== "OK") {
-          toast.error(
-            "Could not link Google Calendar to your account. Please try again.",
-            toastDefaultOptions,
-          );
-          dispatch(resetAuth());
-          return;
-        }
-        const email = authResult.data?.user?.emails?.[0];
-        await completeAuthentication({ email });
-      } catch (error) {
-        handleAuthError(dispatch, error);
-        throw error;
+      if (onSuccess) {
+        await onSuccess(data);
+        dispatch(authSuccess());
+        return;
       }
+
+      const authPayload: SignInUpInput = {
+        ...data,
+      };
+      const authResult = await authenticate(authPayload);
+      if (!authResult.success) {
+        toast.error(
+          "Failed to connect Google Calendar. Please try again.",
+          toastDefaultOptions,
+        );
+        handleAuthError(dispatch, authResult.error);
+        return;
+      }
+      if (authResult.data !== undefined && authResult.data.status !== "OK") {
+        toast.error(
+          "Could not link Google Calendar to your account. Please try again.",
+          toastDefaultOptions,
+        );
+        dispatch(resetAuth());
+        return;
+      }
+      const email = authResult.data?.user?.emails?.[0];
+      await completeAuthentication({ email });
     },
     onError: (error) => {
       if (isGooglePopupClosedError(error)) {
