@@ -170,7 +170,6 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     handleMigrationNavigation("forward"),
     {
       ignoreInputs: false,
-      blurOnTrigger: true,
     },
   );
 
@@ -179,7 +178,6 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     handleMigrationNavigation("backward"),
     {
       ignoreInputs: false,
-      blurOnTrigger: true,
     },
   );
 
