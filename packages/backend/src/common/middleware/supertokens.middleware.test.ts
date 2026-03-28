@@ -511,6 +511,10 @@ describe("supertokens.middleware", () => {
         status: "OK",
         session: compassSession,
       });
+      expect(createGoogleSignInSuccess).toHaveBeenCalledTimes(1);
+      expect(googleAuthService.handleGoogleAuth).toHaveBeenCalledWith(
+        expect.objectContaining({ recipeUserId: "compass-user-id" }),
+      );
     });
 
     it("does not call googleAuthService.handleGoogleAuth when ThirdParty signInUpPOST returns null success", async () => {

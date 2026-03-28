@@ -85,7 +85,7 @@ export async function handleGoogleSignInUp(
   originalSignInUpPOST: ThirdPartySignInUpPostFn,
 ): Promise<Awaited<ReturnType<ThirdPartySignInUpPostFn>>> {
   let response = await originalSignInUpPOST(input);
-  const success = createGoogleSignInSuccess(
+  let success = createGoogleSignInSuccess(
     response as CreateGoogleSignInResponse,
   );
 
@@ -108,6 +108,7 @@ export async function handleGoogleSignInUp(
       );
 
       response = { ...response, session };
+      success = { ...success, recipeUserId: session.getUserId() };
     }
 
     await googleAuthService.handleGoogleAuth(success);
