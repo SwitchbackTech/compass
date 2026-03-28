@@ -52,6 +52,8 @@ type GoogleUiConfig = {
 };
 
 const COMMAND_ICON: CommandActionIcon = "CloudArrowUpIcon";
+const GOOGLE_REPAIR_FAILED_MESSAGE =
+  "Google Calendar repair failed. Please try again.";
 
 const getGoogleUiConfig = (
   state: GoogleUiState,

@@ -360,13 +360,13 @@ describe("useConnectGoogle", () => {
 
     await waitFor(() =>
       expect(mockDispatch).toHaveBeenCalledWith(
-        importGCalSlice.actions.stopRepair(),
+        importGCalSlice.actions.setImportError(
+          "Google Calendar repair failed. Please try again.",
+        ),
       ),
     );
     expect(mockDispatch).toHaveBeenCalledWith(
-      importGCalSlice.actions.setImportError(
-        "Google Calendar repair failed. Please try again.",
-      ),
+      importGCalSlice.actions.stopRepair(),
     );
     expect(mockShowErrorToast).toHaveBeenCalledWith(
       "Google Calendar repair failed. Please try again.",
