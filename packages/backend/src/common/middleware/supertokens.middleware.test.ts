@@ -460,18 +460,27 @@ describe("supertokens.middleware", () => {
         status: "OK" as const,
         session: googleSession,
       };
-      const successPayload = {
+      const buildSuccessFromResponse = (response: {
+        status: string;
+        session?: { getUserId: () => string };
+        user?: { id: string };
+      }) => ({
         providerUser: { sub: "google-sub" },
         oAuthTokens: {
           access_token: "access-token",
           refresh_token: "refresh-token",
         },
         createdNewRecipeUser: false,
-        recipeUserId: "google-user-id",
+        recipeUserId:
+          response.session?.getUserId() ??
+          response.user?.id ??
+          "google-user-id",
         loginMethodsLength: 1,
-      };
+      });
 
-      (createGoogleSignInSuccess as jest.Mock).mockReturnValue(successPayload);
+      (createGoogleSignInSuccess as jest.Mock).mockImplementation(
+        buildSuccessFromResponse,
+      );
       mockedGetConnectedCompassUserId.mockResolvedValue("compass-user-id");
       mockedSessionCreateNewSession.mockResolvedValue(compassSession as never);
       mockedSessionRevokeSession.mockResolvedValue(true);
@@ -511,7 +520,7 @@ describe("supertokens.middleware", () => {
         status: "OK",
         session: compassSession,
       });
-      expect(createGoogleSignInSuccess).toHaveBeenCalledTimes(1);
+      expect(createGoogleSignInSuccess).toHaveBeenCalledTimes(2);
       expect(googleAuthService.handleGoogleAuth).toHaveBeenCalledWith(
         expect.objectContaining({ recipeUserId: "compass-user-id" }),
       );
