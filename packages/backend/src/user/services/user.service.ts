@@ -19,6 +19,8 @@ import supertokensUserCleanupService from "@backend/auth/services/supertokens/su
 import calendarService from "@backend/calendar/services/calendar.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
+import { getGoogleRepairErrorMessage } from "@backend/common/services/gcal/gcal.repair.util";
+import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
@@ -421,6 +423,16 @@ class UserService {
         );
       }
 
+      if (isInvalidGoogleToken(err)) {
+        logger.warn(
+          `Google Calendar repair failed because access was revoked for user: ${userId}`,
+        );
+
+        await this.pruneGoogleData(userId);
+        webSocketServer.handleGoogleRevoked(userId);
+        return;
+      }
+
       await userMetadataService.updateUserMetadata({
         userId,
         data: { sync: { importGCal: "ERRORED" } },
@@ -430,7 +442,7 @@ class UserService {
 
       webSocketServer.handleImportGCalEnd(userId, {
         status: "ERRORED",
-        message: `Import gCal failed for user: ${userId}`,
+        message: getGoogleRepairErrorMessage(err),
       });
     }
   };

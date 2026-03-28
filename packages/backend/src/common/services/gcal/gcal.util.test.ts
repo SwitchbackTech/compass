@@ -7,6 +7,7 @@ import {
   getGoogleErrorStatus,
   isFullSyncRequired,
   isGoogleError,
+  isGoogleRepairQuotaError,
   isInvalidGoogleToken,
   isInvalidValue,
 } from "./gcal.utils";
@@ -61,6 +62,29 @@ describe("Google Error Parsing", () => {
   });
   it("returns undefined for non-google errors", () => {
     expect(getGoogleErrorStatus(new Error("nope"))).toBeUndefined();
+  });
+  it("recognizes Google quota errors", () => {
+    const quotaError = createGoogleError({
+      code: "403",
+      responseStatus: 403,
+      message: "Quota exceeded",
+    });
+
+    if (quotaError.response) {
+      quotaError.response.data = {
+        error: {
+          message: "Quota exceeded for quota metric 'Queries'.",
+          errors: [{ reason: "quotaExceeded" }],
+        },
+      };
+    }
+
+    expect(isGoogleRepairQuotaError(quotaError)).toBe(true);
+  });
+  it("does not treat non-quota Google errors as repair quota errors", () => {
+    expect(isGoogleRepairQuotaError(createGoogleError({ code: "500" }))).toBe(
+      false,
+    );
   });
 });
 
