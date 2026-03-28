@@ -262,6 +262,29 @@ Primary files:
 - `packages/web/src/auth/hooks/oauth/useConnectGoogle.ts`
 - `packages/web/src/common/repositories/event/event.repository.util.ts`
 
+### Connect-Later Ownership Conflict Triage
+
+If `POST /api/auth/google/connect` returns `409` while a user is trying to
+connect Google from an existing password session:
+
+1. confirm whether the Google account is already linked by checking for an
+   existing Compass user with the same `google.googleId`
+2. verify backend conflict payload:
+   - `result: "User not connected"`
+   - `message: "Google account is already connected to another Compass user"`
+3. verify no reconnect side effects were applied for the current session user:
+   - no new Google credential write
+   - no metadata transition to `sync.importGCal = "RESTART"`
+   - no reconnect/import websocket lifecycle (`IMPORT_GCAL_START` /
+     `IMPORT_GCAL_END`) for that failed request
+
+Expected operator action:
+
+- treat as ownership protection, not as an OAuth transport failure
+- have the user authenticate into the Compass account that already owns that
+  Google identity (or disconnect/recover ownership through an explicit support
+  path)
+
 ## User Metadata Shape Used By Socket And UI
 
 `UserMetadata` includes Google connection state alongside sync state:
