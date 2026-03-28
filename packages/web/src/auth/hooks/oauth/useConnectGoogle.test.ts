@@ -1,4 +1,6 @@
+import { toast } from "react-toastify";
 import { renderHook } from "@testing-library/react";
+import { syncLocalEvents } from "@web/auth/google/google.auth.util";
 import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
 import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
@@ -17,14 +19,25 @@ import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
 jest.mock("@web/auth/hooks/oauth/useGoogleAuth");
+jest.mock("@web/auth/google/google.auth.util", () => ({
+  syncLocalEvents: jest.fn(),
+}));
 jest.mock("@web/auth/session/user-metadata.util");
 jest.mock("@web/auth/state/auth.state.util");
 jest.mock("@web/common/apis/auth.api");
 jest.mock("@web/common/apis/sync.api");
 jest.mock("@web/store/store.hooks");
+jest.mock("react-toastify", () => ({
+  toast: {
+    error: jest.fn(),
+  },
+}));
 
 const mockUseGoogleAuth = useGoogleAuth as jest.MockedFunction<
   typeof useGoogleAuth
+>;
+const mockSyncLocalEvents = syncLocalEvents as jest.MockedFunction<
+  typeof syncLocalEvents
 >;
 const mockUseAppDispatch = useAppDispatch as jest.MockedFunction<
   typeof useAppDispatch
@@ -41,6 +54,7 @@ const mockRefreshUserMetadata = refreshUserMetadata as jest.MockedFunction<
   typeof refreshUserMetadata
 >;
 const mockSyncApi = SyncApi as jest.Mocked<typeof SyncApi>;
+const mockToastError = toast.error as jest.MockedFunction<typeof toast.error>;
 
 const getUseGoogleAuthArg = (): Parameters<typeof useGoogleAuth>[0] => {
   const firstCall = mockUseGoogleAuth.mock.calls.at(0);
@@ -65,6 +79,7 @@ describe("useConnectGoogle", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(console, "error").mockImplementation(() => {});
     mockUseAppDispatch.mockReturnValue(mockDispatch);
     mockUseGoogleAuth.mockReturnValue({
       login: mockLogin,
@@ -75,6 +90,7 @@ describe("useConnectGoogle", () => {
     mockHasUserEverAuthenticated.mockReturnValue(true);
     mockRefreshUserMetadata.mockResolvedValue();
     mockSyncApi.importGCal.mockResolvedValue(undefined as never);
+    mockSyncLocalEvents.mockResolvedValue({ success: true, syncedCount: 0 });
     mockUseAppSelector.mockImplementation((selector) => {
       if (selector === selectGoogleConnectionState) {
         return "NOT_CONNECTED";
@@ -356,8 +372,76 @@ describe("useConnectGoogle", () => {
 
     await useGoogleAuthArg.onSuccess(payload);
 
+    expect(mockSyncLocalEvents).toHaveBeenCalledTimes(1);
     expect(mockAuthApi.connectGoogle).toHaveBeenCalledWith(payload);
     expect(mockRefreshUserMetadata).toHaveBeenCalledTimes(1);
     expect(mockDispatch).toHaveBeenCalledWith(triggerFetch());
+  });
+
+  it("records synced local events before refreshing Google data", async () => {
+    mockSyncLocalEvents.mockResolvedValue({ success: true, syncedCount: 2 });
+
+    renderHook(() => useConnectGoogle());
+
+    const useGoogleAuthArg = getUseGoogleAuthArg();
+    if (!useGoogleAuthArg?.onSuccess) {
+      throw new Error("Expected useGoogleAuth to receive an onSuccess handler");
+    }
+
+    const payload = {
+      clientType: "web" as const,
+      thirdPartyId: "google" as const,
+      redirectURIInfo: {
+        redirectURIOnProviderDashboard: window.location.origin,
+        redirectURIQueryParams: {
+          code: "auth-code",
+          scope: "scope",
+          state: "state",
+        },
+      },
+    };
+
+    await useGoogleAuthArg.onSuccess(payload);
+
+    expect(mockDispatch).toHaveBeenCalledWith(
+      importGCalSlice.actions.setLocalEventsSynced(2),
+    );
+    expect(mockAuthApi.connectGoogle).toHaveBeenCalledWith(payload);
+  });
+
+  it("does not connect Google when local event sync fails", async () => {
+    const syncError = new Error("sync failed");
+    mockSyncLocalEvents.mockResolvedValue({
+      success: false,
+      syncedCount: 0,
+      error: syncError,
+    });
+
+    renderHook(() => useConnectGoogle());
+
+    const useGoogleAuthArg = getUseGoogleAuthArg();
+    if (!useGoogleAuthArg?.onSuccess) {
+      throw new Error("Expected useGoogleAuth to receive an onSuccess handler");
+    }
+
+    const payload = {
+      clientType: "web" as const,
+      thirdPartyId: "google" as const,
+      redirectURIInfo: {
+        redirectURIOnProviderDashboard: window.location.origin,
+        redirectURIQueryParams: {
+          code: "auth-code",
+          scope: "scope",
+          state: "state",
+        },
+      },
+    };
+
+    await useGoogleAuthArg.onSuccess(payload);
+
+    expect(mockToastError).toHaveBeenCalled();
+    expect(mockAuthApi.connectGoogle).not.toHaveBeenCalled();
+    expect(mockRefreshUserMetadata).not.toHaveBeenCalled();
+    expect(mockDispatch).not.toHaveBeenCalledWith(triggerFetch());
   });
 });
