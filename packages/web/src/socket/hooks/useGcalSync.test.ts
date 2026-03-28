@@ -14,7 +14,6 @@ import {
   importGCalSlice,
   triggerFetch,
 } from "@web/ducks/events/slices/sync.slice";
-import { useAppSelector } from "@web/store/store.hooks";
 import { socket } from "../client/socket.client";
 import { useGcalSync } from "./useGcalSync";
 
@@ -62,9 +61,6 @@ jest.mock("@web/auth/google/google.auth.util", () => ({
 jest.mock("@web/common/utils/toast/error-toast.util", () => ({
   showErrorToast: jest.fn(),
 }));
-jest.mock("@web/store/store.hooks", () => ({
-  useAppSelector: jest.fn(),
-}));
 
 describe("useGcalSync", () => {
   const mockDispatch = jest.fn();
@@ -72,14 +68,10 @@ describe("useGcalSync", () => {
   const mockShowErrorToast = showErrorToast as jest.MockedFunction<
     typeof showErrorToast
   >;
-  const mockUseAppSelector = useAppSelector as jest.MockedFunction<
-    typeof useAppSelector
-  >;
 
   beforeEach(() => {
     jest.clearAllMocks();
     (useDispatch as jest.Mock).mockReturnValue(mockDispatch);
-    mockUseAppSelector.mockReturnValue({ isRepairing: false });
   });
 
   it("sets up socket listeners", () => {
@@ -221,6 +213,7 @@ describe("useGcalSync", () => {
       renderHook(() => useGcalSync());
 
       importEndHandler?.({
+        operation: "REPAIR",
         status: "COMPLETED",
         eventsCount: 10,
         calendarsCount: 2,
@@ -254,6 +247,7 @@ describe("useGcalSync", () => {
       renderHook(() => useGcalSync());
 
       importEndHandler?.({
+        operation: "REPAIR",
         status: "IGNORED",
         message:
           "User test-user gcal import is in progress or completed, ignoring this request",
@@ -268,8 +262,6 @@ describe("useGcalSync", () => {
     });
 
     it("sets error state when backend returns an errored payload", () => {
-      mockUseAppSelector.mockReturnValue({ isRepairing: true });
-
       let importEndHandler: ((data?: ImportGCalEndPayload) => void) | undefined;
       (socket.on as jest.Mock).mockImplementation(
         (event: string, handler: (data?: ImportGCalEndPayload) => void) => {
@@ -282,6 +274,7 @@ describe("useGcalSync", () => {
       renderHook(() => useGcalSync());
 
       importEndHandler?.({
+        operation: "REPAIR",
         status: "ERRORED",
         message: "Google Calendar repair failed. Please try again.",
       });
@@ -315,6 +308,7 @@ describe("useGcalSync", () => {
       renderHook(() => useGcalSync());
 
       importEndHandler?.({
+        operation: "INCREMENTAL",
         status: "ERRORED",
         message: "Incremental Google Calendar sync failed for user: 123",
       });
@@ -353,6 +347,7 @@ describe("useGcalSync", () => {
 
       // Backend signals import complete
       const successfulResponse: ImportGCalEndPayload = {
+        operation: "REPAIR",
         status: "COMPLETED",
         eventsCount: 25,
         calendarsCount: 3,

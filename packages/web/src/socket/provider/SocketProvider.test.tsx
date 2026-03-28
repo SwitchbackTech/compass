@@ -1,4 +1,3 @@
-import { act } from "react";
 import { Provider } from "react-redux";
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { render, waitFor } from "@testing-library/react";
@@ -37,11 +36,13 @@ describe("SocketProvider", () => {
     importEndCallback = undefined;
     mockUseUser.mockReturnValue({ userId: mockUserId });
 
-    (socket.on as jest.Mock).mockImplementation((event, callback) => {
-      if (event === IMPORT_GCAL_END) {
-        importEndCallback = callback;
-      }
-    });
+    (socket.on as jest.Mock).mockImplementation(
+      (event: string, callback: (data?: ImportGCalEndPayload) => void) => {
+        if (event === IMPORT_GCAL_END) {
+          importEndCallback = callback;
+        }
+      },
+    );
   });
 
   it("sets import results and triggers refetch on import completion", async () => {
@@ -67,6 +68,7 @@ describe("SocketProvider", () => {
     });
 
     importEndCallback?.({
+      operation: "REPAIR",
       status: "COMPLETED",
       eventsCount: 10,
       calendarsCount: 2,

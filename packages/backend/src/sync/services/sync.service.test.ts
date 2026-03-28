@@ -14,7 +14,10 @@ import { missingRefreshTokenError } from "@backend/__tests__/mocks.gcal/errors/e
 import * as googleCalendarClient from "@backend/auth/services/google/clients/google.calendar.client";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
+import { webSocketServer } from "@backend/servers/websocket/websocket.server";
+import * as syncImportService from "@backend/sync/services/import/sync.import";
 import syncService from "@backend/sync/services/sync.service";
+import userMetadataService from "@backend/user/services/user-metadata.service";
 
 const createWatch = async (user: string) => {
   const watch = WatchSchema.parse({
@@ -257,6 +260,75 @@ describe("SyncService", () => {
       expect(await mongoService.watch.findOne({ _id: watch._id })).toEqual(
         expect.objectContaining({ user: user._id.toString() }),
       );
+    });
+  });
+
+  describe("importIncremental", () => {
+    it("emits INCREMENTAL operation when incremental import is ignored", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+      const importEndSpy = jest.spyOn(webSocketServer, "handleImportGCalEnd");
+
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: { sync: { incrementalGCalSync: "COMPLETED" } },
+      });
+
+      await syncService.importIncremental(userId);
+
+      expect(importEndSpy).toHaveBeenCalledWith(userId, {
+        operation: "INCREMENTAL",
+        status: "IGNORED",
+        message: `User ${userId} gcal incremental sync is in progress or completed, ignoring this request`,
+      });
+    });
+
+    it("emits INCREMENTAL operation when incremental import completes", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+      const importEndSpy = jest.spyOn(webSocketServer, "handleImportGCalEnd");
+      const createSyncImportSpy = jest
+        .spyOn(syncImportService, "createSyncImport")
+        .mockResolvedValue({
+          importLatestEvents: jest.fn().mockResolvedValue({}),
+        } as unknown as Awaited<
+          ReturnType<typeof syncImportService.createSyncImport>
+        >);
+
+      await syncService.importIncremental(userId);
+
+      expect(importEndSpy).toHaveBeenCalledWith(userId, {
+        operation: "INCREMENTAL",
+        status: "COMPLETED",
+      });
+
+      createSyncImportSpy.mockRestore();
+    });
+
+    it("emits INCREMENTAL operation when incremental import fails", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+      const importEndSpy = jest.spyOn(webSocketServer, "handleImportGCalEnd");
+      const error = new Error("incremental failed");
+      const createSyncImportSpy = jest
+        .spyOn(syncImportService, "createSyncImport")
+        .mockResolvedValue({
+          importLatestEvents: jest.fn().mockRejectedValue(error),
+        } as unknown as Awaited<
+          ReturnType<typeof syncImportService.createSyncImport>
+        >);
+
+      await expect(syncService.importIncremental(userId)).rejects.toThrow(
+        "incremental failed",
+      );
+
+      expect(importEndSpy).toHaveBeenCalledWith(userId, {
+        operation: "INCREMENTAL",
+        status: "ERRORED",
+        message: `Incremental Google Calendar sync failed for user: ${userId}`,
+      });
+
+      createSyncImportSpy.mockRestore();
     });
   });
 });

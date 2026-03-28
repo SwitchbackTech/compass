@@ -47,6 +47,7 @@ describe("SyncController", () => {
   const importTimeoutMs = 7_000;
 
   interface ImportSummary {
+    operation: "REPAIR";
     status: "COMPLETED";
     eventsCount: number;
     calendarsCount: number;
@@ -57,6 +58,7 @@ describe("SyncController", () => {
   ): ImportSummary {
     expect(result).toEqual(
       expect.objectContaining({
+        operation: "REPAIR",
         status: "COMPLETED",
         eventsCount: expect.any(Number) as number,
         calendarsCount: expect.any(Number) as number,
@@ -504,8 +506,8 @@ describe("SyncController", () => {
     });
   });
 
-  describe("importGCal: ", () => {
-    describe("Imported Data: ", () => {
+  describe("importGCal:", () => {
+    describe("Imported Data:", () => {
       it("should import the first instance of a recurring event (and the base)", async () => {
         // Importing both the base and first instance helps us find the series recurrence rule.
         // To prevent duplicates in the UI, the GET API will not return the base event
@@ -648,7 +650,7 @@ describe("SyncController", () => {
       });
     });
 
-    describe("Import Status: ", () => {
+    describe("Import Status:", () => {
       it("should force a repair import even after a completed sync", async () => {
         const { user, websocketClient } = await websocketUserFlow(true);
         const userId = user._id.toString();
@@ -699,6 +701,7 @@ describe("SyncController", () => {
         );
 
         expect(failReason).toEqual({
+          operation: "REPAIR",
           status: "IGNORED",
           message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
         });
@@ -745,6 +748,7 @@ describe("SyncController", () => {
         );
 
         expect(failReason).toEqual({
+          operation: "REPAIR",
           status: "IGNORED",
           message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
         });

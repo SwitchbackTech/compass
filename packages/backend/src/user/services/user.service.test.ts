@@ -815,6 +815,7 @@ describe("UserService", () => {
       expect(metadata.sync?.importGCal).toBe("ERRORED");
       expect(await mongoService.watch.countDocuments({ user: userId })).toBe(0);
       expect(importEndSpy).toHaveBeenCalledWith(userId, {
+        operation: "REPAIR",
         status: "ERRORED",
         message: "Google Calendar repair failed. Please try again.",
       });
@@ -889,6 +890,7 @@ describe("UserService", () => {
 
       expect(metadata.sync?.importGCal).toBe("ERRORED");
       expect(importEndSpy).toHaveBeenCalledWith(userId, {
+        operation: "REPAIR",
         status: "ERRORED",
         message:
           "Google Calendar repair hit a Google API limit. Please wait a few minutes and try again.",

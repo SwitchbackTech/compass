@@ -167,9 +167,6 @@ const getGoogleUiConfig = (
   }
 };
 
-const GOOGLE_REPAIR_FAILED_MESSAGE =
-  "Google Calendar repair failed. Please try again.";
-
 export const useConnectGoogle = () => {
   const dispatch = useAppDispatch();
   const connectionState = useAppSelector(

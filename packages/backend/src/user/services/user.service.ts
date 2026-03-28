@@ -388,6 +388,7 @@ class UserService {
 
       if (!proceed) {
         webSocketServer.handleImportGCalEnd(userId, {
+          operation: "REPAIR",
           status: "IGNORED",
           message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
         });
@@ -409,6 +410,7 @@ class UserService {
       });
 
       webSocketServer.handleImportGCalEnd(userId, {
+        operation: "REPAIR",
         status: "COMPLETED",
         ...importResults,
       });
@@ -441,6 +443,7 @@ class UserService {
       logger.error(`Re-sync failed for user: ${userId}`, err);
 
       webSocketServer.handleImportGCalEnd(userId, {
+        operation: "REPAIR",
         status: "ERRORED",
         message: getGoogleRepairErrorMessage(err),
       });

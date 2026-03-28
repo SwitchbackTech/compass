@@ -13,17 +13,14 @@ import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.const
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
-import { selectImportGCalState } from "@web/ducks/events/selectors/sync.selector";
 import {
   importGCalSlice,
   triggerFetch,
 } from "@web/ducks/events/slices/sync.slice";
-import { useAppSelector } from "@web/store/store.hooks";
 import { socket } from "../client/socket.client";
 
 export const useGcalSync = () => {
   const dispatch = useDispatch();
-  const { isRepairing } = useAppSelector(selectImportGCalState);
 
   const onImportEnd = useCallback(
     (payload?: ImportGCalEndPayload) => {
@@ -32,7 +29,7 @@ export const useGcalSync = () => {
 
       if (payload?.status === "ERRORED") {
         dispatch(importGCalSlice.actions.setImportError(payload.message));
-        if (isRepairing) {
+        if (payload.operation === "REPAIR") {
           showErrorToast(payload.message, {
             toastId: GOOGLE_REPAIR_FAILED_TOAST_ID,
           });
@@ -59,7 +56,7 @@ export const useGcalSync = () => {
         }),
       );
     },
-    [dispatch, isRepairing],
+    [dispatch],
   );
 
   const onGoogleRevoked = useCallback(() => {

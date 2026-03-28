@@ -244,6 +244,7 @@ describe("GCal Authentication Flow", () => {
       // Backend completes import
       act(() => {
         importEndCallback?.({
+          operation: "REPAIR",
           status: "COMPLETED",
           eventsCount: 42,
           calendarsCount: 2,
@@ -278,6 +279,7 @@ describe("GCal Authentication Flow", () => {
 
       act(() => {
         importEndCallback?.({
+          operation: "INCREMENTAL",
           status: "ERRORED",
           message:
             "Incremental Google Calendar sync failed for user: test-user",
