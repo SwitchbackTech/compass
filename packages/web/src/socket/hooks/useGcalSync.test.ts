@@ -14,6 +14,7 @@ import {
   importGCalSlice,
   triggerFetch,
 } from "@web/ducks/events/slices/sync.slice";
+import { useAppSelector } from "@web/store/store.hooks";
 import { socket } from "../client/socket.client";
 import { useGcalSync } from "./useGcalSync";
 
@@ -61,6 +62,9 @@ jest.mock("@web/auth/google/google.auth.util", () => ({
 jest.mock("@web/common/utils/toast/error-toast.util", () => ({
   showErrorToast: jest.fn(),
 }));
+jest.mock("@web/store/store.hooks", () => ({
+  useAppSelector: jest.fn(),
+}));
 
 describe("useGcalSync", () => {
   const mockDispatch = jest.fn();
@@ -68,10 +72,14 @@ describe("useGcalSync", () => {
   const mockShowErrorToast = showErrorToast as jest.MockedFunction<
     typeof showErrorToast
   >;
+  const mockUseAppSelector = useAppSelector as jest.MockedFunction<
+    typeof useAppSelector
+  >;
 
   beforeEach(() => {
     jest.clearAllMocks();
     (useDispatch as jest.Mock).mockReturnValue(mockDispatch);
+    mockUseAppSelector.mockReturnValue({ isRepairing: false });
   });
 
   it("sets up socket listeners", () => {
@@ -154,7 +162,7 @@ describe("useGcalSync", () => {
       });
 
       expect(mockDispatch).toHaveBeenCalledWith(
-        importGCalSlice.actions.request(undefined as never),
+        importGCalSlice.actions.request(),
       );
     });
 
@@ -260,6 +268,8 @@ describe("useGcalSync", () => {
     });
 
     it("sets error state when backend returns an errored payload", () => {
+      mockUseAppSelector.mockReturnValue({ isRepairing: true });
+
       let importEndHandler: ((data?: ImportGCalEndPayload) => void) | undefined;
       (socket.on as jest.Mock).mockImplementation(
         (event: string, handler: (data?: ImportGCalEndPayload) => void) => {
@@ -290,6 +300,31 @@ describe("useGcalSync", () => {
       );
       expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
       expect(importGCalSlice.actions.setImportResults).not.toHaveBeenCalled();
+    });
+
+    it("does not show a toast for non-repair import errors", () => {
+      let importEndHandler: ((data?: ImportGCalEndPayload) => void) | undefined;
+      (socket.on as jest.Mock).mockImplementation(
+        (event: string, handler: (data?: ImportGCalEndPayload) => void) => {
+          if (event === IMPORT_GCAL_END) {
+            importEndHandler = handler;
+          }
+        },
+      );
+
+      renderHook(() => useGcalSync());
+
+      importEndHandler?.({
+        status: "ERRORED",
+        message: "Incremental Google Calendar sync failed for user: 123",
+      });
+
+      expect(mockDispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.setImportError(
+          "Incremental Google Calendar sync failed for user: 123",
+        ),
+      );
+      expect(mockShowErrorToast).not.toHaveBeenCalled();
     });
   });
 

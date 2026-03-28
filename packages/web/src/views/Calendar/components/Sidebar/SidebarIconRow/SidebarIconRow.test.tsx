@@ -152,6 +152,24 @@ describe("SidebarIconRow", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows the background import spinner while Google Calendar is importing", () => {
+    render(<SidebarIconRow />, {
+      state: {
+        sync: {
+          importGCal: {
+            isProcessing: true,
+          },
+        },
+      },
+    });
+
+    expect(
+      screen.getByRole("button", {
+        name: "Importing your calendar events in the background",
+      }),
+    ).toBeInTheDocument();
+  });
+
   it("clicks through to repair when Google Calendar needs attention", () => {
     render(<SidebarIconRow />, {
       state: {

@@ -96,6 +96,7 @@ export const SidebarIconRow = () => {
   const isCmdPaletteOpen = useAppSelector(selectIsCmdPaletteOpen);
   const { isUpdateAvailable } = useVersionCheck();
   const { sidebarStatus } = useConnectGoogle();
+  const isBackgroundImporting = gCalImport.isProcessing === true;
 
   const handleUpdateReload = () => {
     window.location.reload();
@@ -179,7 +180,7 @@ export const SidebarIconRow = () => {
             })}
           </TooltipWrapper>
         </div>
-        {gCalImport.importing ? (
+        {isBackgroundImporting ? (
           <TooltipWrapper description="Importing your calendar events in the background">
             <SpinnerIcon />
           </TooltipWrapper>
