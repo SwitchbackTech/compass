@@ -1,14 +1,16 @@
+import { type Status } from "@core/errors/status.codes";
+
 export interface CompassError extends Error {
   name: string;
   result?: string;
   stack?: string;
-  status?: number;
+  status?: Status;
 }
 
 export interface ErrorMetadata {
   description: string;
   isOperational: boolean;
-  status: number;
+  status: Status;
 }
 
 export interface Info_Error {

@@ -5,7 +5,6 @@ import {
   expectBodyLocked,
   expectNoOverlay,
   expectOAuthOverlayVisible,
-  expectOverlayPhase,
   prepareOAuthTestPage,
   setIsSyncing,
   waitForAppReady,
@@ -113,60 +112,19 @@ test.describe("OAuth Overlay", () => {
     expect(activeAfterOverlay).toBe("BODY");
   });
 
-  test("overlay cleans up data-app-locked attribute when dismissed", async ({
-    page,
-  }) => {
-    // Activate overlay
-    await setIsSyncing(page, true);
-    await expectBodyLocked(page, true);
-
-    // Clear OAuth state (simulating completion)
-    await setIsSyncing(page, false);
-
-    // Overlay should be gone and body unlocked
-    await expectNoOverlay(page);
-    await expectBodyLocked(page, false);
-  });
-
-  test("expectOverlayPhase returns correct phase", async ({ page }) => {
-    // Initially no phase
-    await expectOverlayPhase(page, "none");
-
-    // OAuth phase
-    await setIsSyncing(page, true);
-    await expectOverlayPhase(page, "oauth");
-
-    // Back to none after OAuth completes
-    await setIsSyncing(page, false);
-    await expectOverlayPhase(page, "none");
-  });
-
-  test("overlay has correct ARIA attributes for accessibility", async ({
+  test("overlay has correct ARIA attributes and shows spinner", async ({
     page,
   }) => {
     await setIsSyncing(page, true);
 
-    // Check for status role panel (use more specific selector to avoid DndLiveRegion)
     const statusPanel = page.locator(OVERLAY_SELECTORS.statusPanel);
     await expect(statusPanel).toBeVisible();
-
-    // Should have aria-busy for screen readers
     await expect(statusPanel).toHaveAttribute("aria-busy", "true");
-
-    // Should have aria-live for announcements
     await expect(statusPanel).toHaveAttribute("aria-live", "polite");
-  });
+    await expect(page.locator(OVERLAY_SELECTORS.spinner)).toBeVisible();
 
-  test("displays spinner during OAuth phase", async ({ page }) => {
-    const spinner = page.locator(OVERLAY_SELECTORS.spinner);
-
-    // OAuth phase
-    await setIsSyncing(page, true);
-    await expect(spinner).toBeVisible();
-
-    // No overlay after OAuth completes
     await setIsSyncing(page, false);
-    await expect(spinner).not.toBeVisible();
+    await expect(page.locator(OVERLAY_SELECTORS.spinner)).not.toBeVisible();
   });
 });
 

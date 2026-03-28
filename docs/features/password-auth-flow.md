@@ -9,7 +9,9 @@ This flow adds first-party auth on top of the existing Google OAuth setup:
 - sign up with email and password
 - sign in with email and password
 - forgot/reset password
-- account linking for explicit in-session Google connect from an authenticated password session
+- explicit Google connect/reconnect from an authenticated password session
+- logged-out Google sign-in that reuses an existing Compass user when the
+  Google account is already attached
 - SuperTokens user-to-Compass-user mapping via Mongo `ObjectId` external ids
 
 Primary files:
@@ -34,7 +36,45 @@ SuperTokens is configured so that:
 - backend user upserts always write against the session user id (`response.session.getUserId()`)
 - Google sign-in/up uses `google.googleId` lookup for existing Compass users before creating a new id
 
-Important constraint: account linking is only enabled when an active session exists. Logged-out sign-in/up paths do not automatically merge same-email Google and password identities.
+Important constraints:
+
+- Compass no longer relies on SuperTokens `AccountLinking` for the
+  password-plus-Google flow.
+- Google ownership is explicit and keyed by `google.googleId`, not by email.
+- Logged-out same-email Google/password identities are still not auto-merged by
+  email.
+
+## Auth Flow Overview
+
+```mermaid
+flowchart TD
+    A["User starts auth"] --> B{"Already signed in?"}
+
+    B -->|No| C["Email/password via SuperTokens EmailPassword"]
+    B -->|No| D["Google sign-in via POST /api/signinup"]
+    B -->|Yes| E["Connect Google via POST /api/auth/google/connect"]
+
+    C --> F["userService.upsertUserFromAuth(...)"]
+
+    D --> G["handleGoogleSignInUp(...)"]
+    G --> H{"Google ID already attached to a Compass user?"}
+    H -->|Yes| I["Replace temp Google session with Compass session"]
+    H -->|No| J["Keep SuperTokens session user"]
+    I --> K["googleAuthService.handleGoogleAuth(...)"]
+    J --> K
+
+    E --> L["googleAuthService.connectGoogleToCurrentUser(...)"]
+    L --> M["Persist Google credentials"]
+    M --> N["Set metadata sync flags to RESTART"]
+    N --> O["Restart Google sync in background"]
+```
+
+Design intent:
+
+- logged-out Google sign-in remains a SuperTokens third-party auth flow
+- logged-in Google attach is an authenticated Compass backend flow
+- logout is decoupled from Google state and succeeds even when no Google account
+  is linked
 
 ## Web Entry Points
 
@@ -176,32 +216,32 @@ form and a success status message:
 
 `initSupertokens()` configures these recipes:
 
-- `AccountLinking`
 - `ThirdParty`
 - `EmailPassword`
 - `Dashboard`
 - `Session`
 - `UserMetadata`
 
-### Account linking
+Compass-owned Google connect happens through:
 
-`AccountLinking.init()` only enables automatic linking when an active session is already present:
-
-- with an active session, linking is allowed (`shouldAutomaticallyLink: true`) and does not require extra verification (`shouldRequireVerification: false`)
-- without an active session, automatic linking is disabled (`shouldAutomaticallyLink: false`)
-
-In practice, this supports the explicit in-session "Connect Google Calendar" flow, while logged-out auth flows do not auto-merge identities by email.
+- `POST /api/auth/google/connect`
+- `authController.connectGoogle(...)`
+- `googleAuthService.connectGoogleToCurrentUser(...)`
 
 ### Google sign-in/up
 
-Google auth still enters through SuperTokens `signInUpPOST`, then:
+Logged-out Google auth still enters through SuperTokens `signInUpPOST`, then:
 
 1. `createGoogleSignInSuccess()` extracts the provider payload and session user id
-2. `handleGoogleAuth()` decides between:
+2. `handleGoogleSignInUp()` checks whether `providerUser.sub` is already
+   attached to an existing Compass user
+3. if so, it replaces the temporary Google session with a Compass session for
+   that existing user before continuing
+4. `handleGoogleAuth()` decides between:
    - `SIGNUP`
    - `SIGNIN_INCREMENTAL`
    - `RECONNECT_REPAIR`
-3. `googleAuthService` performs the matching backend path
+5. `googleAuthService` performs the matching backend path
 
 The auth-mode decision is server-side and depends on:
 
@@ -209,11 +249,22 @@ The auth-mode decision is server-side and depends on:
 - whether a refresh token is stored
 - whether sync health is good enough for incremental sync
 
-When the user explicitly chooses "Connect Google Calendar" from an existing
-password-authenticated session, the web client includes
-`shouldTryLinkingWithSessionUser` in the Google sign-in payload. SuperTokens can
-then link that new Google login method onto the active session user instead of
-creating a second account.
+### Google connect from an authenticated password session
+
+When a logged-in password user chooses `Connect Google Calendar`:
+
+1. the web client completes the Google popup flow
+2. `useConnectGoogle()` sends the auth-code payload to
+   `POST /api/auth/google/connect`
+3. `connectGoogleToCurrentUser()` exchanges the code for Google tokens
+4. backend verifies the Google account is not already owned by a different
+   Compass user
+5. backend persists Google credentials onto the current Compass user
+6. backend marks metadata sync flags as `"RESTART"` and restarts sync in the
+   background
+
+This path does not call SuperTokens `signInUpPOST` and does not depend on
+SuperTokens account linking.
 
 ### Email/password sign-up and sign-in
 
@@ -276,17 +327,20 @@ That lets password-auth users use Compass without blocking on Google connectivit
 
 When a password-only user later connects Google:
 
-- `googleSignup()` first attaches Google credentials to the existing Compass user
-- `syncCompassEventsToGoogle()` backfills eligible Compass-only events that do
-  not yet have Google ids
-- background Google sync is then restarted as normal
+- the existing Compass session is preserved
+- Google credentials are attached to the current Compass user through
+  `/api/auth/google/connect`
+- metadata is updated to restart sync
+- background Google sync is restarted as normal
 
-This prevents the "connect Google later" path from leaving pre-existing Compass
-events stranded outside Google Calendar.
+This decouples Google attach from password auth and avoids the old
+session-linking failure mode.
 
 ## Known Caveats
 
 - The rollout gate is not limited to `lastKnownEmail`; any `?auth=` URL currently enables the auth UI.
 - Reset password links always target the `/day` route and require a valid `FRONTEND_URL` in backend env.
-- Automatic account linking is only enabled when an active session exists. Logged-out same-email Google/password identities are not auto-merged.
+- Logged-out same-email Google/password identities are not auto-merged by email.
+- A Google account can belong to only one Compass user. In-session connect
+  returns a conflict if the Google account is already attached elsewhere.
 - Dated-route redirects preserve existing query params (including `auth=verify`), but `useAuthUrlParam()` only handles `login`, `signup`, `forgot`, and `reset`.

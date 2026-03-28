@@ -9,6 +9,7 @@ import { Reminder } from "@web/views/Calendar/components/Header/Reminder/Reminde
 import {
   StyledHeaderRow,
   StyledLeftGroup,
+  StyledRightGroup,
 } from "@web/views/Calendar/components/Header/styled";
 import { useReminderHotkey } from "@web/views/Calendar/hooks/shortcuts/useFocusHotkey";
 
@@ -52,8 +53,10 @@ export const Header: FC<Props> = ({
 
       {showReminder && <Reminder ref={reminderRef} />}
 
-      <AccountIcon />
-      <SelectView />
+      <StyledRightGroup>
+        <AccountIcon />
+        <SelectView />
+      </StyledRightGroup>
     </StyledHeaderRow>
   );
 };

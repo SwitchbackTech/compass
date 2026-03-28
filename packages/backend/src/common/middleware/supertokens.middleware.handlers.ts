@@ -1,9 +1,13 @@
+import supertokens from "supertokens-node";
 import type {
   APIInterface as EmailPasswordAPIInterface,
   RecipeInterface as EmailPasswordRecipeInterface,
 } from "supertokens-node/recipe/emailpassword/types";
 import Session from "supertokens-node/recipe/session";
-import type { APIInterface as SessionAPIInterface } from "supertokens-node/recipe/session/types";
+import type {
+  APIInterface as SessionAPIInterface,
+  SessionContainerInterface,
+} from "supertokens-node/recipe/session/types";
 import type {
   APIInterface as ThirdPartyAPIInterface,
   RecipeInterface as ThirdPartyRecipeInterface,
@@ -12,6 +16,7 @@ import { NodeEnv } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { zObjectId } from "@core/types/type.utils";
 import googleAuthService from "@backend/auth/services/google/google.auth.service";
+import type { GoogleSignInSuccess } from "@backend/auth/services/google/google.auth.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import {
   type CreateGoogleSignInResponse,
@@ -42,6 +47,66 @@ type SignInPOSTFn = NonNullable<EmailPasswordAPIInterface["signInPOST"]>;
 
 type SessionSignOutPOSTFn = NonNullable<SessionAPIInterface["signOutPOST"]>;
 
+async function replaceGoogleSignInSession(
+  input: ThirdPartySignInUpInput,
+  currentSession: SessionContainerInterface,
+  compassUserId: string,
+) {
+  const compassSession = await Session.createNewSession(
+    input.options.req,
+    input.options.res,
+    "public",
+    supertokens.convertToRecipeUserId(compassUserId),
+  );
+
+  await Session.revokeSession(currentSession.getHandle());
+
+  return compassSession;
+}
+
+// If this Google account already maps to a Compass user, swap the temporary SuperTokens session for theirs and remap `success` (recipeUserId).
+async function maybeRemapGoogleSignInToCompassSession(
+  input: ThirdPartySignInUpInput,
+  response: Awaited<ReturnType<ThirdPartySignInUpPostFn>>,
+  success: GoogleSignInSuccess,
+): Promise<{
+  response: Awaited<ReturnType<ThirdPartySignInUpPostFn>>;
+  success: GoogleSignInSuccess;
+}> {
+  const connectedCompassUserId =
+    await googleAuthService.getConnectedCompassUserId(success.providerUser.sub);
+
+  if (
+    input.session ||
+    !connectedCompassUserId ||
+    response.status !== "OK" ||
+    response.session.getUserId() === connectedCompassUserId
+  ) {
+    return { response, success };
+  }
+
+  const session = await replaceGoogleSignInSession(
+    input,
+    response.session,
+    connectedCompassUserId,
+  );
+
+  const responseWithCompassSession = { ...response, session };
+  const successAfterSessionRemap = createGoogleSignInSuccess(
+    responseWithCompassSession as CreateGoogleSignInResponse,
+  );
+  if (!successAfterSessionRemap) {
+    throw new Error(
+      "Missing Google sign-in success after Compass session replacement",
+    );
+  }
+
+  return {
+    response: responseWithCompassSession,
+    success: successAfterSessionRemap,
+  };
+}
+
 export async function createGoogleUser(
   input: Parameters<CreateGoogleUserFn>[0],
   originalCreateGoogleUser: CreateGoogleUserFn,
@@ -68,11 +133,19 @@ export async function handleGoogleSignInUp(
     response as CreateGoogleSignInResponse,
   );
 
-  if (success) {
-    await googleAuthService.handleGoogleAuth(success);
+  if (!success) {
+    return response;
   }
 
-  return response;
+  const remapped = await maybeRemapGoogleSignInToCompassSession(
+    input,
+    response,
+    success,
+  );
+
+  await googleAuthService.handleGoogleAuth(remapped.success);
+
+  return remapped.response;
 }
 
 export async function sendPasswordResetEmail<

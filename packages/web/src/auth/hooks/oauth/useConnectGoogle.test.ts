@@ -1,20 +1,25 @@
 import { renderHook } from "@testing-library/react";
 import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
-import { useSession } from "@web/auth/hooks/session/useSession";
+import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
 import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
+import { AuthApi } from "@web/common/apis/auth.api";
 import { SyncApi } from "@web/common/apis/sync.api";
 import {
   selectGoogleConnectionState,
   selectUserMetadataStatus,
 } from "@web/ducks/auth/selectors/user-metadata.selectors";
-import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
+import {
+  importGCalSlice,
+  triggerFetch,
+} from "@web/ducks/events/slices/sync.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
 jest.mock("@web/auth/hooks/oauth/useGoogleAuth");
-jest.mock("@web/auth/hooks/session/useSession");
+jest.mock("@web/auth/session/user-metadata.util");
 jest.mock("@web/auth/state/auth.state.util");
+jest.mock("@web/common/apis/auth.api");
 jest.mock("@web/common/apis/sync.api");
 jest.mock("@web/store/store.hooks");
 
@@ -27,30 +32,48 @@ const mockUseAppDispatch = useAppDispatch as jest.MockedFunction<
 const mockUseAppSelector = useAppSelector as jest.MockedFunction<
   typeof useAppSelector
 >;
-const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
 const mockHasUserEverAuthenticated =
   hasUserEverAuthenticated as jest.MockedFunction<
     typeof hasUserEverAuthenticated
   >;
+const mockAuthApi = AuthApi as jest.Mocked<typeof AuthApi>;
+const mockRefreshUserMetadata = refreshUserMetadata as jest.MockedFunction<
+  typeof refreshUserMetadata
+>;
 const mockSyncApi = SyncApi as jest.Mocked<typeof SyncApi>;
+
+const getUseGoogleAuthArg = (): Parameters<typeof useGoogleAuth>[0] => {
+  const firstCall = mockUseGoogleAuth.mock.calls.at(0);
+
+  if (!firstCall) {
+    throw new Error("Expected useGoogleAuth to be called");
+  }
+
+  return firstCall[0] ?? {};
+};
 
 describe("useConnectGoogle", () => {
   const mockDispatch = jest.fn();
   const mockLogin = jest.fn();
 
+  const expectGoogleAuthConfig = () => {
+    const arg = getUseGoogleAuthArg();
+
+    expect(arg.prompt).toBe("consent");
+    expect(typeof arg.onSuccess).toBe("function");
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseAppDispatch.mockReturnValue(mockDispatch);
-    mockUseSession.mockReturnValue({
-      authenticated: true,
-      setAuthenticated: jest.fn(),
-    });
     mockUseGoogleAuth.mockReturnValue({
       login: mockLogin,
       data: null,
       loading: false,
     });
+    mockAuthApi.connectGoogle.mockResolvedValue({ status: "OK" });
     mockHasUserEverAuthenticated.mockReturnValue(true);
+    mockRefreshUserMetadata.mockResolvedValue();
     mockSyncApi.importGCal.mockResolvedValue(undefined as never);
     mockUseAppSelector.mockImplementation((selector) => {
       if (selector === selectGoogleConnectionState) {
@@ -68,10 +91,7 @@ describe("useConnectGoogle", () => {
   it("returns checking state when metadata is still loading", () => {
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
-      prompt: "consent",
-      shouldTryLinkingWithSessionUser: true,
-    });
+    expectGoogleAuthConfig();
     expect(result.current.commandAction.label).toBe(
       "Checking Google Calendar…",
     );
@@ -82,7 +102,7 @@ describe("useConnectGoogle", () => {
     );
   });
 
-  it("returns checking state when metadata is idle before refresh (returning user)", () => {
+  it("returns checking state when metadata is idle before refresh", () => {
     mockUseAppSelector.mockImplementation((selector) => {
       if (selector === selectGoogleConnectionState) {
         return "NOT_CONNECTED";
@@ -118,10 +138,7 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
-      prompt: "consent",
-      shouldTryLinkingWithSessionUser: true,
-    });
+    expectGoogleAuthConfig();
     expect(result.current.commandAction.label).toBe("Connect Google Calendar");
     expect(result.current.commandAction.isDisabled).toBe(false);
     expect(result.current.sidebarStatus.icon).toBe("CloudArrowUpIcon");
@@ -145,10 +162,7 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
-      prompt: "consent",
-      shouldTryLinkingWithSessionUser: true,
-    });
+    expectGoogleAuthConfig();
     expect(result.current.commandAction.label).toBe(
       "Google Calendar Connected",
     );
@@ -173,14 +187,12 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
-      prompt: "consent",
-      shouldTryLinkingWithSessionUser: true,
-    });
+    expectGoogleAuthConfig();
     expect(result.current.commandAction.label).toBe(
       "Reconnect Google Calendar",
     );
     expect(result.current.sidebarStatus.icon).toBe("LinkBreakIcon");
+
     result.current.commandAction.onSelect?.();
 
     expect(mockLogin).toHaveBeenCalled();
@@ -204,10 +216,7 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
-      prompt: "consent",
-      shouldTryLinkingWithSessionUser: true,
-    });
+    expectGoogleAuthConfig();
     expect(result.current.commandAction.label).toBe("Syncing Google Calendar…");
     expect(result.current.commandAction.isDisabled).toBe(true);
     expect(result.current.commandAction.onSelect).toBeUndefined();
@@ -230,10 +239,7 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
-      prompt: "consent",
-      shouldTryLinkingWithSessionUser: true,
-    });
+    expectGoogleAuthConfig();
     expect(result.current.commandAction.label).toBe("Repair Google Calendar");
     expect(result.current.commandAction.isDisabled).toBe(false);
     expect(result.current.sidebarStatus.icon).toBe("CloudWarningIcon");
@@ -276,17 +282,14 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
-      prompt: "consent",
-      shouldTryLinkingWithSessionUser: true,
-    });
+    expectGoogleAuthConfig();
     expect(result.current.commandAction.label).toBe("Connect Google Calendar");
     expect(result.current.commandAction.isDisabled).toBe(false);
     expect(result.current.sidebarStatus.icon).toBe("CloudArrowUpIcon");
     expect(result.current.sidebarStatus.isDisabled).toBe(false);
   });
 
-  it("shows reconnect_required state from server", () => {
+  it("shows reconnect_required state from the server", () => {
     mockUseAppSelector.mockImplementation((selector) => {
       if (selector === selectGoogleConnectionState) {
         return "RECONNECT_REQUIRED";
@@ -301,10 +304,7 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
-      prompt: "consent",
-      shouldTryLinkingWithSessionUser: true,
-    });
+    expectGoogleAuthConfig();
     expect(result.current.commandAction.label).toBe(
       "Reconnect Google Calendar",
     );
@@ -328,11 +328,36 @@ describe("useConnectGoogle", () => {
 
     const { result } = renderHook(() => useConnectGoogle());
 
-    expect(mockUseGoogleAuth).toHaveBeenCalledWith({
-      prompt: "consent",
-      shouldTryLinkingWithSessionUser: true,
-    });
+    expectGoogleAuthConfig();
     expect(result.current.commandAction.label).toBe("Connect Google Calendar");
     expect(result.current.sidebarStatus.icon).toBe("CloudArrowUpIcon");
+  });
+
+  it("connects Google through the backend endpoint and refreshes metadata", async () => {
+    renderHook(() => useConnectGoogle());
+
+    const useGoogleAuthArg = getUseGoogleAuthArg();
+    if (!useGoogleAuthArg?.onSuccess) {
+      throw new Error("Expected useGoogleAuth to receive an onSuccess handler");
+    }
+
+    const payload = {
+      clientType: "web" as const,
+      thirdPartyId: "google" as const,
+      redirectURIInfo: {
+        redirectURIOnProviderDashboard: window.location.origin,
+        redirectURIQueryParams: {
+          code: "auth-code",
+          scope: "scope",
+          state: "state",
+        },
+      },
+    };
+
+    await useGoogleAuthArg.onSuccess(payload);
+
+    expect(mockAuthApi.connectGoogle).toHaveBeenCalledWith(payload);
+    expect(mockRefreshUserMetadata).toHaveBeenCalledTimes(1);
+    expect(mockDispatch).toHaveBeenCalledWith(triggerFetch());
   });
 });

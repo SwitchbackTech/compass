@@ -19,9 +19,7 @@ Use this guide to manually validate:
 Do not use this guide to validate these flows yet:
 
 - email verification completion
-- passive same-email Google/password auto-linking while logged out
-
-Those flows are mentioned in issue `#1569`, but they are not fully implemented end-to-end in the current web and backend auth flow.
+- passive same-email Google/password auto-linking by email while logged out
 
 ## Setup
 
@@ -35,7 +33,8 @@ Helpful notes:
 
 - Password reset requires backend support. If email delivery is not configured in your local environment, validate the flow in an environment where reset emails are delivered, or use backend logs in `test` where reset links are logged instead of sent.
 - The auth rollout gate depends on either `?auth=` being present in the URL or `lastKnownEmail` already existing in local auth state.
-- For "connect Google later" scenarios, start from a password-authenticated session. Do not sign out before connecting Google.
+- For "connect Google later" scenarios, start from a password-authenticated
+  session. Do not sign out before connecting Google.
 
 ## Scenario 1: Gate And Entry Points
 
@@ -192,9 +191,33 @@ An already-authenticated password user should be able to connect Google from ins
 - The app keeps the existing authenticated session instead of falling back to a logged-out state.
 - Previously created Compass data is still present after Google connect.
 - The Google status moves away from `NOT_CONNECTED` and into an importing or connected state.
-- Pre-existing eligible Compass events are pushed to Google during the connect-later flow.
+- The network flow uses the authenticated backend connect path rather than
+  logged-out Google sign-in:
+  - `POST /api/auth/google/connect`
+  - not `POST /api/signinup`
 
-## Scenario 8: Session-Expired Re-Auth
+## Scenario 8: Sign In With Google After Connect-Later
+
+### UX
+
+After a password user connects Google, a later logged-out Google sign-in should
+land in the same Compass account rather than creating a duplicate account.
+
+### Steps
+
+1. Complete Scenario 7 first.
+2. Log out.
+3. Choose `Continue with Google`.
+4. Complete Google OAuth with the same Google account used in Scenario 7.
+5. Verify existing Compass data is still present.
+
+### Expected Results
+
+- The user lands in the same Compass account.
+- Existing Compass data remains visible.
+- No duplicate or empty account is created.
+
+## Scenario 9: Session-Expired Re-Auth
 
 ### UX
 
@@ -215,7 +238,7 @@ When a previously authenticated session becomes invalid, the app should guide th
 - Clicking `Sign in` opens the login modal.
 - Re-authenticating restores normal app usage.
 
-## Scenario 9: Logout And Persisted Gate State
+## Scenario 10: Logout And Persisted Gate State
 
 ### UX
 
@@ -245,10 +268,13 @@ If time is limited, run these checks before shipping auth changes:
 4. Reset links open the reset-password modal and can be completed with a new password.
 5. Password-only users can still create, edit, and delete Compass events before connecting Google.
 6. `Connect Google Calendar` works from an authenticated password session without losing existing Compass data.
-7. Session expiry opens the login modal from the toast.
-8. Logging out preserves the rollout gate for that browser session.
+7. After connect-later, logged-out Google sign-in lands in the same Compass account.
+8. Session expiry opens the login modal from the toast.
+9. Logging out preserves the rollout gate for that browser session.
 
 ## Current Caveats
 
 - Email verification is not part of the current end-to-end manual test flow yet.
-- Passive same-email Google/password auto-linking while logged out is not a supported manual test case yet. Use the explicit in-session `Connect Google Calendar` path instead.
+- Passive same-email Google/password auto-linking by email is not a supported
+  manual test case. Use the explicit in-session `Connect Google Calendar` path
+  instead.

@@ -1,6 +1,5 @@
 import cors from "cors";
 import SuperTokens from "supertokens-node";
-import AccountLinking from "supertokens-node/recipe/accountlinking";
 import Dashboard from "supertokens-node/recipe/dashboard";
 import EmailPassword from "supertokens-node/recipe/emailpassword";
 import Session from "supertokens-node/recipe/session";
@@ -39,18 +38,6 @@ export const initSupertokens = () => {
     },
     framework: "express",
     recipeList: [
-      AccountLinking.init({
-        shouldDoAutomaticAccountLinking: (_newAccountInfo, _user, session) => {
-          if (session) {
-            return Promise.resolve({
-              shouldAutomaticallyLink: true,
-              shouldRequireVerification: false,
-            });
-          }
-
-          return Promise.resolve({ shouldAutomaticallyLink: false });
-        },
-      }),
       // see added endpoints
       // https://app.swaggerhub.com/apis/supertokens/FDI/3.0.0
       // https://supertokens.com/docs/references/fdi/introduction

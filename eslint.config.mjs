@@ -38,6 +38,18 @@ export default [
       },
     },
   },
+  // e2e lives outside root tsconfig.json; use an explicit project so type-aware
+  // rules work in ESLint (including editors using the project service).
+  {
+    files: ["e2e/**/*.ts"],
+    languageOptions: {
+      parserOptions: {
+        projectService: false,
+        project: "./e2e/tsconfig.json",
+        tsconfigRootDir: __dirname,
+      },
+    },
+  },
   {
     settings: {
       react: {
@@ -50,6 +62,7 @@ export default [
         typescript: {
           project: [
             "./tsconfig.json",
+            "./e2e/tsconfig.json",
             "./packages/backend/tsconfig.json",
             "./packages/web/tsconfig.json",
           ],
@@ -75,15 +88,20 @@ export default [
     // Rules and plugins for tests only
     files: ["**/__tests__/**/*.[jt]s?(x)", "**/?(*.)+(spec|test).[jt]s?(x)"],
     plugins: {
-      jest: pluginJest,
-      ...jestDom.configs["flat/dom"],
-      ...testingLibrary.configs["flat/recommended"],
-      ...testingLibrary.configs["flat/react"],
+      ...pluginJest.configs["flat/recommended"].plugins,
+      ...jestDom.configs["flat/recommended"].plugins,
+      ...testingLibrary.configs["flat/dom"].plugins,
+      ...testingLibrary.configs["flat/react"].plugins,
     },
     languageOptions: {
+      ...pluginJest.configs["flat/recommended"].languageOptions,
       globals: pluginJest.environments.globals.globals,
     },
     rules: {
+      ...pluginJest.configs["flat/recommended"].rules,
+      ...jestDom.configs["flat/recommended"].rules,
+      ...testingLibrary.configs["flat/dom"].rules,
+      ...testingLibrary.configs["flat/react"].rules,
       "jest/no-disabled-tests": "warn",
       "jest/no-focused-tests": "error",
       "jest/no-identical-title": "error",

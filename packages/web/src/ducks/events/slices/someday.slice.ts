@@ -19,6 +19,9 @@ const reducers = {
   convert,
   delete: cancel,
   insert,
+  // Same state update as `delete`, but a distinct action type so sagas can
+  // optimistically remove an id without re-triggering takeLatest(delete, ...).
+  removeFromList: cancel,
   replace,
   reorder,
 };

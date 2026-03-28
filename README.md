@@ -1,4 +1,4 @@
-# 🧭 Compass Calendar
+# Compass Calendar
 
 **A minimalist task manager designed for engineers.**
 
@@ -63,7 +63,7 @@ Head over to [app.compasscalendar.com](https://app.compasscalendar.com?utm_sourc
 
 Want to poke around or self-host?
 
-[Read the technical docs](https://docs.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme): All the info you'd need to get started, including guides on how to install, test, build, deploy, and contribute.
+[Read the technical docs](https://github.com/SwitchbackTech/compass/tree/main/docs): All the info you'd need to get started, including guides on how to install, test, build, deploy, and contribute.
 
 ### Development Workflow
 
