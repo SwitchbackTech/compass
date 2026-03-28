@@ -38,6 +38,18 @@ export default [
       },
     },
   },
+  // e2e lives outside root tsconfig.json; use an explicit project so type-aware
+  // rules work in ESLint (including editors using the project service).
+  {
+    files: ["e2e/**/*.ts"],
+    languageOptions: {
+      parserOptions: {
+        projectService: false,
+        project: "./e2e/tsconfig.json",
+        tsconfigRootDir: __dirname,
+      },
+    },
+  },
   {
     settings: {
       react: {
@@ -50,6 +62,7 @@ export default [
         typescript: {
           project: [
             "./tsconfig.json",
+            "./e2e/tsconfig.json",
             "./packages/backend/tsconfig.json",
             "./packages/web/tsconfig.json",
           ],

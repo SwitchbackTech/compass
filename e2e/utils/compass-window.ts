@@ -4,7 +4,7 @@ import { z } from "zod";
  * Zod schema for the Redux store subset exposed on window for e2e testing.
  * Validates that the store is available and has the expected dispatch/getState surface.
  */
-export const compassStoreSchema = z.object({
+const CompassStoreSchema = z.object({
   dispatch: z.function(),
   getState: z.function(),
 });
@@ -12,7 +12,7 @@ export const compassStoreSchema = z.object({
 /**
  * Zod schema for the session test hooks set by SessionProvider.
  */
-export const compassHooksSchema = z.object({
+const CompassHooksSchema = z.object({
   setAuthenticated: z.function(),
 });
 
@@ -20,14 +20,14 @@ export const compassHooksSchema = z.object({
  * Full schema for the compass e2e globals on window.
  * Use compassWindowSchema.parse(window) to validate the window before accessing globals.
  */
-export const compassWindowSchema = z.object({
+export const CompassWindowSchema = z.object({
   __COMPASS_E2E_TEST__: z.boolean().optional(),
-  __COMPASS_E2E_STORE__: compassStoreSchema.optional(),
-  __COMPASS_E2E_HOOKS__: compassHooksSchema.optional(),
+  __COMPASS_E2E_STORE__: CompassStoreSchema.optional(),
+  __COMPASS_E2E_HOOKS__: CompassHooksSchema.optional(),
 });
 
-export type CompassStore = z.infer<typeof compassStoreSchema>;
-export type CompassWindow = z.infer<typeof compassWindowSchema>;
+export type CompassStore = z.infer<typeof CompassStoreSchema>;
+export type CompassWindow = z.infer<typeof CompassWindowSchema>;
 
 /**
  * Augment the global Window type so Playwright page.evaluate() callbacks
