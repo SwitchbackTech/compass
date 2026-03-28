@@ -9,7 +9,6 @@ import { getDateKey } from "@web/common/utils/storage/storage.util";
 import { getIncompleteTasksSorted } from "@web/common/utils/task/sort.task";
 import { useAvailableTasks } from "../hooks/useAvailableTasks";
 import { useFocusedTask } from "../hooks/useFocusedTask";
-import { useNowShortcuts } from "../shortcuts/useNowShortcuts";
 
 interface NowViewContextValue {
   focusedTask: Task | null;
@@ -20,6 +19,7 @@ interface NowViewContextValue {
   handleNextTask: () => void;
   handleCompleteTask: () => void;
   updateTaskDescription: (task: Task, description: string) => void;
+  updateTaskTitle: (task: Task, title: string) => void;
 }
 
 export const NowViewContext = createContext<NowViewContextValue | undefined>(
@@ -45,19 +45,37 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
     [allTasks],
   );
 
-  const updateTaskDescription = useCallback(
-    (task: Task, description: string) => {
+  const persistTaskUpdate = useCallback(
+    (task: Task, updates: Partial<Task>, errorMessage: string) => {
       void (async () => {
         await ensureStorageReady();
         await getTaskRepository("local").save(getDateKey(), {
           ...task,
-          description,
+          ...updates,
         });
       })().catch((error) => {
-        console.error("Failed to update task description:", error);
+        console.error(errorMessage, error);
       });
     },
     [],
+  );
+
+  const updateTaskDescription = useCallback(
+    (task: Task, description: string) => {
+      persistTaskUpdate(
+        task,
+        { description },
+        "Failed to update task description:",
+      );
+    },
+    [persistTaskUpdate],
+  );
+
+  const updateTaskTitle = useCallback(
+    (task: Task, title: string) => {
+      persistTaskUpdate(task, { title }, "Failed to update task title:");
+    },
+    [persistTaskUpdate],
   );
 
   const handlePreviousTask = useCallback(() => {
@@ -130,16 +148,6 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
     navigate,
     setFocusedTask,
   ]);
-
-  // Single call to useNowShortcuts at provider level
-  useNowShortcuts({
-    focusedTask,
-    availableTasks,
-    onPreviousTask: handlePreviousTask,
-    onNextTask: handleNextTask,
-    onCompleteTask: handleCompleteTask,
-  });
-
   const value: NowViewContextValue = {
     focusedTask,
     setFocusedTask,
@@ -149,6 +157,7 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
     handleNextTask,
     handleCompleteTask,
     updateTaskDescription,
+    updateTaskTitle,
   };
 
   return (

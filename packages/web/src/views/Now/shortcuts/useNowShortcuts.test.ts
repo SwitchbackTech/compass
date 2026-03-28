@@ -1,4 +1,3 @@
-import { act } from "react";
 import { useNavigate } from "react-router-dom";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
@@ -22,6 +21,7 @@ describe("useNowShortcuts", () => {
   });
 
   afterEach(() => {
+    (document.activeElement as HTMLElement | null)?.blur?.();
     jest.clearAllMocks();
   });
 
@@ -50,6 +50,9 @@ describe("useNowShortcuts", () => {
       onPreviousTask: jest.fn(),
       onNextTask: jest.fn(),
       onCompleteTask: jest.fn(),
+      onEditDescription: jest.fn(),
+      onEditTitle: jest.fn(),
+      onSaveDescription: jest.fn(),
     };
 
     it("should call onPreviousTask when 'j' is pressed", () => {
@@ -120,6 +123,32 @@ describe("useNowShortcuts", () => {
       expect(defaultProps.onCompleteTask).toHaveBeenCalled();
     });
 
+    it("emits the description focus event when 'e' then 'd' is pressed", () => {
+      renderHook(() => useNowShortcuts(defaultProps));
+
+      pressKey("e");
+      pressKey("d");
+
+      expect(defaultProps.onEditDescription).toHaveBeenCalledTimes(1);
+    });
+
+    it("emits the title focus event when 'e' then 't' is pressed", () => {
+      renderHook(() => useNowShortcuts(defaultProps));
+
+      pressKey("e");
+      pressKey("t");
+
+      expect(defaultProps.onEditTitle).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not emit the description focus event when only 'd' is pressed", () => {
+      renderHook(() => useNowShortcuts(defaultProps));
+
+      pressKey("d");
+
+      expect(defaultProps.onEditDescription).not.toHaveBeenCalled();
+    });
+
     it("should not handle Enter shortcut when there is no focused task", () => {
       const props = { ...defaultProps, focusedTask: null };
 
@@ -138,6 +167,9 @@ describe("useNowShortcuts", () => {
       onPreviousTask: jest.fn(),
       onNextTask: jest.fn(),
       onCompleteTask: jest.fn(),
+      onEditDescription: jest.fn(),
+      onEditTitle: jest.fn(),
+      onSaveDescription: jest.fn(),
     };
 
     it("should not handle shortcuts when typing in input elements", () => {
@@ -146,12 +178,50 @@ describe("useNowShortcuts", () => {
       const input = document.createElement("input");
 
       document.body.appendChild(input);
+      try {
+        input.focus();
 
-      input.focus();
+        pressKey("j", {}, input);
 
-      pressKey("j", {}, input);
+        expect(defaultProps.onPreviousTask).not.toHaveBeenCalled();
+      } finally {
+        input.remove();
+      }
+    });
 
-      expect(defaultProps.onPreviousTask).not.toHaveBeenCalled();
+    it("does not fire edit sequences when there is no focused task", () => {
+      const props = { ...defaultProps, focusedTask: null };
+
+      renderHook(() => useNowShortcuts(props));
+
+      pressKey("e");
+      pressKey("d");
+      pressKey("e");
+      pressKey("t");
+
+      expect(props.onEditDescription).not.toHaveBeenCalled();
+      expect(props.onEditTitle).not.toHaveBeenCalled();
+    });
+
+    it("does not fire edit sequences when typing in editable inputs", () => {
+      renderHook(() => useNowShortcuts(defaultProps));
+
+      const input = document.createElement("input");
+
+      document.body.appendChild(input);
+      try {
+        input.focus();
+
+        pressKey("e", {}, input);
+        pressKey("d", {}, input);
+        pressKey("e", {}, input);
+        pressKey("t", {}, input);
+
+        expect(defaultProps.onEditDescription).not.toHaveBeenCalled();
+        expect(defaultProps.onEditTitle).not.toHaveBeenCalled();
+      } finally {
+        input.remove();
+      }
     });
 
     it("should not handle shortcuts when typing in textarea elements", () => {
@@ -160,12 +230,15 @@ describe("useNowShortcuts", () => {
       const textarea = document.createElement("textarea");
 
       document.body.appendChild(textarea);
+      try {
+        textarea.focus();
 
-      textarea.focus();
+        pressKey("k", {}, textarea);
 
-      pressKey("k", {}, textarea);
-
-      expect(defaultProps.onNextTask).not.toHaveBeenCalled();
+        expect(defaultProps.onNextTask).not.toHaveBeenCalled();
+      } finally {
+        textarea.remove();
+      }
     });
 
     it("should not handle shortcuts when typing in contenteditable elements", () => {
@@ -177,12 +250,15 @@ describe("useNowShortcuts", () => {
       Object.defineProperty(div, "isContentEditable", { value: true });
 
       document.body.appendChild(div);
+      try {
+        div.focus();
 
-      div.focus();
+        pressKey("j", {}, div);
 
-      pressKey("j", {}, div);
-
-      expect(defaultProps.onPreviousTask).not.toHaveBeenCalled();
+        expect(defaultProps.onPreviousTask).not.toHaveBeenCalled();
+      } finally {
+        div.remove();
+      }
     });
   });
 });

@@ -1,13 +1,10 @@
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useHotkeySequence } from "@tanstack/react-hotkeys";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { ID_REMINDER_INPUT } from "@web/common/constants/web.constants";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
 import { type Task } from "@web/common/types/task.types";
-import {
-  CompassDOMEvents,
-  compassEventEmitter,
-} from "@web/common/utils/dom/event-emitter.util";
 
 interface Props {
   focusedTask?: Task | null;
@@ -15,6 +12,9 @@ interface Props {
   onPreviousTask?: () => void;
   onNextTask?: () => void;
   onCompleteTask?: () => void;
+  onEditDescription?: () => void;
+  onEditTitle?: () => void;
+  onSaveDescription?: () => void;
   onToggleSidebar?: () => void;
 }
 
@@ -29,10 +29,14 @@ export function useNowShortcuts(props?: Props) {
     onPreviousTask,
     onNextTask,
     onCompleteTask,
+    onEditDescription,
+    onEditTitle,
+    onSaveDescription,
     onToggleSidebar,
   } = props || {};
 
   const navigate = useNavigate();
+  const isTaskEditingEnabled = Boolean(focusedTask);
 
   const handleTaskNavigation = useCallback(
     (handler?: () => void) => {
@@ -43,20 +47,36 @@ export function useNowShortcuts(props?: Props) {
     [focusedTask, availableTasks.length],
   );
 
-  useAppHotkeyUp("D", () => {
-    compassEventEmitter.emit(CompassDOMEvents.FOCUS_TASK_DESCRIPTION);
-  });
-
-  useAppHotkey(
-    "Mod+Enter",
+  useHotkeySequence(
+    ["E", "D"],
     () => {
-      compassEventEmitter.emit(CompassDOMEvents.SAVE_TASK_DESCRIPTION);
+      onEditDescription?.();
     },
     {
-      ignoreInputs: false,
-      blurOnTrigger: true,
+      enabled: isTaskEditingEnabled,
+      eventType: "keyup",
+      ignoreInputs: true,
+      conflictBehavior: "allow",
     },
   );
+
+  useHotkeySequence(
+    ["E", "T"],
+    () => {
+      onEditTitle?.();
+    },
+    {
+      enabled: isTaskEditingEnabled,
+      eventType: "keyup",
+      ignoreInputs: true,
+      conflictBehavior: "allow",
+    },
+  );
+
+  useAppHotkey("Mod+Enter", () => onSaveDescription?.(), {
+    ignoreInputs: false,
+    blurOnTrigger: true,
+  });
 
   useAppHotkeyUp("J", () => {
     handleTaskNavigation(onPreviousTask)?.();

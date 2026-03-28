@@ -2,10 +2,6 @@ import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { Pencil } from "@phosphor-icons/react";
-import {
-  CompassDOMEvents,
-  compassEventEmitter,
-} from "@web/common/utils/dom/event-emitter.util";
 import { Textarea } from "@web/components/Textarea";
 
 const MAX_DESCRIPTION_LENGTH = 255;
@@ -14,6 +10,8 @@ export const TASK_DESCRIPTION_ID = "focused-task-textarea";
 
 interface TaskDescriptionProps {
   description?: string;
+  editRequestKey?: number;
+  saveRequestKey?: number;
   onSave: (description: string) => void;
 }
 
@@ -113,12 +111,16 @@ const CharacterCount = styled.div<{ isNearLimit: boolean }>`
 
 export const TaskDescription: React.FC<TaskDescriptionProps> = ({
   description = "",
+  editRequestKey = 0,
+  saveRequestKey = 0,
   onSave,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(description);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const originalValueRef = useRef(description);
+  const previousEditRequestKeyRef = useRef(editRequestKey);
+  const previousSaveRequestKeyRef = useRef(saveRequestKey);
 
   useEffect(() => {
     setValue(description);
@@ -135,28 +137,22 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
   }, [isEditing]);
 
   useEffect(() => {
-    if (isEditing) return;
+    if (editRequestKey === previousEditRequestKeyRef.current) return;
 
-    const handler = () => setIsEditing(true);
+    previousEditRequestKeyRef.current = editRequestKey;
 
-    compassEventEmitter.on(CompassDOMEvents.FOCUS_TASK_DESCRIPTION, handler);
-
-    return () => {
-      compassEventEmitter.off(CompassDOMEvents.FOCUS_TASK_DESCRIPTION, handler);
-    };
-  }, [isEditing, setIsEditing]);
+    setIsEditing(true);
+  }, [editRequestKey]);
 
   useEffect(() => {
+    if (saveRequestKey === previousSaveRequestKeyRef.current) return;
+
+    previousSaveRequestKeyRef.current = saveRequestKey;
+
     if (!isEditing) return;
 
-    const handler = () => textareaRef.current?.blur();
-
-    compassEventEmitter.on(CompassDOMEvents.SAVE_TASK_DESCRIPTION, handler);
-
-    return () => {
-      compassEventEmitter.off(CompassDOMEvents.SAVE_TASK_DESCRIPTION, handler);
-    };
-  }, [isEditing, setIsEditing]);
+    textareaRef.current?.blur();
+  }, [isEditing, saveRequestKey]);
 
   const handleClick = () => {
     setIsEditing(true);
