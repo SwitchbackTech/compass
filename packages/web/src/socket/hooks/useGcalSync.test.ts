@@ -7,6 +7,8 @@ import {
   USER_METADATA,
 } from "@core/constants/websocket.constants";
 import { type ImportGCalEndPayload } from "@core/types/websocket.types";
+import { handleGoogleRevoked } from "@web/auth/google/google.auth.util";
+import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import {
   importGCalSlice,
@@ -30,6 +32,7 @@ jest.mock("@web/ducks/events/slices/sync.slice", () => ({
   importGCalSlice: {
     actions: {
       clearImportResults: jest.fn(),
+      stopRepair: jest.fn(),
       setImportResults: jest.fn(),
       setImportError: jest.fn(),
       request: jest.fn(),
@@ -44,23 +47,27 @@ jest.mock("@web/ducks/events/slices/sync.slice", () => ({
 jest.mock("@web/ducks/auth/slices/user-metadata.slice", () => ({
   userMetadataSlice: {
     actions: {
-      set: jest.fn((payload) => ({ type: "userMetadata/set", payload })),
+      set: jest.fn((payload: unknown) => ({
+        type: "userMetadata/set",
+        payload,
+      })),
       clear: jest.fn(() => ({ type: "userMetadata/clear" })),
     },
-  },
-}));
-jest.mock("react-toastify", () => ({
-  toast: {
-    error: jest.fn(),
-    isActive: jest.fn(() => false),
   },
 }));
 jest.mock("@web/auth/google/google.auth.util", () => ({
   handleGoogleRevoked: jest.fn(),
 }));
+jest.mock("@web/common/utils/toast/error-toast.util", () => ({
+  showErrorToast: jest.fn(),
+}));
 
 describe("useGcalSync", () => {
   const mockDispatch = jest.fn();
+  const mockHandleGoogleRevoked = jest.mocked(handleGoogleRevoked);
+  const mockShowErrorToast = showErrorToast as jest.MockedFunction<
+    typeof showErrorToast
+  >;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -83,32 +90,36 @@ describe("useGcalSync", () => {
 
   describe("GOOGLE_REVOKED", () => {
     it("calls handleGoogleRevoked when socket event fires", () => {
-      const {
-        handleGoogleRevoked,
-      } = require("@web/auth/google/google.auth.util");
       let onGoogleRevoked: (() => void) | undefined;
-      (socket.on as jest.Mock).mockImplementation((event, handler) => {
-        if (event === GOOGLE_REVOKED) {
-          onGoogleRevoked = handler;
-        }
-      });
+      (socket.on as jest.Mock).mockImplementation(
+        (event: string, handler: () => void) => {
+          if (event === GOOGLE_REVOKED) {
+            onGoogleRevoked = handler;
+          }
+        },
+      );
 
       renderHook(() => useGcalSync());
 
       onGoogleRevoked?.();
 
-      expect(handleGoogleRevoked).toHaveBeenCalledTimes(1);
+      expect(mockDispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.stopRepair(),
+      );
+      expect(mockHandleGoogleRevoked).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("USER_METADATA", () => {
     it("updates Redux with server metadata (includes connectionState)", () => {
       let metadataHandler: ((metadata: unknown) => void) | undefined;
-      (socket.on as jest.Mock).mockImplementation((event, handler) => {
-        if (event === USER_METADATA) {
-          metadataHandler = handler;
-        }
-      });
+      (socket.on as jest.Mock).mockImplementation(
+        (event: string, handler: (metadata: unknown) => void) => {
+          if (event === USER_METADATA) {
+            metadataHandler = handler;
+          }
+        },
+      );
 
       renderHook(() => useGcalSync());
 
@@ -127,11 +138,13 @@ describe("useGcalSync", () => {
 
     it("requests an import when metadata says restart is needed", () => {
       let metadataHandler: ((metadata: unknown) => void) | undefined;
-      (socket.on as jest.Mock).mockImplementation((event, handler) => {
-        if (event === USER_METADATA) {
-          metadataHandler = handler;
-        }
-      });
+      (socket.on as jest.Mock).mockImplementation(
+        (event: string, handler: (metadata: unknown) => void) => {
+          if (event === USER_METADATA) {
+            metadataHandler = handler;
+          }
+        },
+      );
 
       renderHook(() => useGcalSync());
 
@@ -147,11 +160,13 @@ describe("useGcalSync", () => {
 
     it("does not auto-request an import when reconnect is required", () => {
       let metadataHandler: ((metadata: unknown) => void) | undefined;
-      (socket.on as jest.Mock).mockImplementation((event, handler) => {
-        if (event === USER_METADATA) {
-          metadataHandler = handler;
-        }
-      });
+      (socket.on as jest.Mock).mockImplementation(
+        (event: string, handler: (metadata: unknown) => void) => {
+          if (event === USER_METADATA) {
+            metadataHandler = handler;
+          }
+        },
+      );
 
       renderHook(() => useGcalSync());
 
@@ -165,11 +180,13 @@ describe("useGcalSync", () => {
 
     it("does not auto-request an import when account is not connected", () => {
       let metadataHandler: ((metadata: unknown) => void) | undefined;
-      (socket.on as jest.Mock).mockImplementation((event, handler) => {
-        if (event === USER_METADATA) {
-          metadataHandler = handler;
-        }
-      });
+      (socket.on as jest.Mock).mockImplementation(
+        (event: string, handler: (metadata: unknown) => void) => {
+          if (event === USER_METADATA) {
+            metadataHandler = handler;
+          }
+        },
+      );
 
       renderHook(() => useGcalSync());
 
@@ -202,6 +219,9 @@ describe("useGcalSync", () => {
       });
 
       expect(mockDispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.stopRepair(),
+      );
+      expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.setImportResults({
           eventsCount: 10,
           calendarsCount: 2,
@@ -231,6 +251,9 @@ describe("useGcalSync", () => {
           "User test-user gcal import is in progress or completed, ignoring this request",
       });
 
+      expect(mockDispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.stopRepair(),
+      );
       expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
       expect(importGCalSlice.actions.setImportResults).not.toHaveBeenCalled();
       expect(triggerFetch).not.toHaveBeenCalled();
@@ -250,13 +273,20 @@ describe("useGcalSync", () => {
 
       importEndHandler?.({
         status: "ERRORED",
-        message: "Incremental Google Calendar sync failed for user: test-user",
+        message: "Google Calendar repair failed. Please try again.",
       });
 
       expect(mockDispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.stopRepair(),
+      );
+      expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.setImportError(
-          "Incremental Google Calendar sync failed for user: test-user",
+          "Google Calendar repair failed. Please try again.",
         ),
+      );
+      expect(mockShowErrorToast).toHaveBeenCalledWith(
+        "Google Calendar repair failed. Please try again.",
+        { toastId: "google-repair-failed" },
       );
       expect(socket.emit).toHaveBeenCalledWith(FETCH_USER_METADATA);
       expect(importGCalSlice.actions.setImportResults).not.toHaveBeenCalled();
@@ -294,6 +324,9 @@ describe("useGcalSync", () => {
       };
       handlers[IMPORT_GCAL_END](successfulResponse);
 
+      expect(mockDispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.stopRepair(),
+      );
       expect(mockDispatch).toHaveBeenCalledWith(
         importGCalSlice.actions.setImportResults({
           eventsCount: 25,

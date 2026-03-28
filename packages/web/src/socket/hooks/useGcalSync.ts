@@ -9,6 +9,8 @@ import {
 import { type UserMetadata } from "@core/types/user.types";
 import { type ImportGCalEndPayload } from "@core/types/websocket.types";
 import { handleGoogleRevoked } from "@web/auth/google/google.auth.util";
+import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
+import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import {
@@ -22,10 +24,14 @@ export const useGcalSync = () => {
 
   const onImportEnd = useCallback(
     (payload?: ImportGCalEndPayload) => {
+      dispatch(importGCalSlice.actions.stopRepair());
       socket.emit(FETCH_USER_METADATA);
 
       if (payload?.status === "ERRORED") {
         dispatch(importGCalSlice.actions.setImportError(payload.message));
+        showErrorToast(payload.message, {
+          toastId: GOOGLE_REPAIR_FAILED_TOAST_ID,
+        });
         return;
       }
 
@@ -52,8 +58,9 @@ export const useGcalSync = () => {
   );
 
   const onGoogleRevoked = useCallback(() => {
+    dispatch(importGCalSlice.actions.stopRepair());
     handleGoogleRevoked();
-  }, []);
+  }, [dispatch]);
 
   const onMetadataFetch = useCallback(
     (metadata: UserMetadata) => {

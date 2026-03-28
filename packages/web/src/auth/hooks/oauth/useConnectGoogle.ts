@@ -1,15 +1,23 @@
+import type { AxiosError } from "axios";
 import { useCallback } from "react";
+import { GOOGLE_REVOKED } from "@core/constants/websocket.constants";
+import { type GoogleAuthCodeRequest } from "@core/types/auth.types";
 import { type GoogleConnectionState } from "@core/types/user.types";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
 import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
 import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
 import { AuthApi } from "@web/common/apis/auth.api";
+import { getApiErrorCode } from "@web/common/apis/compass.api.util";
 import { SyncApi } from "@web/common/apis/sync.api";
+import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
+import { type ConnectionStatusIcon } from "@web/common/types/icon.types";
+import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import {
   selectGoogleConnectionState,
   selectUserMetadataStatus,
 } from "@web/ducks/auth/selectors/user-metadata.selectors";
 import type { UserMetadataStatus } from "@web/ducks/auth/slices/user-metadata.slice";
+import { selectImportGCalState } from "@web/ducks/events/selectors/sync.selector";
 import {
   importGCalSlice,
   triggerFetch,
@@ -23,14 +31,7 @@ import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
  * "checking" is a client-only state for loading, the rest map directly
  * to GoogleConnectionState from the server.
  */
-type GoogleUiState = "checking" | GoogleConnectionState;
-
-type SidebarStatusIcon =
-  | "CloudArrowUpIcon"
-  | "LinkBreakIcon"
-  | "LinkIcon"
-  | "SpinnerIcon"
-  | "CloudWarningIcon";
+type GoogleUiState = "checking" | "repairing" | GoogleConnectionState;
 
 type CommandActionIcon = "CloudArrowUpIcon";
 
@@ -42,8 +43,9 @@ type GoogleUiConfig = {
     onSelect?: () => void;
   };
   sidebarStatus: {
-    icon: SidebarStatusIcon;
+    icon: ConnectionStatusIcon;
     tooltip: string;
+    tone?: "default" | "warning";
     isDisabled: boolean;
     onSelect?: () => void;
   };
@@ -68,6 +70,21 @@ const getGoogleUiConfig = (
         sidebarStatus: {
           icon: "SpinnerIcon",
           tooltip: "Checking Google Calendar status…",
+          tone: "default",
+          isDisabled: true,
+        },
+      };
+    case "repairing":
+      return {
+        commandAction: {
+          label: "Repairing Google Calendar…",
+          icon: COMMAND_ICON,
+          isDisabled: true,
+        },
+        sidebarStatus: {
+          icon: "SpinnerIcon",
+          tooltip: "Repairing Google Calendar in the background.",
+          tone: "warning",
           isDisabled: true,
         },
       };
@@ -82,6 +99,7 @@ const getGoogleUiConfig = (
         sidebarStatus: {
           icon: "CloudArrowUpIcon",
           tooltip: "Google Calendar not connected. Click to connect.",
+          tone: "default",
           isDisabled: false,
           onSelect: onConnectGoogle,
         },
@@ -97,6 +115,7 @@ const getGoogleUiConfig = (
         sidebarStatus: {
           icon: "LinkBreakIcon",
           tooltip: "Google Calendar needs reconnecting. Click to reconnect.",
+          tone: "default",
           isDisabled: false,
           onSelect: onConnectGoogle,
         },
@@ -111,6 +130,7 @@ const getGoogleUiConfig = (
         sidebarStatus: {
           icon: "SpinnerIcon",
           tooltip: "Google Calendar is syncing in the background.",
+          tone: "default",
           isDisabled: true,
         },
       };
@@ -125,6 +145,7 @@ const getGoogleUiConfig = (
         sidebarStatus: {
           icon: "CloudWarningIcon",
           tooltip: "Google Calendar needs repair. Click to repair.",
+          tone: "warning",
           isDisabled: false,
           onSelect: onRepairGoogleFromSidebar,
         },
@@ -139,11 +160,15 @@ const getGoogleUiConfig = (
         sidebarStatus: {
           icon: "LinkIcon",
           tooltip: "Google Calendar connected.",
+          tone: "default",
           isDisabled: true,
         },
       };
   }
 };
+
+const GOOGLE_REPAIR_FAILED_MESSAGE =
+  "Google Calendar repair failed. Please try again.";
 
 export const useConnectGoogle = () => {
   const dispatch = useAppDispatch();
@@ -153,9 +178,20 @@ export const useConnectGoogle = () => {
   const userMetadataStatus = useAppSelector(
     selectUserMetadataStatus as (state: RootState) => UserMetadataStatus,
   );
+  const { isRepairing } = useAppSelector(
+    selectImportGCalState as (state: RootState) => {
+      isRepairing: boolean;
+    },
+  );
   const { login } = useGoogleAuth({
     onSuccess: async (data) => {
-      await AuthApi.connectGoogle(data);
+      const payload: GoogleAuthCodeRequest = {
+        clientType: "web",
+        thirdPartyId: "google",
+        redirectURIInfo: data.redirectURIInfo,
+      };
+
+      await AuthApi.connectGoogle(payload);
       await refreshUserMetadata();
       dispatch(triggerFetch());
     },
@@ -170,15 +206,24 @@ export const useConnectGoogle = () => {
   const onRepairGoogleCalendarBase = useCallback(() => {
     const run = async () => {
       dispatch(importGCalSlice.actions.clearImportResults(undefined));
+      dispatch(importGCalSlice.actions.startRepair());
       try {
         await SyncApi.importGCal({ force: true });
       } catch (error) {
-        console.error("Failed to start Google Calendar repair:", error);
+        dispatch(importGCalSlice.actions.stopRepair());
+
+        const isGoogleRevoked =
+          getApiErrorCode(error as AxiosError) === GOOGLE_REVOKED;
+        if (isGoogleRevoked) {
+          return;
+        }
+
         dispatch(
-          importGCalSlice.actions.setImportError(
-            "Failed to start Google Calendar repair.",
-          ),
+          importGCalSlice.actions.setImportError(GOOGLE_REPAIR_FAILED_MESSAGE),
         );
+        showErrorToast(GOOGLE_REPAIR_FAILED_MESSAGE, {
+          toastId: GOOGLE_REPAIR_FAILED_TOAST_ID,
+        });
       }
     };
     void run();
@@ -199,7 +244,11 @@ export const useConnectGoogle = () => {
   const isCheckingStatus =
     hasUserEverAuthenticated() && userMetadataStatus !== "loaded";
 
-  const state: GoogleUiState = isCheckingStatus ? "checking" : connectionState;
+  const state: GoogleUiState = isRepairing
+    ? "repairing"
+    : isCheckingStatus
+      ? "checking"
+      : connectionState;
 
   return getGoogleUiConfig(
     state,

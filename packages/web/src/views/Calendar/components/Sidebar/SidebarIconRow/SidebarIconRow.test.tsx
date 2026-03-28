@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { fireEvent, screen } from "@testing-library/react";
-import { render } from "@web/__tests__/__mocks__/mock.render";
+import { render } from "@web/__tests__/utils/render.test.util";
 import { SyncApi } from "@web/common/apis/sync.api";
 import { SidebarIconRow } from "@web/views/Calendar/components/Sidebar/SidebarIconRow";
 
@@ -172,5 +172,35 @@ describe("SidebarIconRow", () => {
     );
 
     expect(SyncApi.importGCal).toHaveBeenCalledWith({ force: true });
+  });
+
+  it("shows a disabled warning spinner while a repair is active", () => {
+    render(<SidebarIconRow />, {
+      state: {
+        userMetadata: {
+          current: {
+            google: {
+              connectionState: "ATTENTION",
+            },
+          },
+        },
+        sync: {
+          importGCal: {
+            isRepairing: true,
+          },
+        },
+      },
+    });
+
+    expect(
+      screen.getByRole("button", {
+        name: "Repairing Google Calendar in the background.",
+      }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("status", {
+        name: "Repairing Google Calendar in the background.",
+      }),
+    ).toBeInTheDocument();
   });
 });

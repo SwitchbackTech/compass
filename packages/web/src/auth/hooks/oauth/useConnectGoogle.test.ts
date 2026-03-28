@@ -1,14 +1,16 @@
-import { renderHook } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
 import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
 import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
 import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { SyncApi } from "@web/common/apis/sync.api";
+import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import {
   selectGoogleConnectionState,
   selectUserMetadataStatus,
 } from "@web/ducks/auth/selectors/user-metadata.selectors";
+import { selectImportGCalState } from "@web/ducks/events/selectors/sync.selector";
 import {
   importGCalSlice,
   triggerFetch,
@@ -21,6 +23,7 @@ jest.mock("@web/auth/session/user-metadata.util");
 jest.mock("@web/auth/state/auth.state.util");
 jest.mock("@web/common/apis/auth.api");
 jest.mock("@web/common/apis/sync.api");
+jest.mock("@web/common/utils/toast/error-toast.util");
 jest.mock("@web/store/store.hooks");
 
 const mockUseGoogleAuth = useGoogleAuth as jest.MockedFunction<
@@ -41,8 +44,13 @@ const mockRefreshUserMetadata = refreshUserMetadata as jest.MockedFunction<
   typeof refreshUserMetadata
 >;
 const mockSyncApi = SyncApi as jest.Mocked<typeof SyncApi>;
+const mockShowErrorToast = showErrorToast as jest.MockedFunction<
+  typeof showErrorToast
+>;
 
-const getUseGoogleAuthArg = (): Parameters<typeof useGoogleAuth>[0] => {
+const getUseGoogleAuthArg = (): NonNullable<
+  Parameters<typeof useGoogleAuth>[0]
+> => {
   const firstCall = mockUseGoogleAuth.mock.calls.at(0);
 
   if (!firstCall) {
@@ -84,6 +92,10 @@ describe("useConnectGoogle", () => {
         return "loading";
       }
 
+      if (selector === selectImportGCalState) {
+        return { isRepairing: false };
+      }
+
       return undefined;
     });
   });
@@ -112,6 +124,10 @@ describe("useConnectGoogle", () => {
         return "idle";
       }
 
+      if (selector === selectImportGCalState) {
+        return { isRepairing: false };
+      }
+
       return undefined;
     });
 
@@ -131,6 +147,10 @@ describe("useConnectGoogle", () => {
 
       if (selector === selectUserMetadataStatus) {
         return "loaded";
+      }
+
+      if (selector === selectImportGCalState) {
+        return { isRepairing: false };
       }
 
       return undefined;
@@ -157,6 +177,10 @@ describe("useConnectGoogle", () => {
         return "loaded";
       }
 
+      if (selector === selectImportGCalState) {
+        return { isRepairing: false };
+      }
+
       return undefined;
     });
 
@@ -180,6 +204,10 @@ describe("useConnectGoogle", () => {
 
       if (selector === selectUserMetadataStatus) {
         return "loaded";
+      }
+
+      if (selector === selectImportGCalState) {
+        return { isRepairing: false };
       }
 
       return undefined;
@@ -211,6 +239,10 @@ describe("useConnectGoogle", () => {
         return "loaded";
       }
 
+      if (selector === selectImportGCalState) {
+        return { isRepairing: false };
+      }
+
       return undefined;
     });
 
@@ -234,6 +266,10 @@ describe("useConnectGoogle", () => {
         return "loaded";
       }
 
+      if (selector === selectImportGCalState) {
+        return { isRepairing: false };
+      }
+
       return undefined;
     });
 
@@ -253,6 +289,9 @@ describe("useConnectGoogle", () => {
     expect(mockDispatch).toHaveBeenCalledWith(
       importGCalSlice.actions.clearImportResults(undefined),
     );
+    expect(mockDispatch).toHaveBeenCalledWith(
+      importGCalSlice.actions.startRepair(),
+    );
     expect(mockDispatch).not.toHaveBeenCalledWith(
       settingsSlice.actions.closeCmdPalette(),
     );
@@ -267,6 +306,74 @@ describe("useConnectGoogle", () => {
     );
   });
 
+  it("returns repairing state while a repair is active", () => {
+    mockUseAppSelector.mockImplementation((selector) => {
+      if (selector === selectGoogleConnectionState) {
+        return "ATTENTION";
+      }
+
+      if (selector === selectUserMetadataStatus) {
+        return "loaded";
+      }
+
+      if (selector === selectImportGCalState) {
+        return { isRepairing: true };
+      }
+
+      return undefined;
+    });
+
+    const { result } = renderHook(() => useConnectGoogle());
+
+    expect(result.current.commandAction.label).toBe(
+      "Repairing Google Calendar…",
+    );
+    expect(result.current.commandAction.isDisabled).toBe(true);
+    expect(result.current.sidebarStatus.icon).toBe("SpinnerIcon");
+    expect(result.current.sidebarStatus.tone).toBe("warning");
+    expect(result.current.sidebarStatus.tooltip).toBe(
+      "Repairing Google Calendar in the background.",
+    );
+  });
+
+  it("shows a toast and clears repair state when the repair request fails to start", async () => {
+    mockUseAppSelector.mockImplementation((selector) => {
+      if (selector === selectGoogleConnectionState) {
+        return "ATTENTION";
+      }
+
+      if (selector === selectUserMetadataStatus) {
+        return "loaded";
+      }
+
+      if (selector === selectImportGCalState) {
+        return { isRepairing: false };
+      }
+
+      return undefined;
+    });
+    mockSyncApi.importGCal.mockRejectedValueOnce(new Error("boom"));
+
+    const { result } = renderHook(() => useConnectGoogle());
+
+    result.current.commandAction.onSelect?.();
+
+    await waitFor(() =>
+      expect(mockDispatch).toHaveBeenCalledWith(
+        importGCalSlice.actions.stopRepair(),
+      ),
+    );
+    expect(mockDispatch).toHaveBeenCalledWith(
+      importGCalSlice.actions.setImportError(
+        "Google Calendar repair failed. Please try again.",
+      ),
+    );
+    expect(mockShowErrorToast).toHaveBeenCalledWith(
+      "Google Calendar repair failed. Please try again.",
+      { toastId: "google-repair-failed" },
+    );
+  });
+
   it("shows connect state when server says not connected", () => {
     mockUseAppSelector.mockImplementation((selector) => {
       if (selector === selectGoogleConnectionState) {
@@ -275,6 +382,10 @@ describe("useConnectGoogle", () => {
 
       if (selector === selectUserMetadataStatus) {
         return "loaded";
+      }
+
+      if (selector === selectImportGCalState) {
+        return { isRepairing: false };
       }
 
       return undefined;
@@ -299,6 +410,10 @@ describe("useConnectGoogle", () => {
         return "loaded";
       }
 
+      if (selector === selectImportGCalState) {
+        return { isRepairing: false };
+      }
+
       return undefined;
     });
 
@@ -321,6 +436,10 @@ describe("useConnectGoogle", () => {
 
       if (selector === selectUserMetadataStatus) {
         return "idle";
+      }
+
+      if (selector === selectImportGCalState) {
+        return { isRepairing: false };
       }
 
       return undefined;
