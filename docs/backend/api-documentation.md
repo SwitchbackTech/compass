@@ -97,6 +97,30 @@ Behavior constraints:
 - `cUserId` must be a valid Mongo ObjectId string
 - `GET` also requires `verifySession()`
 
+### /api/auth/google/connect
+
+Authenticated Compass-defined Google attach/reconnect endpoint:
+
+- `POST /api/auth/google/connect`
+- middleware: `verifySession()`
+- request body schema: `GoogleAuthCodeRequestSchema`
+- response body:
+
+```json
+{
+  "status": "OK"
+}
+```
+
+Behavior:
+
+- intended only for users who already have an active Compass session
+- exchanges the Google auth code for tokens on the backend
+- attaches or repairs Google credentials on the current Compass user
+- rejects the request if that Google account is already attached to a different
+  Compass user
+- marks Google sync metadata for restart and starts background sync
+
 ### SuperTokens-managed auth endpoints (runtime)
 
 Files:
@@ -108,7 +132,7 @@ Files:
 
 The web app uses SuperTokens APIs mounted under `/api`:
 
-- `POST /api/signinup` (Google OAuth sign-in/up exchange used by `AuthApi.loginOrSignup`)
+- `POST /api/signinup` (logged-out Google OAuth sign-in/up exchange)
 - `POST /api/signout` (session sign-out)
 - `POST /api/session/refresh` (session refresh)
 - Email/password flows are also recipe-managed by SuperTokens and called through `supertokens-web-js`:
@@ -123,6 +147,9 @@ Runtime constraints from recipe overrides:
 
 - successful password `signUpPOST` and `signInPOST` upsert the Compass user via `userService.upsertUserFromAuth(...)`
 - password `createNewRecipeUser` ensures SuperTokens external user-id mapping exists and points to a Mongo `ObjectId` string
+- logged-out Google `signInUpPOST` may replace the temporary Google session with
+  an existing Compass session when `google.googleId` already belongs to an
+  existing Compass user
 - `POST /api/signout` runs `userService.handleLogoutCleanup(...)` after SuperTokens sign-out:
   - users without Google connection data skip metadata updates
   - users with Google connection data get `sync.incrementalGCalSync = "RESTART"`
@@ -349,11 +376,13 @@ Most endpoints require authentication via Supertokens session management.
 **Authentication Flow**:
 
 1. Client completes SuperTokens auth via either:
-   - Google OAuth (`POST /api/signinup`)
+   - Google OAuth while logged out (`POST /api/signinup`)
    - email/password recipe flows (`signUp`, `signIn`, password reset actions via SDK)
-2. Session cookie is set
-3. Subsequent requests include session cookie
-4. Backend validates session with `verifySession()` middleware
+2. Client completes in-session Google attach via:
+   - `POST /api/auth/google/connect`
+3. Session cookie is set or refreshed
+4. Subsequent requests include session cookie
+5. Backend validates session with `verifySession()` middleware
 
 Authentication exceptions:
 

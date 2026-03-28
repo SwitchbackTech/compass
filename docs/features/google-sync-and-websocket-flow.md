@@ -238,31 +238,28 @@ Note: Frontend reconnect intent is no longer used for routing. The server is the
 When a user authenticates with email/password first and connects Google later
 from an existing session:
 
-1. the web client sends Google OAuth with
-   `shouldTryLinkingWithSessionUser: true` (explicit in-session linking intent)
-2. `AccountLinking` allows linking because a session exists
-3. backend `googleSignup()` attaches Google credentials to the existing Compass user
-4. `syncCompassEventsToGoogle(userId)` backfills eligible Compass-only base events
-   that do not have `gEventId` yet
-5. for recurring events, the same backfill pass updates instance provider data so
-   recurrence instances map to the new Google base event id
-6. background import/watch sync is then restarted
+1. the web client completes the Google popup flow
+2. `useConnectGoogle()` sends the auth-code payload to
+   `POST /api/auth/google/connect`
+3. backend `connectGoogleToCurrentUser()` attaches Google credentials to the
+   existing Compass user
+4. backend marks sync metadata as `"RESTART"`
+5. background import/watch sync is restarted
 
 Operational constraints:
 
-- backfill only includes non-someday base events without existing `gEventId`
-- each backfilled event is written to Google first, then Compass is updated with
-  returned provider ids
-- restart still follows the same metadata/socket lifecycle (`IMPORT_GCAL_START`,
-  metadata transitions, `IMPORT_GCAL_END`)
+- this path no longer depends on SuperTokens `AccountLinking`
+- Google-account ownership is checked server-side by `google.googleId`
+- restart still follows the same metadata/socket lifecycle
+  (`IMPORT_GCAL_START`, metadata transitions, `IMPORT_GCAL_END`)
 
 Primary files:
 
 - `packages/backend/src/common/middleware/supertokens.middleware.ts`
 - `packages/backend/src/auth/services/google/google.auth.service.ts`
-- `packages/backend/src/auth/services/compass/compass.auth.service.ts`
+- `packages/backend/src/auth/controllers/auth.controller.ts`
 - `packages/web/src/auth/google/google.auth.state.ts`
-- `packages/web/src/auth/google/google.auth.util.ts`
+- `packages/web/src/auth/hooks/oauth/useConnectGoogle.ts`
 - `packages/web/src/common/repositories/event/event.repository.util.ts`
 
 ## User Metadata Shape Used By Socket And UI
