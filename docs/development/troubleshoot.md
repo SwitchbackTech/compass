@@ -51,3 +51,37 @@ To fix this:
 2. Copy the exact connection URI and API key from your Supertokens dashboard
 3. Verify the connection URI format matches what Supertokens provides (should include the protocol, domain, and port if applicable)
 4. Ensure there are no extra spaces or characters in the environment variable values
+
+## Google Calendar Repair Fails Or Stops Unexpectedly
+
+When a user triggers repair from the UI (`Repair Google Calendar`) and the flow
+does not complete as expected, first classify the failure mode from the message
+and websocket behavior.
+
+### Quota / rate-limit during repair
+
+If the user sees:
+
+- `Google Calendar repair hit a Google API limit. Please wait a few minutes and try again.`
+
+then backend detected a Google quota/rate-limit response (`403`/`429`), and this
+is usually transient.
+
+Recommended action:
+
+1. wait a few minutes
+2. retry repair
+3. if this repeats across many users, investigate Google API quota usage for the project
+
+### Revoked token during repair
+
+If access was revoked (for example Google returns `invalid_grant`), backend
+prunes Google data and emits `GOOGLE_REVOKED`.
+
+Operational notes:
+
+- this path does **not** end with an `IMPORT_GCAL_END` payload with
+  `status: "ERRORED"`
+- UI should transition to reconnect-required behavior rather than repeatedly
+  retrying repair
+- user action is to reconnect Google, then allow sync/import restart

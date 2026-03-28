@@ -18,7 +18,9 @@ import { getGcalClient } from "@backend/auth/services/google/clients/google.cale
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { getGoogleRepairErrorMessage } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { UserError } from "@backend/common/errors/user/user.errors";
+import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
@@ -386,6 +388,7 @@ class UserService {
 
       if (!proceed) {
         webSocketServer.handleImportGCalEnd(userId, {
+          operation: "REPAIR",
           status: "IGNORED",
           message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
         });
@@ -407,6 +410,7 @@ class UserService {
       });
 
       webSocketServer.handleImportGCalEnd(userId, {
+        operation: "REPAIR",
         status: "COMPLETED",
         ...importResults,
       });
@@ -421,6 +425,16 @@ class UserService {
         );
       }
 
+      if (isInvalidGoogleToken(err)) {
+        logger.warn(
+          `Google Calendar repair failed because access was revoked for user: ${userId}`,
+        );
+
+        await this.pruneGoogleData(userId);
+        webSocketServer.handleGoogleRevoked(userId);
+        return;
+      }
+
       await userMetadataService.updateUserMetadata({
         userId,
         data: { sync: { importGCal: "ERRORED" } },
@@ -429,8 +443,9 @@ class UserService {
       logger.error(`Re-sync failed for user: ${userId}`, err);
 
       webSocketServer.handleImportGCalEnd(userId, {
+        operation: "REPAIR",
         status: "ERRORED",
-        message: `Import gCal failed for user: ${userId}`,
+        message: getGoogleRepairErrorMessage(err),
       });
     }
   };

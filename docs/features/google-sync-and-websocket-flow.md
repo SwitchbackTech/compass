@@ -20,6 +20,41 @@ Important server-to-client events:
 - `IMPORT_GCAL_END`
 - `GOOGLE_REVOKED`
 
+### `IMPORT_GCAL_END` Payload Contract
+
+Source files:
+
+- `packages/core/src/types/websocket.types.ts`
+- `packages/backend/src/user/services/user.service.ts`
+- `packages/backend/src/sync/services/sync.service.ts`
+
+`IMPORT_GCAL_END` now carries an explicit `operation` so the client can distinguish
+repair completion from incremental completion.
+
+```ts
+type ImportGCalOperation = "INCREMENTAL" | "REPAIR";
+
+type ImportGCalEndPayload =
+  | {
+      operation: ImportGCalOperation;
+      status: "COMPLETED";
+      eventsCount?: number;
+      calendarsCount?: number;
+    }
+  | {
+      operation: ImportGCalOperation;
+      status: "ERRORED" | "IGNORED";
+      message: string;
+    };
+```
+
+Operational constraints:
+
+- repair path (`restartGoogleCalendarSync`) emits `operation: "REPAIR"`
+- incremental path (`importIncremental`) emits `operation: "INCREMENTAL"`
+- web listeners should keep a defensive `payload?` handler for compatibility with
+  older emitters/tests
+
 ## Outbound Flow: User Changes An Event In Compass
 
 High-level path:
@@ -83,6 +118,10 @@ Important error handling behavior:
   - response is `204` either way
 - invalid/revoked Google token (`invalid_grant`):
   - backend prunes Google data, emits `GOOGLE_REVOKED`, returns revoked payload
+- invalid/revoked token during repair flow:
+  - backend repair catches `invalid_grant`, prunes Google data, emits
+    `GOOGLE_REVOKED`, and exits repair without sending `IMPORT_GCAL_END` with
+    `status: "ERRORED"`
 
 ## Watch And Sync Records
 
@@ -205,6 +244,10 @@ The client:
 - handles Google revocation
 - requests `USER_METADATA` to drive connection-state UI and import restart decisions
 - auto-starts import only when metadata says `sync.importGCal === "RESTART"` and the Google connection is usable
+- tracks a dedicated repair-in-progress state (`isRepairing`) separate from
+  background incremental sync (`isProcessing`)
+- only shows a toast for repair failures, and de-duplicates it with a stable toast id
+  (`GOOGLE_REPAIR_FAILED_TOAST_ID`)
 
 ## Revoked Token And Reconnect Lifecycle
 
@@ -262,6 +305,29 @@ Primary files:
 - `packages/web/src/auth/hooks/oauth/useConnectGoogle.ts`
 - `packages/web/src/common/repositories/event/event.repository.util.ts`
 
+### Connect-Later Ownership Conflict Triage
+
+If `POST /api/auth/google/connect` returns `409` while a user is trying to
+connect Google from an existing password session:
+
+1. confirm whether the Google account is already linked by checking for an
+   existing Compass user with the same `google.googleId`
+2. verify backend conflict payload:
+   - `result: "User not connected"`
+   - `message: "Google account is already connected to another Compass user"`
+3. verify no reconnect side effects were applied for the current session user:
+   - no new Google credential write
+   - no metadata transition to `sync.importGCal = "RESTART"`
+   - no reconnect/import websocket lifecycle (`IMPORT_GCAL_START` /
+     `IMPORT_GCAL_END`) for that failed request
+
+Expected operator action:
+
+- treat as ownership protection, not as an OAuth transport failure
+- have the user authenticate into the Compass account that already owns that
+  Google identity (or disconnect/recover ownership through an explicit support
+  path)
+
 ## User Metadata Shape Used By Socket And UI
 
 `UserMetadata` includes Google connection state alongside sync state:
@@ -318,6 +384,66 @@ Google import progress is also realtime:
 3. client waits for metadata/socket updates from the backend import flow
 4. backend completes import and emits `IMPORT_GCAL_END`
 5. client stores import results and triggers a refetch
+
+### Operation-Aware Import Completion Semantics
+
+Source files:
+
+- `packages/web/src/socket/hooks/useGcalSync.ts`
+- `packages/web/src/auth/hooks/oauth/useConnectGoogle.ts`
+- `packages/web/src/ducks/events/slices/sync.slice.ts`
+
+`IMPORT_GCAL_END` handling is operation-aware:
+
+- `operation: "REPAIR"`
+  - always stops repair spinner/state
+  - `ERRORED`:
+    - stores `importError`
+    - shows one repair-failure toast (de-duped by id)
+  - `COMPLETED`:
+    - stores import counts in `importResults`
+    - triggers an events refetch
+  - `IGNORED`: no refetch
+- `operation: "INCREMENTAL"`
+  - does **not** alter repair spinner/state
+  - `ERRORED`:
+    - stores `importError`
+    - does not show repair-failure toast
+  - `COMPLETED`: stores counts (if provided) and refetches
+
+Examples:
+
+```json
+{
+  "operation": "REPAIR",
+  "status": "COMPLETED",
+  "eventsCount": 42,
+  "calendarsCount": 3
+}
+```
+
+```json
+{
+  "operation": "INCREMENTAL",
+  "status": "ERRORED",
+  "message": "Incremental Google Calendar sync failed for user: 123"
+}
+```
+
+### Repair Failure Messaging
+
+Source files:
+
+- `packages/backend/src/common/services/gcal/gcal.utils.ts`
+- `packages/backend/src/common/errors/integration/gcal/gcal.errors.ts`
+- `packages/backend/src/user/services/user.service.ts`
+
+Repair failures now normalize to two user-facing message classes:
+
+- quota/rate-limit errors from Google (`403`/`429` with quota-style reasons or messages):
+  - `"Google Calendar repair hit a Google API limit. Please wait a few minutes and try again."`
+- all other repair failures:
+  - `"Google Calendar repair failed. Please try again."`
 
 ### Manual Import Trigger Contract
 

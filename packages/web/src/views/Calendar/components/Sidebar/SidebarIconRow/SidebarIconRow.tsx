@@ -7,6 +7,7 @@ import {
 import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { useVersionCheck } from "@web/common/hooks/useVersionCheck";
 import { theme } from "@web/common/styles/theme";
+import { type ConnectionStatusIcon } from "@web/common/types/icon.types";
 import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
 import { CalendarIcon } from "@web/components/Icons/Calendar";
 import { CommandIcon } from "@web/components/Icons/Command";
@@ -34,13 +35,11 @@ import {
  */
 const getGoogleStatusIcon = ({
   icon,
+  tone = "default",
 }: {
-  icon:
-    | "CloudArrowUpIcon"
-    | "LinkBreakIcon"
-    | "LinkIcon"
-    | "SpinnerIcon"
-    | "CloudWarningIcon";
+  icon: ConnectionStatusIcon;
+
+  tone?: "default" | "warning";
 }) => {
   switch (icon) {
     case "LinkBreakIcon":
@@ -63,7 +62,11 @@ const getGoogleStatusIcon = ({
       return (
         <SpinnerIcon
           aria-hidden="true"
-          color={theme.color.status.info}
+          color={
+            tone === "warning"
+              ? theme.color.status.warning
+              : theme.color.status.info
+          }
           size={24}
         />
       );
@@ -93,6 +96,7 @@ export const SidebarIconRow = () => {
   const isCmdPaletteOpen = useAppSelector(selectIsCmdPaletteOpen);
   const { isUpdateAvailable } = useVersionCheck();
   const { sidebarStatus } = useConnectGoogle();
+  const isBackgroundImporting = gCalImport.isProcessing === true;
 
   const handleUpdateReload = () => {
     window.location.reload();
@@ -170,10 +174,13 @@ export const SidebarIconRow = () => {
             disabled={sidebarStatus.isDisabled}
             onClick={sidebarStatus.onSelect}
           >
-            {getGoogleStatusIcon({ icon: sidebarStatus.icon })}
+            {getGoogleStatusIcon({
+              icon: sidebarStatus.icon,
+              tone: sidebarStatus.tone,
+            })}
           </TooltipWrapper>
         </div>
-        {gCalImport.importing ? (
+        {isBackgroundImporting ? (
           <TooltipWrapper description="Importing your calendar events in the background">
             <SpinnerIcon />
           </TooltipWrapper>

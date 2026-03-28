@@ -217,7 +217,35 @@ land in the same Compass account rather than creating a duplicate account.
 - Existing Compass data remains visible.
 - No duplicate or empty account is created.
 
-## Scenario 9: Session-Expired Re-Auth
+## Scenario 9: Connect Conflict (Google Account Already Linked Elsewhere)
+
+### UX
+
+If a logged-in user tries to connect a Google account that already belongs to a
+different Compass user, the connect action should fail safely without replacing
+or mutating the current account session.
+
+### Steps
+
+1. Prepare two distinct Compass users (User A and User B).
+2. Connect Google account G to User A and confirm success.
+3. Log out User A.
+4. Log in as User B (email/password session is easiest for setup).
+5. Trigger `Connect Google Calendar`.
+6. Complete OAuth with the same Google account G.
+7. Observe network and UI behavior after OAuth returns.
+
+### Expected Results
+
+- `POST /api/auth/google/connect` returns `409`.
+- Response payload includes:
+  - `result: "User not connected"`
+  - `message: "Google account is already connected to another Compass user"`
+- User B remains signed in as User B (session is not replaced).
+- User B's existing Compass data remains visible.
+- Google connection status for User B does not transition to connected/importing.
+
+## Scenario 10: Session-Expired Re-Auth
 
 ### UX
 
@@ -238,7 +266,7 @@ When a previously authenticated session becomes invalid, the app should guide th
 - Clicking `Sign in` opens the login modal.
 - Re-authenticating restores normal app usage.
 
-## Scenario 10: Logout And Persisted Gate State
+## Scenario 11: Logout And Persisted Gate State
 
 ### UX
 
@@ -270,7 +298,8 @@ If time is limited, run these checks before shipping auth changes:
 6. `Connect Google Calendar` works from an authenticated password session without losing existing Compass data.
 7. After connect-later, logged-out Google sign-in lands in the same Compass account.
 8. Session expiry opens the login modal from the toast.
-9. Logging out preserves the rollout gate for that browser session.
+9. Connect conflict returns `409` and does not change active Compass session.
+10. Logging out preserves the rollout gate for that browser session.
 
 ## Current Caveats
 

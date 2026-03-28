@@ -318,6 +318,7 @@ class SyncService {
 
       if (!proceed) {
         webSocketServer.handleImportGCalEnd(userId, {
+          operation: "INCREMENTAL",
           status: "IGNORED",
           message: `User ${userId} gcal incremental sync is in progress or completed, ignoring this request`,
         });
@@ -342,6 +343,7 @@ class SyncService {
       });
 
       webSocketServer.handleImportGCalEnd(userId, {
+        operation: "INCREMENTAL",
         status: "COMPLETED",
       });
       webSocketServer.handleBackgroundCalendarChange(userId);
@@ -359,6 +361,7 @@ class SyncService {
       );
 
       webSocketServer.handleImportGCalEnd(userId, {
+        operation: "INCREMENTAL",
         status: "ERRORED",
         message: `Incremental Google Calendar sync failed for user: ${userId}`,
       });

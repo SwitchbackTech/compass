@@ -104,7 +104,7 @@ export const useSidebarActions = (
       draftType == Categories_Event.SOMEDAY_MONTH;
 
     if (state.isDraftingExisting || (state.isDraftingNew && isSomeday)) {
-      dispatch(draftSlice.actions.discard());
+      dispatch(draftSlice.actions.discard(undefined));
     }
   };
 
@@ -152,7 +152,7 @@ export const useSidebarActions = (
     }
 
     if (reduxDraft) {
-      dispatch(draftSlice.actions.discard());
+      dispatch(draftSlice.actions.discard(undefined));
     }
   }, [state.draft, reduxDraft, setDraft, dispatch]);
 
@@ -209,7 +209,7 @@ export const useSidebarActions = (
     const { destination, draggableId, source } = result;
 
     const handleDiscard = () => {
-      dispatch(draftSlice.actions.discard());
+      dispatch(draftSlice.actions.discard(undefined));
       close();
     };
 
@@ -248,7 +248,7 @@ export const useSidebarActions = (
     const existingEvent = state.somedayEvents.events[props.draggableId];
     const isExisting = existingEvent !== undefined;
 
-    dispatch(draftSlice.actions.startDnd());
+    dispatch(draftSlice.actions.startDnd(undefined));
 
     if (isExisting) {
       setDraft(existingEvent);
@@ -329,7 +329,7 @@ export const useSidebarActions = (
     activity: Activity_DraftEvent = "sidebarClick",
   ) => {
     if (isDrafting) {
-      dispatch(draftSlice.actions.discard());
+      dispatch(draftSlice.actions.discard(undefined));
       close();
       return;
     }
@@ -345,7 +345,7 @@ export const useSidebarActions = (
     }
 
     if (isEventFormOpen()) {
-      dispatch(draftSlice.actions.discard());
+      dispatch(draftSlice.actions.discard(undefined));
       return;
     }
 
@@ -365,7 +365,7 @@ export const useSidebarActions = (
       return;
     }
 
-    createDefaultSomeday();
+    void createDefaultSomeday();
   };
 
   const onSubmit = async (

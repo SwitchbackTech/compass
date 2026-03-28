@@ -27,6 +27,17 @@ export declare type gSchema$EventInstance = WithGcalId<
 
 export declare type gSchema$Events = calendar_v3.Schema$Events;
 export declare type gSchema$Events$Union = gSchema$Events | gSchema$Events[];
+export declare type gSchema$ErrorReason = {
+  reason?: string;
+};
+export declare type gSchema$Error = {
+  errors?: gSchema$ErrorReason[];
+  message?: string;
+};
+export declare type gErrorResponse = {
+  error?: gSchema$Error | string;
+  error_description?: string;
+};
 
 export declare type gParamsEventsList = calendar_v3.Params$Resource$Events$List;
 

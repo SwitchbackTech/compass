@@ -13,6 +13,8 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { createGoogleError } from "@backend/__tests__/mocks.gcal/errors/error.google.factory";
+import { invalidGrant400Error } from "@backend/__tests__/mocks.gcal/errors/error.google.invalidGrant";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import calendarService from "@backend/calendar/services/calendar.service";
@@ -21,6 +23,7 @@ import * as supertokensMiddleware from "@backend/common/middleware/supertokens.m
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
 import priorityService from "@backend/priority/services/priority.service";
+import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import syncService from "@backend/sync/services/sync.service";
 import { isUsingHttps } from "@backend/sync/util/sync.util";
 import userMetadataService from "@backend/user/services/user-metadata.service";
@@ -777,6 +780,7 @@ describe("UserService", () => {
     it("cleans up partial watch state when restart fails", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
+      const importEndSpy = jest.spyOn(webSocketServer, "handleImportGCalEnd");
       const stopWatchesSpy = jest
         .spyOn(syncService, "stopWatches")
         .mockImplementation(async (targetUserId) => {
@@ -810,8 +814,88 @@ describe("UserService", () => {
       const metadata = await userMetadataService.fetchUserMetadata(userId);
       expect(metadata.sync?.importGCal).toBe("ERRORED");
       expect(await mongoService.watch.countDocuments({ user: userId })).toBe(0);
+      expect(importEndSpy).toHaveBeenCalledWith(userId, {
+        operation: "REPAIR",
+        status: "ERRORED",
+        message: "Google Calendar repair failed. Please try again.",
+      });
 
       stopWatchesSpy.mockRestore();
+      startSpy.mockRestore();
+    });
+
+    it("prunes Google data and notifies revoked state when repair loses access", async () => {
+      const { user } = await UtilDriver.setupTestUser();
+      const userId = user._id.toString();
+      const googleRevokedSpy = jest.spyOn(
+        webSocketServer,
+        "handleGoogleRevoked",
+      );
+      const importEndSpy = jest.spyOn(webSocketServer, "handleImportGCalEnd");
+      const startSpy = jest
+        .spyOn(userService, "startGoogleCalendarSync")
+        .mockRejectedValue(invalidGrant400Error);
+
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: { sync: { importGCal: "RESTART" } },
+      });
+
+      await userService.restartGoogleCalendarSync(userId, { force: true });
+
+      const storedUser = await mongoService.user.findOne({ _id: user._id });
+      const metadata = await userMetadataService.fetchUserMetadata(userId);
+
+      expect(storedUser?.google?.gRefreshToken).toBe("");
+      expect(metadata.google?.connectionState).toBe("RECONNECT_REQUIRED");
+      expect(googleRevokedSpy).toHaveBeenCalledWith(userId);
+      expect(importEndSpy).not.toHaveBeenCalledWith(
+        userId,
+        expect.objectContaining({ status: "ERRORED" }),
+      );
+
+      startSpy.mockRestore();
+    });
+
+    it("emits a friendly quota error when Google repair hits rate limits", async () => {
+      const { user } = await UtilDriver.setupTestUser();
+      const userId = user._id.toString();
+      const importEndSpy = jest.spyOn(webSocketServer, "handleImportGCalEnd");
+      const quotaError = createGoogleError({
+        code: "403",
+        responseStatus: 403,
+        message: "Quota exceeded",
+      });
+      if (quotaError.response) {
+        quotaError.response.data = {
+          error: {
+            message:
+              "Quota exceeded for quota metric 'Queries' and limit 'Queries per minute per user'.",
+            errors: [{ reason: "quotaExceeded" }],
+          },
+        };
+      }
+      const startSpy = jest
+        .spyOn(userService, "startGoogleCalendarSync")
+        .mockRejectedValue(quotaError);
+
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: { sync: { importGCal: "RESTART" } },
+      });
+
+      await userService.restartGoogleCalendarSync(userId, { force: true });
+
+      const metadata = await userMetadataService.fetchUserMetadata(userId);
+
+      expect(metadata.sync?.importGCal).toBe("ERRORED");
+      expect(importEndSpy).toHaveBeenCalledWith(userId, {
+        operation: "REPAIR",
+        status: "ERRORED",
+        message:
+          "Google Calendar repair hit a Google API limit. Please wait a few minutes and try again.",
+      });
+
       startSpy.mockRestore();
     });
   });

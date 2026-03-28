@@ -1,6 +1,10 @@
 import { act } from "react";
 import { Provider } from "react-redux";
-import { combineReducers, configureStore } from "@reduxjs/toolkit";
+import {
+  type EnhancedStore,
+  combineReducers,
+  configureStore,
+} from "@reduxjs/toolkit";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import { IMPORT_GCAL_END } from "@core/constants/websocket.constants";
@@ -13,6 +17,14 @@ import {
 } from "@web/ducks/events/slices/sync.slice";
 import { socket } from "./SocketProvider";
 import SocketProvider from "./SocketProvider";
+
+type TestStore = EnhancedStore<{
+  sync: {
+    importGCal: ReturnType<typeof importGCalSlice.reducer>;
+    importLatest: ReturnType<typeof importLatestSlice.reducer>;
+  };
+  auth: ReturnType<typeof authSlice.reducer>;
+}>;
 
 // Mock dependencies
 jest.mock("@web/auth/hooks/user/useUser", () => ({
@@ -43,7 +55,9 @@ describe("GCal Authentication Flow", () => {
   // Socket event callbacks captured during render
   let importEndCallback: ((data?: ImportGCalEndPayload) => void) | undefined;
 
-  const createTestStore = (preloadedState?: { isAuthenticating?: boolean }) => {
+  const createTestStore = (preloadedState?: {
+    isAuthenticating?: boolean;
+  }): TestStore => {
     return configureStore({
       reducer: {
         sync: combineReducers({
@@ -55,6 +69,7 @@ describe("GCal Authentication Flow", () => {
       preloadedState: {
         sync: {
           importGCal: {
+            isRepairing: false,
             importResults: null,
             pendingLocalEventsSynced: null,
             importError: null,
@@ -82,11 +97,13 @@ describe("GCal Authentication Flow", () => {
     importEndCallback = undefined;
 
     // Capture socket event handlers when they're registered
-    (socket.on as jest.Mock).mockImplementation((event, callback) => {
-      if (event === IMPORT_GCAL_END) {
-        importEndCallback = callback;
-      }
-    });
+    (socket.on as jest.Mock).mockImplementation(
+      (event: string, callback: (data?: ImportGCalEndPayload) => void) => {
+        if (event === IMPORT_GCAL_END) {
+          importEndCallback = callback;
+        }
+      },
+    );
   });
 
   afterEach(() => {
@@ -95,7 +112,7 @@ describe("GCal Authentication Flow", () => {
   });
 
   describe("OAuth phase (blocking)", () => {
-    it("shows blocking overlay during OAuth popup", async () => {
+    it("shows blocking overlay during OAuth popup", () => {
       const store = createTestStore({ isAuthenticating: true });
 
       render(
@@ -112,10 +129,10 @@ describe("GCal Authentication Flow", () => {
       expect(
         screen.getByText("Please complete authorization in the popup window"),
       ).toBeInTheDocument();
-      expect(document.body.getAttribute("data-app-locked")).toBe("true");
+      expect(document.body).toHaveAttribute("data-app-locked", "true");
     });
 
-    it("dismisses overlay immediately when OAuth completes", async () => {
+    it("dismisses overlay immediately when OAuth completes", () => {
       const store = createTestStore({ isAuthenticating: true });
 
       const { rerender, container } = render(
@@ -152,13 +169,13 @@ describe("GCal Authentication Flow", () => {
       expect(
         screen.queryByText("Complete Google sign-in..."),
       ).not.toBeInTheDocument();
-      expect(container.firstChild).toBeNull();
-      expect(document.body.getAttribute("data-app-locked")).toBeNull();
+      expect(container).toBeEmptyDOMElement();
+      expect(document.body).not.toHaveAttribute("data-app-locked");
     });
   });
 
   describe("Import phase (non-blocking)", () => {
-    it("does not show blocking overlay when not authenticating", async () => {
+    it("does not show blocking overlay when not authenticating", () => {
       const store = createTestStore();
 
       const { container } = render(
@@ -174,8 +191,8 @@ describe("GCal Authentication Flow", () => {
       });
 
       // No blocking overlay should be shown
-      expect(container.firstChild).toBeNull();
-      expect(document.body.getAttribute("data-app-locked")).toBeNull();
+      expect(container).toBeEmptyDOMElement();
+      expect(document.body).not.toHaveAttribute("data-app-locked");
     });
   });
 
@@ -222,11 +239,12 @@ describe("GCal Authentication Flow", () => {
       expect(
         screen.queryByText("Complete Google sign-in..."),
       ).not.toBeInTheDocument();
-      expect(container.firstChild).toBeNull();
+      expect(container).toBeEmptyDOMElement();
 
       // Backend completes import
       act(() => {
         importEndCallback?.({
+          operation: "REPAIR",
           status: "COMPLETED",
           eventsCount: 42,
           calendarsCount: 2,
@@ -261,6 +279,7 @@ describe("GCal Authentication Flow", () => {
 
       act(() => {
         importEndCallback?.({
+          operation: "INCREMENTAL",
           status: "ERRORED",
           message:
             "Incremental Google Calendar sync failed for user: test-user",

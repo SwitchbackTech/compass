@@ -3,6 +3,7 @@ import { c } from "@web/common/styles/colors";
 import { theme } from "@web/common/styles/theme";
 
 export const GOOGLE_REVOKED_TOAST_ID: Id = "google-revoked-api";
+export const GOOGLE_REPAIR_FAILED_TOAST_ID: Id = "google-repair-failed";
 
 export const toastDefaultOptions: ToastOptions = {
   autoClose: 5000,
