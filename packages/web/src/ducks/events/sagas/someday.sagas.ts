@@ -82,7 +82,10 @@ export function* deleteSomedayEvent({
   }
 
   try {
-    yield put(getSomedayEventsSlice.actions.delete(payload));
+    yield put({
+      type: getSomedayEventsSlice.actionNames.removeFromList,
+      payload,
+    });
     yield put(eventsEntitiesSlice.actions.delete(payload));
 
     const sessionExists = (yield call(() =>
