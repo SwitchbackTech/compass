@@ -37,10 +37,15 @@ export const useGoogleAuthWithOverlay = (
     },
   });
 
-  const login = useCallback(() => {
+  const login = useCallback(async () => {
     onStart?.();
-    return googleLogin.login();
-  }, [googleLogin, onStart]);
+
+    try {
+      await googleLogin.login();
+    } catch (error) {
+      onError?.(error);
+    }
+  }, [googleLogin, onError, onStart]);
 
   return {
     ...googleLogin,
