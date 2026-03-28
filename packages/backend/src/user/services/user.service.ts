@@ -18,8 +18,8 @@ import { getGcalClient } from "@backend/auth/services/google/clients/google.cale
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { getGoogleRepairErrorMessage } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { UserError } from "@backend/common/errors/user/user.errors";
-import { getGoogleRepairErrorMessage } from "@backend/common/services/gcal/gcal.repair.util";
 import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
