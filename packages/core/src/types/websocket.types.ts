@@ -3,13 +3,17 @@ import { type Socket, type Server as SocketIOServer } from "socket.io";
 import { type Schema_Event } from "@core/types/event.types";
 import { type UserMetadata } from "@core/types/user.types";
 
+export type ImportGCalOperation = "INCREMENTAL" | "REPAIR";
+
 export type ImportGCalEndPayload =
   | {
+      operation: ImportGCalOperation;
       status: "COMPLETED";
       eventsCount?: number;
       calendarsCount?: number;
     }
   | {
+      operation: ImportGCalOperation;
       status: "ERRORED" | "IGNORED";
       message: string;
     };

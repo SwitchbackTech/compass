@@ -1,7 +1,7 @@
 import { produce } from "immer";
 import {
-  type ActionCreatorWithPayload,
   type PayloadAction,
+  type PayloadActionCreator,
   type SliceCaseReducers,
   type ValidateSliceCaseReducers,
   createSlice,
@@ -46,6 +46,12 @@ export interface SliceStateContext {
     reason?: string | null;
   };
 }
+
+type AsyncPayload<Payload> = [Payload] extends [never]
+  ? SliceStateContext | undefined
+  : [Payload] extends [undefined]
+    ? SliceStateContext | undefined
+    : Payload & SliceStateContext;
 
 export const createAsyncSlice = <
   RequestPayload,
@@ -166,19 +172,31 @@ export const createAsyncSlice = <
     actionNames,
     actions: {
       ...slice.actions,
-      request: slice.actions.request as ActionCreatorWithPayload<
-        RequestPayload & SliceStateContext,
+      request: slice.actions.request as PayloadActionCreator<
+        AsyncPayload<RequestPayload>,
         typeof actionNames.request
       >,
-      success: slice.actions.success as ActionCreatorWithPayload<
-        SuccessPayload & SliceStateContext,
+      success: slice.actions.success as PayloadActionCreator<
+        AsyncPayload<SuccessPayload>,
         typeof actionNames.success
       >,
-      error: slice.actions.error as ActionCreatorWithPayload<
-        ErrorPayload & SliceStateContext,
+      error: slice.actions.error as PayloadActionCreator<
+        AsyncPayload<ErrorPayload>,
         typeof actionNames.error
       >,
-      // custom reducers will remain as in slice.actions
+    } as Omit<typeof slice.actions, "request" | "success" | "error"> & {
+      request: PayloadActionCreator<
+        AsyncPayload<RequestPayload>,
+        typeof actionNames.request
+      >;
+      success: PayloadActionCreator<
+        AsyncPayload<SuccessPayload>,
+        typeof actionNames.success
+      >;
+      error: PayloadActionCreator<
+        AsyncPayload<ErrorPayload>,
+        typeof actionNames.error
+      >;
     },
   };
 };
