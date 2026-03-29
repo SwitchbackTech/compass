@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useGoogleLogin as useGoogleLoginBase } from "@react-oauth/google";
 import { isGooglePopupClosedError } from "@web/auth/google/google-oauth-error.util";
-import { type SignInUpInput } from "@web/components/oauth/ouath.types";
+import { type GoogleAuthConfig } from "../googe.auth.types";
 
 const SCOPES_REQUIRED = [
   "https://www.googleapis.com/auth/userinfo.email",
@@ -23,7 +23,7 @@ export const useGoogleLogin = ({
   shouldTryLinkingWithSessionUser,
 }: {
   onStart?: () => void;
-  onSuccess?: (res: SignInUpInput) => Promise<void>;
+  onSuccess?: (res: GoogleAuthConfig) => Promise<void>;
   onError?: (error: unknown) => void;
   prompt?: "consent" | "none" | "select_account";
   shouldTryLinkingWithSessionUser?: boolean;

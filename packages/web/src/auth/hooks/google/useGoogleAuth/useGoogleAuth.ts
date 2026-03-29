@@ -1,14 +1,13 @@
 import { toast } from "react-toastify";
 import { isGooglePopupClosedError } from "@web/auth/google/google-oauth-error.util";
 import { authenticate } from "@web/auth/google/google.auth.util";
-import { useGoogleAuthWithOverlay } from "@web/auth/hooks/oauth/useGoogleAuthWithOverlay";
-import { useCompleteAuthentication } from "@web/auth/hooks/useCompleteAuthentication";
+import { useCompleteAuthentication } from "@web/auth/hooks/compass/useCompleteAuthentication";
+import { useGoogleAuthWithOverlay } from "@web/auth/hooks/google/useGoogleAuthWithOverlay/useGoogleAuthWithOverlay";
 import { toastDefaultOptions } from "@web/common/constants/toast.constants";
 import {
   SESSION_EXPIRED_TOAST_ID,
   dismissErrorToast,
 } from "@web/common/utils/toast/error-toast.util";
-import { type SignInUpInput } from "@web/components/oauth/ouath.types";
 import {
   authError,
   authSuccess,
@@ -18,6 +17,7 @@ import {
 import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
 import { type AppDispatch } from "@web/store";
 import { useAppDispatch } from "@web/store/store.hooks";
+import { type GoogleAuthConfig } from "../googe.auth.types";
 
 const getErrorMessage = (error: unknown): string => {
   if (error instanceof Error) {
@@ -37,7 +37,7 @@ const resetAuthState = (dispatch: AppDispatch) => {
 
 export function useGoogleAuth(
   options: {
-    onSuccess?: (data: SignInUpInput) => Promise<void>;
+    onSuccess?: (data: GoogleAuthConfig) => Promise<boolean | void>;
     prompt?: "consent" | "none" | "select_account";
     shouldTryLinkingWithSessionUser?: boolean;
   } = {},
@@ -56,12 +56,16 @@ export function useGoogleAuth(
     },
     onSuccess: async (data) => {
       if (onSuccess) {
-        await onSuccess(data);
+        const shouldCompleteAuth = await onSuccess(data);
+        if (shouldCompleteAuth === false) {
+          resetAuthState(dispatch);
+          return;
+        }
         dispatch(authSuccess());
         return;
       }
 
-      const authPayload: SignInUpInput = {
+      const authPayload: GoogleAuthConfig = {
         ...data,
       };
       const authResult = await authenticate(authPayload);
