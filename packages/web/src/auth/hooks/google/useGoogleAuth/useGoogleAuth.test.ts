@@ -255,6 +255,56 @@ describe("useGoogleAuth", () => {
     );
   });
 
+  it("resets auth when a custom success handler returns false", async () => {
+    let onSuccessCallback:
+      | ((data: GoogleAuthConfig) => Promise<boolean | void>)
+      | undefined;
+    const customOnSuccess = jest.fn().mockResolvedValue(false);
+
+    mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
+      onSuccessCallback = onSuccess;
+      return {
+        login: mockLogin,
+        loading: false,
+        data: null,
+      };
+    });
+
+    renderHook(() =>
+      useGoogleAuth({
+        onSuccess: customOnSuccess,
+        prompt: "consent",
+      }),
+    );
+
+    if (!onSuccessCallback) {
+      throw new Error("Expected onSuccess callback to be registered");
+    }
+
+    const payload: GoogleAuthConfig = {
+      clientType: "web",
+      thirdPartyId: "google",
+      redirectURIInfo: {
+        redirectURIOnProviderDashboard: "",
+        redirectURIQueryParams: {
+          code: "test-auth-code",
+          scope: "email profile",
+          state: undefined,
+        },
+      },
+    };
+
+    await onSuccessCallback(payload);
+
+    expect(customOnSuccess).toHaveBeenCalledWith(payload);
+    expect(mockDispatchFn).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "auth/resetAuth" }),
+    );
+    expect(mockDispatchFn).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "auth/authSuccess" }),
+    );
+  });
+
   describe("onError callback", () => {
     it("dispatches auth error when login fails", () => {
       let onErrorCallback: ((error: unknown) => void) | undefined;

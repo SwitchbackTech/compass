@@ -47,7 +47,7 @@ export const useConnectGoogle = () => {
     onSuccess: async (data) => {
       const didSyncLocalEvents = await syncPendingLocalEvents(dispatch);
       if (!didSyncLocalEvents) {
-        return;
+        return false;
       }
 
       const googleConnectRequest = buildGoogleConnectRequest(

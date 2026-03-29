@@ -37,7 +37,7 @@ const resetAuthState = (dispatch: AppDispatch) => {
 
 export function useGoogleAuth(
   options: {
-    onSuccess?: (data: GoogleAuthConfig) => Promise<void>;
+    onSuccess?: (data: GoogleAuthConfig) => Promise<boolean | void>;
     prompt?: "consent" | "none" | "select_account";
     shouldTryLinkingWithSessionUser?: boolean;
   } = {},
@@ -56,7 +56,11 @@ export function useGoogleAuth(
     },
     onSuccess: async (data) => {
       if (onSuccess) {
-        await onSuccess(data);
+        const shouldCompleteAuth = await onSuccess(data);
+        if (shouldCompleteAuth === false) {
+          resetAuthState(dispatch);
+          return;
+        }
         dispatch(authSuccess());
         return;
       }
