@@ -3,11 +3,11 @@ import {
   type GoogleConnectResponse,
   type Result_Auth_Compass,
 } from "@core/types/auth.types";
+import { type GoogleAuthConfig } from "@web/auth/hooks/google/googe.auth.types";
 import { CompassApi } from "@web/common/apis/compass.api";
-import { type SignInUpInput } from "@web/components/oauth/ouath.types";
 
 const AuthApi = {
-  async loginOrSignup(data: SignInUpInput): Promise<Result_Auth_Compass> {
+  async loginOrSignup(data: GoogleAuthConfig): Promise<Result_Auth_Compass> {
     const response = await CompassApi.post<Result_Auth_Compass>(
       `/signinup`,
       data,

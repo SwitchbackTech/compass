@@ -1,10 +1,10 @@
 import { useCallback } from "react";
-import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
-import { type SignInUpInput } from "@web/components/oauth/ouath.types";
+import { useGoogleLogin } from "@web/auth/hooks/google/useGoogleLogin/useGoogleLogin";
+import { type GoogleAuthConfig } from "../googe.auth.types";
 
 interface UseGoogleAuthWithOverlayOptions {
   onStart?: () => void;
-  onSuccess?: (res: SignInUpInput) => Promise<void>;
+  onSuccess?: (res: GoogleAuthConfig) => Promise<void>;
   onError?: (error: unknown) => void;
   prompt?: "consent" | "none" | "select_account";
   shouldTryLinkingWithSessionUser?: boolean;

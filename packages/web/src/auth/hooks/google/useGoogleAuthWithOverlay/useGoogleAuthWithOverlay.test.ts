@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { useGoogleAuthWithOverlay } from "@web/auth/hooks/google/useGoogleAuthWithOverlay/useGoogleAuthWithOverlay";
-import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
-import { type SignInUpInput } from "@web/components/oauth/ouath.types";
+import { useGoogleLogin } from "@web/auth/hooks/google/useGoogleLogin/useGoogleLogin";
+import { type GoogleAuthConfig } from "../googe.auth.types";
 
 jest.mock("@web/components/oauth/google/useGoogleLogin");
 
@@ -34,7 +34,9 @@ describe("useGoogleAuthWithOverlay", () => {
   });
 
   it("calls onSuccess when Google login succeeds", async () => {
-    let onSuccessCallback: ((data: SignInUpInput) => Promise<void>) | undefined;
+    let onSuccessCallback:
+      | ((data: GoogleAuthConfig) => Promise<void>)
+      | undefined;
     const onSuccess = jest.fn();
 
     mockUseGoogleLogin.mockImplementation(({ onSuccess: providedSuccess }) => {
@@ -87,7 +89,9 @@ describe("useGoogleAuthWithOverlay", () => {
   });
 
   it("calls onError when onSuccess throws", async () => {
-    let onSuccessCallback: ((data: SignInUpInput) => Promise<void>) | undefined;
+    let onSuccessCallback:
+      | ((data: GoogleAuthConfig) => Promise<void>)
+      | undefined;
     const onSuccess = jest.fn().mockRejectedValue(new Error("Auth failed"));
     const onError = jest.fn();
 

@@ -8,7 +8,6 @@ import {
   SESSION_EXPIRED_TOAST_ID,
   dismissErrorToast,
 } from "@web/common/utils/toast/error-toast.util";
-import { type SignInUpInput } from "@web/components/oauth/ouath.types";
 import {
   authError,
   authSuccess,
@@ -18,6 +17,7 @@ import {
 import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
 import { type AppDispatch } from "@web/store";
 import { useAppDispatch } from "@web/store/store.hooks";
+import { type GoogleAuthConfig } from "../googe.auth.types";
 
 const getErrorMessage = (error: unknown): string => {
   if (error instanceof Error) {
@@ -37,7 +37,7 @@ const resetAuthState = (dispatch: AppDispatch) => {
 
 export function useGoogleAuth(
   options: {
-    onSuccess?: (data: SignInUpInput) => Promise<void>;
+    onSuccess?: (data: GoogleAuthConfig) => Promise<void>;
     prompt?: "consent" | "none" | "select_account";
     shouldTryLinkingWithSessionUser?: boolean;
   } = {},
@@ -61,7 +61,7 @@ export function useGoogleAuth(
         return;
       }
 
-      const authPayload: SignInUpInput = {
+      const authPayload: GoogleAuthConfig = {
         ...data,
       };
       const authResult = await authenticate(authPayload);

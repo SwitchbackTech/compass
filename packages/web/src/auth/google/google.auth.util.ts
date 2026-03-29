@@ -8,7 +8,6 @@ import {
   toastDefaultOptions,
 } from "@web/common/constants/toast.constants";
 import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
-import { type SignInUpInput } from "@web/components/oauth/ouath.types";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
@@ -19,6 +18,7 @@ import {
 } from "@web/ducks/events/slices/sync.slice";
 import { reconnect } from "@web/socket/client/socket.client";
 import { type AppDispatch, store } from "@web/store";
+import { type GoogleAuthConfig } from "../hooks/google/googe.auth.types";
 
 export interface AuthenticateResult {
   success: boolean;
@@ -39,7 +39,7 @@ export const LOCAL_EVENTS_SYNC_ERROR_MESSAGE =
  * Authenticate with Google using the provided credentials.
  */
 export async function authenticate(
-  data: SignInUpInput,
+  data: GoogleAuthConfig,
 ): Promise<AuthenticateResult> {
   try {
     const response = await AuthApi.loginOrSignup(data);

@@ -5,12 +5,12 @@ import {
   syncLocalEvents,
 } from "@web/auth/google/google.auth.util";
 import { useGoogleAuth } from "@web/auth/hooks/google/useGoogleAuth/useGoogleAuth";
+import { useGoogleLogin } from "@web/auth/hooks/google/useGoogleLogin/useGoogleLogin";
 import { useSession } from "@web/auth/hooks/session/useSession";
 import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
 import { markUserAsAuthenticated } from "@web/auth/state/auth.state.util";
-import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
-import type { SignInUpInput } from "@web/components/oauth/ouath.types";
 import { useAppDispatch } from "@web/store/store.hooks";
+import { GoogleAuthConfig } from "../googe.auth.types";
 
 // Mock dependencies
 jest.mock("@web/auth/google/google.auth.util");
@@ -79,7 +79,9 @@ describe("useGoogleAuth", () => {
   });
 
   it("marks user as authenticated after successful login", async () => {
-    let onSuccessCallback: ((data: SignInUpInput) => Promise<void>) | undefined;
+    let onSuccessCallback:
+      | ((data: GoogleAuthConfig) => Promise<void>)
+      | undefined;
 
     mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
       onSuccessCallback = onSuccess;
@@ -114,7 +116,9 @@ describe("useGoogleAuth", () => {
   });
 
   it("completes auth flow after successful authentication", async () => {
-    let onSuccessCallback: ((data: SignInUpInput) => Promise<void>) | undefined;
+    let onSuccessCallback:
+      | ((data: GoogleAuthConfig) => Promise<void>)
+      | undefined;
 
     mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
       onSuccessCallback = onSuccess;
@@ -203,7 +207,9 @@ describe("useGoogleAuth", () => {
   });
 
   it("runs a custom success handler instead of the default sign-in flow", async () => {
-    let onSuccessCallback: ((data: SignInUpInput) => Promise<void>) | undefined;
+    let onSuccessCallback:
+      | ((data: GoogleAuthConfig) => Promise<void>)
+      | undefined;
     const customOnSuccess = jest.fn().mockResolvedValue(undefined);
 
     mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
@@ -226,7 +232,7 @@ describe("useGoogleAuth", () => {
       throw new Error("Expected onSuccess callback to be registered");
     }
 
-    const payload: SignInUpInput = {
+    const payload: GoogleAuthConfig = {
       clientType: "web",
       thirdPartyId: "google",
       redirectURIInfo: {
@@ -317,7 +323,7 @@ describe("useGoogleAuth", () => {
       });
 
       let onSuccessCallback:
-        | ((data: SignInUpInput) => Promise<void>)
+        | ((data: GoogleAuthConfig) => Promise<void>)
         | undefined;
 
       mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
@@ -368,7 +374,7 @@ describe("useGoogleAuth", () => {
       });
 
       let onSuccessCallback:
-        | ((data: SignInUpInput) => Promise<void>)
+        | ((data: GoogleAuthConfig) => Promise<void>)
         | undefined;
 
       mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
@@ -411,7 +417,7 @@ describe("useGoogleAuth", () => {
       mockAuthenticate.mockRejectedValue(authError);
 
       let onSuccessCallback:
-        | ((data: SignInUpInput) => Promise<void>)
+        | ((data: GoogleAuthConfig) => Promise<void>)
         | undefined;
 
       mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {

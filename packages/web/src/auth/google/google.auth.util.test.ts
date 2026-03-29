@@ -7,7 +7,6 @@ import {
 import { AuthApi } from "@web/common/apis/auth.api";
 import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
-import { type SignInUpInput } from "@web/components/oauth/ouath.types";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
@@ -18,6 +17,7 @@ import {
 } from "@web/ducks/events/slices/sync.slice";
 import { reconnect } from "@web/socket/client/socket.client";
 import { store } from "@web/store";
+import { type GoogleAuthConfig } from "../hooks/google/googe.auth.types";
 import {
   LOCAL_EVENTS_SYNC_ERROR_MESSAGE,
   authenticate,
@@ -63,7 +63,7 @@ describe("google-auth.util", () => {
   });
 
   describe("authenticate", () => {
-    const mockSignInUpInput: SignInUpInput = {
+    const mockGoogleAuthConfig: GoogleAuthConfig = {
       clientType: "web",
       thirdPartyId: "google",
       redirectURIInfo: {
@@ -94,7 +94,7 @@ describe("google-auth.util", () => {
         },
       });
 
-      const result = await authenticate(mockSignInUpInput);
+      const result = await authenticate(mockGoogleAuthConfig);
 
       expect(result).toMatchObject({
         success: true,
@@ -103,14 +103,16 @@ describe("google-auth.util", () => {
           user: { emails: ["test@example.com"] },
         },
       });
-      expect(mockAuthApi.loginOrSignup).toHaveBeenCalledWith(mockSignInUpInput);
+      expect(mockAuthApi.loginOrSignup).toHaveBeenCalledWith(
+        mockGoogleAuthConfig,
+      );
     });
 
     it("returns error when authentication fails", async () => {
       const error = new Error("Authentication failed");
       mockAuthApi.loginOrSignup.mockRejectedValue(error);
 
-      const result = await authenticate(mockSignInUpInput);
+      const result = await authenticate(mockGoogleAuthConfig);
 
       expect(result).toEqual({ success: false, error });
     });
