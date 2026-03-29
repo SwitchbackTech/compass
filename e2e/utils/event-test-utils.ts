@@ -241,10 +241,10 @@ export const fillTitleAndSaveWithKeyboard = async (
   const titleInput = getFormTitleInput(page);
   await expect(titleInput).toBeVisible({ timeout: FORM_TIMEOUT });
   await titleInput.fill(title);
-  // EventForm saves on Cmd+Enter (Mac) or Ctrl+Enter (Linux/Windows)
-  // ControlOrMeta maps to the platform-appropriate modifier.
-  // Use locator.press() so focus is on the input when the key is sent (fixes CI).
-  await titleInput.press("ControlOrMeta+Enter");
+  // Submit from the title field: EventForm registers Enter and Mod+Enter via hotkeys.
+  // Use plain Enter — it matches EventForm.test.tsx and is reliable on Linux CI;
+  // locator.press("ControlOrMeta+Enter") can fail to reach handlers under Chromium on Linux.
+  await titleInput.press("Enter");
   // Wait for form to close, confirming the save completed
   await titleInput.waitFor({ state: "hidden", timeout: FORM_TIMEOUT });
 };
