@@ -23,7 +23,7 @@ export const useGoogleLogin = ({
   shouldTryLinkingWithSessionUser,
 }: {
   onStart?: () => void;
-  onSuccess?: (res: SignInUpInput) => Promise<boolean | void>;
+  onSuccess?: (res: SignInUpInput) => Promise<void>;
   onError?: (error: unknown) => void;
   prompt?: "consent" | "none" | "select_account";
   shouldTryLinkingWithSessionUser?: boolean;
