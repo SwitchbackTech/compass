@@ -5,7 +5,6 @@ import SupertokensUserMetadata, {
 } from "supertokens-node/recipe/usermetadata";
 import { Logger } from "@core/logger/winston.logger";
 import { mapUserToCompass } from "@core/mappers/map.user";
-import { Resource_Sync } from "@core/types/sync.types";
 import { zObjectId } from "@core/types/type.utils";
 import {
   type Schema_User,
@@ -14,7 +13,6 @@ import {
 } from "@core/types/user.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
-import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
@@ -28,7 +26,6 @@ import eventService, {
 import priorityService from "@backend/priority/services/priority.service";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import syncService from "@backend/sync/services/sync.service";
-import { isUsingHttps } from "@backend/sync/util/sync.util";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import {
   type GetUserMetadataResponse,
@@ -37,6 +34,9 @@ import {
 
 const logger = Logger("app:user.service");
 
+/**
+ * Manages user data and metadata.
+ */
 class UserService {
   private splitName(name: string): { firstName: string; lastName: string } {
     const trimmedName = name.trim();
@@ -326,50 +326,6 @@ class UserService {
     });
   };
 
-  startGoogleCalendarSync = async (
-    user: string,
-  ): Promise<{ eventsCount: number; calendarsCount: number }> => {
-    const gcal = await getGcalClient(user);
-
-    const calendarInit = await calendarService.initializeGoogleCalendars(
-      user,
-      gcal,
-    );
-
-    const gCalendarIds = calendarInit.googleCalendars
-      .map(({ id }) => id)
-      .filter((id) => id !== undefined && id !== null);
-
-    const importResults = await syncService.importFull(
-      gcal,
-      gCalendarIds,
-      user,
-    );
-
-    await Promise.resolve(isUsingHttps()).then((yes) =>
-      yes
-        ? syncService.startWatchingGcalResources(
-            user,
-            [
-              { gCalendarId: Resource_Sync.CALENDAR },
-              ...gCalendarIds.map((gCalendarId) => ({ gCalendarId })),
-            ],
-            gcal,
-          )
-        : [],
-    );
-
-    const eventsCount = importResults.reduce(
-      (sum, result) => sum + result.totalChanged,
-      0,
-    );
-
-    return {
-      eventsCount,
-      calendarsCount: gCalendarIds.length,
-    };
-  };
-
   restartGoogleCalendarSync = async (
     userId: string,
     options: { force?: boolean } = {},
@@ -402,7 +358,7 @@ class UserService {
       });
 
       await this.stopGoogleCalendarSync(userId);
-      const importResults = await this.startGoogleCalendarSync(userId);
+      const importResults = await syncService.startGoogleCalendarSync(userId);
 
       await syncCompassEventsToGoogle(userId).catch((err) => {
         logger.error(

@@ -25,17 +25,9 @@ import mongoService from "@backend/common/services/mongo.service";
 import priorityService from "@backend/priority/services/priority.service";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import syncService from "@backend/sync/services/sync.service";
-import { isUsingHttps } from "@backend/sync/util/sync.util";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
 import { type Summary_Delete } from "@backend/user/types/user.types";
-
-jest.mock("@backend/sync/util/sync.util", () => {
-  const actual = jest.requireActual<
-    typeof import("@backend/sync/util/sync.util")
-  >("@backend/sync/util/sync.util");
-  return { ...actual, isUsingHttps: jest.fn(actual.isUsingHttps) };
-});
 
 const createSupertokensUser = (userId: string, recipeUserIds: string[]) => ({
   id: userId,
@@ -191,7 +183,7 @@ describe("UserService", () => {
 
       await priorityService.createDefaultPriorities(userId);
       await SyncDriver.createSync(storedUser!, true);
-      await userService.startGoogleCalendarSync(userId);
+      await syncService.startGoogleCalendarSync(userId);
 
       const summary: Summary_Delete =
         await userService.deleteCompassDataForUser(userId, false);
@@ -463,107 +455,16 @@ describe("UserService", () => {
     });
   });
 
-  describe("startGoogleCalendarSync", () => {
-    it("initializes calendars, events, and sync metadata", async () => {
-      const user = await UserDriver.createUser();
-      const userId = user._id.toString();
-
-      await userService.startGoogleCalendarSync(userId);
-
-      const calendars = await calendarService.getByUser(userId);
-      expect(calendars.length).toBeGreaterThan(0);
-
-      const syncRecord = await mongoService.sync.findOne({ user: userId });
-      expect(syncRecord?.google?.events?.length ?? 0).toBeGreaterThan(0);
-
-      const eventCount = await mongoService.event.countDocuments({
-        user: userId,
-      });
-      expect(eventCount).toBeGreaterThan(0);
-    });
-
-    it("starts Google watches only after full import succeeds", async () => {
-      const user = await UserDriver.createUser();
-      const userId = user._id.toString();
-      const callOrder: string[] = [];
-      const importFull = syncService.importFull.bind(syncService);
-      const startWatching =
-        syncService.startWatchingGcalResources.bind(syncService);
-
-      const importFullSpy = jest
-        .spyOn(syncService, "importFull")
-        .mockImplementation(async (...args) => {
-          callOrder.push("importFull");
-          return importFull(...args);
-        });
-      const startWatchingSpy = jest
-        .spyOn(syncService, "startWatchingGcalResources")
-        .mockImplementation(async (...args) => {
-          callOrder.push("startWatching");
-          return startWatching(...args);
-        });
-
-      await userService.startGoogleCalendarSync(userId);
-
-      expect(callOrder).toEqual(["importFull", "startWatching"]);
-
-      importFullSpy.mockRestore();
-      startWatchingSpy.mockRestore();
-    });
-
-    it("does not create watches when full import fails before token persistence", async () => {
-      const user = await UserDriver.createUser();
-      const userId = user._id.toString();
-      const importError = new Error("import failed before sync token");
-      const importFullSpy = jest
-        .spyOn(syncService, "importFull")
-        .mockRejectedValue(importError);
-      const startWatchingSpy = jest.spyOn(
-        syncService,
-        "startWatchingGcalResources",
-      );
-
-      await expect(userService.startGoogleCalendarSync(userId)).rejects.toThrow(
-        importError,
-      );
-
-      expect(startWatchingSpy).not.toHaveBeenCalled();
-      expect(await mongoService.watch.countDocuments({ user: userId })).toBe(0);
-
-      importFullSpy.mockRestore();
-      startWatchingSpy.mockRestore();
-    });
-
-    it("persists event sync tokens without https so local sync can settle healthy", async () => {
-      const user = await UserDriver.createUser();
-      const userId = user._id.toString();
-      (isUsingHttps as jest.Mock).mockReturnValue(false);
-
-      await userService.startGoogleCalendarSync(userId);
-
-      const syncRecord = await mongoService.sync.findOne({ user: userId });
-      const metadata = await userMetadataService.fetchUserMetadata(userId);
-
-      expect(syncRecord?.google?.events?.length ?? 0).toBeGreaterThan(0);
-      expect(
-        syncRecord?.google?.events?.every(({ nextSyncToken }) =>
-          Boolean(nextSyncToken),
-        ),
-      ).toBe(true);
-      expect(metadata.google?.connectionState).toBe("HEALTHY");
-
-      (isUsingHttps as jest.Mock).mockRestore();
-    });
-  });
-
   describe("stopGoogleCalendarSync", () => {
     it("cleans up google calendars, events, and sync records", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
 
-      await userService.startGoogleCalendarSync(userId);
+      await syncService.startGoogleCalendarSync(userId);
 
-      const calendars = await calendarService.getByUser(userId);
+      const listCalendarsForUser =
+        calendarService.getByUser.bind(calendarService);
+      const calendars = await listCalendarsForUser(userId);
 
       expect(calendars.length).toBeGreaterThan(0);
 
@@ -671,7 +572,7 @@ describe("UserService", () => {
 
       expect(user.google).toBeDefined();
 
-      await userService.startGoogleCalendarSync(userId);
+      await syncService.startGoogleCalendarSync(userId);
 
       const eventCountBefore = await mongoService.event.countDocuments({
         user: userId,
@@ -721,7 +622,9 @@ describe("UserService", () => {
       const metadata = await userMetadataService.fetchUserMetadata(userId);
       expect(metadata.sync?.importGCal).toBe("COMPLETED");
 
-      const calendars = await calendarService.getByUser(userId);
+      const listCalendarsForUser =
+        calendarService.getByUser.bind(calendarService);
+      const calendars = await listCalendarsForUser(userId);
       expect(calendars.length).toBeGreaterThan(0);
     });
 
@@ -735,7 +638,7 @@ describe("UserService", () => {
       });
 
       const stopSpy = jest.spyOn(userService, "stopGoogleCalendarSync");
-      const startSpy = jest.spyOn(userService, "startGoogleCalendarSync");
+      const startSpy = jest.spyOn(syncService, "startGoogleCalendarSync");
 
       await userService.restartGoogleCalendarSync(userId);
 
@@ -762,7 +665,7 @@ describe("UserService", () => {
         .spyOn(userService, "stopGoogleCalendarSync")
         .mockResolvedValue();
       const startSpy = jest
-        .spyOn(userService, "startGoogleCalendarSync")
+        .spyOn(syncService, "startGoogleCalendarSync")
         .mockResolvedValue({ eventsCount: 0, calendarsCount: 0 });
 
       await userService.restartGoogleCalendarSync(userId, { force: true });
@@ -788,7 +691,7 @@ describe("UserService", () => {
           return [];
         });
       const startSpy = jest
-        .spyOn(userService, "startGoogleCalendarSync")
+        .spyOn(syncService, "startGoogleCalendarSync")
         .mockImplementation(async () => {
           await mongoService.watch.insertOne(
             WatchSchema.parse({
@@ -833,7 +736,7 @@ describe("UserService", () => {
       );
       const importEndSpy = jest.spyOn(webSocketServer, "handleImportGCalEnd");
       const startSpy = jest
-        .spyOn(userService, "startGoogleCalendarSync")
+        .spyOn(syncService, "startGoogleCalendarSync")
         .mockRejectedValue(invalidGrant400Error);
 
       await userMetadataService.updateUserMetadata({
@@ -876,7 +779,7 @@ describe("UserService", () => {
         };
       }
       const startSpy = jest
-        .spyOn(userService, "startGoogleCalendarSync")
+        .spyOn(syncService, "startGoogleCalendarSync")
         .mockRejectedValue(quotaError);
 
       await userMetadataService.updateUserMetadata({

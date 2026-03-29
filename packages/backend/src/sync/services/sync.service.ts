@@ -13,6 +13,7 @@ import { ExpirationDateSchema } from "@core/types/type.utils";
 import { WatchSchema } from "@core/types/watch.types";
 import { shouldDoIncrementalGCalSync } from "@core/util/event/event.util";
 import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
+import calendarService from "@backend/calendar/services/calendar.service";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
 import { Collections } from "@backend/common/constants/collections";
 import { error } from "@backend/common/errors/handlers/error.handler";
@@ -41,6 +42,7 @@ import {
 import {
   getChannelExpiration,
   isMissingGoogleRefreshToken,
+  isUsingHttps,
 } from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";
@@ -511,6 +513,46 @@ class SyncService {
       ).length,
       deleted: deletedDuringPrune.length,
       resynced: resynced.length,
+    };
+  };
+
+  startGoogleCalendarSync = async (
+    user: string,
+  ): Promise<{ eventsCount: number; calendarsCount: number }> => {
+    const gcal = await getGcalClient(user);
+
+    const calendarInit = await calendarService.initializeGoogleCalendars(
+      user,
+      gcal,
+    );
+
+    const gCalendarIds = calendarInit.googleCalendars
+      .map(({ id }) => id)
+      .filter((id) => id !== undefined && id !== null);
+
+    const importResults = await this.importFull(gcal, gCalendarIds, user);
+
+    await Promise.resolve(isUsingHttps()).then((yes) =>
+      yes
+        ? this.startWatchingGcalResources(
+            user,
+            [
+              { gCalendarId: Resource_Sync.CALENDAR },
+              ...gCalendarIds.map((gCalendarId) => ({ gCalendarId })),
+            ],
+            gcal,
+          )
+        : [],
+    );
+
+    const eventsCount = importResults.reduce(
+      (sum, result) => sum + result.totalChanged,
+      0,
+    );
+
+    return {
+      eventsCount,
+      calendarsCount: gCalendarIds.length,
     };
   };
 
