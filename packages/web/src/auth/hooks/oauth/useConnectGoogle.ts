@@ -1,20 +1,17 @@
 import type { AxiosError } from "axios";
 import { useCallback } from "react";
-import { toast } from "react-toastify";
 import { GOOGLE_REVOKED } from "@core/constants/websocket.constants";
 import { type GoogleAuthCodeRequest } from "@core/types/auth.types";
 import { type GoogleConnectionState } from "@core/types/user.types";
-import { syncLocalEvents } from "@web/auth/google/google.auth.util";
+import { syncPendingLocalEvents } from "@web/auth/google/google.auth.util";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
 import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
 import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { getApiErrorCode } from "@web/common/apis/compass.api.util";
 import { SyncApi } from "@web/common/apis/sync.api";
-import {
-  GOOGLE_REPAIR_FAILED_TOAST_ID,
-  toastDefaultOptions,
-} from "@web/common/constants/toast.constants";
+import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
+import { type ConnectionStatusIcon } from "@web/common/types/icon.types";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import {
   selectGoogleConnectionState,
@@ -27,7 +24,7 @@ import {
   triggerFetch,
 } from "@web/ducks/events/slices/sync.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
-import type { AppDispatch, RootState } from "@web/store";
+import type { RootState } from "@web/store";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
 /**
@@ -59,9 +56,6 @@ const COMMAND_ICON: CommandActionIcon = "CloudArrowUpIcon";
 const GOOGLE_REPAIR_FAILED_MESSAGE =
   "Google Calendar repair failed. Please try again.";
 
-const LOCAL_EVENTS_SYNC_ERROR_MESSAGE =
-  "We could not sync your local events. Your changes are still saved on this device.";
-
 const buildGoogleConnectRequest = (
   redirectURIInfo: GoogleAuthCodeRequest["redirectURIInfo"],
 ): GoogleAuthCodeRequest => ({
@@ -69,30 +63,6 @@ const buildGoogleConnectRequest = (
   clientType: "web",
   redirectURIInfo,
 });
-
-const showLocalEventsSyncError = (error: Error | undefined) => {
-  toast.error(LOCAL_EVENTS_SYNC_ERROR_MESSAGE, toastDefaultOptions);
-  console.error(error);
-};
-
-const syncPendingLocalEvents = async (
-  dispatch: AppDispatch,
-): Promise<boolean> => {
-  const syncResult = await syncLocalEvents();
-
-  if (!syncResult.success) {
-    showLocalEventsSyncError(syncResult.error);
-    return false;
-  }
-
-  if (syncResult.syncedCount > 0) {
-    dispatch(
-      importGCalSlice.actions.setLocalEventsSynced(syncResult.syncedCount),
-    );
-  }
-
-  return true;
-};
 
 const getGoogleUiConfig = (
   state: GoogleUiState,

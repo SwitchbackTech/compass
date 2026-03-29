@@ -1,6 +1,7 @@
 import { toast } from "react-toastify";
-import { renderHook } from "@testing-library/react";
-import { syncLocalEvents } from "@web/auth/google/google.auth.util";
+import { renderHook, waitFor } from "@testing-library/react";
+import type * as GoogleAuthUtil from "@web/auth/google/google.auth.util";
+import { syncPendingLocalEvents } from "@web/auth/google/google.auth.util";
 import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
 import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
@@ -22,7 +23,10 @@ import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
 jest.mock("@web/auth/hooks/oauth/useGoogleAuth");
 jest.mock("@web/auth/google/google.auth.util", () => ({
-  syncLocalEvents: jest.fn(),
+  ...jest.requireActual<typeof GoogleAuthUtil>(
+    "@web/auth/google/google.auth.util",
+  ),
+  syncPendingLocalEvents: jest.fn(),
 }));
 jest.mock("@web/auth/session/user-metadata.util");
 jest.mock("@web/auth/state/auth.state.util");
@@ -39,8 +43,10 @@ jest.mock("react-toastify", () => ({
 const mockUseGoogleAuth = useGoogleAuth as jest.MockedFunction<
   typeof useGoogleAuth
 >;
-const mockSyncLocalEvents = syncLocalEvents as jest.MockedFunction<
-  typeof syncLocalEvents
+const mockSyncPendingLocalEvents =
+  syncPendingLocalEvents as jest.MockedFunction<typeof syncPendingLocalEvents>;
+const mockShowErrorToast = showErrorToast as jest.MockedFunction<
+  typeof showErrorToast
 >;
 const mockUseAppDispatch = useAppDispatch as jest.MockedFunction<
   typeof useAppDispatch
@@ -95,7 +101,7 @@ describe("useConnectGoogle", () => {
     mockHasUserEverAuthenticated.mockReturnValue(true);
     mockRefreshUserMetadata.mockResolvedValue();
     mockSyncApi.importGCal.mockResolvedValue(undefined as never);
-    mockSyncLocalEvents.mockResolvedValue({ success: true, syncedCount: 0 });
+    mockSyncPendingLocalEvents.mockResolvedValue(true);
     mockUseAppSelector.mockImplementation((selector) => {
       if (selector === selectGoogleConnectionState) {
         return "NOT_CONNECTED";
@@ -488,14 +494,17 @@ describe("useConnectGoogle", () => {
 
     await useGoogleAuthArg.onSuccess(payload);
 
-    expect(mockSyncLocalEvents).toHaveBeenCalledTimes(1);
+    expect(mockSyncPendingLocalEvents).toHaveBeenCalledTimes(1);
     expect(mockAuthApi.connectGoogle).toHaveBeenCalledWith(payload);
     expect(mockRefreshUserMetadata).toHaveBeenCalledTimes(1);
     expect(mockDispatch).toHaveBeenCalledWith(triggerFetch());
   });
 
   it("records synced local events before refreshing Google data", async () => {
-    mockSyncLocalEvents.mockResolvedValue({ success: true, syncedCount: 2 });
+    mockSyncPendingLocalEvents.mockImplementation((dispatch) => {
+      dispatch(importGCalSlice.actions.setLocalEventsSynced(2));
+      return Promise.resolve(true);
+    });
 
     renderHook(() => useConnectGoogle());
 
@@ -526,11 +535,12 @@ describe("useConnectGoogle", () => {
   });
 
   it("does not connect Google when local event sync fails", async () => {
-    const syncError = new Error("sync failed");
-    mockSyncLocalEvents.mockResolvedValue({
-      success: false,
-      syncedCount: 0,
-      error: syncError,
+    const { showLocalEventsSyncFailure } = jest.requireActual<
+      typeof GoogleAuthUtil
+    >("@web/auth/google/google.auth.util");
+    mockSyncPendingLocalEvents.mockImplementation(() => {
+      showLocalEventsSyncFailure(new Error("sync failed"));
+      return Promise.resolve(false);
     });
 
     renderHook(() => useConnectGoogle());
