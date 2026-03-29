@@ -3,7 +3,7 @@ import { useGoogleAuthWithOverlay } from "@web/auth/hooks/google/useGoogleAuthWi
 import { useGoogleLogin } from "@web/auth/hooks/google/useGoogleLogin/useGoogleLogin";
 import { type GoogleAuthConfig } from "../googe.auth.types";
 
-jest.mock("@web/components/oauth/google/useGoogleLogin");
+jest.mock("@web/auth/hooks/google/useGoogleLogin/useGoogleLogin");
 
 const mockUseGoogleLogin = useGoogleLogin as jest.MockedFunction<
   typeof useGoogleLogin

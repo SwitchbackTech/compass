@@ -10,13 +10,13 @@ import { useSession } from "@web/auth/hooks/session/useSession";
 import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
 import { markUserAsAuthenticated } from "@web/auth/state/auth.state.util";
 import { useAppDispatch } from "@web/store/store.hooks";
-import { GoogleAuthConfig } from "../googe.auth.types";
+import { type GoogleAuthConfig } from "../googe.auth.types";
 
 // Mock dependencies
 jest.mock("@web/auth/google/google.auth.util");
 jest.mock("@web/auth/hooks/session/useSession");
 jest.mock("@web/auth/session/user-metadata.util");
-jest.mock("@web/components/oauth/google/useGoogleLogin");
+jest.mock("@web/auth/hooks/google/useGoogleLogin/useGoogleLogin");
 jest.mock("@web/auth/state/auth.state.util");
 jest.mock("@web/store/store.hooks", () => ({
   useAppDispatch: jest.fn(),
