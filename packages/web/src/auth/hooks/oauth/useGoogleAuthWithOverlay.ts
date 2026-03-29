@@ -4,7 +4,7 @@ import { type SignInUpInput } from "@web/components/oauth/ouath.types";
 
 interface UseGoogleAuthWithOverlayOptions {
   onStart?: () => void;
-  onSuccess?: (res: SignInUpInput) => Promise<void>;
+  onSuccess?: (res: SignInUpInput) => Promise<boolean | void>;
   onError?: (error: unknown) => void;
   prompt?: "consent" | "none" | "select_account";
   shouldTryLinkingWithSessionUser?: boolean;
