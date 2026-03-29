@@ -479,4 +479,46 @@ describe("useConnectGoogle", () => {
     expect(mockRefreshUserMetadata).toHaveBeenCalledTimes(1);
     expect(mockDispatch).toHaveBeenCalledWith(triggerFetch());
   });
+
+  it("handles google connect conflict without throwing and shows a single toast", async () => {
+    const connectConflictError = {
+      response: {
+        status: 409,
+        data: {
+          result: "User not connected",
+          message:
+            "Google account is already connected to another Compass user",
+        },
+      },
+    };
+    mockAuthApi.connectGoogle.mockRejectedValueOnce(connectConflictError);
+
+    renderHook(() => useConnectGoogle());
+
+    const useGoogleAuthArg = getUseGoogleAuthArg();
+    if (!useGoogleAuthArg?.onSuccess) {
+      throw new Error("Expected useGoogleAuth to receive an onSuccess handler");
+    }
+
+    const payload = {
+      clientType: "web" as const,
+      thirdPartyId: "google" as const,
+      redirectURIInfo: {
+        redirectURIOnProviderDashboard: window.location.origin,
+        redirectURIQueryParams: {
+          code: "auth-code",
+          scope: "scope",
+          state: "state",
+        },
+      },
+    };
+
+    await expect(useGoogleAuthArg.onSuccess(payload)).resolves.toBe(false);
+    expect(mockShowErrorToast).toHaveBeenCalledWith(
+      "That Google account is already connected to another Compass account.",
+      { toastId: "google-connect-conflict" },
+    );
+    expect(mockRefreshUserMetadata).not.toHaveBeenCalled();
+    expect(mockDispatch).not.toHaveBeenCalledWith(triggerFetch());
+  });
 });

@@ -9,7 +9,10 @@ import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { getApiErrorCode } from "@web/common/apis/compass.api.util";
 import { SyncApi } from "@web/common/apis/sync.api";
-import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
+import {
+  GOOGLE_CONNECT_CONFLICT_TOAST_ID,
+  GOOGLE_REPAIR_FAILED_TOAST_ID,
+} from "@web/common/constants/toast.constants";
 import { type ConnectionStatusIcon } from "@web/common/types/icon.types";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import {
@@ -54,6 +57,8 @@ type GoogleUiConfig = {
 const COMMAND_ICON: CommandActionIcon = "CloudArrowUpIcon";
 const GOOGLE_REPAIR_FAILED_MESSAGE =
   "Google Calendar repair failed. Please try again.";
+const GOOGLE_CONNECT_CONFLICT_MESSAGE =
+  "That Google account is already connected to another Compass account.";
 
 const getGoogleUiConfig = (
   state: GoogleUiState,
@@ -189,10 +194,31 @@ export const useConnectGoogle = () => {
         thirdPartyId: "google",
         redirectURIInfo: data.redirectURIInfo,
       };
+      try {
+        await AuthApi.connectGoogle(payload);
+      } catch (error) {
+        const connectError = error as AxiosError;
+        const isGoogleConnectConflict =
+          connectError.response?.status === 409 &&
+          connectError.response?.data &&
+          typeof connectError.response.data === "object" &&
+          "result" in connectError.response.data &&
+          (connectError.response.data as { result?: unknown }).result ===
+            "User not connected";
 
-      await AuthApi.connectGoogle(payload);
+        if (isGoogleConnectConflict) {
+          showErrorToast(GOOGLE_CONNECT_CONFLICT_MESSAGE, {
+            toastId: GOOGLE_CONNECT_CONFLICT_TOAST_ID,
+          });
+          return false;
+        }
+
+        throw error;
+      }
+
       await refreshUserMetadata();
       dispatch(triggerFetch());
+      return true;
     },
     prompt: "consent",
   });
