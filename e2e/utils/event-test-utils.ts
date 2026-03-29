@@ -241,10 +241,12 @@ export const fillTitleAndSaveWithKeyboard = async (
   const titleInput = getFormTitleInput(page);
   await expect(titleInput).toBeVisible({ timeout: FORM_TIMEOUT });
   await titleInput.fill(title);
-  // Submit from the title field: EventForm registers Enter and Mod+Enter via hotkeys.
-  // Use plain Enter — it matches EventForm.test.tsx and is reliable on Linux CI;
-  // locator.press("ControlOrMeta+Enter") can fail to reach handlers under Chromium on Linux.
-  await titleInput.press("Enter");
+  // Ctrl+Enter is handled on the title input's onKeyDown (handleIgnoredKeys), not only by
+  // the global hotkey layer. Plain Enter + useAppHotkey("Enter") is flaky in Playwright on
+  // Linux CI; locator.press("ControlOrMeta+Enter") is flaky there too. Focus + page.keyboard
+  // with an explicit Control+Enter matches (metaKey || ctrlKey) and works on Mac and Linux.
+  await titleInput.focus();
+  await page.keyboard.press("Control+Enter");
   // Wait for form to close, confirming the save completed
   await titleInput.waitFor({ state: "hidden", timeout: FORM_TIMEOUT });
 };
