@@ -2,7 +2,7 @@ import { toast } from "react-toastify";
 import { renderHook, waitFor } from "@testing-library/react";
 import type * as GoogleAuthUtil from "@web/auth/google/google.auth.util";
 import { syncPendingLocalEvents } from "@web/auth/google/google.auth.util";
-import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
+import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle/useConnectGoogle";
 import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
 import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
 import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
