@@ -1,8 +1,8 @@
 import { toast } from "react-toastify";
 import { isGooglePopupClosedError } from "@web/auth/google/google-oauth-error.util";
 import { authenticate } from "@web/auth/google/google.auth.util";
-import { useGoogleAuthWithOverlay } from "@web/auth/hooks/oauth/useGoogleAuthWithOverlay";
-import { useCompleteAuthentication } from "@web/auth/hooks/useCompleteAuthentication";
+import { useCompleteAuthentication } from "@web/auth/hooks/compass/useCompleteAuthentication";
+import { useGoogleAuthWithOverlay } from "@web/auth/hooks/google/useGoogleAuthWithOverlay/useGoogleAuthWithOverlay";
 import { toastDefaultOptions } from "@web/common/constants/toast.constants";
 import {
   SESSION_EXPIRED_TOAST_ID,

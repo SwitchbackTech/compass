@@ -3,7 +3,7 @@ import { useCallback } from "react";
 import { GOOGLE_REVOKED } from "@core/constants/websocket.constants";
 import { type GoogleConnectionState } from "@core/types/user.types";
 import { syncPendingLocalEvents } from "@web/auth/google/google.auth.util";
-import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
+import { useGoogleAuth } from "@web/auth/hooks/google/useGoogleAuth/useGoogleAuth";
 import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
 import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
 import { AuthApi } from "@web/common/apis/auth.api";

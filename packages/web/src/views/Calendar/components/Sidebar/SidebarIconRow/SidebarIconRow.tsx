@@ -4,7 +4,7 @@ import {
   LinkBreakIcon,
   LinkIcon,
 } from "@phosphor-icons/react";
-import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle/useConnectGoogle";
+import { useConnectGoogle } from "@web/auth/hooks/google/useConnectGoogle/useConnectGoogle";
 import { useVersionCheck } from "@web/common/hooks/useVersionCheck";
 import { theme } from "@web/common/styles/theme";
 import { type ConnectionStatusIcon } from "@web/common/types/icon.types";

@@ -2,8 +2,8 @@ import { toast } from "react-toastify";
 import { renderHook, waitFor } from "@testing-library/react";
 import type * as GoogleAuthUtil from "@web/auth/google/google.auth.util";
 import { syncPendingLocalEvents } from "@web/auth/google/google.auth.util";
-import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle/useConnectGoogle";
-import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
+import { useConnectGoogle } from "@web/auth/hooks/google/useConnectGoogle/useConnectGoogle";
+import { useGoogleAuth } from "@web/auth/hooks/google/useGoogleAuth/useGoogleAuth";
 import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
 import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
 import { AuthApi } from "@web/common/apis/auth.api";
@@ -21,7 +21,7 @@ import {
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
-jest.mock("@web/auth/hooks/oauth/useGoogleAuth");
+jest.mock("@web/auth/hooks/google/useGoogleAuth/useGoogleAuth");
 jest.mock("@web/auth/google/google.auth.util", () => ({
   ...jest.requireActual<typeof GoogleAuthUtil>(
     "@web/auth/google/google.auth.util",

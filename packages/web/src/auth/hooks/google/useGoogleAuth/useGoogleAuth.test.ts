@@ -4,7 +4,7 @@ import {
   authenticate,
   syncLocalEvents,
 } from "@web/auth/google/google.auth.util";
-import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
+import { useGoogleAuth } from "@web/auth/hooks/google/useGoogleAuth/useGoogleAuth";
 import { useSession } from "@web/auth/hooks/session/useSession";
 import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
 import { markUserAsAuthenticated } from "@web/auth/state/auth.state.util";

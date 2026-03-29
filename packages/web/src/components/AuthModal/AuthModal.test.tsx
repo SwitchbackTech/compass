@@ -28,14 +28,14 @@ jest.mock("@web/auth/hooks/session/useSession", () => ({
 
 // Mock useGoogleAuth
 const mockGoogleLogin = jest.fn();
-jest.mock("@web/auth/hooks/oauth/useGoogleAuth", () => ({
+jest.mock("@web/auth/hooks/google/useGoogleAuth/useGoogleAuth", () => ({
   useGoogleAuth: () => ({
     login: mockGoogleLogin,
   }),
 }));
 
 const mockCompleteAuthentication = jest.fn();
-jest.mock("@web/auth/hooks/useCompleteAuthentication", () => ({
+jest.mock("@web/auth/hooks/compass/useCompleteAuthentication", () => ({
   useCompleteAuthentication: () => mockCompleteAuthentication,
 }));
 

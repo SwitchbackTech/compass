@@ -6,7 +6,7 @@ import {
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
-import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle/useConnectGoogle";
+import { useConnectGoogle } from "@web/auth/hooks/google/useConnectGoogle/useConnectGoogle";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
 import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";

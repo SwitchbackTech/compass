@@ -2,7 +2,7 @@ import { useState } from "react";
 import CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
 import dayjs from "@core/util/date/dayjs";
-import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle/useConnectGoogle";
+import { useConnectGoogle } from "@web/auth/hooks/google/useConnectGoogle/useConnectGoogle";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
