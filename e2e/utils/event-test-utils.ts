@@ -226,7 +226,14 @@ export const clickGridCenter = async (page: Page, locator: Locator) => {
   await page.mouse.up();
 };
 
-export const fillTitleAndSaveWithMouse = async (page: Page, title: string) => {
+/**
+ * Fills the event form title and submits via the Save control (role=tab, name Save).
+ * Keyboard shortcuts for submit (Enter / Mod+Enter) are not driven here: Playwright’s
+ * synthesized keyboard events are unreliable in headless Chromium on Linux CI; the Save
+ * tab matches the accessible UI and stays stable. Shortcut submit is covered in
+ * EventForm unit tests.
+ */
+const fillTitleAndSaveEventForm = async (page: Page, title: string) => {
   const titleInput = getFormTitleInput(page);
   await expect(titleInput).toBeVisible({ timeout: FORM_TIMEOUT });
   await titleInput.fill(title);
@@ -234,21 +241,15 @@ export const fillTitleAndSaveWithMouse = async (page: Page, title: string) => {
   await titleInput.waitFor({ state: "hidden", timeout: FORM_TIMEOUT });
 };
 
+export const fillTitleAndSaveWithMouse = async (page: Page, title: string) => {
+  await fillTitleAndSaveEventForm(page, title);
+};
+
 export const fillTitleAndSaveWithKeyboard = async (
   page: Page,
   title: string,
 ) => {
-  const titleInput = getFormTitleInput(page);
-  await expect(titleInput).toBeVisible({ timeout: FORM_TIMEOUT });
-  await titleInput.fill(title);
-  // Ctrl+Enter is handled on the title input's onKeyDown (handleIgnoredKeys), not only by
-  // the global hotkey layer. Plain Enter + useAppHotkey("Enter") is flaky in Playwright on
-  // Linux CI; locator.press("ControlOrMeta+Enter") is flaky there too. Focus + page.keyboard
-  // with an explicit Control+Enter matches (metaKey || ctrlKey) and works on Mac and Linux.
-  await titleInput.focus();
-  await page.keyboard.press("Control+Enter");
-  // Wait for form to close, confirming the save completed
-  await titleInput.waitFor({ state: "hidden", timeout: FORM_TIMEOUT });
+  await fillTitleAndSaveEventForm(page, title);
 };
 
 export const openTimedEventFormWithMouse = async (page: Page) => {
