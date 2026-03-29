@@ -311,7 +311,7 @@ describe("useConnectGoogle", () => {
     expect(mockDispatch).toHaveBeenCalledWith(
       importGCalSlice.actions.startRepair(),
     );
-    expect(mockDispatch).not.toHaveBeenCalledWith(
+    expect(mockDispatch).toHaveBeenCalledWith(
       settingsSlice.actions.closeCmdPalette(),
     );
 

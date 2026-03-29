@@ -19,7 +19,6 @@ export const getGoogleConnectionConfig = (
   state: GoogleUiState,
   onConnectGoogle: () => void,
   onRepairGoogle: () => void,
-  onRepairGoogleFromSidebar: () => void,
 ): GoogleUiConfig => {
   switch (state) {
     case "checking":
@@ -109,7 +108,7 @@ export const getGoogleConnectionConfig = (
           tooltip: "Google Calendar needs repair. Click to repair.",
           tone: "warning",
           isDisabled: false,
-          onSelect: onRepairGoogleFromSidebar,
+          onSelect: onRepairGoogle,
         },
       };
     case "HEALTHY":

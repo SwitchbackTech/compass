@@ -65,7 +65,8 @@ export const useConnectGoogle = () => {
     dispatch(settingsSlice.actions.closeCmdPalette());
   }, [dispatch, login]);
 
-  const onRepairGoogleCalendarBase = useCallback(() => {
+  const onRepairGoogle = useCallback(() => {
+    dispatch(settingsSlice.actions.closeCmdPalette());
     const run = async () => {
       dispatch(importGCalSlice.actions.clearImportResults(undefined));
       dispatch(importGCalSlice.actions.startRepair());
@@ -93,15 +94,6 @@ export const useConnectGoogle = () => {
     void run();
   }, [dispatch]);
 
-  const onRepairGoogleCalendar = useCallback(() => {
-    dispatch(settingsSlice.actions.closeCmdPalette());
-    onRepairGoogleCalendarBase();
-  }, [dispatch, onRepairGoogleCalendarBase]);
-
-  const onRepairGoogleCalendarFromSidebar = useCallback(() => {
-    onRepairGoogleCalendarBase();
-  }, [onRepairGoogleCalendarBase]);
-
   // "checking" is a UI-only state until we have loaded metadata from the server.
   // Covers both "idle" (before refreshUserMetadata dispatches setLoading) and
   // "loading" so returning users do not briefly see NOT_CONNECTED from the selector default.
@@ -114,10 +106,5 @@ export const useConnectGoogle = () => {
       ? "checking"
       : connectionState;
 
-  return getGoogleConnectionConfig(
-    state,
-    onOpenGoogleAuth,
-    onRepairGoogleCalendar,
-    onRepairGoogleCalendarFromSidebar,
-  );
+  return getGoogleConnectionConfig(state, onOpenGoogleAuth, onRepairGoogle);
 };
