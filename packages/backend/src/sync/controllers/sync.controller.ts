@@ -77,7 +77,7 @@ export class SyncController {
     userId: string,
   ): void => {
     // do not await this call
-    userService
+    syncService
       .restartGoogleCalendarSync(userId, { force: true })
       .catch((err) => {
         logger.error(
@@ -132,7 +132,7 @@ export class SyncController {
     // When Google returns 410 (sync token invalid), the token may still exist
     // in the database but is no longer valid. assessGoogleMetadata checks token
     // existence, not validity, so we must force-restart directly.
-    userService
+    syncService
       .restartGoogleCalendarSync(userId, { force: true })
       .catch((err) => {
         logger.error(
@@ -287,7 +287,7 @@ export class SyncController {
     const { force } = ImportGCalRequestSchema.parse(req.body);
     const isForce = force === true;
 
-    userService
+    syncService
       .restartGoogleCalendarSync(userId, { force: isForce })
       .catch((err) => {
         logger.error(

@@ -11,20 +11,14 @@ import {
   type UserMetadata,
   type UserProfile,
 } from "@core/types/user.types";
-import { shouldImportGCal } from "@core/util/event/event.util";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import { getGoogleRepairErrorMessage } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { UserError } from "@backend/common/errors/user/user.errors";
-import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
-import eventService, {
-  syncCompassEventsToGoogle,
-} from "@backend/event/services/event.service";
+import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
-import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import syncService from "@backend/sync/services/sync.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import {
@@ -324,93 +318,6 @@ class UserService {
         sync: { importGCal: "RESTART", incrementalGCalSync: "RESTART" },
       },
     });
-  };
-
-  restartGoogleCalendarSync = async (
-    userId: string,
-    options: { force?: boolean } = {},
-  ) => {
-    const isForce = options.force === true;
-
-    try {
-      const userMeta = await this.fetchUserMetadata(userId);
-      const importStatus = userMeta.sync?.importGCal;
-      const isImporting = importStatus === "IMPORTING";
-      const proceed = isForce ? !isImporting : shouldImportGCal(userMeta);
-
-      if (!proceed) {
-        webSocketServer.handleImportGCalEnd(userId, {
-          operation: "REPAIR",
-          status: "IGNORED",
-          message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
-        });
-
-        return;
-      }
-
-      logger.warn(
-        `Restarting Google Calendar sync for user: ${userId}${isForce ? " (forced)" : ""}`,
-      );
-      webSocketServer.handleImportGCalStart(userId);
-      await userMetadataService.updateUserMetadata({
-        userId,
-        data: { sync: { importGCal: "IMPORTING" } },
-      });
-
-      await this.stopGoogleCalendarSync(userId);
-      const importResults = await syncService.startGoogleCalendarSync(userId);
-
-      await syncCompassEventsToGoogle(userId).catch((err) => {
-        logger.error(
-          `Failed to sync Compass events to Google Calendar for user: ${userId}`,
-          err,
-        );
-      });
-
-      await userMetadataService.updateUserMetadata({
-        userId,
-        data: { sync: { importGCal: "COMPLETED" } },
-      });
-
-      webSocketServer.handleImportGCalEnd(userId, {
-        operation: "REPAIR",
-        status: "COMPLETED",
-        ...importResults,
-      });
-      webSocketServer.handleBackgroundCalendarChange(userId);
-    } catch (err) {
-      try {
-        await this.stopGoogleCalendarSync(userId);
-      } catch (cleanupError) {
-        logger.error(
-          `Failed to clean up partial Google Calendar sync state for user: ${userId}`,
-          cleanupError,
-        );
-      }
-
-      if (isInvalidGoogleToken(err)) {
-        logger.warn(
-          `Google Calendar repair failed because access was revoked for user: ${userId}`,
-        );
-
-        await this.pruneGoogleData(userId);
-        webSocketServer.handleGoogleRevoked(userId);
-        return;
-      }
-
-      await userMetadataService.updateUserMetadata({
-        userId,
-        data: { sync: { importGCal: "ERRORED" } },
-      });
-
-      logger.error(`Re-sync failed for user: ${userId}`, err);
-
-      webSocketServer.handleImportGCalEnd(userId, {
-        operation: "REPAIR",
-        status: "ERRORED",
-        message: getGoogleRepairErrorMessage(err),
-      });
-    }
   };
 
   fetchUserMetadata = async (

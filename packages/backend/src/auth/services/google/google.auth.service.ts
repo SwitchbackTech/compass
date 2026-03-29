@@ -45,7 +45,7 @@ class GoogleAuthService {
   };
 
   private restartGoogleCalendarSyncInBackground = (cUserId: string) => {
-    userService.restartGoogleCalendarSync(cUserId).catch((err) => {
+    syncService.restartGoogleCalendarSync(cUserId).catch((err) => {
       logger.error(
         `Something went wrong with starting calendar sync for user ${cUserId}`,
         err,
