@@ -12,7 +12,6 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import EmailService from "@backend/email/email.service";
-import { syncCompassEventsToGoogle } from "@backend/event/services/event.service";
 import syncService from "@backend/sync/services/sync.service";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";
@@ -90,7 +89,6 @@ class GoogleAuthService {
       return { cUserId: cUser.user.userId };
     });
 
-    await syncCompassEventsToGoogle(user.cUserId);
     this.restartGoogleCalendarSyncInBackground(user.cUserId);
 
     return user;

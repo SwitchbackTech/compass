@@ -22,7 +22,9 @@ import { getGoogleRepairErrorMessage } from "@backend/common/errors/integration/
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
-import eventService from "@backend/event/services/event.service";
+import eventService, {
+  syncCompassEventsToGoogle,
+} from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import syncService from "@backend/sync/services/sync.service";
@@ -374,13 +376,7 @@ class UserService {
   ) => {
     const isForce = options.force === true;
 
-    logger.warn(
-      `Restarting Google Calendar sync for user: ${userId}${isForce ? " (forced)" : ""}`,
-    );
-
     try {
-      webSocketServer.handleImportGCalStart(userId);
-
       const userMeta = await this.fetchUserMetadata(userId);
       const importStatus = userMeta.sync?.importGCal;
       const isImporting = importStatus === "IMPORTING";
@@ -396,6 +392,10 @@ class UserService {
         return;
       }
 
+      logger.warn(
+        `Restarting Google Calendar sync for user: ${userId}${isForce ? " (forced)" : ""}`,
+      );
+      webSocketServer.handleImportGCalStart(userId);
       await userMetadataService.updateUserMetadata({
         userId,
         data: { sync: { importGCal: "IMPORTING" } },
@@ -403,6 +403,13 @@ class UserService {
 
       await this.stopGoogleCalendarSync(userId);
       const importResults = await this.startGoogleCalendarSync(userId);
+
+      await syncCompassEventsToGoogle(userId).catch((err) => {
+        logger.error(
+          `Failed to sync Compass events to Google Calendar for user: ${userId}`,
+          err,
+        );
+      });
 
       await userMetadataService.updateUserMetadata({
         userId,

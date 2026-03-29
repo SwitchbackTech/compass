@@ -13,7 +13,6 @@ import { determineGoogleAuthMode } from "@backend/auth/services/google/util/goog
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import EmailService from "@backend/email/email.service";
-import * as eventService from "@backend/event/services/event.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
 import googleAuthService from "./google.auth.service";
@@ -374,7 +373,7 @@ describe("GoogleAuthService", () => {
   });
 
   describe("googleSignup", () => {
-    it("syncs existing Compass-only events to Google after attaching Google auth", async () => {
+    it("starts calendar repair in the background so Compass-only events sync after import completes", async () => {
       const recipeUserId = faker.database.mongodbObjectId();
       const providerUser = {
         sub: faker.string.uuid(),
@@ -383,9 +382,6 @@ describe("GoogleAuthService", () => {
         picture: faker.image.url(),
       } as TokenPayload;
       const refreshToken = faker.string.uuid();
-      const syncSpy = jest
-        .spyOn(eventService, "syncCompassEventsToGoogle")
-        .mockResolvedValue(2);
       const tagNewUserSpy = jest
         .spyOn(EmailService, "tagNewUserIfEnabled")
         .mockResolvedValue();
@@ -400,11 +396,9 @@ describe("GoogleAuthService", () => {
       );
 
       expect(result.cUserId).toBe(recipeUserId);
-      expect(syncSpy).toHaveBeenCalledWith(recipeUserId);
       expect(tagNewUserSpy).toHaveBeenCalled();
       expect(restartSpy).toHaveBeenCalledWith(recipeUserId);
 
-      syncSpy.mockRestore();
       tagNewUserSpy.mockRestore();
       restartSpy.mockRestore();
     });
