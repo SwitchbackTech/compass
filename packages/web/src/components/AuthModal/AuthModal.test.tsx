@@ -42,7 +42,7 @@ jest.mock("@web/auth/hooks/compass/useCompleteAuthentication", () => ({
 jest.mock("supertokens-web-js/recipe/emailpassword");
 
 // Mock GoogleButton - uses button with label for semantic queries (matches real component's aria-label)
-jest.mock("@web/components/oauth/google/GoogleButton", () => ({
+jest.mock("@web/components/AuthModal/components/GoogleButton", () => ({
   GoogleButton: ({
     onClick,
     label,
