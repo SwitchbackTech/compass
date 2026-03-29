@@ -1,6 +1,11 @@
-import { type ClientSession, ObjectId } from "mongodb";
+import { type ClientSession, type Filter, ObjectId } from "mongodb";
 import { RESULT_NOTIFIED_CLIENT } from "@core/constants/websocket.constants";
 import { Logger } from "@core/logger/winston.logger";
+import { MapEvent } from "@core/mappers/map.event";
+import {
+  type Schema_Event,
+  type Schema_Event_Core,
+} from "@core/types/event.types";
 import { type gCalendar } from "@core/types/gcal";
 import {
   type Params_WatchEvents,
@@ -30,7 +35,7 @@ import {
   isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
-import { syncCompassEventsToGoogle } from "@backend/event/services/event.service";
+import { _createGcal } from "@backend/event/services/event.service";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import { createSyncImport } from "@backend/sync/services/import/sync.import";
 import {
@@ -875,5 +880,86 @@ class SyncService {
     return stopped;
   };
 }
+
+export const syncCompassEventsToGoogle = async (
+  userId: string,
+): Promise<number> => {
+  const compassEvents = await mongoService.event
+    .find({
+      user: userId,
+      isSomeday: false,
+      "recurrence.eventId": { $exists: false },
+      $or: [
+        // no gEventId means it has not been synced to Google yet
+        { gEventId: { $exists: false } },
+        { gEventId: null },
+        { gEventId: "" },
+      ],
+    } as Filter<Omit<Schema_Event, "_id">>)
+    .sort({ startDate: 1 })
+    .toArray();
+
+  let syncedCount = 0;
+
+  for (const compassEvent of compassEvents) {
+    if (
+      !compassEvent.startDate ||
+      !compassEvent.endDate ||
+      !compassEvent.user
+    ) {
+      continue;
+    }
+
+    const gEvent = await _createGcal(
+      userId,
+      compassEvent as unknown as Schema_Event_Core,
+    );
+    const gEventId = gEvent.id;
+
+    if (!gEventId) {
+      continue;
+    }
+
+    await mongoService.event.updateOne(
+      { _id: compassEvent._id, user: userId },
+      { $set: { gEventId } },
+    );
+
+    syncedCount += 1;
+
+    if (!compassEvent.recurrence?.rule) {
+      continue;
+    }
+
+    const instances = await mongoService.event
+      .find({
+        user: userId,
+        "recurrence.eventId": compassEvent._id.toString(),
+      })
+      .sort({ startDate: 1 })
+      .toArray();
+
+    for (const instance of instances) {
+      const providerData = MapEvent.toGcalInstanceProviderData(
+        {
+          ...instance,
+          _id: instance._id.toString(),
+        } as Parameters<typeof MapEvent.toGcalInstanceProviderData>[0],
+        {
+          ...compassEvent,
+          _id: compassEvent._id.toString(),
+          gEventId,
+        } as Parameters<typeof MapEvent.toGcalInstanceProviderData>[1],
+      );
+
+      await mongoService.event.updateOne(
+        { _id: instance._id, user: userId },
+        { $set: providerData },
+      );
+    }
+  }
+
+  return syncedCount;
+};
 
 export default new SyncService();
