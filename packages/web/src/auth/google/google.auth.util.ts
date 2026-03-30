@@ -18,7 +18,7 @@ import {
 } from "@web/ducks/events/slices/sync.slice";
 import { closeStream, openStream } from "@web/sse/client/sse.client";
 import { type AppDispatch, store } from "@web/store";
-import { type GoogleAuthConfig } from "../hooks/google/googe.auth.types";
+import { type GoogleAuthConfig } from "./hooks/googe.auth.types";
 
 export interface AuthenticateResult {
   success: boolean;

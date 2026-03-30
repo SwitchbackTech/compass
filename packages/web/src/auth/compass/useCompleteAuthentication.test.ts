@@ -1,12 +1,12 @@
 import { renderHook } from "@testing-library/react";
 import type * as GoogleAuthUtil from "@web/auth/google/google.auth.util";
 import { syncPendingLocalEvents } from "@web/auth/google/google.auth.util";
-import { useSession } from "@web/auth/hooks/session/useSession";
-import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
+import { useSession } from "@web/auth/session/useSession";
 import {
   clearAnonymousCalendarChangeSignUpPrompt,
   markUserAsAuthenticated,
 } from "@web/auth/state/auth.state.util";
+import { refreshUserMetadata } from "@web/auth/user/util/user-metadata.util";
 import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { useCompleteAuthentication } from "./useCompleteAuthentication";
@@ -17,10 +17,10 @@ jest.mock("@web/auth/google/google.auth.util", () => ({
   ),
   syncPendingLocalEvents: jest.fn(),
 }));
-jest.mock("@web/auth/hooks/session/useSession", () => ({
+jest.mock("@web/auth/session/useSession", () => ({
   useSession: jest.fn(),
 }));
-jest.mock("@web/auth/session/user-metadata.util", () => ({
+jest.mock("@web/auth/user/util/user-metadata.util", () => ({
   refreshUserMetadata: jest.fn(),
 }));
 jest.mock("@web/auth/state/auth.state.util", () => ({

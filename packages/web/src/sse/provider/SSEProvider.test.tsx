@@ -8,8 +8,8 @@ import {
   IMPORT_GCAL_START,
 } from "@core/constants/sse.constants";
 import { type ImportGCalEndPayload } from "@core/types/sse.types";
-import { useSession } from "@web/auth/hooks/session/useSession";
-import { useUser } from "@web/auth/hooks/user/useUser";
+import { useSession } from "@web/auth/session/useSession";
+import { useUser } from "@web/auth/user/hooks/useUser";
 import {
   importGCalSlice,
   importLatestSlice,
@@ -17,9 +17,9 @@ import {
 import SSEProvider from "./SSEProvider";
 
 // Mock dependencies
-jest.mock("@web/auth/hooks/session/useSession");
-jest.mock("@web/auth/hooks/user/useUser");
-jest.mock("@web/auth/session/user-metadata.util", () => ({
+jest.mock("@web/auth/session/useSession");
+jest.mock("@web/auth/user/hooks/useUser");
+jest.mock("@web/auth/user/util/user-metadata.util", () => ({
   refreshUserMetadata: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock("../client/sse.client", () => {

@@ -1,11 +1,11 @@
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useUser } from "@web/auth/hooks/user/useUser";
+import { useUser } from "@web/auth/user/hooks/useUser";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { SubCalendarList } from "./SubCalendarList";
 
-jest.mock("@web/auth/hooks/user/useUser", () => ({
+jest.mock("@web/auth/user/hooks/useUser", () => ({
   useUser: jest.fn(),
 }));
 

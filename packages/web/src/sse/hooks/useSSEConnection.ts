@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { useSession } from "@web/auth/hooks/session/useSession";
-import { useUser } from "@web/auth/hooks/user/useUser";
+import { useSession } from "@web/auth/session/useSession";
+import { useUser } from "@web/auth/user/hooks/useUser";
 import { closeStream, openStream } from "../client/sse.client";
 
 export const useSSEConnection = () => {

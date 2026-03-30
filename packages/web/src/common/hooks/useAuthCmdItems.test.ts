@@ -1,11 +1,11 @@
 import type { MouseEvent } from "react";
 import { act } from "react";
 import { renderHook } from "@testing-library/react";
-import { useSession } from "@web/auth/hooks/session/useSession";
+import { useSession } from "@web/auth/session/useSession";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { useAuthCmdItems } from "./useAuthCmdItems";
 
-jest.mock("@web/auth/hooks/session/useSession", () => ({
+jest.mock("@web/auth/session/useSession", () => ({
   useSession: jest.fn(),
 }));
 

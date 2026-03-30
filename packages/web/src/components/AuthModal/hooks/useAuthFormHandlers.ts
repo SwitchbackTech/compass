@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import EmailPassword from "supertokens-web-js/recipe/emailpassword";
 import { z } from "zod";
-import { useCompleteAuthentication } from "@web/auth/hooks/compass/useCompleteAuthentication";
+import { useCompleteAuthentication } from "@web/auth/compass/useCompleteAuthentication";
 import {
   type ForgotPasswordFormData,
   type LogInFormData,

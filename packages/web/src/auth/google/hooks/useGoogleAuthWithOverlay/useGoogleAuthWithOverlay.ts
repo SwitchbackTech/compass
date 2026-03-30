@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useGoogleLogin } from "@web/auth/hooks/google/useGoogleLogin/useGoogleLogin";
+import { useGoogleLogin } from "@web/auth/google/hooks/useGoogleLogin/useGoogleLogin";
 import { type GoogleAuthConfig } from "../googe.auth.types";
 
 interface UseGoogleAuthWithOverlayOptions {

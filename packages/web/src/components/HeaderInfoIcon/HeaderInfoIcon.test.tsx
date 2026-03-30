@@ -2,7 +2,7 @@ import type React from "react";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { type GoogleUiConfig } from "@web/auth/hooks/google/useConnectGoogle/useConnectGoogle.types";
+import { type GoogleUiConfig } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import { type CompassSession } from "@web/auth/session/session.types";
 import { type AuthView } from "@web/components/AuthModal/hooks/useAuthModal";
 import { useAppSelector } from "@web/store/store.hooks";
@@ -27,11 +27,11 @@ const mockSubscribeToAuthState = jest.fn<() => void, [() => void]>(
   () => () => {},
 );
 
-jest.mock("@web/auth/hooks/session/useSession", () => ({
+jest.mock("@web/auth/session/useSession", () => ({
   useSession: (): CompassSession => mockUseSession(),
 }));
 
-jest.mock("@web/auth/hooks/google/useConnectGoogle/useConnectGoogle", () => ({
+jest.mock("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
   useConnectGoogle: (): MockConnectGoogleResult => mockUseConnectGoogle(),
 }));
 

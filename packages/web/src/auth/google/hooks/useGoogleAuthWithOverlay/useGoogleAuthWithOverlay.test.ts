@@ -1,9 +1,9 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { useGoogleAuthWithOverlay } from "@web/auth/hooks/google/useGoogleAuthWithOverlay/useGoogleAuthWithOverlay";
-import { useGoogleLogin } from "@web/auth/hooks/google/useGoogleLogin/useGoogleLogin";
+import { useGoogleAuthWithOverlay } from "@web/auth/google/hooks/useGoogleAuthWithOverlay/useGoogleAuthWithOverlay";
+import { useGoogleLogin } from "@web/auth/google/hooks/useGoogleLogin/useGoogleLogin";
 import { type GoogleAuthConfig } from "../googe.auth.types";
 
-jest.mock("@web/auth/hooks/google/useGoogleLogin/useGoogleLogin");
+jest.mock("@web/auth/google/hooks/useGoogleLogin/useGoogleLogin");
 
 const mockUseGoogleLogin = useGoogleLogin as jest.MockedFunction<
   typeof useGoogleLogin

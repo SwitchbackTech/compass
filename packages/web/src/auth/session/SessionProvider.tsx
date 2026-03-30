@@ -28,8 +28,8 @@ import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
 import * as sse from "@web/sse/provider/SSEProvider";
 import { store } from "@web/store";
+import { refreshUserMetadata } from "../user/util/user-metadata.util";
 import { type CompassSession } from "./session.types";
-import { refreshUserMetadata } from "./user-metadata.util";
 
 SuperTokens.init({
   appInfo: {

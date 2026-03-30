@@ -1,6 +1,6 @@
 import { type FC, useCallback } from "react";
 import { InfoIcon } from "@phosphor-icons/react";
-import { useUser } from "@web/auth/hooks/user/useUser";
+import { useUser } from "@web/auth/user/hooks/useUser";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 

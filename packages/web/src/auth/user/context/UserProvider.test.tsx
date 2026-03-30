@@ -1,11 +1,11 @@
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
-import { UserProvider } from "@web/auth/context/UserProvider";
-import { useSession } from "@web/auth/hooks/session/useSession";
-import { useUser } from "@web/auth/hooks/user/useUser";
+import { useSession } from "@web/auth/session/useSession";
 import * as authStateUtil from "@web/auth/state/auth.state.util";
+import { UserProvider } from "@web/auth/user/context/UserProvider";
+import { useUser } from "@web/auth/user/hooks/useUser";
 
-jest.mock("@web/auth/hooks/session/useSession", () => ({
+jest.mock("@web/auth/session/useSession", () => ({
   useSession: jest.fn(),
 }));
 const mockUseSession = jest.mocked(useSession);

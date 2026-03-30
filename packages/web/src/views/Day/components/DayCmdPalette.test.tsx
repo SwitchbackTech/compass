@@ -2,7 +2,7 @@ import { resolveModifier } from "@tanstack/react-hotkeys";
 import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
-import * as useGoogleAuthModule from "@web/auth/hooks/google/useGoogleAuth/useGoogleAuth";
+import * as useGoogleAuthModule from "@web/auth/google/hooks/useGoogleAuth/useGoogleAuth";
 import { SyncApi } from "@web/common/apis/sync.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import * as eventUtil from "@web/common/utils/event/event.util";

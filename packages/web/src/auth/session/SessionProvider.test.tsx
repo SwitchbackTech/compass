@@ -18,7 +18,7 @@ describe("SessionProvider sessionInit", () => {
     const markUserAsAuthenticated = jest.fn();
     const getLastKnownEmail = jest.fn().mockReturnValue("test@example.com");
 
-    jest.doMock("@web/auth/session/user-metadata.util", () => ({
+    jest.doMock("@web/auth/user/util/user-metadata.util", () => ({
       refreshUserMetadata,
     }));
     jest.doMock("@web/sse/provider/SSEProvider", () => ({
@@ -63,7 +63,7 @@ describe("SessionProvider sessionInit", () => {
     const markUserAsAuthenticated = jest.fn();
     const getLastKnownEmail = jest.fn().mockReturnValue("test@example.com");
 
-    jest.doMock("@web/auth/session/user-metadata.util", () => ({
+    jest.doMock("@web/auth/user/util/user-metadata.util", () => ({
       refreshUserMetadata,
     }));
     jest.doMock("@web/sse/provider/SSEProvider", () => ({

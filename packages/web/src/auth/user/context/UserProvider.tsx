@@ -1,8 +1,8 @@
 import { type ReactNode } from "react";
-import { useSession } from "@web/auth/hooks/session/useSession";
-import { useLoadProfile } from "@web/auth/hooks/user/useLoadProfile";
 import { useIdentifyUser } from "@web/auth/posthog/useIdentifyUser";
+import { useSession } from "@web/auth/session/useSession";
 import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
+import { useLoadProfile } from "@web/auth/user/hooks/useLoadProfile";
 import { UserContext } from "./UserContext";
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {

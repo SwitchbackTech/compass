@@ -1,7 +1,7 @@
 import { useCallback, useSyncExternalStore } from "react";
-import { useConnectGoogle } from "@web/auth/hooks/google/useConnectGoogle/useConnectGoogle";
-import { type GoogleUiConfig } from "@web/auth/hooks/google/useConnectGoogle/useConnectGoogle.types";
-import { useSession } from "@web/auth/hooks/session/useSession";
+import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
+import { type GoogleUiConfig } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
+import { useSession } from "@web/auth/session/useSession";
 import {
   shouldShowAnonymousCalendarChangeSignUpPrompt,
   subscribeToAuthState,

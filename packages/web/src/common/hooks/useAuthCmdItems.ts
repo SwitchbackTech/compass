@@ -1,5 +1,5 @@
 import { type JsonStructureItem } from "react-cmdk";
-import { useSession } from "@web/auth/hooks/session/useSession";
+import { useSession } from "@web/auth/session/useSession";
 import { useAuthFeatureFlag } from "@web/components/AuthModal/hooks/useAuthFeatureFlag";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 

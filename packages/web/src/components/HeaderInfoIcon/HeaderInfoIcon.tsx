@@ -1,5 +1,5 @@
 import { InfoIcon } from "@phosphor-icons/react";
-import { type IconColor } from "@web/auth/hooks/google/useConnectGoogle/useConnectGoogle.types";
+import { type IconColor } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import { theme } from "@web/common/styles/theme";
 import { SpinnerIcon } from "@web/components/Icons/Spinner";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";

@@ -27,10 +27,10 @@ type TestStore = EnhancedStore<{
 }>;
 
 // Mock dependencies
-jest.mock("@web/auth/hooks/user/useUser", () => ({
+jest.mock("@web/auth/user/hooks/useUser", () => ({
   useUser: () => ({ userId: "test-user-id" }),
 }));
-jest.mock("@web/auth/session/user-metadata.util", () => ({
+jest.mock("@web/auth/user/util/user-metadata.util", () => ({
   refreshUserMetadata: jest.fn().mockResolvedValue(undefined),
 }));
 

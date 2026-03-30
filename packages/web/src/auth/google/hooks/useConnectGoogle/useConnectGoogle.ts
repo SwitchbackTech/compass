@@ -3,9 +3,9 @@ import { useCallback } from "react";
 import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { type GoogleConnectionState } from "@core/types/user.types";
 import { syncPendingLocalEvents } from "@web/auth/google/google.auth.util";
-import { useGoogleAuth } from "@web/auth/hooks/google/useGoogleAuth/useGoogleAuth";
-import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
+import { useGoogleAuth } from "@web/auth/google/hooks/useGoogleAuth/useGoogleAuth";
 import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
+import { refreshUserMetadata } from "@web/auth/user/util/user-metadata.util";
 import { AuthApi } from "@web/common/apis/auth.api";
 import {
   getApiErrorCode,
