@@ -1,6 +1,7 @@
 import { usePostHog } from "posthog-js/react";
 import {
   type ReactNode,
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -8,6 +9,7 @@ import {
 } from "react";
 import { Status } from "@core/errors/status.codes";
 import { type UserProfile } from "@core/types/user.types";
+import { useSession } from "@web/auth/hooks/session/useSession";
 import {
   hasUserEverAuthenticated,
   markUserAsAuthenticated,
@@ -18,25 +20,24 @@ import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { UserContext } from "./UserContext";
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const profile = useRef<UserProfile | null>(null);
+  const { authenticated } = useSession();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(false);
+  const profileRequest = useRef<Promise<void> | null>(null);
   const posthog = usePostHog();
-  const userId = profile.current?.userId ?? null;
-  const email = profile.current?.email ?? null;
+  const userId = profile?.userId ?? null;
+  const email = profile?.email ?? null;
 
-  useLayoutEffect(() => {
-    if (profile.current) return;
-
-    // Only fetch profile if user has authenticated before.
-    if (!hasUserEverAuthenticated()) {
-      return;
+  const loadProfile = useCallback(() => {
+    if (profileRequest.current) {
+      return profileRequest.current;
     }
 
     setIsLoadingUser(true);
 
-    UserApi.getProfile()
+    profileRequest.current = UserApi.getProfile()
       .then((userProfile) => {
-        profile.current = userProfile;
+        setProfile(userProfile);
         markUserAsAuthenticated(userProfile.email);
       })
       .catch((e) => {
@@ -54,9 +55,23 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         console.error("Failed to get user profile", e);
       })
       .finally(() => {
+        profileRequest.current = null;
         setIsLoadingUser(false);
       });
+
+    return profileRequest.current;
   }, []);
+
+  useLayoutEffect(() => {
+    if (profile) return;
+
+    const shouldLoadProfile = authenticated || hasUserEverAuthenticated();
+    if (!shouldLoadProfile) {
+      return;
+    }
+
+    void loadProfile();
+  }, [authenticated, loadProfile, profile]);
 
   // Identify user in PostHog when userId and email are available
   // Only runs if PostHog is enabled (POSTHOG_HOST and POSTHOG_KEY are set)
@@ -78,7 +93,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   return (
     <UserContext.Provider
       value={{
-        ...(profile.current ?? {}),
+        ...(profile ?? {}),
         userId: userId ?? undefined,
         isLoadingUser,
       }}

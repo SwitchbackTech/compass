@@ -7,10 +7,14 @@ import {
   subscribeToAuthState,
 } from "@web/auth/state/auth.state.util";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
+import { selectImportGCalState } from "@web/ducks/events/selectors/sync.selector";
+import type { RootState } from "@web/store";
+import { useAppSelector } from "@web/store/store.hooks";
 
 const ANONYMOUS_SIGN_UP_TOOLTIP = "Sign up to save your changes.";
 
 interface HeaderInfo {
+  isBackgroundImporting: boolean;
   isAnonymousSignUpPrompt: boolean;
   isRepairing: boolean;
   sidebarStatus: GoogleUiConfig["sidebarStatus"];
@@ -20,6 +24,9 @@ export const useHeaderInfo = (): HeaderInfo => {
   const { authenticated } = useSession();
   const { openModal } = useAuthModal();
   const googleStatus = useConnectGoogle();
+  const isBackgroundImporting = useAppSelector(
+    (state: RootState) => selectImportGCalState(state).isProcessing === true,
+  );
   const shouldPromptSignUp = useSyncExternalStore(
     subscribeToAuthState,
     shouldShowAnonymousCalendarChangeSignUpPrompt,
@@ -32,6 +39,7 @@ export const useHeaderInfo = (): HeaderInfo => {
 
   if (!authenticated && shouldPromptSignUp) {
     return {
+      isBackgroundImporting,
       isAnonymousSignUpPrompt: true,
       isRepairing: false,
       sidebarStatus: {
@@ -44,6 +52,7 @@ export const useHeaderInfo = (): HeaderInfo => {
   }
 
   return {
+    isBackgroundImporting,
     isAnonymousSignUpPrompt: false,
     ...googleStatus,
   };

@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { type GoogleUiConfig } from "@web/auth/hooks/google/useConnectGoogle/useConnectGoogle.types";
 import { type CompassSession } from "@web/auth/session/session.types";
 import { type AuthView } from "@web/components/AuthModal/hooks/useAuthModal";
+import { useAppSelector } from "@web/store/store.hooks";
 import { HeaderInfoIcon } from "./HeaderInfoIcon";
 
 interface MockConnectGoogleResult {
@@ -21,6 +22,7 @@ const mockShouldShowAnonymousCalendarChangeSignUpPrompt = jest.fn<
   boolean,
   []
 >();
+const mockUseAppSelector = jest.mocked(useAppSelector);
 const mockSubscribeToAuthState = jest.fn<() => void, [() => void]>(
   () => () => {},
 );
@@ -44,6 +46,10 @@ jest.mock("@web/components/AuthModal/hooks/useAuthModal", () => ({
   useAuthModal: () => ({
     openModal: mockOpenModal,
   }),
+}));
+
+jest.mock("@web/store/store.hooks", () => ({
+  useAppSelector: jest.fn(),
 }));
 
 jest.mock("@phosphor-icons/react", () => ({
@@ -83,6 +89,7 @@ describe("HeaderInfoIcon", () => {
       authenticated: false,
       setAuthenticated: jest.fn(),
     });
+    mockUseAppSelector.mockReturnValue(false);
     mockUseConnectGoogle.mockReturnValue({
       commandAction: {
         icon: "CloudArrowUpIcon",
@@ -151,5 +158,24 @@ describe("HeaderInfoIcon", () => {
     );
     expect(mockGoogleOnSelect).toHaveBeenCalled();
     expect(mockOpenModal).not.toHaveBeenCalled();
+  });
+
+  it("renders the background import spinner instead of the info icon while importing", () => {
+    mockUseAppSelector.mockReturnValue(true);
+
+    render(<HeaderInfoIcon />);
+
+    expect(
+      screen.getByRole("status", {
+        name: /importing your calendar events in the background/i,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: /importing your calendar events in the background/i,
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("spinner-gap")).toBeInTheDocument();
+    expect(screen.queryByLabelText("header-info-icon")).not.toBeInTheDocument();
   });
 });

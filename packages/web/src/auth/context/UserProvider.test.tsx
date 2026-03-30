@@ -1,13 +1,15 @@
 import { rest } from "msw";
 import { type PostHog } from "posthog-js";
 import { usePostHog } from "posthog-js/react";
-import { act, isValidElement } from "react";
+import { isValidElement } from "react";
 import { toast } from "react-toastify";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import { Status } from "@core/errors/status.codes";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { UserProvider } from "@web/auth/context/UserProvider";
+import { useSession } from "@web/auth/hooks/session/useSession";
+import { useUser } from "@web/auth/hooks/user/useUser";
 import * as authStateUtil from "@web/auth/state/auth.state.util";
 import { UserApi } from "@web/common/apis/user.api";
 import { ENV_WEB } from "@web/common/constants/env.constants";
@@ -16,6 +18,11 @@ import { SessionExpiredToast } from "@web/common/utils/toast/session-expired.toa
 jest.mock("posthog-js/react");
 const mockUsePostHog = jest.mocked(usePostHog);
 const mockToastError = jest.mocked(toast.error);
+
+jest.mock("@web/auth/hooks/session/useSession", () => ({
+  useSession: jest.fn(),
+}));
+const mockUseSession = jest.mocked(useSession);
 
 jest.mock("@web/auth/state/auth.state.util", () => {
   const actual = jest.requireActual<typeof authStateUtil>(
@@ -48,11 +55,20 @@ function mockPostHogDisabled(): void {
   mockUsePostHog.mockReturnValue(undefined as unknown as PostHog);
 }
 
+const UserEmail = () => <div>{useUser().email ?? "no-email"}</div>;
+
 describe("UserProvider", () => {
+  let isAuthenticated = false;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    isAuthenticated = false;
     mockHasUserEverAuthenticated.mockReturnValue(true);
     mockPostHogEnabled();
+    mockUseSession.mockImplementation(() => ({
+      authenticated: isAuthenticated,
+      setAuthenticated: jest.fn(),
+    }));
   });
 
   describe("PostHog Integration", () => {
@@ -282,6 +298,37 @@ describe("UserProvider", () => {
 
       await waitFor(() => {
         expect(screen.getByText("Test Child")).toBeInTheDocument();
+      });
+
+      getProfileSpy.mockRestore();
+    });
+
+    it("fetches the profile when auth completes after mount", async () => {
+      mockHasUserEverAuthenticated.mockReturnValue(false);
+      const getProfileSpy = jest.spyOn(UserApi, "getProfile");
+
+      const { rerender } = render(
+        <UserProvider>
+          <UserEmail />
+        </UserProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("no-email")).toBeInTheDocument();
+      });
+      expect(getProfileSpy).not.toHaveBeenCalled();
+
+      isAuthenticated = true;
+
+      rerender(
+        <UserProvider>
+          <UserEmail />
+        </UserProvider>,
+      );
+
+      await waitFor(() => expect(getProfileSpy).toHaveBeenCalledTimes(1));
+      await waitFor(() => {
+        expect(screen.getByText("test@example.com")).toBeInTheDocument();
       });
 
       getProfileSpy.mockRestore();

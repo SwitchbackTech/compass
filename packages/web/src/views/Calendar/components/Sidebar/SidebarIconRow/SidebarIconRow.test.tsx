@@ -33,7 +33,7 @@ jest.mock("@web/components/Tooltip/TooltipWrapper", () => ({
 }));
 
 describe("SidebarIconRow", () => {
-  it("shows the background import spinner while Google Calendar is importing", () => {
+  it("does not render the background import spinner in the sidebar", () => {
     render(<SidebarIconRow />, {
       state: {
         sync: {
@@ -45,9 +45,9 @@ describe("SidebarIconRow", () => {
     });
 
     expect(
-      screen.getByRole("button", {
+      screen.queryByRole("button", {
         name: "Importing your calendar events in the background",
       }),
-    ).toBeInTheDocument();
+    ).not.toBeInTheDocument();
   });
 });
