@@ -11,6 +11,7 @@ import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 const ANONYMOUS_SIGN_UP_TOOLTIP = "Sign up to save your calendar changes.";
 
 export interface SyncStatusDotState {
+  isAnonymousSignUpPrompt: boolean;
   isRepairing: boolean;
   sidebarStatus: GoogleUiConfig["sidebarStatus"];
 }
@@ -31,6 +32,7 @@ export const useSyncStatusDotState = (): SyncStatusDotState => {
 
   if (!authenticated && shouldPromptSignUp) {
     return {
+      isAnonymousSignUpPrompt: true,
       isRepairing: false,
       sidebarStatus: {
         dotColor: "warning" as const,
@@ -42,5 +44,8 @@ export const useSyncStatusDotState = (): SyncStatusDotState => {
     };
   }
 
-  return googleStatus;
+  return {
+    isAnonymousSignUpPrompt: false,
+    ...googleStatus,
+  };
 };

@@ -28,6 +28,9 @@ const DOT_COLOR_MAP: Record<DotColor, string> = {
   error: theme.color.status.error,
 };
 
+const ANONYMOUS_PROMPT_ICON_CLASSNAME =
+  "origin-center transition-all duration-200 ease-out motion-safe:animate-sync-dot-pulse motion-safe:group-hover:animate-none group-hover:scale-110 group-hover:brightness-110";
+
 interface StatusDotPopoverProps {
   children: React.ReactNode;
   tooltip: string;
@@ -121,7 +124,8 @@ const StatusDotPopover = ({
 };
 
 export const SyncStatusDot = () => {
-  const { sidebarStatus, isRepairing } = useSyncStatusDotState();
+  const { isAnonymousSignUpPrompt, sidebarStatus, isRepairing } =
+    useSyncStatusDotState();
 
   // Only render when user attention is needed (warning or error states)
   if (
@@ -132,6 +136,25 @@ export const SyncStatusDot = () => {
   }
 
   const dotColor = DOT_COLOR_MAP[sidebarStatus.dotColor];
+  const iconClassName = isAnonymousSignUpPrompt
+    ? ANONYMOUS_PROMPT_ICON_CLASSNAME
+    : undefined;
+  const icon = (
+    <DotOutlineIcon
+      aria-hidden="true"
+      className={iconClassName}
+      color={dotColor}
+      size={45}
+      weight="fill"
+    />
+  );
+  const wrappedIcon = isAnonymousSignUpPrompt ? (
+    <span className="group inline-flex items-center justify-center">
+      {icon}
+    </span>
+  ) : (
+    icon
+  );
 
   return (
     <div role="status" aria-live="polite" aria-label={sidebarStatus.tooltip}>
@@ -144,12 +167,7 @@ export const SyncStatusDot = () => {
           onRepair={sidebarStatus.dialog.onRepair}
           isRepairing={isRepairing}
         >
-          <DotOutlineIcon
-            aria-hidden="true"
-            color={dotColor}
-            size={45}
-            weight="fill"
-          />
+          {wrappedIcon}
         </StatusDotPopover>
       ) : (
         <TooltipWrapper
@@ -157,12 +175,7 @@ export const SyncStatusDot = () => {
           disabled={sidebarStatus.isDisabled}
           onClick={sidebarStatus.onSelect}
         >
-          <DotOutlineIcon
-            aria-hidden="true"
-            color={dotColor}
-            size={45}
-            weight="fill"
-          />
+          {wrappedIcon}
         </TooltipWrapper>
       )}
     </div>
