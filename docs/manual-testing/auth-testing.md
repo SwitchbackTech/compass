@@ -240,6 +240,7 @@ or mutating the current account session.
 - `POST /api/auth/google/connect` returns `409`.
 - Response payload includes:
   - `result: "User not connected"`
+  - `code: "GOOGLE_ACCOUNT_ALREADY_CONNECTED"`
   - `message: "Google account is already connected to another Compass user"`
 - User B remains signed in as User B (session is not replaced).
 - User B's existing Compass data remains visible.
@@ -304,6 +305,3 @@ If time is limited, run these checks before shipping auth changes:
 ## Current Caveats
 
 - Email verification is not part of the current end-to-end manual test flow yet.
-- Passive same-email Google/password auto-linking by email is not a supported
-  manual test case. Use the explicit in-session `Connect Google Calendar` path
-  instead.

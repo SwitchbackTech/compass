@@ -152,6 +152,19 @@ Conflict contract (Google account already owned by another Compass user):
 }
 ```
 
+Conflict contract (Google account email does not match the active Compass user):
+
+- status code: `409 CONFLICT`
+- payload shape:
+
+```json
+{
+  "result": "User not connected",
+  "code": "GOOGLE_CONNECT_EMAIL_MISMATCH",
+  "message": "Google account email does not match the signed-in Compass account"
+}
+```
+
 Operational notes:
 
 - conflict exits before credential persistence, so no sync restart is triggered

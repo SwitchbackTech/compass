@@ -33,16 +33,18 @@ Compass still treats the MongoDB `userId` as the canonical identity.
 SuperTokens is configured so that:
 
 - password sign-up ensures there is an external user id mapping, and that external id is a Mongo `ObjectId` string
-- backend user upserts always write against the session user id (`response.session.getUserId()`)
-- Google sign-in/up uses `google.googleId` lookup for existing Compass users before creating a new id
+- backend user upserts can canonicalize to an existing Compass user id by normalized email, then remap the auth session to that Compass id when needed
+- Google sign-in/up resolves a canonical Compass user by `google.googleId` first, then by normalized email as fallback before creating a new id
 
 Important constraints:
 
 - Compass no longer relies on SuperTokens `AccountLinking` for the
   password-plus-Google flow.
-- Google ownership is explicit and keyed by `google.googleId`, not by email.
-- Logged-out same-email Google/password identities are still not auto-merged by
-  email.
+- `google.googleId` remains the strongest ownership signal for Google-linked
+  accounts.
+- Email fallback only applies when no existing `google.googleId` owner is found.
+- In-session Google connect still enforces both ownership and email-match
+  checks; mismatch paths fail with `409` instead of reassigning ownership.
 
 ## Auth Flow Overview
 
@@ -284,7 +286,22 @@ Response contract:
 ```json
 {
   "result": "User not connected",
+  "code": "GOOGLE_ACCOUNT_ALREADY_CONNECTED",
   "message": "Google account is already connected to another Compass user"
+}
+```
+
+Email mismatch contract (same endpoint, when OAuth email does not match the
+active Compass user email):
+
+- status: `409 CONFLICT`
+- payload shape:
+
+```json
+{
+  "result": "User not connected",
+  "code": "GOOGLE_CONNECT_EMAIL_MISMATCH",
+  "message": "Google account email does not match the signed-in Compass account"
 }
 ```
 
@@ -309,7 +326,9 @@ API overrides:
 - `signUpPOST()` extracts `email` and `name` from form fields and calls `userService.upsertUserFromAuth()`
 - `signInPOST()` extracts `email` and calls `userService.upsertUserFromAuth()`
 
-This is the step that makes the Compass user record line up with the SuperTokens session user.
+This is the step that aligns the Compass user record with the canonical user
+for that email and remaps the session when SuperTokens issued a different
+temporary recipe user id.
 
 ### User upsert behavior
 
@@ -317,12 +336,15 @@ This is the step that makes the Compass user record line up with the SuperTokens
 
 - validates the session user id as a Mongo `ObjectId`
 - normalizes email casing and whitespace
+- reuses an existing Compass user by normalized email before falling back to the
+  requested session user id
 - keeps an existing Google payload unless a new one is provided
 - keeps the original `signedUpAt` on updates
 - updates `lastLoggedInAt`
 - creates default priorities only for a new Compass user
 
-For repeated auth on the same session user id, this writes to the existing Compass user instead of creating a duplicate record.
+For repeated auth on the same user or same normalized email, this writes to the
+existing Compass user instead of creating a duplicate record.
 
 ## Reset Password Delivery
 
@@ -369,7 +391,8 @@ session-linking failure mode.
 
 - The rollout gate is not limited to `lastKnownEmail`; any `?auth=` URL currently enables the auth UI.
 - Reset password links always target the `/day` route and require a valid `FRONTEND_URL` in backend env.
-- Logged-out same-email Google/password identities are not auto-merged by email.
+- Logged-out same-email Google/password identities can now reuse the existing
+  Compass user when no conflicting `google.googleId` owner exists.
 - A Google account can belong to only one Compass user. In-session connect
   returns a conflict if the Google account is already attached elsewhere.
 - Dated-route redirects preserve existing query params (including `auth=verify`), but `useAuthUrlParam()` only handles `login`, `signup`, `forgot`, and `reset`.
