@@ -97,7 +97,9 @@ class EventController {
       const deleteAllRes = await eventService.deleteAllByUser(userToRemove);
       res.promise(deleteAllRes);
     } catch (e) {
-      res.promise(Promise.reject(e));
+      res.promise(
+        Promise.reject(e instanceof Error ? e : new Error(String(e))),
+      );
     }
   };
 
@@ -107,7 +109,9 @@ class EventController {
       const deleteResponse = await eventService.deleteMany(userId, req.body);
       res.promise(deleteResponse);
     } catch (e) {
-      res.promise(Promise.reject(e));
+      res.promise(
+        Promise.reject(e instanceof Error ? e : new Error(String(e))),
+      );
     }
   };
 
@@ -118,7 +122,9 @@ class EventController {
       const response = await eventService.readById(userId, eventId);
       res.promise(response);
     } catch (e) {
-      res.promise(Promise.reject(e));
+      res.promise(
+        Promise.reject(e instanceof Error ? e : new Error(String(e))),
+      );
     }
   };
 
@@ -128,7 +134,9 @@ class EventController {
       const usersEvents = await eventService.readAll(userId, req.query);
       res.promise(usersEvents);
     } catch (e) {
-      res.promise(Promise.reject(e));
+      res.promise(
+        Promise.reject(e instanceof Error ? e : new Error(String(e))),
+      );
     }
   };
 
@@ -139,7 +147,9 @@ class EventController {
       const result = await eventService.reorder(userId, newOrder);
       res.promise(result);
     } catch (e) {
-      res.promise(Promise.reject(e));
+      res.promise(
+        Promise.reject(e instanceof Error ? e : new Error(String(e))),
+      );
     }
   };
 
