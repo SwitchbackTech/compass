@@ -5,7 +5,7 @@ export type GoogleUiState = "checking" | "repairing" | GoogleConnectionState;
 
 export type CommandActionIcon = "CloudArrowUpIcon";
 
-export type DotColor = "muted" | "warning" | "error";
+export type IconColor = "muted" | "warning" | "error";
 
 export type GoogleUiConfig = {
   commandAction: {
@@ -19,7 +19,7 @@ export type GoogleUiConfig = {
     tooltip: string;
     tone?: "default" | "warning";
     isDisabled: boolean;
-    dotColor?: DotColor;
+    iconColor?: IconColor;
     dialog?: {
       title: string;
       description: string;

@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { type GoogleUiConfig } from "@web/auth/hooks/google/useConnectGoogle/useConnectGoogle.types";
 import { type CompassSession } from "@web/auth/session/session.types";
 import { type AuthView } from "@web/components/AuthModal/hooks/useAuthModal";
-import { SyncStatusDot } from "./SyncStatusDot";
+import { HeaderInfoIcon } from "./HeaderInfoIcon";
 
 interface MockConnectGoogleResult {
   commandAction: GoogleUiConfig["commandAction"];
@@ -46,13 +46,10 @@ jest.mock("@web/components/AuthModal/hooks/useAuthModal", () => ({
   }),
 }));
 
-jest.mock("@web/components/Icons/CircleIcon", () => ({
-  CircleIcon: ({ className }: { className?: string }) => (
-    <span aria-label="sync-dot-icon">{className ?? ""}</span>
-  ),
-}));
-
 jest.mock("@phosphor-icons/react", () => ({
+  InfoIcon: ({ className }: { className?: string }) => (
+    <span aria-label="header-info-icon">{className ?? ""}</span>
+  ),
   SpinnerGap: () => <span aria-label="spinner-gap" />,
 }));
 
@@ -79,7 +76,7 @@ jest.mock("@web/components/Tooltip/TooltipWrapper", () => ({
   ),
 }));
 
-describe("SyncStatusDot", () => {
+describe("HeaderInfoIcon", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseSession.mockReturnValue({
@@ -95,7 +92,7 @@ describe("SyncStatusDot", () => {
       },
       isRepairing: false,
       sidebarStatus: {
-        dotColor: "error",
+        iconColor: "error",
         icon: "DotIcon",
         isDisabled: false,
         onSelect: mockGoogleOnSelect,
@@ -109,7 +106,7 @@ describe("SyncStatusDot", () => {
     const user = userEvent.setup();
     mockShouldShowAnonymousCalendarChangeSignUpPrompt.mockReturnValue(true);
 
-    render(<SyncStatusDot />);
+    render(<HeaderInfoIcon />);
 
     expect(
       screen.getByRole("status", {
@@ -123,10 +120,10 @@ describe("SyncStatusDot", () => {
       }),
     );
 
-    expect(screen.getByLabelText("sync-dot-icon")).toHaveTextContent(
+    expect(screen.getByLabelText("header-info-icon")).toHaveTextContent(
       "motion-safe:animate-sync-dot-pulse",
     );
-    expect(screen.getByLabelText("sync-dot-icon")).toHaveTextContent(
+    expect(screen.getByLabelText("header-info-icon")).toHaveTextContent(
       "motion-safe:group-hover:animate-none",
     );
     expect(mockOpenModal).toHaveBeenCalledWith("signUp");
@@ -136,7 +133,7 @@ describe("SyncStatusDot", () => {
   it("falls back to the existing Google status when the prompt is inactive", async () => {
     const user = userEvent.setup();
 
-    render(<SyncStatusDot />);
+    render(<HeaderInfoIcon />);
 
     expect(
       screen.getByRole("status", {
@@ -150,7 +147,7 @@ describe("SyncStatusDot", () => {
       }),
     );
 
-    expect(screen.getByLabelText("sync-dot-icon")).not.toHaveTextContent(
+    expect(screen.getByLabelText("header-info-icon")).not.toHaveTextContent(
       "motion-safe:animate-sync-dot-pulse",
     );
     expect(mockGoogleOnSelect).toHaveBeenCalled();

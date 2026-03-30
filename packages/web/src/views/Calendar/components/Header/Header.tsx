@@ -2,9 +2,9 @@ import { type FC } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import { getCalendarHeadingLabel } from "@web/common/utils/datetime/web.date.util";
+import { HeaderInfoIcon } from "@web/components/HeaderInfoIcon/HeaderInfoIcon";
 import { SidebarIcon } from "@web/components/Icons/Sidebar";
 import { SelectView } from "@web/components/SelectView/SelectView";
-import { SyncStatusDot } from "@web/components/SyncStatusDot/SyncStatusDot";
 import { Text } from "@web/components/Text";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
@@ -62,7 +62,7 @@ export const Header: FC<Props> = ({ scrollUtil, today, weekProps }) => {
           </div>
         </div>
         <div className="z-[2] flex h-full items-center justify-between">
-          <SyncStatusDot />
+          <HeaderInfoIcon />
           <SelectView />
           <div>
             <div className="mr-5 flex items-center justify-between">

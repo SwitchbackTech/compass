@@ -349,7 +349,7 @@ describe("useConnectGoogle", () => {
     );
     expect(result.current.commandAction.isDisabled).toBe(true);
     expect(result.current.sidebarStatus.icon).toBe("DotIcon");
-    expect(result.current.sidebarStatus.dotColor).toBe("warning");
+    expect(result.current.sidebarStatus.iconColor).toBe("warning");
     expect(result.current.sidebarStatus.tone).toBe("warning");
     expect(result.current.sidebarStatus.tooltip).toBe(
       "Repairing Google Calendar in the background.",

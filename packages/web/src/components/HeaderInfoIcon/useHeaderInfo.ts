@@ -10,13 +10,13 @@ import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 
 const ANONYMOUS_SIGN_UP_TOOLTIP = "Sign up to save your changes.";
 
-export interface SyncStatusDotState {
+interface HeaderInfo {
   isAnonymousSignUpPrompt: boolean;
   isRepairing: boolean;
   sidebarStatus: GoogleUiConfig["sidebarStatus"];
 }
 
-export const useSyncStatusDotState = (): SyncStatusDotState => {
+export const useHeaderInfo = (): HeaderInfo => {
   const { authenticated } = useSession();
   const { openModal } = useAuthModal();
   const googleStatus = useConnectGoogle();
@@ -35,7 +35,7 @@ export const useSyncStatusDotState = (): SyncStatusDotState => {
       isAnonymousSignUpPrompt: true,
       isRepairing: false,
       sidebarStatus: {
-        dotColor: "warning" as const,
+        iconColor: "warning" as const,
         icon: "DotIcon" as const,
         isDisabled: false,
         onSelect: handleOpenSignUp,

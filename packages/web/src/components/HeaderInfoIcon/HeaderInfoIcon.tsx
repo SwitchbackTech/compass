@@ -1,11 +1,11 @@
-import { type DotColor } from "@web/auth/hooks/google/useConnectGoogle/useConnectGoogle.types";
+import { InfoIcon } from "@phosphor-icons/react";
+import { type IconColor } from "@web/auth/hooks/google/useConnectGoogle/useConnectGoogle.types";
 import { theme } from "@web/common/styles/theme";
-import { CircleIcon } from "@web/components/Icons/CircleIcon";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { StatusDotPopover } from "./SyncStatusDotPopover";
-import { useSyncStatusDotState } from "./useSyncStatusDotState";
+import { StatusDotPopover } from "./HeaderInfoIconPopover";
+import { useHeaderInfo } from "./useHeaderInfo";
 
-const DOT_COLOR_MAP: Record<DotColor, string> = {
+const ICON_COLOR_MAP: Record<IconColor, string> = {
   muted: theme.color.text.darkPlaceholder,
   warning: theme.color.status.warning,
   error: theme.color.status.error,
@@ -16,29 +16,28 @@ const ANONYMOUS_PROMPT_ICON_CLASSNAME =
 const DOT_BUTTON_CLASSNAME = "inline-flex h-6 w-6 items-center justify-center";
 const ANONYMOUS_PROMPT_WRAPPER_CLASSNAME = `${DOT_BUTTON_CLASSNAME} group rounded-full transition-colors duration-200 ease-out hover:bg-white/20 hover:ring-1 hover:ring-white/20`;
 
-export const SyncStatusDot = () => {
+export const HeaderInfoIcon = () => {
   const { isAnonymousSignUpPrompt, sidebarStatus, isRepairing } =
-    useSyncStatusDotState();
+    useHeaderInfo();
 
   // Only render when user attention is needed (warning or error states)
   if (
-    sidebarStatus.dotColor !== "warning" &&
-    sidebarStatus.dotColor !== "error"
+    sidebarStatus.iconColor !== "warning" &&
+    sidebarStatus.iconColor !== "error"
   ) {
     return null;
   }
 
-  const dotColor = DOT_COLOR_MAP[sidebarStatus.dotColor];
+  const iconColor = ICON_COLOR_MAP[sidebarStatus.iconColor];
   const iconClassName = isAnonymousSignUpPrompt
     ? ANONYMOUS_PROMPT_ICON_CLASSNAME
     : undefined;
   const icon = (
-    <CircleIcon
+    <InfoIcon
       aria-hidden="true"
       className={iconClassName}
-      style={{
-        color: dotColor,
-      }}
+      style={{ color: iconColor }}
+      size={15}
     />
   );
   const wrappedIcon = isAnonymousSignUpPrompt ? (
