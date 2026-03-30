@@ -35,7 +35,6 @@ describe("SubCalendarList", () => {
   it("renders the signed in email without the temporary account tooltip", () => {
     mockUseUser.mockReturnValue({
       email: "signed-in@example.com",
-      isLoadingUser: false,
     });
 
     render(<SubCalendarList />);
@@ -55,7 +54,6 @@ describe("SubCalendarList", () => {
 
     mockUseUser.mockReturnValue({
       email: undefined,
-      isLoadingUser: false,
     });
 
     render(<SubCalendarList />);
@@ -81,7 +79,6 @@ describe("SubCalendarList", () => {
 
     mockUseUser.mockReturnValue({
       email: undefined,
-      isLoadingUser: false,
     });
 
     render(<SubCalendarList />);

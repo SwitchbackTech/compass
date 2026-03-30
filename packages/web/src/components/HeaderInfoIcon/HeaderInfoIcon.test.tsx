@@ -56,7 +56,7 @@ jest.mock("@phosphor-icons/react", () => ({
   InfoIcon: ({ className }: { className?: string }) => (
     <span aria-label="header-info-icon">{className ?? ""}</span>
   ),
-  SpinnerGap: () => <span aria-label="spinner-gap" />,
+  SpinnerGapIcon: () => <span aria-label="spinner-gap" />,
 }));
 
 jest.mock("@web/components/Tooltip/TooltipWrapper", () => ({

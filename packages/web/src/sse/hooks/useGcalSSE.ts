@@ -3,11 +3,13 @@ import { useDispatch } from "react-redux";
 import {
   GOOGLE_REVOKED,
   IMPORT_GCAL_END,
+  IMPORT_GCAL_START,
   USER_METADATA,
 } from "@core/constants/sse.constants";
 import { type ImportGCalEndPayload } from "@core/types/sse.types";
 import { type UserMetadata } from "@core/types/user.types";
 import { handleGoogleRevoked } from "@web/auth/google/google.auth.util";
+import { isGoogleCalendarImportActive } from "@web/auth/session/user-metadata.import.util";
 import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
 import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
@@ -66,18 +68,15 @@ export const useGcalSSE = () => {
     handleGoogleRevoked();
   }, [dispatch]);
 
+  const onImportStart = useCallback(() => {
+    dispatch(importGCalSlice.actions.request());
+  }, [dispatch]);
+
   const onMetadataFetch = useCallback(
     (metadata: UserMetadata) => {
-      const importStatus = metadata.sync?.importGCal;
-      const connectionState = metadata.google?.connectionState;
-      const shouldAutoImport =
-        importStatus === "RESTART" &&
-        connectionState !== "RECONNECT_REQUIRED" &&
-        connectionState !== "NOT_CONNECTED";
-
       dispatch(userMetadataSlice.actions.set(metadata));
 
-      if (shouldAutoImport) {
+      if (isGoogleCalendarImportActive(metadata)) {
         dispatch(importGCalSlice.actions.request());
       }
     },
@@ -96,6 +95,10 @@ export const useGcalSSE = () => {
       onGoogleRevoked();
     };
 
+    const importStartHandler = () => {
+      onImportStart();
+    };
+
     const userMetadataHandler = (e: Event) => {
       const metadata = JSON.parse(
         String((e as MessageEvent).data),
@@ -103,14 +106,16 @@ export const useGcalSSE = () => {
       onMetadataFetch(metadata);
     };
 
+    sseEmitter.on(IMPORT_GCAL_START, importStartHandler);
     sseEmitter.on(IMPORT_GCAL_END, importEndHandler);
     sseEmitter.on(GOOGLE_REVOKED, googleRevokedHandler);
     sseEmitter.on(USER_METADATA, userMetadataHandler);
 
     return () => {
+      sseEmitter.off(IMPORT_GCAL_START, importStartHandler);
       sseEmitter.off(IMPORT_GCAL_END, importEndHandler);
       sseEmitter.off(GOOGLE_REVOKED, googleRevokedHandler);
       sseEmitter.off(USER_METADATA, userMetadataHandler);
     };
-  }, [onImportEnd, onGoogleRevoked, onMetadataFetch]);
+  }, [onImportEnd, onImportStart, onGoogleRevoked, onMetadataFetch]);
 };

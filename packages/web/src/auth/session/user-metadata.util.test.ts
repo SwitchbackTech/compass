@@ -47,6 +47,43 @@ describe("refreshUserMetadata", () => {
     expect(getDispatchMock()).toHaveBeenCalledTimes(2);
   });
 
+  it("starts background import state when metadata says full import is active", async () => {
+    const metadata = {
+      google: {
+        connectionState: "IMPORTING" as const,
+      },
+      sync: {
+        importGCal: "IMPORTING" as const,
+      },
+    };
+    api.getMetadata.mockResolvedValue(metadata);
+
+    await refreshUserMetadata();
+
+    expect(getDispatchMock()).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({ type: "async/importGCal/request" }),
+    );
+  });
+
+  it("does not start background import state when Google is disconnected", async () => {
+    const metadata = {
+      google: {
+        connectionState: "NOT_CONNECTED" as const,
+      },
+      sync: {
+        importGCal: "RESTART" as const,
+      },
+    };
+    api.getMetadata.mockResolvedValue(metadata);
+
+    await refreshUserMetadata();
+
+    expect(getDispatchMock()).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "async/importGCal/request" }),
+    );
+  });
+
   it("clears metadata when the request is unauthorized", async () => {
     api.getMetadata.mockRejectedValue({
       response: {

@@ -7,7 +7,6 @@ describe("useUser", () => {
     const mockUser = {
       userId: "user123",
       email: "test@example.com",
-      isLoadingUser: false,
     };
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <UserContext.Provider value={mockUser}>{children}</UserContext.Provider>
