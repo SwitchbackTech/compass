@@ -2,7 +2,7 @@ import { test } from "@playwright/test";
 import {
   createEventTitle,
   expectSomedayEventVisible,
-  fillTitleAndSaveWithKeyboard,
+  fillTitleAndSaveEventForm,
   openSomedayEventFormWithKeyboard,
   prepareCalendarPage,
 } from "../utils/event-test-utils";
@@ -16,7 +16,7 @@ test("should create a someday event using keyboard interaction", async ({
 
   const title = createEventTitle("Someday Event");
   await openSomedayEventFormWithKeyboard(page);
-  await fillTitleAndSaveWithKeyboard(page, title);
+  await fillTitleAndSaveEventForm(page, title);
 
   await expectSomedayEventVisible(page, title);
 });

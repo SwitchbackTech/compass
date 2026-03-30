@@ -4,7 +4,7 @@ import {
   deleteEventWithKeyboard,
   expectAllDayEventMissing,
   expectAllDayEventVisible,
-  fillTitleAndSaveWithKeyboard,
+  fillTitleAndSaveEventForm,
   openAllDayEventFormWithKeyboard,
   openEventForEditingWithKeyboard,
   prepareCalendarPage,
@@ -19,7 +19,7 @@ test("should delete an all-day event using keyboard interaction", async ({
 
   const title = createEventTitle("All-Day Event");
   await openAllDayEventFormWithKeyboard(page);
-  await fillTitleAndSaveWithKeyboard(page, title);
+  await fillTitleAndSaveEventForm(page, title);
   await expectAllDayEventVisible(page, title);
   await page.waitForTimeout(1000);
 

@@ -2,7 +2,7 @@ import { test } from "@playwright/test";
 import {
   createEventTitle,
   expectAllDayEventVisible,
-  fillTitleAndSaveWithMouse,
+  fillTitleAndSaveEventForm,
   openAllDayEventFormWithMouse,
   prepareCalendarPage,
 } from "../utils/event-test-utils";
@@ -19,7 +19,7 @@ test("should create an all-day event using mouse interaction", async ({
 
   const title = createEventTitle("All-Day Event");
   await openAllDayEventFormWithMouse(page);
-  await fillTitleAndSaveWithMouse(page, title);
+  await fillTitleAndSaveEventForm(page, title);
 
   await expectAllDayEventVisible(page, title);
 });

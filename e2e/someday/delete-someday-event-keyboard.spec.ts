@@ -4,7 +4,7 @@ import {
   deleteEventWithKeyboard,
   expectSomedayEventMissing,
   expectSomedayEventVisible,
-  fillTitleAndSaveWithKeyboard,
+  fillTitleAndSaveEventForm,
   openEventForEditingWithKeyboard,
   openSomedayEventFormWithKeyboard,
   prepareCalendarPage,
@@ -19,7 +19,7 @@ test("should delete a someday event using keyboard interaction", async ({
 
   const title = createEventTitle("Someday Event");
   await openSomedayEventFormWithKeyboard(page);
-  await fillTitleAndSaveWithKeyboard(page, title);
+  await fillTitleAndSaveEventForm(page, title);
   await expectSomedayEventVisible(page, title);
 
   await openEventForEditingWithKeyboard(page, title);

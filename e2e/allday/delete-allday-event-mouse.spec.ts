@@ -4,7 +4,7 @@ import {
   deleteEventWithMouse,
   expectAllDayEventMissing,
   expectAllDayEventVisible,
-  fillTitleAndSaveWithMouse,
+  fillTitleAndSaveEventForm,
   openAllDayEventFormWithMouse,
   openEventForEditingWithMouse,
   prepareCalendarPage,
@@ -22,7 +22,7 @@ test("should delete an all-day event using mouse interaction", async ({
 
   const title = createEventTitle("All-Day Event");
   await openAllDayEventFormWithMouse(page);
-  await fillTitleAndSaveWithMouse(page, title);
+  await fillTitleAndSaveEventForm(page, title);
   await expectAllDayEventVisible(page, title);
 
   await openEventForEditingWithMouse(page, title);

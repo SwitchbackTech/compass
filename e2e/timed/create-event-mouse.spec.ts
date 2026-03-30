@@ -2,7 +2,7 @@ import { test } from "@playwright/test";
 import {
   createEventTitle,
   expectTimedEventVisible,
-  fillTitleAndSaveWithMouse,
+  fillTitleAndSaveEventForm,
   openTimedEventFormWithMouse,
   prepareCalendarPage,
 } from "../utils/event-test-utils";
@@ -19,7 +19,7 @@ test("should create a timed event using mouse interaction", async ({
 
   const title = createEventTitle("Timed Event");
   await openTimedEventFormWithMouse(page);
-  await fillTitleAndSaveWithMouse(page, title);
+  await fillTitleAndSaveEventForm(page, title);
 
   await expectTimedEventVisible(page, title);
 });

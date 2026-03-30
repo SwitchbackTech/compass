@@ -233,23 +233,18 @@ export const clickGridCenter = async (page: Page, locator: Locator) => {
  * tab matches the accessible UI and stays stable. Shortcut submit is covered in
  * EventForm unit tests.
  */
-const fillTitleAndSaveEventForm = async (page: Page, title: string) => {
+export const fillTitleAndSaveEventForm = async (page: Page, title: string) => {
   const titleInput = getFormTitleInput(page);
   await expect(titleInput).toBeVisible({ timeout: FORM_TIMEOUT });
   await titleInput.fill(title);
-  await page.getByRole("form").getByRole("tab", { name: "Save" }).click();
+  const saveTab = page.getByRole("form").getByRole("tab", { name: "Save" });
+  await saveTab.scrollIntoViewIfNeeded();
+  // Save often sits below the fold; Playwright click() can still refuse when the tab is
+  // outside the viewport (CI). Dispatch the DOM click so React handlers run reliably.
+  await saveTab.evaluate((el) => {
+    (el as HTMLElement).click();
+  });
   await titleInput.waitFor({ state: "hidden", timeout: FORM_TIMEOUT });
-};
-
-export const fillTitleAndSaveWithMouse = async (page: Page, title: string) => {
-  await fillTitleAndSaveEventForm(page, title);
-};
-
-export const fillTitleAndSaveWithKeyboard = async (
-  page: Page,
-  title: string,
-) => {
-  await fillTitleAndSaveEventForm(page, title);
 };
 
 export const openTimedEventFormWithMouse = async (page: Page) => {

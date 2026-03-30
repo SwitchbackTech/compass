@@ -3,7 +3,7 @@ import {
   createEventTitle,
   expectAllDayEventMissing,
   expectAllDayEventVisible,
-  fillTitleAndSaveWithMouse,
+  fillTitleAndSaveEventForm,
   openAllDayEventFormWithMouse,
   openEventForEditingWithMouse,
   prepareCalendarPage,
@@ -22,13 +22,13 @@ test("should update an all-day event using mouse interaction", async ({
 
   const title = createEventTitle("All-Day Event");
   await openAllDayEventFormWithMouse(page);
-  await fillTitleAndSaveWithMouse(page, title);
+  await fillTitleAndSaveEventForm(page, title);
   await expectAllDayEventVisible(page, title);
 
   await openEventForEditingWithMouse(page, title);
 
   const updatedTitle = updateEventTitle("All-Day Event");
-  await fillTitleAndSaveWithMouse(page, updatedTitle);
+  await fillTitleAndSaveEventForm(page, updatedTitle);
 
   await expectAllDayEventVisible(page, updatedTitle);
   await expectAllDayEventMissing(page, title);
