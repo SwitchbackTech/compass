@@ -6,11 +6,15 @@ import {
   markGoogleAsRevoked,
 } from "../google/google.auth.state";
 import {
+  clearAnonymousCalendarChangeSignUpPrompt,
   clearAuthenticationState,
   getAuthState,
   getLastKnownEmail,
   hasUserEverAuthenticated,
+  markAnonymousCalendarChangeForSignUpPrompt,
   markUserAsAuthenticated,
+  shouldShowAnonymousCalendarChangeSignUpPrompt,
+  subscribeToAuthState,
   updateAuthState,
 } from "./auth.state.util";
 
@@ -39,7 +43,10 @@ describe("auth-state.util", () => {
       localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(testState));
 
       const state = getAuthState();
-      expect(state).toEqual(testState);
+      expect(state).toEqual({
+        hasAuthenticated: true,
+        shouldPromptSignUpAfterAnonymousCalendarChange: false,
+      });
     });
 
     it("should migrate legacy stored state from isGoogleAuthenticated", () => {
@@ -48,7 +55,10 @@ describe("auth-state.util", () => {
         JSON.stringify({ isGoogleAuthenticated: true }),
       );
 
-      expect(getAuthState()).toEqual({ hasAuthenticated: true });
+      expect(getAuthState()).toEqual({
+        hasAuthenticated: true,
+        shouldPromptSignUpAfterAnonymousCalendarChange: false,
+      });
     });
 
     it("should handle invalid JSON gracefully", () => {
@@ -73,7 +83,12 @@ describe("auth-state.util", () => {
 
       const stored = localStorage.getItem(STORAGE_KEYS.AUTH);
       expect(stored).toBeTruthy();
-      const parsed = JSON.parse(stored!);
+      const parsed: unknown = JSON.parse(stored ?? "{}");
+      expect(typeof parsed).toBe("object");
+      expect(parsed).not.toBeNull();
+      if (typeof parsed !== "object" || parsed === null) {
+        throw new Error("Expected parsed auth state to be an object");
+      }
       expect(parsed.hasAuthenticated).toBe(true);
     });
 
@@ -94,6 +109,7 @@ describe("auth-state.util", () => {
       expect(getAuthState()).toEqual({
         hasAuthenticated: true,
         lastKnownEmail: "foo@bar.com",
+        shouldPromptSignUpAfterAnonymousCalendarChange: false,
       });
     });
 
@@ -143,6 +159,37 @@ describe("auth-state.util", () => {
       expect(() => markUserAsAuthenticated()).not.toThrow();
 
       setItemSpy.mockRestore();
+    });
+  });
+
+  describe("anonymous calendar sign-up prompt", () => {
+    it("defaults the prompt flag to false for legacy state", () => {
+      localStorage.setItem(
+        STORAGE_KEYS.AUTH,
+        JSON.stringify({ hasAuthenticated: false }),
+      );
+
+      expect(shouldShowAnonymousCalendarChangeSignUpPrompt()).toBe(false);
+    });
+
+    it("marks and clears the prompt flag", () => {
+      markAnonymousCalendarChangeForSignUpPrompt();
+      expect(shouldShowAnonymousCalendarChangeSignUpPrompt()).toBe(true);
+
+      clearAnonymousCalendarChangeSignUpPrompt();
+      expect(shouldShowAnonymousCalendarChangeSignUpPrompt()).toBe(false);
+    });
+
+    it("notifies subscribers when auth state changes", () => {
+      const listener = jest.fn();
+      const unsubscribe = subscribeToAuthState(listener);
+
+      markAnonymousCalendarChangeForSignUpPrompt();
+      clearAnonymousCalendarChangeSignUpPrompt();
+
+      expect(listener).toHaveBeenCalledTimes(2);
+
+      unsubscribe();
     });
   });
 

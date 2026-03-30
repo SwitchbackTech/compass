@@ -14,13 +14,13 @@ import {
   useRole,
 } from "@floating-ui/react";
 import { DotOutlineIcon } from "@phosphor-icons/react";
-import { useConnectGoogle } from "@web/auth/hooks/google/useConnectGoogle/useConnectGoogle";
 import { type DotColor } from "@web/auth/hooks/google/useConnectGoogle/useConnectGoogle.types";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import { theme } from "@web/common/styles/theme";
 import { SpinnerIcon } from "@web/components/Icons/Spinner";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+import { useSyncStatusDotState } from "./useSyncStatusDotState";
 
 const DOT_COLOR_MAP: Record<DotColor, string> = {
   muted: theme.color.text.darkPlaceholder,
@@ -121,7 +121,7 @@ const StatusDotPopover = ({
 };
 
 export const SyncStatusDot = () => {
-  const { sidebarStatus, isRepairing } = useConnectGoogle();
+  const { sidebarStatus, isRepairing } = useSyncStatusDotState();
 
   // Only render when user attention is needed (warning or error states)
   if (

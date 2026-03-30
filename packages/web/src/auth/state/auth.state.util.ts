@@ -6,6 +6,12 @@ import {
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { clearGoogleRevokedState } from "../google/google.auth.state";
 
+const authStateListeners = new Set<() => void>();
+
+function emitAuthStateChange(): void {
+  authStateListeners.forEach((listener) => listener());
+}
+
 function normalizeStoredAuthState(parsed: unknown): AuthState {
   if (typeof parsed !== "object" || parsed === null) {
     return DEFAULT_AUTH_STATE;
@@ -15,6 +21,7 @@ function normalizeStoredAuthState(parsed: unknown): AuthState {
     isGoogleAuthenticated?: unknown;
     hasAuthenticated?: unknown;
     lastKnownEmail?: unknown;
+    shouldPromptSignUpAfterAnonymousCalendarChange?: unknown;
   };
 
   // Migrate legacy isGoogleAuthenticated to hasAuthenticated
@@ -28,6 +35,8 @@ function normalizeStoredAuthState(parsed: unknown): AuthState {
   const migratedState = {
     hasAuthenticated,
     lastKnownEmail: legacyState.lastKnownEmail,
+    shouldPromptSignUpAfterAnonymousCalendarChange:
+      legacyState.shouldPromptSignUpAfterAnonymousCalendarChange,
   };
 
   const result = AuthStateSchema.safeParse(migratedState);
@@ -44,7 +53,7 @@ export function getAuthState(): AuthState {
   try {
     const stored = localStorage.getItem(STORAGE_KEYS.AUTH);
     if (stored) {
-      const parsed = JSON.parse(stored);
+      const parsed: unknown = JSON.parse(stored);
       return normalizeStoredAuthState(parsed);
     }
 
@@ -72,6 +81,7 @@ export function updateAuthState(updates: Partial<AuthState>): void {
     const result = AuthStateSchema.safeParse(updated);
     if (result.success) {
       localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(result.data));
+      emitAuthStateChange();
     }
   } catch {
     // Silently fail if localStorage is unavailable
@@ -129,7 +139,47 @@ export function clearAuthenticationState(): void {
 
   try {
     localStorage.removeItem(STORAGE_KEYS.AUTH);
+    emitAuthStateChange();
   } catch {
     // Silently fail if localStorage is unavailable
   }
+}
+
+export function clearAnonymousCalendarChangeSignUpPrompt(): void {
+  updateAuthState({ shouldPromptSignUpAfterAnonymousCalendarChange: false });
+}
+
+export function markAnonymousCalendarChangeForSignUpPrompt(): void {
+  updateAuthState({ shouldPromptSignUpAfterAnonymousCalendarChange: true });
+}
+
+export function shouldShowAnonymousCalendarChangeSignUpPrompt(): boolean {
+  try {
+    return getAuthState().shouldPromptSignUpAfterAnonymousCalendarChange;
+  } catch {
+    return false;
+  }
+}
+
+export function subscribeToAuthState(listener: () => void): () => void {
+  authStateListeners.add(listener);
+
+  if (typeof window === "undefined") {
+    return () => {
+      authStateListeners.delete(listener);
+    };
+  }
+
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key === STORAGE_KEYS.AUTH) {
+      listener();
+    }
+  };
+
+  window.addEventListener("storage", handleStorage);
+
+  return () => {
+    authStateListeners.delete(listener);
+    window.removeEventListener("storage", handleStorage);
+  };
 }

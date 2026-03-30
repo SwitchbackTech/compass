@@ -3,7 +3,10 @@ import type * as GoogleAuthUtil from "@web/auth/google/google.auth.util";
 import { syncPendingLocalEvents } from "@web/auth/google/google.auth.util";
 import { useSession } from "@web/auth/hooks/session/useSession";
 import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
-import { markUserAsAuthenticated } from "@web/auth/state/auth.state.util";
+import {
+  clearAnonymousCalendarChangeSignUpPrompt,
+  markUserAsAuthenticated,
+} from "@web/auth/state/auth.state.util";
 import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { useCompleteAuthentication } from "./useCompleteAuthentication";
@@ -21,6 +24,7 @@ jest.mock("@web/auth/session/user-metadata.util", () => ({
   refreshUserMetadata: jest.fn(),
 }));
 jest.mock("@web/auth/state/auth.state.util", () => ({
+  clearAnonymousCalendarChangeSignUpPrompt: jest.fn(),
   markUserAsAuthenticated: jest.fn(),
 }));
 jest.mock("@web/store/store.hooks", () => ({
@@ -36,6 +40,10 @@ const mockRefreshUserMetadata = refreshUserMetadata as jest.MockedFunction<
 const mockMarkUserAsAuthenticated =
   markUserAsAuthenticated as jest.MockedFunction<
     typeof markUserAsAuthenticated
+  >;
+const mockClearAnonymousCalendarChangeSignUpPrompt =
+  clearAnonymousCalendarChangeSignUpPrompt as jest.MockedFunction<
+    typeof clearAnonymousCalendarChangeSignUpPrompt
   >;
 const mockUseAppDispatch = jest.mocked(useAppDispatch);
 
@@ -59,6 +67,7 @@ describe("useCompleteAuthentication", () => {
 
     await result.current({ email: "test@example.com" });
 
+    expect(mockClearAnonymousCalendarChangeSignUpPrompt).toHaveBeenCalled();
     expect(mockMarkUserAsAuthenticated).toHaveBeenCalledWith(
       "test@example.com",
     );
