@@ -122,5 +122,8 @@ export const useConnectGoogle = () => {
       ? "checking"
       : connectionState;
 
-  return getGoogleConnectionConfig(state, onOpenGoogleAuth, onRepairGoogle);
+  return {
+    ...getGoogleConnectionConfig(state, onOpenGoogleAuth, onRepairGoogle),
+    isRepairing,
+  };
 };

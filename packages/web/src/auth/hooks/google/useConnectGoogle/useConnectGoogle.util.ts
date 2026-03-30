@@ -43,10 +43,18 @@ export const getGoogleConnectionConfig = (
           isDisabled: true,
         },
         sidebarStatus: {
-          icon: "SpinnerIcon",
-          tooltip: "Repairing Google Calendar in the background.",
+          icon: "DotIcon",
+          dotColor: "warning",
+          tooltip: "Google Calendar needs repair. Click to repair.",
           tone: "warning",
           isDisabled: true,
+          dialog: {
+            title: "Calendar sync needs repair",
+            description:
+              "Your Google Calendar has run into a sync issue. Repairing will re-import your recent events to make sure everything is up to date.",
+            repairLabel: "Repair",
+            onRepair: onRepairGoogle,
+          },
         },
       };
     case "NOT_CONNECTED":
@@ -58,7 +66,8 @@ export const getGoogleConnectionConfig = (
           onSelect: onConnectGoogle,
         },
         sidebarStatus: {
-          icon: "CloudArrowUpIcon",
+          icon: "DotIcon",
+          dotColor: "muted",
           tooltip: "Google Calendar not connected. Click to connect.",
           tone: "default",
           isDisabled: false,
@@ -74,7 +83,8 @@ export const getGoogleConnectionConfig = (
           onSelect: onConnectGoogle,
         },
         sidebarStatus: {
-          icon: "LinkBreakIcon",
+          icon: "DotIcon",
+          dotColor: "error",
           tooltip: "Google Calendar needs reconnecting. Click to reconnect.",
           tone: "default",
           isDisabled: false,
@@ -104,11 +114,18 @@ export const getGoogleConnectionConfig = (
           onSelect: onRepairGoogle,
         },
         sidebarStatus: {
-          icon: "CloudWarningIcon",
+          icon: "DotIcon",
+          dotColor: "warning",
           tooltip: "Google Calendar needs repair. Click to repair.",
           tone: "warning",
           isDisabled: false,
-          onSelect: onRepairGoogle,
+          dialog: {
+            title: "Calendar sync needs repair",
+            description:
+              "Your Google Calendar has run into a sync issue. Repairing will re-import your recent events to make sure everything is up to date.",
+            repairLabel: "Repair",
+            onRepair: onRepairGoogle,
+          },
         },
       };
     case "HEALTHY":
@@ -119,7 +136,8 @@ export const getGoogleConnectionConfig = (
           isDisabled: true,
         },
         sidebarStatus: {
-          icon: "LinkIcon",
+          icon: "DotIcon",
+          dotColor: "muted",
           tooltip: "Google Calendar connected.",
           tone: "default",
           isDisabled: true,

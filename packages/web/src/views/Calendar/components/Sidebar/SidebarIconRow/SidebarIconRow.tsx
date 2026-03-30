@@ -1,13 +1,8 @@
-import {
-  CloudArrowUpIcon,
-  CloudWarningIcon,
-  LinkBreakIcon,
-  LinkIcon,
-} from "@phosphor-icons/react";
+import { DotIcon } from "@phosphor-icons/react";
 import { useConnectGoogle } from "@web/auth/hooks/google/useConnectGoogle/useConnectGoogle";
+import { type DotColor } from "@web/auth/hooks/google/useConnectGoogle/useConnectGoogle.types";
 import { useVersionCheck } from "@web/common/hooks/useVersionCheck";
 import { theme } from "@web/common/styles/theme";
-import { type ConnectionStatusIcon } from "@web/common/types/icon.types";
 import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
 import { CalendarIcon } from "@web/components/Icons/Calendar";
 import { CommandIcon } from "@web/components/Icons/Command";
@@ -27,66 +22,12 @@ import {
   LeftIconGroup,
   RightIconGroup,
 } from "@web/views/Calendar/components/Sidebar/styled";
+import { StatusDotPopover } from "./StatusDotPopover";
 
-/**
- * Returns the icon for the current Google connection state.
- * Icons are decorative (aria-hidden) since the parent status container
- * provides the accessible name via aria-label.
- */
-const getGoogleStatusIcon = ({
-  icon,
-  tone = "default",
-}: {
-  icon: ConnectionStatusIcon;
-
-  tone?: "default" | "warning";
-}) => {
-  switch (icon) {
-    case "LinkBreakIcon":
-      return (
-        <LinkBreakIcon
-          aria-hidden="true"
-          color={theme.color.status.error}
-          size={24}
-        />
-      );
-    case "LinkIcon":
-      return (
-        <LinkIcon
-          aria-hidden="true"
-          color={theme.color.text.darkPlaceholder}
-          size={24}
-        />
-      );
-    case "SpinnerIcon":
-      return (
-        <SpinnerIcon
-          aria-hidden="true"
-          color={
-            tone === "warning"
-              ? theme.color.status.warning
-              : theme.color.status.info
-          }
-          size={24}
-        />
-      );
-    case "CloudWarningIcon":
-      return (
-        <CloudWarningIcon
-          aria-hidden="true"
-          color={theme.color.status.warning}
-          size={24}
-        />
-      );
-    case "CloudArrowUpIcon":
-      return (
-        <CloudArrowUpIcon
-          aria-hidden="true"
-          color={theme.color.text.darkPlaceholder}
-          size={24}
-        />
-      );
-  }
+const DOT_COLOR_MAP: Record<DotColor, string> = {
+  muted: theme.color.text.darkPlaceholder,
+  warning: theme.color.status.warning,
+  error: theme.color.status.error,
 };
 
 export const SidebarIconRow = () => {
@@ -95,7 +36,7 @@ export const SidebarIconRow = () => {
   const gCalImport = useAppSelector(selectImportGCalState);
   const isCmdPaletteOpen = useAppSelector(selectIsCmdPaletteOpen);
   const { isUpdateAvailable } = useVersionCheck();
-  const { sidebarStatus } = useConnectGoogle();
+  const { sidebarStatus, isRepairing } = useConnectGoogle();
   const isBackgroundImporting = gCalImport.isProcessing === true;
 
   const handleUpdateReload = () => {
@@ -117,6 +58,8 @@ export const SidebarIconRow = () => {
       </Text>
     );
   };
+
+  const dotColor = DOT_COLOR_MAP[sidebarStatus.dotColor ?? "muted"];
 
   return (
     <IconRow>
@@ -169,16 +112,51 @@ export const SidebarIconRow = () => {
           aria-live="polite"
           aria-label={sidebarStatus.tooltip}
         >
-          <TooltipWrapper
-            description={sidebarStatus.tooltip}
-            disabled={sidebarStatus.isDisabled}
-            onClick={sidebarStatus.onSelect}
-          >
-            {getGoogleStatusIcon({
-              icon: sidebarStatus.icon,
-              tone: sidebarStatus.tone,
-            })}
-          </TooltipWrapper>
+          {sidebarStatus.icon === "SpinnerIcon" ? (
+            <TooltipWrapper
+              description={sidebarStatus.tooltip}
+              disabled={sidebarStatus.isDisabled}
+            >
+              <SpinnerIcon
+                aria-hidden="true"
+                color={
+                  sidebarStatus.tone === "warning"
+                    ? theme.color.status.warning
+                    : theme.color.status.info
+                }
+                size={24}
+              />
+            </TooltipWrapper>
+          ) : sidebarStatus.dialog ? (
+            <StatusDotPopover
+              tooltip={sidebarStatus.tooltip}
+              title={sidebarStatus.dialog.title}
+              description={sidebarStatus.dialog.description}
+              repairLabel={sidebarStatus.dialog.repairLabel}
+              onRepair={sidebarStatus.dialog.onRepair}
+              isRepairing={isRepairing}
+            >
+              <DotIcon
+                aria-hidden="true"
+                color={dotColor}
+                size={24}
+                weight="fill"
+              />
+            </StatusDotPopover>
+          ) : (
+            <TooltipWrapper
+              description={sidebarStatus.tooltip}
+              disabled={sidebarStatus.isDisabled}
+              onClick={sidebarStatus.onSelect}
+            >
+              <DotIcon
+                aria-hidden="true"
+                color={dotColor}
+                size={24}
+                weight="fill"
+              />
+            </TooltipWrapper>
+          )}
         </div>
         {isBackgroundImporting ? (
           <TooltipWrapper description="Importing your calendar events in the background">

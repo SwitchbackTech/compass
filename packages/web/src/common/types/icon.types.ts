@@ -1,6 +1,1 @@
-export type ConnectionStatusIcon =
-  | "CloudArrowUpIcon"
-  | "LinkBreakIcon"
-  | "LinkIcon"
-  | "SpinnerIcon"
-  | "CloudWarningIcon";
+export type ConnectionStatusIcon = "DotIcon" | "SpinnerIcon";

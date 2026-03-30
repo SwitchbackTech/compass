@@ -180,7 +180,7 @@ describe("useConnectGoogle", () => {
     expectGoogleAuthConfig();
     expect(result.current.commandAction.label).toBe("Connect Google Calendar");
     expect(result.current.commandAction.isDisabled).toBe(false);
-    expect(result.current.sidebarStatus.icon).toBe("CloudArrowUpIcon");
+    expect(result.current.sidebarStatus.icon).toBe("DotIcon");
     expect(result.current.sidebarStatus.tooltip).toBe(
       "Google Calendar not connected. Click to connect.",
     );
@@ -211,7 +211,7 @@ describe("useConnectGoogle", () => {
     );
     expect(result.current.commandAction.isDisabled).toBe(true);
     expect(result.current.commandAction.onSelect).toBeUndefined();
-    expect(result.current.sidebarStatus.icon).toBe("LinkIcon");
+    expect(result.current.sidebarStatus.icon).toBe("DotIcon");
     expect(result.current.sidebarStatus.isDisabled).toBe(true);
   });
 
@@ -238,7 +238,7 @@ describe("useConnectGoogle", () => {
     expect(result.current.commandAction.label).toBe(
       "Reconnect Google Calendar",
     );
-    expect(result.current.sidebarStatus.icon).toBe("LinkBreakIcon");
+    expect(result.current.sidebarStatus.icon).toBe("DotIcon");
 
     result.current.commandAction.onSelect?.();
 
@@ -297,12 +297,12 @@ describe("useConnectGoogle", () => {
     expectGoogleAuthConfig();
     expect(result.current.commandAction.label).toBe("Repair Google Calendar");
     expect(result.current.commandAction.isDisabled).toBe(false);
-    expect(result.current.sidebarStatus.icon).toBe("CloudWarningIcon");
+    expect(result.current.sidebarStatus.icon).toBe("DotIcon");
     expect(result.current.sidebarStatus.tooltip).toBe(
       "Google Calendar needs repair. Click to repair.",
     );
 
-    result.current.sidebarStatus.onSelect?.();
+    result.current.sidebarStatus.dialog?.onRepair();
 
     expect(mockSyncApi.importGCal).toHaveBeenCalledWith({ force: true });
     expect(mockDispatch).toHaveBeenCalledWith(
@@ -348,11 +348,11 @@ describe("useConnectGoogle", () => {
       "Repairing Google Calendar…",
     );
     expect(result.current.commandAction.isDisabled).toBe(true);
-    expect(result.current.sidebarStatus.icon).toBe("SpinnerIcon");
+    expect(result.current.sidebarStatus.icon).toBe("DotIcon");
+    expect(result.current.sidebarStatus.dotColor).toBe("warning");
     expect(result.current.sidebarStatus.tone).toBe("warning");
-    expect(result.current.sidebarStatus.tooltip).toBe(
-      "Repairing Google Calendar in the background.",
-    );
+    expect(result.current.sidebarStatus.isDisabled).toBe(true);
+    expect(result.current.sidebarStatus.dialog).toBeDefined();
   });
 
   it("shows a toast and clears repair state when the repair request fails to start", async () => {
@@ -415,7 +415,7 @@ describe("useConnectGoogle", () => {
     expectGoogleAuthConfig();
     expect(result.current.commandAction.label).toBe("Connect Google Calendar");
     expect(result.current.commandAction.isDisabled).toBe(false);
-    expect(result.current.sidebarStatus.icon).toBe("CloudArrowUpIcon");
+    expect(result.current.sidebarStatus.icon).toBe("DotIcon");
     expect(result.current.sidebarStatus.isDisabled).toBe(false);
   });
 
@@ -442,7 +442,7 @@ describe("useConnectGoogle", () => {
     expect(result.current.commandAction.label).toBe(
       "Reconnect Google Calendar",
     );
-    expect(result.current.sidebarStatus.icon).toBe("LinkBreakIcon");
+    expect(result.current.sidebarStatus.icon).toBe("DotIcon");
     expect(result.current.commandAction.isDisabled).toBe(false);
   });
 
@@ -468,7 +468,7 @@ describe("useConnectGoogle", () => {
 
     expectGoogleAuthConfig();
     expect(result.current.commandAction.label).toBe("Connect Google Calendar");
-    expect(result.current.sidebarStatus.icon).toBe("CloudArrowUpIcon");
+    expect(result.current.sidebarStatus.icon).toBe("DotIcon");
   });
 
   it("connects Google through the backend endpoint and refreshes metadata", async () => {

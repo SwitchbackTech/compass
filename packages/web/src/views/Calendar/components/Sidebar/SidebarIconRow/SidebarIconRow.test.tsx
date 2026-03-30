@@ -47,6 +47,41 @@ jest.mock("@web/components/Tooltip/TooltipWrapper", () => ({
   ),
 }));
 
+jest.mock(
+  "@web/views/Calendar/components/Sidebar/SidebarIconRow/StatusDotPopover",
+  () => ({
+    StatusDotPopover: ({
+      children,
+      title,
+      repairLabel,
+      onRepair,
+      isRepairing,
+    }: {
+      children: ReactNode;
+      title: string;
+      repairLabel: string;
+      onRepair: () => void;
+      isRepairing: boolean;
+    }) => (
+      <div>
+        {children}
+        <div role="dialog" aria-label={title}>
+          <button
+            aria-label={
+              isRepairing ? "We're repairing your calendar" : repairLabel
+            }
+            disabled={isRepairing}
+            onClick={isRepairing ? undefined : onRepair}
+            type="button"
+          >
+            {repairLabel}
+          </button>
+        </div>
+      </div>
+    ),
+  }),
+);
+
 describe("SidebarIconRow", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -170,7 +205,7 @@ describe("SidebarIconRow", () => {
     ).toBeInTheDocument();
   });
 
-  it("clicks through to repair when Google Calendar needs attention", () => {
+  it("shows the attention dialog when Google Calendar needs repair", () => {
     render(<SidebarIconRow />, {
       state: {
         userMetadata: {
@@ -183,16 +218,35 @@ describe("SidebarIconRow", () => {
       },
     });
 
-    fireEvent.click(
-      screen.getByRole("button", {
+    expect(
+      screen.getByRole("dialog", { name: "Calendar sync needs repair" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("status", {
         name: "Google Calendar needs repair. Click to repair.",
       }),
-    );
+    ).toBeInTheDocument();
+  });
+
+  it("calls repair when the Repair button is clicked in the attention dialog", () => {
+    render(<SidebarIconRow />, {
+      state: {
+        userMetadata: {
+          current: {
+            google: {
+              connectionState: "ATTENTION",
+            },
+          },
+        },
+      },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Repair" }));
 
     expect(SyncApi.importGCal).toHaveBeenCalledWith({ force: true });
   });
 
-  it("shows a disabled warning spinner while a repair is active", () => {
+  it("shows a disabled repair button while a repair is active", () => {
     render(<SidebarIconRow />, {
       state: {
         userMetadata: {
@@ -212,12 +266,12 @@ describe("SidebarIconRow", () => {
 
     expect(
       screen.getByRole("button", {
-        name: "Repairing Google Calendar in the background.",
+        name: "We're repairing your calendar",
       }),
     ).toBeDisabled();
     expect(
       screen.getByRole("status", {
-        name: "Repairing Google Calendar in the background.",
+        name: "Google Calendar needs repair. Click to repair.",
       }),
     ).toBeInTheDocument();
   });
