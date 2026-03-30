@@ -82,7 +82,7 @@ export const GoogleConnectErrorResponseSchema = ApiErrorResponseSchema.extend({
 });
 ```
 
-Keep `getApiErrorMessage(...)` style helpers generic. If a flow needs more than display-only fallback behavior, add a feature-specific parser such as `parseGoogleConnectError(...)` instead of baking one endpoint's schema into a generic helper name.
+Keep shared parsing generic with `parseApiError(error, schema)`. If a flow needs more than display-only fallback behavior, add a feature-specific parser such as `parseGoogleConnectError(...)` instead of baking one endpoint's schema into a generic helper name.
 
 ## Adding New Backend Errors
 

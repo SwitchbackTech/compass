@@ -1,7 +1,6 @@
 import type { AxiosError } from "axios";
 import type { ZodType } from "zod";
 import {
-  ApiErrorResponseSchema,
   type GoogleConnectErrorResponse,
   GoogleConnectErrorResponseSchema,
 } from "@core/types/auth.types";
@@ -27,10 +26,6 @@ export const getApiErrorCode = (error: AxiosError): string | undefined => {
   if (!data || typeof data !== "object" || !("code" in data)) return undefined;
   const code = (data as { code?: unknown }).code;
   return typeof code === "string" ? code : undefined;
-};
-
-export const getApiErrorMessage = (error: AxiosError): string | undefined => {
-  return parseApiError(error, ApiErrorResponseSchema)?.message;
 };
 
 export const parseGoogleConnectError = (

@@ -9,7 +9,6 @@ import {
 } from "@core/types/auth.types";
 import {
   getApiErrorCode,
-  getApiErrorMessage,
   parseApiError,
   parseGoogleConnectError,
 } from "./compass.api.util";
@@ -80,27 +79,6 @@ describe("getApiErrorCode", () => {
       data: { code: "GOOGLE_REVOKED", message: "Google access revoked." },
     });
     expect(getApiErrorCode(error)).toBe("GOOGLE_REVOKED");
-  });
-});
-
-describe("getApiErrorMessage", () => {
-  it("returns the message for generic API errors", () => {
-    const error = createAxiosError({
-      data: {
-        code: "ANY_ERROR",
-        message: "Something went wrong",
-      },
-    });
-
-    expect(getApiErrorMessage(error)).toBe("Something went wrong");
-  });
-
-  it("returns undefined when the response is not a typed API error", () => {
-    const error = createAxiosError({
-      data: { message: 404 },
-    });
-
-    expect(getApiErrorMessage(error)).toBeUndefined();
   });
 });
 

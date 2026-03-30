@@ -44,7 +44,7 @@ export const GoogleConnectErrorResponseSchema = ApiErrorResponseSchema.extend({
 });
 ```
 
-Use the generic base schema for display-only fallbacks such as `getApiErrorMessage(...)`. When a flow needs typed behavior, parse against the specific schema for that flow instead of overloading the generic helper.
+Use the generic base schema with `parseApiError(error, ApiErrorResponseSchema)` for display-only fallbacks. When a flow needs typed behavior, parse against the specific schema for that flow instead of overloading a generic helper.
 
 ## Main Places To Look
 
