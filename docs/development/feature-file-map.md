@@ -16,8 +16,8 @@ Use this document to find the first files to inspect for common Compass changes.
 
 - Session initialization and SuperTokens wiring: `packages/web/src/auth/session/SessionProvider.tsx`
 - User profile bootstrap: `packages/web/src/auth/context/UserProvider.tsx`
-- Google OAuth app flow: `packages/web/src/auth/hooks/oauth/useGoogleAuth.ts`, `packages/web/src/auth/hooks/oauth/useGoogleAuthWithOverlay.ts`
-- Google OAuth provider wrapper: `packages/web/src/components/oauth/google/useGoogleLogin.ts`
+- Google OAuth app flow: `packages/web/src/auth/hooks/google/useGoogleAuth/useGoogleAuth.ts`, `packages/web/src/auth/hooks/google/useGoogleAuthWithOverlay/useGoogleAuthWithOverlay.ts`
+- Google OAuth provider wrapper: `packages/web/src/auth/hooks/google/useGoogleLogin/useGoogleLogin.ts`
 - Popup-cancel classification for Google OAuth: `packages/web/src/auth/google/google-oauth-error.util.ts`
 - Auth schemas: `packages/web/src/auth/schemas/auth.schemas.ts`
 - Backend auth routes: `packages/backend/src/auth/auth.routes.config.ts`
@@ -63,7 +63,7 @@ Use this document to find the first files to inspect for common Compass changes.
 - Sidebar shell and tab rendering: `packages/web/src/views/Calendar/components/Sidebar/Sidebar.tsx`
 - Footer icon row actions (tasks/month, command palette, sync/update): `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
 - Sidebar layout constants and icon group styling: `packages/web/src/views/Calendar/components/Sidebar/styled.ts`
-- Google connection/status UI contract for sidebar + command palette: `packages/web/src/auth/hooks/oauth/useConnectGoogle.ts`
+- Google connection/status UI contract for sidebar + command palette: `packages/web/src/auth/hooks/google/useConnectGoogle/useConnectGoogle.ts`
 - Sidebar icon row behavior tests: `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.test.tsx`
 
 ## Offline Storage
