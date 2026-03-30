@@ -16,7 +16,7 @@ Start with [AGENTS.md](../AGENTS.md) for repo rules, commands, and conventions. 
 - Auth or session behavior:
   [Frontend Runtime Flow](./frontend/frontend-runtime-flow.md),
   [Password Auth Flow](./features/password-auth-flow.md),
-  [Google Sync And Websocket Flow](./features/google-sync-and-websocket-flow.md)
+  [Google Sync And SSE Flow](./features/google-sync-and-sse-flow.md)
 - Event shape or recurrence behavior:
   [Event And Task Domain Model](./architecture/event-and-task-domain-model.md),
   [Recurrence Handling](./features/recurring-events-handling.md)
@@ -30,7 +30,7 @@ Start with [AGENTS.md](../AGENTS.md) for repo rules, commands, and conventions. 
 ## Runtime Flows
 
 - [Frontend Runtime Flow](./frontend/frontend-runtime-flow.md)
-- [Google Sync And Websocket Flow](./features/google-sync-and-websocket-flow.md)
+- [Google Sync And SSE Flow](./features/google-sync-and-sse-flow.md)
 - [Password Auth Flow](./features/password-auth-flow.md)
 
 ## Architecture And Domain
@@ -52,6 +52,6 @@ Start with [AGENTS.md](../AGENTS.md) for repo rules, commands, and conventions. 
 ## Feature Deep Dives
 
 - [Password Auth Flow](./features/password-auth-flow.md)
-- [Google Sync And Websocket Flow](./features/google-sync-and-websocket-flow.md)
+- [Google Sync And SSE Flow](./features/google-sync-and-sse-flow.md)
 - [Recurrence Handling](./features/recurring-events-handling.md)
 - [Offline Storage And Migrations](./features/offline-storage-and-migrations.md)

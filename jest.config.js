@@ -14,6 +14,7 @@ const backendProject = {
     "^@backend/common(/(.*)$)?": "<rootDir>/packages/backend/src/common/$1",
     "^@backend/dev(/(.*)$)?": "<rootDir>/packages/backend/src/dev/$1",
     "^@backend/email(/(.*)$)?": "<rootDir>/packages/backend/src/email/$1",
+    "^@backend/events(/(.*)$)?": "<rootDir>/packages/backend/src/events/$1",
     "^@backend/event(/(.*)$)?": "<rootDir>/packages/backend/src/event/$1",
     "^@backend/health(/(.*)$)?": "<rootDir>/packages/backend/src/health/$1",
     "^@backend/priority(/(.*)$)?": "<rootDir>/packages/backend/src/priority/$1",
@@ -65,6 +66,7 @@ const webProject = {
     "^@web/public(/(.*)$)?": "<rootDir>/packages/web/src/public/$1",
     "^@web/routers(/(.*)$)?": "<rootDir>/packages/web/src/routers/$1",
     "^@web/socket(/(.*)$)?": "<rootDir>/packages/web/src/socket/$1",
+    "^@web/sse(/(.*)$)?": "<rootDir>/packages/web/src/sse/$1",
     "^@web/store((/(.*)$)?)?": "<rootDir>/packages/web/src/store/$1",
     "^@web/views(/(.*)$)?": "<rootDir>/packages/web/src/views/$1",
     "^.+\\.(css|less)$":

@@ -222,7 +222,7 @@ Useful anchors:
 
 - `packages/web/src/__tests__`
 - `packages/web/src/views/**/*.test.tsx`
-- `packages/web/src/socket/**/*.test.ts`
+- `packages/web/src/sse/**/*.test.tsx`
 
 ## Backend Test Style
 
@@ -267,10 +267,10 @@ Use them for:
 
 ## Testing Realtime And Sync Changes
 
-For websocket or sync work:
+For SSE or sync work:
 
 - test backend emitters/handlers where possible
-- test web socket hooks for listener registration and dispatch behavior
+- test web SSE hooks for listener registration and dispatch behavior
 - test event sagas if refetch or optimistic behavior changed
 
 ## Common Gaps To Watch

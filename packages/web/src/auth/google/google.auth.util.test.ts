@@ -15,7 +15,7 @@ import {
   importGCalSlice,
   triggerFetch,
 } from "@web/ducks/events/slices/sync.slice";
-import { reconnect } from "@web/socket/client/socket.client";
+import { closeStream, openStream } from "@web/sse/client/sse.client";
 import { store } from "@web/store";
 import { type GoogleAuthConfig } from "../hooks/google/googe.auth.types";
 import {
@@ -39,12 +39,10 @@ jest.mock("@web/store", () => ({
     dispatch: jest.fn(),
   },
 }));
-jest.mock("@web/socket/client/socket.client", () => ({
-  socket: {
-    connected: true,
-    emit: jest.fn(),
-  },
-  reconnect: jest.fn(),
+jest.mock("@web/sse/client/sse.client", () => ({
+  closeStream: jest.fn(),
+  openStream: jest.fn(),
+  getStream: jest.fn().mockReturnValue(null),
 }));
 
 const mockAuthApi = AuthApi as jest.Mocked<typeof AuthApi>;
@@ -239,10 +237,11 @@ describe("google-auth.util", () => {
       );
     });
 
-    it("reconnects socket so the client gets a fresh session after revocation", () => {
+    it("reconnects SSE stream so the client gets a fresh session after revocation", () => {
       handleGoogleRevoked();
 
-      expect(reconnect).toHaveBeenCalled();
+      expect(closeStream).toHaveBeenCalled();
+      expect(openStream).toHaveBeenCalled();
     });
 
     it("marks Google as revoked in session state", () => {

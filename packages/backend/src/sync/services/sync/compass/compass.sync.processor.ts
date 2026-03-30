@@ -2,7 +2,7 @@ import { type ClientSession, ObjectId } from "mongodb";
 import {
   EVENT_CHANGED,
   SOMEDAY_EVENT_CHANGED,
-} from "@core/constants/websocket.constants";
+} from "@core/constants/sse.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { type CompassEvent } from "@core/types/event.types";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
@@ -19,7 +19,7 @@ import {
   _deleteGcal,
   _updateGcal,
 } from "@backend/event/services/event.service";
-import { webSocketServer } from "@backend/servers/websocket/websocket.server";
+import { sseServer } from "@backend/servers/sse/sse.server";
 import { type Event_Transition } from "@backend/sync/sync.types";
 import { isMissingGoogleRefreshToken } from "@backend/sync/util/sync.util";
 import {
@@ -105,10 +105,10 @@ export class CompassSyncProcessor {
       notifications.forEach((notification) => {
         switch (notification) {
           case EVENT_CHANGED:
-            webSocketServer.handleBackgroundCalendarChange(userId);
+            sseServer.handleBackgroundCalendarChange(userId);
             break;
           case SOMEDAY_EVENT_CHANGED:
-            webSocketServer.handleBackgroundSomedayChange(userId);
+            sseServer.handleBackgroundSomedayChange(userId);
             break;
           default:
             logger.error(`Unknown notification type for user: ${userId}`);

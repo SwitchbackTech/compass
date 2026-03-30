@@ -17,7 +17,7 @@ import calendarService from "@backend/calendar/services/calendar.service";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import { webSocketServer } from "@backend/servers/websocket/websocket.server";
+import { sseServer } from "@backend/servers/sse/sse.server";
 import * as syncImportService from "@backend/sync/services/import/sync.import";
 import syncService from "@backend/sync/services/sync.service";
 import { isUsingHttps } from "@backend/sync/util/sync.util";
@@ -283,7 +283,7 @@ describe("SyncService", () => {
     it("emits INCREMENTAL operation when incremental import is ignored", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
-      const importEndSpy = jest.spyOn(webSocketServer, "handleImportGCalEnd");
+      const importEndSpy = jest.spyOn(sseServer, "handleImportGCalEnd");
 
       await userMetadataService.updateUserMetadata({
         userId,
@@ -302,7 +302,7 @@ describe("SyncService", () => {
     it("emits INCREMENTAL operation when incremental import completes", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
-      const importEndSpy = jest.spyOn(webSocketServer, "handleImportGCalEnd");
+      const importEndSpy = jest.spyOn(sseServer, "handleImportGCalEnd");
       const createSyncImportSpy = jest
         .spyOn(syncImportService, "createSyncImport")
         .mockResolvedValue({
@@ -324,7 +324,7 @@ describe("SyncService", () => {
     it("emits INCREMENTAL operation when incremental import fails", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
-      const importEndSpy = jest.spyOn(webSocketServer, "handleImportGCalEnd");
+      const importEndSpy = jest.spyOn(sseServer, "handleImportGCalEnd");
       const error = new Error("incremental failed");
       const createSyncImportSpy = jest
         .spyOn(syncImportService, "createSyncImport")
@@ -519,7 +519,7 @@ describe("SyncService", () => {
     it("cleans up partial watch state when restart fails", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
-      const importEndSpy = jest.spyOn(webSocketServer, "handleImportGCalEnd");
+      const importEndSpy = jest.spyOn(sseServer, "handleImportGCalEnd");
       const stopWatchesSpy = jest
         .spyOn(syncService, "stopWatches")
         .mockImplementation(async (targetUserId) => {
@@ -566,11 +566,8 @@ describe("SyncService", () => {
     it("prunes Google data and notifies revoked state when repair loses access", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
-      const googleRevokedSpy = jest.spyOn(
-        webSocketServer,
-        "handleGoogleRevoked",
-      );
-      const importEndSpy = jest.spyOn(webSocketServer, "handleImportGCalEnd");
+      const googleRevokedSpy = jest.spyOn(sseServer, "handleGoogleRevoked");
+      const importEndSpy = jest.spyOn(sseServer, "handleImportGCalEnd");
       const startSpy = jest
         .spyOn(syncService, "startGoogleCalendarSync")
         .mockRejectedValue(invalidGrant400Error);
@@ -599,7 +596,7 @@ describe("SyncService", () => {
     it("emits a friendly quota error when Google repair hits rate limits", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
-      const importEndSpy = jest.spyOn(webSocketServer, "handleImportGCalEnd");
+      const importEndSpy = jest.spyOn(sseServer, "handleImportGCalEnd");
       const quotaError = createGoogleError({
         code: "403",
         responseStatus: 403,

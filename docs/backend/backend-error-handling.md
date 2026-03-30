@@ -54,7 +54,7 @@ Internal details such as stack traces and operational flags stay server-side.
 - Keep `code` stable and machine-oriented. Prefer values like `GOOGLE_ACCOUNT_ALREADY_CONNECTED`.
 - Put technical detail in logs, not in the client payload.
 - Prefer reusing existing feature error metadata before inventing new names.
-- If the error should trigger special auth/sync behavior, verify both API handling and websocket side effects.
+- If the error should trigger special auth/sync behavior, verify both API handling and SSE side effects.
 
 ## Shared Frontend-Backend Error Pattern
 

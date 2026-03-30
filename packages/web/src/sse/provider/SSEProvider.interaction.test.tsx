@@ -7,16 +7,14 @@ import {
 } from "@reduxjs/toolkit";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
-import { IMPORT_GCAL_END } from "@core/constants/websocket.constants";
-import { type ImportGCalEndPayload } from "@core/types/websocket.types";
+import { type ImportGCalEndPayload } from "@core/types/sse.types";
 import { SyncEventsOverlay } from "@web/components/SyncEventsOverlay/SyncEventsOverlay";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import {
   importGCalSlice,
   importLatestSlice,
 } from "@web/ducks/events/slices/sync.slice";
-import { socket } from "./SocketProvider";
-import SocketProvider from "./SocketProvider";
+import SSEProvider from "./SSEProvider";
 
 type TestStore = EnhancedStore<{
   sync: {
@@ -30,18 +28,37 @@ type TestStore = EnhancedStore<{
 jest.mock("@web/auth/hooks/user/useUser", () => ({
   useUser: () => ({ userId: "test-user-id" }),
 }));
-
-jest.mock("socket.io-client", () => ({
-  io: jest.fn(() => ({
-    on: jest.fn(),
-    once: jest.fn(),
-    emit: jest.fn(),
-    connect: jest.fn(),
-    disconnect: jest.fn(),
-    removeListener: jest.fn(),
-    connected: false,
-  })),
+jest.mock("@web/auth/session/user-metadata.util", () => ({
+  refreshUserMetadata: jest.fn().mockResolvedValue(undefined),
 }));
+
+let importEndCallback: ((data?: ImportGCalEndPayload) => void) | undefined;
+
+jest.mock("../client/sse.client", () => {
+  // Must match `IMPORT_GCAL_END` in `@core/constants/sse.constants`
+  const importGCalEndEvent = "IMPORT_GCAL_END";
+  const mockES = {
+    addEventListener: jest.fn(
+      (event: string, handler: (mockEvt: Event) => void) => {
+        if (event === importGCalEndEvent) {
+          importEndCallback = (data?: ImportGCalEndPayload) => {
+            const messageEvent = new MessageEvent(importGCalEndEvent, {
+              data: JSON.stringify(data),
+            });
+            handler(messageEvent);
+          };
+        }
+      },
+    ),
+    removeEventListener: jest.fn(),
+    close: jest.fn(),
+  };
+  return {
+    openStream: jest.fn(() => mockES),
+    closeStream: jest.fn(),
+    getStream: jest.fn(() => mockES),
+  };
+});
 
 /**
  * Integration tests for the Google Calendar authentication and import flow.
@@ -52,9 +69,6 @@ jest.mock("socket.io-client", () => ({
  * - Overlay disappears immediately after OAuth completes
  */
 describe("GCal Authentication Flow", () => {
-  // Socket event callbacks captured during render
-  let importEndCallback: ((data?: ImportGCalEndPayload) => void) | undefined;
-
   const createTestStore = (preloadedState?: {
     isAuthenticating?: boolean;
   }): TestStore => {
@@ -95,15 +109,6 @@ describe("GCal Authentication Flow", () => {
     jest.useFakeTimers();
     document.body.removeAttribute("data-app-locked");
     importEndCallback = undefined;
-
-    // Capture socket event handlers when they're registered
-    (socket.on as jest.Mock).mockImplementation(
-      (event: string, callback: (data?: ImportGCalEndPayload) => void) => {
-        if (event === IMPORT_GCAL_END) {
-          importEndCallback = callback;
-        }
-      },
-    );
   });
 
   afterEach(() => {
@@ -117,9 +122,9 @@ describe("GCal Authentication Flow", () => {
 
       render(
         <Provider store={store}>
-          <SocketProvider>
+          <SSEProvider>
             <SyncEventsOverlay />
-          </SocketProvider>
+          </SSEProvider>
         </Provider>,
       );
 
@@ -137,9 +142,9 @@ describe("GCal Authentication Flow", () => {
 
       const { rerender, container } = render(
         <Provider store={store}>
-          <SocketProvider>
+          <SSEProvider>
             <SyncEventsOverlay />
-          </SocketProvider>
+          </SSEProvider>
         </Provider>,
       );
 
@@ -154,9 +159,9 @@ describe("GCal Authentication Flow", () => {
 
       rerender(
         <Provider store={store}>
-          <SocketProvider>
+          <SSEProvider>
             <SyncEventsOverlay />
-          </SocketProvider>
+          </SSEProvider>
         </Provider>,
       );
 
@@ -180,9 +185,9 @@ describe("GCal Authentication Flow", () => {
 
       const { container } = render(
         <Provider store={store}>
-          <SocketProvider>
+          <SSEProvider>
             <SyncEventsOverlay />
-          </SocketProvider>
+          </SSEProvider>
         </Provider>,
       );
 
@@ -203,9 +208,9 @@ describe("GCal Authentication Flow", () => {
 
       const { rerender, container } = render(
         <Provider store={store}>
-          <SocketProvider>
+          <SSEProvider>
             <SyncEventsOverlay />
-          </SocketProvider>
+          </SSEProvider>
         </Provider>,
       );
 
@@ -225,9 +230,9 @@ describe("GCal Authentication Flow", () => {
 
       rerender(
         <Provider store={store}>
-          <SocketProvider>
+          <SSEProvider>
             <SyncEventsOverlay />
-          </SocketProvider>
+          </SSEProvider>
         </Provider>,
       );
 
@@ -267,9 +272,9 @@ describe("GCal Authentication Flow", () => {
 
       render(
         <Provider store={store}>
-          <SocketProvider>
+          <SSEProvider>
             <SyncEventsOverlay />
-          </SocketProvider>
+          </SSEProvider>
         </Provider>,
       );
 

@@ -85,7 +85,7 @@ It affects:
 
 - query behavior
 - sync transitions
-- websocket notification type
+- SSE notification type
 - provider selection when mapping events
 
 For someday events, Compass often behaves as the provider of record instead of Google.

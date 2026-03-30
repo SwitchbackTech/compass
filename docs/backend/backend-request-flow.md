@@ -142,7 +142,7 @@ When adding a public contract, prefer creating or extending a shared schema in `
 3. Keep the controller thin: extract params, user id, and response orchestration only.
 4. Put business logic in a service.
 5. Add or update tests at the controller/service level.
-6. If the endpoint affects realtime UI, check whether a websocket notification is also needed.
+6. If the endpoint affects realtime UI, check whether an SSE notification is also needed.
 
 ## Where Bugs Usually Hide
 

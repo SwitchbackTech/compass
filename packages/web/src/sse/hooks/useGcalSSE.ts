@@ -1,14 +1,14 @@
 import { useCallback, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import {
-  FETCH_USER_METADATA,
   GOOGLE_REVOKED,
   IMPORT_GCAL_END,
   USER_METADATA,
-} from "@core/constants/websocket.constants";
+} from "@core/constants/sse.constants";
+import { type ImportGCalEndPayload } from "@core/types/sse.types";
 import { type UserMetadata } from "@core/types/user.types";
-import { type ImportGCalEndPayload } from "@core/types/websocket.types";
 import { handleGoogleRevoked } from "@web/auth/google/google.auth.util";
+import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
 import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
@@ -17,9 +17,9 @@ import {
   importGCalSlice,
   triggerFetch,
 } from "@web/ducks/events/slices/sync.slice";
-import { socket } from "../client/socket.client";
+import { getStream } from "../client/sse.client";
 
-export const useGcalSync = () => {
+export const useGcalSSE = () => {
   const dispatch = useDispatch();
 
   const onImportEnd = useCallback(
@@ -27,7 +27,7 @@ export const useGcalSync = () => {
       if (payload?.operation === "REPAIR") {
         dispatch(importGCalSlice.actions.stopRepair());
       }
-      socket.emit(FETCH_USER_METADATA);
+      void refreshUserMetadata();
 
       if (payload?.status === "ERRORED") {
         dispatch(importGCalSlice.actions.setImportError(payload.message));
@@ -85,23 +85,35 @@ export const useGcalSync = () => {
   );
 
   useEffect(() => {
-    socket.on(USER_METADATA, onMetadataFetch);
-    return () => {
-      socket.removeListener(USER_METADATA, onMetadataFetch);
-    };
-  }, [onMetadataFetch]);
+    const es = getStream();
+    if (!es) return;
 
-  useEffect(() => {
-    socket.on(IMPORT_GCAL_END, onImportEnd);
-    return () => {
-      socket.removeListener(IMPORT_GCAL_END, onImportEnd);
+    const importEndHandler = (e: Event) => {
+      const payload = JSON.parse(
+        String((e as MessageEvent).data),
+      ) as ImportGCalEndPayload;
+      onImportEnd(payload);
     };
-  }, [onImportEnd]);
 
-  useEffect(() => {
-    socket.on(GOOGLE_REVOKED, onGoogleRevoked);
-    return () => {
-      socket.removeListener(GOOGLE_REVOKED, onGoogleRevoked);
+    const googleRevokedHandler = () => {
+      onGoogleRevoked();
     };
-  }, [onGoogleRevoked]);
+
+    const userMetadataHandler = (e: Event) => {
+      const metadata = JSON.parse(
+        String((e as MessageEvent).data),
+      ) as UserMetadata;
+      onMetadataFetch(metadata);
+    };
+
+    es.addEventListener(IMPORT_GCAL_END, importEndHandler);
+    es.addEventListener(GOOGLE_REVOKED, googleRevokedHandler);
+    es.addEventListener(USER_METADATA, userMetadataHandler);
+
+    return () => {
+      es.removeEventListener(IMPORT_GCAL_END, importEndHandler);
+      es.removeEventListener(GOOGLE_REVOKED, googleRevokedHandler);
+      es.removeEventListener(USER_METADATA, userMetadataHandler);
+    };
+  }, [onImportEnd, onGoogleRevoked, onMetadataFetch]);
 };

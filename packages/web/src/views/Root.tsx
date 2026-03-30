@@ -3,7 +3,7 @@ import { useIsMobile } from "@web/common/hooks/useIsMobile";
 import { AuthenticatedLayout } from "@web/components/AuthenticatedLayout/AuthenticatedLayout";
 import { GlobalShortcutsHost } from "@web/components/CompassProvider/CompassProvider";
 import { MobileGate } from "@web/components/MobileGate/MobileGate";
-import SocketProvider from "@web/socket/provider/SocketProvider";
+import SSEProvider from "@web/sse/provider/SSEProvider";
 
 export const RootView = () => {
   const isMobile = useIsMobile();
@@ -14,10 +14,10 @@ export const RootView = () => {
 
   return (
     <UserProvider>
-      <SocketProvider>
+      <SSEProvider>
         <GlobalShortcutsHost />
         <AuthenticatedLayout />
-      </SocketProvider>
+      </SSEProvider>
     </UserProvider>
   );
 };

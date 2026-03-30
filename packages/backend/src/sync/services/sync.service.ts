@@ -1,5 +1,4 @@
 import { type ClientSession, type Filter, ObjectId } from "mongodb";
-import { RESULT_NOTIFIED_CLIENT } from "@core/constants/websocket.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { MapEvent } from "@core/mappers/map.event";
 import {
@@ -36,7 +35,7 @@ import {
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { _createGcal } from "@backend/event/services/event.service";
-import { webSocketServer } from "@backend/servers/websocket/websocket.server";
+import { sseServer } from "@backend/servers/sse/sse.server";
 import { createSyncImport } from "@backend/sync/services/import/sync.import";
 import {
   prepWatchMaintenanceForUser,
@@ -250,11 +249,9 @@ class SyncService {
 
     await handler.handleNotification();
 
-    const wsResult = webSocketServer.handleBackgroundCalendarChange(userId);
+    sseServer.handleBackgroundCalendarChange(userId);
 
-    const result = wsResult?.includes(RESULT_NOTIFIED_CLIENT)
-      ? "PROCESSED AND NOTIFIED CLIENT"
-      : "PROCESSED IN BACKGROUND";
+    const result = "PROCESSED";
 
     logger.info(
       `GCal Notification for user: ${userId}, calendarId: ${calendarId} ${result}`,
@@ -317,7 +314,7 @@ class SyncService {
     );
 
     try {
-      webSocketServer.handleImportGCalStart(userId);
+      sseServer.handleImportGCalStart(userId);
 
       const userMeta = await userMetadataService.fetchUserMetadata(
         userId,
@@ -329,7 +326,7 @@ class SyncService {
       const proceed = shouldDoIncrementalGCalSync(userMeta);
 
       if (!proceed) {
-        webSocketServer.handleImportGCalEnd(userId, {
+        sseServer.handleImportGCalEnd(userId, {
           operation: "INCREMENTAL",
           status: "IGNORED",
           message: `User ${userId} gcal incremental sync is in progress or completed, ignoring this request`,
@@ -354,11 +351,11 @@ class SyncService {
         data: { sync: { incrementalGCalSync: "COMPLETED" } },
       });
 
-      webSocketServer.handleImportGCalEnd(userId, {
+      sseServer.handleImportGCalEnd(userId, {
         operation: "INCREMENTAL",
         status: "COMPLETED",
       });
-      webSocketServer.handleBackgroundCalendarChange(userId);
+      sseServer.handleBackgroundCalendarChange(userId);
 
       return result;
     } catch (error) {
@@ -372,7 +369,7 @@ class SyncService {
         error,
       );
 
-      webSocketServer.handleImportGCalEnd(userId, {
+      sseServer.handleImportGCalEnd(userId, {
         operation: "INCREMENTAL",
         status: "ERRORED",
         message: `Incremental Google Calendar sync failed for user: ${userId}`,
@@ -541,7 +538,7 @@ class SyncService {
       const proceed = isForce ? !isImporting : shouldImportGCal(userMeta);
 
       if (!proceed) {
-        webSocketServer.handleImportGCalEnd(userId, {
+        sseServer.handleImportGCalEnd(userId, {
           operation: "REPAIR",
           status: "IGNORED",
           message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
@@ -553,7 +550,7 @@ class SyncService {
       logger.warn(
         `Restarting Google Calendar sync for user: ${userId}${isForce ? " (forced)" : ""}`,
       );
-      webSocketServer.handleImportGCalStart(userId);
+      sseServer.handleImportGCalStart(userId);
       await userMetadataService.updateUserMetadata({
         userId,
         data: { sync: { importGCal: "IMPORTING" } },
@@ -574,12 +571,12 @@ class SyncService {
         data: { sync: { importGCal: "COMPLETED" } },
       });
 
-      webSocketServer.handleImportGCalEnd(userId, {
+      sseServer.handleImportGCalEnd(userId, {
         operation: "REPAIR",
         status: "COMPLETED",
         ...importResults,
       });
-      webSocketServer.handleBackgroundCalendarChange(userId);
+      sseServer.handleBackgroundCalendarChange(userId);
     } catch (err) {
       try {
         await userService.stopGoogleCalendarSync(userId);
@@ -596,7 +593,7 @@ class SyncService {
         );
 
         await userService.pruneGoogleData(userId);
-        webSocketServer.handleGoogleRevoked(userId);
+        sseServer.handleGoogleRevoked(userId);
         return;
       }
 
@@ -607,7 +604,7 @@ class SyncService {
 
       logger.error(`Re-sync failed for user: ${userId}`, err);
 
-      webSocketServer.handleImportGCalEnd(userId, {
+      sseServer.handleImportGCalEnd(userId, {
         operation: "REPAIR",
         status: "ERRORED",
         message: getGoogleRepairErrorMessage(err),

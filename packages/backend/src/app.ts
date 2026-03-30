@@ -5,7 +5,6 @@ import { ENV } from "@backend/common/constants/env.constants";
 import mongoService from "@backend/common/services/mongo.service";
 import { initExpressServer } from "@backend/servers/express/express.server";
 import { initNgrokServer } from "@backend/servers/ngrok/ngrok.server";
-import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import { type Listener } from "@ngrok/ngrok";
 import { createServer, type Server } from "node:http";
 
@@ -34,8 +33,6 @@ function onNgrokError(error: Error): void {
 
 async function start() {
   try {
-    webSocketServer.init(httpServer);
-
     await mongoService.start();
 
     await new Promise((resolve) =>
