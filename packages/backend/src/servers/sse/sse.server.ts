@@ -65,6 +65,15 @@ class SSEServer {
     }
   }
 
+  publishTo(res: Response, event: string, data: unknown = {}): void {
+    const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+    try {
+      res.write(payload);
+    } catch {
+      // Connection already closed
+    }
+  }
+
   handleImportGCalStart(userId: string): void {
     this.publish(userId, IMPORT_GCAL_START);
   }

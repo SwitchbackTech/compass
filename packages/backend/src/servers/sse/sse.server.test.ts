@@ -101,6 +101,31 @@ describe("SSE Server", () => {
       stream.close();
     });
 
+    it("does not replay USER_METADATA to existing tabs when a new tab opens", async () => {
+      const userId = new ObjectId().toString();
+
+      // Tab A opens and receives its initial replay.
+      const streamA = baseDriver.openSSEStream({ userId });
+      await expect(
+        streamA.waitForEvent(USER_METADATA, 2000),
+      ).resolves.toBeDefined();
+
+      // Register a second listener on tab A BEFORE tab B connects.
+      const spuriousReplay = streamA.waitForEvent(USER_METADATA, 300);
+
+      // Tab B opens for the same user — should only replay to tab B.
+      const streamB = baseDriver.openSSEStream({ userId });
+      await expect(
+        streamB.waitForEvent(USER_METADATA, 2000),
+      ).resolves.toBeDefined();
+
+      // Tab A must NOT receive a second USER_METADATA.
+      await expect(spuriousReplay).rejects.toThrow("Timeout");
+
+      streamA.close();
+      streamB.close();
+    });
+
     it("does not deliver events to unsubscribed users", async () => {
       const userId = new ObjectId().toString();
       const otherUserId = new ObjectId().toString();

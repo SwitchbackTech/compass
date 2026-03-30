@@ -17,7 +17,7 @@ class EventsController {
 
       // Replay current state after subscribing — client is never stuck on reconnect.
       const metadata = await userMetadataService.fetchUserMetadata(userId);
-      sseServer.publish(userId, USER_METADATA, metadata);
+      sseServer.publishTo(res, USER_METADATA, metadata);
     } catch (err) {
       logger.error(`Failed to open SSE stream for user ${userId}:`, err);
     }
