@@ -1,3 +1,4 @@
+import { type EventEmitter2 } from "eventemitter2";
 import { act } from "react";
 import { Provider } from "react-redux";
 import {
@@ -7,6 +8,7 @@ import {
 } from "@reduxjs/toolkit";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
+import { IMPORT_GCAL_END } from "@core/constants/sse.constants";
 import { type ImportGCalEndPayload } from "@core/types/sse.types";
 import { SyncEventsOverlay } from "@web/components/SyncEventsOverlay/SyncEventsOverlay";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
@@ -32,33 +34,29 @@ jest.mock("@web/auth/session/user-metadata.util", () => ({
   refreshUserMetadata: jest.fn().mockResolvedValue(undefined),
 }));
 
-let importEndCallback: ((data?: ImportGCalEndPayload) => void) | undefined;
-
 jest.mock("../client/sse.client", () => {
-  // Must match `IMPORT_GCAL_END` in `@core/constants/sse.constants`
-  const importGCalEndEvent = "IMPORT_GCAL_END";
-  const mockES = {
-    addEventListener: jest.fn(
-      (event: string, handler: (mockEvt: Event) => void) => {
-        if (event === importGCalEndEvent) {
-          importEndCallback = (data?: ImportGCalEndPayload) => {
-            const messageEvent = new MessageEvent(importGCalEndEvent, {
-              data: JSON.stringify(data),
-            });
-            handler(messageEvent);
-          };
-        }
-      },
-    ),
-    removeEventListener: jest.fn(),
-    close: jest.fn(),
-  };
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
+  const { EventEmitter2 } = require("eventemitter2");
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+  const sseEmitter = new EventEmitter2({ maxListeners: 20 });
   return {
-    openStream: jest.fn(() => mockES),
+    openStream: jest.fn(),
     closeStream: jest.fn(),
-    getStream: jest.fn(() => mockES),
+    getStream: jest.fn(() => null),
+    sseEmitter: sseEmitter as unknown as EventEmitter2,
   };
 });
+
+function fireImportEnd(payload: ImportGCalEndPayload) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { sseEmitter } = require("../client/sse.client") as {
+    sseEmitter: EventEmitter2;
+  };
+  sseEmitter.emit(
+    IMPORT_GCAL_END,
+    new MessageEvent(IMPORT_GCAL_END, { data: JSON.stringify(payload) }),
+  );
+}
 
 /**
  * Integration tests for the Google Calendar authentication and import flow.
@@ -108,7 +106,6 @@ describe("GCal Authentication Flow", () => {
     jest.clearAllMocks();
     jest.useFakeTimers();
     document.body.removeAttribute("data-app-locked");
-    importEndCallback = undefined;
   });
 
   afterEach(() => {
@@ -219,10 +216,6 @@ describe("GCal Authentication Flow", () => {
         screen.getByText("Complete Google sign-in..."),
       ).toBeInTheDocument();
 
-      await waitFor(() => {
-        expect(importEndCallback).toBeDefined();
-      });
-
       // OAuth completes, auth state resets
       act(() => {
         store.dispatch(authSlice.actions.resetAuth());
@@ -248,7 +241,7 @@ describe("GCal Authentication Flow", () => {
 
       // Backend completes import
       act(() => {
-        importEndCallback?.({
+        fireImportEnd({
           operation: "REPAIR",
           status: "COMPLETED",
           eventsCount: 42,
@@ -278,12 +271,8 @@ describe("GCal Authentication Flow", () => {
         </Provider>,
       );
 
-      await waitFor(() => {
-        expect(importEndCallback).toBeDefined();
-      });
-
       act(() => {
-        importEndCallback?.({
+        fireImportEnd({
           operation: "INCREMENTAL",
           status: "ERRORED",
           message:
@@ -291,10 +280,11 @@ describe("GCal Authentication Flow", () => {
         });
       });
 
-      const state = store.getState();
-      expect(state.sync.importGCal.importError).toBe(
-        "Incremental Google Calendar sync failed for user: test-user",
-      );
+      await waitFor(() => {
+        expect(store.getState().sync.importGCal.importError).toBe(
+          "Incremental Google Calendar sync failed for user: test-user",
+        );
+      });
     });
   });
 });

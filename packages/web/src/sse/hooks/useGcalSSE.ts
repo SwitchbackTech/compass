@@ -17,7 +17,7 @@ import {
   importGCalSlice,
   triggerFetch,
 } from "@web/ducks/events/slices/sync.slice";
-import { getStream } from "../client/sse.client";
+import { sseEmitter } from "../client/sse.client";
 
 export const useGcalSSE = () => {
   const dispatch = useDispatch();
@@ -85,9 +85,6 @@ export const useGcalSSE = () => {
   );
 
   useEffect(() => {
-    const es = getStream();
-    if (!es) return;
-
     const importEndHandler = (e: Event) => {
       const payload = JSON.parse(
         String((e as MessageEvent).data),
@@ -106,14 +103,14 @@ export const useGcalSSE = () => {
       onMetadataFetch(metadata);
     };
 
-    es.addEventListener(IMPORT_GCAL_END, importEndHandler);
-    es.addEventListener(GOOGLE_REVOKED, googleRevokedHandler);
-    es.addEventListener(USER_METADATA, userMetadataHandler);
+    sseEmitter.on(IMPORT_GCAL_END, importEndHandler);
+    sseEmitter.on(GOOGLE_REVOKED, googleRevokedHandler);
+    sseEmitter.on(USER_METADATA, userMetadataHandler);
 
     return () => {
-      es.removeEventListener(IMPORT_GCAL_END, importEndHandler);
-      es.removeEventListener(GOOGLE_REVOKED, googleRevokedHandler);
-      es.removeEventListener(USER_METADATA, userMetadataHandler);
+      sseEmitter.off(IMPORT_GCAL_END, importEndHandler);
+      sseEmitter.off(GOOGLE_REVOKED, googleRevokedHandler);
+      sseEmitter.off(USER_METADATA, userMetadataHandler);
     };
   }, [onImportEnd, onGoogleRevoked, onMetadataFetch]);
 };
