@@ -1,11 +1,9 @@
-import React, { type FC } from "react";
+import { type FC } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import { getWeekDayLabel } from "@web/common/utils/event/event.util";
-import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
-import { StyledWeekDayFlex, StyledWeekDaysFlex } from "./styled";
 
 interface Props {
   today: Dayjs;
@@ -44,27 +42,26 @@ export const DayLabels: FC<Props> = ({
   };
 
   return (
-    <StyledWeekDaysFlex>
+    <div className="mt-[10px] flex w-full">
       {weekDays.map((day) => {
         const dayNumber = getDayNumber(day);
         const { isToday, color } = getColor(day);
 
         return (
-          <StyledWeekDayFlex
-            justifyContent={JustifyContent.CENTER}
+          <div
+            className="flex min-w-[100px] basis-full items-end justify-center"
             key={getWeekDayLabel(day)}
-            alignItems={AlignItems.FLEX_END}
+            style={{ color }}
             title={getWeekDayLabel(day)}
-            color={color}
           >
             <Text size="xxl" withGradient={isToday}>
               {dayNumber}
             </Text>
             <SpaceCharacter />
             <Text size="l">{day.format("ddd")}</Text>
-          </StyledWeekDayFlex>
+          </div>
         );
       })}
-    </StyledWeekDaysFlex>
+    </div>
   );
 };
