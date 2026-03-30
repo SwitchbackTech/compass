@@ -9,6 +9,7 @@
 - [Common Routes](#common-routes)
 - [Priority Routes](#priority-routes)
 - [Sync Routes](#sync-routes)
+- [Events Stream Routes](#events-stream-routes)
 - [Event Routes](#event-routes)
 - [Operational Headers](#operational-headers)
 
@@ -373,6 +374,36 @@ Authenticated user trigger for full import restart:
 
 ---
 
+## Events Stream Routes
+
+**Source**: `packages/backend/src/events/events.routes.config.ts`, `packages/backend/src/events/controllers/events.controller.ts`, `packages/backend/src/servers/sse/sse.server.ts`
+
+### /api/events/stream
+
+Authenticated realtime stream endpoint used by the web `EventSource` client.
+
+- `GET /api/events/stream`
+- middleware: `verifySession()`
+- response type: `text/event-stream` (long-lived HTTP response)
+- transport notes:
+  - server sends named events (`event: <NAME>`) with JSON data payloads
+  - server sends heartbeat comments (`: keepalive`) roughly every 25 seconds
+  - stream fan-out is per authenticated Compass user id (all active tabs for that user receive published events)
+
+On stream connect:
+
+1. backend subscribes the response to SSE fan-out first
+2. backend fetches current user metadata
+3. backend immediately publishes `USER_METADATA` to that connection
+
+Operational constraints:
+
+- stream requires a valid SuperTokens session cookie; unauthenticated requests are rejected by middleware
+- import progress (`IMPORT_GCAL_START` / `IMPORT_GCAL_END`) and background refresh notifications (`EVENT_CHANGED`, `SOMEDAY_EVENT_CHANGED`, `GOOGLE_REVOKED`) are delivered over this stream
+- clients should treat stream events as asynchronous hints and refetch through normal API/repository paths where applicable
+
+---
+
 ## Event Routes
 
 **Source**: `packages/backend/src/event/event.routes.config.ts`
@@ -513,6 +544,7 @@ When this payload accompanies `401` or `410`, web clients should keep the sessio
 - `/api/signinup`, `/api/signout`, `/api/session/*` - SuperTokens OAuth/session APIs
 - SuperTokens EmailPassword APIs (invoked through SDK methods in auth form hooks)
 - `/api/user/*` - User profile and metadata
+- `/api/events/stream` - authenticated SSE stream for realtime sync events
 - `/api/event/*` - Calendar event CRUD operations
 - `/api/calendars/*` - Calendar list and selection
 - `/api/sync/*` - Google Calendar synchronization

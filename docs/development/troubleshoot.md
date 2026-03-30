@@ -14,6 +14,36 @@ Interpret the result like this:
 - `500`: the backend is running but database connectivity failed
 - connection refused or timeout: the backend is not listening yet, or the port/base URL is wrong
 
+## SSE Stream Not Connected Or Not Receiving Events
+
+Compass realtime updates now use Server-Sent Events over:
+
+- `GET /api/events/stream`
+
+If UI data is stale after backend writes or sync activity, verify transport before
+digging into business logic.
+
+Quick checks:
+
+1. confirm session exists (browser has valid SuperTokens session cookie)
+2. open browser Network tab and verify `/api/events/stream` stays open with `200`
+3. verify response headers include `content-type: text/event-stream`
+4. confirm periodic `: keepalive` frames are visible (roughly every 25 seconds)
+5. trigger a known publish path (for example event write or import) and verify
+   named events appear (`EVENT_CHANGED`, `IMPORT_GCAL_*`, `USER_METADATA`)
+
+If the stream does not open:
+
+- check auth first (`verifySession()` guards the stream route)
+- verify backend route registration for `EventsRoutes`
+- confirm `ENV_WEB.BACKEND_BASEURL` points to the same backend origin expected by the session cookie
+
+If the stream opens but no events arrive:
+
+- check backend logs for publish call sites (`sseServer.handle...`)
+- verify user-id correlation (events fan out by authenticated user id)
+- check reverse-proxy buffering behavior; backend sets `X-Accel-Buffering: no` and uses heartbeats to reduce buffering delays
+
 ## Unable to Sign In with Google in Local Compass Instance
 
 ### Missing User id
