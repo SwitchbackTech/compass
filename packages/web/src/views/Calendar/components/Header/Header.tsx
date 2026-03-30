@@ -6,6 +6,7 @@ import { AccountIcon } from "@web/components/AuthModal/AccountIcon";
 import { AlignItems } from "@web/components/Flex/styled";
 import { SidebarIcon } from "@web/components/Icons/Sidebar";
 import { SelectView } from "@web/components/SelectView/SelectView";
+import { SyncStatusDot } from "@web/components/SyncStatusDot/SyncStatusDot";
 import { Text } from "@web/components/Text";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
@@ -73,6 +74,7 @@ export const Header: FC<Props> = ({ scrollUtil, today, weekProps }) => {
         </StyledLeftGroup>
         <StyledRightGroup>
           <AccountIcon />
+          <SyncStatusDot />
           <SelectView />
           <div>
             <StyledNavigationGroup>

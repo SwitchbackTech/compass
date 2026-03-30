@@ -13,29 +13,32 @@ import {
   useInteractions,
   useRole,
 } from "@floating-ui/react";
+import { DotOutlineIcon } from "@phosphor-icons/react";
+import { useConnectGoogle } from "@web/auth/hooks/google/useConnectGoogle/useConnectGoogle";
+import { type DotColor } from "@web/auth/hooks/google/useConnectGoogle/useConnectGoogle.types";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
+import { theme } from "@web/common/styles/theme";
 import { SpinnerIcon } from "@web/components/Icons/Spinner";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
-interface Props {
-  /** The DotIcon trigger element */
+const DOT_COLOR_MAP: Record<DotColor, string> = {
+  muted: theme.color.text.darkPlaceholder,
+  warning: theme.color.status.warning,
+  error: theme.color.status.error,
+};
+
+interface StatusDotPopoverProps {
   children: React.ReactNode;
-  /** Hover tooltip shown before the user clicks */
   tooltip: string;
-  /** Dialog title */
   title: string;
-  /** Dialog body text */
   description: string;
-  /** Label for the repair action button */
   repairLabel: string;
-  /** Called when the user clicks the repair button */
   onRepair: () => void;
-  /** When true: disables the repair button and shows a loading spinner */
   isRepairing: boolean;
 }
 
-export const StatusDotPopover = ({
+const StatusDotPopover = ({
   children,
   tooltip,
   title,
@@ -43,14 +46,14 @@ export const StatusDotPopover = ({
   repairLabel,
   onRepair,
   isRepairing,
-}: Props) => {
+}: StatusDotPopoverProps) => {
   const [open, setOpen] = useState(false);
   const maxZIndex = useGridMaxZIndex();
 
   const { refs, floatingStyles, context } = useFloating({
     open,
     onOpenChange: setOpen,
-    placement: "top",
+    placement: "bottom",
     whileElementsMounted: autoUpdate,
     middleware: [offset(8), flip(), shift({ padding: 8 })],
   });
@@ -112,5 +115,60 @@ export const StatusDotPopover = ({
         </FloatingPortal>
       )}
     </>
+  );
+};
+
+export const SyncStatusDot = () => {
+  const { sidebarStatus, isRepairing } = useConnectGoogle();
+  const dotColor = DOT_COLOR_MAP[sidebarStatus.dotColor ?? "muted"];
+
+  return (
+    <div role="status" aria-live="polite" aria-label={sidebarStatus.tooltip}>
+      {sidebarStatus.icon === "SpinnerIcon" ? (
+        <TooltipWrapper
+          description={sidebarStatus.tooltip}
+          disabled={sidebarStatus.isDisabled}
+        >
+          <SpinnerIcon
+            aria-hidden="true"
+            color={
+              sidebarStatus.tone === "warning"
+                ? theme.color.status.warning
+                : theme.color.status.info
+            }
+            size={24}
+          />
+        </TooltipWrapper>
+      ) : sidebarStatus.dialog ? (
+        <StatusDotPopover
+          tooltip={sidebarStatus.tooltip}
+          title={sidebarStatus.dialog.title}
+          description={sidebarStatus.dialog.description}
+          repairLabel={sidebarStatus.dialog.repairLabel}
+          onRepair={sidebarStatus.dialog.onRepair}
+          isRepairing={isRepairing}
+        >
+          <DotOutlineIcon
+            aria-hidden="true"
+            color={dotColor}
+            size={45}
+            weight="fill"
+          />
+        </StatusDotPopover>
+      ) : (
+        <TooltipWrapper
+          description={sidebarStatus.tooltip}
+          disabled={sidebarStatus.isDisabled}
+          onClick={sidebarStatus.onSelect}
+        >
+          <DotOutlineIcon
+            aria-hidden="true"
+            color={dotColor}
+            size={45}
+            weight="fill"
+          />
+        </TooltipWrapper>
+      )}
+    </div>
   );
 };

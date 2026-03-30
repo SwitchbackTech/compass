@@ -1,6 +1,3 @@
-import { DotIcon } from "@phosphor-icons/react";
-import { useConnectGoogle } from "@web/auth/hooks/google/useConnectGoogle/useConnectGoogle";
-import { type DotColor } from "@web/auth/hooks/google/useConnectGoogle/useConnectGoogle.types";
 import { useVersionCheck } from "@web/common/hooks/useVersionCheck";
 import { theme } from "@web/common/styles/theme";
 import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
@@ -22,13 +19,6 @@ import {
   LeftIconGroup,
   RightIconGroup,
 } from "@web/views/Calendar/components/Sidebar/styled";
-import { StatusDotPopover } from "./StatusDotPopover";
-
-const DOT_COLOR_MAP: Record<DotColor, string> = {
-  muted: theme.color.text.darkPlaceholder,
-  warning: theme.color.status.warning,
-  error: theme.color.status.error,
-};
 
 export const SidebarIconRow = () => {
   const dispatch = useAppDispatch();
@@ -36,7 +26,6 @@ export const SidebarIconRow = () => {
   const gCalImport = useAppSelector(selectImportGCalState);
   const isCmdPaletteOpen = useAppSelector(selectIsCmdPaletteOpen);
   const { isUpdateAvailable } = useVersionCheck();
-  const { sidebarStatus, isRepairing } = useConnectGoogle();
   const isBackgroundImporting = gCalImport.isProcessing === true;
 
   const handleUpdateReload = () => {
@@ -58,8 +47,6 @@ export const SidebarIconRow = () => {
       </Text>
     );
   };
-
-  const dotColor = DOT_COLOR_MAP[sidebarStatus.dotColor ?? "muted"];
 
   return (
     <IconRow>
@@ -107,57 +94,6 @@ export const SidebarIconRow = () => {
             }
           />
         </TooltipWrapper>
-        <div
-          role="status"
-          aria-live="polite"
-          aria-label={sidebarStatus.tooltip}
-        >
-          {sidebarStatus.icon === "SpinnerIcon" ? (
-            <TooltipWrapper
-              description={sidebarStatus.tooltip}
-              disabled={sidebarStatus.isDisabled}
-            >
-              <SpinnerIcon
-                aria-hidden="true"
-                color={
-                  sidebarStatus.tone === "warning"
-                    ? theme.color.status.warning
-                    : theme.color.status.info
-                }
-                size={24}
-              />
-            </TooltipWrapper>
-          ) : sidebarStatus.dialog ? (
-            <StatusDotPopover
-              tooltip={sidebarStatus.tooltip}
-              title={sidebarStatus.dialog.title}
-              description={sidebarStatus.dialog.description}
-              repairLabel={sidebarStatus.dialog.repairLabel}
-              onRepair={sidebarStatus.dialog.onRepair}
-              isRepairing={isRepairing}
-            >
-              <DotIcon
-                aria-hidden="true"
-                color={dotColor}
-                size={24}
-                weight="fill"
-              />
-            </StatusDotPopover>
-          ) : (
-            <TooltipWrapper
-              description={sidebarStatus.tooltip}
-              disabled={sidebarStatus.isDisabled}
-              onClick={sidebarStatus.onSelect}
-            >
-              <DotIcon
-                aria-hidden="true"
-                color={dotColor}
-                size={24}
-                weight="fill"
-              />
-            </TooltipWrapper>
-          )}
-        </div>
         {isBackgroundImporting ? (
           <TooltipWrapper description="Importing your calendar events in the background">
             <SpinnerIcon />

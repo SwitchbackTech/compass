@@ -4,6 +4,7 @@ import { AccountIcon } from "@web/components/AuthModal/AccountIcon";
 import { AlignItems } from "@web/components/Flex/styled";
 import { SidebarIcon } from "@web/components/Icons/Sidebar";
 import { SelectView } from "@web/components/SelectView/SelectView";
+import { SyncStatusDot } from "@web/components/SyncStatusDot/SyncStatusDot";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { Reminder } from "@web/views/Calendar/components/Header/Reminder/Reminder";
 import {
@@ -55,6 +56,7 @@ export const Header: FC<Props> = ({
 
       <StyledRightGroup>
         <AccountIcon />
+        <SyncStatusDot />
         <SelectView />
       </StyledRightGroup>
     </StyledHeaderRow>
