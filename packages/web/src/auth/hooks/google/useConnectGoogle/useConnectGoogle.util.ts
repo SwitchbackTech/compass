@@ -45,7 +45,7 @@ export const getGoogleConnectionConfig = (
         sidebarStatus: {
           icon: "DotIcon",
           dotColor: "warning",
-          tooltip: "Google Calendar needs repair. Click to repair.",
+          tooltip: "Repairing Google Calendar in the background.",
           tone: "warning",
           isDisabled: true,
           dialog: {
