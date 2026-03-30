@@ -3,7 +3,15 @@ import type {
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from "axios";
-import { getApiErrorCode } from "./compass.api.util";
+import {
+  ApiErrorResponseSchema,
+  GoogleConnectErrorResponseSchema,
+} from "@core/types/auth.types";
+import {
+  getApiErrorCode,
+  parseApiError,
+  parseGoogleConnectError,
+} from "./compass.api.util";
 
 const createAxiosError = (response: { data?: unknown } | null): AxiosError =>
   ({
@@ -71,5 +79,59 @@ describe("getApiErrorCode", () => {
       data: { code: "GOOGLE_REVOKED", message: "Google access revoked." },
     });
     expect(getApiErrorCode(error)).toBe("GOOGLE_REVOKED");
+  });
+});
+
+describe("parseApiError", () => {
+  it("parses errors against a provided schema", () => {
+    const error = createAxiosError({
+      data: {
+        code: "ANY_ERROR",
+        message: "Something went wrong",
+      },
+    });
+
+    expect(parseApiError(error, ApiErrorResponseSchema)).toEqual({
+      code: "ANY_ERROR",
+      message: "Something went wrong",
+    });
+  });
+
+  it("returns undefined when the payload does not match the schema", () => {
+    const error = createAxiosError({
+      data: { code: 404, message: "Something went wrong" },
+    });
+
+    expect(parseApiError(error, ApiErrorResponseSchema)).toBeUndefined();
+  });
+});
+
+describe("parseGoogleConnectError", () => {
+  it("parses typed Google connect errors", () => {
+    const error = createAxiosError({
+      data: {
+        code: "GOOGLE_ACCOUNT_ALREADY_CONNECTED",
+        message: "Google account is already connected",
+      },
+    });
+
+    expect(parseGoogleConnectError(error)).toEqual({
+      code: "GOOGLE_ACCOUNT_ALREADY_CONNECTED",
+      message: "Google account is already connected",
+    });
+  });
+
+  it("returns undefined for non-Google-connect error codes", () => {
+    const error = createAxiosError({
+      data: {
+        code: "ANY_ERROR",
+        message: "Something went wrong",
+      },
+    });
+
+    expect(parseGoogleConnectError(error)).toBeUndefined();
+    expect(
+      parseApiError(error, GoogleConnectErrorResponseSchema),
+    ).toBeUndefined();
   });
 });

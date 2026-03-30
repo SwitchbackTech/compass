@@ -10,6 +10,8 @@ import {
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
+import { UserError } from "@backend/common/errors/user/user.errors";
+import { normalizeEmail } from "@backend/common/helpers/email.util";
 import mongoService from "@backend/common/services/mongo.service";
 import EmailService from "@backend/email/email.service";
 import syncService from "@backend/sync/services/sync.service";
@@ -77,7 +79,7 @@ class GoogleAuthService {
       );
 
       await userMetadataService.updateUserMetadata({
-        userId,
+        userId: cUser.user.userId,
         data: {
           skipOnboarding: false,
           sync: { importGCal: "RESTART", incrementalGCalSync: "RESTART" },
@@ -130,7 +132,6 @@ class GoogleAuthService {
       gUser: validatedGUser,
       refreshToken,
     } = parseReconnectGoogleParams(compassUserId, gUser, tokens);
-
     const existingCompassUserId = await this.getConnectedCompassUserId(
       validatedGUser.sub,
     );
@@ -140,6 +141,19 @@ class GoogleAuthService {
         AuthError.GoogleAccountAlreadyConnected,
         "User not connected",
       );
+    }
+
+    const currentUser = await findCompassUserBy("_id", cUserId);
+
+    if (!currentUser) {
+      throw error(UserError.UserNotFound, "User not connected");
+    }
+
+    if (
+      !validatedGUser.email ||
+      normalizeEmail(validatedGUser.email) !== normalizeEmail(currentUser.email)
+    ) {
+      throw error(AuthError.GoogleConnectEmailMismatch, "User not connected");
     }
 
     return this.persistGoogleConnection(cUserId, validatedGUser, refreshToken);
@@ -218,6 +232,7 @@ class GoogleAuthService {
     // Determine auth mode based on server-side state
     const decision = await determineGoogleAuthMode(
       googleUserId,
+      providerUser.email,
       createdNewRecipeUser,
     );
 

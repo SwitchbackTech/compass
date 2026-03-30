@@ -7,6 +7,7 @@ import {
 } from "supertokens-node";
 import SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
 import { Logger } from "@core/logger/winston.logger";
+import { normalizeEmail } from "@backend/common/helpers/email.util";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import { type Summary_Delete } from "@backend/user/types/user.types";
 
@@ -38,10 +39,6 @@ class SupertokensUserCleanupService {
     return [...new Set(values.filter(Boolean))];
   }
 
-  private normalizeEmail(email: string): string {
-    return email.trim().toLowerCase();
-  }
-
   private hasMetadata(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null && !Array.isArray(value);
   }
@@ -68,9 +65,8 @@ class SupertokensUserCleanupService {
   async resolveByEmail(email: string): Promise<SupertokensCleanupTarget> {
     this.init();
 
-    const normalizedEmail = this.normalizeEmail(email);
     const users = await listUsersByAccountInfo(TENANT_ID, {
-      email: normalizedEmail,
+      email: normalizeEmail(email),
     });
     const superTokensUserIds = this.getUniqueValues(users.map(({ id }) => id));
     const recipeUserIds = this.getUniqueValues(

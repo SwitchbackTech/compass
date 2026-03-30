@@ -6,6 +6,7 @@ import {
   createGoogleSignInSuccess,
   ensureExternalUserIdMapping,
   getFormFieldValue,
+  maybeReplaceEmailPasswordSession,
 } from "@backend/common/middleware/supertokens.middleware.util";
 
 jest.mock("supertokens-node", () => ({
@@ -145,6 +146,70 @@ describe("supertokens.middleware.util", () => {
         createdNewRecipeUser: false,
         recipeUserId,
         loginMethodsLength: 1,
+      });
+    });
+  });
+
+  describe("maybeReplaceEmailPasswordSession", () => {
+    it("returns the original response when the session already belongs to the canonical Compass user", async () => {
+      const input = {
+        formFields: [],
+        options: { req: {}, res: {} },
+      } as unknown as Parameters<typeof maybeReplaceEmailPasswordSession>[0];
+      const response = {
+        status: "OK" as const,
+        session: {
+          getHandle: () => "existing-session",
+          getUserId: () => "compass-user-id",
+        },
+      } as Parameters<typeof maybeReplaceEmailPasswordSession>[1];
+      const replaceSession = jest.fn();
+
+      const result = await maybeReplaceEmailPasswordSession(
+        input,
+        response,
+        "compass-user-id",
+        replaceSession,
+      );
+
+      expect(result).toBe(response);
+      expect(replaceSession).not.toHaveBeenCalled();
+    });
+
+    it("replaces the response session when SuperTokens returned a different user id", async () => {
+      const input = {
+        formFields: [],
+        options: { req: {}, res: {} },
+      } as unknown as Parameters<typeof maybeReplaceEmailPasswordSession>[0];
+      const existingSession = {
+        getHandle: () => "existing-session",
+        getUserId: () => "recipe-user-id",
+      };
+      const replacementSession = {
+        getHandle: () => "compass-session",
+        getUserId: () => "compass-user-id",
+      };
+      const response = {
+        status: "OK" as const,
+        session: existingSession,
+      } as Parameters<typeof maybeReplaceEmailPasswordSession>[1];
+      const replaceSession = jest.fn().mockResolvedValue(replacementSession);
+
+      const result = await maybeReplaceEmailPasswordSession(
+        input,
+        response,
+        "compass-user-id",
+        replaceSession,
+      );
+
+      expect(replaceSession).toHaveBeenCalledWith(
+        input,
+        existingSession,
+        "compass-user-id",
+      );
+      expect(result).toEqual({
+        status: "OK",
+        session: replacementSession,
       });
     });
   });

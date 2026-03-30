@@ -500,6 +500,62 @@ describe("useConnectGoogle", () => {
     expect(mockDispatch).toHaveBeenCalledWith(triggerFetch());
   });
 
+  it("shows the server message when Google connect fails and keeps the connect action visible", async () => {
+    mockUseAppSelector.mockImplementation((selector) => {
+      if (selector === selectGoogleConnectionState) {
+        return "NOT_CONNECTED";
+      }
+
+      if (selector === selectUserMetadataStatus) {
+        return "loaded";
+      }
+
+      if (selector === selectImportGCalState) {
+        return { isRepairing: false };
+      }
+
+      return undefined;
+    });
+    mockAuthApi.connectGoogle.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        data: {
+          code: "GOOGLE_ACCOUNT_ALREADY_CONNECTED",
+          message:
+            "Google account is already connected to another Compass user",
+        },
+      },
+    } as never);
+
+    const { result } = renderHook(() => useConnectGoogle());
+    const useGoogleAuthArg = getUseGoogleAuthArg();
+    if (!useGoogleAuthArg?.onSuccess) {
+      throw new Error("Expected useGoogleAuth to receive an onSuccess handler");
+    }
+
+    const payload = {
+      clientType: "web" as const,
+      thirdPartyId: "google" as const,
+      redirectURIInfo: {
+        redirectURIOnProviderDashboard: window.location.origin,
+        redirectURIQueryParams: {
+          code: "auth-code",
+          scope: "scope",
+          state: "state",
+        },
+      },
+    };
+
+    await expect(useGoogleAuthArg.onSuccess(payload)).resolves.toBe(false);
+
+    expect(mockShowErrorToast).toHaveBeenCalledWith(
+      "Google account is already connected to another Compass user",
+    );
+    expect(mockRefreshUserMetadata).not.toHaveBeenCalled();
+    expect(mockDispatch).not.toHaveBeenCalledWith(triggerFetch());
+    expect(result.current.commandAction.label).toBe("Connect Google Calendar");
+  });
+
   it("records synced local events before refreshing Google data", async () => {
     mockSyncPendingLocalEvents.mockImplementation((dispatch) => {
       dispatch(importGCalSlice.actions.setLocalEventsSynced(2));

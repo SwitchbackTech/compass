@@ -12,6 +12,40 @@ The repo generally prefers:
 
 This keeps runtime validation and compile-time typing close together.
 
+## Shared API Error Contracts
+
+For API errors that the web app needs to understand structurally, use the same pattern as request and response contracts:
+
+1. define a shared base error schema in `packages/core/src/types`
+2. export the inferred type
+3. extend that base schema for feature-specific error families
+4. parse Axios errors on the frontend with `parseApiError(error, schema)`
+5. keep any feature-specific parser in a narrowly named helper such as `parseGoogleConnectError(...)`
+
+Current reference files:
+
+- `packages/core/src/types/auth.types.ts`
+- `packages/web/src/common/apis/compass.api.util.ts`
+- `packages/backend/src/common/errors/handlers/error.handler.ts`
+
+Example:
+
+```ts
+export const ApiErrorResponseSchema = z.object({
+  code: z.string(),
+  message: z.string().min(1),
+});
+
+export const GoogleConnectErrorResponseSchema = ApiErrorResponseSchema.extend({
+  code: z.enum([
+    "GOOGLE_ACCOUNT_ALREADY_CONNECTED",
+    "GOOGLE_CONNECT_EMAIL_MISMATCH",
+  ]),
+});
+```
+
+Use the generic base schema with `parseApiError(error, ApiErrorResponseSchema)` for display-only fallbacks. When a flow needs typed behavior, parse against the specific schema for that flow instead of overloading a generic helper.
+
 ## Main Places To Look
 
 ### Shared contracts
@@ -73,6 +107,12 @@ Put it in `core` when:
 - it defines a persisted or API-visible contract
 - it encodes domain invariants
 
+This includes API error payloads when:
+
+- the backend emits a stable `code`
+- the web needs to branch on that `code`
+- multiple callers should reuse the same contract instead of duplicating inline string checks
+
 Keep it local to `web` or `backend` when:
 
 - it is purely presentation or implementation detail
@@ -86,9 +126,19 @@ Keep it local to `web` or `backend` when:
 4. update web forms, selectors, and renderers
 5. run cross-package tests and `yarn type-check`
 
+For shared API error changes, make that workflow concrete:
+
+1. add or update backend error metadata with a stable `code`
+2. confirm the centralized error handler returns that `code`
+3. add or update the shared Zod schema in `core`
+4. add or update the frontend parser wrapper for the specific flow
+5. test both the backend payload and the frontend parser behavior
+
 ## Common Pitfalls
 
 - changing a TypeScript interface without updating the Zod schema
 - changing web-only types while forgetting the backend contract
 - adding a field to storage or API responses without updating normalization
 - mixing local-only and shared event/task types unintentionally
+- putting an endpoint-specific schema behind a generic helper name
+- branching on raw `error.response.data.code` strings in components instead of parsing through a shared schema

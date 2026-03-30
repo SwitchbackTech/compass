@@ -1,17 +1,7 @@
 import supertokens from "supertokens-node";
-import type {
-  APIInterface as EmailPasswordAPIInterface,
-  RecipeInterface as EmailPasswordRecipeInterface,
-} from "supertokens-node/recipe/emailpassword/types";
 import Session from "supertokens-node/recipe/session";
-import type {
-  APIInterface as SessionAPIInterface,
-  SessionContainerInterface,
-} from "supertokens-node/recipe/session/types";
-import type {
-  APIInterface as ThirdPartyAPIInterface,
-  RecipeInterface as ThirdPartyRecipeInterface,
-} from "supertokens-node/recipe/thirdparty/types";
+import type { SessionContainerInterface } from "supertokens-node/recipe/session/types";
+import type { RecipeInterface as ThirdPartyRecipeInterface } from "supertokens-node/recipe/thirdparty/types";
 import { NodeEnv } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { zObjectId } from "@core/types/type.utils";
@@ -19,36 +9,29 @@ import googleAuthService from "@backend/auth/services/google/google.auth.service
 import type { GoogleSignInSuccess } from "@backend/auth/services/google/google.auth.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import {
-  type CreateGoogleSignInResponse,
-  type ThirdPartySignInUpInput,
   buildResetPasswordLink,
   createGoogleSignInSuccess,
   ensureExternalUserIdMapping,
   getFormFieldValue,
+  maybeReplaceEmailPasswordSession,
 } from "@backend/common/middleware/supertokens.middleware.util";
 import EmailService from "@backend/email/email.service";
 import userService from "@backend/user/services/user.service";
+import type {
+  CreateGoogleSignInResponse,
+  CreateGoogleUserFn,
+  CreateNewRecipeUserFn,
+  SessionSignOutPOSTFn,
+  SignInPOSTFn,
+  SignUpPOSTFn,
+  ThirdPartySignInUpInput,
+  ThirdPartySignInUpPostFn,
+} from "./supertokens.middleware.types";
 
 const logger = Logger("app:supertokens.middleware");
 
-type ThirdPartySignInUpPostFn = NonNullable<
-  ThirdPartyAPIInterface["signInUpPOST"]
->;
-
-type CreateGoogleUserFn =
-  ThirdPartyRecipeInterface["manuallyCreateOrUpdateUser"];
-
-type CreateNewRecipeUserFn =
-  EmailPasswordRecipeInterface["createNewRecipeUser"];
-
-type SignUpPOSTFn = NonNullable<EmailPasswordAPIInterface["signUpPOST"]>;
-
-type SignInPOSTFn = NonNullable<EmailPasswordAPIInterface["signInPOST"]>;
-
-type SessionSignOutPOSTFn = NonNullable<SessionAPIInterface["signOutPOST"]>;
-
-async function replaceGoogleSignInSession(
-  input: ThirdPartySignInUpInput,
+async function replaceSessionWithCompassUser(
+  input: { options: { req: unknown; res: unknown } },
   currentSession: SessionContainerInterface,
   compassUserId: string,
 ) {
@@ -73,8 +56,10 @@ async function maybeRemapGoogleSignInToCompassSession(
   response: Awaited<ReturnType<ThirdPartySignInUpPostFn>>;
   success: GoogleSignInSuccess;
 }> {
-  const connectedCompassUserId =
-    await googleAuthService.getConnectedCompassUserId(success.providerUser.sub);
+  const connectedCompassUserId = await userService.getCanonicalCompassUserId({
+    email: success.providerUser.email,
+    googleUserId: success.providerUser.sub,
+  });
 
   if (
     input.session ||
@@ -85,7 +70,7 @@ async function maybeRemapGoogleSignInToCompassSession(
     return { response, success };
   }
 
-  const session = await replaceGoogleSignInSession(
+  const session = await replaceSessionWithCompassUser(
     input,
     response.session,
     connectedCompassUserId,
@@ -196,7 +181,14 @@ export async function handleEmailPasswordSignUp(
         email,
         name,
       });
+      const remappedResponse = await maybeReplaceEmailPasswordSession(
+        input,
+        response,
+        user.userId,
+        replaceSessionWithCompassUser,
+      );
       await EmailService.tagNewUserIfEnabled(user, isNewUser);
+      return remappedResponse;
     }
   }
 
@@ -214,7 +206,13 @@ export async function handleEmailPasswordSignIn(
     const userId = response.session.getUserId();
 
     if (email) {
-      await userService.upsertUserFromAuth({ userId, email });
+      const { user } = await userService.upsertUserFromAuth({ userId, email });
+      return maybeReplaceEmailPasswordSession(
+        input,
+        response,
+        user.userId,
+        replaceSessionWithCompassUser,
+      );
     }
   }
 

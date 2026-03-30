@@ -1,4 +1,4 @@
-import type { AxiosError } from "axios";
+import { type AxiosError, isAxiosError } from "axios";
 import { useCallback } from "react";
 import { GOOGLE_REVOKED } from "@core/constants/websocket.constants";
 import { type GoogleConnectionState } from "@core/types/user.types";
@@ -7,7 +7,10 @@ import { useGoogleAuth } from "@web/auth/hooks/google/useGoogleAuth/useGoogleAut
 import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
 import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
 import { AuthApi } from "@web/common/apis/auth.api";
-import { getApiErrorCode } from "@web/common/apis/compass.api.util";
+import {
+  getApiErrorCode,
+  parseGoogleConnectError,
+} from "@web/common/apis/compass.api.util";
 import { SyncApi } from "@web/common/apis/sync.api";
 import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
@@ -53,7 +56,20 @@ export const useConnectGoogle = () => {
       const googleConnectRequest = buildGoogleConnectRequest(
         data.redirectURIInfo,
       );
-      await AuthApi.connectGoogle(googleConnectRequest);
+      try {
+        await AuthApi.connectGoogle(googleConnectRequest);
+      } catch (error) {
+        if (isAxiosError(error)) {
+          const message = parseGoogleConnectError(error)?.message;
+
+          if (message) {
+            showErrorToast(message);
+            return false;
+          }
+        }
+
+        throw error;
+      }
       await refreshUserMetadata();
       dispatch(triggerFetch());
     },

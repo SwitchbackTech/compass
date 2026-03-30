@@ -16,10 +16,12 @@ import supertokensUserCleanupService from "@backend/auth/services/supertokens/su
 import calendarService from "@backend/calendar/services/calendar.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
+import { normalizeEmail } from "@backend/common/helpers/email.util";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
 import syncService from "@backend/sync/services/sync.service";
+import { findCanonicalCompassUser } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import {
   type GetUserMetadataResponse,
@@ -91,6 +93,14 @@ class UserService {
     };
   };
 
+  getCanonicalCompassUserId = async (input: {
+    email?: string | null;
+    googleUserId?: string | null;
+  }): Promise<string | null> => {
+    const user = await findCanonicalCompassUser(input);
+    return user?._id.toString() ?? null;
+  };
+
   upsertUserFromAuth = async (
     input: {
       userId: string;
@@ -104,14 +114,18 @@ class UserService {
     user: Schema_User & { userId: string };
     isNewUser: boolean;
   }> => {
-    const userId = zObjectId.parse(input.userId, {
+    const requestedUserId = zObjectId.parse(input.userId, {
       error: () => "Invalid user ID",
     });
-    const email = input.email.trim().toLowerCase();
-    const existingUser = await mongoService.user.findOne(
-      { _id: userId },
+    const email = normalizeEmail(input.email);
+    const existingUserByEmail = await mongoService.user.findOne(
+      { email },
       { session },
     );
+    const existingUser =
+      existingUserByEmail ??
+      (await mongoService.user.findOne({ _id: requestedUserId }, { session }));
+    const userId = existingUser?._id ?? requestedUserId;
 
     const isNewUser = !existingUser;
     const name = input.name?.trim() || existingUser?.name || "Mystery Person";
