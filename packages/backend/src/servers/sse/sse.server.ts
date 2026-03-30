@@ -19,16 +19,24 @@ class SSEServer {
     // .unref() prevents the interval from keeping the Node.js process alive in
     // tests and graceful shutdown scenarios.
     setInterval(() => {
-      for (const conns of this.connections.values()) {
+      for (const [userId, conns] of this.connections) {
         for (const res of conns) {
           try {
             res.write(": keepalive\n\n");
           } catch {
-            // Connection already closed
+            this.removeConnection(userId, res);
           }
         }
       }
     }, HEARTBEAT_INTERVAL_MS).unref();
+  }
+
+  private removeConnection(userId: string, res: Response): void {
+    const conns = this.connections.get(userId);
+    if (!conns) return;
+    conns.delete(res);
+    if (conns.size === 0) this.connections.delete(userId);
+    logger.debug(`SSE dead connection removed for user: ${userId}`);
   }
 
   subscribe(userId: string, res: Response): () => void {
@@ -46,8 +54,7 @@ class SSEServer {
     );
 
     return () => {
-      conns.delete(res);
-      if (conns.size === 0) this.connections.delete(userId);
+      this.removeConnection(userId, res);
       logger.debug(`SSE connection closed for user: ${userId}`);
     };
   }
@@ -60,7 +67,7 @@ class SSEServer {
       try {
         res.write(payload);
       } catch {
-        // Will be cleaned up by close handler
+        this.removeConnection(userId, res);
       }
     }
   }
