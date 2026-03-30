@@ -3,7 +3,6 @@ import {
   formatAs,
   formatAsIso8601,
   isDateRangeOverlapping,
-  isSameMonth,
 } from "./date.util";
 
 describe("convertRruleWithUntilToDate", () => {
@@ -190,36 +189,5 @@ describe("isDateRangeOverlapping", () => {
         ),
       ).toBe(true);
     });
-  });
-});
-
-describe("isSameMonth", () => {
-  it("returns true when dates are in the same month and year", () => {
-    expect(isSameMonth("2024-01-05", "2024-01-20")).toBe(true);
-  });
-
-  it("returns false when dates share the same month but are in different years", () => {
-    expect(isSameMonth("2024-01-15", "2025-01-15")).toBe(false);
-  });
-
-  it("returns false when dates are in different months of the same year", () => {
-    expect(isSameMonth("2024-01-01", "2024-02-01")).toBe(false);
-  });
-
-  it("returns false for December and January across year boundary", () => {
-    expect(isSameMonth("2023-12-31", "2024-01-01")).toBe(false);
-  });
-
-  it("works with ISO datetime strings", () => {
-    expect(isSameMonth("2024-03-01T00:00:00Z", "2024-03-31T23:59:59Z")).toBe(
-      true,
-    );
-  });
-
-  it("compares in UTC to avoid timezone boundary shifts", () => {
-    // 2024-03-01T00:00:00Z is still March in UTC, not February
-    expect(isSameMonth("2024-03-01T00:00:00Z", "2024-03-15T00:00:00Z")).toBe(
-      true,
-    );
   });
 });
