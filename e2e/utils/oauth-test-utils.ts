@@ -1,4 +1,4 @@
-import { Page, expect } from "@playwright/test";
+import { type Page, expect } from "@playwright/test";
 import "./compass-window";
 
 /**
@@ -200,13 +200,20 @@ const CONNECTION_STATE_TO_LABEL: Record<GoogleConnectionState, RegExp> = {
   ATTENTION: /needs repair/i,
 };
 
-const SIDEBAR_STATUS_SELECTOR =
-  "#sidebar [role='status'][aria-label]:not([aria-busy])";
+/**
+ * HeaderInfoIcon only renders role="status" for warning/error connection states
+ * (see HeaderInfoIcon.tsx). Muted / checking / importing-without-background-import
+ * do not expose this region.
+ */
+const GOOGLE_HEADER_STATUS_VISIBLE_STATES: GoogleConnectionState[] = [
+  "RECONNECT_REQUIRED",
+  "ATTENTION",
+];
 
 /**
  * Set the Google connection state via Redux userMetadata slice.
- * Dispatches to the store and waits for the sidebar aria-label to update.
- * waitForAppReady in beforeEach guarantees the store is ready before this runs.
+ * Dispatches to the store, waits for Redux to match, then asserts the header
+ * status region when the UI shows it (reconnect required / needs repair).
  */
 export const setGoogleConnectionState = async (
   page: Page,
@@ -221,9 +228,37 @@ export const setGoogleConnectionState = async (
     });
   }, state);
 
-  await expect(page.locator(SIDEBAR_STATUS_SELECTOR)).toHaveAttribute(
-    "aria-label",
-    CONNECTION_STATE_TO_LABEL[state],
+  await page.waitForFunction(
+    (expected) => {
+      const cs =
+        window.__COMPASS_E2E_STORE__?.getState()?.userMetadata?.current?.google
+          ?.connectionState;
+      return cs === expected;
+    },
+    state,
+    { timeout: 5000 },
+  );
+
+  if (GOOGLE_HEADER_STATUS_VISIBLE_STATES.includes(state)) {
+    await expect(
+      page.getByRole("status", { name: CONNECTION_STATE_TO_LABEL[state] }),
+    ).toBeVisible();
+  }
+};
+
+export const expectGoogleConnectionStateInStore = async (
+  page: Page,
+  state: GoogleConnectionState,
+) => {
+  await page.waitForFunction(
+    (expected) => {
+      const cs =
+        window.__COMPASS_E2E_STORE__?.getState()?.userMetadata?.current?.google
+          ?.connectionState;
+      return cs === expected;
+    },
+    state,
+    { timeout: 5000 },
   );
 };
 
