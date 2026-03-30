@@ -3,7 +3,6 @@ import { ZIndex } from "@web/common/constants/web.constants";
 import { c } from "@web/common/styles/colors";
 import { Flex } from "@web/components/Flex";
 import { JustifyContent } from "@web/components/Flex/styled";
-import { Text } from "@web/components/Text";
 
 // Constants
 export const HEADER_HEIGHT = 80;
@@ -36,40 +35,6 @@ export const StyledRightGroup = styled(Flex)`
   z-index: ${ZIndex.LAYER_2};
 `;
 
-export const StyledHeaderLabel = styled(Flex)`
-  padding-left: 20px;
-  color: ${c.gray100};
-`;
-
-export const StyledNavigationGroup = styled(Flex)`
-  align-items: center;
-  justify-content: space-between;
-  margin-right: 20px;
-`;
-
-export const StyledNavigationArrows = styled(Flex)`
-  padding-left: 20px;
-  align-items: center;
-`;
-
-export const ArrowNavigationButton = styled(Text)`
-  display: flex;
-  justify-content: center;
-  height: 30px;
-  user-select: none;
-  width: 30px;
-
-  &:hover {
-    border-radius: 50%;
-    filter: brightness(160%);
-    transition: filter 0.35s ease-out;
-  }
-
-  &:first-child {
-    margin-right: 12px;
-  }
-`;
-
 // Week days components
 export const StyledWeekDaysFlex = styled(Flex)`
   width: 100%;
@@ -81,24 +46,4 @@ export const StyledWeekDayFlex = styled(Flex)<{ color: string }>`
   color: ${({ color }) => color};
   flex-basis: 100%;
   min-width: ${EVENT_WIDTH_MINIMUM}px;
-`;
-
-export const StyledMonthLabel = styled(Text)`
-  font-size: 24px;
-  color: ${c.gray100};
-  margin-left: 20px;
-`;
-
-// Today button
-export const StyledTodayButton = styled.button`
-  background: transparent;
-  color: ${c.gray100};
-  border-radius: 4px;
-  padding: 4px 8px;
-  cursor: pointer;
-  font-size: 14px;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
 `;
