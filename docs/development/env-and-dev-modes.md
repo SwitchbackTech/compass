@@ -32,7 +32,7 @@ Use this for:
 - authenticated API work
 - Google OAuth/session behavior
 - Mongo-backed event behavior
-- sync and websocket work
+- sync and SSE work
 
 This requires valid env config.
 
@@ -136,7 +136,7 @@ Webpack behavior (`packages/web/webpack.config.mjs`):
 - Google connection flows
 - backend validation behavior
 - Mongo persistence
-- websocket server behavior
+- SSE stream behavior
 
 ## Backend Health Probe
 

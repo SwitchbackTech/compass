@@ -2,7 +2,7 @@ import { type NextFunction, type Request, type Response } from "express";
 import { ObjectId } from "mongodb";
 import { ZodError } from "zod/v4";
 import { COMPASS_RESOURCE_HEADER } from "@core/constants/core.constants";
-import { GOOGLE_REVOKED } from "@core/constants/websocket.constants";
+import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import {
@@ -19,7 +19,7 @@ import {
   isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
-import { webSocketServer } from "@backend/servers/websocket/websocket.server";
+import { sseServer } from "@backend/servers/sse/sse.server";
 import syncService from "@backend/sync/services/sync.service";
 import { getSync } from "@backend/sync/util/sync.queries";
 import { isMissingGoogleRefreshToken } from "@backend/sync/util/sync.util";
@@ -310,5 +310,5 @@ const pruneAndNotifyGoogleRevoked = async (
 ): Promise<void> => {
   logger.warn(`Cleaning data after ${reason} for user: ${userId}`);
   await userService.pruneGoogleData(userId);
-  webSocketServer.handleGoogleRevoked(userId);
+  sseServer.handleGoogleRevoked(userId);
 };

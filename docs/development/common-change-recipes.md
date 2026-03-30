@@ -9,7 +9,7 @@ These are the safest implementation paths for common Compass changes.
 3. Keep the controller thin in `controllers/*.controller.ts`.
 4. Put business logic in `services/*.service.ts`.
 5. Add controller or service tests.
-6. If the endpoint affects realtime UI, decide whether a websocket event is required.
+6. If the endpoint affects realtime UI, decide whether an SSE event is required.
 
 ## Add A New Event Field
 
@@ -45,12 +45,12 @@ Do not edit recurring behavior from one layer only.
 6. Run focused tests:
    - `yarn test:backend --runTestsByPath packages/backend/src/event/classes/compass.event.parser.test.ts packages/backend/src/event/classes/compass.event.executor.test.ts packages/backend/src/sync/services/sync/__tests__/compass.sync.processor.test.ts --runInBand`
 
-## Add A Websocket Event
+## Add An SSE Event
 
-1. Add the event name to `packages/core/src/constants/websocket.constants.ts`.
-2. Update shared websocket types in `packages/core/src/types/websocket.types.ts` if needed.
-3. Emit from `packages/backend/src/servers/websocket/websocket.server.ts`.
-4. Consume it in a web socket hook under `packages/web/src/socket/hooks`.
+1. Add the event name to `packages/core/src/constants/sse.constants.ts`.
+2. Update shared payload types in `packages/core/src/types/sse.types.ts` if needed.
+3. Emit from `packages/backend/src/servers/sse/sse.server.ts` (or call site that uses `publish`).
+4. Consume it in a web hook under `packages/web/src/sse/hooks` (listeners on `EventSource`).
 5. Add tests on both emitter and listener sides.
 
 ## Add Or Change Local Storage Data

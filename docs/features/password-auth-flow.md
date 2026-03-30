@@ -138,7 +138,7 @@ At runtime it:
 
 - checks whether a session already exists
 - marks the user as authenticated in local auth state
-- reconnects the websocket when a session exists
+- opens the SSE stream when a session exists
 - refreshes user metadata after session creation/refresh
 
 `UserProvider.tsx` also backfills `lastKnownEmail` from `/api/user/profile` once a previously-authenticated user is loaded.

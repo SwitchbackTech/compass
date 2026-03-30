@@ -51,7 +51,7 @@ Definition of terms used in the source code and documentation.
 
 **Duck Pattern**: A Redux pattern that co-locates actions, reducers, and selectors in a single file (or directory) for a feature domain.
 
-**WebSocket**: A communication protocol used for real-time bidirectional communication between the frontend and backend. Used to push updates when events change.
+**Server-Sent Events (SSE)**: An HTTP-based mechanism where the server pushes named events over a long-lived response. Compass uses one `EventSource` per tab to `GET /api/events/stream` for calendar sync and metadata updates.
 
 **Supertokens**: The authentication library used by Compass to manage user sessions, access tokens, and refresh tokens.
 

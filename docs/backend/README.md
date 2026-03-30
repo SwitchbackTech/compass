@@ -1,6 +1,6 @@
 # Compass Backend
 
-Backend service for auth/session management, event persistence, Google sync, and websocket notifications.
+Backend service for auth/session management, event persistence, Google sync, and SSE notifications.
 
 ## Intent
 
@@ -22,7 +22,7 @@ When changing sync or auth logic:
 - Shared error handling:
   - `packages/backend/src/common/errors/handlers/error.express.handler.ts`
 - Realtime notifications:
-  - `packages/backend/src/servers/websocket/websocket.server.ts`
+  - `packages/backend/src/servers/sse/sse.server.ts`
 
 ## Primary Backend Workflows
 
@@ -78,4 +78,4 @@ Observed outcomes include:
 - [Backend Request Flow](./backend-request-flow.md)
 - [Compass API Documentation](./api-documentation.md)
 - [Backend Error Handling](./backend-error-handling.md)
-- [Google Sync And Websocket Flow](../features/google-sync-and-websocket-flow.md)
+- [Google Sync And SSE Flow](../features/google-sync-and-sse-flow.md)

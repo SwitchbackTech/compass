@@ -1,27 +1,12 @@
 import type { EventEmitter2 } from "eventemitter2";
 import type EventEmitter from "node:events";
 import type { Server } from "node:http";
-import type { Socket } from "socket.io";
-import type { Socket as Client } from "socket.io-client";
-import type {
-  CompassSocket,
-  CompassSocketServer,
-} from "@core/types/websocket.types";
 
 export async function waitUntilEvent<
   Payload extends unknown[],
   Result = Payload,
 >(
-  emitter: Pick<
-    | Socket
-    | CompassSocket
-    | Client
-    | Server
-    | CompassSocketServer
-    | EventEmitter
-    | EventEmitter2,
-    "once"
-  >,
+  emitter: Pick<Server | EventEmitter | EventEmitter2, "once">,
   event: Parameters<(typeof emitter)["once"]>["0"],
   timeoutMs: number = 2000,
   beforeEvent: () => Promise<unknown> = () => Promise.resolve(),

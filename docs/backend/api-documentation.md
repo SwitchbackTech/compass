@@ -328,7 +328,7 @@ Authenticated user trigger for full import restart:
 
 - middleware: `verifySession()` + `requireGoogleConnectionSession`
 - response: `204 No Content`
-- import runs asynchronously; progress is surfaced via websocket `IMPORT_GCAL_START` / `IMPORT_GCAL_END`
+- import runs asynchronously; progress is surfaced via SSE `IMPORT_GCAL_START` / `IMPORT_GCAL_END`
 - body schema (`ImportGCalRequestSchema` in `packages/backend/src/sync/sync.types.ts`):
   - optional `force: boolean`
 - behavior:
@@ -338,7 +338,7 @@ Authenticated user trigger for full import restart:
 ### /api/event-change-demo
 
 - `POST /api/event-change-demo`
-- debug helper route used to dispatch event-change notifications to a configured demo socket user
+- debug helper route used to dispatch event-change notifications to the user id in env `SSE_DEBUG_USER`
 
 ### ${SYNC_DEBUG}/import-incremental/:userId
 
@@ -496,7 +496,7 @@ Standard error response format:
 }
 ```
 
-Google revocation is a first-class error contract used by API and websocket flows:
+Google revocation is a first-class error contract used by API and SSE flows:
 
 ```json
 {

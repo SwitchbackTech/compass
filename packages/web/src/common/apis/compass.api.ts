@@ -1,5 +1,5 @@
 import axios, { type AxiosError } from "axios";
-import { GOOGLE_REVOKED } from "@core/constants/websocket.constants";
+import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { Status } from "@core/errors/status.codes";
 import { getApiErrorCode } from "@web/common/apis/compass.api.util";
 import { session } from "@web/common/classes/Session";

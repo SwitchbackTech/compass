@@ -26,7 +26,7 @@ import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
-import * as socket from "@web/socket/provider/SocketProvider";
+import * as sse from "@web/sse/provider/SSEProvider";
 import { store } from "@web/store";
 import { type CompassSession } from "./session.types";
 import { refreshUserMetadata } from "./user-metadata.util";
@@ -89,8 +89,8 @@ async function checkIfSessionExists(): Promise<boolean> {
 
     if (exists) {
       handleSessionExists();
-      if (!socket.socket.connected) {
-        socket.socket.connect();
+      if (!sse.getStream()) {
+        sse.openStream();
       }
     } else {
       handleSessionMissing();
@@ -121,11 +121,12 @@ export function sessionInit() {
         // This ensures the flag is set even if markUserAsAuthenticated wasn't called during OAuth
         markUserAsAuthenticated(getLastKnownEmail());
         void refreshUserMetadata();
-        socket.reconnect();
+        sse.closeStream();
+        sse.openStream();
         break;
       case "SIGN_OUT":
         store.dispatch(userMetadataSlice.actions.clear(undefined));
-        socket.disconnect();
+        sse.closeStream();
         break;
     }
   });

@@ -3,7 +3,7 @@ import { faker } from "@faker-js/faker";
 import {
   EVENT_CHANGED,
   SOMEDAY_EVENT_CHANGED,
-} from "@core/constants/websocket.constants";
+} from "@core/constants/sse.constants";
 import {
   CalendarProvider,
   Categories_Recurrence,
@@ -21,7 +21,7 @@ import { type CompassApplyResult } from "@backend/event/classes/compass.event.ex
 import * as compassExecutor from "@backend/event/classes/compass.event.executor";
 import * as compassParser from "@backend/event/classes/compass.event.parser";
 import * as eventService from "@backend/event/services/event.service";
-import { webSocketServer } from "@backend/servers/websocket/websocket.server";
+import { sseServer } from "@backend/servers/sse/sse.server";
 import { CompassSyncProcessor } from "@backend/sync/services/sync/compass/compass.sync.processor";
 import { type Event_Transition } from "@backend/sync/sync.types";
 
@@ -79,20 +79,14 @@ describe("CompassSyncProcessor.getNotificationType", () => {
 
 describe("CompassSyncProcessor.notifyClients", () => {
   beforeEach(() => {
-    jest.spyOn(webSocketServer, "handleBackgroundCalendarChange").mockClear();
-    jest.spyOn(webSocketServer, "handleBackgroundSomedayChange").mockClear();
+    jest.spyOn(sseServer, "handleBackgroundCalendarChange").mockClear();
+    jest.spyOn(sseServer, "handleBackgroundSomedayChange").mockClear();
   });
 
   it("notifies correct users and events", () => {
-    const calendarSpy = jest.spyOn(
-      webSocketServer,
-      "handleBackgroundCalendarChange",
-    );
+    const calendarSpy = jest.spyOn(sseServer, "handleBackgroundCalendarChange");
 
-    const somedaySpy = jest.spyOn(
-      webSocketServer,
-      "handleBackgroundSomedayChange",
-    );
+    const somedaySpy = jest.spyOn(sseServer, "handleBackgroundSomedayChange");
 
     const applyTo = RecurringEventUpdateScope.THIS_EVENT;
     const status = CompassEventStatus.CONFIRMED;

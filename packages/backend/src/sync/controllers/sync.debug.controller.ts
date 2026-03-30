@@ -6,14 +6,14 @@ import {
   type Res_Promise,
   type SReqBody,
 } from "@backend/common/types/express.types";
-import { webSocketServer } from "@backend/servers/websocket/websocket.server";
+import { sseServer } from "@backend/servers/sse/sse.server";
 import syncService from "../services/sync.service";
 import { getSync } from "../util/sync.queries";
 
 class SyncDebugController {
   dispatchEventToClient = (_req: Request, res: Response) => {
     try {
-      const userId = process.env["SOCKET_USER"];
+      const userId = process.env["SSE_DEBUG_USER"];
       if (!userId) {
         throw new Error("No demo user");
       }
@@ -21,7 +21,7 @@ class SyncDebugController {
       const endDate = new Date(startDate);
       endDate.setDate(startDate.getDate() + 1);
 
-      webSocketServer.handleBackgroundCalendarChange(userId);
+      sseServer.handleBackgroundCalendarChange(userId);
       res.sendStatus(200);
     } catch (e) {
       console.error("Error during dispatch:", e);

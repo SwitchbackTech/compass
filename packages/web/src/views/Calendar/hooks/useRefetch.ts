@@ -46,9 +46,7 @@ export const useRefetch = () => {
 
   useEffect(() => {
     if (isFetchNeeded) {
-      if (
-        _reason === Sync_AsyncStateContextReason.SOCKET_SOMEDAY_EVENT_CHANGED
-      ) {
+      if (_reason === Sync_AsyncStateContextReason.SOMEDAY_EVENT_CHANGED) {
         const dateStart = dayjs(dateRange.start);
         const { startDate, endDate } = computeSomedayEventsRequestFilter(
           dateStart,
