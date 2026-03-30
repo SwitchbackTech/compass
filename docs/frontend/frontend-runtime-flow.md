@@ -77,8 +77,8 @@ When a user re-authenticates with Google, auth-state utilities also clear any in
 
 Files:
 
-- `packages/web/src/auth/hooks/oauth/useGoogleAuth.ts`
-- `packages/web/src/components/oauth/google/useGoogleLogin.ts`
+- `packages/web/src/auth/hooks/google/useGoogleAuth/useGoogleAuth.ts`
+- `packages/web/src/auth/hooks/google/useGoogleLogin/useGoogleLogin.ts`
 - `packages/web/src/auth/google/google-oauth-error.util.ts`
 
 The web auth flow intentionally treats popup-close outcomes as cancellation, not authentication failure.
@@ -134,7 +134,7 @@ Files:
 - `packages/web/src/views/Calendar/components/Sidebar/Sidebar.tsx`
 - `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
 - `packages/web/src/views/Calendar/components/Sidebar/styled.ts`
-- `packages/web/src/auth/hooks/oauth/useConnectGoogle.ts`
+- `packages/web/src/auth/hooks/google/useConnectGoogle/useConnectGoogle.ts`
 
 Layout contract:
 
@@ -330,7 +330,8 @@ Runtime nuances:
 
 Files:
 
-- `packages/web/src/auth/hooks/oauth/useConnectGoogle.ts`
+- `packages/web/src/auth/hooks/google/useConnectGoogle/useConnectGoogle.ts`
+- `packages/web/src/auth/google/google.auth.util.ts`
 - `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
 
 UI state comes from a single server-enriched metadata field (`google.connectionState`) plus one client-only loading state:
@@ -345,6 +346,15 @@ UI state comes from a single server-enriched metadata field (`google.connectionS
 Important constraint:
 
 - `connectionState` values are uppercase string literals shared with backend/core (`NOT_CONNECTED`, `RECONNECT_REQUIRED`, `IMPORTING`, `HEALTHY`, `ATTENTION`); lowercase variants will not match UI state guards.
+
+Connect-later guardrail:
+
+- In the password-session "connect Google" flow, `useConnectGoogle` calls
+  `syncPendingLocalEvents(dispatch)` before `AuthApi.connectGoogle(...)`.
+- If local sync fails, connect is aborted and a toast is shown:
+  `"We could not sync your local events. Your changes are still saved on this device."`
+- This prevents IndexedDB-only Compass events from disappearing during the
+  Google-triggered metadata/import refresh.
 
 ## What To Read Before Editing
 
