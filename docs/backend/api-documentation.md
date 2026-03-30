@@ -146,6 +146,7 @@ Conflict contract (Google account already owned by another Compass user):
 ```json
 {
   "result": "User not connected",
+  "code": "GOOGLE_ACCOUNT_ALREADY_CONNECTED",
   "message": "Google account is already connected to another Compass user"
 }
 ```
@@ -154,6 +155,7 @@ Operational notes:
 
 - conflict exits before credential persistence, so no sync restart is triggered
 - clients should treat this as an ownership conflict and keep the current Compass session
+- web callers should parse this through the shared auth error schema in `packages/core/src/types/auth.types.ts`
 
 ### SuperTokens-managed auth endpoints (runtime)
 

@@ -3,7 +3,16 @@ import type {
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from "axios";
-import { getApiErrorCode, getApiErrorMessage } from "./compass.api.util";
+import {
+  ApiErrorResponseSchema,
+  GoogleConnectErrorResponseSchema,
+} from "@core/types/auth.types";
+import {
+  getApiErrorCode,
+  getApiErrorMessage,
+  parseApiError,
+  parseGoogleConnectError,
+} from "./compass.api.util";
 
 const createAxiosError = (response: { data?: unknown } | null): AxiosError =>
   ({
@@ -75,7 +84,52 @@ describe("getApiErrorCode", () => {
 });
 
 describe("getApiErrorMessage", () => {
-  it("returns the message for typed Google connect errors", () => {
+  it("returns the message for generic API errors", () => {
+    const error = createAxiosError({
+      data: {
+        code: "ANY_ERROR",
+        message: "Something went wrong",
+      },
+    });
+
+    expect(getApiErrorMessage(error)).toBe("Something went wrong");
+  });
+
+  it("returns undefined when the response is not a typed API error", () => {
+    const error = createAxiosError({
+      data: { message: 404 },
+    });
+
+    expect(getApiErrorMessage(error)).toBeUndefined();
+  });
+});
+
+describe("parseApiError", () => {
+  it("parses errors against a provided schema", () => {
+    const error = createAxiosError({
+      data: {
+        code: "ANY_ERROR",
+        message: "Something went wrong",
+      },
+    });
+
+    expect(parseApiError(error, ApiErrorResponseSchema)).toEqual({
+      code: "ANY_ERROR",
+      message: "Something went wrong",
+    });
+  });
+
+  it("returns undefined when the payload does not match the schema", () => {
+    const error = createAxiosError({
+      data: { code: 404, message: "Something went wrong" },
+    });
+
+    expect(parseApiError(error, ApiErrorResponseSchema)).toBeUndefined();
+  });
+});
+
+describe("parseGoogleConnectError", () => {
+  it("parses typed Google connect errors", () => {
     const error = createAxiosError({
       data: {
         code: "GOOGLE_ACCOUNT_ALREADY_CONNECTED",
@@ -83,16 +137,23 @@ describe("getApiErrorMessage", () => {
       },
     });
 
-    expect(getApiErrorMessage(error)).toBe(
-      "Google account is already connected",
-    );
+    expect(parseGoogleConnectError(error)).toEqual({
+      code: "GOOGLE_ACCOUNT_ALREADY_CONNECTED",
+      message: "Google account is already connected",
+    });
   });
 
-  it("returns undefined when the response is not a typed Google connect error", () => {
+  it("returns undefined for non-Google-connect error codes", () => {
     const error = createAxiosError({
-      data: { message: "Something went wrong" },
+      data: {
+        code: "ANY_ERROR",
+        message: "Something went wrong",
+      },
     });
 
-    expect(getApiErrorMessage(error)).toBeUndefined();
+    expect(parseGoogleConnectError(error)).toBeUndefined();
+    expect(
+      parseApiError(error, GoogleConnectErrorResponseSchema),
+    ).toBeUndefined();
   });
 });

@@ -9,7 +9,7 @@ import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
 import { AuthApi } from "@web/common/apis/auth.api";
 import {
   getApiErrorCode,
-  getApiErrorMessage,
+  parseGoogleConnectError,
 } from "@web/common/apis/compass.api.util";
 import { SyncApi } from "@web/common/apis/sync.api";
 import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
@@ -60,7 +60,7 @@ export const useConnectGoogle = () => {
         await AuthApi.connectGoogle(googleConnectRequest);
       } catch (error) {
         if (isAxiosError(error)) {
-          const message = getApiErrorMessage(error);
+          const message = parseGoogleConnectError(error)?.message;
 
           if (message) {
             showErrorToast(message);

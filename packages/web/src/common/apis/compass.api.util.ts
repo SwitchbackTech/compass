@@ -1,8 +1,21 @@
 import type { AxiosError } from "axios";
-import { GoogleConnectErrorResponseSchema } from "@core/types/auth.types";
+import type { ZodType } from "zod";
+import {
+  ApiErrorResponseSchema,
+  type GoogleConnectErrorResponse,
+  GoogleConnectErrorResponseSchema,
+} from "@core/types/auth.types";
 
 const getApiErrorData = (error: AxiosError): unknown => {
   return error?.response?.data;
+};
+
+export const parseApiError = <T>(
+  error: AxiosError,
+  schema: ZodType<T>,
+): T | undefined => {
+  const parsed = schema.safeParse(getApiErrorData(error));
+  return parsed.success ? parsed.data : undefined;
 };
 
 /**
@@ -17,8 +30,11 @@ export const getApiErrorCode = (error: AxiosError): string | undefined => {
 };
 
 export const getApiErrorMessage = (error: AxiosError): string | undefined => {
-  const parsed = GoogleConnectErrorResponseSchema.safeParse(
-    getApiErrorData(error),
-  );
-  return parsed.success ? parsed.data.message : undefined;
+  return parseApiError(error, ApiErrorResponseSchema)?.message;
+};
+
+export const parseGoogleConnectError = (
+  error: AxiosError,
+): GoogleConnectErrorResponse | undefined => {
+  return parseApiError(error, GoogleConnectErrorResponseSchema);
 };
