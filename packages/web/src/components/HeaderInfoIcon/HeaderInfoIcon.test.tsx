@@ -93,7 +93,6 @@ describe("HeaderInfoIcon", () => {
       isRepairing: false,
       sidebarStatus: {
         iconColor: "error",
-        icon: "DotIcon",
         isDisabled: false,
         onSelect: mockGoogleOnSelect,
         tooltip: "Google Calendar needs reconnecting. Click to reconnect.",

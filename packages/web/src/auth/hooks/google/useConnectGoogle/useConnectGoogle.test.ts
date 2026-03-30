@@ -127,7 +127,6 @@ describe("useConnectGoogle", () => {
       "Checking Google Calendar…",
     );
     expect(result.current.commandAction.isDisabled).toBe(true);
-    expect(result.current.sidebarStatus.icon).toBe("SpinnerIcon");
     expect(result.current.sidebarStatus.tooltip).toBe(
       "Checking Google Calendar status…",
     );
@@ -155,7 +154,6 @@ describe("useConnectGoogle", () => {
     expect(result.current.commandAction.label).toBe(
       "Checking Google Calendar…",
     );
-    expect(result.current.sidebarStatus.icon).toBe("SpinnerIcon");
   });
 
   it("returns connect state when metadata is loaded and Google is not connected", () => {
@@ -180,7 +178,6 @@ describe("useConnectGoogle", () => {
     expectGoogleAuthConfig();
     expect(result.current.commandAction.label).toBe("Connect Google Calendar");
     expect(result.current.commandAction.isDisabled).toBe(false);
-    expect(result.current.sidebarStatus.icon).toBe("DotIcon");
     expect(result.current.sidebarStatus.tooltip).toBe(
       "Google Calendar not connected. Click to connect.",
     );
@@ -211,7 +208,6 @@ describe("useConnectGoogle", () => {
     );
     expect(result.current.commandAction.isDisabled).toBe(true);
     expect(result.current.commandAction.onSelect).toBeUndefined();
-    expect(result.current.sidebarStatus.icon).toBe("DotIcon");
     expect(result.current.sidebarStatus.isDisabled).toBe(true);
   });
 
@@ -238,7 +234,6 @@ describe("useConnectGoogle", () => {
     expect(result.current.commandAction.label).toBe(
       "Reconnect Google Calendar",
     );
-    expect(result.current.sidebarStatus.icon).toBe("DotIcon");
 
     result.current.commandAction.onSelect?.();
 
@@ -271,7 +266,6 @@ describe("useConnectGoogle", () => {
     expect(result.current.commandAction.label).toBe("Syncing Google Calendar…");
     expect(result.current.commandAction.isDisabled).toBe(true);
     expect(result.current.commandAction.onSelect).toBeUndefined();
-    expect(result.current.sidebarStatus.icon).toBe("SpinnerIcon");
     expect(result.current.sidebarStatus.isDisabled).toBe(true);
   });
 
@@ -297,7 +291,6 @@ describe("useConnectGoogle", () => {
     expectGoogleAuthConfig();
     expect(result.current.commandAction.label).toBe("Repair Google Calendar");
     expect(result.current.commandAction.isDisabled).toBe(false);
-    expect(result.current.sidebarStatus.icon).toBe("DotIcon");
     expect(result.current.sidebarStatus.tooltip).toBe(
       "Google Calendar needs repair. Click to repair.",
     );
@@ -348,7 +341,6 @@ describe("useConnectGoogle", () => {
       "Repairing Google Calendar…",
     );
     expect(result.current.commandAction.isDisabled).toBe(true);
-    expect(result.current.sidebarStatus.icon).toBe("DotIcon");
     expect(result.current.sidebarStatus.iconColor).toBe("warning");
     expect(result.current.sidebarStatus.tone).toBe("warning");
     expect(result.current.sidebarStatus.tooltip).toBe(
@@ -418,7 +410,6 @@ describe("useConnectGoogle", () => {
     expectGoogleAuthConfig();
     expect(result.current.commandAction.label).toBe("Connect Google Calendar");
     expect(result.current.commandAction.isDisabled).toBe(false);
-    expect(result.current.sidebarStatus.icon).toBe("DotIcon");
     expect(result.current.sidebarStatus.isDisabled).toBe(false);
   });
 
@@ -445,7 +436,6 @@ describe("useConnectGoogle", () => {
     expect(result.current.commandAction.label).toBe(
       "Reconnect Google Calendar",
     );
-    expect(result.current.sidebarStatus.icon).toBe("DotIcon");
     expect(result.current.commandAction.isDisabled).toBe(false);
   });
 
@@ -471,7 +461,6 @@ describe("useConnectGoogle", () => {
 
     expectGoogleAuthConfig();
     expect(result.current.commandAction.label).toBe("Connect Google Calendar");
-    expect(result.current.sidebarStatus.icon).toBe("DotIcon");
   });
 
   it("connects Google through the backend endpoint and refreshes metadata", async () => {

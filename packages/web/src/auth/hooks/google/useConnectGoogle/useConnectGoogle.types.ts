@@ -1,5 +1,4 @@
 import { type GoogleConnectionState } from "@core/types/user.types";
-import { type ConnectionStatusIcon } from "@web/common/types/icon.types";
 
 export type GoogleUiState = "checking" | "repairing" | GoogleConnectionState;
 
@@ -15,7 +14,6 @@ export type GoogleUiConfig = {
     onSelect?: () => void;
   };
   sidebarStatus: {
-    icon: ConnectionStatusIcon;
     tooltip: string;
     tone?: "default" | "warning";
     isDisabled: boolean;

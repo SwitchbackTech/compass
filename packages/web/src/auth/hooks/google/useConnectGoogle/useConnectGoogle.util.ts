@@ -29,7 +29,6 @@ export const getGoogleConnectionConfig = (
           isDisabled: true,
         },
         sidebarStatus: {
-          icon: "SpinnerIcon",
           tooltip: "Checking Google Calendar status…",
           tone: "default",
           isDisabled: true,
@@ -43,7 +42,6 @@ export const getGoogleConnectionConfig = (
           isDisabled: true,
         },
         sidebarStatus: {
-          icon: "DotIcon",
           iconColor: "warning",
           tooltip: "Repairing Google Calendar in the background.",
           tone: "warning",
@@ -66,7 +64,6 @@ export const getGoogleConnectionConfig = (
           onSelect: onConnectGoogle,
         },
         sidebarStatus: {
-          icon: "DotIcon",
           iconColor: "muted",
           tooltip: "Google Calendar not connected. Click to connect.",
           tone: "default",
@@ -83,7 +80,6 @@ export const getGoogleConnectionConfig = (
           onSelect: onConnectGoogle,
         },
         sidebarStatus: {
-          icon: "DotIcon",
           iconColor: "error",
           tooltip: "Google Calendar needs reconnecting. Click to reconnect.",
           tone: "default",
@@ -99,7 +95,6 @@ export const getGoogleConnectionConfig = (
           isDisabled: true,
         },
         sidebarStatus: {
-          icon: "SpinnerIcon",
           tooltip: "Google Calendar is syncing in the background.",
           tone: "default",
           isDisabled: true,
@@ -114,7 +109,6 @@ export const getGoogleConnectionConfig = (
           onSelect: onRepairGoogle,
         },
         sidebarStatus: {
-          icon: "DotIcon",
           iconColor: "warning",
           tooltip: "Google Calendar needs repair. Click to repair.",
           tone: "warning",
@@ -136,7 +130,6 @@ export const getGoogleConnectionConfig = (
           isDisabled: true,
         },
         sidebarStatus: {
-          icon: "DotIcon",
           iconColor: "muted",
           tooltip: "Google Calendar connected.",
           tone: "default",

@@ -36,7 +36,6 @@ export const useHeaderInfo = (): HeaderInfo => {
       isRepairing: false,
       sidebarStatus: {
         iconColor: "warning" as const,
-        icon: "DotIcon" as const,
         isDisabled: false,
         onSelect: handleOpenSignUp,
         tooltip: ANONYMOUS_SIGN_UP_TOOLTIP,
