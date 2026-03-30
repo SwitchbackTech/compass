@@ -68,6 +68,8 @@ const StatusDotPopover = ({
     role,
   ]);
 
+  const displayTitle = isRepairing ? "Repairing your calendar…" : title;
+
   return (
     <>
       <div ref={refs.setReference} {...getReferenceProps()}>
@@ -84,23 +86,23 @@ const StatusDotPopover = ({
                 zIndex: maxZIndex + ZIndex.LAYER_3,
               }}
               className="border-border-primary bg-bg-secondary/90 flex max-w-xs flex-col gap-3 rounded-lg border p-4 shadow-lg"
-              aria-label={title}
+              aria-label={displayTitle}
               {...getFloatingProps()}
             >
               <h3 className="text-text-lighter m-0 text-sm font-semibold">
-                {title}
+                {displayTitle}
               </h3>
-              <p className="text-text-lighter m-0 text-sm">{description}</p>
+              {!isRepairing && (
+                <p className="text-text-lighter m-0 text-sm">{description}</p>
+              )}
               {isRepairing ? (
-                <TooltipWrapper description="We're repairing your calendar">
-                  <button
-                    disabled
-                    className="flex cursor-not-allowed items-center justify-center rounded px-3 py-1.5 text-sm font-medium opacity-50"
-                    type="button"
-                  >
-                    <SpinnerIcon aria-hidden="true" size={16} />
-                  </button>
-                </TooltipWrapper>
+                <button
+                  disabled
+                  className="flex cursor-not-allowed items-center justify-center self-start rounded px-3 py-1.5 opacity-50"
+                  type="button"
+                >
+                  <SpinnerIcon aria-hidden="true" size={16} />
+                </button>
               ) : (
                 <button
                   className="bg-bg-accent text-text-light hover:bg-bg-accent/80 self-start rounded px-3 py-1.5 text-sm font-medium"
@@ -120,26 +122,20 @@ const StatusDotPopover = ({
 
 export const SyncStatusDot = () => {
   const { sidebarStatus, isRepairing } = useConnectGoogle();
-  const dotColor = DOT_COLOR_MAP[sidebarStatus.dotColor ?? "muted"];
+
+  // Only render when user attention is needed (warning or error states)
+  if (
+    sidebarStatus.dotColor !== "warning" &&
+    sidebarStatus.dotColor !== "error"
+  ) {
+    return null;
+  }
+
+  const dotColor = DOT_COLOR_MAP[sidebarStatus.dotColor];
 
   return (
     <div role="status" aria-live="polite" aria-label={sidebarStatus.tooltip}>
-      {sidebarStatus.icon === "SpinnerIcon" ? (
-        <TooltipWrapper
-          description={sidebarStatus.tooltip}
-          disabled={sidebarStatus.isDisabled}
-        >
-          <SpinnerIcon
-            aria-hidden="true"
-            color={
-              sidebarStatus.tone === "warning"
-                ? theme.color.status.warning
-                : theme.color.status.info
-            }
-            size={24}
-          />
-        </TooltipWrapper>
-      ) : sidebarStatus.dialog ? (
+      {sidebarStatus.dialog ? (
         <StatusDotPopover
           tooltip={sidebarStatus.tooltip}
           title={sidebarStatus.dialog.title}
