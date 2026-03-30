@@ -186,6 +186,27 @@ describe("UserService", () => {
         user.google?.gRefreshToken,
       );
     });
+
+    it("does not query by id when a different user already exists for the email", async () => {
+      const user = await UserDriver.createUser();
+      const normalizedEmail = user.email.toLowerCase();
+      await mongoService.user.updateOne(
+        { _id: user._id },
+        { $set: { email: normalizedEmail } },
+      );
+      const otherUserId = mongoService.objectId().toString();
+      const findOneSpy = jest.spyOn(mongoService.user, "findOne");
+
+      await userService.upsertUserFromAuth({
+        userId: otherUserId,
+        email: ` ${normalizedEmail.toUpperCase()} `,
+        name: "Replacement Name",
+      });
+
+      expect(findOneSpy.mock.calls).toEqual([
+        [{ email: normalizedEmail }, { session: undefined }],
+      ]);
+    });
   });
 
   describe("deleteCompassDataForUser", () => {

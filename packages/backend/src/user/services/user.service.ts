@@ -137,14 +137,9 @@ class UserService {
       { email },
       { session },
     );
-    const existingUserById =
-      existingUserByEmail?._id.toString() === requestedUserId.toString()
-        ? existingUserByEmail
-        : await mongoService.user.findOne(
-            { _id: requestedUserId },
-            { session },
-          );
-    const existingUser = existingUserByEmail ?? existingUserById;
+    const existingUser =
+      existingUserByEmail ??
+      (await mongoService.user.findOne({ _id: requestedUserId }, { session }));
     const userId = existingUser?._id ?? requestedUserId;
 
     const isNewUser = !existingUser;
