@@ -881,9 +881,7 @@ class SyncService {
   };
 }
 
-export const syncCompassEventsToGoogle = async (
-  userId: string,
-): Promise<number> => {
+const syncCompassEventsToGoogle = async (userId: string): Promise<number> => {
   const compassEvents = await mongoService.event
     .find({
       user: userId,
