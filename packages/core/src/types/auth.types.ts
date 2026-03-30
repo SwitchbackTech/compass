@@ -34,3 +34,17 @@ export const GoogleConnectResponseSchema = z.object({
 });
 
 export type GoogleConnectResponse = z.infer<typeof GoogleConnectResponseSchema>;
+
+const GoogleConnectErrorCodeSchema = z.enum([
+  "GOOGLE_ACCOUNT_ALREADY_CONNECTED",
+  "GOOGLE_CONNECT_EMAIL_MISMATCH",
+]);
+
+export const GoogleConnectErrorResponseSchema = z.object({
+  code: GoogleConnectErrorCodeSchema,
+  message: z.string().min(1),
+});
+
+export type GoogleConnectErrorResponse = z.infer<
+  typeof GoogleConnectErrorResponseSchema
+>;

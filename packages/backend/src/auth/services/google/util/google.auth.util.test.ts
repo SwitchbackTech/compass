@@ -40,7 +40,9 @@ describe("determineGoogleAuthMode", () => {
     const googleUserId = faker.string.uuid();
     mockFindCompassUserBy.mockResolvedValue(null);
 
-    await expect(determineGoogleAuthMode(googleUserId, true)).resolves.toEqual({
+    await expect(
+      determineGoogleAuthMode(googleUserId, null, true),
+    ).resolves.toEqual({
       authMode: "SIGNUP",
       compassUserId: null,
       hasStoredRefreshToken: false,
@@ -63,7 +65,7 @@ describe("determineGoogleAuthMode", () => {
     mockCanDoIncrementalSync.mockReturnValue(true);
 
     await expect(
-      determineGoogleAuthMode(user.google.googleId, false),
+      determineGoogleAuthMode(user.google.googleId, null, false),
     ).resolves.toEqual({
       authMode: "RECONNECT_REPAIR",
       compassUserId: user._id.toString(),
@@ -80,7 +82,7 @@ describe("determineGoogleAuthMode", () => {
     mockCanDoIncrementalSync.mockReturnValue(false);
 
     await expect(
-      determineGoogleAuthMode(user.google.googleId, false),
+      determineGoogleAuthMode(user.google.googleId, null, false),
     ).resolves.toEqual({
       authMode: "RECONNECT_REPAIR",
       compassUserId: user._id.toString(),
@@ -99,7 +101,7 @@ describe("determineGoogleAuthMode", () => {
     mockCanDoIncrementalSync.mockReturnValue(true);
 
     await expect(
-      determineGoogleAuthMode(user.google.googleId, false),
+      determineGoogleAuthMode(user.google.googleId, null, false),
     ).resolves.toEqual({
       authMode: "SIGNIN_INCREMENTAL",
       compassUserId: user._id.toString(),
@@ -107,6 +109,39 @@ describe("determineGoogleAuthMode", () => {
       hasHealthySync: true,
       createdNewRecipeUser: false,
     });
+  });
+
+  it("reuses a same-email Compass user when Google is not linked yet", async () => {
+    const user = { _id: new ObjectId() };
+    mockFindCompassUserBy
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(user);
+    mockGetSync.mockResolvedValue(null);
+
+    await expect(
+      determineGoogleAuthMode(
+        faker.string.uuid(),
+        " Existing@Example.com ",
+        false,
+      ),
+    ).resolves.toEqual({
+      authMode: "RECONNECT_REPAIR",
+      compassUserId: user._id.toString(),
+      hasStoredRefreshToken: false,
+      hasHealthySync: false,
+      createdNewRecipeUser: false,
+    });
+
+    expect(mockFindCompassUserBy).toHaveBeenNthCalledWith(
+      1,
+      "google.googleId",
+      expect.any(String),
+    );
+    expect(mockFindCompassUserBy).toHaveBeenNthCalledWith(
+      2,
+      "email",
+      "existing@example.com",
+    );
   });
 });
 

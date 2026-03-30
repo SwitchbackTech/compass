@@ -1,6 +1,7 @@
 import { type Status } from "./status.codes";
 
 interface ErrorMetadata {
+  code?: string;
   description: string;
   status: Status;
   isOperational: boolean;
@@ -9,6 +10,7 @@ interface ErrorMetadata {
 export type ErrorConstant = Record<string, ErrorMetadata>;
 
 export class BaseError extends Error {
+  public readonly code?: string;
   public readonly result: string;
   public readonly description: string;
   // Tech debt: 'statusCode' does not match the
@@ -21,6 +23,7 @@ export class BaseError extends Error {
     description: string,
     statusCode: Status,
     isOperational: boolean,
+    code?: string,
   ) {
     super(description);
     Object.setPrototypeOf(this, new.target.prototype);
@@ -29,6 +32,7 @@ export class BaseError extends Error {
     this.description = description;
     this.statusCode = statusCode;
     this.isOperational = isOperational;
+    this.code = code;
 
     Error.captureStackTrace(this);
   }

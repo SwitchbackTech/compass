@@ -43,6 +43,22 @@ describe("error.handler", () => {
       expect(payload).not.toHaveProperty("isOperational");
       expect(Object.keys(payload)).toEqual(["result", "message"]);
     });
+
+    it("includes code when the BaseError has one", () => {
+      const baseError = new BaseError(
+        "some-result",
+        "some-description",
+        Status.CONFLICT,
+        true,
+        "GOOGLE_ACCOUNT_ALREADY_CONNECTED",
+      );
+
+      expect(toClientErrorPayload(baseError)).toEqual({
+        result: "some-result",
+        message: "some-description",
+        code: "GOOGLE_ACCOUNT_ALREADY_CONNECTED",
+      });
+    });
   });
 
   describe("handleExpressError", () => {

@@ -3,7 +3,7 @@ import type {
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from "axios";
-import { getApiErrorCode } from "./compass.api.util";
+import { getApiErrorCode, getApiErrorMessage } from "./compass.api.util";
 
 const createAxiosError = (response: { data?: unknown } | null): AxiosError =>
   ({
@@ -71,5 +71,28 @@ describe("getApiErrorCode", () => {
       data: { code: "GOOGLE_REVOKED", message: "Google access revoked." },
     });
     expect(getApiErrorCode(error)).toBe("GOOGLE_REVOKED");
+  });
+});
+
+describe("getApiErrorMessage", () => {
+  it("returns the message for typed Google connect errors", () => {
+    const error = createAxiosError({
+      data: {
+        code: "GOOGLE_ACCOUNT_ALREADY_CONNECTED",
+        message: "Google account is already connected",
+      },
+    });
+
+    expect(getApiErrorMessage(error)).toBe(
+      "Google account is already connected",
+    );
+  });
+
+  it("returns undefined when the response is not a typed Google connect error", () => {
+    const error = createAxiosError({
+      data: { message: "Something went wrong" },
+    });
+
+    expect(getApiErrorMessage(error)).toBeUndefined();
   });
 });

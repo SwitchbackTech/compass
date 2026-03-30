@@ -70,14 +70,8 @@ describe("UserService", () => {
         _id: mongoService.objectId(userId),
       });
 
-      expect(storedUser).toEqual(
-        expect.objectContaining({
-          email: gUser.email as string,
-          google: expect.objectContaining({
-            gRefreshToken: refreshToken,
-          }),
-        }),
-      );
+      expect(storedUser?.email).toBe(gUser.email as string);
+      expect(storedUser?.google?.gRefreshToken).toBe(refreshToken);
     });
   });
 
@@ -154,15 +148,42 @@ describe("UserService", () => {
       expect(result.isNewUser).toBe(false);
 
       const storedUser = await mongoService.user.findOne({ _id: user._id });
-      expect(storedUser).toEqual(
-        expect.objectContaining({
-          email: "updated@example.com",
-          name: user.name,
-          google: expect.objectContaining({
-            googleId: user.google?.googleId,
-            gRefreshToken: user.google?.gRefreshToken,
-          }),
-        }),
+      expect(storedUser?.email).toBe("updated@example.com");
+      expect(storedUser?.name).toBe(user.name);
+      expect(storedUser?.google?.googleId).toBe(user.google?.googleId);
+      expect(storedUser?.google?.gRefreshToken).toBe(
+        user.google?.gRefreshToken,
+      );
+    });
+
+    it("reuses an existing Compass user with the same normalized email", async () => {
+      const user = await UserDriver.createUser();
+      const normalizedEmail = user.email.toLowerCase();
+      await mongoService.user.updateOne(
+        { _id: user._id },
+        { $set: { email: normalizedEmail } },
+      );
+      const otherUserId = mongoService.objectId().toString();
+
+      const result = await userService.upsertUserFromAuth({
+        userId: otherUserId,
+        email: ` ${normalizedEmail.toUpperCase()} `,
+        name: "Replacement Name",
+      });
+
+      expect(result.isNewUser).toBe(false);
+      expect(result.user.userId).toBe(user._id.toString());
+
+      const storedUsers = await mongoService.user
+        .find({ email: normalizedEmail })
+        .toArray();
+
+      expect(storedUsers).toHaveLength(1);
+      expect(storedUsers[0]?._id).toEqual(user._id);
+      expect(storedUsers[0]?.name).toBe("Replacement Name");
+      expect(storedUsers[0]?.google?.googleId).toBe(user.google?.googleId);
+      expect(storedUsers[0]?.google?.gRefreshToken).toBe(
+        user.google?.gRefreshToken,
       );
     });
   });
@@ -279,7 +300,7 @@ describe("UserService", () => {
       const getUserIdMappingSpy = jest
         .spyOn(supertokensNode, "getUserIdMapping")
         .mockImplementation(
-          async ({
+          ({
             userId,
             userIdType,
           }: {
@@ -287,20 +308,20 @@ describe("UserService", () => {
             userIdType?: "EXTERNAL" | "SUPERTOKENS" | "ANY";
           }) => {
             if (userIdType === "SUPERTOKENS") {
-              return {
+              return Promise.resolve({
                 externalUserId: "external-user-1",
                 externalUserIdInfo: undefined,
                 status: "OK" as const,
                 superTokensUserId: userId,
-              };
+              });
             }
 
-            return {
+            return Promise.resolve({
               externalUserId: userId,
               externalUserIdInfo: undefined,
               status: "OK" as const,
               superTokensUserId: "recipe-user-1",
-            };
+            });
           },
         );
       const getUserMetadataSpy = jest
@@ -354,7 +375,7 @@ describe("UserService", () => {
       const getUserIdMappingSpy = jest
         .spyOn(supertokensNode, "getUserIdMapping")
         .mockImplementation(
-          async ({
+          ({
             userId,
             userIdType,
           }: {
@@ -362,20 +383,20 @@ describe("UserService", () => {
             userIdType?: "EXTERNAL" | "SUPERTOKENS" | "ANY";
           }) => {
             if (userIdType === "SUPERTOKENS") {
-              return {
+              return Promise.resolve({
                 externalUserId: "external-user-1",
                 externalUserIdInfo: undefined,
                 status: "OK" as const,
                 superTokensUserId: userId,
-              };
+              });
             }
 
-            return {
+            return Promise.resolve({
               externalUserId: userId,
               externalUserIdInfo: undefined,
               status: "OK" as const,
               superTokensUserId: "recipe-user-1",
-            };
+            });
           },
         );
       const getUserSpy = jest

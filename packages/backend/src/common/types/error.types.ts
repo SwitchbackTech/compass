@@ -8,6 +8,7 @@ export interface CompassError extends Error {
 }
 
 export interface ErrorMetadata {
+  code?: string;
   description: string;
   isOperational: boolean;
   status: Status;
