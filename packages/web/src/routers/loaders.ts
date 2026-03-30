@@ -9,6 +9,13 @@ export interface DayLoaderData {
 }
 
 export async function loadAuthenticated() {
+  // Playwright e2e serves the web app without a backend; SuperTokens session
+  // checks can block navigation until the HTTP client times out. The e2e
+  // webpack build uses NODE_ENV=test (see playwright.config.ts webServer env).
+  if (process.env.NODE_ENV === "test") {
+    return { authenticated: false };
+  }
+
   const { session } = await import("../common/classes/Session");
 
   const authenticated = await session.doesSessionExist();
