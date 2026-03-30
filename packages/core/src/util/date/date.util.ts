@@ -64,16 +64,6 @@ export const getCurrentRangeDates = () => {
 };
 
 /**
- * Check if two date strings are in the same month and year (UTC)
- * @param start Start date string (ISO or other parseable format)
- * @param end End date string (ISO or other parseable format)
- * @returns true if both dates are in the same month and year
- */
-export const isSameMonth = (start: string, end: string) => {
-  return dayjs.utc(start).isSame(dayjs.utc(end), "month");
-};
-
-/**
  * Convert date string to a supported RFC format (RFC5545, RFC3339, etc)
  * @param format - Which RFC format to output
  * @param orig - The original date string (ISO, RFC, etc)

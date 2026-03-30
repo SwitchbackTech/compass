@@ -4,7 +4,7 @@ import {
   type Schema_Event,
   type Schema_Event_Core,
 } from "@core/types/event.types";
-import { isSameMonth } from "@core/util/date/date.util";
+import dayjs from "@core/util/date/dayjs";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 
@@ -81,8 +81,7 @@ const _getDateFilters = (isSomeday: boolean, start: string, end: string) => {
     start,
     end,
   );
-
-  const _isSameMonth = isSameMonth(start, end);
+  const _isSameMonth = dayjs.utc(start).isSame(dayjs.utc(end), "month");
   const overLapOrBetween =
     isSomeday && _isSameMonth
       ? [inBetweenStart, overlapping]
