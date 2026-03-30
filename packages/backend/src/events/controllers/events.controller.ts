@@ -20,6 +20,9 @@ class EventsController {
       sseServer.publishTo(res, USER_METADATA, metadata);
     } catch (err) {
       logger.error(`Failed to open SSE stream for user ${userId}:`, err);
+      if (!res.headersSent) {
+        res.status(500).end();
+      }
     }
   };
 }
