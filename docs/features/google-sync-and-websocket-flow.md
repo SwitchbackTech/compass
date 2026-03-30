@@ -414,11 +414,20 @@ Source files:
 Examples:
 
 ```json
-{ "operation": "REPAIR", "status": "COMPLETED", "eventsCount": 42, "calendarsCount": 3 }
+{
+  "operation": "REPAIR",
+  "status": "COMPLETED",
+  "eventsCount": 42,
+  "calendarsCount": 3
+}
 ```
 
 ```json
-{ "operation": "INCREMENTAL", "status": "ERRORED", "message": "Incremental Google Calendar sync failed for user: 123" }
+{
+  "operation": "INCREMENTAL",
+  "status": "ERRORED",
+  "message": "Incremental Google Calendar sync failed for user: 123"
+}
 ```
 
 ### Repair Failure Messaging

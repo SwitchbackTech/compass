@@ -4,7 +4,7 @@ import {
   deleteEventWithMouse,
   expectTimedEventMissing,
   expectTimedEventVisible,
-  fillTitleAndSaveWithMouse,
+  fillTitleAndSaveEventForm,
   openEventForEditingWithMouse,
   openTimedEventFormWithMouse,
   prepareCalendarPage,
@@ -22,7 +22,7 @@ test("should delete a timed event using mouse interaction", async ({
 
   const title = createEventTitle("Timed Event");
   await openTimedEventFormWithMouse(page);
-  await fillTitleAndSaveWithMouse(page, title);
+  await fillTitleAndSaveEventForm(page, title);
   await expectTimedEventVisible(page, title);
 
   await openEventForEditingWithMouse(page, title);

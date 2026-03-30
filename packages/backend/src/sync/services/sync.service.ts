@@ -1,6 +1,11 @@
-import { type ClientSession, ObjectId } from "mongodb";
+import { type ClientSession, type Filter, ObjectId } from "mongodb";
 import { RESULT_NOTIFIED_CLIENT } from "@core/constants/websocket.constants";
 import { Logger } from "@core/logger/winston.logger";
+import { MapEvent } from "@core/mappers/map.event";
+import {
+  type Schema_Event,
+  type Schema_Event_Core,
+} from "@core/types/event.types";
 import { type gCalendar } from "@core/types/gcal";
 import {
   type Params_WatchEvents,
@@ -11,11 +16,16 @@ import {
 } from "@core/types/sync.types";
 import { ExpirationDateSchema } from "@core/types/type.utils";
 import { WatchSchema } from "@core/types/watch.types";
-import { shouldDoIncrementalGCalSync } from "@core/util/event/event.util";
+import {
+  shouldDoIncrementalGCalSync,
+  shouldImportGCal,
+} from "@core/util/event/event.util";
 import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
+import calendarService from "@backend/calendar/services/calendar.service";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
 import { Collections } from "@backend/common/constants/collections";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { getGoogleRepairErrorMessage } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { WatchError } from "@backend/common/errors/sync/watch.errors";
 import { UserError } from "@backend/common/errors/user/user.errors";
@@ -25,6 +35,7 @@ import {
   isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
+import { _createGcal } from "@backend/event/services/event.service";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import { createSyncImport } from "@backend/sync/services/import/sync.import";
 import {
@@ -41,6 +52,7 @@ import {
 import {
   getChannelExpiration,
   isMissingGoogleRefreshToken,
+  isUsingHttps,
 } from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";
@@ -514,6 +526,135 @@ class SyncService {
     };
   };
 
+  restartGoogleCalendarSync = async (
+    userId: string,
+    options: { force?: boolean } = {},
+  ) => {
+    const { default: userService } =
+      await import("@backend/user/services/user.service");
+    const isForce = options.force === true;
+
+    try {
+      const userMeta = await userService.fetchUserMetadata(userId);
+      const importStatus = userMeta.sync?.importGCal;
+      const isImporting = importStatus === "IMPORTING";
+      const proceed = isForce ? !isImporting : shouldImportGCal(userMeta);
+
+      if (!proceed) {
+        webSocketServer.handleImportGCalEnd(userId, {
+          operation: "REPAIR",
+          status: "IGNORED",
+          message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
+        });
+
+        return;
+      }
+
+      logger.warn(
+        `Restarting Google Calendar sync for user: ${userId}${isForce ? " (forced)" : ""}`,
+      );
+      webSocketServer.handleImportGCalStart(userId);
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: { sync: { importGCal: "IMPORTING" } },
+      });
+
+      await userService.stopGoogleCalendarSync(userId);
+      const importResults = await this.startGoogleCalendarSync(userId);
+
+      await syncCompassEventsToGoogle(userId).catch((err) => {
+        logger.error(
+          `Failed to sync Compass events to Google Calendar for user: ${userId}`,
+          err,
+        );
+      });
+
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: { sync: { importGCal: "COMPLETED" } },
+      });
+
+      webSocketServer.handleImportGCalEnd(userId, {
+        operation: "REPAIR",
+        status: "COMPLETED",
+        ...importResults,
+      });
+      webSocketServer.handleBackgroundCalendarChange(userId);
+    } catch (err) {
+      try {
+        await userService.stopGoogleCalendarSync(userId);
+      } catch (cleanupError) {
+        logger.error(
+          `Failed to clean up partial Google Calendar sync state for user: ${userId}`,
+          cleanupError,
+        );
+      }
+
+      if (isInvalidGoogleToken(err)) {
+        logger.warn(
+          `Google Calendar repair failed because access was revoked for user: ${userId}`,
+        );
+
+        await userService.pruneGoogleData(userId);
+        webSocketServer.handleGoogleRevoked(userId);
+        return;
+      }
+
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: { sync: { importGCal: "ERRORED" } },
+      });
+
+      logger.error(`Re-sync failed for user: ${userId}`, err);
+
+      webSocketServer.handleImportGCalEnd(userId, {
+        operation: "REPAIR",
+        status: "ERRORED",
+        message: getGoogleRepairErrorMessage(err),
+      });
+    }
+  };
+
+  startGoogleCalendarSync = async (
+    user: string,
+  ): Promise<{ eventsCount: number; calendarsCount: number }> => {
+    const gcal = await getGcalClient(user);
+
+    const calendarInit = await calendarService.initializeGoogleCalendars(
+      user,
+      gcal,
+    );
+
+    const gCalendarIds = calendarInit.googleCalendars
+      .map(({ id }) => id)
+      .filter((id) => id !== undefined && id !== null);
+
+    const importResults = await this.importFull(gcal, gCalendarIds, user);
+
+    await Promise.resolve(isUsingHttps()).then((yes) =>
+      yes
+        ? this.startWatchingGcalResources(
+            user,
+            [
+              { gCalendarId: Resource_Sync.CALENDAR },
+              ...gCalendarIds.map((gCalendarId) => ({ gCalendarId })),
+            ],
+            gcal,
+          )
+        : [],
+    );
+
+    const eventsCount = importResults.reduce(
+      (sum, result) => sum + result.totalChanged,
+      0,
+    );
+
+    return {
+      eventsCount,
+      calendarsCount: gCalendarIds.length,
+    };
+  };
+
   startWatchingGcalCalendars = async (
     user: string,
     params: Pick<Params_WatchEvents, "quotaUser">,
@@ -739,5 +880,84 @@ class SyncService {
     return stopped;
   };
 }
+
+const syncCompassEventsToGoogle = async (userId: string): Promise<number> => {
+  const compassEvents = await mongoService.event
+    .find({
+      user: userId,
+      isSomeday: false,
+      "recurrence.eventId": { $exists: false },
+      $or: [
+        // no gEventId means it has not been synced to Google yet
+        { gEventId: { $exists: false } },
+        { gEventId: null },
+        { gEventId: "" },
+      ],
+    } as Filter<Omit<Schema_Event, "_id">>)
+    .sort({ startDate: 1 })
+    .toArray();
+
+  let syncedCount = 0;
+
+  for (const compassEvent of compassEvents) {
+    if (
+      !compassEvent.startDate ||
+      !compassEvent.endDate ||
+      !compassEvent.user
+    ) {
+      continue;
+    }
+
+    const gEvent = await _createGcal(
+      userId,
+      compassEvent as unknown as Schema_Event_Core,
+    );
+    const gEventId = gEvent.id;
+
+    if (!gEventId) {
+      continue;
+    }
+
+    await mongoService.event.updateOne(
+      { _id: compassEvent._id, user: userId },
+      { $set: { gEventId } },
+    );
+
+    syncedCount += 1;
+
+    if (!compassEvent.recurrence?.rule) {
+      continue;
+    }
+
+    const instances = await mongoService.event
+      .find({
+        user: userId,
+        "recurrence.eventId": compassEvent._id.toString(),
+      })
+      .sort({ startDate: 1 })
+      .toArray();
+
+    for (const instance of instances) {
+      const providerData = MapEvent.toGcalInstanceProviderData(
+        {
+          ...instance,
+          _id: instance._id.toString(),
+        } as Parameters<typeof MapEvent.toGcalInstanceProviderData>[0],
+        {
+          ...compassEvent,
+          _id: compassEvent._id.toString(),
+          gEventId,
+        } as Parameters<typeof MapEvent.toGcalInstanceProviderData>[1],
+      );
+
+      await mongoService.event.updateOne(
+        { _id: instance._id, user: userId },
+        { $set: providerData },
+      );
+    }
+  }
+
+  return syncedCount;
+};
 
 export default new SyncService();

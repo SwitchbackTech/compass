@@ -1,6 +1,6 @@
 import { type CodeResponse } from "@react-oauth/google";
 
-export interface SignInUpInput {
+export interface GoogleAuthConfig {
   thirdPartyId: string;
   clientType: "web";
   shouldTryLinkingWithSessionUser?: boolean;

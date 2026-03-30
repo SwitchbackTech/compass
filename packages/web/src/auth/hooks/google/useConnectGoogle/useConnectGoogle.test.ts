@@ -1,6 +1,9 @@
+import { toast } from "react-toastify";
 import { renderHook, waitFor } from "@testing-library/react";
-import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
-import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
+import type * as GoogleAuthUtil from "@web/auth/google/google.auth.util";
+import { syncPendingLocalEvents } from "@web/auth/google/google.auth.util";
+import { useConnectGoogle } from "@web/auth/hooks/google/useConnectGoogle/useConnectGoogle";
+import { useGoogleAuth } from "@web/auth/hooks/google/useGoogleAuth/useGoogleAuth";
 import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
 import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
 import { AuthApi } from "@web/common/apis/auth.api";
@@ -18,16 +21,32 @@ import {
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
-jest.mock("@web/auth/hooks/oauth/useGoogleAuth");
+jest.mock("@web/auth/hooks/google/useGoogleAuth/useGoogleAuth");
+jest.mock("@web/auth/google/google.auth.util", () => ({
+  ...jest.requireActual<typeof GoogleAuthUtil>(
+    "@web/auth/google/google.auth.util",
+  ),
+  syncPendingLocalEvents: jest.fn(),
+}));
 jest.mock("@web/auth/session/user-metadata.util");
 jest.mock("@web/auth/state/auth.state.util");
 jest.mock("@web/common/apis/auth.api");
 jest.mock("@web/common/apis/sync.api");
 jest.mock("@web/common/utils/toast/error-toast.util");
 jest.mock("@web/store/store.hooks");
+jest.mock("react-toastify", () => ({
+  toast: {
+    error: jest.fn(),
+  },
+}));
 
 const mockUseGoogleAuth = useGoogleAuth as jest.MockedFunction<
   typeof useGoogleAuth
+>;
+const mockSyncPendingLocalEvents =
+  syncPendingLocalEvents as jest.MockedFunction<typeof syncPendingLocalEvents>;
+const mockShowErrorToast = showErrorToast as jest.MockedFunction<
+  typeof showErrorToast
 >;
 const mockUseAppDispatch = useAppDispatch as jest.MockedFunction<
   typeof useAppDispatch
@@ -44,9 +63,7 @@ const mockRefreshUserMetadata = refreshUserMetadata as jest.MockedFunction<
   typeof refreshUserMetadata
 >;
 const mockSyncApi = SyncApi as jest.Mocked<typeof SyncApi>;
-const mockShowErrorToast = showErrorToast as jest.MockedFunction<
-  typeof showErrorToast
->;
+const mockToastError = toast.error as jest.MockedFunction<typeof toast.error>;
 
 const getUseGoogleAuthArg = (): NonNullable<
   Parameters<typeof useGoogleAuth>[0]
@@ -73,6 +90,7 @@ describe("useConnectGoogle", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(console, "error").mockImplementation(() => {});
     mockUseAppDispatch.mockReturnValue(mockDispatch);
     mockUseGoogleAuth.mockReturnValue({
       login: mockLogin,
@@ -83,6 +101,7 @@ describe("useConnectGoogle", () => {
     mockHasUserEverAuthenticated.mockReturnValue(true);
     mockRefreshUserMetadata.mockResolvedValue();
     mockSyncApi.importGCal.mockResolvedValue(undefined as never);
+    mockSyncPendingLocalEvents.mockResolvedValue(true);
     mockUseAppSelector.mockImplementation((selector) => {
       if (selector === selectGoogleConnectionState) {
         return "NOT_CONNECTED";
@@ -292,7 +311,7 @@ describe("useConnectGoogle", () => {
     expect(mockDispatch).toHaveBeenCalledWith(
       importGCalSlice.actions.startRepair(),
     );
-    expect(mockDispatch).not.toHaveBeenCalledWith(
+    expect(mockDispatch).toHaveBeenCalledWith(
       settingsSlice.actions.closeCmdPalette(),
     );
 
@@ -475,8 +494,80 @@ describe("useConnectGoogle", () => {
 
     await useGoogleAuthArg.onSuccess(payload);
 
+    expect(mockSyncPendingLocalEvents).toHaveBeenCalledTimes(1);
     expect(mockAuthApi.connectGoogle).toHaveBeenCalledWith(payload);
     expect(mockRefreshUserMetadata).toHaveBeenCalledTimes(1);
     expect(mockDispatch).toHaveBeenCalledWith(triggerFetch());
+  });
+
+  it("records synced local events before refreshing Google data", async () => {
+    mockSyncPendingLocalEvents.mockImplementation((dispatch) => {
+      dispatch(importGCalSlice.actions.setLocalEventsSynced(2));
+      return Promise.resolve(true);
+    });
+
+    renderHook(() => useConnectGoogle());
+
+    const useGoogleAuthArg = getUseGoogleAuthArg();
+    if (!useGoogleAuthArg?.onSuccess) {
+      throw new Error("Expected useGoogleAuth to receive an onSuccess handler");
+    }
+
+    const payload = {
+      clientType: "web" as const,
+      thirdPartyId: "google" as const,
+      redirectURIInfo: {
+        redirectURIOnProviderDashboard: window.location.origin,
+        redirectURIQueryParams: {
+          code: "auth-code",
+          scope: "scope",
+          state: "state",
+        },
+      },
+    };
+
+    await useGoogleAuthArg.onSuccess(payload);
+
+    expect(mockDispatch).toHaveBeenCalledWith(
+      importGCalSlice.actions.setLocalEventsSynced(2),
+    );
+    expect(mockAuthApi.connectGoogle).toHaveBeenCalledWith(payload);
+  });
+
+  it("does not connect Google when local event sync fails", async () => {
+    const { showLocalEventsSyncFailure } = jest.requireActual<
+      typeof GoogleAuthUtil
+    >("@web/auth/google/google.auth.util");
+    mockSyncPendingLocalEvents.mockImplementation(() => {
+      showLocalEventsSyncFailure(new Error("sync failed"));
+      return Promise.resolve(false);
+    });
+
+    renderHook(() => useConnectGoogle());
+
+    const useGoogleAuthArg = getUseGoogleAuthArg();
+    if (!useGoogleAuthArg?.onSuccess) {
+      throw new Error("Expected useGoogleAuth to receive an onSuccess handler");
+    }
+
+    const payload = {
+      clientType: "web" as const,
+      thirdPartyId: "google" as const,
+      redirectURIInfo: {
+        redirectURIOnProviderDashboard: window.location.origin,
+        redirectURIQueryParams: {
+          code: "auth-code",
+          scope: "scope",
+          state: "state",
+        },
+      },
+    };
+
+    await useGoogleAuthArg.onSuccess(payload);
+
+    expect(mockToastError).toHaveBeenCalled();
+    expect(mockAuthApi.connectGoogle).not.toHaveBeenCalled();
+    expect(mockRefreshUserMetadata).not.toHaveBeenCalled();
+    expect(mockDispatch).not.toHaveBeenCalledWith(triggerFetch());
   });
 });

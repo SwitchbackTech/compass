@@ -3,16 +3,22 @@ import { Origin } from "@core/constants/core.constants";
 import { type Result_Auth_Compass } from "@core/types/auth.types";
 import { markGoogleAsRevoked } from "@web/auth/google/google.auth.state";
 import { AuthApi } from "@web/common/apis/auth.api";
-import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
+import {
+  GOOGLE_REVOKED_TOAST_ID,
+  toastDefaultOptions,
+} from "@web/common/constants/toast.constants";
 import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
-import { type SignInUpInput } from "@web/components/oauth/ouath.types";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
-import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
+import {
+  importGCalSlice,
+  triggerFetch,
+} from "@web/ducks/events/slices/sync.slice";
 import { reconnect } from "@web/socket/client/socket.client";
-import { store } from "@web/store";
+import { type AppDispatch, store } from "@web/store";
+import { type GoogleAuthConfig } from "../hooks/google/googe.auth.types";
 
 export interface AuthenticateResult {
   success: boolean;
@@ -26,11 +32,14 @@ export interface SyncLocalEventsResult {
   error?: Error;
 }
 
+export const LOCAL_EVENTS_SYNC_ERROR_MESSAGE =
+  "We could not sync your local events. Your changes are still saved on this device.";
+
 /**
  * Authenticate with Google using the provided credentials.
  */
 export async function authenticate(
-  data: SignInUpInput,
+  data: GoogleAuthConfig,
 ): Promise<AuthenticateResult> {
   try {
     const response = await AuthApi.loginOrSignup(data);
@@ -70,6 +79,11 @@ export const handleGoogleRevoked = () => {
   reconnect();
 };
 
+export const showLocalEventsSyncFailure = (error: Error | undefined) => {
+  toast.error(LOCAL_EVENTS_SYNC_ERROR_MESSAGE, toastDefaultOptions);
+  console.error(error);
+};
+
 /**
  * Sync local events to the cloud.
  */
@@ -80,4 +94,27 @@ export async function syncLocalEvents(): Promise<SyncLocalEventsResult> {
   } catch (error) {
     return { syncedCount: 0, success: false, error: error as Error };
   }
+}
+
+/**
+ * Runs {@link syncLocalEvents}, surfaces failures with a toast, and records
+ * synced counts in Redux when migration succeeds. Returns whether sync succeeded.
+ */
+export async function syncPendingLocalEvents(
+  dispatch: AppDispatch,
+): Promise<boolean> {
+  const syncResult = await syncLocalEvents();
+
+  if (!syncResult.success) {
+    showLocalEventsSyncFailure(syncResult.error);
+    return false;
+  }
+
+  if (syncResult.syncedCount > 0) {
+    dispatch(
+      importGCalSlice.actions.setLocalEventsSynced(syncResult.syncedCount),
+    );
+  }
+
+  return true;
 }

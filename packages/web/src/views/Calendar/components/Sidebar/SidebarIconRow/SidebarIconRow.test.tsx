@@ -6,7 +6,7 @@ import { SidebarIconRow } from "@web/views/Calendar/components/Sidebar/SidebarIc
 
 const mockLogin = jest.fn();
 
-jest.mock("@web/auth/hooks/oauth/useGoogleAuth", () => ({
+jest.mock("@web/auth/hooks/google/useGoogleAuth/useGoogleAuth", () => ({
   useGoogleAuth: () => ({
     login: mockLogin,
   }),

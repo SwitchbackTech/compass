@@ -3,7 +3,7 @@ import {
   createEventTitle,
   expectSomedayEventMissing,
   expectSomedayEventVisible,
-  fillTitleAndSaveWithKeyboard,
+  fillTitleAndSaveEventForm,
   openEventForEditingWithKeyboard,
   openSomedayEventFormWithKeyboard,
   prepareCalendarPage,
@@ -19,14 +19,14 @@ test("should update a someday event using keyboard interaction", async ({
 
   const title = createEventTitle("Someday Event");
   await openSomedayEventFormWithKeyboard(page);
-  await fillTitleAndSaveWithKeyboard(page, title);
+  await fillTitleAndSaveEventForm(page, title);
   await expectSomedayEventVisible(page, title);
   await page.waitForTimeout(1000);
 
   await openEventForEditingWithKeyboard(page, title);
 
   const updatedTitle = updateEventTitle("Someday Event");
-  await fillTitleAndSaveWithKeyboard(page, updatedTitle);
+  await fillTitleAndSaveEventForm(page, updatedTitle);
 
   await expectSomedayEventVisible(page, updatedTitle);
   await expectSomedayEventMissing(page, title);

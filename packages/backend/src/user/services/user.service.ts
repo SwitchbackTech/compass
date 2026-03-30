@@ -5,28 +5,21 @@ import SupertokensUserMetadata, {
 } from "supertokens-node/recipe/usermetadata";
 import { Logger } from "@core/logger/winston.logger";
 import { mapUserToCompass } from "@core/mappers/map.user";
-import { Resource_Sync } from "@core/types/sync.types";
 import { zObjectId } from "@core/types/type.utils";
 import {
   type Schema_User,
   type UserMetadata,
   type UserProfile,
 } from "@core/types/user.types";
-import { shouldImportGCal } from "@core/util/event/event.util";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
-import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import { getGoogleRepairErrorMessage } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { UserError } from "@backend/common/errors/user/user.errors";
-import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
-import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import syncService from "@backend/sync/services/sync.service";
-import { isUsingHttps } from "@backend/sync/util/sync.util";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import {
   type GetUserMetadataResponse,
@@ -35,6 +28,9 @@ import {
 
 const logger = Logger("app:user.service");
 
+/**
+ * Manages user data and metadata.
+ */
 class UserService {
   private splitName(name: string): { firstName: string; lastName: string } {
     const trimmedName = name.trim();
@@ -322,132 +318,6 @@ class UserService {
         sync: { importGCal: "RESTART", incrementalGCalSync: "RESTART" },
       },
     });
-  };
-
-  startGoogleCalendarSync = async (
-    user: string,
-  ): Promise<{ eventsCount: number; calendarsCount: number }> => {
-    const gcal = await getGcalClient(user);
-
-    const calendarInit = await calendarService.initializeGoogleCalendars(
-      user,
-      gcal,
-    );
-
-    const gCalendarIds = calendarInit.googleCalendars
-      .map(({ id }) => id)
-      .filter((id) => id !== undefined && id !== null);
-
-    const importResults = await syncService.importFull(
-      gcal,
-      gCalendarIds,
-      user,
-    );
-
-    await Promise.resolve(isUsingHttps()).then((yes) =>
-      yes
-        ? syncService.startWatchingGcalResources(
-            user,
-            [
-              { gCalendarId: Resource_Sync.CALENDAR },
-              ...gCalendarIds.map((gCalendarId) => ({ gCalendarId })),
-            ],
-            gcal,
-          )
-        : [],
-    );
-
-    const eventsCount = importResults.reduce(
-      (sum, result) => sum + result.totalChanged,
-      0,
-    );
-
-    return {
-      eventsCount,
-      calendarsCount: gCalendarIds.length,
-    };
-  };
-
-  restartGoogleCalendarSync = async (
-    userId: string,
-    options: { force?: boolean } = {},
-  ) => {
-    const isForce = options.force === true;
-
-    logger.warn(
-      `Restarting Google Calendar sync for user: ${userId}${isForce ? " (forced)" : ""}`,
-    );
-
-    try {
-      webSocketServer.handleImportGCalStart(userId);
-
-      const userMeta = await this.fetchUserMetadata(userId);
-      const importStatus = userMeta.sync?.importGCal;
-      const isImporting = importStatus === "IMPORTING";
-      const proceed = isForce ? !isImporting : shouldImportGCal(userMeta);
-
-      if (!proceed) {
-        webSocketServer.handleImportGCalEnd(userId, {
-          operation: "REPAIR",
-          status: "IGNORED",
-          message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
-        });
-
-        return;
-      }
-
-      await userMetadataService.updateUserMetadata({
-        userId,
-        data: { sync: { importGCal: "IMPORTING" } },
-      });
-
-      await this.stopGoogleCalendarSync(userId);
-      const importResults = await this.startGoogleCalendarSync(userId);
-
-      await userMetadataService.updateUserMetadata({
-        userId,
-        data: { sync: { importGCal: "COMPLETED" } },
-      });
-
-      webSocketServer.handleImportGCalEnd(userId, {
-        operation: "REPAIR",
-        status: "COMPLETED",
-        ...importResults,
-      });
-      webSocketServer.handleBackgroundCalendarChange(userId);
-    } catch (err) {
-      try {
-        await this.stopGoogleCalendarSync(userId);
-      } catch (cleanupError) {
-        logger.error(
-          `Failed to clean up partial Google Calendar sync state for user: ${userId}`,
-          cleanupError,
-        );
-      }
-
-      if (isInvalidGoogleToken(err)) {
-        logger.warn(
-          `Google Calendar repair failed because access was revoked for user: ${userId}`,
-        );
-
-        await this.pruneGoogleData(userId);
-        webSocketServer.handleGoogleRevoked(userId);
-        return;
-      }
-
-      await userMetadataService.updateUserMetadata({
-        userId,
-        data: { sync: { importGCal: "ERRORED" } },
-      });
-
-      logger.error(`Re-sync failed for user: ${userId}`, err);
-
-      webSocketServer.handleImportGCalEnd(userId, {
-        operation: "REPAIR",
-        status: "ERRORED",
-        message: getGoogleRepairErrorMessage(err),
-      });
-    }
   };
 
   fetchUserMetadata = async (

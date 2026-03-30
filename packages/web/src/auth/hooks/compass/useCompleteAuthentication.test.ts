@@ -1,12 +1,18 @@
-import { act, renderHook } from "@testing-library/react";
-import { syncLocalEvents } from "@web/auth/google/google.auth.util";
+import { renderHook } from "@testing-library/react";
+import type * as GoogleAuthUtil from "@web/auth/google/google.auth.util";
+import { syncPendingLocalEvents } from "@web/auth/google/google.auth.util";
 import { useSession } from "@web/auth/hooks/session/useSession";
 import { refreshUserMetadata } from "@web/auth/session/user-metadata.util";
 import { markUserAsAuthenticated } from "@web/auth/state/auth.state.util";
+import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
+import { useAppDispatch } from "@web/store/store.hooks";
 import { useCompleteAuthentication } from "./useCompleteAuthentication";
 
 jest.mock("@web/auth/google/google.auth.util", () => ({
-  syncLocalEvents: jest.fn(),
+  ...jest.requireActual<typeof GoogleAuthUtil>(
+    "@web/auth/google/google.auth.util",
+  ),
+  syncPendingLocalEvents: jest.fn(),
 }));
 jest.mock("@web/auth/hooks/session/useSession", () => ({
   useSession: jest.fn(),
@@ -21,9 +27,8 @@ jest.mock("@web/store/store.hooks", () => ({
   useAppDispatch: jest.fn(),
 }));
 
-const mockSyncLocalEvents = syncLocalEvents as jest.MockedFunction<
-  typeof syncLocalEvents
->;
+const mockSyncPendingLocalEvents =
+  syncPendingLocalEvents as jest.MockedFunction<typeof syncPendingLocalEvents>;
 const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
 const mockRefreshUserMetadata = refreshUserMetadata as jest.MockedFunction<
   typeof refreshUserMetadata
@@ -32,10 +37,7 @@ const mockMarkUserAsAuthenticated =
   markUserAsAuthenticated as jest.MockedFunction<
     typeof markUserAsAuthenticated
   >;
-const storeHooksMock = jest.requireMock("@web/store/store.hooks") as {
-  useAppDispatch: jest.Mock;
-};
-const mockUseAppDispatch = storeHooksMock.useAppDispatch;
+const mockUseAppDispatch = jest.mocked(useAppDispatch);
 
 describe("useCompleteAuthentication", () => {
   const mockDispatch = jest.fn();
@@ -48,7 +50,7 @@ describe("useCompleteAuthentication", () => {
       authenticated: false,
       setAuthenticated: mockSetAuthenticated,
     });
-    mockSyncLocalEvents.mockResolvedValue({ success: true, syncedCount: 0 });
+    mockSyncPendingLocalEvents.mockResolvedValue(true);
     mockRefreshUserMetadata.mockResolvedValue();
   });
 
@@ -71,7 +73,10 @@ describe("useCompleteAuthentication", () => {
   });
 
   it("records synced local events count", async () => {
-    mockSyncLocalEvents.mockResolvedValue({ success: true, syncedCount: 5 });
+    mockSyncPendingLocalEvents.mockImplementation((dispatch) => {
+      dispatch(importGCalSlice.actions.setLocalEventsSynced(5));
+      return Promise.resolve(true);
+    });
     const { result } = renderHook(() => useCompleteAuthentication());
 
     await result.current({ email: "test@example.com" });

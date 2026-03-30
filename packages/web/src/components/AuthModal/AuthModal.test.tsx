@@ -28,21 +28,21 @@ jest.mock("@web/auth/hooks/session/useSession", () => ({
 
 // Mock useGoogleAuth
 const mockGoogleLogin = jest.fn();
-jest.mock("@web/auth/hooks/oauth/useGoogleAuth", () => ({
+jest.mock("@web/auth/hooks/google/useGoogleAuth/useGoogleAuth", () => ({
   useGoogleAuth: () => ({
     login: mockGoogleLogin,
   }),
 }));
 
 const mockCompleteAuthentication = jest.fn();
-jest.mock("@web/auth/hooks/useCompleteAuthentication", () => ({
+jest.mock("@web/auth/hooks/compass/useCompleteAuthentication", () => ({
   useCompleteAuthentication: () => mockCompleteAuthentication,
 }));
 
 jest.mock("supertokens-web-js/recipe/emailpassword");
 
 // Mock GoogleButton - uses button with label for semantic queries (matches real component's aria-label)
-jest.mock("@web/components/oauth/google/GoogleButton", () => ({
+jest.mock("@web/components/AuthModal/components/GoogleButton", () => ({
   GoogleButton: ({
     onClick,
     label,

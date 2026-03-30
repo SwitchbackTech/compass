@@ -208,7 +208,7 @@ describe("SyncController", () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
       const restartSpy = jest
-        .spyOn(userService, "restartGoogleCalendarSync")
+        .spyOn(syncService, "restartGoogleCalendarSync")
         .mockResolvedValue();
 
       const watch = await mongoService.watch.findOne({
@@ -250,7 +250,7 @@ describe("SyncController", () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
       const restartSpy = jest
-        .spyOn(userService, "restartGoogleCalendarSync")
+        .spyOn(syncService, "restartGoogleCalendarSync")
         .mockImplementation(async () => {
           await userMetadataService.updateUserMetadata({
             userId,
