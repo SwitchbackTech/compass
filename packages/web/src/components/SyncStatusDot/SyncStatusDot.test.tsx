@@ -46,10 +46,13 @@ jest.mock("@web/components/AuthModal/hooks/useAuthModal", () => ({
   }),
 }));
 
-jest.mock("@phosphor-icons/react", () => ({
-  DotOutlineIcon: ({ className }: { className?: string }) => (
+jest.mock("@web/components/Icons/CircleIcon", () => ({
+  CircleIcon: ({ className }: { className?: string }) => (
     <span aria-label="sync-dot-icon">{className ?? ""}</span>
   ),
+}));
+
+jest.mock("@phosphor-icons/react", () => ({
   SpinnerGap: () => <span aria-label="spinner-gap" />,
 }));
 
@@ -124,7 +127,7 @@ describe("SyncStatusDot", () => {
       "motion-safe:animate-sync-dot-pulse",
     );
     expect(screen.getByLabelText("sync-dot-icon")).toHaveTextContent(
-      "hover:scale-110",
+      "motion-safe:group-hover:animate-none",
     );
     expect(mockOpenModal).toHaveBeenCalledWith("signUp");
     expect(mockGoogleOnSelect).not.toHaveBeenCalled();

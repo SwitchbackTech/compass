@@ -1,4 +1,6 @@
-export const CircleIcon = () => {
+import { type ComponentProps } from "react";
+
+export const CircleIcon = (props: ComponentProps<"svg">) => {
   return (
     <svg
       width="12"
@@ -7,6 +9,7 @@ export const CircleIcon = () => {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
+      {...props}
     >
       <circle cx="6" cy="6" r="3" fill="currentColor" />
     </svg>

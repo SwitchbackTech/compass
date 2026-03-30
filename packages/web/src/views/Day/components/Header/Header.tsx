@@ -55,7 +55,6 @@ export const Header: FC<Props> = ({
       {showReminder && <Reminder ref={reminderRef} />}
 
       <StyledRightGroup>
-        <AccountIcon />
         <SyncStatusDot />
         <SelectView />
       </StyledRightGroup>

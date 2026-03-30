@@ -13,11 +13,11 @@ import {
   useInteractions,
   useRole,
 } from "@floating-ui/react";
-import { DotOutlineIcon } from "@phosphor-icons/react";
 import { type DotColor } from "@web/auth/hooks/google/useConnectGoogle/useConnectGoogle.types";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import { theme } from "@web/common/styles/theme";
+import { CircleIcon } from "@web/components/Icons/CircleIcon";
 import { SpinnerIcon } from "@web/components/Icons/Spinner";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { useSyncStatusDotState } from "./useSyncStatusDotState";
@@ -29,7 +29,9 @@ const DOT_COLOR_MAP: Record<DotColor, string> = {
 };
 
 const ANONYMOUS_PROMPT_ICON_CLASSNAME =
-  "origin-center transition-all duration-200 ease-out motion-safe:animate-sync-dot-pulse motion-safe:group-hover:animate-none group-hover:scale-110 group-hover:brightness-110";
+  "origin-center transition-all duration-200 ease-out motion-safe:animate-sync-dot-pulse motion-safe:group-hover:animate-none";
+const DOT_BUTTON_CLASSNAME = "inline-flex h-6 w-6 items-center justify-center";
+const ANONYMOUS_PROMPT_WRAPPER_CLASSNAME = `${DOT_BUTTON_CLASSNAME} group rounded-full transition-colors duration-200 ease-out hover:bg-white/20 hover:ring-1 hover:ring-white/20`;
 
 interface StatusDotPopoverProps {
   children: React.ReactNode;
@@ -140,20 +142,18 @@ export const SyncStatusDot = () => {
     ? ANONYMOUS_PROMPT_ICON_CLASSNAME
     : undefined;
   const icon = (
-    <DotOutlineIcon
+    <CircleIcon
       aria-hidden="true"
       className={iconClassName}
-      color={dotColor}
-      size={45}
-      weight="fill"
+      style={{
+        color: dotColor,
+      }}
     />
   );
   const wrappedIcon = isAnonymousSignUpPrompt ? (
-    <span className="group inline-flex items-center justify-center">
-      {icon}
-    </span>
+    <span className={ANONYMOUS_PROMPT_WRAPPER_CLASSNAME}>{icon}</span>
   ) : (
-    icon
+    <span className={DOT_BUTTON_CLASSNAME}>{icon}</span>
   );
 
   return (
