@@ -25,7 +25,6 @@ Important server-to-client events:
 Source files:
 
 - `packages/core/src/types/websocket.types.ts`
-- `packages/backend/src/user/services/user.service.ts`
 - `packages/backend/src/sync/services/sync.service.ts`
 
 `IMPORT_GCAL_END` now carries an explicit `operation` so the client can distinguish
@@ -282,17 +281,23 @@ When a user authenticates with email/password first and connects Google later
 from an existing session:
 
 1. the web client completes the Google popup flow
-2. `useConnectGoogle()` sends the auth-code payload to
-   `POST /api/auth/google/connect`
-3. backend `connectGoogleToCurrentUser()` attaches Google credentials to the
+2. `useConnectGoogle()` first calls `syncPendingLocalEvents(dispatch)` so
+   IndexedDB-only Compass events are pushed before any Google refresh
+3. if local sync fails, connect is aborted and the user sees:
+   - `We could not sync your local events. Your changes are still saved on this device.`
+4. on successful local sync, `useConnectGoogle()` sends the auth-code payload
+   to `POST /api/auth/google/connect`
+5. backend `connectGoogleToCurrentUser()` attaches Google credentials to the
    existing Compass user
-4. backend marks sync metadata as `"RESTART"`
-5. background import/watch sync is restarted
+6. backend marks sync metadata as `"RESTART"`
+7. background import/watch sync is restarted
 
 Operational constraints:
 
 - this path no longer depends on SuperTokens `AccountLinking`
 - Google-account ownership is checked server-side by `google.googleId`
+- connect is intentionally blocked when local event sync fails; this prevents
+  local-only Compass events from disappearing during Google-triggered refresh
 - restart still follows the same metadata/socket lifecycle
   (`IMPORT_GCAL_START`, metadata transitions, `IMPORT_GCAL_END`)
 
@@ -302,7 +307,8 @@ Primary files:
 - `packages/backend/src/auth/services/google/google.auth.service.ts`
 - `packages/backend/src/auth/controllers/auth.controller.ts`
 - `packages/web/src/auth/google/google.auth.state.ts`
-- `packages/web/src/auth/hooks/oauth/useConnectGoogle.ts`
+- `packages/web/src/auth/google/google.auth.util.ts`
+- `packages/web/src/auth/hooks/google/useConnectGoogle/useConnectGoogle.ts`
 - `packages/web/src/common/repositories/event/event.repository.util.ts`
 
 ### Connect-Later Ownership Conflict Triage
@@ -390,7 +396,7 @@ Google import progress is also realtime:
 Source files:
 
 - `packages/web/src/socket/hooks/useGcalSync.ts`
-- `packages/web/src/auth/hooks/oauth/useConnectGoogle.ts`
+- `packages/web/src/auth/hooks/google/useConnectGoogle/useConnectGoogle.ts`
 - `packages/web/src/ducks/events/slices/sync.slice.ts`
 
 `IMPORT_GCAL_END` handling is operation-aware:

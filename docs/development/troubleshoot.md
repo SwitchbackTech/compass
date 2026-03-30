@@ -85,3 +85,26 @@ Operational notes:
 - UI should transition to reconnect-required behavior rather than repeatedly
   retrying repair
 - user action is to reconnect Google, then allow sync/import restart
+
+## Google Connect Aborts With Local Events Sync Error
+
+When a password-authenticated user connects Google from an existing session, the
+client now attempts to sync IndexedDB-only Compass events **before**
+`POST /api/auth/google/connect`.
+
+If that pre-connect local sync fails, connect is intentionally aborted and the
+user sees:
+
+- `We could not sync your local events. Your changes are still saved on this device.`
+
+What this means operationally:
+
+- this is a local-to-cloud event migration failure, not an OAuth popup failure
+- backend `connectGoogleToCurrentUser` is not called for that attempt
+- no Google import restart should be observed from that click
+
+Recommended triage:
+
+1. inspect browser console/network for the local event sync request failure
+2. resolve connectivity/auth issues to Compass APIs first
+3. retry Google connect after local sync succeeds
