@@ -9,7 +9,8 @@ jest.mock("@backend/user/queries/user.queries");
 jest.mock("@backend/sync/util/sync.queries");
 jest.mock("@backend/sync/util/sync.util");
 
-const mockFindCompassUserBy = userQueries.findCompassUserBy as jest.Mock;
+const mockFindCanonicalCompassUser =
+  userQueries.findCanonicalCompassUser as jest.Mock;
 const mockGetSync = syncQueries.getSync as jest.Mock;
 const mockCanDoIncrementalSync = syncUtil.canDoIncrementalSync as jest.Mock;
 
@@ -34,7 +35,7 @@ describe("determineGoogleAuthMode", () => {
 
   it("returns SIGNUP when there is no linked Compass user", async () => {
     const googleUserId = faker.string.uuid();
-    mockFindCompassUserBy.mockResolvedValue(null);
+    mockFindCanonicalCompassUser.mockResolvedValue(null);
 
     await expect(
       determineGoogleAuthMode(googleUserId, null, true),
@@ -46,15 +47,15 @@ describe("determineGoogleAuthMode", () => {
       createdNewRecipeUser: true,
     });
 
-    expect(mockFindCompassUserBy).toHaveBeenCalledWith(
-      "google.googleId",
+    expect(mockFindCanonicalCompassUser).toHaveBeenCalledWith({
       googleUserId,
-    );
+      email: null,
+    });
   });
 
   it("returns RECONNECT_REPAIR when the user is missing a stored refresh token", async () => {
     const user = makeCompassUser({ hasRefreshToken: false });
-    mockFindCompassUserBy.mockResolvedValue(user);
+    mockFindCanonicalCompassUser.mockResolvedValue(user);
     mockGetSync.mockResolvedValue({
       google: { events: [{ nextSyncToken: "x" }] },
     });
@@ -73,7 +74,7 @@ describe("determineGoogleAuthMode", () => {
 
   it("returns RECONNECT_REPAIR when sync is not healthy", async () => {
     const user = makeCompassUser();
-    mockFindCompassUserBy.mockResolvedValue(user);
+    mockFindCanonicalCompassUser.mockResolvedValue(user);
     mockGetSync.mockResolvedValue({ google: { events: [] } });
     mockCanDoIncrementalSync.mockReturnValue(false);
 
@@ -90,7 +91,7 @@ describe("determineGoogleAuthMode", () => {
 
   it("returns SIGNIN_INCREMENTAL when the user has a refresh token and healthy sync", async () => {
     const user = makeCompassUser();
-    mockFindCompassUserBy.mockResolvedValue(user);
+    mockFindCanonicalCompassUser.mockResolvedValue(user);
     mockGetSync.mockResolvedValue({
       google: { events: [{ nextSyncToken: "token" }] },
     });
@@ -109,23 +110,23 @@ describe("determineGoogleAuthMode", () => {
 
   it("reuses a same-email Compass user when Google is not linked yet", async () => {
     const user = { _id: new ObjectId() };
-    mockFindCompassUserBy
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(user);
+    const googleUserId = faker.string.uuid();
+    mockFindCanonicalCompassUser.mockResolvedValueOnce(user);
     mockGetSync.mockResolvedValue(null);
 
     await expect(
-      determineGoogleAuthMode(
-        faker.string.uuid(),
-        " Existing@Example.com ",
-        false,
-      ),
+      determineGoogleAuthMode(googleUserId, " Existing@Example.com ", false),
     ).resolves.toEqual({
       authMode: "RECONNECT_REPAIR",
       compassUserId: user._id.toString(),
       hasStoredRefreshToken: false,
       hasHealthySync: false,
       createdNewRecipeUser: false,
+    });
+
+    expect(mockFindCanonicalCompassUser).toHaveBeenCalledWith({
+      googleUserId,
+      email: " Existing@Example.com ",
     });
   });
 });

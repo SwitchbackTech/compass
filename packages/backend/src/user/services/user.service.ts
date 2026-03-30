@@ -21,7 +21,7 @@ import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
 import syncService from "@backend/sync/services/sync.service";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import { findCanonicalCompassUser } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import {
   type GetUserMetadataResponse,
@@ -97,22 +97,7 @@ class UserService {
     email?: string | null;
     googleUserId?: string | null;
   }): Promise<string | null> => {
-    if (input.googleUserId) {
-      const connectedUser = await findCompassUserBy(
-        "google.googleId",
-        input.googleUserId,
-      );
-
-      if (connectedUser) {
-        return connectedUser._id.toString();
-      }
-    }
-
-    if (!input.email) {
-      return null;
-    }
-
-    const user = await findCompassUserBy("email", normalizeEmail(input.email));
+    const user = await findCanonicalCompassUser(input);
     return user?._id.toString() ?? null;
   };
 

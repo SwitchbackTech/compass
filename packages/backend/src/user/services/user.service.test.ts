@@ -105,6 +105,44 @@ describe("UserService", () => {
     });
   });
 
+  describe("getCanonicalCompassUserId", () => {
+    it("returns the connected Compass user id for a matching Google user id", async () => {
+      const user = await UserDriver.createUser();
+
+      await expect(
+        userService.getCanonicalCompassUserId({
+          googleUserId: user.google?.googleId,
+          email: faker.internet.email(),
+        }),
+      ).resolves.toBe(user._id.toString());
+    });
+
+    it("falls back to a normalized email lookup when Google is not linked", async () => {
+      const user = await UserDriver.createUser();
+      const normalizedEmail = user.email.toLowerCase();
+      await mongoService.user.updateOne(
+        { _id: user._id },
+        { $set: { email: normalizedEmail }, $unset: { google: "" } },
+      );
+
+      await expect(
+        userService.getCanonicalCompassUserId({
+          googleUserId: faker.string.uuid(),
+          email: ` ${normalizedEmail.toUpperCase()} `,
+        }),
+      ).resolves.toBe(user._id.toString());
+    });
+
+    it("returns null when neither lookup finds a Compass user", async () => {
+      await expect(
+        userService.getCanonicalCompassUserId({
+          googleUserId: faker.string.uuid(),
+          email: faker.internet.email(),
+        }),
+      ).resolves.toBeNull();
+    });
+  });
+
   describe("upsertUserFromAuth", () => {
     it("creates a password user with normalized fields and default priorities", async () => {
       const userId = mongoService.objectId().toString();

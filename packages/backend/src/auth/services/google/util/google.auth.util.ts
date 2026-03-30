@@ -1,9 +1,8 @@
 import { type Credentials, type TokenPayload } from "google-auth-library";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
-import { normalizeEmail } from "@backend/common/helpers/email.util";
 import { getSync } from "@backend/sync/util/sync.queries";
 import { canDoIncrementalSync } from "@backend/sync/util/sync.util";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import { findCanonicalCompassUser } from "@backend/user/queries/user.queries";
 import { type AuthDecision } from "../google.auth.types";
 import { type ParsedReconnectGoogleParams } from "../google.auth.types";
 
@@ -12,12 +11,7 @@ export async function determineGoogleAuthMode(
   email: string | null | undefined,
   createdNewRecipeUser: boolean,
 ): Promise<AuthDecision> {
-  const normalizedEmail = email ? normalizeEmail(email) : null;
-  const user =
-    (await findCompassUserBy("google.googleId", googleUserId)) ??
-    (normalizedEmail
-      ? await findCompassUserBy("email", normalizedEmail)
-      : null);
+  const user = await findCanonicalCompassUser({ googleUserId, email });
 
   if (!user) {
     return {
