@@ -1,7 +1,7 @@
 import { type Request } from "express";
 import { GaxiosError } from "gaxios";
 import { type SessionRequest } from "supertokens-node/framework/express";
-import { GOOGLE_REVOKED } from "@core/constants/websocket.constants";
+import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
@@ -23,7 +23,7 @@ import {
   type Info_Error,
 } from "@backend/common/types/error.types";
 import { type SessionResponse } from "@backend/common/types/express.types";
-import { webSocketServer } from "@backend/servers/websocket/websocket.server";
+import { sseServer } from "@backend/servers/sse/sse.server";
 import syncService from "@backend/sync/services/sync.service";
 import { getSyncByToken } from "@backend/sync/util/sync.queries";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
@@ -117,7 +117,7 @@ const handleGoogleError = async (
 ) => {
   if (isInvalidGoogleToken(e)) {
     await userService.pruneGoogleData(userId);
-    webSocketServer.handleGoogleRevoked(userId);
+    sseServer.handleGoogleRevoked(userId);
 
     logger.warn(
       `Invalid Google token for user: ${userId}. Google data pruned and client notified.`,

@@ -56,7 +56,7 @@ To fix this:
 
 When a user triggers repair from the UI (`Repair Google Calendar`) and the flow
 does not complete as expected, first classify the failure mode from the message
-and websocket behavior.
+and SSE behavior.
 
 ### Quota / rate-limit during repair
 

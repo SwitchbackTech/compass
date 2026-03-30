@@ -43,9 +43,9 @@ sed -n '1,260p' packages/core/src/types/event.types.ts
 - Event controller: `packages/backend/src/event/controllers/event.controller.ts`
 - Event service: `packages/backend/src/event/services/event.service.ts`
 - Sync service: `packages/backend/src/sync/services/sync.service.ts`
-- Websocket server: `packages/backend/src/servers/websocket/websocket.server.ts`
+- SSE server: `packages/backend/src/servers/sse/sse.server.ts`
 - Shared event types: `packages/core/src/types/event.types.ts`
-- Shared websocket constants: `packages/core/src/constants/websocket.constants.ts`
+- Shared SSE event names: `packages/core/src/constants/sse.constants.ts`
 
 ## If You Are Touching...
 
@@ -56,8 +56,8 @@ sed -n '1,260p' packages/core/src/types/event.types.ts
 - Backend endpoints:
   [Backend Request Flow](../backend/backend-request-flow.md),
   [API Documentation](../backend/api-documentation.md)
-- Google sync or websocket behavior:
-  [Google Sync And Websocket Flow](../features/google-sync-and-websocket-flow.md)
+- Google sync or SSE behavior:
+  [Google Sync And SSE Flow](../features/google-sync-and-sse-flow.md)
 - Local persistence:
   [Offline Storage And Migrations](../features/offline-storage-and-migrations.md)
 - Event or task shape:

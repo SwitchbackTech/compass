@@ -49,7 +49,7 @@ Important behavior:
 
 - blocks mobile with `MobileGate`
 - wraps authenticated layout with `UserProvider`
-- wires socket listeners through `SocketProvider`
+- wires SSE listeners through `SSEProvider`
 
 This is the shell for the main desktop app experience.
 
@@ -64,7 +64,7 @@ Responsibilities:
 - initialize SuperTokens recipes
 - track auth state in a `BehaviorSubject`
 - mark users as having authenticated
-- connect or disconnect sockets on session changes
+- open or close the SSE stream on session changes
 - expose a React context for auth status
 
 Important detail:
@@ -244,7 +244,7 @@ Typical event flow:
 2. redux-saga handles the async side effect
 3. the selected repository writes locally or remotely
 4. reducers and/or Elf stores update client state
-5. websocket events can trigger refetch or metadata refresh later
+5. SSE events can trigger refetch or metadata refresh later
 
 Important consequence:
 
@@ -285,7 +285,7 @@ This is deliberate and prevents events from "disappearing" after login when loca
 Revoked state details:
 
 - stored in memory only (not persisted)
-- set when `GOOGLE_REVOKED` is detected from socket or API error responses
+- set when `GOOGLE_REVOKED` is detected from SSE or API error responses
 - cleared when Google auth succeeds again
 
 ## Storage Initialization
@@ -304,27 +304,27 @@ Startup storage flow:
 
 Database init failure is non-fatal; the app falls back to remote-only behavior when possible.
 
-## Websocket Runtime
+## SSE Runtime
 
 Files:
 
-- `packages/web/src/socket/provider/SocketProvider.tsx`
-- `packages/web/src/socket/hooks/useSocketConnection.ts`
-- `packages/web/src/socket/hooks/useEventSync.ts`
-- `packages/web/src/socket/hooks/useGcalSync.ts`
+- `packages/web/src/sse/provider/SSEProvider.tsx`
+- `packages/web/src/sse/hooks/useSSEConnection.ts`
+- `packages/web/src/sse/hooks/useEventSSE.ts`
+- `packages/web/src/sse/hooks/useGcalSSE.ts`
 
 Responsibilities:
 
-- connect/disconnect the socket based on auth state
-- refetch events when background event changes arrive
+- open/close `EventSource` to `GET /api/events/stream` based on auth state
+- refetch events when background event changes arrive (`EVENT_CHANGED`, `SOMEDAY_EVENT_CHANGED`)
 - react to Google import progress and Google revocation events
-- request user metadata via socket when appropriate
+- apply `USER_METADATA` pushed on stream connect and when the backend refreshes metadata
 
 Runtime nuances:
 
-- `useGcalSync` uses `USER_METADATA` as the source of truth for sync metadata and Google connection status.
+- `useGcalSSE` uses `USER_METADATA` as the source of truth for sync metadata and Google connection status.
 - auto-import is triggered only when `sync.importGCal === "RESTART"` and `google.connectionState` is neither `NOT_CONNECTED` nor `RECONNECT_REQUIRED`.
-- On connect, backend may proactively emit `GOOGLE_REVOKED`; the client clears Google-origin events and falls back to local event storage until reconnect.
+- On connect, backend may proactively send `GOOGLE_REVOKED`; the client clears Google-origin events and falls back to local event storage until reconnect.
 
 ## Google Connection UI Contract
 
@@ -359,6 +359,6 @@ Connect-later guardrail:
 ## What To Read Before Editing
 
 - Auth/session issue: read session provider, user provider, router loaders.
-- Event refresh issue: read socket hooks, sync slice, event sagas.
+- Event refresh issue: read SSE hooks, sync slice, event sagas.
 - Offline issue: read storage adapter and migration runner.
 - Rendering issue in day/week/now: start at the route view, then its hooks.

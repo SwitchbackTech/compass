@@ -16,7 +16,7 @@ import {
   importGCalSlice,
   triggerFetch,
 } from "@web/ducks/events/slices/sync.slice";
-import { reconnect } from "@web/socket/client/socket.client";
+import { closeStream, openStream } from "@web/sse/client/sse.client";
 import { type AppDispatch, store } from "@web/store";
 import { type GoogleAuthConfig } from "../hooks/google/googe.auth.types";
 
@@ -74,9 +74,10 @@ export const handleGoogleRevoked = () => {
     triggerFetch({ reason: Sync_AsyncStateContextReason.GOOGLE_REVOKED }),
   );
 
-  // Always reconnect so the socket gets a fresh session; the backend has pruned
+  // Always reconnect so the stream gets a fresh session; the backend has pruned
   // Google data and the current connection may carry stale auth state.
-  reconnect();
+  closeStream();
+  openStream();
 };
 
 export const showLocalEventsSyncFailure = (error: Error | undefined) => {

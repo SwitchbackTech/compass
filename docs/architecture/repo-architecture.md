@@ -12,7 +12,7 @@ The React frontend. It owns:
 - auth/session-aware UI
 - event and task interactions
 - local offline storage
-- websocket listeners
+- SSE listeners (`EventSource`)
 
 Key entrypoints:
 
@@ -29,13 +29,13 @@ The Express + MongoDB backend. It owns:
 - Supertokens session enforcement
 - event CRUD and recurrence processing
 - Google Calendar sync
-- websocket fanout
+- SSE fanout
 
 Key entrypoints:
 
 - `packages/backend/src/app.ts`
 - `packages/backend/src/servers/express/express.server.ts`
-- `packages/backend/src/servers/websocket/websocket.server.ts`
+- `packages/backend/src/servers/sse/sse.server.ts`
 
 ### `packages/core`
 
@@ -51,7 +51,7 @@ High-value files:
 - `packages/core/src/types/event.types.ts`
 - `packages/core/src/types/type.utils.ts`
 - `packages/core/src/constants/core.constants.ts`
-- `packages/core/src/constants/websocket.constants.ts`
+- `packages/core/src/constants/sse.constants.ts`
 
 ### `packages/scripts`
 
@@ -73,14 +73,14 @@ The web package imports shared event/task/date concepts from `core` and should n
 
 ### Backend -> Core
 
-The backend uses `core` for shared validation, event categories, recurrence scopes, constants, and websocket event names.
+The backend uses `core` for shared validation, event categories, recurrence scopes, constants, and SSE event names.
 
 ### Web <-> Backend
 
 The web talks to the backend through:
 
 - HTTP APIs
-- websocket events
+- SSE events
 - shared domain types from `core`
 
 ## Startup Paths
@@ -102,7 +102,7 @@ The web talks to the backend through:
 
 1. create Express app
 2. create HTTP server
-3. initialize websocket server on the HTTP server
+3. register HTTP routes (SSE is opened per authenticated `GET /api/events/stream`)
 4. start Mongo
 5. listen on the configured port
 6. optionally connect ngrok
@@ -138,5 +138,5 @@ The repo prefers:
 
 - New event field: `core` schema, backend parsing/persistence, web editors/selectors/tests
 - New backend endpoint: backend route/controller/service plus maybe shared type in `core`
-- New websocket event: `core` constants/types, backend server emitter, web socket hook consumer
+- New SSE event: `core` constants/types, backend `sse.server` / `publish`, web SSE hook consumer
 - New local persistence behavior: web storage adapter, migration runner, tests

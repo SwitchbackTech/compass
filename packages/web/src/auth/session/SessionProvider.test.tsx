@@ -11,9 +11,9 @@ describe("SessionProvider sessionInit", () => {
 
   it("refreshes user metadata when a session already exists", async () => {
     const refreshUserMetadata = jest.fn().mockResolvedValue(undefined);
-    const reconnect = jest.fn();
-    const connect = jest.fn();
-    const disconnect = jest.fn();
+    const openStream = jest.fn();
+    const closeStream = jest.fn();
+    const getStream = jest.fn().mockReturnValue(null);
     const dispatch = jest.fn();
     const markUserAsAuthenticated = jest.fn();
     const getLastKnownEmail = jest.fn().mockReturnValue("test@example.com");
@@ -21,14 +21,10 @@ describe("SessionProvider sessionInit", () => {
     jest.doMock("@web/auth/session/user-metadata.util", () => ({
       refreshUserMetadata,
     }));
-    jest.doMock("@web/socket/provider/SocketProvider", () => ({
-      socket: {
-        connected: false,
-        connect,
-        disconnect,
-      },
-      reconnect,
-      disconnect,
+    jest.doMock("@web/sse/provider/SSEProvider", () => ({
+      openStream,
+      closeStream,
+      getStream,
     }));
     jest.doMock("@web/store", () => ({
       store: {
@@ -54,15 +50,15 @@ describe("SessionProvider sessionInit", () => {
         );
         expect(refreshUserMetadata).toHaveBeenCalledTimes(1);
       });
-      expect(connect).toHaveBeenCalledTimes(1);
+      expect(openStream).toHaveBeenCalledTimes(1);
     });
   });
 
   it("refreshes metadata on session creation and clears it on sign out", async () => {
     const refreshUserMetadata = jest.fn().mockResolvedValue(undefined);
-    const reconnect = jest.fn();
-    const connect = jest.fn();
-    const disconnect = jest.fn();
+    const openStream = jest.fn();
+    const closeStream = jest.fn();
+    const getStream = jest.fn().mockReturnValue({} as EventSource); // stream already open
     const dispatch = jest.fn();
     const markUserAsAuthenticated = jest.fn();
     const getLastKnownEmail = jest.fn().mockReturnValue("test@example.com");
@@ -70,14 +66,10 @@ describe("SessionProvider sessionInit", () => {
     jest.doMock("@web/auth/session/user-metadata.util", () => ({
       refreshUserMetadata,
     }));
-    jest.doMock("@web/socket/provider/SocketProvider", () => ({
-      socket: {
-        connected: true,
-        connect,
-        disconnect,
-      },
-      reconnect,
-      disconnect,
+    jest.doMock("@web/sse/provider/SSEProvider", () => ({
+      openStream,
+      closeStream,
+      getStream,
     }));
     jest.doMock("@web/store", () => ({
       store: {
@@ -105,7 +97,9 @@ describe("SessionProvider sessionInit", () => {
         );
         expect(refreshUserMetadata).toHaveBeenCalledTimes(1);
       });
-      expect(reconnect).toHaveBeenCalledTimes(1);
+      // closeStream + openStream both called for SESSION_CREATED
+      expect(closeStream).toHaveBeenCalledTimes(1);
+      expect(openStream).toHaveBeenCalledTimes(1);
 
       session.emit("SIGN_OUT", { action: "SIGN_OUT" } as never);
 
@@ -116,7 +110,7 @@ describe("SessionProvider sessionInit", () => {
       expect(dispatch).toHaveBeenCalledWith(
         userMetadataSlice.actions.clear(undefined),
       );
-      expect(disconnect).toHaveBeenCalledTimes(1);
+      expect(closeStream).toHaveBeenCalledTimes(2);
     });
   });
 });

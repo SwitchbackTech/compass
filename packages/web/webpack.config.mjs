@@ -292,6 +292,7 @@ export default (env, argv) => {
         "@web/ducks": resolvePath("./src/ducks/"),
         "@web/public": resolvePath("./src/public"),
         "@web/routers": resolvePath("./src/routers"),
+        "@web/sse": resolvePath("./src/sse"),
         "@web/socket": resolvePath("./src/socket"),
         "@web/store": resolvePath("./src/store"),
         "@web/views": resolvePath("./src/views"),

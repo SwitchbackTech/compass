@@ -1,3 +1,4 @@
+import { type EventEmitter2 } from "eventemitter2";
 import { act } from "react";
 import { Provider } from "react-redux";
 import {
@@ -7,16 +8,15 @@ import {
 } from "@reduxjs/toolkit";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
-import { IMPORT_GCAL_END } from "@core/constants/websocket.constants";
-import { type ImportGCalEndPayload } from "@core/types/websocket.types";
+import { IMPORT_GCAL_END } from "@core/constants/sse.constants";
+import { type ImportGCalEndPayload } from "@core/types/sse.types";
 import { SyncEventsOverlay } from "@web/components/SyncEventsOverlay/SyncEventsOverlay";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import {
   importGCalSlice,
   importLatestSlice,
 } from "@web/ducks/events/slices/sync.slice";
-import { socket } from "./SocketProvider";
-import SocketProvider from "./SocketProvider";
+import SSEProvider from "./SSEProvider";
 
 type TestStore = EnhancedStore<{
   sync: {
@@ -30,18 +30,33 @@ type TestStore = EnhancedStore<{
 jest.mock("@web/auth/hooks/user/useUser", () => ({
   useUser: () => ({ userId: "test-user-id" }),
 }));
-
-jest.mock("socket.io-client", () => ({
-  io: jest.fn(() => ({
-    on: jest.fn(),
-    once: jest.fn(),
-    emit: jest.fn(),
-    connect: jest.fn(),
-    disconnect: jest.fn(),
-    removeListener: jest.fn(),
-    connected: false,
-  })),
+jest.mock("@web/auth/session/user-metadata.util", () => ({
+  refreshUserMetadata: jest.fn().mockResolvedValue(undefined),
 }));
+
+jest.mock("../client/sse.client", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
+  const { EventEmitter2 } = require("eventemitter2");
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+  const sseEmitter = new EventEmitter2({ maxListeners: 20 });
+  return {
+    openStream: jest.fn(),
+    closeStream: jest.fn(),
+    getStream: jest.fn(() => null),
+    sseEmitter: sseEmitter as unknown as EventEmitter2,
+  };
+});
+
+function fireImportEnd(payload: ImportGCalEndPayload) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { sseEmitter } = require("../client/sse.client") as {
+    sseEmitter: EventEmitter2;
+  };
+  sseEmitter.emit(
+    IMPORT_GCAL_END,
+    new MessageEvent(IMPORT_GCAL_END, { data: JSON.stringify(payload) }),
+  );
+}
 
 /**
  * Integration tests for the Google Calendar authentication and import flow.
@@ -52,9 +67,6 @@ jest.mock("socket.io-client", () => ({
  * - Overlay disappears immediately after OAuth completes
  */
 describe("GCal Authentication Flow", () => {
-  // Socket event callbacks captured during render
-  let importEndCallback: ((data?: ImportGCalEndPayload) => void) | undefined;
-
   const createTestStore = (preloadedState?: {
     isAuthenticating?: boolean;
   }): TestStore => {
@@ -94,16 +106,6 @@ describe("GCal Authentication Flow", () => {
     jest.clearAllMocks();
     jest.useFakeTimers();
     document.body.removeAttribute("data-app-locked");
-    importEndCallback = undefined;
-
-    // Capture socket event handlers when they're registered
-    (socket.on as jest.Mock).mockImplementation(
-      (event: string, callback: (data?: ImportGCalEndPayload) => void) => {
-        if (event === IMPORT_GCAL_END) {
-          importEndCallback = callback;
-        }
-      },
-    );
   });
 
   afterEach(() => {
@@ -117,9 +119,9 @@ describe("GCal Authentication Flow", () => {
 
       render(
         <Provider store={store}>
-          <SocketProvider>
+          <SSEProvider>
             <SyncEventsOverlay />
-          </SocketProvider>
+          </SSEProvider>
         </Provider>,
       );
 
@@ -137,9 +139,9 @@ describe("GCal Authentication Flow", () => {
 
       const { rerender, container } = render(
         <Provider store={store}>
-          <SocketProvider>
+          <SSEProvider>
             <SyncEventsOverlay />
-          </SocketProvider>
+          </SSEProvider>
         </Provider>,
       );
 
@@ -154,9 +156,9 @@ describe("GCal Authentication Flow", () => {
 
       rerender(
         <Provider store={store}>
-          <SocketProvider>
+          <SSEProvider>
             <SyncEventsOverlay />
-          </SocketProvider>
+          </SSEProvider>
         </Provider>,
       );
 
@@ -180,9 +182,9 @@ describe("GCal Authentication Flow", () => {
 
       const { container } = render(
         <Provider store={store}>
-          <SocketProvider>
+          <SSEProvider>
             <SyncEventsOverlay />
-          </SocketProvider>
+          </SSEProvider>
         </Provider>,
       );
 
@@ -203,9 +205,9 @@ describe("GCal Authentication Flow", () => {
 
       const { rerender, container } = render(
         <Provider store={store}>
-          <SocketProvider>
+          <SSEProvider>
             <SyncEventsOverlay />
-          </SocketProvider>
+          </SSEProvider>
         </Provider>,
       );
 
@@ -214,10 +216,6 @@ describe("GCal Authentication Flow", () => {
         screen.getByText("Complete Google sign-in..."),
       ).toBeInTheDocument();
 
-      await waitFor(() => {
-        expect(importEndCallback).toBeDefined();
-      });
-
       // OAuth completes, auth state resets
       act(() => {
         store.dispatch(authSlice.actions.resetAuth());
@@ -225,9 +223,9 @@ describe("GCal Authentication Flow", () => {
 
       rerender(
         <Provider store={store}>
-          <SocketProvider>
+          <SSEProvider>
             <SyncEventsOverlay />
-          </SocketProvider>
+          </SSEProvider>
         </Provider>,
       );
 
@@ -243,7 +241,7 @@ describe("GCal Authentication Flow", () => {
 
       // Backend completes import
       act(() => {
-        importEndCallback?.({
+        fireImportEnd({
           operation: "REPAIR",
           status: "COMPLETED",
           eventsCount: 42,
@@ -267,18 +265,14 @@ describe("GCal Authentication Flow", () => {
 
       render(
         <Provider store={store}>
-          <SocketProvider>
+          <SSEProvider>
             <SyncEventsOverlay />
-          </SocketProvider>
+          </SSEProvider>
         </Provider>,
       );
 
-      await waitFor(() => {
-        expect(importEndCallback).toBeDefined();
-      });
-
       act(() => {
-        importEndCallback?.({
+        fireImportEnd({
           operation: "INCREMENTAL",
           status: "ERRORED",
           message:
@@ -286,10 +280,11 @@ describe("GCal Authentication Flow", () => {
         });
       });
 
-      const state = store.getState();
-      expect(state.sync.importGCal.importError).toBe(
-        "Incremental Google Calendar sync failed for user: test-user",
-      );
+      await waitFor(() => {
+        expect(store.getState().sync.importGCal.importError).toBe(
+          "Incremental Google Calendar sync failed for user: test-user",
+        );
+      });
     });
   });
 });

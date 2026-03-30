@@ -177,7 +177,7 @@ Use this sequence when recurring edits behave unexpectedly:
   - `UNTIL`-only truncation
   - full series recreation
 - Google side effects for someday/non-someday transitions
-- websocket notifications for calendar vs someday changes
+- SSE notifications for calendar vs someday changes
 
 Good test anchors:
 

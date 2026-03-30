@@ -123,7 +123,7 @@ This is a Typescript project with a monorepo structure.
 
 ### Packages Overview
 
-- `@compass/backend` - Express.js REST API with MongoDB, Google Calendar sync, WebSocket support
+- `@compass/backend` - Express.js REST API with MongoDB, Google Calendar sync, Server-Sent Events (SSE)
 - `@compass/web` - React/TypeScript frontend with Redux, styled-components, webpack bundling
 - `@compass/core` - Shared utilities, types, and business logic
 - `@compass/scripts` - CLI tools for building, database operations, user management

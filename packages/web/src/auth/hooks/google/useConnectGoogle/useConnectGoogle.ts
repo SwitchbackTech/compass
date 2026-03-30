@@ -1,6 +1,6 @@
 import { type AxiosError, isAxiosError } from "axios";
 import { useCallback } from "react";
-import { GOOGLE_REVOKED } from "@core/constants/websocket.constants";
+import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { type GoogleConnectionState } from "@core/types/user.types";
 import { syncPendingLocalEvents } from "@web/auth/google/google.auth.util";
 import { useGoogleAuth } from "@web/auth/hooks/google/useGoogleAuth/useGoogleAuth";

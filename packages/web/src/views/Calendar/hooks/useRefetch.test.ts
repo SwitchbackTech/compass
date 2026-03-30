@@ -81,7 +81,7 @@ describe("useRefetch", () => {
       expect(mockDispatch).toHaveBeenCalledWith(resetIsFetchNeeded());
     });
 
-    it("should map SOCKET_EVENT_CHANGED to WEEK_VIEW_CHANGE for week view", () => {
+    it("should map EVENT_CHANGED to WEEK_VIEW_CHANGE for week view", () => {
       mockUseLocation.mockReturnValue({ pathname: ROOT_ROUTES.WEEK });
       mockUseParams.mockReturnValue({});
 
@@ -96,7 +96,7 @@ describe("useRefetch", () => {
         ) {
           return {
             isFetchNeeded: true,
-            reason: Sync_AsyncStateContextReason.SOCKET_EVENT_CHANGED,
+            reason: Sync_AsyncStateContextReason.EVENT_CHANGED,
           };
         }
         if (
@@ -118,7 +118,7 @@ describe("useRefetch", () => {
           startDate: toUTCOffset(weekStart),
           endDate: toUTCOffset(weekEnd),
           __context: {
-            reason: Sync_AsyncStateContextReason.SOCKET_EVENT_CHANGED,
+            reason: Sync_AsyncStateContextReason.EVENT_CHANGED,
           },
         }),
       );
@@ -228,7 +228,7 @@ describe("useRefetch", () => {
       );
     });
 
-    it("should map SOCKET_EVENT_CHANGED to WEEK_VIEW_CHANGE for day view", () => {
+    it("should map EVENT_CHANGED to WEEK_VIEW_CHANGE for day view", () => {
       const testDate = "2024-01-15";
       mockUseLocation.mockReturnValue({ pathname: `/day/${testDate}` });
       mockUseParams.mockReturnValue({ date: testDate });
@@ -236,7 +236,7 @@ describe("useRefetch", () => {
       mockUseAppSelector
         .mockReturnValueOnce({
           isFetchNeeded: true,
-          reason: Sync_AsyncStateContextReason.SOCKET_EVENT_CHANGED,
+          reason: Sync_AsyncStateContextReason.EVENT_CHANGED,
         })
         .mockReturnValueOnce({
           start: "2024-01-15T00:00:00Z",
@@ -260,7 +260,7 @@ describe("useRefetch", () => {
           startDate: expectedStart,
           endDate: expectedEnd,
           __context: {
-            reason: Sync_AsyncStateContextReason.SOCKET_EVENT_CHANGED,
+            reason: Sync_AsyncStateContextReason.EVENT_CHANGED,
           },
         }),
       );
@@ -268,7 +268,7 @@ describe("useRefetch", () => {
   });
 
   describe("Someday events handling", () => {
-    it("should fetch someday events when SOCKET_SOMEDAY_EVENT_CHANGED reason", () => {
+    it("should fetch someday events when SOMEDAY_EVENT_CHANGED reason", () => {
       mockUseLocation.mockReturnValue({ pathname: ROOT_ROUTES.WEEK });
       mockUseParams.mockReturnValue({});
 
@@ -278,7 +278,7 @@ describe("useRefetch", () => {
       mockUseAppSelector
         .mockReturnValueOnce({
           isFetchNeeded: true,
-          reason: Sync_AsyncStateContextReason.SOCKET_SOMEDAY_EVENT_CHANGED,
+          reason: Sync_AsyncStateContextReason.SOMEDAY_EVENT_CHANGED,
         })
         .mockReturnValueOnce({
           start: weekStart,
@@ -302,7 +302,7 @@ describe("useRefetch", () => {
       expect(mockDispatch).toHaveBeenCalledWith(resetIsFetchNeeded());
     });
 
-    it("should fetch someday events for day view when SOCKET_SOMEDAY_EVENT_CHANGED", () => {
+    it("should fetch someday events for day view when SOMEDAY_EVENT_CHANGED", () => {
       const testDate = "2024-01-15";
       mockUseLocation.mockReturnValue({ pathname: `/day/${testDate}` });
       mockUseParams.mockReturnValue({ date: testDate });
@@ -310,7 +310,7 @@ describe("useRefetch", () => {
       mockUseAppSelector
         .mockReturnValueOnce({
           isFetchNeeded: true,
-          reason: Sync_AsyncStateContextReason.SOCKET_SOMEDAY_EVENT_CHANGED,
+          reason: Sync_AsyncStateContextReason.SOMEDAY_EVENT_CHANGED,
         })
         .mockReturnValueOnce({
           start: "2024-01-15T00:00:00Z",

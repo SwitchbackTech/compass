@@ -48,5 +48,5 @@ node build/node/packages/backend/src/app.js
 Deployment notes:
 
 - backend requires MongoDB, SuperTokens, and Google credentials
-- if you run behind a reverse proxy, it must support websocket upgrades
+- if you run behind a reverse proxy, configure buffering/timeouts for long-lived `text/event-stream` responses (SSE)
 - ngrok is only relevant for local watch/debug flows, not normal hosted deploys

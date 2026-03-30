@@ -73,13 +73,14 @@ Use this document to find the first files to inspect for common Compass changes.
 - Legacy schema migration: `packages/web/src/common/storage/adapter/legacy-primary-key.migration.ts`
 - Data/external migrations: `packages/web/src/common/storage/migrations`
 
-## Sync And Websockets
+## Sync And SSE
 
-- Web socket client: `packages/web/src/socket/client/socket.client.ts`
-- Web socket hooks: `packages/web/src/socket/hooks`
-- Web socket provider: `packages/web/src/socket/provider/SocketProvider.tsx`
-- Shared websocket event names: `packages/core/src/constants/websocket.constants.ts`
-- Backend websocket server: `packages/backend/src/servers/websocket/websocket.server.ts`
+- SSE client: `packages/web/src/sse/client/sse.client.ts`
+- SSE hooks: `packages/web/src/sse/hooks`
+- SSE provider: `packages/web/src/sse/provider/SSEProvider.tsx`
+- Shared SSE event names: `packages/core/src/constants/sse.constants.ts`
+- Backend SSE server: `packages/backend/src/servers/sse/sse.server.ts`
+- Events stream route: `packages/backend/src/events/events.routes.config.ts`
 - Backend sync routes/services: `packages/backend/src/sync/sync.routes.config.ts`, `packages/backend/src/sync/services`
 
 ## Users / Metadata / Priority
