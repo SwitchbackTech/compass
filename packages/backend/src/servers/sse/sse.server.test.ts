@@ -1,3 +1,8 @@
+/**
+ * @jest-environment node
+ *
+ * we do not need the database for this test
+ */
 import { ObjectId } from "mongodb";
 import {
   EVENT_CHANGED,
@@ -6,11 +11,6 @@ import {
 } from "@core/constants/sse.constants";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 
-/**
- * @jest-environment node
- *
- * we do not need the database for this test
- */
 jest.mock("supertokens-node/recipe/session/framework/express", () => ({
   verifySession:
     () =>

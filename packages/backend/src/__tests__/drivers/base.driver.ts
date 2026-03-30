@@ -92,6 +92,8 @@ export class BaseDriver {
 
         const decoder = new TextDecoder();
         let buffer = "";
+        let eventName = "message";
+        let dataLine = "";
 
         while (true) {
           const { done, value } = await reader.read();
@@ -100,9 +102,6 @@ export class BaseDriver {
 
           const lines = buffer.split("\n");
           buffer = lines.pop() ?? "";
-
-          let eventName = "message";
-          let dataLine = "";
 
           for (const line of lines) {
             if (line.startsWith("event: ")) {
