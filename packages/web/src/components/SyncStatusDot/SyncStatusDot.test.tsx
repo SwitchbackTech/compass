@@ -113,13 +113,13 @@ describe("SyncStatusDot", () => {
 
     expect(
       screen.getByRole("status", {
-        name: /sign up to save your calendar changes/i,
+        name: /sign up to save your changes/i,
       }),
     ).toBeInTheDocument();
 
     await user.click(
       screen.getByRole("button", {
-        name: /sign up to save your calendar changes/i,
+        name: /sign up to save your changes/i,
       }),
     );
 

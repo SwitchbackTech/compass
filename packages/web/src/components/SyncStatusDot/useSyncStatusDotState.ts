@@ -8,7 +8,7 @@ import {
 } from "@web/auth/state/auth.state.util";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 
-const ANONYMOUS_SIGN_UP_TOOLTIP = "Sign up to save your calendar changes.";
+const ANONYMOUS_SIGN_UP_TOOLTIP = "Sign up to save your changes.";
 
 export interface SyncStatusDotState {
   isAnonymousSignUpPrompt: boolean;
