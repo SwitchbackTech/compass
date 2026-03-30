@@ -1,39 +1,59 @@
-import React, { type FC } from "react";
-import { theme } from "@web/common/styles/theme";
-import { Divider } from "@web/components/Divider";
-import { Text } from "@web/components/Text";
-import {
-  CalendarLabel,
-  CalendarList,
-  CalendarListContainer,
-} from "../../styled";
+import { type FC, useCallback } from "react";
+import { InfoIcon } from "@phosphor-icons/react";
+import { useUser } from "@web/auth/hooks/user/useUser";
+import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
+import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+
+const TEMPORARY_ACCOUNT_MESSAGE = "Sign up to save your changes";
 
 export const SubCalendarList: FC = () => {
+  const { email } = useUser();
+  const { openModal } = useAuthModal();
+  const isTemporaryAccount = !email;
+  const headingText = email ?? "Temporary account";
+  const handleOpenSignUp = useCallback(() => {
+    openModal("signUp");
+  }, [openModal]);
+
   return (
     <>
-      <Divider
+      <div
+        className="from-fg-primary-dark to-fg-primary h-[2px] w-full bg-linear-to-r"
         role="separator"
         title="right sidebar divider"
-        withAnimation={false}
       />
-      <CalendarListContainer>
-        <Text color={theme.color.text.light} size="xl">
-          Calendars
-        </Text>
-        <CalendarList>
-          <CalendarLabel>
-            <input
-              checked={true}
-              disabled={true}
-              type="checkbox"
-              style={{ marginRight: "6px" }}
-            />
-            <Text color={theme.color.text.light} size="m">
-              primary
-            </Text>
-          </CalendarLabel>
-        </CalendarList>
-      </CalendarListContainer>
+      <div>
+        <div className="mb-1 flex items-center gap-1.5">
+          <span className="text-text-light text">{headingText}</span>
+          {isTemporaryAccount ? (
+            <TooltipWrapper
+              description={TEMPORARY_ACCOUNT_MESSAGE}
+              onClick={handleOpenSignUp}
+            >
+              <button
+                aria-label="Temporary account info"
+                className="text-text-darkPlaceholder inline-flex cursor-pointer items-center p-0"
+                type="button"
+              >
+                <InfoIcon aria-hidden="true" size={14} />
+              </button>
+            </TooltipWrapper>
+          ) : null}
+        </div>
+        {!isTemporaryAccount ? (
+          <ul className="pl-[10px]">
+            <label className="flex items-center">
+              <input
+                checked={true}
+                className="mr-1.5"
+                disabled={true}
+                type="checkbox"
+              />
+              <span className="text-text-light text-base">primary</span>
+            </label>
+          </ul>
+        ) : null}
+      </div>
     </>
   );
 };

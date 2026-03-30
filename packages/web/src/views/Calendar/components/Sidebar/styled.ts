@@ -9,8 +9,6 @@ import { type SectionProps } from "./sidebar.types";
 
 const ICON_ROW_HEIGHT = 40;
 
-export const CalendarListContainer = styled.div``;
-
 export const CalendarLabel = styled.label`
   align-items: center;
   display: flex;
