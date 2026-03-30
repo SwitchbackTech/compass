@@ -100,7 +100,7 @@ For `POST /api/event`:
    - applies Compass DB mutations first
    - executes any Google side effect implied by the transition
    - if Google is not connected (`MissingGoogleRefreshToken`), keeps the Compass mutation and skips the Google side effect
-   - notifies clients after commit
+   - notifies clients after commit by publishing SSE events via `sseServer` (`EVENT_CHANGED` / `SOMEDAY_EVENT_CHANGED`)
 
 `PUT /api/event/:id` and `DELETE /api/event/:id` follow the same write pattern:
 

@@ -50,7 +50,9 @@ Do not edit recurring behavior from one layer only.
 1. Add the event name to `packages/core/src/constants/sse.constants.ts`.
 2. Update shared payload types in `packages/core/src/types/sse.types.ts` if needed.
 3. Emit from `packages/backend/src/servers/sse/sse.server.ts` (or call site that uses `publish`).
-4. Consume it in a web hook under `packages/web/src/sse/hooks` (listeners on `EventSource`).
+4. Consume it in a web hook under `packages/web/src/sse/hooks` by subscribing to
+   `sseEmitter` from `packages/web/src/sse/client/sse.client.ts` (the client
+   module owns `EventSource` listeners and forwards named events).
 5. Add tests on both emitter and listener sides.
 
 ## Add Or Change Local Storage Data

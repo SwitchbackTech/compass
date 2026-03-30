@@ -10,6 +10,7 @@
 - [Priority Routes](#priority-routes)
 - [Sync Routes](#sync-routes)
 - [Event Routes](#event-routes)
+- [Events Stream Routes](#events-stream-routes)
 - [Operational Headers](#operational-headers)
 
 ---
@@ -418,6 +419,37 @@ Write semantics:
 
 ---
 
+## Events Stream Routes
+
+**Source**: `packages/backend/src/events/events.routes.config.ts`, `packages/backend/src/events/controllers/events.controller.ts`, `packages/backend/src/servers/sse/sse.server.ts`
+
+### /api/events/stream
+
+Authenticated realtime stream used by web clients:
+
+- `GET /api/events/stream`
+  - middleware: `verifySession()`
+  - response type: `text/event-stream`
+  - transport: Server-Sent Events (SSE)
+
+Connection behavior:
+
+- stream is subscribed before metadata fetch so no events are missed during connect
+- server replays `USER_METADATA` immediately after subscribe
+- heartbeat comments (`: keepalive`) are sent periodically to reduce proxy buffering issues
+- each browser tab holds its own stream connection; events are fanned out to all active connections for the user
+
+Event names are shared in `packages/core/src/constants/sse.constants.ts`:
+
+- `EVENT_CHANGED`
+- `SOMEDAY_EVENT_CHANGED`
+- `USER_METADATA`
+- `IMPORT_GCAL_START`
+- `IMPORT_GCAL_END`
+- `GOOGLE_REVOKED`
+
+---
+
 ## Authentication
 
 Most endpoints require authentication via Supertokens session management.
@@ -514,6 +546,7 @@ When this payload accompanies `401` or `410`, web clients should keep the sessio
 - SuperTokens EmailPassword APIs (invoked through SDK methods in auth form hooks)
 - `/api/user/*` - User profile and metadata
 - `/api/event/*` - Calendar event CRUD operations
+- `/api/events/stream` - SSE realtime event stream
 - `/api/calendars/*` - Calendar list and selection
 - `/api/sync/*` - Google Calendar synchronization
 - `/api/priority/*` - Task priority management

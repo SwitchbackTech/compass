@@ -75,7 +75,6 @@ Wire format uses the `event:` field (uppercase identifiers). Backend and web bot
 Source:
 
 - `packages/core/src/types/sse.types.ts`
-- `packages/backend/src/user/services/user.service.ts`
 - `packages/backend/src/sync/services/sync.service.ts`
 
 `IMPORT_GCAL_END` carries an explicit `operation` so the client can distinguish repair completion from incremental completion.
