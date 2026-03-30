@@ -28,11 +28,22 @@ import { CompassSyncProcessor } from "@backend/sync/services/sync/compass/compas
  * automatic cleanup of revoked Google data and appropriate client notifications.
  */
 class EventController {
+  private normalizeRecurrenceNull(payload: CompassEvent["payload"]) {
+    if (payload.recurrence === null) {
+      return {
+        ...payload,
+        recurrence: undefined,
+      };
+    }
+
+    return payload;
+  }
+
   private async processEvents(_events: CompassEvent[]) {
     const events = _events.map((e) => ({
       ...e,
       payload: CompassCoreEventSchema.parse({
-        ...e.payload,
+        ...this.normalizeRecurrenceNull(e.payload),
         _id:
           e.payload._id?.replace(`${ID_OPTIMISTIC_PREFIX}-`, "") ??
           new ObjectId().toString(),
