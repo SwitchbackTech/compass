@@ -551,7 +551,7 @@ describe("SyncService", () => {
           fetchMetadataCallCount += 1;
 
           if (fetchMetadataCallCount === 1) {
-            await fetchMetadataDeferred.promise;
+            await fetchMetadataDeferred;
           }
 
           return userMetadataService.fetchUserMetadata(targetUserId);
