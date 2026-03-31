@@ -1,4 +1,4 @@
-import { UserProvider } from "@web/auth/context/UserProvider";
+import { UserProvider } from "@web/auth/compass/user/context/UserProvider";
 import { useIsMobile } from "@web/common/hooks/useIsMobile";
 import { AuthenticatedLayout } from "@web/components/AuthenticatedLayout/AuthenticatedLayout";
 import { GlobalShortcutsHost } from "@web/components/CompassProvider/CompassProvider";

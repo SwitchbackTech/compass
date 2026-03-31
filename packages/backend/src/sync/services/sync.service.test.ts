@@ -447,6 +447,7 @@ describe("SyncService", () => {
     it("restarts the import workflow and completes successfully", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
+      const importEndSpy = jest.spyOn(sseServer, "handleImportGCalEnd");
 
       await userMetadataService.updateUserMetadata({
         userId,
@@ -462,11 +463,19 @@ describe("SyncService", () => {
         calendarService.getByUser.bind(calendarService);
       const calendars = await listCalendarsForUser(userId);
       expect(calendars.length).toBeGreaterThan(0);
+      expect(importEndSpy).toHaveBeenCalledWith(
+        userId,
+        expect.objectContaining({
+          operation: "INCREMENTAL",
+          status: "COMPLETED",
+        }),
+      );
     });
 
     it("skips restart when import is completed and not forced", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
+      const importEndSpy = jest.spyOn(sseServer, "handleImportGCalEnd");
 
       await userMetadataService.updateUserMetadata({
         userId,
@@ -483,6 +492,11 @@ describe("SyncService", () => {
 
       const metadata = await userMetadataService.fetchUserMetadata(userId);
       expect(metadata.sync?.importGCal).toBe("COMPLETED");
+      expect(importEndSpy).toHaveBeenCalledWith(userId, {
+        operation: "INCREMENTAL",
+        status: "IGNORED",
+        message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
+      });
 
       stopSpy.mockRestore();
       startSpy.mockRestore();
@@ -514,6 +528,64 @@ describe("SyncService", () => {
 
       stopSpy.mockRestore();
       startSpy.mockRestore();
+    });
+
+    it("ignores a duplicate restart while the first full sync is still starting", async () => {
+      const { user } = await UtilDriver.setupTestUser();
+      const userId = user._id.toString();
+      const importEndSpy = jest.spyOn(sseServer, "handleImportGCalEnd");
+      let resolveFetchMetadata: (() => void) | undefined;
+      const fetchMetadataDeferred = new Promise<void>((resolve) => {
+        resolveFetchMetadata = resolve;
+      });
+      let fetchMetadataCallCount = 0;
+
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: { sync: { importGCal: "RESTART" } },
+      });
+
+      const fetchMetadataSpy = jest
+        .spyOn(userService, "fetchUserMetadata")
+        .mockImplementation(async (targetUserId) => {
+          fetchMetadataCallCount += 1;
+
+          if (fetchMetadataCallCount === 1) {
+            await fetchMetadataDeferred;
+          }
+
+          return userMetadataService.fetchUserMetadata(targetUserId);
+        });
+      const startSpy = jest
+        .spyOn(syncService, "startGoogleCalendarSync")
+        .mockResolvedValue({ eventsCount: 0, calendarsCount: 0 });
+      const stopSpy = jest
+        .spyOn(userService, "stopGoogleCalendarSync")
+        .mockResolvedValue();
+
+      const firstRestart = syncService.restartGoogleCalendarSync(userId, {
+        force: true,
+      });
+      await Promise.resolve();
+
+      const secondRestart = syncService.restartGoogleCalendarSync(userId, {
+        force: true,
+      });
+
+      resolveFetchMetadata?.();
+
+      await Promise.all([firstRestart, secondRestart]);
+
+      expect(startSpy).toHaveBeenCalledTimes(1);
+      expect(importEndSpy).toHaveBeenCalledWith(userId, {
+        operation: "REPAIR",
+        status: "IGNORED",
+        message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
+      });
+
+      fetchMetadataSpy.mockRestore();
+      startSpy.mockRestore();
+      stopSpy.mockRestore();
     });
 
     it("cleans up partial watch state when restart fails", async () => {

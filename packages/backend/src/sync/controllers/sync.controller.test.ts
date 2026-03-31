@@ -42,9 +42,10 @@ describe("SyncController", () => {
   const baseDriver = new BaseDriver();
   const syncDriver = new SyncControllerDriver(baseDriver);
   const importTimeoutMs = 7_000;
+  type ImportOperation = "INCREMENTAL" | "REPAIR";
 
   interface ImportSummary {
-    operation: "REPAIR";
+    operation: ImportOperation;
     status: "COMPLETED";
     eventsCount: number;
     calendarsCount: number;
@@ -52,10 +53,11 @@ describe("SyncController", () => {
 
   function parseImportResult(
     result: ImportGCalEndPayload | undefined,
+    operation: ImportOperation = "INCREMENTAL",
   ): ImportSummary {
     expect(result).toEqual(
       expect.objectContaining({
-        operation: "REPAIR",
+        operation,
         status: "COMPLETED",
         eventsCount: expect.any(Number) as number,
         calendarsCount: expect.any(Number) as number,
@@ -607,7 +609,7 @@ describe("SyncController", () => {
         const result = (await importEndPromise) as ImportGCalEndPayload;
         stream.close();
 
-        const parsed = parseImportResult(result);
+        const parsed = parseImportResult(result, "REPAIR");
 
         expect(parsed).toHaveProperty("eventsCount");
         expect(parsed).toHaveProperty("calendarsCount");
@@ -643,7 +645,7 @@ describe("SyncController", () => {
         stream.close();
 
         expect(failReason).toEqual({
-          operation: "REPAIR",
+          operation: "INCREMENTAL",
           status: "IGNORED",
           message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
         });
@@ -683,7 +685,7 @@ describe("SyncController", () => {
         stream.close();
 
         expect(failReason).toEqual({
-          operation: "REPAIR",
+          operation: "INCREMENTAL",
           status: "IGNORED",
           message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
         });

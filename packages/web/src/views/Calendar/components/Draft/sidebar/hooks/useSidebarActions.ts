@@ -13,7 +13,7 @@ import {
   type Schema_Event,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { getUserId } from "@web/auth/session/session.util";
+import { getUserId } from "@web/auth/compass/session/session.util";
 import {
   COLUMN_MONTH,
   type COLUMN_WEEK,

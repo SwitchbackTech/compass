@@ -2,6 +2,12 @@ import { type AxiosResponse } from "axios";
 import { type Schema_Event } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
+import {
+  clearAnonymousCalendarChangeSignUpPrompt,
+  clearAuthenticationState,
+  shouldShowAnonymousCalendarChangeSignUpPrompt,
+  updateAuthState,
+} from "@web/auth/compass/state/auth.state.util";
 import { session } from "@web/common/classes/Session";
 import {
   ensureStorageReady,
@@ -35,6 +41,7 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.restoreAllMocks();
+  clearAuthenticationState();
 });
 
 describe("createEvent saga - optimistic rendering", () => {
@@ -469,6 +476,7 @@ describe("createEvent saga - unauthenticated users", () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    clearAuthenticationState();
     try {
       await ensureStorageReady();
       await getStorageAdapter().clearAllEvents();
@@ -559,5 +567,62 @@ describe("createEvent saga - unauthenticated users", () => {
     const eventId = eventIds[0];
     const isPending = selectIsEventPending(state, eventId);
     expect(isPending).toBe(false);
+  });
+
+  it("should mark the sign-up prompt after anonymous event creation", async () => {
+    const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+    const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
+
+    store.dispatch(createEventSlice.actions.request(event));
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(shouldShowAnonymousCalendarChangeSignUpPrompt()).toBe(true);
+  });
+
+  it("should mark the sign-up prompt after anonymous event edit", async () => {
+    const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+    const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
+
+    store.dispatch(createEventSlice.actions.request(event));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    clearAnonymousCalendarChangeSignUpPrompt();
+
+    const stateAfterCreate = store.getState();
+    const eventId = Object.keys(
+      stateAfterCreate.events.entities.value || {},
+    )[0];
+    const existingEvent = selectEventById(
+      stateAfterCreate,
+      eventId,
+    ) as Schema_GridEvent;
+
+    store.dispatch(
+      editEventSlice.actions.request({
+        _id: eventId,
+        event: {
+          ...existingEvent,
+          title: "Updated Title",
+        } as Schema_WebEvent,
+      }),
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(shouldShowAnonymousCalendarChangeSignUpPrompt()).toBe(true);
+  });
+
+  it("should not mark the sign-up prompt for previously authenticated users", async () => {
+    updateAuthState({ hasAuthenticated: true });
+
+    const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+    const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
+
+    store.dispatch(createEventSlice.actions.request(event));
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(shouldShowAnonymousCalendarChangeSignUpPrompt()).toBe(false);
   });
 });

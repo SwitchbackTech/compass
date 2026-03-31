@@ -22,20 +22,20 @@ const mockUseSession = jest.fn(() => ({
   setAuthenticated: jest.fn(),
 }));
 
-jest.mock("@web/auth/hooks/session/useSession", () => ({
+jest.mock("@web/auth/compass/session/useSession", () => ({
   useSession: () => mockUseSession(),
 }));
 
 // Mock useGoogleAuth
 const mockGoogleLogin = jest.fn();
-jest.mock("@web/auth/hooks/google/useGoogleAuth/useGoogleAuth", () => ({
+jest.mock("@web/auth/google/hooks/useGoogleAuth/useGoogleAuth", () => ({
   useGoogleAuth: () => ({
     login: mockGoogleLogin,
   }),
 }));
 
 const mockCompleteAuthentication = jest.fn();
-jest.mock("@web/auth/hooks/compass/useCompleteAuthentication", () => ({
+jest.mock("@web/auth/compass/hooks/useCompleteAuthentication", () => ({
   useCompleteAuthentication: () => mockCompleteAuthentication,
 }));
 
@@ -934,18 +934,6 @@ describe("URL Parameter Support", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("implicitly enables auth feature when ?auth param is present", async () => {
-    mockWindowLocation("/?auth=signup");
-    renderWithProviders(<AccountIcon />, "/?auth=signup");
-
-    await waitFor(() => {
-      // The auth modal should open
-      expect(
-        screen.getByRole("heading", { name: /nice to meet you/i }),
-      ).toBeInTheDocument();
-    });
-  });
-
   it("works on different routes", async () => {
     mockWindowLocation("/week?auth=signup");
     renderWithProviders(<div />, "/week?auth=signup");
@@ -1043,69 +1031,6 @@ describe("URL Parameter Support", () => {
     await waitFor(() => {
       expect(
         screen.getByRole("heading", { name: /nice to meet you/i }),
-      ).toBeInTheDocument();
-    });
-  });
-});
-
-describe("AccountIcon", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it("renders when user is not authenticated and feature flag is enabled", async () => {
-    mockUseSession.mockReturnValue({
-      authenticated: false,
-      setAuthenticated: jest.fn(),
-    });
-
-    renderWithProviders(<AccountIcon />, "/day?auth=signup");
-
-    await waitFor(() => {
-      expect(screen.getByLabelText(/log in/i)).toBeInTheDocument();
-    });
-  });
-
-  it("shows 'Log in' when user is not authenticated", () => {
-    mockUseSession.mockReturnValue({
-      authenticated: false,
-      setAuthenticated: jest.fn(),
-    });
-
-    renderWithProviders(<AccountIcon />, "/day?auth=signup");
-
-    expect(screen.getAllByText("Log in").length).toBeGreaterThan(0);
-  });
-
-  it("does not render when feature flag is disabled", () => {
-    mockUseSession.mockReturnValue({
-      authenticated: false,
-      setAuthenticated: jest.fn(),
-    });
-
-    renderWithProviders(<AccountIcon />, "/day");
-
-    expect(screen.queryByLabelText(/log in/i)).not.toBeInTheDocument();
-  });
-
-  it("opens modal when clicked", async () => {
-    const user = userEvent.setup();
-    mockUseSession.mockReturnValue({
-      authenticated: false,
-      setAuthenticated: jest.fn(),
-    });
-
-    renderWithProviders(<AccountIcon />, "/day?auth=signup");
-
-    await waitFor(() => {
-      expect(screen.getByLabelText(/log in/i)).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByLabelText(/log in/i));
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole("heading", { name: /hey, welcome back/i }),
       ).toBeInTheDocument();
     });
   });

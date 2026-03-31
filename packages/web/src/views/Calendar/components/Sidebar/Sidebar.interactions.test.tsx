@@ -15,7 +15,7 @@ import { ENV_WEB } from "@web/common/constants/env.constants";
 import { CalendarView } from "@web/views/Calendar";
 import { freshenEventStartEndDate } from "@web/views/Calendar/calendar.render.test.utils";
 
-jest.mock("@web/auth/session/session.util", () => ({
+jest.mock("@web/auth/compass/session/session.util", () => ({
   getUserId: async () => "test-user-id",
 }));
 

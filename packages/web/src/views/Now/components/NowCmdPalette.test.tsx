@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { render } from "@web/__tests__/utils/render.test.util";
+import {
+  resetGoogleSyncUIStateForTests,
+  setRepairingSyncIndicatorOverride,
+} from "@web/auth/google/state/google.sync.state";
 import { SyncApi } from "@web/common/apis/sync.api";
 import * as eventEmitterUtil from "@web/common/utils/dom/event-emitter.util";
 import { NowCmdPalette } from "@web/views/Now/components/NowCmdPalette";
@@ -104,7 +108,7 @@ jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
 
 // Mock useGoogleAuth
 const mockLogin = jest.fn();
-jest.mock("@web/auth/hooks/google/useGoogleAuth/useGoogleAuth", () => ({
+jest.mock("@web/auth/google/hooks/useGoogleAuth/useGoogleAuth", () => ({
   useGoogleAuth: () => ({
     login: mockLogin,
   }),
@@ -125,6 +129,7 @@ describe("NowCmdPalette", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    resetGoogleSyncUIStateForTests();
   });
 
   it("should render when open", () => {
@@ -260,6 +265,8 @@ describe("NowCmdPalette", () => {
     });
 
     it("shows a disabled repairing action while a repair is active", () => {
+      setRepairingSyncIndicatorOverride();
+
       render(<NowCmdPalette />, {
         state: {
           ...initialState,
@@ -268,11 +275,6 @@ describe("NowCmdPalette", () => {
               google: {
                 connectionState: "ATTENTION",
               },
-            },
-          },
-          sync: {
-            importGCal: {
-              isRepairing: true,
             },
           },
         },

@@ -59,6 +59,8 @@ import userMetadataService from "@backend/user/services/user-metadata.service";
 const logger = Logger("app:sync.service");
 
 class SyncService {
+  private activeFullSyncRestarts = new Set<string>();
+
   deleteAllByGcalId = async (gCalendarId: string, session?: ClientSession) => {
     const delRes = await mongoService.sync.deleteMany(
       { "google.events.gCalendarId": gCalendarId },
@@ -530,6 +532,19 @@ class SyncService {
     const { default: userService } =
       await import("@backend/user/services/user.service");
     const isForce = options.force === true;
+    const operation = isForce ? "REPAIR" : "INCREMENTAL";
+    const ignoreMessage = `User ${userId} gcal import is in progress or completed, ignoring this request`;
+
+    if (this.activeFullSyncRestarts.has(userId)) {
+      sseServer.handleImportGCalEnd(userId, {
+        operation,
+        status: "IGNORED",
+        message: ignoreMessage,
+      });
+      return;
+    }
+
+    this.activeFullSyncRestarts.add(userId);
 
     try {
       const userMeta = await userService.fetchUserMetadata(userId);
@@ -539,9 +554,9 @@ class SyncService {
 
       if (!proceed) {
         sseServer.handleImportGCalEnd(userId, {
-          operation: "REPAIR",
+          operation,
           status: "IGNORED",
-          message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
+          message: ignoreMessage,
         });
 
         return;
@@ -572,7 +587,7 @@ class SyncService {
       });
 
       sseServer.handleImportGCalEnd(userId, {
-        operation: "REPAIR",
+        operation,
         status: "COMPLETED",
         ...importResults,
       });
@@ -605,10 +620,12 @@ class SyncService {
       logger.error(`Re-sync failed for user: ${userId}`, err);
 
       sseServer.handleImportGCalEnd(userId, {
-        operation: "REPAIR",
+        operation,
         status: "ERRORED",
         message: getGoogleRepairErrorMessage(err),
       });
+    } finally {
+      this.activeFullSyncRestarts.delete(userId);
     }
   };
 

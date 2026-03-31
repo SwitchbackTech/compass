@@ -3,7 +3,7 @@ import {
   type GoogleConnectResponse,
   type Result_Auth_Compass,
 } from "@core/types/auth.types";
-import { type GoogleAuthConfig } from "@web/auth/hooks/google/googe.auth.types";
+import { type GoogleAuthConfig } from "@web/auth/google/hooks/googe.auth.types";
 import { CompassApi } from "@web/common/apis/compass.api";
 
 const AuthApi = {

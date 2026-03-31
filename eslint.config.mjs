@@ -111,6 +111,15 @@ export default [
       "jest/unbound-method": "error",
     },
   },
+  {
+    files: ["e2e/**/*.ts"],
+    rules: {
+      // Playwright e2e is not React Testing Library; page.getByRole is correct.
+      "testing-library/prefer-screen-queries": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+    },
+  },
   // Warn on console.log in packages/web to avoid leaking secure info
   {
     files: ["packages/web/**/*.{ts,tsx}"],

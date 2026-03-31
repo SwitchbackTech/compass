@@ -1,4 +1,4 @@
-import { getLastKnownEmail } from "@web/auth/state/auth.state.util";
+import { getLastKnownEmail } from "@web/auth/compass/state/auth.state.util";
 
 /**
  * Feature flag hook for email/password authentication UI

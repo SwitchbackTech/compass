@@ -1,5 +1,5 @@
 import { renderHook } from "@testing-library/react";
-import { markUserAsAuthenticated } from "@web/auth/state/auth.state.util";
+import { markUserAsAuthenticated } from "@web/auth/compass/state/auth.state.util";
 import { useAuthFeatureFlag } from "./useAuthFeatureFlag";
 
 const setWindowLocation = (url: string) => {
