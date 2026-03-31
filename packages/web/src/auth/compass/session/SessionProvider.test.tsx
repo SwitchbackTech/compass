@@ -17,7 +17,7 @@ describe("SessionProvider sessionInit", () => {
     const markUserAsAuthenticated = jest.fn();
     const getLastKnownEmail = jest.fn().mockReturnValue("test@example.com");
 
-    jest.doMock("@web/auth/user/util/user-metadata.util", () => ({
+    jest.doMock("@web/auth/compass/user/util/user-metadata.util", () => ({
       refreshUserMetadata,
     }));
     jest.doMock("@web/sse/provider/SSEProvider", () => ({
@@ -30,7 +30,7 @@ describe("SessionProvider sessionInit", () => {
         dispatch,
       },
     }));
-    jest.doMock("@web/auth/state/auth.state.util", () => ({
+    jest.doMock("@web/auth/compass/state/auth.state.util", () => ({
       getLastKnownEmail,
       markUserAsAuthenticated,
     }));
@@ -62,7 +62,7 @@ describe("SessionProvider sessionInit", () => {
     const markUserAsAuthenticated = jest.fn();
     const getLastKnownEmail = jest.fn().mockReturnValue("test@example.com");
 
-    jest.doMock("@web/auth/user/util/user-metadata.util", () => ({
+    jest.doMock("@web/auth/compass/user/util/user-metadata.util", () => ({
       refreshUserMetadata,
     }));
     jest.doMock("@web/sse/provider/SSEProvider", () => ({
@@ -75,7 +75,7 @@ describe("SessionProvider sessionInit", () => {
         dispatch,
       },
     }));
-    jest.doMock("@web/auth/state/auth.state.util", () => ({
+    jest.doMock("@web/auth/compass/state/auth.state.util", () => ({
       getLastKnownEmail,
       markUserAsAuthenticated,
     }));

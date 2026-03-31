@@ -7,7 +7,7 @@ import {
   clearAuthenticationState,
   shouldShowAnonymousCalendarChangeSignUpPrompt,
   updateAuthState,
-} from "@web/auth/state/auth.state.util";
+} from "@web/auth/compass/state/auth.state.util";
 import { session } from "@web/common/classes/Session";
 import {
   ensureStorageReady,

@@ -1,12 +1,12 @@
+import * as authStateUtil from "@web/auth/compass/state/auth.state.util";
 import * as googleAuthState from "@web/auth/google/state/google.auth.state";
-import * as authStateUtil from "@web/auth/state/auth.state.util";
 import { getEventRepository } from "./event.repository.util";
 import { LocalEventRepository } from "./local.event.repository";
 import { RemoteEventRepository } from "./remote.event.repository";
 
 jest.mock("@web/common/classes/Session");
 jest.mock("@web/auth/google/state/google.auth.state");
-jest.mock("@web/auth/state/auth.state.util");
+jest.mock("@web/auth/compass/state/auth.state.util");
 
 describe("getEventRepository", () => {
   beforeEach(() => {

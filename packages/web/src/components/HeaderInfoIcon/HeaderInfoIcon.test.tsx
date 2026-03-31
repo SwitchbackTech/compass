@@ -2,11 +2,11 @@ import type React from "react";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { type CompassSession } from "@web/auth/compass/session/session.types";
 import {
   type GoogleUiConfig,
   type GoogleUiState,
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
-import { type CompassSession } from "@web/auth/session/session.types";
 import { type AuthView } from "@web/components/AuthModal/hooks/useAuthModal";
 import { HeaderInfoIcon } from "./HeaderInfoIcon";
 
@@ -29,7 +29,7 @@ const mockSubscribeToAuthState = jest.fn<() => void, [() => void]>(
   () => () => {},
 );
 
-jest.mock("@web/auth/session/useSession", () => ({
+jest.mock("@web/auth/compass/session/useSession", () => ({
   useSession: (): CompassSession => mockUseSession(),
 }));
 
@@ -37,7 +37,7 @@ jest.mock("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
   useConnectGoogle: (): MockConnectGoogleResult => mockUseConnectGoogle(),
 }));
 
-jest.mock("@web/auth/state/auth.state.util", () => ({
+jest.mock("@web/auth/compass/state/auth.state.util", () => ({
   shouldShowAnonymousCalendarChangeSignUpPrompt: (): boolean =>
     mockShouldShowAnonymousCalendarChangeSignUpPrompt(),
   subscribeToAuthState: (listener: () => void): (() => void) =>

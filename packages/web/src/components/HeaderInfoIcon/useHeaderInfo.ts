@@ -1,14 +1,14 @@
 import { useCallback, useSyncExternalStore } from "react";
+import { useSession } from "@web/auth/compass/session/useSession";
+import {
+  shouldShowAnonymousCalendarChangeSignUpPrompt,
+  subscribeToAuthState,
+} from "@web/auth/compass/state/auth.state.util";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import {
   type GoogleUiConfig,
   type UseConnectGoogleResult,
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
-import { useSession } from "@web/auth/session/useSession";
-import {
-  shouldShowAnonymousCalendarChangeSignUpPrompt,
-  subscribeToAuthState,
-} from "@web/auth/state/auth.state.util";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 
 const ANONYMOUS_SIGN_UP_TOOLTIP = "Sign up to save your changes.";

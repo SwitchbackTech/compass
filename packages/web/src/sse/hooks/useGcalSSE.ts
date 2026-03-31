@@ -7,13 +7,13 @@ import {
 } from "@core/constants/sse.constants";
 import { type ImportGCalEndPayload } from "@core/types/sse.types";
 import { type UserMetadata } from "@core/types/user.types";
+import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
 import {
   clearGoogleSyncIndicatorOverride,
   getGoogleSyncIndicatorOverride,
   setSyncingSyncIndicatorOverride,
 } from "@web/auth/google/state/google.sync.state";
 import { handleGoogleRevoked } from "@web/auth/google/util/google.auth.util";
-import { refreshUserMetadata } from "@web/auth/user/util/user-metadata.util";
 import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";

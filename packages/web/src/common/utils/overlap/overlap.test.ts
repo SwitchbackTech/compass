@@ -1,5 +1,5 @@
 import { Categories_Event } from "@core/types/event.types";
-import { getUserId } from "@web/auth/session/session.util";
+import { getUserId } from "@web/auth/compass/session/session.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   assembleDefaultEvent,
@@ -7,7 +7,7 @@ import {
 } from "../event/event.util";
 import { adjustOverlappingEvents, getOverlappingStyles } from "./overlap";
 
-jest.mock("@web/auth/session/session.util", () => ({
+jest.mock("@web/auth/compass/session/session.util", () => ({
   getUserId: jest.fn(),
 }));
 

@@ -2,14 +2,14 @@ import { type EventEmitter2 } from "eventemitter2";
 import { Provider } from "react-redux";
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { render, waitFor } from "@testing-library/react";
-import { useSession } from "@web/auth/session/useSession";
-import { useUser } from "@web/auth/user/hooks/useUser";
+import { useSession } from "@web/auth/compass/session/useSession";
+import { useUser } from "@web/auth/compass/user/hooks/useUser";
 import { importLatestSlice } from "@web/ducks/events/slices/sync.slice";
 import SSEProvider from "./SSEProvider";
 
-jest.mock("@web/auth/session/useSession");
-jest.mock("@web/auth/user/hooks/useUser");
-jest.mock("@web/auth/user/util/user-metadata.util", () => ({
+jest.mock("@web/auth/compass/session/useSession");
+jest.mock("@web/auth/compass/user/hooks/useUser");
+jest.mock("@web/auth/compass/user/util/user-metadata.util", () => ({
   refreshUserMetadata: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock("../client/sse.client", () => {

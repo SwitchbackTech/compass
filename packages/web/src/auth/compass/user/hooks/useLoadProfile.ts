@@ -4,7 +4,7 @@ import { type UserProfile } from "@core/types/user.types";
 import {
   getLastKnownEmail,
   markUserAsAuthenticated,
-} from "@web/auth/state/auth.state.util";
+} from "@web/auth/compass/state/auth.state.util";
 import { UserApi } from "@web/common/apis/user.api";
 import { showSessionExpiredToast } from "@web/common/utils/toast/error-toast.util";
 

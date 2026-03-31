@@ -1,5 +1,5 @@
 import { toast } from "react-toastify";
-import { useCompleteAuthentication } from "@web/auth/compass/useCompleteAuthentication";
+import { useCompleteAuthentication } from "@web/auth/compass/hooks/useCompleteAuthentication";
 import { useGoogleAuthWithOverlay } from "@web/auth/google/hooks/useGoogleAuthWithOverlay/useGoogleAuthWithOverlay";
 import { isGooglePopupClosedError } from "@web/auth/google/util/google-oauth-error.util";
 import { authenticate } from "@web/auth/google/util/google.auth.util";

@@ -1,18 +1,18 @@
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
-import { useSession } from "@web/auth/session/useSession";
-import * as authStateUtil from "@web/auth/state/auth.state.util";
-import { UserProvider } from "@web/auth/user/context/UserProvider";
-import { useUser } from "@web/auth/user/hooks/useUser";
+import { useSession } from "@web/auth/compass/session/useSession";
+import * as authStateUtil from "@web/auth/compass/state/auth.state.util";
+import { UserProvider } from "@web/auth/compass/user/context/UserProvider";
+import { useUser } from "@web/auth/compass/user/hooks/useUser";
 
-jest.mock("@web/auth/session/useSession", () => ({
+jest.mock("@web/auth/compass/session/useSession", () => ({
   useSession: jest.fn(),
 }));
 const mockUseSession = jest.mocked(useSession);
 
-jest.mock("@web/auth/state/auth.state.util", () => {
+jest.mock("@web/auth/compass/state/auth.state.util", () => {
   const actual = jest.requireActual<typeof authStateUtil>(
-    "@web/auth/state/auth.state.util",
+    "@web/auth/compass/state/auth.state.util",
   );
   return {
     ...actual,

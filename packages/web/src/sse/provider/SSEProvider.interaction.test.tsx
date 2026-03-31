@@ -25,7 +25,7 @@ import { useGcalSSE } from "../hooks/useGcalSSE";
 jest.mock("@web/auth/google/util/google.auth.util", () => ({
   handleGoogleRevoked: jest.fn(),
 }));
-jest.mock("@web/auth/user/util/user-metadata.util", () => ({
+jest.mock("@web/auth/compass/user/util/user-metadata.util", () => ({
   refreshUserMetadata: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock("@web/common/utils/toast/error-toast.util", () => ({

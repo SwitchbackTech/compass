@@ -2,6 +2,8 @@ import { type AxiosError, isAxiosError } from "axios";
 import { useCallback, useSyncExternalStore } from "react";
 import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { type GoogleConnectionState } from "@core/types/user.types";
+import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
+import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
 import { useGoogleAuth } from "@web/auth/google/hooks/useGoogleAuth/useGoogleAuth";
 import {
   clearGoogleSyncIndicatorOverride,
@@ -11,8 +13,6 @@ import {
   subscribeToGoogleSyncUIState,
 } from "@web/auth/google/state/google.sync.state";
 import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
-import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
-import { refreshUserMetadata } from "@web/auth/user/util/user-metadata.util";
 import { AuthApi } from "@web/common/apis/auth.api";
 import {
   getApiErrorCode,

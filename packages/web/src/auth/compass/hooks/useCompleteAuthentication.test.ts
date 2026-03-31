@@ -1,12 +1,12 @@
 import { renderHook } from "@testing-library/react";
-import type * as GoogleAuthUtil from "@web/auth/google/util/google.auth.util";
-import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
-import { useSession } from "@web/auth/session/useSession";
+import { useSession } from "@web/auth/compass/session/useSession";
 import {
   clearAnonymousCalendarChangeSignUpPrompt,
   markUserAsAuthenticated,
-} from "@web/auth/state/auth.state.util";
-import { refreshUserMetadata } from "@web/auth/user/util/user-metadata.util";
+} from "@web/auth/compass/state/auth.state.util";
+import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
+import type * as GoogleAuthUtil from "@web/auth/google/util/google.auth.util";
+import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { useCompleteAuthentication } from "./useCompleteAuthentication";
 
@@ -16,13 +16,13 @@ jest.mock("@web/auth/google/util/google.auth.util", () => ({
   ),
   syncPendingLocalEvents: jest.fn(),
 }));
-jest.mock("@web/auth/session/useSession", () => ({
+jest.mock("@web/auth/compass/session/useSession", () => ({
   useSession: jest.fn(),
 }));
-jest.mock("@web/auth/user/util/user-metadata.util", () => ({
+jest.mock("@web/auth/compass/user/util/user-metadata.util", () => ({
   refreshUserMetadata: jest.fn(),
 }));
-jest.mock("@web/auth/state/auth.state.util", () => ({
+jest.mock("@web/auth/compass/state/auth.state.util", () => ({
   clearAnonymousCalendarChangeSignUpPrompt: jest.fn(),
   markUserAsAuthenticated: jest.fn(),
 }));

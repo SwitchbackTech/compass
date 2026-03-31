@@ -1,4 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
+import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import { useGoogleAuth } from "@web/auth/google/hooks/useGoogleAuth/useGoogleAuth";
 import {
@@ -7,8 +9,6 @@ import {
 } from "@web/auth/google/state/google.sync.state";
 import type * as GoogleAuthUtil from "@web/auth/google/util/google.auth.util";
 import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
-import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
-import { refreshUserMetadata } from "@web/auth/user/util/user-metadata.util";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { SyncApi } from "@web/common/apis/sync.api";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
@@ -27,8 +27,8 @@ jest.mock("@web/auth/google/util/google.auth.util", () => ({
   ),
   syncPendingLocalEvents: jest.fn(),
 }));
-jest.mock("@web/auth/user/util/user-metadata.util");
-jest.mock("@web/auth/state/auth.state.util");
+jest.mock("@web/auth/compass/user/util/user-metadata.util");
+jest.mock("@web/auth/compass/state/auth.state.util");
 jest.mock("@web/common/apis/auth.api");
 jest.mock("@web/common/apis/sync.api");
 jest.mock("@web/common/utils/toast/error-toast.util");

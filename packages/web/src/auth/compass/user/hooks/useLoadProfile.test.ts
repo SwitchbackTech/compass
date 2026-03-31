@@ -6,15 +6,15 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { Status } from "@core/errors/status.codes";
 // eslint-disable-next-line jest/no-mocks-import
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
-import * as authStateUtil from "@web/auth/state/auth.state.util";
+import * as authStateUtil from "@web/auth/compass/state/auth.state.util";
 import { UserApi } from "@web/common/apis/user.api";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { SessionExpiredToast } from "@web/common/utils/toast/session-expired.toast";
 import { useLoadProfile } from "./useLoadProfile";
 
-jest.mock("@web/auth/state/auth.state.util", () => {
+jest.mock("@web/auth/compass/state/auth.state.util", () => {
   const actual = jest.requireActual<typeof authStateUtil>(
-    "@web/auth/state/auth.state.util",
+    "@web/auth/compass/state/auth.state.util",
   );
   return {
     ...actual,

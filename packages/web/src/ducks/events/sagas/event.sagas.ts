@@ -7,11 +7,11 @@ import {
   type Schema_Event,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { isGoogleRevoked } from "@web/auth/google/state/google.auth.state";
 import {
   hasUserEverAuthenticated,
   markAnonymousCalendarChangeForSignUpPrompt,
-} from "@web/auth/state/auth.state.util";
+} from "@web/auth/compass/state/auth.state.util";
+import { isGoogleRevoked } from "@web/auth/google/state/google.auth.state";
 import { session } from "@web/common/classes/Session";
 import { getEventRepository } from "@web/common/repositories/event/event.repository.util";
 import { type Response_HttpPaginatedSuccess } from "@web/common/types/api.types";

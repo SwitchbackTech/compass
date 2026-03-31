@@ -48,7 +48,7 @@ jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
     },
 }));
 
-jest.mock("@web/auth/session/session.util", () => ({
+jest.mock("@web/auth/compass/session/session.util", () => ({
   getUserId: async () => "test-user-id",
 }));
 

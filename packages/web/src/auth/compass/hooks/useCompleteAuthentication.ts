@@ -1,10 +1,10 @@
-import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
-import { useSession } from "@web/auth/session/useSession";
+import { useSession } from "@web/auth/compass/session/useSession";
 import {
   clearAnonymousCalendarChangeSignUpPrompt,
   markUserAsAuthenticated,
-} from "@web/auth/state/auth.state.util";
-import { refreshUserMetadata } from "@web/auth/user/util/user-metadata.util";
+} from "@web/auth/compass/state/auth.state.util";
+import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
+import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
 import { authSuccess } from "@web/ducks/auth/slices/auth.slice";
 import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { useAppDispatch } from "@web/store/store.hooks";

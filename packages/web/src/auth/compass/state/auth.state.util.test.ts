@@ -4,7 +4,7 @@ import {
   clearGoogleRevokedState,
   isGoogleRevoked,
   markGoogleAsRevoked,
-} from "../google/state/google.auth.state";
+} from "../../google/state/google.auth.state";
 import {
   clearAnonymousCalendarChangeSignUpPrompt,
   clearAuthenticationState,

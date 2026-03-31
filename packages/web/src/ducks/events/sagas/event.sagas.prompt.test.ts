@@ -27,7 +27,7 @@ jest.mock("@web/auth/google/state/google.auth.state", () => ({
   isGoogleRevoked: jest.fn<boolean, []>(() => false),
 }));
 
-jest.mock("@web/auth/state/auth.state.util", () => ({
+jest.mock("@web/auth/compass/state/auth.state.util", () => ({
   hasUserEverAuthenticated: jest.fn<boolean, []>(() => false),
   markAnonymousCalendarChangeForSignUpPrompt: (): void => {
     mockMarkAnonymousCalendarChangeForSignUpPrompt();

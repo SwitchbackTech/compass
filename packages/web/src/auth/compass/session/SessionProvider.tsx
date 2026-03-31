@@ -19,7 +19,7 @@ import { APP_NAME } from "@core/constants/core.constants";
 import {
   getLastKnownEmail,
   markUserAsAuthenticated,
-} from "@web/auth/state/auth.state.util";
+} from "@web/auth/compass/state/auth.state.util";
 import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
@@ -27,7 +27,7 @@ import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import * as sse from "@web/sse/provider/SSEProvider";
 import { store } from "@web/store";
-import { clearGoogleSyncIndicatorOverride } from "../google/state/google.sync.state";
+import { clearGoogleSyncIndicatorOverride } from "../../google/state/google.sync.state";
 import { refreshUserMetadata } from "../user/util/user-metadata.util";
 import { type CompassSession } from "./session.types";
 

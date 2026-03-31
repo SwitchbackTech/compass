@@ -1,23 +1,23 @@
 import { toast } from "react-toastify";
 import { renderHook, waitFor } from "@testing-library/react";
+import { useSession } from "@web/auth/compass/session/useSession";
+import { markUserAsAuthenticated } from "@web/auth/compass/state/auth.state.util";
+import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
 import { useGoogleAuth } from "@web/auth/google/hooks/useGoogleAuth/useGoogleAuth";
 import { useGoogleLogin } from "@web/auth/google/hooks/useGoogleLogin/useGoogleLogin";
 import {
   authenticate,
   syncLocalEvents,
 } from "@web/auth/google/util/google.auth.util";
-import { useSession } from "@web/auth/session/useSession";
-import { markUserAsAuthenticated } from "@web/auth/state/auth.state.util";
-import { refreshUserMetadata } from "@web/auth/user/util/user-metadata.util";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { type GoogleAuthConfig } from "../googe.auth.types";
 
 // Mock dependencies
 jest.mock("@web/auth/google/util/google.auth.util");
-jest.mock("@web/auth/session/useSession");
-jest.mock("@web/auth/user/util/user-metadata.util");
+jest.mock("@web/auth/compass/session/useSession");
+jest.mock("@web/auth/compass/user/util/user-metadata.util");
 jest.mock("@web/auth/google/hooks/useGoogleLogin/useGoogleLogin");
-jest.mock("@web/auth/state/auth.state.util");
+jest.mock("@web/auth/compass/state/auth.state.util");
 jest.mock("@web/store/store.hooks", () => ({
   useAppDispatch: jest.fn(),
 }));

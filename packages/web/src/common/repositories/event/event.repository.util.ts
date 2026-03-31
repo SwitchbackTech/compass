@@ -1,5 +1,5 @@
+import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
 import { isGoogleRevoked } from "@web/auth/google/state/google.auth.state";
-import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
 import { type EventRepository } from "./event.repository.interface";
 import { LocalEventRepository } from "./local.event.repository";
 import { RemoteEventRepository } from "./remote.event.repository";
