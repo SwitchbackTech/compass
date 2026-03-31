@@ -9,7 +9,10 @@ import {
 import { type ImportGCalEndPayload } from "@core/types/sse.types";
 import { type UserMetadata } from "@core/types/user.types";
 import { handleGoogleRevoked } from "@web/auth/google/google.auth.util";
-import { isGoogleCalendarImportActive } from "@web/auth/user/util/user-metadata.import.util";
+import {
+  isGoogleCalendarAutoImportNeeded,
+  isGoogleCalendarImportActive,
+} from "@web/auth/user/util/user-metadata.import.util";
 import { refreshUserMetadata } from "@web/auth/user/util/user-metadata.util";
 import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
@@ -29,10 +32,11 @@ export const useGcalSSE = () => {
       if (payload?.operation === "REPAIR") {
         dispatch(importGCalSlice.actions.stopRepair());
       }
-      void refreshUserMetadata();
 
       if (payload?.status === "ERRORED") {
         dispatch(importGCalSlice.actions.setImportError(payload.message));
+        dispatch(importGCalSlice.actions.error(undefined));
+        void refreshUserMetadata();
         if (payload.operation === "REPAIR") {
           showErrorToast(payload.message, {
             toastId: GOOGLE_REPAIR_FAILED_TOAST_ID,
@@ -42,6 +46,8 @@ export const useGcalSSE = () => {
       }
 
       if (payload?.status === "IGNORED") {
+        dispatch(importGCalSlice.actions.success(undefined));
+        void refreshUserMetadata();
         return;
       }
 
@@ -52,8 +58,10 @@ export const useGcalSSE = () => {
             calendarsCount: payload.calendarsCount,
           }),
         );
+        dispatch(importGCalSlice.actions.success(undefined));
       }
 
+      void refreshUserMetadata();
       dispatch(
         triggerFetch({
           reason: Sync_AsyncStateContextReason.IMPORT_COMPLETE,
@@ -78,6 +86,8 @@ export const useGcalSSE = () => {
 
       if (isGoogleCalendarImportActive(metadata)) {
         dispatch(importGCalSlice.actions.request());
+      } else if (isGoogleCalendarAutoImportNeeded(metadata)) {
+        dispatch(importGCalSlice.actions.triggerAutoImport());
       }
     },
     [dispatch],

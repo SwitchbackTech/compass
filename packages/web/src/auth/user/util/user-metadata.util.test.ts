@@ -84,6 +84,65 @@ describe("refreshUserMetadata", () => {
     );
   });
 
+  it("triggers auto-import (not spinner) when RESTART and Google is connected", async () => {
+    // RESTART means the backend wants a new import but hasn't started it yet.
+    // The saga should be kicked off, but the spinner should NOT appear until
+    // IMPORT_GCAL_START arrives — so we dispatch triggerAutoImport, not request.
+    const metadata = {
+      google: {
+        connectionState: "HEALTHY" as const,
+      },
+      sync: {
+        importGCal: "RESTART" as const,
+      },
+    };
+    api.getMetadata.mockResolvedValue(metadata);
+
+    await refreshUserMetadata();
+
+    expect(getDispatchMock()).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "async/importGCal/triggerAutoImport" }),
+    );
+  });
+
+  it("does not show spinner (request) for RESTART state — avoids false flicker", async () => {
+    // Using request() for RESTART was the root cause of the spinner flicker bug:
+    // every metadata refresh with a stale RESTART status re-showed the spinner.
+    const metadata = {
+      google: {
+        connectionState: "HEALTHY" as const,
+      },
+      sync: {
+        importGCal: "RESTART" as const,
+      },
+    };
+    api.getMetadata.mockResolvedValue(metadata);
+
+    await refreshUserMetadata();
+
+    expect(getDispatchMock()).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "async/importGCal/request" }),
+    );
+  });
+
+  it("does not trigger auto-import when RESTART but Google is not connected", async () => {
+    const metadata = {
+      google: {
+        connectionState: "NOT_CONNECTED" as const,
+      },
+      sync: {
+        importGCal: "RESTART" as const,
+      },
+    };
+    api.getMetadata.mockResolvedValue(metadata);
+
+    await refreshUserMetadata();
+
+    expect(getDispatchMock()).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "async/importGCal/triggerAutoImport" }),
+    );
+  });
+
   it("clears metadata when the request is unauthorized", async () => {
     api.getMetadata.mockRejectedValue({
       response: {

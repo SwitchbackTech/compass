@@ -57,5 +57,5 @@ function* somedayEventSagas() {
 }
 
 function* syncSagas() {
-  yield takeLatest(importGCalSlice.actions.request, importGCal);
+  yield takeLatest(importGCalSlice.actions.triggerAutoImport, importGCal);
 }

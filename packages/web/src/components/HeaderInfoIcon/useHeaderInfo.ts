@@ -6,6 +6,7 @@ import {
   shouldShowAnonymousCalendarChangeSignUpPrompt,
   subscribeToAuthState,
 } from "@web/auth/state/auth.state.util";
+import { useBufferedVisibility } from "@web/common/hooks/useBufferedVisibility";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { selectImportGCalState } from "@web/ducks/events/selectors/sync.selector";
 import type { RootState } from "@web/store";
@@ -24,9 +25,10 @@ export const useHeaderInfo = (): HeaderInfo => {
   const { authenticated } = useSession();
   const { openModal } = useAuthModal();
   const googleStatus = useConnectGoogle();
-  const isBackgroundImporting = useAppSelector(
+  const rawIsBackgroundImporting = useAppSelector(
     (state: RootState) => selectImportGCalState(state).isProcessing === true,
   );
+  const isBackgroundImporting = useBufferedVisibility(rawIsBackgroundImporting);
   const shouldPromptSignUp = useSyncExternalStore(
     subscribeToAuthState,
     shouldShowAnonymousCalendarChangeSignUpPrompt,

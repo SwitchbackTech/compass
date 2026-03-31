@@ -74,6 +74,12 @@ const importGCalReducers = {
     state.importResults = null;
     state.importError = null;
   },
+  triggerAutoImport: (
+    _state: AsyncState<undefined, undefined> & ImportGCalExtraState,
+  ) => {
+    // No-op: signals the saga to start a non-forced import.
+    // Does not set isProcessing — spinner appears when IMPORT_GCAL_START SSE arrives.
+  },
 };
 
 export const importGCalSlice = createAsyncSlice<

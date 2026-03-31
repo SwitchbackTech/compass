@@ -86,6 +86,7 @@ export const useConnectGoogle = () => {
     const run = async () => {
       dispatch(importGCalSlice.actions.clearImportResults(undefined));
       dispatch(importGCalSlice.actions.startRepair());
+      dispatch(importGCalSlice.actions.request());
       try {
         await SyncApi.importGCal({ force: true });
       } catch (error) {
