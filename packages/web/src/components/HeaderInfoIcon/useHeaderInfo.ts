@@ -1,32 +1,29 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
-import { type GoogleUiConfig } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
+import {
+  type GoogleUiConfig,
+  type UseConnectGoogleResult,
+} from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import { useSession } from "@web/auth/session/useSession";
 import {
   shouldShowAnonymousCalendarChangeSignUpPrompt,
   subscribeToAuthState,
 } from "@web/auth/state/auth.state.util";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
-import {
-  type GoogleSyncIndicator,
-  selectGoogleSyncIndicator,
-} from "@web/ducks/events/selectors/sync.selector";
-import { useAppSelector } from "@web/store/store.hooks";
 
 const ANONYMOUS_SIGN_UP_TOOLTIP = "Sign up to save your changes.";
 
 interface HeaderInfo {
   isAnonymousSignUpPrompt: boolean;
-  isRepairing: boolean;
+  isRepairing: UseConnectGoogleResult["isRepairing"];
   sidebarStatus: GoogleUiConfig["sidebarStatus"];
-  syncIndicator: GoogleSyncIndicator;
+  syncTooltip: null | string;
 }
 
 export const useHeaderInfo = (): HeaderInfo => {
   const { authenticated } = useSession();
   const { openModal } = useAuthModal();
   const googleStatus = useConnectGoogle();
-  const syncIndicator = useAppSelector(selectGoogleSyncIndicator);
   const shouldPromptSignUp = useSyncExternalStore(
     subscribeToAuthState,
     shouldShowAnonymousCalendarChangeSignUpPrompt,
@@ -47,13 +44,20 @@ export const useHeaderInfo = (): HeaderInfo => {
         onSelect: handleOpenSignUp,
         tooltip: ANONYMOUS_SIGN_UP_TOOLTIP,
       },
-      syncIndicator,
+      syncTooltip: null,
     };
   }
+
+  const syncTooltip =
+    googleStatus.state === "repairing"
+      ? "Repairing Google Calendar in the background."
+      : googleStatus.state === "IMPORTING"
+        ? "Syncing Google Calendar in the background."
+        : null;
 
   return {
     isAnonymousSignUpPrompt: false,
     ...googleStatus,
-    syncIndicator,
+    syncTooltip,
   };
 };

@@ -1,4 +1,6 @@
 import { Status } from "@core/errors/status.codes";
+import { resetGoogleSyncUIStateForTests } from "@web/auth/google/google-sync-ui.state";
+import { SyncApi } from "@web/common/apis/sync.api";
 import { UserApi } from "@web/common/apis/user.api";
 import { store } from "@web/store";
 import { refreshUserMetadata } from "./user-metadata.util";
@@ -9,44 +11,27 @@ jest.mock("@web/common/apis/user.api", () => ({
   },
 }));
 
+jest.mock("@web/common/apis/sync.api", () => ({
+  SyncApi: {
+    importGCal: jest.fn(),
+  },
+}));
+
 jest.mock("@web/store", () => ({
   store: {
     dispatch: jest.fn(),
-    getState: jest.fn(),
   },
 }));
 
 describe("refreshUserMetadata", () => {
-  let mockState: {
-    sync: {
-      importGCal: {
-        isAutoImportPending: boolean;
-        isProcessing: boolean;
-        isRepairing: boolean;
-      };
-    };
-  };
-
-  const api = UserApi as unknown as {
-    getMetadata: jest.MockedFunction<typeof UserApi.getMetadata>;
-  };
-  const getDispatchMock = () =>
-    store.dispatch as jest.MockedFunction<typeof store.dispatch>;
-  const getStateMock = () =>
-    store.getState as jest.MockedFunction<typeof store.getState>;
+  const api = UserApi as jest.Mocked<typeof UserApi>;
+  const syncApi = SyncApi as jest.Mocked<typeof SyncApi>;
+  const dispatch = store.dispatch as jest.MockedFunction<typeof store.dispatch>;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockState = {
-      sync: {
-        importGCal: {
-          isAutoImportPending: false,
-          isProcessing: false,
-          isRepairing: false,
-        },
-      },
-    };
-    getStateMock().mockImplementation(() => mockState);
+    resetGoogleSyncUIStateForTests();
+    syncApi.importGCal.mockResolvedValue(undefined);
   });
 
   it("loads metadata into the store", async () => {
@@ -59,138 +44,82 @@ describe("refreshUserMetadata", () => {
 
     await refreshUserMetadata();
 
-    expect(getDispatchMock()).toHaveBeenNthCalledWith(
+    expect(dispatch).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({ type: "userMetadata/setLoading" }),
     );
-    expect(getDispatchMock()).toHaveBeenNthCalledWith(
+    expect(dispatch).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({ type: "userMetadata/set", payload: metadata }),
     );
-    expect(getDispatchMock()).toHaveBeenNthCalledWith(
-      3,
-      expect.objectContaining({
-        type: "async/importGCal/reconcileImportStateFromMetadata",
-      }),
-    );
-    expect(getDispatchMock()).toHaveBeenCalledTimes(3);
+    expect(dispatch).toHaveBeenCalledTimes(2);
   });
 
-  it("starts background import state when metadata says full import is active", async () => {
+  it("triggers auto-import once when metadata says RESTART and Google is connected", async () => {
     const metadata = {
       google: {
-        connectionState: "IMPORTING" as const,
+        connectionState: "ATTENTION" as const,
       },
       sync: {
-        importGCal: "IMPORTING" as const,
+        importGCal: "RESTART" as const,
       },
     };
     api.getMetadata.mockResolvedValue(metadata);
 
     await refreshUserMetadata();
+    await refreshUserMetadata();
 
-    expect(getDispatchMock()).toHaveBeenNthCalledWith(
-      3,
-      expect.objectContaining({
-        type: "async/importGCal/reconcileImportStateFromMetadata",
-      }),
-    );
+    expect(syncApi.importGCal).toHaveBeenCalledTimes(1);
+    expect(syncApi.importGCal).toHaveBeenCalledWith();
   });
 
-  it("does not start background import state when Google is disconnected", async () => {
-    const metadata = {
+  it("does not trigger auto-import when Google is disconnected", async () => {
+    api.getMetadata.mockResolvedValue({
       google: {
         connectionState: "NOT_CONNECTED" as const,
       },
       sync: {
         importGCal: "RESTART" as const,
       },
-    };
-    api.getMetadata.mockResolvedValue(metadata);
+    });
 
     await refreshUserMetadata();
 
-    expect(getDispatchMock()).not.toHaveBeenCalledWith(
-      expect.objectContaining({ type: "async/importGCal/triggerAutoImport" }),
-    );
+    expect(syncApi.importGCal).not.toHaveBeenCalled();
   });
 
-  it("triggers auto-import (not spinner) when RESTART and Google is connected", async () => {
-    // RESTART means the backend wants a new import but hasn't started it yet.
-    // The saga should be kicked off, but the spinner should NOT appear until
-    // IMPORT_GCAL_START arrives — so we dispatch triggerAutoImport, not request.
-    const metadata = {
-      google: {
-        connectionState: "HEALTHY" as const,
-      },
-      sync: {
-        importGCal: "RESTART" as const,
-      },
-    };
-    api.getMetadata.mockResolvedValue(metadata);
+  it("resets the restart gate once metadata leaves RESTART", async () => {
+    api.getMetadata
+      .mockResolvedValueOnce({
+        google: {
+          connectionState: "ATTENTION" as const,
+        },
+        sync: {
+          importGCal: "RESTART" as const,
+        },
+      })
+      .mockResolvedValueOnce({
+        google: {
+          connectionState: "HEALTHY" as const,
+        },
+        sync: {
+          importGCal: "COMPLETED" as const,
+        },
+      })
+      .mockResolvedValueOnce({
+        google: {
+          connectionState: "ATTENTION" as const,
+        },
+        sync: {
+          importGCal: "RESTART" as const,
+        },
+      });
 
     await refreshUserMetadata();
-
-    expect(getDispatchMock()).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "async/importGCal/triggerAutoImport" }),
-    );
-  });
-
-  it("does not show spinner (request) for RESTART state — avoids false flicker", async () => {
-    // Using request() for RESTART was the root cause of the spinner flicker bug:
-    // every metadata refresh with a stale RESTART status re-showed the spinner.
-    const metadata = {
-      google: {
-        connectionState: "HEALTHY" as const,
-      },
-      sync: {
-        importGCal: "RESTART" as const,
-      },
-    };
-    api.getMetadata.mockResolvedValue(metadata);
-
+    await refreshUserMetadata();
     await refreshUserMetadata();
 
-    expect(getDispatchMock()).not.toHaveBeenCalledWith(
-      expect.objectContaining({ type: "async/importGCal/request" }),
-    );
-  });
-
-  it("does not trigger auto-import twice while RESTART is already pending", async () => {
-    mockState.sync.importGCal.isAutoImportPending = true;
-    const metadata = {
-      google: {
-        connectionState: "HEALTHY" as const,
-      },
-      sync: {
-        importGCal: "RESTART" as const,
-      },
-    };
-    api.getMetadata.mockResolvedValue(metadata);
-
-    await refreshUserMetadata();
-
-    expect(getDispatchMock()).not.toHaveBeenCalledWith(
-      expect.objectContaining({ type: "async/importGCal/triggerAutoImport" }),
-    );
-  });
-
-  it("does not trigger auto-import when RESTART but Google is not connected", async () => {
-    const metadata = {
-      google: {
-        connectionState: "NOT_CONNECTED" as const,
-      },
-      sync: {
-        importGCal: "RESTART" as const,
-      },
-    };
-    api.getMetadata.mockResolvedValue(metadata);
-
-    await refreshUserMetadata();
-
-    expect(getDispatchMock()).not.toHaveBeenCalledWith(
-      expect.objectContaining({ type: "async/importGCal/triggerAutoImport" }),
-    );
+    expect(syncApi.importGCal).toHaveBeenCalledTimes(2);
   });
 
   it("clears metadata when the request is unauthorized", async () => {
@@ -202,11 +131,11 @@ describe("refreshUserMetadata", () => {
 
     await refreshUserMetadata();
 
-    expect(getDispatchMock()).toHaveBeenNthCalledWith(
+    expect(dispatch).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({ type: "userMetadata/setLoading" }),
     );
-    expect(getDispatchMock()).toHaveBeenNthCalledWith(
+    expect(dispatch).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({ type: "userMetadata/clear" }),
     );
@@ -220,11 +149,11 @@ describe("refreshUserMetadata", () => {
 
     await refreshUserMetadata();
 
-    expect(getDispatchMock()).toHaveBeenNthCalledWith(
+    expect(dispatch).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({ type: "userMetadata/setLoading" }),
     );
-    expect(getDispatchMock()).toHaveBeenNthCalledWith(
+    expect(dispatch).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({ type: "userMetadata/finishLoading" }),
     );

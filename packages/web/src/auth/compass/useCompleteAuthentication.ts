@@ -27,7 +27,7 @@ export function useCompleteAuthentication() {
 
     void refreshUserMetadata();
 
-    await syncPendingLocalEvents(dispatch);
+    await syncPendingLocalEvents();
 
     dispatch(triggerFetch());
     onComplete?.();

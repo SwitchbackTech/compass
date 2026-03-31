@@ -160,7 +160,7 @@ describe("useGoogleAuth", () => {
   });
 
   describe("onStart callback", () => {
-    it("shows overlay immediately when login starts and clears prior import results", () => {
+    it("shows overlay immediately when login starts", () => {
       mockUseGoogleLogin.mockReturnValue({
         login: mockLogin,
         loading: false,
@@ -174,11 +174,6 @@ describe("useGoogleAuth", () => {
 
       expect(mockDispatchFn).toHaveBeenCalledWith(
         expect.objectContaining({ type: "auth/startAuthenticating" }),
-      );
-      expect(mockDispatchFn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "async/importGCal/clearImportResults",
-        }),
       );
       expect(mockToast.dismiss).toHaveBeenCalledWith("session-expired-api");
     });

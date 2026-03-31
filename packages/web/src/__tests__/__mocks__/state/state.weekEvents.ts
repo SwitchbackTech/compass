@@ -84,12 +84,6 @@ export const preloadedState: InitialReduxState = {
     status: "idle",
   },
   sync: {
-    importGCal: {
-      isRepairing: false,
-      importResults: null,
-      pendingLocalEventsSynced: null,
-      importError: null,
-    },
     importLatest: {
       isFetchNeeded: false,
       reason: null,

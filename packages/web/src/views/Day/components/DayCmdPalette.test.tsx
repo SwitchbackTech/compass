@@ -3,9 +3,9 @@ import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import * as useGoogleAuthModule from "@web/auth/google/hooks/useGoogleAuth/useGoogleAuth";
+import { SyncApi } from "@web/common/apis/sync.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import * as eventUtil from "@web/common/utils/event/event.util";
-import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
@@ -110,6 +110,11 @@ jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
 
 // Mock event utility functions
 jest.mock("@web/common/utils/event/event.util");
+jest.mock("@web/common/apis/sync.api", () => ({
+  SyncApi: {
+    importGCal: jest.fn().mockResolvedValue(undefined),
+  },
+}));
 
 jest.mock("@web/store/store.hooks", () => ({
   useAppDispatch: () => mockDispatch,
@@ -375,9 +380,7 @@ describe("DayCmdPalette", () => {
 
       await user.click(screen.getByText("Repair Google Calendar"));
 
-      expect(mockDispatch).toHaveBeenCalledWith(
-        importGCalSlice.actions.triggerRepairImport(),
-      );
+      expect(SyncApi.importGCal).toHaveBeenCalledWith({ force: true });
     });
   });
 });

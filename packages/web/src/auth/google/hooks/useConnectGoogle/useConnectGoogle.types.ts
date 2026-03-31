@@ -27,3 +27,8 @@ export type GoogleUiConfig = {
     onSelect?: () => void;
   };
 };
+
+export type UseConnectGoogleResult = GoogleUiConfig & {
+  isRepairing: boolean;
+  state: GoogleUiState;
+};

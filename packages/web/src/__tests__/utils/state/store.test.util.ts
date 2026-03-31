@@ -122,13 +122,6 @@ export const createInitialState = (
       status: "idle",
     },
     sync: {
-      importGCal: {
-        isAutoImportPending: false,
-        isRepairing: false,
-        importResults: null,
-        pendingLocalEventsSynced: null,
-        importError: null,
-      },
       importLatest: {
         isFetchNeeded: false,
         reason: null,

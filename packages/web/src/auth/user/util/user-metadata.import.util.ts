@@ -1,7 +1,10 @@
 import { type UserMetadata } from "@core/types/user.types";
-import { selectImportGCalState } from "@web/ducks/events/selectors/sync.selector";
-import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
-import { type AppDispatch, type RootState } from "@web/store";
+import {
+  hasAutoImportBeenTriggeredForRestart,
+  markAutoImportTriggeredForRestart,
+  resetAutoImportTriggeredForRestart,
+} from "@web/auth/google/google-sync-ui.state";
+import { SyncApi } from "@web/common/apis/sync.api";
 
 const isGoogleConnected = (metadata: UserMetadata) => {
   const connectionState = metadata.google?.connectionState;
@@ -23,25 +26,19 @@ export const isGoogleCalendarAutoImportNeeded = (metadata: UserMetadata) => {
   return metadata.sync?.importGCal === "RESTART" && isGoogleConnected(metadata);
 };
 
-export const reconcileGoogleCalendarImportState = ({
-  dispatch,
-  getState,
-  metadata,
-}: {
-  dispatch: AppDispatch;
-  getState: () => RootState;
-  metadata: UserMetadata;
-}) => {
-  dispatch(importGCalSlice.actions.reconcileImportStateFromMetadata(metadata));
-
-  const importState = selectImportGCalState(getState());
-  const shouldTriggerAutoImport =
-    isGoogleCalendarAutoImportNeeded(metadata) &&
-    !importState.isAutoImportPending &&
-    !importState.isProcessing &&
-    !importState.isRepairing;
-
-  if (shouldTriggerAutoImport) {
-    dispatch(importGCalSlice.actions.triggerAutoImport());
+export const reconcileGoogleCalendarAutoImport = (metadata: UserMetadata) => {
+  if (!isGoogleCalendarAutoImportNeeded(metadata)) {
+    resetAutoImportTriggeredForRestart();
+    return;
   }
+
+  if (hasAutoImportBeenTriggeredForRestart()) {
+    return;
+  }
+
+  markAutoImportTriggeredForRestart();
+
+  void SyncApi.importGCal().catch((error) => {
+    console.error("Failed to start Google Calendar auto-import", error);
+  });
 };

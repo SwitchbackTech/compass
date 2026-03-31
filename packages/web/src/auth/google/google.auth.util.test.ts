@@ -11,10 +11,7 @@ import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
-import {
-  importGCalSlice,
-  triggerFetch,
-} from "@web/ducks/events/slices/sync.slice";
+import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { closeStream, openStream } from "@web/sse/client/sse.client";
 import { store } from "@web/store";
 import {
@@ -152,41 +149,33 @@ describe("google-auth.util", () => {
       jest.restoreAllMocks();
     });
 
-    it("dispatches setLocalEventsSynced when sync succeeds with events", async () => {
+    it("returns true when sync succeeds with events", async () => {
       mockSyncLocalEventsToCloud.mockResolvedValue(3);
-      const dispatch = jest.fn();
 
-      const ok = await syncPendingLocalEvents(dispatch);
+      const ok = await syncPendingLocalEvents();
 
       expect(ok).toBe(true);
-      expect(dispatch).toHaveBeenCalledWith(
-        importGCalSlice.actions.setLocalEventsSynced(3),
-      );
     });
 
-    it("does not dispatch when syncedCount is zero", async () => {
+    it("returns true when syncedCount is zero", async () => {
       mockSyncLocalEventsToCloud.mockResolvedValue(0);
-      const dispatch = jest.fn();
 
-      const ok = await syncPendingLocalEvents(dispatch);
+      const ok = await syncPendingLocalEvents();
 
       expect(ok).toBe(true);
-      expect(dispatch).not.toHaveBeenCalled();
     });
 
     it("shows toast and returns false on sync failure", async () => {
       const error = new Error("fail");
       mockSyncLocalEventsToCloud.mockRejectedValue(error);
-      const dispatch = jest.fn();
 
-      const ok = await syncPendingLocalEvents(dispatch);
+      const ok = await syncPendingLocalEvents();
 
       expect(ok).toBe(false);
       expect(toast.error).toHaveBeenCalledWith(
         LOCAL_EVENTS_SYNC_ERROR_MESSAGE,
         expect.anything(),
       );
-      expect(dispatch).not.toHaveBeenCalled();
     });
   });
 

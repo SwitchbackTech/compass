@@ -34,15 +34,7 @@ jest.mock("@web/components/Tooltip/TooltipWrapper", () => ({
 
 describe("SidebarIconRow", () => {
   it("does not render the background import spinner in the sidebar", () => {
-    render(<SidebarIconRow />, {
-      state: {
-        sync: {
-          importGCal: {
-            isProcessing: true,
-          },
-        },
-      },
-    });
+    render(<SidebarIconRow />);
 
     expect(
       screen.queryByRole("button", {

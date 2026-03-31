@@ -14,7 +14,6 @@ import {
   resetAuth,
   startAuthenticating,
 } from "@web/ducks/auth/slices/auth.slice";
-import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
 import { type AppDispatch } from "@web/store";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { type GoogleAuthConfig } from "../googe.auth.types";
@@ -52,7 +51,6 @@ export function useGoogleAuth(
     onStart: () => {
       dismissErrorToast(SESSION_EXPIRED_TOAST_ID);
       dispatch(startAuthenticating());
-      dispatch(importGCalSlice.actions.clearImportResults(undefined));
     },
     onSuccess: async (data) => {
       if (onSuccess) {

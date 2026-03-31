@@ -94,8 +94,12 @@ class UserMetadataService {
     }
 
     const importStatus = storedMetadata.sync?.importGCal;
-    if (importStatus === "IMPORTING" || importStatus === "RESTART") {
+    if (importStatus === "IMPORTING") {
       return { connectionState: "IMPORTING" };
+    }
+
+    if (importStatus === "RESTART") {
+      return { connectionState: "ATTENTION" };
     }
 
     const isHealthy = await this.isGoogleSyncHealthy(userId);

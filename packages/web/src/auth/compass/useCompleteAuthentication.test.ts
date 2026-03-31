@@ -7,7 +7,6 @@ import {
   markUserAsAuthenticated,
 } from "@web/auth/state/auth.state.util";
 import { refreshUserMetadata } from "@web/auth/user/util/user-metadata.util";
-import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { useCompleteAuthentication } from "./useCompleteAuthentication";
 
@@ -82,19 +81,11 @@ describe("useCompleteAuthentication", () => {
   });
 
   it("records synced local events count", async () => {
-    mockSyncPendingLocalEvents.mockImplementation((dispatch) => {
-      dispatch(importGCalSlice.actions.setLocalEventsSynced(5));
-      return Promise.resolve(true);
-    });
+    mockSyncPendingLocalEvents.mockResolvedValue(true);
     const { result } = renderHook(() => useCompleteAuthentication());
 
     await result.current({ email: "test@example.com" });
 
-    expect(mockDispatch).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: "async/importGCal/setLocalEventsSynced",
-        payload: 5,
-      }),
-    );
+    expect(mockSyncPendingLocalEvents).toHaveBeenCalledTimes(1);
   });
 });

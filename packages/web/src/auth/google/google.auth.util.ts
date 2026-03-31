@@ -12,12 +12,9 @@ import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
-import {
-  importGCalSlice,
-  triggerFetch,
-} from "@web/ducks/events/slices/sync.slice";
+import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { closeStream, openStream } from "@web/sse/client/sse.client";
-import { type AppDispatch, store } from "@web/store";
+import { store } from "@web/store";
 import { type GoogleAuthConfig } from "./hooks/googe.auth.types";
 
 export interface AuthenticateResult {
@@ -98,23 +95,15 @@ export async function syncLocalEvents(): Promise<SyncLocalEventsResult> {
 }
 
 /**
- * Runs {@link syncLocalEvents}, surfaces failures with a toast, and records
- * synced counts in Redux when migration succeeds. Returns whether sync succeeded.
+ * Runs {@link syncLocalEvents}, surfaces failures with a toast, and returns
+ * whether sync succeeded.
  */
-export async function syncPendingLocalEvents(
-  dispatch: AppDispatch,
-): Promise<boolean> {
+export async function syncPendingLocalEvents(): Promise<boolean> {
   const syncResult = await syncLocalEvents();
 
   if (!syncResult.success) {
     showLocalEventsSyncFailure(syncResult.error);
     return false;
-  }
-
-  if (syncResult.syncedCount > 0) {
-    dispatch(
-      importGCalSlice.actions.setLocalEventsSynced(syncResult.syncedCount),
-    );
   }
 
   return true;

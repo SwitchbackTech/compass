@@ -25,9 +25,9 @@ import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
-import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
 import * as sse from "@web/sse/provider/SSEProvider";
 import { store } from "@web/store";
+import { clearRepairRequested } from "../google/google-sync-ui.state";
 import { refreshUserMetadata } from "../user/util/user-metadata.util";
 import { type CompassSession } from "./session.types";
 
@@ -42,7 +42,7 @@ SuperTokens.init({
     EmailPassword.init(),
     EmailVerification.init(),
     Session.init({
-      postAPIHook: async (context) => {
+      postAPIHook: (context) => {
         session.emit(context.action, context);
       },
       onHandleEvent: (event) => {
@@ -69,8 +69,8 @@ const handleSessionExists = () => {
 
 const handleSessionMissing = () => {
   store.dispatch(authSlice.actions.resetAuth());
-  store.dispatch(importGCalSlice.actions.clearImportResults(undefined));
   store.dispatch(userMetadataSlice.actions.clear(undefined));
+  clearRepairRequested();
 };
 
 async function checkIfSessionExists(): Promise<boolean> {
@@ -108,11 +108,11 @@ async function checkIfSessionExists(): Promise<boolean> {
 }
 
 export function sessionInit() {
-  checkIfSessionExists();
+  void checkIfSessionExists();
 
   // No need to unsubscribe as this runs for the lifetime of the app
   session.events.pipe(distinctUntilKeyChanged("action")).subscribe((e) => {
-    checkIfSessionExists();
+    void checkIfSessionExists();
 
     switch (e.action) {
       case "REFRESH_SESSION":
@@ -132,7 +132,7 @@ export function sessionInit() {
   });
 }
 
-export function SessionProvider({ children }: PropsWithChildren<{}>) {
+export function SessionProvider({ children }: PropsWithChildren<object>) {
   const [authenticated, setAuthenticated] = useState(authenticated$.value);
 
   useEffect(() => {

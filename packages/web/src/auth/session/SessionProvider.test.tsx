@@ -2,7 +2,6 @@ import { act } from "react";
 import { waitFor } from "@testing-library/react";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
-import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
 
 describe("SessionProvider sessionInit", () => {
   beforeEach(() => {
@@ -104,9 +103,6 @@ describe("SessionProvider sessionInit", () => {
       session.emit("SIGN_OUT", { action: "SIGN_OUT" } as never);
 
       expect(dispatch).toHaveBeenCalledWith(authSlice.actions.resetAuth());
-      expect(dispatch).toHaveBeenCalledWith(
-        importGCalSlice.actions.clearImportResults(undefined),
-      );
       expect(dispatch).toHaveBeenCalledWith(
         userMetadataSlice.actions.clear(undefined),
       );

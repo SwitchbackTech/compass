@@ -14,10 +14,6 @@ import {
   getSomedayEvents,
   reorderSomedayEvents,
 } from "@web/ducks/events/sagas/someday.sagas";
-import {
-  importAutoGCal,
-  importRepairGCal,
-} from "@web/ducks/events/sagas/sync.sagas";
 import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
 import {
   createEventSlice,
@@ -26,11 +22,10 @@ import {
   getCurrentMonthEventsSlice,
 } from "@web/ducks/events/slices/event.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
-import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 
 export function* sagas() {
-  yield all([eventSagas(), somedayEventSagas(), syncSagas()]);
+  yield all([eventSagas(), somedayEventSagas()]);
 }
 
 function* eventSagas() {
@@ -57,12 +52,4 @@ function* somedayEventSagas() {
   yield takeLatest(getSomedayEventsSlice.actions.request, getSomedayEvents);
   yield takeLatest(getSomedayEventsSlice.actions.delete, deleteSomedayEvent);
   yield takeLatest(getSomedayEventsSlice.actions.reorder, reorderSomedayEvents);
-}
-
-function* syncSagas() {
-  yield takeLatest(importGCalSlice.actions.triggerAutoImport, importAutoGCal);
-  yield takeLatest(
-    importGCalSlice.actions.triggerRepairImport,
-    importRepairGCal,
-  );
 }

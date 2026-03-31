@@ -2,16 +2,19 @@ import type React from "react";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { type GoogleUiConfig } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
+import {
+  type GoogleUiConfig,
+  type GoogleUiState,
+} from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import { type CompassSession } from "@web/auth/session/session.types";
 import { type AuthView } from "@web/components/AuthModal/hooks/useAuthModal";
-import { useAppSelector } from "@web/store/store.hooks";
 import { HeaderInfoIcon } from "./HeaderInfoIcon";
 
 interface MockConnectGoogleResult {
   commandAction: GoogleUiConfig["commandAction"];
   isRepairing: boolean;
   sidebarStatus: GoogleUiConfig["sidebarStatus"];
+  state: GoogleUiState;
 }
 
 const mockOpenModal = jest.fn<void, [AuthView?]>();
@@ -22,7 +25,6 @@ const mockShouldShowAnonymousCalendarChangeSignUpPrompt = jest.fn<
   boolean,
   []
 >();
-const mockUseAppSelector = jest.mocked(useAppSelector);
 const mockSubscribeToAuthState = jest.fn<() => void, [() => void]>(
   () => () => {},
 );
@@ -46,10 +48,6 @@ jest.mock("@web/components/AuthModal/hooks/useAuthModal", () => ({
   useAuthModal: () => ({
     openModal: mockOpenModal,
   }),
-}));
-
-jest.mock("@web/store/store.hooks", () => ({
-  useAppSelector: jest.fn(),
 }));
 
 jest.mock("@phosphor-icons/react", () => ({
@@ -89,10 +87,6 @@ describe("HeaderInfoIcon", () => {
       authenticated: false,
       setAuthenticated: jest.fn(),
     });
-    mockUseAppSelector.mockReturnValue({
-      kind: "idle",
-      tooltip: null,
-    });
     mockUseConnectGoogle.mockReturnValue({
       commandAction: {
         icon: "CloudArrowUpIcon",
@@ -107,6 +101,7 @@ describe("HeaderInfoIcon", () => {
         onSelect: mockGoogleOnSelect,
         tooltip: "Google Calendar needs reconnecting. Click to reconnect.",
       },
+      state: "RECONNECT_REQUIRED",
     });
     mockShouldShowAnonymousCalendarChangeSignUpPrompt.mockReturnValue(false);
   });
@@ -164,9 +159,18 @@ describe("HeaderInfoIcon", () => {
   });
 
   it("renders the background import spinner instead of the info icon while importing", () => {
-    mockUseAppSelector.mockReturnValue({
-      kind: "syncing",
-      tooltip: "Syncing Google Calendar in the background.",
+    mockUseConnectGoogle.mockReturnValue({
+      commandAction: {
+        icon: "CloudArrowUpIcon",
+        isDisabled: true,
+        label: "Syncing Google Calendar…",
+      },
+      isRepairing: false,
+      sidebarStatus: {
+        isDisabled: true,
+        tooltip: "Google Calendar is syncing in the background.",
+      },
+      state: "IMPORTING",
     });
 
     render(<HeaderInfoIcon />);
@@ -186,9 +190,19 @@ describe("HeaderInfoIcon", () => {
   });
 
   it("renders the repairing spinner instead of the warning icon while repairing", () => {
-    mockUseAppSelector.mockReturnValue({
-      kind: "repairing",
-      tooltip: "Repairing Google Calendar in the background.",
+    mockUseConnectGoogle.mockReturnValue({
+      commandAction: {
+        icon: "CloudArrowUpIcon",
+        isDisabled: true,
+        label: "Repairing Google Calendar…",
+      },
+      isRepairing: true,
+      sidebarStatus: {
+        iconColor: "warning",
+        isDisabled: true,
+        tooltip: "Repairing Google Calendar in the background.",
+      },
+      state: "repairing",
     });
 
     render(<HeaderInfoIcon />);

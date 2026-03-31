@@ -150,5 +150,19 @@ describe("UserMetadataService", () => {
 
       restartSpy.mockRestore();
     });
+
+    it("returns ATTENTION when a restart is pending", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+
+      await driver.updateUserMetadata({
+        userId,
+        data: { sync: { importGCal: "RESTART" } },
+      });
+
+      const metadata = await driver.fetchUserMetadata(userId);
+
+      expect(metadata.google?.connectionState).toBe("ATTENTION");
+    });
   });
 });
