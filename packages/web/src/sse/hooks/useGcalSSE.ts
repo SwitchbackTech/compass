@@ -2,13 +2,17 @@ import { useCallback, useEffect } from "react";
 import {
   GOOGLE_REVOKED,
   IMPORT_GCAL_END,
+  IMPORT_GCAL_START,
   USER_METADATA,
 } from "@core/constants/sse.constants";
 import { type ImportGCalEndPayload } from "@core/types/sse.types";
 import { type UserMetadata } from "@core/types/user.types";
-import { clearRepairRequested } from "@web/auth/google/google-sync-ui.state";
+import {
+  clearGoogleSyncIndicatorOverride,
+  getGoogleSyncIndicatorOverride,
+  setSyncingSyncIndicatorOverride,
+} from "@web/auth/google/google-sync-ui.state";
 import { handleGoogleRevoked } from "@web/auth/google/google.auth.util";
-import { reconcileGoogleCalendarAutoImport } from "@web/auth/user/util/user-metadata.import.util";
 import { refreshUserMetadata } from "@web/auth/user/util/user-metadata.util";
 import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
@@ -23,9 +27,7 @@ export const useGcalSSE = () => {
 
   const onImportEnd = useCallback(
     (payload?: ImportGCalEndPayload) => {
-      if (payload?.operation === "REPAIR") {
-        clearRepairRequested();
-      }
+      clearGoogleSyncIndicatorOverride();
 
       if (payload?.status === "ERRORED") {
         void refreshUserMetadata();
@@ -52,15 +54,22 @@ export const useGcalSSE = () => {
     [dispatch],
   );
 
+  const onImportStart = useCallback(() => {
+    if (getGoogleSyncIndicatorOverride() !== null) {
+      return;
+    }
+
+    setSyncingSyncIndicatorOverride();
+  }, []);
+
   const onGoogleRevoked = useCallback(() => {
-    clearRepairRequested();
+    clearGoogleSyncIndicatorOverride();
     handleGoogleRevoked();
   }, []);
 
   const onMetadataFetch = useCallback(
     (metadata: UserMetadata) => {
       dispatch(userMetadataSlice.actions.set(metadata));
-      reconcileGoogleCalendarAutoImport(metadata);
     },
     [dispatch],
   );
@@ -71,6 +80,10 @@ export const useGcalSSE = () => {
         String((e as MessageEvent).data),
       ) as ImportGCalEndPayload;
       onImportEnd(payload);
+    };
+
+    const importStartHandler = () => {
+      onImportStart();
     };
 
     const googleRevokedHandler = () => {
@@ -84,14 +97,16 @@ export const useGcalSSE = () => {
       onMetadataFetch(metadata);
     };
 
+    sseEmitter.on(IMPORT_GCAL_START, importStartHandler);
     sseEmitter.on(IMPORT_GCAL_END, importEndHandler);
     sseEmitter.on(GOOGLE_REVOKED, googleRevokedHandler);
     sseEmitter.on(USER_METADATA, userMetadataHandler);
 
     return () => {
+      sseEmitter.off(IMPORT_GCAL_START, importStartHandler);
       sseEmitter.off(IMPORT_GCAL_END, importEndHandler);
       sseEmitter.off(GOOGLE_REVOKED, googleRevokedHandler);
       sseEmitter.off(USER_METADATA, userMetadataHandler);
     };
-  }, [onImportEnd, onGoogleRevoked, onMetadataFetch]);
+  }, [onImportEnd, onImportStart, onGoogleRevoked, onMetadataFetch]);
 };

@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import {
-  markRepairRequested,
   resetGoogleSyncUIStateForTests,
+  setRepairingSyncIndicatorOverride,
 } from "@web/auth/google/google-sync-ui.state";
 import type * as GoogleAuthUtil from "@web/auth/google/google.auth.util";
 import { syncPendingLocalEvents } from "@web/auth/google/google.auth.util";
@@ -158,7 +158,7 @@ describe("useConnectGoogle", () => {
   });
 
   it("shows repairing state from the local repair store", () => {
-    markRepairRequested();
+    setRepairingSyncIndicatorOverride();
     setSelectorState({
       connectionState: "ATTENTION",
       userMetadataStatus: "loaded",
@@ -217,6 +217,11 @@ describe("useConnectGoogle", () => {
   });
 
   it("connects Google through the backend endpoint and refreshes metadata", async () => {
+    setSelectorState({
+      connectionState: "ATTENTION",
+      userMetadataStatus: "loaded",
+    });
+
     renderHook(() => useConnectGoogle());
 
     const useGoogleAuthArg = getUseGoogleAuthArg();
@@ -237,12 +242,48 @@ describe("useConnectGoogle", () => {
       },
     };
 
-    await useGoogleAuthArg.onSuccess(payload);
+    await act(async () => {
+      await useGoogleAuthArg.onSuccess(payload);
+    });
 
     expect(mockSyncPendingLocalEvents).toHaveBeenCalledTimes(1);
     expect(mockAuthApi.connectGoogle).toHaveBeenCalledWith(payload);
     expect(mockRefreshUserMetadata).toHaveBeenCalledTimes(1);
     expect(mockDispatch).toHaveBeenCalledWith(triggerFetch());
+    expect(mockSyncApi.importGCal).not.toHaveBeenCalled();
+  });
+
+  it("shows syncing UI immediately after Google auth succeeds", async () => {
+    setSelectorState({
+      connectionState: "ATTENTION",
+      userMetadataStatus: "loaded",
+    });
+
+    const { result } = renderHook(() => useConnectGoogle());
+    const useGoogleAuthArg = getUseGoogleAuthArg();
+    if (!useGoogleAuthArg?.onSuccess) {
+      throw new Error("Expected useGoogleAuth to receive an onSuccess handler");
+    }
+
+    const payload = {
+      clientType: "web" as const,
+      thirdPartyId: "google" as const,
+      redirectURIInfo: {
+        redirectURIOnProviderDashboard: window.location.origin,
+        redirectURIQueryParams: {
+          code: "auth-code",
+          scope: "scope",
+          state: "state",
+        },
+      },
+    };
+
+    await act(async () => {
+      await useGoogleAuthArg.onSuccess(payload);
+    });
+
+    expect(result.current.state).toBe("IMPORTING");
+    expect(result.current.commandAction.label).toBe("Syncing Google Calendar…");
   });
 
   it("shows the server message when Google connect fails", async () => {

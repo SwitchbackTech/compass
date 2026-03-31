@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { render } from "@web/__tests__/utils/render.test.util";
 import {
-  markRepairRequested,
   resetGoogleSyncUIStateForTests,
+  setRepairingSyncIndicatorOverride,
 } from "@web/auth/google/google-sync-ui.state";
 import { SyncApi } from "@web/common/apis/sync.api";
 import * as eventEmitterUtil from "@web/common/utils/dom/event-emitter.util";
@@ -265,7 +265,7 @@ describe("NowCmdPalette", () => {
     });
 
     it("shows a disabled repairing action while a repair is active", () => {
-      markRepairRequested();
+      setRepairingSyncIndicatorOverride();
 
       render(<NowCmdPalette />, {
         state: {

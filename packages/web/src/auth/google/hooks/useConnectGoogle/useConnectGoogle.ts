@@ -3,9 +3,10 @@ import { useCallback, useSyncExternalStore } from "react";
 import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { type GoogleConnectionState } from "@core/types/user.types";
 import {
-  clearRepairRequested,
-  getIsRepairRequested,
-  markRepairRequested,
+  clearGoogleSyncIndicatorOverride,
+  getGoogleSyncIndicatorOverride,
+  setRepairingSyncIndicatorOverride,
+  setSyncingSyncIndicatorOverride,
   subscribeToGoogleSyncUIState,
 } from "@web/auth/google/google-sync-ui.state";
 import { syncPendingLocalEvents } from "@web/auth/google/google.auth.util";
@@ -46,10 +47,10 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
   const userMetadataStatus = useAppSelector(
     selectUserMetadataStatus as (state: RootState) => UserMetadataStatus,
   );
-  const isRepairRequested = useSyncExternalStore(
+  const syncIndicatorOverride = useSyncExternalStore(
     subscribeToGoogleSyncUIState,
-    getIsRepairRequested,
-    getIsRepairRequested,
+    getGoogleSyncIndicatorOverride,
+    getGoogleSyncIndicatorOverride,
   );
   const { login } = useGoogleAuth({
     onSuccess: async (data) => {
@@ -75,6 +76,8 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
 
         throw error;
       }
+
+      setSyncingSyncIndicatorOverride();
       await refreshUserMetadata();
       dispatch(triggerFetch());
     },
@@ -89,12 +92,12 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
   const onRepairGoogle = useCallback(() => {
     const startRepair = async () => {
       dispatch(settingsSlice.actions.closeCmdPalette());
-      markRepairRequested();
+      setRepairingSyncIndicatorOverride();
 
       try {
         await SyncApi.importGCal({ force: true });
       } catch (error) {
-        clearRepairRequested();
+        clearGoogleSyncIndicatorOverride();
         const isGoogleRevoked =
           getApiErrorCode(error as AxiosError) === GOOGLE_REVOKED;
 
@@ -117,11 +120,14 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
   const isCheckingStatus =
     hasUserEverAuthenticated() && userMetadataStatus !== "loaded";
 
-  const state: GoogleUiState = isRepairRequested
-    ? "repairing"
-    : isCheckingStatus
-      ? "checking"
-      : connectionState;
+  const state: GoogleUiState =
+    syncIndicatorOverride === "repairing"
+      ? "repairing"
+      : syncIndicatorOverride === "syncing"
+        ? "IMPORTING"
+        : isCheckingStatus
+          ? "checking"
+          : connectionState;
 
   return {
     ...getGoogleConnectionConfig(state, onOpenGoogleAuth, onRepairGoogle),

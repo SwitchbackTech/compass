@@ -6,17 +6,17 @@ import { render, waitFor } from "@testing-library/react";
 import {
   GOOGLE_REVOKED,
   IMPORT_GCAL_END,
+  IMPORT_GCAL_START,
   USER_METADATA,
 } from "@core/constants/sse.constants";
 import { type ImportGCalEndPayload } from "@core/types/sse.types";
 import { type UserMetadata } from "@core/types/user.types";
 import {
-  getIsRepairRequested,
-  markRepairRequested,
+  getGoogleSyncIndicatorOverride,
   resetGoogleSyncUIStateForTests,
+  setRepairingSyncIndicatorOverride,
 } from "@web/auth/google/google-sync-ui.state";
 import { handleGoogleRevoked } from "@web/auth/google/google.auth.util";
-import { SyncApi } from "@web/common/apis/sync.api";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { importLatestSlice } from "@web/ducks/events/slices/sync.slice";
@@ -27,11 +27,6 @@ jest.mock("@web/auth/google/google.auth.util", () => ({
 }));
 jest.mock("@web/auth/user/util/user-metadata.util", () => ({
   refreshUserMetadata: jest.fn().mockResolvedValue(undefined),
-}));
-jest.mock("@web/common/apis/sync.api", () => ({
-  SyncApi: {
-    importGCal: jest.fn().mockResolvedValue(undefined),
-  },
 }));
 jest.mock("@web/common/utils/toast/error-toast.util", () => ({
   showErrorToast: jest.fn(),
@@ -55,7 +50,6 @@ const mockHandleGoogleRevoked = handleGoogleRevoked as jest.MockedFunction<
 const mockShowErrorToast = showErrorToast as jest.MockedFunction<
   typeof showErrorToast
 >;
-const mockSyncApi = SyncApi as jest.Mocked<typeof SyncApi>;
 
 const HookHost = () => {
   useGcalSSE();
@@ -66,6 +60,10 @@ const getSseEmitter = () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   return (require("../client/sse.client") as { sseEmitter: EventEmitter2 })
     .sseEmitter;
+};
+
+const fireImportStart = () => {
+  getSseEmitter().emit(IMPORT_GCAL_START, new MessageEvent(IMPORT_GCAL_START));
 };
 
 const fireImportEnd = (payload: ImportGCalEndPayload) => {
@@ -96,10 +94,9 @@ describe("useGcalSSE", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     resetGoogleSyncUIStateForTests();
-    mockSyncApi.importGCal.mockResolvedValue(undefined);
   });
 
-  it("triggers auto-import once per RESTART period", async () => {
+  it("does not trigger a client-side import when USER_METADATA reports RESTART", async () => {
     const store = createStore();
 
     render(
@@ -113,22 +110,11 @@ describe("useGcalSSE", () => {
         google: { connectionState: "ATTENTION" },
         sync: { importGCal: "RESTART" },
       });
-      fireUserMetadata({
-        google: { connectionState: "ATTENTION" },
-        sync: { importGCal: "RESTART" },
-      });
-      fireUserMetadata({
-        google: { connectionState: "HEALTHY" },
-        sync: { importGCal: "COMPLETED" },
-      });
-      fireUserMetadata({
-        google: { connectionState: "ATTENTION" },
-        sync: { importGCal: "RESTART" },
-      });
     });
 
-    await waitFor(() => {
-      expect(mockSyncApi.importGCal).toHaveBeenCalledTimes(2);
+    expect(store.getState().userMetadata.current).toEqual({
+      google: { connectionState: "ATTENTION" },
+      sync: { importGCal: "RESTART" },
     });
   });
 
@@ -152,12 +138,29 @@ describe("useGcalSSE", () => {
       google: { connectionState: "IMPORTING" },
       sync: { importGCal: "IMPORTING" },
     });
-    expect(mockSyncApi.importGCal).not.toHaveBeenCalled();
   });
 
-  it("clears the repair flag and triggers refetch after REPAIR completion", async () => {
+  it("sets the syncing override when IMPORT_GCAL_START arrives", async () => {
     const store = createStore();
-    markRepairRequested();
+
+    render(
+      <Provider store={store}>
+        <HookHost />
+      </Provider>,
+    );
+
+    act(() => {
+      fireImportStart();
+    });
+
+    await waitFor(() => {
+      expect(getGoogleSyncIndicatorOverride()).toBe("syncing");
+    });
+  });
+
+  it("clears the syncing override and triggers refetch after REPAIR completion", async () => {
+    const store = createStore();
+    setRepairingSyncIndicatorOverride();
 
     render(
       <Provider store={store}>
@@ -175,14 +178,14 @@ describe("useGcalSSE", () => {
     });
 
     await waitFor(() => {
-      expect(getIsRepairRequested()).toBe(false);
+      expect(getGoogleSyncIndicatorOverride()).toBe(null);
       expect(store.getState().sync.importLatest.isFetchNeeded).toBe(true);
     });
   });
 
-  it("clears the repair flag and shows the repair toast after REPAIR failure", async () => {
+  it("clears the syncing override and shows the repair toast after REPAIR failure", async () => {
     const store = createStore();
-    markRepairRequested();
+    setRepairingSyncIndicatorOverride();
 
     render(
       <Provider store={store}>
@@ -199,7 +202,7 @@ describe("useGcalSSE", () => {
     });
 
     await waitFor(() => {
-      expect(getIsRepairRequested()).toBe(false);
+      expect(getGoogleSyncIndicatorOverride()).toBe(null);
       expect(mockShowErrorToast).toHaveBeenCalledWith(
         "Google Calendar repair failed",
         expect.anything(),
@@ -207,9 +210,9 @@ describe("useGcalSSE", () => {
     });
   });
 
-  it("clears the repair flag when Google is revoked", async () => {
+  it("clears the syncing override when Google is revoked", async () => {
     const store = createStore();
-    markRepairRequested();
+    setRepairingSyncIndicatorOverride();
 
     render(
       <Provider store={store}>
@@ -222,7 +225,7 @@ describe("useGcalSSE", () => {
     });
 
     await waitFor(() => {
-      expect(getIsRepairRequested()).toBe(false);
+      expect(getGoogleSyncIndicatorOverride()).toBe(null);
       expect(mockHandleGoogleRevoked).toHaveBeenCalledTimes(1);
     });
   });

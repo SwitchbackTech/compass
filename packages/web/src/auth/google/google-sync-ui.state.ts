@@ -1,46 +1,40 @@
 const googleSyncUIListeners = new Set<() => void>();
 
-let hasTriggeredAutoImportForRestart = false;
-let isRepairRequested = false;
+export type GoogleSyncIndicatorOverride = null | "repairing" | "syncing";
+
+let googleSyncIndicatorOverride: GoogleSyncIndicatorOverride = null;
 
 const emitGoogleSyncUIChange = () => {
   googleSyncUIListeners.forEach((listener) => listener());
 };
 
-export const clearRepairRequested = () => {
-  if (!isRepairRequested) {
+const setGoogleSyncIndicatorOverride = (
+  nextOverride: GoogleSyncIndicatorOverride,
+) => {
+  if (googleSyncIndicatorOverride === nextOverride) {
     return;
   }
 
-  isRepairRequested = false;
+  googleSyncIndicatorOverride = nextOverride;
   emitGoogleSyncUIChange();
 };
 
-export const getIsRepairRequested = () => isRepairRequested;
-
-export const hasAutoImportBeenTriggeredForRestart = () =>
-  hasTriggeredAutoImportForRestart;
-
-export const markAutoImportTriggeredForRestart = () => {
-  hasTriggeredAutoImportForRestart = true;
+export const clearGoogleSyncIndicatorOverride = () => {
+  setGoogleSyncIndicatorOverride(null);
 };
 
-export const markRepairRequested = () => {
-  if (isRepairRequested) {
-    return;
-  }
+export const getGoogleSyncIndicatorOverride = () => googleSyncIndicatorOverride;
 
-  isRepairRequested = true;
-  emitGoogleSyncUIChange();
+export const setRepairingSyncIndicatorOverride = () => {
+  setGoogleSyncIndicatorOverride("repairing");
 };
 
-export const resetAutoImportTriggeredForRestart = () => {
-  hasTriggeredAutoImportForRestart = false;
+export const setSyncingSyncIndicatorOverride = () => {
+  setGoogleSyncIndicatorOverride("syncing");
 };
 
 export const resetGoogleSyncUIStateForTests = () => {
-  hasTriggeredAutoImportForRestart = false;
-  isRepairRequested = false;
+  googleSyncIndicatorOverride = null;
   emitGoogleSyncUIChange();
 };
 

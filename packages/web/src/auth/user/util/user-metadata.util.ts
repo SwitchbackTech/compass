@@ -2,7 +2,6 @@ import { Status } from "@core/errors/status.codes";
 import { UserApi } from "@web/common/apis/user.api";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { store } from "@web/store";
-import { reconcileGoogleCalendarAutoImport } from "./user-metadata.import.util";
 
 let refreshUserMetadataRequest: Promise<void> | null = null;
 
@@ -16,7 +15,6 @@ export const refreshUserMetadata = async (): Promise<void> => {
   refreshUserMetadataRequest = UserApi.getMetadata()
     .then((metadata) => {
       store.dispatch(userMetadataSlice.actions.set(metadata));
-      reconcileGoogleCalendarAutoImport(metadata);
     })
     .catch((error) => {
       const status = (error as { response?: { status?: number } })?.response

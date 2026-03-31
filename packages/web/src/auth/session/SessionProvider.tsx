@@ -27,7 +27,7 @@ import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import * as sse from "@web/sse/provider/SSEProvider";
 import { store } from "@web/store";
-import { clearRepairRequested } from "../google/google-sync-ui.state";
+import { clearGoogleSyncIndicatorOverride } from "../google/google-sync-ui.state";
 import { refreshUserMetadata } from "../user/util/user-metadata.util";
 import { type CompassSession } from "./session.types";
 
@@ -70,7 +70,7 @@ const handleSessionExists = () => {
 const handleSessionMissing = () => {
   store.dispatch(authSlice.actions.resetAuth());
   store.dispatch(userMetadataSlice.actions.clear(undefined));
-  clearRepairRequested();
+  clearGoogleSyncIndicatorOverride();
 };
 
 async function checkIfSessionExists(): Promise<boolean> {

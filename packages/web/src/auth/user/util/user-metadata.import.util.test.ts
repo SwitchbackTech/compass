@@ -1,7 +1,4 @@
-import {
-  isGoogleCalendarAutoImportNeeded,
-  isGoogleCalendarImportActive,
-} from "./user-metadata.import.util";
+import { isGoogleCalendarImportActive } from "./user-metadata.import.util";
 
 describe("isGoogleCalendarImportActive", () => {
   it("returns true when import is actively running", () => {
@@ -62,72 +59,6 @@ describe("isGoogleCalendarImportActive", () => {
       isGoogleCalendarImportActive({
         google: { connectionState: "RECONNECT_REQUIRED" },
         sync: { importGCal: "IMPORTING" },
-      }),
-    ).toBe(false);
-  });
-});
-
-describe("isGoogleCalendarAutoImportNeeded", () => {
-  it("returns true when RESTART and connected — backend wants a new import", () => {
-    expect(
-      isGoogleCalendarAutoImportNeeded({
-        google: { connectionState: "HEALTHY" },
-        sync: { importGCal: "RESTART" },
-      }),
-    ).toBe(true);
-  });
-
-  it("returns false when IMPORTING — import already running, no need to trigger again", () => {
-    // This is the key guard against the import loop: an in-progress import
-    // must not re-trigger the saga.
-    expect(
-      isGoogleCalendarAutoImportNeeded({
-        google: { connectionState: "IMPORTING" },
-        sync: { importGCal: "IMPORTING" },
-      }),
-    ).toBe(false);
-  });
-
-  it("returns false when COMPLETED", () => {
-    expect(
-      isGoogleCalendarAutoImportNeeded({
-        google: { connectionState: "HEALTHY" },
-        sync: { importGCal: "COMPLETED" },
-      }),
-    ).toBe(false);
-  });
-
-  it("returns false when ERRORED", () => {
-    expect(
-      isGoogleCalendarAutoImportNeeded({
-        google: { connectionState: "HEALTHY" },
-        sync: { importGCal: "ERRORED" },
-      }),
-    ).toBe(false);
-  });
-
-  it("returns false when RESTART but Google is not connected", () => {
-    expect(
-      isGoogleCalendarAutoImportNeeded({
-        google: { connectionState: "NOT_CONNECTED" },
-        sync: { importGCal: "RESTART" },
-      }),
-    ).toBe(false);
-  });
-
-  it("returns false when RESTART but reconnect is required", () => {
-    expect(
-      isGoogleCalendarAutoImportNeeded({
-        google: { connectionState: "RECONNECT_REQUIRED" },
-        sync: { importGCal: "RESTART" },
-      }),
-    ).toBe(false);
-  });
-
-  it("returns false when sync status is absent", () => {
-    expect(
-      isGoogleCalendarAutoImportNeeded({
-        google: { connectionState: "HEALTHY" },
       }),
     ).toBe(false);
   });
