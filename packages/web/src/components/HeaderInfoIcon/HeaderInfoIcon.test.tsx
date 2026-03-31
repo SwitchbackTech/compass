@@ -89,7 +89,10 @@ describe("HeaderInfoIcon", () => {
       authenticated: false,
       setAuthenticated: jest.fn(),
     });
-    mockUseAppSelector.mockReturnValue(false);
+    mockUseAppSelector.mockReturnValue({
+      kind: "idle",
+      tooltip: null,
+    });
     mockUseConnectGoogle.mockReturnValue({
       commandAction: {
         icon: "CloudArrowUpIcon",
@@ -161,18 +164,43 @@ describe("HeaderInfoIcon", () => {
   });
 
   it("renders the background import spinner instead of the info icon while importing", () => {
-    mockUseAppSelector.mockReturnValue(true);
+    mockUseAppSelector.mockReturnValue({
+      kind: "syncing",
+      tooltip: "Syncing Google Calendar in the background.",
+    });
 
     render(<HeaderInfoIcon />);
 
     expect(
       screen.getByRole("status", {
-        name: /importing your calendar events in the background/i,
+        name: /syncing google calendar in the background/i,
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", {
-        name: /importing your calendar events in the background/i,
+        name: /syncing google calendar in the background/i,
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("spinner-gap")).toBeInTheDocument();
+    expect(screen.queryByLabelText("header-info-icon")).not.toBeInTheDocument();
+  });
+
+  it("renders the repairing spinner instead of the warning icon while repairing", () => {
+    mockUseAppSelector.mockReturnValue({
+      kind: "repairing",
+      tooltip: "Repairing Google Calendar in the background.",
+    });
+
+    render(<HeaderInfoIcon />);
+
+    expect(
+      screen.getByRole("status", {
+        name: /repairing google calendar in the background/i,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: /repairing google calendar in the background/i,
       }),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("spinner-gap")).toBeInTheDocument();

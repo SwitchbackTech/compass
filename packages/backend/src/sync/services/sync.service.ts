@@ -530,6 +530,7 @@ class SyncService {
     const { default: userService } =
       await import("@backend/user/services/user.service");
     const isForce = options.force === true;
+    const operation = isForce ? "REPAIR" : "INCREMENTAL";
 
     try {
       const userMeta = await userService.fetchUserMetadata(userId);
@@ -539,7 +540,7 @@ class SyncService {
 
       if (!proceed) {
         sseServer.handleImportGCalEnd(userId, {
-          operation: "REPAIR",
+          operation,
           status: "IGNORED",
           message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
         });
@@ -572,7 +573,7 @@ class SyncService {
       });
 
       sseServer.handleImportGCalEnd(userId, {
-        operation: "REPAIR",
+        operation,
         status: "COMPLETED",
         ...importResults,
       });
@@ -605,7 +606,7 @@ class SyncService {
       logger.error(`Re-sync failed for user: ${userId}`, err);
 
       sseServer.handleImportGCalEnd(userId, {
-        operation: "REPAIR",
+        operation,
         status: "ERRORED",
         message: getGoogleRepairErrorMessage(err),
       });

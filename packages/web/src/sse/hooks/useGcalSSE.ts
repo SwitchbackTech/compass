@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from "react";
-import { useDispatch } from "react-redux";
+import { useStore } from "react-redux";
 import {
   GOOGLE_REVOKED,
   IMPORT_GCAL_END,
@@ -9,10 +9,7 @@ import {
 import { type ImportGCalEndPayload } from "@core/types/sse.types";
 import { type UserMetadata } from "@core/types/user.types";
 import { handleGoogleRevoked } from "@web/auth/google/google.auth.util";
-import {
-  isGoogleCalendarAutoImportNeeded,
-  isGoogleCalendarImportActive,
-} from "@web/auth/user/util/user-metadata.import.util";
+import { reconcileGoogleCalendarImportState } from "@web/auth/user/util/user-metadata.import.util";
 import { refreshUserMetadata } from "@web/auth/user/util/user-metadata.util";
 import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
@@ -22,10 +19,13 @@ import {
   importGCalSlice,
   triggerFetch,
 } from "@web/ducks/events/slices/sync.slice";
+import { type RootState } from "@web/store";
+import { useAppDispatch } from "@web/store/store.hooks";
 import { sseEmitter } from "../client/sse.client";
 
 export const useGcalSSE = () => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
+  const store = useStore<RootState>();
 
   const onImportEnd = useCallback(
     (payload?: ImportGCalEndPayload) => {
@@ -83,14 +83,13 @@ export const useGcalSSE = () => {
   const onMetadataFetch = useCallback(
     (metadata: UserMetadata) => {
       dispatch(userMetadataSlice.actions.set(metadata));
-
-      if (isGoogleCalendarImportActive(metadata)) {
-        dispatch(importGCalSlice.actions.request());
-      } else if (isGoogleCalendarAutoImportNeeded(metadata)) {
-        dispatch(importGCalSlice.actions.triggerAutoImport());
-      }
+      reconcileGoogleCalendarImportState({
+        dispatch,
+        getState: () => store.getState(),
+        metadata,
+      });
     },
-    [dispatch],
+    [dispatch, store],
   );
 
   useEffect(() => {

@@ -7,7 +7,6 @@ import { useGoogleAuth } from "@web/auth/google/hooks/useGoogleAuth/useGoogleAut
 import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
 import { refreshUserMetadata } from "@web/auth/user/util/user-metadata.util";
 import { AuthApi } from "@web/common/apis/auth.api";
-import { SyncApi } from "@web/common/apis/sync.api";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import {
   selectGoogleConnectionState,
@@ -31,7 +30,6 @@ jest.mock("@web/auth/google/google.auth.util", () => ({
 jest.mock("@web/auth/user/util/user-metadata.util");
 jest.mock("@web/auth/state/auth.state.util");
 jest.mock("@web/common/apis/auth.api");
-jest.mock("@web/common/apis/sync.api");
 jest.mock("@web/common/utils/toast/error-toast.util");
 jest.mock("@web/store/store.hooks");
 jest.mock("react-toastify", () => ({
@@ -62,7 +60,6 @@ const mockAuthApi = AuthApi as jest.Mocked<typeof AuthApi>;
 const mockRefreshUserMetadata = refreshUserMetadata as jest.MockedFunction<
   typeof refreshUserMetadata
 >;
-const mockSyncApi = SyncApi as jest.Mocked<typeof SyncApi>;
 const mockToastError = toast.error as jest.MockedFunction<typeof toast.error>;
 
 const getUseGoogleAuthArg = (): NonNullable<
@@ -100,7 +97,6 @@ describe("useConnectGoogle", () => {
     mockAuthApi.connectGoogle.mockResolvedValue({ status: "OK" });
     mockHasUserEverAuthenticated.mockReturnValue(true);
     mockRefreshUserMetadata.mockResolvedValue();
-    mockSyncApi.importGCal.mockResolvedValue(undefined as never);
     mockSyncPendingLocalEvents.mockResolvedValue(true);
     mockUseAppSelector.mockImplementation((selector) => {
       if (selector === selectGoogleConnectionState) {
@@ -297,12 +293,14 @@ describe("useConnectGoogle", () => {
 
     result.current.sidebarStatus.dialog?.onRepair();
 
-    expect(mockSyncApi.importGCal).toHaveBeenCalledWith({ force: true });
     expect(mockDispatch).toHaveBeenCalledWith(
       importGCalSlice.actions.clearImportResults(undefined),
     );
     expect(mockDispatch).toHaveBeenCalledWith(
       importGCalSlice.actions.startRepair(),
+    );
+    expect(mockDispatch).toHaveBeenCalledWith(
+      importGCalSlice.actions.triggerRepairImport(),
     );
     expect(mockDispatch).toHaveBeenCalledWith(
       settingsSlice.actions.closeCmdPalette(),
@@ -312,7 +310,9 @@ describe("useConnectGoogle", () => {
 
     result.current.commandAction.onSelect?.();
 
-    expect(mockSyncApi.importGCal).toHaveBeenCalledWith({ force: true });
+    expect(mockDispatch).toHaveBeenCalledWith(
+      importGCalSlice.actions.triggerRepairImport(),
+    );
     expect(mockDispatch).toHaveBeenCalledWith(
       settingsSlice.actions.closeCmdPalette(),
     );
@@ -350,7 +350,7 @@ describe("useConnectGoogle", () => {
     expect(result.current.sidebarStatus.dialog).toBeDefined();
   });
 
-  it("shows a toast and clears repair state when the repair request fails to start", async () => {
+  it("does not try to start the repair request directly from the hook", () => {
     mockUseAppSelector.mockImplementation((selector) => {
       if (selector === selectGoogleConnectionState) {
         return "ATTENTION";
@@ -366,25 +366,19 @@ describe("useConnectGoogle", () => {
 
       return undefined;
     });
-    mockSyncApi.importGCal.mockRejectedValueOnce(new Error("boom"));
 
     const { result } = renderHook(() => useConnectGoogle());
 
     result.current.commandAction.onSelect?.();
 
-    await waitFor(() =>
-      expect(mockDispatch).toHaveBeenCalledWith(
-        importGCalSlice.actions.setImportError(
-          "Google Calendar repair failed. Please try again.",
-        ),
-      ),
+    expect(mockDispatch).toHaveBeenCalledWith(
+      importGCalSlice.actions.clearImportResults(undefined),
     );
     expect(mockDispatch).toHaveBeenCalledWith(
-      importGCalSlice.actions.stopRepair(),
+      importGCalSlice.actions.startRepair(),
     );
-    expect(mockShowErrorToast).toHaveBeenCalledWith(
-      "Google Calendar repair failed. Please try again.",
-      { toastId: "google-repair-failed" },
+    expect(mockDispatch).toHaveBeenCalledWith(
+      importGCalSlice.actions.triggerRepairImport(),
     );
   });
 

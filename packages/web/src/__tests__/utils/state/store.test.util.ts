@@ -123,6 +123,7 @@ export const createInitialState = (
     },
     sync: {
       importGCal: {
+        isAutoImportPending: false,
         isRepairing: false,
         importResults: null,
         pendingLocalEventsSynced: null,

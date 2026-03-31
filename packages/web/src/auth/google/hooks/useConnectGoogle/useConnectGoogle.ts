@@ -1,18 +1,12 @@
-import { type AxiosError, isAxiosError } from "axios";
+import { isAxiosError } from "axios";
 import { useCallback } from "react";
-import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { type GoogleConnectionState } from "@core/types/user.types";
 import { syncPendingLocalEvents } from "@web/auth/google/google.auth.util";
 import { useGoogleAuth } from "@web/auth/google/hooks/useGoogleAuth/useGoogleAuth";
 import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
 import { refreshUserMetadata } from "@web/auth/user/util/user-metadata.util";
 import { AuthApi } from "@web/common/apis/auth.api";
-import {
-  getApiErrorCode,
-  parseGoogleConnectError,
-} from "@web/common/apis/compass.api.util";
-import { SyncApi } from "@web/common/apis/sync.api";
-import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
+import { parseGoogleConnectError } from "@web/common/apis/compass.api.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import {
   selectGoogleConnectionState,
@@ -83,32 +77,9 @@ export const useConnectGoogle = () => {
 
   const onRepairGoogle = useCallback(() => {
     dispatch(settingsSlice.actions.closeCmdPalette());
-    const run = async () => {
-      dispatch(importGCalSlice.actions.clearImportResults(undefined));
-      dispatch(importGCalSlice.actions.startRepair());
-      dispatch(importGCalSlice.actions.request());
-      try {
-        await SyncApi.importGCal({ force: true });
-      } catch (error) {
-        dispatch(importGCalSlice.actions.stopRepair());
-
-        const isGoogleRevoked =
-          getApiErrorCode(error as AxiosError) === GOOGLE_REVOKED;
-        if (isGoogleRevoked) {
-          return;
-        }
-
-        dispatch(
-          importGCalSlice.actions.setImportError(
-            "Google Calendar repair failed. Please try again.",
-          ),
-        );
-        showErrorToast("Google Calendar repair failed. Please try again.", {
-          toastId: GOOGLE_REPAIR_FAILED_TOAST_ID,
-        });
-      }
-    };
-    void run();
+    dispatch(importGCalSlice.actions.clearImportResults(undefined));
+    dispatch(importGCalSlice.actions.startRepair());
+    dispatch(importGCalSlice.actions.triggerRepairImport());
   }, [dispatch]);
 
   // "checking" is a UI-only state until we have loaded metadata from the server.

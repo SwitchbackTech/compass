@@ -14,27 +14,17 @@ const ICON_COLOR_MAP: Record<IconColor, string> = {
 
 const ANONYMOUS_PROMPT_ICON_CLASSNAME =
   "origin-center transition-all duration-200 ease-out motion-safe:animate-sync-dot-pulse motion-safe:group-hover:animate-none";
-const BACKGROUND_IMPORT_TOOLTIP =
-  "Importing your calendar events in the background";
 const DOT_BUTTON_CLASSNAME = "inline-flex h-6 w-6 items-center justify-center";
 const ANONYMOUS_PROMPT_WRAPPER_CLASSNAME = `${DOT_BUTTON_CLASSNAME} group rounded-full transition-colors duration-200 ease-out hover:bg-white/20 hover:ring-1 hover:ring-white/20`;
 
 export const HeaderInfoIcon = () => {
-  const {
-    isAnonymousSignUpPrompt,
-    isBackgroundImporting,
-    sidebarStatus,
-    isRepairing,
-  } = useHeaderInfo();
+  const { isAnonymousSignUpPrompt, sidebarStatus, isRepairing, syncIndicator } =
+    useHeaderInfo();
 
-  if (isBackgroundImporting) {
+  if (syncIndicator.kind !== "idle") {
     return (
-      <div
-        role="status"
-        aria-live="polite"
-        aria-label={BACKGROUND_IMPORT_TOOLTIP}
-      >
-        <TooltipWrapper description={BACKGROUND_IMPORT_TOOLTIP}>
+      <div role="status" aria-live="polite" aria-label={syncIndicator.tooltip}>
+        <TooltipWrapper description={syncIndicator.tooltip}>
           <span className={DOT_BUTTON_CLASSNAME}>
             <SpinnerIcon aria-hidden="true" />
           </span>

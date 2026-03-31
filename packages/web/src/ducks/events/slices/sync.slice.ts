@@ -1,4 +1,5 @@
 import { type PayloadAction, createSlice } from "@reduxjs/toolkit";
+import { type UserMetadata } from "@core/types/user.types";
 import { type AsyncState, createAsyncSlice } from "@web/common/store/helpers";
 import { type Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 
@@ -23,10 +24,20 @@ export interface ImportResults {
 }
 
 type ImportGCalExtraState = {
+  isAutoImportPending: boolean;
   isRepairing: boolean;
   importResults: ImportResults | null;
   pendingLocalEventsSynced: number | null;
   importError: string | null;
+};
+
+const isGoogleConnected = (metadata: UserMetadata) => {
+  const connectionState = metadata.google?.connectionState;
+
+  return (
+    connectionState !== "NOT_CONNECTED" &&
+    connectionState !== "RECONNECT_REQUIRED"
+  );
 };
 
 const importGCalReducers = {
@@ -75,10 +86,36 @@ const importGCalReducers = {
     state.importError = null;
   },
   triggerAutoImport: (
-    _state: AsyncState<undefined, undefined> & ImportGCalExtraState,
+    state: AsyncState<undefined, undefined> & ImportGCalExtraState,
   ) => {
-    // No-op: signals the saga to start a non-forced import.
-    // Does not set isProcessing — spinner appears when IMPORT_GCAL_START SSE arrives.
+    state.isAutoImportPending = true;
+  },
+  triggerRepairImport: (
+    state: AsyncState<undefined, undefined> & ImportGCalExtraState,
+  ) => {
+    void state;
+    // No-op: signals the saga to start a forced repair import.
+  },
+  reconcileImportStateFromMetadata: (
+    state: AsyncState<undefined, undefined> & ImportGCalExtraState,
+    action: PayloadAction<UserMetadata>,
+  ) => {
+    const isConnected = isGoogleConnected(action.payload);
+    const importStatus = action.payload.sync?.importGCal;
+
+    if (importStatus === "IMPORTING" && isConnected) {
+      state.isProcessing = true;
+      state.isAutoImportPending = false;
+      return;
+    }
+
+    if (importStatus === "RESTART" && isConnected) {
+      state.isProcessing = state.isProcessing === true;
+      return;
+    }
+
+    state.isProcessing = false;
+    state.isAutoImportPending = false;
   },
 };
 
@@ -91,6 +128,7 @@ export const importGCalSlice = createAsyncSlice<
 >({
   name: "importGCal",
   initialState: {
+    isAutoImportPending: false,
     isRepairing: false,
     importResults: null,
     pendingLocalEventsSynced: null,

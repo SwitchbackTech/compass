@@ -1,12 +1,8 @@
 import { Status } from "@core/errors/status.codes";
 import { UserApi } from "@web/common/apis/user.api";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
-import { importGCalSlice } from "@web/ducks/events/slices/sync.slice";
 import { store } from "@web/store";
-import {
-  isGoogleCalendarAutoImportNeeded,
-  isGoogleCalendarImportActive,
-} from "./user-metadata.import.util";
+import { reconcileGoogleCalendarImportState } from "./user-metadata.import.util";
 
 let refreshUserMetadataRequest: Promise<void> | null = null;
 
@@ -20,11 +16,11 @@ export const refreshUserMetadata = async (): Promise<void> => {
   refreshUserMetadataRequest = UserApi.getMetadata()
     .then((metadata) => {
       store.dispatch(userMetadataSlice.actions.set(metadata));
-      if (isGoogleCalendarImportActive(metadata)) {
-        store.dispatch(importGCalSlice.actions.request());
-      } else if (isGoogleCalendarAutoImportNeeded(metadata)) {
-        store.dispatch(importGCalSlice.actions.triggerAutoImport());
-      }
+      reconcileGoogleCalendarImportState({
+        dispatch: store.dispatch,
+        getState: () => store.getState(),
+        metadata,
+      });
     })
     .catch((error) => {
       const status = (error as { response?: { status?: number } })?.response

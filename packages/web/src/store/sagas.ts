@@ -14,7 +14,10 @@ import {
   getSomedayEvents,
   reorderSomedayEvents,
 } from "@web/ducks/events/sagas/someday.sagas";
-import { importGCal } from "@web/ducks/events/sagas/sync.sagas";
+import {
+  importAutoGCal,
+  importRepairGCal,
+} from "@web/ducks/events/sagas/sync.sagas";
 import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
 import {
   createEventSlice,
@@ -57,5 +60,9 @@ function* somedayEventSagas() {
 }
 
 function* syncSagas() {
-  yield takeLatest(importGCalSlice.actions.triggerAutoImport, importGCal);
+  yield takeLatest(importGCalSlice.actions.triggerAutoImport, importAutoGCal);
+  yield takeLatest(
+    importGCalSlice.actions.triggerRepairImport,
+    importRepairGCal,
+  );
 }

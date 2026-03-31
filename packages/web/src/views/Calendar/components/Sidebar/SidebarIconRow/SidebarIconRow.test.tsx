@@ -46,7 +46,7 @@ describe("SidebarIconRow", () => {
 
     expect(
       screen.queryByRole("button", {
-        name: "Importing your calendar events in the background",
+        name: "Syncing Google Calendar in the background.",
       }),
     ).not.toBeInTheDocument();
   });

@@ -447,6 +447,7 @@ describe("SyncService", () => {
     it("restarts the import workflow and completes successfully", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
+      const importEndSpy = jest.spyOn(sseServer, "handleImportGCalEnd");
 
       await userMetadataService.updateUserMetadata({
         userId,
@@ -462,11 +463,19 @@ describe("SyncService", () => {
         calendarService.getByUser.bind(calendarService);
       const calendars = await listCalendarsForUser(userId);
       expect(calendars.length).toBeGreaterThan(0);
+      expect(importEndSpy).toHaveBeenCalledWith(
+        userId,
+        expect.objectContaining({
+          operation: "INCREMENTAL",
+          status: "COMPLETED",
+        }),
+      );
     });
 
     it("skips restart when import is completed and not forced", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
+      const importEndSpy = jest.spyOn(sseServer, "handleImportGCalEnd");
 
       await userMetadataService.updateUserMetadata({
         userId,
@@ -483,6 +492,11 @@ describe("SyncService", () => {
 
       const metadata = await userMetadataService.fetchUserMetadata(userId);
       expect(metadata.sync?.importGCal).toBe("COMPLETED");
+      expect(importEndSpy).toHaveBeenCalledWith(userId, {
+        operation: "INCREMENTAL",
+        status: "IGNORED",
+        message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
+      });
 
       stopSpy.mockRestore();
       startSpy.mockRestore();

@@ -89,6 +89,7 @@ function fireUserMetadata(metadata: UserMetadata) {
  */
 describe("GCal Authentication Flow", () => {
   const createTestStore = (preloadedState?: {
+    isAutoImportPending?: boolean;
     isAuthenticating?: boolean;
     isProcessingGcal?: boolean;
   }): TestStore => {
@@ -103,6 +104,7 @@ describe("GCal Authentication Flow", () => {
       preloadedState: {
         sync: {
           importGCal: {
+            isAutoImportPending: preloadedState?.isAutoImportPending ?? false,
             isRepairing: false,
             isProcessing: preloadedState?.isProcessingGcal ?? false,
             importResults: null,
@@ -417,11 +419,8 @@ describe("GCal Authentication Flow", () => {
         </Provider>,
       );
 
-    it("dispatches request action when USER_METADATA reports IMPORTING", () => {
-      // Note: createAsyncSlice's request() is a no-op in test mode, so we verify
-      // the action was dispatched rather than checking isProcessing state directly.
+    it("reconciles isProcessing when USER_METADATA reports IMPORTING", () => {
       const store = createTestStore();
-      const dispatchSpy = jest.spyOn(store, "dispatch");
       renderProvider(store);
 
       act(() => {
@@ -431,17 +430,13 @@ describe("GCal Authentication Flow", () => {
         });
       });
 
-      expect(dispatchSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ type: "async/importGCal/request" }),
-      );
+      expect(store.getState().sync.importGCal.isProcessing).toBe(true);
+      expect(store.getState().sync.importGCal.isAutoImportPending).toBe(false);
     });
 
-    it("does not set isProcessing when USER_METADATA reports RESTART", () => {
-      // RESTART triggers the auto-import saga (triggerAutoImport action) but
-      // must NOT show the spinner — the spinner only appears when the backend
-      // confirms the import has actually started via IMPORT_GCAL_START.
-      // Showing the spinner for RESTART caused the original flicker.
+    it("triggers auto-import once and keeps the spinner off for RESTART", () => {
       const store = createTestStore();
+      const dispatchSpy = jest.spyOn(store, "dispatch");
       renderProvider(store);
 
       act(() => {
@@ -451,7 +446,24 @@ describe("GCal Authentication Flow", () => {
         });
       });
 
-      expect(store.getState().sync.importGCal.isProcessing).toBeFalsy();
+      expect(store.getState().sync.importGCal.isProcessing).toBe(false);
+      expect(store.getState().sync.importGCal.isAutoImportPending).toBe(true);
+      expect(dispatchSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "async/importGCal/triggerAutoImport" }),
+      );
+
+      dispatchSpy.mockClear();
+
+      act(() => {
+        fireUserMetadata({
+          google: { connectionState: "ATTENTION" },
+          sync: { importGCal: "RESTART" },
+        });
+      });
+
+      expect(dispatchSpy).not.toHaveBeenCalledWith(
+        expect.objectContaining({ type: "async/importGCal/triggerAutoImport" }),
+      );
     });
 
     it("does not set isProcessing when USER_METADATA reports NOT_CONNECTED", () => {
@@ -468,8 +480,8 @@ describe("GCal Authentication Flow", () => {
       expect(store.getState().sync.importGCal.isProcessing).toBeFalsy();
     });
 
-    it("does not set isProcessing when USER_METADATA reports COMPLETED", () => {
-      const store = createTestStore();
+    it("clears stale isProcessing when USER_METADATA reports COMPLETED", () => {
+      const store = createTestStore({ isProcessingGcal: true });
       renderProvider(store);
 
       act(() => {
@@ -480,6 +492,20 @@ describe("GCal Authentication Flow", () => {
       });
 
       expect(store.getState().sync.importGCal.isProcessing).toBeFalsy();
+    });
+
+    it("does not clear an observed import when stale RESTART metadata arrives", () => {
+      const store = createTestStore({ isProcessingGcal: true });
+      renderProvider(store);
+
+      act(() => {
+        fireUserMetadata({
+          google: { connectionState: "ATTENTION" },
+          sync: { importGCal: "RESTART" },
+        });
+      });
+
+      expect(store.getState().sync.importGCal.isProcessing).toBe(true);
     });
   });
 });

@@ -6,29 +6,27 @@ import {
   shouldShowAnonymousCalendarChangeSignUpPrompt,
   subscribeToAuthState,
 } from "@web/auth/state/auth.state.util";
-import { useBufferedVisibility } from "@web/common/hooks/useBufferedVisibility";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
-import { selectImportGCalState } from "@web/ducks/events/selectors/sync.selector";
-import type { RootState } from "@web/store";
+import {
+  type GoogleSyncIndicator,
+  selectGoogleSyncIndicator,
+} from "@web/ducks/events/selectors/sync.selector";
 import { useAppSelector } from "@web/store/store.hooks";
 
 const ANONYMOUS_SIGN_UP_TOOLTIP = "Sign up to save your changes.";
 
 interface HeaderInfo {
-  isBackgroundImporting: boolean;
   isAnonymousSignUpPrompt: boolean;
   isRepairing: boolean;
   sidebarStatus: GoogleUiConfig["sidebarStatus"];
+  syncIndicator: GoogleSyncIndicator;
 }
 
 export const useHeaderInfo = (): HeaderInfo => {
   const { authenticated } = useSession();
   const { openModal } = useAuthModal();
   const googleStatus = useConnectGoogle();
-  const rawIsBackgroundImporting = useAppSelector(
-    (state: RootState) => selectImportGCalState(state).isProcessing === true,
-  );
-  const isBackgroundImporting = useBufferedVisibility(rawIsBackgroundImporting);
+  const syncIndicator = useAppSelector(selectGoogleSyncIndicator);
   const shouldPromptSignUp = useSyncExternalStore(
     subscribeToAuthState,
     shouldShowAnonymousCalendarChangeSignUpPrompt,
@@ -41,7 +39,6 @@ export const useHeaderInfo = (): HeaderInfo => {
 
   if (!authenticated && shouldPromptSignUp) {
     return {
-      isBackgroundImporting,
       isAnonymousSignUpPrompt: true,
       isRepairing: false,
       sidebarStatus: {
@@ -50,12 +47,13 @@ export const useHeaderInfo = (): HeaderInfo => {
         onSelect: handleOpenSignUp,
         tooltip: ANONYMOUS_SIGN_UP_TOOLTIP,
       },
+      syncIndicator,
     };
   }
 
   return {
-    isBackgroundImporting,
     isAnonymousSignUpPrompt: false,
     ...googleStatus,
+    syncIndicator,
   };
 };
