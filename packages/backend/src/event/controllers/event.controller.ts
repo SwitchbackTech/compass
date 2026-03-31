@@ -94,7 +94,7 @@ class EventController {
       const deleteAllRes = await eventService.deleteAllByUser(userToRemove);
       res.promise(deleteAllRes);
     } catch (e) {
-      res.promise(Promise.reject(e));
+      res.promise(Promise.reject(this.toError(e)));
     }
   };
 
@@ -104,7 +104,7 @@ class EventController {
       const deleteResponse = await eventService.deleteMany(userId, req.body);
       res.promise(deleteResponse);
     } catch (e) {
-      res.promise(Promise.reject(e));
+      res.promise(Promise.reject(this.toError(e)));
     }
   };
 
@@ -115,7 +115,7 @@ class EventController {
       const response = await eventService.readById(userId, eventId);
       res.promise(response);
     } catch (e) {
-      res.promise(Promise.reject(e));
+      res.promise(Promise.reject(this.toError(e)));
     }
   };
 
@@ -125,7 +125,7 @@ class EventController {
       const usersEvents = await eventService.readAll(userId, req.query);
       res.promise(usersEvents);
     } catch (e) {
-      res.promise(Promise.reject(e));
+      res.promise(Promise.reject(this.toError(e)));
     }
   };
 
@@ -136,9 +136,13 @@ class EventController {
       const result = await eventService.reorder(userId, newOrder);
       res.promise(result);
     } catch (e) {
-      res.promise(Promise.reject(e));
+      res.promise(Promise.reject(this.toError(e)));
     }
   };
+
+  private toError(error: unknown): Error {
+    return error instanceof Error ? error : new Error(String(error));
+  }
 
   update = (req: SReqBody<Schema_Event>, res: Res_Promise) => {
     const { body, query, params, session } = req;
