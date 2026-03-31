@@ -32,7 +32,15 @@ class EventController {
     const events = _events.map((e) => ({
       ...e,
       payload: CompassCoreEventSchema.parse({
-        ...e.payload,
+        ...((): Record<string, unknown> => {
+          const payload = { ...e.payload } as Record<string, unknown>;
+
+          if (payload["recurrence"] === null) {
+            delete payload["recurrence"];
+          }
+
+          return payload;
+        })(),
         _id:
           e.payload._id?.replace(`${ID_OPTIMISTIC_PREFIX}-`, "") ??
           new ObjectId().toString(),

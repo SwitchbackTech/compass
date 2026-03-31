@@ -202,7 +202,9 @@ export const CompassCoreEventSchema = CoreEventSchema.extend({
   _id: IDSchema,
   recurrence: CompassEventRecurrence.extend({
     rule: z.union([z.null(), z.array(z.string())]),
-  }).optional(),
+  })
+    .nullable()
+    .optional(),
 });
 
 const BaseCompassEventSchema = z.object({
