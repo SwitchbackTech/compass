@@ -3,7 +3,7 @@ import { Origin } from "@core/constants/core.constants";
 import {
   clearGoogleRevokedState,
   isGoogleRevoked,
-} from "@web/auth/google/google.auth.state";
+} from "@web/auth/google/state/google.auth.state";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
@@ -14,6 +14,7 @@ import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
 import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { closeStream, openStream } from "@web/sse/client/sse.client";
 import { store } from "@web/store";
+import { type GoogleAuthConfig } from "../hooks/googe.auth.types";
 import {
   LOCAL_EVENTS_SYNC_ERROR_MESSAGE,
   authenticate,
@@ -21,7 +22,6 @@ import {
   syncLocalEvents,
   syncPendingLocalEvents,
 } from "./google.auth.util";
-import { type GoogleAuthConfig } from "./hooks/googe.auth.types";
 
 jest.mock("@web/common/apis/auth.api");
 jest.mock("@web/common/utils/sync/local-event-sync.util");

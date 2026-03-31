@@ -1,5 +1,5 @@
 import { Status } from "@core/errors/status.codes";
-import { resetGoogleSyncUIStateForTests } from "@web/auth/google/google-sync-ui.state";
+import { resetGoogleSyncUIStateForTests } from "@web/auth/google/state/google.sync.state";
 import { UserApi } from "@web/common/apis/user.api";
 import { store } from "@web/store";
 import { refreshUserMetadata } from "./user-metadata.util";

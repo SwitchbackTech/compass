@@ -1,6 +1,6 @@
 import { renderHook } from "@testing-library/react";
-import type * as GoogleAuthUtil from "@web/auth/google/google.auth.util";
-import { syncPendingLocalEvents } from "@web/auth/google/google.auth.util";
+import type * as GoogleAuthUtil from "@web/auth/google/util/google.auth.util";
+import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
 import { useSession } from "@web/auth/session/useSession";
 import {
   clearAnonymousCalendarChangeSignUpPrompt,
@@ -10,9 +10,9 @@ import { refreshUserMetadata } from "@web/auth/user/util/user-metadata.util";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { useCompleteAuthentication } from "./useCompleteAuthentication";
 
-jest.mock("@web/auth/google/google.auth.util", () => ({
+jest.mock("@web/auth/google/util/google.auth.util", () => ({
   ...jest.requireActual<typeof GoogleAuthUtil>(
-    "@web/auth/google/google.auth.util",
+    "@web/auth/google/util/google.auth.util",
   ),
   syncPendingLocalEvents: jest.fn(),
 }));

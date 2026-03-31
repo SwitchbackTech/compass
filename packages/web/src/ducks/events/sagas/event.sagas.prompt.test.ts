@@ -23,7 +23,7 @@ jest.mock("@web/common/repositories/event/event.repository.util", () => ({
   getEventRepository: jest.fn(),
 }));
 
-jest.mock("@web/auth/google/google.auth.state", () => ({
+jest.mock("@web/auth/google/state/google.auth.state", () => ({
   isGoogleRevoked: jest.fn<boolean, []>(() => false),
 }));
 

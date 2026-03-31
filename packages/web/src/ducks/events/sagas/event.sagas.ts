@@ -7,7 +7,7 @@ import {
   type Schema_Event,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { isGoogleRevoked } from "@web/auth/google/google.auth.state";
+import { isGoogleRevoked } from "@web/auth/google/state/google.auth.state";
 import {
   hasUserEverAuthenticated,
   markAnonymousCalendarChangeForSignUpPrompt,

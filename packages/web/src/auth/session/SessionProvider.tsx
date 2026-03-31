@@ -27,7 +27,7 @@ import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import * as sse from "@web/sse/provider/SSEProvider";
 import { store } from "@web/store";
-import { clearGoogleSyncIndicatorOverride } from "../google/google-sync-ui.state";
+import { clearGoogleSyncIndicatorOverride } from "../google/state/google.sync.state";
 import { refreshUserMetadata } from "../user/util/user-metadata.util";
 import { type CompassSession } from "./session.types";
 

@@ -6,7 +6,7 @@ import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { showSessionExpiredToast } from "@web/common/utils/toast/error-toast.util";
-import { handleGoogleRevoked } from "../../auth/google/google.auth.util";
+import { handleGoogleRevoked } from "../../auth/google/util/google.auth.util";
 
 export const CompassApi = axios.create({
   baseURL: ENV_WEB.API_BASEURL,

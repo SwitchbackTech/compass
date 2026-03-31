@@ -11,8 +11,8 @@ import {
   clearGoogleSyncIndicatorOverride,
   getGoogleSyncIndicatorOverride,
   setSyncingSyncIndicatorOverride,
-} from "@web/auth/google/google-sync-ui.state";
-import { handleGoogleRevoked } from "@web/auth/google/google.auth.util";
+} from "@web/auth/google/state/google.sync.state";
+import { handleGoogleRevoked } from "@web/auth/google/util/google.auth.util";
 import { refreshUserMetadata } from "@web/auth/user/util/user-metadata.util";
 import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";

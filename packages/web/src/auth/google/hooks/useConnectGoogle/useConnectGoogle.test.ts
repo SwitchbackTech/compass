@@ -1,12 +1,12 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
+import { useGoogleAuth } from "@web/auth/google/hooks/useGoogleAuth/useGoogleAuth";
 import {
   resetGoogleSyncUIStateForTests,
   setRepairingSyncIndicatorOverride,
-} from "@web/auth/google/google-sync-ui.state";
-import type * as GoogleAuthUtil from "@web/auth/google/google.auth.util";
-import { syncPendingLocalEvents } from "@web/auth/google/google.auth.util";
-import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
-import { useGoogleAuth } from "@web/auth/google/hooks/useGoogleAuth/useGoogleAuth";
+} from "@web/auth/google/state/google.sync.state";
+import type * as GoogleAuthUtil from "@web/auth/google/util/google.auth.util";
+import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
 import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
 import { refreshUserMetadata } from "@web/auth/user/util/user-metadata.util";
 import { AuthApi } from "@web/common/apis/auth.api";
@@ -21,9 +21,9 @@ import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
 jest.mock("@web/auth/google/hooks/useGoogleAuth/useGoogleAuth");
-jest.mock("@web/auth/google/google.auth.util", () => ({
+jest.mock("@web/auth/google/util/google.auth.util", () => ({
   ...jest.requireActual<typeof GoogleAuthUtil>(
-    "@web/auth/google/google.auth.util",
+    "@web/auth/google/util/google.auth.util",
   ),
   syncPendingLocalEvents: jest.fn(),
 }));

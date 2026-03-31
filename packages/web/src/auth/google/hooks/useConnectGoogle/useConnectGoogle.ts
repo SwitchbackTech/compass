@@ -2,15 +2,15 @@ import { type AxiosError, isAxiosError } from "axios";
 import { useCallback, useSyncExternalStore } from "react";
 import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { type GoogleConnectionState } from "@core/types/user.types";
+import { useGoogleAuth } from "@web/auth/google/hooks/useGoogleAuth/useGoogleAuth";
 import {
   clearGoogleSyncIndicatorOverride,
   getGoogleSyncIndicatorOverride,
   setRepairingSyncIndicatorOverride,
   setSyncingSyncIndicatorOverride,
   subscribeToGoogleSyncUIState,
-} from "@web/auth/google/google-sync-ui.state";
-import { syncPendingLocalEvents } from "@web/auth/google/google.auth.util";
-import { useGoogleAuth } from "@web/auth/google/hooks/useGoogleAuth/useGoogleAuth";
+} from "@web/auth/google/state/google.sync.state";
+import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
 import { hasUserEverAuthenticated } from "@web/auth/state/auth.state.util";
 import { refreshUserMetadata } from "@web/auth/user/util/user-metadata.util";
 import { AuthApi } from "@web/common/apis/auth.api";
@@ -39,6 +39,10 @@ import {
   getGoogleConnectionConfig,
 } from "./useConnectGoogle.util";
 
+// Merges Redux-derived Google connection state with transient UI overrides from
+// google.sync.ui.state.ts; the override is read via useSyncExternalStore so React
+// stays aligned with that external store (see comments there).
+
 export const useConnectGoogle = (): UseConnectGoogleResult => {
   const dispatch = useAppDispatch();
   const connectionState = useAppSelector(
@@ -47,7 +51,7 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
   const userMetadataStatus = useAppSelector(
     selectUserMetadataStatus as (state: RootState) => UserMetadataStatus,
   );
-  const syncIndicatorOverride = useSyncExternalStore(
+  const syncIndicator = useSyncExternalStore(
     subscribeToGoogleSyncUIState,
     getGoogleSyncIndicatorOverride,
     getGoogleSyncIndicatorOverride,
@@ -121,9 +125,9 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
     hasUserEverAuthenticated() && userMetadataStatus !== "loaded";
 
   const state: GoogleUiState =
-    syncIndicatorOverride === "repairing"
+    syncIndicator === "repairing"
       ? "repairing"
-      : syncIndicatorOverride === "syncing"
+      : syncIndicator === "syncing"
         ? "IMPORTING"
         : isCheckingStatus
           ? "checking"

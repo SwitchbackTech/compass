@@ -4,7 +4,7 @@ import {
   DEFAULT_AUTH_STATE,
 } from "@web/common/constants/auth.constants";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
-import { clearGoogleRevokedState } from "../google/google.auth.state";
+import { clearGoogleRevokedState } from "../google/state/google.auth.state";
 
 const authStateListeners = new Set<() => void>();
 

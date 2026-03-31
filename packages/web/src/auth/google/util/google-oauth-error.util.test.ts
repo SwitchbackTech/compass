@@ -1,4 +1,4 @@
-import { isGooglePopupClosedError } from "@web/auth/google/google-oauth-error.util";
+import { isGooglePopupClosedError } from "@web/auth/google/util/google-oauth-error.util";
 
 describe("isGooglePopupClosedError", () => {
   it("returns true for non-oauth popup_closed type", () => {

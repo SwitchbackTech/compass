@@ -15,14 +15,14 @@ import {
   getGoogleSyncIndicatorOverride,
   resetGoogleSyncUIStateForTests,
   setRepairingSyncIndicatorOverride,
-} from "@web/auth/google/google-sync-ui.state";
-import { handleGoogleRevoked } from "@web/auth/google/google.auth.util";
+} from "@web/auth/google/state/google.sync.state";
+import { handleGoogleRevoked } from "@web/auth/google/util/google.auth.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { importLatestSlice } from "@web/ducks/events/slices/sync.slice";
 import { useGcalSSE } from "../hooks/useGcalSSE";
 
-jest.mock("@web/auth/google/google.auth.util", () => ({
+jest.mock("@web/auth/google/util/google.auth.util", () => ({
   handleGoogleRevoked: jest.fn(),
 }));
 jest.mock("@web/auth/user/util/user-metadata.util", () => ({
@@ -96,7 +96,7 @@ describe("useGcalSSE", () => {
     resetGoogleSyncUIStateForTests();
   });
 
-  it("does not trigger a client-side import when USER_METADATA reports RESTART", async () => {
+  it("does not trigger a client-side import when USER_METADATA reports RESTART", () => {
     const store = createStore();
 
     render(

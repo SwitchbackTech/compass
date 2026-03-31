@@ -4,7 +4,7 @@ import { render } from "@web/__tests__/utils/render.test.util";
 import {
   resetGoogleSyncUIStateForTests,
   setRepairingSyncIndicatorOverride,
-} from "@web/auth/google/google-sync-ui.state";
+} from "@web/auth/google/state/google.sync.state";
 import { SyncApi } from "@web/common/apis/sync.api";
 import * as eventEmitterUtil from "@web/common/utils/dom/event-emitter.util";
 import { NowCmdPalette } from "@web/views/Now/components/NowCmdPalette";

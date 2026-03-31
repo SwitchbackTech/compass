@@ -1,4 +1,4 @@
-import { syncPendingLocalEvents } from "@web/auth/google/google.auth.util";
+import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
 import { useSession } from "@web/auth/session/useSession";
 import {
   clearAnonymousCalendarChangeSignUpPrompt,
