@@ -4,10 +4,26 @@ import {
   SomedayEventSchema,
 } from "../types/web.event.types";
 
+function normalizeNullRecurrence(event: Schema_WebEvent): Schema_WebEvent {
+  const eventWithNullableRecurrence = event as Schema_WebEvent & {
+    recurrence?: Schema_WebEvent["recurrence"] | null;
+  };
+
+  if (eventWithNullableRecurrence.recurrence !== null) {
+    return event;
+  }
+
+  const { recurrence: _recurrence, ...normalizedEvent } =
+    eventWithNullableRecurrence;
+  void _recurrence;
+
+  return normalizedEvent as Schema_WebEvent;
+}
+
 export const validateSomedayEvent = (
   event: Schema_WebEvent,
 ): Schema_SomedayEvent => {
-  const result = SomedayEventSchema.parse(event);
+  const result = SomedayEventSchema.parse(normalizeNullRecurrence(event));
   return result;
 };
 

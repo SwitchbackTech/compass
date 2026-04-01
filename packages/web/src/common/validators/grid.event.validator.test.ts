@@ -75,4 +75,31 @@ describe("validateGridEvent", () => {
 
     expect(() => validateGridEvent(event)).toThrow();
   });
+
+  it("normalizes null recurrence", () => {
+    const event = {
+      _id: new ObjectId().toString(),
+      startDate: "2023-01-01",
+      endDate: "2023-01-02",
+      origin: Origin.COMPASS,
+      priority: Priorities.RELATIONS,
+      user: "user123",
+      recurrence: null,
+      position: {
+        dragOffset: { y: 0, x: 0 },
+        horizontalOrder: 0,
+        initialX: 0,
+        initialY: 0,
+        totalEventsInGroup: 1,
+        isOverlapping: false,
+        widthMultiplier: 1,
+      },
+    } as unknown as Omit<Schema_GridEvent, "recurrence"> & {
+      recurrence: null;
+    };
+
+    const parsedEvent = validateGridEvent(event);
+
+    expect(parsedEvent.recurrence).toBeUndefined();
+  });
 });
