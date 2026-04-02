@@ -28,7 +28,9 @@ import { CompassSyncProcessor } from "@backend/sync/services/sync/compass/compas
  * automatic cleanup of revoked Google data and appropriate client notifications.
  */
 class EventController {
-  private normalizeRecurrence<T extends CompassThisEvent["payload"]>(payload: T): T {
+  private normalizeRecurrence<T extends CompassThisEvent["payload"]>(
+    payload: T,
+  ): T {
     if (payload.recurrence !== null) return payload;
 
     return { ...payload, recurrence: { rule: null } } as T;
@@ -92,7 +94,8 @@ class EventController {
       const deleteAllRes = await eventService.deleteAllByUser(userToRemove);
       res.promise(deleteAllRes);
     } catch (e) {
-      res.promise(Promise.reject(e));
+      const error = e instanceof Error ? e : new Error(String(e));
+      res.promise(Promise.reject(error));
     }
   };
 
@@ -102,7 +105,8 @@ class EventController {
       const deleteResponse = await eventService.deleteMany(userId, req.body);
       res.promise(deleteResponse);
     } catch (e) {
-      res.promise(Promise.reject(e));
+      const error = e instanceof Error ? e : new Error(String(e));
+      res.promise(Promise.reject(error));
     }
   };
 
@@ -113,7 +117,8 @@ class EventController {
       const response = await eventService.readById(userId, eventId);
       res.promise(response);
     } catch (e) {
-      res.promise(Promise.reject(e));
+      const error = e instanceof Error ? e : new Error(String(e));
+      res.promise(Promise.reject(error));
     }
   };
 
@@ -123,7 +128,8 @@ class EventController {
       const usersEvents = await eventService.readAll(userId, req.query);
       res.promise(usersEvents);
     } catch (e) {
-      res.promise(Promise.reject(e));
+      const error = e instanceof Error ? e : new Error(String(e));
+      res.promise(Promise.reject(error));
     }
   };
 
@@ -134,7 +140,8 @@ class EventController {
       const result = await eventService.reorder(userId, newOrder);
       res.promise(result);
     } catch (e) {
-      res.promise(Promise.reject(e));
+      const error = e instanceof Error ? e : new Error(String(e));
+      res.promise(Promise.reject(error));
     }
   };
 
