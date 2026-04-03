@@ -1,10 +1,20 @@
 import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
-import { renderHook, waitFor } from "@web/__tests__/__mocks__/mock.render";
+import { act, renderHook, waitFor } from "@web/__tests__/__mocks__/mock.render";
 import {
+  HOTKEY_SEQUENCE_TIMEOUT_MS,
+  resetHotkeySequenceControllerForTests,
   useAppHotkey,
   useAppHotkeySequence,
   useAppHotkeyUp,
+  useIsHotkeySequencePending,
 } from "@web/hotkeys/hooks/useAppHotkey";
+
+function dispatchSequence(sequence: string[]) {
+  sequence.forEach((key) => {
+    dispatchKeyEvent(key, "keydown");
+    dispatchKeyEvent(key, "keyup");
+  });
+}
 
 function dispatchKeyEvent(
   key: string,
@@ -29,6 +39,7 @@ describe("useAppHotkey", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     HotkeyManager.resetInstance();
+    resetHotkeySequenceControllerForTests();
     document.body.removeAttribute("data-app-locked");
   });
 
@@ -146,6 +157,43 @@ describe("useAppHotkey", () => {
       expect(mockHandler).not.toHaveBeenCalled();
     });
   });
+
+  it("suppresses a conflicting single-key hotkey while a sequence is pending", async () => {
+    const mockSingleHandler = jest.fn();
+    const mockSequenceHandler = jest.fn();
+
+    renderHook(() => {
+      useAppHotkeyUp("D", mockSingleHandler);
+      useAppHotkeySequence(["E", "D"], mockSequenceHandler);
+    });
+
+    dispatchSequence(["e", "d"]);
+
+    await waitFor(() => {
+      expect(mockSequenceHandler).toHaveBeenCalledTimes(1);
+      expect(mockSingleHandler).not.toHaveBeenCalled();
+    });
+  });
+
+  it("still fires non-conflicting single-key hotkeys while a sequence is pending", async () => {
+    const mockSingleHandler = jest.fn();
+    const mockSequenceHandler = jest.fn();
+
+    renderHook(() => {
+      useAppHotkeyUp("A", mockSingleHandler);
+      useAppHotkeySequence(["E", "D"], mockSequenceHandler);
+    });
+
+    dispatchKeyEvent("e", "keydown");
+    dispatchKeyEvent("e", "keyup");
+    dispatchKeyEvent("a", "keydown");
+    dispatchKeyEvent("a", "keyup");
+
+    await waitFor(() => {
+      expect(mockSingleHandler).toHaveBeenCalledTimes(1);
+      expect(mockSequenceHandler).not.toHaveBeenCalled();
+    });
+  });
 });
 
 describe("useAppHotkeySequence", () => {
@@ -154,16 +202,101 @@ describe("useAppHotkeySequence", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     HotkeyManager.resetInstance();
+    resetHotkeySequenceControllerForTests();
     document.body.removeAttribute("data-app-locked");
   });
 
   it("calls the handler when the sequence is pressed in order", async () => {
     renderHook(() => useAppHotkeySequence(["E", "D"], mockHandler));
 
-    dispatchKeyEvent("e", "keydown");
-    dispatchKeyEvent("e", "keyup");
-    dispatchKeyEvent("d", "keydown");
-    dispatchKeyEvent("d", "keyup");
+    dispatchSequence(["e", "d"]);
+
+    await waitFor(() => {
+      expect(mockHandler).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("reports pending state while waiting for the next key", async () => {
+    const { result } = renderHook(() => {
+      useAppHotkeySequence(["E", "D"], mockHandler);
+      return useIsHotkeySequencePending(["E", "D"]);
+    });
+
+    expect(result.current).toBe(false);
+
+    act(() => {
+      dispatchKeyEvent("e", "keydown");
+      dispatchKeyEvent("e", "keyup");
+    });
+
+    await waitFor(() => {
+      expect(result.current).toBe(true);
+    });
+
+    act(() => {
+      dispatchKeyEvent("d", "keydown");
+      dispatchKeyEvent("d", "keyup");
+    });
+
+    await waitFor(() => {
+      expect(result.current).toBe(false);
+    });
+  });
+
+  it("clears pending state after the timeout", async () => {
+    jest.useFakeTimers();
+
+    const { result } = renderHook(() => {
+      useAppHotkeySequence(["E", "D"], mockHandler);
+      return useIsHotkeySequencePending(["E", "D"]);
+    });
+
+    act(() => {
+      dispatchKeyEvent("e", "keydown");
+      dispatchKeyEvent("e", "keyup");
+    });
+
+    await waitFor(() => {
+      expect(result.current).toBe(true);
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(HOTKEY_SEQUENCE_TIMEOUT_MS);
+    });
+
+    await waitFor(() => {
+      expect(result.current).toBe(false);
+    });
+  });
+
+  it("clears pending state after unmount", async () => {
+    const registration = renderHook(() => {
+      useAppHotkeySequence(["E", "D"], mockHandler);
+      return useIsHotkeySequencePending(["E", "D"]);
+    });
+
+    act(() => {
+      dispatchKeyEvent("e", "keydown");
+      dispatchKeyEvent("e", "keyup");
+    });
+
+    await waitFor(() => {
+      expect(registration.result.current).toBe(true);
+    });
+
+    act(() => {
+      registration.unmount();
+    });
+
+    const observer = renderHook(() => useIsHotkeySequencePending(["E", "D"]));
+
+    expect(observer.result.current).toBe(false);
+  });
+
+  it("restarts matching after a mismatch on the current key", async () => {
+    renderHook(() => useAppHotkeySequence(["E", "D"], mockHandler));
+
+    dispatchSequence(["e", "e", "d"]);
 
     await waitFor(() => {
       expect(mockHandler).toHaveBeenCalledTimes(1);
@@ -175,10 +308,7 @@ describe("useAppHotkeySequence", () => {
 
     renderHook(() => useAppHotkeySequence(["E", "D"], mockHandler));
 
-    dispatchKeyEvent("e", "keydown");
-    dispatchKeyEvent("e", "keyup");
-    dispatchKeyEvent("d", "keydown");
-    dispatchKeyEvent("d", "keyup");
+    dispatchSequence(["e", "d"]);
 
     await waitFor(() => {
       expect(mockHandler).not.toHaveBeenCalled();

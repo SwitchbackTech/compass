@@ -7,8 +7,11 @@ import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
-import { useAppHotkey, useAppHotkeyUp } from "@web/hotkeys/hooks/useAppHotkey";
-import { useEditMode } from "@web/hotkeys/hooks/useEditMode";
+import {
+  useAppHotkey,
+  useAppHotkeySequence,
+  useAppHotkeyUp,
+} from "@web/hotkeys/hooks/useAppHotkey";
 import { SHORTCUTS } from "@web/hotkeys/registry/shortcut.registry";
 
 interface Props {
@@ -35,7 +38,6 @@ export function useNowShortcuts(props?: Props) {
   } = props || {};
 
   const navigate = useNavigate();
-  const { armEditMode, clearEditMode, isEditMode } = useEditMode();
 
   const handleTaskNavigation = useCallback(
     (handler?: () => void) => {
@@ -46,24 +48,15 @@ export function useNowShortcuts(props?: Props) {
     [focusedTask, availableTasks.length],
   );
 
-  const editModeHotkey = SHORTCUTS.NOW_FOCUS_DESC.sequence.at(0);
+  const focusDescriptionSequence = SHORTCUTS.NOW_FOCUS_DESC.sequence;
 
-  if (!editModeHotkey) {
+  if (!focusDescriptionSequence) {
     throw new Error("NOW_FOCUS_DESC.sequence must define an edit mode prefix");
   }
 
-  useAppHotkeyUp(editModeHotkey, armEditMode);
-
-  useAppHotkeyUp(
-    SHORTCUTS.NOW_FOCUS_DESC.hotkey,
-    () => {
-      compassEventEmitter.emit(CompassDOMEvents.FOCUS_TASK_DESCRIPTION);
-      clearEditMode();
-    },
-    {
-      enabled: isEditMode,
-    },
-  );
+  useAppHotkeySequence(focusDescriptionSequence, () => {
+    compassEventEmitter.emit(CompassDOMEvents.FOCUS_TASK_DESCRIPTION);
+  });
 
   useAppHotkey(
     SHORTCUTS.NOW_SAVE_DESC.hotkey,
@@ -98,7 +91,6 @@ export function useNowShortcuts(props?: Props) {
   useAppHotkey(
     SHORTCUTS.NOW_ESCAPE.hotkey,
     () => {
-      clearEditMode();
       navigate(ROOT_ROUTES.DAY);
     },
     {

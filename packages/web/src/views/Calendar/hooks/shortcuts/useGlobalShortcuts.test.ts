@@ -1,4 +1,4 @@
-import { act, createElement } from "react";
+import { act } from "react";
 import { useNavigate } from "react-router-dom";
 import { configureStore } from "@reduxjs/toolkit";
 import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
@@ -10,17 +10,21 @@ import {
 } from "@web/__tests__/__mocks__/mock.setup";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { sagaMiddleware } from "@web/common/store/middlewares";
-import { pressKey } from "@web/common/utils/dom/event-emitter.util";
+import {
+  CompassDOMEvents,
+  compassEventEmitter,
+  pressKey,
+} from "@web/common/utils/dom/event-emitter.util";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import {
-  EDIT_MODE_TIMEOUT_MS,
-  useEditMode,
-} from "@web/hotkeys/hooks/useEditMode";
-import { EditModeProvider } from "@web/hotkeys/providers/EditModeProvider";
+  HOTKEY_SEQUENCE_TIMEOUT_MS,
+  resetHotkeySequenceControllerForTests,
+} from "@web/hotkeys/hooks/useAppHotkey";
 import { reducers } from "@web/store/reducers";
 import { sagas } from "@web/store/sagas";
 import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
+import { useNowShortcuts } from "@web/views/Now/shortcuts/useNowShortcuts";
 
 // Mock react-router-dom
 jest.mock("react-router-dom", () => ({
@@ -33,8 +37,6 @@ const { useLocation } = jest.requireMock("react-router-dom");
 
 const mockNavigate = jest.fn();
 const mockLocation = (pathname: string) => ({ pathname });
-const EditModeWrapper = ({ children }: { children: React.ReactNode }) =>
-  createElement(EditModeProvider, null, children);
 
 const pressModifierShortcut = () => {
   const modifierProps =
@@ -61,6 +63,7 @@ describe("useGlobalShortcuts", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     HotkeyManager.resetInstance();
+    resetHotkeySequenceControllerForTests();
     (useNavigate as jest.Mock).mockReturnValue(mockNavigate);
     (useLocation as jest.Mock).mockReturnValue(mockLocation("/"));
   });
@@ -81,63 +84,55 @@ describe("useGlobalShortcuts", () => {
 
   it("should navigate to DAY when 'd' is pressed from different route", () => {
     (useLocation as jest.Mock).mockReturnValue(mockLocation("/week"));
-    renderHook(() => useGlobalShortcuts(), { wrapper: EditModeWrapper });
+    renderHook(() => useGlobalShortcuts());
     pressKey("d");
     expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
   });
 
   it("should NOT navigate to DAY when 'd' is pressed from DAY route", () => {
     (useLocation as jest.Mock).mockReturnValue(mockLocation(ROOT_ROUTES.DAY));
-    renderHook(() => useGlobalShortcuts(), { wrapper: EditModeWrapper });
+    renderHook(() => useGlobalShortcuts());
     pressKey("d");
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it("should NOT navigate to DAY when 'd' is pressed from DAY date route", () => {
     (useLocation as jest.Mock).mockReturnValue(mockLocation("/day/2024-01-15"));
-    renderHook(() => useGlobalShortcuts(), { wrapper: EditModeWrapper });
+    renderHook(() => useGlobalShortcuts());
     pressKey("d");
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
-  it("should NOT navigate to DAY from NOW while edit mode is armed", () => {
+  it("should yield to the Now description sequence while pending on NOW", () => {
     (useLocation as jest.Mock).mockReturnValue(mockLocation(ROOT_ROUTES.NOW));
-    const { result } = renderHook(
-      () => {
-        useGlobalShortcuts();
-        return useEditMode();
-      },
-      { wrapper: EditModeWrapper },
-    );
+    const emitSpy = jest.spyOn(compassEventEmitter, "emit");
+
+    renderHook(() => useGlobalShortcuts());
+    renderHook(() => useNowShortcuts());
 
     act(() => {
-      result.current.armEditMode();
-    });
-
-    act(() => {
+      pressKey("e");
       pressKey("d");
     });
 
     expect(mockNavigate).not.toHaveBeenCalled();
+    expect(emitSpy).toHaveBeenCalledWith(
+      CompassDOMEvents.FOCUS_TASK_DESCRIPTION,
+    );
   });
 
-  it("should navigate to DAY after edit mode times out on NOW", () => {
+  it("should navigate to DAY on NOW after the sequence timeout", () => {
     jest.useFakeTimers();
     (useLocation as jest.Mock).mockReturnValue(mockLocation(ROOT_ROUTES.NOW));
-    const { result } = renderHook(
-      () => {
-        useGlobalShortcuts();
-        return useEditMode();
-      },
-      { wrapper: EditModeWrapper },
-    );
+    renderHook(() => useGlobalShortcuts());
+    renderHook(() => useNowShortcuts());
 
     act(() => {
-      result.current.armEditMode();
+      pressKey("e");
     });
 
     act(() => {
-      jest.advanceTimersByTime(EDIT_MODE_TIMEOUT_MS);
+      jest.advanceTimersByTime(HOTKEY_SEQUENCE_TIMEOUT_MS);
     });
 
     act(() => {
@@ -148,18 +143,12 @@ describe("useGlobalShortcuts", () => {
     jest.useRealTimers();
   });
 
-  it("should navigate to DAY outside NOW even when edit mode is armed", () => {
-    (useLocation as jest.Mock).mockReturnValue(mockLocation(ROOT_ROUTES.WEEK));
-    const { result } = renderHook(
-      () => {
-        useGlobalShortcuts();
-        return useEditMode();
-      },
-      { wrapper: EditModeWrapper },
-    );
+  it("should navigate to DAY on NOW when no sequence is pending", () => {
+    (useLocation as jest.Mock).mockReturnValue(mockLocation(ROOT_ROUTES.NOW));
+    renderHook(() => useGlobalShortcuts());
+    renderHook(() => useNowShortcuts());
 
     act(() => {
-      result.current.armEditMode();
       pressKey("d");
     });
 

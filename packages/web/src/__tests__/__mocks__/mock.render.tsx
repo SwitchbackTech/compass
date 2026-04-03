@@ -16,13 +16,14 @@ import { useSetupMovementEvents } from "@web/common/hooks/useMovementEvent";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
-import { EditModeProvider } from "@web/hotkeys/providers/EditModeProvider";
 import type { store as compassStore } from "@web/store";
 import { reducers } from "@web/store/reducers";
 import { sagas } from "@web/store/sagas";
 
+type TestState = Partial<ReturnType<typeof reducers>>;
+
 interface CustomRenderOptions extends RenderOptions {
-  state?: any;
+  state?: TestState;
   store?: typeof compassStore;
   router?: RouterProviderProps["router"];
   wrapper?: ComponentType<PropsWithChildren>;
@@ -41,30 +42,26 @@ const TestProviders = (props?: {
     if (!props?.router) {
       return (
         <div id={ID_ROOT} data-testid={ID_ROOT}>
-          <EditModeProvider>
-            <CompassRequiredProviders {...props}>
-              {children}
-            </CompassRequiredProviders>
-          </EditModeProvider>
+          <CompassRequiredProviders {...props}>
+            {children}
+          </CompassRequiredProviders>
         </div>
       );
     }
 
     return (
       <div id={ID_ROOT} data-testid={ID_ROOT}>
-        <EditModeProvider>
-          <CompassRequiredProviders store={props?.store}>
-            <RouterProvider
-              router={props.router}
-              fallbackElement={<AbsoluteOverflowLoader />}
-              future={{
-                // Test-only: sync RouterProvider state updates (no startTransition).
-                // Matches initial render + client navigations with RTL act() without globals.
-                v7_startTransition: false,
-              }}
-            />
-          </CompassRequiredProviders>
-        </EditModeProvider>
+        <CompassRequiredProviders store={props?.store}>
+          <RouterProvider
+            router={props.router}
+            fallbackElement={<AbsoluteOverflowLoader />}
+            future={{
+              // Test-only: sync RouterProvider state updates (no startTransition).
+              // Matches initial render + client navigations with RTL act() without globals.
+              v7_startTransition: false,
+            }}
+          />
+        </CompassRequiredProviders>
       </div>
     );
   };

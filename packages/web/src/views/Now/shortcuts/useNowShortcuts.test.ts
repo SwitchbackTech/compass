@@ -1,4 +1,4 @@
-import { act, createElement } from "react";
+import { act } from "react";
 import { useNavigate } from "react-router-dom";
 import { HotkeyManager } from "@tanstack/react-hotkeys";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
@@ -8,8 +8,10 @@ import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
-import { EDIT_MODE_TIMEOUT_MS } from "@web/hotkeys/hooks/useEditMode";
-import { EditModeProvider } from "@web/hotkeys/providers/EditModeProvider";
+import {
+  HOTKEY_SEQUENCE_TIMEOUT_MS,
+  resetHotkeySequenceControllerForTests,
+} from "@web/hotkeys/hooks/useAppHotkey";
 import { useNowShortcuts } from "@web/views/Now/shortcuts/useNowShortcuts";
 
 // Mock react-router-dom
@@ -18,8 +20,6 @@ jest.mock("react-router-dom", () => ({
 }));
 
 const mockNavigate = jest.fn();
-const EditModeWrapper = ({ children }: { children: React.ReactNode }) =>
-  createElement(EditModeProvider, null, children);
 
 describe("useNowShortcuts", () => {
   const mockTask1 = createMockTask();
@@ -28,6 +28,7 @@ describe("useNowShortcuts", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     HotkeyManager.resetInstance();
+    resetHotkeySequenceControllerForTests();
     (useNavigate as jest.Mock).mockReturnValue(mockNavigate);
   });
 
@@ -38,7 +39,7 @@ describe("useNowShortcuts", () => {
 
   describe("global navigation shortcuts", () => {
     it("should navigate to Day when 'Escape' is pressed", async () => {
-      renderHook(useNowShortcuts, { wrapper: EditModeWrapper });
+      renderHook(useNowShortcuts);
 
       pressKey("Escape");
 
@@ -46,7 +47,7 @@ describe("useNowShortcuts", () => {
     });
 
     it("should not handle unknown keys", async () => {
-      renderHook(useNowShortcuts, { wrapper: EditModeWrapper });
+      renderHook(useNowShortcuts);
 
       pressKey("x");
 
@@ -64,9 +65,7 @@ describe("useNowShortcuts", () => {
     };
 
     it("should call onPreviousTask when 'j' is pressed", () => {
-      renderHook(() => useNowShortcuts(defaultProps), {
-        wrapper: EditModeWrapper,
-      });
+      renderHook(() => useNowShortcuts(defaultProps));
 
       pressKey("j");
 
@@ -74,9 +73,7 @@ describe("useNowShortcuts", () => {
     });
 
     it("should call onNextTask when 'k' is pressed", () => {
-      renderHook(() => useNowShortcuts(defaultProps), {
-        wrapper: EditModeWrapper,
-      });
+      renderHook(() => useNowShortcuts(defaultProps));
 
       pressKey("k");
 
@@ -84,9 +81,7 @@ describe("useNowShortcuts", () => {
     });
 
     it("should handle case-insensitive key matching for 'j'", () => {
-      renderHook(() => useNowShortcuts(defaultProps), {
-        wrapper: EditModeWrapper,
-      });
+      renderHook(() => useNowShortcuts(defaultProps));
 
       pressKey("J");
 
@@ -94,9 +89,7 @@ describe("useNowShortcuts", () => {
     });
 
     it("should handle case-insensitive key matching for 'k'", () => {
-      renderHook(() => useNowShortcuts(defaultProps), {
-        wrapper: EditModeWrapper,
-      });
+      renderHook(() => useNowShortcuts(defaultProps));
 
       pressKey("K");
 
@@ -106,7 +99,7 @@ describe("useNowShortcuts", () => {
     it("should not handle task shortcuts when there is no focused task", () => {
       const props = { ...defaultProps, focusedTask: null };
 
-      renderHook(() => useNowShortcuts(props), { wrapper: EditModeWrapper });
+      renderHook(() => useNowShortcuts(props));
 
       pressKey("j");
 
@@ -116,7 +109,7 @@ describe("useNowShortcuts", () => {
     it("should not handle task shortcuts when there are no available tasks", () => {
       const props = { ...defaultProps, availableTasks: [] };
 
-      renderHook(() => useNowShortcuts(props), { wrapper: EditModeWrapper });
+      renderHook(() => useNowShortcuts(props));
 
       pressKey("k");
 
@@ -124,9 +117,7 @@ describe("useNowShortcuts", () => {
     });
 
     it("should handle task shortcuts when focusedTask exists and availableTasks has items", () => {
-      renderHook(() => useNowShortcuts(defaultProps), {
-        wrapper: EditModeWrapper,
-      });
+      renderHook(() => useNowShortcuts(defaultProps));
 
       pressKey("j");
 
@@ -134,9 +125,7 @@ describe("useNowShortcuts", () => {
     });
 
     it("should call onCompleteTask when 'Enter' is pressed", () => {
-      renderHook(() => useNowShortcuts(defaultProps), {
-        wrapper: EditModeWrapper,
-      });
+      renderHook(() => useNowShortcuts(defaultProps));
 
       pressKey("Enter");
 
@@ -146,7 +135,7 @@ describe("useNowShortcuts", () => {
     it("should not handle Enter shortcut when there is no focused task", () => {
       const props = { ...defaultProps, focusedTask: null };
 
-      renderHook(() => useNowShortcuts(props), { wrapper: EditModeWrapper });
+      renderHook(() => useNowShortcuts(props));
 
       pressKey("Enter");
 
@@ -164,9 +153,7 @@ describe("useNowShortcuts", () => {
     };
 
     it("should not handle shortcuts when typing in input elements", () => {
-      renderHook(() => useNowShortcuts(defaultProps), {
-        wrapper: EditModeWrapper,
-      });
+      renderHook(() => useNowShortcuts(defaultProps));
 
       const input = document.createElement("input");
 
@@ -180,9 +167,7 @@ describe("useNowShortcuts", () => {
     });
 
     it("should not handle shortcuts when typing in textarea elements", () => {
-      renderHook(() => useNowShortcuts(defaultProps), {
-        wrapper: EditModeWrapper,
-      });
+      renderHook(() => useNowShortcuts(defaultProps));
 
       const textarea = document.createElement("textarea");
 
@@ -196,9 +181,7 @@ describe("useNowShortcuts", () => {
     });
 
     it("should not handle shortcuts when typing in contenteditable elements", () => {
-      renderHook(() => useNowShortcuts(defaultProps), {
-        wrapper: EditModeWrapper,
-      });
+      renderHook(() => useNowShortcuts(defaultProps));
 
       const div = document.createElement("div");
 
@@ -215,11 +198,11 @@ describe("useNowShortcuts", () => {
     });
   });
 
-  describe("edit mode shortcuts", () => {
+  describe("sequence shortcuts", () => {
     it("should not focus description when 'd' is pressed alone", () => {
       const emitSpy = jest.spyOn(compassEventEmitter, "emit");
 
-      renderHook(useNowShortcuts, { wrapper: EditModeWrapper });
+      renderHook(useNowShortcuts);
 
       act(() => {
         pressKey("d");
@@ -233,7 +216,7 @@ describe("useNowShortcuts", () => {
     it("should focus description when 'e' then 'd' is pressed", () => {
       const emitSpy = jest.spyOn(compassEventEmitter, "emit");
 
-      renderHook(useNowShortcuts, { wrapper: EditModeWrapper });
+      renderHook(useNowShortcuts);
 
       act(() => {
         pressKey("e");
@@ -248,10 +231,10 @@ describe("useNowShortcuts", () => {
       );
     });
 
-    it("should clear edit mode after focusing description", () => {
+    it("should only trigger once for a completed sequence", () => {
       const emitSpy = jest.spyOn(compassEventEmitter, "emit");
 
-      renderHook(useNowShortcuts, { wrapper: EditModeWrapper });
+      renderHook(useNowShortcuts);
 
       act(() => {
         pressKey("e");
@@ -272,15 +255,15 @@ describe("useNowShortcuts", () => {
       );
     });
 
-    it("should exit edit mode after the timeout", () => {
+    it("should expire the pending sequence after the timeout", () => {
       jest.useFakeTimers();
       const emitSpy = jest.spyOn(compassEventEmitter, "emit");
 
-      renderHook(useNowShortcuts, { wrapper: EditModeWrapper });
+      renderHook(useNowShortcuts);
 
       act(() => {
         pressKey("e");
-        jest.advanceTimersByTime(EDIT_MODE_TIMEOUT_MS);
+        jest.advanceTimersByTime(HOTKEY_SEQUENCE_TIMEOUT_MS);
       });
 
       act(() => {
@@ -288,6 +271,22 @@ describe("useNowShortcuts", () => {
       });
 
       expect(emitSpy).not.toHaveBeenCalledWith(
+        CompassDOMEvents.FOCUS_TASK_DESCRIPTION,
+      );
+    });
+
+    it("should restart the sequence when the prefix key is repeated", () => {
+      const emitSpy = jest.spyOn(compassEventEmitter, "emit");
+
+      renderHook(useNowShortcuts);
+
+      act(() => {
+        pressKey("e");
+        pressKey("e");
+        pressKey("d");
+      });
+
+      expect(emitSpy).toHaveBeenCalledWith(
         CompassDOMEvents.FOCUS_TASK_DESCRIPTION,
       );
     });
