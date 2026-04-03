@@ -63,6 +63,7 @@ const webProject = {
     "^@web/common(/(.*)$)?": "<rootDir>/packages/web/src/common/$1",
     "^@web/components(/(.*)$)?": "<rootDir>/packages/web/src/components/$1",
     "^@web/ducks(/(.*)$)?": "<rootDir>/packages/web/src/ducks/$1",
+    "^@web/hotkeys(/(.*)$)?": "<rootDir>/packages/web/src/hotkeys/$1",
     "^@web/public(/(.*)$)?": "<rootDir>/packages/web/src/public/$1",
     "^@web/routers(/(.*)$)?": "<rootDir>/packages/web/src/routers/$1",
     "^@web/sse(/(.*)$)?": "<rootDir>/packages/web/src/sse/$1",

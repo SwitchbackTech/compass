@@ -1,8 +1,8 @@
 import type React from "react";
 import styled from "styled-components";
 import { ArrowLeftIcon } from "@phosphor-icons/react";
-import { getMetaKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
 import { Text } from "@web/components/Text";
+import { getMetaKeyIcon } from "@web/hotkeys/util/shortcut.util";
 import MenuItem from "@web/views/Forms/ActionsMenu/MenuItem";
 
 interface Props {

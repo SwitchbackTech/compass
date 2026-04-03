@@ -9,15 +9,15 @@ import {
   mockWindowsUserAgent,
 } from "@web/__tests__/__mocks__/mock.setup";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import {
-  EDIT_MODE_TIMEOUT_MS,
-  ShortcutEditModeProvider,
-  useShortcutEditMode,
-} from "@web/common/context/shortcut-edit-mode";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
+import {
+  EDIT_MODE_TIMEOUT_MS,
+  useEditMode,
+} from "@web/hotkeys/hooks/useEditMode";
+import { EditModeProvider } from "@web/hotkeys/providers/EditModeProvider";
 import { reducers } from "@web/store/reducers";
 import { sagas } from "@web/store/sagas";
 import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
@@ -34,7 +34,7 @@ const { useLocation } = jest.requireMock("react-router-dom");
 const mockNavigate = jest.fn();
 const mockLocation = (pathname: string) => ({ pathname });
 const EditModeWrapper = ({ children }: { children: React.ReactNode }) =>
-  createElement(ShortcutEditModeProvider, null, children);
+  createElement(EditModeProvider, null, children);
 
 const pressModifierShortcut = () => {
   const modifierProps =
@@ -105,7 +105,7 @@ describe("useGlobalShortcuts", () => {
     const { result } = renderHook(
       () => {
         useGlobalShortcuts();
-        return useShortcutEditMode();
+        return useEditMode();
       },
       { wrapper: EditModeWrapper },
     );
@@ -127,7 +127,7 @@ describe("useGlobalShortcuts", () => {
     const { result } = renderHook(
       () => {
         useGlobalShortcuts();
-        return useShortcutEditMode();
+        return useEditMode();
       },
       { wrapper: EditModeWrapper },
     );
@@ -153,7 +153,7 @@ describe("useGlobalShortcuts", () => {
     const { result } = renderHook(
       () => {
         useGlobalShortcuts();
-        return useShortcutEditMode();
+        return useEditMode();
       },
       { wrapper: EditModeWrapper },
     );

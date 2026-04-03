@@ -1,26 +1,20 @@
-import {
-  type PropsWithChildren,
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { createContext, useCallback, useEffect, useRef, useState } from "react";
+import type { PropsWithChildren } from "react";
+import { EDIT_MODE_TIMEOUT_MS } from "../constants/hotkey.constants";
 
-export const EDIT_MODE_TIMEOUT_MS = 1000;
-
-interface ShortcutEditModeContextValue {
+type EditModeContextValue = {
   isEditMode: boolean;
   armEditMode: () => void;
   clearEditMode: () => void;
-}
+};
 
-const ShortcutEditModeContext = createContext<
-  ShortcutEditModeContextValue | undefined
->(undefined);
+export const EditModeContext = createContext<EditModeContextValue>({
+  isEditMode: false,
+  armEditMode: () => {},
+  clearEditMode: () => {},
+});
 
-export function ShortcutEditModeProvider({ children }: PropsWithChildren) {
+export function EditModeProvider({ children }: PropsWithChildren) {
   const timeoutRef = useRef<number | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
 
@@ -48,22 +42,10 @@ export function ShortcutEditModeProvider({ children }: PropsWithChildren) {
   useEffect(() => clearEditMode, [clearEditMode]);
 
   return (
-    <ShortcutEditModeContext.Provider
+    <EditModeContext.Provider
       value={{ isEditMode, armEditMode, clearEditMode }}
     >
       {children}
-    </ShortcutEditModeContext.Provider>
+    </EditModeContext.Provider>
   );
-}
-
-export function useShortcutEditMode() {
-  const context = useContext(ShortcutEditModeContext);
-
-  if (!context) {
-    throw new Error(
-      "useShortcutEditMode must be used within ShortcutEditModeProvider",
-    );
-  }
-
-  return context;
 }

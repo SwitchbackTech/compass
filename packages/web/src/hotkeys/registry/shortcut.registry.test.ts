@@ -2,7 +2,7 @@ import {
   SHORTCUTS,
   type ShortcutDef,
   ShortcutTags,
-} from "@web/common/shortcuts/shortcut.registry";
+} from "@web/hotkeys/registry/shortcut.registry";
 
 describe("shortcut.registry", () => {
   describe("SHORTCUTS", () => {

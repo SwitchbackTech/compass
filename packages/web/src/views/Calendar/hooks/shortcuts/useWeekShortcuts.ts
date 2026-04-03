@@ -5,8 +5,6 @@ import {
 } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { type Dayjs } from "@core/util/date/dayjs";
-import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
-import { SHORTCUTS } from "@web/common/shortcuts/shortcut.registry";
 import {
   createAlldayDraft,
   createTimedDraft,
@@ -22,6 +20,8 @@ import {
 } from "@web/ducks/events/selectors/view.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
+import { useAppHotkey, useAppHotkeyUp } from "@web/hotkeys/hooks/useAppHotkey";
+import { SHORTCUTS } from "@web/hotkeys/registry/shortcut.registry";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
 import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";

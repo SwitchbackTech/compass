@@ -12,11 +12,11 @@ import {
   renderHook,
 } from "@testing-library/react";
 import { ID_ROOT } from "@web/common/constants/web.constants";
-import { ShortcutEditModeProvider } from "@web/common/context/shortcut-edit-mode";
 import { useSetupMovementEvents } from "@web/common/hooks/useMovementEvent";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
+import { EditModeProvider } from "@web/hotkeys/providers/EditModeProvider";
 import type { store as compassStore } from "@web/store";
 import { reducers } from "@web/store/reducers";
 import { sagas } from "@web/store/sagas";
@@ -41,18 +41,18 @@ const TestProviders = (props?: {
     if (!props?.router) {
       return (
         <div id={ID_ROOT} data-testid={ID_ROOT}>
-          <ShortcutEditModeProvider>
+          <EditModeProvider>
             <CompassRequiredProviders {...props}>
               {children}
             </CompassRequiredProviders>
-          </ShortcutEditModeProvider>
+          </EditModeProvider>
         </div>
       );
     }
 
     return (
       <div id={ID_ROOT} data-testid={ID_ROOT}>
-        <ShortcutEditModeProvider>
+        <EditModeProvider>
           <CompassRequiredProviders store={props?.store}>
             <RouterProvider
               router={props.router}
@@ -64,7 +64,7 @@ const TestProviders = (props?: {
               }}
             />
           </CompassRequiredProviders>
-        </ShortcutEditModeProvider>
+        </EditModeProvider>
       </div>
     );
   };

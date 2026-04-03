@@ -3,15 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { HotkeyManager } from "@tanstack/react-hotkeys";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
-import {
-  EDIT_MODE_TIMEOUT_MS,
-  ShortcutEditModeProvider,
-} from "@web/common/context/shortcut-edit-mode";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
+import { EDIT_MODE_TIMEOUT_MS } from "@web/hotkeys/hooks/useEditMode";
+import { EditModeProvider } from "@web/hotkeys/providers/EditModeProvider";
 import { useNowShortcuts } from "@web/views/Now/shortcuts/useNowShortcuts";
 
 // Mock react-router-dom
@@ -21,7 +19,7 @@ jest.mock("react-router-dom", () => ({
 
 const mockNavigate = jest.fn();
 const EditModeWrapper = ({ children }: { children: React.ReactNode }) =>
-  createElement(ShortcutEditModeProvider, null, children);
+  createElement(EditModeProvider, null, children);
 
 describe("useNowShortcuts", () => {
   const mockTask1 = createMockTask();

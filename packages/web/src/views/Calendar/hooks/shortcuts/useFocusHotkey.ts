@@ -1,4 +1,4 @@
-import { useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
+import { useAppHotkeyUp } from "@web/hotkeys/hooks/useAppHotkey";
 
 export const useReminderHotkey = (
   callback: () => void,

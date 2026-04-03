@@ -1,11 +1,11 @@
 import dayjs from "@core/util/date/dayjs";
+import { type Shortcut } from "@web/common/types/global.shortcut.types";
 import {
   SHORTCUTS,
   type ShortcutDef,
   type ShortcutTag,
   ShortcutTags,
-} from "@web/common/shortcuts/shortcut.registry";
-import { type Shortcut } from "@web/common/types/global.shortcut.types";
+} from "@web/hotkeys/registry/shortcut.registry";
 
 interface ShortcutsConfig {
   isHome?: boolean;

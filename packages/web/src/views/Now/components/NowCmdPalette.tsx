@@ -4,11 +4,11 @@ import "react-cmdk/dist/cmdk.css";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
 import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
-import { SHORTCUTS } from "@web/common/shortcuts/shortcut.registry";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
+import { SHORTCUTS } from "@web/hotkeys/registry/shortcut.registry";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
 export const NowCmdPalette = () => {

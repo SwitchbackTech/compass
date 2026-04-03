@@ -4,7 +4,7 @@ import {
   useAppHotkey,
   useAppHotkeySequence,
   useAppHotkeyUp,
-} from "@web/common/hooks/useAppHotkey";
+} from "@web/hotkeys/hooks/useAppHotkey";
 
 function dispatchKeyEvent(
   key: string,

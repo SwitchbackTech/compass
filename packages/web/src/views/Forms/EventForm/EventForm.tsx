@@ -7,7 +7,6 @@ import { Priorities } from "@core/constants/core.constants";
 import { darken } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
-import { useAppHotkey } from "@web/common/hooks/useAppHotkey";
 import {
   colorByPriority,
   hoverColorByPriority,
@@ -16,6 +15,7 @@ import { type SelectOption } from "@web/common/types/component.types";
 import { mapToBackend } from "@web/common/utils/datetime/web.date.util";
 import { getCategory } from "@web/common/utils/event/event.util";
 import { isComboboxInteraction } from "@web/common/utils/form/form.util";
+import { useAppHotkey } from "@web/hotkeys/hooks/useAppHotkey";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";

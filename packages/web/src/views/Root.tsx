@@ -2,20 +2,17 @@ import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { UserProvider } from "@web/auth/compass/user/context/UserProvider";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import {
-  ShortcutEditModeProvider,
-  useShortcutEditMode,
-} from "@web/common/context/shortcut-edit-mode";
 import { useIsMobile } from "@web/common/hooks/useIsMobile";
 import { AuthenticatedLayout } from "@web/components/AuthenticatedLayout/AuthenticatedLayout";
 import { GlobalShortcutsHost } from "@web/components/CompassProvider/CompassProvider";
 import { MobileGate } from "@web/components/MobileGate/MobileGate";
+import { EditModeProvider } from "@web/hotkeys/providers/EditModeProvider";
 import SSEProvider from "@web/sse/provider/SSEProvider";
 
 const RootViewContent = () => {
   const isMobile = useIsMobile();
   const location = useLocation();
-  const { clearEditMode } = useShortcutEditMode();
+  const { clearEditMode } = useEditMode();
 
   useEffect(() => {
     if (location.pathname !== ROOT_ROUTES.NOW) {
@@ -38,7 +35,7 @@ const RootViewContent = () => {
 };
 
 export const RootView = () => (
-  <ShortcutEditModeProvider>
+  <EditModeProvider>
     <RootViewContent />
-  </ShortcutEditModeProvider>
+  </EditModeProvider>
 );

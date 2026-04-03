@@ -2,14 +2,14 @@ import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { ID_REMINDER_INPUT } from "@web/common/constants/web.constants";
-import { useShortcutEditMode } from "@web/common/context/shortcut-edit-mode";
-import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
-import { SHORTCUTS } from "@web/common/shortcuts/shortcut.registry";
 import { type Task } from "@web/common/types/task.types";
 import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
+import { useAppHotkey, useAppHotkeyUp } from "@web/hotkeys/hooks/useAppHotkey";
+import { useEditMode } from "@web/hotkeys/hooks/useEditMode";
+import { SHORTCUTS } from "@web/hotkeys/registry/shortcut.registry";
 
 interface Props {
   focusedTask?: Task | null;
@@ -35,7 +35,7 @@ export function useNowShortcuts(props?: Props) {
   } = props || {};
 
   const navigate = useNavigate();
-  const { armEditMode, clearEditMode, isEditMode } = useShortcutEditMode();
+  const { armEditMode, clearEditMode, isEditMode } = useEditMode();
 
   const handleTaskNavigation = useCallback(
     (handler?: () => void) => {

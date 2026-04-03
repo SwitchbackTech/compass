@@ -1,5 +1,5 @@
 import dayjs from "@core/util/date/dayjs";
-import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
+import { getShortcuts } from "@web/hotkeys/registry/shortcuts.data";
 
 describe("shortcuts.data", () => {
   describe("getShortcuts", () => {

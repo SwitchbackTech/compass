@@ -2,7 +2,7 @@ import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import { renderWithMemoryRouter } from "@web/__tests__/utils/providers/MemoryRouter";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { getModifierKeyTestId } from "@web/common/utils/shortcut/shortcut.util";
+import { getModifierKeyTestId } from "@web/hotkeys/util/shortcut.util";
 import { NowView } from "@web/views/Now/view/NowView";
 
 // Mock the useNowShortcuts hook

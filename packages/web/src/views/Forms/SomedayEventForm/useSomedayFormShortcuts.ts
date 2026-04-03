@@ -3,8 +3,8 @@ import {
   type Direction_Migrate,
   type Schema_Event,
 } from "@core/types/event.types";
-import { useAppHotkey } from "@web/common/hooks/useAppHotkey";
 import { isComboboxInteraction } from "@web/common/utils/form/form.util";
+import { useAppHotkey } from "@web/hotkeys/hooks/useAppHotkey";
 
 export const SOMEDAY_HOTKEY_OPTIONS = {
   enabled: true,

@@ -2,7 +2,7 @@ import "@testing-library/jest-dom";
 import { screen, within } from "@testing-library/react";
 import { prepareEmptyStorageForTests } from "@web/__tests__/utils/storage/indexeddb.test.util";
 import { waitForTaskListReady } from "@web/__tests__/utils/tasks/task.test.util";
-import { getModifierKeyTestId } from "@web/common/utils/shortcut/shortcut.util";
+import { getModifierKeyTestId } from "@web/hotkeys/util/shortcut.util";
 import { renderWithDayProvidersAsync } from "@web/views/Day/util/day.test-util";
 import { DayViewContent } from "@web/views/Day/view/DayViewContent";
 

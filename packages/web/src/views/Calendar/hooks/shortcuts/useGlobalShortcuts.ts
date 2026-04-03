@@ -1,10 +1,10 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { useShortcutEditMode } from "@web/common/context/shortcut-edit-mode";
-import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
-import { SHORTCUTS } from "@web/common/shortcuts/shortcut.registry";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
+import { useAppHotkey, useAppHotkeyUp } from "@web/hotkeys/hooks/useAppHotkey";
+import { useEditMode } from "@web/hotkeys/hooks/useEditMode";
+import { SHORTCUTS } from "@web/hotkeys/registry/shortcut.registry";
 import { useAppDispatch } from "@web/store/store.hooks";
 
 /**
@@ -15,7 +15,7 @@ export function useGlobalShortcuts() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { isEditMode } = useShortcutEditMode();
+  const { isEditMode } = useEditMode();
 
   const isNowEditMode = location.pathname === ROOT_ROUTES.NOW && isEditMode;
 

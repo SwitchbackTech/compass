@@ -1,6 +1,6 @@
 import { type Shortcut } from "@web/common/types/global.shortcut.types";
-import { ShortCutLabel } from "@web/common/utils/shortcut/shortcut.util";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
+import { ShortCutLabel } from "@web/hotkeys/util/shortcut.util";
 
 export const ShortcutList = ({ shortcuts }: { shortcuts: Shortcut[] }) => {
   if (!shortcuts.length) return null;
