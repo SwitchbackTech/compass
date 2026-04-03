@@ -1,8 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { type RegisterableHotkey } from "@tanstack/react-hotkeys";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
+import { SHORTCUTS } from "@web/common/shortcuts/shortcut.registry";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
@@ -15,39 +14,35 @@ export function useGlobalShortcuts() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const nowHotkey = VIEW_SHORTCUTS.now.key.toUpperCase() as RegisterableHotkey;
-  const dayHotkey = VIEW_SHORTCUTS.day.key.toUpperCase() as RegisterableHotkey;
-  const weekHotkey =
-    VIEW_SHORTCUTS.week.key.toUpperCase() as RegisterableHotkey;
 
-  useAppHotkeyUp(nowHotkey, () => {
-    if (location.pathname !== VIEW_SHORTCUTS.now.route) {
-      navigate(VIEW_SHORTCUTS.now.route);
+  useAppHotkeyUp(SHORTCUTS.NAV_NOW.hotkey, () => {
+    if (location.pathname !== ROOT_ROUTES.NOW) {
+      navigate(ROOT_ROUTES.NOW);
     }
   });
 
-  useAppHotkeyUp(dayHotkey, () => {
-    if (!location.pathname.startsWith(VIEW_SHORTCUTS.day.route)) {
-      navigate(VIEW_SHORTCUTS.day.route);
+  useAppHotkeyUp(SHORTCUTS.NAV_DAY.hotkey, () => {
+    if (!location.pathname.startsWith(ROOT_ROUTES.DAY)) {
+      navigate(ROOT_ROUTES.DAY);
     }
   });
 
-  useAppHotkeyUp(weekHotkey, () => {
-    if (location.pathname !== VIEW_SHORTCUTS.week.route) {
-      navigate(VIEW_SHORTCUTS.week.route);
+  useAppHotkeyUp(SHORTCUTS.NAV_WEEK.hotkey, () => {
+    if (location.pathname !== ROOT_ROUTES.WEEK) {
+      navigate(ROOT_ROUTES.WEEK);
     }
   });
 
-  useAppHotkeyUp("Z", () => {
+  useAppHotkeyUp(SHORTCUTS.NAV_LOGOUT.hotkey, () => {
     navigate(ROOT_ROUTES.LOGOUT);
   });
 
-  useAppHotkeyUp("R", () => {
+  useAppHotkeyUp(SHORTCUTS.NAV_REMINDER.hotkey, () => {
     dispatch(viewSlice.actions.updateReminder(true));
   });
 
   useAppHotkey(
-    "Mod+K",
+    SHORTCUTS.CMD_PALETTE.hotkey,
     () => {
       dispatch(settingsSlice.actions.toggleCmdPalette());
     },

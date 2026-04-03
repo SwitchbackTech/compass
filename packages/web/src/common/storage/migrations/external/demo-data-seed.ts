@@ -2,7 +2,7 @@ import { Origin, Priorities } from "@core/constants/core.constants";
 import { type Event_Core } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
-import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
+import { SHORTCUTS } from "@web/common/shortcuts/shortcut.registry";
 import { type Task } from "@web/common/types/task.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
@@ -153,11 +153,11 @@ function generateDemoData() {
       order: 2,
     }),
     createTask({
-      title: `Go to Now view (${VIEW_SHORTCUTS.now.key})`,
+      title: `Go to Now view (${SHORTCUTS.NAV_NOW.display})`,
       order: 3,
     }),
     createTask({
-      title: `Go to Week view (${VIEW_SHORTCUTS.week.key})`,
+      title: `Go to Week view (${SHORTCUTS.NAV_WEEK.display})`,
       order: 4,
     }),
     createTask({

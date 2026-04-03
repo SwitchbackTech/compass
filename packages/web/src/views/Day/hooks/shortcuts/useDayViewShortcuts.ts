@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { toast } from "react-toastify";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
+import { SHORTCUTS } from "@web/common/shortcuts/shortcut.registry";
 import {
   getFocusedTaskId,
   isFocusedOnTaskCheckbox,
@@ -115,43 +116,33 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     }
   }, [onRestoreTask, onRestoreEvent, undoToastId, eventUndoToastId]);
 
-  useAppHotkeyUp("J", () => {
+  useAppHotkeyUp(SHORTCUTS.NAV_PREV.hotkey, () => {
     onPrevDay?.();
   });
-
-  useAppHotkeyUp("K", () => {
+  useAppHotkeyUp(SHORTCUTS.NAV_NEXT.hotkey, () => {
     onNextDay?.();
   });
-
-  useAppHotkeyUp("T", () => {
+  useAppHotkeyUp(SHORTCUTS.NAV_TODAY.hotkey, () => {
     onGoToToday?.();
   });
-
-  // Sidebar shortcut
-  useAppHotkeyUp("[", () => {
+  useAppHotkeyUp(SHORTCUTS.TOGGLE_SIDEBAR.hotkey, () => {
     onToggleSidebar?.();
   });
 
-  // Tasks shortcuts
-  useAppHotkeyUp("U", () => {
+  // Task shortcuts
+  useAppHotkeyUp(SHORTCUTS.DAY_FOCUS_TASKS.hotkey, () => {
     onFocusTasks?.();
   });
-
-  useAppHotkeyUp("C", () => {
+  useAppHotkeyUp(SHORTCUTS.DAY_CREATE_TASK.hotkey, () => {
     onAddTask?.();
   });
-
-  useAppHotkeyUp("E", () => {
+  useAppHotkeyUp(SHORTCUTS.DAY_EDIT_TASK.hotkey, () => {
     onEditTask?.();
   });
-
   useAppHotkeyUp("Delete", handleDeleteTask);
-
   useAppHotkeyUp("Backspace", handleDeleteTask);
-
   useAppHotkeyUp("Enter", handleEnterKey);
-
-  useAppHotkeyUp("Mod+Z", handleRestore);
+  useAppHotkeyUp(SHORTCUTS.DAY_UNDO.hotkey, handleRestore);
   useAppHotkeyUp("Mod+Shift+Z", handleRestore);
 
   useAppHotkey(
@@ -159,36 +150,26 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     () => {
       onEscape?.();
     },
-    {
-      ignoreInputs: false,
-      blurOnTrigger: true,
-    },
+    { ignoreInputs: false, blurOnTrigger: true },
   );
 
   useAppHotkey(
-    "Control+Meta+ArrowRight",
+    SHORTCUTS.DAY_MIGRATE_FWD.hotkey,
     handleMigrationNavigation("forward"),
-    {
-      ignoreInputs: false,
-      blurOnTrigger: true,
-    },
+    { ignoreInputs: false, blurOnTrigger: true },
   );
 
   useAppHotkey(
-    "Control+Meta+ArrowLeft",
+    SHORTCUTS.DAY_MIGRATE_BACK.hotkey,
     handleMigrationNavigation("backward"),
-    {
-      ignoreInputs: false,
-      blurOnTrigger: true,
-    },
+    { ignoreInputs: false, blurOnTrigger: true },
   );
 
   // Agenda shortcuts
-  useAppHotkeyUp("I", () => {
+  useAppHotkeyUp(SHORTCUTS.DAY_FOCUS_AGENDA.hotkey, () => {
     onFocusAgenda?.();
   });
-
-  useAppHotkeyUp("M", () => {
+  useAppHotkeyUp(SHORTCUTS.DAY_EDIT_EVENT.hotkey, () => {
     onEditEvent?.();
   });
 }

@@ -9,7 +9,7 @@ import {
   useRole,
 } from "@floating-ui/react";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
+import { SHORTCUTS } from "@web/common/shortcuts/shortcut.registry";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 
 interface SelectViewProps {
@@ -93,22 +93,22 @@ export const SelectView = ({
 
   const options = [
     {
-      route: VIEW_SHORTCUTS.now.route,
-      label: VIEW_SHORTCUTS.now.label,
+      route: ROOT_ROUTES.NOW,
+      label: SHORTCUTS.NAV_NOW.label,
       view: "Now" as const,
-      key: VIEW_SHORTCUTS.now.key,
+      key: SHORTCUTS.NAV_NOW.display,
     },
     {
-      route: VIEW_SHORTCUTS.day.route,
-      label: VIEW_SHORTCUTS.day.label,
+      route: ROOT_ROUTES.DAY,
+      label: SHORTCUTS.NAV_DAY.label,
       view: "Day" as const,
-      key: VIEW_SHORTCUTS.day.key,
+      key: SHORTCUTS.NAV_DAY.display,
     },
     {
-      route: VIEW_SHORTCUTS.week.route,
-      label: VIEW_SHORTCUTS.week.label,
+      route: ROOT_ROUTES.WEEK,
+      label: SHORTCUTS.NAV_WEEK.label,
       view: "Week" as const,
-      key: VIEW_SHORTCUTS.week.key,
+      key: SHORTCUTS.NAV_WEEK.display,
     },
   ];
 

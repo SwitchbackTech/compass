@@ -1,6 +1,10 @@
 import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
 import { renderHook, waitFor } from "@web/__tests__/__mocks__/mock.render";
-import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
+import {
+  useAppHotkey,
+  useAppHotkeySequence,
+  useAppHotkeyUp,
+} from "@web/common/hooks/useAppHotkey";
 
 function dispatchKeyEvent(
   key: string,
@@ -141,5 +145,62 @@ describe("useAppHotkey", () => {
     await waitFor(() => {
       expect(mockHandler).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe("useAppHotkeySequence", () => {
+  const mockHandler = jest.fn();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    HotkeyManager.resetInstance();
+    document.body.removeAttribute("data-app-locked");
+  });
+
+  it("calls the handler when the sequence is pressed in order", async () => {
+    renderHook(() => useAppHotkeySequence(["E", "D"], mockHandler));
+
+    dispatchKeyEvent("e", "keydown");
+    dispatchKeyEvent("e", "keyup");
+    dispatchKeyEvent("d", "keydown");
+    dispatchKeyEvent("d", "keyup");
+
+    await waitFor(() => {
+      expect(mockHandler).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("does not call the handler when the app is locked", async () => {
+    document.body.dataset.appLocked = "true";
+
+    renderHook(() => useAppHotkeySequence(["E", "D"], mockHandler));
+
+    dispatchKeyEvent("e", "keydown");
+    dispatchKeyEvent("e", "keyup");
+    dispatchKeyEvent("d", "keydown");
+    dispatchKeyEvent("d", "keyup");
+
+    await waitFor(() => {
+      expect(mockHandler).not.toHaveBeenCalled();
+    });
+  });
+
+  it("ignores sequence when focused in an input by default", async () => {
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    input.focus();
+
+    renderHook(() => useAppHotkeySequence(["E", "D"], mockHandler));
+
+    dispatchKeyEvent("e", "keydown", {}, input);
+    dispatchKeyEvent("e", "keyup", {}, input);
+    dispatchKeyEvent("d", "keydown", {}, input);
+    dispatchKeyEvent("d", "keyup", {}, input);
+
+    await waitFor(() => {
+      expect(mockHandler).not.toHaveBeenCalled();
+    });
+
+    document.body.removeChild(input);
   });
 });
