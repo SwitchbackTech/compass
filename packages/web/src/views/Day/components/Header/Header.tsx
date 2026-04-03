@@ -1,15 +1,10 @@
 import { type FC, useCallback, useRef } from "react";
 import { theme } from "@web/common/styles/theme";
-import { AccountIcon } from "@web/components/AuthModal/AccountIcon";
-import { AlignItems } from "@web/components/Flex/styled";
+import { HeaderInfoIcon } from "@web/components/HeaderInfoIcon/HeaderInfoIcon";
 import { SidebarIcon } from "@web/components/Icons/Sidebar";
 import { SelectView } from "@web/components/SelectView/SelectView";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { Reminder } from "@web/views/Calendar/components/Header/Reminder/Reminder";
-import {
-  StyledHeaderRow,
-  StyledLeftGroup,
-} from "@web/views/Calendar/components/Header/styled";
 import { useReminderHotkey } from "@web/views/Calendar/hooks/shortcuts/useFocusHotkey";
 
 interface Props {
@@ -34,7 +29,7 @@ export const Header: FC<Props> = ({
   useReminderHotkey(handleFocusReminder, [handleFocusReminder], showReminder);
 
   return (
-    <StyledHeaderRow alignItems={AlignItems.BASELINE}>
+    <div className="text-text-light relative flex h-20 w-full items-baseline justify-between">
       <TooltipWrapper
         description={isSidebarOpen ? "Hide shortcuts" : "Show shortcuts"}
         onClick={onToggleSidebar}
@@ -48,12 +43,14 @@ export const Header: FC<Props> = ({
           }
         />
       </TooltipWrapper>
-      <StyledLeftGroup />
+      <div className="z-2 flex items-center justify-between" />
 
       {showReminder && <Reminder ref={reminderRef} />}
 
-      <AccountIcon />
-      <SelectView />
-    </StyledHeaderRow>
+      <div className="z-2 flex h-full items-center justify-between">
+        <HeaderInfoIcon />
+        <SelectView />
+      </div>
+    </div>
   );
 };

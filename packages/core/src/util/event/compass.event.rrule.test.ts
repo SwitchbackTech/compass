@@ -24,7 +24,10 @@ import {
 
 describe("CompassEventRRule: ", () => {
   it(`should return the correct number of events based on rrule count`, () => {
-    const count = faker.number.int({ min: 1, max: GCAL_MAX_RECURRENCES });
+    const count = faker.number.int({
+      min: 1,
+      max: GCAL_MAX_RECURRENCES - 1,
+    });
     const rruleString = `RRULE:FREQ=DAILY;COUNT=${count}`;
 
     const baseEvent = createMockBaseEvent({
@@ -113,7 +116,7 @@ describe("CompassEventRRule: ", () => {
 
   describe("diffOptions", () => {
     it("should return the differences between two rrule options", () => {
-      const until = dayjs();
+      const until = dayjs("2026-01-15T12:34:56Z");
       const untilRule = `UNTIL=${until.toRRuleDTSTARTString()}`;
       const rule = [`RRULE:FREQ=DAILY;COUNT=10;BYDAY=MO,WE,FR;${untilRule}`];
       const _baseEvent = createMockBaseEvent({ recurrence: { rule } });

@@ -1,10 +1,13 @@
 import axios from "axios";
 import { Logger } from "@core/logger/winston.logger";
+import { mapCompassUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
 import {
   type Subscriber,
   SubscriberSchema,
 } from "@core/types/email/email.types";
+import { type Schema_User } from "@core/types/user.types";
 import { ENV } from "@backend/common/constants/env.constants";
+import { isMissingUserTagId } from "@backend/common/constants/env.util";
 import { EmailerError } from "@backend/common/errors/emailer/emailer.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import {
@@ -30,6 +33,21 @@ class EmailService {
         },
       };
     }
+  }
+
+  static async tagNewUserIfEnabled(
+    user: Schema_User,
+    isNewUser: boolean,
+  ): Promise<void> {
+    if (isMissingUserTagId()) {
+      logger.warn(
+        "Did not tag subscriber due to missing EMAILER_ ENV value(s)",
+      );
+      return;
+    }
+    if (!isNewUser) return;
+    const subscriber = mapCompassUserToEmailSubscriber(user);
+    await EmailService.addTagToSubscriber(subscriber, ENV.EMAILER_USER_TAG_ID!);
   }
 
   static async addTagToSubscriber(

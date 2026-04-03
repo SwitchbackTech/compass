@@ -1,7 +1,7 @@
 import "react-datepicker/dist/react-datepicker.css";
 import { createRoot } from "react-dom/client";
 import "react-toastify/dist/ReactToastify.css";
-import { sessionInit } from "@web/auth/session/SessionProvider";
+import { sessionInit } from "@web/auth/compass/session/SessionProvider";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import {
   initializeDatabaseWithErrorHandling,

@@ -1,4 +1,5 @@
 import { Status } from "@core/errors/status.codes";
+import { isGoogleRepairQuotaError } from "@backend/common/services/gcal/gcal.utils";
 import { type ErrorMetadata } from "@backend/common/types/error.types";
 
 interface GcalErrors {
@@ -54,3 +55,13 @@ export const GcalError: GcalErrors = {
     isOperational: true,
   },
 };
+
+const GOOGLE_REPAIR_FAILED_MESSAGE =
+  "Google Calendar repair failed. Please try again.";
+const GOOGLE_REPAIR_QUOTA_MESSAGE =
+  "Google Calendar repair hit a Google API limit. Please wait a few minutes and try again.";
+
+export const getGoogleRepairErrorMessage = (err: unknown): string =>
+  isGoogleRepairQuotaError(err)
+    ? GOOGLE_REPAIR_QUOTA_MESSAGE
+    : GOOGLE_REPAIR_FAILED_MESSAGE;

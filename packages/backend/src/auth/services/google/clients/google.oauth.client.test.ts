@@ -12,6 +12,10 @@ jest.mock("google-auth-library", () => {
   class MockOAuth2Client {
     credentials: Record<string, unknown> = {};
     _clientId = "mock-client-id";
+    getToken = jest.fn();
+    setCredentials = jest.fn((credentials: Record<string, unknown>) => {
+      this.credentials = credentials;
+    });
     verifyIdToken = jest.fn();
     getAccessToken = jest.fn();
   }
@@ -24,6 +28,8 @@ jest.mock("google-auth-library", () => {
 type MockOAuthClientInstance = {
   credentials: Record<string, unknown>;
   _clientId: string;
+  getToken: jest.Mock;
+  setCredentials: jest.Mock;
   verifyIdToken: jest.Mock;
   getAccessToken: jest.Mock;
 };
@@ -84,6 +90,45 @@ describe("GoogleOAuthClient", () => {
       idToken: "token",
       audience: "mock-client-id",
     });
+  });
+
+  it("exchanges an auth code for tokens and returns the Google user info", async () => {
+    const client = new GoogleOAuthClient();
+    const mockOAuthClient = getMockOAuthClient(client);
+    const payload = {
+      sub: faker.string.uuid(),
+      email: faker.internet.email(),
+    };
+    const tokens = {
+      access_token: faker.internet.jwt(),
+      id_token: "token",
+      refresh_token: faker.string.uuid(),
+    };
+
+    mockOAuthClient.getToken.mockResolvedValue({ tokens });
+    mockOAuthClient.verifyIdToken.mockResolvedValue({
+      getPayload: () => payload,
+    });
+
+    await expect(
+      client.exchangeAuthCode({
+        clientType: "web",
+        thirdPartyId: "google",
+        redirectURIInfo: {
+          redirectURIOnProviderDashboard: "http://localhost:9080",
+          redirectURIQueryParams: { code: "auth-code" },
+        },
+      }),
+    ).resolves.toEqual({
+      gUser: payload,
+      tokens,
+    });
+
+    expect(mockOAuthClient.getToken).toHaveBeenCalledWith({
+      code: "auth-code",
+      codeVerifier: undefined,
+    });
+    expect(mockOAuthClient.setCredentials).toHaveBeenCalledWith(tokens);
   });
 
   it("returns the access token when refreshAccessToken receives a non-empty token", async () => {

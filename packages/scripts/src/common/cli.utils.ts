@@ -22,7 +22,7 @@ export const getApiBaseUrl = async (
     return baseUrl;
   }
 
-  const domain = await getDomainAnswer(category);
+  const domain = await getDomainAnswer();
   return `https://${domain}/api`;
 };
 
@@ -48,28 +48,24 @@ export const getClientId = async (environment: Environment_Cli) => {
   throw Error("Invalid destination");
 };
 
-const getDomainAnswer = async (env: string) => {
-  const isLocal = env === "local";
-  const isStaging = env === "staging";
+const getDomainAnswer = async () => {
+  const { hostname, host } = new URL(CLI_ENV.FRONTEND_URL);
 
-  if (isStaging && CLI_ENV.STAGING_WEB_URL !== undefined) {
-    return new URL(CLI_ENV.STAGING_WEB_URL).host;
-  }
-
-  if (!isLocal && !isStaging && CLI_ENV.PROD_WEB_URL !== undefined) {
-    return new URL(CLI_ENV.PROD_WEB_URL).host;
+  if (hostname !== "localhost") {
+    return host;
   }
 
   const q = `Enter the domain of the VM that will be used.
     Do not include 'https://', just the domain.
     Example: app.yourdomain.com
 
+    Tip: set FRONTEND_URL in .env to skip this step.
+
     Type here:`;
 
   return prompt([{ type: "input", name: "answer", message: q }])
     .then((a: { answer: string }) => {
-      log.info(`\tUsing: ${a.answer}.
-        Save this value in .env to skip this step next time`);
+      log.info(`\tUsing: ${a.answer}`);
       return a.answer;
     })
     .catch((e) => {

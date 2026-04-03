@@ -15,12 +15,24 @@ export class AuthRoutes extends CommonRoutesConfig {
   }
 
   configureRoutes(): express.Application {
+    const requireSession = verifySession() as express.RequestHandler;
+
     this.app
       .route(`/api/auth/session`)
       .all(authMiddleware.verifyIsDev)
+      .post((req, res) => {
+        void authController.createSession(req, res);
+      })
+      .get(requireSession, (req, res) => {
+        authController.getUserIdFromSession(req, res);
+      });
 
-      .post(authController.createSession)
-      .get([verifySession(), authController.getUserIdFromSession]);
+    this.app
+      .route(`/api/auth/google/connect`)
+      .all(requireSession)
+      .post((req, res) => {
+        authController.connectGoogle(req, res);
+      });
 
     return this.app;
   }

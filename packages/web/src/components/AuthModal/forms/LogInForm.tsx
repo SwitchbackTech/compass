@@ -2,7 +2,7 @@ import { type FC } from "react";
 import {
   type LogInFormData,
   LogInSchema,
-} from "@web/auth/schemas/auth.schemas";
+} from "@web/auth/compass/schemas/auth.schemas";
 import { AuthButton } from "../components/AuthButton";
 import { AuthInput } from "../components/AuthInput";
 import { useZodForm } from "../hooks/useZodForm";
@@ -14,6 +14,8 @@ interface SignInFormProps {
   onForgotPassword: () => void;
   /** Whether form submission is in progress */
   isSubmitting?: boolean;
+  /** Optional status message shown above the form */
+  statusMessage?: string | null;
 }
 
 /**
@@ -25,6 +27,7 @@ export const LogInForm: FC<SignInFormProps> = ({
   onSubmit,
   onForgotPassword,
   isSubmitting,
+  statusMessage,
 }) => {
   const form = useZodForm({
     schema: LogInSchema,
@@ -34,6 +37,12 @@ export const LogInForm: FC<SignInFormProps> = ({
 
   return (
     <form onSubmit={form.handleSubmit} className="flex w-full flex-col gap-4">
+      {statusMessage ? (
+        <p className="text-status-success text-center text-sm" role="status">
+          {statusMessage}
+        </p>
+      ) : null}
+
       <AuthInput
         type="email"
         placeholder="Email"

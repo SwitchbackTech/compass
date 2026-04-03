@@ -2,13 +2,11 @@ import { type ClientSession, ObjectId } from "mongodb";
 import {
   EVENT_CHANGED,
   SOMEDAY_EVENT_CHANGED,
-} from "@core/constants/websocket.constants";
-import { BaseError } from "@core/errors/errors.base";
+} from "@core/constants/sse.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { type CompassEvent } from "@core/types/event.types";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import { UserError } from "@backend/common/errors/user/user.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import { applyCompassPlan } from "@backend/event/classes/compass.event.executor";
 import { CompassEventFactory } from "@backend/event/classes/compass.event.generator";
@@ -21,21 +19,15 @@ import {
   _deleteGcal,
   _updateGcal,
 } from "@backend/event/services/event.service";
-import { webSocketServer } from "@backend/servers/websocket/websocket.server";
+import { sseServer } from "@backend/servers/sse/sse.server";
 import { type Event_Transition } from "@backend/sync/sync.types";
+import { isMissingGoogleRefreshToken } from "@backend/sync/util/sync.util";
 import {
   type PersistedCompassEvent,
   isPersistedCoreEvent,
 } from "./compass.sync.processor.util";
 
 const logger = Logger("app.compass.sync.processor");
-
-const isMissingGoogleRefreshToken = (error: unknown): error is BaseError => {
-  return (
-    error instanceof BaseError &&
-    error.description === UserError.MissingGoogleRefreshToken.description
-  );
-};
 
 export class CompassSyncProcessor {
   static async processEvents(
@@ -113,10 +105,10 @@ export class CompassSyncProcessor {
       notifications.forEach((notification) => {
         switch (notification) {
           case EVENT_CHANGED:
-            webSocketServer.handleBackgroundCalendarChange(userId);
+            sseServer.handleBackgroundCalendarChange(userId);
             break;
           case SOMEDAY_EVENT_CHANGED:
-            webSocketServer.handleBackgroundSomedayChange(userId);
+            sseServer.handleBackgroundSomedayChange(userId);
             break;
           default:
             logger.error(`Unknown notification type for user: ${userId}`);

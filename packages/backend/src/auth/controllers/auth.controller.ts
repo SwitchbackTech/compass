@@ -1,10 +1,17 @@
 import { ObjectId } from "mongodb";
 import { type SessionRequest } from "supertokens-node/framework/express";
+import {
+  type GoogleAuthCodeRequest,
+  GoogleAuthCodeRequestSchema,
+  GoogleConnectResponseSchema,
+} from "@core/types/auth.types";
 import { zObjectId } from "@core/types/type.utils";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
+import googleAuthService from "@backend/auth/services/google/google.auth.service";
 import {
   type ReqBody,
   type Res_Promise,
+  type SReqBody,
 } from "@backend/common/types/express.types";
 
 class AuthController {
@@ -37,6 +44,20 @@ class AuthController {
     const userId = zObjectId.parse(req.session?.getUserId()).toString();
 
     res.promise({ userId });
+  };
+
+  connectGoogle = (
+    req: SReqBody<GoogleAuthCodeRequest>,
+    res: Res_Promise,
+  ): void => {
+    const userId = zObjectId.parse(req.session?.getUserId()).toString();
+    const input = GoogleAuthCodeRequestSchema.parse(req.body);
+
+    res.promise(
+      googleAuthService
+        .connectGoogleToCurrentUser(userId, input)
+        .then(() => GoogleConnectResponseSchema.parse({ status: "OK" })),
+    );
   };
 }
 

@@ -1,7 +1,7 @@
 import { Categories_Event } from "@core/types/event.types";
 import { assembleDefaultEvent } from "../event/event.util";
 
-jest.mock("@web/auth/session/session.util", () => ({
+jest.mock("@web/auth/compass/session/session.util", () => ({
   getUserId: jest.fn().mockResolvedValue("mock-user-id"),
 }));
 describe("assembleDefaultEvent", () => {

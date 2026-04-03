@@ -1,4 +1,5 @@
-import { Page, expect } from "@playwright/test";
+import { type Page, expect } from "@playwright/test";
+import "./compass-window";
 
 /**
  * Sets up the page for OAuth overlay testing.
@@ -9,7 +10,7 @@ export const prepareOAuthTestPage = async (page: Page) => {
   // Enable test mode before app loads
   await page.addInitScript(() => {
     // Enable e2e test mode - this exposes test hooks in the app
-    (window as any).__COMPASS_E2E_TEST__ = true;
+    window.__COMPASS_E2E_TEST__ = true;
   });
 
   // Mock API endpoints to prevent real network calls
@@ -60,21 +61,22 @@ export const waitForAppReady = async (page: Page) => {
 
   // Wait for store to be available
   await page.waitForFunction(
-    () => typeof (window as any).__COMPASS_STORE__?.dispatch === "function",
+    () => typeof window.__COMPASS_E2E_STORE__?.dispatch === "function",
     { timeout: 10000 },
   );
 
-  // Wait for all network requests to complete.
-  // This is critical because sessionInit() triggers async session checks
-  // that can call handleSessionMissing() → clear() and overwrite test state.
-  await page.waitForLoadState("networkidle");
+  // Avoid networkidle here. The app can keep background requests alive, which
+  // makes this readiness check hang in CI even though the UI is already usable.
+  await page.waitForFunction(() => document.readyState === "complete", {
+    timeout: 10000,
+  });
 
   // Wait for user metadata fetch to settle (not "loading").
   // This prevents race conditions between API responses and test state changes.
   await page.waitForFunction(
     () => {
-      const store = (window as any).__COMPASS_STORE__;
-      const status = store?.getState()?.userMetadata?.status;
+      const status =
+        window.__COMPASS_E2E_STORE__?.getState()?.userMetadata?.status;
       // Wait until status is "idle" or "loaded" (not "loading")
       return status !== "loading";
     },
@@ -84,13 +86,14 @@ export const waitForAppReady = async (page: Page) => {
 
 /**
  * Set the authenticating state via Redux (triggers OAuth overlay when true).
- * Uses semantic role="status" query instead of arbitrary timeout.
+ * Dispatches to the store and waits for the UI to reflect the change.
+ * SessionProvider skips real session checks in e2e mode, so the store state
+ * is stable after dispatch — no retry loop needed.
  */
 export const setIsSyncing = async (page: Page, value: boolean) => {
   await page.evaluate((syncValue) => {
-    const store = (window as any).__COMPASS_STORE__;
+    const store = window.__COMPASS_E2E_STORE__;
     if (!store) return;
-
     if (syncValue) {
       store.dispatch({ type: "auth/startAuthenticating" });
     } else {
@@ -98,13 +101,10 @@ export const setIsSyncing = async (page: Page, value: boolean) => {
     }
   }, value);
 
-  // Wait for overlay visibility using semantic query (replaces waitForTimeout)
-  // The SyncEventsOverlay renders with role="status" and aria-busy="true"
-  const overlay = page.locator(OVERLAY_SELECTORS.statusPanel);
   if (value) {
-    await expect(overlay).toBeVisible();
+    await expect(page.locator(OVERLAY_SELECTORS.statusPanel)).toBeVisible();
   } else {
-    await expect(overlay).not.toBeVisible();
+    await expect(page.locator(OVERLAY_SELECTORS.statusPanel)).toHaveCount(0);
   }
 };
 
@@ -201,22 +201,26 @@ const CONNECTION_STATE_TO_LABEL: Record<GoogleConnectionState, RegExp> = {
 };
 
 /**
+ * HeaderInfoIcon only renders role="status" for warning/error connection states
+ * (see HeaderInfoIcon.tsx). Muted / checking / importing-without-background-import
+ * do not expose this region.
+ */
+const GOOGLE_HEADER_STATUS_VISIBLE_STATES: GoogleConnectionState[] = [
+  "RECONNECT_REQUIRED",
+  "ATTENTION",
+];
+
+/**
  * Set the Google connection state via Redux userMetadata slice.
- * This updates the sidebar icon to reflect the given connection state.
- * Uses semantic role="status" query instead of arbitrary timeout.
+ * Dispatches to the store, waits for Redux to match, then asserts the header
+ * status region when the UI shows it (reconnect required / needs repair).
  */
 export const setGoogleConnectionState = async (
   page: Page,
   state: GoogleConnectionState,
 ) => {
-  // Wait for store to be fully available
-  await page.waitForFunction(
-    () => typeof (window as any).__COMPASS_STORE__?.dispatch === "function",
-    { timeout: 10000 },
-  );
-
   await page.evaluate((connectionState) => {
-    const store = (window as any).__COMPASS_STORE__;
+    const store = window.__COMPASS_E2E_STORE__;
     if (!store) return;
     store.dispatch({
       type: "userMetadata/set",
@@ -224,32 +228,37 @@ export const setGoogleConnectionState = async (
     });
   }, state);
 
-  // Wait for Redux state to reflect the change
   await page.waitForFunction(
-    (expectedState) => {
-      const store = (window as any).__COMPASS_STORE__;
-      return (
-        store?.getState()?.userMetadata?.current?.google?.connectionState ===
-        expectedState
-      );
+    (expected) => {
+      const cs =
+        window.__COMPASS_E2E_STORE__?.getState()?.userMetadata?.current?.google
+          ?.connectionState;
+      return cs === expected;
     },
     state,
-    { timeout: 10000 },
+    { timeout: 5000 },
   );
 
-  // Wait for DOM to update with the new state via aria-label
-  // Uses waitForFunction to verify in-browser, more reliable than locator assertions
-  const expectedPattern = CONNECTION_STATE_TO_LABEL[state];
+  if (GOOGLE_HEADER_STATUS_VISIBLE_STATES.includes(state)) {
+    await expect(
+      page.getByRole("status", { name: CONNECTION_STATE_TO_LABEL[state] }),
+    ).toBeVisible();
+  }
+};
+
+export const expectGoogleConnectionStateInStore = async (
+  page: Page,
+  state: GoogleConnectionState,
+) => {
   await page.waitForFunction(
-    (pattern) => {
-      const el = document.querySelector(
-        '[role="status"][aria-label]:not([aria-busy])',
-      );
-      const label = el?.getAttribute("aria-label") ?? "";
-      return new RegExp(pattern, "i").test(label);
+    (expected) => {
+      const cs =
+        window.__COMPASS_E2E_STORE__?.getState()?.userMetadata?.current?.google
+          ?.connectionState;
+      return cs === expected;
     },
-    expectedPattern.source,
-    { timeout: 10000 },
+    state,
+    { timeout: 5000 },
   );
 };
 

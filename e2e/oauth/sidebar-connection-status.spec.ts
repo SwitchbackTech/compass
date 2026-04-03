@@ -1,7 +1,8 @@
-import { expect, test } from "@playwright/test";
+import { type Page, expect, test } from "@playwright/test";
 import {
   type GoogleConnectionState,
   SIDEBAR_STATUS_LABELS,
+  expectGoogleConnectionStateInStore,
   markUserAsAuthenticated,
   prepareOAuthTestPage,
   setGoogleConnectionState,
@@ -9,21 +10,11 @@ import {
 } from "../utils/oauth-test-utils";
 
 /**
- * E2E tests for sidebar Google Calendar connection status.
+ * E2E tests for Google Calendar connection state (Redux + header status when visible).
  *
- * These tests verify that the sidebar status container correctly reflects the 5 connection
- * states from the server (GoogleConnectionState), plus the client-only "checking"
- * state that appears while metadata is loading.
- *
- * Connection states and their status messages:
- * - NOT_CONNECTED: "Google Calendar not connected. Click to connect."
- * - RECONNECT_REQUIRED: "Google Calendar needs reconnecting. Click to reconnect."
- * - IMPORTING: "Google Calendar is syncing in the background."
- * - HEALTHY: "Google Calendar connected."
- * - ATTENTION: "Google Calendar needs repair. Click to repair."
- * - "checking" (client-only): "Checking Google Calendar status…"
- *
- * The status is rendered in SidebarIconRow with role="status" and managed by useConnectGoogle hook.
+ * HeaderInfoIcon only renders role="status" for warning/error states (reconnect required,
+ * needs repair). Other states are reflected in Redux only; command palette still exposes
+ * connect/repair actions.
  *
  * NOTE: These tests are skipped on mobile because the MobileGate component
  * blocks the entire app on mobile viewports.
@@ -35,10 +26,8 @@ test.describe("Sidebar Connection Status", () => {
   // Run tests serially to avoid state interference
   test.describe.configure({ mode: "serial" });
 
-  // Helper to get the sidebar status container
-  // Filter: has aria-label (excludes DndLiveRegion), no aria-busy (excludes overlay)
-  const getSidebarStatus = (page: import("@playwright/test").Page) =>
-    page.locator('[role="status"][aria-label]:not([aria-busy])');
+  const getHeaderGoogleStatus = (page: Page) =>
+    page.locator("#cal").getByRole("status", { name: /Google Calendar/i });
 
   test.beforeEach(async ({ page }) => {
     await prepareOAuthTestPage(page);
@@ -50,89 +39,49 @@ test.describe("Sidebar Connection Status", () => {
     await setGoogleConnectionState(page, "NOT_CONNECTED");
   });
 
-  test("shows NOT_CONNECTED status", async ({ page }) => {
-    // State already set in beforeEach - just verify it
-
-    const status = getSidebarStatus(page);
-    await expect(status).toHaveAttribute(
-      "aria-label",
-      SIDEBAR_STATUS_LABELS.notConnected,
-    );
+  test("stores NOT_CONNECTED in Redux (header icon hidden for muted state)", async ({
+    page,
+  }) => {
+    await expectGoogleConnectionStateInStore(page, "NOT_CONNECTED");
   });
 
-  test("shows checking status when metadata is loading", async ({ page }) => {
-    // The "checking" state requires:
-    // 1. userMetadataStatus === "loading"
-    // 2. hasUserEverAuthenticated() returns true (localStorage flag)
-    //
-    // Set the localStorage flag first, then force loading state.
+  test("checking path: authenticated user with metadata loading", async ({
+    page,
+  }) => {
     await markUserAsAuthenticated(page);
 
-    // Force the loading state by dispatching both clear and setLoading
     await page.evaluate(() => {
-      const store = (window as any).__COMPASS_STORE__;
+      const store = window.__COMPASS_E2E_STORE__;
       if (!store) return;
-      // Clear any existing metadata
       store.dispatch({ type: "userMetadata/clear" });
-      // Set to loading state
       store.dispatch({ type: "userMetadata/setLoading" });
     });
 
-    // Wait for state to be in loading
     await page.waitForFunction(
-      () => {
-        const store = (window as any).__COMPASS_STORE__;
-        return store?.getState()?.userMetadata?.status === "loading";
-      },
+      () =>
+        window.__COMPASS_E2E_STORE__?.getState()?.userMetadata?.status ===
+        "loading",
       { timeout: 5000 },
     );
 
-    // Wait for status container to show "checking" state via aria-label
-    const status = getSidebarStatus(page);
-    await expect(status).toHaveAttribute(
-      "aria-label",
-      /Checking Google Calendar/i,
-    );
+    // "Checking" does not render HeaderInfoIcon (muted / no warning-error icon).
+    await expect(getHeaderGoogleStatus(page)).toHaveCount(0);
   });
 
   test("shows IMPORTING status", async ({ page }) => {
     await setGoogleConnectionState(page, "IMPORTING");
-
-    const status = getSidebarStatus(page);
-    await expect(status).toHaveAttribute(
-      "aria-label",
-      SIDEBAR_STATUS_LABELS.syncing,
-    );
   });
 
   test("shows HEALTHY status", async ({ page }) => {
     await setGoogleConnectionState(page, "HEALTHY");
-
-    const status = getSidebarStatus(page);
-    await expect(status).toHaveAttribute(
-      "aria-label",
-      SIDEBAR_STATUS_LABELS.connected,
-    );
   });
 
   test("shows ATTENTION status", async ({ page }) => {
     await setGoogleConnectionState(page, "ATTENTION");
-
-    const status = getSidebarStatus(page);
-    await expect(status).toHaveAttribute(
-      "aria-label",
-      SIDEBAR_STATUS_LABELS.needsRepair,
-    );
   });
 
   test("shows RECONNECT_REQUIRED status", async ({ page }) => {
     await setGoogleConnectionState(page, "RECONNECT_REQUIRED");
-
-    const status = getSidebarStatus(page);
-    await expect(status).toHaveAttribute(
-      "aria-label",
-      SIDEBAR_STATUS_LABELS.reconnectRequired,
-    );
   });
 });
 
@@ -143,11 +92,6 @@ test.describe("Sidebar Connection Status - State Transitions", () => {
   // Run tests serially to avoid state interference
   test.describe.configure({ mode: "serial" });
 
-  // Helper to get the sidebar status container
-  // Filter: has aria-label (excludes DndLiveRegion), no aria-busy (excludes overlay)
-  const getSidebarStatus = (page: import("@playwright/test").Page) =>
-    page.locator('[role="status"][aria-label]:not([aria-busy])');
-
   test.beforeEach(async ({ page }) => {
     await prepareOAuthTestPage(page);
     await page.goto("/week");
@@ -158,23 +102,20 @@ test.describe("Sidebar Connection Status - State Transitions", () => {
     await setGoogleConnectionState(page, "NOT_CONNECTED");
   });
 
-  test("transitions from NOT_CONNECTED to HEALTHY correctly", async ({
+  test("transitions from RECONNECT_REQUIRED to ATTENTION correctly", async ({
     page,
   }) => {
-    const status = getSidebarStatus(page);
+    await setGoogleConnectionState(page, "RECONNECT_REQUIRED");
+    await expect(
+      page.getByRole("status", {
+        name: SIDEBAR_STATUS_LABELS.reconnectRequired,
+      }),
+    ).toBeVisible();
 
-    // State already set to NOT_CONNECTED in beforeEach - just verify it
-    await expect(status).toHaveAttribute(
-      "aria-label",
-      SIDEBAR_STATUS_LABELS.notConnected,
-    );
-
-    // Transition to HEALTHY (simulating successful OAuth flow)
-    await setGoogleConnectionState(page, "HEALTHY");
-    await expect(status).toHaveAttribute(
-      "aria-label",
-      SIDEBAR_STATUS_LABELS.connected,
-    );
+    await setGoogleConnectionState(page, "ATTENTION");
+    await expect(
+      page.getByRole("status", { name: SIDEBAR_STATUS_LABELS.needsRepair }),
+    ).toBeVisible();
   });
 
   test("cycles through connection states without visual glitches", async ({
@@ -190,14 +131,12 @@ test.describe("Sidebar Connection Status - State Transitions", () => {
 
     for (const state of states) {
       await setGoogleConnectionState(page, state);
-      // setGoogleConnectionState now waits for aria-label, no timeout needed
     }
 
-    // Should end on RECONNECT_REQUIRED
-    const status = getSidebarStatus(page);
-    await expect(status).toHaveAttribute(
-      "aria-label",
-      SIDEBAR_STATUS_LABELS.reconnectRequired,
-    );
+    await expect(
+      page.getByRole("status", {
+        name: SIDEBAR_STATUS_LABELS.reconnectRequired,
+      }),
+    ).toBeVisible();
   });
 });

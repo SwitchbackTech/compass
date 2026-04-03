@@ -1,8 +1,8 @@
 import { type FC, useCallback, useEffect, useRef, useState } from "react";
 import { DotIcon } from "@phosphor-icons/react";
-import { useGoogleAuth } from "@web/auth/hooks/oauth/useGoogleAuth";
+import { useGoogleAuth } from "@web/auth/google/hooks/useGoogleAuth/useGoogleAuth";
+import { GoogleButton } from "@web/components/AuthModal/components/GoogleButton";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
-import { GoogleButton } from "@web/components/oauth/google/GoogleButton";
 import { AuthButton } from "./components/AuthButton";
 import { ForgotPasswordForm } from "./forms/ForgotPasswordForm";
 import { LogInForm } from "./forms/LogInForm";
@@ -12,14 +12,15 @@ import { useAuthFormHandlers } from "./hooks/useAuthFormHandlers";
 import { useAuthModal } from "./hooks/useAuthModal";
 import { useAuthUrlParam } from "./hooks/useAuthUrlParam";
 
-function getInitialResetPasswordToken(): string | undefined {
+function getInitialAuthToken(): string | undefined {
   if (typeof window === "undefined") {
     return undefined;
   }
 
   const searchParams = new URLSearchParams(window.location.search);
+  const authParam = searchParams.get("auth")?.toLowerCase();
 
-  if (searchParams.get("auth")?.toLowerCase() !== "reset") {
+  if (authParam !== "reset" && authParam !== "verify") {
     return undefined;
   }
 
@@ -40,7 +41,9 @@ export const AuthModal: FC = () => {
   const { isOpen, currentView, openModal, closeModal, setView } =
     useAuthModal();
   const googleAuth = useGoogleAuth();
-  const resetPasswordToken = useRef(getInitialResetPasswordToken()).current;
+  const isLoginView =
+    currentView === "login" || currentView === "loginAfterReset";
+  const authToken = useRef(getInitialAuthToken()).current;
   const {
     isSubmitting,
     submitError,
@@ -51,7 +54,7 @@ export const AuthModal: FC = () => {
   } = useAuthFormHandlers({
     currentView,
     closeModal,
-    resetPasswordToken,
+    authToken,
     setView,
   });
 
@@ -68,12 +71,12 @@ export const AuthModal: FC = () => {
   }, [currentView]);
 
   const handleSwitchAuth = useCallback(
-    () => setView(currentView === "login" ? "signUp" : "login"),
+    () => setView(currentView === "signUp" ? "login" : "signUp"),
     [currentView, setView],
   );
 
   const handleGoogleSignIn = useCallback(() => {
-    googleAuth.login();
+    void googleAuth.login();
     closeModal();
   }, [googleAuth, closeModal]);
 
@@ -93,11 +96,10 @@ export const AuthModal: FC = () => {
     return null;
   }
 
-  const showAuthSwitch = currentView === "login" || currentView === "signUp";
+  const showAuthSwitch = isLoginView || currentView === "signUp";
   const showGoogleAuth = currentView !== "resetPassword";
   const showSubmitError =
-    submitError !== null &&
-    (currentView === "login" || currentView === "signUp");
+    submitError !== null && (isLoginView || currentView === "signUp");
   const trimmedName = signUpName.trim();
   const title =
     currentView === "forgotPassword"
@@ -121,11 +123,16 @@ export const AuthModal: FC = () => {
             isSubmitting={isSubmitting}
           />
         )}
-        {currentView === "login" && (
+        {isLoginView && (
           <LogInForm
             onSubmit={handleLogin}
             onForgotPassword={navigateToForgotPassword}
             isSubmitting={isSubmitting}
+            statusMessage={
+              currentView === "loginAfterReset"
+                ? "Password reset successful. Log in with your new password."
+                : null
+            }
           />
         )}
         {currentView === "forgotPassword" && (
@@ -161,7 +168,7 @@ export const AuthModal: FC = () => {
               variant="outline"
               onClick={handleSwitchAuth}
             >
-              {currentView === "login" ? "Sign up" : "Log in"}
+              {isLoginView ? "Sign up" : "Log in"}
             </AuthButton>
           </>
         )}

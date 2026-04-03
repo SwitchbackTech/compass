@@ -1,5 +1,9 @@
 import { GaxiosError } from "gaxios";
-import { type gSchema$Event } from "@core/types/gcal";
+import {
+  type gErrorResponse,
+  type gSchema$Error,
+  type gSchema$Event,
+} from "@core/types/gcal";
 
 const cancelled = (e: gSchema$Event) => {
   /*
@@ -99,8 +103,49 @@ export const getGoogleErrorStatus = (e: unknown) => {
   return undefined;
 };
 
+const getGoogleApiError = (e: unknown): gSchema$Error | undefined => {
+  if (!isGoogleError(e)) {
+    return undefined;
+  }
+
+  const googleError = (e as GaxiosError<gErrorResponse>).response?.data?.error;
+
+  if (!googleError || typeof googleError === "string") {
+    return undefined;
+  }
+
+  return googleError;
+};
+
 export const isFullSyncRequired = (e: unknown) => {
   return getGoogleErrorStatus(e) === 410;
+};
+
+export const isGoogleRepairQuotaError = (e: unknown): boolean => {
+  if (!isGoogleError(e)) {
+    return false;
+  }
+
+  const status = getGoogleErrorStatus(e);
+  if (status !== 403 && status !== 429) {
+    return false;
+  }
+
+  const googleError = getGoogleApiError(e);
+  const reasons =
+    googleError?.errors
+      ?.map(({ reason }) => reason)
+      .filter((reason): reason is string => Boolean(reason)) ?? [];
+  const message = [googleError?.message, (e as Error).message]
+    .filter((part): part is string => Boolean(part))
+    .join(" ");
+
+  return (
+    reasons.includes("quotaExceeded") ||
+    reasons.includes("userRateLimitExceeded") ||
+    reasons.includes("rateLimitExceeded") ||
+    /quota|rate limit/i.test(message)
+  );
 };
 
 export const isInvalidValue = (e: GaxiosError) => {

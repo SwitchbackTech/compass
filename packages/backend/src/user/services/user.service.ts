@@ -5,31 +5,34 @@ import SupertokensUserMetadata, {
 } from "supertokens-node/recipe/usermetadata";
 import { Logger } from "@core/logger/winston.logger";
 import { mapUserToCompass } from "@core/mappers/map.user";
-import { Resource_Sync } from "@core/types/sync.types";
 import { zObjectId } from "@core/types/type.utils";
 import {
   type Schema_User,
   type UserMetadata,
   type UserProfile,
 } from "@core/types/user.types";
-import { shouldImportGCal } from "@core/util/event/event.util";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
-import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
+import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
-import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
+import { normalizeEmail } from "@backend/common/helpers/email.util";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
-import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import syncService from "@backend/sync/services/sync.service";
-import { isUsingHttps } from "@backend/sync/util/sync.util";
+import { findCanonicalCompassUser } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";
-import { type Summary_Delete } from "@backend/user/types/user.types";
+import {
+  type GetUserMetadataResponse,
+  type Summary_Delete,
+} from "@backend/user/types/user.types";
 
 const logger = Logger("app:user.service");
 
+/**
+ * Manages user data and metadata.
+ */
 class UserService {
   private splitName(name: string): { firstName: string; lastName: string } {
     const trimmedName = name.trim();
@@ -90,6 +93,14 @@ class UserService {
     };
   };
 
+  getCanonicalCompassUserId = async (input: {
+    email?: string | null;
+    googleUserId?: string | null;
+  }): Promise<string | null> => {
+    const user = await findCanonicalCompassUser(input);
+    return user?._id.toString() ?? null;
+  };
+
   upsertUserFromAuth = async (
     input: {
       userId: string;
@@ -103,14 +114,18 @@ class UserService {
     user: Schema_User & { userId: string };
     isNewUser: boolean;
   }> => {
-    const userId = zObjectId.parse(input.userId, {
+    const requestedUserId = zObjectId.parse(input.userId, {
       error: () => "Invalid user ID",
     });
-    const email = input.email.trim().toLowerCase();
-    const existingUser = await mongoService.user.findOne(
-      { _id: userId },
+    const email = normalizeEmail(input.email);
+    const existingUserByEmail = await mongoService.user.findOne(
+      { email },
       { session },
     );
+    const existingUser =
+      existingUserByEmail ??
+      (await mongoService.user.findOne({ _id: requestedUserId }, { session }));
+    const userId = existingUser?._id ?? requestedUserId;
 
     const isNewUser = !existingUser;
     const name = input.name?.trim() || existingUser?.name || "Mystery Person";
@@ -162,9 +177,11 @@ class UserService {
   ): Promise<Summary_Delete> => {
     const _id = zObjectId.parse(userId);
     const summary: Summary_Delete = {};
+    const authCleanupTarget =
+      await supertokensUserCleanupService.resolveByExternalUserId(userId);
     const session = await mongoService.startSession();
 
-    const result = await session.withTransaction(async (session) => {
+    await session.withTransaction(async (session) => {
       const user = await mongoService.user.findOne({ _id }, { session });
 
       if (!user) {
@@ -206,27 +223,21 @@ class UserService {
         summary.syncs += staleSyncs.deletedCount;
       }
 
-      // revoke all sessions
-      initSupertokens();
-      const { sessionsRevoked } = await compassAuthService
-        .revokeSessionsByUser(userId)
-        .catch((err) => {
-          logger.error(
-            `Failed to revoke sessions for user: ${userId} during data deletion`,
-            err,
-          );
-          return { sessionsRevoked: 0 };
-        });
-      summary.sessions = sessionsRevoked;
-
       // delete user
       const userDel = await mongoService.user.deleteOne({ _id }, { session });
       summary.user = userDel.deletedCount;
-
-      return summary;
     });
 
-    return result;
+    const { sessionsRevoked } =
+      await compassAuthService.revokeSessionsByUser(userId);
+    summary.sessions = sessionsRevoked;
+
+    const authSummary =
+      await supertokensUserCleanupService.cleanupResolvedTarget(
+        authCleanupTarget,
+      );
+
+    return { ...summary, ...authSummary };
   };
 
   initUserData = async (
@@ -256,6 +267,34 @@ class UserService {
       await syncService.stopWatches(userId);
     }
     await syncService.deleteByIntegration("google", userId);
+  };
+
+  handleLogoutCleanup = async (
+    userId: string,
+    options: { isLastActiveSession: boolean },
+  ): Promise<void> => {
+    const _id = zObjectId.parse(userId);
+    const user = await mongoService.user.findOne({ _id });
+
+    if (!user) {
+      logger.warn(`User(${userId}) not found during logout cleanup`);
+      return;
+    }
+
+    const hasGoogleConnection = Boolean(
+      user.google?.googleId || user.google?.gRefreshToken,
+    );
+
+    if (hasGoogleConnection) {
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: { sync: { incrementalGCalSync: "RESTART" } },
+      });
+    }
+
+    if (options.isLastActiveSession) {
+      await syncService.stopWatches(userId);
+    }
   };
 
   reconnectGoogleCredentials = async (
@@ -295,127 +334,14 @@ class UserService {
     });
   };
 
-  startGoogleCalendarSync = async (
-    user: string,
-  ): Promise<{ eventsCount: number; calendarsCount: number }> => {
-    const gcal = await getGcalClient(user);
-
-    const calendarInit = await calendarService.initializeGoogleCalendars(
-      user,
-      gcal,
-    );
-
-    const gCalendarIds = calendarInit.googleCalendars
-      .map(({ id }) => id)
-      .filter((id) => id !== undefined && id !== null);
-
-    const importResults = await syncService.importFull(
-      gcal,
-      gCalendarIds,
-      user,
-    );
-
-    await Promise.resolve(isUsingHttps()).then((yes) =>
-      yes
-        ? syncService.startWatchingGcalResources(
-            user,
-            [
-              { gCalendarId: Resource_Sync.CALENDAR },
-              ...gCalendarIds.map((gCalendarId) => ({ gCalendarId })),
-            ],
-            gcal,
-          )
-        : [],
-    );
-
-    const eventsCount = importResults.reduce(
-      (sum, result) => sum + result.totalChanged,
-      0,
-    );
-
-    return {
-      eventsCount,
-      calendarsCount: gCalendarIds.length,
-    };
-  };
-
-  restartGoogleCalendarSync = async (
-    userId: string,
-    options: { force?: boolean } = {},
-  ) => {
-    const isForce = options.force === true;
-
-    logger.warn(
-      `Restarting Google Calendar sync for user: ${userId}${isForce ? " (forced)" : ""}`,
-    );
-
-    try {
-      webSocketServer.handleImportGCalStart(userId);
-
-      const userMeta = await this.fetchUserMetadata(userId);
-      const importStatus = userMeta.sync?.importGCal;
-      const isImporting = importStatus === "IMPORTING";
-      const proceed = isForce ? !isImporting : shouldImportGCal(userMeta);
-
-      if (!proceed) {
-        webSocketServer.handleImportGCalEnd(userId, {
-          status: "IGNORED",
-          message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
-        });
-
-        return;
-      }
-
-      await userMetadataService.updateUserMetadata({
-        userId,
-        data: { sync: { importGCal: "IMPORTING" } },
-      });
-
-      await this.stopGoogleCalendarSync(userId);
-      const importResults = await this.startGoogleCalendarSync(userId);
-
-      await userMetadataService.updateUserMetadata({
-        userId,
-        data: { sync: { importGCal: "COMPLETED" } },
-      });
-
-      webSocketServer.handleImportGCalEnd(userId, {
-        status: "COMPLETED",
-        ...importResults,
-      });
-      webSocketServer.handleBackgroundCalendarChange(userId);
-    } catch (err) {
-      try {
-        await this.stopGoogleCalendarSync(userId);
-      } catch (cleanupError) {
-        logger.error(
-          `Failed to clean up partial Google Calendar sync state for user: ${userId}`,
-          cleanupError,
-        );
-      }
-
-      await userMetadataService.updateUserMetadata({
-        userId,
-        data: { sync: { importGCal: "ERRORED" } },
-      });
-
-      logger.error(`Re-sync failed for user: ${userId}`, err);
-
-      webSocketServer.handleImportGCalEnd(userId, {
-        status: "ERRORED",
-        message: `Import gCal failed for user: ${userId}`,
-      });
-    }
-  };
-
   fetchUserMetadata = async (
     userId: string,
     userContext?: Record<string, JSONObject>,
   ): Promise<UserMetadata> => {
-    const { status, metadata } = await SupertokensUserMetadata.getUserMetadata(
+    const { status, metadata } = (await SupertokensUserMetadata.getUserMetadata(
       userId,
       userContext,
-    );
+    )) as GetUserMetadataResponse;
 
     if (status !== "OK") throw new Error("Failed to fetch user metadata");
 

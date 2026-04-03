@@ -58,7 +58,7 @@ jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
 }));
 
 const mockLogin = jest.fn();
-jest.mock("@web/auth/hooks/oauth/useGoogleAuth", () => ({
+jest.mock("@web/auth/google/hooks/useGoogleAuth/useGoogleAuth", () => ({
   useGoogleAuth: () => ({
     login: mockLogin,
   }),

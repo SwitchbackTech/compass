@@ -2,8 +2,7 @@ import { type FC } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import { getCalendarHeadingLabel } from "@web/common/utils/datetime/web.date.util";
-import { AccountIcon } from "@web/components/AuthModal/AccountIcon";
-import { AlignItems } from "@web/components/Flex/styled";
+import { HeaderInfoIcon } from "@web/components/HeaderInfoIcon/HeaderInfoIcon";
 import { SidebarIcon } from "@web/components/Icons/Sidebar";
 import { SelectView } from "@web/components/SelectView/SelectView";
 import { Text } from "@web/components/Text";
@@ -16,15 +15,6 @@ import { type Util_Scroll } from "../../hooks/grid/useScroll";
 import { type WeekProps } from "../../hooks/useWeek";
 import { TodayButton } from "../TodayButton/TodayButton";
 import { DayLabels } from "./DayLabels";
-import {
-  ArrowNavigationButton,
-  StyledHeaderLabel,
-  StyledHeaderRow,
-  StyledLeftGroup,
-  StyledNavigationArrows,
-  StyledNavigationGroup,
-  StyledRightGroup,
-} from "./styled";
 
 interface Props {
   rootProps: RootProps;
@@ -52,7 +42,7 @@ export const Header: FC<Props> = ({ scrollUtil, today, weekProps }) => {
 
   return (
     <>
-      <StyledHeaderRow alignItems={AlignItems.BASELINE}>
+      <div className="text-text-light relative flex h-20 w-full items-baseline justify-between">
         <TooltipWrapper
           description={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
           onClick={() => dispatch(viewSlice.actions.toggleSidebar())}
@@ -66,53 +56,55 @@ export const Header: FC<Props> = ({ scrollUtil, today, weekProps }) => {
             }
           />
         </TooltipWrapper>
-        <StyledLeftGroup>
-          <StyledHeaderLabel aria-level={1} role="heading">
+        <div className="z-[2] flex items-center justify-between">
+          <div aria-level={1} className="text-text-light pl-5" role="heading">
             <Text size="xl">{headerLabel}</Text>
-          </StyledHeaderLabel>
-        </StyledLeftGroup>
-        <StyledRightGroup>
-          <AccountIcon />
+          </div>
+        </div>
+        <div className="z-[2] flex h-full items-center justify-between">
+          <HeaderInfoIcon />
           <SelectView />
           <div>
-            <StyledNavigationGroup>
+            <div className="mr-5 flex items-center justify-between">
               <TodayButton
                 navigateToToday={onTodayClick}
                 isToday={weekProps.component.isCurrentWeek}
               />
-              <StyledNavigationArrows>
+              <div className="flex items-center gap-3 pl-5">
                 <TooltipWrapper
                   onClick={() => weekProps.util.decrementWeek()}
                   shortcut="J"
                 >
-                  <ArrowNavigationButton
+                  <Text
+                    className="flex h-[30px] w-[30px] items-center justify-center transition-[filter] duration-[350ms] ease-out select-none hover:rounded-full hover:brightness-[1.6]"
                     cursor="pointer"
                     role="navigation"
                     size="xxl"
                     title="previous week"
                   >
                     {"<"}
-                  </ArrowNavigationButton>
+                  </Text>
                 </TooltipWrapper>
 
                 <TooltipWrapper
                   onClick={() => weekProps.util.incrementWeek()}
                   shortcut="K"
                 >
-                  <ArrowNavigationButton
+                  <Text
+                    className="flex h-[30px] w-[30px] items-center justify-center transition-[filter] duration-[350ms] ease-out select-none hover:rounded-full hover:brightness-[1.6]"
                     cursor="pointer"
                     role="navigation"
                     size="xxl"
                     title="next week"
                   >
                     {">"}
-                  </ArrowNavigationButton>
+                  </Text>
                 </TooltipWrapper>
-              </StyledNavigationArrows>
-            </StyledNavigationGroup>
+              </div>
+            </div>
           </div>
-        </StyledRightGroup>
-      </StyledHeaderRow>
+        </div>
+      </div>
 
       <DayLabels
         startOfView={weekProps.component.startOfView}

@@ -78,6 +78,7 @@
 
   /* Animations */
   --animate-progress-slide: progressSlide 2s ease-out infinite;
+  --animate-sync-dot-pulse: syncDotPulse 2.4s ease-in-out infinite;
 
   @keyframes progressSlide {
     0% {
@@ -85,6 +86,19 @@
     }
     100% {
       width: 600%;
+    }
+  }
+
+  @keyframes syncDotPulse {
+    0%,
+    100% {
+      opacity: 0.88;
+      transform: scale(0.96);
+    }
+
+    50% {
+      opacity: 1;
+      transform: scale(1);
     }
   }
 }

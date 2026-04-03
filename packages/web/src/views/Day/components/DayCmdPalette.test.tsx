@@ -2,7 +2,7 @@ import { resolveModifier } from "@tanstack/react-hotkeys";
 import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
-import * as useGoogleAuthModule from "@web/auth/hooks/oauth/useGoogleAuth";
+import * as useGoogleAuthModule from "@web/auth/google/hooks/useGoogleAuth/useGoogleAuth";
 import { SyncApi } from "@web/common/apis/sync.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import * as eventUtil from "@web/common/utils/event/event.util";
@@ -110,16 +110,15 @@ jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
 
 // Mock event utility functions
 jest.mock("@web/common/utils/event/event.util");
-
-jest.mock("@web/store/store.hooks", () => ({
-  useAppDispatch: () => mockDispatch,
-  useAppSelector: jest.requireActual("@web/store/store.hooks").useAppSelector,
-}));
-
 jest.mock("@web/common/apis/sync.api", () => ({
   SyncApi: {
     importGCal: jest.fn().mockResolvedValue(undefined),
   },
+}));
+
+jest.mock("@web/store/store.hooks", () => ({
+  useAppDispatch: () => mockDispatch,
+  useAppSelector: jest.requireActual("@web/store/store.hooks").useAppSelector,
 }));
 
 function Component() {

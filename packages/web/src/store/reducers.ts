@@ -12,10 +12,7 @@ import {
 } from "@web/ducks/events/slices/event.slice";
 import { pendingEventsSlice } from "@web/ducks/events/slices/pending.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
-import {
-  importGCalSlice,
-  importLatestSlice,
-} from "@web/ducks/events/slices/sync.slice";
+import { importLatestSlice } from "@web/ducks/events/slices/sync.slice";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
@@ -34,7 +31,6 @@ const eventsReducer = combineReducers({
 });
 
 const syncReducer = combineReducers({
-  importGCal: importGCalSlice.reducer,
   importLatest: importLatestSlice.reducer,
 });
 

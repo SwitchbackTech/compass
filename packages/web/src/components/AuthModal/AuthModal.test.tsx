@@ -1,9 +1,16 @@
-import { type ReactElement, type ReactNode } from "react";
-import { MemoryRouter } from "react-router-dom";
+import { type ReactElement, type ReactNode, useLayoutEffect } from "react";
+import {
+  MemoryRouter,
+  Outlet,
+  RouterProvider,
+  createMemoryRouter,
+  useLocation,
+} from "react-router-dom";
 import EmailPassword from "supertokens-web-js/recipe/emailpassword";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { loadDayData, loadTodayData } from "@web/routers/loaders";
 import { AccountIcon } from "./AccountIcon";
 import { AuthModal } from "./AuthModal";
 import { AuthModalProvider } from "./AuthModalProvider";
@@ -15,27 +22,27 @@ const mockUseSession = jest.fn(() => ({
   setAuthenticated: jest.fn(),
 }));
 
-jest.mock("@web/auth/hooks/session/useSession", () => ({
+jest.mock("@web/auth/compass/session/useSession", () => ({
   useSession: () => mockUseSession(),
 }));
 
 // Mock useGoogleAuth
 const mockGoogleLogin = jest.fn();
-jest.mock("@web/auth/hooks/oauth/useGoogleAuth", () => ({
+jest.mock("@web/auth/google/hooks/useGoogleAuth/useGoogleAuth", () => ({
   useGoogleAuth: () => ({
     login: mockGoogleLogin,
   }),
 }));
 
 const mockCompleteAuthentication = jest.fn();
-jest.mock("@web/auth/hooks/useCompleteAuthentication", () => ({
+jest.mock("@web/auth/compass/hooks/useCompleteAuthentication", () => ({
   useCompleteAuthentication: () => mockCompleteAuthentication,
 }));
 
 jest.mock("supertokens-web-js/recipe/emailpassword");
 
 // Mock GoogleButton - uses button with label for semantic queries (matches real component's aria-label)
-jest.mock("@web/components/oauth/google/GoogleButton", () => ({
+jest.mock("@web/components/AuthModal/components/GoogleButton", () => ({
   GoogleButton: ({
     onClick,
     label,
@@ -125,6 +132,63 @@ const renderWithProviders = (
 async function flushEffects() {
   await Promise.resolve();
 }
+
+const RouteLocationMirror = ({ children }: { children: ReactNode }) => {
+  const location = useLocation();
+
+  useLayoutEffect(() => {
+    mockWindowLocation(
+      `${location.pathname}${location.search}${location.hash}`,
+    );
+  }, [location]);
+
+  return <>{children}</>;
+};
+
+const DayRedirectShell = () => (
+  <RouteLocationMirror>
+    <AuthModalProvider>
+      <AuthModal />
+      <Outlet />
+    </AuthModalProvider>
+  </RouteLocationMirror>
+);
+
+const renderWithDayRedirectRoute = (initialRoute: string) => {
+  mockWindowLocation(initialRoute);
+
+  const router = createMemoryRouter(
+    [
+      {
+        path: "/day",
+        Component: DayRedirectShell,
+        children: [
+          {
+            index: true,
+            loader: loadDayData,
+          },
+          {
+            path: ":dateString",
+            element: <div>Day route loaded</div>,
+          },
+        ],
+      },
+    ],
+    {
+      initialEntries: [initialRoute],
+      future: {
+        v7_relativeSplatPath: true,
+      },
+    },
+  );
+
+  return {
+    router,
+    ...render(
+      <RouterProvider router={router} future={{ v7_startTransition: true }} />,
+    ),
+  };
+};
 
 describe("AuthModal", () => {
   beforeEach(() => {
@@ -497,6 +561,39 @@ describe("AuthModal", () => {
           }),
         );
       });
+      expect(mockEmailPassword.signUp).toHaveBeenCalledWith({
+        formFields: [
+          { id: "name", value: "Alex" },
+          { id: "email", value: "test@example.com" },
+          { id: "password", value: "password123" },
+        ],
+      });
+    });
+
+    it("skips existing-session linking during email/password sign in", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<ModalTrigger />);
+
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+      });
+
+      await user.type(screen.getByLabelText(/email/i), "test@example.com");
+      await user.type(screen.getByLabelText(/password/i), "password123");
+      await user.click(screen.getByRole("button", { name: /^log in$/i }));
+
+      await waitFor(() => {
+        expect(mockEmailPassword.signIn).toHaveBeenCalledWith({
+          shouldTryLinkingWithSessionUser: false,
+          formFields: [
+            { id: "email", value: "test@example.com" },
+            { id: "password", value: "password123" },
+          ],
+        });
+      });
     });
   });
 
@@ -837,18 +934,6 @@ describe("URL Parameter Support", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("implicitly enables auth feature when ?auth param is present", async () => {
-    mockWindowLocation("/?auth=signup");
-    renderWithProviders(<AccountIcon />, "/?auth=signup");
-
-    await waitFor(() => {
-      // The auth modal should open
-      expect(
-        screen.getByRole("heading", { name: /nice to meet you/i }),
-      ).toBeInTheDocument();
-    });
-  });
-
   it("works on different routes", async () => {
     mockWindowLocation("/week?auth=signup");
     renderWithProviders(<div />, "/week?auth=signup");
@@ -858,6 +943,25 @@ describe("URL Parameter Support", () => {
         screen.getByRole("heading", { name: /nice to meet you/i }),
       ).toBeInTheDocument();
     });
+  });
+
+  it("opens reset password after the /day redirect preserves auth params", async () => {
+    const { dateString } = loadTodayData();
+
+    renderWithDayRedirectRoute("/day?auth=reset&token=reset-token");
+
+    await waitFor(() => {
+      expect(screen.getByText("Day route loaded")).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: /set new password/i }),
+      ).toBeInTheDocument();
+    });
+
+    expect(mockReplaceState).toHaveBeenCalledWith(
+      null,
+      "",
+      `/day/${dateString}?token=reset-token`,
+    );
   });
 
   it("submits reset password with the initial token after the URL changes", async () => {
@@ -882,70 +986,51 @@ describe("URL Parameter Support", () => {
       });
     });
 
+    expect(mockReplaceState).toHaveBeenLastCalledWith(
+      undefined,
+      "",
+      expect.not.stringContaining("token="),
+    );
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Password reset successful. Log in with your new password.",
+    );
+    expect(
+      screen.getByRole("heading", { name: /hey, welcome back/i }),
+    ).toBeInTheDocument();
+    expect(mockCompleteAuthentication).not.toHaveBeenCalled();
     expect(
       mockEmailPassword.getResetPasswordTokenFromURL,
     ).not.toHaveBeenCalled();
   });
-});
 
-describe("AccountIcon", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it("renders when user is not authenticated and feature flag is enabled", async () => {
-    mockUseSession.mockReturnValue({
-      authenticated: false,
-      setAuthenticated: jest.fn(),
-    });
-
-    renderWithProviders(<AccountIcon />, "/day?auth=signup");
-
-    await waitFor(() => {
-      expect(screen.getByLabelText(/log in/i)).toBeInTheDocument();
-    });
-  });
-
-  it("shows 'Log in' when user is not authenticated", () => {
-    mockUseSession.mockReturnValue({
-      authenticated: false,
-      setAuthenticated: jest.fn(),
-    });
-
-    renderWithProviders(<AccountIcon />, "/day?auth=signup");
-
-    expect(screen.getAllByText("Log in").length).toBeGreaterThan(0);
-  });
-
-  it("does not render when feature flag is disabled", () => {
-    mockUseSession.mockReturnValue({
-      authenticated: false,
-      setAuthenticated: jest.fn(),
-    });
-
-    renderWithProviders(<AccountIcon />, "/day");
-
-    expect(screen.queryByLabelText(/log in/i)).not.toBeInTheDocument();
-  });
-
-  it("opens modal when clicked", async () => {
+  it("switches to signUp (not back to loginAfterReset) when Sign up is clicked after reset", async () => {
     const user = userEvent.setup();
-    mockUseSession.mockReturnValue({
-      authenticated: false,
-      setAuthenticated: jest.fn(),
-    });
-
-    renderWithProviders(<AccountIcon />, "/day?auth=signup");
-
-    await waitFor(() => {
-      expect(screen.getByLabelText(/log in/i)).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByLabelText(/log in/i));
+    mockWindowLocation("/day?auth=reset&token=reset-token");
+    mockEmailPassword.submitNewPassword.mockResolvedValue({
+      status: "OK",
+    } as never);
+    renderWithProviders(<div />, "/day?auth=reset&token=reset-token");
 
     await waitFor(() => {
       expect(
-        screen.getByRole("heading", { name: /hey, welcome back/i }),
+        screen.getByRole("heading", { name: /set new password/i }),
+      ).toBeInTheDocument();
+    });
+
+    await user.type(screen.getByLabelText(/new password/i), "newpassword123");
+    await user.click(screen.getByRole("button", { name: /set new password/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "Password reset successful. Log in with your new password.",
+      );
+    });
+
+    await user.click(screen.getByRole("button", { name: /^sign up$/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /nice to meet you/i }),
       ).toBeInTheDocument();
     });
   });

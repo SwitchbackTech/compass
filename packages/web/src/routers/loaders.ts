@@ -9,6 +9,13 @@ export interface DayLoaderData {
 }
 
 export async function loadAuthenticated() {
+  // Playwright e2e serves the web app without a backend; SuperTokens session
+  // checks can block navigation until the HTTP client times out. The e2e
+  // webpack build uses NODE_ENV=test (see playwright.config.ts webServer env).
+  if (process.env.NODE_ENV === "test") {
+    return { authenticated: false };
+  }
+
   const { session } = await import("../common/classes/Session");
 
   const authenticated = await session.doesSessionExist();
@@ -29,14 +36,21 @@ export function loadTodayData(): DayLoaderData {
   return { dateInView, dateString: dateInView.format(dateFormat) };
 }
 
-export async function loadDayData() {
+function buildTodayRedirectUrl(request: Request): string {
   const { dateString } = loadTodayData();
+  const url = new URL(request.url);
 
-  return redirect(`${ROOT_ROUTES.DAY}/${dateString}`);
+  return `${ROOT_ROUTES.DAY}/${dateString}${url.search}`;
 }
 
-export async function loadRootData() {
-  return loadDayData();
+export function loadDayData({
+  request,
+}: LoaderFunctionArgs<unknown>): Response {
+  return redirect(buildTodayRedirectUrl(request));
+}
+
+export function loadRootData(args: LoaderFunctionArgs<unknown>): Response {
+  return loadDayData(args);
 }
 
 export async function loadSpecificDayData({

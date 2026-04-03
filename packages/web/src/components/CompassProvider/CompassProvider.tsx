@@ -5,7 +5,8 @@ import { ToastContainer } from "react-toastify";
 import { ThemeProvider } from "styled-components";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { HotkeysProvider } from "@tanstack/react-hotkeys";
-import { SessionProvider } from "@web/auth/session/SessionProvider";
+import { SessionProvider } from "@web/auth/compass/session/SessionProvider";
+import { isPosthogEnabled } from "@web/auth/posthog/posthog.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { CompassRefsProvider } from "@web/common/context/compass-refs";
 import { PointerPositionProvider } from "@web/common/context/pointer-position";
@@ -17,10 +18,6 @@ import { DNDOverlay } from "@web/components/DND/DNDOverlay";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
 import { store } from "@web/store";
 import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
-
-function isPosthogEnabled() {
-  return !!ENV_WEB.POSTHOG_HOST && !!ENV_WEB.POSTHOG_KEY;
-}
 
 /**
  * Mount once under {@link HotkeysProvider} and inside React Router so
@@ -46,22 +43,21 @@ export const CompassRequiredProviders = (
                     <AuthModalProvider>
                       {props.children}
                       <AuthModal />
+                      <ToastContainer
+                        position="bottom-left"
+                        autoClose={5000}
+                        hideProgressBar={false}
+                        newestOnTop={false}
+                        closeOnClick
+                        rtl={false}
+                        pauseOnFocusLoss
+                        draggable
+                        pauseOnHover
+                        theme="dark"
+                        limit={1}
+                      />
                     </AuthModalProvider>
                   </IconProvider>
-
-                  <ToastContainer
-                    position="bottom-left"
-                    autoClose={5000}
-                    hideProgressBar={false}
-                    newestOnTop={false}
-                    closeOnClick
-                    rtl={false}
-                    pauseOnFocusLoss
-                    draggable
-                    pauseOnHover
-                    theme="dark"
-                    limit={1}
-                  />
 
                   <DNDOverlay />
                 </DNDContext>

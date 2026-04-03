@@ -2,8 +2,7 @@ import { type NextFunction, type Request, type Response } from "express";
 import { ObjectId } from "mongodb";
 import { ZodError } from "zod/v4";
 import { COMPASS_RESOURCE_HEADER } from "@core/constants/core.constants";
-import { GOOGLE_REVOKED } from "@core/constants/websocket.constants";
-import { BaseError } from "@core/errors/errors.base";
+import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import {
@@ -14,18 +13,19 @@ import {
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { WatchError } from "@backend/common/errors/sync/watch.errors";
-import { UserError } from "@backend/common/errors/user/user.errors";
 import {
   isFullSyncRequired,
   isGoogleError,
   isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
-import { webSocketServer } from "@backend/servers/websocket/websocket.server";
+import { sseServer } from "@backend/servers/sse/sse.server";
 import syncService from "@backend/sync/services/sync.service";
 import { getSync } from "@backend/sync/util/sync.queries";
+import { isMissingGoogleRefreshToken } from "@backend/sync/util/sync.util";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
+import { ImportGCalRequestSchema } from "../sync.types";
 
 const logger = Logger("app:sync.controller");
 
@@ -77,7 +77,7 @@ export class SyncController {
     userId: string,
   ): void => {
     // do not await this call
-    userService
+    syncService
       .restartGoogleCalendarSync(userId, { force: true })
       .catch((err) => {
         logger.error(
@@ -132,7 +132,7 @@ export class SyncController {
     // When Google returns 410 (sync token invalid), the token may still exist
     // in the database but is no longer valid. assessGoogleMetadata checks token
     // existence, not validity, so we must force-restart directly.
-    userService
+    syncService
       .restartGoogleCalendarSync(userId, { force: true })
       .catch((err) => {
         logger.error(
@@ -284,9 +284,10 @@ export class SyncController {
 
   static importGCal = (req: Request, res: Response): void => {
     const userId = req.session!.getUserId();
-    const isForce = req.body?.force === true;
+    const { force } = ImportGCalRequestSchema.parse(req.body);
+    const isForce = force === true;
 
-    userService
+    syncService
       .restartGoogleCalendarSync(userId, { force: isForce })
       .catch((err) => {
         logger.error(
@@ -299,13 +300,6 @@ export class SyncController {
   };
 }
 
-const isMissingGoogleRefreshToken = (e: unknown): boolean => {
-  return (
-    e instanceof BaseError &&
-    e.description === UserError.MissingGoogleRefreshToken.description
-  );
-};
-
 /**
  * Prunes Google data for a user and notifies connected clients.
  * Used when Google access has been revoked or refresh token is missing.
@@ -316,5 +310,5 @@ const pruneAndNotifyGoogleRevoked = async (
 ): Promise<void> => {
   logger.warn(`Cleaning data after ${reason} for user: ${userId}`);
   await userService.pruneGoogleData(userId);
-  webSocketServer.handleGoogleRevoked(userId);
+  sseServer.handleGoogleRevoked(userId);
 };

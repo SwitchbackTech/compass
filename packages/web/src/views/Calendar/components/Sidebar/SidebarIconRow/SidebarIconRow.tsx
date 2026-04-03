@@ -1,21 +1,12 @@
-import {
-  CloudArrowUpIcon,
-  CloudWarningIcon,
-  LinkBreakIcon,
-  LinkIcon,
-} from "@phosphor-icons/react";
-import { useConnectGoogle } from "@web/auth/hooks/oauth/useConnectGoogle";
 import { useVersionCheck } from "@web/common/hooks/useVersionCheck";
 import { theme } from "@web/common/styles/theme";
 import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
 import { CalendarIcon } from "@web/components/Icons/Calendar";
 import { CommandIcon } from "@web/components/Icons/Command";
 import { RefreshIcon } from "@web/components/Icons/Refresh";
-import { SpinnerIcon } from "@web/components/Icons/Spinner";
 import { TodoIcon } from "@web/components/Icons/Todo";
 import { Text } from "@web/components/Text";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { selectImportGCalState } from "@web/ducks/events/selectors/sync.selector";
 import { selectSidebarTab } from "@web/ducks/events/selectors/view.selectors";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
@@ -27,72 +18,11 @@ import {
   RightIconGroup,
 } from "@web/views/Calendar/components/Sidebar/styled";
 
-/**
- * Returns the icon for the current Google connection state.
- * Icons are decorative (aria-hidden) since the parent status container
- * provides the accessible name via aria-label.
- */
-const getGoogleStatusIcon = ({
-  icon,
-}: {
-  icon:
-    | "CloudArrowUpIcon"
-    | "LinkBreakIcon"
-    | "LinkIcon"
-    | "SpinnerIcon"
-    | "CloudWarningIcon";
-}) => {
-  switch (icon) {
-    case "LinkBreakIcon":
-      return (
-        <LinkBreakIcon
-          aria-hidden="true"
-          color={theme.color.status.error}
-          size={24}
-        />
-      );
-    case "LinkIcon":
-      return (
-        <LinkIcon
-          aria-hidden="true"
-          color={theme.color.text.darkPlaceholder}
-          size={24}
-        />
-      );
-    case "SpinnerIcon":
-      return (
-        <SpinnerIcon
-          aria-hidden="true"
-          color={theme.color.status.info}
-          size={24}
-        />
-      );
-    case "CloudWarningIcon":
-      return (
-        <CloudWarningIcon
-          aria-hidden="true"
-          color={theme.color.status.warning}
-          size={24}
-        />
-      );
-    case "CloudArrowUpIcon":
-      return (
-        <CloudArrowUpIcon
-          aria-hidden="true"
-          color={theme.color.text.darkPlaceholder}
-          size={24}
-        />
-      );
-  }
-};
-
 export const SidebarIconRow = () => {
   const dispatch = useAppDispatch();
   const tab = useAppSelector(selectSidebarTab);
-  const gCalImport = useAppSelector(selectImportGCalState);
   const isCmdPaletteOpen = useAppSelector(selectIsCmdPaletteOpen);
   const { isUpdateAvailable } = useVersionCheck();
-  const { sidebarStatus } = useConnectGoogle();
 
   const handleUpdateReload = () => {
     window.location.reload();
@@ -160,24 +90,6 @@ export const SidebarIconRow = () => {
             }
           />
         </TooltipWrapper>
-        <div
-          role="status"
-          aria-live="polite"
-          aria-label={sidebarStatus.tooltip}
-        >
-          <TooltipWrapper
-            description={sidebarStatus.tooltip}
-            disabled={sidebarStatus.isDisabled}
-            onClick={sidebarStatus.onSelect}
-          >
-            {getGoogleStatusIcon({ icon: sidebarStatus.icon })}
-          </TooltipWrapper>
-        </div>
-        {gCalImport.importing ? (
-          <TooltipWrapper description="Importing your calendar events in the background">
-            <SpinnerIcon />
-          </TooltipWrapper>
-        ) : undefined}
         {isUpdateAvailable ? (
           <TooltipWrapper
             description="Get latest version"

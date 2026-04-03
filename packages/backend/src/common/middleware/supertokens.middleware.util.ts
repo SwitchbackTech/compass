@@ -1,28 +1,13 @@
-import { type Credentials, type TokenPayload } from "google-auth-library";
 import { ObjectId } from "mongodb";
 import { createUserIdMapping, getUserIdMapping } from "supertokens-node";
 import type { SessionContainerInterface } from "supertokens-node/recipe/session/types";
-import type { APIInterface } from "supertokens-node/recipe/thirdparty/types";
 import { type GoogleSignInSuccess } from "@backend/auth/services/google/google.auth.types";
-
-type ThirdPartySignInUpPost = NonNullable<APIInterface["signInUpPOST"]>;
-type ThirdPartySignInUpResponse = Awaited<ReturnType<ThirdPartySignInUpPost>>;
-type ThirdPartySignInUpSuccess = Extract<
-  ThirdPartySignInUpResponse,
-  { status: "OK" }
->;
-type GoogleThirdPartySignInUpSuccess = ThirdPartySignInUpSuccess & {
-  rawUserInfoFromProvider: { fromIdTokenPayload: TokenPayload };
-  oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">;
-  user: { id: string; loginMethods: unknown[] };
-  session?: SessionContainerInterface;
-};
-
-export type ThirdPartySignInUpInput = Parameters<ThirdPartySignInUpPost>[0];
-export type CreateGoogleSignInResponse =
-  | { status: Exclude<ThirdPartySignInUpResponse["status"], "OK"> }
-  | GoogleThirdPartySignInUpSuccess;
-export type AuthFormField = { id: string; value: unknown };
+import {
+  type AuthFormField,
+  type CreateGoogleSignInResponse,
+  type EmailPasswordAuthInput,
+  type EmailPasswordAuthResponse,
+} from "./supertokens.middleware.types";
 
 export function getFormFieldValue(
   formFields: AuthFormField[],
@@ -32,22 +17,30 @@ export function getFormFieldValue(
   return typeof field?.value === "string" ? field.value : undefined;
 }
 
+function buildFrontendAuthLink(
+  originalLink: string,
+  frontendUrl: string,
+  authView: "reset" | "verify",
+): string {
+  const url = new URL(originalLink);
+  const token = url.searchParams.get("token");
+
+  if (!token) {
+    return originalLink;
+  }
+
+  const appUrl = new URL(`${frontendUrl}/day`);
+  appUrl.searchParams.set("auth", authView);
+  appUrl.searchParams.set("token", token);
+
+  return appUrl.toString();
+}
+
 export function buildResetPasswordLink(
   passwordResetLink: string,
   frontendUrl: string,
 ): string {
-  const url = new URL(passwordResetLink);
-  const token = url.searchParams.get("token");
-
-  if (!token) {
-    return passwordResetLink;
-  }
-
-  const appUrl = new URL(`${frontendUrl}/day`);
-  appUrl.searchParams.set("auth", "reset");
-  appUrl.searchParams.set("token", token);
-
-  return appUrl.toString();
+  return buildFrontendAuthLink(passwordResetLink, frontendUrl, "reset");
 }
 
 export async function ensureExternalUserIdMapping(
@@ -83,4 +76,23 @@ export function createGoogleSignInSuccess(
     recipeUserId: response.session?.getUserId() ?? response.user.id,
     loginMethodsLength: response.user.loginMethods.length,
   };
+}
+
+export async function maybeReplaceEmailPasswordSession(
+  input: EmailPasswordAuthInput,
+  response: EmailPasswordAuthResponse,
+  compassUserId: string,
+  replaceSession: (
+    input: EmailPasswordAuthInput,
+    currentSession: SessionContainerInterface,
+    compassUserId: string,
+  ) => Promise<SessionContainerInterface>,
+): Promise<EmailPasswordAuthResponse> {
+  if (response.session.getUserId() === compassUserId) {
+    return response;
+  }
+
+  const session = await replaceSession(input, response.session, compassUserId);
+
+  return { ...response, session };
 }

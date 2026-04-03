@@ -1,3 +1,4 @@
+/* eslint-disable jest/no-mocks-import */
 import {
   CHILL_ALL_DAY,
   CLIMB,
@@ -8,7 +9,6 @@ import {
   TY_TIM,
 } from "@core/__mocks__/v1/events/events.misc";
 import { type InitialReduxState } from "@web/__tests__/utils/state/store.test.util";
-import { AuthStatus } from "@web/ducks/auth/slices/auth.slice";
 
 export const preloadedState: InitialReduxState = {
   auth: {
@@ -79,13 +79,11 @@ export const preloadedState: InitialReduxState = {
   settings: {
     isCmdPaletteOpen: false,
   },
+  userMetadata: {
+    current: null,
+    status: "idle",
+  },
   sync: {
-    importGCal: {
-      importing: false,
-      importResults: null,
-      pendingLocalEventsSynced: null,
-      importError: null,
-    },
     importLatest: {
       isFetchNeeded: false,
       reason: null,

@@ -17,6 +17,7 @@ export const error = (cause: ErrorMetadata, result: string) => {
     cause.description,
     cause.status,
     cause.isOperational,
+    cause.code,
   );
 };
 
@@ -37,10 +38,14 @@ export const genericError = (
  * Returns a safe payload for BaseError to send to clients.
  * Avoids exposing stack, isOperational, or other internal details.
  */
-export const toClientErrorPayload = (e: BaseError) => ({
-  result: e.result,
-  message: e.description,
-});
+export const toClientErrorPayload = (e: BaseError) => {
+  const payload = {
+    result: e.result,
+    message: e.description,
+  };
+
+  return e.code ? { ...payload, code: e.code } : payload;
+};
 
 class ErrorHandler {
   public isOperational(error: Error): boolean {

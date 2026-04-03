@@ -8,7 +8,7 @@ import {
   type Schema_Event_Recur_Base,
 } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { getUserId } from "@web/auth/session/session.util";
+import { getUserId } from "@web/auth/compass/session/session.util";
 import {
   CLASS_TIMED_CALENDAR_EVENT,
   DATA_EVENT_ELEMENT_ID,

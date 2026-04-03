@@ -1,4 +1,4 @@
-import { GOOGLE_REVOKED } from "@core/constants/websocket.constants";
+import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { invalidGrant400Error } from "@backend/__tests__/mocks.gcal/errors/error.google.invalidGrant";
@@ -9,7 +9,7 @@ import {
   toClientErrorPayload,
 } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
-import { webSocketServer } from "@backend/servers/websocket/websocket.server";
+import { sseServer } from "@backend/servers/sse/sse.server";
 import userService from "@backend/user/services/user.service";
 
 describe("error.handler", () => {
@@ -43,6 +43,22 @@ describe("error.handler", () => {
       expect(payload).not.toHaveProperty("isOperational");
       expect(Object.keys(payload)).toEqual(["result", "message"]);
     });
+
+    it("includes code when the BaseError has one", () => {
+      const baseError = new BaseError(
+        "some-result",
+        "some-description",
+        Status.CONFLICT,
+        true,
+        "GOOGLE_ACCOUNT_ALREADY_CONNECTED",
+      );
+
+      expect(toClientErrorPayload(baseError)).toEqual({
+        result: "some-result",
+        message: "some-description",
+        code: "GOOGLE_ACCOUNT_ALREADY_CONNECTED",
+      });
+    });
   });
 
   describe("handleExpressError", () => {
@@ -50,7 +66,7 @@ describe("error.handler", () => {
       const userId = "507f1f77bcf86cd799439011";
       jest.spyOn(userService, "pruneGoogleData").mockResolvedValue();
       const handleGoogleRevokedSpy = jest.spyOn(
-        webSocketServer,
+        sseServer,
         "handleGoogleRevoked",
       );
       handleGoogleRevokedSpy.mockImplementation(() => undefined);

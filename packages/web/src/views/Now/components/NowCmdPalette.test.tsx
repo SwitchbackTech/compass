@@ -1,20 +1,45 @@
-import { act } from "react";
+import type { ReactNode } from "react";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
-import { render } from "@web/__tests__/__mocks__/mock.render";
+import { render } from "@web/__tests__/utils/render.test.util";
+import {
+  resetGoogleSyncUIStateForTests,
+  setRepairingSyncIndicatorOverride,
+} from "@web/auth/google/state/google.sync.state";
 import { SyncApi } from "@web/common/apis/sync.api";
-import { pressKey } from "@web/common/utils/dom/event-emitter.util";
+import * as eventEmitterUtil from "@web/common/utils/dom/event-emitter.util";
 import { NowCmdPalette } from "@web/views/Now/components/NowCmdPalette";
 
-jest.mock("react-cmdk", () => {
-  const React = require("react");
+type CommandPaletteProps = {
+  children: ReactNode;
+  isOpen: boolean;
+  onChangeSearch: (value: string) => void;
+  placeholder: string;
+  search: string;
+};
 
-  const CommandPalette = ({
+type CommandPalettePageProps = {
+  children: ReactNode;
+};
+
+type CommandPaletteListProps = {
+  children: ReactNode;
+  heading: string;
+};
+
+type CommandPaletteListItemProps = {
+  children: ReactNode;
+  disabled?: boolean;
+  onClick?: () => void;
+};
+
+jest.mock("react-cmdk", () => {
+  const MockCommandPalette = ({
     children,
     isOpen,
     onChangeSearch,
     placeholder,
     search,
-  }: any) => {
+  }: CommandPaletteProps) => {
     if (!isOpen) {
       return null;
     }
@@ -31,33 +56,50 @@ jest.mock("react-cmdk", () => {
     );
   };
 
-  CommandPalette.Page = ({ children }: any) => <div>{children}</div>;
-  CommandPalette.List = ({ children, heading }: any) => (
+  const Page = ({ children }: CommandPalettePageProps) => <div>{children}</div>;
+  const List = ({ children, heading }: CommandPaletteListProps) => (
     <section>
       <h2>{heading}</h2>
       {children}
     </section>
   );
-  CommandPalette.ListItem = ({ children, disabled, onClick }: any) => (
+  const ListItem = ({
+    children,
+    disabled,
+    onClick,
+  }: CommandPaletteListItemProps) => (
     <button disabled={disabled} onClick={onClick}>
       {children}
     </button>
   );
-  CommandPalette.FreeSearchAction = () => <div>No results</div>;
+  const FreeSearchAction = () => <div>No results</div>;
+
+  const CommandPalette = Object.assign(MockCommandPalette, {
+    Page,
+    List,
+    ListItem,
+    FreeSearchAction,
+  });
 
   return {
     __esModule: true,
     default: CommandPalette,
-    filterItems: (items: unknown) => items,
+    filterItems: <T,>(items: T) => items,
     getItemIndex: () => 0,
   };
 });
 
 // Mock pressKey
-jest.mock("@web/common/utils/dom/event-emitter.util", () => ({
-  ...jest.requireActual("@web/common/utils/dom/event-emitter.util"),
-  pressKey: jest.fn(),
-}));
+jest.mock("@web/common/utils/dom/event-emitter.util", () => {
+  const actual = jest.requireActual<typeof eventEmitterUtil>(
+    "@web/common/utils/dom/event-emitter.util",
+  );
+
+  return {
+    ...actual,
+    pressKey: jest.fn(),
+  };
+});
 
 // Mock onEventTargetVisibility
 jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
@@ -66,7 +108,7 @@ jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
 
 // Mock useGoogleAuth
 const mockLogin = jest.fn();
-jest.mock("@web/auth/hooks/oauth/useGoogleAuth", () => ({
+jest.mock("@web/auth/google/hooks/useGoogleAuth/useGoogleAuth", () => ({
   useGoogleAuth: () => ({
     login: mockLogin,
   }),
@@ -87,6 +129,7 @@ describe("NowCmdPalette", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    resetGoogleSyncUIStateForTests();
   });
 
   it("should render when open", () => {
@@ -119,26 +162,34 @@ describe("NowCmdPalette", () => {
 
   it("should trigger pressKey('d') when 'Go to Day' is clicked", async () => {
     render(<NowCmdPalette />, { state: initialState });
-    act(() => fireEvent.click(screen.getByText("Go to Day [d]")));
-    await waitFor(() => expect(pressKey).toHaveBeenCalledWith("d"));
+    fireEvent.click(screen.getByText("Go to Day [d]"));
+    await waitFor(() =>
+      expect(eventEmitterUtil.pressKey).toHaveBeenCalledWith("d"),
+    );
   });
 
   it("should trigger pressKey('w') when 'Go to Week' is clicked", async () => {
     render(<NowCmdPalette />, { state: initialState });
-    act(() => fireEvent.click(screen.getByText("Go to Week [w]")));
-    await waitFor(() => expect(pressKey).toHaveBeenCalledWith("w"));
+    fireEvent.click(screen.getByText("Go to Week [w]"));
+    await waitFor(() =>
+      expect(eventEmitterUtil.pressKey).toHaveBeenCalledWith("w"),
+    );
   });
 
   it("should trigger pressKey('r') when 'Edit Reminder' is clicked", async () => {
     render(<NowCmdPalette />, { state: initialState });
-    act(() => fireEvent.click(screen.getByText("Edit Reminder [r]")));
-    await waitFor(() => expect(pressKey).toHaveBeenCalledWith("r"));
+    fireEvent.click(screen.getByText("Edit Reminder [r]"));
+    await waitFor(() =>
+      expect(eventEmitterUtil.pressKey).toHaveBeenCalledWith("r"),
+    );
   });
 
   it("should trigger pressKey('z') when 'Log Out' is clicked", async () => {
     render(<NowCmdPalette />, { state: initialState });
-    act(() => fireEvent.click(screen.getByText("Log Out [z]")));
-    await waitFor(() => expect(pressKey).toHaveBeenCalledWith("z"));
+    fireEvent.click(screen.getByText("Log Out [z]"));
+    await waitFor(() =>
+      expect(eventEmitterUtil.pressKey).toHaveBeenCalledWith("z"),
+    );
   });
 
   describe("Google Calendar authentication status", () => {
@@ -187,15 +238,13 @@ describe("NowCmdPalette", () => {
         },
       });
 
-      act(() =>
-        fireEvent.click(
-          screen.getByRole("button", { name: "Reconnect Google Calendar" }),
-        ),
+      fireEvent.click(
+        screen.getByRole("button", { name: "Reconnect Google Calendar" }),
       );
       await waitFor(() => expect(mockLogin).toHaveBeenCalled());
     });
 
-    it("disables the generic action while importing", async () => {
+    it("disables the generic action while importing", () => {
       render(<NowCmdPalette />, {
         state: {
           ...initialState,
@@ -215,6 +264,29 @@ describe("NowCmdPalette", () => {
       expect(button).toBeDisabled();
     });
 
+    it("shows a disabled repairing action while a repair is active", () => {
+      setRepairingSyncIndicatorOverride();
+
+      render(<NowCmdPalette />, {
+        state: {
+          ...initialState,
+          userMetadata: {
+            current: {
+              google: {
+                connectionState: "ATTENTION",
+              },
+            },
+          },
+        },
+      });
+
+      expect(
+        screen.getByRole("button", {
+          name: "Repairing Google Calendar…",
+        }),
+      ).toBeDisabled();
+    });
+
     it("starts a forced repair when sync needs attention", async () => {
       render(<NowCmdPalette />, {
         state: {
@@ -229,10 +301,8 @@ describe("NowCmdPalette", () => {
         },
       });
 
-      act(() =>
-        fireEvent.click(
-          screen.getByRole("button", { name: "Repair Google Calendar" }),
-        ),
+      fireEvent.click(
+        screen.getByRole("button", { name: "Repair Google Calendar" }),
       );
 
       await waitFor(() =>

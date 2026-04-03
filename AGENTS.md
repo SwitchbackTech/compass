@@ -5,7 +5,7 @@ Primary instructions for AI agents and developers in the Compass monorepo.
 ## Quick Start
 
 1. `yarn install --immutable` (Do not cancel; `httpTimeout` is set in `.yarnrc.yml`)
-2. `cp packages/backend/.env.local.example packages/backend/.env`
+2. `cp packages/backend/.env.local.example packages/backend/.env.local`
 3. `yarn dev:web` (frontend on http://localhost:9080/)
 
 ## Table of Contents
@@ -71,7 +71,7 @@ Example: `import { foo } from '@compass/core'` not `import { foo } from '../../.
 
 - Install dependencies: `yarn install --immutable` (`httpTimeout` is set in `.yarnrc.yml`)
   - Takes ~3.5 minutes. Set timeout to 10+ minutes.
-- Copy environment template: `cp packages/backend/.env.local.example packages/backend/.env`
+- Copy environment template: `cp packages/backend/.env.local.example packages/backend/.env.local`
 
 ### Development Servers
 
@@ -79,7 +79,7 @@ Example: `import { foo } from '@compass/core'` not `import { foo } from '../../.
   - yarn dev:web - Takes ~10 seconds to build. Serves on http://localhost:9080/
   - Frontend works standalone without backend services
 - **Backend Development**:
-  - `yarn dev:backend` - Fails without proper .env configuration
+  - `yarn dev:backend` - Fails without proper .env.local configuration
 
 ### Testing
 
@@ -108,6 +108,7 @@ Run `yarn test:core`, `yarn test:web`, and `yarn test:backend` after making chan
 
 ### Linting
 
+- Run `./node_modules/.bin/eslint <changed app files>` before finishing. Treat eslint as required validation for changed implementation files, not an optional follow-up.
 - `yarn prettier . --write`
 
 ## Validation
@@ -122,7 +123,7 @@ This is a Typescript project with a monorepo structure.
 
 ### Packages Overview
 
-- `@compass/backend` - Express.js REST API with MongoDB, Google Calendar sync, WebSocket support
+- `@compass/backend` - Express.js REST API with MongoDB, Google Calendar sync, Server-Sent Events (SSE)
 - `@compass/web` - React/TypeScript frontend with Redux, styled-components, webpack bundling
 - `@compass/core` - Shared utilities, types, and business logic
 - `@compass/scripts` - CLI tools for building, database operations, user management
@@ -171,15 +172,17 @@ packages/core/src/
 
 1. **Start Development**: `yarn dev:web` (frontend only, always works)
 2. **Run Tests**: `yarn test:core && yarn test:web` (add `&& yarn test:backend` when credentials available)
-3. **Check Code Style**: `yarn prettier . --write`
-4. **Manual Validation**: Open <http://localhost:9080/> and verify login page loads
+3. **Run Eslint On Changed Implementation Files**: `./node_modules/.bin/eslint <changed app files>`
+4. **Check Code Style**: `yarn prettier . --write`
+5. **Manual Validation**: Open <http://localhost:9080/> and verify login page loads
 
 ## Cursor Cloud specific instructions
 
 - Prefer running scoped checks for changed areas: `yarn test:core`, `yarn test:web`, `yarn test:backend`, or `yarn test:scripts` as applicable.
+- Run `./node_modules/.bin/eslint <changed app files>` before handing off work.
 - Do not run `yarn test` in restricted environments unless explicitly required.
 - For UI-affecting changes in `packages/web`, validate with `yarn dev:web` and confirm behavior in the web dev server.
-- If backend work is required, ensure `packages/backend/.env` exists by copying `packages/backend/.env.local.example`.
+- If backend work is required, ensure `packages/backend/.env.local` exists by copying `packages/backend/.env.local.example`.
 - Keep test runs reproducible by recording exact commands and outcomes in your handoff notes.
 
 ### Styling
@@ -198,8 +201,8 @@ packages/core/src/
 ### Common Issues
 
 - **Test failures**: Run `yarn test:core`, `yarn test:web`, `yarn test:backend`, and `yarn test:scripts` individually to narrow the scope of the failure
-- **Backend won't start**: Missing environment variables in `packages/backend/.env`, use web-only development (`yarn dev:web`)
-- Environment: Copy from `packages/backend/.env.local.example` to `packages/backend/.env` (there is no `.env.example`).
+- **Backend won't start**: Missing environment variables in `packages/backend/.env.local`, use web-only development (`yarn dev:web`)
+- Environment: Copy from `packages/backend/.env.local.example` to `packages/backend/.env.local` (there is no `.env.example`).
 - Webpack dev server warns about a missing `.env.local` file; this is harmless—it falls back to `process.env`.
 - Husky pre-push hook runs `yarn prettier . --write`, which can modify files. Ensure working tree is clean or committed before pushing.
 
@@ -232,6 +235,7 @@ packages/core/src/
 - Use `is` prefix for boolean variables. For example, `isLoading`, `isError`, `isSuccess`
 - Do not use barrel (`index.ts`) files. Use named exports instead.
 - When creating constants, use uppercase and underscores. Example: `SIGNIN_INCREMENTAL`
+- When adding a new function to an existing file, order the function alphabetically.
 
 ## Branch Naming & Commit Message Conventions
 

@@ -12,14 +12,10 @@ import mongoService from "@backend/common/services/mongo.service";
 import { getSync } from "@backend/sync/util/sync.queries";
 import { isUsingHttps } from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import { type GetUserMetadataResponse } from "@backend/user/types/user.types";
 
 type GoogleMetadataAssessment = {
   connectionState: GoogleConnectionState;
-};
-
-type GetUserMetadataResponse = {
-  status: string;
-  metadata: UserMetadata;
 };
 
 class UserMetadataService {
@@ -98,8 +94,12 @@ class UserMetadataService {
     }
 
     const importStatus = storedMetadata.sync?.importGCal;
-    if (importStatus === "IMPORTING" || importStatus === "RESTART") {
+    if (importStatus === "IMPORTING") {
       return { connectionState: "IMPORTING" };
+    }
+
+    if (importStatus === "RESTART") {
+      return { connectionState: "ATTENTION" };
     }
 
     const isHealthy = await this.isGoogleSyncHealthy(userId);

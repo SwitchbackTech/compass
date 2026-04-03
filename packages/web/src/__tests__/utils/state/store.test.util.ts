@@ -44,7 +44,7 @@ type TestState = {
       reason: string | null;
     };
     entities?: {
-      value: Record<string, unknown>;
+      value: Record<string, Schema_Event>;
     };
     [key: string]: unknown;
   };
@@ -122,12 +122,6 @@ export const createInitialState = (
       status: "idle",
     },
     sync: {
-      importGCal: {
-        importing: false,
-        importResults: null,
-        pendingLocalEventsSynced: null,
-        importError: null,
-      },
       importLatest: {
         isFetchNeeded: false,
         reason: null,
@@ -195,7 +189,7 @@ export const findAndUpdateEventInPreloadedState = (
   }
 
   // Create a deep copy of the event to avoid mutations
-  const eventCopy = JSON.parse(JSON.stringify(event));
+  const eventCopy = structuredClone(event);
   const updatedEvent = callback(eventCopy);
 
   // Return new state with updated event

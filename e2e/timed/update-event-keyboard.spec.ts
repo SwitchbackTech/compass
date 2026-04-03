@@ -3,7 +3,7 @@ import {
   createEventTitle,
   expectTimedEventMissing,
   expectTimedEventVisible,
-  fillTitleAndSaveWithKeyboard,
+  fillTitleAndSaveEventForm,
   openEventForEditingWithKeyboard,
   openTimedEventFormWithKeyboard,
   prepareCalendarPage,
@@ -19,14 +19,14 @@ test("should update a timed event using keyboard interaction", async ({
 
   const title = createEventTitle("Timed Event");
   await openTimedEventFormWithKeyboard(page);
-  await fillTitleAndSaveWithKeyboard(page, title);
+  await fillTitleAndSaveEventForm(page, title);
   await expectTimedEventVisible(page, title);
   await page.waitForTimeout(1000);
 
   await openEventForEditingWithKeyboard(page, title);
 
   const updatedTitle = updateEventTitle("Timed Event");
-  await fillTitleAndSaveWithKeyboard(page, updatedTitle);
+  await fillTitleAndSaveEventForm(page, updatedTitle);
 
   await expectTimedEventVisible(page, updatedTitle);
   await expectTimedEventMissing(page, title);
