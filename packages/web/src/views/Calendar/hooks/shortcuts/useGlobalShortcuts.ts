@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { useShortcutEditMode } from "@web/common/context/shortcut-edit-mode";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
 import { SHORTCUTS } from "@web/common/shortcuts/shortcut.registry";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
@@ -14,6 +15,9 @@ export function useGlobalShortcuts() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const { isEditMode } = useShortcutEditMode();
+
+  const isNowEditMode = location.pathname === ROOT_ROUTES.NOW && isEditMode;
 
   useAppHotkeyUp(SHORTCUTS.NAV_NOW.hotkey, () => {
     if (location.pathname !== ROOT_ROUTES.NOW) {
@@ -21,11 +25,17 @@ export function useGlobalShortcuts() {
     }
   });
 
-  useAppHotkeyUp(SHORTCUTS.NAV_DAY.hotkey, () => {
-    if (!location.pathname.startsWith(ROOT_ROUTES.DAY)) {
-      navigate(ROOT_ROUTES.DAY);
-    }
-  });
+  useAppHotkeyUp(
+    SHORTCUTS.NAV_DAY.hotkey,
+    () => {
+      if (!location.pathname.startsWith(ROOT_ROUTES.DAY)) {
+        navigate(ROOT_ROUTES.DAY);
+      }
+    },
+    {
+      enabled: !isNowEditMode,
+    },
+  );
 
   useAppHotkeyUp(SHORTCUTS.NAV_WEEK.hotkey, () => {
     if (location.pathname !== ROOT_ROUTES.WEEK) {

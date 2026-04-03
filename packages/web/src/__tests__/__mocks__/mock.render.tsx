@@ -12,6 +12,7 @@ import {
   renderHook,
 } from "@testing-library/react";
 import { ID_ROOT } from "@web/common/constants/web.constants";
+import { ShortcutEditModeProvider } from "@web/common/context/shortcut-edit-mode";
 import { useSetupMovementEvents } from "@web/common/hooks/useMovementEvent";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
@@ -40,26 +41,30 @@ const TestProviders = (props?: {
     if (!props?.router) {
       return (
         <div id={ID_ROOT} data-testid={ID_ROOT}>
-          <CompassRequiredProviders {...props}>
-            {children}
-          </CompassRequiredProviders>
+          <ShortcutEditModeProvider>
+            <CompassRequiredProviders {...props}>
+              {children}
+            </CompassRequiredProviders>
+          </ShortcutEditModeProvider>
         </div>
       );
     }
 
     return (
       <div id={ID_ROOT} data-testid={ID_ROOT}>
-        <CompassRequiredProviders store={props?.store}>
-          <RouterProvider
-            router={props.router}
-            fallbackElement={<AbsoluteOverflowLoader />}
-            future={{
-              // Test-only: sync RouterProvider state updates (no startTransition).
-              // Matches initial render + client navigations with RTL act() without globals.
-              v7_startTransition: false,
-            }}
-          />
-        </CompassRequiredProviders>
+        <ShortcutEditModeProvider>
+          <CompassRequiredProviders store={props?.store}>
+            <RouterProvider
+              router={props.router}
+              fallbackElement={<AbsoluteOverflowLoader />}
+              future={{
+                // Test-only: sync RouterProvider state updates (no startTransition).
+                // Matches initial render + client navigations with RTL act() without globals.
+                v7_startTransition: false,
+              }}
+            />
+          </CompassRequiredProviders>
+        </ShortcutEditModeProvider>
       </div>
     );
   };

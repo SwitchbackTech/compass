@@ -1,4 +1,4 @@
-import { act } from "react";
+import { act, createElement } from "react";
 import { useNavigate } from "react-router-dom";
 import { configureStore } from "@reduxjs/toolkit";
 import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
@@ -9,6 +9,11 @@ import {
   mockWindowsUserAgent,
 } from "@web/__tests__/__mocks__/mock.setup";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import {
+  EDIT_MODE_TIMEOUT_MS,
+  ShortcutEditModeProvider,
+  useShortcutEditMode,
+} from "@web/common/context/shortcut-edit-mode";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
@@ -28,6 +33,8 @@ const { useLocation } = jest.requireMock("react-router-dom");
 
 const mockNavigate = jest.fn();
 const mockLocation = (pathname: string) => ({ pathname });
+const EditModeWrapper = ({ children }: { children: React.ReactNode }) =>
+  createElement(ShortcutEditModeProvider, null, children);
 
 const pressModifierShortcut = () => {
   const modifierProps =
@@ -53,6 +60,7 @@ const createTestStore = () => {
 describe("useGlobalShortcuts", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    HotkeyManager.resetInstance();
     (useNavigate as jest.Mock).mockReturnValue(mockNavigate);
     (useLocation as jest.Mock).mockReturnValue(mockLocation("/"));
   });
@@ -73,23 +81,89 @@ describe("useGlobalShortcuts", () => {
 
   it("should navigate to DAY when 'd' is pressed from different route", () => {
     (useLocation as jest.Mock).mockReturnValue(mockLocation("/week"));
-    renderHook(() => useGlobalShortcuts());
+    renderHook(() => useGlobalShortcuts(), { wrapper: EditModeWrapper });
     pressKey("d");
     expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
   });
 
   it("should NOT navigate to DAY when 'd' is pressed from DAY route", () => {
     (useLocation as jest.Mock).mockReturnValue(mockLocation(ROOT_ROUTES.DAY));
-    renderHook(() => useGlobalShortcuts());
+    renderHook(() => useGlobalShortcuts(), { wrapper: EditModeWrapper });
     pressKey("d");
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it("should NOT navigate to DAY when 'd' is pressed from DAY date route", () => {
     (useLocation as jest.Mock).mockReturnValue(mockLocation("/day/2024-01-15"));
-    renderHook(() => useGlobalShortcuts());
+    renderHook(() => useGlobalShortcuts(), { wrapper: EditModeWrapper });
     pressKey("d");
     expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it("should NOT navigate to DAY from NOW while edit mode is armed", () => {
+    (useLocation as jest.Mock).mockReturnValue(mockLocation(ROOT_ROUTES.NOW));
+    const { result } = renderHook(
+      () => {
+        useGlobalShortcuts();
+        return useShortcutEditMode();
+      },
+      { wrapper: EditModeWrapper },
+    );
+
+    act(() => {
+      result.current.armEditMode();
+    });
+
+    act(() => {
+      pressKey("d");
+    });
+
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it("should navigate to DAY after edit mode times out on NOW", () => {
+    jest.useFakeTimers();
+    (useLocation as jest.Mock).mockReturnValue(mockLocation(ROOT_ROUTES.NOW));
+    const { result } = renderHook(
+      () => {
+        useGlobalShortcuts();
+        return useShortcutEditMode();
+      },
+      { wrapper: EditModeWrapper },
+    );
+
+    act(() => {
+      result.current.armEditMode();
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(EDIT_MODE_TIMEOUT_MS);
+    });
+
+    act(() => {
+      pressKey("d");
+    });
+
+    expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
+    jest.useRealTimers();
+  });
+
+  it("should navigate to DAY outside NOW even when edit mode is armed", () => {
+    (useLocation as jest.Mock).mockReturnValue(mockLocation(ROOT_ROUTES.WEEK));
+    const { result } = renderHook(
+      () => {
+        useGlobalShortcuts();
+        return useShortcutEditMode();
+      },
+      { wrapper: EditModeWrapper },
+    );
+
+    act(() => {
+      result.current.armEditMode();
+      pressKey("d");
+    });
+
+    expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
   });
 
   it("should navigate to WEEK when 'w' is pressed from different route", () => {

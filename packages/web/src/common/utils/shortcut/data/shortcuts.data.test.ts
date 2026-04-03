@@ -116,8 +116,8 @@ describe("shortcuts.data", () => {
 
       expect(shortcuts.nowShortcuts).toHaveLength(6);
       expect(shortcuts.nowShortcuts[0]).toEqual({
-        k: "d",
-        label: "Focus task description",
+        k: ["e", "d"],
+        label: "Edit description",
       });
       expect(shortcuts.nowShortcuts[1]).toEqual({
         k: "Mod+Enter",

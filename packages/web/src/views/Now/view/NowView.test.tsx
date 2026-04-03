@@ -91,6 +91,8 @@ describe("NowView", () => {
     await renderWithMemoryRouter(<NowView />, [ROOT_ROUTES.NOW]);
 
     // Check that shortcut keys are rendered
+    expect(screen.getByText("Edit description")).toBeInTheDocument();
+    expect(screen.getAllByTestId("e-icon").length).toBeGreaterThan(0);
     expect(screen.getAllByTestId("n-icon").length).toBeGreaterThan(0);
     expect(screen.getAllByTestId("d-icon").length).toBeGreaterThan(0);
     expect(screen.getAllByTestId("w-icon").length).toBeGreaterThan(0);

@@ -28,9 +28,13 @@ export const NowViewContext = createContext<NowViewContextValue | undefined>(
 
 interface NowViewProviderProps {
   children: React.ReactNode;
+  onToggleSidebar?: () => void;
 }
 
-export function NowViewProvider({ children }: NowViewProviderProps) {
+export function NowViewProvider({
+  children,
+  onToggleSidebar,
+}: NowViewProviderProps) {
   const navigate = useNavigate();
   const { availableTasks, allTasks, hasCompletedTasks } = useAvailableTasks();
   const { focusedTask, setFocusedTask } = useFocusedTask({ availableTasks });
@@ -138,6 +142,7 @@ export function NowViewProvider({ children }: NowViewProviderProps) {
     onPreviousTask: handlePreviousTask,
     onNextTask: handleNextTask,
     onCompleteTask: handleCompleteTask,
+    onToggleSidebar,
   });
 
   const value: NowViewContextValue = {

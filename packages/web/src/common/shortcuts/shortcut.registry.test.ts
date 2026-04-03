@@ -49,5 +49,16 @@ describe("shortcut.registry", () => {
         }
       }
     });
+
+    it("sequence entries end with their registered hotkey", () => {
+      for (const [id, def] of Object.entries(SHORTCUTS) as [
+        string,
+        ShortcutDef,
+      ][]) {
+        if (!def.sequence) continue;
+
+        expect(def.sequence.at(-1)).toBe(def.hotkey);
+      }
+    });
   });
 });

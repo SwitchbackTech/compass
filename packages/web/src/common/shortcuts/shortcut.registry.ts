@@ -157,9 +157,10 @@ export const SHORTCUTS = {
   // ── Now view ─────────────────────────────────────────────────────────────────
   NOW_FOCUS_DESC: {
     hotkey: "D",
-    display: "d",
-    label: "Focus task description",
+    display: "e d",
+    label: "Edit description",
     tags: [NOW],
+    sequence: ["E", "D"],
   },
   NOW_SAVE_DESC: {
     hotkey: "Mod+Enter",

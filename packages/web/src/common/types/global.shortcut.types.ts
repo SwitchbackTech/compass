@@ -1,1 +1,1 @@
-export type Shortcut = { k: string; label: string };
+export type Shortcut = { k: string | string[]; label: string };

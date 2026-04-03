@@ -93,7 +93,7 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
   if (isNow) {
     nowShortcuts = [
       {
-        k: SHORTCUTS.NOW_FOCUS_DESC.display,
+        k: SHORTCUTS.NOW_FOCUS_DESC.sequence.map((key) => key.toLowerCase()),
         label: SHORTCUTS.NOW_FOCUS_DESC.label,
       },
       {
