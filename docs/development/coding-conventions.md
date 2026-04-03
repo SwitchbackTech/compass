@@ -17,6 +17,11 @@ This document keeps only the local conventions that are useful to repeat inside 
 - Add comments only when they explain non-obvious behavior, constraints, or cross-file coupling.
 - If a flow needs more than a short code comment, prefer a repo doc and link to it.
 
+## Frontend: one component per file
+
+- Put each React component in its own file. Do not define multiple components in the same module (for example, a screen-level component plus a small presentational subcomponent used only there).
+- **Example:** If `DatePicker` uses a `MonthNavButton`, use `DatePicker.tsx` and `MonthNavButton.tsx` (typically in the same directory), instead of defining both in `DatePicker.tsx`.
+
 ## Cleanup
 
 - Do not add dead code, speculative scaffolding, or half-implemented branches.

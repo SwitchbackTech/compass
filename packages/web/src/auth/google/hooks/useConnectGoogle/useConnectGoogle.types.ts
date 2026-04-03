@@ -15,7 +15,6 @@ export type GoogleUiConfig = {
   };
   sidebarStatus: {
     tooltip: string;
-    tone?: "default" | "warning";
     isDisabled: boolean;
     iconColor?: IconColor;
     dialog?: {
