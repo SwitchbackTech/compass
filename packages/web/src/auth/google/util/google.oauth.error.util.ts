@@ -1,5 +1,8 @@
 const POPUP_CLOSED_ERROR_TYPE = "popup_closed";
-const POPUP_CLOSED_ERROR_MESSAGE = "popup window closed";
+const POPUP_ERROR_MESSAGE_FRAGMENTS = [
+  "popup window closed",
+  "failed to open popup window",
+];
 
 type GoogleOAuthErrorLike = {
   type?: unknown;
@@ -28,6 +31,8 @@ export const isGooglePopupClosedError = (error: unknown): boolean => {
   return errorMessages.some(
     (value) =>
       value.toLowerCase() === POPUP_CLOSED_ERROR_TYPE ||
-      value.toLowerCase().includes(POPUP_CLOSED_ERROR_MESSAGE),
+      POPUP_ERROR_MESSAGE_FRAGMENTS.some((fragment) =>
+        value.toLowerCase().includes(fragment),
+      ),
   );
 };
