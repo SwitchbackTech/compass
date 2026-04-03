@@ -77,8 +77,8 @@ When a user re-authenticates with Google, auth-state utilities also clear any in
 
 Files:
 
-- `packages/web/src/auth/hooks/google/useGoogleAuth/useGoogleAuth.ts`
-- `packages/web/src/auth/hooks/google/useGoogleLogin/useGoogleLogin.ts`
+- `packages/web/src/auth/google/hooks/useGoogleAuth/useGoogleAuth.ts`
+- `packages/web/src/auth/google/hooks/useGoogleLogin/useGoogleLogin.ts`
 - `packages/web/src/auth/google/google-oauth-error.util.ts`
 
 The web auth flow intentionally treats popup-close outcomes as cancellation, not authentication failure.
@@ -134,7 +134,6 @@ Files:
 - `packages/web/src/views/Calendar/components/Sidebar/Sidebar.tsx`
 - `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
 - `packages/web/src/views/Calendar/components/Sidebar/styled.ts`
-- `packages/web/src/auth/hooks/google/useConnectGoogle/useConnectGoogle.ts`
 
 Layout contract:
 
@@ -151,14 +150,12 @@ Control mapping:
   - Month tab (`SHIFT + 2`) dispatches `viewSlice.actions.updateSidebarTab("monthWidget")`
 - Right group:
   - Command palette toggle (`modifier + K`) dispatches open/close palette actions from `settingsSlice`
-  - Google status action is derived from `useConnectGoogle().sidebarStatus`
-  - background import spinner is shown while `selectImportGCalState(...).importing` is true
   - update action (refresh icon) is shown when `useVersionCheck().isUpdateAvailable` is true and reloads the page
 
 Icon state constraints:
 
 - tab icons and command icon use `theme.color.text.light` when active and `theme.color.text.darkPlaceholder` when inactive
-- Google status icon tooltips and disabled/clickable behavior come from `useConnectGoogle` and should not be hardcoded in the row component
+- Google status icon behavior is not owned by `SidebarIconRow`; it is surfaced through `HeaderInfoIcon` (`useHeaderInfo` + `useConnectGoogle`) and command palettes (`DayCmdPalette`, `NowCmdPalette`, and week `CmdPalette`)
 
 ## Dedication Dialog Runtime
 
@@ -330,9 +327,15 @@ Runtime nuances:
 
 Files:
 
-- `packages/web/src/auth/hooks/google/useConnectGoogle/useConnectGoogle.ts`
+- `packages/web/src/auth/google/hooks/useConnectGoogle/useConnectGoogle.ts`
+- `packages/web/src/auth/google/hooks/useConnectGoogle/useConnectGoogle.types.ts`
+- `packages/web/src/auth/google/hooks/useConnectGoogle/useConnectGoogle.util.ts`
 - `packages/web/src/auth/google/google.auth.util.ts`
-- `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
+- `packages/web/src/components/HeaderInfoIcon/useHeaderInfo.ts`
+- `packages/web/src/components/HeaderInfoIcon/HeaderInfoIcon.tsx`
+- `packages/web/src/views/Day/components/DayCmdPalette.tsx`
+- `packages/web/src/views/Now/components/NowCmdPalette.tsx`
+- `packages/web/src/views/CmdPalette/CmdPalette.tsx`
 
 UI state comes from a single server-enriched metadata field (`google.connectionState`) plus one client-only loading state:
 
@@ -342,6 +345,16 @@ UI state comes from a single server-enriched metadata field (`google.connectionS
 - `IMPORTING` → disabled syncing status (`SpinnerIcon`)
 - `HEALTHY` → disabled connected status (`LinkIcon`)
 - `ATTENTION` → repair action (`CloudWarningIcon`)
+
+Configuration contract (`GoogleUiConfig`) from `useConnectGoogle.types.ts`:
+
+- `commandAction` powers command palette entries (`label`, `icon`, `isDisabled`, `onSelect`)
+- `sidebarStatus` powers header status behavior (`tooltip`, `iconColor`, `isDisabled`, optional `dialog`, `onSelect`)
+- `sidebarStatus.dialog` is used for repair confirmation (`title`, `description`, `repairLabel`, `onRepair`)
+
+Implementation constraint:
+
+- Repair dialog copy for both `ATTENTION` and client-only `repairing` states is intentionally built by the shared `buildRepairDialog()` helper in `useConnectGoogle.util.ts` to keep dialog messaging and callbacks consistent across UI states.
 
 Important constraint:
 
@@ -355,6 +368,25 @@ Connect-later guardrail:
   `"We could not sync your local events. Your changes are still saved on this device."`
 - This prevents IndexedDB-only Compass events from disappearing during the
   Google-triggered metadata/import refresh.
+
+## DatePicker Month Navigation Componentization
+
+Files:
+
+- `packages/web/src/components/DatePicker/DatePicker.tsx`
+- `packages/web/src/components/DatePicker/MonthNavButton.tsx`
+- `packages/web/src/views/Calendar/components/Sidebar/MonthTab/MonthPicker/SidebarMonthPicker.tsx`
+
+Runtime behavior:
+
+- `DatePicker` now delegates month increment/decrement controls to a dedicated `MonthNavButton` component for each direction.
+- `renderCustomHeader` still owns month/year switching semantics (`decreaseMonth`, `increaseMonth`, and "Today" jump), while button rendering and hover style behavior are encapsulated in `MonthNavButton`.
+- `portalId` defaults to `"root"` in `DatePicker` when callers do not provide one; this keeps popover mounting predictable across call sites.
+
+Pitfalls:
+
+- Keep `MonthNavButton` as a separate component file to follow repo convention (one React component per file).
+- If changing header interaction behavior, update both `DatePicker.tsx` and `MonthNavButton.tsx` together so accessibility labels and click handlers stay aligned (`aria-label="Previous month"` / `"Next month"`).
 
 ## What To Read Before Editing
 

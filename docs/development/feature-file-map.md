@@ -58,12 +58,18 @@ Use this document to find the first files to inspect for common Compass changes.
   - week view: `packages/web/src/views/Calendar/Calendar.tsx`
   - day view: `packages/web/src/views/Day/view/DayViewContent.tsx`
 
-## Calendar Sidebar
+## Calendar Sidebar And Header Status
 
 - Sidebar shell and tab rendering: `packages/web/src/views/Calendar/components/Sidebar/Sidebar.tsx`
 - Footer icon row actions (tasks/month, command palette, sync/update): `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
 - Sidebar layout constants and icon group styling: `packages/web/src/views/Calendar/components/Sidebar/styled.ts`
-- Google connection/status UI contract for sidebar + command palette: `packages/web/src/auth/hooks/google/useConnectGoogle/useConnectGoogle.ts`
+- Sidebar month widget date picker: `packages/web/src/views/Calendar/components/Sidebar/MonthTab/MonthPicker/SidebarMonthPicker.tsx`
+- Shared date picker month navigation UI: `packages/web/src/components/DatePicker/DatePicker.tsx`, `packages/web/src/components/DatePicker/MonthNavButton.tsx`
+- Google connection/status UI contract for command palettes + header status icon:
+  - `packages/web/src/auth/google/hooks/useConnectGoogle/useConnectGoogle.ts`
+  - `packages/web/src/auth/google/hooks/useConnectGoogle/useConnectGoogle.types.ts`
+  - `packages/web/src/auth/google/hooks/useConnectGoogle/useConnectGoogle.util.ts`
+  - `packages/web/src/components/HeaderInfoIcon/useHeaderInfo.ts`
 - Sidebar icon row behavior tests: `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.test.tsx`
 
 ## Offline Storage
