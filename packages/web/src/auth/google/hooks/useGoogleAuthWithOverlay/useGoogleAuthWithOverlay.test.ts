@@ -27,7 +27,7 @@ describe("useGoogleAuthWithOverlay", () => {
 
     const { result } = renderHook(() => useGoogleAuthWithOverlay({ onStart }));
 
-    result.current.login();
+    void result.current.login();
 
     expect(onStart).toHaveBeenCalledTimes(1);
     expect(mockLogin).toHaveBeenCalledTimes(1);
