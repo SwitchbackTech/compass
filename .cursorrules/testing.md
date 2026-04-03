@@ -11,9 +11,9 @@ This rule defines testing requirements and best practices for the Compass codeba
 
 **ALWAYS run the appropriate test suite based on the package you modified:**
 
-- Changed files in `packages/web`: Run `yarn test:web` (takes ~15 seconds)
-- Changed files in `packages/backend`: Run `yarn test:backend` (takes ~15 seconds)
-- Changed files in `packages/core`: Run `yarn test:core` (takes ~2 seconds)
+- Changed files in `packages/web`: Run `bun run test:web` (takes ~15 seconds)
+- Changed files in `packages/backend`: Run `bun run test:backend` (takes ~15 seconds)
+- Changed files in `packages/core`: Run `bun run test:core` (takes ~2 seconds)
 
 **All tests MUST pass before marking work as complete.**
 
@@ -93,7 +93,7 @@ import { act } from "react";
 
 ## Summary
 
-- Run `yarn test:web`, `yarn test:backend`, or `yarn test:core` based on changes
+- Run `bun run test:web`, `bun run test:backend`, or `bun run test:core` based on changes
 - Place tests next to source files with `.test.ts` extension
 - Use semantic queries for web tests
 - Minimize mocking, test user flows

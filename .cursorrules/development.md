@@ -12,12 +12,13 @@ This rule defines development commands, setup, and workflow for the Compass code
 ### Install Dependencies
 
 ```bash
-yarn install --immutable
+bun install
 ```
 
 - Takes ~3.5 minutes
 - NEVER CANCEL the installation
 - Set timeout to 10+ minutes
+- Bun manages dependencies and script entrypoints; Node 24+ still runs the backend, CLI, Jest, and webpack processes
 
 ### Environment Configuration
 
@@ -32,7 +33,7 @@ Edit `packages/backend/.env.local` with your credentials.
 ### Web (Recommended for Frontend Work)
 
 ```bash
-yarn dev:web
+bun run dev:web
 ```
 
 - Starts on http://localhost:9080/
@@ -42,7 +43,7 @@ yarn dev:web
 ### Backend (Requires Full Setup)
 
 ```bash
-yarn dev:backend
+bun run dev:backend
 ```
 
 - Requires Google OAuth credentials
@@ -55,21 +56,21 @@ yarn dev:backend
 ### Testing
 
 ```bash
-yarn test:core      # Run core tests (~2 seconds)
-yarn test:web       # Run web tests (~15 seconds)
-yarn test:backend   # Run backend tests (~15 seconds)
+bun run test:core      # Run core tests (~2 seconds)
+bun run test:web       # Run web tests (~15 seconds)
+bun run test:backend   # Run backend tests (~15 seconds)
 ```
 
 ### Code Formatting
 
 ```bash
-yarn prettier . --write  # Format all code (~15 seconds)
+bunx prettier . --write  # Format all code (~15 seconds)
 ```
 
 ### CLI Tools
 
 ```bash
-yarn cli --help     # Shows all available CLI commands
+bun run cli --help     # Shows all available CLI commands
 ```
 
 ## Environment Requirements
@@ -100,8 +101,8 @@ The backend requires:
 
 The repository includes Husky hooks that automatically:
 
-- Run `yarn lint-staged` on pre-commit (formats code with Prettier)
-- Run `yarn prettier . --write` on pre-push (ensures consistent formatting)
+- Run `bunx lint-staged` on pre-commit (formats code with Prettier)
+- Run `bunx prettier . --write` on pre-push (ensures consistent formatting)
 
 Your commits will pass these checks automatically.
 
@@ -139,8 +140,8 @@ packages/
 
 ## Summary
 
-- Install with `yarn install --immutable` (`httpTimeout` is in `.yarnrc.yml`)
-- Start frontend: `yarn dev:web` (recommended)
-- Run tests: `yarn test:web`, `yarn test:backend`, `yarn test:core`
-- Format code: `yarn prettier . --write`
+- Install with `bun install`
+- Start frontend: `bun run dev:web` (recommended)
+- Run tests: `bun run test:web`, `bun run test:backend`, `bun run test:core`
+- Format code: `bunx prettier . --write`
 - Pre-commit hooks run automatically

@@ -51,7 +51,7 @@ We're actively working on improvements – check out our [roadmap](https://githu
 - **Backend**: Node.js, Express, TypeScript, MongoDB
 - **Integrations**: Google Calendar API, Google OAuth2, Socket.io
 - **Testing**: Jest, React Testing Library
-- **Other**: Yarn workspaces for monorepo management
+- **Other**: Bun for package management and Node.js for runtime/tooling
 
 ## Getting Started
 
@@ -65,22 +65,24 @@ Want to poke around or self-host?
 
 [Read the technical docs](https://github.com/SwitchbackTech/compass/tree/main/docs): All the info you'd need to get started, including guides on how to install, test, build, deploy, and contribute.
 
+Use Bun for dependency installation and script entrypoints. Node.js 24+ is still required because the current backend, CLI, Jest, and webpack flows continue to run on Node.
+
 ### Development Workflow
 
 ```bash
 # Quick start
-yarn install --immutable
+bun install
 cp packages/backend/.env.local.example packages/backend/.env.local
-yarn dev:web  # Frontend on http://localhost:9080
-yarn dev:backend # Backend on http://localhost:3000
+bun run dev:web  # Frontend on http://localhost:9080
+bun run dev:backend # Backend on http://localhost:3000
 
 # Testing
-yarn test:core && yarn test:web && yarn test:backend
-yarn test:e2e
+bun run test:core && bun run test:web && bun run test:backend
+bun run test:e2e
 
 # Type checking and linting
-yarn type-check
-yarn prettier . --write
+bun run type-check
+bunx prettier . --write
 ```
 
 ## Contributing

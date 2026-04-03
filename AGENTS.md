@@ -4,9 +4,9 @@ Primary instructions for AI agents and developers in the Compass monorepo.
 
 ## Quick Start
 
-1. `yarn install --immutable` (Do not cancel; `httpTimeout` is set in `.yarnrc.yml`)
+1. `bun install`
 2. `cp packages/backend/.env.local.example packages/backend/.env.local`
-3. `yarn dev:web` (frontend on http://localhost:9080/)
+3. `bun run dev:web` (frontend on http://localhost:9080/)
 
 ## Table of Contents
 
@@ -69,21 +69,22 @@ Example: `import { foo } from '@compass/core'` not `import { foo } from '../../.
 
 ### Initial Setup
 
-- Install dependencies: `yarn install --immutable` (`httpTimeout` is set in `.yarnrc.yml`)
+- Install dependencies: `bun install`
   - Takes ~3.5 minutes. Set timeout to 10+ minutes.
+  - Bun manages dependencies and script entrypoints; Node 24+ still runs the backend, CLI, Jest, and webpack processes.
 - Copy environment template: `cp packages/backend/.env.local.example packages/backend/.env.local`
 
 ### Development Servers
 
 - **Web Development**:
-  - yarn dev:web - Takes ~10 seconds to build. Serves on http://localhost:9080/
+  - bun run dev:web - Takes ~10 seconds to build. Serves on http://localhost:9080/
   - Frontend works standalone without backend services
 - **Backend Development**:
-  - `yarn dev:backend` - Fails without proper .env.local configuration
+  - `bun run dev:backend` - Fails without proper .env.local configuration
 
 ### Testing
 
-Run `yarn test:core`, `yarn test:web`, and `yarn test:backend` after making changes. Use `yarn test:scripts` for scripts package tests. Avoid `yarn test` (full suite) in restricted network environments—MongoDB binary download may fail.
+Run `bun run test:core`, `bun run test:web`, and `bun run test:backend` after making changes. Use `bun run test:scripts` for scripts package tests. Avoid `bun run test` (full suite) in restricted network environments—MongoDB binary download may fail.
 
 #### Writing Tests in `@compass/web`
 
@@ -95,21 +96,21 @@ Run `yarn test:core`, `yarn test:web`, and `yarn test:backend` after making chan
 
 #### Running Tests
 
-- **Core tests**: `yarn test:core`
-- **Web tests**: `yarn test:web`
-- **Backend tests**: `yarn test:backend`
-- **Scripts tests**: `yarn test:scripts`
-- **Full test suite**: `yarn test`
+- **Core tests**: `bun run test:core`
+- **Web tests**: `bun run test:web`
+- **Backend tests**: `bun run test:backend`
+- **Scripts tests**: `bun run test:scripts`
+- **Full test suite**: `bun run test`
 
 ### Building
 
-- **Web Build**: `yarn cli build web --environment staging --clientId "test-client-id"`
-- **Node Build**: `yarn cli build nodePckgs --environment staging`
+- **Web Build**: `bun run cli build web --environment staging --clientId "test-client-id"`
+- **Node Build**: `bun run cli build nodePckgs --environment staging`
 
 ### Linting
 
 - Run `./node_modules/.bin/eslint <changed app files>` before finishing. Treat eslint as required validation for changed implementation files, not an optional follow-up.
-- `yarn prettier . --write`
+- `bunx prettier . --write`
 
 ## Validation
 
@@ -160,28 +161,28 @@ packages/core/src/
 
 ### Repository Operations
 
-- `yarn install` - 3.5 minutes
-- `yarn test:core` - ~2 seconds (all pass)
-- `yarn test:web` - ~15 seconds (all pass)
-- `yarn test:backend` - ~15 seconds (all pass)
-- `yarn test:scripts` - scripts package tests
-- `yarn dev:web` - ~10 seconds to start
-- `yarn cli --help` - ~3 seconds (shows available commands)
+- `bun install` - 3.5 minutes
+- `bun run test:core` - ~2 seconds (all pass)
+- `bun run test:web` - ~15 seconds (all pass)
+- `bun run test:backend` - ~15 seconds (all pass)
+- `bun run test:scripts` - scripts package tests
+- `bun run dev:web` - ~10 seconds to start
+- `bun run cli --help` - ~3 seconds (shows available commands)
 
 ### Development Workflow
 
-1. **Start Development**: `yarn dev:web` (frontend only, always works)
-2. **Run Tests**: `yarn test:core && yarn test:web` (add `&& yarn test:backend` when credentials available)
+1. **Start Development**: `bun run dev:web` (frontend only, always works)
+2. **Run Tests**: `bun run test:core && bun run test:web` (add `&& bun run test:backend` when credentials available)
 3. **Run Eslint On Changed Implementation Files**: `./node_modules/.bin/eslint <changed app files>`
-4. **Check Code Style**: `yarn prettier . --write`
+4. **Check Code Style**: `bunx prettier . --write`
 5. **Manual Validation**: Open <http://localhost:9080/> and verify login page loads
 
 ## Cursor Cloud specific instructions
 
-- Prefer running scoped checks for changed areas: `yarn test:core`, `yarn test:web`, `yarn test:backend`, or `yarn test:scripts` as applicable.
+- Prefer running scoped checks for changed areas: `bun run test:core`, `bun run test:web`, `bun run test:backend`, or `bun run test:scripts` as applicable.
 - Run `./node_modules/.bin/eslint <changed app files>` before handing off work.
-- Do not run `yarn test` in restricted environments unless explicitly required.
-- For UI-affecting changes in `packages/web`, validate with `yarn dev:web` and confirm behavior in the web dev server.
+- Do not run `bun run test` in restricted environments unless explicitly required.
+- For UI-affecting changes in `packages/web`, validate with `bun run dev:web` and confirm behavior in the web dev server.
 - If backend work is required, ensure `packages/backend/.env.local` exists by copying `packages/backend/.env.local.example`.
 - Keep test runs reproducible by recording exact commands and outcomes in your handoff notes.
 
@@ -193,18 +194,18 @@ packages/core/src/
 
 ### CI/CD Integration
 
-- GitHub Actions unit tests run in `.github/workflows/test-unit.yml` as a matrix (`core`, `web`, `backend`, `scripts`) using `yarn test <project>` on `push`.
+- GitHub Actions unit tests run in `.github/workflows/test-unit.yml` as a matrix (`core`, `web`, `backend`, `scripts`) using `bun run test <project>` on `push`.
 - End-to-end tests run separately in `.github/workflows/test-e2e.yml` on pull requests to `main`.
 
 ## Troubleshooting
 
 ### Common Issues
 
-- **Test failures**: Run `yarn test:core`, `yarn test:web`, `yarn test:backend`, and `yarn test:scripts` individually to narrow the scope of the failure
-- **Backend won't start**: Missing environment variables in `packages/backend/.env.local`, use web-only development (`yarn dev:web`)
+- **Test failures**: Run `bun run test:core`, `bun run test:web`, `bun run test:backend`, and `bun run test:scripts` individually to narrow the scope of the failure
+- **Backend won't start**: Missing environment variables in `packages/backend/.env.local`, use web-only development (`bun run dev:web`)
 - Environment: Copy from `packages/backend/.env.local.example` to `packages/backend/.env.local` (there is no `.env.example`).
 - Webpack dev server warns about a missing `.env.local` file; this is harmless—it falls back to `process.env`.
-- Husky pre-push hook runs `yarn prettier . --write`, which can modify files. Ensure working tree is clean or committed before pushing.
+- Husky pre-push hook runs `bunx prettier . --write`, which can modify files. Ensure working tree is clean or committed before pushing.
 
 ### Network Limitations
 
@@ -221,14 +222,14 @@ packages/core/src/
 
 ### Root Level Commands
 
-- `yarn cli [command]` - Access CLI tools for build, seed, delete operations
-- `yarn dev:web` - Start webpack dev server
-- `yarn dev:backend` - Start backend server (requires full environment)
-- `yarn test` - Run all tests (fails in restricted environments)
-- `yarn test:core` - Run core package tests only
-- `yarn test:web` - Run web package tests only
-- `yarn test:backend` - Run backend package tests only
-- `yarn test:scripts` - Run scripts package tests only
+- `bun run cli [command]` - Access CLI tools for build, seed, delete operations
+- `bun run dev:web` - Start webpack dev server
+- `bun run dev:backend` - Start backend server (requires full environment)
+- `bun run test` - Run all tests (fails in restricted environments)
+- `bun run test:core` - Run core package tests only
+- `bun run test:web` - Run web package tests only
+- `bun run test:backend` - Run backend package tests only
+- `bun run test:scripts` - Run scripts package tests only
 
 ## Naming Conventions
 
@@ -310,7 +311,7 @@ packages/core/src/
 
 The repository includes Husky hooks that will:
 
-- Run `yarn lint-staged` on pre-commit (formats code with Prettier)
-- Run `yarn prettier . --write` on pre-push (ensures consistent formatting)
+- Run `bunx lint-staged` on pre-commit (formats code with Prettier)
+- Run `bunx prettier . --write` on pre-push (ensures consistent formatting)
 
 **ALWAYS** ensure your commits pass these checks before pushing.

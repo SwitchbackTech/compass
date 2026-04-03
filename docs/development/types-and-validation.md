@@ -124,7 +124,7 @@ Keep it local to `web` or `backend` when:
 2. update inferred types and related helpers
 3. update backend parsers/controllers/services
 4. update web forms, selectors, and renderers
-5. run cross-package tests and `yarn type-check`
+5. run cross-package tests and `bun run type-check`
 
 For shared API error changes, make that workflow concrete:
 

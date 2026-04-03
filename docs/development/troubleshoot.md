@@ -50,7 +50,7 @@ If the stream opens but no events arrive:
 
 When you encounter a missing user id, Compass usually is not connected to MongoDB or the backend never started cleanly.
 
-Sometimes MongoDB is successfully connected when you run `yarn dev:backend` but you still get a missing user id error. This could be because:
+Sometimes MongoDB is successfully connected when you run `bun run dev:backend` but you still get a missing user id error. This could be because:
 
 1. The MongoDB connection string in your backend env file is incorrect
 2. Your IP address is not whitelisted in MongoDB Atlas
@@ -62,7 +62,7 @@ Sometimes MongoDB is successfully connected when you run `yarn dev:backend` but 
 When you encounter a mismatch user id, the user in your mongo collection is not the one being captured. This could be because you have duplicate users in your database. In order to fix this you need to clear your user data using the CLI delete command:
 
 ```bash
-yarn cli delete -u <email>
+bun run cli delete -u <email>
 ```
 
 The delete flow removes both Compass data and SuperTokens auth state. The

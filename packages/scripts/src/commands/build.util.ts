@@ -65,7 +65,7 @@ export const installDependencies = () => {
 
   shell.cd(`${COMPASS_BUILD_DEV}/node`);
 
-  // Use npm for production install (more reliable across yarn versions)
+  // Use npm for production install so build output stays package-manager agnostic.
   // --loglevel=error suppresses deprecation warnings from transitive dependencies
   const result = shell.exec(
     "npm install --omit=dev --ignore-scripts --loglevel=error",

@@ -68,8 +68,8 @@ Use conventional commit format: `type(scope): description`
 
 The repository includes Husky hooks that will:
 
-- Run `yarn lint-staged` on pre-commit (formats code with Prettier)
-- Run `yarn prettier . --write` on pre-push (ensures consistent formatting)
+- Run `bunx lint-staged` on pre-commit (formats code with Prettier)
+- Run `bunx prettier . --write` on pre-push (ensures consistent formatting)
 
 **ALWAYS ensure your commits pass these checks before pushing.**
 
