@@ -104,14 +104,7 @@ export const useGoogleLogin = ({
       onStart?.();
       setData(null);
       setLoading(true);
-
-      try {
-        return login();
-      } catch (error) {
-        setLoading(false);
-        onError?.(error);
-        return;
-      }
+      return login();
     }, [login, onStart, setData, setLoading]),
     data,
     loading,
