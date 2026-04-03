@@ -16,6 +16,8 @@ import { Flex } from "@web/components/Flex";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { StyledInput } from "@web/components/Input/styled";
 import { Text } from "@web/components/Text";
+import { ChevronLeftIcon } from "@web/views/Day/components/Icons/ChevronLeftIcon";
+import { ChevronRightIcon } from "@web/views/Day/components/Icons/ChevronRightIcon";
 import { Focusable } from "../Focusable/Focusable";
 
 export interface Props extends ReactDatePickerProps {
@@ -133,22 +135,58 @@ export const DatePicker: React.FC<Props> = ({
             {!customHeaderCount && (
               <Flex alignItems={AlignItems.CENTER}>
                 <ChangeDayButtonsStyledFlex>
-                  <Text
-                    cursor="pointer"
+                  <button
                     onClick={decreaseMonth}
-                    color={headerColor}
-                    size="l"
+                    aria-label="Previous month"
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor =
+                        "rgba(255,255,255,0.2)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = "transparent")
+                    }
+                    style={{
+                      cursor: "pointer",
+                      color: headerColor,
+                      background: "transparent",
+                      border: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "24px",
+                      height: "24px",
+                      borderRadius: "50%",
+                      transition: "background-color 0.2s",
+                    }}
                   >
-                    {"<"}
-                  </Text>
-                  <Text
-                    cursor="pointer"
+                    <ChevronLeftIcon />
+                  </button>
+                  <button
                     onClick={increaseMonth}
-                    color={headerColor}
-                    size="l"
+                    aria-label="Next month"
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor =
+                        "rgba(255,255,255,0.2)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = "transparent")
+                    }
+                    style={{
+                      cursor: "pointer",
+                      color: headerColor,
+                      background: "transparent",
+                      border: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "24px",
+                      height: "24px",
+                      borderRadius: "50%",
+                      transition: "background-color 0.2s",
+                    }}
                   >
-                    {">"}
-                  </Text>
+                    <ChevronRightIcon />
+                  </button>
                 </ChangeDayButtonsStyledFlex>
                 {withTodayButton && (
                   <TodayStyledText
