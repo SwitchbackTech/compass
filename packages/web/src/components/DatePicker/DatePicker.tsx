@@ -5,6 +5,7 @@ import ReactDatePicker, { type ReactDatePickerProps } from "react-datepicker";
 import { darken, isDark } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
+import { MonthNavButton } from "@web/components/DatePicker/MonthNavButton";
 import {
   ChangeDayButtonsStyledFlex,
   MonthContainerStyled,
@@ -26,7 +27,6 @@ export interface Props extends ReactDatePickerProps {
   displayDate?: Date;
   inputColor?: string;
   isOpen?: boolean;
-  onInputBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   view: "sidebar" | "grid";
   withTodayButton?: boolean;
 }
@@ -35,21 +35,18 @@ export interface CalendarRef extends HTMLDivElement {
   input: HTMLInputElement;
 }
 
-export const DatePicker: React.FC<Props> = ({
-  animationOnToggle = true,
-  autoFocus: _autoFocus = false,
-  bgColor = theme.color.bg.primary,
-  calendarClassName,
-  inputColor,
-  isOpen = true,
-  onSelect = () => null,
-  onInputBlur,
-  onCalendarClose = () => null,
-  onCalendarOpen = () => null,
-  view,
-  withTodayButton = true,
-  ...props
-}) => {
+export const DatePicker: React.FC<Props> = (datePickerProps) => {
+  const {
+    animationOnToggle = true,
+    autoFocus: _autoFocus = false,
+    bgColor = theme.color.bg.primary,
+    calendarClassName,
+    inputColor,
+    isOpen = true,
+    view,
+    withTodayButton = true,
+    ...props
+  } = datePickerProps;
   const datepickerRef = useRef<CalendarRef>(null);
   const headerColor =
     view === "sidebar"
@@ -95,29 +92,26 @@ export const DatePicker: React.FC<Props> = ({
       dateFormat={"M-d-yyyy"}
       formatWeekDay={(day) => day[0]}
       open={isOpen}
+      {...props}
       onCalendarOpen={() => {
-        onCalendarOpen();
+        datePickerProps.onCalendarOpen?.();
       }}
       onCalendarClose={() => {
-        onCalendarClose();
+        datePickerProps.onCalendarClose?.();
       }}
       onClickOutside={() => {
-        onCalendarClose();
+        datePickerProps.onCalendarClose?.();
       }}
       onSelect={(date, event: React.SyntheticEvent<Event> | undefined) => {
-        onSelect(date, event);
+        datePickerProps.onSelect?.(date, event);
       }}
       portalId="root"
-      ref={datepickerRef as any}
+      ref={(instance) => {
+        datepickerRef.current = instance as unknown as CalendarRef | null;
+      }}
       showPopperArrow={false}
-      renderCustomHeader={({
-        monthDate,
-        increaseMonth,
-        decreaseMonth,
-        changeMonth,
-        changeYear,
-        customHeaderCount,
-      }) => {
+      renderCustomHeader={(headerProps) => {
+        const { customHeaderCount, monthDate } = headerProps;
         const selectedMonth = dayjs(monthDate).format("MMM YYYY");
         const currentMonth = dayjs().format("MMM YYYY");
 
@@ -135,66 +129,32 @@ export const DatePicker: React.FC<Props> = ({
             {!customHeaderCount && (
               <Flex alignItems={AlignItems.CENTER}>
                 <ChangeDayButtonsStyledFlex>
-                  <button
-                    onClick={decreaseMonth}
-                    aria-label="Previous month"
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor =
-                        "rgba(255,255,255,0.2)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = "transparent")
-                    }
-                    style={{
-                      cursor: "pointer",
-                      color: headerColor,
-                      background: "transparent",
-                      border: "none",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: "24px",
-                      height: "24px",
-                      borderRadius: "50%",
-                      transition: "background-color 0.2s",
+                  <MonthNavButton
+                    ariaLabel="Previous month"
+                    color={headerColor}
+                    onClick={() => {
+                      headerProps.decreaseMonth();
                     }}
                   >
                     <ChevronLeftIcon />
-                  </button>
-                  <button
-                    onClick={increaseMonth}
-                    aria-label="Next month"
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor =
-                        "rgba(255,255,255,0.2)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = "transparent")
-                    }
-                    style={{
-                      cursor: "pointer",
-                      color: headerColor,
-                      background: "transparent",
-                      border: "none",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: "24px",
-                      height: "24px",
-                      borderRadius: "50%",
-                      transition: "background-color 0.2s",
+                  </MonthNavButton>
+                  <MonthNavButton
+                    ariaLabel="Next month"
+                    color={headerColor}
+                    onClick={() => {
+                      headerProps.increaseMonth();
                     }}
                   >
                     <ChevronRightIcon />
-                  </button>
+                  </MonthNavButton>
                 </ChangeDayButtonsStyledFlex>
                 {withTodayButton && (
                   <TodayStyledText
                     isCurrentDate={currentMonth === selectedMonth}
                     cursor="pointer"
                     onClick={() => {
-                      changeMonth(dayjs().month());
-                      changeYear(dayjs().year());
+                      headerProps.changeMonth(dayjs().month());
+                      headerProps.changeYear(dayjs().year());
                     }}
                     color={theme.color.text.light}
                     size="l"
@@ -207,7 +167,6 @@ export const DatePicker: React.FC<Props> = ({
           </StyledHeaderFlex>
         );
       }}
-      {...props}
     />
   );
 };
