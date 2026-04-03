@@ -6,6 +6,7 @@ import {
 } from "./useConnectGoogle.types";
 
 const COMMAND_ICON: CommandActionIcon = "CloudArrowUpIcon";
+type RepairDialog = NonNullable<GoogleUiConfig["sidebarStatus"]["dialog"]>;
 
 export const buildGoogleConnectRequest = (
   redirectURIInfo: GoogleAuthCodeRequest["redirectURIInfo"],
@@ -13,6 +14,14 @@ export const buildGoogleConnectRequest = (
   thirdPartyId: "google",
   clientType: "web",
   redirectURIInfo,
+});
+
+const buildRepairDialog = (onRepairGoogle: () => void): RepairDialog => ({
+  title: "Calendar sync needs repair",
+  description:
+    "Your Google Calendar has run into a sync issue. Repairing will re-import your recent events to make sure everything is up to date.",
+  repairLabel: "Repair",
+  onRepair: onRepairGoogle,
 });
 
 export const getGoogleConnectionConfig = (
@@ -30,7 +39,6 @@ export const getGoogleConnectionConfig = (
         },
         sidebarStatus: {
           tooltip: "Checking Google Calendar status…",
-          tone: "default",
           isDisabled: true,
         },
       };
@@ -44,15 +52,8 @@ export const getGoogleConnectionConfig = (
         sidebarStatus: {
           iconColor: "warning",
           tooltip: "Repairing Google Calendar in the background.",
-          tone: "warning",
           isDisabled: true,
-          dialog: {
-            title: "Calendar sync needs repair",
-            description:
-              "Your Google Calendar has run into a sync issue. Repairing will re-import your recent events to make sure everything is up to date.",
-            repairLabel: "Repair",
-            onRepair: onRepairGoogle,
-          },
+          dialog: buildRepairDialog(onRepairGoogle),
         },
       };
     case "NOT_CONNECTED":
@@ -66,7 +67,6 @@ export const getGoogleConnectionConfig = (
         sidebarStatus: {
           iconColor: "muted",
           tooltip: "Google Calendar not connected. Click to connect.",
-          tone: "default",
           isDisabled: false,
           onSelect: onConnectGoogle,
         },
@@ -82,7 +82,6 @@ export const getGoogleConnectionConfig = (
         sidebarStatus: {
           iconColor: "error",
           tooltip: "Google Calendar needs reconnecting. Click to reconnect.",
-          tone: "default",
           isDisabled: false,
           onSelect: onConnectGoogle,
         },
@@ -96,7 +95,6 @@ export const getGoogleConnectionConfig = (
         },
         sidebarStatus: {
           tooltip: "Google Calendar is syncing in the background.",
-          tone: "default",
           isDisabled: true,
         },
       };
@@ -111,15 +109,8 @@ export const getGoogleConnectionConfig = (
         sidebarStatus: {
           iconColor: "warning",
           tooltip: "Google Calendar needs repair. Click to repair.",
-          tone: "warning",
           isDisabled: false,
-          dialog: {
-            title: "Calendar sync needs repair",
-            description:
-              "Your Google Calendar has run into a sync issue. Repairing will re-import your recent events to make sure everything is up to date.",
-            repairLabel: "Repair",
-            onRepair: onRepairGoogle,
-          },
+          dialog: buildRepairDialog(onRepairGoogle),
         },
       };
     case "HEALTHY":
@@ -132,7 +123,6 @@ export const getGoogleConnectionConfig = (
         sidebarStatus: {
           iconColor: "muted",
           tooltip: "Google Calendar connected.",
-          tone: "default",
           isDisabled: true,
         },
       };
