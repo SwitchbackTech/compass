@@ -1,4 +1,3 @@
-import shell from "shelljs";
 import { COMPASS_ROOT_DEV, PCKG } from "@scripts/common/cli.constants";
 import { type Options_Cli } from "@scripts/common/cli.types";
 import { getEnvironmentAnswer, log } from "@scripts/common/cli.utils";
@@ -8,6 +7,18 @@ import {
   installDependencies,
   removeOldBuildFor,
 } from "./build.util";
+
+type BunRuntime = {
+  spawnSync(input: {
+    cmd: string[];
+    cwd?: string;
+    env?: Record<string, string | undefined>;
+    stderr?: "inherit";
+    stdout?: "inherit";
+  }): { exitCode: number };
+};
+
+const bunRuntime = (globalThis as unknown as { Bun: BunRuntime }).Bun;
 
 export const runBuild = async (options: Options_Cli) => {
   const packages = options.packages as string[];
@@ -29,12 +40,15 @@ const buildNodePckgs = async (options: Options_Cli) => {
   await copyNodeConfigsToBuild(options);
 
   log.info("Compiling node packages ...");
-  const result = shell.exec(
-    "./node_modules/.bin/tsc --project tsconfig.build.json",
-  );
-  if (result.code !== 0) {
+  const result = bunRuntime.spawnSync({
+    cmd: ["bunx", "tsc", "--project", "tsconfig.build.json"],
+    cwd: COMPASS_ROOT_DEV,
+    stderr: "inherit",
+    stdout: "inherit",
+  });
+  if (result.exitCode !== 0) {
     log.error("Exiting because of compilation errors");
-    process.exit(result.code);
+    process.exit(result.exitCode);
   }
 
   log.success("Compiled node pckgs");
@@ -47,13 +61,24 @@ const buildWeb = (options: Options_Cli) => {
   const environment = options.environment as string;
 
   log.info("Compiling web files...");
-  shell.cd(`${COMPASS_ROOT_DEV}/packages/web`);
-  const result = shell.exec(
-    `../../node_modules/.bin/webpack --mode=production --node-env=${environment}`,
-  );
-  if (result.code !== 0) {
+  const result = bunRuntime.spawnSync({
+    cmd: [
+      "bun",
+      "../../node_modules/webpack-cli/bin/cli.js",
+      "--mode=production",
+      `--node-env=${environment}`,
+    ],
+    cwd: `${COMPASS_ROOT_DEV}/packages/web`,
+    env: {
+      ...process.env,
+      TZ: process.env["TZ"] ?? "Etc/UTC",
+    },
+    stderr: "inherit",
+    stdout: "inherit",
+  });
+  if (result.exitCode !== 0) {
     log.error("Webpack compilation failed");
-    process.exit(result.code);
+    process.exit(result.exitCode);
   }
 
   log.success(`Done building web files.`);

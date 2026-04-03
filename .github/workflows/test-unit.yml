@@ -40,4 +40,4 @@ jobs:
         env:
           TZ: ${{ vars.TZ }}
         run: |
-          bun run test ${{ matrix.project }}
+          bun run test:${{ matrix.project }}

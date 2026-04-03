@@ -18,7 +18,8 @@ bun install
 - Takes ~3.5 minutes
 - NEVER CANCEL the installation
 - Set timeout to 10+ minutes
-- Bun manages dependencies and script entrypoints; Node 24+ still runs the backend, CLI, Jest, and webpack processes
+- Bun is the primary install/runtime entrypoint. `bun run cli`, `bun run dev:backend`, and `bun run test:core` execute directly through Bun.
+- Node 24+ is still required for retained tooling such as the web/backend/scripts Jest suites and the production Node build output
 
 ### Environment Configuration
 

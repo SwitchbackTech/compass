@@ -28,23 +28,27 @@ Unit workflow (`test-unit.yml`):
 - triggers on `push`
 - runs a matrix across `core`, `web`, `backend`, and `scripts`
 - uses `fail-fast: false`, so one failing lane does not cancel the others
-- runs `bun run test <project>` in each lane after dependency install
+- runs `bun run test:<project>` in each lane after dependency install
 - passes timezone through `TZ: ${{ vars.TZ }}`
 
 Local parity commands:
 
 ```bash
-bun run test core
-bun run test web
-bun run test backend
-bun run test scripts
+bun run test:core
+bun run test:web
+bun run test:backend
+bun run test:scripts
 ```
-
-`bun run test:<project>` aliases are equivalent and usually easier to remember.
 
 E2E workflow (`test-e2e.yml`) is separate and runs on pull requests to `main` via `bun run test:e2e`.
 
-## Jest Project Layout
+## Current Test Strategy
+
+- `bun run test:core` uses `bun test` with a small compatibility preload for the core BSON mock setup.
+- `bun run test:web`, `bun run test:backend`, and `bun run test:scripts` intentionally retain the existing Jest harness while their hoist-heavy module-mocking patterns are migrated.
+- `bun run test:<project>` is the stable CI-facing entrypoint for every package; the root dispatcher chooses the correct runner per project.
+
+## Retained Jest Layout
 
 Source:
 

@@ -18,21 +18,21 @@
     "@compass/scripts": "packages/scripts/src"
   },
   "scripts": {
-    "cli": "cross-env TZ=Etc/UTC node --env-file=packages/backend/.env.local -r ts-node/register/transpile-only -r tsconfig-paths/register packages/scripts/src/cli.ts",
+    "cli": "TZ=Etc/UTC bun --env-file=packages/backend/.env.local packages/scripts/src/cli.ts",
     "debug:supertokens": "export DEBUG=com.supertokens && bun run dev:backend",
     "debug:web": "http-server build/web/",
     "dev:backend -verbose": "export DEBUG=* && bun run dev:backend",
-    "dev:backend": "cd packages/backend && cross-env TZ=Etc/UTC node --env-file=.env.local ../../node_modules/ts-node-dev/lib/bin.js --respawn --pretty --exit-child --debounce --transpile-only -r tsconfig-paths/register src/app.ts",
+    "dev:backend": "cd packages/backend && TZ=Etc/UTC bun --env-file=.env.local --watch src/app.ts",
     "dev:update": "git checkout main && git pull && bun install",
-    "dev:web": "cd packages/web && node --env-file=../backend/.env.local ../../node_modules/.bin/webpack serve --mode=development --node-env=local",
+    "dev:web": "cd packages/web && TZ=Etc/UTC bun --env-file=../backend/.env.local ../../node_modules/webpack-cli/bin/cli.js serve --mode=development --node-env=local",
     "postinstall": "husky install | chmod ug+x .husky/*",
-    "test": "cross-env TZ=Etc/UTC ./node_modules/.bin/jest",
-    "test:e2e": "playwright test",
-    "test:backend": "cross-env TZ=Etc/UTC ./node_modules/.bin/jest --selectProjects backend",
-    "test:core": "bun run test core",
-    "test:web": "cross-env TZ=Etc/UTC ./node_modules/.bin/jest web",
-    "test:scripts": "bun run test scripts",
-    "type-check": "tsc --noEmit"
+    "test": "TZ=Etc/UTC bun packages/scripts/src/testing/run.ts",
+    "test:e2e": "bunx playwright test",
+    "test:backend": "TZ=Etc/UTC bun packages/scripts/src/testing/run.ts backend",
+    "test:core": "TZ=Etc/UTC bun packages/scripts/src/testing/run.ts core",
+    "test:web": "TZ=Etc/UTC bun packages/scripts/src/testing/run.ts web",
+    "test:scripts": "TZ=Etc/UTC bun packages/scripts/src/testing/run.ts scripts",
+    "type-check": "TZ=Etc/UTC bunx tsc --noEmit"
   },
   "dependencies": {
     "@compass/backend": "*",
@@ -57,7 +57,6 @@
     "@typescript-eslint/parser": "^8.0.0",
     "baseline-browser-mapping": "^2.9.11",
     "concurrently": "^8.0.1",
-    "cross-env": "^7.0.3",
     "eslint": "^9.20.1",
     "eslint-config-prettier": "^8.3.0",
     "eslint-import-resolver-lerna": "^2.0.0",
@@ -69,8 +68,6 @@
     "jest": "^29.0.3",
     "lint-staged": "^15.2.10",
     "prettier": "^3.5.1",
-    "ts-node": "^10.9.1",
-    "ts-node-dev": "^2.0.0",
     "typescript": "^5.1.6",
     "typescript-eslint": "^8.24.0"
   },
