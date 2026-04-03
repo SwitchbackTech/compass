@@ -14,6 +14,39 @@ Interpret the result like this:
 - `500`: the backend is running but database connectivity failed
 - connection refused or timeout: the backend is not listening yet, or the port/base URL is wrong
 
+## Bun Install Fails With Lockfile Errors
+
+If CI or local setup fails during dependency install with lockfile mismatch output, check whether dependency metadata changed without a matching `bun.lock` update.
+
+Why this happens:
+
+- unit/e2e workflows run `bun install --frozen-lockfile`
+- `--frozen-lockfile` rejects installs when `package.json` and `bun.lock` are out of sync
+
+Runbook:
+
+1. regenerate lockfile from repo root:
+   ```bash
+   bun install
+   ```
+2. ensure the lockfile delta is present:
+   ```bash
+   git status --short
+   ```
+3. verify frozen-lockfile behavior locally:
+   ```bash
+   bun install --frozen-lockfile
+   ```
+4. commit both dependency manifest changes and `bun.lock` together
+
+## E2E Fails Because Playwright Browsers Are Missing
+
+If `bun run test:e2e` fails with browser executable errors, install browsers with the same command used in CI:
+
+```bash
+bunx playwright install --with-deps chromium
+```
+
 ## SSE Stream Not Connected Or Not Receiving Events
 
 Compass realtime updates now use Server-Sent Events over:

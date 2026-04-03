@@ -44,6 +44,26 @@ bun run test scripts
 
 E2E workflow (`test-e2e.yml`) is separate and runs on pull requests to `main` via `bun run test:e2e`.
 
+### Install And Lockfile Contract
+
+Source of truth:
+
+- `package.json`
+- `bunfig.toml`
+- `.github/workflows/test-unit.yml`
+- `.github/workflows/test-e2e.yml`
+
+Current behavior:
+
+- Bun is the package manager (`packageManager` in `package.json`).
+- CI installs dependencies with `bun install --frozen-lockfile`.
+- CI restores Bun cache from `~/.bun/install/cache`.
+- Bun uses `linker = "isolated"` (`bunfig.toml`), so avoid assumptions based on hoisted transitive dependencies.
+
+Operational constraint:
+
+- if a change updates dependencies or resolution behavior, commit `bun.lock` in the same PR or CI install will fail under `--frozen-lockfile`.
+
 ## Jest Project Layout
 
 Source:
@@ -259,11 +279,23 @@ Useful anchors:
 
 E2E tests live in `e2e`.
 
+First-time local setup (or after Playwright upgrades):
+
+```bash
+bunx playwright install --with-deps chromium
+```
+
 Use them for:
 
 - critical user flows
 - integration between auth, UI, and persistence
 - regressions that unit tests cannot model cleanly
+
+CI parity run:
+
+```bash
+bun run test:e2e
+```
 
 ## Testing Realtime And Sync Changes
 
