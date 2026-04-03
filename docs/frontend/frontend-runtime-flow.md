@@ -369,25 +369,6 @@ Connect-later guardrail:
 - This prevents IndexedDB-only Compass events from disappearing during the
   Google-triggered metadata/import refresh.
 
-## DatePicker Month Navigation Componentization
-
-Files:
-
-- `packages/web/src/components/DatePicker/DatePicker.tsx`
-- `packages/web/src/components/DatePicker/MonthNavButton.tsx`
-- `packages/web/src/views/Calendar/components/Sidebar/MonthTab/MonthPicker/SidebarMonthPicker.tsx`
-
-Runtime behavior:
-
-- `DatePicker` now delegates month increment/decrement controls to a dedicated `MonthNavButton` component for each direction.
-- `renderCustomHeader` still owns month/year switching semantics (`decreaseMonth`, `increaseMonth`, and "Today" jump), while button rendering and hover style behavior are encapsulated in `MonthNavButton`.
-- `portalId` defaults to `"root"` in `DatePicker` when callers do not provide one; this keeps popover mounting predictable across call sites.
-
-Pitfalls:
-
-- Keep `MonthNavButton` as a separate component file to follow repo convention (one React component per file).
-- If changing header interaction behavior, update both `DatePicker.tsx` and `MonthNavButton.tsx` together so accessibility labels and click handlers stay aligned (`aria-label="Previous month"` / `"Next month"`).
-
 ## What To Read Before Editing
 
 - Auth/session issue: read session provider, user provider, router loaders.
