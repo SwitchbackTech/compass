@@ -11,12 +11,12 @@ Primary file:
 Root command:
 
 ```bash
-yarn cli <command>
+bun run cli <command>
 ```
 
 Environment loading:
 
-- `yarn cli` runs Node with `--env-file=packages/backend/.env.local`.
+- `bun run cli` runs Node with `--env-file=packages/backend/.env.local`.
 - Keep local development variables in `packages/backend/.env.local` (bootstrap from `.env.local.example`).
 
 ## CLI URL Resolution Contract
@@ -43,8 +43,8 @@ Fallback behavior:
 Examples:
 
 ```bash
-yarn cli build web --environment staging --clientId "test-client-id"
-yarn cli build nodePckgs --environment staging
+bun run cli build web --environment staging --clientId "test-client-id"
+bun run cli build nodePckgs --environment staging
 ```
 
 Implementation:
@@ -61,7 +61,7 @@ Use for:
 Example:
 
 ```bash
-yarn cli delete --user <id-or-email> --force
+bun run cli delete --user <id-or-email> --force
 ```
 
 Implementation:
@@ -78,7 +78,7 @@ and IndexedDB.
 Example shape:
 
 ```bash
-yarn cli migrate <umzug-subcommand>
+bun run cli migrate <umzug-subcommand>
 ```
 
 Implementation:
@@ -87,7 +87,7 @@ Implementation:
 
 This command wraps Umzug and uses Mongo-backed migration storage.
 
-Verified subcommands (`yarn cli migrate --help`):
+Verified subcommands (`bun run cli migrate --help`):
 
 - `up` - apply pending migrations
 - `down` - revert migrations
@@ -99,17 +99,17 @@ Common examples:
 
 ```bash
 # inspect migration state
-yarn cli migrate pending
-yarn cli migrate executed
+bun run cli migrate pending
+bun run cli migrate executed
 
 # apply everything pending
-yarn cli migrate up
+bun run cli migrate up
 
 # apply a specific migration only
-yarn cli migrate up --name 2025.10.13T14.22.21.migrate-sync-watch-data
+bun run cli migrate up --name 2025.10.13T14.22.21.migrate-sync-watch-data
 
 # revert the most recent migration
-yarn cli migrate down
+bun run cli migrate down
 ```
 
 `up` and `down` also support `--to` and `--step` for bounded execution.
@@ -119,7 +119,7 @@ yarn cli migrate down
 Example shape:
 
 ```bash
-yarn cli seed <umzug-subcommand>
+bun run cli seed <umzug-subcommand>
 ```
 
 Use for database seeder flows built on the same migration framework.
@@ -166,13 +166,13 @@ Recommended execution pattern:
 
 ```bash
 # verify target migration is pending
-yarn cli migrate pending
+bun run cli migrate pending
 
 # run only the watch migration
-yarn cli migrate up --name 2025.10.13T14.22.21.migrate-sync-watch-data
+bun run cli migrate up --name 2025.10.13T14.22.21.migrate-sync-watch-data
 
 # confirm it is now recorded as executed
-yarn cli migrate executed
+bun run cli migrate executed
 ```
 
 ## Safety Guidance
@@ -181,14 +181,14 @@ yarn cli migrate executed
 - Treat delete flows as destructive unless proven otherwise.
 - For migration work, inspect existing migration naming and ordering first.
 - For build work, confirm whether you need `web` or `nodePckgs`.
-- `yarn cli` always loads `packages/backend/.env.local` through the root script; build-time environment selection changes which backend env file is copied or loaded by the underlying command.
+- `bun run cli` always loads `packages/backend/.env.local` through the root script; build-time environment selection changes which backend env file is copied or loaded by the underlying command.
 
 ## Quick Reference
 
-- General help: `yarn cli --help`
-- Build package outputs: `yarn cli build ...`
-- Database migration framework: `yarn cli migrate ...`
-- Seeder framework: `yarn cli seed ...`
-- User-data maintenance: `yarn cli delete ...`
+- General help: `bun run cli --help`
+- Build package outputs: `bun run cli build ...`
+- Database migration framework: `bun run cli migrate ...`
+- Seeder framework: `bun run cli seed ...`
+- User-data maintenance: `bun run cli delete ...`
 
 There is no waitlist invite CLI command in the current codebase. Mobile waitlist signup is handled in the web app via `packages/web/src/components/MobileGate/MobileGate.tsx`.

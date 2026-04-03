@@ -17,13 +17,15 @@ This section provides specific guidelines for AI coding agents working on Compas
 2. **Environment Setup**
 
    ```bash
-   yarn install --immutable
+   bun install
    cp packages/backend/.env.local.example packages/backend/.env.local
-   yarn dev:web  # Verify frontend works
+   bun run dev:web  # Verify frontend works
    ```
 
+   Bun is the package manager for this repo. Node.js 24+ is still required because the app runtime and current tooling execute on Node.
+
 3. **Understand the Codebase**
-   - Use `yarn ai:index` to generate semantic search index
+   - Use `bun run ai:index` to generate semantic search index
    - Explore `ai-tools/` directory for helpful scripts
    - Review architecture in [AGENTS.md](./AGENTS.md)
 
@@ -161,32 +163,32 @@ test(web): add unit tests for login component
 1. **Run Type Checking**
 
    ```bash
-   yarn type-check
+   bun run type-check
    ```
 
 2. **Run Tests**
 
    ```bash
-   yarn test:core
-   yarn test:web
-   yarn test:backend
+   bun run test:core
+   bun run test:web
+   bun run test:backend
    ```
 
 3. **Check Code Health**
 
    ```bash
-   yarn audit:code-health
+   bun run audit:code-health
    ```
 
 4. **Format Code**
 
    ```bash
-   yarn prettier . --write
+   bunx prettier . --write
    ```
 
 5. **Generate Documentation** (if you added/modified APIs)
    ```bash
-   yarn docs:generate
+   bun run docs:generate
    ```
 
 #### PR Description Template
@@ -205,7 +207,7 @@ Brief description of changes
 
 ## Testing
 
-- [ ] Unit tests pass (`yarn test:core`, `yarn test:web`, `yarn test:backend`)
+- [ ] Unit tests pass (`bun run test:core`, `bun run test:web`, `bun run test:backend`)
 - [ ] E2E tests pass (if applicable)
 - [ ] Manual testing completed
 
@@ -225,7 +227,7 @@ Brief description of changes
 2. **Don't use raw Tailwind colors** - Use semantic theme colors (`bg-bg-primary` not `bg-blue-300`)
 3. **Don't test login without backend** - Frontend tests should work standalone
 4. **Don't modify unrelated code** - Keep changes surgical and focused
-5. **Don't skip type checking** - Always run `yarn type-check` before submitting
+5. **Don't skip type checking** - Always run `bun run type-check` before submitting
 6. **Don't ignore linter warnings** - Fix all warnings in your code
 7. **Don't use relative imports** - Always use module aliases
 
@@ -242,7 +244,7 @@ The `ai-tools/` directory contains helper scripts:
 Run any tool with:
 
 ```bash
-yarn ts-node ai-tools/<script-name>.ts
+bunx ts-node ai-tools/<script-name>.ts
 ```
 
 ### Resources for AI Agents

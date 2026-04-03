@@ -2,5 +2,5 @@
 . "$(dirname "$0")/_/husky.sh"
 
 echo "Formatting code ..."
-yarn prettier . --write --log-level silent
+bunx prettier . --write --log-level silent
 echo "Code formatted"

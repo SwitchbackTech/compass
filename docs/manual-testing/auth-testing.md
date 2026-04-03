@@ -23,9 +23,9 @@ Do not use this guide to validate these flows yet:
 
 ## Setup
 
-1. Install dependencies with `yarn install --immutable`.
+1. Install dependencies with `bun install`.
 2. Copy `packages/backend/.env.local.example` to `packages/backend/.env.local` if you are running the backend locally.
-3. Start the web app with `yarn dev:web`.
+3. Start the web app with `bun run dev:web`.
 4. Start the backend if you need live auth or password reset delivery.
 5. Use a fresh browser profile or clear app cookies and local storage before each scenario unless the scenario explicitly depends on persisted auth state.
 

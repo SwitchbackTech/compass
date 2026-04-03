@@ -13,7 +13,6 @@ credentials.txt
 *.log
 *.mongodb
 *.tsbuildinfo
-packages/**/yarn.lock
 
 ########
 # DIRS #
@@ -23,8 +22,6 @@ packages/**/yarn.lock
 .idea/
 .mcp.json
 .vscode/
-.yarn/
-.yarn-cache/
 
 build/
 buildcache/

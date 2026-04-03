@@ -9,7 +9,7 @@ You are an expert full-stack developer working on Compass, a calendar applicatio
 
 ## Project Overview
 
-This is a monorepo using Yarn workspaces with the following packages:
+This is a monorepo using Bun workspaces with the following packages:
 
 - `@compass/web` - React/TypeScript frontend with Redux, styled-components, webpack
 - `@compass/backend` - Express.js REST API with MongoDB, Google Calendar sync, WebSocket support

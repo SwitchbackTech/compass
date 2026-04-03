@@ -19,7 +19,7 @@ export const runBuild = async (options: Options_Cli) => {
     await buildNodePckgs(options);
   }
   if (packages.includes(PCKG.WEB)) {
-    await buildWeb(options);
+    buildWeb(options);
   }
 };
 
@@ -29,7 +29,9 @@ const buildNodePckgs = async (options: Options_Cli) => {
   await copyNodeConfigsToBuild(options);
 
   log.info("Compiling node packages ...");
-  const result = shell.exec("yarn tsc --project tsconfig.build.json");
+  const result = shell.exec(
+    "./node_modules/.bin/tsc --project tsconfig.build.json",
+  );
   if (result.code !== 0) {
     log.error("Exiting because of compilation errors");
     process.exit(result.code);
@@ -39,7 +41,7 @@ const buildNodePckgs = async (options: Options_Cli) => {
   installDependencies();
 };
 
-const buildWeb = async (options: Options_Cli) => {
+const buildWeb = (options: Options_Cli) => {
   removeOldBuildFor(PCKG.WEB);
 
   const environment = options.environment as string;
@@ -47,7 +49,7 @@ const buildWeb = async (options: Options_Cli) => {
   log.info("Compiling web files...");
   shell.cd(`${COMPASS_ROOT_DEV}/packages/web`);
   const result = shell.exec(
-    `yarn webpack --mode=production --node-env=${environment}`,
+    `../../node_modules/.bin/webpack --mode=production --node-env=${environment}`,
   );
   if (result.code !== 0) {
     log.error("Webpack compilation failed");

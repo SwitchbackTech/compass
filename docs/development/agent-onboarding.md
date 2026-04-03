@@ -13,7 +13,7 @@ Fastest accurate path into the Compass repo for internal engineers and agents.
 ## Current Ground Truth
 
 - Active packages are `packages/web`, `packages/backend`, `packages/core`, and `packages/scripts`.
-- `yarn dev:web` works without backend services.
+- `bun run dev:web` works without backend services.
 - Backend, sync, and auth work require valid env plus external services.
 - Shared domain contracts live mostly in `packages/core/src`.
 - Event behavior crosses `core`, `web`, and `backend`.
@@ -75,9 +75,9 @@ sed -n '1,260p' packages/core/src/types/event.types.ts
 
 ## Validation Defaults
 
-- Core-only changes: `yarn test:core`
-- Web-only changes: `yarn test:web`
-- Backend-only changes: `yarn test:backend`
-- Scripts-only changes: `yarn test:scripts`
-- Cross-package type changes: `yarn test:core && yarn test:web && yarn test:backend`
-- Before handoff: `yarn type-check`
+- Core-only changes: `bun run test:core`
+- Web-only changes: `bun run test:web`
+- Backend-only changes: `bun run test:backend`
+- Scripts-only changes: `bun run test:scripts`
+- Cross-package type changes: `bun run test:core && bun run test:web && bun run test:backend`
+- Before handoff: `bun run type-check`

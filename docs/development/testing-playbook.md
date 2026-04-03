@@ -7,14 +7,14 @@ Use the smallest test surface that can fail for the change you are making, then 
 From repo root:
 
 ```bash
-yarn test:core
-yarn test:web
-yarn test:backend
-yarn test:scripts
-yarn type-check
+bun run test:core
+bun run test:web
+bun run test:backend
+bun run test:scripts
+bun run type-check
 ```
 
-Avoid defaulting to `yarn test` unless you really need the full suite.
+Avoid defaulting to `bun run test` unless you really need the full suite.
 
 ## CI Unit Test Workflow
 
@@ -28,21 +28,21 @@ Unit workflow (`test-unit.yml`):
 - triggers on `push`
 - runs a matrix across `core`, `web`, `backend`, and `scripts`
 - uses `fail-fast: false`, so one failing lane does not cancel the others
-- runs `yarn test <project>` in each lane after dependency install
+- runs `bun run test <project>` in each lane after dependency install
 - passes timezone through `TZ: ${{ vars.TZ }}`
 
 Local parity commands:
 
 ```bash
-yarn test core
-yarn test web
-yarn test backend
-yarn test scripts
+bun run test core
+bun run test web
+bun run test backend
+bun run test scripts
 ```
 
-`yarn test:<project>` aliases are equivalent and usually easier to remember.
+`bun run test:<project>` aliases are equivalent and usually easier to remember.
 
-E2E workflow (`test-e2e.yml`) is separate and runs on pull requests to `main` via `yarn test:e2e`.
+E2E workflow (`test-e2e.yml`) is separate and runs on pull requests to `main` via `bun run test:e2e`.
 
 ## Jest Project Layout
 
@@ -66,8 +66,8 @@ Each project has its own setup files and module alias mapping.
 Run:
 
 ```bash
-yarn test:core && yarn test:web && yarn test:backend
-yarn type-check
+bun run test:core && bun run test:web && bun run test:backend
+bun run type-check
 ```
 
 ### Web-only UI or behavior change
@@ -75,27 +75,27 @@ yarn type-check
 Run:
 
 ```bash
-yarn test:web
+bun run test:web
 ```
 
-Add `yarn test:core` if the change touched shared utilities.
+Add `bun run test:core` if the change touched shared utilities.
 
 ### Backend route or service change
 
 Run:
 
 ```bash
-yarn test:backend
+bun run test:backend
 ```
 
-Add `yarn test:core` if a shared type or mapper changed.
+Add `bun run test:core` if a shared type or mapper changed.
 
 ### CLI, migration, or seeder change
 
 Run:
 
 ```bash
-yarn test:scripts
+bun run test:scripts
 ```
 
 ## Web Test Style

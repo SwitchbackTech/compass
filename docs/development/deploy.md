@@ -24,7 +24,7 @@ For staging or production:
 Build command:
 
 ```bash
-yarn cli build web --environment staging --clientId "test-client-id"
+bun run cli build web --environment staging --clientId "test-client-id"
 ```
 
 Webpack outputs static assets to `build/web`. Serve those assets from any static host or reverse proxy setup that can serve the app and `version.json`.
@@ -34,7 +34,7 @@ Webpack outputs static assets to `build/web`. Serve those assets from any static
 Build command:
 
 ```bash
-yarn cli build nodePckgs --environment staging
+bun run cli build nodePckgs --environment staging
 ```
 
 Node build output lands in `build/node` and includes a copied `.env` file for the selected environment when that file exists.
