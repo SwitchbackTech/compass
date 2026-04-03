@@ -43,6 +43,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
     calendarClassName,
     inputColor,
     isOpen = true,
+    portalId = "root",
     view,
     withTodayButton = true,
     ...props
@@ -105,7 +106,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
       onSelect={(date, event: React.SyntheticEvent<Event> | undefined) => {
         datePickerProps.onSelect?.(date, event);
       }}
-      portalId="root"
+      portalId={portalId}
       ref={(instance) => {
         datepickerRef.current = instance as unknown as CalendarRef | null;
       }}
