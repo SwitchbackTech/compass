@@ -134,7 +134,9 @@ Files:
 - `packages/web/src/views/Calendar/components/Sidebar/Sidebar.tsx`
 - `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
 - `packages/web/src/views/Calendar/components/Sidebar/styled.ts`
-- `packages/web/src/auth/hooks/google/useConnectGoogle/useConnectGoogle.ts`
+- `packages/web/src/auth/google/hooks/useConnectGoogle/useConnectGoogle.ts`
+- `packages/web/src/components/HeaderInfoIcon/useHeaderInfo.ts`
+- `packages/web/src/components/HeaderInfoIcon/HeaderInfoIcon.tsx`
 
 Layout contract:
 
@@ -151,14 +153,19 @@ Control mapping:
   - Month tab (`SHIFT + 2`) dispatches `viewSlice.actions.updateSidebarTab("monthWidget")`
 - Right group:
   - Command palette toggle (`modifier + K`) dispatches open/close palette actions from `settingsSlice`
-  - Google status action is derived from `useConnectGoogle().sidebarStatus`
-  - background import spinner is shown while `selectImportGCalState(...).importing` is true
   - update action (refresh icon) is shown when `useVersionCheck().isUpdateAvailable` is true and reloads the page
+
+Google status surfaces:
+
+- Command palettes (week/day/now) consume `useConnectGoogle().commandAction` for the connect/reconnect/repair item.
+- Header status icons consume `useConnectGoogle` via `useHeaderInfo()`:
+  - warning/error states render an attention icon and optional repair dialog
+  - `IMPORTING` and `repairing` states render a spinner tooltip instead of the icon
 
 Icon state constraints:
 
 - tab icons and command icon use `theme.color.text.light` when active and `theme.color.text.darkPlaceholder` when inactive
-- Google status icon tooltips and disabled/clickable behavior come from `useConnectGoogle` and should not be hardcoded in the row component
+- Google status tooltip text, clickability, and dialog behavior come from `useConnectGoogle` and should not be hardcoded in header/palette components
 
 ## Dedication Dialog Runtime
 
@@ -330,9 +337,11 @@ Runtime nuances:
 
 Files:
 
-- `packages/web/src/auth/hooks/google/useConnectGoogle/useConnectGoogle.ts`
+- `packages/web/src/auth/google/hooks/useConnectGoogle/useConnectGoogle.ts`
 - `packages/web/src/auth/google/google.auth.util.ts`
-- `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
+- `packages/web/src/components/HeaderInfoIcon/useHeaderInfo.ts`
+- `packages/web/src/components/HeaderInfoIcon/HeaderInfoIcon.tsx`
+- `packages/web/src/views/CmdPalette/CmdPalette.tsx`
 
 UI state comes from a single server-enriched metadata field (`google.connectionState`) plus one client-only loading state:
 
@@ -342,6 +351,15 @@ UI state comes from a single server-enriched metadata field (`google.connectionS
 - `IMPORTING` → disabled syncing status (`SpinnerIcon`)
 - `HEALTHY` → disabled connected status (`LinkIcon`)
 - `ATTENTION` → repair action (`CloudWarningIcon`)
+
+`sidebarStatus` contract:
+
+- `iconColor` only uses `muted`, `warning`, and `error`
+- `tone` is not part of the UI contract; warning/error rendering is driven by `iconColor`
+- warning states can include a reusable repair popover dialog:
+  - title: `Calendar sync needs repair`
+  - action label: `Repair`
+  - action handler: shared `onRepairGoogle`
 
 Important constraint:
 
@@ -362,3 +380,26 @@ Connect-later guardrail:
 - Event refresh issue: read SSE hooks, sync slice, event sagas.
 - Offline issue: read storage adapter and migration runner.
 - Rendering issue in day/week/now: start at the route view, then its hooks.
+
+## Shared DatePicker Runtime Contract
+
+Files:
+
+- `packages/web/src/components/DatePicker/DatePicker.tsx`
+- `packages/web/src/components/DatePicker/MonthNavButton.tsx`
+- `packages/web/src/views/Calendar/components/Sidebar/MonthTab/MonthPicker/SidebarMonthPicker.tsx`
+- `packages/web/src/views/Forms/EventForm/DateControlsSection/DateTimeSection/DatePickers/DatePickers.tsx`
+- `packages/web/src/views/Forms/EventForm/DateControlsSection/RecurrenceSection/components/EndsOnDate.tsx`
+
+Behavior:
+
+- `DatePicker` wraps `react-datepicker` and defaults `portalId` to `"root"`; callers only need to pass a custom `portalId` when rendering inside an alternate portal container.
+- Consumers should use `onCalendarOpen` / `onCalendarClose` and `onSelect` props; wrapper callbacks are optional-chained and no-op safely when handlers are omitted.
+- Month navigation buttons are extracted into `MonthNavButton` and expose accessible labels (`Previous month`, `Next month`).
+- `withTodayButton` controls whether the custom header renders the Today shortcut (defaults to `true`).
+- Example: recurrence `EndsOnDate` uses `portalId="portal"` because the picker is rendered under a custom `<div id="portal">` container.
+
+Constraints and pitfalls:
+
+- Keep one component per file for DatePicker subcomponents (`DatePicker.tsx`, `MonthNavButton.tsx`).
+- The wrapper uses a custom input/ref bridge to trigger autofocus behavior; avoid bypassing it with direct DOM access from parent components.

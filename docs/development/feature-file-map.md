@@ -63,8 +63,16 @@ Use this document to find the first files to inspect for common Compass changes.
 - Sidebar shell and tab rendering: `packages/web/src/views/Calendar/components/Sidebar/Sidebar.tsx`
 - Footer icon row actions (tasks/month, command palette, sync/update): `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
 - Sidebar layout constants and icon group styling: `packages/web/src/views/Calendar/components/Sidebar/styled.ts`
-- Google connection/status UI contract for sidebar + command palette: `packages/web/src/auth/hooks/google/useConnectGoogle/useConnectGoogle.ts`
+- Google connection/status UI contract for command palettes + header status icon: `packages/web/src/auth/google/hooks/useConnectGoogle/useConnectGoogle.ts`
+- Header info status bridge and rendering: `packages/web/src/components/HeaderInfoIcon/useHeaderInfo.ts`, `packages/web/src/components/HeaderInfoIcon/HeaderInfoIcon.tsx`
 - Sidebar icon row behavior tests: `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.test.tsx`
+
+## Date Picking UI
+
+- Shared DatePicker wrapper and custom month nav: `packages/web/src/components/DatePicker/DatePicker.tsx`, `packages/web/src/components/DatePicker/MonthNavButton.tsx`
+- Sidebar month picker integration: `packages/web/src/views/Calendar/components/Sidebar/MonthTab/MonthPicker/SidebarMonthPicker.tsx`
+- Event form date pickers: `packages/web/src/views/Forms/EventForm/DateControlsSection/DateTimeSection/DatePickers/DatePickers.tsx`
+- Recurrence "Ends on" picker (custom `portalId` usage): `packages/web/src/views/Forms/EventForm/DateControlsSection/RecurrenceSection/components/EndsOnDate.tsx`
 
 ## Offline Storage
 
