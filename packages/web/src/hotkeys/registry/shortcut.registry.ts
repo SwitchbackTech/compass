@@ -5,7 +5,6 @@ export const ShortcutTags = {
   DAY: "day",
   WEEK: "week",
   NOW: "now",
-  HOME: "home",
 } as const;
 
 export type ShortcutTag = (typeof ShortcutTags)[keyof typeof ShortcutTags];
@@ -181,5 +180,3 @@ export const SHORTCUTS = {
     tags: [NOW],
   },
 } as const satisfies Record<string, ShortcutDef>;
-
-export type ShortcutId = keyof typeof SHORTCUTS;

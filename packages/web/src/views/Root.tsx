@@ -5,7 +5,7 @@ import { GlobalShortcutsHost } from "@web/components/CompassProvider/CompassProv
 import { MobileGate } from "@web/components/MobileGate/MobileGate";
 import SSEProvider from "@web/sse/provider/SSEProvider";
 
-const RootViewContent = () => {
+export const RootView = () => {
   const isMobile = useIsMobile();
 
   if (isMobile) {
@@ -21,5 +21,3 @@ const RootViewContent = () => {
     </UserProvider>
   );
 };
-
-export const RootView = () => <RootViewContent />;
