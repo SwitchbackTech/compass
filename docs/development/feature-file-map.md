@@ -104,9 +104,11 @@ Use this document to find the first files to inspect for common Compass changes.
 - Delete command: `packages/scripts/src/commands/delete.ts`
 - Migration command: `packages/scripts/src/commands/migrate.ts`
 - Seeders/migrations: `packages/scripts/src/migrations`, `packages/scripts/src/seeders`
+- Test dispatcher: `packages/scripts/src/testing/run.ts`
 
 ## Test Anchors
 
+- Bun core test preload + Jest-compat shim: `packages/scripts/src/testing/core.preload.ts`, `packages/scripts/src/testing/core.jest-compat.ts`
 - Retained Jest project config for `web`, `backend`, and `scripts`: `jest.config.js`
 - Core test setup: `packages/core/src/__tests__`
 - Web test setup: `packages/web/src/__tests__`

@@ -48,6 +48,29 @@ E2E workflow (`test-e2e.yml`) is separate and runs on pull requests to `main` vi
 - `bun run test:web`, `bun run test:backend`, and `bun run test:scripts` intentionally retain the existing Jest harness while their hoist-heavy module-mocking patterns are migrated.
 - `bun run test:<project>` is the stable CI-facing entrypoint for every package; the root dispatcher chooses the correct runner per project.
 
+### Focused Runs And Extra Flags
+
+Source:
+
+- `packages/scripts/src/testing/run.ts`
+
+Important constraint:
+
+- the root dispatcher currently accepts a project name (`core`, `web`, `backend`, `scripts`) but does not forward additional CLI flags to Bun/Jest.
+- use `bun run test:<project>` for CI parity and whole-project validation.
+- for focused local debugging (single file, `--runTestsByPath`, `--runInBand`), call the underlying runner directly.
+
+Examples:
+
+```bash
+# backend/scripts/web focused runs (retained Jest projects)
+./node_modules/.bin/jest --selectProjects backend --runTestsByPath packages/backend/src/event/services/event.service.test.ts --runInBand
+./node_modules/.bin/jest web packages/web/src/views/Day/view/DayViewContent.test.tsx --runInBand
+
+# core focused runs (Bun native)
+bun test packages/core/src/util/date/date.util.test.ts --preload packages/scripts/src/testing/core.preload.ts
+```
+
 ## Retained Jest Layout
 
 Source:

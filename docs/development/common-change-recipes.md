@@ -43,7 +43,7 @@ Do not edit recurring behavior from one layer only.
 4. Confirm planned `steps` and `googleEffect` match expected behavior.
 5. Confirm executor step mapping in `packages/backend/src/event/classes/compass.event.executor.ts`.
 6. Run focused tests:
-   - `bun run test:backend --runTestsByPath packages/backend/src/event/classes/compass.event.parser.test.ts packages/backend/src/event/classes/compass.event.executor.test.ts packages/backend/src/sync/services/sync/__tests__/compass.sync.processor.test.ts --runInBand`
+   - `./node_modules/.bin/jest --selectProjects backend --runTestsByPath packages/backend/src/event/classes/compass.event.parser.test.ts packages/backend/src/event/classes/compass.event.executor.test.ts packages/backend/src/sync/services/sync/__tests__/compass.sync.processor.test.ts --runInBand`
 
 ## Add An SSE Event
 

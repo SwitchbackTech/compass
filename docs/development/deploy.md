@@ -39,11 +39,24 @@ bun run cli build nodePckgs --environment staging
 
 Node build output lands in `build/node` and includes a copied `.env` file for the selected environment when that file exists.
 
+What this build command does:
+
+- compiles backend/core with `bunx tsc --project tsconfig.build.json`
+- copies root + package manifests (`package.json`, `bun.lock`, package-level `package.json` files)
+- installs production dependencies in `build/node` with:
+  `bun install --production --frozen-lockfile --ignore-scripts --no-progress`
+
 Runtime entrypoint:
 
 ```bash
-node build/node/packages/backend/src/app.js
+cd build/node
+node packages/backend/src/app.js
 ```
+
+Runtime notes:
+
+- Bun is the build orchestrator, but deployed backend runtime is still Node.
+- Compiled runtime alias wiring is initialized in `packages/backend/src/init.ts` for build output paths (`/build/...`) so imports like `@backend/*` and `@core/*` continue to resolve.
 
 Deployment notes:
 
