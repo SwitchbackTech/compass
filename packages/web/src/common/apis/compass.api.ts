@@ -74,6 +74,8 @@ CompassApi.interceptors.response.use(
         status === Status.UNAUTHORIZED)
     ) {
       await signOut(status);
+      // Avoid bubbling expected auth-expiry failures as unhandled rejections.
+      return Promise.resolve();
     } else if (!isAuthEndpoint) {
       console.error(error);
     }
