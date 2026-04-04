@@ -19,7 +19,7 @@ bun install
 - NEVER CANCEL the installation
 - Set timeout to 10+ minutes
 - Bun is the primary install/runtime entrypoint. `bun run cli`, `bun run dev:backend`, and `bun run test:core` execute directly through Bun.
-- Node 24+ is still required for retained tooling such as the web/backend/scripts Jest suites and the production Node build output
+- Node 24+ is still required for retained tooling such as the web/backend Jest suites and the production Node build output
 
 ### Environment Configuration
 

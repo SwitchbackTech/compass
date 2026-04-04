@@ -107,7 +107,8 @@ Use this document to find the first files to inspect for common Compass changes.
 
 ## Test Anchors
 
-- Retained Jest project config for `web`, `backend`, and `scripts`: `jest.config.js`
+- Retained Jest project config for `web` and `backend`: `jest.config.js`
+- Bun script-test harness and preloads: `packages/scripts/src/testing`
 - Core test setup: `packages/core/src/__tests__`
 - Web test setup: `packages/web/src/__tests__`
 - Web mock server handlers: `packages/web/src/__tests__/__mocks__/server/mock.handlers.ts`

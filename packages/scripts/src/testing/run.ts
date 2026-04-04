@@ -32,7 +32,7 @@ const TEST_PROJECTS = {
     ],
   },
   scripts: {
-    cmd: ["./node_modules/.bin/jest", "scripts"],
+    cmd: ["bun", "packages/scripts/src/testing/run-scripts.ts"],
   },
   web: {
     cmd: ["./node_modules/.bin/jest", "web"],

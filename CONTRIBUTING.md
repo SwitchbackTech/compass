@@ -22,7 +22,7 @@ This section provides specific guidelines for AI coding agents working on Compas
    bun run dev:web  # Verify frontend works
    ```
 
-   Bun is the primary package manager and command runner for this repo. Node.js 24+ is still required for retained tooling such as the web/backend/scripts Jest suites and the production Node build output.
+   Bun is the primary package manager and command runner for this repo. Node.js 24+ is still required for retained tooling such as the web/backend Jest suites and the production Node build output.
 
 3. **Understand the Codebase**
    - Use `bun run ai:index` to generate semantic search index

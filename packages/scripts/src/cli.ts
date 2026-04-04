@@ -6,14 +6,39 @@ import { runMigrator } from "@scripts/commands/migrate";
 import { ALL_PACKAGES, ENVIRONMENT } from "@scripts/common/cli.constants";
 import { MigratorType } from "@scripts/common/cli.types";
 
-export default class CompassCLI {
-  private program: Command;
-  private validator: CliValidator;
+export type CompassCliValidator = Pick<
+  CliValidator,
+  "exitHelpfully" | "getCliOptions" | "validateBuild" | "validateDelete"
+>;
 
-  constructor(args: string[]) {
+export type CompassCliDeps = {
+  createValidator?: (program: Command) => CompassCliValidator;
+  parseArgs?: (program: Command, args: string[]) => void;
+  runBuild?: typeof runBuild;
+  runMigrator?: typeof runMigrator;
+  startDeleteFlow?: typeof startDeleteFlow;
+};
+
+const DEFAULT_DEPS: Required<CompassCliDeps> = {
+  createValidator: (program) => new CliValidator(program),
+  parseArgs: (program, args) => {
+    program.parse(args);
+  },
+  runBuild,
+  runMigrator,
+  startDeleteFlow,
+};
+
+export default class CompassCLI {
+  private deps: Required<CompassCliDeps>;
+  private program: Command;
+  private validator: CompassCliValidator;
+
+  constructor(args: string[], deps: CompassCliDeps = {}) {
+    this.deps = { ...DEFAULT_DEPS, ...deps };
     this.program = this._createProgram();
-    this.validator = new CliValidator(this.program);
-    this.program.parse(args);
+    this.validator = this.deps.createValidator(this.program);
+    this.deps.parseArgs(this.program, args);
   }
 
   public async run() {
@@ -23,20 +48,20 @@ export default class CompassCLI {
     switch (true) {
       case cmd === "build": {
         await this.validator.validateBuild(options);
-        await runBuild(options);
+        await this.deps.runBuild(options);
         break;
       }
       case cmd === "delete": {
         const { force, user } = options;
         this.validator.validateDelete(options);
-        await startDeleteFlow(user as string, force);
+        await this.deps.startDeleteFlow(user as string, force);
         break;
       }
       case cmd === "migrate":
-        await runMigrator(MigratorType.MIGRATION);
+        await this.deps.runMigrator(MigratorType.MIGRATION);
         break;
       case cmd === "seed": {
-        await runMigrator(MigratorType.SEEDER);
+        await this.deps.runMigrator(MigratorType.SEEDER);
         break;
       }
       default:

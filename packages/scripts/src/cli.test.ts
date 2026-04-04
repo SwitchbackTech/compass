@@ -1,114 +1,145 @@
-import CompassCLI from "@scripts/cli";
-import { runBuild } from "@scripts/commands/build";
-import { startDeleteFlow } from "@scripts/commands/delete/delete";
+import { describe, expect, it } from "bun:test";
+import CompassCLI, {
+  type CompassCliDeps,
+  type CompassCliValidator,
+} from "@scripts/cli";
+import { type Options_Cli } from "@scripts/common/cli.types";
 import { NodeEnv } from "../../core/src/constants/core.constants";
 import { MigratorType } from "./common/cli.types";
 
-// Mock 'open' module to avoid ESM compatibility issues in Jest
-jest.mock("open", () => ({
-  __esModule: true,
-  default: jest.fn(),
-  apps: { chrome: "chrome", firefox: "firefox", brave: "brave", edge: "edge" },
-}));
+type CliTestCalls = {
+  exitHelpfully: Array<[cmd: string, msg?: string]>;
+  runBuild: Options_Cli[];
+  runMigrator: MigratorType[];
+  startDeleteFlow: Array<[user: string, force?: boolean]>;
+  validateBuild: number;
+  validateDelete: number;
+};
 
-const mockGetCliOptions = jest.fn();
-const mockValidateBuild = jest.fn();
-const mockValidateDelete = jest.fn();
-const mockExitHelpfully = jest.fn();
-const mockRunMigrator = jest.fn();
-
-jest.mock("@scripts/cli.validator", () => {
+function createCalls(): CliTestCalls {
   return {
-    CliValidator: jest.fn().mockImplementation(() => ({
-      getCliOptions: mockGetCliOptions,
-      validateBuild: mockValidateBuild,
-      validateDelete: mockValidateDelete,
-      exitHelpfully: mockExitHelpfully,
-    })),
+    exitHelpfully: [],
+    runBuild: [],
+    runMigrator: [],
+    startDeleteFlow: [],
+    validateBuild: 0,
+    validateDelete: 0,
   };
-});
+}
 
-jest.mock("@scripts/commands/build.util");
-jest.mock("@scripts/commands/build");
-jest.mock("@scripts/commands/delete/delete");
+function createDeps(options: Options_Cli = {}): {
+  calls: CliTestCalls;
+  deps: CompassCliDeps;
+  validator: CompassCliValidator;
+} {
+  const calls = createCalls();
 
-jest.mock("@scripts/commands/migrate", () => ({
-  runMigrator: jest
-    .fn()
-    .mockImplementation((...args) => mockRunMigrator(...args)),
-}));
+  const validator: CompassCliValidator = {
+    exitHelpfully(cmd, msg) {
+      calls.exitHelpfully.push([cmd, msg]);
+    },
+    getCliOptions() {
+      return options;
+    },
+    validateBuild() {
+      calls.validateBuild += 1;
+      return Promise.resolve();
+    },
+    validateDelete() {
+      calls.validateDelete += 1;
+    },
+  };
+
+  return {
+    calls,
+    deps: {
+      createValidator: () => validator,
+      parseArgs(program, args) {
+        program.parse(args);
+      },
+      runBuild(input) {
+        calls.runBuild.push(input);
+        return Promise.resolve();
+      },
+      runMigrator(input) {
+        calls.runMigrator.push(input);
+        return Promise.resolve();
+      },
+      startDeleteFlow(user, force) {
+        calls.startDeleteFlow.push([user, force]);
+        return Promise.resolve();
+      },
+    },
+    validator,
+  };
+}
 
 describe("CompassCLI", () => {
-  beforeEach(() => jest.clearAllMocks());
-
   it("runs build command and calls validateBuild and runBuild", async () => {
-    mockGetCliOptions.mockReturnValue({ force: false, user: undefined });
+    const { calls, deps } = createDeps({
+      force: false,
+      user: undefined,
+    });
 
-    const cli = new CompassCLI([
-      "node",
-      "cli",
-      "build",
-      "nodePckgs",
-      "-e",
-      NodeEnv.Staging,
-    ]);
+    const cli = new CompassCLI(
+      ["bun", "cli", "build", "nodePckgs", "-e", NodeEnv.Staging],
+      deps,
+    );
 
     await cli.run();
 
-    expect(mockValidateBuild).toHaveBeenCalled();
-    expect(runBuild).toHaveBeenCalled();
+    expect(calls.validateBuild).toBe(1);
+    expect(calls.runBuild).toHaveLength(1);
   });
 
   it("runs delete command and calls validateDelete and startDeleteFlow", async () => {
-    mockGetCliOptions.mockReturnValue({
+    const { calls, deps } = createDeps({
       force: true,
       user: "user@example.com",
     });
 
-    const cli = new CompassCLI(["node", "cli", "delete"]);
+    const cli = new CompassCLI(["bun", "cli", "delete"], deps);
 
     await cli.run();
 
-    expect(mockValidateDelete).toHaveBeenCalled();
-    expect(startDeleteFlow).toHaveBeenCalledWith("user@example.com", true);
+    expect(calls.validateDelete).toBe(1);
+    expect(calls.startDeleteFlow).toEqual([["user@example.com", true]]);
   });
 
   it("runs migrate command and does not throw", async () => {
-    mockGetCliOptions.mockReturnValue({});
+    const { calls, deps } = createDeps({});
 
-    const cli = new CompassCLI(["node", "cli", "migrate", "--help"]);
+    const cli = new CompassCLI(["bun", "cli", "migrate", "--help"], deps);
 
     await cli.run();
 
-    expect(mockRunMigrator).toHaveBeenCalledWith(MigratorType.MIGRATION);
+    expect(calls.runMigrator).toEqual([MigratorType.MIGRATION]);
   });
 
   it("runs seed command and does not throw", async () => {
-    mockGetCliOptions.mockReturnValue({});
+    const { calls, deps } = createDeps({});
 
-    const cli = new CompassCLI(["node", "cli", "seed"]);
+    const cli = new CompassCLI(["bun", "cli", "seed"], deps);
 
     await cli.run();
 
-    expect(mockRunMigrator).toHaveBeenCalledWith(MigratorType.SEEDER);
+    expect(calls.runMigrator).toEqual([MigratorType.SEEDER]);
   });
 
   it("calls exitHelpfully for unsupported command", async () => {
-    mockGetCliOptions.mockReturnValue({});
+    const { calls, deps } = createDeps({});
 
-    const exitSpy = jest
-      .spyOn(process, "exit")
-      .mockImplementation(jest.fn() as never);
-
-    const cli = new CompassCLI(["node", "cli", "unknown"]);
+    const cli = new CompassCLI(["bun", "cli"], {
+      ...deps,
+      parseArgs(program) {
+        program.args = ["unknown"];
+      },
+    });
 
     await cli.run();
 
-    expect(mockExitHelpfully).toHaveBeenCalledWith(
-      "root",
-      "unknown is not a supported cmd",
-    );
-
-    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(calls.exitHelpfully).toEqual([
+      ["root", "unknown is not a supported cmd"],
+    ]);
   });
 });

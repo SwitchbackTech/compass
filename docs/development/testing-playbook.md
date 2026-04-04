@@ -45,7 +45,8 @@ E2E workflow (`test-e2e.yml`) is separate and runs on pull requests to `main` vi
 ## Current Test Strategy
 
 - `bun run test:core` uses `bun test` with a small compatibility preload for the core BSON mock setup.
-- `bun run test:web`, `bun run test:backend`, and `bun run test:scripts` intentionally retain the existing Jest harness while their hoist-heavy module-mocking patterns are migrated.
+- `bun run test:scripts` uses `bun test` with Bun preloads for CLI/unit setup and Mongo-backed migration integration setup.
+- `bun run test:web` and `bun run test:backend` intentionally retain the existing Jest harness while their hoist-heavy module-mocking patterns are migrated.
 - `bun run test:<project>` is the stable CI-facing entrypoint for every package; the root dispatcher chooses the correct runner per project.
 
 ## Retained Jest Layout
@@ -59,7 +60,6 @@ Projects:
 - `core`
 - `web`
 - `backend`
-- `scripts`
 
 Each project has its own setup files and module alias mapping.
 
