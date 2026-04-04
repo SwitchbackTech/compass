@@ -1,15 +1,24 @@
 // sort-imports-ignore
-import moduleAlias from "module-alias";
 import path from "path";
+import { createRequire } from "node:module";
 
 type AliasApi = {
   addAliases(aliases: Record<string, string>): void;
 };
-const aliasApi = moduleAlias as unknown as AliasApi;
-aliasApi.addAliases({
-  "@backend": `${__dirname}`,
-  "@core": `${path.resolve(__dirname, "../../core/src")}`,
-});
+
+const isBuildRuntime =
+  typeof (globalThis as { Bun?: unknown }).Bun === "undefined" &&
+  __dirname.includes(`${path.sep}build${path.sep}`);
+
+if (isBuildRuntime) {
+  const require = createRequire(__filename);
+  const aliasApi = require("module-alias") as AliasApi;
+
+  aliasApi.addAliases({
+    "@backend": `${__dirname}`,
+    "@core": `${path.resolve(__dirname, "../../core/src")}`,
+  });
+}
 
 import { Logger } from "@core/logger/winston.logger";
 

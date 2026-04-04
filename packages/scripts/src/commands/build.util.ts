@@ -8,6 +8,17 @@ import {
 import { type Options_Cli } from "@scripts/common/cli.types";
 import { _confirm, fileExists, log } from "@scripts/common/cli.utils";
 
+type BunRuntime = {
+  spawnSync(input: {
+    cmd: string[];
+    cwd?: string;
+    stderr?: "inherit";
+    stdout?: "inherit";
+  }): { exitCode: number };
+};
+
+const bunRuntime = (globalThis as unknown as { Bun: BunRuntime }).Bun;
+
 /**
  * Utilities for building a project
  */
@@ -43,6 +54,13 @@ export const copyNodeConfigsToBuild = async (options: Options_Cli) => {
 
   log.info("Copying package configs to build ...");
   shell.cp(`${COMPASS_ROOT_DEV}/package.json`, `${NODE_BUILD}/package.json`);
+  shell.cp(`${COMPASS_ROOT_DEV}/bun.lock`, `${NODE_BUILD}/bun.lock`);
+
+  const bunfigPath = `${COMPASS_ROOT_DEV}/bunfig.toml`;
+
+  if (fileExists(bunfigPath)) {
+    shell.cp(bunfigPath, `${NODE_BUILD}/bunfig.toml`);
+  }
 
   shell.cp(
     `${COMPASS_ROOT_DEV}/packages/backend/package.json`,
@@ -63,16 +81,22 @@ export const createNodeDirs = () => {
 export const installDependencies = () => {
   log.info("Installing dependencies...");
 
-  shell.cd(`${COMPASS_BUILD_DEV}/node`);
-
-  // Use npm for production install so build output stays package-manager agnostic.
-  // --loglevel=error suppresses deprecation warnings from transitive dependencies
-  const result = shell.exec(
-    "npm install --omit=dev --ignore-scripts --loglevel=error",
-  );
-  if (result.code !== 0) {
+  const result = bunRuntime.spawnSync({
+    cmd: [
+      "bun",
+      "install",
+      "--production",
+      "--frozen-lockfile",
+      "--ignore-scripts",
+      "--no-progress",
+    ],
+    cwd: `${COMPASS_BUILD_DEV}/node`,
+    stderr: "inherit",
+    stdout: "inherit",
+  });
+  if (result.exitCode !== 0) {
     log.error("Exiting due to error during dependency installation");
-    process.exit(result.code);
+    process.exit(result.exitCode);
   }
 
   log.success(`Done building node packages.`);

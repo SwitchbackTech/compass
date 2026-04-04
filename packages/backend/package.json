@@ -29,12 +29,10 @@
     "@types/express": "^4.17.13",
     "@types/jest": "^29.0.0",
     "@types/lodash.mergewith": "^4.6.9",
-    "@types/module-alias": "^2.0.1",
     "@types/morgan": "^1.9.4",
     "@types/node": "^22.13.10",
     "@types/supertest": "^6.0.3",
     "jest-environment-node": "^29.7.0",
-    "supertest": "^7.1.0",
-    "tsconfig-paths": "^4.1.2"
+    "supertest": "^7.1.0"
   }
 }

@@ -44,7 +44,7 @@ cp packages/backend/.env.local.example packages/backend/.env.local
 
 Runtime note:
 
-- `bun run dev:backend`, `bun run dev:web`, and `bun run cli ...` load variables from `packages/backend/.env.local` via Node's `--env-file`.
+- `bun run dev:backend`, `bun run dev:web`, and `bun run cli ...` load variables from `packages/backend/.env.local` through Bun's `--env-file`.
 
 ## Backend Environment Contract
 

@@ -16,7 +16,7 @@ bun run cli <command>
 
 Environment loading:
 
-- `bun run cli` runs Node with `--env-file=packages/backend/.env.local`.
+- `bun run cli` runs the TypeScript entrypoint directly through Bun with `--env-file=packages/backend/.env.local`.
 - Keep local development variables in `packages/backend/.env.local` (bootstrap from `.env.local.example`).
 
 ## CLI URL Resolution Contract
@@ -54,7 +54,8 @@ Implementation:
 Use for:
 
 - production-style web builds
-- compiled node package output
+- compiled Node package output
+- Bun-managed production dependency installation in `build/node`
 
 ### Delete
 
@@ -181,7 +182,7 @@ bun run cli migrate executed
 - Treat delete flows as destructive unless proven otherwise.
 - For migration work, inspect existing migration naming and ordering first.
 - For build work, confirm whether you need `web` or `nodePckgs`.
-- `bun run cli` always loads `packages/backend/.env.local` through the root script; build-time environment selection changes which backend env file is copied or loaded by the underlying command.
+- `bun run cli` always loads `packages/backend/.env.local` through the root Bun script; build-time environment selection changes which backend env file is copied or loaded by the underlying command.
 
 ## Quick Reference
 

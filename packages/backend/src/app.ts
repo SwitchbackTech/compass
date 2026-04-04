@@ -65,7 +65,7 @@ async function closeNGrokServer(): Promise<void> {
   if (ngrokListener) {
     // do not wait for this promise,
     // underlying rust process termination not finished
-    ngrokListener.close();
+    void ngrokListener.close();
     ngrokServer?.emit("close");
   }
 }
@@ -86,9 +86,17 @@ ngrokServer?.on("connected", onNgrokConnected);
 ngrokServer?.on("error", onNgrokError);
 ngrokServer?.on("close", onNgrokClose);
 
-// gracefully shutdown server - mostly for development respawn with ts-node
-process.on("SIGTERM", gracefulShutdown);
-process.on("SIGINT", gracefulShutdown);
-process.on("SIGQUIT", gracefulShutdown);
+// graceful shutdown keeps Bun watch restarts and local exits clean
+process.on("SIGTERM", () => {
+  void gracefulShutdown();
+});
+process.on("SIGINT", () => {
+  void gracefulShutdown();
+});
+process.on("SIGQUIT", () => {
+  void gracefulShutdown();
+});
 
-if (require.main === module) start();
+if (require.main === module) {
+  void start();
+}

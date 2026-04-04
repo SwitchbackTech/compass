@@ -5,6 +5,7 @@
     "packages/core/src/**/*.ts",
     "packages/backend/src/**/*.ts",
     "packages/scripts/src/**/*.ts",
+    "packages/scripts/src/**/*.d.ts",
     "packages/scripts/src/commands/dev.js"
   ],
   "compilerOptions": {
