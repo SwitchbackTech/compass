@@ -6,7 +6,7 @@ import type {
 } from "axios";
 import { toast } from "react-toastify";
 import { signOut } from "supertokens-web-js/recipe/session";
-import * as SuperTokensSession from "supertokens-web-js/recipe/session";
+import type * as SuperTokensSession from "supertokens-web-js/recipe/session";
 import { Status } from "@core/errors/status.codes";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
