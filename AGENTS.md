@@ -71,8 +71,8 @@ Example: `import { foo } from '@compass/core'` not `import { foo } from '../../.
 
 - Install dependencies: `bun install`
   - Takes ~3.5 minutes. Set timeout to 10+ minutes.
-  - Bun is the primary install/runtime entrypoint. `bun run cli`, `bun run dev:backend`, core/scripts tests, and build packaging now execute through Bun directly.
-  - Node 24+ is still required for retained tooling: the web/backend Jest suites and the production Node build output.
+  - Bun is the primary install/runtime entrypoint. `bun run cli`, `bun run dev:backend`, core/scripts tests, the backend unit subset, and build packaging now execute through Bun directly.
+  - Node 24+ is still required for retained tooling: the web suite, the remaining backend Jest coverage, and the production Node build output.
 - Copy environment template: `cp packages/backend/.env.local.example packages/backend/.env.local`
 
 ### Development Servers
@@ -85,7 +85,7 @@ Example: `import { foo } from '@compass/core'` not `import { foo } from '../../.
 
 ### Testing
 
-Run `bun run test:core`, `bun run test:web`, and `bun run test:backend` after making changes. Use `bun run test:scripts` for scripts package tests. The current test strategy is hybrid: `test:core` and `test:scripts` use `bun test`, while `test:web` and `test:backend` still route to the retained Jest harness. Avoid `bun run test` (full suite) in restricted network environments—MongoDB binary download may fail.
+Run `bun run test:core`, `bun run test:web`, and `bun run test:backend` after making changes. Use `bun run test:scripts` for scripts package tests. The current test strategy is hybrid: `test:core` and `test:scripts` use `bun test`, `test:backend` runs a Bun-backed unit subset before handing the remaining backend files to Jest, and `test:web` still routes to the retained Jest harness. Avoid `bun run test` (full suite) in restricted network environments—MongoDB binary download may fail.
 
 #### Writing Tests in `@compass/web`
 
@@ -102,7 +102,7 @@ Run `bun run test:core`, `bun run test:web`, and `bun run test:backend` after ma
 - **Backend tests**: `bun run test:backend`
 - **Scripts tests**: `bun run test:scripts`
 - **Full test suite**: `bun run test`
-- `test:core` and `test:scripts` are Bun-native; `test:web` and `test:backend` intentionally retain Jest for now.
+- `test:core` and `test:scripts` are Bun-native; `test:backend` is mixed (Bun unit subset plus retained Jest remainder); `test:web` intentionally retains Jest for now.
 
 ### Building
 
@@ -166,7 +166,7 @@ packages/core/src/
 - `bun install` - 3.5 minutes
 - `bun run test:core` - ~2 seconds (Bun test, all pass)
 - `bun run test:web` - ~15 seconds (retained Jest suite, all pass)
-- `bun run test:backend` - ~15 seconds (all pass)
+- `bun run test:backend` - mixed runner: Bun unit subset first, then retained Jest coverage
 - `bun run test:scripts` - scripts package tests
 - `bun run dev:web` - ~10 seconds to start
 - `bun run cli --help` - ~3 seconds (shows available commands)
@@ -197,7 +197,7 @@ packages/core/src/
 ### CI/CD Integration
 
 - GitHub Actions unit tests run in `.github/workflows/test-unit.yml` as a matrix (`core`, `web`, `backend`, `scripts`) using `bun run test:<project>` on `push`.
-- The root test dispatcher keeps the current hybrid model: core/scripts run through `bun test`, and web/backend use the retained Jest harness.
+- The root test dispatcher keeps the current hybrid model: core/scripts run through `bun test`, backend runs a Bun unit subset plus retained Jest remainder, and web uses the retained Jest harness.
 - End-to-end tests run separately in `.github/workflows/test-e2e.yml` on pull requests to `main`.
 
 ## Troubleshooting

@@ -20,7 +20,7 @@ const bunRuntime = (globalThis as unknown as { Bun: BunRuntime }).Bun;
 
 const TEST_PROJECTS = {
   backend: {
-    cmd: ["./node_modules/.bin/jest", "--selectProjects", "backend"],
+    cmd: ["bun", "packages/scripts/src/testing/run-backend.ts"],
   },
   core: {
     cmd: [
