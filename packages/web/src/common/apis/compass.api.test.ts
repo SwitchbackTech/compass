@@ -6,13 +6,16 @@ import type {
 } from "axios";
 import { toast } from "react-toastify";
 import { signOut } from "supertokens-web-js/recipe/session";
+import * as SuperTokensSession from "supertokens-web-js/recipe/session";
 import { Status } from "@core/errors/status.codes";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { CompassApi } from "./compass.api";
 
 jest.mock("supertokens-web-js/recipe/session", () => {
-  const actual = jest.requireActual("supertokens-web-js/recipe/session");
+  const actual = jest.requireActual<typeof SuperTokensSession>(
+    "supertokens-web-js/recipe/session",
+  );
   const mockedDefault = {
     ...actual.default,
     doesSessionExist: jest.fn(),
@@ -186,10 +189,6 @@ describe("CompassApi interceptor auth handling", () => {
       code: "GOOGLE_REVOKED",
       message: "Google access revoked.",
     };
-    const toastExpectation = expect.objectContaining({
-      toastId: GOOGLE_REVOKED_TOAST_ID,
-      autoClose: false,
-    });
 
     for (const status of [Status.UNAUTHORIZED, Status.GONE]) {
       jest.clearAllMocks();
@@ -197,7 +196,10 @@ describe("CompassApi interceptor auth handling", () => {
 
       expect(toast.error).toHaveBeenCalledWith(
         "Google access revoked. Your Google data has been removed.",
-        toastExpectation,
+        expect.objectContaining({
+          toastId: GOOGLE_REVOKED_TOAST_ID,
+          autoClose: false,
+        }),
       );
       expect(signOut).not.toHaveBeenCalled();
       expect(assignMock).not.toHaveBeenCalled();
