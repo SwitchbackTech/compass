@@ -231,27 +231,7 @@ Hovering near the top or bottom edge of an event reveals a resize cursor. Draggi
 
 ---
 
-## Scenario 10: Move An Event To Someday By Dragging To The Sidebar
-
-### UX
-
-A scheduled event can be dragged from the calendar grid onto the Someday sidebar to convert it into an unscheduled event.
-
-### Steps
-
-1. Open the sidebar with `[`.
-2. Locate a timed event on the grid.
-3. Drag the event from the grid and drop it onto the Someday sidebar area.
-
-### Expected Results
-
-- The event disappears from the calendar grid.
-- The event appears in the Someday section of the sidebar.
-- The Someday Week limit (9) is enforced. If the sidebar is already at 9 Week events, the drag is rejected with an error message.
-
----
-
-## Scenario 11: Schedule A Someday Event By Dragging To The Grid
+## Scenario 10: Schedule A Someday Event By Dragging To The Grid
 
 ### UX
 
@@ -271,7 +251,7 @@ Someday events can be dragged from the sidebar onto a specific day and time on t
 
 ---
 
-## Scenario 12: Duplicate An Event (Cmd+D)
+## Scenario 11: Duplicate An Event (Cmd+D)
 
 ### UX
 
@@ -291,7 +271,7 @@ With an event form open, pressing Cmd+D (Mac) or Ctrl+D (Windows) creates a copy
 
 ---
 
-## Scenario 13: Undo An Event Deletion (Ctrl+Z)
+## Scenario 12: Undo An Event Deletion (Ctrl+Z)
 
 ### UX
 

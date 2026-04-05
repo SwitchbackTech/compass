@@ -6,7 +6,6 @@ This runbook covers the auth UX that is currently implemented in Compass.
 
 Use this guide to manually validate:
 
-- rollout-gated auth entry points
 - email/password sign up
 - email/password log in
 - forgot password and reset password
@@ -27,12 +26,11 @@ Do not use this guide to validate these flows yet:
 2. Copy `packages/backend/.env.local.example` to `packages/backend/.env.local` if you are running the backend locally.
 3. Start the web app with `bun run dev:web`.
 4. Start the backend if you need live auth or password reset delivery.
-5. Use a fresh browser profile or clear app cookies and local storage before each scenario unless the scenario explicitly depends on persisted auth state.
+5. Use a fresh browser profile or clear app cookies and local storage before each scenario unless the scenario explicitly depends on persisted auth state. TIP: You can use the CLI's delete command to do this for you.
 
 Helpful notes:
 
 - Password reset requires backend support. If email delivery is not configured in your local environment, validate the flow in an environment where reset emails are delivered, or use backend logs in `test` where reset links are logged instead of sent.
-- The auth rollout gate depends on either `?auth=` being present in the URL or `lastKnownEmail` already existing in local auth state.
 - For "connect Google later" scenarios, start from a password-authenticated
   session. Do not sign out before connecting Google.
 
@@ -40,7 +38,7 @@ Helpful notes:
 
 ### UX
 
-Logged-out users should only see the password auth entry points when the rollout gate is enabled. The auth modal can be opened from an `?auth=` URL or, after a user has authenticated once, from persisted local auth state.
+The auth modal can be opened from an `?auth=` URL or, after a user has authenticated once, from persisted local auth state.
 
 ### Steps
 
