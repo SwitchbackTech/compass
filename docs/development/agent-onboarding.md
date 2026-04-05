@@ -49,6 +49,8 @@ sed -n '1,260p' packages/core/src/types/event.types.ts
 
 ## If You Are Touching...
 
+Before implementing or modifying features, consult the relevant requirements doc in `docs/requirements/` (auth, events, google-sync, recurring-events, shortcuts, tasks) to understand expected behavior.
+
 - Auth or session behavior:
   [Frontend Runtime Flow](../frontend/frontend-runtime-flow.md),
   [Password Auth Flow](../features/password-auth-flow.md),

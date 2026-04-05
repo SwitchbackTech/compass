@@ -55,3 +55,14 @@ Start with [AGENTS.md](../AGENTS.md) for repo rules, commands, and conventions. 
 - [Google Sync And SSE Flow](./features/google-sync-and-sse-flow.md)
 - [Recurrence Handling](./features/recurring-events-handling.md)
 - [Offline Storage And Migrations](./features/offline-storage-and-migrations.md)
+
+## Requirements
+
+Product requirements and specifications for each feature area:
+
+- [Auth](./requirements/auth.md)
+- [Events](./requirements/events.md)
+- [Google Sync](./requirements/google-sync.md)
+- [Recurring Events](./requirements/recurring-events.md)
+- [Shortcuts](./requirements/shortcuts.md)
+- [Tasks](./requirements/tasks.md)

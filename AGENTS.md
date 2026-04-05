@@ -135,6 +135,8 @@ This is a Typescript project with a monorepo structure.
 
 Additional documentation lives in the `docs/` directory (e.g. API docs, workflow examples). Update these documents as you make changes when relevant.
 
+- **Requirements**: `docs/requirements/` contains product requirements and specifications for each feature area (auth, events, google-sync, recurring-events, shortcuts, tasks). Consult these when implementing or modifying features to understand expected behavior.
+
 ### Key Files & Directories
 
 ```text
