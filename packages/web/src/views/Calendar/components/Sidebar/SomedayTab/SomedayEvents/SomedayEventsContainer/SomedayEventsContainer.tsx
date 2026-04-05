@@ -69,7 +69,9 @@ export const SomedayEventsContainer: FC<Props> = ({
             : "Add to week"
         }
         onClick={() => context.actions.createSomedayDraft(category)}
-        shortcut={category === Categories_Event.SOMEDAY_MONTH ? "M" : "W"}
+        shortcut={
+          category === Categories_Event.SOMEDAY_MONTH ? "Shift+M" : "Shift+W"
+        }
       >
         {children}
       </TooltipWrapper>

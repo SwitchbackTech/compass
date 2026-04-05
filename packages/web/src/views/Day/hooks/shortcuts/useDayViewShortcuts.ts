@@ -184,11 +184,11 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   );
 
   // Agenda shortcuts
-  useAppHotkeyUp("I", () => {
+  useAppHotkeyUp("i", () => {
     onFocusAgenda?.();
   });
 
-  useAppHotkeyUp("M", () => {
+  useAppHotkeyUp("m", () => {
     onEditEvent?.();
   });
 }

@@ -140,11 +140,11 @@ export const useWeekShortcuts = ({
   useAppHotkey("Shift+1", openTasks);
   useAppHotkey("Shift+2", openMonthWidget);
   useAppHotkeyUp("[", openSidebar);
-  useAppHotkeyUp("J", goToPreviousWeek);
-  useAppHotkeyUp("K", goToNextWeek);
-  useAppHotkeyUp("T", toToday);
-  useAppHotkeyUp("A", createAllDayDraftEvent);
-  useAppHotkeyUp("C", createTimedDraftEvent);
-  useAppHotkeyUp("M", createSomedayMonthDraft);
-  useAppHotkeyUp("W", createSomedayWeekDraft);
+  useAppHotkeyUp("j", goToPreviousWeek);
+  useAppHotkeyUp("k", goToNextWeek);
+  useAppHotkeyUp("t", toToday);
+  useAppHotkeyUp("a", createAllDayDraftEvent);
+  useAppHotkeyUp("c", createTimedDraftEvent);
+  useAppHotkeyUp("Shift+m", createSomedayMonthDraft);
+  useAppHotkeyUp("Shift+w", createSomedayWeekDraft);
 };

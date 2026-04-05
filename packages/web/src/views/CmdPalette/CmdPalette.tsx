@@ -105,7 +105,7 @@ const CmdPalette = ({
           },
           {
             id: "create-someday-week-event",
-            children: "Create Week Event [w]",
+            children: "Create Week Event [Shift+W]",
             icon: "PlusIcon",
             onClick: onEventTargetVisibility(() => {
               void handleCreateSomedayDraft(Categories_Event.SOMEDAY_WEEK);
@@ -113,7 +113,7 @@ const CmdPalette = ({
           },
           {
             id: "create-someday-month-event",
-            children: "Create Month Event [m]",
+            children: "Create Month Event [Shift+M]",
             icon: "PlusIcon",
             onClick: onEventTargetVisibility(() => {
               void handleCreateSomedayDraft(Categories_Event.SOMEDAY_MONTH);
