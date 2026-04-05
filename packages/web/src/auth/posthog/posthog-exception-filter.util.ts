@@ -26,7 +26,9 @@ export function filterPosthogExceptionEvent(
     return event;
   }
 
-  const exceptionValues = getExceptionValues(event.properties?.$exception_values);
+  const exceptionValues = getExceptionValues(
+    event.properties?.$exception_values,
+  );
 
   if (
     exceptionValues.some((exceptionValue) =>
