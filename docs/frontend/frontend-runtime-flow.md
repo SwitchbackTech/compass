@@ -160,6 +160,39 @@ Icon state constraints:
 - tab icons and command icon use `theme.color.text.light` when active and `theme.color.text.darkPlaceholder` when inactive
 - Google status icon tooltips and disabled/clickable behavior come from `useConnectGoogle` and should not be hardcoded in the row component
 
+## Week Shortcut Runtime
+
+Files:
+
+- `packages/web/src/views/Calendar/hooks/shortcuts/useWeekShortcuts.ts`
+- `packages/web/src/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventsContainer/SomedayEventsContainer.tsx`
+- `packages/web/src/views/CmdPalette/CmdPalette.tsx`
+- `e2e/utils/event-test-utils.ts`
+
+Runtime behavior:
+
+- week navigation and draft actions are registered on `keyup` in `useWeekShortcuts`:
+  - previous week: `j`
+  - next week: `k`
+  - today: `t`
+  - create all-day event draft: `a`
+  - create timed event draft: `c`
+- sidebar tab switching stays on shifted number keys:
+  - tasks tab: `Shift+1`
+  - month widget tab: `Shift+2`
+- Someday creation uses explicit shifted keys to avoid collisions with unmodified letter shortcuts:
+  - Someday week draft: `Shift+W`
+  - Someday month draft: `Shift+M`
+- Someday shortcut creation enforces weekly/monthly limits and, when successful, ensures the sidebar is visible on the tasks tab before continuing user flow.
+
+Consistency constraints:
+
+- keyboard shortcut registrations (`useWeekShortcuts`) must stay aligned with:
+  - Someday plus-button tooltip shortcuts in `SomedayEventsContainer`
+  - command palette labels in `CmdPalette`
+  - e2e keyboard helper (`openSomedayEventFormWithKeyboard`) in `e2e/utils/event-test-utils.ts`
+- register unmodified letter shortcuts as lowercase tokens in `useWeekShortcuts` (`j`, `k`, `t`, `a`, `c`) and reserve shifted combinations for explicit shifted behavior.
+
 ## Dedication Dialog Runtime
 
 Files:

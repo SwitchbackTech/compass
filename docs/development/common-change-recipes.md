@@ -90,6 +90,25 @@ Use this for overlays mounted in both `CalendarView` and `DayViewContent` (for e
 
 Common pitfall: calling `dialog.close()` directly in an event handler will skip the CSS exit transition and can produce abrupt UI changes.
 
+## Change Week/Sidebar Event Hotkeys
+
+Use this when updating keyboard shortcuts that create events or move week view navigation.
+
+1. Update week shortcut registrations in `packages/web/src/views/Calendar/hooks/shortcuts/useWeekShortcuts.ts`.
+2. Keep non-modified letter shortcuts registered as lowercase tokens (for example `j`, `k`, `t`, `a`, `c`).
+3. Use explicit shifted combos where shift is required (`Shift+W`, `Shift+M` for Someday creation).
+4. Keep all user-facing shortcut labels aligned:
+   - Someday add tooltip shortcuts in `packages/web/src/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventsContainer/SomedayEventsContainer.tsx`
+   - command palette labels in `packages/web/src/views/CmdPalette/CmdPalette.tsx`
+5. Update e2e keyboard helpers when bindings change:
+   - `openSomedayEventFormWithKeyboard` in `e2e/utils/event-test-utils.ts`
+6. Re-run web tests and impacted e2e coverage for keyboard paths.
+
+Common pitfalls:
+
+- updating `useWeekShortcuts` without updating command palette/tooltip labels causes user-facing mismatch
+- updating labels without updating e2e helper key presses causes flaky or failing keyboard-flow tests
+
 ## Add A Migration Or Seeder
 
 For database migrations:

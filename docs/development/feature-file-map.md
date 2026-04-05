@@ -49,6 +49,7 @@ Use this document to find the first files to inspect for common Compass changes.
 - Day shortcuts sidebar component: `packages/web/src/views/Day/components/ShortcutsSidebar/ShortcutsSidebar.tsx`
 - Shared responsive sidebar state hook (`xl` breakpoint behavior): `packages/web/src/common/hooks/useSidebarState.ts`
 - Day keyboard shortcuts (includes `[` toggle): `packages/web/src/views/Day/hooks/shortcuts/useDayViewShortcuts.ts`
+- Week keyboard shortcuts (week navigation, draft creation, Someday hotkeys): `packages/web/src/views/Calendar/hooks/shortcuts/useWeekShortcuts.ts`
 - Day view hooks: `packages/web/src/views/Day/hooks`
 - Week/calendar view: `packages/web/src/views/Calendar`
 - Now view: `packages/web/src/views/Now`
@@ -62,7 +63,9 @@ Use this document to find the first files to inspect for common Compass changes.
 
 - Sidebar shell and tab rendering: `packages/web/src/views/Calendar/components/Sidebar/Sidebar.tsx`
 - Footer icon row actions (tasks/month, command palette, sync/update): `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
+- Someday sidebar add controls (tooltip shortcuts + create actions): `packages/web/src/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventsContainer/SomedayEventsContainer.tsx`
 - Sidebar layout constants and icon group styling: `packages/web/src/views/Calendar/components/Sidebar/styled.ts`
+- Command palette labels and create actions for shortcut parity: `packages/web/src/views/CmdPalette/CmdPalette.tsx`
 - Google connection/status UI contract for sidebar + command palette: `packages/web/src/auth/hooks/google/useConnectGoogle/useConnectGoogle.ts`
 - Sidebar icon row behavior tests: `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.test.tsx`
 
