@@ -65,6 +65,49 @@ What happens when a user creates an event:
 | Redux store root   | `packages/web/src/store/index.ts`                                     | Combines Redux reducers                          |
 | Saga root          | `packages/web/src/store/sagas.ts`                                     | Registers all sagas                              |
 
+## Repository Selection Decision Matrix
+
+Canonical source:
+
+- `packages/web/src/common/repositories/event/event.repository.util.ts`
+- `packages/web/src/auth/compass/state/auth.state.util.ts`
+- `packages/web/src/auth/google/state/google.auth.state.ts`
+
+`getEventRepository(sessionExists)` applies the following order:
+
+| Check order | Condition                                      | Repository | Why |
+| ----------- | ---------------------------------------------- | ---------- | --- |
+| 1           | `isGoogleRevoked()` is `true`                  | Local      | Prevent repeated remote failures until re-auth. |
+| 2           | `hasUserEverAuthenticated()` is `true`         | Remote     | Preserve post-login continuity when local data is empty. |
+| 3           | `sessionExists` is `true`                      | Remote     | Active session can use API-backed repositories. |
+| 4           | none of the above                              | Local      | Never-authenticated local-first mode. |
+
+Notes:
+
+- Google revoked state is intentionally in-memory (session-scoped), not persisted.
+- Re-authentication clears revoked state and restores normal remote preference.
+- Components should not call repositories directly; sagas own selection.
+
+## Anonymous Calendar Change Sign-Up Prompt Contract
+
+Canonical source:
+
+- `packages/web/src/ducks/events/sagas/event.sagas.ts`
+- `packages/web/src/auth/compass/state/auth.state.util.ts`
+
+The sign-up prompt flag (`shouldPromptSignUpAfterAnonymousCalendarChange`) is set only when all of these are true:
+
+1. no active session (`sessionExists === false`)
+2. user has never authenticated (`hasUserEverAuthenticated() === false`)
+3. Google is not in revoked mode (`isGoogleRevoked() === false`)
+
+Current write paths that apply this guard:
+
+- `createEvent` saga (after successful repository `create`)
+- `editEvent` saga (after successful repository `edit`)
+
+`deleteEvent` and read operations do not set this prompt flag.
+
 ## Common AI Mistakes
 
 **1. Putting event entity data in a Redux slice**
