@@ -29,4 +29,5 @@ export const ENV_WEB = webEnvSchema.parse({
   POSTHOG_HOST: process.env["POSTHOG_HOST"],
 });
 
+console.log("ENV_WEB", ENV_WEB);
 export const IS_DEV = isDev(ENV_WEB.NODE_ENV);

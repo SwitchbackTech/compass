@@ -193,7 +193,6 @@ Reliable setup pattern:
 Assertions to prefer:
 
 - query the sidebar by landmark role and label (`role="complementary"`, `name: "Shortcuts sidebar"`)
-- when asserting presence in JSDOM for desktop-only markup (`hidden xl:flex`), use role queries that allow hidden elements where needed
 - verify both pathways for toggle behavior:
   - user interaction (header toggle button)
   - keyboard interaction (`[` shortcut via view shortcut hooks)
@@ -209,24 +208,6 @@ Pass `initialEntries` when asserting nested or non-root routes.
 ### Global And Console Cleanup
 
 If a test overrides globals (for example `window.location` or `window.indexedDB`) or spies on `console.*`, always restore them in teardown (`afterEach`/`afterAll`) to prevent cross-test leakage and noisy output.
-
-### Floating UI-Dependent Tests
-
-If a test exercises components that rely on `@floating-ui/react` refs/styles (for example Day view task/context-menu interactions), import the shared setup:
-
-- `@web/__tests__/floating-ui.setup`
-
-This keeps tests on production code paths while avoiding brittle layout coupling in JSDOM.
-
-### Jest Unbound-Method Rule In Tests
-
-Test linting enforces `jest/unbound-method`. If you need to assert method calls on non-mock objects, spy on the method first so assertions are bound to a Jest mock/spy.
-
-Useful anchors:
-
-- `packages/web/src/__tests__`
-- `packages/web/src/views/**/*.test.tsx`
-- `packages/web/src/sse/**/*.test.tsx`
 
 ## Backend Test Style
 

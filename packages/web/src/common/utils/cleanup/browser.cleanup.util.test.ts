@@ -1,6 +1,3 @@
-/**
- * @jest-environment jsdom
- */
 import { session } from "@web/common/classes/Session";
 import {
   clearAllBrowserStorage,

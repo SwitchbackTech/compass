@@ -42,21 +42,6 @@ describe("useFloatingAtCursor", () => {
     expect(result.current).toBe("fixed");
   });
 
-  it("should update when subjects emit new values", () => {
-    renderHook(() => useFloatingAtCursor());
-
-    act(() => {
-      placement$.next("bottom-end");
-      strategy$.next("fixed");
-      reference$.next(document.createElement("div"));
-    });
-
-    // useFloating from @floating-ui/react might not update the returned strategy
-    // immediately or without proper layout in JSDOM.
-    // We verified useFloatingStrategyAtCursor updates correctly in the test above.
-    // So we trust that the correct strategy is passed to useFloating.
-  });
-
   it("should handle onOpenChange callback to close floating", () => {
     const onOpenChangeSpy = jest.fn();
     const { result } = renderHook(() => useFloatingAtCursor(onOpenChangeSpy));

@@ -35,7 +35,7 @@ const TEST_PROJECTS = {
     cmd: ["./node_modules/.bin/jest", "scripts"],
   },
   web: {
-    cmd: ["./node_modules/.bin/jest", "web"],
+    cmd: ["bun", "test", "packages/web/src"],
   },
 } satisfies Record<string, ProjectConfig>;
 

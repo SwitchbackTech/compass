@@ -467,7 +467,6 @@ describe("pending events state management", () => {
   });
 });
 
-// Mock window.alert to prevent jsdom errors
 global.alert = jest.fn();
 
 describe("createEvent saga - unauthenticated users", () => {
