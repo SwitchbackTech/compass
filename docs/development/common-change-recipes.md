@@ -112,6 +112,30 @@ For web local-data migrations:
 2. Confirm startup behavior still works in the intended dev mode.
 3. Document any new required variables.
 
+## Add, Remove, Or Reclassify A Dependency
+
+1. Determine where the module is imported:
+   - app runtime code (`packages/*/src`) -> `dependencies`
+   - build/test/tooling files (`webpack.config.mjs`, Jest/Babel/ESLint config, build scripts) -> `devDependencies`
+2. Update the package manifest where the dependency is actually used:
+   - root `package.json` for repo-level tooling and shared runtime packaging
+   - package-level `package.json` (for example `packages/web/package.json`) for package-scoped usage
+3. Keep node build packaging constraints in mind:
+   - `packages/scripts/src/commands/build.util.ts` copies manifest files to `build/node`
+   - the build then runs `bun install --production --frozen-lockfile`
+   - runtime deps misclassified as dev-only will not be installed in `build/node`
+4. Regenerate the lockfile from repo root:
+   - `bun install`
+5. Run focused validation:
+   - web-only dependency changes: `bun run test:web`
+   - backend/core/runtime dependency changes: `bun run test:backend && bun run test:core`
+
+Common pitfalls:
+
+- leaving webpack loaders/plugins in `dependencies` instead of `devDependencies`
+- moving app-runtime imports to `devDependencies` because local dev still passes
+- editing `package.json` without updating `bun.lock`
+
 ## Add A New CLI Command
 
 1. Register the command in `packages/scripts/src/cli.ts`.
