@@ -15,7 +15,7 @@ const mockGetCliOptions = jest.fn();
 const mockValidateBuild = jest.fn();
 const mockValidateDelete = jest.fn();
 const mockExitHelpfully = jest.fn();
-const mockRunMigrator = jest.fn();
+const mockRunMigrator = jest.fn((): Promise<void> => Promise.resolve());
 
 jest.mock("@scripts/cli.validator", () => {
   return {
@@ -28,14 +28,27 @@ jest.mock("@scripts/cli.validator", () => {
   };
 });
 
-jest.mock("@scripts/commands/build.util");
-jest.mock("@scripts/commands/build");
-jest.mock("@scripts/commands/delete/delete");
+jest.mock("@scripts/commands/build.util", () => ({
+  __esModule: true,
+  copyNodeConfigsToBuild: jest.fn(),
+  createNodeDirs: jest.fn(),
+  installDependencies: jest.fn(),
+  removeOldBuildFor: jest.fn(),
+}));
+
+jest.mock("@scripts/commands/build", () => ({
+  __esModule: true,
+  runBuild: jest.fn(),
+}));
+
+jest.mock("@scripts/commands/delete/delete", () => ({
+  __esModule: true,
+  startDeleteFlow: jest.fn(),
+}));
 
 jest.mock("@scripts/commands/migrate", () => ({
-  runMigrator: jest
-    .fn()
-    .mockImplementation((...args) => mockRunMigrator(...args)),
+  __esModule: true,
+  runMigrator: jest.fn((type: MigratorType) => mockRunMigrator(type)),
 }));
 
 describe("CompassCLI", () => {
