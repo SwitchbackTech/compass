@@ -5,6 +5,8 @@ import { execSync } from "node:child_process";
  * Detects which packages changed via git diff and runs the minimum
  * necessary test suites plus type-check.
  *
+ * All test execution is delegated to run.ts — no commands are duplicated here.
+ *
  * Usage:
  *   bun run verify              — auto-detect from git diff
  *   bun run verify web          — run web suite + type-check
@@ -24,21 +26,17 @@ type BunRuntime = {
 
 const bunRuntime = (globalThis as unknown as { Bun: BunRuntime }).Bun;
 
-const PACKAGE_PREFIXES: Record<string, string> = {
+const VALID_PACKAGES = ["core", "web", "backend", "scripts"] as const;
+type Package = (typeof VALID_PACKAGES)[number];
+
+const PACKAGE_PREFIXES: Record<string, Package> = {
   "packages/core/": "core",
   "packages/web/": "web",
   "packages/backend/": "backend",
   "packages/scripts/": "scripts",
 };
 
-const TEST_COMMANDS: Record<string, string[]> = {
-  core: ["bun", "packages/scripts/src/testing/run.ts", "core"],
-  web: ["./node_modules/.bin/jest", "web"],
-  backend: ["./node_modules/.bin/jest", "--selectProjects", "backend"],
-  scripts: ["./node_modules/.bin/jest", "scripts"],
-};
-
-function getChangedPackages(): string[] {
+function getChangedPackages(): Package[] {
   try {
     const output = execSync("git diff --name-only HEAD", {
       encoding: "utf-8",
@@ -66,8 +64,8 @@ function getChangedPackages(): string[] {
   }
 }
 
-function mapFilesToPackages(files: string[]): string[] {
-  const packages = new Set<string>();
+function mapFilesToPackages(files: string[]): Package[] {
+  const packages = new Set<Package>();
   for (const file of files) {
     for (const [prefix, pkg] of Object.entries(PACKAGE_PREFIXES)) {
       if (file.startsWith(prefix)) {
@@ -78,10 +76,10 @@ function mapFilesToPackages(files: string[]): string[] {
   return Array.from(packages);
 }
 
-function runCommand(cmd: string[], label: string): boolean {
-  console.log(`\n→ ${label}`);
+function runPackage(pkg: Package): boolean {
+  console.log(`\n→ test:${pkg}`);
   const result = bunRuntime.spawnSync({
-    cmd,
+    cmd: ["bun", "packages/scripts/src/testing/run.ts", pkg],
     cwd: process.cwd(),
     env: {
       ...process.env,
@@ -112,23 +110,21 @@ function runTypeCheck(): boolean {
 }
 
 function main() {
-  const args = process.argv.slice(2) as Array<keyof typeof TEST_COMMANDS>;
+  const args = process.argv.slice(2);
 
-  let packagesToRun: string[];
+  let packagesToRun: Package[];
 
   if (args.length > 0) {
-    // Explicit packages passed as arguments
-    const invalid = args.filter((a) => !TEST_COMMANDS[a]);
+    const invalid = args.filter((a) => !VALID_PACKAGES.includes(a as Package));
     if (invalid.length > 0) {
       console.error(
-        `Unknown package(s): ${invalid.join(", ")}. Valid: core, web, backend, scripts`,
+        `Unknown package(s): ${invalid.join(", ")}. Valid: ${VALID_PACKAGES.join(", ")}`,
       );
       process.exit(1);
     }
-    packagesToRun = args;
+    packagesToRun = args as Package[];
     console.log(`Running: ${packagesToRun.join(" → ")} → type-check`);
   } else {
-    // Auto-detect from git diff
     packagesToRun = getChangedPackages();
 
     if (packagesToRun.length === 0) {
@@ -146,16 +142,12 @@ function main() {
   const failed: string[] = [];
 
   for (const pkg of packagesToRun) {
-    const cmd = TEST_COMMANDS[pkg];
-    if (!cmd) continue;
-    const ok = runCommand(cmd, `test:${pkg}`);
-    if (!ok) {
+    if (!runPackage(pkg)) {
       failed.push(`test:${pkg}`);
     }
   }
 
-  const typeCheckOk = runTypeCheck();
-  if (!typeCheckOk) {
+  if (!runTypeCheck()) {
     failed.push("type-check");
   }
 
