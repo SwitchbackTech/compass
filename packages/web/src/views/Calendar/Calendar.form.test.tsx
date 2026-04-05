@@ -14,7 +14,6 @@ import { RootState } from "@web/store";
 import { CalendarView } from "@web/views/Calendar";
 import { freshenEventStartEndDate } from "./calendar.render.test.utils";
 
-// Mock IntersectionObserver for jsdom
 global.IntersectionObserver = class IntersectionObserver {
   root: Element | null = null;
   rootMargin: string = "";

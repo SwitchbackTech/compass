@@ -80,8 +80,6 @@ export const renderWithDayProvidersAsync = async (
 
   const rtlResult = render(<></>, { store, router });
 
-  // Poll router + task UI with waitFor (RTL act) instead of await act(async () => …) around
-  // router.subscribe, which can trip React 18’s act warning in JSDOM.
   await waitFor(() => {
     expect(router.state.initialized).toBe(true);
     expect(router.state.navigation.state).toBe("idle");

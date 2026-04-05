@@ -29,7 +29,6 @@ import { sagas } from "@web/store/sagas";
 jest.mock("@web/ducks/events/event.api");
 jest.mock("@web/common/classes/Session");
 
-// Mock window.alert to prevent jsdom errors
 global.alert = jest.fn();
 
 describe("getSomedayEvents saga", () => {
