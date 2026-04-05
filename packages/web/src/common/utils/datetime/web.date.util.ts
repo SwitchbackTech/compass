@@ -252,9 +252,33 @@ const _getNextWeekInSameMonth = (weekStart: Dayjs) => {
   return { startDate, endDate };
 };
 
+const _isoUtcOffsetMinutes = (value: string): number | undefined => {
+  const trimmed = value.trim();
+
+  if (/Z$/i.test(trimmed)) {
+    return 0;
+  }
+
+  const match = trimmed.match(/([+-])(\d{2}):(\d{2})$/);
+
+  if (!match) {
+    return undefined;
+  }
+
+  const sign = match[1] === "+" ? 1 : -1;
+
+  return sign * (parseInt(match[2], 10) * 60 + parseInt(match[3], 10));
+};
+
 const _getTimeLabel = (date: string) => {
-  const orig = dayjs(date).format(HOURS_AM_FORMAT);
-  return orig.replace(":00", "");
+  const offsetMinutes = _isoUtcOffsetMinutes(date);
+  const parsed = dayjs(date);
+  const formatted =
+    offsetMinutes !== undefined
+      ? parsed.utcOffset(offsetMinutes).format(HOURS_AM_FORMAT)
+      : parsed.format(HOURS_AM_FORMAT);
+
+  return formatted.replace(":00", "");
 };
 
 export const computeCurrentEventDateRange = (

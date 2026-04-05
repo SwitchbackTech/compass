@@ -5,7 +5,7 @@ import {
   EVENT_CHANGED,
   GOOGLE_REVOKED,
   IMPORT_GCAL_END,
-  IMPORT_GCAL_START,
+  USER_METADATA,
 } from "@core/constants/sse.constants";
 import { Status } from "@core/errors/status.codes";
 import { type ImportGCalEndPayload } from "@core/types/sse.types";
@@ -569,6 +569,7 @@ describe("SyncController", () => {
           userId,
           sessionId: randomUUID(),
         });
+        await stream.waitForEvent(USER_METADATA, importTimeoutMs);
         const importEndPromise = stream.waitForEvent(
           IMPORT_GCAL_END,
           importTimeoutMs,
@@ -601,6 +602,7 @@ describe("SyncController", () => {
           userId,
           sessionId: randomUUID(),
         });
+        await stream.waitForEvent(USER_METADATA, importTimeoutMs);
         const importEndPromise = stream.waitForEvent(
           IMPORT_GCAL_END,
           importTimeoutMs,
@@ -636,6 +638,7 @@ describe("SyncController", () => {
           userId,
           sessionId: randomUUID(),
         });
+        await stream.waitForEvent(USER_METADATA, importTimeoutMs);
         const importEndPromise = stream.waitForEvent(
           IMPORT_GCAL_END,
           importTimeoutMs,
@@ -676,6 +679,7 @@ describe("SyncController", () => {
           userId,
           sessionId: randomUUID(),
         });
+        await stream.waitForEvent(USER_METADATA, importTimeoutMs);
         const importEndPromise = stream.waitForEvent(
           IMPORT_GCAL_END,
           importTimeoutMs,
@@ -716,6 +720,7 @@ describe("SyncController", () => {
           userId,
           sessionId: randomUUID(),
         });
+        await stream.waitForEvent(USER_METADATA, importTimeoutMs);
         const importEndPromise = stream.waitForEvent(
           IMPORT_GCAL_END,
           importTimeoutMs,
@@ -756,6 +761,7 @@ describe("SyncController", () => {
           userId,
           sessionId: randomUUID(),
         });
+        await stream.waitForEvent(USER_METADATA, importTimeoutMs);
         const importEndPromise = stream.waitForEvent(
           IMPORT_GCAL_END,
           importTimeoutMs,
@@ -806,6 +812,7 @@ describe("SyncController", () => {
           userId,
           sessionId: randomUUID(),
         });
+        await stream.waitForEvent(USER_METADATA, importTimeoutMs);
         const importEndPromise = stream.waitForEvent(
           IMPORT_GCAL_END,
           importTimeoutMs,
@@ -834,6 +841,7 @@ describe("SyncController", () => {
           userId,
           sessionId: randomUUID(),
         });
+        await stream.waitForEvent(USER_METADATA, importTimeoutMs);
         const importEndPromise = stream.waitForEvent(
           IMPORT_GCAL_END,
           importTimeoutMs,
