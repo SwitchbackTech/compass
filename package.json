@@ -32,7 +32,8 @@
     "test:core": "TZ=Etc/UTC bun packages/scripts/src/testing/run.ts core",
     "test:web": "TZ=Etc/UTC bun packages/scripts/src/testing/run.ts web",
     "test:scripts": "TZ=Etc/UTC bun packages/scripts/src/testing/run.ts scripts",
-    "type-check": "TZ=Etc/UTC bunx tsc --noEmit"
+    "type-check": "TZ=Etc/UTC bunx tsc --noEmit",
+    "verify": "TZ=Etc/UTC bun packages/scripts/src/testing/verify.ts"
   },
   "dependencies": {
     "@compass/backend": "*",

@@ -1,3 +1,10 @@
+/**
+ * Elf entity store — source of truth for event objects in the web app.
+ * Handles create/update/delete/select for Schema_Event entities.
+ * Do NOT put event data in Redux slices; those hold async status only.
+ * Sagas update this store after API calls or IndexedDB operations complete.
+ * Related: docs/development/web-state-guide.md
+ */
 import { combineLatestWith, map, shareReplay } from "rxjs/operators";
 import {
   createStore,
