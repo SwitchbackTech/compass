@@ -15,7 +15,7 @@ Use this guide to validate:
 - toggling the sidebar ([)
 - completing tasks with the keyboard (Enter on checkbox)
 - deleting tasks with the keyboard (Delete/Backspace)
-- undoing with the keyboard (Ctrl+Z)
+- undoing with the keyboard (Cmd+Z / Ctrl+Z)
 - confirming that shortcuts do not fire while typing in inputs
 
 Do not use this guide to validate:
@@ -34,6 +34,7 @@ Helpful notes:
 
 - All shortcuts are context-aware. They do not fire when the user is typing in a text input, textarea, or form field — except Cmd+K / Ctrl+K, which opens the command palette from anywhere.
 - Shortcuts shown as `Cmd` apply on Mac. On Windows/Linux, use `Ctrl` in place of `Cmd` unless noted otherwise.
+- `Mod` means Command on Mac and Control on Windows/Linux.
 - `Meta` in key combinations refers to the Command key on Mac and the Windows key on Windows.
 
 ---
@@ -59,7 +60,7 @@ Helpful notes:
 | `Enter`                | Day view  | Mark focused task complete        |
 | `Ctrl+Meta+ArrowRight` | Day view  | Move focused task to next day     |
 | `Ctrl+Meta+ArrowLeft`  | Day view  | Move focused task to previous day |
-| `Ctrl+Z`               | Day view  | Undo last action                  |
+| `Cmd+Z` / `Ctrl+Z`     | Day view  | Undo last action                  |
 | `J`                    | Week view | Previous week                     |
 | `K`                    | Week view | Next week                         |
 | `T`                    | Week view | Go to today                       |
@@ -302,16 +303,16 @@ Pressing Delete or Backspace while a task checkbox is focused removes the task �
 
 ---
 
-## Scenario 12: Undo With The Keyboard (Ctrl+Z)
+## Scenario 12: Undo With The Keyboard (Cmd+Z / Ctrl+Z)
 
 ### UX
 
-After deleting an event or task, pressing Ctrl+Z restores it — equivalent to clicking the undo toast.
+After deleting an event or task, pressing Cmd+Z (Mac) or Ctrl+Z (Windows/Linux) restores it — equivalent to clicking the undo toast.
 
 ### Steps
 
 1. In Day view, delete a task.
-2. Immediately press Ctrl+Z.
+2. Immediately press Cmd+Z (Mac) or Ctrl+Z (Windows/Linux).
 
 ### Expected Results
 
@@ -356,5 +357,5 @@ If time is limited, run these checks before shipping shortcut-related changes:
 8. `[` toggles the sidebar in both Week and Day view.
 9. Enter on a focused task checkbox marks the task complete.
 10. Delete/Backspace on a focused task checkbox removes the task.
-11. Ctrl+Z restores the last deleted task or event.
+11. Cmd+Z / Ctrl+Z restores the last deleted task or event.
 12. No shortcuts fire inside a focused text input except Cmd+K.

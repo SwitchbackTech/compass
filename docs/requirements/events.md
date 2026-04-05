@@ -17,7 +17,7 @@ Use this guide to validate:
 - moving events to the Someday sidebar by drag
 - scheduling Someday events onto the grid by drag
 - duplicating events (Cmd+D)
-- undoing an event deletion (Ctrl+Z)
+- undoing an event deletion (Cmd+Z / Ctrl+Z)
 
 Do not use this guide to validate:
 
@@ -271,16 +271,16 @@ With an event form open, pressing Cmd+D (Mac) or Ctrl+D (Windows) creates a copy
 
 ---
 
-## Scenario 12: Undo An Event Deletion (Ctrl+Z)
+## Scenario 12: Undo An Event Deletion (Cmd+Z / Ctrl+Z)
 
 ### UX
 
-After deleting an event, a brief undo opportunity is available. Pressing Ctrl+Z (or using the undo toast) restores the event.
+After deleting an event, a brief undo opportunity is available. Pressing Cmd+Z (Mac) or Ctrl+Z (Windows/Linux), or using the undo toast, restores the event.
 
 ### Steps
 
 1. Delete a standalone event via the right-click context menu.
-2. Immediately press Ctrl+Z.
+2. Immediately press Cmd+Z (Mac) or Ctrl+Z (Windows/Linux).
 
 ### Expected Results
 
@@ -304,4 +304,4 @@ If time is limited, run these checks before shipping event-related changes:
 9. Resizing an event updates the duration and persists after reload.
 10. Dragging to/from the Someday sidebar correctly converts events between scheduled and unscheduled states.
 11. Cmd+D duplicates an event with the same properties.
-12. Ctrl+Z after deletion restores the event.
+12. Cmd+Z / Ctrl+Z after deletion restores the event.
