@@ -1,5 +1,6 @@
 import { useVersionCheck } from "@web/common/hooks/useVersionCheck";
 import { theme } from "@web/common/styles/theme";
+import { reloadLocation } from "@web/common/utils/browser/browser-navigation.util";
 import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
 import { CalendarIcon } from "@web/components/Icons/Calendar";
 import { CommandIcon } from "@web/components/Icons/Command";
@@ -25,7 +26,7 @@ export const SidebarIconRow = () => {
   const { isUpdateAvailable } = useVersionCheck();
 
   const handleUpdateReload = () => {
-    window.location.reload();
+    reloadLocation();
   };
 
   const toggleCmdPalette = () => {

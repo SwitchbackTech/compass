@@ -5,6 +5,10 @@ import { getApiErrorCode } from "@web/common/apis/compass.api.util";
 import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import {
+  assignLocation,
+  reloadLocation,
+} from "@web/common/utils/browser/browser-navigation.util";
 import { showSessionExpiredToast } from "@web/common/utils/toast/error-toast.util";
 import { handleGoogleRevoked } from "../../auth/google/util/google.auth.util";
 
@@ -31,7 +35,7 @@ const signOut = async (status: SignoutStatus) => {
   if (window.location.pathname.startsWith(ROOT_ROUTES.DAY)) {
     return;
   }
-  window.location.assign(ROOT_ROUTES.DAY);
+  assignLocation(ROOT_ROUTES.DAY);
 };
 
 CompassApi.interceptors.response.use(
@@ -43,7 +47,7 @@ CompassApi.interceptors.response.use(
     const requestUrl = error?.config?.url;
 
     if (status === Status.REDUX_REFRESH_NEEDED) {
-      window.location.reload();
+      reloadLocation();
       return Promise.resolve();
     }
 

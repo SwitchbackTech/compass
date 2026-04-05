@@ -5,11 +5,21 @@ import type {
   InternalAxiosRequestConfig,
 } from "axios";
 import { toast } from "react-toastify";
-import { signOut } from "supertokens-web-js/recipe/session";
 import { Status } from "@core/errors/status.codes";
+import { setTestWindowUrl } from "@web/__tests__/set-test-window-url";
+import { session } from "@web/common/classes/Session";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
+import {
+  assignLocation,
+  reloadLocation,
+} from "@web/common/utils/browser/browser-navigation.util";
 import { CompassApi } from "./compass.api";
+
+jest.mock("@web/common/utils/browser/browser-navigation.util", () => ({
+  assignLocation: jest.fn(),
+  reloadLocation: jest.fn(),
+}));
 
 jest.mock("supertokens-web-js/recipe/session", () => {
   const actual = jest.requireActual("supertokens-web-js/recipe/session");
@@ -28,19 +38,12 @@ jest.mock("supertokens-web-js/recipe/session", () => {
   };
 });
 
-const assignMock = jest.fn();
-const reloadMock = jest.fn();
+const assignMock = jest.mocked(assignLocation);
+const reloadMock = jest.mocked(reloadLocation);
 const originalAdapter = CompassApi.defaults.adapter;
 
 const setLocationPath = (pathname: string) => {
-  Object.defineProperty(window, "location", {
-    configurable: true,
-    value: {
-      assign: assignMock,
-      reload: reloadMock,
-      pathname,
-    } as unknown as Location,
-  });
+  setTestWindowUrl(pathname);
 };
 
 const createAxiosError = (
@@ -88,10 +91,11 @@ describe("CompassApi interceptor auth handling", () => {
     jest.clearAllMocks();
     assignMock.mockReset();
     reloadMock.mockReset();
-    (signOut as jest.Mock).mockResolvedValue(undefined);
-    (toast.isActive as jest.Mock).mockReturnValue(false);
+    (session.signOut as jest.Mock).mockResolvedValue(undefined);
+    jest.spyOn(toast, "isActive").mockReturnValue(false);
+    jest.spyOn(toast, "error").mockReturnValue("toast-id" as never);
     setLocationPath(ROOT_ROUTES.NOW);
-    jest.spyOn(window, "alert").mockImplementation(() => undefined);
+    jest.spyOn(globalThis, "alert").mockImplementation(() => undefined);
     jest.spyOn(console, "error").mockImplementation(() => undefined);
   });
 
@@ -103,10 +107,10 @@ describe("CompassApi interceptor auth handling", () => {
   it("signs out and redirects to day when Google token is invalid", async () => {
     await triggerErrorResponse(Status.NOT_FOUND);
 
-    expect(window.alert).toHaveBeenCalledWith(
+    expect(globalThis.alert).toHaveBeenCalledWith(
       "Login required, cuz security 😇",
     );
-    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(session.signOut).toHaveBeenCalledTimes(1);
     expect(assignMock).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
   });
 
@@ -115,7 +119,7 @@ describe("CompassApi interceptor auth handling", () => {
 
     await triggerErrorResponse(Status.NOT_FOUND);
 
-    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(session.signOut).toHaveBeenCalledTimes(1);
     expect(assignMock).not.toHaveBeenCalled();
   });
 
@@ -131,13 +135,14 @@ describe("CompassApi interceptor auth handling", () => {
         draggable: false,
       }),
     );
-    expect(window.alert).not.toHaveBeenCalled();
-    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(globalThis.alert).not.toHaveBeenCalled();
+    expect(session.signOut).toHaveBeenCalledTimes(1);
     expect(assignMock).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
   });
 
   it("does not enqueue duplicate session-expired toasts when already active", async () => {
-    (toast.isActive as jest.Mock)
+    jest
+      .spyOn(toast, "isActive")
       .mockReturnValueOnce(false)
       .mockReturnValue(true);
 
@@ -151,7 +156,7 @@ describe("CompassApi interceptor auth handling", () => {
     await triggerErrorResponse(Status.REDUX_REFRESH_NEEDED);
 
     expect(reloadMock).toHaveBeenCalledTimes(1);
-    expect(signOut).not.toHaveBeenCalled();
+    expect(session.signOut).not.toHaveBeenCalled();
     expect(assignMock).not.toHaveBeenCalled();
   });
 
@@ -159,15 +164,15 @@ describe("CompassApi interceptor auth handling", () => {
     await triggerErrorResponse(Status.INTERNAL_SERVER);
 
     expect(console.error).toHaveBeenCalled();
-    expect(signOut).not.toHaveBeenCalled();
+    expect(session.signOut).not.toHaveBeenCalled();
     expect(assignMock).not.toHaveBeenCalled();
   });
 
   it("does not sign out or redirect on /user/profile 404", async () => {
     await triggerErrorResponse(Status.NOT_FOUND, "/user/profile");
 
-    expect(window.alert).not.toHaveBeenCalled();
-    expect(signOut).not.toHaveBeenCalled();
+    expect(globalThis.alert).not.toHaveBeenCalled();
+    expect(session.signOut).not.toHaveBeenCalled();
     expect(assignMock).not.toHaveBeenCalled();
   });
 
@@ -189,7 +194,7 @@ describe("CompassApi interceptor auth handling", () => {
         "Google access revoked. Your Google data has been removed.",
         toastExpectation,
       );
-      expect(signOut).not.toHaveBeenCalled();
+      expect(session.signOut).not.toHaveBeenCalled();
       expect(assignMock).not.toHaveBeenCalled();
     }
   });

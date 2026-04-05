@@ -23,6 +23,7 @@ import {
   type Schema_WebEvent,
   type WithId,
 } from "@web/common/types/web.event.types";
+import { reloadLocation } from "@web/common/utils/browser/browser-navigation.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
   focusElement,
@@ -227,7 +228,7 @@ export const handleError = (error: Error) => {
 
   if (code === Status.INTERNAL_SERVER) {
     alert("Something went wrong behind the scenes. Please try again later.");
-    window.location.reload();
+    reloadLocation();
   }
 
   alert(error);

@@ -95,8 +95,37 @@ export function mockSuperTokens() {
 }
 
 function mockReactToastify() {
-  mockModule("react-toastify", () => {
-    return jest.createMockFromModule("react-toastify");
+  jest.mock("react-toastify", () => {
+    const actual =
+      jest.requireActual<typeof import("react-toastify")>("react-toastify");
+    const baseToast = actual.toast;
+    const toastFn = jest
+      .fn()
+      .mockReturnValue("mock-toast-id") as typeof baseToast &
+      jest.MockedFunction<typeof baseToast>;
+
+    toastFn.POSITION = baseToast.POSITION;
+    toastFn.TYPE = baseToast.TYPE;
+    toastFn.dismiss = jest.fn();
+    toastFn.error = jest.fn();
+    toastFn.info = jest.fn();
+    toastFn.isActive = jest.fn();
+    toastFn.success = jest.fn();
+    toastFn.update = jest.fn();
+    toastFn.warning = jest.fn();
+    toastFn.warn = jest.fn();
+    toastFn.loading = jest.fn();
+    toastFn.promise = jest.fn();
+    toastFn.dark = jest.fn();
+    toastFn.done = jest.fn();
+    toastFn.onChange = jest.fn();
+    toastFn.clearWaitingQueue = jest.fn();
+
+    return {
+      ...actual,
+      default: toastFn,
+      toast: toastFn,
+    };
   });
 }
 
