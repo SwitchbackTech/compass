@@ -1,0 +1,1 @@
+export const HOTKEY_SEQUENCE_TIMEOUT_MS = 1000;

@@ -11,7 +11,7 @@ import {
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
 import { openEventFormEditEvent } from "@web/common/utils/event/event.util";
-import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
+import { getShortcuts } from "@web/hotkeys/registry/shortcuts.data";
 import { Dedication } from "@web/views/Calendar/components/Dedication/Dedication";
 import { useRefetch } from "@web/views/Calendar/hooks/useRefetch";
 import { StyledCalendar } from "@web/views/Calendar/styled";

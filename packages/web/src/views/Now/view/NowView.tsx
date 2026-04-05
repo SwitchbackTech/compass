@@ -1,13 +1,12 @@
 import { useEffect } from "react";
 import { usePointerPosition } from "@web/common/hooks/usePointerPosition";
 import { useSidebarState } from "@web/common/hooks/useSidebarState";
-import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
+import { getShortcuts } from "@web/hotkeys/registry/shortcuts.data";
 import { StyledCalendar } from "@web/views/Calendar/styled";
 import { Header } from "@web/views/Day/components/Header/Header";
 import { ShortcutsSidebar } from "@web/views/Day/components/ShortcutsSidebar/ShortcutsSidebar";
 import { NowCmdPalette } from "@web/views/Now/components/NowCmdPalette";
 import { NowViewProvider } from "@web/views/Now/context/NowViewProvider";
-import { useNowShortcuts } from "@web/views/Now/shortcuts/useNowShortcuts";
 import { NowViewContent } from "@web/views/Now/view/NowViewContent";
 
 export const NowView = () => {
@@ -23,10 +22,8 @@ export const NowView = () => {
     return () => togglePointerMovementTracking(false);
   }, [togglePointerMovementTracking]);
 
-  useNowShortcuts({ onToggleSidebar: toggleSidebar });
-
   return (
-    <NowViewProvider>
+    <NowViewProvider onToggleSidebar={toggleSidebar}>
       <NowCmdPalette />
       <StyledCalendar>
         <Header

@@ -3,12 +3,12 @@ import CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
-import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
+import { SHORTCUTS } from "@web/hotkeys/registry/shortcut.registry";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
 export const NowCmdPalette = () => {
@@ -27,15 +27,15 @@ export const NowCmdPalette = () => {
         items: [
           {
             id: "go-to-day",
-            children: `Go to Day [${VIEW_SHORTCUTS.day.key}]`,
+            children: `Go to Day [${SHORTCUTS.NAV_DAY.display}]`,
             icon: "CalendarDaysIcon",
-            onClick: () => pressKey(VIEW_SHORTCUTS.day.key),
+            onClick: () => pressKey(SHORTCUTS.NAV_DAY.display),
           },
           {
             id: "go-to-week",
-            children: `Go to Week [${VIEW_SHORTCUTS.week.key}]`,
+            children: `Go to Week [${SHORTCUTS.NAV_WEEK.display}]`,
             icon: "CalendarIcon",
-            onClick: () => pressKey(VIEW_SHORTCUTS.week.key),
+            onClick: () => pressKey(SHORTCUTS.NAV_WEEK.display),
           },
           {
             id: "edit-reminder",

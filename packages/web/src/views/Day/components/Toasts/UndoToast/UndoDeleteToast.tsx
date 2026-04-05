@@ -1,7 +1,7 @@
 import type React from "react";
 import { toast } from "react-toastify";
 import { toastDefaultOptions } from "@web/common/constants/toast.constants";
-import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
+import { getModifierKeyIcon } from "@web/hotkeys/util/shortcut.util";
 
 interface UndoProps {
   onRestore: () => void;

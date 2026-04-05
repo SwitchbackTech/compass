@@ -1,8 +1,17 @@
 import { act } from "react";
 import { useNavigate } from "react-router-dom";
+import { HotkeyManager } from "@tanstack/react-hotkeys";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
+import {
+  CompassDOMEvents,
+  compassEventEmitter,
+} from "@web/common/utils/dom/event-emitter.util";
+import {
+  HOTKEY_SEQUENCE_TIMEOUT_MS,
+  resetHotkeySequenceControllerForTests,
+} from "@web/hotkeys/hooks/useAppHotkey";
 import { useNowShortcuts } from "@web/views/Now/shortcuts/useNowShortcuts";
 
 // Mock react-router-dom
@@ -18,11 +27,14 @@ describe("useNowShortcuts", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    HotkeyManager.resetInstance();
+    resetHotkeySequenceControllerForTests();
     (useNavigate as jest.Mock).mockReturnValue(mockNavigate);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
+    jest.useRealTimers();
   });
 
   describe("global navigation shortcuts", () => {
@@ -183,6 +195,100 @@ describe("useNowShortcuts", () => {
       pressKey("j", {}, div);
 
       expect(defaultProps.onPreviousTask).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("sequence shortcuts", () => {
+    it("should not focus description when 'd' is pressed alone", () => {
+      const emitSpy = jest.spyOn(compassEventEmitter, "emit");
+
+      renderHook(useNowShortcuts);
+
+      act(() => {
+        pressKey("d");
+      });
+
+      expect(emitSpy).not.toHaveBeenCalledWith(
+        CompassDOMEvents.FOCUS_TASK_DESCRIPTION,
+      );
+    });
+
+    it("should focus description when 'e' then 'd' is pressed", () => {
+      const emitSpy = jest.spyOn(compassEventEmitter, "emit");
+
+      renderHook(useNowShortcuts);
+
+      act(() => {
+        pressKey("e");
+      });
+
+      act(() => {
+        pressKey("d");
+      });
+
+      expect(emitSpy).toHaveBeenCalledWith(
+        CompassDOMEvents.FOCUS_TASK_DESCRIPTION,
+      );
+    });
+
+    it("should only trigger once for a completed sequence", () => {
+      const emitSpy = jest.spyOn(compassEventEmitter, "emit");
+
+      renderHook(useNowShortcuts);
+
+      act(() => {
+        pressKey("e");
+      });
+
+      act(() => {
+        pressKey("d");
+      });
+
+      emitSpy.mockClear();
+
+      act(() => {
+        pressKey("d");
+      });
+
+      expect(emitSpy).not.toHaveBeenCalledWith(
+        CompassDOMEvents.FOCUS_TASK_DESCRIPTION,
+      );
+    });
+
+    it("should expire the pending sequence after the timeout", () => {
+      jest.useFakeTimers();
+      const emitSpy = jest.spyOn(compassEventEmitter, "emit");
+
+      renderHook(useNowShortcuts);
+
+      act(() => {
+        pressKey("e");
+        jest.advanceTimersByTime(HOTKEY_SEQUENCE_TIMEOUT_MS);
+      });
+
+      act(() => {
+        pressKey("d");
+      });
+
+      expect(emitSpy).not.toHaveBeenCalledWith(
+        CompassDOMEvents.FOCUS_TASK_DESCRIPTION,
+      );
+    });
+
+    it("should restart the sequence when the prefix key is repeated", () => {
+      const emitSpy = jest.spyOn(compassEventEmitter, "emit");
+
+      renderHook(useNowShortcuts);
+
+      act(() => {
+        pressKey("e");
+        pressKey("e");
+        pressKey("d");
+      });
+
+      expect(emitSpy).toHaveBeenCalledWith(
+        CompassDOMEvents.FOCUS_TASK_DESCRIPTION,
+      );
     });
   });
 });

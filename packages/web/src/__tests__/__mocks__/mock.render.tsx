@@ -20,8 +20,10 @@ import type { store as compassStore } from "@web/store";
 import { reducers } from "@web/store/reducers";
 import { sagas } from "@web/store/sagas";
 
+type TestState = Partial<ReturnType<typeof reducers>>;
+
 interface CustomRenderOptions extends RenderOptions {
-  state?: any;
+  state?: TestState;
   store?: typeof compassStore;
   router?: RouterProviderProps["router"];
   wrapper?: ComponentType<PropsWithChildren>;

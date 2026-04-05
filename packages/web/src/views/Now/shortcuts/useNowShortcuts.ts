@@ -2,12 +2,17 @@ import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { ID_REMINDER_INPUT } from "@web/common/constants/web.constants";
-import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
 import { type Task } from "@web/common/types/task.types";
 import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
+import {
+  useAppHotkey,
+  useAppHotkeySequence,
+  useAppHotkeyUp,
+} from "@web/hotkeys/hooks/useAppHotkey";
+import { SHORTCUTS } from "@web/hotkeys/registry/shortcut.registry";
 
 interface Props {
   focusedTask?: Task | null;
@@ -43,12 +48,18 @@ export function useNowShortcuts(props?: Props) {
     [focusedTask, availableTasks.length],
   );
 
-  useAppHotkeyUp("D", () => {
+  const focusDescriptionSequence = SHORTCUTS.NOW_FOCUS_DESC.sequence;
+
+  if (!focusDescriptionSequence) {
+    throw new Error("NOW_FOCUS_DESC.sequence must define an edit mode prefix");
+  }
+
+  useAppHotkeySequence(focusDescriptionSequence, () => {
     compassEventEmitter.emit(CompassDOMEvents.FOCUS_TASK_DESCRIPTION);
   });
 
   useAppHotkey(
-    "Mod+Enter",
+    SHORTCUTS.NOW_SAVE_DESC.hotkey,
     () => {
       compassEventEmitter.emit(CompassDOMEvents.SAVE_TASK_DESCRIPTION);
     },
@@ -58,11 +69,11 @@ export function useNowShortcuts(props?: Props) {
     },
   );
 
-  useAppHotkeyUp("J", () => {
+  useAppHotkeyUp(SHORTCUTS.NAV_PREV.hotkey, () => {
     handleTaskNavigation(onPreviousTask)?.();
   });
 
-  useAppHotkeyUp("K", () => {
+  useAppHotkeyUp(SHORTCUTS.NAV_NEXT.hotkey, () => {
     handleTaskNavigation(onNextTask)?.();
   });
 
@@ -75,10 +86,10 @@ export function useNowShortcuts(props?: Props) {
     handleTaskNavigation(onCompleteTask)?.();
   }, [handleTaskNavigation, onCompleteTask]);
 
-  useAppHotkeyUp("Enter", handleEnterKey);
+  useAppHotkeyUp(SHORTCUTS.NOW_COMPLETE_TASK.hotkey, handleEnterKey);
 
   useAppHotkey(
-    "Escape",
+    SHORTCUTS.NOW_ESCAPE.hotkey,
     () => {
       navigate(ROOT_ROUTES.DAY);
     },
@@ -88,8 +99,7 @@ export function useNowShortcuts(props?: Props) {
     },
   );
 
-  // Sidebar shortcut
-  useAppHotkeyUp("[", () => {
+  useAppHotkeyUp(SHORTCUTS.TOGGLE_SIDEBAR.hotkey, () => {
     onToggleSidebar?.();
   });
 }

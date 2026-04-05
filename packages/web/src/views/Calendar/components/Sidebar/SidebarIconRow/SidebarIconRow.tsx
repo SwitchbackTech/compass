@@ -1,6 +1,5 @@
 import { useVersionCheck } from "@web/common/hooks/useVersionCheck";
 import { theme } from "@web/common/styles/theme";
-import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
 import { CalendarIcon } from "@web/components/Icons/Calendar";
 import { CommandIcon } from "@web/components/Icons/Command";
 import { RefreshIcon } from "@web/components/Icons/Refresh";
@@ -11,6 +10,7 @@ import { selectSidebarTab } from "@web/ducks/events/selectors/view.selectors";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
+import { getModifierKeyIcon } from "@web/hotkeys/util/shortcut.util";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import {
   IconRow,

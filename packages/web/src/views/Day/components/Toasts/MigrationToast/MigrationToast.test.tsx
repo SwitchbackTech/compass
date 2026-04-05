@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { getModifierKeyTestId } from "@web/common/utils/shortcut/shortcut.util";
+import { getModifierKeyTestId } from "@web/hotkeys/util/shortcut.util";
 import { showMigrationToast } from "@web/views/Day/components/Toasts/MigrationToast/MigrationToast";
 
 describe("MigrationToast", () => {

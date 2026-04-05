@@ -8,7 +8,7 @@ import {
   getMetaKeyIcon,
   getModifierKeyIcon,
   getModifierKeyTestId,
-} from "@web/common/utils/shortcut/shortcut.util";
+} from "@web/hotkeys/util/shortcut.util";
 
 describe("shortcut.util", () => {
   beforeEach(() => {

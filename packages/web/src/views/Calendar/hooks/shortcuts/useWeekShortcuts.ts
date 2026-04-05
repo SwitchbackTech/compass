@@ -5,7 +5,6 @@ import {
 } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { type Dayjs } from "@core/util/date/dayjs";
-import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
 import {
   createAlldayDraft,
   createTimedDraft,
@@ -21,6 +20,8 @@ import {
 } from "@web/ducks/events/selectors/view.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
+import { useAppHotkey, useAppHotkeyUp } from "@web/hotkeys/hooks/useAppHotkey";
+import { SHORTCUTS } from "@web/hotkeys/registry/shortcut.registry";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
 import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
@@ -137,14 +138,14 @@ export const useWeekShortcuts = ({
     _createSomedayDraft(Categories_Event.SOMEDAY_WEEK);
   }, [_createSomedayDraft]);
 
-  useAppHotkey("Shift+1", openTasks);
-  useAppHotkey("Shift+2", openMonthWidget);
-  useAppHotkeyUp("[", openSidebar);
-  useAppHotkeyUp("J", goToPreviousWeek);
-  useAppHotkeyUp("K", goToNextWeek);
-  useAppHotkeyUp("T", toToday);
-  useAppHotkeyUp("A", createAllDayDraftEvent);
-  useAppHotkeyUp("C", createTimedDraftEvent);
-  useAppHotkeyUp("M", createSomedayMonthDraft);
-  useAppHotkeyUp("W", createSomedayWeekDraft);
+  useAppHotkey(SHORTCUTS.WEEK_OPEN_TASKS.hotkey, openTasks);
+  useAppHotkey(SHORTCUTS.WEEK_OPEN_MONTH.hotkey, openMonthWidget);
+  useAppHotkeyUp(SHORTCUTS.TOGGLE_SIDEBAR.hotkey, openSidebar);
+  useAppHotkeyUp(SHORTCUTS.NAV_PREV.hotkey, goToPreviousWeek);
+  useAppHotkeyUp(SHORTCUTS.NAV_NEXT.hotkey, goToNextWeek);
+  useAppHotkeyUp(SHORTCUTS.NAV_TODAY.hotkey, toToday);
+  useAppHotkeyUp(SHORTCUTS.WEEK_CREATE_ALLDAY.hotkey, createAllDayDraftEvent);
+  useAppHotkeyUp(SHORTCUTS.WEEK_CREATE_TIMED.hotkey, createTimedDraftEvent);
+  useAppHotkeyUp(SHORTCUTS.WEEK_SOMEDAY_MONTH.hotkey, createSomedayMonthDraft);
+  useAppHotkeyUp(SHORTCUTS.WEEK_SOMEDAY_WEEK.hotkey, createSomedayWeekDraft);
 };

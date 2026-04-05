@@ -2,7 +2,7 @@ import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import { renderWithMemoryRouter } from "@web/__tests__/utils/providers/MemoryRouter";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { getModifierKeyTestId } from "@web/common/utils/shortcut/shortcut.util";
+import { getModifierKeyTestId } from "@web/hotkeys/util/shortcut.util";
 import { NowView } from "@web/views/Now/view/NowView";
 
 // Mock the useNowShortcuts hook
@@ -91,6 +91,8 @@ describe("NowView", () => {
     await renderWithMemoryRouter(<NowView />, [ROOT_ROUTES.NOW]);
 
     // Check that shortcut keys are rendered
+    expect(screen.getByText("Edit description")).toBeInTheDocument();
+    expect(screen.getAllByTestId("e-icon").length).toBeGreaterThan(0);
     expect(screen.getAllByTestId("n-icon").length).toBeGreaterThan(0);
     expect(screen.getAllByTestId("d-icon").length).toBeGreaterThan(0);
     expect(screen.getAllByTestId("w-icon").length).toBeGreaterThan(0);

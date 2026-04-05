@@ -2,12 +2,12 @@ import { Origin, Priorities } from "@core/constants/core.constants";
 import { type Event_Core } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
-import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { type Task } from "@web/common/types/task.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
-import { getModifierKeyLabel } from "@web/common/utils/shortcut/shortcut.util";
+import { SHORTCUTS } from "@web/hotkeys/registry/shortcut.registry";
+import { getModifierKeyLabel } from "@web/hotkeys/util/shortcut.util";
 import { type StorageAdapter } from "../../adapter/storage.adapter";
 import { type ExternalMigration } from "../migration.types";
 
@@ -153,11 +153,11 @@ function generateDemoData() {
       order: 2,
     }),
     createTask({
-      title: `Go to Now view (${VIEW_SHORTCUTS.now.key})`,
+      title: `Go to Now view (${SHORTCUTS.NAV_NOW.display})`,
       order: 3,
     }),
     createTask({
-      title: `Go to Week view (${VIEW_SHORTCUTS.week.key})`,
+      title: `Go to Week view (${SHORTCUTS.NAV_WEEK.display})`,
       order: 4,
     }),
     createTask({

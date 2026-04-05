@@ -1,5 +1,5 @@
 import dayjs from "@core/util/date/dayjs";
-import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
+import { getShortcuts } from "@web/hotkeys/registry/shortcuts.data";
 
 describe("shortcuts.data", () => {
   describe("getShortcuts", () => {
@@ -116,7 +116,7 @@ describe("shortcuts.data", () => {
 
       expect(shortcuts.nowShortcuts).toHaveLength(6);
       expect(shortcuts.nowShortcuts[0]).toEqual({
-        k: "d",
+        k: ["e", "d"],
         label: "Edit description",
       });
       expect(shortcuts.nowShortcuts[1]).toEqual({

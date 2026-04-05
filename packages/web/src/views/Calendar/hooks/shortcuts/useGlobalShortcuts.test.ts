@@ -10,12 +10,21 @@ import {
 } from "@web/__tests__/__mocks__/mock.setup";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { sagaMiddleware } from "@web/common/store/middlewares";
-import { pressKey } from "@web/common/utils/dom/event-emitter.util";
+import {
+  CompassDOMEvents,
+  compassEventEmitter,
+  pressKey,
+} from "@web/common/utils/dom/event-emitter.util";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
+import {
+  HOTKEY_SEQUENCE_TIMEOUT_MS,
+  resetHotkeySequenceControllerForTests,
+} from "@web/hotkeys/hooks/useAppHotkey";
 import { reducers } from "@web/store/reducers";
 import { sagas } from "@web/store/sagas";
 import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
+import { useNowShortcuts } from "@web/views/Now/shortcuts/useNowShortcuts";
 
 // Mock react-router-dom
 jest.mock("react-router-dom", () => ({
@@ -53,6 +62,8 @@ const createTestStore = () => {
 describe("useGlobalShortcuts", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    HotkeyManager.resetInstance();
+    resetHotkeySequenceControllerForTests();
     (useNavigate as jest.Mock).mockReturnValue(mockNavigate);
     (useLocation as jest.Mock).mockReturnValue(mockLocation("/"));
   });
@@ -90,6 +101,58 @@ describe("useGlobalShortcuts", () => {
     renderHook(() => useGlobalShortcuts());
     pressKey("d");
     expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it("should yield to the Now description sequence while pending on NOW", () => {
+    (useLocation as jest.Mock).mockReturnValue(mockLocation(ROOT_ROUTES.NOW));
+    const emitSpy = jest.spyOn(compassEventEmitter, "emit");
+
+    renderHook(() => useGlobalShortcuts());
+    renderHook(() => useNowShortcuts());
+
+    act(() => {
+      pressKey("e");
+      pressKey("d");
+    });
+
+    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(emitSpy).toHaveBeenCalledWith(
+      CompassDOMEvents.FOCUS_TASK_DESCRIPTION,
+    );
+  });
+
+  it("should navigate to DAY on NOW after the sequence timeout", () => {
+    jest.useFakeTimers();
+    (useLocation as jest.Mock).mockReturnValue(mockLocation(ROOT_ROUTES.NOW));
+    renderHook(() => useGlobalShortcuts());
+    renderHook(() => useNowShortcuts());
+
+    act(() => {
+      pressKey("e");
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(HOTKEY_SEQUENCE_TIMEOUT_MS);
+    });
+
+    act(() => {
+      pressKey("d");
+    });
+
+    expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
+    jest.useRealTimers();
+  });
+
+  it("should navigate to DAY on NOW when no sequence is pending", () => {
+    (useLocation as jest.Mock).mockReturnValue(mockLocation(ROOT_ROUTES.NOW));
+    renderHook(() => useGlobalShortcuts());
+    renderHook(() => useNowShortcuts());
+
+    act(() => {
+      pressKey("d");
+    });
+
+    expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
   });
 
   it("should navigate to WEEK when 'w' is pressed from different route", () => {

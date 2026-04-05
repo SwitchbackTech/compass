@@ -290,6 +290,7 @@ export default (env, argv) => {
         "@web/common": resolvePath("./src/common"),
         "@web/components": resolvePath("./src/components"),
         "@web/ducks": resolvePath("./src/ducks/"),
+        "@web/hotkeys": resolvePath("./src/hotkeys"),
         "@web/public": resolvePath("./src/public"),
         "@web/routers": resolvePath("./src/routers"),
         "@web/sse": resolvePath("./src/sse"),
