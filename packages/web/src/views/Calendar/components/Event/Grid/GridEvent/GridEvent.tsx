@@ -34,6 +34,7 @@ import { selectIsEventPending } from "@web/ducks/events/selectors/pending.select
 import { useAppSelector } from "@web/store/store.hooks";
 import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { MIN_EVENT_HEIGHT_FOR_TIME_LABEL } from "@web/views/Calendar/layout.constants";
 
 interface Props {
   event: Schema_GridEvent;
@@ -199,11 +200,12 @@ const _GridEvent = (
         </span>
         {!event.isAllDay && (
           <>
-            {(isDraft || !isInPast) && (
-              <Text role="textbox" size="xs" zIndex={ZIndex.LAYER_3}>
-                {getTimesLabel(event.startDate, event.endDate)}
-              </Text>
-            )}
+            {(isDraft || !isInPast) &&
+              position.height >= MIN_EVENT_HEIGHT_FOR_TIME_LABEL && (
+                <Text role="textbox" size="xs" zIndex={ZIndex.LAYER_3}>
+                  {getTimesLabel(event.startDate, event.endDate)}
+                </Text>
+              )}
             <>
               <div
                 role="button"
