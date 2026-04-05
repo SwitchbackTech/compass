@@ -70,7 +70,20 @@ function autoMockValue(bunJest, value, seen) {
     }
 
     if (Array.isArray(value)) {
-      return value.map((item) => autoMockValue(bunJest, item, seen));
+      const out = [];
+      seen.set(value, out);
+
+      for (let i = 0; i < value.length; i++) {
+        if (i in value) {
+          try {
+            out[i] = autoMockValue(bunJest, value[i], seen);
+          } catch {
+            // ignore TDZ / non-readable props
+          }
+        }
+      }
+
+      return out;
     }
 
     const out = {};
