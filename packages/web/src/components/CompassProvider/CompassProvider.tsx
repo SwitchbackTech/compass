@@ -5,6 +5,7 @@ import { ToastContainer } from "react-toastify";
 import { ThemeProvider } from "styled-components";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { HotkeysProvider } from "@tanstack/react-hotkeys";
+import { filterPosthogExceptionEvent } from "@web/auth/posthog/posthog-exception-filter.util";
 import { SessionProvider } from "@web/auth/compass/session/SessionProvider";
 import { isPosthogEnabled } from "@web/auth/posthog/posthog.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
@@ -79,6 +80,7 @@ export const CompassOptionalProviders = ({ children }: PropsWithChildren) => {
         apiKey={ENV_WEB.POSTHOG_KEY as string}
         options={{
           api_host: ENV_WEB.POSTHOG_HOST!,
+          before_send: filterPosthogExceptionEvent,
           capture_exceptions: {
             capture_unhandled_errors: true,
             capture_unhandled_rejections: true,
