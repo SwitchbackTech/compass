@@ -31,7 +31,8 @@ Helpful notes:
 
 - Tasks are always tied to a specific date. There is no undated or Someday task concept — that is handled by Someday events.
 - Completed tasks display with reduced opacity and are sorted below incomplete tasks in the list.
-- Undo is available immediately after a deletion via toast or Ctrl+Z.
+- Undo is available immediately after a deletion via toast or Cmd+Z / Ctrl+Z.
+- Keyboard shortcuts using `Mod` map to Command on Mac and Control on Windows/Linux.
 
 ---
 
@@ -141,12 +142,12 @@ Pressing Delete or Backspace while a task checkbox is focused removes the task. 
 
 ### UX
 
-Immediately after deleting a task, pressing Ctrl+Z restores it.
+Immediately after deleting a task, pressing Cmd+Z (Mac) or Ctrl+Z (Windows/Linux) restores it.
 
 ### Steps
 
 1. Delete a task (see Scenario 5).
-2. Immediately press Ctrl+Z.
+2. Immediately press Cmd+Z (Mac) or Ctrl+Z (Windows/Linux).
 
 ### Expected Results
 
@@ -283,14 +284,14 @@ Pressing Enter in Now mode marks the focused task complete and automatically mov
 
 ### UX
 
-Pressing `D` while a task is focused in Now mode opens an inline description editor (max 255 characters). Pressing Ctrl+Enter saves the description.
+Pressing `D` while a task is focused in Now mode opens an inline description editor (max 255 characters). Pressing Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux) saves the description.
 
 ### Steps
 
 1. Enter Now mode and select a task.
 2. Press `D`.
 3. Type a description (keep it under 255 characters).
-4. Press Ctrl+Enter to save.
+4. Press Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux) to save.
 
 ### Expected Results
 
@@ -309,10 +310,10 @@ If time is limited, run these checks before shipping task-related changes:
 2. Completed tasks move below incomplete tasks and appear faded.
 3. Toggling a completed task back to incomplete restores its position and full opacity.
 4. Delete/Backspace on a focused task checkbox removes the task and shows an undo toast.
-5. Ctrl+Z restores the deleted task with its original properties.
+5. Cmd+Z / Ctrl+Z restores the deleted task with its original properties.
 6. Drag-and-drop reordering persists after a page reload.
 7. Ctrl+Meta+ArrowRight moves a task to the next day; Ctrl+Meta+ArrowLeft to the previous day.
 8. Now mode shows all incomplete tasks for today and locks focus to a selected task.
 9. J/K navigate between tasks in Now mode without leaving the view.
 10. Enter in Now mode marks the task complete and auto-advances.
-11. D opens the description editor; Ctrl+Enter saves; max 255 characters is enforced.
+11. D opens the description editor; Cmd+Enter / Ctrl+Enter saves; max 255 characters is enforced.
