@@ -34,6 +34,12 @@ Rule: never treat event shape as web-only unless the field is strictly presentat
 
 Do not edit recurring behavior from one layer only.
 
+### Common Mistakes
+
+- **Changing only the executor without updating the parser plan builders** — the executor reads the `steps` array that the parser produces. If the plan builder for a given transition key is wrong, the executor will silently do the wrong thing even if the executor logic looks correct. Always trace from `PLAN_BUILDERS` in `compass.event.parser.ts` to confirm `steps` and `googleEffect` match the intended behavior.
+- **Missing a database migration for existing recurring events** — existing user data will not be retroactively updated by code changes alone. If you modify how recurring series are stored or processed, add a migration to `packages/scripts/src/migrations`.
+- **Testing only the happy-path transition** — someday and cancellation transitions follow different planner paths. A test that only covers the primary create/update flow can pass while someday transitions break silently.
+
 ## Triage A Recurrence Sync Regression
 
 1. Reproduce with one event and one expected transition outcome.
@@ -59,6 +65,11 @@ Do not edit recurring behavior from one layer only.
 2. Update `packages/web/src/common/storage/adapter/indexeddb.adapter.ts`.
 3. Add a migration if existing user data could become invalid.
 4. Add adapter and migration tests.
+
+### Common Mistakes
+
+- **Adding new fields without a migration** — existing users already have data in IndexedDB without the new field. If your code expects the field to be present, it will fail silently or throw on their existing records. Always add a migration in `packages/web/src/common/storage/migrations/migrations.ts` and test the migration path, not just the new code path.
+- **Testing only the new code path** — write a test that starts with pre-migration data (the old shape) and confirms the migration transforms it correctly. A test that only creates fresh data will not catch migration regressions.
 
 ## Change Repository Selection Or Offline Behavior
 

@@ -1,3 +1,11 @@
+/**
+ * Repository selection entry point.
+ * This factory decides whether event reads/writes go to local IndexedDB or the remote API.
+ * Auth state is the source of truth — authenticated users prefer remote.
+ * Never call this directly from components; always go through sagas.
+ * Start debugging "why isn't this event saving?" here.
+ * Related: docs/development/web-state-guide.md
+ */
 import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
 import { isGoogleRevoked } from "@web/auth/google/state/google.auth.state";
 import { type EventRepository } from "./event.repository.interface";
