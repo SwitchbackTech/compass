@@ -12,9 +12,43 @@ bun run test:web
 bun run test:backend
 bun run test:scripts
 bun run type-check
+bun run verify
 ```
 
 Avoid defaulting to `bun run test` unless you really need the full suite.
+
+## Smart Verify Command (`bun run verify`)
+
+Source:
+
+- `packages/scripts/src/testing/verify.ts`
+
+Use this for fast local iteration loops. It runs the minimum package suites it can infer, then always runs `type-check`.
+
+Examples:
+
+```bash
+# auto-detect changed packages from git diff and run inferred suites
+bun run verify
+
+# explicit package selection (always followed by type-check)
+bun run verify web
+bun run verify core web
+```
+
+Detection contract (no args):
+
+- maps changed files under `packages/core/`, `packages/web/`, `packages/backend/`, and `packages/scripts/`
+- uses `git diff --name-only HEAD` (with a staged/unstaged fallback)
+- if nothing maps to a package, falls back to `core -> web -> type-check`
+
+Constraints:
+
+- untracked files are not included in `git diff --name-only HEAD`
+- root-only changes (for example `package.json`, workflow files, docs) do not map to a package
+- when inference is ambiguous, pass explicit packages instead of relying on fallback
+
+`bun run verify` is a local productivity helper. CI remains authoritative and runs package-specific lanes via `bun run test:<project>`.
 
 ## CI Unit Test Workflow
 
