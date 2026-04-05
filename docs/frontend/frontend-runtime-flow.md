@@ -260,6 +260,43 @@ The web app currently uses two styling systems in parallel:
 
 Do not describe the frontend as Tailwind-only or styled-components-only. Follow the local pattern of the area you are editing unless the change is explicitly migrating that area.
 
+## Calendar Event Card Rendering (Week Grid + All-Day Row)
+
+Files:
+
+- `packages/web/src/views/Calendar/components/Event/Grid/GridEvent/GridEvent.tsx`
+- `packages/web/src/views/Calendar/components/Grid/AllDayRow/AllDayEvent.tsx`
+- `packages/web/src/views/Calendar/layout.constants.ts`
+- `packages/web/src/common/utils/position/position.util.ts`
+
+Intent:
+
+- keep event text readable in short time slots without visual overflow
+- preserve consistent drag/resize affordances across draft, pending, placeholder, and normal states
+- keep priority-based color behavior in component-level style variables
+
+Runtime behavior:
+
+- both components compute absolute placement and size from `getEventPosition(...)`
+- event colors are derived from priority maps (`colorByPriority`, `hoverColorByPriority`) and applied via CSS variables (`--event-bg`, `--event-hover-bg`)
+- pending events intentionally block drag/resize initiation on `onMouseDown` while backend confirmation is in progress
+- past events are visually dimmed (`brightness(0.7)`) while current/future events use normal brightness
+- `GridEvent` renders the time label only when all conditions are true:
+  - event is not all-day
+  - event is draft or not in the past
+  - rendered height is at least `MIN_EVENT_HEIGHT_FOR_TIME_LABEL` (currently `36` px)
+
+Interaction details to preserve:
+
+- resize hit areas are intentionally invisible overlays (`4.5px`) with slight offsets (`-0.25px`) so resize remains easy to target without adding visual noise
+- keyboard activation for event cards remains `Enter` / `Space` only, with default prevented before invoking handlers
+
+Pitfalls:
+
+- avoid reintroducing text overflow in short events by bypassing the `MIN_EVENT_HEIGHT_FOR_TIME_LABEL` guard
+- if changing event height math, validate both label visibility and line clamp behavior (`getLineClamp`) because both depend on rendered height
+- preserve pending-state interaction blocking in both grid and all-day event cards to avoid race conditions with optimistic UI updates
+
 ## Day Task Drag Handle Positioning
 
 File:

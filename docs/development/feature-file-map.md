@@ -31,6 +31,9 @@ Use this document to find the first files to inspect for common Compass changes.
 - Web event slices/selectors: `packages/web/src/ducks/events/slices`, `packages/web/src/ducks/events/selectors`
 - Elf event entity store: `packages/web/src/store/events.ts`
 - Event API/repositories: `packages/web/src/ducks/events/event.api.ts`, `packages/web/src/common/repositories/event`
+- Week grid event card rendering and interactions: `packages/web/src/views/Calendar/components/Event/Grid/GridEvent/GridEvent.tsx`
+- All-day row event rendering and resize handles: `packages/web/src/views/Calendar/components/Grid/AllDayRow/AllDayEvent.tsx`
+- Calendar event sizing/label constants (including min time-label height): `packages/web/src/views/Calendar/layout.constants.ts`
 - Backend event routes: `packages/backend/src/event/event.routes.config.ts`
 - Backend event controller/service: `packages/backend/src/event/controllers/event.controller.ts`, `packages/backend/src/event/services/event.service.ts`
 

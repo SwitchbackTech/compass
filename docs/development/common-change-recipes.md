@@ -72,6 +72,24 @@ Do not edit recurring behavior from one layer only.
 2. Inspect supporting UI in `packages/web/src/views/Day/components/TaskList`.
 3. If persistence changed, update storage adapter code and tests.
 
+## Change Calendar Event Card Rendering (Week + All-Day)
+
+1. Start in the render components:
+   - `packages/web/src/views/Calendar/components/Event/Grid/GridEvent/GridEvent.tsx`
+   - `packages/web/src/views/Calendar/components/Grid/AllDayRow/AllDayEvent.tsx`
+2. Keep shared display thresholds in `packages/web/src/views/Calendar/layout.constants.ts` (for example `MIN_EVENT_HEIGHT_FOR_TIME_LABEL`) instead of hardcoding values inside components.
+3. Preserve position ownership in `getEventPosition(...)` (`packages/web/src/common/utils/position/position.util.ts`) so drag, resize, and overlap math stays centralized.
+4. Keep interaction guardrails:
+   - pending events should not start drag/resize on mouse down
+   - keyboard activation remains `Enter` / `Space` for event cards
+   - resize hit areas remain large enough to target (`4.5px` overlays)
+5. Validate short-event text behavior explicitly when changing height logic:
+   - title clamping (`getLineClamp`)
+   - time-label visibility threshold (`MIN_EVENT_HEIGHT_FOR_TIME_LABEL`)
+6. Add or update focused web tests in:
+   - `packages/web/src/views/Calendar/components/Event/Grid/GridEvent/GridEvent.test.tsx`
+   - nearby calendar view tests affected by the interaction change
+
 ## Change A Shared Hotkey Dialog (Day + Week)
 
 Use this for overlays mounted in both `CalendarView` and `DayViewContent` (for example Dedication).
