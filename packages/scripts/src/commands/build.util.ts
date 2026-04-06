@@ -56,11 +56,14 @@ export const copyNodeConfigsToBuild = async (options: Options_Cli) => {
   shell.cp(`${COMPASS_ROOT_DEV}/package.json`, `${NODE_BUILD}/package.json`);
   shell.cp(`${COMPASS_ROOT_DEV}/bun.lock`, `${NODE_BUILD}/bun.lock`);
 
-  const bunfigPath = `${COMPASS_ROOT_DEV}/bunfig.toml`;
-
-  if (fileExists(bunfigPath)) {
-    shell.cp(bunfigPath, `${NODE_BUILD}/bunfig.toml`);
-  }
+  // Write bunfig.toml with frozenLockfile disabled for production builds
+  const bunfigContent = `[install]
+linker = "isolated"
+frozenLockfile = false
+production = true
+`;
+  const fs = await import("node:fs");
+  fs.writeFileSync(`${NODE_BUILD}/bunfig.toml`, bunfigContent);
 
   shell.cp(
     `${COMPASS_ROOT_DEV}/packages/backend/package.json`,
@@ -82,14 +85,7 @@ export const installDependencies = () => {
   log.info("Installing dependencies...");
 
   const result = bunRuntime.spawnSync({
-    cmd: [
-      "bun",
-      "install",
-      "--production",
-      "--frozen-lockfile",
-      "--ignore-scripts",
-      "--no-progress",
-    ],
+    cmd: ["bun", "install", "--ignore-scripts", "--no-progress"],
     cwd: `${COMPASS_BUILD_DEV}/node`,
     stderr: "inherit",
     stdout: "inherit",

@@ -641,7 +641,7 @@ class SyncService {
 
     const gCalendarIds = calendarInit.googleCalendars
       .map(({ id }) => id)
-      .filter((id) => id !== undefined && id !== null);
+      .filter((id): id is string => id !== undefined && id !== null);
 
     const importResults = await this.importFull(gcal, gCalendarIds, user);
 
@@ -889,7 +889,10 @@ class SyncService {
       ),
     );
 
-    const stopped = result.filter((identity) => identity !== undefined);
+    const stopped = result.filter(
+      (identity): identity is { channelId: string; resourceId: string } =>
+        identity !== undefined,
+    );
 
     return stopped;
   };

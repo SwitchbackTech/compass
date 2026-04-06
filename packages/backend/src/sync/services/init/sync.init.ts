@@ -17,7 +17,7 @@ export const getCalendarsToSync = async (gcal: gCalendar) => {
 
   const gCalendarIds = calendars
     .map(({ id }) => id)
-    .filter((id) => id !== undefined && id !== null);
+    .filter((id): id is string => id !== undefined && id !== null);
 
   return {
     calendars,

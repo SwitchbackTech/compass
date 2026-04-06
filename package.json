@@ -72,11 +72,13 @@
   },
   "resolutions": {
     "glob": "^13.0.6",
-    "typescript": "5.1.6"
+    "typescript": "5.1.6",
+    "onetime": "^5.1.2"
   },
   "overrides": {
     "glob": "^13.0.6",
-    "typescript": "5.1.6"
+    "typescript": "5.1.6",
+    "onetime": "^5.1.2"
   },
   "workspaces": [
     "packages/*"

@@ -45,7 +45,8 @@ export const isBase = (
 ): boolean => {
   return (
     "recurrence" in event &&
-    Array.isArray(event.recurrence?.rule) &&
+    event.recurrence !== undefined &&
+    Array.isArray(event.recurrence.rule) &&
     !("eventId" in event.recurrence)
   );
 };

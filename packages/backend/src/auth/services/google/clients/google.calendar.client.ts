@@ -1,4 +1,4 @@
-import { GaxiosError } from "gaxios";
+import { GaxiosError, type GaxiosResponse } from "gaxios";
 import { type WithId } from "mongodb";
 import { calendar } from "@googleapis/calendar";
 import { Status } from "@core/errors/status.codes";
@@ -80,22 +80,7 @@ export const getGcalClient = async (userId: string): Promise<gCalendar> => {
         },
         statusText: "BAD_REQUEST Cannot initialize Gcal client",
         headers: new Headers(),
-        ok: false,
-        redirected: false,
-        type: "error" as ResponseType,
-        url: "https://www.googleapis.com/calendar/v3",
-        body: null,
-        bodyUsed: false,
-        clone: () => {
-          throw new Error("Not implemented");
-        },
-        arrayBuffer: () => Promise.reject(new Error("Not implemented")),
-        blob: () => Promise.reject(new Error("Not implemented")),
-        formData: () => Promise.reject(new Error("Not implemented")),
-        json: () => Promise.resolve({ userId }),
-        text: () => Promise.resolve(JSON.stringify({ userId })),
-        bytes: () => Promise.reject(new Error("Not implemented")),
-      },
+      } as GaxiosResponse<{ userId: string }>,
     );
     gaxiosErr.code = "400";
     throw gaxiosErr;
