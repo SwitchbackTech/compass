@@ -1,4 +1,5 @@
 import { type MutableRefObject, useCallback, useEffect } from "react";
+import { useAppHotkey } from "@web/common/hooks/useAppHotkey";
 import { getCurrentMinute } from "@web/common/utils/grid/grid.util";
 
 export const useScroll = (
@@ -21,24 +22,7 @@ export const useScroll = (
   }, [timedGridRef]);
 
   // Scroll when pressing "c"
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement;
-      const isTypingField =
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.isContentEditable;
-
-      if (!isTypingField && !event.ctrlKey && event.key.toLowerCase() === "c") {
-        scrollToNow();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [scrollToNow]);
+  useAppHotkey("C", scrollToNow);
 
   // Optional: scroll to now on mount
   useEffect(() => {

@@ -85,7 +85,7 @@ describe("SomedayEventContainer keyboard interactions", () => {
     const btn = document.querySelector(
       `[data-event-id="${LEARN_CHINESE._id}"]`,
     )!;
-    btn.focus();
+    fireEvent.focus(btn);
     fireEvent.keyDown(btn, { key: "Enter" });
 
     expect(onDraft).toHaveBeenCalledTimes(1);
@@ -152,7 +152,7 @@ describe("SomedayEventContainer keyboard interactions", () => {
     const btn = document.querySelector(
       `[data-event-id="${LEARN_CHINESE._id}"]`,
     )!;
-    btn.focus();
+    fireEvent.focus(btn);
     fireEvent.keyDown(btn, { key: "ArrowUp", metaKey: true, ctrlKey: true });
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
@@ -217,7 +217,7 @@ describe("SomedayEventContainer keyboard interactions", () => {
     const btn = document.querySelector(
       `[data-event-id="${LEARN_CHINESE._id}"]`,
     )!;
-    btn.focus();
+    fireEvent.focus(btn);
     fireEvent.keyDown(btn, { key: "ArrowDown", metaKey: true, ctrlKey: true });
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
