@@ -1,7 +1,5 @@
-import type React from "react";
 import { useState } from "react";
 import { toast } from "react-toastify";
-import { Key } from "ts-key-enum";
 import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
 import {
   type DraggableProvided,
@@ -13,6 +11,7 @@ import {
   RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
+import { useAppHotkey } from "@web/common/hooks/useAppHotkey";
 import { computeCurrentEventDateRange } from "@web/common/utils/datetime/web.date.util";
 import { useDraftForm } from "@web/views/Calendar/components/Draft/hooks/state/useDraftForm";
 import { type SidebarDraftContextValue } from "@web/views/Calendar/components/Draft/sidebar/context/SidebarDraftContext";
@@ -68,47 +67,33 @@ export const SomedayEventContainer = ({
 
   const [isFocused, setIsFocused] = useState(false);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    // ENTER opens the edit form
-    if (e.key === Key.Enter) {
-      e.preventDefault();
-      e.stopPropagation();
-      actions.onDraft(event, category);
+  useAppHotkey("Enter", () => actions.onDraft(event, category), {
+    enabled: isFocused,
+  });
+
+  const migrateEvent = (direction: "up" | "down") => {
+    const canMigrate =
+      !event.recurrence?.rule || event.recurrence?.rule.length === 0;
+    if (!canMigrate) {
+      toast.error("Can't migrate recurring events");
       return;
     }
-
-    // META + CTRL + UP/DOWN should migrate the event between Someday lists
-    const isMetaCtrl = e.metaKey && e.ctrlKey;
-    const isArrowUp = e.key === "ArrowUp";
-    const isArrowDown = e.key === "ArrowDown";
-
-    if (isMetaCtrl && (isArrowUp || isArrowDown)) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      // Prevent migrating recurring events
-      const canMigrate =
-        !event.recurrence?.rule || event.recurrence?.rule.length === 0;
-
-      if (!canMigrate) {
-        toast.error("Can't migrate recurring events");
-        return;
-      }
-
-      const duration = isArrowUp ? "week" : "month";
-      const targetCategory = isArrowUp
-        ? Categories_Event.SOMEDAY_WEEK
-        : Categories_Event.SOMEDAY_MONTH;
-
-      const updatedEvent = computeCurrentEventDateRange(
-        { duration },
-        event,
-        weekViewRange,
-      );
-
-      actions.onSubmit(targetCategory, updatedEvent);
-    }
+    const [duration, targetCategory] =
+      direction === "up"
+        ? (["week", Categories_Event.SOMEDAY_WEEK] as const)
+        : (["month", Categories_Event.SOMEDAY_MONTH] as const);
+    void actions.onSubmit(
+      targetCategory,
+      computeCurrentEventDateRange({ duration }, event, weekViewRange),
+    );
   };
+
+  useAppHotkey("Control+Meta+ArrowUp", () => migrateEvent("up"), {
+    enabled: isFocused,
+  });
+  useAppHotkey("Control+Meta+ArrowDown", () => migrateEvent("down"), {
+    enabled: isFocused,
+  });
 
   const isDraftingThisEvent =
     state.isDrafting && state.draft?._id === event._id;
@@ -127,7 +112,6 @@ export const SomedayEventContainer = ({
           actions.onDraft(event, category);
         }}
         onFocus={() => setIsFocused(true)}
-        onKeyDown={handleKeyDown}
         priority={event.priority || Priorities.UNASSIGNED}
         provided={provided}
         snapshot={snapshot}

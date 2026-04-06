@@ -1,4 +1,3 @@
-import type React from "react";
 import {
   type DraggableProvided,
   type DraggableStateSnapshot,
@@ -24,7 +23,6 @@ interface Props {
   onBlur: () => void;
   onClick: () => void;
   onFocus: () => void;
-  onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
   onMigrate: Actions_Sidebar["onMigrate"];
   priority: Priorities;
   provided: DraggableProvided;
@@ -41,7 +39,6 @@ export const SomedayEvent = ({
   onBlur,
   onClick,
   onFocus,
-  onKeyDown,
   onMigrate,
   priority,
   provided,
@@ -62,7 +59,6 @@ export const SomedayEvent = ({
     onBlur,
     onClick,
     onFocus,
-    onKeyDown,
     priority,
     role: "button",
     ref: provided.innerRef,
