@@ -84,7 +84,9 @@ export const pruneSync = async (
         ),
       );
 
-      stopped = results.filter((r) => r !== undefined);
+      stopped = results.filter(
+        (r): r is { channelId: string; resourceId: string } => r !== undefined,
+      );
     } catch (e) {
       if (isInvalidGoogleToken(e as Error)) {
         await userService.deleteCompassDataForUser(user, false);

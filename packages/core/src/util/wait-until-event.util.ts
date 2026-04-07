@@ -16,6 +16,14 @@ export async function waitUntilEvent<
   return new Promise((resolve, reject) => {
     const eventEmitter = emitter as EventEmitter;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const listener = (...payload: any[]) => {
+      afterEvent(...(payload as Payload))
+        .then(resolve)
+        .catch(reject);
+      clearTimeout(timeout);
+    };
+
     const timeout = setTimeout(() => {
       clearTimeout(timeout);
 
@@ -25,13 +33,6 @@ export async function waitUntilEvent<
         new Error(`Operation timed out. Wait for ${String(event)} timed out`),
       );
     }, timeoutMs);
-
-    const listener = (...payload: Payload) => {
-      afterEvent(...payload)
-        .then(resolve)
-        .catch(reject);
-      clearTimeout(timeout);
-    };
 
     eventEmitter.once(event as string, listener);
 

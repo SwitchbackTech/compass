@@ -4,6 +4,8 @@
     "node_modules",
     "**/*.test.ts",
     "**/__mocks__/**/*",
-    "packages/scripts/src/testing/**/*"
+    "**/__tests__/**/*",
+    "packages/scripts/src/testing/**/*",
+    "packages/scripts/src/migrations/**/*"
   ]
 }

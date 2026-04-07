@@ -19,6 +19,12 @@ type BunRuntime = {
 
 const bunRuntime = (globalThis as unknown as { Bun: BunRuntime }).Bun;
 
+/** Subset of root package.json read when preparing the node production bundle. */
+type RootPackageJsonForNodeBuild = Record<string, unknown> & {
+  packageManager?: string;
+  workspaces?: string[];
+};
+
 /**
  * Utilities for building a project
  */
@@ -53,14 +59,23 @@ export const copyNodeConfigsToBuild = async (options: Options_Cli) => {
   }
 
   log.info("Copying package configs to build ...");
-  shell.cp(`${COMPASS_ROOT_DEV}/package.json`, `${NODE_BUILD}/package.json`);
-  shell.cp(`${COMPASS_ROOT_DEV}/bun.lock`, `${NODE_BUILD}/bun.lock`);
 
-  const bunfigPath = `${COMPASS_ROOT_DEV}/bunfig.toml`;
+  // Read and modify root package.json for production build
+  // Only include backend and core workspaces (not web/scripts which aren't deployed)
+  const fs = await import("node:fs");
+  const rootPackageJson = JSON.parse(
+    fs.readFileSync(`${COMPASS_ROOT_DEV}/package.json`, "utf-8"),
+  ) as RootPackageJsonForNodeBuild;
+  rootPackageJson.workspaces = ["packages/backend", "packages/core"];
+  delete rootPackageJson.packageManager;
+  fs.writeFileSync(
+    `${NODE_BUILD}/package.json`,
+    JSON.stringify(rootPackageJson, null, 2),
+  );
 
-  if (fileExists(bunfigPath)) {
-    shell.cp(bunfigPath, `${NODE_BUILD}/bunfig.toml`);
-  }
+  // Don't copy bun.lock - let bun generate a fresh lockfile for the production
+  // subset of workspaces. The root lockfile includes all 4 workspaces which
+  // causes mismatch errors when only 2 are present.
 
   shell.cp(
     `${COMPASS_ROOT_DEV}/packages/backend/package.json`,
@@ -86,7 +101,6 @@ export const installDependencies = () => {
       "bun",
       "install",
       "--production",
-      "--frozen-lockfile",
       "--ignore-scripts",
       "--no-progress",
     ],
