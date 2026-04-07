@@ -53,17 +53,23 @@ export const copyNodeConfigsToBuild = async (options: Options_Cli) => {
   }
 
   log.info("Copying package configs to build ...");
-  shell.cp(`${COMPASS_ROOT_DEV}/package.json`, `${NODE_BUILD}/package.json`);
-  shell.cp(`${COMPASS_ROOT_DEV}/bun.lock`, `${NODE_BUILD}/bun.lock`);
 
-  // Write bunfig.toml with frozenLockfile disabled for production builds
-  const bunfigContent = `[install]
-linker = "isolated"
-frozenLockfile = false
-production = true
-`;
+  // Read and modify root package.json for production build
+  // Only include backend and core workspaces (not web/scripts which aren't deployed)
   const fs = await import("node:fs");
-  fs.writeFileSync(`${NODE_BUILD}/bunfig.toml`, bunfigContent);
+  const rootPackageJson = JSON.parse(
+    fs.readFileSync(`${COMPASS_ROOT_DEV}/package.json`, "utf-8"),
+  );
+  rootPackageJson.workspaces = ["packages/backend", "packages/core"];
+  delete rootPackageJson.packageManager;
+  fs.writeFileSync(
+    `${NODE_BUILD}/package.json`,
+    JSON.stringify(rootPackageJson, null, 2),
+  );
+
+  // Don't copy bun.lock - let bun generate a fresh lockfile for the production
+  // subset of workspaces. The root lockfile includes all 4 workspaces which
+  // causes mismatch errors when only 2 are present.
 
   shell.cp(
     `${COMPASS_ROOT_DEV}/packages/backend/package.json`,
@@ -85,7 +91,13 @@ export const installDependencies = () => {
   log.info("Installing dependencies...");
 
   const result = bunRuntime.spawnSync({
-    cmd: ["bun", "install", "--ignore-scripts", "--no-progress"],
+    cmd: [
+      "bun",
+      "install",
+      "--production",
+      "--ignore-scripts",
+      "--no-progress",
+    ],
     cwd: `${COMPASS_BUILD_DEV}/node`,
     stderr: "inherit",
     stdout: "inherit",

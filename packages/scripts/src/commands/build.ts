@@ -61,9 +61,11 @@ const buildWeb = (options: Options_Cli) => {
   const environment = options.environment as string;
 
   log.info("Compiling web files...");
+  // Use node instead of bun for webpack because terser-webpack-plugin
+  // uses worker_threads options that Bun doesn't support yet
   const result = bunRuntime.spawnSync({
     cmd: [
-      "bun",
+      "node",
       "../../node_modules/webpack-cli/bin/cli.js",
       "--mode=production",
       `--node-env=${environment}`,
