@@ -19,6 +19,12 @@ type BunRuntime = {
 
 const bunRuntime = (globalThis as unknown as { Bun: BunRuntime }).Bun;
 
+/** Subset of root package.json read when preparing the node production bundle. */
+type RootPackageJsonForNodeBuild = Record<string, unknown> & {
+  packageManager?: string;
+  workspaces?: string[];
+};
+
 /**
  * Utilities for building a project
  */
@@ -59,7 +65,7 @@ export const copyNodeConfigsToBuild = async (options: Options_Cli) => {
   const fs = await import("node:fs");
   const rootPackageJson = JSON.parse(
     fs.readFileSync(`${COMPASS_ROOT_DEV}/package.json`, "utf-8"),
-  );
+  ) as RootPackageJsonForNodeBuild;
   rootPackageJson.workspaces = ["packages/backend", "packages/core"];
   delete rootPackageJson.packageManager;
   fs.writeFileSync(
