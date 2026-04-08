@@ -13,6 +13,7 @@ export const CaretInput = ({ onChange }: CaretInputProps) => {
   return (
     <StyledCaretInputContainer>
       <StyledCaretButton
+        aria-label="Increase interval"
         onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
           event.preventDefault();
           event.stopPropagation();
@@ -23,6 +24,7 @@ export const CaretInput = ({ onChange }: CaretInputProps) => {
       </StyledCaretButton>
 
       <StyledCaretButton
+        aria-label="Decrease interval"
         onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
           event.preventDefault();
           event.stopPropagation();
@@ -34,3 +36,4 @@ export const CaretInput = ({ onChange }: CaretInputProps) => {
     </StyledCaretInputContainer>
   );
 };
+

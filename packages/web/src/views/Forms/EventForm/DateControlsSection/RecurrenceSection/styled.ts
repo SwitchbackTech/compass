@@ -177,3 +177,85 @@ export const StyledCaretButton = styled.button`
     box-shadow: 0 0 0 2px ${({ theme }) => theme.color.border.primaryDark};
   }
 `;
+
+export const StyledFreqSelectContainer = styled.div`
+  position: relative;
+  display: inline-block;
+`;
+
+export const StyledFreqSelectTrigger = styled.button<{
+  bgColor: string;
+}>`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: ${({ bgColor }) => bgColor};
+  border: none;
+  border-radius: ${({ theme }) => theme.shape.borderRadius};
+  color: ${({ theme }) => theme.color.text.dark};
+  cursor: pointer;
+  font-size: ${({ theme }) => theme.text.size.m};
+  min-width: 80px;
+  padding: 6px 10px;
+  transition: ${({ theme }) => theme.transition.default};
+
+  &:hover {
+    filter: brightness(95%);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.color.border.primaryDark};
+    outline: none;
+  }
+
+  svg {
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+`;
+
+export const StyledFreqSelectListbox = styled.ul<{
+  bgColor: string;
+}>`
+  background-color: ${({ bgColor }) => bgColor};
+  border-radius: ${({ theme }) => theme.shape.borderRadius};
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 100%;
+  z-index: 10;
+`;
+
+export const StyledFreqSelectOption = styled.li<{
+  bgColor: string;
+  bgBright: string;
+  bgDark: string;
+  isActive: boolean;
+  isSelected: boolean;
+}>`
+  background-color: ${({ isSelected, isActive, bgBright, bgDark }) =>
+    isSelected ? bgBright : isActive ? bgDark : "transparent"};
+  color: ${({ theme }) => theme.color.text.dark};
+  cursor: pointer;
+  font-size: ${({ theme }) => theme.text.size.m};
+  padding: 6px 10px;
+  transition: ${({ theme }) => theme.transition.default};
+
+  &:first-child {
+    border-radius: ${({ theme }) => theme.shape.borderRadius}
+      ${({ theme }) => theme.shape.borderRadius} 0 0;
+  }
+
+  &:last-child {
+    border-radius: 0 0 ${({ theme }) => theme.shape.borderRadius}
+      ${({ theme }) => theme.shape.borderRadius};
+  }
+
+  &:hover {
+    background-color: ${({ bgDark }) => bgDark};
+  }
+`;

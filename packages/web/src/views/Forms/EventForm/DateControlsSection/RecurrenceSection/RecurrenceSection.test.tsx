@@ -7,7 +7,7 @@ import { RecurrenceSection } from "./RecurrenceSection";
 
 const mockSetEvent = jest.fn();
 
-const baseEvent: Schema_Event = {
+const baseEvent = {
   _id: "1",
   title: "Test Event",
   description: "desc",
@@ -17,7 +17,8 @@ const baseEvent: Schema_Event = {
   isSomeday: false,
   user: "user1",
   recurrence: undefined,
-};
+  position: {} as any,
+} as Schema_Event;
 
 describe("RecurrenceSection", () => {
   beforeEach(() => {
@@ -52,7 +53,7 @@ describe("RecurrenceSection", () => {
     const eventWithRecurrence = {
       ...baseEvent,
       recurrence: { rule: ["RRULE:FREQ=WEEKLY;COUNT=5"] },
-    };
+    } as Schema_Event;
     render(
       <RecurrenceSection
         bgColor="#fff"
@@ -67,7 +68,7 @@ describe("RecurrenceSection", () => {
     const eventWithRecurrence = {
       ...baseEvent,
       recurrence: { rule: ["RRULE:FREQ=WEEKLY;COUNT=5"] },
-    };
+    } as Schema_Event;
     render(
       <RecurrenceSection
         bgColor="#fff"
@@ -83,7 +84,7 @@ describe("RecurrenceSection", () => {
     const eventWithRecurrence = {
       ...baseEvent,
       recurrence: { rule: ["RRULE:FREQ=WEEKLY;COUNT=5"] },
-    };
+    } as Schema_Event;
     render(
       <RecurrenceSection
         bgColor="#fff"
@@ -96,7 +97,7 @@ describe("RecurrenceSection", () => {
     expect(everyLabels.length).toBeGreaterThan(0);
     everyLabels.forEach((label) => expect(label).toBeInTheDocument());
     // Find the first caret up button (increase)
-    const upButton = screen.getAllByRole("button")[0];
+    const upButton = screen.getAllByRole("button", { name: /increase interval/i })[0];
     fireEvent.click(upButton);
     expect(mockSetEvent).toHaveBeenCalled();
   });
@@ -105,7 +106,7 @@ describe("RecurrenceSection", () => {
     const eventWithRecurrence = {
       ...baseEvent,
       recurrence: { rule: ["RRULE:FREQ=WEEKLY;COUNT=5"] },
-    };
+    } as Schema_Event;
     render(
       <RecurrenceSection
         bgColor="#fff"
@@ -127,7 +128,7 @@ describe("RecurrenceSection", () => {
     const eventWithRecurrence = {
       ...baseEvent,
       recurrence: { rule: ["RRULE:FREQ=WEEKLY;COUNT=5"] },
-    };
+    } as Schema_Event;
     render(
       <RecurrenceSection
         bgColor="#fff"
@@ -145,7 +146,7 @@ describe("RecurrenceSection", () => {
     const eventWithRecurrence = {
       ...baseEvent,
       recurrence: { rule: ["RRULE:FREQ=MONTHLY;COUNT=2"] },
-    };
+    } as Schema_Event;
 
     render(
       <RecurrenceSection
@@ -157,5 +158,73 @@ describe("RecurrenceSection", () => {
 
     expect(screen.getAllByText("Every").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Ends on:").length).toBeGreaterThan(0);
+  });
+
+  // accessibility / FreqSelect keyboard interactions
+  describe("FreqSelect keyboard interactions", () => {
+    const setupRecurrence = () => {
+      const eventWithRecurrence = {
+        ...baseEvent,
+        recurrence: { rule: ["RRULE:FREQ=WEEKLY"] },
+      } as Schema_Event;
+      render(
+        <RecurrenceSection
+          bgColor="#fff"
+          event={eventWithRecurrence}
+          setEvent={mockSetEvent}
+        />,
+      );
+      return screen.getByRole("combobox", { name: /Recurrence frequency/i });
+    };
+
+    it("opens listbox with Space or Enter or ArrowDown", () => {
+      const trigger = setupRecurrence();
+      expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+
+      fireEvent.keyDown(trigger, { key: " " });
+      expect(screen.getByRole("listbox")).toBeInTheDocument();
+
+      fireEvent.keyDown(screen.getByRole("listbox"), { key: "Escape" });
+      expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+
+      fireEvent.keyDown(trigger, { key: "Enter" });
+      expect(screen.getByRole("listbox")).toBeInTheDocument();
+      
+      fireEvent.keyDown(screen.getByRole("listbox"), { key: "Escape" });
+      
+      fireEvent.keyDown(trigger, { key: "ArrowDown" });
+      expect(screen.getByRole("listbox")).toBeInTheDocument();
+    });
+
+    it("cycles options with arrow keys and selects with Enter/Space", () => {
+      const trigger = setupRecurrence();
+      fireEvent.keyDown(trigger, { key: "Enter" });
+      
+      const listbox = screen.getByRole("listbox");
+      const options = screen.getAllByRole("option");
+      
+      // Focus starts at Week (index 1)
+      fireEvent.keyDown(listbox, { key: "ArrowDown" }); // Move to Month
+      fireEvent.keyDown(listbox, { key: "ArrowDown" }); // Move to Year
+      fireEvent.keyDown(listbox, { key: "ArrowDown" }); // Move to Day (wrap around)
+      
+      fireEvent.keyDown(listbox, { key: "Enter" });
+      
+      expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+      expect(mockSetEvent).toHaveBeenCalled();
+    });
+
+    it("supports typeahead jumps", () => {
+      const trigger = setupRecurrence();
+      fireEvent.keyDown(trigger, { key: "Enter" });
+      
+      const listbox = screen.getByRole("listbox");
+      
+      // Type 'm' to jump to Month
+      fireEvent.keyDown(listbox, { key: "m" });
+      fireEvent.keyDown(listbox, { key: "Enter" });
+      
+      expect(mockSetEvent).toHaveBeenCalled();
+    });
   });
 });
