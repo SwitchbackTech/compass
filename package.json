@@ -24,7 +24,7 @@
     "dev:backend -verbose": "export DEBUG=* && bun run dev:backend",
     "dev:backend": "cd packages/backend && TZ=Etc/UTC bun --env-file=.env.local --watch src/app.ts",
     "dev:update": "git checkout main && git pull && bun install",
-    "dev:web": "cd packages/web && TZ=Etc/UTC bun --env-file=../backend/.env.local ../../node_modules/webpack-cli/bin/cli.js serve --mode=development --node-env=local",
+    "dev:web": "cd packages/web && TZ=Etc/UTC bun --env-file=../backend/.env.local run dev.ts",
     "postinstall": "husky install | chmod ug+x .husky/*",
     "test": "TZ=Etc/UTC bun packages/scripts/src/testing/run.ts",
     "test:e2e": "bunx playwright test",
@@ -33,7 +33,8 @@
     "test:web": "TZ=Etc/UTC bun packages/scripts/src/testing/run.ts web",
     "test:scripts": "TZ=Etc/UTC bun packages/scripts/src/testing/run.ts scripts",
     "type-check": "TZ=Etc/UTC bunx tsc --noEmit",
-    "verify": "TZ=Etc/UTC bun packages/scripts/src/testing/verify.ts"
+    "verify": "TZ=Etc/UTC bun packages/scripts/src/testing/verify.ts",
+    "build:web": "cd packages/web && TZ=Etc/UTC bun --env-file=../backend/.env.local run build.ts"
   },
   "dependencies": {
     "@compass/backend": "*",

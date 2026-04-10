@@ -1,5 +1,5 @@
 import { useState } from "react";
-import CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
+import _CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
 import dayjs from "@core/util/date/dayjs";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
@@ -14,6 +14,12 @@ import {
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+
+// Bun's __toESM(mod, nodeInterop=1) wraps CJS+__esModule modules so .default = whole exports.
+// Unwrap one level to reach the actual component function.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CommandPalette = ((_CommandPalette as any).default ??
+  _CommandPalette) as typeof _CommandPalette;
 
 interface DayCmdPaletteProps {
   onGoToToday?: () => void;
