@@ -9,21 +9,19 @@ const get = (
   tokens: morgan.TokenIndexer<IncomingMessage, ServerResponse<IncomingMessage>>,
   req?: IncomingMessage,
   res?: ServerResponse<IncomingMessage>,
-) => {
-  if (tokens[key] === undefined) return "unknown";
-  if (req && res) {
-    // @ts-expect-error morgan token indexer typing does not preserve the token call signature.
-    if (tokens[key](req, res) === undefined) {
-      return "unknown";
-    }
-    // @ts-expect-error morgan token indexer typing does not preserve the token call signature.
-    const val = tokens[key](req, res) as string;
-    return val;
-  }
-  if (!tokens[key]) {
+): string => {
+  const token = tokens[key];
+  if (token === undefined) {
     return "unknown";
   }
-  return tokens[key];
+  if (req && res) {
+    if (typeof token === "function") {
+      const val = token(req, res);
+      return val === undefined ? "unknown" : String(val);
+    }
+    return String(token);
+  }
+  return "unknown";
 };
 
 const getStatusColor = (status: string): HttpLogColor => {
@@ -49,7 +47,7 @@ export const httpLoggingMiddleware = morgan(function (tokens, req, res) {
   const responseTime =
     get("response-time", tokens, req, res)?.toString() || "unknown";
 
-  const status = get("status", tokens, req, res) as string;
+  const status = get("status", tokens, req, res);
   const statusColor = getStatusColor(status);
 
   return [
