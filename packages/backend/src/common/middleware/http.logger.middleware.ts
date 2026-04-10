@@ -1,6 +1,8 @@
-import chalk from "chalk";
 import { type IncomingMessage, type ServerResponse } from "http";
 import morgan from "morgan";
+import { styleText } from "node:util";
+
+type HttpLogColor = "cyanBright" | "yellow" | "red" | "magentaBright";
 
 const get = (
   key: string,
@@ -10,11 +12,11 @@ const get = (
 ) => {
   if (tokens[key] === undefined) return "unknown";
   if (req && res) {
-    //@ts-ignore
+    // @ts-expect-error morgan token indexer typing does not preserve the token call signature.
     if (tokens[key](req, res) === undefined) {
       return "unknown";
     }
-    //@ts-ignore
+    // @ts-expect-error morgan token indexer typing does not preserve the token call signature.
     const val = tokens[key](req, res) as string;
     return val;
   }
@@ -24,25 +26,23 @@ const get = (
   return tokens[key];
 };
 
-const getStatusColor = (status: string) => {
-  let statusColor: string;
+const getStatusColor = (status: string): HttpLogColor => {
   switch (status[0]) {
     case "1":
     case "2": {
-      return "#BDCFDC";
+      return "cyanBright";
     }
     case "3": {
-      return "#BCB55D";
+      return "yellow";
     }
     case "4":
     case "5": {
-      return "#EE4B2B";
+      return "red";
     }
     default: {
-      return "#F97CFA";
+      return "magentaBright";
     }
   }
-  return statusColor;
 };
 
 export const httpLoggingMiddleware = morgan(function (tokens, req, res) {
@@ -53,10 +53,10 @@ export const httpLoggingMiddleware = morgan(function (tokens, req, res) {
   const statusColor = getStatusColor(status);
 
   return [
-    chalk.hex(statusColor).bold(status),
-    chalk.hex("#F3F2ED").bold(get("method", tokens, req, res)),
-    chalk.hex("#6CD7E9").bold(get("url", tokens, req, res)),
-    chalk.hex("#5A7ED9").bold(responseTime + "ms"),
-    chalk.hex("#fba9fc").bold(get("date", tokens, req, res)),
+    styleText(["bold", statusColor], status),
+    styleText(["bold", "whiteBright"], get("method", tokens, req, res)),
+    styleText(["bold", "cyanBright"], get("url", tokens, req, res)),
+    styleText(["bold", "blueBright"], responseTime + "ms"),
+    styleText(["bold", "magentaBright"], get("date", tokens, req, res)),
   ].join(" ");
 });

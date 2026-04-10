@@ -1,5 +1,5 @@
-import chalk from "chalk";
 import pkg from "inquirer";
+import { styleText } from "node:util";
 import shell from "shelljs";
 import { ALL_PACKAGES, CLI_ENV } from "./cli.constants";
 import { type Environment_Cli } from "./cli.types";
@@ -128,11 +128,11 @@ export const getPckgsTo = async (action: "build") => {
 };
 
 export const log = {
-  info: (msg: string) => console.log(chalk.italic.whiteBright(msg)),
-  error: (msg: string) => console.log(chalk.bold.red(msg)),
-  warning: (msg: string) => console.log(chalk.hex("#FFA500")(msg)),
-  success: (msg: string) => console.log(chalk.green(msg)),
-  tip: (msg: string) => console.log(chalk.hex("#f5c150")(msg)),
+  info: (msg: string) => console.log(styleText(["italic", "whiteBright"], msg)),
+  error: (msg: string) => console.log(styleText(["bold", "red"], msg)),
+  warning: (msg: string) => console.log(styleText("yellow", msg)),
+  success: (msg: string) => console.log(styleText("green", msg)),
+  tip: (msg: string) => console.log(styleText("yellowBright", msg)),
 };
 
 export const _confirm = async (question: string, _default = true) => {
