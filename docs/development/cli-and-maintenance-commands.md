@@ -1,6 +1,6 @@
 # CLI And Maintenance Commands
 
-Compass ships a repo CLI for builds and database maintenance.
+Compass ships a repo CLI for database maintenance and migration flows.
 
 ## Entry Point
 
@@ -40,22 +40,14 @@ Fallback behavior:
 
 ### Build
 
-Examples:
+Builds no longer go through the repo CLI.
+
+Use the top-level Bun scripts instead:
 
 ```bash
-bun run cli build web --environment staging --clientId "test-client-id"
-bun run cli build nodePckgs --environment staging
+BUILD_ENV=staging bun run build:web
+BUILD_ENV=staging bun run build:backend
 ```
-
-Implementation:
-
-- `packages/scripts/src/commands/build.ts`
-
-Use for:
-
-- production-style web builds
-- compiled Node package output
-- Bun-managed production dependency installation in `build/node`
 
 ### Delete
 
@@ -181,13 +173,14 @@ bun run cli migrate executed
 - Prefer reading a command implementation before running it.
 - Treat delete flows as destructive unless proven otherwise.
 - For migration work, inspect existing migration naming and ordering first.
-- For build work, confirm whether you need `web` or `nodePckgs`.
-- `bun run cli` always loads `packages/backend/.env.local` through the root Bun script; build-time environment selection changes which backend env file is copied or loaded by the underlying command.
+- `bun run cli` always loads `packages/backend/.env.local` through the root Bun script.
+- `BUILD_ENV` selects which backend env file the Bun build scripts load or copy.
 
 ## Quick Reference
 
 - General help: `bun run cli --help`
-- Build package outputs: `bun run cli build ...`
+- Build web assets: `bun run build:web`
+- Build backend output: `bun run build:backend`
 - Database migration framework: `bun run cli migrate ...`
 - Seeder framework: `bun run cli seed ...`
 - User-data maintenance: `bun run cli delete ...`

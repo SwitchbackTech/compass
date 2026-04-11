@@ -45,6 +45,7 @@ cp packages/backend/.env.local.example packages/backend/.env.local
 Runtime note:
 
 - `bun run dev:backend`, `bun run dev:web`, and `bun run cli ...` load variables from `packages/backend/.env.local` through Bun's `--env-file`.
+- `bun run build:web` and `bun run build:backend` load `packages/backend/.env.local`, `.env.staging`, or `.env.production` based on `BUILD_ENV`.
 
 ## Backend Environment Contract
 
@@ -82,20 +83,22 @@ Derived backend values:
 - `DB` is not supplied directly; backend derives it from `NODE_ENV`
 - `ORIGINS_ALLOWED` is derived by splitting the comma-separated `CORS` env var
 
-## CLI And Build URL Variables
+## Build URL Variables
 
 Primary files:
 
-- `packages/scripts/src/common/cli.constants.ts`
-- `packages/scripts/src/common/cli.utils.ts`
-- `packages/web/webpack.config.mjs`
+- `packages/scripts/src/common/build-env.ts`
+- `packages/web/build.ts`
+- `packages/web/src/common/constants/env.constants.ts`
 
-Variables used by CLI/build flows:
+Variables used by Bun build and frontend runtime:
 
-- `BASEURL` (used for local CLI operations and injected into the web build as `API_BASEURL`)
-- `FRONTEND_URL` (used by backend auth email flows and CLI domain resolution)
-
-If `FRONTEND_URL` points to localhost, the CLI prompts for a VM/public domain and builds the API URL from that input.
+- `BASEURL` (backend/server-side API base URL)
+- `FRONTEND_URL` (backend auth/email origin)
+- `COMPASS_PUBLIC_API_BASEURL`
+- `COMPASS_PUBLIC_GOOGLE_CLIENT_ID`
+- `COMPASS_PUBLIC_POSTHOG_KEY`
+- `COMPASS_PUBLIC_POSTHOG_HOST`
 
 ## Web Environment Contract
 
@@ -105,19 +108,19 @@ Source:
 
 Important variables:
 
-- `API_BASEURL`
-- `GOOGLE_CLIENT_ID`
+- `COMPASS_PUBLIC_API_BASEURL`
+- `COMPASS_PUBLIC_GOOGLE_CLIENT_ID`
 - `NODE_ENV`
-- `POSTHOG_KEY`
-- `POSTHOG_HOST`
+- `COMPASS_PUBLIC_POSTHOG_KEY`
+- `COMPASS_PUBLIC_POSTHOG_HOST`
 
-`BACKEND_BASEURL` is derived from `API_BASEURL`.
+`BACKEND_BASEURL` is derived from `COMPASS_PUBLIC_API_BASEURL`.
 
-Webpack behavior (`packages/web/webpack.config.mjs`):
+Bun behavior:
 
 - local/staging/production builds load `packages/backend/.env.local`, `.env.staging`, or `.env.production`
-- missing env files are a warning, not a hard failure; values can come from `process.env`
-- test mode skips env-file loading entirely
+- build scripts fail fast if the selected backend env file is missing
+- Bun inlines `process.env.COMPASS_PUBLIC_*` values in the browser bundle
 
 ## Practical Mode Matrix
 

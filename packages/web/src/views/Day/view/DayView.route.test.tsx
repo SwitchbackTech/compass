@@ -45,18 +45,18 @@ const createRouter = () =>
       {
         path: ROOT_ROUTES.DAY,
         lazy: async () =>
-          import(
-            /* webpackChunkName: "day" */ "@web/views/Day/view/DayView"
-          ).then((module) => ({ Component: module.DayView })),
+          import("@web/views/Day/view/DayView").then((module) => ({
+            Component: module.DayView,
+          })),
         children: [
           {
             path: ROOT_ROUTES.DAY_DATE,
             id: ROOT_ROUTES.DAY_DATE,
             loader: loadSpecificDayData,
             lazy: async () =>
-              import(
-                /* webpackChunkName: "date" */ "@web/views/Day/view/DayViewContent"
-              ).then((module) => ({ Component: module.DayViewContent })),
+              import("@web/views/Day/view/DayViewContent").then((module) => ({
+                Component: module.DayViewContent,
+              })),
           },
           {
             index: true,

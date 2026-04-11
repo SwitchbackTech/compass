@@ -23,7 +23,7 @@ jobs:
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.2.18
+          bun-version: 1.3.11
 
       - name: Cache Bun dependencies
         uses: actions/cache@v5
@@ -42,6 +42,6 @@ jobs:
       - name: Run e2e tests
         env:
           TZ: Etc/UTC
-          GOOGLE_CLIENT_ID: test-client-id
-          API_BASEURL: http://localhost:3000/api
+          COMPASS_PUBLIC_GOOGLE_CLIENT_ID: test-client-id
+          COMPASS_PUBLIC_API_BASEURL: http://localhost:3000/api
         run: bun run test:e2e

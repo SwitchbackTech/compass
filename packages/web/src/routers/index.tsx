@@ -19,9 +19,7 @@ const devOnlyRoutes: RouteObject[] = IS_DEV
       {
         path: ROOT_ROUTES.CLEANUP,
         lazy: async () =>
-          import(
-            /* webpackChunkName: "cleanup" */ "@web/views/Cleanup/Cleanup"
-          ).then((module) => ({
+          import("@web/views/Cleanup/Cleanup").then((module) => ({
             Component: module.CleanupView,
           })),
       },
@@ -32,37 +30,33 @@ export const router = createBrowserRouter(
   [
     {
       lazy: async () =>
-        import(/* webpackChunkName: "calendar" */ "@web/views/Root").then(
-          (module) => ({
-            Component: module.RootView,
-          }),
-        ),
+        import("@web/views/Root").then((module) => ({
+          Component: module.RootView,
+        })),
       loader: loadAuthenticated,
       children: [
         {
           path: ROOT_ROUTES.NOW,
           lazy: async () =>
-            import(
-              /* webpackChunkName: "now" */ "@web/views/Now/view/NowView"
-            ).then((module) => ({
+            import("@web/views/Now/view/NowView").then((module) => ({
               Component: module.NowView,
             })),
         },
         {
           path: ROOT_ROUTES.DAY,
           lazy: async () =>
-            import(
-              /* webpackChunkName: "day" */ "@web/views/Day/view/DayView"
-            ).then((module) => ({ Component: module.DayView })),
+            import("@web/views/Day/view/DayView").then((module) => ({
+              Component: module.DayView,
+            })),
           children: [
             {
               path: ROOT_ROUTES.DAY_DATE,
               id: ROOT_ROUTES.DAY_DATE,
               loader: loadSpecificDayData,
               lazy: async () =>
-                import(
-                  /* webpackChunkName: "date" */ "@web/views/Day/view/DayViewContent"
-                ).then((module) => ({ Component: module.DayViewContent })),
+                import("@web/views/Day/view/DayViewContent").then((module) => ({
+                  Component: module.DayViewContent,
+                })),
             },
             {
               index: true,
@@ -73,20 +67,16 @@ export const router = createBrowserRouter(
         {
           path: ROOT_ROUTES.LOGOUT,
           lazy: async () =>
-            import(/* webpackChunkName: "logout" */ "@web/views/Logout").then(
-              (module) => ({
-                Component: module.LogoutView,
-              }),
-            ),
+            import("@web/views/Logout").then((module) => ({
+              Component: module.LogoutView,
+            })),
         },
         {
           path: ROOT_ROUTES.WEEK,
           lazy: async () =>
-            import(/* webpackChunkName: "week" */ "@web/views/Calendar").then(
-              (module) => ({
-                Component: module.CalendarView,
-              }),
-            ),
+            import("@web/views/Calendar").then((module) => ({
+              Component: module.CalendarView,
+            })),
         },
         {
           path: ROOT_ROUTES.ROOT,
@@ -98,11 +88,9 @@ export const router = createBrowserRouter(
     {
       path: "*",
       lazy: async () =>
-        import(/* webpackChunkName: "not-found" */ "@web/views/NotFound").then(
-          (module) => ({
-            Component: module.NotFoundView,
-          }),
-        ),
+        import("@web/views/NotFound").then((module) => ({
+          Component: module.NotFoundView,
+        })),
     },
   ],
   {

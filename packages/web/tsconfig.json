@@ -2,7 +2,7 @@
   /*
   - does not extend root tsconfig, because it'd causing an unnecessary
   dependency with the backend code
-  - webpack handles most TSC compilation details for web
+  - Bun handles module resolution and bundling for the web package
   */
   // "include": ["./src/**/*.tsx", "./src/**/*.ts", "./declaration.d.ts"],
   // "exclude": ["./src/node_modules", "**/*.test.ts"],

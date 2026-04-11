@@ -1,13 +1,13 @@
 import pkg from "inquirer";
+import { existsSync } from "node:fs";
 import { styleText } from "node:util";
-import shell from "shelljs";
-import { ALL_PACKAGES, CLI_ENV } from "./cli.constants";
+import { CLI_ENV } from "./cli.constants";
 import { type Environment_Cli } from "./cli.types";
 
 const { prompt } = pkg;
 
 export const fileExists = (file: string) => {
-  return shell.test("-e", file);
+  return existsSync(file);
 };
 
 export const getApiBaseUrl = async (
@@ -24,28 +24,6 @@ export const getApiBaseUrl = async (
 
   const domain = await getDomainAnswer();
   return `https://${domain}/api`;
-};
-
-export const getClientId = async (environment: Environment_Cli) => {
-  if (environment === "staging") {
-    return process.env["GOOGLE_CLIENT_ID"] as string;
-  }
-
-  if (environment === "production") {
-    const q = `Enter the googleClientId for the production environment:`;
-
-    return prompt([{ type: "input", name: "answer", message: q }])
-      .then((a: { answer: string }) => {
-        log.info(`\tUsing: >>${a.answer}<<`);
-        return a.answer;
-      })
-      .catch((e) => {
-        console.log(e);
-        process.exit(1);
-      });
-  }
-
-  throw Error("Invalid destination");
 };
 
 const getDomainAnswer = async () => {
@@ -102,52 +80,10 @@ export const getListAnswer = async (question: string, choices: string[]) => {
     });
 };
 
-export const getPckgsTo = async (action: "build") => {
-  const q = [
-    {
-      type: "checkbox",
-      name: "packages",
-      message: `What package(s) do you want to ${action}?`,
-      choices: ALL_PACKAGES,
-    },
-  ];
-
-  return prompt(q)
-    .then((a: { packages: string[] }) => {
-      if (a.packages.length > 1) {
-        log.error(`Sorry, you can only ${action} one package at a time`);
-        process.exit(1);
-      }
-
-      return a.packages;
-    })
-    .catch((e) => {
-      console.log(e);
-      process.exit(1);
-    });
-};
-
 export const log = {
   info: (msg: string) => console.log(styleText(["italic", "whiteBright"], msg)),
   error: (msg: string) => console.log(styleText(["bold", "red"], msg)),
   warning: (msg: string) => console.log(styleText("yellow", msg)),
   success: (msg: string) => console.log(styleText("green", msg)),
   tip: (msg: string) => console.log(styleText("yellowBright", msg)),
-};
-
-export const _confirm = async (question: string, _default = true) => {
-  const q = [
-    {
-      type: "confirm",
-      name: "confirm",
-      message: question,
-      default: _default,
-    },
-  ];
-  return prompt(q)
-    .then((a: { confirm: boolean }) => a.confirm)
-    .catch((e) => {
-      console.log(e);
-      process.exit(1);
-    });
 };

@@ -71,8 +71,8 @@ Example: `import { foo } from '@compass/core'` not `import { foo } from '../../.
 
 - Install dependencies: `bun install`
   - Takes ~3.5 minutes. Set timeout to 10+ minutes.
-  - Bun is the primary install/runtime entrypoint. `bun run cli`, `bun run dev:backend`, core tests, and build packaging now execute through Bun directly.
-  - Node 24+ is still required for retained tooling: the web/backend/scripts Jest suites and the production Node build output.
+  - Bun is the primary install/runtime entrypoint. `bun run cli`, `bun run dev:web`, `bun run dev:backend`, core tests, and package builds now execute through Bun directly.
+  - Node 24+ is still required for retained tooling: the web/backend/scripts Jest suites.
 - Copy environment template: `cp packages/backend/.env.local.example packages/backend/.env.local`
 
 ### Development Servers
@@ -106,8 +106,8 @@ Run `bun run test:core`, `bun run test:web`, and `bun run test:backend` after ma
 
 ### Building
 
-- **Web Build**: `bun run cli build web --environment staging --clientId "test-client-id"`
-- **Node Build**: `bun run cli build nodePckgs --environment staging`
+- **Web Build**: `BUILD_ENV=staging bun run build:web`
+- **Backend Build**: `BUILD_ENV=staging bun run build:backend`
 
 ### Linting
 
@@ -127,7 +127,7 @@ This is a Typescript project with a monorepo structure.
 ### Packages Overview
 
 - `@compass/backend` - Express.js REST API with MongoDB, Google Calendar sync, Server-Sent Events (SSE)
-- `@compass/web` - React/TypeScript frontend with Redux, styled-components, webpack bundling
+- `@compass/web` - React/TypeScript frontend with Redux, styled-components, Bun HTML bundling
 - `@compass/core` - Shared utilities, types, and business logic
 - `@compass/scripts` - CLI tools for building, database operations, user management
 
@@ -209,7 +209,7 @@ packages/core/src/
 - **Test failures**: Run `bun run test:core`, `bun run test:web`, `bun run test:backend`, and `bun run test:scripts` individually to narrow the scope of the failure
 - **Backend won't start**: Missing environment variables in `packages/backend/.env.local`, use web-only development (`bun run dev:web`)
 - Environment: Copy from `packages/backend/.env.local.example` to `packages/backend/.env.local` (there is no `.env.example`).
-- Webpack dev server warns about a missing `.env.local` file; this is harmless—it falls back to `process.env`.
+- Bun HTML serving reads frontend public values from the backend env file loaded via `--env-file`.
 - Husky pre-push hook runs `bunx prettier . --write`, which can modify files. Ensure working tree is clean or committed before pushing.
 
 ### Network Limitations
@@ -227,9 +227,11 @@ packages/core/src/
 
 ### Root Level Commands
 
-- `bun run cli [command]` - Access CLI tools for build, seed, delete operations
-- `bun run dev:web` - Start the Bun-wrapped webpack dev server
-- `bun run dev:backend` - Start the backend directly with Bun watch mode (requires full environment)
+- `bun run cli [command]` - Access CLI tools for delete, migrate, and seed operations
+- `bun run dev:web` - Start the Bun HTML dev server
+- `bun run dev:backend` - Start the backend directly with Bun hot reload (requires full environment)
+- `bun run build:web` - Build the web app into `build/web`
+- `bun run build:backend` - Build the backend into `build/backend`
 - `bun run test` - Run all tests (fails in restricted environments)
 - `bun run test:core` - Run core package tests only
 - `bun run test:web` - Run web package tests only

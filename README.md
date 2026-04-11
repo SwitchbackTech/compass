@@ -47,11 +47,11 @@ We're actively working on improvements – check out our [roadmap](https://githu
 
 ## Tech Stack
 
-- **Frontend**: React, Redux, Tailwind CSS, TypeScript, Webpack
-- **Backend**: Node.js, Express, TypeScript, MongoDB
+- **Frontend**: React, Redux, Tailwind CSS, TypeScript, Bun HTML bundling
+- **Backend**: Bun runtime, Express, TypeScript, MongoDB
 - **Integrations**: Google Calendar API, Google OAuth2, Socket.io
 - **Testing**: Bun test (core), retained Jest suites (web/backend/scripts), React Testing Library, Playwright
-- **Other**: Bun is the primary install/runtime/build entrypoint; webpack and Playwright are intentionally retained
+- **Other**: Bun is the primary install/runtime/build entrypoint; Playwright is retained for e2e coverage
 
 ## Getting Started
 
@@ -65,7 +65,7 @@ Want to poke around or self-host?
 
 [Read the technical docs](https://github.com/SwitchbackTech/compass/tree/main/docs): All the info you'd need to get started, including guides on how to install, test, build, deploy, and contribute.
 
-Use Bun for dependency installation and the default repo commands. Bun now runs the CLI, backend dev flow, core tests, and package builds directly. Node.js 24+ is still required for retained tooling such as the web/backend/scripts Jest suites and the production Node build output.
+Use Bun for dependency installation and the default repo commands. Bun now runs the CLI, web/backend dev flows, core tests, and package builds directly. Node.js 24+ is still required for retained tooling such as the web/backend/scripts Jest suites.
 
 ### Development Workflow
 
@@ -75,6 +75,10 @@ bun install
 cp packages/backend/.env.local.example packages/backend/.env.local
 bun run dev:web  # Frontend on http://localhost:9080
 bun run dev:backend # Backend on http://localhost:3000
+
+# Production-style builds
+bun run build:web
+bun run build:backend
 
 # Testing
 bun run test:core && bun run test:web && bun run test:backend

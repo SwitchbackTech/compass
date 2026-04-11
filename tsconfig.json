@@ -1,6 +1,6 @@
 /* Visit https://aka.ms/tsconfig.json to read more about this file */
 {
-  /* Web module excluded because webpack handles packaging */
+  /* Web package uses its own Bun-oriented tsconfig */
   "include": [
     "packages/core/src/**/*.ts",
     "packages/backend/src/**/*.ts",
