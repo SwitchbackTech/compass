@@ -20,7 +20,7 @@ if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === "undefined") {
 // process.env.NODE_ENV and process.env["NODE_ENV"] are both replaced correctly.
 const define: Record<string, string> = {
   "process.env": JSON.stringify({
-    NODE_ENV: "development",
+    NODE_ENV: process.env.NODE_ENV || "development",
     API_BASEURL: process.env.BASEURL ?? "",
     GOOGLE_CLIENT_ID: GOOGLE_CLIENT_ID,
     POSTHOG_KEY: process.env.POSTHOG_KEY || "undefined",

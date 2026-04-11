@@ -24,14 +24,11 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command:
-      "cd packages/web && ../../node_modules/.bin/webpack serve --mode=development --node-env=test",
+    command: "cd packages/web && bun run dev.ts",
     env: {
       NODE_ENV: "test",
-      WEB_IS_DEV: "false",
       GOOGLE_CLIENT_ID: "test-client-id",
       BASEURL: "http://localhost:3000/api",
-      API_PORT: "3000",
       POSTHOG_KEY: "test-posthog-key",
       POSTHOG_HOST: "https://app.posthog.com",
       WEB_PORT: `${TEST_PORT}`,
