@@ -44,5 +44,4 @@ jobs:
           TZ: Etc/UTC
           GOOGLE_CLIENT_ID: test-client-id
           API_BASEURL: http://localhost:3000/api
-          API_PORT: 3000
         run: bun run test:e2e
