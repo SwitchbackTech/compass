@@ -1,7 +1,10 @@
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "node:crypto";
+// eslint-disable-next-line jest/no-mocks-import -- shared static fixture imported directly for grid layout expectations.
 import { mar13To19 } from "@core/__mocks__/v1/events/events.allday.3";
 import { type Schema_Event } from "@core/types/event.types";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
+
+const createId = () => randomUUID();
 
 const assignsRowNumberToEachEvent = (events: Schema_Event[]) => {
   let res = true;
@@ -15,8 +18,14 @@ const assignsRowNumberToEachEvent = (events: Schema_Event[]) => {
   return res;
 };
 
+const hasNumericRow = (
+  event: Schema_Event,
+): event is Schema_Event & { row: number } => {
+  return "row" in event && typeof event.row === "number";
+};
+
 const noEventsOnSameRow = (events: Schema_Event[]) => {
-  const rows = events.map((e) => e.row);
+  const rows = events.filter(hasNumericRow).map((event) => event.row);
   const noDuplicates = new Set(rows).size === rows.length;
   return noDuplicates;
 };
@@ -54,10 +63,10 @@ describe("case: 4 events, year change", () => {
     364 365 366 367 368 369 370 371
     364 365 366 367 368
     */
-    { startDate: "2024-12-29", endDate: "2025-01-05", _id: uuidv4() },
-    { startDate: "2024-12-30", endDate: "2025-01-01", _id: uuidv4() },
-    { startDate: "2025-01-01", endDate: "2025-01-03", _id: uuidv4() },
-    { startDate: "2024-12-29", endDate: "2024-12-30", _id: uuidv4() },
+    { startDate: "2024-12-29", endDate: "2025-01-05", _id: createId() },
+    { startDate: "2024-12-30", endDate: "2025-01-01", _id: createId() },
+    { startDate: "2025-01-01", endDate: "2025-01-03", _id: createId() },
+    { startDate: "2024-12-29", endDate: "2024-12-30", _id: createId() },
   ]);
   it("uses 2 rows", () => {
     expect(rowsCount).toBe(2);
@@ -90,7 +99,7 @@ describe("case: 10 multi-week events with identical times", () => {
     events.push({
       startDate: "2023-12-28",
       endDate: "2024-02-05",
-      _id: uuidv4(),
+      _id: createId(),
     });
   }
   const { rowsCount, allDayEvents } = assignEventsToRow(events);
@@ -124,11 +133,11 @@ describe("case: leap year (2024) + year change", () => {
     <------------->
 */
   const { rowsCount, allDayEvents } = assignEventsToRow([
-    { startDate: "2024-02-27", endDate: "2024-02-29", _id: uuidv4() },
-    { startDate: "2024-02-28", endDate: "2024-02-29", _id: uuidv4() },
-    { startDate: "2024-02-29", endDate: "2024-03-01", _id: uuidv4() },
-    { startDate: "2024-03-01", endDate: "2024-03-02", _id: uuidv4() },
-    { startDate: "2023-12-30", endDate: "2024-03-06", _id: uuidv4() },
+    { startDate: "2024-02-27", endDate: "2024-02-29", _id: createId() },
+    { startDate: "2024-02-28", endDate: "2024-02-29", _id: createId() },
+    { startDate: "2024-02-29", endDate: "2024-03-01", _id: createId() },
+    { startDate: "2024-03-01", endDate: "2024-03-02", _id: createId() },
+    { startDate: "2023-12-30", endDate: "2024-03-06", _id: createId() },
   ]);
   it("uses 3 rows", () => {
     expect(rowsCount).toBe(3);

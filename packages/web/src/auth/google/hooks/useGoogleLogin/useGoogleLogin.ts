@@ -1,5 +1,4 @@
 import { useCallback, useRef, useState } from "react";
-import { v4 as uuidv4 } from "uuid";
 import { useGoogleLogin as useGoogleLoginBase } from "@react-oauth/google";
 import { isGooglePopupClosedError } from "@web/auth/google/util/google.oauth.error.util";
 import { type GoogleAuthConfig } from "../googe.auth.types";
@@ -35,7 +34,7 @@ export const useGoogleLogin = ({
   } | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const antiCsrfToken = useRef(uuidv4()).current;
+  const antiCsrfToken = useRef(crypto.randomUUID()).current;
 
   const login = useGoogleLoginBase({
     flow: "auth-code",
@@ -53,7 +52,7 @@ export const useGoogleLogin = ({
       console.error(nonOAuthError);
       onError?.(nonOAuthError);
     },
-    onSuccess: async ({ code, scope, state }) => {
+    onSuccess({ code, scope, state }) {
       const isFromHacker = state !== antiCsrfToken;
       if (isFromHacker) {
         alert("Nice try, hacker");
@@ -65,25 +64,28 @@ export const useGoogleLogin = ({
         return;
       }
 
-      try {
-        await onSuccess?.({
-          thirdPartyId: "google",
-          clientType: "web",
-          shouldTryLinkingWithSessionUser,
-          redirectURIInfo: {
-            redirectURIOnProviderDashboard: window.location.origin,
-            redirectURIQueryParams: { code, state, scope },
-          },
-        });
+      const loginResult = onSuccess?.({
+        thirdPartyId: "google",
+        clientType: "web",
+        shouldTryLinkingWithSessionUser,
+        redirectURIInfo: {
+          redirectURIOnProviderDashboard: window.location.origin,
+          redirectURIQueryParams: { code, state, scope },
+        },
+      });
 
-        setData({ code, scope, state });
-      } catch (e) {
-        console.error(e);
-        alert("Login failed. Please try again.");
-        onError?.(e);
-      } finally {
-        setLoading(false);
-      }
+      void (loginResult ?? Promise.resolve())
+        .then(() => {
+          setData({ code, scope, state });
+        })
+        .catch((e) => {
+          console.error(e);
+          alert("Login failed. Please try again.");
+          onError?.(e);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     },
     onError: (error) => {
       setLoading(false);
@@ -100,7 +102,7 @@ export const useGoogleLogin = ({
   });
 
   return {
-    login: useCallback(async () => {
+    login: useCallback(() => {
       onStart?.();
       setData(null);
       setLoading(true);

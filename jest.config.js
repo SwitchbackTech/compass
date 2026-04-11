@@ -71,7 +71,6 @@ const webProject = {
     "^.+\\.(css|less)$":
       "<rootDir>/packages/web/src/__tests__/__mocks__/css.stub.js",
     "\\.(svg)$": "<rootDir>/packages/web/src/__tests__/__mocks__/svg.stub.js",
-    "^uuid$": "uuid",
   },
   setupFiles: [
     "<rootDir>/packages/core/src/__tests__/core.test.init.ts",
