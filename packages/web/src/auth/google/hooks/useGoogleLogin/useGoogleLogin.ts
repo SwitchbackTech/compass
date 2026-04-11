@@ -74,7 +74,7 @@ export const useGoogleLogin = ({
         },
       });
 
-      void loginResult
+      void (loginResult ?? Promise.resolve())
         .then(() => {
           setData({ code, scope, state });
         })
