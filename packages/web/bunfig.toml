@@ -1,0 +1,3 @@
+[serve.static]
+env = "inline"
+plugins = ["bun-plugin-tailwind"]
