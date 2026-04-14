@@ -1,9 +1,7 @@
 import { Command } from "commander";
 import { CliValidator } from "@scripts/cli.validator";
-import { runBuild } from "@scripts/commands/build";
 import { startDeleteFlow } from "@scripts/commands/delete/delete";
 import { runMigrator } from "@scripts/commands/migrate";
-import { ALL_PACKAGES, ENVIRONMENT } from "@scripts/common/cli.constants";
 import { MigratorType } from "@scripts/common/cli.types";
 
 export default class CompassCLI {
@@ -21,11 +19,6 @@ export default class CompassCLI {
     const cmd = this.program.args[0];
 
     switch (true) {
-      case cmd === "build": {
-        await this.validator.validateBuild(options);
-        await runBuild(options);
-        break;
-      }
       case cmd === "delete": {
         const { force, user } = options;
         this.validator.validateDelete(options);
@@ -49,22 +42,6 @@ export default class CompassCLI {
 
   private _createProgram(): Command {
     const program = new Command();
-
-    program
-      .command("build")
-      .description("build compass package")
-      .argument(
-        `[${ALL_PACKAGES.join(" | ")}]`,
-        "package to build (only provide 1)",
-      )
-      .option(
-        "-c, --clientId <clientId>",
-        "google client id to inject into build",
-      )
-      .option(
-        `-e, --environment [local | ${ENVIRONMENT.STAG} | ${ENVIRONMENT.PROD}]`,
-        "specify environment",
-      );
 
     program
       .command("delete")

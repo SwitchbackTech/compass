@@ -24,25 +24,27 @@ For staging or production:
 Build command:
 
 ```bash
-bun run cli build web --environment staging --clientId "test-client-id"
+bun run build:web
 ```
 
-Webpack outputs static assets to `build/web`. Serve those assets from any static host or reverse proxy setup that can serve the app and `version.json`.
+Bun bundles static assets to `build/web`. Serve those assets from any static host or reverse proxy setup that can serve the app and `version.json`.
 
 ## Backend (API)
 
 Build command:
 
 ```bash
-bun run cli build nodePckgs --environment staging
+bun run build:backend --environment staging
 ```
 
-Node build output lands in `build/node` and includes a copied `.env` file for the selected environment when that file exists.
+The backend build uses `Bun.build()` to produce a single bundled file at `build/backend/app.js`,
+alongside a `.env` file copied from the selected environment and a minimal `node_modules/`
+containing only the required native modules (`saslprep`, `@ngrok/ngrok`).
 
 Runtime entrypoint:
 
 ```bash
-node build/node/packages/backend/src/app.js
+bun build/backend/app.js
 ```
 
 Deployment notes:

@@ -1,14 +1,11 @@
 import { type Command } from "commander";
-import { ALL_PACKAGES } from "./common/cli.constants";
 import {
   type Options_Cli,
-  type Options_Cli_Build,
   type Options_Cli_Delete,
-  Schema_Options_Cli_Build,
   Schema_Options_Cli_Delete,
   Schema_Options_Cli_Root,
 } from "./common/cli.types";
-import { getPckgsTo, log } from "./common/cli.utils";
+import { log } from "./common/cli.utils";
 
 export class CliValidator {
   private program: Command;
@@ -17,10 +14,7 @@ export class CliValidator {
     this.program = program;
   }
 
-  public exitHelpfully(
-    cmd: "root" | "build" | "delete" | "seed",
-    msg?: string,
-  ) {
+  public exitHelpfully(cmd: "root" | "delete" | "seed", msg?: string) {
     msg && log.error(msg);
 
     if (cmd === "root") {
@@ -42,22 +36,6 @@ export class CliValidator {
     return validOptions;
   }
 
-  public async validateBuild(options: Options_Cli) {
-    if (!options.packages) {
-      options.packages = await getPckgsTo("build");
-    }
-
-    const unsupportedPackages = options.packages.filter(
-      (pkg) => !ALL_PACKAGES.includes(pkg),
-    );
-    if (unsupportedPackages.length > 0) {
-      this.exitHelpfully(
-        "build",
-        `One or more of these packages isn't supported: ${unsupportedPackages.toString()}`,
-      );
-    }
-  }
-
   public validateDelete(options: Options_Cli) {
     const { user } = options;
     if (!user || typeof user !== "string") {
@@ -70,35 +48,6 @@ export class CliValidator {
     if (!user || typeof user !== "string") {
       this.exitHelpfully("seed", "You must supply a user");
     }
-  }
-
-  private _getBuildOptions() {
-    const buildOpts: Options_Cli_Build = {};
-
-    const buildCmd = this.program.commands.find(
-      (cmd) => cmd.name() === "build",
-    );
-    if (buildCmd) {
-      const packages = this.program.args[1]?.split(",");
-      if (packages) {
-        buildOpts.packages = packages;
-      }
-
-      const environment = buildCmd?.opts()[
-        "environment"
-      ] as Options_Cli_Build["environment"];
-      if (environment) {
-        buildOpts.environment = environment;
-      }
-
-      const clientId = buildCmd?.opts()[
-        "clientId"
-      ] as Options_Cli_Build["clientId"];
-      if (clientId) {
-        buildOpts.clientId = clientId;
-      }
-    }
-    return buildOpts;
   }
 
   private _getDeleteOptions() {
@@ -141,14 +90,6 @@ export class CliValidator {
       ..._options,
     };
 
-    const buildOptions = this._getBuildOptions();
-    if (Object.keys(buildOptions).length > 0) {
-      options = {
-        ...options,
-        ...buildOptions,
-      };
-    }
-
     const deleteOptions = this._getDeleteOptions();
     if (Object.keys(deleteOptions).length > 0) {
       options = {
@@ -178,15 +119,6 @@ export class CliValidator {
       );
     }
 
-    const { data: buildData, error: buildError } =
-      Schema_Options_Cli_Build.safeParse(options);
-    if (buildError) {
-      this.exitHelpfully(
-        "build",
-        `Invalid build options: ${buildError.toString()}`,
-      );
-    }
-
     const { data: deleteData, error: deleteError } =
       Schema_Options_Cli_Delete.safeParse(options);
     if (deleteError) {
@@ -196,7 +128,7 @@ export class CliValidator {
       );
     }
 
-    const data: Options_Cli = { ...rootData, ...buildData, ...deleteData };
+    const data: Options_Cli = { ...rootData, ...deleteData };
     return data;
   }
 }

@@ -1,7 +1,5 @@
 import CompassCLI from "@scripts/cli";
-import { runBuild } from "@scripts/commands/build";
 import { startDeleteFlow } from "@scripts/commands/delete/delete";
-import { NodeEnv } from "../../core/src/constants/core.constants";
 import { MigratorType } from "./common/cli.types";
 
 // Mock 'open' module to avoid ESM compatibility issues in Jest
@@ -12,7 +10,6 @@ jest.mock("open", () => ({
 }));
 
 const mockGetCliOptions = jest.fn();
-const mockValidateBuild = jest.fn();
 const mockValidateDelete = jest.fn();
 const mockExitHelpfully = jest.fn();
 const mockRunMigrator = jest.fn((): Promise<void> => Promise.resolve());
@@ -21,25 +18,11 @@ jest.mock("@scripts/cli.validator", () => {
   return {
     CliValidator: jest.fn().mockImplementation(() => ({
       getCliOptions: mockGetCliOptions,
-      validateBuild: mockValidateBuild,
       validateDelete: mockValidateDelete,
       exitHelpfully: mockExitHelpfully,
     })),
   };
 });
-
-jest.mock("@scripts/commands/build.util", () => ({
-  __esModule: true,
-  copyNodeConfigsToBuild: jest.fn(),
-  createNodeDirs: jest.fn(),
-  installDependencies: jest.fn(),
-  removeOldBuildFor: jest.fn(),
-}));
-
-jest.mock("@scripts/commands/build", () => ({
-  __esModule: true,
-  runBuild: jest.fn(),
-}));
 
 jest.mock("@scripts/commands/delete/delete", () => ({
   __esModule: true,
@@ -53,24 +36,6 @@ jest.mock("@scripts/commands/migrate", () => ({
 
 describe("CompassCLI", () => {
   beforeEach(() => jest.clearAllMocks());
-
-  it("runs build command and calls validateBuild and runBuild", async () => {
-    mockGetCliOptions.mockReturnValue({ force: false, user: undefined });
-
-    const cli = new CompassCLI([
-      "node",
-      "cli",
-      "build",
-      "nodePckgs",
-      "-e",
-      NodeEnv.Staging,
-    ]);
-
-    await cli.run();
-
-    expect(mockValidateBuild).toHaveBeenCalled();
-    expect(runBuild).toHaveBeenCalled();
-  });
 
   it("runs delete command and calls validateDelete and startDeleteFlow", async () => {
     mockGetCliOptions.mockReturnValue({
