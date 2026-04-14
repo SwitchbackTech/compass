@@ -19,6 +19,7 @@ credentials.txt
 ########
 # root
 .claude/
+.codex/
 .idea/
 .mcp.json
 .vscode/
