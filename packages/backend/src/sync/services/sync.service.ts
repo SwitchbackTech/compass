@@ -59,6 +59,8 @@ import userMetadataService from "@backend/user/services/user-metadata.service";
 
 const logger = Logger("app:sync.service");
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 class SyncService {
   private activeFullSyncRestarts = new Set<string>();
 
@@ -277,25 +279,30 @@ class SyncService {
     try {
       const syncImport = await createSyncImport(gcal);
 
-      const eventImports = await Promise.all(
-        gCalendarIds.map(async (gCalId) => {
-          const { nextSyncToken, ...result } = await syncImport.importAllEvents(
-            userId,
-            gCalId,
-            2500,
-          );
+      // Process calendars sequentially to avoid rate limiting
+      const eventImports = [];
+      for (const gCalId of gCalendarIds) {
+        const { nextSyncToken, ...result } = await syncImport.importAllEvents(
+          userId,
+          gCalId,
+          2500,
+        );
 
-          await updateSync(
-            Resource_Sync.EVENTS,
-            userId,
-            gCalId,
-            { nextSyncToken },
-            session,
-          );
+        await updateSync(
+          Resource_Sync.EVENTS,
+          userId,
+          gCalId,
+          { nextSyncToken },
+          session,
+        );
 
-          return { gCalId, ...result };
-        }),
-      );
+        eventImports.push({ gCalId, ...result });
+
+        // Delay between calendars to stay under rate limits
+        if (gCalendarIds.indexOf(gCalId) < gCalendarIds.length - 1) {
+          await sleep(1000); // 1 second between calendars
+        }
+      }
 
       await session.commitTransaction();
 
