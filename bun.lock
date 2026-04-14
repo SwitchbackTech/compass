@@ -184,7 +184,6 @@
         "prettier": "^3.5.1",
         "prettier-plugin-tailwindcss": "^0.7.0",
         "tailwindcss": "^4.1.14",
-        "ts-key-enum": "^2.0.12",
         "typescript": "^5.1.6",
         "typescript-plugin-css-modules": "^5.0.1",
       },
@@ -2455,8 +2454,6 @@
     "triple-beam": ["triple-beam@1.4.1", "", {}, "sha512-aZbgViZrg1QNcG+LULa7nhZpJTZSLm/mXnHXnbAbjmN5aSa0y7V+wvv6+4WaBtpISJzThKy+PIPxc1Nq1EJ9mg=="],
 
     "ts-api-utils": ["ts-api-utils@2.5.0", "", { "peerDependencies": { "typescript": ">=4.8.4" } }, "sha512-OJ/ibxhPlqrMM0UiNHJ/0CKQkoKF243/AEmplt3qpRgkW8VG7IfOS41h7V8TjITqdByHzrjcS/2si+y4lIh8NA=="],
-
-    "ts-key-enum": ["ts-key-enum@2.0.13", "", {}, "sha512-zixs6j8+NhzazLUQ1SiFrlo1EFWG/DbqLuUGcWWZ5zhwjRT7kbi1hBlofxdqel+h28zrby2It5TrOyKp04kvqw=="],
 
     "tsconfig-paths": ["tsconfig-paths@4.2.0", "", { "dependencies": { "json5": "^2.2.2", "minimist": "^1.2.6", "strip-bom": "^3.0.0" } }, "sha512-NoZ4roiN7LnbKn9QqE1amc9DJfzvZXxF4xDavcOWt1BPkdx+m+0gJuPM+S0vCe7zTJMYUP0R8pO2XMr+Y8oLIg=="],
 

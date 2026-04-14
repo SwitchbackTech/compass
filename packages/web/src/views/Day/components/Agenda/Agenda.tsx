@@ -1,7 +1,6 @@
 import classNames from "classnames";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BehaviorSubject, distinctUntilChanged } from "rxjs";
-import { Key } from "ts-key-enum";
 import { distinctUntilArrayItemChanged } from "@ngneat/elf";
 import {
   UIEntitiesRef,
@@ -66,7 +65,7 @@ export function Agenda() {
   });
 
   const onEnterKey = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === Key.Enter) {
+    if (e.key === "Enter") {
       e.preventDefault();
       e.stopPropagation();
       timedEventsGridRef.current?.click();

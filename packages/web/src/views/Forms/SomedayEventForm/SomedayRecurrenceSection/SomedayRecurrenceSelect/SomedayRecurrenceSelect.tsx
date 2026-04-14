@@ -7,7 +7,6 @@ import ReactSelect, {
 import { components } from "react-select";
 import { Frequency } from "rrule";
 import { useTheme } from "styled-components";
-import { Key } from "ts-key-enum";
 import { brighten, darken } from "@core/util/color.utils";
 import { theme } from "@web/common/styles/theme";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
@@ -68,7 +67,7 @@ export const SomedayRecurrenceSelect = ({
   }, [menuIsOpen]);
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === Key.Escape) {
+    if (event.key === "Escape") {
       event.preventDefault();
       event.stopPropagation();
       onCancel?.();

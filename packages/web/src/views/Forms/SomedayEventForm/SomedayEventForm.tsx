@@ -1,7 +1,6 @@
 import { type KeyboardEvent, type MouseEvent } from "react";
 import type React from "react";
 import { useCallback, useRef } from "react";
-import { Key } from "ts-key-enum";
 import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { darken } from "@core/util/color.utils";
@@ -42,11 +41,11 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   const origRecurrence = useRef(event?.recurrence).current;
 
   const ignoreDelete = (e: KeyboardEvent) => {
-    if (e.key === Key.Backspace) {
+    if (e.key === "Backspace") {
       e.stopPropagation();
     }
 
-    if (e.key !== Key.Enter || e.defaultPrevented) {
+    if (e.key !== "Enter" || e.defaultPrevented) {
       return;
     }
 
@@ -112,12 +111,12 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   }, [onDeleteEvent, onClose]);
 
   const onKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
-    if (e.key === Key.Backspace) {
+    if (e.key === "Backspace") {
       e.stopPropagation();
       return;
     }
 
-    if (e.defaultPrevented || e.key !== Key.Delete) {
+    if (e.defaultPrevented || e.key !== "Delete") {
       return;
     }
 

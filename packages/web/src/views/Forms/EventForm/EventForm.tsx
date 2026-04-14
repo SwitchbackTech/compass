@@ -2,7 +2,6 @@ import fastDeepEqual from "fast-deep-equal/react";
 import { type KeyboardEvent } from "react";
 import type React from "react";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { Key } from "ts-key-enum";
 import { Priorities } from "@core/constants/core.constants";
 import { darken } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
@@ -63,7 +62,6 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       label: "1 AM",
       value: "01:00 AM",
     });
-    const [_isShiftKeyPressed, setIsShiftKeyPressed] = useState(false);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
     const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
@@ -76,36 +74,6 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     const [displayEndDate, setDisplayEndDate] = useState(selectedStartDate);
 
     const descriptionRef = useRef<HTMLTextAreaElement>(null);
-
-    /*********
-     * Effects
-     *********/
-
-    const keyDownHandler = useCallback(
-      (e: globalThis.KeyboardEvent) => {
-        if (e.key === Key.Shift) {
-          setIsShiftKeyPressed(true);
-        }
-      },
-      [_onClose],
-    );
-
-    const keyUpHandler = useCallback((e: globalThis.KeyboardEvent) => {
-      if (e.key === Key.Shift) {
-        setIsShiftKeyPressed(false);
-      }
-    }, []);
-
-    useEffect(() => {
-      window.addEventListener("keydown", keyDownHandler);
-      window.addEventListener("keyup", keyUpHandler);
-
-      return () => {
-        window.removeEventListener("keydown", keyDownHandler);
-        window.removeEventListener("keyup", keyUpHandler);
-      };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
 
     useEffect(() => {
       setEvent(event || {});
@@ -151,7 +119,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       // Ignores certain keys and key combinations to prevent default behavior.
       // Allows some of them to be used as hotkeys
 
-      if (e.key === Key.Backspace) {
+      if (e.key === "Backspace") {
         e.stopPropagation();
       }
 
@@ -163,7 +131,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         e.preventDefault();
       }
 
-      if ((e.metaKey || e.ctrlKey) && e.key === Key.Enter) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
         e.preventDefault();
         onSubmitForm();
       }
