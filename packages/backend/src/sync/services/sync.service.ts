@@ -49,6 +49,7 @@ import {
   updateSync,
 } from "@backend/sync/util/sync.queries";
 import {
+  createConcurrencyLimiter,
   getChannelExpiration,
   isMissingGoogleRefreshToken,
   isUsingHttps,
@@ -419,9 +420,7 @@ class SyncService {
       users.push(user._id);
     }
 
-    const { default: pLimit } = await import("p-limit"); // esm module support
-    // Limit concurrency to avoid resource exhaustion and API rate limits
-    const limit = pLimit(5); // Adjust concurrency as needed
+    const limit = createConcurrencyLimiter(5);
 
     const run = await Promise.all(
       users.map((user) =>
