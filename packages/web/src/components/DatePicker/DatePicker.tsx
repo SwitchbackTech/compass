@@ -1,7 +1,8 @@
 import classNames from "classnames";
 import type React from "react";
 import { useEffect, useRef } from "react";
-import ReactDatePicker, { type ReactDatePickerProps } from "react-datepicker";
+import * as ReactDatePickerModule from "react-datepicker";
+import { type ReactDatePickerProps } from "react-datepicker";
 import { darken, isDark } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
@@ -34,6 +35,12 @@ export interface Props extends ReactDatePickerProps {
 export interface CalendarRef extends HTMLDivElement {
   input: HTMLInputElement;
 }
+
+const ReactDatePicker = (
+  typeof ReactDatePickerModule.default === "function"
+    ? ReactDatePickerModule.default
+    : ReactDatePickerModule.default.default
+) as React.ComponentType<ReactDatePickerProps>;
 
 export const DatePicker: React.FC<Props> = (datePickerProps) => {
   const {
