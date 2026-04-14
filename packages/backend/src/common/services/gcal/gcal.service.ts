@@ -1,5 +1,6 @@
 import type { GaxiosResponse } from "gaxios";
 import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
+import { Logger } from "@core/logger/winston.logger";
 import type {
   gCalendar,
   gParamsEventsList,
@@ -15,8 +16,13 @@ import { IDSchemaV4 } from "@core/types/type.utils";
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
+import { isGoogleRepairQuotaError } from "@backend/common/services/gcal/gcal.utils";
 import { getBaseURL } from "@backend/servers/ngrok/ngrok.utils";
 import { encodeChannelToken } from "@backend/sync/util/watch.util";
+
+const logger = Logger("app:gcal.service");
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 class GCalService {
   private validateGCalResponse<T>(
@@ -87,9 +93,28 @@ class GCalService {
   }
 
   async getEvents(gcal: gCalendar, params: gParamsEventsList) {
-    const response = await gcal.events.list(params);
+    const maxRetries = 5;
+    let delay = 1000; // Start with 1 second
 
-    return this.validateGCalResponse(response);
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await gcal.events.list(params);
+        return this.validateGCalResponse(response);
+      } catch (e) {
+        if (isGoogleRepairQuotaError(e) && attempt < maxRetries) {
+          logger.warn(
+            `Rate limited on calendar ${params.calendarId}, waiting ${delay}ms before retry ${attempt + 1}/${maxRetries}`,
+          );
+          await sleep(delay);
+          delay *= 2; // Exponential backoff: 1s, 2s, 4s, 8s, 16s
+          continue;
+        }
+        throw e;
+      }
+    }
+
+    // This should never be reached due to the throw in catch, but TypeScript needs it
+    throw error(GcalError.Unsure, "Failed to fetch events after max retries");
   }
 
   async *getBaseRecurringEventInstances({
@@ -137,6 +162,11 @@ class GCalService {
         typeof nextPageToken === "string" && nextPageToken.length > 0;
 
       yield { nextPageToken, nextSyncToken, items };
+
+      // Rate limiting delay between pages to avoid hitting Google's 600 queries/min limit
+      if (hasNextPage) {
+        await sleep(200); // 200ms between pages = max 300 pages/min
+      }
     } while (hasNextPage);
   }
 
@@ -187,6 +217,11 @@ class GCalService {
         typeof nextSyncToken === "string" && nextSyncToken.length > 0;
 
       yield { nextPageToken, nextSyncToken, items };
+
+      // Rate limiting delay between pages to avoid hitting Google's 600 queries/min limit
+      if (hasNextPage) {
+        await sleep(200); // 200ms between pages = max 300 pages/min
+      }
     } while (hasNextPage || !isLastPage);
   }
 

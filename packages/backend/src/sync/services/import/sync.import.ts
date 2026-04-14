@@ -39,6 +39,8 @@ import { isUsingHttps } from "@backend/sync/util/sync.util";
 
 const logger = Logger("app:sync.import");
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export type WithCompassObjectId<T> = Omit<T, "_id"> & { _id: ObjectId };
 
 export type RecurrenceWithObjectId =
@@ -342,24 +344,34 @@ export class SyncImport {
       nextSyncToken,
       nextPageToken,
     } of gCalResponse) {
-      await Promise.allSettled(
-        items.map(async (baseEvent) => {
-          const instanceStats = await this.importEventInstances(
-            userId,
-            calendarId,
-            baseEvent,
-            perPage,
-            session,
-          );
+      // Process events in batches to avoid rate limiting
+      const batchSize = 10;
+      for (let i = 0; i < items.length; i += batchSize) {
+        const batch = items.slice(i, i + batchSize);
+        await Promise.allSettled(
+          batch.map(async (baseEvent) => {
+            const instanceStats = await this.importEventInstances(
+              userId,
+              calendarId,
+              baseEvent,
+              perPage,
+              session,
+            );
 
-          const totalBaseEventsSaved =
-            instanceStats.totalSaved - instanceStats.totalInstancesSaved;
+            const totalBaseEventsSaved =
+              instanceStats.totalSaved - instanceStats.totalInstancesSaved;
 
-          stats.totalChanged += instanceStats.totalSaved;
-          stats.totalProcessed += instanceStats.totalProcessed;
-          stats.totalBaseEventsChanged += totalBaseEventsSaved;
-        }),
-      );
+            stats.totalChanged += instanceStats.totalSaved;
+            stats.totalProcessed += instanceStats.totalProcessed;
+            stats.totalBaseEventsChanged += totalBaseEventsSaved;
+          }),
+        );
+
+        // Small delay between batches to stay under rate limits
+        if (i + batchSize < items.length) {
+          await sleep(100);
+        }
+      }
 
       await updateSync(
         Resource_Sync.EVENTS,
