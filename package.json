@@ -34,6 +34,7 @@
     "test:scripts": "TZ=Etc/UTC bun packages/scripts/src/testing/run.ts scripts",
     "type-check": "TZ=Etc/UTC bunx tsc --noEmit",
     "verify": "TZ=Etc/UTC bun packages/scripts/src/testing/verify.ts",
+    "build:backend": "TZ=Etc/UTC bun packages/scripts/src/commands/build.backend.ts",
     "build:web": "cd packages/web && TZ=Etc/UTC bun --env-file=../backend/.env.local run build.ts"
   },
   "dependencies": {
