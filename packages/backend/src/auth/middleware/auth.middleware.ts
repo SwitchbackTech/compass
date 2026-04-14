@@ -1,12 +1,12 @@
-import { type NextFunction, type Request, type Response } from "express";
-import { COMPASS_RESOURCE_HEADER } from "@core/constants/core.constants";
-import { Status } from "@core/errors/status.codes";
 import { ENV, IS_DEV } from "@backend/common/constants/env.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { hasGoogleHeaders } from "@backend/sync/util/sync.util";
 import { decodeChannelToken } from "@backend/sync/util/watch.util";
+import { COMPASS_RESOURCE_HEADER } from "@core/constants/core.constants";
+import { Status } from "@core/errors/status.codes";
+import { type NextFunction, type Request, type Response } from "express";
 
 class AuthMiddleware {
   verifyIsDev = (_req: Request, res: Response, next: NextFunction) => {

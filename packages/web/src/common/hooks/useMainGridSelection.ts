@@ -1,14 +1,3 @@
-import { ObjectId } from "bson";
-import { useEffect } from "react";
-import {
-  BehaviorSubject,
-  combineLatest,
-  distinctUntilChanged,
-  filter,
-  map,
-  shareReplay,
-  skip,
-} from "rxjs";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { cursor$, pointerState$ } from "@web/common/context/pointer-position";
 import { isDraggingEvent$ } from "@web/common/hooks/useIsDraggingEvent";
@@ -21,6 +10,17 @@ import {
   selectionStart$,
 } from "@web/common/utils/dom/event-emitter.util";
 import { SLOT_HEIGHT } from "@web/views/Day/constants/day.constants";
+import { ObjectId } from "bson";
+import { useEffect } from "react";
+import {
+  BehaviorSubject,
+  combineLatest,
+  distinctUntilChanged,
+  filter,
+  map,
+  shareReplay,
+  skip,
+} from "rxjs";
 
 const selection$ = combineLatest([
   pointerState$,

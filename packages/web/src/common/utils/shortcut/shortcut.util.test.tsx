@@ -3,11 +3,11 @@ import { screen } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { mockNavigatorPlatform } from "@web/__tests__/utils/navigator.test.util";
 import {
-  ShortCutLabel,
   expandModInShortcutDisplay,
   getMetaKeyIcon,
   getModifierKeyIcon,
   getModifierKeyTestId,
+  ShortCutLabel,
 } from "@web/common/utils/shortcut/shortcut.util";
 
 describe("shortcut.util", () => {

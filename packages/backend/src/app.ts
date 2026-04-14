@@ -1,12 +1,12 @@
 // sort-imports-ignore
-import { logger } from "./init"; //must be first import
 
+import { createServer, type Server } from "node:http";
 import { ENV } from "@backend/common/constants/env.constants";
 import mongoService from "@backend/common/services/mongo.service";
 import { initExpressServer } from "@backend/servers/express/express.server";
 import { initNgrokServer } from "@backend/servers/ngrok/ngrok.server";
 import { type Listener } from "@ngrok/ngrok";
-import { createServer, type Server } from "node:http";
+import { logger } from "./init"; //must be first import
 
 const app = initExpressServer();
 const httpServer: Server = createServer(app);

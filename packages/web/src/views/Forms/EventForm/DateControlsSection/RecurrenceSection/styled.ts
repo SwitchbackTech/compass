@@ -1,6 +1,6 @@
-import styled from "styled-components";
 import { darken } from "@core/util/color.utils";
 import { Flex } from "@web/components/Flex";
+import styled from "styled-components";
 
 export const StyledRepeatContainer = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.xs};

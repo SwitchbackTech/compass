@@ -3,7 +3,7 @@ import { ENV } from "../constants/env.constants";
 
 const corsWhitelist = cors({
   credentials: true,
-  origin: function (origin, callback) {
+  origin: (origin, callback) => {
     if (!origin) return callback(null, true);
 
     if (ENV.ORIGINS_ALLOWED.indexOf(origin) === -1) {

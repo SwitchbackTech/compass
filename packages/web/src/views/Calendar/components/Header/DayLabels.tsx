@@ -1,9 +1,9 @@
-import { type FC } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import { getWeekDayLabel } from "@web/common/utils/event/event.util";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
+import { type FC } from "react";
 
 interface Props {
   today: Dayjs;

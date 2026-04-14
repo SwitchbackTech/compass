@@ -1,5 +1,5 @@
-import { addEntities } from "@ngneat/elf-entities";
 import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
+import { addEntities } from "@ngneat/elf-entities";
 import {
   activeEvent$,
   activeEventId$,
@@ -57,7 +57,7 @@ describe("events store", () => {
       let activeId: string | null = null;
       const subId = activeEventId$.subscribe((val) => (activeId = val));
 
-      let activeEvent: WithCompassId<Schema_Event> | undefined = undefined;
+      let activeEvent: WithCompassId<Schema_Event> | undefined;
       const subEvent = activeEvent$.subscribe((val) => (activeEvent = val));
 
       // Add event to store first so it can be selected as active

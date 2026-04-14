@@ -1,4 +1,3 @@
-import { type FC } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
@@ -13,6 +12,7 @@ import {
   type Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { type FC } from "react";
 
 interface Props {
   category: Categories_Event;

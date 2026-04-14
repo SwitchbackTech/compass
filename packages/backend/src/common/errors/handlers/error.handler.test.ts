@@ -1,6 +1,3 @@
-import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
-import { BaseError } from "@core/errors/errors.base";
-import { Status } from "@core/errors/status.codes";
 import { invalidGrant400Error } from "@backend/__tests__/mocks.gcal/errors/error.google.invalidGrant";
 import { handleExpressError } from "@backend/common/errors/handlers/error.express.handler";
 import {
@@ -11,6 +8,9 @@ import {
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import userService from "@backend/user/services/user.service";
+import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
+import { BaseError } from "@core/errors/errors.base";
+import { Status } from "@core/errors/status.codes";
 
 describe("error.handler", () => {
   describe("toClientErrorPayload", () => {

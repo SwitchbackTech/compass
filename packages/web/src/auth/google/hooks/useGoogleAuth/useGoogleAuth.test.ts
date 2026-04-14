@@ -1,4 +1,3 @@
-import { toast } from "react-toastify";
 import { renderHook, waitFor } from "@testing-library/react";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { markUserAsAuthenticated } from "@web/auth/compass/state/auth.state.util";
@@ -10,6 +9,7 @@ import {
   syncLocalEvents,
 } from "@web/auth/google/util/google.auth.util";
 import { useAppDispatch } from "@web/store/store.hooks";
+import { toast } from "react-toastify";
 import { type GoogleAuthConfig } from "../googe.auth.types";
 
 // Mock dependencies

@@ -1,5 +1,5 @@
-import { ObjectId } from "mongodb";
-import { RRule } from "rrule";
+import { GenericError } from "@backend/common/errors/generic/generic.errors";
+import { error } from "@backend/common/errors/handlers/error.handler";
 import { RRULE } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import {
@@ -9,8 +9,8 @@ import {
   type Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { GenericError } from "@backend/common/errors/generic/generic.errors";
-import { error } from "@backend/common/errors/handlers/error.handler";
+import { ObjectId } from "mongodb";
+import { RRule } from "rrule";
 
 export const assembleInstances = (
   event: Schema_Event_Core,

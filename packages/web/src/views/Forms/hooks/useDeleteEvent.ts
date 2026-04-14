@@ -1,11 +1,11 @@
-import { useCallback } from "react";
-import { getEntity } from "@ngneat/elf-entities";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { StringV4Schema } from "@core/types/type.utils";
+import { getEntity } from "@ngneat/elf-entities";
 import { closeFloatingAtCursor } from "@web/common/hooks/useOpenAtCursor";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
 import { eventsStore, getDraft, resetDraft } from "@web/store/events";
 import { useAppDispatch } from "@web/store/store.hooks";
+import { useCallback } from "react";
 
 /**
  * useDeleteEvent

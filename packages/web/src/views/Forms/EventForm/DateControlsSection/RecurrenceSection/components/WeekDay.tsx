@@ -1,5 +1,5 @@
-import type React from "react";
 import { StyledWeekDay } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
+import type React from "react";
 
 export interface WeekDayProps {
   day: string;

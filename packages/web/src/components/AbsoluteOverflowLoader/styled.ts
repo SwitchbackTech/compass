@@ -1,5 +1,5 @@
-import styled, { keyframes } from "styled-components";
 import { Flex } from "@web/components/Flex";
+import styled, { keyframes } from "styled-components";
 
 export const Styled = styled(Flex)`
   position: absolute;

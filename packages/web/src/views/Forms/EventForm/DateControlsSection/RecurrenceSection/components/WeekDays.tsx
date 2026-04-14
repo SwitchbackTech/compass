@@ -1,7 +1,7 @@
-import type React from "react";
 import { StyledText } from "@web/components/Text/styled";
 import { WEEKDAYS } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";
 import { StyledRepeatRow } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
+import type React from "react";
 import { WeekDay } from "./WeekDay";
 
 export interface WeekDaysProps {

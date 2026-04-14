@@ -1,9 +1,7 @@
-import { ObjectId } from "bson";
-import { type MouseEvent, type PointerEvent, useCallback } from "react";
-import { getEntity } from "@ngneat/elf-entities";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { getEntity } from "@ngneat/elf-entities";
 import { getUserId } from "@web/auth/compass/session/session.util";
 import {
   DATA_EVENT_ELEMENT_ID,
@@ -35,6 +33,8 @@ import {
   focusElement,
   getEventClass,
 } from "@web/views/Day/util/agenda/focus.util";
+import { ObjectId } from "bson";
+import { type MouseEvent, type PointerEvent, useCallback } from "react";
 
 const YMD = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
 
@@ -73,7 +73,7 @@ export function useOpenEventForm() {
       const _id = create ? draftId : (existingEventId ?? draftId);
       const sameDraft = previousDraft?._id === _id;
 
-      let draftEvent: WithCompassId<Schema_Event> | undefined = undefined;
+      let draftEvent: WithCompassId<Schema_Event> | undefined;
 
       if (existingEventId && !create) {
         draftEvent = eventsStore.query(getEntity(existingEventId));

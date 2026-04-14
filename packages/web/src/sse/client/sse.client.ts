@@ -1,4 +1,3 @@
-import { EventEmitter2 } from "eventemitter2";
 import {
   EVENT_CHANGED,
   GOOGLE_REVOKED,
@@ -8,6 +7,7 @@ import {
   USER_METADATA,
 } from "@core/constants/sse.constants";
 import { ENV_WEB } from "@web/common/constants/env.constants";
+import { EventEmitter2 } from "eventemitter2";
 
 const SSE_EVENTS = [
   EVENT_CHANGED,

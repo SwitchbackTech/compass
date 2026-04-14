@@ -1,16 +1,16 @@
-import styled from "styled-components";
-import {
-  type DraggableStateSnapshot,
-  type DroppableProvided,
-} from "@hello-pangea/dnd";
-import { type DraggableStyle } from "@hello-pangea/dnd";
 import { type Priorities } from "@core/constants/core.constants";
 import { brighten } from "@core/util/color.utils";
+import {
+  type DraggableStateSnapshot,
+  type DraggableStyle,
+  type DroppableProvided,
+} from "@hello-pangea/dnd";
 import {
   colorByPriority,
   hoverColorByPriority,
 } from "@web/common/styles/theme.util";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
+import styled from "styled-components";
 
 export function getStyle(
   snapshot: DraggableStateSnapshot,

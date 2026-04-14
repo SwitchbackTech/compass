@@ -1,5 +1,5 @@
 import { apps } from "open";
-import type { SupportedBrowser } from "./delete.types";
+import { type SupportedBrowser } from "./delete.types";
 
 export const BROWSER_MAP: Record<SupportedBrowser, string | readonly string[]> =
   {

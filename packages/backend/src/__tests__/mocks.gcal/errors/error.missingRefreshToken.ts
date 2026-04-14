@@ -1,5 +1,5 @@
-import { BaseError } from "@core/errors/errors.base";
 import { UserError } from "@backend/common/errors/user/user.errors";
+import { BaseError } from "@core/errors/errors.base";
 
 export const missingRefreshTokenError = new BaseError(
   "MissingGoogleRefreshToken",

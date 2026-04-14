@@ -1,11 +1,11 @@
-import { useCallback, useEffect } from "react";
-import { useDispatch } from "react-redux";
 import {
   EVENT_CHANGED,
   SOMEDAY_EVENT_CHANGED,
 } from "@core/constants/sse.constants";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
+import { useCallback, useEffect } from "react";
+import { useDispatch } from "react-redux";
 import { sseEmitter } from "../client/sse.client";
 
 export const useEventSSE = () => {

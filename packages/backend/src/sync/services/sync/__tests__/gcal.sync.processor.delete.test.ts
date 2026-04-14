@@ -1,7 +1,3 @@
-import { RRule } from "rrule";
-import { Categories_Recurrence } from "@core/types/event.types";
-import { type WithGcalId, type gSchema$Event } from "@core/types/gcal";
-import { categorizeEvents } from "@core/util/event/event.util";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   getEventsInDb,
@@ -16,6 +12,10 @@ import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.event
 import { mockRecurringGcalBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { createCompassSeriesFromGcalBase } from "@backend/sync/services/sync/__tests__/gcal.sync.processor.test.util";
 import { GcalSyncProcessor } from "@backend/sync/services/sync/google/gcal.sync.processor";
+import { Categories_Recurrence } from "@core/types/event.types";
+import { type gSchema$Event, type WithGcalId } from "@core/types/gcal";
+import { categorizeEvents } from "@core/util/event/event.util";
+import { RRule } from "rrule";
 
 describe("GcalSyncProcessor: DELETE", () => {
   beforeAll(setupTestDb);

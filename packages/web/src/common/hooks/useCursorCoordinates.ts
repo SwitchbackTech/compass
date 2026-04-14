@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
 import { cursor$ } from "@web/common/context/pointer-position";
+import { useEffect, useState } from "react";
 
 export function useCursorCoordinates() {
   const cursor = cursor$.getValue();

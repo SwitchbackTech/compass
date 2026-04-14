@@ -1,5 +1,3 @@
-import React, { useMemo } from "react";
-import ReactSelect from "react-select";
 import { brighten, darken } from "@core/util/color.utils";
 import { theme } from "@web/common/styles/theme";
 import {
@@ -7,6 +5,8 @@ import {
   FREQUENCY_OPTIONS,
   type FrequencyValues,
 } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";
+import React, { useMemo } from "react";
+import ReactSelect from "react-select";
 
 export interface FreqSelectProps {
   bgColor: string;

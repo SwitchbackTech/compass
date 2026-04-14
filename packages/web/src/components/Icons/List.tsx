@@ -1,5 +1,5 @@
-import styled from "styled-components";
 import { List } from "@phosphor-icons/react";
+import styled from "styled-components";
 
 export const StyledListIcon = styled(List)`
   color: ${({ theme }) => theme.color.text.light};

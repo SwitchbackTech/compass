@@ -1,4 +1,3 @@
-import { isBase, isInstance } from "@core/util/event/event.util";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   getCategorizedEventsInDb,
@@ -10,6 +9,7 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { createSyncImport } from "@backend/sync/services/import/sync.import";
+import { isBase, isInstance } from "@core/util/event/event.util";
 
 describe("SyncImport: Full", () => {
   beforeAll(setupTestDb);

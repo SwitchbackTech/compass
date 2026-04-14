@@ -1,5 +1,5 @@
-import styled from "styled-components";
 import { darkBlueGradient } from "@web/common/styles/theme.util";
+import styled from "styled-components";
 
 export const StyledNotFoundImg = styled.img`
   border-radius: 50%;

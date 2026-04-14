@@ -1,3 +1,4 @@
+// biome-ignore-all assist/source/organizeImports: PostHog must load before SuperTokens patches XMLHttpRequest in tests.
 import { PostHogProvider } from "posthog-js/react";
 import { type PropsWithChildren } from "react";
 import { Provider } from "react-redux";

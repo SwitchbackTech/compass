@@ -1,4 +1,3 @@
-import { ObjectId } from "bson";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import {
   type Schema_GridEvent,
@@ -6,6 +5,7 @@ import {
 } from "@web/common/types/web.event.types";
 import { addId, isEventInRange } from "@web/common/utils/event/event.util";
 import { _assembleGridEvent } from "@web/ducks/events/sagas/saga.util";
+import { ObjectId } from "bson";
 
 describe("isEventInRange", () => {
   it("returns true if event is in range", () => {

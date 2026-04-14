@@ -1,10 +1,10 @@
-import styled from "styled-components";
 import { Flex } from "@web/components/Flex";
 import {
   DIVIDER_GRID,
   GRID_MARGIN_LEFT,
   GRID_PADDING_BOTTOM,
 } from "@web/views/Calendar/layout.constants";
+import styled from "styled-components";
 
 export const StyledGridRow = styled(Flex)`
   height: calc(100% / 11);

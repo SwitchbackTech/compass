@@ -1,4 +1,3 @@
-import { all, takeLatest } from "redux-saga/effects";
 import {
   convertCalendarToSomedayEvent,
   createEvent,
@@ -23,6 +22,7 @@ import {
 } from "@web/ducks/events/slices/event.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
+import { all, takeLatest } from "redux-saga/effects";
 
 export function* sagas() {
   yield all([eventSagas(), somedayEventSagas()]);

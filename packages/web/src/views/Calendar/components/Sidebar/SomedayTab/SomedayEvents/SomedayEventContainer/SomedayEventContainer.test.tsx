@@ -1,8 +1,8 @@
-import React from "react";
 import {
   type DraggableProvided,
   type DraggableStateSnapshot,
 } from "@hello-pangea/dnd";
+import React from "react";
 import "@testing-library/jest-dom";
 import { LEARN_CHINESE } from "@core/__mocks__/v1/events/events.misc";
 import {

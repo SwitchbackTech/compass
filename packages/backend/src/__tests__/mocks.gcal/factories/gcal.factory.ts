@@ -1,16 +1,15 @@
-import type { GaxiosPromise, GaxiosResponse } from "gaxios";
-import { calendar } from "@googleapis/calendar";
-import type { calendar_v3 } from "@googleapis/calendar";
-import type { MethodOptions, StreamMethodOptions } from "@googleapis/calendar";
+import { compassTestState } from "@backend/__tests__/helpers/mock.setup";
+import { generateGcalId } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
+import { GcalEventRRule } from "@backend/event/classes/gcal.event.rrule";
 import { Status } from "@core/errors/status.codes";
-import type {
-  WithGcalId,
-  gSchema$CalendarList,
-  gSchema$CalendarListEntry,
-  gSchema$Channel,
-  gSchema$Event,
-  gSchema$EventBase,
-  gSchema$Events,
+import {
+  type gSchema$CalendarList,
+  type gSchema$CalendarListEntry,
+  type gSchema$Channel,
+  type gSchema$Event,
+  type gSchema$EventBase,
+  type gSchema$Events,
+  type WithGcalId,
 } from "@core/types/gcal";
 import { Resource_Sync } from "@core/types/sync.types";
 import {
@@ -18,9 +17,13 @@ import {
   isInstanceGCalEvent,
   isRegularGCalEvent,
 } from "@core/util/event/gcal.event.util";
-import { compassTestState } from "@backend/__tests__/helpers/mock.setup";
-import { generateGcalId } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
-import { GcalEventRRule } from "@backend/event/classes/gcal.event.rrule";
+import {
+  calendar,
+  type calendar_v3,
+  type MethodOptions,
+  type StreamMethodOptions,
+} from "@googleapis/calendar";
+import { type GaxiosPromise, type GaxiosResponse } from "gaxios";
 
 /**
  * Creates a mock GaxiosResponse object with all required Response properties

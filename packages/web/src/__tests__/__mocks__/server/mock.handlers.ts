@@ -1,6 +1,3 @@
-import { ObjectId } from "bson";
-import { rest } from "msw";
-import { faker } from "@faker-js/faker";
 import {
   CLIMB,
   EUROPE_TRIP,
@@ -10,8 +7,11 @@ import {
   TY_TIM,
 } from "@core/__mocks__/v1/events/events.misc";
 import { Status } from "@core/errors/status.codes";
+import { faker } from "@faker-js/faker";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { freshenEventStartEndDate } from "@web/views/Calendar/calendar.render.test.utils";
+import { ObjectId } from "bson";
+import { rest } from "msw";
 
 export const globalHandlers = [
   rest.get("http://localhost/version.json", (_req, res, ctx) => {

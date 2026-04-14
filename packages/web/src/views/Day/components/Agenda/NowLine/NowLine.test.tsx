@@ -1,4 +1,3 @@
-import { act } from "react";
 import { render, screen } from "@testing-library/react";
 import { NowLine } from "@web/views/Day/components/Agenda/NowLine/NowLine";
 import {
@@ -6,6 +5,7 @@ import {
   getNowLinePosition,
 } from "@web/views/Day/util/agenda/agenda.util";
 import { setupMinuteSync } from "@web/views/Day/util/time/time.util";
+import { act } from "react";
 
 // Mock dependencies
 jest.mock("@web/common/utils/dom/grid-organization.util", () => {

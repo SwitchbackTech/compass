@@ -1,8 +1,8 @@
-import { type FC, useEffect, useState } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { ID_DATEPICKER_SIDEBAR } from "@web/common/constants/web.constants";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { type FC, useEffect, useState } from "react";
 import { MonthPickerContainer } from "./../styled";
 
 interface Props {

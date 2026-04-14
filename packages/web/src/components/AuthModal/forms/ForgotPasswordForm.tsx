@@ -1,8 +1,8 @@
-import { type ChangeEvent, type FC, useState } from "react";
 import {
   type ForgotPasswordFormData,
   ForgotPasswordSchema,
 } from "@web/auth/compass/schemas/auth.schemas";
+import { type ChangeEvent, type FC, useState } from "react";
 import { AuthButton } from "../components/AuthButton";
 import { AuthInput } from "../components/AuthInput";
 import { useZodForm } from "../hooks/useZodForm";

@@ -1,8 +1,3 @@
-import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
-import BaseCalendarMigration from "@scripts/migrations/2025.10.03T01.19.59.calendar-schema";
-import Migration from "@scripts/migrations/2025.10.14T12.24.01.update-calendar-schema";
-import { CompassCalendarSchema } from "@core/types/calendar.types";
-import { IDSchemaV4 } from "@core/types/type.utils";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -10,6 +5,11 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
+import { CompassCalendarSchema } from "@core/types/calendar.types";
+import { IDSchemaV4 } from "@core/types/type.utils";
+import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
+import BaseCalendarMigration from "@scripts/migrations/2025.10.03T01.19.59.calendar-schema";
+import Migration from "@scripts/migrations/2025.10.14T12.24.01.update-calendar-schema";
 
 describe("2025.10.14T12.24.01.update-calendar-schema migration (integration)", () => {
   const userIndexName = `${Collections.CALENDAR}_user_index`;

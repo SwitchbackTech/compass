@@ -1,7 +1,3 @@
-import { type Credentials, type TokenPayload } from "google-auth-library";
-import { Logger } from "@core/logger/winston.logger";
-import { type GoogleAuthCodeRequest } from "@core/types/auth.types";
-import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import GoogleOAuthClient from "@backend/auth/services/google/clients/google.oauth.client";
 import {
   determineGoogleAuthMode,
@@ -16,8 +12,12 @@ import mongoService from "@backend/common/services/mongo.service";
 import EmailService from "@backend/email/email.service";
 import syncService from "@backend/sync/services/sync.service";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
+import userMetadataService from "@backend/user/services/user-metadata.service";
+import { Logger } from "@core/logger/winston.logger";
+import { type GoogleAuthCodeRequest } from "@core/types/auth.types";
+import { StringV4Schema, zObjectId } from "@core/types/type.utils";
+import { type Credentials, type TokenPayload } from "google-auth-library";
 import { type GoogleSignInSuccess } from "./google.auth.types";
 
 const logger = Logger("app:auth.google.service");

@@ -1,5 +1,5 @@
-import { createElement } from "react";
 import { mockModule } from "@core/__tests__/mock.setup";
+import { createElement } from "react";
 
 export function mockUserAgent(userAgent: string) {
   return jest

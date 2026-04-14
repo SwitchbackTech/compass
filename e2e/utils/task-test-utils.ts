@@ -1,4 +1,4 @@
-import { type Page, expect } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import { resetLocalEventDb } from "./event-test-utils";
 
 const getTaskInput = (page: Page, title: string) =>

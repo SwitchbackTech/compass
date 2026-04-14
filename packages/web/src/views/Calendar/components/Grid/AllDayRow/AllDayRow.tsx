@@ -1,4 +1,3 @@
-import React, { type FC, type MouseEvent, useEffect } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event } from "@core/types/event.types";
 import {
@@ -17,6 +16,7 @@ import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import React, { type FC, type MouseEvent, useEffect } from "react";
 import { StyledGridCol } from "../Columns/styled";
 import { AllDayEvents } from "./AllDayEvents";
 import { StyledAllDayColumns, StyledAllDayRow } from "./styled";

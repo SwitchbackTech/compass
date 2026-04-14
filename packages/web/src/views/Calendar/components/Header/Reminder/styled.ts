@@ -1,6 +1,6 @@
-import styled, { css, keyframes } from "styled-components";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
+import styled, { css, keyframes } from "styled-components";
 
 // Hand-drawn underline animation
 const drawHandwrittenUnderline = keyframes`
@@ -96,7 +96,7 @@ export const _StyledPlaceholderUnderline = styled.svg<{ isVisible: boolean }>`
     stroke-dasharray: 1000;
     stroke-dashoffset: ${({ isVisible }) => (isVisible ? 0 : 1000)};
     animation: ${({ isVisible }) =>
-        isVisible ? drawHandwrittenUnderline : "none"}
+      isVisible ? drawHandwrittenUnderline : "none"}
       0.8s ease-out forwards;
   }
 `;
@@ -117,7 +117,7 @@ export const StyledPlaceholderUnderline = styled.svg<{ isVisible: boolean }>`
     stroke-dasharray: 1000;
     stroke-dashoffset: ${({ isVisible }) => (isVisible ? 0 : 1000)};
     animation: ${({ isVisible }) =>
-        isVisible ? drawHandwrittenUnderline : "none"}
+      isVisible ? drawHandwrittenUnderline : "none"}
       0.8s ease-out forwards;
   }
 `;
@@ -236,7 +236,7 @@ export const StyledUnderline = styled.svg<{ isVisible: boolean }>`
     stroke-dasharray: 1000;
     stroke-dashoffset: ${({ isVisible }) => (isVisible ? 0 : 1000)};
     animation: ${({ isVisible }) =>
-        isVisible ? drawHandwrittenUnderline : "none"}
+      isVisible ? drawHandwrittenUnderline : "none"}
       0.8s ease-out forwards;
   }
 `;

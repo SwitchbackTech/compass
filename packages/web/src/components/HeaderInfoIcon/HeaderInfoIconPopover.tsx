@@ -1,8 +1,7 @@
-import { useState } from "react";
 import {
+  autoUpdate,
   FloatingFocusManager,
   FloatingPortal,
-  autoUpdate,
   flip,
   offset,
   shift,
@@ -15,6 +14,7 @@ import {
 import { SpinnerIcon } from "@phosphor-icons/react";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
+import { useState } from "react";
 import { TooltipWrapper } from "../Tooltip/TooltipWrapper";
 
 interface StatusDotPopoverProps {

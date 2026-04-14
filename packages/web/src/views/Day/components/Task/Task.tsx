@@ -1,10 +1,10 @@
-import classNames from "classnames";
-import type React from "react";
-import { useRef } from "react";
 import { DATA_TASK_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { type Task as TaskType } from "@web/common/types/task.types";
 import { ArrowButton } from "@web/components/Button/ArrowButton";
 import { TaskCircleIcon } from "@web/views/Day/components/Icons/TaskCircleIcon";
+import classNames from "classnames";
+import type React from "react";
+import { useRef } from "react";
 
 export interface TaskProps {
   task: TaskType;

@@ -1,8 +1,8 @@
-import type React from "react";
 import { Copy } from "@phosphor-icons/react";
 import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
 import { Text } from "@web/components/Text";
 import MenuItem from "@web/views/Forms/ActionsMenu/MenuItem";
+import type React from "react";
 
 interface Props {
   onClick: () => void;

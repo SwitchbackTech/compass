@@ -1,8 +1,6 @@
-import { toast } from "react-toastify";
 import { resolveModifier } from "@tanstack/react-hotkeys";
+import { toast } from "react-toastify";
 import "@testing-library/jest-dom/extend-expect";
-import { act, screen, waitFor, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import {
   Categories_Event,
   RecurringEventUpdateScope,
@@ -10,6 +8,8 @@ import {
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
+import { act, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { setupDraftState } from "@web/__tests__/utils/state/draft.test.util";
 import { type ApiResponse } from "@web/common/apis/api.types";

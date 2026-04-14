@@ -9,8 +9,8 @@ import {
   waitForTaskListReady,
 } from "@web/__tests__/utils/tasks/task.test.util";
 import {
-  TaskProviderWrapper,
   renderWithDayProvidersAsync,
+  TaskProviderWrapper,
 } from "../../util/day.test-util";
 import { TaskList } from "./TaskList";
 

@@ -1,4 +1,3 @@
-import { useCallback } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { getUserId } from "@web/auth/compass/session/session.util";
 import {
@@ -11,6 +10,7 @@ import { getCalendarEventElementFromGrid } from "@web/common/utils/event/event.u
 import { setDraft, updateDraft } from "@web/store/events";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { getEventTimeFromPosition } from "@web/views/Day/util/agenda/agenda.util";
+import { useCallback } from "react";
 
 export function useMainGridSelectionActions() {
   const dateInView = useDateInView();

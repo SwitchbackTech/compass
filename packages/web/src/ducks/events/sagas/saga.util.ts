@@ -1,11 +1,10 @@
-import { normalize, schema } from "normalizr";
-import { type SelectEffect, call, put, select } from "@redux-saga/core/effects";
 import {
   type Params_Events,
   type RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
+import { call, put, type SelectEffect, select } from "@redux-saga/core/effects";
 import { session } from "@web/common/classes/Session";
 import { getEventRepository } from "@web/common/repositories/event/event.repository.util";
 import {
@@ -22,6 +21,7 @@ import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { type RootState } from "@web/store";
+import { normalize, schema } from "normalizr";
 
 export function* getEventById(
   _id: string,

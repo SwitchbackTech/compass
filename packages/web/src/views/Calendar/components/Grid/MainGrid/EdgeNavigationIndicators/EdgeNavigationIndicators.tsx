@@ -1,5 +1,5 @@
-import React, { type FC } from "react";
 import { type DragEdgeNavigationState } from "@web/views/Calendar/hooks/grid/useDragEdgeNavigation";
+import React, { type FC } from "react";
 import {
   StyledEdgeZone,
   StyledNavigationIcon,

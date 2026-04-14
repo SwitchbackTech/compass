@@ -1,4 +1,3 @@
-import { useCallback, useEffect } from "react";
 import {
   GOOGLE_REVOKED,
   IMPORT_GCAL_END,
@@ -20,6 +19,7 @@ import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
+import { useCallback, useEffect } from "react";
 import { sseEmitter } from "../client/sse.client";
 
 export const useGcalSSE = () => {

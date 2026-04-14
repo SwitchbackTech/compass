@@ -1,10 +1,10 @@
-import { type ObjectId } from "mongodb";
 import { type Schema_Event } from "@core/types/event.types";
 import {
   type gSchema$Event,
   type gSchema$EventBase,
   type gSchema$EventInstance,
 } from "@core/types/gcal";
+import { type ObjectId } from "mongodb";
 
 export interface EventsToModify {
   toUpdate: Schema_Event[];

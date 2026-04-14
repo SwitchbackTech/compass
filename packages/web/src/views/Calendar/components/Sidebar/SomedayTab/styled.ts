@@ -1,6 +1,6 @@
-import styled from "styled-components";
 import { Flex } from "@web/components/Flex";
 import { Text } from "@web/components/Text";
+import styled from "styled-components";
 
 export const SidebarContainer = styled.div`
   flex: 1;

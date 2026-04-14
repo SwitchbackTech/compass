@@ -1,14 +1,13 @@
-import { useCallback } from "react";
 import {
-  type OpenChangeReason,
-  type Placement,
-  type ReferenceType,
-  type UseFloatingOptions,
   autoUpdate,
   flip,
   hide,
+  type OpenChangeReason,
   offset,
+  type Placement,
+  type ReferenceType,
   shift,
+  type UseFloatingOptions,
   useFloating,
 } from "@floating-ui/react";
 import {
@@ -30,6 +29,7 @@ import {
   useFloatingStrategyAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
 import { theme } from "@web/common/styles/theme";
+import { useCallback } from "react";
 
 const themeSpacing = parseInt(theme.spacing.xs);
 

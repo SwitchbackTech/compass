@@ -1,6 +1,3 @@
-import { type KeyboardEvent, type MouseEvent } from "react";
-import type React from "react";
-import { useCallback, useRef } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { darken } from "@core/util/color.utils";
@@ -22,6 +19,13 @@ import {
 import { SomedayEventActionMenu } from "@web/views/Forms/SomedayEventForm/SomedayEventActionMenu";
 import { SomedayRecurrenceSection } from "@web/views/Forms/SomedayEventForm/SomedayRecurrenceSection/SomedayRecurrenceSection";
 import { useSomedayFormShortcuts } from "@web/views/Forms/SomedayEventForm/useSomedayFormShortcuts";
+import type React from "react";
+import {
+  type KeyboardEvent,
+  type MouseEvent,
+  useCallback,
+  useRef,
+} from "react";
 
 export const SomedayEventForm: React.FC<FormProps> = ({
   event,

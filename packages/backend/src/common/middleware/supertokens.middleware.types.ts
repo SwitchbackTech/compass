@@ -1,15 +1,15 @@
 import { type Credentials, type TokenPayload } from "google-auth-library";
-import type {
-  APIInterface as EmailPasswordAPIInterface,
-  RecipeInterface as EmailPasswordRecipeInterface,
+import {
+  type APIInterface as EmailPasswordAPIInterface,
+  type RecipeInterface as EmailPasswordRecipeInterface,
 } from "supertokens-node/recipe/emailpassword/types";
-import type {
-  APIInterface as SessionAPIInterface,
-  SessionContainerInterface,
+import {
+  type APIInterface as SessionAPIInterface,
+  type SessionContainerInterface,
 } from "supertokens-node/recipe/session/types";
-import type {
-  APIInterface as ThirdPartyAPIInterface,
-  RecipeInterface as ThirdPartyRecipeInterface,
+import {
+  type APIInterface as ThirdPartyAPIInterface,
+  type RecipeInterface as ThirdPartyRecipeInterface,
 } from "supertokens-node/recipe/thirdparty/types";
 
 export type ThirdPartySignInUpPostFn = NonNullable<

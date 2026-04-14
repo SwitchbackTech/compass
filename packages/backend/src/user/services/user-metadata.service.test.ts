@@ -1,5 +1,5 @@
-import { UserMetadataServiceDriver } from "@backend/__tests__/drivers/user-metadata.service.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
+import { UserMetadataServiceDriver } from "@backend/__tests__/drivers/user-metadata.service.driver";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import { WatchDriver } from "@backend/__tests__/drivers/watch.driver";
 import {

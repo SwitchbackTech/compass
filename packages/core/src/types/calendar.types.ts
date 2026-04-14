@@ -1,10 +1,10 @@
-import { z } from "zod/v4";
 import { CalendarProvider } from "@core/types/event.types";
 import {
   RGBHexSchema,
   TimezoneSchema,
   zObjectId,
 } from "@core/types/type.utils";
+import { z } from "zod/v4";
 
 export const GoogleCalendarMetadataSchema = z.object({
   id: z.string(),

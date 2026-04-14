@@ -1,17 +1,3 @@
-import cors from "cors";
-import SuperTokens from "supertokens-node";
-import Dashboard from "supertokens-node/recipe/dashboard";
-import EmailPassword from "supertokens-node/recipe/emailpassword";
-import Session from "supertokens-node/recipe/session";
-import ThirdParty from "supertokens-node/recipe/thirdparty";
-import UserMetadata from "supertokens-node/recipe/usermetadata";
-import {
-  APP_NAME,
-  PORT_DEFAULT_BACKEND,
-  PORT_DEFAULT_WEB,
-} from "@core/constants/core.constants";
-import { BaseError } from "@core/errors/errors.base";
-import { Status } from "@core/errors/status.codes";
 import { ENV } from "@backend/common/constants/env.constants";
 import {
   createEmailPasswordUser,
@@ -22,6 +8,20 @@ import {
   handleSessionSignOut,
   sendPasswordResetEmail,
 } from "@backend/common/middleware/supertokens.middleware.handlers";
+import {
+  APP_NAME,
+  PORT_DEFAULT_BACKEND,
+  PORT_DEFAULT_WEB,
+} from "@core/constants/core.constants";
+import { BaseError } from "@core/errors/errors.base";
+import { Status } from "@core/errors/status.codes";
+import cors from "cors";
+import SuperTokens from "supertokens-node";
+import Dashboard from "supertokens-node/recipe/dashboard";
+import EmailPassword from "supertokens-node/recipe/emailpassword";
+import Session from "supertokens-node/recipe/session";
+import ThirdParty from "supertokens-node/recipe/thirdparty";
+import UserMetadata from "supertokens-node/recipe/usermetadata";
 
 export const initSupertokens = () => {
   SuperTokens.init({

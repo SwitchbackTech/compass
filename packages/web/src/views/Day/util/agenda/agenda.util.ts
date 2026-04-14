@@ -1,6 +1,6 @@
-import { type Active, type Over } from "@dnd-kit/core";
 import { type Schema_Event } from "@core/types/event.types";
 import { type Dayjs } from "@core/util/date/dayjs";
+import { type Active, type Over } from "@dnd-kit/core";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {

@@ -1,4 +1,3 @@
-import { toast } from "react-toastify";
 import { Origin } from "@core/constants/core.constants";
 import {
   clearGoogleRevokedState,
@@ -14,11 +13,12 @@ import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
 import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { closeStream, openStream } from "@web/sse/client/sse.client";
 import { store } from "@web/store";
+import { toast } from "react-toastify";
 import { type GoogleAuthConfig } from "../hooks/googe.auth.types";
 import {
-  LOCAL_EVENTS_SYNC_ERROR_MESSAGE,
   authenticate,
   handleGoogleRevoked,
+  LOCAL_EVENTS_SYNC_ERROR_MESSAGE,
   syncLocalEvents,
   syncPendingLocalEvents,
 } from "./google.auth.util";

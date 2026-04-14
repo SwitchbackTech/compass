@@ -1,5 +1,5 @@
-import { Outlet } from "react-router-dom";
 import { SyncEventsOverlay } from "@web/components/SyncEventsOverlay/SyncEventsOverlay";
+import { Outlet } from "react-router-dom";
 
 /**
  * Layout component for authenticated routes

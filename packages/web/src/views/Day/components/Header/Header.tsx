@@ -1,4 +1,3 @@
-import { type FC, useCallback, useRef } from "react";
 import { theme } from "@web/common/styles/theme";
 import { HeaderInfoIcon } from "@web/components/HeaderInfoIcon/HeaderInfoIcon";
 import { SidebarIcon } from "@web/components/Icons/Sidebar";
@@ -6,6 +5,7 @@ import { SelectView } from "@web/components/SelectView/SelectView";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { Reminder } from "@web/views/Calendar/components/Header/Reminder/Reminder";
 import { useReminderHotkey } from "@web/views/Calendar/hooks/shortcuts/useFocusHotkey";
+import { type FC, useCallback, useRef } from "react";
 
 interface Props {
   showReminder?: boolean;

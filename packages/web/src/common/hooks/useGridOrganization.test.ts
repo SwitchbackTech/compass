@@ -1,10 +1,10 @@
-import { act } from "react";
 import { renderHook, waitFor } from "@testing-library/react";
 import {
   CLASS_TIMED_CALENDAR_EVENT,
   DATA_EVENT_ELEMENT_ID,
 } from "@web/common/constants/web.constants";
 import { useGridOrganization } from "@web/common/hooks/useGridOrganization";
+import { act } from "react";
 
 describe("useGridOrganization", () => {
   const rectMap = new Map<HTMLElement, DOMRect>();

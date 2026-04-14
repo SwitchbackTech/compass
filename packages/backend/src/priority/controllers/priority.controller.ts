@@ -1,12 +1,12 @@
-import { type Request } from "express";
-import { type SessionRequest } from "supertokens-node/framework/express";
-import { type PriorityReq } from "@core/types/priority.types";
-import { zObjectId } from "@core/types/type.utils";
 import {
   type Res_Promise,
   type SReqBody,
 } from "@backend/common/types/express.types";
 import priorityService from "@backend/priority/services/priority.service";
+import { type PriorityReq } from "@core/types/priority.types";
+import { zObjectId } from "@core/types/type.utils";
+import { type Request } from "express";
+import { type SessionRequest } from "supertokens-node/framework/express";
 
 class PriorityController {
   create = async (req: SReqBody<PriorityReq>, res: Res_Promise) => {

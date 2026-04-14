@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import {
   FloatingFocusManager,
   FloatingPortal,
@@ -6,7 +6,6 @@ import {
   type useFloating,
 } from "@floating-ui/react";
 import { getEntity } from "@ngneat/elf-entities";
-import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import {
   CursorItem,
@@ -20,6 +19,7 @@ import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
 import { useSaveEventForm } from "@web/views/Forms/hooks/useSaveEventForm";
+import { useCallback, useMemo } from "react";
 
 export function FloatingEventForm({
   floating,

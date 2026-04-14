@@ -1,13 +1,10 @@
-import classNames from "classnames";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { BehaviorSubject, distinctUntilChanged } from "rxjs";
+import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import { distinctUntilArrayItemChanged } from "@ngneat/elf";
 import {
-  UIEntitiesRef,
   setEntities,
+  UIEntitiesRef,
   updateEntities,
 } from "@ngneat/elf-entities";
-import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
 import { useFloatingAtCursor } from "@web/common/hooks/useFloatingAtCursor";
@@ -31,6 +28,9 @@ import { NowLine } from "@web/views/Day/components/Agenda/NowLine/NowLine";
 import { TimeLabels } from "@web/views/Day/components/Agenda/TimeLabels/TimeLabels";
 import { EventContextMenu } from "@web/views/Day/components/ContextMenu/EventContextMenu";
 import { useAgendaInteractionsAtCursor } from "@web/views/Day/hooks/events/useAgendaInteractionsAtCursor";
+import classNames from "classnames";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { BehaviorSubject, distinctUntilChanged } from "rxjs";
 
 export function Agenda() {
   const entities = selectDayEvents(store.getState());

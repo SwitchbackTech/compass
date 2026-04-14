@@ -1,6 +1,6 @@
-import styled from "styled-components";
 import { Btn } from "@web/components/Button/styled";
 import { Flex } from "@web/components/Flex";
+import styled from "styled-components";
 
 export const StyledLogoutBtn = styled(Btn)`
   background: ${({ theme }) => theme.color.status.info};

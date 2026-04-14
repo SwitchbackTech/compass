@@ -1,12 +1,12 @@
-import { type Filter, ObjectId, type WithId } from "mongodb";
+import { GenericError } from "@backend/common/errors/generic/generic.errors";
+import { error } from "@backend/common/errors/handlers/error.handler";
 import {
   type Query_Event,
   type Schema_Event,
   type Schema_Event_Core,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { GenericError } from "@backend/common/errors/generic/generic.errors";
-import { error } from "@backend/common/errors/handlers/error.handler";
+import { type Filter, ObjectId, type WithId } from "mongodb";
 
 export const getDeleteByIdFilter = (
   event: Schema_Event_Core,

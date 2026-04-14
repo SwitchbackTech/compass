@@ -1,12 +1,12 @@
-import { type Filter } from "mongodb";
-import { mockEventSetMar22 } from "@core/__mocks__/v1/events/events.22mar";
-import { type Schema_Event } from "@core/types/event.types";
 import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import mongoService from "@backend/common/services/mongo.service";
 import { getReadAllFilter } from "@backend/event/services/event.service.util";
+import { mockEventSetMar22 } from "@core/__mocks__/v1/events/events.22mar";
+import { type Schema_Event } from "@core/types/event.types";
+import { type Filter } from "mongodb";
 
 describe("Mar 6 - 12, 2022: All-Day Events", () => {
   let filter: Filter<Omit<Schema_Event, "_id">>;

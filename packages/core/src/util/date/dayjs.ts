@@ -1,3 +1,4 @@
+import { dayjsCompassPlugin } from "@core/util/date/dayjs-compass.plugin";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import dayOfYear from "dayjs/plugin/dayOfYear";
@@ -8,9 +9,8 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import timezone from "dayjs/plugin/timezone";
 import updateLocale from "dayjs/plugin/updateLocale";
 import utcPlugin from "dayjs/plugin/utc";
-import weekOfYear from "dayjs/plugin/weekOfYear";
 import weekday from "dayjs/plugin/weekday";
-import { dayjsCompassPlugin } from "@core/util/date/dayjs-compass.plugin";
+import weekOfYear from "dayjs/plugin/weekOfYear";
 
 export type {
   ConfigType,
@@ -29,7 +29,6 @@ export type {
   UnitTypeLongPlural,
   UnitTypeShort,
 } from "dayjs";
-
 export { Ls } from "dayjs";
 
 dayjs.extend(utcPlugin);
@@ -57,7 +56,7 @@ dayjs.extend(relativeTime, {
     { l: "y", r: 1 },
     { l: "yy", d: "year" },
   ],
-  rounding: (t: number) => Math.round(t * Math.pow(10, 1)) / Math.pow(10, 1),
+  rounding: (t: number) => Math.round(t * 10 ** 1) / 10 ** 1,
 });
 
 dayjs.updateLocale("en", {

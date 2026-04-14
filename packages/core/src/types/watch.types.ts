@@ -1,10 +1,10 @@
-import { z } from "zod/v4";
 import { Resource_Sync } from "@core/types/sync.types";
 import {
   ExpirationDateSchema,
   IDSchemaV4,
   zObjectId,
 } from "@core/types/type.utils";
+import { z } from "zod/v4";
 
 /**
  * Watch collection schema for Google Calendar push notification channels

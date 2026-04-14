@@ -1,17 +1,4 @@
-import { ObjectId, type WithId } from "mongodb";
 import { randomUUID } from "node:crypto";
-import { faker } from "@faker-js/faker";
-import {
-  EVENT_CHANGED,
-  GOOGLE_REVOKED,
-  IMPORT_GCAL_END,
-  USER_METADATA,
-} from "@core/constants/sse.constants";
-import { Status } from "@core/errors/status.codes";
-import { type ImportGCalEndPayload } from "@core/types/sse.types";
-import { Resource_Sync, XGoogleResourceState } from "@core/types/sync.types";
-import { type Schema_User } from "@core/types/user.types";
-import { isBase, isInstance } from "@core/util/event/event.util";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 import { SyncControllerDriver } from "@backend/__tests__/drivers/sync.controller.driver";
 import { SyncDriver } from "@backend/__tests__/drivers/sync.driver";
@@ -35,8 +22,21 @@ import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/g
 import syncService from "@backend/sync/services/sync.service";
 import * as syncQueries from "@backend/sync/util/sync.queries";
 import { updateSync } from "@backend/sync/util/sync.queries";
-import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
+import userMetadataService from "@backend/user/services/user-metadata.service";
+import {
+  EVENT_CHANGED,
+  GOOGLE_REVOKED,
+  IMPORT_GCAL_END,
+  USER_METADATA,
+} from "@core/constants/sse.constants";
+import { Status } from "@core/errors/status.codes";
+import { type ImportGCalEndPayload } from "@core/types/sse.types";
+import { Resource_Sync, XGoogleResourceState } from "@core/types/sync.types";
+import { type Schema_User } from "@core/types/user.types";
+import { isBase, isInstance } from "@core/util/event/event.util";
+import { faker } from "@faker-js/faker";
+import { ObjectId, type WithId } from "mongodb";
 
 describe("SyncController", () => {
   const baseDriver = new BaseDriver();

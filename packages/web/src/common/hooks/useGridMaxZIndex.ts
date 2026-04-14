@@ -1,6 +1,6 @@
+import { maxGridZIndex$ } from "@web/common/utils/dom/grid-organization.util";
 import { useEffect, useState } from "react";
 import { distinctUntilChanged, share } from "rxjs/operators";
-import { maxGridZIndex$ } from "@web/common/utils/dom/grid-organization.util";
 
 const maxZIndex$ = maxGridZIndex$.pipe(distinctUntilChanged(), share());
 

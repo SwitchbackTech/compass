@@ -1,5 +1,3 @@
-import type React from "react";
-import { useRef, useState } from "react";
 import { AddTaskActiveButton } from "@web/views/Day/components/AddTask/AddTaskActiveButton";
 import { AddTaskPreviewButton } from "@web/views/Day/components/AddTask/AddTaskPreviewButton";
 import { TaskContextMenuWrapper } from "@web/views/Day/components/ContextMenu/TaskContextMenuWrapper";
@@ -8,6 +6,8 @@ import { Tasks } from "@web/views/Day/components/Tasks/Tasks";
 import { useTaskListInputFocus } from "@web/views/Day/components/Tasks/useTaskListInputFocus";
 import { DNDTasksProvider } from "@web/views/Day/context/DNDTasksContext";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
+import type React from "react";
+import { useRef, useState } from "react";
 
 export function TaskList() {
   const { addTask, isAddingTask, isLoadingTasks, setIsAddingTask } = useTasks();

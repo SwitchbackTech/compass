@@ -1,9 +1,6 @@
-import {
-  type ClientSession,
-  type Filter,
-  ObjectId,
-  type WithId,
-} from "mongodb";
+import { GenericError } from "@backend/common/errors/generic/generic.errors";
+import { error } from "@backend/common/errors/handlers/error.handler";
+import mongoService from "@backend/common/services/mongo.service";
 import { MapEvent } from "@core/mappers/map.event";
 import {
   type CompassAllEvents,
@@ -12,8 +9,8 @@ import {
   CompassEventStatus,
   type CompassThisAndFollowingEvent,
   type CompassThisEvent,
-  EventUpdateSchema,
   type Event_Core,
+  EventUpdateSchema,
   RecurringEventUpdateScope,
   type Schema_Event,
   type Schema_Event_Recur_Base,
@@ -25,9 +22,12 @@ import {
   isBase,
   parseCompassEventDate,
 } from "@core/util/event/event.util";
-import { GenericError } from "@backend/common/errors/generic/generic.errors";
-import { error } from "@backend/common/errors/handlers/error.handler";
-import mongoService from "@backend/common/services/mongo.service";
+import {
+  type ClientSession,
+  type Filter,
+  ObjectId,
+  type WithId,
+} from "mongodb";
 
 export class CompassEventFactory {
   private static async findCompassEvent(

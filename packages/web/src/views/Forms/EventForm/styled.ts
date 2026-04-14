@@ -1,4 +1,3 @@
-import styled from "styled-components";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
 import { PriorityButton } from "@web/components/Button/styled";
@@ -6,6 +5,7 @@ import { Flex } from "@web/components/Flex";
 import { Input } from "@web/components/Input/Input";
 import { Textarea } from "@web/components/Textarea";
 import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
+import styled from "styled-components";
 import { type StyledFormProps } from "./types";
 
 interface SomedayFormProps extends StyledFormProps {

@@ -1,7 +1,3 @@
-import { Categories_Recurrence } from "@core/types/event.types";
-import { type gSchema$EventBase } from "@core/types/gcal";
-import dayjs from "@core/util/date/dayjs";
-import { categorizeEvents } from "@core/util/event/event.util";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
@@ -23,6 +19,10 @@ import {
   instanceDataMatchesGcalBase,
 } from "@backend/sync/services/sync/__tests__/gcal.sync.processor.test.util";
 import { GcalSyncProcessor } from "@backend/sync/services/sync/google/gcal.sync.processor";
+import { Categories_Recurrence } from "@core/types/event.types";
+import { type gSchema$EventBase } from "@core/types/gcal";
+import dayjs from "@core/util/date/dayjs";
+import { categorizeEvents } from "@core/util/event/event.util";
 
 describe("GcalSyncProcessor UPSERT: BASE", () => {
   beforeAll(setupTestDb);

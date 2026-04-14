@@ -1,6 +1,3 @@
-import fastDeepEqual from "fast-deep-equal/react";
-import { type MouseEvent, memo, useCallback, useEffect } from "react";
-import { useLocation } from "react-router-dom";
 import { type UseInteractionsReturn } from "@floating-ui/react";
 import { useObservable } from "@ngneat/use-observable";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
@@ -24,6 +21,9 @@ import { useDraft } from "@web/views/Calendar/components/Draft/context/useDraft"
 import { AgendaSkeleton } from "@web/views/Day/components/Agenda/AgendaSkeleton/AgendaSkeleton";
 import { DraggableTimedAgendaEvent } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/DraggableTimedAgendaEvent";
 import { useOpenEventForm } from "@web/views/Forms/hooks/useOpenEventForm";
+import fastDeepEqual from "fast-deep-equal/react";
+import { type MouseEvent, memo, useCallback, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 export const TimedAgendaEvents = memo(
   ({ interactions }: { interactions: UseInteractionsReturn }) => {

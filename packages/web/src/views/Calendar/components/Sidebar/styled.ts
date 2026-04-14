@@ -1,10 +1,10 @@
-import styled from "styled-components";
 import { Flex } from "@web/components/Flex";
 import { FlexDirections } from "@web/components/Flex/styled";
 import {
   PAGE_MARGIN_TOP,
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
+import styled from "styled-components";
 import { type SectionProps } from "./sidebar.types";
 
 const ICON_ROW_HEIGHT = 40;

@@ -1,18 +1,18 @@
 // sort-imports-ignore — side-effect import order matters
 import { afterAll, afterEach, beforeAll, beforeEach, expect } from "bun:test";
-import { JSDOM } from "jsdom";
 import { createRequire } from "node:module";
+import { JSDOM } from "jsdom";
 import { jest as jestBinding } from "./patched-jest.cjs";
 
 globalThis.jest = jestBinding;
 import "@core/__tests__/core.test.init";
 import "@core/__tests__/core.test.start";
 import "./web.test.init";
+import { mockNodeModules } from "./__mocks__/mock.setup";
 import {
   appendTailwindCss,
   getTailwindCss,
 } from "./__mocks__/mock.tailwindcss";
-import { mockNodeModules } from "./__mocks__/mock.setup";
 import { server } from "./__mocks__/server/mock.server";
 
 const requireMatchers = createRequire(import.meta.path);

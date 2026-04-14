@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/extend-expect";
+import { Priorities } from "@core/constants/core.constants";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Priorities } from "@core/constants/core.constants";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { SaveSection } from "./SaveSection";
 

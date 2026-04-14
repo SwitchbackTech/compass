@@ -1,12 +1,12 @@
-import { ZodError as ZodErrorV3 } from "zod";
-import { ZodError, z } from "zod/v4";
-import { faker } from "@faker-js/faker";
 import {
   IDSchema,
   IDSchemaV4,
   RGBHexSchema,
   TimezoneSchema,
 } from "@core/types/type.utils";
+import { faker } from "@faker-js/faker";
+import { ZodError as ZodErrorV3 } from "zod";
+import { ZodError, z } from "zod/v4";
 
 describe("IDSchema", () => {
   it("validates a correct ObjectId string", () => {

@@ -1,5 +1,5 @@
-import { z } from "zod";
 import { isDev } from "@core/util/env.util";
+import { z } from "zod";
 
 const API_BASEURL =
   process.env["API_BASEURL"] || `http://localhost:${process.env["PORT"]}`;

@@ -1,6 +1,6 @@
+import { Logger } from "@core/logger/winston.logger";
 import supertokens from "supertokens-node";
 import Session from "supertokens-node/recipe/session";
-import { Logger } from "@core/logger/winston.logger";
 
 const logger = Logger("app:auth.service");
 

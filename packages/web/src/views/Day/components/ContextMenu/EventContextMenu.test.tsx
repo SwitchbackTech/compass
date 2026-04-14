@@ -1,10 +1,10 @@
-import { ObjectId } from "bson";
-import { screen, waitFor } from "@testing-library/react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
+import { screen, waitFor } from "@testing-library/react";
 import { renderAgenda } from "@web/__tests__/utils/agenda/agenda.test.util";
 import { type AppDispatch } from "@web/store";
 import * as reduxHooks from "@web/store/store.hooks";
+import { ObjectId } from "bson";
 
 describe("EventContextMenu", () => {
   const baseEvent: Schema_Event = {

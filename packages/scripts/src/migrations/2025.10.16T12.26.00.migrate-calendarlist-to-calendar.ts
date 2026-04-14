@@ -1,12 +1,12 @@
-import { type AnyBulkWriteOperation } from "mongodb";
-import type { MigrationParams, RunnableMigration } from "umzug";
-import { type MigrationContext } from "@scripts/common/cli.types";
-import { MapCalendar } from "@core/mappers/map.calendar";
-import { type Schema_Calendar } from "@core/types/calendar.types";
-import { type gSchema$CalendarListEntry } from "@core/types/gcal";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
 import { IS_DEV } from "@backend/common/constants/env.constants";
 import mongoService from "@backend/common/services/mongo.service";
+import { MapCalendar } from "@core/mappers/map.calendar";
+import { type Schema_Calendar } from "@core/types/calendar.types";
+import { type gSchema$CalendarListEntry } from "@core/types/gcal";
+import { type MigrationContext } from "@scripts/common/cli.types";
+import { type AnyBulkWriteOperation } from "mongodb";
+import { type MigrationParams, type RunnableMigration } from "umzug";
 
 export default class Migration implements RunnableMigration<MigrationContext> {
   readonly name: string =

@@ -1,17 +1,17 @@
 import {
+  type DomMovement,
+  domMovement$,
+  globalMovementHandler,
+} from "@web/common/utils/dom/event-emitter.util";
+import {
   type DependencyList,
   type PointerEvent,
   useCallback,
   useEffect,
   useMemo,
 } from "react";
-import { BehaviorSubject, EMPTY, NEVER, fromEvent, iif, merge, of } from "rxjs";
+import { BehaviorSubject, EMPTY, fromEvent, iif, merge, NEVER, of } from "rxjs";
 import { filter, map, switchMap } from "rxjs/operators";
-import {
-  type DomMovement,
-  domMovement$,
-  globalMovementHandler,
-} from "@web/common/utils/dom/event-emitter.util";
 
 interface Options {
   handler?: (e: DomMovement) => void;
@@ -36,7 +36,7 @@ export function useMovementEvent({
   handler,
   deps = [],
   eventTypes = [],
-  selectors: selectors = [],
+  selectors = [],
 }: Options) {
   const typeFilter = useCallback(
     ({ event }: DomMovement) => {

@@ -1,7 +1,7 @@
-import { useMemo } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { getWeekRangeLabel } from "@web/common/utils/datetime/web.date.util";
 import { useToday } from "@web/views/Calendar/hooks/useToday";
+import { useMemo } from "react";
 
 export const useWeekLabel = (viewStart: Dayjs, viewEnd: Dayjs) => {
   const { today } = useToday();

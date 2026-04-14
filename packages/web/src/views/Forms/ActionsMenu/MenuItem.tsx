@@ -1,16 +1,16 @@
-import { type ReactNode } from "react";
-import type React from "react";
-import { useEffect, useRef, useState } from "react";
 import { LegacyShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@web/components/Tooltip";
+import type React from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useMenuContext } from "./ActionsMenu";
 import { StyledMenuItem } from "./styled";
 
-export interface MenuItemProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface MenuItemProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /**
    * Content to render inside the delayed tooltip. If omitted, the tooltip is disabled.
    */

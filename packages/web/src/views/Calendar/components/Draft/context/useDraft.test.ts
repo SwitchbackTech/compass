@@ -1,8 +1,8 @@
-import { act } from "react";
-import { renderHook } from "@testing-library/react";
 import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
+import { renderHook } from "@testing-library/react";
 import { resetDraft, setDraft } from "@web/store/events";
 import { useDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
+import { act } from "react";
 
 describe("useDraft", () => {
   const mockEvent: WithCompassId<Schema_Event> = {

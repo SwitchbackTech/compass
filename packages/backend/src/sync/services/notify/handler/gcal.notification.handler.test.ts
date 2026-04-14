@@ -1,5 +1,3 @@
-import { type gCalendar } from "@core/types/gcal";
-import { Resource_Sync } from "@core/types/sync.types";
 import {
   cleanupTestDb,
   setupTestDb,
@@ -7,6 +5,8 @@ import {
 import { mockRegularGcalEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/gcal.notification.handler";
+import { type gCalendar } from "@core/types/gcal";
+import { Resource_Sync } from "@core/types/sync.types";
 
 // Mock dependencies
 

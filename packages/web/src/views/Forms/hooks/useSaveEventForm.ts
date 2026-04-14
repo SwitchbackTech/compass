@@ -1,4 +1,3 @@
-import { useCallback } from "react";
 import {
   type Recurrence,
   RecurringEventUpdateScope,
@@ -12,6 +11,7 @@ import { store } from "@web/store";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { OnSubmitParser } from "@web/views/Calendar/components/Draft/hooks/actions/submit.parser";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
+import { useCallback } from "react";
 
 export function useSaveEventForm() {
   const dispatch = useAppDispatch();

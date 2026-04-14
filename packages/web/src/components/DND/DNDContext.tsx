@@ -1,4 +1,3 @@
-import { type PropsWithChildren, useCallback } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -9,6 +8,7 @@ import {
 } from "@dnd-kit/core";
 import { isDraggingEvent$ } from "@web/common/hooks/useIsDraggingEvent";
 import { usePointerPosition } from "@web/common/hooks/usePointerPosition";
+import { type PropsWithChildren, useCallback } from "react";
 
 export function DNDContext({ children }: PropsWithChildren) {
   const { togglePointerMovementTracking } = usePointerPosition();

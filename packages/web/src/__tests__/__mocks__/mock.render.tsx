@@ -1,9 +1,3 @@
-import {
-  type ComponentType,
-  type PropsWithChildren,
-  type ReactElement,
-} from "react";
-import { RouterProvider, type RouterProviderProps } from "react-router-dom";
 import { configureStore } from "@reduxjs/toolkit";
 import {
   type RenderHookOptions,
@@ -16,9 +10,15 @@ import { useSetupMovementEvents } from "@web/common/hooks/useMovementEvent";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
-import type { store as compassStore } from "@web/store";
+import { type store as compassStore } from "@web/store";
 import { reducers } from "@web/store/reducers";
 import { sagas } from "@web/store/sagas";
+import {
+  type ComponentType,
+  type PropsWithChildren,
+  type ReactElement,
+} from "react";
+import { RouterProvider, type RouterProviderProps } from "react-router-dom";
 
 interface CustomRenderOptions extends RenderOptions {
   state?: any;
@@ -28,7 +28,8 @@ interface CustomRenderOptions extends RenderOptions {
 }
 
 interface CustomRenderHookOptions<Props>
-  extends CustomRenderOptions, Omit<RenderHookOptions<Props>, "wrapper"> {}
+  extends CustomRenderOptions,
+    Omit<RenderHookOptions<Props>, "wrapper"> {}
 
 const TestProviders = (props?: {
   router?: RouterProviderProps["router"];

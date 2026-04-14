@@ -1,5 +1,5 @@
-import type React from "react";
 import { Trash } from "@phosphor-icons/react";
+import type React from "react";
 import MenuItem from "../ActionsMenu/MenuItem";
 
 interface Props {

@@ -1,6 +1,6 @@
-import styled from "styled-components";
 import { theme } from "@web/common/styles/theme";
 import { blueGradient, getGradient } from "@web/common/styles/theme.util";
+import styled from "styled-components";
 
 export interface Props {
   bgColor?: string;

@@ -1,6 +1,6 @@
-import { act } from "react";
 import { renderHook, waitFor } from "@testing-library/react";
 import { useVersionCheck } from "@web/common/hooks/useVersionCheck";
+import { act } from "react";
 
 let mockIsDev = false;
 jest.mock("@web/common/constants/env.constants", () => ({

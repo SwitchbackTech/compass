@@ -1,13 +1,12 @@
-import { type Request, type Response } from "express";
-import { type NextFunction } from "express";
-import { type SessionRequest } from "supertokens-node/framework/express";
-import { BaseError } from "@core/errors/errors.base";
 import {
   errorHandler,
   toClientErrorPayload,
 } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { requireGoogleConnection } from "@backend/common/guards/google.guard";
+import { BaseError } from "@core/errors/errors.base";
+import { type NextFunction, type Request, type Response } from "express";
+import { type SessionRequest } from "supertokens-node/framework/express";
 
 export const requireGoogleConnectionSession = async (
   req: SessionRequest,

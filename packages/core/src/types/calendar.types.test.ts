@@ -1,11 +1,11 @@
-import { ObjectId } from "bson";
-import { faker } from "@faker-js/faker";
 import {
   CompassCalendarSchema,
   GoogleCalendarMetadataSchema,
 } from "@core/types/calendar.types";
 import { CalendarProvider } from "@core/types/event.types";
 import { type gSchema$CalendarListEntry } from "@core/types/gcal";
+import { faker } from "@faker-js/faker";
+import { ObjectId } from "bson";
 
 describe("Calendar Types", () => {
   const id = faker.internet.email();

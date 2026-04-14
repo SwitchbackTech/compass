@@ -1,6 +1,3 @@
-import { type TokenPayload } from "google-auth-library";
-import { createUserIdMapping, getUserIdMapping } from "supertokens-node";
-import { faker } from "@faker-js/faker";
 import {
   buildResetPasswordLink,
   createGoogleSignInSuccess,
@@ -8,6 +5,9 @@ import {
   getFormFieldValue,
   maybeReplaceEmailPasswordSession,
 } from "@backend/common/middleware/supertokens.middleware.util";
+import { faker } from "@faker-js/faker";
+import { type TokenPayload } from "google-auth-library";
+import { createUserIdMapping, getUserIdMapping } from "supertokens-node";
 
 jest.mock("supertokens-node", () => ({
   createUserIdMapping: jest.fn(),

@@ -1,6 +1,6 @@
-import { useCallback, useRef, useState } from "react";
 import { useGoogleLogin as useGoogleLoginBase } from "@react-oauth/google";
 import { isGooglePopupClosedError } from "@web/auth/google/util/google.oauth.error.util";
+import { useCallback, useRef, useState } from "react";
 import { type GoogleAuthConfig } from "../googe.auth.types";
 
 const SCOPES_REQUIRED = [

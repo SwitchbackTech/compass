@@ -1,5 +1,5 @@
-import styled, { css, keyframes } from "styled-components";
 import { ZIndex } from "@web/common/constants/web.constants";
+import styled, { css, keyframes } from "styled-components";
 
 const fadeIn = keyframes`
   from {
@@ -59,9 +59,11 @@ export const StyledEdgeZone = styled.div<{
     isActive &&
     css`
       opacity: 1 !important;
-      background: ${position === "left"
-        ? "linear-gradient(to right, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.1), transparent)"
-        : "linear-gradient(to left, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.1), transparent)"};
+      background: ${
+        position === "left"
+          ? "linear-gradient(to right, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.1), transparent)"
+          : "linear-gradient(to left, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.1), transparent)"
+      };
     `}
 
   ${({ isTimerActive, position }) =>
@@ -72,9 +74,11 @@ export const StyledEdgeZone = styled.div<{
         ${pulseGlow} 1s ease-in-out infinite,
         ${fadeIn} 0.6s ease-out forwards;
       animation-delay: 0s, 0.05s;
-      background: ${position === "left"
-        ? "linear-gradient(to right, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.15), transparent)"
-        : "linear-gradient(to left, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.15), transparent)"};
+      background: ${
+        position === "left"
+          ? "linear-gradient(to right, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.15), transparent)"
+          : "linear-gradient(to left, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.15), transparent)"
+      };
     `}
 
   display: flex;

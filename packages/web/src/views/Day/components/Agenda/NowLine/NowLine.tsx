@@ -1,5 +1,3 @@
-import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { fromEvent, share } from "rxjs";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import {
   CompassDOMEvents,
@@ -10,6 +8,8 @@ import {
   getNowLinePosition,
 } from "@web/views/Day/util/agenda/agenda.util";
 import { setupMinuteSync } from "@web/views/Day/util/time/time.util";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { fromEvent, share } from "rxjs";
 
 const scroll$ = fromEvent(
   compassEventEmitter,

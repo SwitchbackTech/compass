@@ -1,11 +1,11 @@
-import Dexie, { type Table } from "dexie";
 import { type Event_Core } from "@core/types/event.types";
 import { isDateRangeOverlapping } from "@core/util/date/date.util";
 import {
-  type Task,
   normalizeTask,
   normalizeTasks,
+  type Task,
 } from "@web/common/types/task.types";
+import Dexie, { type Table } from "dexie";
 import {
   deleteCompassLocalDb,
   extractDataFromLegacySchema,

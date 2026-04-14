@@ -1,5 +1,3 @@
-import { ObjectId } from "mongodb";
-import { Status } from "@core/errors/status.codes";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 import { UserControllerDriver } from "@backend/__tests__/drivers/user.controller.driver";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
@@ -9,6 +7,8 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { UserError } from "@backend/common/errors/user/user.errors";
+import { Status } from "@core/errors/status.codes";
+import { ObjectId } from "mongodb";
 
 describe("UserController", () => {
   const baseDriver = new BaseDriver();

@@ -1,11 +1,11 @@
-import { type ClientSession } from "mongodb";
+import mongoService from "@backend/common/services/mongo.service";
 import { Priorities } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import {
   type PriorityReq,
   type Schema_Priority,
 } from "@core/types/priority.types";
-import mongoService from "@backend/common/services/mongo.service";
+import { type ClientSession } from "mongodb";
 
 class PriorityService {
   async list(userId: string) {

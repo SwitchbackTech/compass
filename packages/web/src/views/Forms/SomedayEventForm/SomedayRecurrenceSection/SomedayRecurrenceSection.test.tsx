@@ -1,8 +1,8 @@
 import { type SetStateAction, useCallback, useState } from "react";
 import "@testing-library/jest-dom";
-import { fireEvent, screen } from "@testing-library/react";
 import { Priorities } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
+import { fireEvent, screen } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { SomedayRecurrenceSection } from "./SomedayRecurrenceSection";
 

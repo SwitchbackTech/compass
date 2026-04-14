@@ -1,7 +1,7 @@
-import { useNavigate } from "react-router-dom";
 import notFoundImg from "@web/assets/png/notFound.png";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { Text } from "@web/components/Text";
+import { useNavigate } from "react-router-dom";
 import {
   StyledBackButton,
   StyledNotFoundContainer,

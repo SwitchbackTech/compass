@@ -1,5 +1,5 @@
-import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { useNavigate } from "react-router-dom";
 
 export const NoTaskAvailable = ({
   allCompleted = false,

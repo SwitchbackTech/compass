@@ -1,4 +1,3 @@
-import { ObjectId } from "bson";
 import { renderHook } from "@testing-library/react";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import {
@@ -8,6 +7,7 @@ import {
 import { eventsStore, setActiveEvent } from "@web/store/events";
 import { useOpenAgendaEventPreview } from "@web/views/Day/hooks/events/useOpenAgendaEventPreview";
 import { getEventClass } from "@web/views/Day/util/agenda/focus.util";
+import { ObjectId } from "bson";
 
 jest.mock("@web/store/events", () => ({
   eventsStore: {

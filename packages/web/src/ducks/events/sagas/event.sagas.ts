@@ -5,8 +5,7 @@
  * Do not update the Elf store from reducers or components — only sagas do this.
  * Related: docs/development/web-state-guide.md
  */
-import { normalize } from "normalizr";
-import { call, put, select } from "@redux-saga/core/effects";
+
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import {
   type Params_Events,
@@ -14,6 +13,7 @@ import {
   type Schema_Event,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
+import { call, put, select } from "@redux-saga/core/effects";
 import {
   hasUserEverAuthenticated,
   markAnonymousCalendarChangeForSignUpPrompt,
@@ -40,10 +40,10 @@ import {
   type Response_GetEventsSuccess,
 } from "@web/ducks/events/event.types";
 import {
-  EventDateUtils,
   _assembleGridEvent,
   _createOptimisticGridEvent,
   _editEvent,
+  EventDateUtils,
   normalizedEventsSchema,
 } from "@web/ducks/events/sagas/saga.util";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
@@ -58,6 +58,7 @@ import {
 import { pendingEventsSlice } from "@web/ducks/events/slices/pending.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { type RootState } from "@web/store";
+import { normalize } from "normalizr";
 
 function shouldPromptAnonymousSignUp(sessionExists: boolean): boolean {
   return !sessionExists && !hasUserEverAuthenticated() && !isGoogleRevoked();

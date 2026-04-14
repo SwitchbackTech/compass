@@ -9,9 +9,6 @@
   "engines": {
     "node": ">=24.0.0"
   },
-  "lint-staged": {
-    "**/*": "prettier --write --ignore-unknown"
-  },
   "_moduleAliases": {
     "@compass/backend": "packages/backend/src",
     "@compass/core": "packages/core/src",
@@ -25,7 +22,10 @@
     "dev:backend": "cd packages/backend && TZ=Etc/UTC bun --env-file=.env.local --watch src/app.ts",
     "dev:update": "git checkout main && git pull && bun install",
     "dev:web": "cd packages/web && TZ=Etc/UTC bun --env-file=../backend/.env.local run dev.ts",
-    "postinstall": "husky install | chmod ug+x .husky/*",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
     "test": "TZ=Etc/UTC bun packages/scripts/src/testing/run.ts",
     "test:e2e": "bunx playwright test",
     "test:backend": "TZ=Etc/UTC bun packages/scripts/src/testing/run.ts backend",
@@ -48,28 +48,12 @@
     "@babel/preset-env": "^7.16.0",
     "@babel/preset-react": "^7.16.7",
     "@babel/preset-typescript": "^7.16.0",
-    "@eslint/compat": "^1.2.6",
-    "@eslint/eslintrc": "^3.2.0",
-    "@eslint/js": "^9.20.0",
+    "@biomejs/biome": "^2.4.12",
     "@playwright/test": "^1.56.0",
-    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@types/node": "^22.13.10",
     "@types/node-fetch": "^2.6.13",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
-    "eslint": "^9.20.1",
-    "eslint-config-prettier": "^8.3.0",
-    "eslint-import-resolver-lerna": "^2.0.0",
-    "eslint-plugin-jest": "^28.11.0",
-    "eslint-plugin-prettier": "^5.2.3",
-    "eslint-plugin-react": "^7.37.4",
-    "globals": "^15.15.0",
-    "husky": "^8.0.1",
     "jest": "^29.0.3",
-    "lint-staged": "^15.2.10",
-    "prettier": "^3.5.1",
-    "typescript": "^5.1.6",
-    "typescript-eslint": "^8.24.0"
+    "typescript": "^5.1.6"
   },
   "resolutions": {
     "glob": "^13.0.6",

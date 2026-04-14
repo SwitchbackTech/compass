@@ -1,28 +1,3 @@
-import { type ClientSession, type UpdateFilter, type WithId } from "mongodb";
-import { Logger } from "@core/logger/winston.logger";
-import { gEventToCompassEvent } from "@core/mappers/map.event";
-import {
-  Categories_Recurrence,
-  type Schema_Event,
-  type Schema_Event_Recur_Base,
-  type TransitionCategoriesRecurrence,
-  type TransitionStatus,
-} from "@core/types/event.types";
-import {
-  type WithGcalId,
-  type gSchema$Event,
-  type gSchema$EventBase,
-} from "@core/types/gcal";
-import {
-  isBase,
-  isInstance,
-  isRegularEvent,
-} from "@core/util/event/event.util";
-import {
-  isBaseGCalEvent,
-  isInstanceGCalEvent,
-  isRegularGCalEvent,
-} from "@core/util/event/gcal.event.util";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
@@ -36,6 +11,31 @@ import {
   type Event_Transition,
   type Operation_Sync,
 } from "@backend/sync/sync.types";
+import { Logger } from "@core/logger/winston.logger";
+import { gEventToCompassEvent } from "@core/mappers/map.event";
+import {
+  Categories_Recurrence,
+  type Schema_Event,
+  type Schema_Event_Recur_Base,
+  type TransitionCategoriesRecurrence,
+  type TransitionStatus,
+} from "@core/types/event.types";
+import {
+  type gSchema$Event,
+  type gSchema$EventBase,
+  type WithGcalId,
+} from "@core/types/gcal";
+import {
+  isBase,
+  isInstance,
+  isRegularEvent,
+} from "@core/util/event/event.util";
+import {
+  isBaseGCalEvent,
+  isInstanceGCalEvent,
+  isRegularGCalEvent,
+} from "@core/util/event/gcal.event.util";
+import { type ClientSession, type UpdateFilter, type WithId } from "mongodb";
 
 export class GcalEventParser {
   #logger = Logger("app.event.classes.gcal.parser");

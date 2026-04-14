@@ -1,4 +1,3 @@
-import { type Action } from "redux";
 import {
   type Categories_Event,
   type Schema_Event,
@@ -7,6 +6,7 @@ import {
   type Schema_GridEvent,
   type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
+import { type Action } from "redux";
 
 export interface Action_DraftEvent extends Action {
   payload: Payload_DraftEvent;

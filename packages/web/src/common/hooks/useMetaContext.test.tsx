@@ -1,5 +1,5 @@
-import { createContext } from "react";
 import { renderHook } from "@testing-library/react";
+import { createContext } from "react";
 import { useMetaContext } from "./useMetaContext";
 
 describe("useMetaContext", () => {

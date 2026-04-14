@@ -1,5 +1,4 @@
-import type { Dayjs, PluginFunc } from "dayjs";
-import dayjs from "dayjs";
+import dayjs, { type Dayjs, type PluginFunc } from "dayjs";
 import type winston from "winston";
 
 enum DateFormatEnum {

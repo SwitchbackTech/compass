@@ -1,5 +1,5 @@
-import type React from "react";
 import { IconContext } from "@phosphor-icons/react";
+import type React from "react";
 
 export const IconProvider = ({ children }: { children: React.ReactNode }) => {
   return (

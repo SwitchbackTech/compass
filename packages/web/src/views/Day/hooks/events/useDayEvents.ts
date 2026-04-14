@@ -1,8 +1,8 @@
-import { useEffect, useMemo } from "react";
 import type dayjs from "@core/util/date/dayjs";
 import { Day_AsyncStateContextReason } from "@web/ducks/events/context/day.context";
 import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
+import { useEffect, useMemo } from "react";
 
 export function useDayEvents(dateInView: dayjs.Dayjs) {
   const dispatch = useAppDispatch();

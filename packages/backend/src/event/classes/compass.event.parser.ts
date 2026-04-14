@@ -1,4 +1,9 @@
-import { ObjectId, type WithId } from "mongodb";
+import { GenericError } from "@backend/common/errors/generic/generic.errors";
+import { error } from "@backend/common/errors/handlers/error.handler";
+import {
+  type Event_Transition,
+  type Operation_Sync,
+} from "@backend/sync/sync.types";
 import {
   CalendarProvider,
   Categories_Recurrence,
@@ -14,12 +19,7 @@ import {
   isInstance,
   isRegularEvent,
 } from "@core/util/event/event.util";
-import { GenericError } from "@backend/common/errors/generic/generic.errors";
-import { error } from "@backend/common/errors/handlers/error.handler";
-import {
-  type Event_Transition,
-  type Operation_Sync,
-} from "@backend/sync/sync.types";
+import { ObjectId, type WithId } from "mongodb";
 
 type NormalizedCompassEvent = WithId<Omit<Schema_Event, "_id">>;
 type CompassTransitionKey =

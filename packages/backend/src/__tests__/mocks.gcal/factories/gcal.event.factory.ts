@@ -1,15 +1,15 @@
-import { type Options, RRule } from "rrule";
-import { faker } from "@faker-js/faker";
+import { GcalEventRRule } from "@backend/event/classes/gcal.event.rrule";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import {
-  type WithGcalId,
   type gSchema$Event,
   type gSchema$EventBase,
   type gSchema$EventInstance,
+  type WithGcalId,
 } from "@core/types/gcal";
 import { formatAs } from "@core/util/date/date.util";
 import dayjs from "@core/util/date/dayjs";
-import { GcalEventRRule } from "@backend/event/classes/gcal.event.rrule";
+import { faker } from "@faker-js/faker";
+import { type Options, RRule } from "rrule";
 
 /**
  * Generates a random base32 hex string according to gcal id's requirement:

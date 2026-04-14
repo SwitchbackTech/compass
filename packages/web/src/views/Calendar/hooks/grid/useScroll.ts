@@ -1,6 +1,6 @@
-import { type MutableRefObject, useCallback, useEffect } from "react";
 import { useAppHotkey } from "@web/common/hooks/useAppHotkey";
 import { getCurrentMinute } from "@web/common/utils/grid/grid.util";
+import { type MutableRefObject, useCallback, useEffect } from "react";
 
 export const useScroll = (
   timedGridRef: MutableRefObject<HTMLDivElement | null>,

@@ -1,7 +1,7 @@
-import type express from "express";
-import { verifySession } from "supertokens-node/recipe/session/framework/express";
 import authMiddleware from "@backend/auth/middleware/auth.middleware";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
+import type express from "express";
+import { verifySession } from "supertokens-node/recipe/session/framework/express";
 import eventController from "./controllers/event.controller";
 
 /**

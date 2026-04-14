@@ -1,10 +1,7 @@
-import { type MouseEvent } from "react";
-import type React from "react";
-import { createContext, useContext, useEffect, useRef, useState } from "react";
 import {
+  autoUpdate,
   FloatingFocusManager,
   FloatingPortal,
-  autoUpdate,
   flip,
   offset,
   shift,
@@ -26,6 +23,15 @@ import {
   StyledMenu,
   TriggerWrapper,
 } from "@web/views/Forms/ActionsMenu/styled";
+import type React from "react";
+import {
+  createContext,
+  type MouseEvent,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 interface MenuContextValue {
   getItemProps: (

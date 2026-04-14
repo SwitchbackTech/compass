@@ -1,5 +1,9 @@
-import { ObjectId } from "mongodb";
-import { type SessionRequest } from "supertokens-node/framework/express";
+import {
+  type Res_Promise,
+  type SReqBody,
+} from "@backend/common/types/express.types";
+import eventService from "@backend/event/services/event.service";
+import { CompassSyncProcessor } from "@backend/sync/services/sync/compass/compass.sync.processor";
 import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
 import { Status } from "@core/errors/status.codes";
 import {
@@ -12,12 +16,8 @@ import {
   RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
-import {
-  type Res_Promise,
-  type SReqBody,
-} from "@backend/common/types/express.types";
-import eventService from "@backend/event/services/event.service";
-import { CompassSyncProcessor } from "@backend/sync/services/sync/compass/compass.sync.processor";
+import { ObjectId } from "mongodb";
+import { type SessionRequest } from "supertokens-node/framework/express";
 
 /**
  * Event controller for CRUD operations on Compass events.

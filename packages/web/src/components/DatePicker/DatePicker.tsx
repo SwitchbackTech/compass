@@ -1,8 +1,3 @@
-import classNames from "classnames";
-import type React from "react";
-import { useEffect, useRef } from "react";
-import * as ReactDatePickerModule from "react-datepicker";
-import { type ReactDatePickerProps } from "react-datepicker";
 import { darken, isDark } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
@@ -20,6 +15,11 @@ import { StyledInput } from "@web/components/Input/styled";
 import { Text } from "@web/components/Text";
 import { ChevronLeftIcon } from "@web/views/Day/components/Icons/ChevronLeftIcon";
 import { ChevronRightIcon } from "@web/views/Day/components/Icons/ChevronRightIcon";
+import classNames from "classnames";
+import type React from "react";
+import { useEffect, useRef } from "react";
+import * as ReactDatePickerModule from "react-datepicker";
+import { type ReactDatePickerProps } from "react-datepicker";
 import { Focusable } from "../Focusable/Focusable";
 
 export interface Props extends ReactDatePickerProps {

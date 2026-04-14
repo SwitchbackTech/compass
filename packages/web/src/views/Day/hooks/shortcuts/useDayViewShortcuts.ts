@@ -1,11 +1,11 @@
-import { useCallback } from "react";
-import { toast } from "react-toastify";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
 import {
   getFocusedTaskId,
   isFocusedOnTaskCheckbox,
   isFocusedWithinTask,
 } from "@web/views/Day/util/day.shortcut.util";
+import { useCallback } from "react";
+import { toast } from "react-toastify";
 
 interface KeyboardShortcutsConfig {
   // Task management

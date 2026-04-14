@@ -1,4 +1,3 @@
-import { type FC, type MouseEvent, type MutableRefObject } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
@@ -21,6 +20,7 @@ import { useDragEventSmartScroll } from "@web/views/Calendar/hooks/grid/useDragE
 import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { DRAFT_DURATION_MIN } from "@web/views/Calendar/layout.constants";
+import { type FC, type MouseEvent, type MutableRefObject } from "react";
 
 interface Props {
   dateCalcs: DateCalcs;

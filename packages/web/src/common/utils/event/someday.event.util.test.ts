@@ -1,5 +1,3 @@
-import { ObjectId } from "bson";
-import { faker } from "@faker-js/faker";
 import {
   Origin,
   Priorities,
@@ -12,6 +10,7 @@ import {
   createMockBaseEvent,
   createMockInstances,
 } from "@core/util/test/ccal.event.factory";
+import { faker } from "@faker-js/faker";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import {
   type Schema_SomedayEvent,
@@ -21,6 +20,7 @@ import {
   categorizeSomedayEvents,
   setSomedayEventsOrder,
 } from "@web/common/utils/event/someday.event.util";
+import { ObjectId } from "bson";
 
 describe("categorizeSomedayEvents", () => {
   const baseEvent: Partial<Omit<Schema_SomedayEvent, "recurrence">> = {

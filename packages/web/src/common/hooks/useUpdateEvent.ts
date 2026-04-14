@@ -1,12 +1,12 @@
-import fastDeepEqual from "fast-deep-equal/es6";
-import { useCallback } from "react";
-import { getEntity } from "@ngneat/elf-entities";
 import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
+import { getEntity } from "@ngneat/elf-entities";
 import { type SliceStateContext } from "@web/common/store/helpers";
 import { type Payload_EditEvent } from "@web/ducks/events/event.types";
 import { editEventSlice } from "@web/ducks/events/slices/event.slice";
 import { eventsStore, setDraft } from "@web/store/events";
 import { useAppDispatch } from "@web/store/store.hooks";
+import fastDeepEqual from "fast-deep-equal/es6";
+import { useCallback } from "react";
 import { type Schema_GridEvent } from "../types/web.event.types";
 
 export function useUpdateEvent() {

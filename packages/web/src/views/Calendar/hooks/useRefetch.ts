@@ -1,5 +1,3 @@
-import { useEffect, useMemo } from "react";
-import { useLocation } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
@@ -15,6 +13,8 @@ import { resetIsFetchNeeded } from "@web/ducks/events/slices/sync.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
+import { useEffect, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 
 export const useRefetch = () => {
   const dispatch = useAppDispatch();

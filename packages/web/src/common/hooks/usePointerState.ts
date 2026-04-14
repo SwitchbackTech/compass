@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
 import {
   type PointerState,
   pointerState$,
 } from "@web/common/context/pointer-position";
+import { useEffect, useState } from "react";
 
 export function usePointerState(): PointerState {
   const state = pointerState$.getValue();

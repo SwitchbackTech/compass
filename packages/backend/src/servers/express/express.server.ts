@@ -1,9 +1,3 @@
-import express, { type Application } from "express";
-import helmet from "helmet";
-import {
-  errorHandler as supertokensErrorHandler,
-  middleware as supertokensMiddleware,
-} from "supertokens-node/framework/express";
 import { AuthRoutes } from "@backend/auth/auth.routes.config";
 import { CalendarRoutes } from "@backend/calendar/calendar.routes.config";
 import { type CommonRoutesConfig } from "@backend/common/common.routes.config";
@@ -20,6 +14,12 @@ import { HealthRoutes } from "@backend/health/health.routes.config";
 import { PriorityRoutes } from "@backend/priority/priority.routes.config";
 import { SyncRoutes } from "@backend/sync/sync.routes.config";
 import { UserRoutes } from "@backend/user/user.routes.config";
+import express, { type Application } from "express";
+import helmet from "helmet";
+import {
+  errorHandler as supertokensErrorHandler,
+  middleware as supertokensMiddleware,
+} from "supertokens-node/framework/express";
 
 export const initExpressServer = () => {
   /* Express Configuration */

@@ -1,12 +1,11 @@
-import { toast } from "react-toastify";
 import { useCompleteAuthentication } from "@web/auth/compass/hooks/useCompleteAuthentication";
 import { useGoogleAuthWithOverlay } from "@web/auth/google/hooks/useGoogleAuthWithOverlay/useGoogleAuthWithOverlay";
 import { authenticate } from "@web/auth/google/util/google.auth.util";
 import { isGooglePopupClosedError } from "@web/auth/google/util/google.oauth.error.util";
 import { toastDefaultOptions } from "@web/common/constants/toast.constants";
 import {
-  SESSION_EXPIRED_TOAST_ID,
   dismissErrorToast,
+  SESSION_EXPIRED_TOAST_ID,
 } from "@web/common/utils/toast/error-toast.util";
 import {
   authError,
@@ -16,6 +15,7 @@ import {
 } from "@web/ducks/auth/slices/auth.slice";
 import { type AppDispatch } from "@web/store";
 import { useAppDispatch } from "@web/store/store.hooks";
+import { toast } from "react-toastify";
 import { type GoogleAuthConfig } from "../googe.auth.types";
 
 const getErrorMessage = (error: unknown): string => {

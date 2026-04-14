@@ -1,11 +1,11 @@
-import type React from "react";
-import { act } from "react";
 import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import { fireEvent, screen } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { DraggableTask } from "@web/views/Day/components/Task/DraggableTask";
 import { type TaskContext } from "@web/views/Day/context/TaskContext";
+import type React from "react";
+import { act } from "react";
 
 jest.mock("@floating-ui/react", () => ({
   autoUpdate: jest.fn(),

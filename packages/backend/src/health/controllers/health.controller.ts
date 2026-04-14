@@ -1,7 +1,7 @@
-import { type Request, type Response } from "express";
+import mongoService from "@backend/common/services/mongo.service";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
-import mongoService from "@backend/common/services/mongo.service";
+import { type Request, type Response } from "express";
 
 interface HealthResponse {
   status: "ok" | "error";

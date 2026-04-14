@@ -1,9 +1,9 @@
 import { act } from "react";
 import { createMemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
+import dayjs from "@core/util/date/dayjs";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import dayjs from "@core/util/date/dayjs";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { prepareEmptyStorageForTests } from "@web/__tests__/utils/storage/indexeddb.test.util";
 import { ROOT_ROUTES } from "@web/common/constants/routes";

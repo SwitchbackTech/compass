@@ -1,8 +1,8 @@
-import { type gSchema$EventInstance } from "@core/types/gcal";
 import {
   mockRecurringGcalBaseEvent,
   mockRecurringGcalInstances,
 } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
+import { type gSchema$EventInstance } from "@core/types/gcal";
 
 describe("mockRecurringInstances", () => {
   it("should not include 'recurrence'", () => {

@@ -1,5 +1,3 @@
-import classNames from "classnames";
-import { useLayoutEffect, useRef } from "react";
 import { autoUpdate, inline, offset, useFloating } from "@floating-ui/react";
 import { Draggable } from "@hello-pangea/dnd";
 import { DotsSixVerticalIcon } from "@phosphor-icons/react";
@@ -7,6 +5,8 @@ import { type Task as ITask } from "@web/common/types/task.types";
 import { getStyle } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEvent/styled";
 import { Task } from "@web/views/Day/components/Task/Task";
 import { type useTasks } from "@web/views/Day/hooks/tasks/useTasks";
+import classNames from "classnames";
+import { useLayoutEffect, useRef } from "react";
 
 function getFiniteFloatingStyles(
   styles: ReturnType<typeof useFloating>["floatingStyles"],

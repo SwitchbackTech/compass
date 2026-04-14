@@ -1,11 +1,3 @@
-import { ObjectId } from "mongodb";
-import { faker } from "@faker-js/faker";
-import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
-import Migration from "@scripts/migrations/2025.10.18T19.43.00.new-events-collection";
-import { Origin, Priorities } from "@core/constants/core.constants";
-import { CalendarProvider } from "@core/types/event.types";
-import { EventSchema, type Schema_Event } from "@core/types/event_new.types";
-import dayjs from "@core/util/date/dayjs";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -14,6 +6,14 @@ import {
 import { generateGcalId } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
+import { Origin, Priorities } from "@core/constants/core.constants";
+import { CalendarProvider } from "@core/types/event.types";
+import { EventSchema, type Schema_Event } from "@core/types/event_new.types";
+import dayjs from "@core/util/date/dayjs";
+import { faker } from "@faker-js/faker";
+import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
+import Migration from "@scripts/migrations/2025.10.18T19.43.00.new-events-collection";
+import { ObjectId } from "mongodb";
 
 describe("2025.10.18T19.43.00.new-events-collection", () => {
   const collectionName = `${Collections.EVENT}_new`;

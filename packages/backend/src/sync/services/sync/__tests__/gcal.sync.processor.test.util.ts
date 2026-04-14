@@ -1,4 +1,9 @@
-import { type Filter, ObjectId, type WithId } from "mongodb";
+import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
+import { type State_AfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
+import { createRecurrenceSeries } from "@backend/__tests__/mocks.db/ccal.mock.db.util";
+import { mockRecurringGcalInstances } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
+import { type Event_API } from "@backend/common/types/backend.event.types";
+import { validateEventSafely } from "@backend/common/validators/validate.event";
 import {
   type Event_Core,
   type Schema_Event,
@@ -16,12 +21,7 @@ import {
   isBase,
   isInstance,
 } from "@core/util/event/event.util";
-import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
-import { type State_AfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
-import { createRecurrenceSeries } from "@backend/__tests__/mocks.db/ccal.mock.db.util";
-import { mockRecurringGcalInstances } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
-import { type Event_API } from "@backend/common/types/backend.event.types";
-import { validateEventSafely } from "@backend/common/validators/validate.event";
+import { type Filter, ObjectId, type WithId } from "mongodb";
 
 /** Utility assertions for the gcal sync processor tests */
 export const baseHasRecurrenceRule = async (

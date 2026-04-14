@@ -1,5 +1,5 @@
-import { useContext } from "react";
 import { DateNavigationContext } from "@web/views/Day/context/DateNavigationContext";
+import { useContext } from "react";
 
 export function useDateNavigation() {
   const context = useContext(DateNavigationContext);

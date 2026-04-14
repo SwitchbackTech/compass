@@ -1,4 +1,3 @@
-import { ObjectId } from "bson";
 import {
   CompassCalendarSchema,
   GoogleCalendarMetadataSchema,
@@ -7,6 +6,7 @@ import { CalendarProvider } from "@core/types/event.types";
 import { type gSchema$CalendarListEntry } from "@core/types/gcal";
 import { generateCalendarColorScheme } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
+import { ObjectId } from "bson";
 
 export class MapCalendar {
   static gcalToCompass(

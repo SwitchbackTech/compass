@@ -1,15 +1,15 @@
+import { Categories_Event } from "@core/types/event.types";
 import {
-  type OpenChangeReason,
-  type UseFloatingOptions,
   autoUpdate,
   flip,
+  type OpenChangeReason,
   offset,
   shift,
+  type UseFloatingOptions,
   useDismiss,
   useFloating,
   useInteractions,
 } from "@floating-ui/react";
-import { Categories_Event } from "@core/types/event.types";
 
 export const useEventForm = (
   category: Categories_Event,

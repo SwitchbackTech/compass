@@ -1,4 +1,3 @@
-import React, { type Dispatch, type SetStateAction } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
 import {
@@ -13,6 +12,7 @@ import { RecurrenceToggle } from "@web/views/Forms/EventForm/DateControlsSection
 import { WeekDays } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/components/WeekDays";
 import { StyledRepeatRow } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
 import { useRecurrence } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/useRecurrence/useRecurrence";
+import React, { type Dispatch, type SetStateAction } from "react";
 
 export interface RecurrenceSectionProps {
   bgColor: string;

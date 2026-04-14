@@ -1,9 +1,3 @@
-import {
-  type RouteObject,
-  RouterProvider,
-  type RouterProviderProps,
-  createBrowserRouter,
-} from "react-router-dom";
 import { IS_DEV } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
@@ -13,6 +7,12 @@ import {
   loadRootData,
   loadSpecificDayData,
 } from "@web/routers/loaders";
+import {
+  createBrowserRouter,
+  type RouteObject,
+  RouterProvider,
+  type RouterProviderProps,
+} from "react-router-dom";
 
 const devOnlyRoutes: RouteObject[] = IS_DEV
   ? [

@@ -1,5 +1,5 @@
-import type { MigrationParams, RunnableMigration } from "umzug";
 import { type MigrationContext } from "@scripts/common/cli.types";
+import { type MigrationParams, type RunnableMigration } from "umzug";
 
 export default class Template implements RunnableMigration<MigrationContext> {
   readonly name: string = "{{name}}";

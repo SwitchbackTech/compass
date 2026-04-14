@@ -1,5 +1,5 @@
-import { type ReactNode } from "react";
 import { getMetaKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
+import { type ReactNode } from "react";
 
 export const MigrationShortcutHint = ({
   children,

@@ -1,7 +1,7 @@
+import { AuthError } from "@backend/common/errors/auth/auth.errors";
+import { BaseError } from "@core/errors/errors.base";
 import { faker } from "@faker-js/faker";
 import { calendar } from "@googleapis/calendar";
-import { BaseError } from "@core/errors/errors.base";
-import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import GoogleOAuthClient from "./google.oauth.client";
 
 jest.mock("@googleapis/calendar", () => ({

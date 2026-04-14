@@ -1,5 +1,3 @@
-import { type ClientSession } from "mongodb";
-import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import {
   type CompassOperationPlan,
   type CompassPersistenceStep,
@@ -13,6 +11,8 @@ import {
   _updateCompassSeries,
 } from "@backend/event/services/event.service";
 import { type Event_Transition } from "@backend/sync/sync.types";
+import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
+import { type ClientSession } from "mongodb";
 
 export type CompassApplyResult = {
   applied: boolean;

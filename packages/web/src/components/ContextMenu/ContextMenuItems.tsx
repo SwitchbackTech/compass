@@ -1,7 +1,5 @@
-import type React from "react";
-import { useState } from "react";
-import { Copy, PenNib, Trash } from "@phosphor-icons/react";
 import { Priorities } from "@core/constants/core.constants";
+import { Copy, PenNib, Trash } from "@phosphor-icons/react";
 import { ID_CONTEXT_MENU_ITEMS } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -20,6 +18,8 @@ import { selectIsEventPending } from "@web/ducks/events/selectors/pending.select
 import { useAppSelector } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
+import type React from "react";
+import { useState } from "react";
 
 export interface ContextMenuAction {
   id: string;

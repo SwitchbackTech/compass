@@ -1,6 +1,6 @@
 import http from "node:http";
-import { type Request, agent } from "supertest";
 import { initExpressServer } from "@backend/servers/express/express.server";
+import { agent, type Request } from "supertest";
 
 export class BaseDriver {
   private readonly app = initExpressServer();

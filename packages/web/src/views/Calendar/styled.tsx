@@ -1,7 +1,7 @@
-import { type PropsWithChildren } from "react";
-import styled from "styled-components";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { Flex } from "@web/components/Flex";
+import { type PropsWithChildren } from "react";
+import styled from "styled-components";
 
 export const Styled = styled(Flex)`
   height: 100vh;

@@ -1,21 +1,3 @@
-import { type ClientSession, type ObjectId } from "mongodb";
-import { Origin } from "@core/constants/core.constants";
-import { Logger } from "@core/logger/winston.logger";
-import { MapEvent } from "@core/mappers/map.event";
-import {
-  type RecurrenceWithoutId,
-  type Schema_Event_Recur_Base,
-  type Schema_Event_Recur_Instance,
-  type WithCompassId,
-  type WithoutCompassId,
-} from "@core/types/event.types";
-import {
-  type gCalendar,
-  type gSchema$Event,
-  type gSchema$EventBase,
-} from "@core/types/gcal";
-import { Resource_Sync, type SyncDetails } from "@core/types/sync.types";
-import { isBaseGCalEvent } from "@core/util/event/gcal.event.util";
 import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import { Collections } from "@backend/common/constants/collections";
 import { ENV } from "@backend/common/constants/env.constants";
@@ -36,6 +18,24 @@ import {
   updateSync,
 } from "@backend/sync/util/sync.queries";
 import { isUsingHttps } from "@backend/sync/util/sync.util";
+import { Origin } from "@core/constants/core.constants";
+import { Logger } from "@core/logger/winston.logger";
+import { MapEvent } from "@core/mappers/map.event";
+import {
+  type RecurrenceWithoutId,
+  type Schema_Event_Recur_Base,
+  type Schema_Event_Recur_Instance,
+  type WithCompassId,
+  type WithoutCompassId,
+} from "@core/types/event.types";
+import {
+  type gCalendar,
+  type gSchema$Event,
+  type gSchema$EventBase,
+} from "@core/types/gcal";
+import { Resource_Sync, type SyncDetails } from "@core/types/sync.types";
+import { isBaseGCalEvent } from "@core/util/event/gcal.event.util";
+import { type ClientSession, type ObjectId } from "mongodb";
 
 const logger = Logger("app:sync.import");
 
@@ -311,7 +311,7 @@ export class SyncImport {
 
     const startTime = performance.now();
 
-    let syncToken: string | undefined = undefined;
+    let syncToken: string | undefined;
 
     const stats: {
       totalProcessed: number;
@@ -580,7 +580,7 @@ export class SyncImport {
     perPage = 1000,
   ) {
     let nextSyncToken: string | null | undefined = initialSyncToken;
-    let nextPageToken: string | null | undefined = undefined;
+    let nextPageToken: string | null | undefined;
     let totalUpdated = 0;
     let totalDeleted = 0;
     let totalCreated = 0;

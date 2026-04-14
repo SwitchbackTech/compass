@@ -1,5 +1,3 @@
-import { type CSSProperties } from "react";
-import { BehaviorSubject } from "rxjs";
 import {
   CLASS_TIMED_CALENDAR_EVENT,
   DATA_EVENT_ELEMENT_ID,
@@ -8,6 +6,8 @@ import {
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
+import { type CSSProperties } from "react";
+import { BehaviorSubject } from "rxjs";
 
 interface Placement {
   isOverlapping: boolean;

@@ -1,5 +1,3 @@
-import { Categories_Recurrence } from "@core/types/event.types";
-import { type gSchema$Event } from "@core/types/gcal";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   cleanupCollections,
@@ -9,6 +7,8 @@ import {
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 import mongoService from "@backend/common/services/mongo.service";
 import { GcalSyncProcessor } from "@backend/sync/services/sync/google/gcal.sync.processor";
+import { Categories_Recurrence } from "@core/types/event.types";
+import { type gSchema$Event } from "@core/types/gcal";
 
 describe("GcalSyncProcessor UPSERT: INSTANCE", () => {
   beforeAll(setupTestDb);

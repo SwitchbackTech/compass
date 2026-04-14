@@ -1,7 +1,7 @@
-import classNames from "classnames";
-import { useEffect, useState } from "react";
 import { ShortcutSection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutSection";
 import { type ShortcutOverlaySection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
+import classNames from "classnames";
+import { useEffect, useState } from "react";
 
 interface ShortcutsSidebarProps {
   isOpen: boolean;

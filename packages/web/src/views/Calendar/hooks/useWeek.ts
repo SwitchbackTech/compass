@@ -1,4 +1,3 @@
-import { useEffect, useMemo, useRef, useState } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import {
   computeSomedayEventsRequestFilter,
@@ -10,6 +9,7 @@ import { updateDates } from "@web/ducks/events/slices/view.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { type Category_View } from "@web/views/Calendar/calendarView.types";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export type WeekNavigationSource = "manual" | "drag-to-edge";
 

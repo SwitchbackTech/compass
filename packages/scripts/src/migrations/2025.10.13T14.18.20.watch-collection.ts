@@ -1,8 +1,8 @@
-import type { RunnableMigration } from "umzug";
+import mongoService from "@backend/common/services/mongo.service";
+import { WatchSchema } from "@core/types/watch.types";
 import { type MigrationContext } from "@scripts/common/cli.types";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
-import { WatchSchema } from "@core/types/watch.types";
-import mongoService from "@backend/common/services/mongo.service";
+import { type RunnableMigration } from "umzug";
 
 export default class Migration implements RunnableMigration<MigrationContext> {
   readonly name: string = "2025.10.13T14.18.20.watch-collection";

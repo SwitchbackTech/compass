@@ -1,5 +1,5 @@
-import { type DefaultTheme } from "styled-components";
 import { c, textDark, textLight } from "@web/common/styles/colors";
+import { type DefaultTheme } from "styled-components";
 
 export const theme: DefaultTheme = {
   color: {

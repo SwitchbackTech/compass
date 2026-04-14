@@ -1,8 +1,8 @@
-import { useEffect } from "react";
 import { useBufferedVisibility } from "@web/common/hooks/useBufferedVisibility";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { selectIsAuthenticating } from "@web/ducks/auth/selectors/auth.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
+import { useEffect } from "react";
 
 export const SyncEventsOverlay = () => {
   const isAuthenticating = useAppSelector(selectIsAuthenticating);

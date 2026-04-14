@@ -1,5 +1,5 @@
-import type express from "express";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
+import type express from "express";
 import healthController from "./controllers/health.controller";
 
 /**

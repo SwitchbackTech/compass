@@ -1,4 +1,3 @@
-import { type FC, memo, useCallback, useMemo } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { DAY_COMPACT, DAY_HOUR_MIN_M } from "@core/constants/date.constants";
 import { type Schema_Event } from "@core/types/event.types";
@@ -12,9 +11,9 @@ import { selectRowCount } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { snapToGrid } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/snap.grid";
 import {
-  StyledGridEventPreview,
   getItemStyles,
   layerStyles,
+  StyledGridEventPreview,
 } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/styled";
 import { SOMEDAY_EVENT_HEIGHT } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEvent/styled";
 import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
@@ -29,6 +28,7 @@ import {
   GRID_X_START,
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
+import { type FC, memo, useCallback, useMemo } from "react";
 
 interface Props {
   dateCalcs: DateCalcs;

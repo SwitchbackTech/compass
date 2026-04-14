@@ -1,4 +1,3 @@
-import { type FocusEvent, type MouseEvent, useCallback } from "react";
 import { getEntity } from "@ngneat/elf-entities";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import {
@@ -8,6 +7,7 @@ import {
 import { eventsStore, setActiveEvent } from "@web/store/events";
 import { useAppSelector } from "@web/store/store.hooks";
 import { getEventClass } from "@web/views/Day/util/agenda/focus.util";
+import { type FocusEvent, type MouseEvent, useCallback } from "react";
 
 export function useOpenAgendaEventPreview() {
   const pendingEventIds = useAppSelector(

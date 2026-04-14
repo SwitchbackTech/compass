@@ -1,7 +1,7 @@
-import { type AnyBulkWriteOperation } from "mongodb";
+import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.utils";
 import { type Schema_Event_Core } from "@core/types/event.types";
 import { type gSchema$Event } from "@core/types/gcal";
-import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.utils";
+import { type AnyBulkWriteOperation } from "mongodb";
 
 export const assembleEventOperations = (
   userId: string,

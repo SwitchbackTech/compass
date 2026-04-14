@@ -1,8 +1,6 @@
-import type { MouseEvent as ReactMouseEvent } from "react";
-import { act } from "react";
-import { renderHook } from "@testing-library/react";
 import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
+import { renderHook } from "@testing-library/react";
 import { useEventResizeActions } from "@web/common/hooks/useEventResizeActions";
 import { CursorItem, nodeId$, open$ } from "@web/common/hooks/useOpenAtCursor";
 import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
@@ -11,6 +9,7 @@ import {
   MINUTES_PER_SLOT,
   SLOT_HEIGHT,
 } from "@web/views/Day/constants/day.constants";
+import { act, type MouseEvent as ReactMouseEvent } from "react";
 
 // Mocks
 jest.mock("@web/common/hooks/useUpdateEvent");

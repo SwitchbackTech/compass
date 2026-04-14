@@ -1,12 +1,11 @@
-import { useCallback } from "react";
+import { Categories_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import {
   type Active,
   type DragEndEvent,
   type Over,
   useDndMonitor,
 } from "@dnd-kit/core";
-import { Categories_Event } from "@core/types/event.types";
-import dayjs from "@core/util/date/dayjs";
 import {
   ID_GRID_ALLDAY_ROW,
   ID_GRID_MAIN,
@@ -23,6 +22,7 @@ import { getCalendarEventElementFromGrid } from "@web/common/utils/event/event.u
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { store } from "@web/store";
 import { getSnappedMinutes } from "@web/views/Day/util/agenda/agenda.util";
+import { useCallback } from "react";
 
 const shouldSaveImmediately = (_id: string) => {
   const storeEvent = selectEventById(store.getState(), _id);

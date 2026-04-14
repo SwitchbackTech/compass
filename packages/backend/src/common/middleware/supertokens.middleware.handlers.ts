@@ -1,12 +1,5 @@
-import supertokens from "supertokens-node";
-import Session from "supertokens-node/recipe/session";
-import type { SessionContainerInterface } from "supertokens-node/recipe/session/types";
-import type { RecipeInterface as ThirdPartyRecipeInterface } from "supertokens-node/recipe/thirdparty/types";
-import { NodeEnv } from "@core/constants/core.constants";
-import { Logger } from "@core/logger/winston.logger";
-import { zObjectId } from "@core/types/type.utils";
 import googleAuthService from "@backend/auth/services/google/google.auth.service";
-import type { GoogleSignInSuccess } from "@backend/auth/services/google/google.auth.types";
+import { type GoogleSignInSuccess } from "@backend/auth/services/google/google.auth.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import {
   buildResetPasswordLink,
@@ -17,15 +10,22 @@ import {
 } from "@backend/common/middleware/supertokens.middleware.util";
 import EmailService from "@backend/email/email.service";
 import userService from "@backend/user/services/user.service";
-import type {
-  CreateGoogleSignInResponse,
-  CreateGoogleUserFn,
-  CreateNewRecipeUserFn,
-  SessionSignOutPOSTFn,
-  SignInPOSTFn,
-  SignUpPOSTFn,
-  ThirdPartySignInUpInput,
-  ThirdPartySignInUpPostFn,
+import { NodeEnv } from "@core/constants/core.constants";
+import { Logger } from "@core/logger/winston.logger";
+import { zObjectId } from "@core/types/type.utils";
+import supertokens from "supertokens-node";
+import Session from "supertokens-node/recipe/session";
+import { type SessionContainerInterface } from "supertokens-node/recipe/session/types";
+import { type RecipeInterface as ThirdPartyRecipeInterface } from "supertokens-node/recipe/thirdparty/types";
+import {
+  type CreateGoogleSignInResponse,
+  type CreateGoogleUserFn,
+  type CreateNewRecipeUserFn,
+  type SessionSignOutPOSTFn,
+  type SignInPOSTFn,
+  type SignUpPOSTFn,
+  type ThirdPartySignInUpInput,
+  type ThirdPartySignInUpPostFn,
 } from "./supertokens.middleware.types";
 
 const logger = Logger("app:supertokens.middleware");

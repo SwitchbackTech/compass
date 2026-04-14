@@ -1,11 +1,11 @@
-import type React from "react";
 import { renderHook } from "@testing-library/react";
 import {
-  PointerPositionContext,
   cursor$,
+  PointerPositionContext,
   pointerState$,
 } from "@web/common/context/pointer-position";
 import { usePointerPosition } from "@web/common/hooks/usePointerPosition";
+import type React from "react";
 
 // Mock @floating-ui/react
 jest.mock("@floating-ui/react", () => ({

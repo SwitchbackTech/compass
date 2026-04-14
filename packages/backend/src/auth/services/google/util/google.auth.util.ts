@@ -1,10 +1,12 @@
-import { type Credentials, type TokenPayload } from "google-auth-library";
-import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import { getSync } from "@backend/sync/util/sync.queries";
 import { canDoIncrementalSync } from "@backend/sync/util/sync.util";
 import { findCanonicalCompassUser } from "@backend/user/queries/user.queries";
-import { type AuthDecision } from "../google.auth.types";
-import { type ParsedReconnectGoogleParams } from "../google.auth.types";
+import { StringV4Schema, zObjectId } from "@core/types/type.utils";
+import { type Credentials, type TokenPayload } from "google-auth-library";
+import {
+  type AuthDecision,
+  type ParsedReconnectGoogleParams,
+} from "../google.auth.types";
 
 export async function determineGoogleAuthMode(
   googleUserId: string,

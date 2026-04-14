@@ -1,11 +1,11 @@
-import type React from "react";
-import { useCallback } from "react";
 import { type Priority } from "@core/constants/core.constants";
 import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
 import { Btn, StyledSaveBtn } from "@web/components/Button/styled";
 import { Text } from "@web/components/Text";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { StyledSubmitRow } from "@web/views/Forms/EventForm/styled";
+import type React from "react";
+import { useCallback } from "react";
 
 interface Props {
   saveText?: string;

@@ -1,9 +1,9 @@
 import { rest } from "msw";
-import { type ReactElement, isValidElement } from "react";
+import { isValidElement, type ReactElement } from "react";
 import { toast } from "react-toastify";
 import "@testing-library/jest-dom";
-import { renderHook, waitFor } from "@testing-library/react";
 import { Status } from "@core/errors/status.codes";
+import { renderHook, waitFor } from "@testing-library/react";
 // eslint-disable-next-line jest/no-mocks-import
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import * as authStateUtil from "@web/auth/compass/state/auth.state.util";

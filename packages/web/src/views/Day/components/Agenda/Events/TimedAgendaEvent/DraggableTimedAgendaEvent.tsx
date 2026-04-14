@@ -1,13 +1,10 @@
-import classNames from "classnames";
-import fastDeepEqual from "fast-deep-equal/react";
-import { memo } from "react";
-import { type UseInteractionsReturn } from "@floating-ui/react";
 import {
   Categories_Event,
   type Schema_Event,
   type WithCompassId,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
+import { type UseInteractionsReturn } from "@floating-ui/react";
 import { CLASS_TIMED_CALENDAR_EVENT } from "@web/common/constants/web.constants";
 import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
 import { useEventResizeActions } from "@web/common/hooks/useEventResizeActions";
@@ -34,6 +31,9 @@ import {
   getAgendaEventPosition,
   getEventHeight,
 } from "@web/views/Day/util/agenda/agenda.util";
+import classNames from "classnames";
+import fastDeepEqual from "fast-deep-equal/react";
+import { memo } from "react";
 
 export const DraggableTimedAgendaEvent = memo(
   ({

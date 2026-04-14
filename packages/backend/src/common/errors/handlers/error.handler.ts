@@ -1,7 +1,7 @@
+import { type ErrorMetadata } from "@backend/common/types/error.types";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
-import { type ErrorMetadata } from "@backend/common/types/error.types";
 
 const logger = Logger("app:error.handler");
 

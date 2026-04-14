@@ -1,15 +1,3 @@
-import { type NextFunction, type Request, type Response } from "express";
-import { ObjectId } from "mongodb";
-import { ZodError } from "zod/v4";
-import { COMPASS_RESOURCE_HEADER } from "@core/constants/core.constants";
-import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
-import { Status } from "@core/errors/status.codes";
-import { Logger } from "@core/logger/winston.logger";
-import {
-  GcalNotificationSchema,
-  type Payload_Sync_Notif,
-  type Resource_Sync,
-} from "@core/types/sync.types";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { WatchError } from "@backend/common/errors/sync/watch.errors";
@@ -23,8 +11,20 @@ import { sseServer } from "@backend/servers/sse/sse.server";
 import syncService from "@backend/sync/services/sync.service";
 import { getSync } from "@backend/sync/util/sync.queries";
 import { isMissingGoogleRefreshToken } from "@backend/sync/util/sync.util";
-import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
+import userMetadataService from "@backend/user/services/user-metadata.service";
+import { COMPASS_RESOURCE_HEADER } from "@core/constants/core.constants";
+import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
+import { Status } from "@core/errors/status.codes";
+import { Logger } from "@core/logger/winston.logger";
+import {
+  GcalNotificationSchema,
+  type Payload_Sync_Notif,
+  type Resource_Sync,
+} from "@core/types/sync.types";
+import { type NextFunction, type Request, type Response } from "express";
+import { ObjectId } from "mongodb";
+import { ZodError } from "zod/v4";
 import { ImportGCalRequestSchema } from "../sync.types";
 
 const logger = Logger("app:sync.controller");

@@ -1,10 +1,10 @@
-import styled from "styled-components";
 import { Flex } from "@web/components/Flex";
 import {
   DIVIDER_GRID,
   EVENT_WIDTH_MINIMUM,
+  GRID_MARGIN_LEFT,
 } from "@web/views/Calendar/layout.constants";
-import { GRID_MARGIN_LEFT } from "@web/views/Calendar/layout.constants";
+import styled from "styled-components";
 
 export const Columns = styled(Flex)`
   position: absolute;

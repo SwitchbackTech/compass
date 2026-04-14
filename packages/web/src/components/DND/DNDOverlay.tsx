@@ -1,11 +1,11 @@
-import { type PropsWithChildren, useMemo } from "react";
-import { createPortal } from "react-dom";
+import { Categories_Event } from "@core/types/event.types";
 import { DragOverlay, useDndContext } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
-import { Categories_Event } from "@core/types/event.types";
 import { type DraggableDNDData } from "@web/components/DND/Draggable";
 import { AllDayAgendaEvent } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/AllDayAgendaEvent";
 import { TimedAgendaEvent } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/TimedAgendaEvent";
+import { type PropsWithChildren, useMemo } from "react";
+import { createPortal } from "react-dom";
 
 export function DNDOverlay({ children }: PropsWithChildren) {
   const { active, over } = useDndContext();

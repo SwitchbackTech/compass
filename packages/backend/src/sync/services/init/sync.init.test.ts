@@ -1,6 +1,3 @@
-import { GoogleCalendarMetadataSchema } from "@core/types/calendar.types";
-import { type gCalendar } from "@core/types/gcal";
-import { StringV4Schema } from "@core/types/type.utils";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   cleanupCollections,
@@ -10,6 +7,9 @@ import {
 import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { getCalendarsToSync } from "@backend/sync/services/init/sync.init";
+import { GoogleCalendarMetadataSchema } from "@core/types/calendar.types";
+import { type gCalendar } from "@core/types/gcal";
+import { StringV4Schema } from "@core/types/type.utils";
 
 describe("getCalendarsToSync", () => {
   beforeEach(setupTestDb);

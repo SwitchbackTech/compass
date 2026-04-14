@@ -1,6 +1,3 @@
-import { ObjectId } from "bson";
-import { useCallback, useMemo } from "react";
-import { type DropResult } from "@hello-pangea/dnd";
 import {
   SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
@@ -13,6 +10,7 @@ import {
   type Schema_Event,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
+import { type DropResult } from "@hello-pangea/dnd";
 import { getUserId } from "@web/auth/compass/session/session.util";
 import {
   COLUMN_MONTH,
@@ -57,6 +55,8 @@ import {
 } from "@web/views/Calendar/components/Draft/sidebar/hooks/useSidebarState";
 import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { ObjectId } from "bson";
+import { useCallback, useMemo } from "react";
 
 interface SomedayEventsColumns {
   [COLUMN_WEEK]: {

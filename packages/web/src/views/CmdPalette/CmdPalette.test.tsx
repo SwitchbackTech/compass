@@ -1,9 +1,9 @@
-import { act } from "react";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { SyncApi } from "@web/common/apis/sync.api";
 import CmdPalette from "@web/views/CmdPalette/CmdPalette";
+import { act } from "react";
 
 jest.mock("react-cmdk", () => {
   const React = require("react");

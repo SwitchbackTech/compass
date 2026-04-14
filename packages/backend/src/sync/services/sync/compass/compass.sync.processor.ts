@@ -1,18 +1,11 @@
-import { type ClientSession, ObjectId } from "mongodb";
-import {
-  EVENT_CHANGED,
-  SOMEDAY_EVENT_CHANGED,
-} from "@core/constants/sse.constants";
-import { Logger } from "@core/logger/winston.logger";
-import { type CompassEvent } from "@core/types/event.types";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
 import { applyCompassPlan } from "@backend/event/classes/compass.event.executor";
 import { CompassEventFactory } from "@backend/event/classes/compass.event.generator";
 import {
-  type CompassOperationPlan,
   analyzeCompassTransition,
+  type CompassOperationPlan,
 } from "@backend/event/classes/compass.event.parser";
 import {
   _createGcal,
@@ -23,8 +16,15 @@ import { sseServer } from "@backend/servers/sse/sse.server";
 import { type Event_Transition } from "@backend/sync/sync.types";
 import { isMissingGoogleRefreshToken } from "@backend/sync/util/sync.util";
 import {
-  type PersistedCompassEvent,
+  EVENT_CHANGED,
+  SOMEDAY_EVENT_CHANGED,
+} from "@core/constants/sse.constants";
+import { Logger } from "@core/logger/winston.logger";
+import { type CompassEvent } from "@core/types/event.types";
+import { type ClientSession, ObjectId } from "mongodb";
+import {
   isPersistedCoreEvent,
+  type PersistedCompassEvent,
 } from "./compass.sync.processor.util";
 
 const logger = Logger("app.compass.sync.processor");

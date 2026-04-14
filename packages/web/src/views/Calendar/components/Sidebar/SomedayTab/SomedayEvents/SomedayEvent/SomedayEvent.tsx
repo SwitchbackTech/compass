@@ -1,17 +1,17 @@
-import {
-  type DraggableProvided,
-  type DraggableStateSnapshot,
-} from "@hello-pangea/dnd";
 import { type Priorities } from "@core/constants/core.constants";
 import {
   type Categories_Event,
   type Schema_Event,
 } from "@core/types/event.types";
+import {
+  type DraggableProvided,
+  type DraggableStateSnapshot,
+} from "@hello-pangea/dnd";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { type Props_DraftForm } from "@web/views/Calendar/components/Draft/hooks/state/useDraftForm";
 import { type Actions_Sidebar } from "@web/views/Calendar/components/Draft/sidebar/hooks/useSidebarActions";
 import { SomedayEventRectangle } from "../SomedayEventContainer/SomedayEventRectangle";
-import { StyledNewSomedayEvent, getStyle } from "./styled";
+import { getStyle, StyledNewSomedayEvent } from "./styled";
 
 interface Props {
   category: Categories_Event;

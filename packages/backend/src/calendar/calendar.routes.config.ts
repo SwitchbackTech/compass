@@ -1,6 +1,6 @@
+import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 import { type Application } from "express";
 import { verifySession } from "supertokens-node/recipe/session/framework/express";
-import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 import calendarController from "./controllers/calendar.controller";
 
 export class CalendarRoutes extends CommonRoutesConfig {

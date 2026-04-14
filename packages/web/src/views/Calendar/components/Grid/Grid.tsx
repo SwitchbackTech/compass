@@ -1,4 +1,3 @@
-import { type FC } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { AllDayRow } from "@web/views/Calendar/components/Grid/AllDayRow";
 import { MainGrid } from "@web/views/Calendar/components/Grid/MainGrid";
@@ -10,6 +9,7 @@ import {
   type Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { type FC } from "react";
 import { GRID_PADDING_BOTTOM } from "../../layout.constants";
 
 interface Props {

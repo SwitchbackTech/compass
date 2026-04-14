@@ -116,7 +116,7 @@ const projectMap = {
 };
 
 const requestedProject = process.argv.find((arg) =>
-  Object.prototype.hasOwnProperty.call(projectMap, arg),
+  Object.hasOwn(projectMap, arg),
 );
 
 const mongoProjects = ["backend", "scripts"];

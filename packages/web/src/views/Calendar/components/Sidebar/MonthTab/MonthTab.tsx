@@ -1,5 +1,5 @@
-import type React from "react";
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import type React from "react";
 import { SidebarContent } from "../SomedayTab/styled";
 import { SidebarMonthPicker } from "./MonthPicker/SidebarMonthPicker";
 import { SubCalendarList } from "./SubCalendarList/SubCalendarList";

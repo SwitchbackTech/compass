@@ -1,7 +1,7 @@
 import { type Weekday } from "rrule";
 import {
-  type WEEKDAYS,
   WEEKDAY_RRULE_MAP,
+  type WEEKDAYS,
 } from "../constants/recurrence.constants";
 
 function toWeekDay(weekDay: (typeof WEEKDAYS)[0]): Weekday {

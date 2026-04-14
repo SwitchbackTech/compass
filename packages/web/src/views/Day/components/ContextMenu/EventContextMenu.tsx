@@ -1,4 +1,3 @@
-import classNames from "classnames";
 import {
   FloatingPortal,
   type UseInteractionsReturn,
@@ -12,6 +11,7 @@ import {
 } from "@web/common/hooks/useOpenAtCursor";
 import { activeEvent$ } from "@web/store/events";
 import { EventContextMenuItems } from "@web/views/Day/components/ContextMenu/EventContextMenuItems";
+import classNames from "classnames";
 
 export function EventContextMenu({
   floating,

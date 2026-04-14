@@ -1,4 +1,5 @@
-import React, { useCallback, useMemo, useState } from "react";
+import { Priorities } from "@core/constants/core.constants";
+import { RecurringEventUpdateScope } from "@core/types/event.types";
 import {
   FloatingFocusManager,
   FloatingOverlay,
@@ -9,8 +10,6 @@ import {
   useInteractions,
   useRole,
 } from "@floating-ui/react";
-import { Priorities } from "@core/constants/core.constants";
-import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { DirtyParser } from "@web/common/parsers/dirty.parser";
 import { theme } from "@web/common/styles/theme";
 import { type Schema_WebEvent } from "@web/common/types/web.event.types";
@@ -19,6 +18,7 @@ import { useAppSelector } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection/SaveSection";
 import { StyledEventForm } from "@web/views/Forms/EventForm/styled";
+import React, { useCallback, useMemo, useState } from "react";
 
 export function RecurringEventUpdateScopeDialog() {
   const {

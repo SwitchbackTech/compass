@@ -1,7 +1,3 @@
-import classNames from "classnames";
-import { type DetailedHTMLProps, type HTMLAttributes } from "react";
-import type React from "react";
-import { createElement, forwardRef } from "react";
 import {
   type FloatingContext,
   useClick,
@@ -9,6 +5,14 @@ import {
   useInteractions,
   useRole,
 } from "@floating-ui/react";
+import classNames from "classnames";
+import type React from "react";
+import {
+  createElement,
+  type DetailedHTMLProps,
+  forwardRef,
+  type HTMLAttributes,
+} from "react";
 
 interface BaseContextMenuProps {
   onOutsideClick: () => void;

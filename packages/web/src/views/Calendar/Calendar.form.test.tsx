@@ -1,14 +1,14 @@
 import { type SyntheticEvent } from "react";
 import { createMemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
+import { CLIMB, EUROPE_TRIP } from "@core/__mocks__/v1/events/events.misc";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CLIMB, EUROPE_TRIP } from "@core/__mocks__/v1/events/events.misc";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
 import {
-  InitialReduxState,
   findAndUpdateEventInPreloadedState,
+  InitialReduxState,
 } from "@web/__tests__/utils/state/store.test.util";
 import { RootState } from "@web/store";
 import { CalendarView } from "@web/views/Calendar";
