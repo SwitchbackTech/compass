@@ -2,7 +2,7 @@ import { type Page, expect } from "@playwright/test";
 import { resetLocalEventDb } from "./event-test-utils";
 
 const getTaskInput = (page: Page, title: string) =>
-  page.getByDisplayValue(title, { exact: true });
+  page.getByRole("textbox", { name: `Edit ${title}` });
 
 export const prepareTaskPage = async (page: Page) => {
   await page.goto("/day", { waitUntil: "domcontentloaded" });
