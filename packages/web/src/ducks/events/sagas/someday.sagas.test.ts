@@ -8,7 +8,7 @@ import {
   createInitialState,
   createStoreWithEvents,
 } from "@web/__tests__/utils/state/store.test.util";
-import { type ApiResponse } from "@web/common/apis/compass.api";
+import { type ApiResponse } from "@web/common/apis/api.types";
 import { session } from "@web/common/classes/Session";
 import { type EventRepository } from "@web/common/repositories/event/event.repository.interface";
 import * as eventRepositoryUtil from "@web/common/repositories/event/event.repository.util";

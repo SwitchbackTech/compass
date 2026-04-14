@@ -12,7 +12,7 @@ import dayjs from "@core/util/date/dayjs";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { setupDraftState } from "@web/__tests__/utils/state/draft.test.util";
-import { type ApiResponse } from "@web/common/apis/compass.api";
+import { type ApiResponse } from "@web/common/apis/api.types";
 import { type Schema_WebEvent } from "@web/common/types/web.event.types";
 import { EventApi } from "@web/ducks/events/event.api";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";

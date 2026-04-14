@@ -7,7 +7,7 @@ import {
   shouldShowAnonymousCalendarChangeSignUpPrompt,
   updateAuthState,
 } from "@web/auth/compass/state/auth.state.util";
-import { type ApiResponse } from "@web/common/apis/compass.api";
+import { type ApiResponse } from "@web/common/apis/api.types";
 import { session } from "@web/common/classes/Session";
 import {
   ensureStorageReady,

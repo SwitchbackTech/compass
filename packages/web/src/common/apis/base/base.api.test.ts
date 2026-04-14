@@ -8,7 +8,7 @@ import {
   assignLocation,
   reloadLocation,
 } from "@web/common/utils/browser/browser-navigation.util";
-import { type ApiError, type ApiResponse, CompassApi } from "./compass.api";
+import { BaseApi } from "./base.api";
 
 jest.mock("@web/common/utils/browser/browser-navigation.util", () => ({
   assignLocation: jest.fn(),
@@ -34,7 +34,7 @@ jest.mock("supertokens-web-js/recipe/session", () => {
 
 const assignMock = jest.mocked(assignLocation);
 const reloadMock = jest.mocked(reloadLocation);
-const originalAdapter = CompassApi.defaults.adapter;
+const originalAdapter = BaseApi.defaults.adapter;
 
 const setLocationPath = (pathname: string) => {
   setTestWindowUrl(pathname);
@@ -70,14 +70,14 @@ const triggerErrorResponse = async (
 ) => {
   const apiError = createApiError(status, url, data);
   const adapter = () => Promise.reject(apiError);
-  CompassApi.defaults.adapter = adapter;
+  BaseApi.defaults.adapter = adapter;
 
-  await CompassApi.get("/test").catch(() => undefined);
+  await BaseApi.get("/test").catch(() => undefined);
 };
 
 describe("CompassApi interceptor auth handling", () => {
   it("sends cookies with cross-origin API requests", () => {
-    expect(CompassApi.defaults.withCredentials).toBe(true);
+    expect(BaseApi.defaults.withCredentials).toBe(true);
   });
 
   beforeEach(() => {
@@ -94,7 +94,7 @@ describe("CompassApi interceptor auth handling", () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
-    CompassApi.defaults.adapter = originalAdapter;
+    BaseApi.defaults.adapter = originalAdapter;
   });
 
   it("signs out and redirects to day when Google token is invalid", async () => {

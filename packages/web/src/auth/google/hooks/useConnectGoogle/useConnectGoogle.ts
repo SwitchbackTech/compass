@@ -13,12 +13,12 @@ import {
 } from "@web/auth/google/state/google.sync.state";
 import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
 import { AuthApi } from "@web/common/apis/auth.api";
-import { isApiError } from "@web/common/apis/compass.api";
+import { SyncApi } from "@web/common/apis/sync.api";
 import {
   getApiErrorCode,
+  isApiError,
   parseGoogleConnectError,
-} from "@web/common/apis/compass.api.util";
-import { SyncApi } from "@web/common/apis/sync.api";
+} from "@web/common/apis/util/api.util";
 import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import {

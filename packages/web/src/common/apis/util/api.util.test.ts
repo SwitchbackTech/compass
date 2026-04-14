@@ -2,12 +2,12 @@ import {
   ApiErrorResponseSchema,
   GoogleConnectErrorResponseSchema,
 } from "@core/types/auth.types";
-import { type ApiError, type ApiResponse } from "./compass.api";
+import { type ApiError } from "../api.types";
 import {
   getApiErrorCode,
   parseApiError,
   parseGoogleConnectError,
-} from "./compass.api.util";
+} from "./api.util";
 
 const createApiError = (response: { data?: unknown } | null): ApiError =>
   ({
