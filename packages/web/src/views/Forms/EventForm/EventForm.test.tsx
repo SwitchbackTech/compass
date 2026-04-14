@@ -1,9 +1,9 @@
 import { resolveModifier } from "@tanstack/react-hotkeys";
 import { act } from "react";
 import "@testing-library/jest-dom/extend-expect";
-import { type Schema_Event } from "@core/types/event.types";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { type Schema_Event } from "@core/types/event.types";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { EventForm } from "./EventForm";

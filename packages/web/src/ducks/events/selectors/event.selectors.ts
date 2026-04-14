@@ -1,5 +1,5 @@
-import { type Schema_Event } from "@core/types/event.types";
 import { createSelector } from "@reduxjs/toolkit";
+import { type Schema_Event } from "@core/types/event.types";
 import { isProcessing } from "@web/common/store/helpers";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";

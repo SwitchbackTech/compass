@@ -1,6 +1,6 @@
+import { Status } from "@core/errors/status.codes";
 import { isGoogleRepairQuotaError } from "@backend/common/services/gcal/gcal.utils";
 import { type ErrorMetadata } from "@backend/common/types/error.types";
-import { Status } from "@core/errors/status.codes";
 
 interface GcalErrors {
   CalendarlistMissing: ErrorMetadata;

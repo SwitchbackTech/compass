@@ -1,5 +1,5 @@
-import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { type Id, toast } from "react-toastify";
+import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 
 interface SessionExpiredToastProps {
   toastId: Id;

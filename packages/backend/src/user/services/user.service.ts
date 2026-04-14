@@ -1,3 +1,16 @@
+import { type TokenPayload } from "google-auth-library";
+import { type ClientSession, ObjectId, type WithId } from "mongodb";
+import SupertokensUserMetadata, {
+  type JSONObject,
+} from "supertokens-node/recipe/usermetadata";
+import { Logger } from "@core/logger/winston.logger";
+import { mapUserToCompass } from "@core/mappers/map.user";
+import { zObjectId } from "@core/types/type.utils";
+import {
+  type Schema_User,
+  type UserMetadata,
+  type UserProfile,
+} from "@core/types/user.types";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import calendarService from "@backend/calendar/services/calendar.service";
@@ -14,19 +27,6 @@ import {
   type GetUserMetadataResponse,
   type Summary_Delete,
 } from "@backend/user/types/user.types";
-import { Logger } from "@core/logger/winston.logger";
-import { mapUserToCompass } from "@core/mappers/map.user";
-import { zObjectId } from "@core/types/type.utils";
-import {
-  type Schema_User,
-  type UserMetadata,
-  type UserProfile,
-} from "@core/types/user.types";
-import { type TokenPayload } from "google-auth-library";
-import { type ClientSession, ObjectId, type WithId } from "mongodb";
-import SupertokensUserMetadata, {
-  type JSONObject,
-} from "supertokens-node/recipe/usermetadata";
 
 const logger = Logger("app:user.service");
 

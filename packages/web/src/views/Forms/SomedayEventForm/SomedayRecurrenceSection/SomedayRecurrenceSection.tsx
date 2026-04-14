@@ -1,11 +1,11 @@
+import React, { type Dispatch, type SetStateAction, useRef } from "react";
+import { Frequency } from "rrule";
 import { type Schema_Event } from "@core/types/event.types";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
 import {
   StyledRepeatRow,
   StyledRepeatTextContainer,
 } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
-import React, { type Dispatch, type SetStateAction, useRef } from "react";
-import { Frequency } from "rrule";
 import { useRecurrence } from "../../EventForm/DateControlsSection/RecurrenceSection/useRecurrence/useRecurrence";
 import {
   type SomedayFrequencyOption,

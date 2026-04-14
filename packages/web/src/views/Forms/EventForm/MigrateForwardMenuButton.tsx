@@ -1,6 +1,6 @@
 import { ArrowRightIcon } from "@phosphor-icons/react";
-import MenuItem from "@web/views/Forms/ActionsMenu/MenuItem";
 import type React from "react";
+import MenuItem from "@web/views/Forms/ActionsMenu/MenuItem";
 import { MigrationShortcutHint } from "./MigrationShortcutHint";
 
 interface Props {

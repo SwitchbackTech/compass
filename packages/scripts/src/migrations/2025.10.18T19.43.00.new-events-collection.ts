@@ -1,8 +1,8 @@
-import mongoService from "@backend/common/services/mongo.service";
-import { EventSchema, type Schema_Event } from "@core/types/event_new.types";
 import { type MigrationContext } from "@scripts/common/cli.types";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
 import { type RunnableMigration } from "umzug";
+import { EventSchema, type Schema_Event } from "@core/types/event_new.types";
+import mongoService from "@backend/common/services/mongo.service";
 
 export default class Migration implements RunnableMigration<MigrationContext> {
   readonly name: string = "2025.10.18T19.43.00.new-events-collection";

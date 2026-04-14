@@ -1,16 +1,4 @@
-import { GenericError } from "@backend/common/errors/generic/generic.errors";
-import { error } from "@backend/common/errors/handlers/error.handler";
-import mongoService from "@backend/common/services/mongo.service";
-import { GcalEventRRule } from "@backend/event/classes/gcal.event.rrule";
-import {
-  mongoDateAggregation,
-  stripReadonlyEventProps,
-} from "@backend/event/services/recur/util/recur.util";
-import { createSyncImport } from "@backend/sync/services/import/sync.import";
-import {
-  type Event_Transition,
-  type Operation_Sync,
-} from "@backend/sync/sync.types";
+import { type ClientSession, type UpdateFilter, type WithId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
 import { gEventToCompassEvent } from "@core/mappers/map.event";
 import {
@@ -35,7 +23,19 @@ import {
   isInstanceGCalEvent,
   isRegularGCalEvent,
 } from "@core/util/event/gcal.event.util";
-import { type ClientSession, type UpdateFilter, type WithId } from "mongodb";
+import { GenericError } from "@backend/common/errors/generic/generic.errors";
+import { error } from "@backend/common/errors/handlers/error.handler";
+import mongoService from "@backend/common/services/mongo.service";
+import { GcalEventRRule } from "@backend/event/classes/gcal.event.rrule";
+import {
+  mongoDateAggregation,
+  stripReadonlyEventProps,
+} from "@backend/event/services/recur/util/recur.util";
+import { createSyncImport } from "@backend/sync/services/import/sync.import";
+import {
+  type Event_Transition,
+  type Operation_Sync,
+} from "@backend/sync/sync.types";
 
 export class GcalEventParser {
   #logger = Logger("app.event.classes.gcal.parser");

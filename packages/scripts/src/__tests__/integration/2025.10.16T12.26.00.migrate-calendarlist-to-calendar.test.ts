@@ -1,3 +1,11 @@
+import { faker } from "@faker-js/faker";
+import { MigratorType } from "@scripts/common/cli.types";
+import CalendarMigration from "@scripts/migrations/2025.10.03T01.19.59.calendar-schema";
+import CalendarUpdateMigration from "@scripts/migrations/2025.10.14T12.24.01.update-calendar-schema";
+import Migration from "@scripts/migrations/2025.10.16T12.26.00.migrate-calendarlist-to-calendar";
+import { ObjectId } from "bson";
+import { Logger } from "@core/logger/winston.logger";
+import { CalendarProvider } from "@core/types/event.types";
 import { CalendarDriver } from "@backend/__tests__/drivers/calendar.driver";
 import {
   cleanupCollections,
@@ -7,14 +15,6 @@ import {
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
 import { IS_DEV } from "@backend/common/constants/env.constants";
 import mongoService from "@backend/common/services/mongo.service";
-import { Logger } from "@core/logger/winston.logger";
-import { CalendarProvider } from "@core/types/event.types";
-import { faker } from "@faker-js/faker";
-import { MigratorType } from "@scripts/common/cli.types";
-import CalendarMigration from "@scripts/migrations/2025.10.03T01.19.59.calendar-schema";
-import CalendarUpdateMigration from "@scripts/migrations/2025.10.14T12.24.01.update-calendar-schema";
-import Migration from "@scripts/migrations/2025.10.16T12.26.00.migrate-calendarlist-to-calendar";
-import { ObjectId } from "bson";
 
 describe("2025.10.16T12.26.00.migrate-calendarlist-to-calendar", () => {
   const migration = new Migration();

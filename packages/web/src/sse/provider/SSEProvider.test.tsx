@@ -1,10 +1,10 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { render, waitFor } from "@testing-library/react";
+import { type EventEmitter2 } from "eventemitter2";
+import { Provider } from "react-redux";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { useUser } from "@web/auth/compass/user/hooks/useUser";
 import { importLatestSlice } from "@web/ducks/events/slices/sync.slice";
-import { type EventEmitter2 } from "eventemitter2";
-import { Provider } from "react-redux";
 import SSEProvider from "./SSEProvider";
 
 jest.mock("@web/auth/compass/session/useSession");

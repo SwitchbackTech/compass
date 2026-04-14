@@ -1,5 +1,3 @@
-import { Priorities } from "@core/constants/core.constants";
-import { darken, isDark } from "@core/util/color.utils";
 import { useDndContext } from "@dnd-kit/core";
 import {
   FloatingPortal,
@@ -7,6 +5,9 @@ import {
   type useFloating,
 } from "@floating-ui/react";
 import { useObservable } from "@ngneat/use-observable";
+import { useMemo } from "react";
+import { Priorities } from "@core/constants/core.constants";
+import { darken, isDark } from "@core/util/color.utils";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import {
   CursorItem,
@@ -15,7 +16,6 @@ import {
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { activeEvent$, draft$ } from "@web/store/events";
 import { getAgendaEventTime } from "@web/views/Day/util/agenda/agenda.util";
-import { useMemo } from "react";
 
 export function AgendaEventPreview({
   floating,

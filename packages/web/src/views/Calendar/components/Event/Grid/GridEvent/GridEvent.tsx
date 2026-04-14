@@ -1,3 +1,12 @@
+import {
+  type CSSProperties,
+  type ForwardedRef,
+  forwardRef,
+  type KeyboardEvent,
+  type MouseEvent,
+  memo,
+  useMemo,
+} from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { brighten, darken } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
@@ -26,15 +35,6 @@ import { useAppSelector } from "@web/store/store.hooks";
 import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { MIN_EVENT_HEIGHT_FOR_TIME_LABEL } from "@web/views/Calendar/layout.constants";
-import {
-  type CSSProperties,
-  type ForwardedRef,
-  forwardRef,
-  type KeyboardEvent,
-  type MouseEvent,
-  memo,
-  useMemo,
-} from "react";
 
 interface Props {
   event: Schema_GridEvent;

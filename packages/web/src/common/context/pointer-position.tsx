@@ -1,4 +1,11 @@
 import {
+  createContext,
+  type PointerEvent,
+  type PropsWithChildren,
+  useCallback,
+} from "react";
+import { BehaviorSubject } from "rxjs";
+import {
   COLUMN_MONTH,
   COLUMN_WEEK,
   ID_GRID_ALLDAY_ROW,
@@ -11,13 +18,6 @@ import {
   type DomMovement,
   getElementAtPoint,
 } from "@web/common/utils/dom/event-emitter.util";
-import {
-  createContext,
-  type PointerEvent,
-  type PropsWithChildren,
-  useCallback,
-} from "react";
-import { BehaviorSubject } from "rxjs";
 
 export interface PointerState {
   event: PointerEvent;

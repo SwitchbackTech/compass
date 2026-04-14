@@ -1,8 +1,4 @@
 import { type UniqueIdentifier } from "@dnd-kit/core";
-import { usePointerPosition } from "@web/common/hooks/usePointerPosition";
-import { resizeId$ } from "@web/common/hooks/useResizeId";
-import { resizing$ } from "@web/common/hooks/useResizing";
-import { type DNDChildProps } from "@web/components/DND/Draggable";
 import {
   Resizable as ReResizable,
   type ResizableProps,
@@ -15,6 +11,10 @@ import {
   type PropsWithChildren,
   useCallback,
 } from "react";
+import { usePointerPosition } from "@web/common/hooks/usePointerPosition";
+import { resizeId$ } from "@web/common/hooks/useResizeId";
+import { resizing$ } from "@web/common/hooks/useResizing";
+import { type DNDChildProps } from "@web/components/DND/Draggable";
 
 interface Props extends ResizableProps {
   id: UniqueIdentifier;

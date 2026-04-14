@@ -1,3 +1,5 @@
+import { faker } from "@faker-js/faker";
+import { Resource_Sync } from "@core/types/sync.types";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
@@ -10,8 +12,6 @@ import {
   getSync,
   updateSync,
 } from "@backend/sync/util/sync.queries";
-import { Resource_Sync } from "@core/types/sync.types";
-import { faker } from "@faker-js/faker";
 
 describe("sync.queries: ", () => {
   describe("nextPageToken", () => {

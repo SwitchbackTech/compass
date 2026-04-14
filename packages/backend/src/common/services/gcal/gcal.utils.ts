@@ -1,9 +1,9 @@
+import { GaxiosError } from "gaxios";
 import {
   type gErrorResponse,
   type gSchema$Error,
   type gSchema$Event,
 } from "@core/types/gcal";
-import { GaxiosError } from "gaxios";
 
 const cancelled = (e: gSchema$Event) => {
   /*

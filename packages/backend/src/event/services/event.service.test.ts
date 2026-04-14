@@ -1,3 +1,10 @@
+import { ObjectId } from "mongodb";
+import { CalendarProvider } from "@core/types/event.types";
+import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
+import {
+  createMockBaseEvent,
+  createMockStandaloneEvent,
+} from "@core/util/test/ccal.event.factory";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import {
   cleanupCollections,
@@ -9,13 +16,6 @@ import {
   _createCompassEvent,
   _deleteSeries,
 } from "@backend/event/services/event.service";
-import { CalendarProvider } from "@core/types/event.types";
-import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
-import {
-  createMockBaseEvent,
-  createMockStandaloneEvent,
-} from "@core/util/test/ccal.event.factory";
-import { ObjectId } from "mongodb";
 
 // Use real services, no mocks
 

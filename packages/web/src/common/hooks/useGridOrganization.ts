@@ -1,9 +1,9 @@
+import { useEffect } from "react";
+import { debounceTime, Subject } from "rxjs";
 import {
   gridObserver,
   reorderGrid,
 } from "@web/common/utils/dom/grid-organization.util";
-import { useEffect } from "react";
-import { debounceTime, Subject } from "rxjs";
 
 export function useGridOrganization(mainGrid: HTMLElement | null) {
   useEffect(() => {

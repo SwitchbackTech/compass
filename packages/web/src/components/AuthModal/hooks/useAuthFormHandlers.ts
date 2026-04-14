@@ -1,3 +1,6 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import EmailPassword from "supertokens-web-js/recipe/emailpassword";
+import { z } from "zod";
 import { useCompleteAuthentication } from "@web/auth/compass/hooks/useCompleteAuthentication";
 import {
   type ForgotPasswordFormData,
@@ -5,9 +8,6 @@ import {
   type ResetPasswordFormData,
   type SignUpFormData,
 } from "@web/auth/compass/schemas/auth.schemas";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import EmailPassword from "supertokens-web-js/recipe/emailpassword";
-import { z } from "zod";
 import { type AuthView } from "./useAuthModal";
 
 const AUTH_TOKEN_QUERY_SCHEMA = z.object({

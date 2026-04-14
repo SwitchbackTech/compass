@@ -1,9 +1,9 @@
 import { renderHook, waitFor } from "@testing-library/react";
+import { act, useRef, useState } from "react";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { type TaskRepository } from "@web/common/repositories/task/task.repository";
 import { type Task } from "@web/common/types/task.types";
 import { useLoadTasksByDateEffect } from "@web/views/Day/hooks/tasks/useLoadTasksByDateEffect";
-import { act, useRef, useState } from "react";
 
 const mockGet = jest.fn();
 const mockTaskRepository: TaskRepository = {

@@ -1,3 +1,8 @@
+import { faker } from "@faker-js/faker";
+import { MigratorType } from "@scripts/common/cli.types";
+import NewEventsCollectionMigration from "@scripts/migrations/2025.10.18T19.43.00.new-events-collection";
+import Migration from "@scripts/migrations/2025.10.18T20.01.14.migrate-events-to-new-events-collection";
+import { Logger } from "@core/logger/winston.logger";
 import { EventDriver } from "@backend/__tests__/drivers/event.driver";
 import {
   cleanupCollections,
@@ -7,11 +12,6 @@ import {
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
-import { Logger } from "@core/logger/winston.logger";
-import { faker } from "@faker-js/faker";
-import { MigratorType } from "@scripts/common/cli.types";
-import NewEventsCollectionMigration from "@scripts/migrations/2025.10.18T19.43.00.new-events-collection";
-import Migration from "@scripts/migrations/2025.10.18T20.01.14.migrate-events-to-new-events-collection";
 
 describe("2025.10.18T20.01.14.migrate-events-to-new-events-collection", () => {
   const migration = new Migration();

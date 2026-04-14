@@ -1,6 +1,6 @@
-import { styleText } from "node:util";
 import { type IncomingMessage, type ServerResponse } from "http";
 import morgan from "morgan";
+import { styleText } from "node:util";
 
 type HttpLogColor = "cyanBright" | "yellow" | "red" | "magentaBright";
 

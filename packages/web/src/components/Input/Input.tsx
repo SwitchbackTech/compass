@@ -1,13 +1,13 @@
-import {
-  type ClassNamedComponent,
-  type UnderlinedInput,
-} from "@web/common/types/component.types";
 import React, {
   type ForwardRefRenderFunction,
   forwardRef,
   type HTMLAttributes,
   type Ref,
 } from "react";
+import {
+  type ClassNamedComponent,
+  type UnderlinedInput,
+} from "@web/common/types/component.types";
 import { Focusable } from "../Focusable/Focusable";
 import { StyledInput, type Props as StyledProps } from "./styled";
 

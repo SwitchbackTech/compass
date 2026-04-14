@@ -1,9 +1,9 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { session } from "@web/common/classes/Session";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { StyledLogoutBtn, StyledLogoutContainer } from "./styled";
 
 export const LogoutView = () => {

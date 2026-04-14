@@ -1,3 +1,5 @@
+import { faker } from "@faker-js/faker";
+import { ObjectId } from "bson";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import {
   type Schema_Event,
@@ -8,8 +10,6 @@ import {
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { isAllDay, parseCompassEventDate } from "@core/util/event/event.util";
-import { faker } from "@faker-js/faker";
-import { ObjectId } from "bson";
 import { CompassEventRRule } from "../event/compass.event.rrule";
 
 export const createMockStandaloneEvent = (

@@ -1,3 +1,4 @@
+import styled from "styled-components";
 import { Flex } from "@web/components/Flex";
 import {
   GRID_MARGIN_LEFT,
@@ -6,7 +7,6 @@ import {
   GRID_Y_START,
   SCROLLBAR_WIDTH,
 } from "@web/views/Calendar/layout.constants";
-import styled from "styled-components";
 import { Columns } from "../Columns/styled";
 
 const gridHeight = `100% - (${GRID_Y_START}px + ${GRID_PADDING_BOTTOM}px)`;

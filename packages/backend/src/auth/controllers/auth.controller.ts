@@ -1,3 +1,11 @@
+import { ObjectId } from "mongodb";
+import { type SessionRequest } from "supertokens-node/framework/express";
+import {
+  type GoogleAuthCodeRequest,
+  GoogleAuthCodeRequestSchema,
+  GoogleConnectResponseSchema,
+} from "@core/types/auth.types";
+import { zObjectId } from "@core/types/type.utils";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import googleAuthService from "@backend/auth/services/google/google.auth.service";
 import {
@@ -5,14 +13,6 @@ import {
   type Res_Promise,
   type SReqBody,
 } from "@backend/common/types/express.types";
-import {
-  type GoogleAuthCodeRequest,
-  GoogleAuthCodeRequestSchema,
-  GoogleConnectResponseSchema,
-} from "@core/types/auth.types";
-import { zObjectId } from "@core/types/type.utils";
-import { ObjectId } from "mongodb";
-import { type SessionRequest } from "supertokens-node/framework/express";
 
 class AuthController {
   createSession = async (

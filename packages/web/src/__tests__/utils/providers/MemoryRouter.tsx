@@ -1,6 +1,6 @@
-import { render } from "@web/__tests__/__mocks__/mock.render";
 import { type ReactElement } from "react";
 import { MemoryRouter } from "react-router-dom";
+import { render } from "@web/__tests__/__mocks__/mock.render";
 
 export const renderWithMemoryRouter = async (
   ui: ReactElement,

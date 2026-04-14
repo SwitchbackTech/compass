@@ -1,8 +1,7 @@
-import { ENV } from "@backend/common/constants/env.constants";
-import { error } from "@backend/common/errors/handlers/error.handler";
-import { UserError } from "@backend/common/errors/user/user.errors";
-import { CompassSyncProcessor } from "@backend/sync/services/sync/compass/compass.sync.processor";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import { confirm, input } from "@inquirer/prompts";
+import { type MigrationContext } from "@scripts/common/cli.types";
+import { ObjectId } from "mongodb";
+import { type MigrationParams, type RunnableMigration } from "umzug";
 import { NodeEnv } from "@core/constants/core.constants";
 import {
   CompassEventStatus,
@@ -11,10 +10,11 @@ import {
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
-import { confirm, input } from "@inquirer/prompts";
-import { type MigrationContext } from "@scripts/common/cli.types";
-import { ObjectId } from "mongodb";
-import { type MigrationParams, type RunnableMigration } from "umzug";
+import { ENV } from "@backend/common/constants/env.constants";
+import { error } from "@backend/common/errors/handlers/error.handler";
+import { UserError } from "@backend/common/errors/user/user.errors";
+import { CompassSyncProcessor } from "@backend/sync/services/sync/compass/compass.sync.processor";
+import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 export default class Seeder implements RunnableMigration<MigrationContext> {
   readonly name: string = "2025.10.01T10.09.22.seed-user-events";

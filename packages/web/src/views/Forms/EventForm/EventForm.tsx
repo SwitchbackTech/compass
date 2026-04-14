@@ -1,3 +1,13 @@
+import fastDeepEqual from "fast-deep-equal/react";
+import type React from "react";
+import {
+  type KeyboardEvent,
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { darken } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
@@ -27,16 +37,6 @@ import {
   type FormProps,
   type SetEventFormField,
 } from "@web/views/Forms/EventForm/types";
-import fastDeepEqual from "fast-deep-equal/react";
-import type React from "react";
-import {
-  type KeyboardEvent,
-  memo,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
 
 const EVENT_FORM_PLAIN_HOTKEY_OPTIONS = {
   enabled: true,

@@ -1,7 +1,7 @@
-import { styleText } from "node:util";
 import pkg from "inquirer";
 import { CLI_ENV } from "./cli.constants";
 import { type Environment_Cli } from "./cli.types";
+import { styleText } from "node:util";
 
 const { prompt } = pkg;
 

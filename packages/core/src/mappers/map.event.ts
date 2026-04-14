@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 
+import mergeWith from "lodash.mergewith";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import {
@@ -22,7 +23,6 @@ import {
 } from "@core/util/event/event.util";
 import { isCancelledGCalEvent } from "@core/util/event/gcal.event.util";
 import { validateEvent } from "@core/validators/event.validator";
-import mergeWith from "lodash.mergewith";
 
 export namespace MapEvent {
   export const toCompass = (

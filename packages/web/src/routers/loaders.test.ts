@@ -1,6 +1,6 @@
+import { type LoaderFunctionArgs } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { loadDayData, loadRootData, loadTodayData } from "@web/routers/loaders";
-import { type LoaderFunctionArgs } from "react-router-dom";
 
 function createLoaderArgs(url: string): LoaderFunctionArgs<unknown> {
   return {

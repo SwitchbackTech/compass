@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { Status } from "@core/errors/status.codes";
 import { setTestWindowUrl } from "@web/__tests__/set-test-window-url";
 import { session } from "@web/common/classes/Session";
@@ -7,7 +8,6 @@ import {
   assignLocation,
   reloadLocation,
 } from "@web/common/utils/browser/browser-navigation.util";
-import { toast } from "react-toastify";
 import { BaseApi } from "./base.api";
 
 jest.mock("@web/common/utils/browser/browser-navigation.util", () => ({

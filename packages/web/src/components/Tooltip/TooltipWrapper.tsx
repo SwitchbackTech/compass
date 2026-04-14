@@ -1,3 +1,5 @@
+import type React from "react";
+import { type ReactNode, useState } from "react";
 import { AlignItems } from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";
 import {
@@ -5,8 +7,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@web/components/Tooltip";
-import type React from "react";
-import { type ReactNode, useState } from "react";
 import { Flex } from "../Flex";
 import { LegacyShortcutHint } from "../Shortcuts/ShortcutHint";
 import { TooltipDescription } from "./Description/TooltipDescription";

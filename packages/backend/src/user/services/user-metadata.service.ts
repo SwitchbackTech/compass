@@ -1,18 +1,18 @@
-import mongoService from "@backend/common/services/mongo.service";
-import { getSync } from "@backend/sync/util/sync.queries";
-import { isUsingHttps } from "@backend/sync/util/sync.util";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import { type GetUserMetadataResponse } from "@backend/user/types/user.types";
+import mergeWith from "lodash.mergewith";
+import SupertokensUserMetadata, {
+  type JSONObject,
+} from "supertokens-node/recipe/usermetadata";
 import { Resource_Sync } from "@core/types/sync.types";
 import {
   type GoogleConnectionState,
   type UserMetadata,
 } from "@core/types/user.types";
 import dayjs from "@core/util/date/dayjs";
-import mergeWith from "lodash.mergewith";
-import SupertokensUserMetadata, {
-  type JSONObject,
-} from "supertokens-node/recipe/usermetadata";
+import mongoService from "@backend/common/services/mongo.service";
+import { getSync } from "@backend/sync/util/sync.queries";
+import { isUsingHttps } from "@backend/sync/util/sync.util";
+import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import { type GetUserMetadataResponse } from "@backend/user/types/user.types";
 
 type GoogleMetadataAssessment = {
   connectionState: GoogleConnectionState;

@@ -1,3 +1,6 @@
+import { type ObjectId, type WithId } from "mongodb";
+import { type Options, RRule, type RRuleStrOptions, rrulestr } from "rrule";
+import { type ParsedOptions } from "rrule/dist/esm/types";
 import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
 import { gEventToCompassEvent } from "@core/mappers/map.event";
 import { type Schema_Event_Recur_Instance } from "@core/types/event.types";
@@ -12,9 +15,6 @@ import {
   getGcalEventDateFormat,
   parseGCalEventDate,
 } from "@core/util/event/gcal.event.util";
-import { type ObjectId, type WithId } from "mongodb";
-import { type Options, RRule, type RRuleStrOptions, rrulestr } from "rrule";
-import { type ParsedOptions } from "rrule/dist/esm/types";
 
 export class GcalEventRRule extends RRule {
   #event: gSchema$Event;

@@ -1,3 +1,4 @@
+import { combineReducers } from "redux";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
@@ -15,7 +16,6 @@ import { importLatestSlice } from "@web/ducks/events/slices/sync.slice";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
-import { combineReducers } from "redux";
 
 const eventsReducer = combineReducers({
   createEvent: createEventSlice.reducer,

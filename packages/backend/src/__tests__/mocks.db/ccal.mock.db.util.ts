@@ -1,4 +1,4 @@
-import mongoService from "@backend/common/services/mongo.service";
+import { ObjectId } from "mongodb";
 import {
   type Schema_Event,
   type Schema_Event_Recur_Base,
@@ -8,7 +8,7 @@ import {
   createMockBaseEvent,
   createMockInstance,
 } from "@core/util/test/ccal.event.factory";
-import { ObjectId } from "mongodb";
+import mongoService from "@backend/common/services/mongo.service";
 
 export const createRecurrenceSeries = async (
   baseOverrides: Partial<Schema_Event_Recur_Base>,

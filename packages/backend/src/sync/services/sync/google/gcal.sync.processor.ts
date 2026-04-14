@@ -1,12 +1,12 @@
+import { type ClientSession } from "mongodb";
+import { Logger } from "@core/logger/winston.logger";
+import { type gSchema$Event, type WithGcalId } from "@core/types/gcal";
 import { EventError } from "@backend/common/errors/event/event.errors";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
 import { GcalEventParser } from "@backend/event/classes/gcal.event.parser";
 import { type Event_Transition } from "@backend/sync/sync.types";
-import { Logger } from "@core/logger/winston.logger";
-import { type gSchema$Event, type WithGcalId } from "@core/types/gcal";
-import { type ClientSession } from "mongodb";
 
 const logger = Logger("app.gcal.sync.processor");
 export class GcalSyncProcessor {

@@ -1,11 +1,11 @@
+import type React from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { LegacyShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@web/components/Tooltip";
-import type React from "react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useMenuContext } from "./ActionsMenu";
 import { StyledMenuItem } from "./styled";
 

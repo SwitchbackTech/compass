@@ -1,3 +1,9 @@
+import { faker } from "@faker-js/faker";
+import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
+import Migration from "@scripts/migrations/2025.10.03T01.19.59.calendar-schema";
+import { ObjectId } from "bson";
+import { gcalCalendarList } from "@core/__mocks__/v1/calendarlist/gcal.calendarlist";
+import { GoogleCalendarMetadataSchema } from "@core/types/calendar.types";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -5,12 +11,6 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
-import { gcalCalendarList } from "@core/__mocks__/v1/calendarlist/gcal.calendarlist";
-import { GoogleCalendarMetadataSchema } from "@core/types/calendar.types";
-import { faker } from "@faker-js/faker";
-import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
-import Migration from "@scripts/migrations/2025.10.03T01.19.59.calendar-schema";
-import { ObjectId } from "bson";
 
 describe("2025.10.03T01.19.59.calendar-schema", () => {
   const migration = new Migration();

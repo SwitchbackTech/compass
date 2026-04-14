@@ -1,6 +1,7 @@
-import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import { addEntities } from "@ngneat/elf-entities";
 import { renderHook } from "@testing-library/react";
+import { act } from "react";
+import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import {
   DATA_EVENT_ELEMENT_ID,
   ID_GRID_MAIN,
@@ -13,7 +14,6 @@ import {
   reference$,
 } from "@web/common/hooks/useOpenAtCursor";
 import { eventsStore, getDraft } from "@web/store/events";
-import { act } from "react";
 import { useDuplicateEvent } from "./useDuplicateEvent";
 
 describe("useDuplicateEvent Integration", () => {

@@ -1,12 +1,12 @@
+import { type ObjectId } from "bson";
+import { type Query } from "express-serve-static-core";
+import { z } from "zod";
 import {
   Origin,
   Priorities,
   type Priority,
 } from "@core/constants/core.constants";
 import { IDSchema } from "@core/types/type.utils";
-import { type ObjectId } from "bson";
-import { type Query } from "express-serve-static-core";
-import { z } from "zod";
 
 /**
  * Event category, based on its display type

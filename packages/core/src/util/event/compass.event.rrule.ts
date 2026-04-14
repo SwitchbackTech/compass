@@ -1,3 +1,6 @@
+import { ObjectId } from "bson";
+import { type Options, RRule, type RRuleStrOptions, rrulestr } from "rrule";
+import { type ParsedOptions } from "rrule/dist/esm/types";
 import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
 import {
@@ -12,9 +15,6 @@ import {
   getCompassEventDateFormat,
   parseCompassEventDate,
 } from "@core/util/event/event.util";
-import { ObjectId } from "bson";
-import { type Options, RRule, type RRuleStrOptions, rrulestr } from "rrule";
-import { type ParsedOptions } from "rrule/dist/esm/types";
 
 export class CompassEventRRule extends RRule {
   #event: WithMongoId<Omit<Schema_Event_Recur_Base, "_id">>;

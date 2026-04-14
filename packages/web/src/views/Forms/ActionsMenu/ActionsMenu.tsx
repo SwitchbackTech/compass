@@ -13,6 +13,15 @@ import {
   useRole,
 } from "@floating-ui/react";
 import { DotsThreeVerticalIcon } from "@phosphor-icons/react";
+import type React from "react";
+import {
+  createContext,
+  type MouseEvent,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   ID_EVENT_FORM_ACTION_MENU,
   ZIndex,
@@ -23,15 +32,6 @@ import {
   StyledMenu,
   TriggerWrapper,
 } from "@web/views/Forms/ActionsMenu/styled";
-import type React from "react";
-import {
-  createContext,
-  type MouseEvent,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
 
 interface MenuContextValue {
   getItemProps: (

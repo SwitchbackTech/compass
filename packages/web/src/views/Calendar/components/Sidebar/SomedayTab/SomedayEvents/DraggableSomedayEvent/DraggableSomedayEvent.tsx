@@ -1,12 +1,12 @@
+import { Draggable } from "@hello-pangea/dnd";
+import React, { type FC } from "react";
 import {
   type Categories_Event,
   type Schema_Event,
 } from "@core/types/event.types";
-import { Draggable } from "@hello-pangea/dnd";
 import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
-import React, { type FC } from "react";
 import { useDraftContext } from "../../../../Draft/context/useDraftContext";
 import { SomedayEventContainer } from "../SomedayEventContainer/SomedayEventContainer";
 

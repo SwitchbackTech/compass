@@ -1,8 +1,8 @@
+import { faker } from "@faker-js/faker";
+import { ObjectId } from "mongodb";
 import * as syncQueries from "@backend/sync/util/sync.queries";
 import * as syncUtil from "@backend/sync/util/sync.util";
 import * as userQueries from "@backend/user/queries/user.queries";
-import { faker } from "@faker-js/faker";
-import { ObjectId } from "mongodb";
 import { determineGoogleAuthMode } from "./util/google.auth.util";
 
 jest.mock("@backend/user/queries/user.queries");

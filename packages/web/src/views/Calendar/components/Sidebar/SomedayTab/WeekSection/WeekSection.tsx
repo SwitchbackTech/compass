@@ -1,3 +1,4 @@
+import React, { type FC } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";
@@ -7,7 +8,6 @@ import {
   type Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import React, { type FC } from "react";
 import { SomedayEvents } from "../SomedayEvents/SomedayEvents";
 import { SidebarHeader, SidebarSection } from "../styled";
 

@@ -1,7 +1,7 @@
 import { TrashIcon } from "@phosphor-icons/react";
-import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import type React from "react";
 import { useCallback } from "react";
+import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 
 export function EventContextMenuItems({ id }: { id: string }) {
   const deleteEvent = useDeleteEvent(id);

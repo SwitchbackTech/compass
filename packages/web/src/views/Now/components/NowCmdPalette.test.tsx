@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { type ReactNode } from "react";
 import { render } from "@web/__tests__/utils/render.test.util";
 import {
   resetGoogleSyncUIStateForTests,
@@ -7,7 +8,6 @@ import {
 import { SyncApi } from "@web/common/apis/sync.api";
 import * as eventEmitterUtil from "@web/common/utils/dom/event-emitter.util";
 import { NowCmdPalette } from "@web/views/Now/components/NowCmdPalette";
-import { type ReactNode } from "react";
 
 type CommandPaletteProps = {
   children: ReactNode;

@@ -1,3 +1,10 @@
+import { calendar } from "@googleapis/calendar";
+import {
+  Categories_Recurrence,
+  type Schema_Event,
+} from "@core/types/event.types";
+import { type gSchema$Event } from "@core/types/gcal";
+import { isInstance } from "@core/util/event/event.util";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
@@ -12,13 +19,6 @@ import {
   updateBasePayloadToExpireOneDayAfterFirstInstance,
 } from "@backend/sync/services/sync/__tests__/gcal.sync.processor.test.util";
 import { GcalSyncProcessor } from "@backend/sync/services/sync/google/gcal.sync.processor";
-import {
-  Categories_Recurrence,
-  type Schema_Event,
-} from "@core/types/event.types";
-import { type gSchema$Event } from "@core/types/gcal";
-import { isInstance } from "@core/util/event/event.util";
-import { calendar } from "@googleapis/calendar";
 
 describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
   beforeAll(setupTestDb);

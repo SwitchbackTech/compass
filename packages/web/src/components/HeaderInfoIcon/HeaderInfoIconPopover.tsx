@@ -12,9 +12,9 @@ import {
   useRole,
 } from "@floating-ui/react";
 import { SpinnerIcon } from "@phosphor-icons/react";
+import { useState } from "react";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
-import { useState } from "react";
 import { TooltipWrapper } from "../Tooltip/TooltipWrapper";
 
 interface StatusDotPopoverProps {

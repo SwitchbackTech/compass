@@ -10,6 +10,7 @@ import {
   type UseFloatingOptions,
   useFloating,
 } from "@floating-ui/react";
+import { useCallback } from "react";
 import {
   DATA_FULL_WIDTH,
   DATA_OVERLAPPING,
@@ -29,7 +30,6 @@ import {
   useFloatingStrategyAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
 import { theme } from "@web/common/styles/theme";
-import { useCallback } from "react";
 
 const themeSpacing = parseInt(theme.spacing.xs);
 

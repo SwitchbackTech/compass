@@ -1,6 +1,6 @@
-import gcalService from "@backend/common/services/gcal/gcal.service";
 import { type gCalendar } from "@core/types/gcal";
 import { StringV4Schema } from "@core/types/type.utils";
+import gcalService from "@backend/common/services/gcal/gcal.service";
 
 export const getCalendarsToSync = async (gcal: gCalendar) => {
   const calendarListResponse = await gcalService.getCalendarlist(gcal);

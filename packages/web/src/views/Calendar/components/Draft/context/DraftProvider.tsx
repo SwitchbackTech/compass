@@ -1,9 +1,9 @@
+import type React from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import type React from "react";
 import { useDraftActions } from "../hooks/actions/useDraftActions";
 import { useDraftConfirmation } from "../hooks/state/useDraftConfirmation";
 import { useDraftForm } from "../hooks/state/useDraftForm";

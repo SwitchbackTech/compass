@@ -1,4 +1,7 @@
 import { getEntity } from "@ngneat/elf-entities";
+import { ObjectId } from "bson";
+import { useCallback } from "react";
+import { lastValueFrom, timer } from "rxjs";
 import {
   CursorItem,
   openFloatingAtCursor,
@@ -6,9 +9,6 @@ import {
 import { getCalendarEventElementFromGrid } from "@web/common/utils/event/event.util";
 import { eventsStore, setDraft } from "@web/store/events";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
-import { ObjectId } from "bson";
-import { useCallback } from "react";
-import { lastValueFrom, timer } from "rxjs";
 
 /**
  * useDuplicateEvent

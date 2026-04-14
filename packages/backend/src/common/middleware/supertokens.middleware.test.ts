@@ -1,3 +1,16 @@
+import cors from "cors";
+import { ObjectId } from "mongodb";
+import superTokensNode from "supertokens-node";
+import Dashboard from "supertokens-node/recipe/dashboard";
+import EmailPassword from "supertokens-node/recipe/emailpassword";
+import Session from "supertokens-node/recipe/session";
+import ThirdParty from "supertokens-node/recipe/thirdparty";
+import UserMetadata from "supertokens-node/recipe/usermetadata";
+import {
+  APP_NAME,
+  PORT_DEFAULT_BACKEND,
+  PORT_DEFAULT_WEB,
+} from "@core/constants/core.constants";
 import googleAuthService from "@backend/auth/services/google/google.auth.service";
 import { ENV } from "@backend/common/constants/env.constants";
 import {
@@ -13,19 +26,6 @@ import {
 } from "@backend/common/middleware/supertokens.middleware.util";
 import EmailService from "@backend/email/email.service";
 import userService from "@backend/user/services/user.service";
-import {
-  APP_NAME,
-  PORT_DEFAULT_BACKEND,
-  PORT_DEFAULT_WEB,
-} from "@core/constants/core.constants";
-import cors from "cors";
-import { ObjectId } from "mongodb";
-import superTokensNode from "supertokens-node";
-import Dashboard from "supertokens-node/recipe/dashboard";
-import EmailPassword from "supertokens-node/recipe/emailpassword";
-import Session from "supertokens-node/recipe/session";
-import ThirdParty from "supertokens-node/recipe/thirdparty";
-import UserMetadata from "supertokens-node/recipe/usermetadata";
 
 jest.mock("cors", () => ({
   __esModule: true,

@@ -1,3 +1,4 @@
+import { Categories_Recurrence } from "@core/types/event.types";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
@@ -8,7 +9,6 @@ import {
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 import { mockRegularGcalEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { GcalSyncProcessor } from "@backend/sync/services/sync/google/gcal.sync.processor";
-import { Categories_Recurrence } from "@core/types/event.types";
 
 describe("GcalSyncProcessor UPSERT: STANDALONE", () => {
   beforeAll(setupTestDb);

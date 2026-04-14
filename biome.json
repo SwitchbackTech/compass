@@ -76,8 +76,8 @@
           "level": "on",
           "options": {
             "groups": [
-              [":BUN:", ":NODE:"],
-              ":PACKAGE:",
+              [":PACKAGE:", "!@core/**", "!@web/**", "!@backend/**"],
+              ["@*", "!@core/**", "!@web/**", "!@backend/**"],
               ["@core/**", "!@core"],
               ["@web/**", "!@web"],
               ["@backend/**", "!@backend"],

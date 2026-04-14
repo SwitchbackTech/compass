@@ -1,6 +1,3 @@
-import { brighten, darken } from "@core/util/color.utils";
-import { theme } from "@web/common/styles/theme";
-import { RepeatIcon } from "@web/components/Icons/Repeat";
 import type React from "react";
 import { useEffect, useMemo, useRef } from "react";
 import ReactSelect, {
@@ -10,6 +7,9 @@ import ReactSelect, {
 } from "react-select";
 import { Frequency } from "rrule";
 import { useTheme } from "styled-components";
+import { brighten, darken } from "@core/util/color.utils";
+import { theme } from "@web/common/styles/theme";
+import { RepeatIcon } from "@web/components/Icons/Repeat";
 import { type FrequencyValues } from "../../../EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";
 import { SelectContent } from "./styled";
 

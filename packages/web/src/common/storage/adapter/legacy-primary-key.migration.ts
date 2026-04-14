@@ -1,5 +1,5 @@
-import { type Event_Core } from "@core/types/event.types";
 import Dexie, { type Table } from "dexie";
+import { type Event_Core } from "@core/types/event.types";
 import { type StoredTask } from "./storage.adapter";
 
 const DB_NAME = "compass-local";

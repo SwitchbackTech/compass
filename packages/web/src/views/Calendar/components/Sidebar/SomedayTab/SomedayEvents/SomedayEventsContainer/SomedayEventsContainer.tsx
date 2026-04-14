@@ -1,5 +1,7 @@
-import { Categories_Event } from "@core/types/event.types";
 import { Droppable } from "@hello-pangea/dnd";
+import type React from "react";
+import { type FC } from "react";
+import { Categories_Event } from "@core/types/event.types";
 import {
   COLUMN_MONTH,
   COLUMN_WEEK,
@@ -14,8 +16,6 @@ import { DraggableSomedayEvent } from "@web/views/Calendar/components/Sidebar/So
 import { DraggableSomedayEvents } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/DraggableSomedayEvent/DraggableSomedayEvents";
 import { AddSomedayEvent } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventsContainer/AddSomedayEvent";
 import { DropZone } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventsContainer/Dropzone";
-import type React from "react";
-import { type FC } from "react";
 
 const getColName = (category: Categories_Event) => {
   return category === Categories_Event.SOMEDAY_WEEK

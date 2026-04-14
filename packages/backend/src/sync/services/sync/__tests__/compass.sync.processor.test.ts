@@ -1,14 +1,6 @@
 /** @jest-environment node */
 
-import { missingRefreshTokenError } from "@backend/__tests__/mocks.gcal/errors/error.missingRefreshToken";
-import mongoService from "@backend/common/services/mongo.service";
-import * as compassExecutor from "@backend/event/classes/compass.event.executor";
-import { type CompassApplyResult } from "@backend/event/classes/compass.event.executor";
-import * as compassParser from "@backend/event/classes/compass.event.parser";
-import * as eventService from "@backend/event/services/event.service";
-import { sseServer } from "@backend/servers/sse/sse.server";
-import { CompassSyncProcessor } from "@backend/sync/services/sync/compass/compass.sync.processor";
-import { type Event_Transition } from "@backend/sync/sync.types";
+import { faker } from "@faker-js/faker";
 import {
   EVENT_CHANGED,
   SOMEDAY_EVENT_CHANGED,
@@ -24,7 +16,15 @@ import {
   createMockBaseEvent,
   createMockStandaloneEvent,
 } from "@core/util/test/ccal.event.factory";
-import { faker } from "@faker-js/faker";
+import { missingRefreshTokenError } from "@backend/__tests__/mocks.gcal/errors/error.missingRefreshToken";
+import mongoService from "@backend/common/services/mongo.service";
+import * as compassExecutor from "@backend/event/classes/compass.event.executor";
+import { type CompassApplyResult } from "@backend/event/classes/compass.event.executor";
+import * as compassParser from "@backend/event/classes/compass.event.parser";
+import * as eventService from "@backend/event/services/event.service";
+import { sseServer } from "@backend/servers/sse/sse.server";
+import { CompassSyncProcessor } from "@backend/sync/services/sync/compass/compass.sync.processor";
+import { type Event_Transition } from "@backend/sync/sync.types";
 
 // Import the enum
 

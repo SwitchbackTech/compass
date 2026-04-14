@@ -1,7 +1,7 @@
 import { renderHook } from "@testing-library/react";
+import { act, type MouseEvent } from "react";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
-import { act, type MouseEvent } from "react";
 import { useAuthCmdItems } from "./useAuthCmdItems";
 
 jest.mock("@web/auth/compass/session/useSession", () => ({

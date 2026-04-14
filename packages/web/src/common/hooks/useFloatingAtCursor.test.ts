@@ -1,4 +1,5 @@
 import { renderHook } from "@testing-library/react";
+import { act } from "react";
 import {
   CursorItem,
   nodeId$,
@@ -8,7 +9,6 @@ import {
   strategy$,
   useFloatingStrategyAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
-import { act } from "react";
 import { useFloatingAtCursor } from "./useFloatingAtCursor";
 
 describe("useFloatingAtCursor", () => {

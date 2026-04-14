@@ -1,5 +1,8 @@
-import { Categories_Event } from "@core/types/event.types";
 import { type UseInteractionsReturn } from "@floating-ui/react";
+import classNames from "classnames";
+import fastDeepEqual from "fast-deep-equal/react";
+import { memo } from "react";
+import { Categories_Event } from "@core/types/event.types";
 import { CLASS_ALL_DAY_CALENDAR_EVENT } from "@web/common/constants/web.constants";
 import { useIsDraggingEvent } from "@web/common/hooks/useIsDraggingEvent";
 import { useMainGridSelectionState } from "@web/common/hooks/useMainGridSelectionState";
@@ -13,9 +16,6 @@ import { Draggable } from "@web/components/DND/Draggable";
 import { AllDayAgendaEvent } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/AllDayAgendaEvent";
 import { useOpenAgendaEventPreview } from "@web/views/Day/hooks/events/useOpenAgendaEventPreview";
 import { useOpenEventContextMenu } from "@web/views/Day/hooks/events/useOpenEventContextMenu";
-import classNames from "classnames";
-import fastDeepEqual from "fast-deep-equal/react";
-import { memo } from "react";
 
 export const DraggableAllDayAgendaEvent = memo(
   ({

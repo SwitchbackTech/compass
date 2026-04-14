@@ -1,17 +1,5 @@
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
-import {
-  cleanupCollections,
-  cleanupTestDb,
-  setupTestDb,
-} from "@backend/__tests__/helpers/mock.db.setup";
-import mongoService from "@backend/common/services/mongo.service";
-import {
-  testCompassEventInGcal,
-  testCompassEventNotInGcal,
-  testCompassSeries,
-} from "@backend/event/classes/compass.event.parser.test.util";
-import eventService, { _getGcal } from "@backend/event/services/event.service";
-import { CompassSyncProcessor } from "@backend/sync/services/sync/compass/compass.sync.processor";
+import { faker } from "@faker-js/faker";
+import { type WithId } from "mongodb";
 import { Priorities } from "@core/constants/core.constants";
 import {
   CalendarProvider,
@@ -26,8 +14,20 @@ import {
 import dayjs from "@core/util/date/dayjs";
 import { parseCompassEventDate } from "@core/util/event/event.util";
 import { createMockBaseEvent } from "@core/util/test/ccal.event.factory";
-import { faker } from "@faker-js/faker";
-import { type WithId } from "mongodb";
+import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
+import {
+  cleanupCollections,
+  cleanupTestDb,
+  setupTestDb,
+} from "@backend/__tests__/helpers/mock.db.setup";
+import mongoService from "@backend/common/services/mongo.service";
+import {
+  testCompassEventInGcal,
+  testCompassEventNotInGcal,
+  testCompassSeries,
+} from "@backend/event/classes/compass.event.parser.test.util";
+import eventService, { _getGcal } from "@backend/event/services/event.service";
+import { CompassSyncProcessor } from "@backend/sync/services/sync/compass/compass.sync.processor";
 
 describe.each([
   { calendarProvider: CalendarProvider.GOOGLE },

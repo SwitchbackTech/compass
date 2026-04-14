@@ -1,9 +1,9 @@
 import { CaretDown, CaretUp } from "@phosphor-icons/react";
+import type React from "react";
 import {
   StyledCaretButton,
   StyledCaretInputContainer,
 } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
-import type React from "react";
 
 export interface CaretInputProps {
   onChange: (type: "increase" | "decrease") => void;

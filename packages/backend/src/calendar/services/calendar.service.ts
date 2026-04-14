@@ -1,6 +1,5 @@
-import mongoService from "@backend/common/services/mongo.service";
-import { getCalendarsToSync } from "@backend/sync/services/init/sync.init";
-import { updateSync } from "@backend/sync/util/sync.queries";
+import { type ClientSession, type ObjectId } from "mongodb";
+import { z } from "zod/v4";
 import { MapCalendar } from "@core/mappers/map.calendar";
 import {
   CompassCalendarSchema,
@@ -10,8 +9,9 @@ import { CalendarProvider } from "@core/types/event.types";
 import { type gCalendar } from "@core/types/gcal";
 import { Resource_Sync } from "@core/types/sync.types";
 import { zObjectId } from "@core/types/type.utils";
-import { type ClientSession, type ObjectId } from "mongodb";
-import { z } from "zod/v4";
+import mongoService from "@backend/common/services/mongo.service";
+import { getCalendarsToSync } from "@backend/sync/services/init/sync.init";
+import { updateSync } from "@backend/sync/util/sync.queries";
 
 class CalendarService {
   private static readonly calendarSelectionToggleSchema = z

@@ -1,5 +1,5 @@
-import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import { addEntities } from "@ngneat/elf-entities";
+import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import {
   activeEvent$,
   activeEventId$,

@@ -1,10 +1,3 @@
-import { ENV } from "@backend/common/constants/env.constants";
-import { isMissingUserTagId } from "@backend/common/constants/env.util";
-import { EmailerError } from "@backend/common/errors/emailer/emailer.errors";
-import {
-  error,
-  genericError,
-} from "@backend/common/errors/handlers/error.handler";
 import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 import { mapCompassUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
@@ -13,6 +6,13 @@ import {
   SubscriberSchema,
 } from "@core/types/email/email.types";
 import { type Schema_User } from "@core/types/user.types";
+import { ENV } from "@backend/common/constants/env.constants";
+import { isMissingUserTagId } from "@backend/common/constants/env.util";
+import { EmailerError } from "@backend/common/errors/emailer/emailer.errors";
+import {
+  error,
+  genericError,
+} from "@backend/common/errors/handlers/error.handler";
 import {
   type Response_TagSubscriber,
   type Response_UpsertSubscriber,

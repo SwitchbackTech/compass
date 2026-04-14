@@ -1,3 +1,8 @@
+import { ObjectId } from "mongodb";
+import {
+  filterBaseEvents,
+  filterExistingInstances,
+} from "@core/util/event/event.util";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
@@ -11,11 +16,6 @@ import {
   mockRecurringGcalInstances,
 } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { createSyncImport } from "@backend/sync/services/import/sync.import";
-import {
-  filterBaseEvents,
-  filterExistingInstances,
-} from "@core/util/event/event.util";
-import { ObjectId } from "mongodb";
 
 describe("SyncImport: Series", () => {
   beforeAll(setupTestDb);

@@ -1,11 +1,11 @@
-import { type SReqBody } from "@backend/common/types/express.types";
-import userService from "@backend/user/services/user.service";
-import userMetadataService from "@backend/user/services/user-metadata.service";
+import { type Request, type Response } from "express";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { zObjectId } from "@core/types/type.utils";
 import { type UserMetadata, type UserProfile } from "@core/types/user.types";
-import { type Request, type Response } from "express";
+import { type SReqBody } from "@backend/common/types/express.types";
+import userService from "@backend/user/services/user.service";
+import userMetadataService from "@backend/user/services/user-metadata.service";
 
 class UserController {
   getProfile = async (

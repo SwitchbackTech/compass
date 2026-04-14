@@ -1,3 +1,24 @@
+import { type ClientSession, type Filter, ObjectId } from "mongodb";
+import { Logger } from "@core/logger/winston.logger";
+import { MapEvent } from "@core/mappers/map.event";
+import {
+  type Schema_Event,
+  type Schema_Event_Core,
+} from "@core/types/event.types";
+import { type gCalendar } from "@core/types/gcal";
+import {
+  type Params_WatchEvents,
+  type Payload_Sync_Notif,
+  Resource_Sync,
+  type Result_Watch_Stop,
+  XGoogleResourceState,
+} from "@core/types/sync.types";
+import { ExpirationDateSchema } from "@core/types/type.utils";
+import { WatchSchema } from "@core/types/watch.types";
+import {
+  shouldDoIncrementalGCalSync,
+  shouldImportGCal,
+} from "@core/util/event/event.util";
 import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
@@ -35,27 +56,6 @@ import {
 } from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";
-import { Logger } from "@core/logger/winston.logger";
-import { MapEvent } from "@core/mappers/map.event";
-import {
-  type Schema_Event,
-  type Schema_Event_Core,
-} from "@core/types/event.types";
-import { type gCalendar } from "@core/types/gcal";
-import {
-  type Params_WatchEvents,
-  type Payload_Sync_Notif,
-  Resource_Sync,
-  type Result_Watch_Stop,
-  XGoogleResourceState,
-} from "@core/types/sync.types";
-import { ExpirationDateSchema } from "@core/types/type.utils";
-import { WatchSchema } from "@core/types/watch.types";
-import {
-  shouldDoIncrementalGCalSync,
-  shouldImportGCal,
-} from "@core/util/event/event.util";
-import { type ClientSession, type Filter, ObjectId } from "mongodb";
 
 const logger = Logger("app:sync.service");
 

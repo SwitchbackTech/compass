@@ -1,8 +1,4 @@
-import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
-import { error } from "@backend/common/errors/handlers/error.handler";
-import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
-import { getBaseURL } from "@backend/servers/ngrok/ngrok.utils";
-import { encodeChannelToken } from "@backend/sync/util/watch.util";
+import { type GaxiosResponse } from "gaxios";
 import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
 import {
   type gCalendar,
@@ -16,7 +12,11 @@ import {
   type SyncDetails,
 } from "@core/types/sync.types";
 import { IDSchemaV4 } from "@core/types/type.utils";
-import { type GaxiosResponse } from "gaxios";
+import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
+import { error } from "@backend/common/errors/handlers/error.handler";
+import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
+import { getBaseURL } from "@backend/servers/ngrok/ngrok.utils";
+import { encodeChannelToken } from "@backend/sync/util/watch.util";
 
 class GCalService {
   private validateGCalResponse<T>(

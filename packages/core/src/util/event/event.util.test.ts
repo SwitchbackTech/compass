@@ -1,3 +1,5 @@
+import { faker } from "@faker-js/faker";
+import { RRule, rrulestr } from "rrule";
 import dayjs from "@core/util/date/dayjs";
 import {
   categorizeEvents,
@@ -8,8 +10,6 @@ import {
   createMockInstance,
   createMockStandaloneEvent,
 } from "@core/util/test/ccal.event.factory";
-import { faker } from "@faker-js/faker";
-import { RRule, rrulestr } from "rrule";
 
 describe("categorizeEvents", () => {
   it("should categorize events correctly", () => {

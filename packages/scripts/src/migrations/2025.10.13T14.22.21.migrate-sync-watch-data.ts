@@ -1,16 +1,16 @@
+import { type MigrationContext } from "@scripts/common/cli.types";
+import { ObjectId } from "mongodb";
+import { type MigrationParams, type RunnableMigration } from "umzug";
+import { z } from "zod/v4";
+import { Resource_Sync } from "@core/types/sync.types";
+import { ExpirationDateSchema } from "@core/types/type.utils";
+import { type Schema_Watch, WatchSchema } from "@core/types/watch.types";
 import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import syncService from "@backend/sync/services/sync.service";
 import { getChannelExpiration } from "@backend/sync/util/sync.util";
-import { Resource_Sync } from "@core/types/sync.types";
-import { ExpirationDateSchema } from "@core/types/type.utils";
-import { type Schema_Watch, WatchSchema } from "@core/types/watch.types";
-import { type MigrationContext } from "@scripts/common/cli.types";
-import { ObjectId } from "mongodb";
-import { type MigrationParams, type RunnableMigration } from "umzug";
-import { z } from "zod/v4";
 
 export default class Migration implements RunnableMigration<MigrationContext> {
   readonly name: string = "2025.10.13T14.22.21.migrate-sync-watch-data";

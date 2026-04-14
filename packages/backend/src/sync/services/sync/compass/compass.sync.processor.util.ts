@@ -1,9 +1,9 @@
-import { type applyCompassPlan } from "@backend/event/classes/compass.event.executor";
+import { z } from "zod";
 import {
   CoreEventSchema,
   type Schema_Event_Core,
 } from "@core/types/event.types";
-import { z } from "zod";
+import { type applyCompassPlan } from "@backend/event/classes/compass.event.executor";
 
 export type PersistedCompassEvent = Awaited<
   ReturnType<typeof applyCompassPlan>

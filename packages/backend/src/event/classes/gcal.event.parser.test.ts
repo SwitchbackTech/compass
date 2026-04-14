@@ -1,3 +1,9 @@
+import { faker } from "@faker-js/faker";
+import { RRule } from "rrule";
+import { Categories_Recurrence } from "@core/types/event.types";
+import { type gSchema$Event, type WithGcalId } from "@core/types/gcal";
+import dayjs from "@core/util/date/dayjs";
+import { isBase, isInstance } from "@core/util/event/event.util";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import {
   cleanupCollections,
@@ -18,12 +24,6 @@ import { createNewRecurringEventPayload } from "@backend/__tests__/mocks.gcal/fi
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import { GcalEventParser } from "@backend/event/classes//gcal.event.parser";
-import { Categories_Recurrence } from "@core/types/event.types";
-import { type gSchema$Event, type WithGcalId } from "@core/types/gcal";
-import dayjs from "@core/util/date/dayjs";
-import { isBase, isInstance } from "@core/util/event/event.util";
-import { faker } from "@faker-js/faker";
-import { RRule } from "rrule";
 
 describe("GcalEventParser", () => {
   describe("Before Init", () => {

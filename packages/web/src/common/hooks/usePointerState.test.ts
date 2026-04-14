@@ -1,10 +1,10 @@
 import { renderHook } from "@testing-library/react";
+import { act, type PointerEvent } from "react";
 import {
   type PointerState,
   pointerState$,
 } from "@web/common/context/pointer-position";
 import { usePointerState } from "@web/common/hooks/usePointerState";
-import { act, type PointerEvent } from "react";
 
 const excludeEvent = (state: PointerState): Omit<PointerState, "event"> => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

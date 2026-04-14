@@ -1,5 +1,5 @@
-import { SubscriberStateSchema } from "@core/types/email/email.types";
 import { z } from "zod";
+import { SubscriberStateSchema } from "@core/types/email/email.types";
 
 export const RequestBody_AddTagToSubscriberSchema = z.object({
   email_address: z.string().email(),

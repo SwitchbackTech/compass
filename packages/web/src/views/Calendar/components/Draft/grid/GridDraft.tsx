@@ -1,6 +1,7 @@
+import { FloatingFocusManager } from "@floating-ui/react";
+import { type FC, type MouseEvent } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
-import { FloatingFocusManager } from "@floating-ui/react";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getEventDragOffset } from "@web/common/utils/event/event.util";
@@ -11,7 +12,6 @@ import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLa
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
-import { type FC, type MouseEvent } from "react";
 
 interface Props {
   draft: Schema_GridEvent;

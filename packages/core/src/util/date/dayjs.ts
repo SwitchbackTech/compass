@@ -1,4 +1,3 @@
-import { dayjsCompassPlugin } from "@core/util/date/dayjs-compass.plugin";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import dayOfYear from "dayjs/plugin/dayOfYear";
@@ -11,6 +10,7 @@ import updateLocale from "dayjs/plugin/updateLocale";
 import utcPlugin from "dayjs/plugin/utc";
 import weekday from "dayjs/plugin/weekday";
 import weekOfYear from "dayjs/plugin/weekOfYear";
+import { dayjsCompassPlugin } from "@core/util/date/dayjs-compass.plugin";
 
 export type {
   ConfigType,

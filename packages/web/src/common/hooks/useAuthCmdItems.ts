@@ -1,7 +1,7 @@
+import { type JsonStructureItem } from "react-cmdk";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { useAuthFeatureFlag } from "@web/components/AuthModal/hooks/useAuthFeatureFlag";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
-import { type JsonStructureItem } from "react-cmdk";
 
 /**
  * Returns command palette items for authentication actions.

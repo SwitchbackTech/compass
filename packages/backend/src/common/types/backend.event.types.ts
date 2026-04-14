@@ -1,6 +1,6 @@
-import { CoreEventSchema } from "@core/types/event.types";
 import { ObjectId } from "mongodb";
 import { z } from "zod";
+import { CoreEventSchema } from "@core/types/event.types";
 
 const zObjectId = z.instanceof(ObjectId);
 

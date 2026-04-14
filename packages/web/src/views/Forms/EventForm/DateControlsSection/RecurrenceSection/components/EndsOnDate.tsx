@@ -1,3 +1,5 @@
+import type React from "react";
+import { useMemo, useState } from "react";
 import { darken } from "@core/util/color.utils";
 import { parseCompassEventDate } from "@core/util/event/event.util";
 import { theme } from "@web/common/styles/theme";
@@ -6,8 +8,6 @@ import { Flex } from "@web/components/Flex";
 import { StyledText } from "@web/components/Text/styled";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { StyledRepeatRow } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
-import type React from "react";
-import { useMemo, useState } from "react";
 
 export interface EndsOnDateProps {
   bgColor: string;

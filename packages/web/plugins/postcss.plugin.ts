@@ -1,5 +1,5 @@
-import { type BunPlugin } from "bun";
 import tailwindcss from "@tailwindcss/postcss";
+import { type BunPlugin } from "bun";
 import postcss from "postcss";
 
 /**

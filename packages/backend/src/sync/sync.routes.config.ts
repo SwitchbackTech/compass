@@ -1,3 +1,9 @@
+import type express from "express";
+import { verifySession } from "supertokens-node/recipe/session/framework/express";
+import {
+  GCAL_NOTIFICATION_ENDPOINT,
+  SYNC_DEBUG,
+} from "@core/constants/core.constants";
 import authMiddleware from "@backend/auth/middleware/auth.middleware";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 import {
@@ -6,12 +12,6 @@ import {
 } from "@backend/common/middleware/google.required.middleware";
 import { SyncController } from "@backend/sync/controllers/sync.controller";
 import syncDebugController from "@backend/sync/controllers/sync.debug.controller";
-import {
-  GCAL_NOTIFICATION_ENDPOINT,
-  SYNC_DEBUG,
-} from "@core/constants/core.constants";
-import type express from "express";
-import { verifySession } from "supertokens-node/recipe/session/framework/express";
 
 export class SyncRoutes extends CommonRoutesConfig {
   constructor(app: express.Application) {

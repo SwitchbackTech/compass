@@ -1,5 +1,5 @@
-import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
 import { z } from "zod";
+import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
 
 const TaskSchema = z.object({
   _id: z.string(),

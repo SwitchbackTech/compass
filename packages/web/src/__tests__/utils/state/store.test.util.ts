@@ -1,5 +1,5 @@
-import { type Schema_Event } from "@core/types/event.types";
 import { configureStore, type PreloadedState } from "@reduxjs/toolkit";
+import { type Schema_Event } from "@core/types/event.types";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { type RootState } from "@web/store";
 import { reducers } from "@web/store/reducers";

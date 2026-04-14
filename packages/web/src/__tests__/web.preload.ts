@@ -1,8 +1,9 @@
 // sort-imports-ignore — side-effect import order matters
-import { afterAll, afterEach, beforeAll, beforeEach, expect } from "bun:test";
-import { createRequire } from "node:module";
+
 import { JSDOM } from "jsdom";
 import { jest as jestBinding } from "./patched-jest.cjs";
+import { afterAll, afterEach, beforeAll, beforeEach, expect } from "bun:test";
+import { createRequire } from "node:module";
 
 globalThis.jest = jestBinding;
 import "@core/__tests__/core.test.init";

@@ -1,11 +1,11 @@
+import { faker } from "@faker-js/faker";
+import { ObjectId } from "bson";
 import {
   GcalNotificationSchema,
   Resource_Sync,
   XGoogleResourceState,
 } from "@core/types/sync.types";
 import dayjs from "@core/util/date/dayjs";
-import { faker } from "@faker-js/faker";
-import { ObjectId } from "bson";
 
 describe("GcalNotificationSchema", () => {
   it("validates a correct EVENTS notification", () => {

@@ -1,8 +1,8 @@
+import React, { type FC } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import { NowLine } from "@web/views/Calendar/components/NowLine";
-import React, { type FC } from "react";
 import { StyledGridCol, StyledGridCols } from "./styled";
 import { TimesColumn } from "./TimesColumn";
 

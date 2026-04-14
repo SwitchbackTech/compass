@@ -1,3 +1,4 @@
+import { act } from "react";
 import {
   fireEvent,
   renderHook,
@@ -5,7 +6,6 @@ import {
 } from "@web/__tests__/__mocks__/mock.render";
 import { ID_MAIN, ID_ROOT } from "@web/common/constants/web.constants";
 import { useMovementEvent } from "@web/common/hooks/useMovementEvent";
-import { act } from "react";
 
 describe("useMovementEvent", () => {
   const mockHandler = jest.fn();

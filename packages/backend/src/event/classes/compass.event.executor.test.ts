@@ -1,11 +1,6 @@
 /** @jest-environment node */
 
-import {
-  applyCompassPlan,
-  type CompassApplyResult,
-} from "@backend/event/classes/compass.event.executor";
-import { type CompassOperationPlan } from "@backend/event/classes/compass.event.parser";
-import * as eventService from "@backend/event/services/event.service";
+import { ObjectId } from "mongodb";
 import {
   CalendarProvider,
   Categories_Recurrence,
@@ -18,7 +13,12 @@ import {
   createMockBaseEvent,
   createMockStandaloneEvent,
 } from "@core/util/test/ccal.event.factory";
-import { ObjectId } from "mongodb";
+import {
+  applyCompassPlan,
+  type CompassApplyResult,
+} from "@backend/event/classes/compass.event.executor";
+import { type CompassOperationPlan } from "@backend/event/classes/compass.event.parser";
+import * as eventService from "@backend/event/services/event.service";
 
 jest.mock("@backend/event/services/event.service", () => ({
   _createCompassEvent: jest.fn(),

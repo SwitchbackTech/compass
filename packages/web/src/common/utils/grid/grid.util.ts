@@ -1,3 +1,4 @@
+import { type MouseEvent } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
   type AssignResult,
@@ -11,7 +12,6 @@ import {
   FLEX_TODAY,
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
-import { type MouseEvent } from "react";
 
 export const assignEventToRow = (
   eventDays: number[],

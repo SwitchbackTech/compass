@@ -1,10 +1,10 @@
+import { type ObjectId } from "mongodb";
+import { z } from "zod/v4";
 import {
   type Categories_Recurrence,
   type Event_Core,
   type TransitionCategoriesRecurrence,
 } from "@core/types/event.types";
-import { type ObjectId } from "mongodb";
-import { z } from "zod/v4";
 
 export type Event_Core_WithObjectId = Omit<Event_Core, "_id"> & {
   _id?: ObjectId;

@@ -1,3 +1,6 @@
+import classNames from "classnames";
+import fastDeepEqual from "fast-deep-equal/react";
+import { memo } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { darken, isDark } from "@core/util/color.utils";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
@@ -5,9 +8,6 @@ import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { type DNDChildProps } from "@web/components/DND/Draggable";
-import classNames from "classnames";
-import fastDeepEqual from "fast-deep-equal/react";
-import { memo } from "react";
 
 export const AllDayAgendaEvent = memo(
   ({

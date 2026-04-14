@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { usePointerPosition } from "@web/common/hooks/usePointerPosition";
 import { useSidebarState } from "@web/common/hooks/useSidebarState";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
@@ -8,7 +9,6 @@ import { NowCmdPalette } from "@web/views/Now/components/NowCmdPalette";
 import { NowViewProvider } from "@web/views/Now/context/NowViewProvider";
 import { useNowShortcuts } from "@web/views/Now/shortcuts/useNowShortcuts";
 import { NowViewContent } from "@web/views/Now/view/NowViewContent";
-import { useEffect } from "react";
 
 export const NowView = () => {
   const { togglePointerMovementTracking } = usePointerPosition();

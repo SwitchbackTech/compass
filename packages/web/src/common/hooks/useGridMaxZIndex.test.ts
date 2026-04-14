@@ -1,6 +1,6 @@
 import { renderHook } from "@testing-library/react";
-import { maxGridZIndex$ } from "@web/common/utils/dom/grid-organization.util";
 import { act } from "react";
+import { maxGridZIndex$ } from "@web/common/utils/dom/grid-organization.util";
 import { useGridMaxZIndex } from "./useGridMaxZIndex";
 
 describe("useGridMaxZIndex", () => {

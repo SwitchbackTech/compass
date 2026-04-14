@@ -1,3 +1,4 @@
+import { type FC, memo, useCallback, useMemo } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { DAY_COMPACT, DAY_HOUR_MIN_M } from "@core/constants/date.constants";
 import { type Schema_Event } from "@core/types/event.types";
@@ -28,7 +29,6 @@ import {
   GRID_X_START,
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
-import { type FC, memo, useCallback, useMemo } from "react";
 
 interface Props {
   dateCalcs: DateCalcs;

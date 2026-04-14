@@ -1,3 +1,5 @@
+import { act } from "react";
+import { useDispatch } from "react-redux";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import { type Schema_WebEvent } from "@web/common/types/web.event.types";
@@ -9,8 +11,6 @@ import { useDateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { useGridLayout } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { useToday } from "@web/views/Calendar/hooks/useToday";
 import { useWeek } from "@web/views/Calendar/hooks/useWeek";
-import { act } from "react";
-import { useDispatch } from "react-redux";
 
 export function setupDraftState(event: Schema_WebEvent) {
   const isSidebarOpen = true;

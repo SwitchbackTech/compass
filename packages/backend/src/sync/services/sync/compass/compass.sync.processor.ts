@@ -1,3 +1,10 @@
+import { type ClientSession, ObjectId } from "mongodb";
+import {
+  EVENT_CHANGED,
+  SOMEDAY_EVENT_CHANGED,
+} from "@core/constants/sse.constants";
+import { Logger } from "@core/logger/winston.logger";
+import { type CompassEvent } from "@core/types/event.types";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
@@ -15,13 +22,6 @@ import {
 import { sseServer } from "@backend/servers/sse/sse.server";
 import { type Event_Transition } from "@backend/sync/sync.types";
 import { isMissingGoogleRefreshToken } from "@backend/sync/util/sync.util";
-import {
-  EVENT_CHANGED,
-  SOMEDAY_EVENT_CHANGED,
-} from "@core/constants/sse.constants";
-import { Logger } from "@core/logger/winston.logger";
-import { type CompassEvent } from "@core/types/event.types";
-import { type ClientSession, ObjectId } from "mongodb";
 import {
   isPersistedCoreEvent,
   type PersistedCompassEvent,

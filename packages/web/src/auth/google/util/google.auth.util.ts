@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { Origin } from "@core/constants/core.constants";
 import { type Result_Auth_Compass } from "@core/types/auth.types";
 import { markGoogleAsRevoked } from "@web/auth/google/state/google.auth.state";
@@ -14,7 +15,6 @@ import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
 import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { closeStream, openStream } from "@web/sse/client/sse.client";
 import { store } from "@web/store";
-import { toast } from "react-toastify";
 import { type GoogleAuthConfig } from "../hooks/googe.auth.types";
 
 export interface AuthenticateResult {

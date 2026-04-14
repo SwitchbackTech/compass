@@ -1,3 +1,5 @@
+import type React from "react";
+import { type FC, useState } from "react";
 import { type Schema_Event } from "@core/types/event.types";
 import { type SelectOption } from "@web/common/types/component.types";
 import { type Option_Time } from "@web/common/types/util.types";
@@ -8,8 +10,6 @@ import {
 } from "@web/common/utils/datetime/web.date.util";
 import { shouldAdjustComplimentTime } from "@web/common/utils/datetime/web.datetime.util";
 import { AlignItems } from "@web/components/Flex/styled";
-import type React from "react";
-import { type FC, useState } from "react";
 import { StyledTimeFlex } from "../styled";
 import { TimePicker } from "./TimePicker";
 

@@ -1,12 +1,12 @@
 import { rest } from "msw";
 import { createMemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {
   EUROPE_TRIP,
   LEARN_CHINESE,
 } from "@core/__mocks__/v1/events/events.misc";
-import { screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";

@@ -1,8 +1,8 @@
+import { type FC } from "react";
 import {
   type LogInFormData,
   LogInSchema,
 } from "@web/auth/compass/schemas/auth.schemas";
-import { type FC } from "react";
 import { AuthButton } from "../components/AuthButton";
 import { AuthInput } from "../components/AuthInput";
 import { useZodForm } from "../hooks/useZodForm";

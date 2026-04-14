@@ -1,5 +1,5 @@
-import { initializeStorage } from "@web/common/storage/adapter/adapter";
 import { toast } from "react-toastify";
+import { initializeStorage } from "@web/common/storage/adapter/adapter";
 import { DatabaseInitError } from "./storage/db-errors.util";
 
 export interface AppInitResult {

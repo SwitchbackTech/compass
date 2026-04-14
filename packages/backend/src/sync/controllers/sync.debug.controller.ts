@@ -1,12 +1,12 @@
+import { type Request, type Response } from "express";
+import { type SessionRequest } from "supertokens-node/framework/express";
+import { type BaseError } from "@core/errors/errors.base";
 import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import {
   type Res_Promise,
   type SReqBody,
 } from "@backend/common/types/express.types";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import { type BaseError } from "@core/errors/errors.base";
-import { type Request, type Response } from "express";
-import { type SessionRequest } from "supertokens-node/framework/express";
 import syncService from "../services/sync.service";
 import { getSync } from "../util/sync.queries";
 

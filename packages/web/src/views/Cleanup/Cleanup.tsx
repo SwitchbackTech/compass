@@ -1,8 +1,8 @@
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { clearAllBrowserStorage } from "@web/common/utils/cleanup/browser.cleanup.util";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
-import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 const REDIRECT_DELAY_MS = 3000;
 

@@ -1,3 +1,4 @@
+import { type MouseEvent as ReactMouseEvent, useRef } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import {
   ID_GRID_ALLDAY_ROW,
@@ -7,7 +8,6 @@ import { type PartialMouseEvent } from "@web/common/types/util.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { getElemById } from "@web/common/utils/grid/grid.util";
-import { type MouseEvent as ReactMouseEvent, useRef } from "react";
 
 export const GRID_EVENT_MOUSE_HOLD_DELAY = 750; // ms
 export const GRID_EVENT_MOUSE_HOLD_MOVE_THRESHOLD = 25; // pixels

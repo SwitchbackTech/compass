@@ -1,4 +1,3 @@
-import { Categories_Event } from "@core/types/event.types";
 import {
   autoUpdate,
   flip,
@@ -6,6 +5,9 @@ import {
   shift,
   useFloating,
 } from "@floating-ui/react";
+import type React from "react";
+import { useState } from "react";
+import { Categories_Event } from "@core/types/event.types";
 import {
   assembleGridEvent,
   getCalendarEventIdFromElement,
@@ -18,8 +20,6 @@ import {
 import { selectSomedayEvents } from "@web/ducks/events/selectors/someday.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import type React from "react";
-import { useState } from "react";
 import { ContextMenu } from "./ContextMenu";
 
 export const ContextMenuWrapper = ({

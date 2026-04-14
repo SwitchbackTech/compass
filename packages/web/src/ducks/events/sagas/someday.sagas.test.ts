@@ -1,7 +1,9 @@
+import { configureStore } from "@reduxjs/toolkit";
+import { type AnyAction } from "redux";
+import { runSaga } from "redux-saga";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { configureStore } from "@reduxjs/toolkit";
 import {
   createInitialState,
   createStoreWithEvents,
@@ -23,8 +25,6 @@ import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { type RootState } from "@web/store";
 import { reducers } from "@web/store/reducers";
 import { sagas } from "@web/store/sagas";
-import { type AnyAction } from "redux";
-import { runSaga } from "redux-saga";
 
 jest.mock("@web/ducks/events/event.api");
 jest.mock("@web/common/classes/Session");

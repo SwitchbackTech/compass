@@ -1,4 +1,5 @@
-import { type Event_API } from "@backend/common/types/backend.event.types";
+import { type RRule } from "rrule";
+import { type ParsedOptions } from "rrule/dist/esm/types";
 import {
   type Recurrence,
   type Schema_Event,
@@ -7,8 +8,7 @@ import {
 } from "@core/types/event.types";
 import { type UserMetadata } from "@core/types/user.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { type RRule } from "rrule";
-import { type ParsedOptions } from "rrule/dist/esm/types";
+import { type Event_API } from "@backend/common/types/backend.event.types";
 
 /** Event utilities for Compass events */
 

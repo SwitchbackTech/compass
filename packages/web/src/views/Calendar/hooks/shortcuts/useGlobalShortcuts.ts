@@ -1,11 +1,11 @@
 import { type RegisterableHotkey } from "@tanstack/react-hotkeys";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
-import { useLocation, useNavigate } from "react-router-dom";
 
 /**
  * Registers app-wide shortcuts via {@link useAppHotkey} / {@link useAppHotkeyUp}.

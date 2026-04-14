@@ -1,3 +1,4 @@
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { Status } from "@core/errors/status.codes";
 import { type UserProfile } from "@core/types/user.types";
 import {
@@ -6,7 +7,6 @@ import {
 } from "@web/auth/compass/state/auth.state.util";
 import { UserApi } from "@web/common/apis/user.api";
 import { showSessionExpiredToast } from "@web/common/utils/toast/error-toast.util";
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
 
 export type UseLoadProfileResult = {
   email: string | null;

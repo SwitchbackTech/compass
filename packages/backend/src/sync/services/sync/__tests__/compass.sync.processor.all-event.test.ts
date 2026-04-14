@@ -1,3 +1,16 @@
+import { faker } from "@faker-js/faker";
+import { ObjectId } from "mongodb";
+import { Priorities } from "@core/constants/core.constants";
+import {
+  CalendarProvider,
+  Categories_Recurrence,
+  type CompassAllEvents,
+  CompassEventStatus,
+  type CompassThisEvent,
+  RecurringEventUpdateScope,
+} from "@core/types/event.types";
+import { parseCompassEventDate } from "@core/util/event/event.util";
+import { createMockBaseEvent } from "@core/util/test/ccal.event.factory";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
@@ -12,19 +25,6 @@ import {
 } from "@backend/event/classes/compass.event.parser.test.util";
 import eventService, { _getGcal } from "@backend/event/services/event.service";
 import { CompassSyncProcessor } from "@backend/sync/services/sync/compass/compass.sync.processor";
-import { Priorities } from "@core/constants/core.constants";
-import {
-  CalendarProvider,
-  Categories_Recurrence,
-  type CompassAllEvents,
-  CompassEventStatus,
-  type CompassThisEvent,
-  RecurringEventUpdateScope,
-} from "@core/types/event.types";
-import { parseCompassEventDate } from "@core/util/event/event.util";
-import { createMockBaseEvent } from "@core/util/test/ccal.event.factory";
-import { faker } from "@faker-js/faker";
-import { ObjectId } from "mongodb";
 
 describe.each([
   { calendarProvider: CalendarProvider.GOOGLE },

@@ -1,10 +1,10 @@
+import { faker } from "@faker-js/faker";
+import { ObjectId } from "mongodb";
+import { IDSchema } from "@core/types/type.utils";
+import { type Schema_User } from "@core/types/user.types";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { requireGoogleConnection } from "@backend/common/guards/google.guard";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import { IDSchema } from "@core/types/type.utils";
-import { type Schema_User } from "@core/types/user.types";
-import { faker } from "@faker-js/faker";
-import { ObjectId } from "mongodb";
 
 const isGoogleConnected = async (userId: string): Promise<boolean> => {
   if (!IDSchema.safeParse(userId).success) {

@@ -1,9 +1,9 @@
-import mongoService from "@backend/common/services/mongo.service";
-import { CompassCalendarSchema } from "@core/types/calendar.types";
-import { IDSchemaV4 } from "@core/types/type.utils";
 import { type MigrationContext } from "@scripts/common/cli.types";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
 import { type RunnableMigration } from "umzug";
+import { CompassCalendarSchema } from "@core/types/calendar.types";
+import { IDSchemaV4 } from "@core/types/type.utils";
+import mongoService from "@backend/common/services/mongo.service";
 
 export default class Migration implements RunnableMigration<MigrationContext> {
   readonly name: string = "2025.10.14T12.24.01.update-calendar-schema";

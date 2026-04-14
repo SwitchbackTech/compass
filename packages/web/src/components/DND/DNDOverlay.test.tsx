@@ -1,6 +1,6 @@
-import { Categories_Event } from "@core/types/event.types";
 import { useDndContext } from "@dnd-kit/core";
 import { render, screen } from "@testing-library/react";
+import { Categories_Event } from "@core/types/event.types";
 import { DNDOverlay } from "./DNDOverlay";
 
 jest.mock("@dnd-kit/core", () => ({

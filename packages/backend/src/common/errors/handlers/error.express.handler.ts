@@ -1,3 +1,10 @@
+import { type Request } from "express";
+import { GaxiosError } from "gaxios";
+import { type SessionRequest } from "supertokens-node/framework/express";
+import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
+import { BaseError } from "@core/errors/errors.base";
+import { Status } from "@core/errors/status.codes";
+import { Logger } from "@core/logger/winston.logger";
 import { IS_DEV } from "@backend/common/constants/env.constants";
 import {
   errorHandler,
@@ -21,13 +28,6 @@ import syncService from "@backend/sync/services/sync.service";
 import { getSyncByToken } from "@backend/sync/util/sync.queries";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
-import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
-import { BaseError } from "@core/errors/errors.base";
-import { Status } from "@core/errors/status.codes";
-import { Logger } from "@core/logger/winston.logger";
-import { type Request } from "express";
-import { GaxiosError } from "gaxios";
-import { type SessionRequest } from "supertokens-node/framework/express";
 
 const logger = Logger("app:express.handler");
 

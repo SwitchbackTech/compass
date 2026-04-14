@@ -4,13 +4,13 @@
  * we do not need the database for this test
  */
 
-import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
+import { ObjectId } from "mongodb";
 import {
   EVENT_CHANGED,
   SOMEDAY_EVENT_CHANGED,
   USER_METADATA,
 } from "@core/constants/sse.constants";
-import { ObjectId } from "mongodb";
+import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 
 jest.mock("supertokens-node/recipe/session/framework/express", () => ({
   verifySession:

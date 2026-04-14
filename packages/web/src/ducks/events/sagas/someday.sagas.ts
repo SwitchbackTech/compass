@@ -1,3 +1,5 @@
+import { normalize } from "normalizr";
+import { call, put } from "redux-saga/effects";
 import { type Payload_Order, type Schema_Event } from "@core/types/event.types";
 import { session } from "@web/common/classes/Session";
 import { getEventRepository } from "@web/common/repositories/event/event.repository.util";
@@ -25,8 +27,6 @@ import {
 import { pendingEventsSlice } from "@web/ducks/events/slices/pending.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { type Action_Someday_Reorder } from "@web/ducks/events/slices/someday.slice.types";
-import { normalize } from "normalizr";
-import { call, put } from "redux-saga/effects";
 
 export function* convertSomedayToCalendarEvent({
   payload,

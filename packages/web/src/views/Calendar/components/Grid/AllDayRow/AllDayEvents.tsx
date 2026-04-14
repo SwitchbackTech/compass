@@ -1,3 +1,4 @@
+import { useStore } from "react-redux";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
@@ -16,7 +17,6 @@ import { StyledEvents } from "@web/views/Calendar/components/Grid/AllDayRow/styl
 import { useGridEventMouseDown } from "@web/views/Calendar/hooks/grid/useGridEventMouseDown";
 import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { useStore } from "react-redux";
 
 interface Props {
   measurements: Measurements_Grid;

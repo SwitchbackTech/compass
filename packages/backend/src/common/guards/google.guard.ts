@@ -1,7 +1,7 @@
+import { IDSchema } from "@core/types/type.utils";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import { IDSchema } from "@core/types/type.utils";
 
 export const requireGoogleConnection = async (
   userId: string,

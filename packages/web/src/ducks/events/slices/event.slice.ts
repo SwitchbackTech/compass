@@ -1,7 +1,8 @@
+import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import produce from "immer";
 import { type Origin } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { createAsyncSlice } from "@web/common/store/helpers";
 import { type Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { type Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
@@ -16,7 +17,6 @@ import {
   type Payload_EditEvent,
   type Payload_GetPaginatedEvents,
 } from "@web/ducks/events/event.types";
-import produce from "immer";
 
 const changeTimezones = produce((draft, newTimeZone) => {
   Object.keys(draft.value).map((k) => {

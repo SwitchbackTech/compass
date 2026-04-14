@@ -1,12 +1,3 @@
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
-import { ID_REMINDER_INPUT } from "@web/common/constants/web.constants";
-import { useAppHotkey } from "@web/common/hooks/useAppHotkey";
-import { theme } from "@web/common/styles/theme";
-import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { selectReminder } from "@web/ducks/events/selectors/view.selectors";
-import { viewSlice } from "@web/ducks/events/slices/view.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { generateHandDrawnUnderline } from "@web/views/Calendar/components/Header/Reminder/reminder-util";
 import type React from "react";
 import {
   type ForwardedRef,
@@ -17,6 +8,15 @@ import {
   useRef,
   useState,
 } from "react";
+import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import { ID_REMINDER_INPUT } from "@web/common/constants/web.constants";
+import { useAppHotkey } from "@web/common/hooks/useAppHotkey";
+import { theme } from "@web/common/styles/theme";
+import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+import { selectReminder } from "@web/ducks/events/selectors/view.selectors";
+import { viewSlice } from "@web/ducks/events/slices/view.slice";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { generateHandDrawnUnderline } from "@web/views/Calendar/components/Header/Reminder/reminder-util";
 import {
   StyledCharCounter,
   StyledPlaceholderUnderline,

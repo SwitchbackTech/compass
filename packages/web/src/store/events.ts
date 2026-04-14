@@ -6,7 +6,6 @@
  * Related: docs/development/web-state-guide.md
  */
 
-import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import {
   createStore,
   distinctUntilArrayItemChanged,
@@ -28,6 +27,7 @@ import {
   withUIEntities,
 } from "@ngneat/elf-entities";
 import { combineLatestWith, map, shareReplay } from "rxjs/operators";
+import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 
 export interface EventUIState {
   _id: string;

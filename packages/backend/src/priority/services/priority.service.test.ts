@@ -1,3 +1,7 @@
+import { afterAll, beforeAll, describe, expect, it } from "@jest/globals";
+import { ObjectId } from "mongodb";
+import { Priorities } from "@core/constants/core.constants";
+import { type Schema_Priority } from "@core/types/priority.types";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -5,10 +9,6 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import mongoService from "@backend/common/services/mongo.service";
 import priorityService from "@backend/priority/services/priority.service";
-import { Priorities } from "@core/constants/core.constants";
-import { type Schema_Priority } from "@core/types/priority.types";
-import { afterAll, beforeAll, describe, expect, it } from "@jest/globals";
-import { ObjectId } from "mongodb";
 
 describe("PriorityService", () => {
   const user = new ObjectId().toString();

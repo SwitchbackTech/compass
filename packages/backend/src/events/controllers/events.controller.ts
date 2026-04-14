@@ -1,8 +1,8 @@
-import { sseServer } from "@backend/servers/sse/sse.server";
-import userMetadataService from "@backend/user/services/user-metadata.service";
+import { type Request, type Response } from "express";
 import { USER_METADATA } from "@core/constants/sse.constants";
 import { Logger } from "@core/logger/winston.logger";
-import { type Request, type Response } from "express";
+import { sseServer } from "@backend/servers/sse/sse.server";
+import userMetadataService from "@backend/user/services/user-metadata.service";
 
 const logger = Logger("app:events.controller");
 

@@ -1,3 +1,4 @@
+import type React from "react";
 import { Priorities, type Priority } from "@core/constants/core.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import {
@@ -6,7 +7,6 @@ import {
   TooltipWrapper,
 } from "@web/components/ContextMenu/styled";
 import { JustifyContent } from "@web/components/Flex/styled";
-import type React from "react";
 import { type SetEventFormField } from "../types";
 import { StyledPriorityFlex } from "./styled";
 

@@ -1,5 +1,8 @@
 import { type UseInteractionsReturn } from "@floating-ui/react";
 import { useObservable } from "@ngneat/use-observable";
+import classNames from "classnames";
+import fastDeepEqual from "fast-deep-equal/react";
+import { memo, useCallback } from "react";
 import { ID_GRID_ALLDAY_ROW } from "@web/common/constants/web.constants";
 import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -10,9 +13,6 @@ import { useAppSelector } from "@web/store/store.hooks";
 import { useDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
 import { DraggableAllDayAgendaEvent } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/DraggableAllDayAgendaEvent";
 import { useOpenEventForm } from "@web/views/Forms/hooks/useOpenEventForm";
-import classNames from "classnames";
-import fastDeepEqual from "fast-deep-equal/react";
-import { memo, useCallback } from "react";
 
 const AllDayAgendaEventsComponent = ({
   interactions,

@@ -1,3 +1,4 @@
+import { memo, useCallback } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
 import { useEventDNDActions } from "@web/common/hooks/useEventDNDActions";
@@ -29,7 +30,6 @@ import {
   focusOnAddTaskInput,
   focusOnFirstTask,
 } from "@web/views/Day/util/day.shortcut.util";
-import { memo, useCallback } from "react";
 
 export const DayViewContent = memo(() => {
   const { isSidebarOpen, toggleSidebar } = useSidebarState();

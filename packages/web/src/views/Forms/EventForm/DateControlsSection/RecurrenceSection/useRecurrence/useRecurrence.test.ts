@@ -1,9 +1,9 @@
-import { Origin, Priorities } from "@core/constants/core.constants";
 import { renderHook } from "@testing-library/react";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { act } from "react";
 import { Frequency } from "rrule";
+import { Origin, Priorities } from "@core/constants/core.constants";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { useRecurrence } from "./useRecurrence";
 
 describe("useRecurrence hook", () => {

@@ -1,7 +1,9 @@
+import { getEntity } from "@ngneat/elf-entities";
+import { ObjectId } from "bson";
+import { type MouseEvent, type PointerEvent, useCallback } from "react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { getEntity } from "@ngneat/elf-entities";
 import { getUserId } from "@web/auth/compass/session/session.util";
 import {
   DATA_EVENT_ELEMENT_ID,
@@ -33,8 +35,6 @@ import {
   focusElement,
   getEventClass,
 } from "@web/views/Day/util/agenda/focus.util";
-import { ObjectId } from "bson";
-import { type MouseEvent, type PointerEvent, useCallback } from "react";
 
 const YMD = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
 

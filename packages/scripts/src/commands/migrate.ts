@@ -1,7 +1,3 @@
-import { readFile } from "node:fs/promises";
-import { parse, resolve, sep } from "node:path";
-import mongoService from "@backend/common/services/mongo.service";
-import { Logger } from "@core/logger/winston.logger";
 import {
   type MigrationContext,
   type MigratorType,
@@ -14,6 +10,10 @@ import {
   Umzug,
   UmzugCLI,
 } from "umzug";
+import { Logger } from "@core/logger/winston.logger";
+import mongoService from "@backend/common/services/mongo.service";
+import { readFile } from "node:fs/promises";
+import { parse, resolve, sep } from "node:path";
 
 const logger = Logger("scripts.commands.migrations");
 

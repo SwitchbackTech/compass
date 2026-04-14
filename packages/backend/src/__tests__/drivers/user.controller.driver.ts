@@ -1,7 +1,7 @@
-import { type BaseDriver } from "@backend/__tests__/drivers/base.driver";
+import type request from "supertest";
 import { Status } from "@core/errors/status.codes";
 import { type UserProfile } from "@core/types/user.types";
-import type request from "supertest";
+import { type BaseDriver } from "@backend/__tests__/drivers/base.driver";
 
 export class UserControllerDriver {
   constructor(private readonly baseDriver: BaseDriver) {}

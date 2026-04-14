@@ -1,10 +1,10 @@
+import { faker } from "@faker-js/faker";
+import { Resource_Sync } from "@core/types/sync.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import {
   decodeChannelToken,
   encodeChannelToken,
 } from "@backend/sync/util/watch.util";
-import { Resource_Sync } from "@core/types/sync.types";
-import { faker } from "@faker-js/faker";
 
 // Mock ENV
 jest.mock("@backend/common/constants/env.constants", () => ({

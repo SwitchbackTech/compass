@@ -1,10 +1,11 @@
+import { type PayloadAction } from "@reduxjs/toolkit";
+import { type Action } from "redux";
 import { type Priorities } from "@core/constants/core.constants";
 import {
   type RecurringEventUpdateScope,
   type Schema_Event,
   type WithCompassId,
 } from "@core/types/event.types";
-import { type PayloadAction } from "@reduxjs/toolkit";
 import { type SliceStateContext } from "@web/common/store/helpers";
 import {
   type Filters_Pagination,
@@ -15,7 +16,6 @@ import {
   type Schema_GridEvent,
   type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
-import { type Action } from "redux";
 
 export type Action_ConvertEvent = PayloadAction<Payload_ConvertEvent>;
 

@@ -1,9 +1,9 @@
+import { runSaga } from "redux-saga";
 import { type Schema_Event } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { session } from "@web/common/classes/Session";
 import { getEventRepository } from "@web/common/repositories/event/event.repository.util";
 import type * as SagaUtil from "@web/ducks/events/sagas/saga.util";
-import { runSaga } from "redux-saga";
 import { createEvent, editEvent } from "./event.sagas";
 
 const mockHandleError = jest.fn<void, [unknown]>();

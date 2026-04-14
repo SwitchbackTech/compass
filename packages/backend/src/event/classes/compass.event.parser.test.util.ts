@@ -1,5 +1,4 @@
-import mongoService from "@backend/common/services/mongo.service";
-import { _getGcal } from "@backend/event/services/event.service";
+import { ObjectId, type WithId } from "mongodb";
 import {
   CalendarProvider,
   type Schema_Event,
@@ -14,7 +13,8 @@ import {
   isInstance,
   isRegularEvent,
 } from "@core/util/event/event.util";
-import { ObjectId, type WithId } from "mongodb";
+import mongoService from "@backend/common/services/mongo.service";
+import { _getGcal } from "@backend/event/services/event.service";
 
 export async function testCompassStandaloneEvent(
   payload: WithCompassId<Schema_Event_Regular>,

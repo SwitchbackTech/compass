@@ -1,7 +1,7 @@
+import { type Filter } from "mongodb";
+import { type Event_Core, type Schema_Event } from "@core/types/event.types";
 import mongoService from "@backend/common/services/mongo.service";
 import { type Event_API } from "@backend/common/types/backend.event.types";
-import { type Event_Core, type Schema_Event } from "@core/types/event.types";
-import { type Filter } from "mongodb";
 
 export const getCategorizedEventsInDb = async (
   filter?: Filter<Omit<Schema_Event, "_id">>,

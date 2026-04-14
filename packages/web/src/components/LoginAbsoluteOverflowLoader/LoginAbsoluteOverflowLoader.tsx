@@ -1,9 +1,9 @@
+import React, { useEffect, useState } from "react";
 import {
   AlignItems,
   JustifyContent,
   type Props,
 } from "@web/components/Flex/styled";
-import React, { useEffect, useState } from "react";
 import { LoadingMessage, ProgressBar, Styled, StyledSpinner } from "./styled";
 
 /**

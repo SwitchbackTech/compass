@@ -1,3 +1,5 @@
+import { faker } from "@faker-js/faker";
+import { type Credentials, type TokenPayload } from "google-auth-library";
 import googleAuthService from "@backend/auth/services/google/google.auth.service";
 import {
   type AuthDecision,
@@ -5,8 +7,6 @@ import {
 } from "@backend/auth/services/google/google.auth.types";
 import type * as GoogleAuthUtilModule from "@backend/auth/services/google/util/google.auth.util";
 import { determineGoogleAuthMode } from "@backend/auth/services/google/util/google.auth.util";
-import { faker } from "@faker-js/faker";
-import { type Credentials, type TokenPayload } from "google-auth-library";
 
 jest.mock("@backend/auth/services/google/util/google.auth.util", () => {
   const actual = jest.requireActual<typeof GoogleAuthUtilModule>(

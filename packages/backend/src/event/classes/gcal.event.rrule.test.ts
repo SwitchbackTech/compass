@@ -1,8 +1,6 @@
-import {
-  generateGcalEventDate,
-  mockRecurringGcalBaseEvent,
-} from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
-import { GcalEventRRule } from "@backend/event/classes/gcal.event.rrule";
+import { faker } from "@faker-js/faker";
+import { ObjectId } from "mongodb";
+import { RRule } from "rrule";
 import { recurring } from "@core/__mocks__/v1/events/gcal/gcal.recurring";
 import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
 import { type gSchema$EventBase } from "@core/types/gcal";
@@ -13,9 +11,11 @@ import {
   isInstanceGCalEvent,
   parseGCalEventDate,
 } from "@core/util/event/gcal.event.util";
-import { faker } from "@faker-js/faker";
-import { ObjectId } from "mongodb";
-import { RRule } from "rrule";
+import {
+  generateGcalEventDate,
+  mockRecurringGcalBaseEvent,
+} from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
+import { GcalEventRRule } from "@backend/event/classes/gcal.event.rrule";
 
 describe("GcalEventRRule: ", () => {
   it(`should return the correct number of events based on rrule count`, () => {

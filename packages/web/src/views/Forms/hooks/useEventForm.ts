@@ -1,4 +1,3 @@
-import { Categories_Event } from "@core/types/event.types";
 import {
   autoUpdate,
   flip,
@@ -10,6 +9,7 @@ import {
   useFloating,
   useInteractions,
 } from "@floating-ui/react";
+import { Categories_Event } from "@core/types/event.types";
 
 export const useEventForm = (
   category: Categories_Event,

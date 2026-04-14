@@ -1,3 +1,4 @@
+import { type ZodType } from "zod";
 import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { Status } from "@core/errors/status.codes";
 import {
@@ -6,7 +7,6 @@ import {
 } from "@core/types/auth.types";
 import { handleGoogleRevoked } from "@web/auth/google/util/google.auth.util";
 import { session } from "@web/common/classes/Session";
-import { type ZodType } from "zod";
 import { ENV_WEB } from "../../constants/env.constants";
 import { ROOT_ROUTES } from "../../constants/routes";
 import {

@@ -1,3 +1,4 @@
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { type Task } from "@web/common/types/task.types";
 import { type CompassTasksSavedEvent } from "@web/common/utils/storage/storage.types";
@@ -8,7 +9,6 @@ import {
 } from "@web/common/utils/storage/storage.util";
 import { getIncompleteTasksSorted } from "@web/common/utils/task/sort.task";
 import { TaskContext } from "@web/views/Day/context/TaskContext";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 export function useAvailableTasks() {
   const [storedTasks, setStoredTasks] = useState<Task[]>([]);

@@ -1,3 +1,6 @@
+import classNames from "classnames";
+import fastDeepEqual from "fast-deep-equal/react";
+import { memo } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { darken, isDark } from "@core/util/color.utils";
 import { ID_GRID_ALLDAY_ROW } from "@web/common/constants/web.constants";
@@ -8,9 +11,6 @@ import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { type DNDChildProps } from "@web/components/DND/Draggable";
 import { SLOT_HEIGHT } from "@web/views/Day/constants/day.constants";
 import { getEventHeight } from "@web/views/Day/util/agenda/agenda.util";
-import classNames from "classnames";
-import fastDeepEqual from "fast-deep-equal/react";
-import { memo } from "react";
 
 export const TimedAgendaEvent = memo(
   ({

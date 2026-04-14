@@ -1,3 +1,5 @@
+import type React from "react";
+import { useCallback } from "react";
 import { ConditionalRender } from "@web/components/ConditionalRender/ConditionalRender";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
 import {
@@ -6,8 +8,6 @@ import {
   StyledRepeatText,
   StyledRepeatTextContainer,
 } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
-import type React from "react";
-import { useCallback } from "react";
 
 export interface RecurrenceToggleProps {
   hasRecurrence: boolean;

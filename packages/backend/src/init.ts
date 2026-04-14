@@ -1,7 +1,7 @@
 // sort-imports-ignore
 
-import { createRequire } from "node:module";
 import path from "path";
+import { createRequire } from "node:module";
 
 type AliasApi = {
   addAliases(aliases: Record<string, string>): void;

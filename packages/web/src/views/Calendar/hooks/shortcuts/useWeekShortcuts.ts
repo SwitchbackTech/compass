@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import {
   SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
@@ -25,7 +26,6 @@ import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/
 import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { type Util_Scroll } from "@web/views/Calendar/hooks/grid/useScroll";
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { useCallback } from "react";
 
 export interface ShortcutProps {
   today: Dayjs;

@@ -1,5 +1,7 @@
-import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
-import mongoService from "@backend/common/services/mongo.service";
+import { type MigrationContext } from "@scripts/common/cli.types";
+import { ObjectId } from "bson";
+import { type MigrationParams, type RunnableMigration } from "umzug";
+import { z } from "zod/v4";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { CalendarProvider } from "@core/types/event.types";
 import {
@@ -9,10 +11,8 @@ import {
 } from "@core/types/event_new.types";
 import { zObjectId } from "@core/types/type.utils";
 import { parseCompassEventDate } from "@core/util/event/event.util";
-import { type MigrationContext } from "@scripts/common/cli.types";
-import { ObjectId } from "bson";
-import { type MigrationParams, type RunnableMigration } from "umzug";
-import { z } from "zod/v4";
+import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
+import mongoService from "@backend/common/services/mongo.service";
 
 export default class Migration implements RunnableMigration<MigrationContext> {
   readonly name: string =

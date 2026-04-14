@@ -1,3 +1,8 @@
+import { combineReducers, configureStore } from "@reduxjs/toolkit";
+import { render, waitFor } from "@testing-library/react";
+import { type EventEmitter2 } from "eventemitter2";
+import { act } from "react";
+import { Provider } from "react-redux";
 import {
   GOOGLE_REVOKED,
   IMPORT_GCAL_END,
@@ -6,8 +11,6 @@ import {
 } from "@core/constants/sse.constants";
 import { type ImportGCalEndPayload } from "@core/types/sse.types";
 import { type UserMetadata } from "@core/types/user.types";
-import { combineReducers, configureStore } from "@reduxjs/toolkit";
-import { render, waitFor } from "@testing-library/react";
 import {
   getGoogleSyncIndicatorOverride,
   resetGoogleSyncUIStateForTests,
@@ -17,9 +20,6 @@ import { handleGoogleRevoked } from "@web/auth/google/util/google.auth.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { importLatestSlice } from "@web/ducks/events/slices/sync.slice";
-import { type EventEmitter2 } from "eventemitter2";
-import { act } from "react";
-import { Provider } from "react-redux";
 import { useGcalSSE } from "../hooks/useGcalSSE";
 
 jest.mock("@web/auth/google/util/google.auth.util", () => ({

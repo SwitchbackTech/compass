@@ -1,5 +1,3 @@
-import { toastDefaultOptions } from "@web/common/constants/toast.constants";
-import { SessionExpiredToast } from "@web/common/utils/toast/session-expired.toast";
 import { createElement } from "react";
 import {
   type Id,
@@ -7,6 +5,8 @@ import {
   type ToastOptions,
   toast,
 } from "react-toastify";
+import { toastDefaultOptions } from "@web/common/constants/toast.constants";
+import { SessionExpiredToast } from "@web/common/utils/toast/session-expired.toast";
 
 export const SESSION_EXPIRED_TOAST_ID = "session-expired-api";
 

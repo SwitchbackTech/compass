@@ -1,9 +1,4 @@
-import {
-  cleanupTestDb,
-  setupTestDb,
-} from "@backend/__tests__/helpers/mock.db.setup";
-import mongoService from "@backend/common/services/mongo.service";
-import { getDeleteByIdFilter } from "@backend/event/services/event.service.util";
+import { ObjectId } from "mongodb";
 import {
   mockSomedayRecurrences,
   newsletterId,
@@ -12,7 +7,12 @@ import {
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs from "@core/util/date/dayjs";
-import { ObjectId } from "mongodb";
+import {
+  cleanupTestDb,
+  setupTestDb,
+} from "@backend/__tests__/helpers/mock.db.setup";
+import mongoService from "@backend/common/services/mongo.service";
+import { getDeleteByIdFilter } from "@backend/event/services/event.service.util";
 
 describe("Delete Events", () => {
   beforeAll(setupTestDb);

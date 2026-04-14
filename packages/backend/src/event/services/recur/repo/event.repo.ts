@@ -2,15 +2,15 @@
  * Event DB operations repo for Compass's Event collection
  */
 
-import { Collections } from "@backend/common/constants/collections";
-import mongoService from "@backend/common/services/mongo.service";
-import { type Ids_Event } from "@backend/event/queries/event.queries";
+import { ObjectId, type WithId } from "mongodb";
 import {
   type Event_Core,
   type Schema_Event,
   type Schema_Event_Core,
 } from "@core/types/event.types";
-import { ObjectId, type WithId } from "mongodb";
+import { Collections } from "@backend/common/constants/collections";
+import mongoService from "@backend/common/services/mongo.service";
+import { type Ids_Event } from "@backend/event/queries/event.queries";
 
 export class EventRepository {
   constructor(private userId: string) {}

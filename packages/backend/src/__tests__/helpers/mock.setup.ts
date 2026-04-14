@@ -1,13 +1,3 @@
-import { randomUUID } from "node:crypto";
-import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
-import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
-import { ENV } from "@backend/common/constants/env.constants";
-import { type SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
-import { createMockCalendarListEntry as mockCalendarListCreate } from "@core/__tests__/helpers/gcal.factory";
-import { mockModule } from "@core/__tests__/mock.setup";
-import { type gSchema$CalendarListEntry } from "@core/types/gcal";
-import { StringV4Schema, zObjectId } from "@core/types/type.utils";
-import { type UserMetadata } from "@core/types/user.types";
 import { type Handler, type NextFunction, type Response } from "express";
 import mergeWith from "lodash.mergewith";
 import { type SessionRequest } from "supertokens-node/framework/express";
@@ -21,6 +11,16 @@ import {
   type VerifySessionOptions,
 } from "supertokens-node/lib/build/recipe/session/types";
 import { type UserContext } from "supertokens-node/lib/build/types";
+import { createMockCalendarListEntry as mockCalendarListCreate } from "@core/__tests__/helpers/gcal.factory";
+import { mockModule } from "@core/__tests__/mock.setup";
+import { type gSchema$CalendarListEntry } from "@core/types/gcal";
+import { StringV4Schema, zObjectId } from "@core/types/type.utils";
+import { type UserMetadata } from "@core/types/user.types";
+import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
+import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
+import { ENV } from "@backend/common/constants/env.constants";
+import { type SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
+import { randomUUID } from "node:crypto";
 
 export interface CompassTestState {
   events: ReturnType<typeof mockAndCategorizeGcalEvents>;

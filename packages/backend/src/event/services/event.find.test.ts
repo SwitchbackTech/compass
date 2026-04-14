@@ -1,3 +1,16 @@
+import { type Filter, ObjectId, type WithId } from "mongodb";
+import { mockEventSetJan22 } from "@core/__mocks__/v1/events/events.22jan";
+import { mockEventSetSomeday1 } from "@core/__mocks__/v1/events/events.someday.1";
+import { gEventToCompassEvent, MapEvent } from "@core/mappers/map.event";
+import {
+  Categories_Recurrence,
+  CompassEventStatus,
+  type CompassThisEvent,
+  RecurringEventUpdateScope,
+  type Schema_Event,
+} from "@core/types/event.types";
+import { isBase, isInstance } from "@core/util/event/event.util";
+import { createMockBaseEvent } from "@core/util/test/ccal.event.factory";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   cleanupTestDb,
@@ -11,19 +24,6 @@ import mongoService from "@backend/common/services/mongo.service";
 import { testCompassSeries } from "@backend/event/classes/compass.event.parser.test.util";
 import { getReadAllFilter } from "@backend/event/services/event.service.util";
 import { CompassSyncProcessor } from "@backend/sync/services/sync/compass/compass.sync.processor";
-import { mockEventSetJan22 } from "@core/__mocks__/v1/events/events.22jan";
-import { mockEventSetSomeday1 } from "@core/__mocks__/v1/events/events.someday.1";
-import { gEventToCompassEvent, MapEvent } from "@core/mappers/map.event";
-import {
-  Categories_Recurrence,
-  CompassEventStatus,
-  type CompassThisEvent,
-  RecurringEventUpdateScope,
-  type Schema_Event,
-} from "@core/types/event.types";
-import { isBase, isInstance } from "@core/util/event/event.util";
-import { createMockBaseEvent } from "@core/util/test/ccal.event.factory";
-import { type Filter, ObjectId, type WithId } from "mongodb";
 
 describe("Jan 2022: Many Formats", () => {
   const gBase = mockRecurringGcalBaseEvent({}, false, { count: 10 });

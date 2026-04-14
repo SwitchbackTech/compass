@@ -1,10 +1,10 @@
+import { ObjectId } from "bson";
 import { MapEvent } from "@core/mappers/map.event";
 import { type Schema_Event } from "@core/types/event.types";
 import {
   createMockBaseEvent,
   createMockInstance,
 } from "@core/util/test/ccal.event.factory";
-import { ObjectId } from "bson";
 
 describe("MapEvent.removeProviderData", () => {
   it("removes gEventId from a base event", () => {

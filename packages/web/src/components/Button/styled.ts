@@ -1,7 +1,7 @@
+import styled from "styled-components";
 import { Priorities, type Priority } from "@core/constants/core.constants";
 import { brighten, darken } from "@core/util/color.utils";
 import { colorByPriority } from "@web/common/styles/theme.util";
-import styled from "styled-components";
 
 export const Btn = styled.div`
   align-items: center;

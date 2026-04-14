@@ -1,6 +1,6 @@
-import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import {
   createInitialState,

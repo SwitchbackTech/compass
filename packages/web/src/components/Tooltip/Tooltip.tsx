@@ -1,6 +1,4 @@
 import { FloatingPortal, useMergeRefs } from "@floating-ui/react";
-import { ZIndex } from "@web/common/constants/web.constants";
-import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import {
   cloneElement,
   forwardRef,
@@ -8,6 +6,8 @@ import {
   isValidElement,
   type ReactNode,
 } from "react";
+import { ZIndex } from "@web/common/constants/web.constants";
+import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import { type TooltipOptions } from "./tooltip.types";
 import { TooltipContext, useTooltip, useTooltipContext } from "./useTooltip";
 

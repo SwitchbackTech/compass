@@ -1,12 +1,12 @@
+import Migration from "@scripts/migrations/2025.10.18T20.01.14.migrate-events-to-new-events-collection";
+import { ObjectId } from "mongodb";
+import { type z } from "zod/v4";
+import { Origin, Priorities } from "@core/constants/core.constants";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import calendarService from "@backend/calendar/services/calendar.service";
 import mongoService from "@backend/common/services/mongo.service";
-import { Origin, Priorities } from "@core/constants/core.constants";
-import Migration from "@scripts/migrations/2025.10.18T20.01.14.migrate-events-to-new-events-collection";
-import { ObjectId } from "mongodb";
-import { type z } from "zod/v4";
 
 export class EventDriver {
   static async generateV0Data(count = 3) {

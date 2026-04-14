@@ -1,9 +1,9 @@
+import { type MouseEvent, useCallback } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { getElemById } from "@web/common/utils/grid/grid.util";
 import { selectDraftStatus } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { useEventListener } from "@web/views/Calendar/hooks/mouse/useEventListener";
-import { type MouseEvent, useCallback } from "react";
 import { useDraftContext } from "../../context/useDraftContext";
 
 export const useGridMouseUp = () => {

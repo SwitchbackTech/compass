@@ -1,5 +1,3 @@
-import { type UnderlinedInput } from "@web/common/types/component.types";
-import { Divider } from "@web/components/Divider";
 import {
   type FocusEvent,
   forwardRef,
@@ -9,6 +7,8 @@ import {
   useState,
 } from "react";
 import { type StyledComponent } from "styled-components";
+import { type UnderlinedInput } from "@web/common/types/component.types";
+import { Divider } from "@web/components/Divider";
 
 export interface Props extends UnderlinedInput, HTMLAttributes<HTMLElement> {
   autoFocus?: boolean;

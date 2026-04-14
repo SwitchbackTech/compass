@@ -1,3 +1,9 @@
+import {
+  type CSSProperties,
+  type KeyboardEvent,
+  type MouseEvent,
+  memo,
+} from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { darken } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
@@ -19,12 +25,6 @@ import { selectIsEventPending } from "@web/ducks/events/selectors/pending.select
 import { useAppSelector } from "@web/store/store.hooks";
 import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import {
-  type CSSProperties,
-  type KeyboardEvent,
-  type MouseEvent,
-  memo,
-} from "react";
 
 interface Props {
   event: Schema_GridEvent;

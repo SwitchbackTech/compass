@@ -1,8 +1,8 @@
+import { type Credentials, type TokenPayload } from "google-auth-library";
+import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import { getSync } from "@backend/sync/util/sync.queries";
 import { canDoIncrementalSync } from "@backend/sync/util/sync.util";
 import { findCanonicalCompassUser } from "@backend/user/queries/user.queries";
-import { StringV4Schema, zObjectId } from "@core/types/type.utils";
-import { type Credentials, type TokenPayload } from "google-auth-library";
 import {
   type AuthDecision,
   type ParsedReconnectGoogleParams,

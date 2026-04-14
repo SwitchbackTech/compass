@@ -1,3 +1,4 @@
+import { type Response } from "express";
 import {
   EVENT_CHANGED,
   GOOGLE_REVOKED,
@@ -7,7 +8,6 @@ import {
 } from "@core/constants/sse.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { type ImportGCalEndPayload } from "@core/types/sse.types";
-import { type Response } from "express";
 
 const logger = Logger("app:sse.server");
 const HEARTBEAT_INTERVAL_MS = 25_000;

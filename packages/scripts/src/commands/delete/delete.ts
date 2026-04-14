@@ -1,12 +1,12 @@
+import { CLI_ENV } from "@scripts/common/cli.constants";
+import { log } from "@scripts/common/cli.utils";
+import inquirer, { type QuestionCollection } from "inquirer";
+import open from "open";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { findCompassUsersBy } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
 import { type Summary_Delete } from "@backend/user/types/user.types";
-import { CLI_ENV } from "@scripts/common/cli.constants";
-import { log } from "@scripts/common/cli.utils";
-import inquirer, { type QuestionCollection } from "inquirer";
-import open from "open";
 import { BROWSER_MAP } from "./delete.constants";
 import {
   type BrowserCleanupPromptAnswers,

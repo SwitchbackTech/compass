@@ -1,3 +1,5 @@
+import { type ResizeCallback, type ResizeStartCallback } from "re-resizable";
+import { useCallback, useRef } from "react";
 import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { CursorItem, nodeId$, open$ } from "@web/common/hooks/useOpenAtCursor";
@@ -15,8 +17,6 @@ import {
   roundMinutesToNearestFifteen,
   roundToNearestFifteenWithinHour,
 } from "@web/views/Day/util/agenda/agenda.util";
-import { type ResizeCallback, type ResizeStartCallback } from "re-resizable";
-import { useCallback, useRef } from "react";
 
 export function useEventResizeActions(event: WithCompassId<Schema_Event>) {
   const updateReduxEvent = useUpdateEvent();

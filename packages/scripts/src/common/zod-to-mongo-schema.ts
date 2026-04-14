@@ -1,12 +1,12 @@
 // derived from https://github.com/mission-apprentissage/zod-to-mongodb-schema/tree/main/index.ts
 
-import { zObjectId, zObjectIdMini } from "@core/types/type.utils";
 import {
   type $ZodType,
   type JSONSchema,
   registry,
   toJSONSchema,
 } from "zod/v4/core";
+import { zObjectId, zObjectIdMini } from "@core/types/type.utils";
 
 type MongoType = "object" | "array" | "number" | "boolean" | "string" | "null";
 

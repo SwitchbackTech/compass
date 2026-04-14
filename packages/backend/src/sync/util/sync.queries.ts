@@ -1,4 +1,9 @@
-import mongoService from "@backend/common/services/mongo.service";
+import {
+  type ClientSession,
+  type UpdateFilter,
+  type UpdateResult,
+} from "mongodb";
+import zod from "zod";
 import { Origin } from "@core/constants/core.constants";
 import {
   Resource_Sync,
@@ -6,12 +11,7 @@ import {
   type SyncDetails,
 } from "@core/types/sync.types";
 import dayjs from "@core/util/date/dayjs";
-import {
-  type ClientSession,
-  type UpdateFilter,
-  type UpdateResult,
-} from "mongodb";
-import zod from "zod";
+import mongoService from "@backend/common/services/mongo.service";
 
 /**
  * Helper funcs that predominately query/update the DB

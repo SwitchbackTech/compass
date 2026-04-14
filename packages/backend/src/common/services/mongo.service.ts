@@ -1,13 +1,3 @@
-import { Collections } from "@backend/common/constants/collections";
-import { ENV } from "@backend/common/constants/env.constants";
-import { Logger } from "@core/logger/winston.logger";
-import { type Schema_Calendar } from "@core/types/calendar.types";
-import { type Schema_Event } from "@core/types/event.types";
-import { type Schema_Priority } from "@core/types/priority.types";
-import { type Schema_Sync } from "@core/types/sync.types";
-import { type Schema_User } from "@core/types/user.types";
-import { type Schema_Watch } from "@core/types/watch.types";
-import { waitUntilEvent } from "@core/util/wait-until-event.util";
 import { backOff } from "exponential-backoff";
 import {
   type ClientSession,
@@ -18,6 +8,16 @@ import {
   MongoClient,
   ObjectId,
 } from "mongodb";
+import { Logger } from "@core/logger/winston.logger";
+import { type Schema_Calendar } from "@core/types/calendar.types";
+import { type Schema_Event } from "@core/types/event.types";
+import { type Schema_Priority } from "@core/types/priority.types";
+import { type Schema_Sync } from "@core/types/sync.types";
+import { type Schema_User } from "@core/types/user.types";
+import { type Schema_Watch } from "@core/types/watch.types";
+import { waitUntilEvent } from "@core/util/wait-until-event.util";
+import { Collections } from "@backend/common/constants/collections";
+import { ENV } from "@backend/common/constants/env.constants";
 
 const logger = Logger("app:mongo.service");
 

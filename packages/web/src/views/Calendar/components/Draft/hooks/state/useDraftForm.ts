@@ -1,5 +1,5 @@
-import { type Categories_Event } from "@core/types/event.types";
 import { type OpenChangeReason } from "@floating-ui/react";
+import { type Categories_Event } from "@core/types/event.types";
 import { isSomedayEventActionMenuOpen } from "@web/common/utils/event/someday.event.util";
 import { isContextMenuOpen } from "@web/common/utils/form/form.util";
 import { useEventForm } from "@web/views/Forms/hooks/useEventForm";

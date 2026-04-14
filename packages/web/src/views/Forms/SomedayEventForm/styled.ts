@@ -1,5 +1,5 @@
-import { ZIndex } from "@web/common/constants/web.constants";
 import styled from "styled-components";
+import { ZIndex } from "@web/common/constants/web.constants";
 
 interface FormContainerProps {
   strategy: "fixed" | "absolute";

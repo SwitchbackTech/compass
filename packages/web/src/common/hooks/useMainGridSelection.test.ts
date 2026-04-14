@@ -1,11 +1,11 @@
 import { renderHook } from "@testing-library/react";
+import { act, type PointerEvent as IPointerEvent } from "react";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { cursor$, pointerState$ } from "@web/common/context/pointer-position";
 import { isDraggingEvent$ } from "@web/common/hooks/useIsDraggingEvent";
 import { useMainGridSelection } from "@web/common/hooks/useMainGridSelection";
 import { resizing$ } from "@web/common/hooks/useResizing";
 import * as eventUtils from "@web/common/utils/dom/event-emitter.util";
-import { act, type PointerEvent as IPointerEvent } from "react";
 
 describe("useMainGridSelection", () => {
   const onSelectionStart = jest.fn();

@@ -5,6 +5,12 @@ import {
   render,
   renderHook,
 } from "@testing-library/react";
+import {
+  type ComponentType,
+  type PropsWithChildren,
+  type ReactElement,
+} from "react";
+import { RouterProvider, type RouterProviderProps } from "react-router-dom";
 import { ID_ROOT } from "@web/common/constants/web.constants";
 import { useSetupMovementEvents } from "@web/common/hooks/useMovementEvent";
 import { sagaMiddleware } from "@web/common/store/middlewares";
@@ -13,12 +19,6 @@ import { CompassRequiredProviders } from "@web/components/CompassProvider/Compas
 import { type store as compassStore } from "@web/store";
 import { reducers } from "@web/store/reducers";
 import { sagas } from "@web/store/sagas";
-import {
-  type ComponentType,
-  type PropsWithChildren,
-  type ReactElement,
-} from "react";
-import { RouterProvider, type RouterProviderProps } from "react-router-dom";
 
 interface CustomRenderOptions extends RenderOptions {
   state?: any;

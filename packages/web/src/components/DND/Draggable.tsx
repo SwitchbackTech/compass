@@ -1,4 +1,3 @@
-import { type Categories_Event } from "@core/types/event.types";
 import {
   type UniqueIdentifier,
   type UseDraggableArguments,
@@ -6,7 +5,6 @@ import {
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { useMergeRefs } from "@floating-ui/react";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { ObjectId } from "bson";
 import {
   cloneElement,
@@ -18,6 +16,8 @@ import {
   isValidElement,
   type ReactHTML,
 } from "react";
+import { type Categories_Event } from "@core/types/event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 
 export interface DraggableDNDData {
   type: Categories_Event;

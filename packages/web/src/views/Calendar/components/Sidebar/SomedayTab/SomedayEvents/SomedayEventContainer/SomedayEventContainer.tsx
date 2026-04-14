@@ -1,14 +1,16 @@
+import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
+import {
+  type DraggableProvided,
+  type DraggableStateSnapshot,
+} from "@hello-pangea/dnd";
+import { useState } from "react";
+import { toast } from "react-toastify";
 import { Priorities } from "@core/constants/core.constants";
 import {
   Categories_Event,
   RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
-import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
-import {
-  type DraggableProvided,
-  type DraggableStateSnapshot,
-} from "@hello-pangea/dnd";
 import { useAppHotkey } from "@web/common/hooks/useAppHotkey";
 import { computeCurrentEventDateRange } from "@web/common/utils/datetime/web.date.util";
 import { useDraftForm } from "@web/views/Calendar/components/Draft/hooks/state/useDraftForm";
@@ -19,8 +21,6 @@ import { SomedayEvent } from "@web/views/Calendar/components/Sidebar/SomedayTab/
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm/SomedayEventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
-import { useState } from "react";
-import { toast } from "react-toastify";
 
 export interface Props {
   category: Categories_Event;

@@ -1,3 +1,8 @@
+import { ObjectId } from "mongodb";
+import { Logger } from "@core/logger/winston.logger";
+import { type Result_Watch_Stop } from "@core/types/sync.types";
+import { type Schema_Watch } from "@core/types/watch.types";
+import dayjs from "@core/util/date/dayjs";
 import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import {
   isFullSyncRequired,
@@ -8,11 +13,6 @@ import syncService from "@backend/sync/services/sync.service";
 import { hasUpdatedCompassEventRecently } from "@backend/sync/util/sync.queries";
 import { syncExpired, syncExpiresSoon } from "@backend/sync/util/sync.util";
 import userService from "@backend/user/services/user.service";
-import { Logger } from "@core/logger/winston.logger";
-import { type Result_Watch_Stop } from "@core/types/sync.types";
-import { type Schema_Watch } from "@core/types/watch.types";
-import dayjs from "@core/util/date/dayjs";
-import { ObjectId } from "mongodb";
 
 const logger = Logger("app:sync.maintenance");
 

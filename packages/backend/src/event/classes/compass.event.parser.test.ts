@@ -1,9 +1,7 @@
 /** @jest-environment node */
 
-import {
-  analyzeCompassTransition,
-  buildCompassTransitionContext,
-} from "@backend/event/classes/compass.event.parser";
+import { ObjectId, type WithId } from "mongodb";
+import { RRule } from "rrule";
 import {
   Categories_Recurrence,
   type CompassEvent,
@@ -14,8 +12,10 @@ import {
   createMockBaseEvent,
   createMockStandaloneEvent,
 } from "@core/util/test/ccal.event.factory";
-import { ObjectId, type WithId } from "mongodb";
-import { RRule } from "rrule";
+import {
+  analyzeCompassTransition,
+  buildCompassTransitionContext,
+} from "@backend/event/classes/compass.event.parser";
 
 function toDbEvent(event: Schema_Event): WithId<Omit<Schema_Event, "_id">> {
   return {

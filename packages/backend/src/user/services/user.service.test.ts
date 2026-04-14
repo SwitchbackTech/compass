@@ -1,3 +1,8 @@
+import { faker } from "@faker-js/faker";
+import * as supertokensNode from "supertokens-node";
+import SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
+import { CompassCalendarSchema } from "@core/types/calendar.types";
+import { CalendarProvider } from "@core/types/event.types";
 import { EmailDriver } from "@backend/__tests__/drivers/email.driver";
 import { SyncDriver } from "@backend/__tests__/drivers/sync.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
@@ -18,11 +23,6 @@ import syncService from "@backend/sync/services/sync.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import { type Summary_Delete } from "@backend/user/types/user.types";
-import { CompassCalendarSchema } from "@core/types/calendar.types";
-import { CalendarProvider } from "@core/types/event.types";
-import { faker } from "@faker-js/faker";
-import * as supertokensNode from "supertokens-node";
-import SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
 
 const createSupertokensUser = (userId: string, recipeUserIds: string[]) => ({
   id: userId,

@@ -1,3 +1,12 @@
+import { faker } from "@faker-js/faker";
+import { ObjectId } from "mongodb";
+import { createMockCalendarListEntry } from "@core/__tests__/helpers/gcal.factory";
+import { MapCalendar } from "@core/mappers/map.calendar";
+import {
+  CompassCalendarSchema,
+  GoogleCalendarMetadataSchema,
+} from "@core/types/calendar.types";
+import { StringV4Schema } from "@core/types/type.utils";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   cleanupCollections,
@@ -6,15 +15,6 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import calendarService from "@backend/calendar/services/calendar.service";
-import { createMockCalendarListEntry } from "@core/__tests__/helpers/gcal.factory";
-import { MapCalendar } from "@core/mappers/map.calendar";
-import {
-  CompassCalendarSchema,
-  GoogleCalendarMetadataSchema,
-} from "@core/types/calendar.types";
-import { StringV4Schema } from "@core/types/type.utils";
-import { faker } from "@faker-js/faker";
-import { ObjectId } from "mongodb";
 
 describe("CalendarService", () => {
   beforeEach(setupTestDb);

@@ -1,6 +1,6 @@
+import styled, { css, keyframes } from "styled-components";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
-import styled, { css, keyframes } from "styled-components";
 
 // Hand-drawn underline animation
 const drawHandwrittenUnderline = keyframes`

@@ -1,9 +1,9 @@
+import { faker } from "@faker-js/faker";
 import { Priorities } from "@core/constants/core.constants";
 import {
   createMockBaseEvent,
   createMockStandaloneEvent,
 } from "@core/util/test/ccal.event.factory";
-import { faker } from "@faker-js/faker";
 import { DirtyParser } from "@web/common/parsers/dirty.parser";
 import { type Schema_WebEvent } from "../types/web.event.types";
 

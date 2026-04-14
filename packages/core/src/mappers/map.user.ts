@@ -1,7 +1,7 @@
+import { type TokenPayload } from "google-auth-library";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { type Schema_User } from "@core/types/user.types";
-import { type TokenPayload } from "google-auth-library";
 
 // Map  user object given by google signin to our schema //
 export const mapUserToCompass = (

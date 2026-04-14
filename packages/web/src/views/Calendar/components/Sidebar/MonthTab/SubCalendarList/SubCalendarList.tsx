@@ -1,8 +1,8 @@
 import { InfoIcon } from "@phosphor-icons/react";
+import { type FC, useCallback } from "react";
 import { useUser } from "@web/auth/compass/user/hooks/useUser";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { type FC, useCallback } from "react";
 
 const TEMPORARY_ACCOUNT_MESSAGE = "Sign up to save your changes";
 

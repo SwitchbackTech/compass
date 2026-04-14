@@ -1,6 +1,6 @@
-import { join } from "node:path";
 import tailwindcssPlugin from "@tailwindcss/postcss";
 import postcss from "postcss";
+import { join } from "node:path";
 
 export const TAILWIND_CSS_TEST_STYLE_TESTID = "tailwindcss-test-styles";
 

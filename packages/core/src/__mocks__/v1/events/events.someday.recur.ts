@@ -1,7 +1,7 @@
+import { ObjectId } from "bson";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { ObjectId } from "bson";
 
 export const userId = new ObjectId().toString();
 export const newsletterId = new ObjectId().toString();

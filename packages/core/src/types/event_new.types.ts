@@ -1,7 +1,7 @@
+import z from "zod/v4";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { CalendarProvider } from "@core/types/event.types";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
-import z from "zod/v4";
 
 export const GoogleStandaloneEventMetadataSchema = z.object({
   provider: z.literal(CalendarProvider.GOOGLE),

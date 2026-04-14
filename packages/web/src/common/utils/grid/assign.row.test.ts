@@ -1,8 +1,8 @@
-import { randomUUID } from "node:crypto";
 // eslint-disable-next-line jest/no-mocks-import -- shared static fixture imported directly for grid layout expectations.
 import { mar13To19 } from "@core/__mocks__/v1/events/events.allday.3";
 import { type Schema_Event } from "@core/types/event.types";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
+import { randomUUID } from "node:crypto";
 
 const createId = () => randomUUID();
 

@@ -1,3 +1,5 @@
+import { faker } from "@faker-js/faker";
+import { type Credentials, type TokenPayload } from "google-auth-library";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import {
   cleanupCollections,
@@ -13,8 +15,6 @@ import EmailService from "@backend/email/email.service";
 import syncService from "@backend/sync/services/sync.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
-import { faker } from "@faker-js/faker";
-import { type Credentials, type TokenPayload } from "google-auth-library";
 import googleAuthService from "./google.auth.service";
 import {
   type AuthDecision,

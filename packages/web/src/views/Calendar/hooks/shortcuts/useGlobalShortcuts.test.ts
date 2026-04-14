@@ -1,5 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
+import { act } from "react";
+import { useNavigate } from "react-router-dom";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import {
   mockLinuxUserAgent,
@@ -14,8 +16,6 @@ import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { reducers } from "@web/store/reducers";
 import { sagas } from "@web/store/sagas";
 import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
-import { act } from "react";
-import { useNavigate } from "react-router-dom";
 
 // Mock react-router-dom
 jest.mock("react-router-dom", () => ({

@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
+import { screen } from "@testing-library/react";
 import { Priorities } from "@core/constants/core.constants";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
-import { screen } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";

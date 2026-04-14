@@ -1,6 +1,6 @@
+import classNames from "classnames";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import { type Shortcut } from "@web/common/types/global.shortcut.types";
-import classNames from "classnames";
 import { ShortcutSection } from "./ShortcutSection";
 
 export interface ShortcutOverlaySection {

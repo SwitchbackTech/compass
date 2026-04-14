@@ -1,12 +1,12 @@
 import { Pencil } from "@phosphor-icons/react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
+import styled from "styled-components";
 import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
 import { Textarea } from "@web/components/Textarea";
-import type React from "react";
-import { useEffect, useRef, useState } from "react";
-import styled from "styled-components";
 
 const MAX_DESCRIPTION_LENGTH = 255;
 const NEAR_LIMIT_THRESHOLD = Math.floor(MAX_DESCRIPTION_LENGTH * 0.9); // 90% of max

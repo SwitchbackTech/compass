@@ -1,3 +1,11 @@
+import { faker } from "@faker-js/faker";
+import { MigratorType } from "@scripts/common/cli.types";
+import WatchMigration from "@scripts/migrations/2025.10.13T14.18.20.watch-collection";
+import Migration from "@scripts/migrations/2025.10.13T14.22.21.migrate-sync-watch-data";
+import { ObjectId } from "mongodb";
+import { Logger } from "@core/logger/winston.logger";
+import { Resource_Sync } from "@core/types/sync.types";
+import { ExpirationDateSchema } from "@core/types/type.utils";
 import { SyncDriver } from "@backend/__tests__/drivers/sync.driver";
 import {
   cleanupCollections,
@@ -6,14 +14,6 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
 import mongoService from "@backend/common/services/mongo.service";
-import { Logger } from "@core/logger/winston.logger";
-import { Resource_Sync } from "@core/types/sync.types";
-import { ExpirationDateSchema } from "@core/types/type.utils";
-import { faker } from "@faker-js/faker";
-import { MigratorType } from "@scripts/common/cli.types";
-import WatchMigration from "@scripts/migrations/2025.10.13T14.18.20.watch-collection";
-import Migration from "@scripts/migrations/2025.10.13T14.22.21.migrate-sync-watch-data";
-import { ObjectId } from "mongodb";
 
 describe.each([
   { generateExpiredWatches: true },

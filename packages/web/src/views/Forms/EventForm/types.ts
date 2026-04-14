@@ -1,10 +1,10 @@
+import { type Dispatch, type SetStateAction } from "react";
 import { type Priority } from "@core/constants/core.constants";
 import {
   type Categories_Event,
   type Direction_Migrate,
   type Schema_Event,
 } from "@core/types/event.types";
-import { type Dispatch, type SetStateAction } from "react";
 
 export interface FormProps {
   event: Schema_Event;

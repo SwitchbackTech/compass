@@ -1,7 +1,3 @@
-import { normalizeEmail } from "@backend/common/helpers/email.util";
-import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
-import { type Summary_Delete } from "@backend/user/types/user.types";
-import { Logger } from "@core/logger/winston.logger";
 import {
   deleteUser,
   deleteUserIdMapping,
@@ -10,6 +6,10 @@ import {
   listUsersByAccountInfo,
 } from "supertokens-node";
 import SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
+import { Logger } from "@core/logger/winston.logger";
+import { normalizeEmail } from "@backend/common/helpers/email.util";
+import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
+import { type Summary_Delete } from "@backend/user/types/user.types";
 
 const logger = Logger("app:auth.supertokens-user-cleanup");
 const TENANT_ID = "public";

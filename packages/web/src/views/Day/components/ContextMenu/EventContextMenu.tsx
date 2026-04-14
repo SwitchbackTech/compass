@@ -4,6 +4,7 @@ import {
   type useFloating,
 } from "@floating-ui/react";
 import { useObservable } from "@ngneat/use-observable";
+import classNames from "classnames";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import {
   CursorItem,
@@ -11,7 +12,6 @@ import {
 } from "@web/common/hooks/useOpenAtCursor";
 import { activeEvent$ } from "@web/store/events";
 import { EventContextMenuItems } from "@web/views/Day/components/ContextMenu/EventContextMenuItems";
-import classNames from "classnames";
 
 export function EventContextMenu({
   floating,

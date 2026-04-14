@@ -1,3 +1,7 @@
+import { faker } from "@faker-js/faker";
+import { ObjectId } from "mongodb";
+import { Resource_Sync, XGoogleResourceState } from "@core/types/sync.types";
+import { WatchSchema } from "@core/types/watch.types";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
@@ -19,10 +23,6 @@ import syncService from "@backend/sync/services/sync.service";
 import { isUsingHttps } from "@backend/sync/util/sync.util";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
-import { Resource_Sync, XGoogleResourceState } from "@core/types/sync.types";
-import { WatchSchema } from "@core/types/watch.types";
-import { faker } from "@faker-js/faker";
-import { ObjectId } from "mongodb";
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return -- jest.mock factory delegates to requireActual */
 jest.mock("@backend/sync/util/sync.util", () => {
