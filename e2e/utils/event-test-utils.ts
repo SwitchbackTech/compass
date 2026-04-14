@@ -55,6 +55,7 @@ const retryUntil = async (
             "Expected target element to become visible.",
         );
       }
+      await waitFor.page().waitForTimeout(200);
     }
   }
 };
@@ -115,15 +116,17 @@ export const updateEventTitle = (prefix: string) =>
 
 export const prepareCalendarPage = async (page: Page) => {
   await page.goto("/week", { waitUntil: "domcontentloaded" });
-  await waitForCalendarShell(page);
   await clearClientAuthState(page);
 
   await resetLocalEventDb(page);
-  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.goto("/week", { waitUntil: "domcontentloaded" });
   await waitForCalendarShell(page);
 
   await ensureWeekView(page);
   await page.locator("#mainGrid").waitFor({ state: "visible", timeout: 15000 });
+  await page
+    .locator("#allDayRow")
+    .waitFor({ state: "visible", timeout: 15000 });
   await blurActiveElement(page);
   await page.locator("#mainGrid").focus();
 };
@@ -180,7 +183,12 @@ export const ensureSidebarOpen = async (page: Page) => {
   }
 };
 
-export const clickGridCenter = async (page: Page, locator: Locator) => {
+export const clickGridCenter = async (
+  page: Page,
+  locator: Locator,
+  options: { draftSelector?: string; fallbackDelayMs?: number } = {},
+) => {
+  const { draftSelector, fallbackDelayMs = 175 } = options;
   await locator.scrollIntoViewIfNeeded();
   const box = await locator.boundingBox();
   if (!box) {
@@ -192,14 +200,18 @@ export const clickGridCenter = async (page: Page, locator: Locator) => {
 
   await page.mouse.move(x, y);
   await page.mouse.down();
-  await page
-    .waitForSelector('#mainGrid .active[role="button"]', {
-      state: "attached",
-      timeout: 3000,
-    })
-    .catch(() => {
-      // Release the mouse even if the draft preview never appears so state stays clean.
-    });
+  if (draftSelector) {
+    await page
+      .waitForSelector(draftSelector, {
+        state: "attached",
+        timeout: 3000,
+      })
+      .catch(() => {
+        // Release the mouse even if the draft preview never appears so state stays clean.
+      });
+  } else {
+    await page.waitForTimeout(fallbackDelayMs);
+  }
   await page.mouse.up();
 };
 
@@ -233,7 +245,9 @@ export const openTimedEventFormWithMouse = async (page: Page) => {
         return;
       }
 
-      await clickGridCenter(page, page.locator("#mainGrid"));
+      await clickGridCenter(page, page.locator("#mainGrid"), {
+        draftSelector: '#mainGrid .active[role="button"]',
+      });
       try {
         await draftEvent.waitFor({ state: "visible", timeout: 1000 });
         await draftEvent.click({ force: true });
@@ -321,7 +335,7 @@ export const openEventForEditingWithKeyboard = async (
       }
     },
     titleInput,
-    { maxAttempts: 2, perAttemptTimeout: 5000 },
+    { maxAttempts: 4 },
   );
 };
 

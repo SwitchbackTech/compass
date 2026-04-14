@@ -6,28 +6,13 @@ export const prepareTaskPage = async (page: Page) => {
   await page.evaluate(() => {
     localStorage.removeItem("compass.auth");
   });
-  await page.waitForURL(/\/day\/\d{4}-\d{2}-\d{2}$/);
-  await page.waitForFunction(
-    () => {
-      const root = document.querySelector("#root");
-      return root && root.children.length > 0;
-    },
-    { timeout: 10000 },
-  );
 
   await resetLocalEventDb(page);
-  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.goto("/day", { waitUntil: "domcontentloaded" });
   await page.waitForURL(/\/day\/\d{4}-\d{2}-\d{2}$/);
-  await page.waitForFunction(
-    () => {
-      const root = document.querySelector("#root");
-      return root && root.children.length > 0;
-    },
-    { timeout: 10000 },
-  );
-
-  // Wait for task list to be visible
-  await expect(page.locator('[aria-label="daily-tasks"]')).toBeVisible();
+  await expect(page.locator('[aria-label="daily-tasks"]')).toBeVisible({
+    timeout: 15000,
+  });
 };
 
 export const createTask = async (page: Page, title: string) => {

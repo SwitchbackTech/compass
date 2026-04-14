@@ -21,6 +21,7 @@ test("should delete a timed event using keyboard interaction", async ({
   await openTimedEventFormWithKeyboard(page);
   await fillTitleAndSaveEventForm(page, title);
   await expectTimedEventVisible(page, title);
+  await page.waitForTimeout(1000);
 
   await openEventForEditingWithKeyboard(page, title);
   await deleteEventWithKeyboard(page);
