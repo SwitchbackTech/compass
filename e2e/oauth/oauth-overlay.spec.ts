@@ -93,7 +93,9 @@ test.describe("OAuth Overlay", () => {
     await mainGrid.waitFor({ state: "visible", timeout: 10000 });
     await mainGrid.focus();
 
-    await page.waitForTimeout(100); // Give time for focus to settle
+    await page.waitForFunction(
+      () => document.activeElement?.tagName !== "BODY",
+    );
 
     // Verify something is focused (not body)
     const activeBeforeOverlay = await page.evaluate(
@@ -103,7 +105,9 @@ test.describe("OAuth Overlay", () => {
 
     // Activate overlay
     await setIsSyncing(page, true);
-    await page.waitForTimeout(100); // Give time for blur effect
+    await page.waitForFunction(
+      () => document.activeElement?.tagName === "BODY",
+    );
 
     // Active element should be blurred (now body)
     const activeAfterOverlay = await page.evaluate(

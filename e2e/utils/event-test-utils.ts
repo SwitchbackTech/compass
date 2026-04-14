@@ -37,7 +37,6 @@ const pressShortcut = async (page: Page, key: string) => {
  * Consolidates the retry pattern used throughout the test utils.
  */
 const retryUntil = async (
-  page: Page,
   action: () => Promise<void>,
   waitFor: Locator,
   options: { maxAttempts?: number; perAttemptTimeout?: number } = {},
@@ -53,10 +52,9 @@ const retryUntil = async (
       if (attempt === maxAttempts - 1) {
         throw new Error(
           `Action failed after ${maxAttempts} attempts. ` +
-            `Expected element to be visible: ${waitFor}`,
+            "Expected target element to become visible.",
         );
       }
-      await page.waitForTimeout(200);
     }
   }
 };
@@ -102,33 +100,6 @@ const waitForCalendarShell = async (page: Page) => {
       state: "visible",
       timeout: 15000,
     });
-};
-
-const reloadCalendarView = async (
-  page: Page,
-  options: { openSidebar?: boolean } = {},
-) => {
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await waitForCalendarShell(page);
-  await ensureWeekView(page);
-  await page.locator("#mainGrid").waitFor({ state: "visible", timeout: 15000 });
-
-  if (options.openSidebar) {
-    await ensureSidebarOpen(page);
-  }
-};
-
-const expectWithCalendarRecovery = async (
-  page: Page,
-  assertion: () => Promise<void>,
-  options: { openSidebar?: boolean } = {},
-) => {
-  try {
-    await assertion();
-  } catch {
-    await reloadCalendarView(page, options);
-    await assertion();
-  }
 };
 
 const clearClientAuthState = async (page: Page) => {
@@ -182,7 +153,7 @@ export const resetLocalEventDb = async (page: Page) => {
 
       deleteRequest.onsuccess = () => resolve();
       deleteRequest.onerror = () => resolve();
-      deleteRequest.onblocked = async () => {
+      deleteRequest.onblocked = () => {
         // If the app still has an open connection, fall back to clearing stores
         // so tests still start from a clean state.
         const openRequest = indexedDB.open(dbName);
@@ -221,8 +192,14 @@ export const clickGridCenter = async (page: Page, locator: Locator) => {
 
   await page.mouse.move(x, y);
   await page.mouse.down();
-  // Allow draft state to settle before mouseup so the form can open reliably.
-  await page.waitForTimeout(175);
+  await page
+    .waitForSelector('#mainGrid .active[role="button"]', {
+      state: "attached",
+      timeout: 3000,
+    })
+    .catch(() => {
+      // Release the mouse even if the draft preview never appears so state stays clean.
+    });
   await page.mouse.up();
 };
 
@@ -250,7 +227,6 @@ export const fillTitleAndSaveEventForm = async (page: Page, title: string) => {
 export const openTimedEventFormWithMouse = async (page: Page) => {
   const draftEvent = page.locator('#mainGrid .active[role="button"]').first();
   await retryUntil(
-    page,
     async () => {
       if (await draftEvent.isVisible().catch(() => false)) {
         await draftEvent.click({ force: true });
@@ -272,7 +248,6 @@ export const openTimedEventFormWithMouse = async (page: Page) => {
 
 export const openAllDayEventFormWithMouse = async (page: Page) => {
   await retryUntil(
-    page,
     () => clickGridCenter(page, page.locator("#allDayRow")),
     getFormTitleInput(page),
   );
@@ -291,27 +266,19 @@ export const openSomedayEventFormWithMouse = async (
 };
 
 export const openTimedEventFormWithKeyboard = async (page: Page) => {
-  await retryUntil(
-    page,
-    async () => {
-      await blurActiveElement(page);
-      await page.locator("#mainGrid").focus();
-      await pressShortcut(page, "c");
-    },
-    getFormTitleInput(page),
-  );
+  await retryUntil(async () => {
+    await blurActiveElement(page);
+    await page.locator("#mainGrid").focus();
+    await pressShortcut(page, "c");
+  }, getFormTitleInput(page));
 };
 
 export const openAllDayEventFormWithKeyboard = async (page: Page) => {
-  await retryUntil(
-    page,
-    async () => {
-      await blurActiveElement(page);
-      await page.locator("#mainGrid").focus();
-      await pressShortcut(page, "a");
-    },
-    getFormTitleInput(page),
-  );
+  await retryUntil(async () => {
+    await blurActiveElement(page);
+    await page.locator("#mainGrid").focus();
+    await pressShortcut(page, "a");
+  }, getFormTitleInput(page));
 };
 
 export const openSomedayEventFormWithKeyboard = async (page: Page) => {
@@ -345,7 +312,6 @@ export const openEventForEditingWithKeyboard = async (
   const titleInput = getFormTitleInput(page);
 
   await retryUntil(
-    page,
     async () => {
       await eventButton.focus();
       await page.keyboard.press("Enter");
@@ -355,7 +321,7 @@ export const openEventForEditingWithKeyboard = async (
       }
     },
     titleInput,
-    { maxAttempts: 4 },
+    { maxAttempts: 2, perAttemptTimeout: 5000 },
   );
 };
 
@@ -371,14 +337,9 @@ export const openEventForEditingWithMouse = async (
     );
   }
 
-  await retryUntil(
-    page,
-    async () => {
-      await page.waitForTimeout(200);
-      await eventButton.click({ force: true });
-    },
-    getFormTitleInput(page),
-  );
+  await retryUntil(async () => {
+    await eventButton.click({ force: true });
+  }, getFormTitleInput(page));
 };
 
 const findEventButton = async (
@@ -401,30 +362,7 @@ const findEventButton = async (
       return eventButtons.nth(buttonCount - 1);
     }
   }
-
-  const sidebarButton = page
-    .locator("#sidebar")
-    .getByRole("button", { name: eventTitle });
-  if ((await sidebarButton.count()) > 0) {
-    return sidebarButton.first();
-  }
-
-  const allDayButton = page
-    .locator("#allDayRow")
-    .getByRole("button", { name: eventTitle });
-  if ((await allDayButton.count()) > 0) {
-    return allDayButton.last();
-  }
-
-  const timedButton = page.locator("#mainGrid").getByRole("button", {
-    name: eventTitle,
-  });
-  if ((await timedButton.count()) > 0) {
-    return timedButton.last();
-  }
-
-  const activeButton = page.locator(".active", { hasText: eventTitle });
-  return (await activeButton.count()) > 0 ? activeButton.first() : null;
+  return null;
 };
 
 export const deleteEventWithMouse = async (page: Page) => {
@@ -442,55 +380,39 @@ export const deleteEventWithKeyboard = async (page: Page) => {
 };
 
 export const expectTimedEventVisible = async (page: Page, title: string) => {
-  await expectWithCalendarRecovery(page, async () => {
-    await expect(
-      page.locator("#mainGrid").getByRole("button", { name: title }),
-    ).toBeVisible({ timeout: 3000 });
-  });
+  await expect(
+    page.locator("#mainGrid").getByRole("button", { name: title }),
+  ).toBeVisible({ timeout: 8000 });
 };
 
 export const expectAllDayEventVisible = async (page: Page, title: string) => {
-  await expectWithCalendarRecovery(page, async () => {
-    await expect(
-      page.locator("#allDayRow").getByRole("button", { name: title }),
-    ).toBeVisible({ timeout: 3000 });
-  });
+  await expect(
+    page.locator("#allDayRow").getByRole("button", { name: title }),
+  ).toBeVisible({ timeout: 8000 });
 };
 
-export const expectSomedayEventVisible = async (page: Page, title: string) =>
-  expectWithCalendarRecovery(
-    page,
-    async () => {
-      await expect(
-        page.locator("#sidebar").getByRole("button", { name: title }),
-      ).toBeVisible({ timeout: 3000 });
-    },
-    { openSidebar: true },
-  );
+export const expectSomedayEventVisible = async (page: Page, title: string) => {
+  await ensureSidebarOpen(page);
+  await expect(
+    page.locator("#sidebar").getByRole("button", { name: title }),
+  ).toBeVisible({ timeout: 8000 });
+};
 
 export const expectTimedEventMissing = async (page: Page, title: string) => {
-  await expectWithCalendarRecovery(page, async () => {
-    await expect(
-      page.locator("#mainGrid").getByRole("button", { name: title }),
-    ).toHaveCount(0, { timeout: 3000 });
-  });
+  await expect(
+    page.locator("#mainGrid").getByRole("button", { name: title }),
+  ).toHaveCount(0, { timeout: 8000 });
 };
 
 export const expectAllDayEventMissing = async (page: Page, title: string) => {
-  await expectWithCalendarRecovery(page, async () => {
-    await expect(
-      page.locator("#allDayRow").getByRole("button", { name: title }),
-    ).toHaveCount(0, { timeout: 3000 });
-  });
+  await expect(
+    page.locator("#allDayRow").getByRole("button", { name: title }),
+  ).toHaveCount(0, { timeout: 8000 });
 };
 
-export const expectSomedayEventMissing = async (page: Page, title: string) =>
-  expectWithCalendarRecovery(
-    page,
-    async () => {
-      await expect(
-        page.locator("#sidebar").getByRole("button", { name: title }),
-      ).toHaveCount(0, { timeout: 3000 });
-    },
-    { openSidebar: true },
-  );
+export const expectSomedayEventMissing = async (page: Page, title: string) => {
+  await ensureSidebarOpen(page);
+  await expect(
+    page.locator("#sidebar").getByRole("button", { name: title }),
+  ).toHaveCount(0, { timeout: 8000 });
+};

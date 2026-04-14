@@ -21,7 +21,6 @@ test("should update an all-day event using keyboard interaction", async ({
   await openAllDayEventFormWithKeyboard(page);
   await fillTitleAndSaveEventForm(page, title);
   await expectAllDayEventVisible(page, title);
-  await page.waitForTimeout(1000);
 
   await openEventForEditingWithKeyboard(page, title);
 
