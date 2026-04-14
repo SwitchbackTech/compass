@@ -1,6 +1,5 @@
 import { type FC } from "react";
 import type React from "react";
-import { Key } from "ts-key-enum";
 import { MONTH_DAY_YEAR } from "@core/constants/date.constants";
 import { darken } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
@@ -63,12 +62,12 @@ export const DatePickers: FC<Props> = ({
     picker: "start" | "end",
     e: React.KeyboardEvent<HTMLDivElement>,
   ) => {
-    switch (e.key) {
-      case Key.Backspace: {
+    switch (true) {
+      case e.key === "Backspace": {
         e.stopPropagation();
         break;
       }
-      case Key.Enter: {
+      case e.key === "Enter": {
         e.stopPropagation();
         e.preventDefault();
 
@@ -94,7 +93,7 @@ export const DatePickers: FC<Props> = ({
 
         break;
       }
-      case Key.Escape: {
+      case e.key === "Escape": {
         if (isStartDatePickerOpen) {
           e.stopPropagation();
           closeStartDatePicker();
@@ -105,7 +104,7 @@ export const DatePickers: FC<Props> = ({
         }
         break;
       }
-      case Key.Tab: {
+      case e.key === "Tab": {
         if (isStartDatePickerOpen) {
           setIsStartDatePickerOpen(false);
         }

@@ -1,7 +1,6 @@
 import classNames from "classnames";
 import fastDeepEqual from "fast-deep-equal/react";
 import { memo, useCallback } from "react";
-import { Key } from "ts-key-enum";
 import { type UseInteractionsReturn } from "@floating-ui/react";
 import { useObservable } from "@ngneat/use-observable";
 import { ID_GRID_ALLDAY_ROW } from "@web/common/constants/web.constants";
@@ -28,7 +27,7 @@ const AllDayAgendaEventsComponent = ({
 
   const onEnterKey = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (e.key === Key.Enter) {
+      if (e.key === "Enter") {
         e.preventDefault();
         e.stopPropagation();
         openEventForm();

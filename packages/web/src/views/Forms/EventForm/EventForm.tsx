@@ -2,7 +2,6 @@ import fastDeepEqual from "fast-deep-equal/react";
 import { type KeyboardEvent } from "react";
 import type React from "react";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { Key } from "ts-key-enum";
 import { Priorities } from "@core/constants/core.constants";
 import { darken } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
@@ -83,7 +82,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
 
     const keyDownHandler = useCallback(
       (e: globalThis.KeyboardEvent) => {
-        if (e.key === Key.Shift) {
+        if (e.key === "Shift") {
           setIsShiftKeyPressed(true);
         }
       },
@@ -91,7 +90,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     );
 
     const keyUpHandler = useCallback((e: globalThis.KeyboardEvent) => {
-      if (e.key === Key.Shift) {
+      if (e.key === "Shift") {
         setIsShiftKeyPressed(false);
       }
     }, []);
@@ -151,7 +150,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       // Ignores certain keys and key combinations to prevent default behavior.
       // Allows some of them to be used as hotkeys
 
-      if (e.key === Key.Backspace) {
+      if (e.key === "Backspace") {
         e.stopPropagation();
       }
 
@@ -163,7 +162,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         e.preventDefault();
       }
 
-      if ((e.metaKey || e.ctrlKey) && e.key === Key.Enter) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
         e.preventDefault();
         onSubmitForm();
       }

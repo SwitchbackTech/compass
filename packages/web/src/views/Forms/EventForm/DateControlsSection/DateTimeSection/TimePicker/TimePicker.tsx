@@ -1,6 +1,5 @@
 import type React from "react";
 import ReactSelect, { type Props as RSProps } from "react-select";
-import { Key } from "ts-key-enum";
 import { type SelectOption } from "@web/common/types/component.types";
 import { type Option_Time } from "@web/common/types/util.types";
 import { StyledTimePicker } from "./styled";
@@ -43,20 +42,20 @@ export const TimePicker = ({
         onKeyDown={(e) => {
           const key = e.key;
 
-          if (key === Key.Enter || key === Key.Backspace) {
+          if (key === "Enter" || key === "Backspace") {
             e.stopPropagation();
           }
 
-          if (key === Key.Shift) {
+          if (key === "Shift") {
             e.stopPropagation();
           }
 
-          if (key === Key.Escape) {
+          if (key === "Escape") {
             setIsMenuOpen(false);
             e.stopPropagation();
           }
 
-          if (key === Key.Tab) {
+          if (key === "Tab") {
             setIsMenuOpen(false);
           }
         }}
