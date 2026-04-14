@@ -292,7 +292,7 @@ describe("useConnectGoogle", () => {
       userMetadataStatus: "loaded",
     });
     mockAuthApi.connectGoogle.mockRejectedValueOnce({
-      isAxiosError: true,
+      config: { url: "/auth/google/connect" },
       response: {
         data: {
           code: "GOOGLE_ACCOUNT_ALREADY_CONNECTED",

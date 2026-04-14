@@ -1,9 +1,3 @@
-import type {
-  AxiosAdapter,
-  AxiosError,
-  AxiosResponse,
-  InternalAxiosRequestConfig,
-} from "axios";
 import { toast } from "react-toastify";
 import { Status } from "@core/errors/status.codes";
 import { setTestWindowUrl } from "@web/__tests__/set-test-window-url";
@@ -14,7 +8,7 @@ import {
   assignLocation,
   reloadLocation,
 } from "@web/common/utils/browser/browser-navigation.util";
-import { CompassApi } from "./compass.api";
+import { type ApiError, type ApiResponse, CompassApi } from "./compass.api";
 
 jest.mock("@web/common/utils/browser/browser-navigation.util", () => ({
   assignLocation: jest.fn(),
@@ -46,28 +40,27 @@ const setLocationPath = (pathname: string) => {
   setTestWindowUrl(pathname);
 };
 
-const createAxiosError = (
+const createApiError = (
   status: number,
   url?: string,
   data?: unknown,
-): AxiosError => {
-  const config = { url } as InternalAxiosRequestConfig;
+): ApiError => {
+  const config = { method: "GET", url };
   const response = {
     config,
     data: data ?? {},
-    headers: {},
+    headers: new Headers(),
     status,
     statusText: "Error",
-  } as AxiosResponse;
+  } as ApiResponse<unknown>;
 
   return {
     config,
-    isAxiosError: true,
     message: "boom",
-    name: "AxiosError",
+    name: "ApiError",
     response,
     toJSON: () => ({}),
-  } as AxiosError;
+  } as ApiError;
 };
 
 const triggerErrorResponse = async (
@@ -75,8 +68,8 @@ const triggerErrorResponse = async (
   url?: string,
   data?: unknown,
 ) => {
-  const axiosError = createAxiosError(status, url, data);
-  const adapter: AxiosAdapter = () => Promise.reject(axiosError);
+  const apiError = createApiError(status, url, data);
+  const adapter = () => Promise.reject(apiError);
   CompassApi.defaults.adapter = adapter;
 
   await CompassApi.get("/test").catch(() => undefined);

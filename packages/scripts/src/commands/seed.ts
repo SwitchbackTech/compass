@@ -1,4 +1,3 @@
-import axios from "axios";
 import pkg from "inquirer";
 import { ObjectId } from "mongodb";
 import { getApiBaseUrl, log } from "@scripts/common/cli.utils";
@@ -16,9 +15,18 @@ async function createEvent(
   baseUrl: string,
   accessToken: string,
 ) {
-  await axios.post(`${baseUrl}/event`, events, {
-    headers: { Cookie: `sAccessToken=${accessToken}` },
+  const response = await fetch(`${baseUrl}/event`, {
+    body: JSON.stringify(events),
+    headers: {
+      "Content-Type": "application/json",
+      Cookie: `sAccessToken=${accessToken}`,
+    },
+    method: "POST",
   });
+
+  if (!response.ok) {
+    throw new Error(`Failed to create events: ${response.status}`);
+  }
 }
 
 async function seedEvents(userInput: string) {

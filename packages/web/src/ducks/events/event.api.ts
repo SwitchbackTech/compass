@@ -1,11 +1,10 @@
-import { type AxiosPromise } from "axios";
 import {
   type Params_Events,
   type Payload_Order,
   type RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
-import { CompassApi } from "@web/common/apis/compass.api";
+import { type ApiResponse, CompassApi } from "@web/common/apis/compass.api";
 import { type Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 
 const EventApi = {
@@ -19,7 +18,7 @@ const EventApi = {
     _id: string,
     event: Schema_Event,
     params: { applyTo?: RecurringEventUpdateScope },
-  ): AxiosPromise<void> => {
+  ): Promise<ApiResponse<void>> => {
     if (params?.applyTo) {
       return CompassApi.put<void>(
         `/event/${_id}?applyTo=${params.applyTo}`,

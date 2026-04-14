@@ -1,4 +1,3 @@
-import { type AxiosError, isAxiosError } from "axios";
 import { useCallback, useSyncExternalStore } from "react";
 import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { type GoogleConnectionState } from "@core/types/user.types";
@@ -14,6 +13,7 @@ import {
 } from "@web/auth/google/state/google.sync.state";
 import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
 import { AuthApi } from "@web/common/apis/auth.api";
+import { isApiError } from "@web/common/apis/compass.api";
 import {
   getApiErrorCode,
   parseGoogleConnectError,
@@ -69,7 +69,7 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
       try {
         await AuthApi.connectGoogle(googleConnectRequest);
       } catch (error) {
-        if (isAxiosError(error)) {
+        if (isApiError(error)) {
           const message = parseGoogleConnectError(error)?.message;
 
           if (message) {
@@ -103,7 +103,7 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
       } catch (error) {
         clearGoogleSyncIndicatorOverride();
         const isGoogleRevoked =
-          getApiErrorCode(error as AxiosError) === GOOGLE_REVOKED;
+          isApiError(error) && getApiErrorCode(error) === GOOGLE_REVOKED;
 
         if (isGoogleRevoked) {
           return;

@@ -1,4 +1,3 @@
-import { type AxiosResponse } from "axios";
 import { toast } from "react-toastify";
 import { resolveModifier } from "@tanstack/react-hotkeys";
 import "@testing-library/jest-dom/extend-expect";
@@ -13,6 +12,7 @@ import dayjs from "@core/util/date/dayjs";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { setupDraftState } from "@web/__tests__/utils/state/draft.test.util";
+import { type ApiResponse } from "@web/common/apis/compass.api";
 import { type Schema_WebEvent } from "@web/common/types/web.event.types";
 import { EventApi } from "@web/ducks/events/event.api";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
@@ -53,26 +53,26 @@ describe("SomedayEventForm Hotkeys", () => {
     jest
       .spyOn(EventApi, "delete")
       .mockImplementation(() =>
-        Promise.resolve({ status: 200 } as unknown as AxiosResponse<void>),
+        Promise.resolve({ status: 200 } as ApiResponse<void>),
       );
 
     jest
       .spyOn(EventApi, "create")
       .mockImplementation(() =>
-        Promise.resolve({ status: 200 } as unknown as AxiosResponse<void>),
+        Promise.resolve({ status: 200 } as ApiResponse<void>),
       );
 
     jest
       .spyOn(EventApi, "edit")
       .mockImplementation(() =>
-        Promise.resolve({ status: 200 } as unknown as AxiosResponse<void>),
+        Promise.resolve({ status: 200 } as ApiResponse<void>),
       );
 
     jest.spyOn(EventApi, "get").mockImplementation(() =>
       Promise.resolve({
         status: 200,
         data: [],
-      } as AxiosResponse<Schema_Event[]>),
+      } as ApiResponse<Schema_Event[]>),
     );
 
     jest.spyOn(window, "alert").mockImplementation(() => {});

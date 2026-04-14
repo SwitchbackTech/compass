@@ -1,16 +1,16 @@
-import type { AxiosError } from "axios";
 import type { ZodType } from "zod";
 import {
   type GoogleConnectErrorResponse,
   GoogleConnectErrorResponseSchema,
 } from "@core/types/auth.types";
+import { type ApiError } from "./compass.api";
 
-const getApiErrorData = (error: AxiosError): unknown => {
+const getApiErrorData = (error: ApiError): unknown => {
   return error?.response?.data;
 };
 
 export const parseApiError = <T>(
-  error: AxiosError,
+  error: ApiError,
   schema: ZodType<T>,
 ): T | undefined => {
   const parsed = schema.safeParse(getApiErrorData(error));
@@ -18,10 +18,10 @@ export const parseApiError = <T>(
 };
 
 /**
- * Extracts the error code from an Axios error's response data.
+ * Extracts the error code from an API error's response data.
  * Returns undefined when the response has no object body with a string `code` property.
  */
-export const getApiErrorCode = (error: AxiosError): string | undefined => {
+export const getApiErrorCode = (error: ApiError): string | undefined => {
   const data = getApiErrorData(error);
   if (!data || typeof data !== "object" || !("code" in data)) return undefined;
   const code = (data as { code?: unknown }).code;
@@ -29,7 +29,7 @@ export const getApiErrorCode = (error: AxiosError): string | undefined => {
 };
 
 export const parseGoogleConnectError = (
-  error: AxiosError,
+  error: ApiError,
 ): GoogleConnectErrorResponse | undefined => {
   return parseApiError(error, GoogleConnectErrorResponseSchema);
 };

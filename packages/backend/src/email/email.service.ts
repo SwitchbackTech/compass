@@ -1,4 +1,3 @@
-import axios from "axios";
 import { Logger } from "@core/logger/winston.logger";
 import { mapCompassUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
 import {
@@ -16,6 +15,44 @@ import {
 } from "./email.types";
 
 const logger = Logger("app:email.service");
+
+interface EmailServiceError extends Error {
+  data?: unknown;
+  method?: string;
+  status?: number;
+  url?: string;
+}
+
+const createEmailServiceError = (
+  method: string,
+  url: string,
+  status?: number,
+  data?: unknown,
+): EmailServiceError => {
+  const error = new Error(
+    `Kit request failed${status ? ` with status ${status}` : ""}`,
+  ) as EmailServiceError;
+  error.data = data;
+  error.method = method;
+  error.name = "EmailServiceError";
+  error.status = status;
+  error.url = url;
+  return error;
+};
+
+const getResponseData = async (response: Response): Promise<unknown> => {
+  const text = await response.text();
+  if (!text) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+};
+
 class EmailService {
   private static headers: { headers: Record<string, string> };
   private static readonly baseUrl = "https://api.kit.com/v4";
@@ -64,18 +101,18 @@ class EmailService {
       // add tag to subscriber
       logger.info(`Tagging subscriber: ${subscriber.email_address}`);
       const url = `${this.baseUrl}/tags/${tagId}/subscribers/${subId}`;
-      const result = await axios.post(url, {}, this.headers);
-      return result.data;
+      return await this.post<Response_TagSubscriber>(url, {});
     } catch (err) {
-      if (axios.isAxiosError(err)) {
+      if (err instanceof Error && err.name === "EmailServiceError") {
+        const emailerError = err as EmailServiceError;
         logger.error({
-          message: err.message,
-          status: err.response?.status,
-          data: err.response?.data,
-          url: err.config?.url,
-          method: err.config?.method,
+          message: emailerError.message,
+          status: emailerError.status,
+          data: emailerError.data,
+          method: emailerError.method,
+          url: emailerError.url,
         });
-        switch (err.response?.status) {
+        switch (emailerError.status) {
           case 401:
             throw error(
               EmailerError.InvalidSecret,
@@ -104,8 +141,22 @@ class EmailService {
     }
 
     const url = `${this.baseUrl}/subscribers`;
-    const result = await axios.post(url, data, this.headers);
-    return result.data;
+    return await this.post<Response_UpsertSubscriber>(url, data);
+  }
+
+  private static async post<T>(url: string, body: object): Promise<T> {
+    const response = await fetch(url, {
+      body: JSON.stringify(body),
+      headers: this.headers.headers,
+      method: "POST",
+    });
+    const data = await getResponseData(response);
+
+    if (!response.ok) {
+      throw createEmailServiceError("POST", url, response.status, data);
+    }
+
+    return data as T;
   }
 }
 
