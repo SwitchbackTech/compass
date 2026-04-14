@@ -1,5 +1,5 @@
-import { default as mockMergeWith } from "lodash.mergewith";
 import { faker as mockFaker } from "@faker-js/faker";
+import { deepMerge } from "@core/util/object.util";
 
 export const mockBSON = () => {
   jest.mock("bson", () => ({
@@ -33,7 +33,7 @@ export function mockModule<T>(
   const mockedModule = jest.requireActual(mockPath);
 
   jest.mock<T>(mockPath, () =>
-    mockMergeWith(
+    deepMerge(
       { __esModule: mockAsEsModule },
       mockedModule,
       mockFactory(mockedModule),

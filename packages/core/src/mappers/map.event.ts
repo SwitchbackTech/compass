@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import mergeWith from "lodash.mergewith";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import {
@@ -21,6 +20,7 @@ import {
   parseCompassEventDate,
 } from "@core/util/event/event.util";
 import { isCancelledGCalEvent } from "@core/util/event/gcal.event.util";
+import { deepMerge } from "@core/util/object.util";
 import { validateEvent } from "@core/validators/event.validator";
 
 export namespace MapEvent {
@@ -200,11 +200,11 @@ export const gEventToCompassEvent = (
     );
   }
 
-  const event: WithGcalId<gSchema$Event> = mergeWith(
+  const event: WithGcalId<gSchema$Event> = deepMerge(
     {},
     gEventDefaults,
     gEvent,
-  );
+  ) as WithGcalId<gSchema$Event>;
 
   const { id: gEventId, description } = event;
   const title = event.summary!;

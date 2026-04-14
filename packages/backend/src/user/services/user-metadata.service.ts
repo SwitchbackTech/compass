@@ -1,4 +1,3 @@
-import mergeWith from "lodash.mergewith";
 import SupertokensUserMetadata, {
   type JSONObject,
 } from "supertokens-node/recipe/usermetadata";
@@ -8,6 +7,7 @@ import {
   type UserMetadata,
 } from "@core/types/user.types";
 import dayjs from "@core/util/date/dayjs";
+import { deepMerge } from "@core/util/object.util";
 import mongoService from "@backend/common/services/mongo.service";
 import { getSync } from "@backend/sync/util/sync.queries";
 import { isUsingHttps } from "@backend/sync/util/sync.util";
@@ -126,7 +126,7 @@ class UserMetadataService {
     data: Partial<UserMetadata>;
   }): Promise<UserMetadata> => {
     const value = await this.getStoredUserMetadata(userId);
-    const update = mergeWith(value, data) as UserMetadata;
+    const update = deepMerge(value, data) as UserMetadata;
 
     const result = (await SupertokensUserMetadata.updateUserMetadata(
       userId,

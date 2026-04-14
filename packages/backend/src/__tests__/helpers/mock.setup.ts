@@ -1,5 +1,4 @@
 import { type Handler, type NextFunction, type Response } from "express";
-import mergeWith from "lodash.mergewith";
 import { randomUUID } from "node:crypto";
 import { type SessionRequest } from "supertokens-node/framework/express";
 import {
@@ -17,6 +16,7 @@ import { mockModule } from "@core/__tests__/mock.setup";
 import { type gSchema$CalendarListEntry } from "@core/types/gcal";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import { type UserMetadata } from "@core/types/user.types";
+import { deepMerge } from "@core/util/object.util";
 import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
 import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 import { ENV } from "@backend/common/constants/env.constants";
@@ -211,12 +211,12 @@ function mockSuperTokens() {
   mockModule(
     "supertokens-node",
     (superTokens: typeof import("supertokens-node")) => {
-      const superTokensModule = mergeWith(superTokens, {
+      const superTokensModule = deepMerge(superTokens, {
         getUserIdMapping: jest.fn(getUserIdMapping),
         createUserIdMapping: jest.fn(createUserIdMapping),
       });
 
-      return mergeWith(superTokensModule, { default: superTokensModule });
+      return deepMerge(superTokensModule, { default: superTokensModule });
     },
   );
 
@@ -225,11 +225,11 @@ function mockSuperTokens() {
     (
       frameworkExpress: typeof import("supertokens-node/recipe/session/framework/express"),
     ) => {
-      const frameworkExpressModule = mergeWith(frameworkExpress, {
+      const frameworkExpressModule = deepMerge(frameworkExpress, {
         verifySession: jest.fn(verifySession),
       });
 
-      return mergeWith(frameworkExpressModule, {
+      return deepMerge(frameworkExpressModule, {
         default: frameworkExpressModule,
       });
     },
@@ -240,12 +240,12 @@ function mockSuperTokens() {
     (
       recipeUserMetadata: typeof import("supertokens-node/recipe/usermetadata"),
     ) => {
-      const userMetadataModule = mergeWith(recipeUserMetadata, {
+      const userMetadataModule = deepMerge(recipeUserMetadata, {
         updateUserMetadata: jest.fn(updateUserMetadata),
         getUserMetadata: jest.fn(getUserMetadata),
       });
 
-      return mergeWith(userMetadataModule, { default: userMetadataModule });
+      return deepMerge(userMetadataModule, { default: userMetadataModule });
     },
   );
 
@@ -257,13 +257,13 @@ function mockSuperTokens() {
       const getInstanceOrThrowError =
         session.default.getInstanceOrThrowError.bind(session.default);
 
-      const sessionModule = mergeWith(session, {
-        default: mergeWith(session.default, {
+      const sessionModule = deepMerge(session, {
+        default: deepMerge(session.default, {
           getInstanceOrThrowError: jest.fn(() => {
             const instance = getInstanceOrThrowError();
 
-            return mergeWith(instance, {
-              apiImpl: mergeWith(instance.apiImpl, {
+            return deepMerge(instance, {
+              apiImpl: deepMerge(instance.apiImpl, {
                 verifySession: jest.fn(
                   async (input: {
                     verifySessionOptions: VerifySessionOptions | undefined;
