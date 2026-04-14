@@ -6,6 +6,7 @@ import {
   expectTaskSavedToIndexedDB,
   expectTaskVisible,
   prepareTaskPage,
+  reloadTaskPage,
   restoreDeletedTaskFromUndoToast,
 } from "../utils/task-test-utils";
 
@@ -33,7 +34,7 @@ test.describe("Task Delete + Restore", () => {
     await expectTaskVisible(page, taskTitle);
     await expectTaskSavedToIndexedDB(page, taskTitle);
 
-    await page.reload();
+    await reloadTaskPage(page);
     await expectTaskVisible(page, taskTitle, 10000);
     await expectTaskSavedToIndexedDB(page, taskTitle);
   });

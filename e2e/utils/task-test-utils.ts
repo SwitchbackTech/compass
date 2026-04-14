@@ -1,6 +1,9 @@
 import { type Page, expect } from "@playwright/test";
 import { resetLocalEventDb } from "./event-test-utils";
 
+const getTaskInput = (page: Page, title: string) =>
+  page.locator(`input[value="${title.replace(/"/g, '\\"')}"]`);
+
 export const prepareTaskPage = async (page: Page) => {
   await page.goto("/day", { waitUntil: "domcontentloaded" });
   await page.evaluate(() => {
@@ -8,6 +11,10 @@ export const prepareTaskPage = async (page: Page) => {
   });
 
   await resetLocalEventDb(page);
+  await reloadTaskPage(page);
+};
+
+export const reloadTaskPage = async (page: Page) => {
   await page.goto("/day", { waitUntil: "domcontentloaded" });
   await page.waitForURL(/\/day\/\d{4}-\d{2}-\d{2}$/);
   await expect(page.locator('[aria-label="daily-tasks"]')).toBeVisible({
@@ -39,11 +46,10 @@ export const expectTaskVisible = async (
   title: string,
   timeout = 10000,
 ) => {
-  await expect(
-    page.getByRole("textbox", { name: `Edit ${title}` }),
-  ).toBeVisible({
+  await expect(page.locator('[aria-label="daily-tasks"]')).toBeVisible({
     timeout,
   });
+  await expect(getTaskInput(page, title)).toBeVisible({ timeout });
 };
 
 export const expectTaskMissing = async (
@@ -51,9 +57,7 @@ export const expectTaskMissing = async (
   title: string,
   timeout = 10000,
 ) => {
-  await expect(
-    page.getByRole("textbox", { name: `Edit ${title}` }),
-  ).toHaveCount(0, {
+  await expect(getTaskInput(page, title)).toHaveCount(0, {
     timeout,
   });
 };
@@ -69,12 +73,12 @@ export const deleteTaskWithKeyboard = async (page: Page, title: string) => {
 };
 
 export const restoreDeletedTaskFromUndoToast = async (page: Page) => {
-  const undoDeleteText = page.getByText("Deleted").first();
+  const undoDeleteToast = page
+    .getByRole("button", { name: /deleted/i })
+    .first();
 
-  await expect(undoDeleteText).toBeVisible();
-  await undoDeleteText.click();
-  await page.keyboard.press("Meta+z");
-  await page.keyboard.press("Control+z");
+  await expect(undoDeleteToast).toBeVisible();
+  await undoDeleteToast.click();
 };
 
 export const expectTaskSavedToIndexedDB = async (page: Page, title: string) => {
@@ -123,6 +127,5 @@ export const expectTaskSavedToIndexedDB = async (page: Page, title: string) => {
 
 export const clearAllLocalData = async (page: Page) => {
   await resetLocalEventDb(page);
-  await page.reload();
-  await expect(page.locator('[aria-label="daily-tasks"]')).toBeVisible();
+  await reloadTaskPage(page);
 };
