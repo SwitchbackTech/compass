@@ -105,4 +105,4 @@ if (install.exitCode !== 0) {
 }
 
 log.success("Backend build complete");
-log.tip(`  Runtime: bun ${BACKEND_BUILD}/app.js`);
+log.tip(`  Runtime: cd ${BACKEND_BUILD} && bun app.js`);

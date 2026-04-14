@@ -44,8 +44,10 @@ containing only the required native modules (`saslprep`, `@ngrok/ngrok`).
 Runtime entrypoint:
 
 ```bash
-bun build/backend/app.js
+cd build/backend && bun app.js
 ```
+
+Bun loads `.env` from the working directory, so `cd` into the build dir before running.
 
 Deployment notes:
 
