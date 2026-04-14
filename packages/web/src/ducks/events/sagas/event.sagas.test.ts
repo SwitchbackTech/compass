@@ -1,4 +1,3 @@
-import { type AxiosResponse } from "axios";
 import { type Schema_Event } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
@@ -8,6 +7,7 @@ import {
   shouldShowAnonymousCalendarChangeSignUpPrompt,
   updateAuthState,
 } from "@web/auth/compass/state/auth.state.util";
+import { type ApiResponse } from "@web/common/apis/api.types";
 import { session } from "@web/common/classes/Session";
 import {
   ensureStorageReady,
@@ -56,7 +56,7 @@ describe("createEvent saga - optimistic rendering", () => {
     mockCreateApi = jest.spyOn(EventApi, "create").mockImplementation(() => {
       return Promise.resolve({
         status: 200,
-      } as unknown as AxiosResponse<void>);
+      } as ApiResponse<void>);
     });
   });
 
@@ -91,8 +91,8 @@ describe("createEvent saga - optimistic rendering", () => {
 
   it("should keep event in state during API call", async () => {
     // Create a promise that we can control
-    let resolveApiCall: (value: AxiosResponse<void>) => void;
-    const apiPromise = new Promise<AxiosResponse<void>>((resolve) => {
+    let resolveApiCall: (value: ApiResponse<void>) => void;
+    const apiPromise = new Promise<ApiResponse<void>>((resolve) => {
       resolveApiCall = resolve;
     });
 
@@ -134,7 +134,7 @@ describe("createEvent saga - optimistic rendering", () => {
     // Resolve the API call
     resolveApiCall!({
       status: 200,
-    } as AxiosResponse<void>);
+    } as ApiResponse<void>);
 
     // Wait for saga to complete
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -155,7 +155,7 @@ describe("createEvent saga - optimistic rendering", () => {
     // Mock API to return success
     mockCreateApi.mockResolvedValue({
       status: 200,
-    } as AxiosResponse<void>);
+    } as ApiResponse<void>);
 
     const action = createEventSlice.actions.request(event);
     store.dispatch(action);
@@ -279,13 +279,13 @@ describe("pending events state management", () => {
     mockCreateApi = jest.spyOn(EventApi, "create").mockImplementation(() => {
       return Promise.resolve({
         status: 200,
-      } as unknown as AxiosResponse<void>);
+      } as ApiResponse<void>);
     });
 
     mockEditApi = jest.spyOn(EventApi, "edit").mockImplementation(() => {
       return Promise.resolve({
         status: 200,
-      } as unknown as AxiosResponse<void>);
+      } as ApiResponse<void>);
     });
   });
 

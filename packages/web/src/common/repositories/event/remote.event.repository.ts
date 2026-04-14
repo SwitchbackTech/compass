@@ -16,7 +16,7 @@ export class RemoteEventRepository implements EventRepository {
   async get(params: Params_Events): Promise<Response_GetEventsSuccess> {
     const response = await EventApi.get(params);
 
-    // Axios responses have a .data property, and the backend returns
+    // API responses have a .data property, and the backend returns
     // the data in the shape of Response_HttpPaginatedSuccess<Schema_Event[]>
     // We combine it with params to create Response_GetEventsSuccess
 

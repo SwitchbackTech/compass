@@ -19,7 +19,6 @@
     "@react-oauth/google": "^0.7.0",
     "@reduxjs/toolkit": "^1.6.1",
     "@tanstack/react-hotkeys": "^0.3.1",
-    "axios": "^1.2.2",
     "classnames": "^2.3.1",
     "dayjs": "^1.10.7",
     "dexie": "^4.2.1",

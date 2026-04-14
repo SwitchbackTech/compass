@@ -1,4 +1,4 @@
-import axios from "axios";
+import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 import { mapCompassUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
 import {
@@ -9,13 +9,50 @@ import { type Schema_User } from "@core/types/user.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import { isMissingUserTagId } from "@backend/common/constants/env.util";
 import { EmailerError } from "@backend/common/errors/emailer/emailer.errors";
-import { error } from "@backend/common/errors/handlers/error.handler";
+import {
+  error,
+  genericError,
+} from "@backend/common/errors/handlers/error.handler";
 import {
   type Response_TagSubscriber,
   type Response_UpsertSubscriber,
 } from "./email.types";
 
 const logger = Logger("app:email.service");
+
+/**
+ * Internal error class for Kit API failures.
+ * Used to pass response details from post() to callers, who then
+ * transform it into appropriate domain errors using error().
+ */
+class KitApiError extends Error {
+  constructor(
+    message: string,
+    public readonly method: string,
+    public readonly url: string,
+    public readonly status?: number,
+    public readonly data?: unknown,
+  ) {
+    super(message);
+    this.name = "KitApiError";
+    Object.setPrototypeOf(this, new.target.prototype);
+    Error.captureStackTrace(this);
+  }
+}
+
+const getResponseData = async (response: Response): Promise<unknown> => {
+  const text = await response.text();
+  if (!text) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+};
+
 class EmailService {
   private static headers: { headers: Record<string, string> };
   private static readonly baseUrl = "https://api.kit.com/v4";
@@ -64,18 +101,22 @@ class EmailService {
       // add tag to subscriber
       logger.info(`Tagging subscriber: ${subscriber.email_address}`);
       const url = `${this.baseUrl}/tags/${tagId}/subscribers/${subId}`;
-      const result = await axios.post(url, {}, this.headers);
-      return result.data;
+      return await this.post<Response_TagSubscriber>(url, {});
     } catch (err) {
-      if (axios.isAxiosError(err)) {
+      if (err instanceof BaseError) {
+        throw err;
+      }
+
+      if (err instanceof KitApiError) {
         logger.error({
           message: err.message,
-          status: err.response?.status,
-          data: err.response?.data,
-          url: err.config?.url,
-          method: err.config?.method,
+          status: err.status,
+          data: err.data,
+          method: err.method,
+          url: err.url,
         });
-        switch (err.response?.status) {
+
+        switch (err.status) {
           case 401:
             throw error(
               EmailerError.InvalidSecret,
@@ -84,11 +125,11 @@ class EmailService {
           case 404:
             throw error(EmailerError.InvalidTagId, "Subscriber was not tagged");
           default:
-            throw err;
+            throw genericError(err, "Failed to tag subscriber");
         }
-      } else {
-        throw err;
       }
+
+      throw genericError(err, "Failed to tag subscriber");
     }
   }
 
@@ -104,8 +145,28 @@ class EmailService {
     }
 
     const url = `${this.baseUrl}/subscribers`;
-    const result = await axios.post(url, data, this.headers);
-    return result.data;
+    return await this.post<Response_UpsertSubscriber>(url, data);
+  }
+
+  private static async post<T>(url: string, body: object): Promise<T> {
+    const response = await fetch(url, {
+      body: JSON.stringify(body),
+      headers: this.headers.headers,
+      method: "POST",
+    });
+    const data = await getResponseData(response);
+
+    if (!response.ok) {
+      throw new KitApiError(
+        `Kit request failed with status ${response.status}`,
+        "POST",
+        url,
+        response.status,
+        data,
+      );
+    }
+
+    return data as T;
   }
 }
 

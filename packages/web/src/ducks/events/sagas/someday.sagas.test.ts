@@ -1,4 +1,3 @@
-import { type AxiosResponse } from "axios";
 import { type AnyAction } from "redux";
 import { runSaga } from "redux-saga";
 import { configureStore } from "@reduxjs/toolkit";
@@ -9,6 +8,7 @@ import {
   createInitialState,
   createStoreWithEvents,
 } from "@web/__tests__/utils/state/store.test.util";
+import { type ApiResponse } from "@web/common/apis/api.types";
 import { session } from "@web/common/classes/Session";
 import { type EventRepository } from "@web/common/repositories/event/event.repository.interface";
 import * as eventRepositoryUtil from "@web/common/repositories/event/event.repository.util";
@@ -83,8 +83,8 @@ describe("getSomedayEvents saga", () => {
         },
       ];
 
-      // EventApi.get returns an AxiosResponse, and the repository extracts response.data
-      const mockResponse: AxiosResponse<
+      // EventApi.get returns an API response, and the repository extracts response.data
+      const mockResponse: ApiResponse<
         Response_HttpPaginatedSuccess<Schema_Event[]>
       > = {
         data: {
@@ -98,8 +98,8 @@ describe("getSomedayEvents saga", () => {
         },
         status: 200,
         statusText: "OK",
-        headers: {},
-        config: {} as AxiosResponse["config"],
+        headers: new Headers(),
+        config: {},
       };
       mockGetApi.mockResolvedValue(mockResponse);
 

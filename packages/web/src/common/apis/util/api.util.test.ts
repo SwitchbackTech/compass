@@ -1,81 +1,77 @@
-import type {
-  AxiosError,
-  AxiosResponse,
-  InternalAxiosRequestConfig,
-} from "axios";
 import {
   ApiErrorResponseSchema,
   GoogleConnectErrorResponseSchema,
 } from "@core/types/auth.types";
+import { type ApiError } from "../api.types";
 import {
   getApiErrorCode,
   parseApiError,
   parseGoogleConnectError,
-} from "./compass.api.util";
+} from "./api.util";
 
-const createAxiosError = (response: { data?: unknown } | null): AxiosError =>
+const createApiError = (response: { data?: unknown } | null): ApiError =>
   ({
     response: response
       ? ({
           data: response.data,
-          config: {} as InternalAxiosRequestConfig,
-          headers: {},
+          config: {},
+          headers: new Headers(),
           status: 400,
           statusText: "Error",
-        } as AxiosResponse)
+        } as ApiResponse<unknown>)
       : undefined,
-  }) as AxiosError;
+  }) as ApiError;
 
 describe("getApiErrorCode", () => {
   it("returns the code when response.data has a string code property", () => {
-    const error = createAxiosError({ data: { code: "GOOGLE_REVOKED" } });
+    const error = createApiError({ data: { code: "GOOGLE_REVOKED" } });
     expect(getApiErrorCode(error)).toBe("GOOGLE_REVOKED");
   });
 
   it("returns the code for arbitrary error codes", () => {
-    const error = createAxiosError({ data: { code: "FULL_SYNC_REQUIRED" } });
+    const error = createApiError({ data: { code: "FULL_SYNC_REQUIRED" } });
     expect(getApiErrorCode(error)).toBe("FULL_SYNC_REQUIRED");
   });
 
   it("returns undefined when error has no response", () => {
-    const error = createAxiosError(null);
+    const error = createApiError(null);
     expect(getApiErrorCode(error)).toBeUndefined();
   });
 
   it("returns undefined when response has no data", () => {
-    const error = createAxiosError({ data: undefined });
+    const error = createApiError({ data: undefined });
     expect(getApiErrorCode(error)).toBeUndefined();
   });
 
   it("returns undefined when data is not an object", () => {
-    const error = createAxiosError({ data: "string body" });
+    const error = createApiError({ data: "string body" });
     expect(getApiErrorCode(error)).toBeUndefined();
   });
 
   it("returns undefined when data is an array", () => {
-    const error = createAxiosError({ data: [] });
+    const error = createApiError({ data: [] });
     expect(getApiErrorCode(error)).toBeUndefined();
   });
 
   it("returns undefined when data has no code property", () => {
-    const error = createAxiosError({
+    const error = createApiError({
       data: { message: "Something went wrong" },
     });
     expect(getApiErrorCode(error)).toBeUndefined();
   });
 
   it("returns undefined when code is not a string", () => {
-    const error = createAxiosError({ data: { code: 404 } });
+    const error = createApiError({ data: { code: 404 } });
     expect(getApiErrorCode(error)).toBeUndefined();
   });
 
   it("returns undefined when code is null", () => {
-    const error = createAxiosError({ data: { code: null } });
+    const error = createApiError({ data: { code: null } });
     expect(getApiErrorCode(error)).toBeUndefined();
   });
 
   it("preserves message when data has both code and message", () => {
-    const error = createAxiosError({
+    const error = createApiError({
       data: { code: "GOOGLE_REVOKED", message: "Google access revoked." },
     });
     expect(getApiErrorCode(error)).toBe("GOOGLE_REVOKED");
@@ -84,7 +80,7 @@ describe("getApiErrorCode", () => {
 
 describe("parseApiError", () => {
   it("parses errors against a provided schema", () => {
-    const error = createAxiosError({
+    const error = createApiError({
       data: {
         code: "ANY_ERROR",
         message: "Something went wrong",
@@ -98,7 +94,7 @@ describe("parseApiError", () => {
   });
 
   it("returns undefined when the payload does not match the schema", () => {
-    const error = createAxiosError({
+    const error = createApiError({
       data: { code: 404, message: "Something went wrong" },
     });
 
@@ -108,7 +104,7 @@ describe("parseApiError", () => {
 
 describe("parseGoogleConnectError", () => {
   it("parses typed Google connect errors", () => {
-    const error = createAxiosError({
+    const error = createApiError({
       data: {
         code: "GOOGLE_ACCOUNT_ALREADY_CONNECTED",
         message: "Google account is already connected",
@@ -122,7 +118,7 @@ describe("parseGoogleConnectError", () => {
   });
 
   it("returns undefined for non-Google-connect error codes", () => {
-    const error = createAxiosError({
+    const error = createApiError({
       data: {
         code: "ANY_ERROR",
         message: "Something went wrong",

@@ -1,22 +1,19 @@
 import { type UserMetadata, type UserProfile } from "@core/types/user.types";
-import { CompassApi } from "@web/common/apis/compass.api";
+import { BaseApi } from "@web/common/apis/base/base.api";
 
 const UserApi = {
   async getProfile(): Promise<UserProfile> {
-    const response = await CompassApi.get<UserProfile>(`/user/profile`);
+    const response = await BaseApi.get<UserProfile>(`/user/profile`);
     return response.data;
   },
 
   async getMetadata(): Promise<UserMetadata> {
-    const response = await CompassApi.get<UserMetadata>(`/user/metadata`);
+    const response = await BaseApi.get<UserMetadata>(`/user/metadata`);
     return response.data;
   },
 
   async updateMetadata(data: UserMetadata): Promise<UserMetadata> {
-    const response = await CompassApi.post<UserMetadata>(
-      `/user/metadata`,
-      data,
-    );
+    const response = await BaseApi.post<UserMetadata>(`/user/metadata`, data);
 
     return response.data;
   },

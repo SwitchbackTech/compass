@@ -1,9 +1,3 @@
-import type {
-  AxiosAdapter,
-  AxiosError,
-  AxiosResponse,
-  InternalAxiosRequestConfig,
-} from "axios";
 import { toast } from "react-toastify";
 import { Status } from "@core/errors/status.codes";
 import { setTestWindowUrl } from "@web/__tests__/set-test-window-url";
@@ -14,7 +8,7 @@ import {
   assignLocation,
   reloadLocation,
 } from "@web/common/utils/browser/browser-navigation.util";
-import { CompassApi } from "./compass.api";
+import { BaseApi } from "./base.api";
 
 jest.mock("@web/common/utils/browser/browser-navigation.util", () => ({
   assignLocation: jest.fn(),
@@ -40,34 +34,33 @@ jest.mock("supertokens-web-js/recipe/session", () => {
 
 const assignMock = jest.mocked(assignLocation);
 const reloadMock = jest.mocked(reloadLocation);
-const originalAdapter = CompassApi.defaults.adapter;
+const originalAdapter = BaseApi.defaults.adapter;
 
 const setLocationPath = (pathname: string) => {
   setTestWindowUrl(pathname);
 };
 
-const createAxiosError = (
+const createApiError = (
   status: number,
   url?: string,
   data?: unknown,
-): AxiosError => {
-  const config = { url } as InternalAxiosRequestConfig;
+): ApiError => {
+  const config = { method: "GET", url };
   const response = {
     config,
     data: data ?? {},
-    headers: {},
+    headers: new Headers(),
     status,
     statusText: "Error",
-  } as AxiosResponse;
+  } as ApiResponse<unknown>;
 
   return {
     config,
-    isAxiosError: true,
     message: "boom",
-    name: "AxiosError",
+    name: "ApiError",
     response,
     toJSON: () => ({}),
-  } as AxiosError;
+  } as ApiError;
 };
 
 const triggerErrorResponse = async (
@@ -75,16 +68,16 @@ const triggerErrorResponse = async (
   url?: string,
   data?: unknown,
 ) => {
-  const axiosError = createAxiosError(status, url, data);
-  const adapter: AxiosAdapter = () => Promise.reject(axiosError);
-  CompassApi.defaults.adapter = adapter;
+  const apiError = createApiError(status, url, data);
+  const adapter = () => Promise.reject(apiError);
+  BaseApi.defaults.adapter = adapter;
 
-  await CompassApi.get("/test").catch(() => undefined);
+  await BaseApi.get("/test").catch(() => undefined);
 };
 
 describe("CompassApi interceptor auth handling", () => {
   it("sends cookies with cross-origin API requests", () => {
-    expect(CompassApi.defaults.withCredentials).toBe(true);
+    expect(BaseApi.defaults.withCredentials).toBe(true);
   });
 
   beforeEach(() => {
@@ -101,7 +94,7 @@ describe("CompassApi interceptor auth handling", () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
-    CompassApi.defaults.adapter = originalAdapter;
+    BaseApi.defaults.adapter = originalAdapter;
   });
 
   it("signs out and redirects to day when Google token is invalid", async () => {
