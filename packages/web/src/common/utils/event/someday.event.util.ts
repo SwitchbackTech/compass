@@ -1,4 +1,3 @@
-import uniqby from "lodash.uniqby";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
@@ -11,6 +10,17 @@ import {
   type Schema_SomedayEventsColumn,
 } from "@web/common/types/web.event.types";
 import { validateSomedayEvents } from "@web/common/validators/someday.event.validator";
+
+const uniqBy = <T, K>(array: T[], iteratee: (item: T) => K): T[] => {
+  const map = new Map<K, T>();
+  for (const item of array) {
+    const key = iteratee(item);
+    if (!map.has(key)) {
+      map.set(key, item);
+    }
+  }
+  return Array.from(map.values());
+};
 
 export const getSomedayEventCategory = (
   event: Schema_Event,
@@ -53,7 +63,7 @@ export const categorizeSomedayEvents = (
   const somedayEvents = validateSomedayEvents(_events);
   const _weekEvents = eventsBetweenDates(somedayEvents, weekStart, weekEnd);
   const _monthEvents = eventsBetweenDates(somedayEvents, monthStart, monthEnd);
-  const weekEvents = uniqby(_weekEvents, (e) => e.recurrence?.eventId ?? e._id);
+  const weekEvents = uniqBy(_weekEvents, (e) => e.recurrence?.eventId ?? e._id);
 
   const otherMonthEvents = _monthEvents.filter(
     ({ _id, recurrence }) =>
@@ -65,7 +75,7 @@ export const categorizeSomedayEvents = (
       ),
   );
 
-  const monthEvents = uniqby(
+  const monthEvents = uniqBy(
     otherMonthEvents,
     (e) => e.recurrence?.eventId ?? e._id,
   );
