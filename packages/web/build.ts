@@ -41,6 +41,7 @@ const result = await Bun.build({
   splitting: false,
   define,
   plugins: [postcssPlugin],
+  publicPath: "/",
 });
 
 if (!result.success) {
