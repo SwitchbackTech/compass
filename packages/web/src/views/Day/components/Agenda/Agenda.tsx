@@ -65,7 +65,7 @@ export function Agenda() {
   });
 
   const onEnterKey = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === Key.Enter) {
+    if (e.key === "Enter") {
       e.preventDefault();
       e.stopPropagation();
       timedEventsGridRef.current?.click();
