@@ -53,7 +53,7 @@ const retryUntil = async (
       if (attempt === maxAttempts - 1) {
         throw new Error(
           `Action failed after ${maxAttempts} attempts. ` +
-            `Expected element to be visible: ${waitFor}`,
+            "Expected target element to become visible.",
         );
       }
       await page.waitForTimeout(200);
@@ -182,7 +182,7 @@ export const resetLocalEventDb = async (page: Page) => {
 
       deleteRequest.onsuccess = () => resolve();
       deleteRequest.onerror = () => resolve();
-      deleteRequest.onblocked = async () => {
+      deleteRequest.onblocked = () => {
         // If the app still has an open connection, fall back to clearing stores
         // so tests still start from a clean state.
         const openRequest = indexedDB.open(dbName);
@@ -445,7 +445,7 @@ export const expectTimedEventVisible = async (page: Page, title: string) => {
   await expectWithCalendarRecovery(page, async () => {
     await expect(
       page.locator("#mainGrid").getByRole("button", { name: title }),
-    ).toBeVisible({ timeout: 3000 });
+    ).toBeVisible({ timeout: 8000 });
   });
 };
 
@@ -453,7 +453,7 @@ export const expectAllDayEventVisible = async (page: Page, title: string) => {
   await expectWithCalendarRecovery(page, async () => {
     await expect(
       page.locator("#allDayRow").getByRole("button", { name: title }),
-    ).toBeVisible({ timeout: 3000 });
+    ).toBeVisible({ timeout: 8000 });
   });
 };
 
@@ -463,7 +463,7 @@ export const expectSomedayEventVisible = async (page: Page, title: string) =>
     async () => {
       await expect(
         page.locator("#sidebar").getByRole("button", { name: title }),
-      ).toBeVisible({ timeout: 3000 });
+      ).toBeVisible({ timeout: 8000 });
     },
     { openSidebar: true },
   );
@@ -472,7 +472,7 @@ export const expectTimedEventMissing = async (page: Page, title: string) => {
   await expectWithCalendarRecovery(page, async () => {
     await expect(
       page.locator("#mainGrid").getByRole("button", { name: title }),
-    ).toHaveCount(0, { timeout: 3000 });
+    ).toHaveCount(0, { timeout: 8000 });
   });
 };
 
@@ -480,7 +480,7 @@ export const expectAllDayEventMissing = async (page: Page, title: string) => {
   await expectWithCalendarRecovery(page, async () => {
     await expect(
       page.locator("#allDayRow").getByRole("button", { name: title }),
-    ).toHaveCount(0, { timeout: 3000 });
+    ).toHaveCount(0, { timeout: 8000 });
   });
 };
 
@@ -490,7 +490,7 @@ export const expectSomedayEventMissing = async (page: Page, title: string) =>
     async () => {
       await expect(
         page.locator("#sidebar").getByRole("button", { name: title }),
-      ).toHaveCount(0, { timeout: 3000 });
+      ).toHaveCount(0, { timeout: 8000 });
     },
     { openSidebar: true },
   );

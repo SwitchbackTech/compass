@@ -4,6 +4,7 @@ import {
   expectTaskSavedToIndexedDB,
   expectTaskVisible,
   prepareTaskPage,
+  reloadTaskPage,
 } from "../utils/task-test-utils";
 
 test.describe("Task Persistence", () => {
@@ -23,7 +24,7 @@ test.describe("Task Persistence", () => {
     await expectTaskSavedToIndexedDB(page, taskTitle);
 
     // Reload and verify persistence.
-    await page.reload();
+    await reloadTaskPage(page);
     await expectTaskSavedToIndexedDB(page, taskTitle);
     await expectTaskVisible(page, taskTitle, 10000);
   });

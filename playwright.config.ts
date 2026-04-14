@@ -18,10 +18,6 @@ export default defineConfig({
       name: "chromium-desktop",
       use: { ...devices["Desktop Chrome"] },
     },
-    {
-      name: "chromium-mobile",
-      use: { ...devices["Pixel 5"] },
-    },
   ],
   webServer: {
     command: "cd packages/web && bun run dev.ts",

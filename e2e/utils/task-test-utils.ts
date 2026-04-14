@@ -1,33 +1,25 @@
 import { type Page, expect } from "@playwright/test";
 import { resetLocalEventDb } from "./event-test-utils";
 
+const getTaskInput = (page: Page, title: string) =>
+  page.getByRole("textbox", { name: `Edit ${title}` });
+
 export const prepareTaskPage = async (page: Page) => {
   await page.goto("/day", { waitUntil: "domcontentloaded" });
   await page.evaluate(() => {
     localStorage.removeItem("compass.auth");
   });
-  await page.waitForURL(/\/day\/\d{4}-\d{2}-\d{2}$/);
-  await page.waitForFunction(
-    () => {
-      const root = document.querySelector("#root");
-      return root && root.children.length > 0;
-    },
-    { timeout: 10000 },
-  );
 
   await resetLocalEventDb(page);
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await page.waitForURL(/\/day\/\d{4}-\d{2}-\d{2}$/);
-  await page.waitForFunction(
-    () => {
-      const root = document.querySelector("#root");
-      return root && root.children.length > 0;
-    },
-    { timeout: 10000 },
-  );
+  await reloadTaskPage(page);
+};
 
-  // Wait for task list to be visible
-  await expect(page.locator('[aria-label="daily-tasks"]')).toBeVisible();
+export const reloadTaskPage = async (page: Page) => {
+  await page.goto("/day", { waitUntil: "domcontentloaded" });
+  await page.waitForURL(/\/day\/\d{4}-\d{2}-\d{2}$/);
+  await expect(page.locator('[aria-label="daily-tasks"]')).toBeVisible({
+    timeout: 15000,
+  });
 };
 
 export const createTask = async (page: Page, title: string) => {
@@ -54,11 +46,10 @@ export const expectTaskVisible = async (
   title: string,
   timeout = 10000,
 ) => {
-  await expect(
-    page.getByRole("textbox", { name: `Edit ${title}` }),
-  ).toBeVisible({
+  await expect(page.locator('[aria-label="daily-tasks"]')).toBeVisible({
     timeout,
   });
+  await expect(getTaskInput(page, title)).toBeVisible({ timeout });
 };
 
 export const expectTaskMissing = async (
@@ -66,9 +57,7 @@ export const expectTaskMissing = async (
   title: string,
   timeout = 10000,
 ) => {
-  await expect(
-    page.getByRole("textbox", { name: `Edit ${title}` }),
-  ).toHaveCount(0, {
+  await expect(getTaskInput(page, title)).toHaveCount(0, {
     timeout,
   });
 };
@@ -84,106 +73,59 @@ export const deleteTaskWithKeyboard = async (page: Page, title: string) => {
 };
 
 export const restoreDeletedTaskFromUndoToast = async (page: Page) => {
-  const undoDeleteText = page.getByText("Deleted").first();
+  const undoDeleteToast = page
+    .getByRole("button", { name: /deleted/i })
+    .first();
 
-  await expect(undoDeleteText).toBeVisible();
-  await undoDeleteText.click();
-  await page.keyboard.press("Meta+z");
-  await page.keyboard.press("Control+z");
+  await expect(undoDeleteToast).toBeVisible();
+  await undoDeleteToast.click();
 };
 
 export const expectTaskSavedToIndexedDB = async (page: Page, title: string) => {
-  let lastSnapshot: unknown = null;
+  const currentDateKey = page.url().split("/").pop() ?? "";
 
-  for (let attempt = 0; attempt < 20; attempt++) {
-    lastSnapshot = await page.evaluate(async () => {
-      const currentDateKey = window.location.pathname.split("/").pop() ?? "";
-
-      return await new Promise<{
-        openError?: boolean;
-        storeError?: string;
-        currentDateKey?: string;
-        tasks?: Array<{ title: string; dateKey: string }>;
-      }>((resolve) => {
+  await page.waitForFunction(
+    async ([taskTitle, dateKey]) =>
+      new Promise<boolean>((resolve) => {
         const openRequest = indexedDB.open("compass-local");
-        openRequest.onerror = () => resolve({ openError: true });
+        openRequest.onerror = () => resolve(false);
         openRequest.onsuccess = () => {
           const db = openRequest.result;
 
-          let store;
+          let transaction: IDBTransaction;
           try {
-            const transaction = db.transaction("tasks", "readonly");
-            store = transaction.objectStore("tasks");
-          } catch (error) {
-            resolve({ storeError: String(error) });
+            transaction = db.transaction("tasks", "readonly");
+          } catch {
+            db.close();
+            resolve(false);
             return;
           }
 
-          const getAllRequest = store.getAll();
-          getAllRequest.onerror = () => resolve({ currentDateKey, tasks: [] });
+          const getAllRequest = transaction.objectStore("tasks").getAll();
+          getAllRequest.onerror = () => {
+            db.close();
+            resolve(false);
+          };
           getAllRequest.onsuccess = () => {
             const tasks = getAllRequest.result as Array<{
               title?: string;
               dateKey?: string;
             }>;
-            resolve({
-              currentDateKey,
-              tasks: tasks
-                .filter(
-                  (task): task is { title: string; dateKey: string } =>
-                    Boolean(task?.title) && Boolean(task?.dateKey),
-                )
-                .map((task) => ({
-                  title: task.title,
-                  dateKey: task.dateKey,
-                })),
-            });
+            db.close();
+            resolve(
+              tasks.some(
+                (task) => task.title === taskTitle && task.dateKey === dateKey,
+              ),
+            );
           };
         };
-      });
-    });
-
-    if (
-      typeof lastSnapshot === "object" &&
-      lastSnapshot !== null &&
-      "tasks" in lastSnapshot
-    ) {
-      const tasks =
-        (
-          lastSnapshot as {
-            tasks?: Array<{ title: string; dateKey: string }>;
-          }
-        ).tasks ?? [];
-      const currentDateKey =
-        (lastSnapshot as { currentDateKey?: string }).currentDateKey ?? "";
-
-      const isTaskSavedForCurrentDate = tasks.some(
-        (task) => task.title === title && task.dateKey === currentDateKey,
-      );
-
-      if (isTaskSavedForCurrentDate) {
-        return;
-      }
-    }
-
-    await page.waitForTimeout(200);
-  }
-
-  throw new Error(
-    `Task was not found in IndexedDB after polling: ${JSON.stringify(lastSnapshot)}`,
+      }),
+    [title, currentDateKey] as [string, string],
+    { timeout: 5000 },
   );
 };
 
 export const clearAllLocalData = async (page: Page) => {
   await resetLocalEventDb(page);
-  await page.reload();
-  await expect(page.locator('[aria-label="daily-tasks"]')).toBeVisible();
-};
-
-/**
- * @deprecated Use clearAllLocalData. This clears the shared local IndexedDB
- * database (both events and tasks).
- */
-export const clearTasks = async (page: Page) => {
-  await clearAllLocalData(page);
+  await reloadTaskPage(page);
 };
