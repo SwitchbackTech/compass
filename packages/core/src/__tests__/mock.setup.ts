@@ -1,5 +1,5 @@
 import { faker as mockFaker } from "@faker-js/faker";
-import { deepMerge } from "@core/util/object.util";
+import { deepMerge as mockDeepMerge } from "@core/util/object.util";
 
 export const mockBSON = () => {
   jest.mock("bson", () => ({
@@ -25,17 +25,17 @@ export const mockBSON = () => {
   }));
 };
 
-export function mockModule<T>(
+export function mockModule<T extends object>(
   mockPath: string,
   mockFactory: (mockedModule: T) => object = () => ({}),
   mockAsEsModule = true,
 ) {
-  const mockedModule = jest.requireActual(mockPath);
+  const mockedModule = jest.requireActual<T>(mockPath);
 
-  jest.mock<T>(mockPath, () =>
-    deepMerge(
+  jest.mock(mockPath, () =>
+    mockDeepMerge(
       { __esModule: mockAsEsModule },
-      mockedModule,
+      mockedModule as object,
       mockFactory(mockedModule),
     ),
   );
