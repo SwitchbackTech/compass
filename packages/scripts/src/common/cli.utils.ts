@@ -1,14 +1,9 @@
 import pkg from "inquirer";
 import { styleText } from "node:util";
-import shell from "shelljs";
-import { ALL_PACKAGES, CLI_ENV } from "./cli.constants";
+import { CLI_ENV } from "./cli.constants";
 import { type Environment_Cli } from "./cli.types";
 
 const { prompt } = pkg;
-
-export const fileExists = (file: string) => {
-  return shell.test("-e", file);
-};
 
 export const getApiBaseUrl = async (
   environment: Environment_Cli,
@@ -24,28 +19,6 @@ export const getApiBaseUrl = async (
 
   const domain = await getDomainAnswer();
   return `https://${domain}/api`;
-};
-
-export const getClientId = async (environment: Environment_Cli) => {
-  if (environment === "staging") {
-    return process.env["GOOGLE_CLIENT_ID"] as string;
-  }
-
-  if (environment === "production") {
-    const q = `Enter the googleClientId for the production environment:`;
-
-    return prompt([{ type: "input", name: "answer", message: q }])
-      .then((a: { answer: string }) => {
-        log.info(`\tUsing: >>${a.answer}<<`);
-        return a.answer;
-      })
-      .catch((e) => {
-        console.log(e);
-        process.exit(1);
-      });
-  }
-
-  throw Error("Invalid destination");
 };
 
 const getDomainAnswer = async () => {
@@ -96,31 +69,6 @@ export const getListAnswer = async (question: string, choices: string[]) => {
 
   return prompt(q)
     .then((a: { answer: string }) => a.answer)
-    .catch((e) => {
-      console.log(e);
-      process.exit(1);
-    });
-};
-
-export const getPckgsTo = async (action: "build") => {
-  const q = [
-    {
-      type: "checkbox",
-      name: "packages",
-      message: `What package(s) do you want to ${action}?`,
-      choices: ALL_PACKAGES,
-    },
-  ];
-
-  return prompt(q)
-    .then((a: { packages: string[] }) => {
-      if (a.packages.length > 1) {
-        log.error(`Sorry, you can only ${action} one package at a time`);
-        process.exit(1);
-      }
-
-      return a.packages;
-    })
     .catch((e) => {
       console.log(e);
       process.exit(1);

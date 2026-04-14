@@ -181,13 +181,14 @@ bun run cli migrate executed
 - Prefer reading a command implementation before running it.
 - Treat delete flows as destructive unless proven otherwise.
 - For migration work, inspect existing migration naming and ordering first.
-- For build work, confirm whether you need `web` or `nodePckgs`.
-- `bun run cli` always loads `packages/backend/.env.local` through the root Bun script; build-time environment selection changes which backend env file is copied or loaded by the underlying command.
+- For build work, use `bun run build:web` or `bun run build:backend` directly (not the CLI).
+- `bun run cli` always loads `packages/backend/.env.local` through the root Bun script.
 
 ## Quick Reference
 
 - General help: `bun run cli --help`
-- Build package outputs: `bun run cli build ...`
+- Web production build: `bun run build:web` (outputs to `build/web/`)
+- Backend production build: `bun run build:backend --environment [local|staging|production]` (outputs to `build/backend/`)
 - Database migration framework: `bun run cli migrate ...`
 - Seeder framework: `bun run cli seed ...`
 - User-data maintenance: `bun run cli delete ...`
