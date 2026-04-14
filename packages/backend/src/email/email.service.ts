@@ -1,3 +1,4 @@
+import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 import { mapCompassUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
 import {
@@ -8,7 +9,10 @@ import { type Schema_User } from "@core/types/user.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import { isMissingUserTagId } from "@backend/common/constants/env.util";
 import { EmailerError } from "@backend/common/errors/emailer/emailer.errors";
-import { error } from "@backend/common/errors/handlers/error.handler";
+import {
+  error,
+  genericError,
+} from "@backend/common/errors/handlers/error.handler";
 import {
   type Response_TagSubscriber,
   type Response_UpsertSubscriber,
@@ -16,29 +20,25 @@ import {
 
 const logger = Logger("app:email.service");
 
-interface EmailServiceError extends Error {
-  data?: unknown;
-  method?: string;
-  status?: number;
-  url?: string;
+/**
+ * Internal error class for Kit API failures.
+ * Used to pass response details from post() to callers, who then
+ * transform it into appropriate domain errors using error().
+ */
+class KitApiError extends Error {
+  constructor(
+    message: string,
+    public readonly method: string,
+    public readonly url: string,
+    public readonly status?: number,
+    public readonly data?: unknown,
+  ) {
+    super(message);
+    this.name = "KitApiError";
+    Object.setPrototypeOf(this, new.target.prototype);
+    Error.captureStackTrace(this);
+  }
 }
-
-const createEmailServiceError = (
-  method: string,
-  url: string,
-  status?: number,
-  data?: unknown,
-): EmailServiceError => {
-  const error = new Error(
-    `Kit request failed${status ? ` with status ${status}` : ""}`,
-  ) as EmailServiceError;
-  error.data = data;
-  error.method = method;
-  error.name = "EmailServiceError";
-  error.status = status;
-  error.url = url;
-  return error;
-};
 
 const getResponseData = async (response: Response): Promise<unknown> => {
   const text = await response.text();
@@ -103,16 +103,20 @@ class EmailService {
       const url = `${this.baseUrl}/tags/${tagId}/subscribers/${subId}`;
       return await this.post<Response_TagSubscriber>(url, {});
     } catch (err) {
-      if (err instanceof Error && err.name === "EmailServiceError") {
-        const emailerError = err as EmailServiceError;
+      if (err instanceof BaseError) {
+        throw err;
+      }
+
+      if (err instanceof KitApiError) {
         logger.error({
-          message: emailerError.message,
-          status: emailerError.status,
-          data: emailerError.data,
-          method: emailerError.method,
-          url: emailerError.url,
+          message: err.message,
+          status: err.status,
+          data: err.data,
+          method: err.method,
+          url: err.url,
         });
-        switch (emailerError.status) {
+
+        switch (err.status) {
           case 401:
             throw error(
               EmailerError.InvalidSecret,
@@ -121,11 +125,11 @@ class EmailService {
           case 404:
             throw error(EmailerError.InvalidTagId, "Subscriber was not tagged");
           default:
-            throw err;
+            throw genericError(err, "Failed to tag subscriber");
         }
-      } else {
-        throw err;
       }
+
+      throw genericError(err, "Failed to tag subscriber");
     }
   }
 
@@ -153,7 +157,13 @@ class EmailService {
     const data = await getResponseData(response);
 
     if (!response.ok) {
-      throw createEmailServiceError("POST", url, response.status, data);
+      throw new KitApiError(
+        `Kit request failed with status ${response.status}`,
+        "POST",
+        url,
+        response.status,
+        data,
+      );
     }
 
     return data as T;
