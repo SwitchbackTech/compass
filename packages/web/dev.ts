@@ -63,6 +63,7 @@ async function build() {
     splitting: false,
     define,
     plugins: [postcssPlugin],
+    publicPath: "/",
   });
 
   if (!result.success) {
