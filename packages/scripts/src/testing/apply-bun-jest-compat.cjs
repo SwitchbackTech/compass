@@ -1,6 +1,8 @@
 "use strict";
 
 const { createRequire } = require("node:module");
+const path = require("node:path");
+const { pathToFileURL } = require("node:url");
 
 const compatFilePath = __filename;
 
@@ -14,6 +16,7 @@ function getCallerRequire() {
 
     if (
       file &&
+      (path.isAbsolute(file) || file.startsWith("file://")) &&
       file !== compatFilePath &&
       !file.includes("core.jest-compat") &&
       !file.includes("apply-bun-jest-compat")
@@ -137,12 +140,22 @@ function applyBunJestCompat(bunJest, bunMock) {
   jestCompat.mocked = (item) => item;
 
   jestCompat.mock = (moduleName, factory) => {
-    const actualModule = jestCompat.requireActual(moduleName);
     const { resolvedModule } = resolveModule(moduleName);
+    const moduleFactoryResult = factory
+      ? factory()
+      : {
+          __esModule: true,
+          ...jestCompat.createMockFromModule(moduleName),
+        };
+    const mockTargets = new Set([moduleName, resolvedModule]);
 
-    bunMock.module(resolvedModule, () => {
-      return factory ? factory() : actualModule;
-    });
+    if (path.isAbsolute(resolvedModule)) {
+      mockTargets.add(pathToFileURL(resolvedModule).href);
+    }
+
+    for (const mockTarget of mockTargets) {
+      bunMock.module(mockTarget, () => moduleFactoryResult);
+    }
 
     return bunJest;
   };

@@ -40,7 +40,7 @@ const TEST_PROJECTS = {
       "test",
       "packages/web/src",
       "--preload",
-      "packages/web/src/__tests__/web.preload.ts",
+      "packages/web/src/__tests__/web.bun.preload.ts",
     ],
   },
 } satisfies Record<string, ProjectConfig>;

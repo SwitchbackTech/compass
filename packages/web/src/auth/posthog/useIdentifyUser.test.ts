@@ -1,10 +1,10 @@
 import { type PostHog } from "posthog-js";
-import { usePostHog } from "posthog-js/react";
+import { usePostHog } from "./posthog-react";
 import "@testing-library/jest-dom";
 import { renderHook, waitFor } from "@testing-library/react";
 import { useIdentifyUser } from "./useIdentifyUser";
 
-jest.mock("posthog-js/react");
+jest.mock("./posthog-react");
 const mockUsePostHog = jest.mocked(usePostHog);
 
 const mockIdentify = jest.fn();
