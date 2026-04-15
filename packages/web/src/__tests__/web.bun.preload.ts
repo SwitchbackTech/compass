@@ -1,13 +1,7 @@
 import { JSDOM } from "jsdom";
-import { expect, jest, mock } from "bun:test";
+import { jest, mock } from "bun:test";
 import { createRequire } from "node:module";
 import ts from "typescript";
-
-type MatcherContext = {
-  isNot?: boolean;
-  promise?: string;
-  utils?: Record<string, unknown>;
-};
 
 const require = createRequire(import.meta.path);
 const { applyBunJestCompat } = require(
@@ -20,56 +14,6 @@ const { applyBunJestCompat } = require(
 };
 const TEST_GLOBALS_IMPORT =
   'import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest, mock, spyOn, test } from "@web/__tests__/bun-test-shim";\nimport { createRequire } from "node:module";\nconst require = createRequire(import.meta.url);';
-
-function getClassNames(expectedClassNames: string[]) {
-  return expectedClassNames
-    .flatMap((expectedClassName) => expectedClassName.split(/\s+/))
-    .filter(Boolean);
-}
-
-function getStyleEntries(expectedStyle: Record<string, string> | string) {
-  if (typeof expectedStyle === "string") {
-    return expectedStyle
-      .split(";")
-      .map((part) => part.trim())
-      .filter(Boolean)
-      .map((part) => {
-        const [property, ...value] = part.split(":");
-
-        return [property?.trim() ?? "", value.join(":").trim()];
-      })
-      .filter(([property]) => property);
-  }
-
-  return Object.entries(expectedStyle).map(([property, value]) => {
-    const cssProperty = property.replace(/[A-Z]/g, (letter) => {
-      return `-${letter.toLowerCase()}`;
-    });
-
-    return [cssProperty, String(value)];
-  });
-}
-
-function getTagName(received: unknown) {
-  if (
-    received &&
-    typeof received === "object" &&
-    "tagName" in received &&
-    typeof received.tagName === "string"
-  ) {
-    return received.tagName.toLowerCase();
-  }
-
-  return "node";
-}
-
-function isElement(received: unknown): received is Element {
-  return received instanceof Element;
-}
-
-function makeMessage(message: string) {
-  return () => message;
-}
 
 function getImportText(sourceFile: ts.SourceFile, node: ts.Node) {
   return sourceFile.text.slice(node.getFullStart(), node.getEnd());
@@ -340,89 +284,34 @@ for (const key of Object.getOwnPropertyNames(window)) {
   const descriptor = Object.getOwnPropertyDescriptor(window, key);
 
   if (descriptor) {
-    Object.defineProperty(globalThis, key, descriptor);
+    try {
+      Object.defineProperty(globalThis, key, descriptor);
+    } catch {
+      // Some properties are non-configurable in Bun's globalThis; skip them
+    }
   }
 }
 
-for (const key of ["MouseEvent", "MutationObserver", "XMLHttpRequest"]) {
+for (const key of [
+  "Event",
+  "CustomEvent",
+  "EventTarget",
+  "UIEvent",
+  "MouseEvent",
+  "KeyboardEvent",
+  "FocusEvent",
+  "InputEvent",
+  "PointerEvent",
+  "MutationObserver",
+  "XMLHttpRequest",
+]) {
   const descriptor = Object.getOwnPropertyDescriptor(window, key);
 
   if (descriptor) {
-    Object.defineProperty(globalThis, key, descriptor);
+    try {
+      Object.defineProperty(globalThis, key, descriptor);
+    } catch {
+      // Some properties are non-configurable in Bun's globalThis; skip them
+    }
   }
 }
-
-expect.extend(
-  Object.fromEntries(
-    Object.entries(jestDomMatchers).map(([name, matcher]) => {
-      return [
-        name,
-        function wrappedMatcher(this: MatcherContext, ...args: unknown[]) {
-          const baseContext =
-            this && typeof this === "object" ? this : ({} as MatcherContext);
-          const baseUtils =
-            this.utils && typeof this.utils === "object" ? this.utils : {};
-          const utils = Object.assign(
-            Object.create(Object.getPrototypeOf(baseUtils)),
-            baseUtils,
-            {
-              DIM_COLOR:
-                this.utils?.["DIM_COLOR"] ??
-                jestMatcherUtils["DIM_COLOR"] ??
-                ((value: unknown) => String(value)),
-              EXPECTED_COLOR:
-                this.utils?.["EXPECTED_COLOR"] ??
-                jestMatcherUtils["EXPECTED_COLOR"] ??
-                ((value: unknown) => String(value)),
-              RECEIVED_COLOR:
-                this.utils?.["RECEIVED_COLOR"] ??
-                jestMatcherUtils["RECEIVED_COLOR"] ??
-                ((value: unknown) => String(value)),
-              diff:
-                this.utils?.["diff"] ?? jestMatcherUtils["diff"] ?? (() => ""),
-              matcherHint:
-                this.utils?.["matcherHint"] ??
-                jestMatcherUtils["matcherHint"] ??
-                ((value: unknown) => String(value)),
-              printExpected:
-                this.utils?.["printExpected"] ??
-                jestMatcherUtils["printExpected"] ??
-                ((value: unknown) => String(value)),
-              printReceived:
-                this.utils?.["printReceived"] ??
-                jestMatcherUtils["printReceived"] ??
-                ((value: unknown) => String(value)),
-              printWithType:
-                this.utils?.["printWithType"] ??
-                jestMatcherUtils["printWithType"] ??
-                ((value: unknown) => String(value)),
-            },
-          );
-          const context = Object.create(baseContext);
-          Object.defineProperty(context, "equals", {
-            configurable: true,
-            enumerable: true,
-            value:
-              (this as MatcherContext & { equals?: (a: unknown, b: unknown) => boolean })
-                .equals ??
-              ((left: unknown, right: unknown) => {
-                return (
-                  Object.is(left, right) ||
-                  JSON.stringify(left) === JSON.stringify(right)
-                );
-              }),
-            writable: true,
-          });
-          Object.defineProperty(context, "utils", {
-            configurable: true,
-            enumerable: true,
-            value: utils,
-            writable: true,
-          });
-
-          return matcher.call(context, ...args);
-        },
-      ];
-    }),
-  ),
-);
