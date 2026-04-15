@@ -28,6 +28,7 @@
     // "sourceMap": true,
     // "outDir": "./dist/tsc/",
     "jsx": "react-jsx",
+    "types": ["bun-types"],
     "paths": {
       "@web/*": ["./src/*"],
       "@core/*": ["../core/src/*"]

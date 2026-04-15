@@ -51,45 +51,6 @@ const coreProject = {
 };
 
 /** @type { Exclude<Exclude<import("jest").Config["projects"], undefined>[number], string>} */
-const webProject = {
-  displayName: "web",
-  moduleNameMapper: {
-    "\\.(jpg|jpeg|png|gif)$":
-      "<rootDir>/packages/web/src/__tests__/__mocks__/file.stub.js",
-    "^@core(/(.*)$)?": "<rootDir>/packages/core/src/$1",
-    "^@web/__tests__(/(.*)$)?": "<rootDir>/packages/web/src/__tests__/$1",
-    "^@web/assets(/(.*)$)?": "<rootDir>/packages/web/src/assets/$1",
-    "^@web/auth(/(.*)$)?": "<rootDir>/packages/web/src/auth/$1",
-    "^@web/common(/(.*)$)?": "<rootDir>/packages/web/src/common/$1",
-    "^@web/components(/(.*)$)?": "<rootDir>/packages/web/src/components/$1",
-    "^@web/ducks(/(.*)$)?": "<rootDir>/packages/web/src/ducks/$1",
-    "^@web/public(/(.*)$)?": "<rootDir>/packages/web/src/public/$1",
-    "^@web/routers(/(.*)$)?": "<rootDir>/packages/web/src/routers/$1",
-    "^@web/sse(/(.*)$)?": "<rootDir>/packages/web/src/sse/$1",
-    "^@web/store((/(.*)$)?)?": "<rootDir>/packages/web/src/store/$1",
-    "^@web/views(/(.*)$)?": "<rootDir>/packages/web/src/views/$1",
-    "^.+\\.(css|less)$":
-      "<rootDir>/packages/web/src/__tests__/__mocks__/css.stub.js",
-    "\\.(svg)$": "<rootDir>/packages/web/src/__tests__/__mocks__/svg.stub.js",
-  },
-  setupFiles: [
-    "<rootDir>/packages/core/src/__tests__/core.test.init.ts",
-    "<rootDir>/packages/core/src/__tests__/core.test.start.ts",
-    "<rootDir>/packages/web/src/__tests__/web.test.init.ts",
-    "jest-canvas-mock",
-  ],
-  setupFilesAfterEnv: [
-    "<rootDir>/packages/web/src/__tests__/web.test.start.ts",
-  ],
-  testEnvironment: "<rootDir>/packages/web/src/__tests__/jsdom.ts",
-  testMatch: ["<rootDir>/packages/web/**/*.(test|spec).[jt]s?(x)"],
-  transformIgnorePatterns: [
-    //https://github.com/react-dnd/react-dnd/issues/3443
-    "/node_modules/(?!react-dnd|dnd-core|@react-dnd)",
-  ],
-};
-
-/** @type { Exclude<Exclude<import("jest").Config["projects"], undefined>[number], string>} */
 const scriptsProject = {
   displayName: "scripts",
   moduleNameMapper: {
@@ -110,7 +71,6 @@ const scriptsProject = {
 
 const projectMap = {
   core: coreProject,
-  web: webProject,
   backend: backendProject,
   scripts: scriptsProject,
 };
@@ -221,7 +181,7 @@ const config = {
 
   projects: requestedProject
     ? [projectMap[requestedProject]]
-    : [coreProject, webProject, backendProject, scriptsProject],
+    : [coreProject, backendProject, scriptsProject],
   // Use this configuration option to add custom reporters to Jest
   // reporters: undefined,
 
