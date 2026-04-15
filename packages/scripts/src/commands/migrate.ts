@@ -1,14 +1,19 @@
-import glob from "fast-glob";
-import { readFile } from "node:fs/promises";
-import { parse, resolve, sep } from "node:path";
-import type { MigrationParams, RunnableMigration } from "umzug";
-import { MongoDBStorage, Umzug, UmzugCLI } from "umzug";
 import {
   type MigrationContext,
   type MigratorType,
 } from "@scripts/common/cli.types";
+import glob from "fast-glob";
+import {
+  type MigrationParams,
+  MongoDBStorage,
+  type RunnableMigration,
+  Umzug,
+  UmzugCLI,
+} from "umzug";
 import { Logger } from "@core/logger/winston.logger";
 import mongoService from "@backend/common/services/mongo.service";
+import { readFile } from "node:fs/promises";
+import { parse, resolve, sep } from "node:path";
 
 const logger = Logger("scripts.commands.migrations");
 

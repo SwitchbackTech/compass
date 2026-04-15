@@ -1,5 +1,5 @@
-import { OAuth2Client, type TokenPayload } from "google-auth-library";
 import { calendar } from "@googleapis/calendar";
+import { OAuth2Client, type TokenPayload } from "google-auth-library";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import {

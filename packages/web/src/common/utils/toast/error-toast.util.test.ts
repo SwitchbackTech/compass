@@ -1,8 +1,8 @@
 import { createElement, isValidElement } from "react";
 import { toast } from "react-toastify";
 import {
-  ErrorToastSeverity,
   dismissErrorToast,
+  ErrorToastSeverity,
   showErrorToast,
   showSessionExpiredToast,
 } from "@web/common/utils/toast/error-toast.util";

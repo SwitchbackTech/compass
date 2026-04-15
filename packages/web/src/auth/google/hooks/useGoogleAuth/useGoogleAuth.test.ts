@@ -1,5 +1,5 @@
-import { toast } from "react-toastify";
 import { renderHook, waitFor } from "@testing-library/react";
+import { toast } from "react-toastify";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { markUserAsAuthenticated } from "@web/auth/compass/state/auth.state.util";
 import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";

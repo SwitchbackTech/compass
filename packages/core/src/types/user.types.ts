@@ -40,10 +40,11 @@ export interface UserMetadata extends SupertokensUserMetadata.JSONObject {
   };
 }
 
-export interface UserProfile extends Pick<
-  WithCompassId<Schema_User>,
-  "firstName" | "lastName" | "name" | "email" | "locale"
-> {
+export interface UserProfile
+  extends Pick<
+    WithCompassId<Schema_User>,
+    "firstName" | "lastName" | "name" | "email" | "locale"
+  > {
   picture: string;
   userId: string;
 }

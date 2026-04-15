@@ -1,6 +1,10 @@
-import { type KeyboardEvent, type MouseEvent } from "react";
 import type React from "react";
-import { useCallback, useRef } from "react";
+import {
+  type KeyboardEvent,
+  type MouseEvent,
+  useCallback,
+  useRef,
+} from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { darken } from "@core/util/color.utils";

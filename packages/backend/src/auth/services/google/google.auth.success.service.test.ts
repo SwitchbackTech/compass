@@ -1,9 +1,9 @@
-import type { Credentials, TokenPayload } from "google-auth-library";
 import { faker } from "@faker-js/faker";
+import { type Credentials, type TokenPayload } from "google-auth-library";
 import googleAuthService from "@backend/auth/services/google/google.auth.service";
-import type {
-  AuthDecision,
-  GoogleSignInSuccess,
+import {
+  type AuthDecision,
+  type GoogleSignInSuccess,
 } from "@backend/auth/services/google/google.auth.types";
 import type * as GoogleAuthUtilModule from "@backend/auth/services/google/util/google.auth.util";
 import { determineGoogleAuthMode } from "@backend/auth/services/google/util/google.auth.util";

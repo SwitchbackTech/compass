@@ -1,5 +1,4 @@
-import { HotkeyManager } from "@tanstack/react-hotkeys";
-import { resolveModifier } from "@tanstack/react-hotkeys";
+import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
 import { render, waitFor } from "@testing-library/react";
 import { Categories_Event } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";

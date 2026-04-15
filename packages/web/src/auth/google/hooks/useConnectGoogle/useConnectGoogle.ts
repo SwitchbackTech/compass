@@ -25,10 +25,10 @@ import {
   selectGoogleConnectionState,
   selectUserMetadataStatus,
 } from "@web/ducks/auth/selectors/user-metadata.selectors";
-import type { UserMetadataStatus } from "@web/ducks/auth/slices/user-metadata.slice";
+import { type UserMetadataStatus } from "@web/ducks/auth/slices/user-metadata.slice";
 import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
-import type { RootState } from "@web/store";
+import { type RootState } from "@web/store";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import {
   type GoogleUiState,

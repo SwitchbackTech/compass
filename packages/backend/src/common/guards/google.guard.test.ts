@@ -1,5 +1,5 @@
-import { ObjectId } from "mongodb";
 import { faker } from "@faker-js/faker";
+import { ObjectId } from "mongodb";
 import { IDSchema } from "@core/types/type.utils";
 import { type Schema_User } from "@core/types/user.types";
 import { UserError } from "@backend/common/errors/user/user.errors";

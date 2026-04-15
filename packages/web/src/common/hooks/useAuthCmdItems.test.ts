@@ -1,6 +1,5 @@
-import type { MouseEvent } from "react";
-import { act } from "react";
 import { renderHook } from "@testing-library/react";
+import { act, type MouseEvent } from "react";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { useAuthCmdItems } from "./useAuthCmdItems";

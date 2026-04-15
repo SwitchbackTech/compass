@@ -1,7 +1,7 @@
-import type React from "react";
-import { act } from "react";
 import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import { fireEvent, screen } from "@testing-library/react";
+import type React from "react";
+import { act } from "react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { DraggableTask } from "@web/views/Day/components/Task/DraggableTask";

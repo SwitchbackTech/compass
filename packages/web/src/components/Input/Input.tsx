@@ -1,8 +1,8 @@
 import React, {
   type ForwardRefRenderFunction,
+  forwardRef,
   type HTMLAttributes,
   type Ref,
-  forwardRef,
 } from "react";
 import {
   type ClassNamedComponent,
@@ -12,8 +12,7 @@ import { Focusable } from "../Focusable/Focusable";
 import { StyledInput, type Props as StyledProps } from "./styled";
 
 export interface Props
-  extends
-    ClassNamedComponent,
+  extends ClassNamedComponent,
     UnderlinedInput,
     StyledProps,
     HTMLAttributes<HTMLInputElement> {

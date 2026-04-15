@@ -9,9 +9,9 @@ import {
   type TransitionStatus,
 } from "@core/types/event.types";
 import {
-  type WithGcalId,
   type gSchema$Event,
   type gSchema$EventBase,
+  type WithGcalId,
 } from "@core/types/gcal";
 import {
   isBase,

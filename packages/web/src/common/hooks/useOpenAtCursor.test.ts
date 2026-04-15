@@ -1,6 +1,6 @@
-import { act } from "react";
 import { type Placement, type Strategy } from "@floating-ui/react";
 import { renderHook } from "@testing-library/react";
+import { act } from "react";
 import {
   CursorItem,
   closeFloatingAtCursor,

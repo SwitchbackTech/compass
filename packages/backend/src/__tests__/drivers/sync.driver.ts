@@ -1,5 +1,5 @@
-import { ObjectId, type WithId } from "mongodb";
 import { faker } from "@faker-js/faker";
+import { ObjectId, type WithId } from "mongodb";
 import { Resource_Sync, type Schema_Sync } from "@core/types/sync.types";
 import { type Schema_User } from "@core/types/user.types";
 import dayjs from "@core/util/date/dayjs";

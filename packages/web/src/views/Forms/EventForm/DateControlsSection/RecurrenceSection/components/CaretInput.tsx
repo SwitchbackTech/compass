@@ -1,5 +1,5 @@
-import type React from "react";
 import { CaretDown, CaretUp } from "@phosphor-icons/react";
+import type React from "react";
 import {
   StyledCaretButton,
   StyledCaretInputContainer,

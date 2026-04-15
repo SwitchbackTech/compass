@@ -1,6 +1,6 @@
+import { type UniqueIdentifier } from "@dnd-kit/core";
 import { useEffect, useState } from "react";
 import { BehaviorSubject } from "rxjs";
-import { type UniqueIdentifier } from "@dnd-kit/core";
 
 export const resizeId$ = new BehaviorSubject<UniqueIdentifier | null>(null);
 

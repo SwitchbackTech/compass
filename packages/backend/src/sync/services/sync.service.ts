@@ -528,8 +528,9 @@ class SyncService {
     userId: string,
     options: { force?: boolean } = {},
   ) => {
-    const { default: userService } =
-      await import("@backend/user/services/user.service");
+    const { default: userService } = await import(
+      "@backend/user/services/user.service"
+    );
     const isForce = options.force === true;
     const operation = isForce ? "REPAIR" : "INCREMENTAL";
     const ignoreMessage = `User ${userId} gcal import is in progress or completed, ignoring this request`;

@@ -1,9 +1,9 @@
 import { type ReactElement, type ReactNode, useLayoutEffect } from "react";
 import {
+  createMemoryRouter,
   MemoryRouter,
   Outlet,
   RouterProvider,
-  createMemoryRouter,
   useLocation,
 } from "react-router-dom";
 import EmailPassword from "supertokens-web-js/recipe/emailpassword";

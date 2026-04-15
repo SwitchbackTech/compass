@@ -111,8 +111,8 @@ Run `bun run test:core`, `bun run test:web`, and `bun run test:backend` after ma
 
 ### Linting
 
-- Run `./node_modules/.bin/eslint <changed app files>` before finishing. Treat eslint as required validation for changed implementation files, not an optional follow-up.
-- `bunx prettier . --write`
+- Run `bun run lint` before finishing. Treat Biome lint and format checks as required validation for changed implementation files, not an optional follow-up.
+- Run `bun run lint:fix` to apply safe Biome fixes and formatting.
 
 ## Validation
 
@@ -177,14 +177,14 @@ packages/core/src/
 
 1. **Start Development**: `bun run dev:web` (frontend only, always works)
 2. **Run Tests**: `bun run test:core && bun run test:web` (add `&& bun run test:backend` when credentials available)
-3. **Run Eslint On Changed Implementation Files**: `./node_modules/.bin/eslint <changed app files>`
-4. **Check Code Style**: `bunx prettier . --write`
+3. **Run Biome Lint and Format Checks**: `bun run lint`
+4. **Apply Safe Fixes When Needed**: `bun run lint:fix`
 5. **Manual Validation**: Open <http://localhost:9080/> and verify login page loads
 
 ## Cursor Cloud specific instructions
 
 - Prefer running scoped checks for changed areas: `bun run test:core`, `bun run test:web`, `bun run test:backend`, or `bun run test:scripts` as applicable.
-- Run `./node_modules/.bin/eslint <changed app files>` before handing off work.
+- Run `bun run lint` before handing off work.
 - Do not run `bun run test` in restricted environments unless explicitly required.
 - For UI-affecting changes in `packages/web`, validate with `bun run dev:web` and confirm behavior in the web dev server.
 - If backend work is required, ensure `packages/backend/.env.local` exists by copying `packages/backend/.env.local.example`.
@@ -210,7 +210,7 @@ packages/core/src/
 - **Backend won't start**: Missing environment variables in `packages/backend/.env.local`, use web-only development (`bun run dev:web`)
 - Environment: Copy from `packages/backend/.env.local.example` to `packages/backend/.env.local` (there is no `.env.example`).
 - Webpack dev server warns about a missing `.env.local` file; this is harmless—it falls back to `process.env`.
-- Husky pre-push hook runs `bunx prettier . --write`, which can modify files. Ensure working tree is clean or committed before pushing.
+- Biome can modify files when run with `bun run lint:fix`. Review the diff before pushing.
 
 ### Network Limitations
 
@@ -314,9 +314,9 @@ packages/core/src/
 
 ### Pre-commit Validation
 
-The repository includes Husky hooks that will:
+Before committing or pushing:
 
-- Run `bunx lint-staged` on pre-commit (formats code with Prettier)
-- Run `bunx prettier . --write` on pre-push (ensures consistent formatting)
+- Run `bun run lint` to check lint, formatting, and import organization with Biome.
+- Run `bun run lint:fix` when you want Biome to apply safe fixes.
 
 **ALWAYS** ensure your commits pass these checks before pushing.

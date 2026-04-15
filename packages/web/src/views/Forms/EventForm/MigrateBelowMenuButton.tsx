@@ -1,5 +1,5 @@
-import type React from "react";
 import { ArrowDownIcon } from "@phosphor-icons/react";
+import type React from "react";
 import MenuItem from "@web/views/Forms/ActionsMenu/MenuItem";
 import { MigrationShortcutHint } from "./MigrationShortcutHint";
 

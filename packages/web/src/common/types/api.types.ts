@@ -15,9 +15,8 @@ export interface Filters_Pagination {
 
 export type Options_FilterSort = Filters_Pagination & Options_Sort;
 
-export interface Response_HttpPaginatedSuccess<
-  Data,
-> extends Filters_Pagination {
+export interface Response_HttpPaginatedSuccess<Data>
+  extends Filters_Pagination {
   data: Data;
   count: number;
   [key: string]: unknown | undefined;

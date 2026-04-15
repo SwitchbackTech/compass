@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
 import { createUserIdMapping, getUserIdMapping } from "supertokens-node";
-import type { SessionContainerInterface } from "supertokens-node/recipe/session/types";
+import { type SessionContainerInterface } from "supertokens-node/recipe/session/types";
 import { type GoogleSignInSuccess } from "@backend/auth/services/google/google.auth.types";
 import {
   type AuthFormField,

@@ -1,5 +1,5 @@
-import { type FC, useCallback } from "react";
 import { InfoIcon } from "@phosphor-icons/react";
+import { type FC, useCallback } from "react";
 import { useUser } from "@web/auth/compass/user/hooks/useUser";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";

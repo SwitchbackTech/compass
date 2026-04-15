@@ -1,9 +1,9 @@
-import styled from "styled-components";
 import {
   type DraggableStateSnapshot,
+  type DraggableStyle,
   type DroppableProvided,
 } from "@hello-pangea/dnd";
-import { type DraggableStyle } from "@hello-pangea/dnd";
+import styled from "styled-components";
 import { type Priorities } from "@core/constants/core.constants";
 import { brighten } from "@core/util/color.utils";
 import {

@@ -1,4 +1,4 @@
-import { type Task, isTask } from "@web/common/types/task.types";
+import { isTask, type Task } from "@web/common/types/task.types";
 import { type StorageAdapter } from "../../adapter/storage.adapter";
 import { type ExternalMigration } from "../migration.types";
 

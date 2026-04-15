@@ -11,8 +11,8 @@ import mongoService from "@backend/common/services/mongo.service";
 import { applyCompassPlan } from "@backend/event/classes/compass.event.executor";
 import { CompassEventFactory } from "@backend/event/classes/compass.event.generator";
 import {
-  type CompassOperationPlan,
   analyzeCompassTransition,
+  type CompassOperationPlan,
 } from "@backend/event/classes/compass.event.parser";
 import {
   _createGcal,
@@ -23,8 +23,8 @@ import { sseServer } from "@backend/servers/sse/sse.server";
 import { type Event_Transition } from "@backend/sync/sync.types";
 import { isMissingGoogleRefreshToken } from "@backend/sync/util/sync.util";
 import {
-  type PersistedCompassEvent,
   isPersistedCoreEvent,
+  type PersistedCompassEvent,
 } from "./compass.sync.processor.util";
 
 const logger = Logger("app.compass.sync.processor");

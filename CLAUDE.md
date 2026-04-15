@@ -13,7 +13,7 @@ Run after making changes. Always run `bun run type-check` before handoff.
 | `packages/backend` only      | `bun run test:backend`                                                                |
 | `packages/scripts` only      | `bun run test:scripts`                                                                |
 | Cross-package (types/schema) | `bun run test:core && bun run test:web && bun run test:backend && bun run type-check` |
-| Lint changed files           | `./node_modules/.bin/eslint <file1> <file2>`                                          |
+| Lint and format check        | `bun run lint`                                                                        |
 
 Or use the smart detect-and-run script: **`bun run verify`** (checks git diff, runs the right suites + type-check).
 

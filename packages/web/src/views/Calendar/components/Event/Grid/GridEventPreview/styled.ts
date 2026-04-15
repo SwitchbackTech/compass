@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import styled from "styled-components";
 import { type Priority } from "@core/constants/core.constants";
 import { ZIndex } from "@web/common/constants/web.constants";

@@ -82,7 +82,7 @@ bun run test:e2e
 
 # Type checking and linting
 bun run type-check
-bunx prettier . --write
+bun run lint
 ```
 
 ## Contributing

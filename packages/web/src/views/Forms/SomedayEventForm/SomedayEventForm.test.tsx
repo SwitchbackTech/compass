@@ -1,5 +1,5 @@
-import { toast } from "react-toastify";
 import { resolveModifier } from "@tanstack/react-hotkeys";
+import { toast } from "react-toastify";
 import "@testing-library/jest-dom/extend-expect";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

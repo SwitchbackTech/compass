@@ -23,8 +23,8 @@ import { sseServer } from "@backend/servers/sse/sse.server";
 import syncService from "@backend/sync/services/sync.service";
 import { getSync } from "@backend/sync/util/sync.queries";
 import { isMissingGoogleRefreshToken } from "@backend/sync/util/sync.util";
-import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
+import userMetadataService from "@backend/user/services/user-metadata.service";
 import { ImportGCalRequestSchema } from "../sync.types";
 
 const logger = Logger("app:sync.controller");

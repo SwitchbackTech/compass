@@ -17,7 +17,7 @@ describe("snapToGrid", () => {
       y: 0,
       bottom: 0,
       right: 0,
-      toJSON: function () {
+      toJSON: () => {
         throw new Error("Function not implemented.");
       },
     },

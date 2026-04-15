@@ -1,8 +1,8 @@
-import { Command } from "commander";
 import { CliValidator } from "@scripts/cli.validator";
 import { startDeleteFlow } from "@scripts/commands/delete/delete";
 import { runMigrator } from "@scripts/commands/migrate";
 import { MigratorType } from "@scripts/common/cli.types";
+import { Command } from "commander";
 
 export default class CompassCLI {
   private program: Command;

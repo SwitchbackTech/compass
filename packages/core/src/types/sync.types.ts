@@ -1,4 +1,4 @@
-import type { AnyBulkWriteOperation, BulkWriteResult } from "mongodb";
+import { type AnyBulkWriteOperation, type BulkWriteResult } from "mongodb";
 import { z } from "zod/v4";
 import { type BaseError } from "@core/errors/errors.base";
 import { ExpirationDateSchema, zObjectId } from "@core/types/type.utils";

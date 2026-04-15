@@ -1,7 +1,7 @@
 import { type Filter, ObjectId, type WithId } from "mongodb";
 import { mockEventSetJan22 } from "@core/__mocks__/v1/events/events.22jan";
 import { mockEventSetSomeday1 } from "@core/__mocks__/v1/events/events.someday.1";
-import { MapEvent, gEventToCompassEvent } from "@core/mappers/map.event";
+import { gEventToCompassEvent, MapEvent } from "@core/mappers/map.event";
 import {
   Categories_Recurrence,
   CompassEventStatus,

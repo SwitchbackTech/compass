@@ -17,13 +17,13 @@ import {
   initSupertokens,
   supertokensCors,
 } from "@backend/common/middleware/supertokens.middleware";
+import type * as SupertokensMiddlewareUtilModule from "@backend/common/middleware/supertokens.middleware.util";
 import {
   buildResetPasswordLink,
   createGoogleSignInSuccess,
   ensureExternalUserIdMapping,
   getFormFieldValue,
 } from "@backend/common/middleware/supertokens.middleware.util";
-import type * as SupertokensMiddlewareUtilModule from "@backend/common/middleware/supertokens.middleware.util";
 import EmailService from "@backend/email/email.service";
 import userService from "@backend/user/services/user.service";
 

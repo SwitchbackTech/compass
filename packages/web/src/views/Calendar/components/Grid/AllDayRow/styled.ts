@@ -3,10 +3,10 @@ import { Flex } from "@web/components/Flex";
 import {
   GRID_MARGIN_LEFT,
   GRID_PADDING_BOTTOM,
+  GRID_TIME_STEP,
   GRID_Y_START,
   SCROLLBAR_WIDTH,
 } from "@web/views/Calendar/layout.constants";
-import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 import { Columns } from "../Columns/styled";
 
 const gridHeight = `100% - (${GRID_Y_START}px + ${GRID_PADDING_BOTTOM}px)`;

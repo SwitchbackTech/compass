@@ -1,5 +1,5 @@
-import { act } from "react";
 import { waitFor } from "@testing-library/react";
+import { act } from "react";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 

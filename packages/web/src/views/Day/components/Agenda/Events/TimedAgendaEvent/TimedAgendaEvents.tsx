@@ -1,8 +1,8 @@
+import { type UseInteractionsReturn } from "@floating-ui/react";
+import { useObservable } from "@ngneat/use-observable";
 import fastDeepEqual from "fast-deep-equal/react";
 import { type MouseEvent, memo, useCallback, useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { type UseInteractionsReturn } from "@floating-ui/react";
-import { useObservable } from "@ngneat/use-observable";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
 import { useHasLoadedOnce } from "@web/common/hooks/useHasLoadedOnce";

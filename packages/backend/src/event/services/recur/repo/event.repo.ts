@@ -1,6 +1,7 @@
 /**
  * Event DB operations repo for Compass's Event collection
  */
+
 import { ObjectId, type WithId } from "mongodb";
 import {
   type Event_Core,

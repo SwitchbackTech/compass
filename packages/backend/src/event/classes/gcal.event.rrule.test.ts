@@ -1,6 +1,6 @@
+import { faker } from "@faker-js/faker";
 import { ObjectId } from "mongodb";
 import { RRule } from "rrule";
-import { faker } from "@faker-js/faker";
 import { recurring } from "@core/__mocks__/v1/events/gcal/gcal.recurring";
 import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
 import { type gSchema$EventBase } from "@core/types/gcal";

@@ -1,5 +1,5 @@
-import { type PointerEvent, act } from "react";
 import { renderHook } from "@testing-library/react";
+import { act, type PointerEvent } from "react";
 import {
   type PointerState,
   pointerState$,

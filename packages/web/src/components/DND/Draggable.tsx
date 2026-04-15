@@ -1,14 +1,3 @@
-import { ObjectId } from "bson";
-import {
-  type DetailedHTMLProps,
-  type ForwardedRef,
-  type HTMLAttributes,
-  type ReactHTML,
-  cloneElement,
-  createElement,
-  forwardRef,
-  isValidElement,
-} from "react";
 import {
   type UniqueIdentifier,
   type UseDraggableArguments,
@@ -16,6 +5,17 @@ import {
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { useMergeRefs } from "@floating-ui/react";
+import { ObjectId } from "bson";
+import {
+  cloneElement,
+  createElement,
+  type DetailedHTMLProps,
+  type ForwardedRef,
+  forwardRef,
+  type HTMLAttributes,
+  isValidElement,
+  type ReactHTML,
+} from "react";
 import { type Categories_Event } from "@core/types/event.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 
@@ -25,10 +25,11 @@ export interface DraggableDNDData {
   view: "day" | "week" | "now";
 }
 
-export interface DNDChildProps extends Pick<
-  ReturnType<typeof useDraggable>,
-  "over" | "listeners" | "isDragging"
-> {
+export interface DNDChildProps
+  extends Pick<
+    ReturnType<typeof useDraggable>,
+    "over" | "listeners" | "isDragging"
+  > {
   id: UniqueIdentifier;
   setDisabled?: (disabled: boolean) => void;
 }

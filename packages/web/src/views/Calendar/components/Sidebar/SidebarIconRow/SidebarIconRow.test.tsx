@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
 import { screen } from "@testing-library/react";
+import { type ReactNode } from "react";
 import { render } from "@web/__tests__/utils/render.test.util";
 import { SidebarIconRow } from "@web/views/Calendar/components/Sidebar/SidebarIconRow";
 

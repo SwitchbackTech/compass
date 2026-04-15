@@ -1,6 +1,6 @@
+import { calendar } from "@googleapis/calendar";
 import { ObjectId, type WithoutId } from "mongodb";
 import { type Options } from "rrule";
-import { calendar } from "@googleapis/calendar";
 import { Origin } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
 import { type Schema_Event, type WithCompassId } from "@core/types/event.types";

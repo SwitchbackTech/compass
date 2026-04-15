@@ -1,5 +1,5 @@
-import { act } from "react";
 import { renderHook } from "@testing-library/react";
+import { act } from "react";
 import { cursor$ } from "@web/common/context/pointer-position";
 import { useCursorCoordinates } from "./useCursorCoordinates";
 

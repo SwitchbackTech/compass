@@ -1,5 +1,5 @@
-import { useLocation, useNavigate } from "react-router-dom";
 import { type RegisterableHotkey } from "@tanstack/react-hotkeys";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";

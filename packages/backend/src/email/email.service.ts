@@ -95,13 +95,14 @@ class EmailService {
     try {
       // upsert subscriber
       logger.debug(`Adding subscriber: ${subscriber.email_address}`);
-      const upsertedSubscriber = await this.upsertSubscriber(subscriber);
+      const upsertedSubscriber =
+        await EmailService.upsertSubscriber(subscriber);
       const subId = upsertedSubscriber.subscriber.id;
 
       // add tag to subscriber
       logger.info(`Tagging subscriber: ${subscriber.email_address}`);
-      const url = `${this.baseUrl}/tags/${tagId}/subscribers/${subId}`;
-      return await this.post<Response_TagSubscriber>(url, {});
+      const url = `${EmailService.baseUrl}/tags/${tagId}/subscribers/${subId}`;
+      return await EmailService.post<Response_TagSubscriber>(url, {});
     } catch (err) {
       if (err instanceof BaseError) {
         throw err;
@@ -144,14 +145,14 @@ class EmailService {
       );
     }
 
-    const url = `${this.baseUrl}/subscribers`;
-    return await this.post<Response_UpsertSubscriber>(url, data);
+    const url = `${EmailService.baseUrl}/subscribers`;
+    return await EmailService.post<Response_UpsertSubscriber>(url, data);
   }
 
   private static async post<T>(url: string, body: object): Promise<T> {
     const response = await fetch(url, {
       body: JSON.stringify(body),
-      headers: this.headers.headers,
+      headers: EmailService.headers.headers,
       method: "POST",
     });
     const data = await getResponseData(response);

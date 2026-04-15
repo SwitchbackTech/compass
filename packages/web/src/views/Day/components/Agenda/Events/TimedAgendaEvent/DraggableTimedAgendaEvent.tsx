@@ -1,7 +1,7 @@
+import { type UseInteractionsReturn } from "@floating-ui/react";
 import classNames from "classnames";
 import fastDeepEqual from "fast-deep-equal/react";
 import { memo } from "react";
-import { type UseInteractionsReturn } from "@floating-ui/react";
 import {
   Categories_Event,
   type Schema_Event,

@@ -1,5 +1,4 @@
-import { type Request, type Response } from "express";
-import { type NextFunction } from "express";
+import { type NextFunction, type Request, type Response } from "express";
 import { type SessionRequest } from "supertokens-node/framework/express";
 import { BaseError } from "@core/errors/errors.base";
 import {

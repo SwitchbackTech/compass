@@ -1,6 +1,6 @@
+import { faker } from "@faker-js/faker";
 import { type TokenPayload } from "google-auth-library";
 import { ObjectId, type WithId } from "mongodb";
-import { faker } from "@faker-js/faker";
 import { type Schema_User } from "@core/types/user.types";
 import mongoService from "@backend/common/services/mongo.service";
 import userService from "../../user/services/user.service";

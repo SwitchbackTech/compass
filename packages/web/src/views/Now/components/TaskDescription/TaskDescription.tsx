@@ -1,7 +1,7 @@
+import { Pencil } from "@phosphor-icons/react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
-import { Pencil } from "@phosphor-icons/react";
 import {
   CompassDOMEvents,
   compassEventEmitter,

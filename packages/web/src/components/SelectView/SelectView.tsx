@@ -1,5 +1,3 @@
-import { useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
 import {
   useClick,
   useDismiss,
@@ -8,6 +6,8 @@ import {
   useListNavigation,
   useRole,
 } from "@floating-ui/react";
+import { useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";

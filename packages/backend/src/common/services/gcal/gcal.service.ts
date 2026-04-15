@@ -1,10 +1,10 @@
-import type { GaxiosResponse } from "gaxios";
+import { type GaxiosResponse } from "gaxios";
 import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
-import type {
-  gCalendar,
-  gParamsEventsList,
-  gSchema$Event,
-  gSchema$Events,
+import {
+  type gCalendar,
+  type gParamsEventsList,
+  type gSchema$Event,
+  type gSchema$Events,
 } from "@core/types/gcal";
 import {
   type Params_WatchEvents,

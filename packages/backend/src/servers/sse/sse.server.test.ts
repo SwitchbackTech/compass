@@ -3,6 +3,7 @@
  *
  * we do not need the database for this test
  */
+
 import { ObjectId } from "mongodb";
 import {
   EVENT_CHANGED,

@@ -12,9 +12,9 @@ import { selectRowCount } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { snapToGrid } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/snap.grid";
 import {
-  StyledGridEventPreview,
   getItemStyles,
   layerStyles,
+  StyledGridEventPreview,
 } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/styled";
 import { SOMEDAY_EVENT_HEIGHT } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEvent/styled";
 import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";

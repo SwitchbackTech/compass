@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
 import {
-  OVERLAY_SELECTORS,
-  OVERLAY_TEXT,
   expectBodyLocked,
   expectNoOverlay,
   expectOAuthOverlayVisible,
+  OVERLAY_SELECTORS,
+  OVERLAY_TEXT,
   prepareOAuthTestPage,
   setIsSyncing,
   waitForAppReady,

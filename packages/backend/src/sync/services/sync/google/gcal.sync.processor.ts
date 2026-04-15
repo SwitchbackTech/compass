@@ -1,6 +1,6 @@
 import { type ClientSession } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
-import { type WithGcalId, type gSchema$Event } from "@core/types/gcal";
+import { type gSchema$Event, type WithGcalId } from "@core/types/gcal";
 import { EventError } from "@backend/common/errors/event/event.errors";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";

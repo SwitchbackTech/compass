@@ -1,5 +1,5 @@
+import { call, put, type SelectEffect, select } from "@redux-saga/core/effects";
 import { normalize, schema } from "normalizr";
-import { type SelectEffect, call, put, select } from "@redux-saga/core/effects";
 import {
   type Params_Events,
   type RecurringEventUpdateScope,

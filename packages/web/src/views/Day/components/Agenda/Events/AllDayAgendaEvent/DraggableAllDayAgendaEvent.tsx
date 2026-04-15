@@ -1,7 +1,7 @@
+import { type UseInteractionsReturn } from "@floating-ui/react";
 import classNames from "classnames";
 import fastDeepEqual from "fast-deep-equal/react";
 import { memo } from "react";
-import { type UseInteractionsReturn } from "@floating-ui/react";
 import { Categories_Event } from "@core/types/event.types";
 import { CLASS_ALL_DAY_CALENDAR_EVENT } from "@web/common/constants/web.constants";
 import { useIsDraggingEvent } from "@web/common/hooks/useIsDraggingEvent";

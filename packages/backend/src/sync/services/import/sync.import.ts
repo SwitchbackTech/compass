@@ -311,7 +311,7 @@ export class SyncImport {
 
     const startTime = performance.now();
 
-    let syncToken: string | undefined = undefined;
+    let syncToken: string | undefined;
 
     const stats: {
       totalProcessed: number;
@@ -580,7 +580,7 @@ export class SyncImport {
     perPage = 1000,
   ) {
     let nextSyncToken: string | null | undefined = initialSyncToken;
-    let nextPageToken: string | null | undefined = undefined;
+    let nextPageToken: string | null | undefined;
     let totalUpdated = 0;
     let totalDeleted = 0;
     let totalCreated = 0;

@@ -1,5 +1,5 @@
-import React, { type FC, useRef } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
+import React, { type FC, useRef } from "react";
 import { theme } from "@web/common/styles/theme";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { Divider } from "@web/components/Divider";
@@ -14,8 +14,8 @@ import {
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { MonthSection } from "./MonthSection/MonthSection";
-import { WeekSection } from "./WeekSection/WeekSection";
 import { SidebarContent } from "./styled";
+import { WeekSection } from "./WeekSection/WeekSection";
 
 interface Props {
   dateCalcs: DateCalcs;

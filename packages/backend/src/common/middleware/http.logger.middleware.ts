@@ -43,7 +43,7 @@ const getStatusColor = (status: string): HttpLogColor => {
   }
 };
 
-export const httpLoggingMiddleware = morgan(function (tokens, req, res) {
+export const httpLoggingMiddleware = morgan((tokens, req, res) => {
   const responseTime =
     get("response-time", tokens, req, res)?.toString() || "unknown";
 

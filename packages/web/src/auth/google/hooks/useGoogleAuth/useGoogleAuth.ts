@@ -5,8 +5,8 @@ import { authenticate } from "@web/auth/google/util/google.auth.util";
 import { isGooglePopupClosedError } from "@web/auth/google/util/google.oauth.error.util";
 import { toastDefaultOptions } from "@web/common/constants/toast.constants";
 import {
-  SESSION_EXPIRED_TOAST_ID,
   dismissErrorToast,
+  SESSION_EXPIRED_TOAST_ID,
 } from "@web/common/utils/toast/error-toast.util";
 import {
   authError,

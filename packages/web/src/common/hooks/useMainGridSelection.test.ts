@@ -1,5 +1,5 @@
-import { type PointerEvent as IPointerEvent, act } from "react";
 import { renderHook } from "@testing-library/react";
+import { act, type PointerEvent as IPointerEvent } from "react";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { cursor$, pointerState$ } from "@web/common/context/pointer-position";
 import { isDraggingEvent$ } from "@web/common/hooks/useIsDraggingEvent";

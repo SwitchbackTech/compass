@@ -1,7 +1,7 @@
-import { ObjectId } from "bson";
-import type { MigrationParams, RunnableMigration } from "umzug";
-import { z } from "zod/v4";
 import { type MigrationContext } from "@scripts/common/cli.types";
+import { ObjectId } from "bson";
+import { type MigrationParams, type RunnableMigration } from "umzug";
+import { z } from "zod/v4";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { CalendarProvider } from "@core/types/event.types";
 import {

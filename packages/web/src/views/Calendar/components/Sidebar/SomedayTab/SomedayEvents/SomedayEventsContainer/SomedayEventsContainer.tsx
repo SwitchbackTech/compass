@@ -1,6 +1,6 @@
-import { type FC } from "react";
-import type React from "react";
 import { Droppable } from "@hello-pangea/dnd";
+import type React from "react";
+import { type FC } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import {
   COLUMN_MONTH,

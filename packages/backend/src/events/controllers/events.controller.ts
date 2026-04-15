@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import { type Request, type Response } from "express";
 import { USER_METADATA } from "@core/constants/sse.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { sseServer } from "@backend/servers/sse/sse.server";

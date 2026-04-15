@@ -1,4 +1,4 @@
-import type { ZodType } from "zod";
+import { type ZodType } from "zod";
 import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { Status } from "@core/errors/status.codes";
 import {

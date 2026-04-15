@@ -1,3 +1,4 @@
+import { type UniqueIdentifier } from "@dnd-kit/core";
 import {
   Resizable as ReResizable,
   type ResizableProps,
@@ -5,12 +6,11 @@ import {
   type ResizeStartCallback,
 } from "re-resizable";
 import {
-  type PropsWithChildren,
   cloneElement,
   isValidElement,
+  type PropsWithChildren,
   useCallback,
 } from "react";
-import { type UniqueIdentifier } from "@dnd-kit/core";
 import { usePointerPosition } from "@web/common/hooks/usePointerPosition";
 import { resizeId$ } from "@web/common/hooks/useResizeId";
 import { resizing$ } from "@web/common/hooks/useResizing";

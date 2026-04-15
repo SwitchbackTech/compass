@@ -1,4 +1,4 @@
-import type { GaxiosError } from "gaxios";
+import { type GaxiosError } from "gaxios";
 import {
   type ClientSession,
   type Document,

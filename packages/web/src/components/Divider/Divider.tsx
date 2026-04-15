@@ -1,6 +1,5 @@
-import { type HTMLAttributes } from "react";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { type HTMLAttributes, useEffect, useState } from "react";
 import { StyledDivider } from "./styled";
 import { type Props } from "./types";
 

@@ -5,20 +5,20 @@
  * Sagas update this store after API calls or IndexedDB operations complete.
  * Related: docs/development/web-state-guide.md
  */
-import { combineLatestWith, map, shareReplay } from "rxjs/operators";
+
 import {
   createStore,
   distinctUntilArrayItemChanged,
   propsFactory,
 } from "@ngneat/elf";
 import {
-  UIEntitiesRef,
   resetActiveId,
   selectActiveEntity,
   selectActiveId,
   selectAllEntities,
   selectEntities,
   setActiveId,
+  UIEntitiesRef,
   unionEntities,
   updateEntities,
   upsertEntitiesById,
@@ -26,6 +26,7 @@ import {
   withEntities,
   withUIEntities,
 } from "@ngneat/elf-entities";
+import { combineLatestWith, map, shareReplay } from "rxjs/operators";
 import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 
 export interface EventUIState {

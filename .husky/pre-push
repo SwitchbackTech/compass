@@ -1,6 +1,0 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
-echo "Formatting code ..."
-bunx prettier . --write --log-level silent
-echo "Code formatted"

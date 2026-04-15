@@ -17,8 +17,8 @@ import {
 } from "@web/common/types/web.event.types";
 import {
   type FrequencyValues,
-  type WEEKDAYS,
   type WEEKDAY_RRULE_MAP,
+  type WEEKDAYS,
 } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";
 import { toWeekDays } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/util/recurrence.util";
 

@@ -1,9 +1,9 @@
 import {
   type CSSProperties,
   type ForwardedRef,
+  forwardRef,
   type KeyboardEvent,
   type MouseEvent,
-  forwardRef,
   memo,
   useMemo,
 } from "react";

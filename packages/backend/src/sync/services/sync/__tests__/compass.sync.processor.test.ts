@@ -1,4 +1,5 @@
 /** @jest-environment node */
+
 import { faker } from "@faker-js/faker";
 import {
   EVENT_CHANGED,
@@ -17,8 +18,8 @@ import {
 } from "@core/util/test/ccal.event.factory";
 import { missingRefreshTokenError } from "@backend/__tests__/mocks.gcal/errors/error.missingRefreshToken";
 import mongoService from "@backend/common/services/mongo.service";
-import { type CompassApplyResult } from "@backend/event/classes/compass.event.executor";
 import * as compassExecutor from "@backend/event/classes/compass.event.executor";
+import { type CompassApplyResult } from "@backend/event/classes/compass.event.executor";
 import * as compassParser from "@backend/event/classes/compass.event.parser";
 import * as eventService from "@backend/event/services/event.service";
 import { sseServer } from "@backend/servers/sse/sse.server";

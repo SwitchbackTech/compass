@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-namespace */
+
 import mergeWith from "lodash.mergewith";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
@@ -13,7 +14,7 @@ import {
   type WithMongoId,
   type WithoutCompassId,
 } from "@core/types/event.types";
-import { type WithGcalId, type gSchema$Event } from "@core/types/gcal";
+import { type gSchema$Event, type WithGcalId } from "@core/types/gcal";
 import dayjs from "@core/util/date/dayjs";
 import {
   isAllDay,

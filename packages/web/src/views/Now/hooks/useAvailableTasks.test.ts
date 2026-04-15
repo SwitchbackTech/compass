@@ -1,5 +1,5 @@
-import React, { act } from "react";
 import { renderHook, waitFor } from "@testing-library/react";
+import React, { act } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { type Task } from "@web/common/types/task.types";
@@ -279,7 +279,7 @@ describe("useAvailableTasks", () => {
       .mockReturnValueOnce(staleLoadPromise)
       .mockResolvedValueOnce(freshTasks);
 
-    let taskContextValue: React.ContextType<typeof TaskContext> = undefined;
+    let taskContextValue: React.ContextType<typeof TaskContext>;
     const wrapper = ({ children }: { children: React.ReactNode }) => {
       if (taskContextValue) {
         return React.createElement(

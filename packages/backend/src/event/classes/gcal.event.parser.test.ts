@@ -1,7 +1,7 @@
-import { RRule } from "rrule";
 import { faker } from "@faker-js/faker";
+import { RRule } from "rrule";
 import { Categories_Recurrence } from "@core/types/event.types";
-import { type WithGcalId, type gSchema$Event } from "@core/types/gcal";
+import { type gSchema$Event, type WithGcalId } from "@core/types/gcal";
 import dayjs from "@core/util/date/dayjs";
 import { isBase, isInstance } from "@core/util/event/event.util";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";

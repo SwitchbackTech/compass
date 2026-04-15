@@ -1,6 +1,6 @@
+import { faker } from "@faker-js/faker";
 import { ObjectId } from "bson";
 import { rest } from "msw";
-import { faker } from "@faker-js/faker";
 import {
   CLIMB,
   EUROPE_TRIP,

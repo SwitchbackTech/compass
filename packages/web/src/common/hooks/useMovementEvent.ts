@@ -5,7 +5,7 @@ import {
   useEffect,
   useMemo,
 } from "react";
-import { BehaviorSubject, EMPTY, NEVER, fromEvent, iif, merge, of } from "rxjs";
+import { BehaviorSubject, EMPTY, fromEvent, iif, merge, NEVER, of } from "rxjs";
 import { filter, map, switchMap } from "rxjs/operators";
 import {
   type DomMovement,
@@ -36,7 +36,7 @@ export function useMovementEvent({
   handler,
   deps = [],
   eventTypes = [],
-  selectors: selectors = [],
+  selectors = [],
 }: Options) {
   const typeFilter = useCallback(
     ({ event }: DomMovement) => {

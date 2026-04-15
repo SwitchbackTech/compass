@@ -1,5 +1,5 @@
-import EventEmitter from "node:events";
 import { waitUntilEvent } from "@core/util/wait-until-event.util";
+import EventEmitter from "node:events";
 
 describe("waitUntilEvent", () => {
   it("waits for event to complete before resolving", async () => {

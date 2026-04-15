@@ -1,8 +1,8 @@
+import { type UseInteractionsReturn } from "@floating-ui/react";
+import { useObservable } from "@ngneat/use-observable";
 import classNames from "classnames";
 import fastDeepEqual from "fast-deep-equal/react";
 import { memo, useCallback } from "react";
-import { type UseInteractionsReturn } from "@floating-ui/react";
-import { useObservable } from "@ngneat/use-observable";
 import { ID_GRID_ALLDAY_ROW } from "@web/common/constants/web.constants";
 import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";

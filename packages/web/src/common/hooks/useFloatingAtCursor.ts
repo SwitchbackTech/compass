@@ -1,16 +1,16 @@
-import { useCallback } from "react";
 import {
-  type OpenChangeReason,
-  type Placement,
-  type ReferenceType,
-  type UseFloatingOptions,
   autoUpdate,
   flip,
   hide,
+  type OpenChangeReason,
   offset,
+  type Placement,
+  type ReferenceType,
   shift,
+  type UseFloatingOptions,
   useFloating,
 } from "@floating-ui/react";
+import { useCallback } from "react";
 import {
   DATA_FULL_WIDTH,
   DATA_OVERLAPPING,

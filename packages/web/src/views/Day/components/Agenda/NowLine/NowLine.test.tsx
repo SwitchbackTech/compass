@@ -1,5 +1,5 @@
-import { act } from "react";
 import { render, screen } from "@testing-library/react";
+import { act } from "react";
 import { NowLine } from "@web/views/Day/components/Agenda/NowLine/NowLine";
 import {
   getAgendaEventTime,

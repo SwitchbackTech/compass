@@ -1,6 +1,6 @@
+import { calendar } from "@googleapis/calendar";
 import { GaxiosError, type GaxiosResponse } from "gaxios";
 import { type WithId } from "mongodb";
-import { calendar } from "@googleapis/calendar";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { type gCalendar } from "@core/types/gcal";

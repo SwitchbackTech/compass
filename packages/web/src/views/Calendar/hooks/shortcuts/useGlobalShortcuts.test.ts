@@ -1,7 +1,7 @@
-import { act } from "react";
-import { useNavigate } from "react-router-dom";
 import { configureStore } from "@reduxjs/toolkit";
 import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
+import { act } from "react";
+import { useNavigate } from "react-router-dom";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import {
   mockLinuxUserAgent,
@@ -130,27 +130,26 @@ describe("useGlobalShortcuts", () => {
     { os: "Windows", mockFn: mockWindowsUserAgent, modifier: "Control" },
     { os: "Linux", mockFn: mockLinuxUserAgent, modifier: "Control" },
     { os: "MacOS", mockFn: mockMacOSUserAgent, modifier: "Meta" },
-  ])(
-    `should toggle command palette when '$modifier+k' is pressed - $os`,
-    async ({ mockFn }) => {
-      const osSpy = mockFn();
-      HotkeyManager.resetInstance();
-      const store = createTestStore();
-      const dispatchSpy = jest.spyOn(store, "dispatch");
+  ])(`should toggle command palette when '$modifier+k' is pressed - $os`, async ({
+    mockFn,
+  }) => {
+    const osSpy = mockFn();
+    HotkeyManager.resetInstance();
+    const store = createTestStore();
+    const dispatchSpy = jest.spyOn(store, "dispatch");
 
-      act(() => renderHook(() => useGlobalShortcuts(), { store }));
+    act(() => renderHook(() => useGlobalShortcuts(), { store }));
 
-      act(() => {
-        pressModifierShortcut();
-      });
+    act(() => {
+      pressModifierShortcut();
+    });
 
-      expect(dispatchSpy).toHaveBeenCalledWith(
-        settingsSlice.actions.toggleCmdPalette(),
-      );
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      settingsSlice.actions.toggleCmdPalette(),
+    );
 
-      osSpy.mockRestore();
-    },
-  );
+    osSpy.mockRestore();
+  });
 
   it("should close command palette when 'Escape' is pressed", () => {
     const osSpy = mockMacOSUserAgent();

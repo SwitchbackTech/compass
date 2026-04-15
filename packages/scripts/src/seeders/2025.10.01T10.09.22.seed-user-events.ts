@@ -1,7 +1,7 @@
-import { ObjectId } from "mongodb";
-import type { MigrationParams, RunnableMigration } from "umzug";
 import { confirm, input } from "@inquirer/prompts";
 import { type MigrationContext } from "@scripts/common/cli.types";
+import { ObjectId } from "mongodb";
+import { type MigrationParams, type RunnableMigration } from "umzug";
 import { NodeEnv } from "@core/constants/core.constants";
 import {
   CompassEventStatus,

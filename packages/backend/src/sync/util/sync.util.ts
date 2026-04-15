@@ -1,6 +1,6 @@
 import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
-import type { Schema_Sync } from "@core/types/sync.types";
+import { type Schema_Sync } from "@core/types/sync.types";
 import dayjs from "@core/util/date/dayjs";
 import { SYNC_BUFFER_DAYS } from "@backend/common/constants/backend.constants";
 import { ENV } from "@backend/common/constants/env.constants";

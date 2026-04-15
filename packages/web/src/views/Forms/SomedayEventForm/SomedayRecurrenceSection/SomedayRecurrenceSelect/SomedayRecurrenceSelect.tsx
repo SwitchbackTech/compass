@@ -1,10 +1,10 @@
 import type React from "react";
 import { useEffect, useMemo, useRef } from "react";
 import ReactSelect, {
+  components,
   type SelectInstance,
   type SingleValueProps,
 } from "react-select";
-import { components } from "react-select";
 import { Frequency } from "rrule";
 import { useTheme } from "styled-components";
 import { brighten, darken } from "@core/util/color.utils";

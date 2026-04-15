@@ -1,6 +1,5 @@
-import type { Credentials } from "google-auth-library";
-import type { TokenPayload } from "google-auth-library";
 import { faker } from "@faker-js/faker";
+import { type Credentials, type TokenPayload } from "google-auth-library";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import {
   cleanupCollections,
@@ -14,10 +13,13 @@ import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import EmailService from "@backend/email/email.service";
 import syncService from "@backend/sync/services/sync.service";
-import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
+import userMetadataService from "@backend/user/services/user-metadata.service";
 import googleAuthService from "./google.auth.service";
-import type { AuthDecision, GoogleSignInSuccess } from "./google.auth.types";
+import {
+  type AuthDecision,
+  type GoogleSignInSuccess,
+} from "./google.auth.types";
 
 jest.mock("@backend/auth/services/google/util/google.auth.util", () => {
   const actual = jest.requireActual<typeof GoogleAuthUtilModule>(

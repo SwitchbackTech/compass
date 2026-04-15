@@ -1,5 +1,5 @@
+import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import produce from "immer";
-import { type PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { type Origin } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";

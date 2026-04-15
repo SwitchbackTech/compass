@@ -10,13 +10,14 @@
  *   bun run build:backend --environment staging
  *   bun run build:backend --environment production
  */
-import { $ } from "bun";
-import path from "path";
+
 import {
   COMPASS_BUILD_DEV,
   COMPASS_ROOT_DEV,
 } from "@scripts/common/cli.constants";
 import { getEnvironmentAnswer, log } from "@scripts/common/cli.utils";
+import { $ } from "bun";
+import path from "path";
 
 const BACKEND_BUILD = path.join(COMPASS_BUILD_DEV, "backend");
 

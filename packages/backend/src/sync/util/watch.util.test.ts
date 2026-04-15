@@ -18,20 +18,19 @@ describe("watch.util", () => {
     it.each([
       { resource: Resource_Sync.EVENTS },
       { resource: Resource_Sync.CALENDAR },
-    ])(
-      "should encode $resource channel data into a base64 token",
-      ({ resource }) => {
-        const token = encodeChannelToken({ resource });
+    ])("should encode $resource channel data into a base64 token", ({
+      resource,
+    }) => {
+      const token = encodeChannelToken({ resource });
 
-        expect(typeof token).toBe("string");
+      expect(typeof token).toBe("string");
 
-        // Decoding should yield a valid ChannelToken
-        const decoded = Buffer.from(token, "base64").toString("utf-8");
+      // Decoding should yield a valid ChannelToken
+      const decoded = Buffer.from(token, "base64").toString("utf-8");
 
-        expect(decoded).toContain(`token=${notificationToken}`);
-        expect(decoded).toContain(`resource=${resource}`);
-      },
-    );
+      expect(decoded).toContain(`token=${notificationToken}`);
+      expect(decoded).toContain(`resource=${resource}`);
+    });
 
     it("should throw if an invalid resource is supplied", () => {
       const resource = faker.lorem.word() as Resource_Sync;
@@ -73,19 +72,18 @@ describe("watch.util", () => {
     it.each([
       { resource: Resource_Sync.EVENTS },
       { resource: Resource_Sync.CALENDAR },
-    ])(
-      "should decode a token back to the original channel data",
-      ({ resource }) => {
-        const token = encodeChannelToken({ resource });
-        const result = decodeChannelToken(token);
+    ])("should decode a token back to the original channel data", ({
+      resource,
+    }) => {
+      const token = encodeChannelToken({ resource });
+      const result = decodeChannelToken(token);
 
-        // Should match the original data plus the token from ENV
-        expect(result).toEqual({
-          token: notificationToken,
-          resource,
-        });
-      },
-    );
+      // Should match the original data plus the token from ENV
+      expect(result).toEqual({
+        token: notificationToken,
+        resource,
+      });
+    });
 
     it("should return undefined if token is invalid base64", () => {
       expect(decodeChannelToken("not-base64!")).toBeUndefined();

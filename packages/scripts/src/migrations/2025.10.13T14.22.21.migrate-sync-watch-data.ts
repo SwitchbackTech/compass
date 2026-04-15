@@ -1,7 +1,7 @@
-import { ObjectId } from "mongodb";
-import type { MigrationParams, RunnableMigration } from "umzug";
-import { z } from "zod/v4";
 import { type MigrationContext } from "@scripts/common/cli.types";
+import { ObjectId } from "mongodb";
+import { type MigrationParams, type RunnableMigration } from "umzug";
+import { z } from "zod/v4";
 import { Resource_Sync } from "@core/types/sync.types";
 import { ExpirationDateSchema } from "@core/types/type.utils";
 import { type Schema_Watch, WatchSchema } from "@core/types/watch.types";

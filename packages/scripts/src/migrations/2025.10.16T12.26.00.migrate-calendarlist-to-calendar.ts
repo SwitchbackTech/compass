@@ -1,6 +1,6 @@
-import { type AnyBulkWriteOperation } from "mongodb";
-import type { MigrationParams, RunnableMigration } from "umzug";
 import { type MigrationContext } from "@scripts/common/cli.types";
+import { type AnyBulkWriteOperation } from "mongodb";
+import { type MigrationParams, type RunnableMigration } from "umzug";
 import { MapCalendar } from "@core/mappers/map.calendar";
 import { type Schema_Calendar } from "@core/types/calendar.types";
 import { type gSchema$CalendarListEntry } from "@core/types/gcal";

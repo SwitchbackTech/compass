@@ -1,7 +1,13 @@
 import fastDeepEqual from "fast-deep-equal/react";
-import { type KeyboardEvent } from "react";
 import type React from "react";
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import {
+  type KeyboardEvent,
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { darken } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";

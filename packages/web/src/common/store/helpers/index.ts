@@ -1,11 +1,11 @@
-import { produce } from "immer";
 import {
+  createSlice,
   type PayloadAction,
   type PayloadActionCreator,
   type SliceCaseReducers,
   type ValidateSliceCaseReducers,
-  createSlice,
 } from "@reduxjs/toolkit";
+import { produce } from "immer";
 
 export interface AsyncState<SuccessPayload, ErrorPayload> {
   isProcessing?: boolean;
@@ -214,9 +214,8 @@ export const isSuccess = <SuccessPayload, ErrorPayload>(
 export const pure = <T>(state: T) => state;
 
 export function write<S>(updater: (state: S) => void): (state: S) => S {
-  return function (state) {
-    return produce(state, (draft) => {
+  return (state) =>
+    produce(state, (draft) => {
       updater(draft as S);
     });
-  };
 }

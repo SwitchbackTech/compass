@@ -1,6 +1,5 @@
-import { ObjectId, type WithId } from "mongodb";
-import { randomUUID } from "node:crypto";
 import { faker } from "@faker-js/faker";
+import { ObjectId, type WithId } from "mongodb";
 import {
   EVENT_CHANGED,
   GOOGLE_REVOKED,
@@ -35,8 +34,9 @@ import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/g
 import syncService from "@backend/sync/services/sync.service";
 import * as syncQueries from "@backend/sync/util/sync.queries";
 import { updateSync } from "@backend/sync/util/sync.queries";
-import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
+import userMetadataService from "@backend/user/services/user-metadata.service";
+import { randomUUID } from "node:crypto";
 
 describe("SyncController", () => {
   const baseDriver = new BaseDriver();

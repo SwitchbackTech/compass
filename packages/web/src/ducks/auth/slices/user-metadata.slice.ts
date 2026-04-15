@@ -1,8 +1,8 @@
 import {
+  createSlice,
   type PayloadAction,
   type Slice,
   type SliceCaseReducers,
-  createSlice,
 } from "@reduxjs/toolkit";
 import { type UserMetadata } from "@core/types/user.types";
 

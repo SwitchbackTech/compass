@@ -1,4 +1,3 @@
-import { type PropsWithChildren, useCallback } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -7,6 +6,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import { type PropsWithChildren, useCallback } from "react";
 import { isDraggingEvent$ } from "@web/common/hooks/useIsDraggingEvent";
 import { usePointerPosition } from "@web/common/hooks/usePointerPosition";
 

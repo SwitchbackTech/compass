@@ -1,6 +1,6 @@
+import { faker } from "@faker-js/faker";
 import { ObjectId } from "bson";
 import { RRule } from "rrule";
-import { faker } from "@faker-js/faker";
 import { recurring } from "@core/__mocks__/v1/events/gcal/gcal.recurring";
 import { GCAL_MAX_RECURRENCES, Origin } from "@core/constants/core.constants";
 import { gEventToCompassEvent } from "@core/mappers/map.event";

@@ -3,8 +3,8 @@ import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { getModifierKeyTestId } from "@web/common/utils/shortcut/shortcut.util";
 import {
-  UndoDeleteToast,
   showUndoDeleteToast,
+  UndoDeleteToast,
 } from "@web/views/Day/components/Toasts/UndoToast/UndoDeleteToast";
 
 describe("UndoDeleteToast", () => {

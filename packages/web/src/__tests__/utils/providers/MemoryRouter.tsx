@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { type ReactElement } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 

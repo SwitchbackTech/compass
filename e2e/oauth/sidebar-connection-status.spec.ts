@@ -1,10 +1,10 @@
-import { type Page, expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import {
-  type GoogleConnectionState,
-  SIDEBAR_STATUS_LABELS,
   expectGoogleConnectionStateInStore,
+  type GoogleConnectionState,
   markUserAsAuthenticated,
   prepareOAuthTestPage,
+  SIDEBAR_STATUS_LABELS,
   setGoogleConnectionState,
   waitForAppReady,
 } from "../utils/oauth-test-utils";

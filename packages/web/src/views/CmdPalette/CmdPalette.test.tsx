@@ -1,5 +1,5 @@
-import { act } from "react";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { act } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { SyncApi } from "@web/common/apis/sync.api";

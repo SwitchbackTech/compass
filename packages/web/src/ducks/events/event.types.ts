@@ -1,5 +1,5 @@
-import { type Action } from "redux";
 import { type PayloadAction } from "@reduxjs/toolkit";
+import { type Action } from "redux";
 import { type Priorities } from "@core/constants/core.constants";
 import {
   type RecurringEventUpdateScope,

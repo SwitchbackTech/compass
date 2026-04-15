@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Logger } from "@core/logger/winston.logger";
+import { type Logger } from "@core/logger/winston.logger";
 
 export const Schema_Options_Cli_Root = z.object({});
 

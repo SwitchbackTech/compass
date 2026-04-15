@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { gSchema$CalendarListEntry } from "@core/types/gcal";
+import { type gSchema$CalendarListEntry } from "@core/types/gcal";
 import { generateCalendarColorScheme } from "@core/util/color.utils";
 
 /**

@@ -1,6 +1,6 @@
+import { getEntity } from "@ngneat/elf-entities";
 import fastDeepEqual from "fast-deep-equal/es6";
 import { useCallback } from "react";
-import { getEntity } from "@ngneat/elf-entities";
 import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import { type SliceStateContext } from "@web/common/store/helpers";
 import { type Payload_EditEvent } from "@web/ducks/events/event.types";

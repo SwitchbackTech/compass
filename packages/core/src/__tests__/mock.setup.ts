@@ -1,5 +1,5 @@
-import { default as mockMergeWith } from "lodash.mergewith";
 import { faker as mockFaker } from "@faker-js/faker";
+import { default as mockMergeWith } from "lodash.mergewith";
 
 export const mockBSON = () => {
   jest.mock("bson", () => ({

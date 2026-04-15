@@ -1,6 +1,6 @@
-import type { BunPlugin } from "bun";
-import postcss from "postcss";
 import tailwindcss from "@tailwindcss/postcss";
+import { type BunPlugin } from "bun";
+import postcss from "postcss";
 
 /**
  * Bun plugin that processes CSS files through PostCSS + Tailwind 4.

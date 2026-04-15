@@ -16,9 +16,9 @@ import { closeStream, openStream } from "@web/sse/client/sse.client";
 import { store } from "@web/store";
 import { type GoogleAuthConfig } from "../hooks/googe.auth.types";
 import {
-  LOCAL_EVENTS_SYNC_ERROR_MESSAGE,
   authenticate,
   handleGoogleRevoked,
+  LOCAL_EVENTS_SYNC_ERROR_MESSAGE,
   syncLocalEvents,
   syncPendingLocalEvents,
 } from "./google.auth.util";

@@ -1,8 +1,8 @@
 import { createSlice } from "@reduxjs/toolkit";
 import {
-  type Action_DraftEvent,
   type Action_Draft_Resize,
   type Action_Draft_Swap,
+  type Action_DraftEvent,
   type State_DraftEvent,
 } from "./draft.slice.types";
 

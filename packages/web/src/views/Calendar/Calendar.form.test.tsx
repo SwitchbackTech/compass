@@ -7,8 +7,8 @@ import { CLIMB, EUROPE_TRIP } from "@core/__mocks__/v1/events/events.misc";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
 import {
-  InitialReduxState,
   findAndUpdateEventInPreloadedState,
+  InitialReduxState,
 } from "@web/__tests__/utils/state/store.test.util";
 import { RootState } from "@web/store";
 import { CalendarView } from "@web/views/Calendar";

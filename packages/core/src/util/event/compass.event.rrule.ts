@@ -1,14 +1,13 @@
 import { ObjectId } from "bson";
-import type { Options, RRuleStrOptions } from "rrule";
-import { RRule, rrulestr } from "rrule";
-import type { ParsedOptions } from "rrule/dist/esm/types";
+import { type Options, RRule, type RRuleStrOptions, rrulestr } from "rrule";
+import { type ParsedOptions } from "rrule/dist/esm/types";
 import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
-import type {
-  CalendarProvider,
-  Schema_Event_Recur_Base,
-  Schema_Event_Recur_Instance,
-  WithMongoId,
+import {
+  type CalendarProvider,
+  type Schema_Event_Recur_Base,
+  type Schema_Event_Recur_Instance,
+  type WithMongoId,
 } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {

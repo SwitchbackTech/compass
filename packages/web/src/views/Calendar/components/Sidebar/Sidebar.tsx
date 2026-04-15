@@ -1,5 +1,5 @@
-import { type FC } from "react";
 import type React from "react";
+import { type FC } from "react";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { selectSidebarTab } from "@web/ducks/events/selectors/view.selectors";
 import { useAppSelector } from "@web/store/store.hooks";

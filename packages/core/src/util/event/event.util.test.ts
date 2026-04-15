@@ -1,5 +1,5 @@
-import { RRule, rrulestr } from "rrule";
 import { faker } from "@faker-js/faker";
+import { RRule, rrulestr } from "rrule";
 import dayjs from "@core/util/date/dayjs";
 import {
   categorizeEvents,

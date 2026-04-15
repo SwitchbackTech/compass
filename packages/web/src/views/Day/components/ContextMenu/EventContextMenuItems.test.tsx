@@ -1,6 +1,6 @@
+import { configureStore } from "@reduxjs/toolkit";
 import { Provider } from "react-redux";
 import { type BehaviorSubject } from "rxjs";
-import { configureStore } from "@reduxjs/toolkit";
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

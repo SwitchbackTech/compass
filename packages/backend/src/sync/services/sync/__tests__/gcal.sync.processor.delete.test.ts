@@ -1,6 +1,6 @@
 import { RRule } from "rrule";
 import { Categories_Recurrence } from "@core/types/event.types";
-import { type WithGcalId, type gSchema$Event } from "@core/types/gcal";
+import { type gSchema$Event, type WithGcalId } from "@core/types/gcal";
 import { categorizeEvents } from "@core/util/event/event.util";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {

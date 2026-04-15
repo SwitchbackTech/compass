@@ -1,5 +1,3 @@
-import type React from "react";
-import { useState } from "react";
 import {
   autoUpdate,
   flip,
@@ -7,6 +5,8 @@ import {
   shift,
   useFloating,
 } from "@floating-ui/react";
+import type React from "react";
+import { useState } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import {
   assembleGridEvent,

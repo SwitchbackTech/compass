@@ -1,5 +1,5 @@
 import { type Credentials, type TokenPayload } from "google-auth-library";
-import type { User } from "supertokens-node";
+import { type User } from "supertokens-node";
 import { z } from "zod";
 
 export interface Result_Auth_Compass {

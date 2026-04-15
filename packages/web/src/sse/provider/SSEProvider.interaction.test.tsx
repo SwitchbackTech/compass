@@ -1,8 +1,8 @@
+import { combineReducers, configureStore } from "@reduxjs/toolkit";
+import { render, waitFor } from "@testing-library/react";
 import { type EventEmitter2 } from "eventemitter2";
 import { act } from "react";
 import { Provider } from "react-redux";
-import { combineReducers, configureStore } from "@reduxjs/toolkit";
-import { render, waitFor } from "@testing-library/react";
 import {
   GOOGLE_REVOKED,
   IMPORT_GCAL_END,

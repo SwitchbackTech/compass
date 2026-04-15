@@ -1,4 +1,3 @@
-import { createContext, useContext, useMemo, useState } from "react";
 import {
   autoUpdate,
   flip,
@@ -11,6 +10,7 @@ import {
   useInteractions,
   useRole,
 } from "@floating-ui/react";
+import { createContext, useContext, useMemo, useState } from "react";
 import { type TooltipOptions } from "./tooltip.types";
 
 export function useTooltip({

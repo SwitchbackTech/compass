@@ -1,11 +1,11 @@
-import { type Options, RRule } from "rrule";
 import { faker } from "@faker-js/faker";
+import { type Options, RRule } from "rrule";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import {
-  type WithGcalId,
   type gSchema$Event,
   type gSchema$EventBase,
   type gSchema$EventInstance,
+  type WithGcalId,
 } from "@core/types/gcal";
 import { formatAs } from "@core/util/date/date.util";
 import dayjs from "@core/util/date/dayjs";

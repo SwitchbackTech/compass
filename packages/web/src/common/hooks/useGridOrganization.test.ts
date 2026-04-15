@@ -1,5 +1,5 @@
-import { act } from "react";
 import { renderHook, waitFor } from "@testing-library/react";
+import { act } from "react";
 import {
   CLASS_TIMED_CALENDAR_EVENT,
   DATA_EVENT_ELEMENT_ID,

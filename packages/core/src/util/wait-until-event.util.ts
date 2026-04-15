@@ -1,6 +1,6 @@
-import type { EventEmitter2 } from "eventemitter2";
+import { type EventEmitter2 } from "eventemitter2";
 import type EventEmitter from "node:events";
-import type { Server } from "node:http";
+import { type Server } from "node:http";
 
 export async function waitUntilEvent<
   Payload extends unknown[],

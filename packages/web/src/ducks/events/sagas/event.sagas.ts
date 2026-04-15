@@ -5,8 +5,9 @@
  * Do not update the Elf store from reducers or components — only sagas do this.
  * Related: docs/development/web-state-guide.md
  */
-import { normalize } from "normalizr";
+
 import { call, put, select } from "@redux-saga/core/effects";
+import { normalize } from "normalizr";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import {
   type Params_Events,
@@ -40,10 +41,10 @@ import {
   type Response_GetEventsSuccess,
 } from "@web/ducks/events/event.types";
 import {
-  EventDateUtils,
   _assembleGridEvent,
   _createOptimisticGridEvent,
   _editEvent,
+  EventDateUtils,
   normalizedEventsSchema,
 } from "@web/ducks/events/sagas/saga.util";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";

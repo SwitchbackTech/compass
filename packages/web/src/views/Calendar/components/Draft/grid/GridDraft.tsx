@@ -1,5 +1,5 @@
-import { type FC, type MouseEvent } from "react";
 import { FloatingFocusManager } from "@floating-ui/react";
+import { type FC, type MouseEvent } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import { type PartialMouseEvent } from "@web/common/types/util.types";

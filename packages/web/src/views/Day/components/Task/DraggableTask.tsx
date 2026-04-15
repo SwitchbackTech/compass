@@ -1,8 +1,8 @@
-import classNames from "classnames";
-import { useLayoutEffect, useRef } from "react";
 import { autoUpdate, inline, offset, useFloating } from "@floating-ui/react";
 import { Draggable } from "@hello-pangea/dnd";
 import { DotsSixVerticalIcon } from "@phosphor-icons/react";
+import classNames from "classnames";
+import { useLayoutEffect, useRef } from "react";
 import { type Task as ITask } from "@web/common/types/task.types";
 import { getStyle } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEvent/styled";
 import { Task } from "@web/views/Day/components/Task/Task";

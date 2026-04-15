@@ -1,5 +1,5 @@
-import React, { type FC } from "react";
 import { Draggable } from "@hello-pangea/dnd";
+import React, { type FC } from "react";
 import {
   type Categories_Event,
   type Schema_Event,

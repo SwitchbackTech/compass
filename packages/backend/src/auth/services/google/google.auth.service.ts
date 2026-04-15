@@ -16,8 +16,8 @@ import mongoService from "@backend/common/services/mongo.service";
 import EmailService from "@backend/email/email.service";
 import syncService from "@backend/sync/services/sync.service";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import userMetadataService from "@backend/user/services/user-metadata.service";
 import userService from "@backend/user/services/user.service";
+import userMetadataService from "@backend/user/services/user-metadata.service";
 import { type GoogleSignInSuccess } from "./google.auth.types";
 
 const logger = Logger("app:auth.google.service");

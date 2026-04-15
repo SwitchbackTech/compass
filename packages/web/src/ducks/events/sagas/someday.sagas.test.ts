@@ -1,6 +1,6 @@
+import { configureStore } from "@reduxjs/toolkit";
 import { type AnyAction } from "redux";
 import { runSaga } from "redux-saga";
-import { configureStore } from "@reduxjs/toolkit";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";

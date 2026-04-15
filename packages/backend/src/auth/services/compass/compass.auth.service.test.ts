@@ -1,6 +1,6 @@
+import { faker } from "@faker-js/faker";
 import supertokens from "supertokens-node";
 import Session from "supertokens-node/recipe/session";
-import { faker } from "@faker-js/faker";
 import compassAuthService from "./compass.auth.service";
 
 jest.mock("supertokens-node/recipe/session", () => ({

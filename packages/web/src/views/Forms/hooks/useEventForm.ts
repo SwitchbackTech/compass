@@ -1,10 +1,10 @@
 import {
-  type OpenChangeReason,
-  type UseFloatingOptions,
   autoUpdate,
   flip,
+  type OpenChangeReason,
   offset,
   shift,
+  type UseFloatingOptions,
   useDismiss,
   useFloating,
   useInteractions,

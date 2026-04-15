@@ -1,6 +1,5 @@
 import { type Handler, type NextFunction, type Response } from "express";
 import mergeWith from "lodash.mergewith";
-import { randomUUID } from "node:crypto";
 import { type SessionRequest } from "supertokens-node/framework/express";
 import {
   type ExpressRequest,
@@ -21,6 +20,7 @@ import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/facto
 import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 import { ENV } from "@backend/common/constants/env.constants";
 import { type SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
+import { randomUUID } from "node:crypto";
 
 export interface CompassTestState {
   events: ReturnType<typeof mockAndCategorizeGcalEvents>;

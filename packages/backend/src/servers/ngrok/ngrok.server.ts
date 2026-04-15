@@ -1,10 +1,10 @@
-import EventEmitter from "node:events";
-import type { Server } from "node:http";
-import type { Server as HttpsServer } from "node:https";
-import type { AddressInfo } from "node:net";
-import type { Listener } from "@ngrok/ngrok";
+import { type Listener } from "@ngrok/ngrok";
 import { isDev } from "@core/util/env.util";
 import { ENV } from "@backend/common/constants/env.constants";
+import EventEmitter from "node:events";
+import { type Server } from "node:http";
+import { type Server as HttpsServer } from "node:https";
+import { type AddressInfo } from "node:net";
 
 const getServerUri = (httpServer: Server | HttpsServer) => {
   const port = (httpServer.address() as AddressInfo).port;

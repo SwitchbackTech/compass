@@ -1,5 +1,3 @@
-import type React from "react";
-import { useState } from "react";
 import {
   autoUpdate,
   flip,
@@ -7,6 +5,8 @@ import {
   shift,
   useFloating,
 } from "@floating-ui/react";
+import type React from "react";
+import { useState } from "react";
 import { type Task } from "../../../../common/types/task.types";
 import { useTasks } from "../../hooks/tasks/useTasks";
 import { getTaskIdFromElement } from "../../util/task.locate";
