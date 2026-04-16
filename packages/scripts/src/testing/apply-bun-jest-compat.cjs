@@ -112,6 +112,37 @@ function autoMockValue(bunJest, value, seen) {
   return value;
 }
 
+function mergeFactoryResultWithActual(jestCompat, moduleName, factoryResult) {
+  if (
+    !factoryResult ||
+    typeof factoryResult !== "object" ||
+    Array.isArray(factoryResult)
+  ) {
+    return factoryResult;
+  }
+
+  let actualModule = {};
+
+  try {
+    const actual = jestCompat.requireActual(moduleName);
+
+    if (actual && typeof actual === "object") {
+      actualModule = actual;
+    }
+  } catch {
+    // Some virtual or intentionally missing modules do not have an actual module
+  }
+
+  return {
+    ...actualModule,
+    __esModule:
+      factoryResult.__esModule ??
+      actualModule.__esModule ??
+      true,
+    ...factoryResult,
+  };
+}
+
 function applyBunJestCompat(bunJest, bunMock) {
   const jestCompat = bunJest;
 
@@ -142,7 +173,7 @@ function applyBunJestCompat(bunJest, bunMock) {
   jestCompat.mock = (moduleName, factory) => {
     const { resolvedModule } = resolveModule(moduleName);
     const moduleFactoryResult = factory
-      ? factory()
+      ? mergeFactoryResultWithActual(jestCompat, moduleName, factory())
       : {
           __esModule: true,
           ...jestCompat.createMockFromModule(moduleName),
