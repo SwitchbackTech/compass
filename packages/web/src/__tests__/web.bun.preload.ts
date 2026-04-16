@@ -334,6 +334,8 @@ for (const key of Object.getOwnPropertyNames(window)) {
 }
 
 for (const key of [
+  "addEventListener",
+  "dispatchEvent",
   "Event",
   "CustomEvent",
   "EventTarget",
@@ -343,6 +345,7 @@ for (const key of [
   "FocusEvent",
   "InputEvent",
   "PointerEvent",
+  "removeEventListener",
   "MutationObserver",
   "XMLHttpRequest",
 ]) {
@@ -356,3 +359,7 @@ for (const key of [
     }
   }
 }
+
+globalThis.addEventListener = window.addEventListener.bind(window);
+globalThis.removeEventListener = window.removeEventListener.bind(window);
+globalThis.dispatchEvent = window.dispatchEvent.bind(window);

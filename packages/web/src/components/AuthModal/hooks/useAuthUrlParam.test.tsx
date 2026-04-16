@@ -4,28 +4,20 @@ import { useAuthUrlParam } from "./useAuthUrlParam";
 // Helper to set up window.location for tests
 const setWindowLocation = (url: string) => {
   const urlObj = new URL(url, "http://localhost");
-  Object.defineProperty(window, "location", {
-    value: {
-      pathname: urlObj.pathname,
-      search: urlObj.search,
-      hash: urlObj.hash,
-    },
-    writable: true,
-  });
+  window.history.pushState({}, "", urlObj);
 };
 
 // Mock history.replaceState
 const mockReplaceState = jest.fn();
-Object.defineProperty(window, "history", {
-  value: {
-    replaceState: mockReplaceState,
-  },
-  writable: true,
-});
 
 describe("useAuthUrlParam", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    Object.defineProperty(window.history, "replaceState", {
+      value: mockReplaceState,
+      writable: true,
+      configurable: true,
+    });
     // Reset to default location
     setWindowLocation("/");
   });

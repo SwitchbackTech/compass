@@ -4,15 +4,7 @@ import { useAuthFeatureFlag } from "./useAuthFeatureFlag";
 
 const setWindowLocation = (url: string) => {
   const urlObj = new URL(url, "http://localhost");
-  Object.defineProperty(window, "location", {
-    value: {
-      pathname: urlObj.pathname,
-      search: urlObj.search,
-      hash: urlObj.hash,
-    },
-    writable: true,
-    configurable: true,
-  });
+  window.history.pushState({}, "", urlObj);
 };
 
 describe("useAuthFeatureFlag", () => {

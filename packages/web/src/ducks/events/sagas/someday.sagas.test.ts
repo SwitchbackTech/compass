@@ -304,10 +304,12 @@ describe("deleteSomedayEvent saga", () => {
     typeof eventRepositoryUtil.getEventRepository
   >;
   let handleErrorSpy: jest.SpiedFunction<typeof eventUtil.handleError>;
+  let mockDeleteEvent: jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
     (session.doesSessionExist as jest.Mock).mockResolvedValue(true);
+    mockDeleteEvent = jest.fn().mockResolvedValue(undefined);
 
     handleErrorSpy = jest
       .spyOn(eventUtil, "handleError")
@@ -319,7 +321,7 @@ describe("deleteSomedayEvent saga", () => {
         create: jest.fn(),
         get: jest.fn(),
         edit: jest.fn(),
-        delete: jest.fn().mockRejectedValue(new Error("delete failed")),
+        delete: mockDeleteEvent,
         reorder: jest.fn(),
       } as unknown as EventRepository);
 
@@ -373,6 +375,8 @@ describe("deleteSomedayEvent saga", () => {
 
   it("restores the someday list id when repository delete fails", async () => {
     const eventId = "delete-fail-evt";
+    mockDeleteEvent.mockRejectedValue(new Error("delete failed"));
+
     await runSaga(
       {
         dispatch: (action) => {
@@ -391,15 +395,6 @@ describe("deleteSomedayEvent saga", () => {
 
   it("removes event entity and someday list ID on successful delete", async () => {
     const eventId = "delete-fail-evt";
-
-    // Override to success (beforeEach sets up rejection by default)
-    getEventRepositorySpy.mockReturnValue({
-      create: jest.fn(),
-      get: jest.fn(),
-      edit: jest.fn(),
-      delete: jest.fn().mockResolvedValue(undefined),
-      reorder: jest.fn(),
-    } as unknown as EventRepository);
 
     await runSaga(
       {

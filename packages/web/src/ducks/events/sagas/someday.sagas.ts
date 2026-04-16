@@ -2,7 +2,7 @@ import { normalize } from "normalizr";
 import { call, put } from "redux-saga/effects";
 import { type Payload_Order, type Schema_Event } from "@core/types/event.types";
 import { session } from "@web/common/classes/Session";
-import { getEventRepository } from "@web/common/repositories/event/event.repository.util";
+import * as eventRepositoryUtil from "@web/common/repositories/event/event.repository.util";
 import { type Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import { type Schema_OptimisticEvent } from "@web/common/types/web.event.types";
 import { handleError } from "@web/common/utils/event/event.util";
@@ -91,7 +91,7 @@ export function* deleteSomedayEvent({
     const sessionExists = (yield call(() =>
       session.doesSessionExist(),
     )) as boolean;
-    const repository = getEventRepository(sessionExists);
+    const repository = eventRepositoryUtil.getEventRepository(sessionExists);
     yield call(() => repository.delete(payload._id, payload.applyTo));
   } catch (error) {
     yield put(
@@ -114,7 +114,7 @@ export function* getSomedayEvents({ payload }: Action_GetEvents): Generator {
     const sessionExists = (yield call(() =>
       session.doesSessionExist(),
     )) as boolean;
-    const repository = getEventRepository(sessionExists);
+    const repository = eventRepositoryUtil.getEventRepository(sessionExists);
 
     const res = (yield call(() =>
       repository.get({
@@ -160,7 +160,7 @@ export function* reorderSomedayEvents({
     const sessionExists = (yield call(() =>
       session.doesSessionExist(),
     )) as boolean;
-    const repository = getEventRepository(sessionExists);
+    const repository = eventRepositoryUtil.getEventRepository(sessionExists);
     yield call(() => repository.reorder(payload as Payload_Order[]));
   } catch (error) {
     yield put(

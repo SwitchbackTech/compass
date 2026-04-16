@@ -66,7 +66,7 @@ describe("app-init.util", () => {
       // Should not throw - just return the error
       await expect(
         initializeDatabaseWithErrorHandling(),
-      ).resolves.not.toThrow();
+      ).resolves.toEqual({ dbInitError: dbError });
     });
   });
 

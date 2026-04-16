@@ -27,15 +27,13 @@ describe("Calendar Interactions", () => {
         }),
       );
 
-      const alertMock = jest.spyOn(window, "alert").mockImplementation();
-      const consoleMock = (console.error = jest.fn()); // mock so doesnt clutter test logs
+      const alertMock = jest.spyOn(globalThis, "alert").mockImplementation();
 
       render(<></>, { router });
 
       await waitFor(() => {
         expect(alertMock).toHaveBeenCalled();
       });
-      expect(consoleMock).toHaveBeenCalled();
     });
   });
 

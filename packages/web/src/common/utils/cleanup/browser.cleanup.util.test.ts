@@ -79,7 +79,7 @@ describe("browser.cleanup.util", () => {
 
       mockSignOut.mockRejectedValueOnce(new Error("Sign out failed"));
 
-      await expect(clearAllBrowserStorage()).resolves.not.toThrow();
+      await expect(clearAllBrowserStorage()).resolves.toBeUndefined();
       expect(localStorage.getItem("compass.test")).toBeNull();
       expect(warnSpy).toHaveBeenCalledWith(
         "Failed to sign out during browser cleanup:",
@@ -90,7 +90,7 @@ describe("browser.cleanup.util", () => {
 
     it("should not fail when no Compass storage exists", async () => {
       localStorage.setItem("other.key", "value");
-      await expect(clearAllBrowserStorage()).resolves.not.toThrow();
+      await expect(clearAllBrowserStorage()).resolves.toBeUndefined();
       expect(localStorage.getItem("other.key")).toBe("value");
     });
 
@@ -169,7 +169,7 @@ describe("browser.cleanup.util", () => {
         });
 
         // Should complete without errors
-        await expect(clearAllBrowserStorage()).resolves.not.toThrow();
+        await expect(clearAllBrowserStorage()).resolves.toBeUndefined();
       });
 
       it("should handle IndexedDB deletion error", async () => {
@@ -225,7 +225,7 @@ describe("browser.cleanup.util", () => {
           configurable: true,
         });
 
-        await expect(clearAllBrowserStorage()).resolves.not.toThrow();
+        await expect(clearAllBrowserStorage()).resolves.toBeUndefined();
         expect(consoleWarnSpy).toHaveBeenCalledWith(
           "IndexedDB deletion blocked - close all Compass tabs and try again",
         );

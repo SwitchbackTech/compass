@@ -146,13 +146,6 @@ describe("useLoadProfile", () => {
   });
 
   it("shows a login toast when profile fetch returns unauthorized", async () => {
-    const assignMock = jest.fn();
-    const originalLocation = window.location;
-    Object.defineProperty(window, "location", {
-      value: { ...originalLocation, assign: assignMock },
-      configurable: true,
-    });
-
     const getProfileSpy = jest.spyOn(UserApi, "getProfile");
     server.use(
       rest.get(`${ENV_WEB.API_BASEURL}/user/profile`, (_req, res, ctx) => {
@@ -188,9 +181,5 @@ describe("useLoadProfile", () => {
     expect(toastElement.props.toastId).toBe("session-expired-api");
 
     getProfileSpy.mockRestore();
-    Object.defineProperty(window, "location", {
-      value: originalLocation,
-      configurable: true,
-    });
   });
 });
