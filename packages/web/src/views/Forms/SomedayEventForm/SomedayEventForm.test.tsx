@@ -23,7 +23,6 @@ import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm/SomedayEvent
 jest.mock("@web/ducks/events/event.api");
 
 const mockDispatch = jest.fn();
-const mockConfirm = jest.spyOn(window, "confirm");
 const mockOnClose = jest.fn();
 const mockOnMigrate = jest.fn();
 const mockOnSubmit = jest.fn();
@@ -33,6 +32,7 @@ const mockDuplicateEvent = jest.fn();
 const isDraft = true;
 const isExistingEvent = true;
 let dispatchSpy: jest.Mock;
+let mockConfirm: jest.Spied<typeof window.confirm>;
 
 const getModifierShortcut = (key: string) =>
   resolveModifier("Mod") === "Meta"
@@ -46,6 +46,7 @@ const getCtrlMetaArrowShortcut = (arrowWithBraces: string) =>
 describe("SomedayEventForm Hotkeys", () => {
   beforeEach(() => {
     jest.resetAllMocks();
+    mockConfirm = jest.spyOn(window, "confirm").mockImplementation(() => false);
     jest.spyOn(window, "alert");
     dispatchSpy = jest.fn();
     jest.spyOn(storeHooks, "useAppDispatch").mockReturnValue(dispatchSpy);
