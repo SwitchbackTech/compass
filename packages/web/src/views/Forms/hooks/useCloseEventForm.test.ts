@@ -3,7 +3,9 @@ import { closeFloatingAtCursor } from "@web/common/hooks/useOpenAtCursor";
 import { resetActiveEvent, resetDraft } from "@web/store/events";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 
-jest.mock("@web/common/hooks/useOpenAtCursor");
+jest.mock("@web/common/hooks/useOpenAtCursor", () => ({
+  closeFloatingAtCursor: jest.fn(),
+}));
 jest.mock("@web/store/events", () => ({
   resetDraft: jest.fn(),
   resetActiveEvent: jest.fn(),
