@@ -348,6 +348,9 @@ function applyBunJestCompat(bunJest, bunMock) {
     syncWindowTimerGlobals();
     return bunJest;
   };
+  jestCompat.getTimerCount = () => {
+    return fakeClock?.countTimers?.() ?? 0;
+  };
   jestCompat.setSystemTime = (value) => {
     if (fakeClock) {
       fakeClock.setSystemTime(value);
