@@ -1,5 +1,5 @@
 import { JSDOM } from "jsdom";
-import { jest, mock } from "bun:test";
+import { afterEach, jest, mock } from "bun:test";
 import { createRequire } from "node:module";
 import ts from "typescript";
 import { mockNodeModules } from "./__mocks__/mock.setup";
@@ -316,6 +316,8 @@ Bun.plugin({
 });
 
 await import("./web.preload");
+const { cleanup } = await import("@testing-library/react");
+afterEach(() => cleanup());
 
 for (const key of Object.getOwnPropertyNames(window)) {
   if (key in globalThis) {

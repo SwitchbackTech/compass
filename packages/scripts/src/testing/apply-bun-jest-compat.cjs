@@ -47,6 +47,7 @@ function resolveModule(moduleName) {
 
 const actualModules = new Map();
 let fakeClock = null;
+const replacedProperties = new Set();
 
 function syncWindowTimerGlobals() {
   if (!globalThis.window) {
@@ -241,6 +242,13 @@ function mergeFactoryResultWithActual(jestCompat, moduleName, factoryResult) {
 
 function applyBunJestCompat(bunJest, bunMock) {
   const jestCompat = bunJest;
+  const originalRestoreAllMocks = bunJest.restoreAllMocks?.bind(bunJest);
+
+  function restoreReplacedProperties() {
+    for (const replacedProperty of Array.from(replacedProperties)) {
+      replacedProperty.restore();
+    }
+  }
 
   jestCompat.requireActual = (moduleName) => {
     const { callerRequire, resolvedModule } = resolveModule(moduleName);
@@ -267,6 +275,44 @@ function applyBunJestCompat(bunJest, bunMock) {
   jestCompat.mocked = (item) => item;
   jestCompat.doMock = (moduleName, factory) =>
     jestCompat.mock(moduleName, factory);
+  jestCompat.replaceProperty = (target, propertyKey, value) => {
+    const ownDescriptor = Object.getOwnPropertyDescriptor(target, propertyKey);
+    const prototype = Object.getPrototypeOf(target);
+    const inheritedDescriptor =
+      ownDescriptor || !prototype
+        ? undefined
+        : Object.getOwnPropertyDescriptor(prototype, propertyKey);
+    const existingDescriptor = ownDescriptor ?? inheritedDescriptor;
+    let currentValue = value;
+
+    const replacedProperty = {
+      replaceValue(nextValue) {
+        currentValue = nextValue;
+        Object.defineProperty(target, propertyKey, {
+          configurable: true,
+          enumerable: existingDescriptor?.enumerable ?? true,
+          writable: true,
+          value: currentValue,
+        });
+        return replacedProperty;
+      },
+      restore() {
+        if (ownDescriptor) {
+          Object.defineProperty(target, propertyKey, ownDescriptor);
+        } else if (inheritedDescriptor) {
+          delete target[propertyKey];
+        } else {
+          delete target[propertyKey];
+        }
+        replacedProperties.delete(replacedProperty);
+      },
+    };
+
+    replacedProperty.replaceValue(value);
+    replacedProperties.add(replacedProperty);
+
+    return replacedProperty;
+  };
   jestCompat.useFakeTimers = () => {
     fakeClock?.uninstall();
     fakeClock = FakeTimers.withGlobal(globalThis).install({
@@ -320,7 +366,12 @@ function applyBunJestCompat(bunJest, bunMock) {
   };
   jestCompat.resetAllMocks = () => {
     bunJest.clearAllMocks();
-    bunJest.restoreAllMocks();
+    jestCompat.restoreAllMocks();
+    return bunJest;
+  };
+  jestCompat.restoreAllMocks = () => {
+    originalRestoreAllMocks?.();
+    restoreReplacedProperties();
     return bunJest;
   };
   jestCompat.resetModules = () => {
