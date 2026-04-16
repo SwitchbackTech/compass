@@ -2,6 +2,11 @@ import { JSDOM } from "jsdom";
 import { jest, mock } from "bun:test";
 import { createRequire } from "node:module";
 import ts from "typescript";
+import { mockNodeModules } from "./__mocks__/mock.setup";
+
+declare global {
+  var __webReapplyModuleMocks: (() => void) | undefined;
+}
 
 const require = createRequire(import.meta.path);
 const { applyBunJestCompat } = require(
@@ -13,7 +18,19 @@ const { applyBunJestCompat } = require(
   ) => void;
 };
 const TEST_GLOBALS_IMPORT =
-  'import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest, mock, spyOn, test } from "@web/__tests__/bun-test-shim";\nimport { createRequire } from "node:module";\nconst require = createRequire(import.meta.url);';
+  'import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest, mock, spyOn, test } from "@web/__tests__/bun-test-shim";\nimport { createRequire } from "node:module";\nconst require = createRequire(import.meta.url);\nafterAll(() => {\n  mock.restore();\n  globalThis.__webReapplyModuleMocks?.();\n});';
+const EMPTY_STYLE_STUB_PATH = new URL(
+  "./__mocks__/asset-empty-style.js",
+  import.meta.url,
+).pathname;
+const FILE_STUB_PATH = new URL(
+  "./__mocks__/asset-file-stub.js",
+  import.meta.url,
+).pathname;
+const SVG_STUB_PATH = new URL(
+  "./__mocks__/asset-svg-stub.tsx",
+  import.meta.url,
+).pathname;
 
 function getImportText(sourceFile: ts.SourceFile, node: ts.Node) {
   return sourceFile.text.slice(node.getFullStart(), node.getEnd());
@@ -88,7 +105,7 @@ function getImportStatements(
       return { runtimeImports, typeOnlyImports };
     }
 
-    runtimeImports.push(`require(${moduleSpecifier});`);
+    runtimeImports.push(`await import(${moduleSpecifier});`);
     return { runtimeImports, typeOnlyImports };
   }
 
@@ -100,7 +117,7 @@ function getImportStatements(
   if (importClause.namedBindings) {
     if (ts.isNamespaceImport(importClause.namedBindings)) {
       runtimeImports.push(
-        `const ${importClause.namedBindings.name.text} = require(${moduleSpecifier});`,
+        `const ${importClause.namedBindings.name.text} = await import(${moduleSpecifier});`,
       );
       return { runtimeImports, typeOnlyImports };
     }
@@ -132,7 +149,9 @@ function getImportStatements(
 
   if (importClause.name || runtimeImportSpecifiers.length > 0) {
     const moduleBinding = `__web_test_import_${index}__`;
-    runtimeImports.push(`const ${moduleBinding} = require(${moduleSpecifier});`);
+    runtimeImports.push(
+      `const ${moduleBinding} = await import(${moduleSpecifier});`,
+    );
 
     if (importClause.name) {
       runtimeImports.push(
@@ -185,14 +204,17 @@ function rewriteTestModule(source: string, path: string) {
     getScriptKind(path),
   );
   const output: string[] = [TEST_GLOBALS_IMPORT];
+  const preImportStatements: string[] = [];
   const typeOnlyImports: string[] = [];
   const runtimeImports: string[] = [];
   const hoistedJestMocks: string[] = [];
   const otherStatements: string[] = [];
   let importIndex = 0;
+  let sawImport = false;
 
   for (const statement of sourceFile.statements) {
     if (ts.isImportDeclaration(statement)) {
+      sawImport = true;
       const importStatements = getImportStatements(statement, importIndex);
       importIndex += 1;
       typeOnlyImports.push(...importStatements.typeOnlyImports);
@@ -206,11 +228,17 @@ function rewriteTestModule(source: string, path: string) {
       continue;
     }
 
+    if (!sawImport) {
+      preImportStatements.push(getImportText(sourceFile, statement));
+      continue;
+    }
+
     otherStatements.push(getImportText(sourceFile, statement));
   }
 
   output.push(
     ...typeOnlyImports,
+    ...preImportStatements,
     ...hoistedJestMocks,
     ...runtimeImports,
     ...otherStatements,
@@ -221,6 +249,7 @@ function rewriteTestModule(source: string, path: string) {
 
 applyBunJestCompat(jest, mock);
 globalThis.jest = jest;
+globalThis.__webReapplyModuleMocks = mockNodeModules;
 
 const scratchWindow = new JSDOM("<!DOCTYPE html><html><body></body></html>", {
   pretendToBeVisual: true,
@@ -232,6 +261,18 @@ globalThis.XMLHttpRequest ??= scratchWindow.XMLHttpRequest;
 Bun.plugin({
   name: "web-test-bun-runtime",
   setup(build) {
+    build.onResolve({ filter: /\.(css|less)$/ }, () => ({
+      path: EMPTY_STYLE_STUB_PATH,
+    }));
+
+    build.onResolve({ filter: /\.(jpe?g|png|gif)$/i }, () => ({
+      path: FILE_STUB_PATH,
+    }));
+
+    build.onResolve({ filter: /\.svg$/ }, () => ({
+      path: SVG_STUB_PATH,
+    }));
+
     build.onLoad(
       {
         filter: /\/packages\/web\/src\/.*\.(test|spec)\.[jt]sx?$/,

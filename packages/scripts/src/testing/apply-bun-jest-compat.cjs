@@ -3,6 +3,7 @@
 const { createRequire } = require("node:module");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
+const FakeTimers = require("@sinonjs/fake-timers");
 
 const compatFilePath = __filename;
 
@@ -45,6 +46,29 @@ function resolveModule(moduleName) {
 }
 
 const actualModules = new Map();
+let fakeClock = null;
+
+function syncWindowTimerGlobals() {
+  if (!globalThis.window) {
+    return;
+  }
+
+  for (const key of [
+    "Date",
+    "clearImmediate",
+    "clearInterval",
+    "clearTimeout",
+    "requestAnimationFrame",
+    "cancelAnimationFrame",
+    "setImmediate",
+    "setInterval",
+    "setTimeout",
+  ]) {
+    if (key in globalThis) {
+      globalThis.window[key] = globalThis[key];
+    }
+  }
+}
 
 function autoMockValue(bunJest, value, seen) {
   if (value === null || value === undefined) {
@@ -64,7 +88,32 @@ function autoMockValue(bunJest, value, seen) {
   }
 
   if (primitiveType === "function") {
-    return bunJest.fn(value);
+    if (seen.has(value)) {
+      return seen.get(value);
+    }
+
+    const mockedFunction = bunJest.fn(value);
+    seen.set(value, mockedFunction);
+
+    for (const key of Reflect.ownKeys(value)) {
+      if (key === "length" || key === "name" || key === "prototype") {
+        continue;
+      }
+
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+
+      if (descriptor?.get || descriptor?.set) {
+        continue;
+      }
+
+      try {
+        mockedFunction[key] = autoMockValue(bunJest, value[key], seen);
+      } catch {
+        // ignore TDZ / non-readable props
+      }
+    }
+
+    return mockedFunction;
   }
 
   if (typeof value === "object") {
@@ -92,7 +141,7 @@ function autoMockValue(bunJest, value, seen) {
     const out = {};
     seen.set(value, out);
 
-    for (const key in value) {
+    for (const key of Reflect.ownKeys(value)) {
       const descriptor = Object.getOwnPropertyDescriptor(value, key);
 
       if (descriptor?.get || descriptor?.set) {
@@ -113,14 +162,6 @@ function autoMockValue(bunJest, value, seen) {
 }
 
 function mergeFactoryResultWithActual(jestCompat, moduleName, factoryResult) {
-  if (
-    !factoryResult ||
-    typeof factoryResult !== "object" ||
-    Array.isArray(factoryResult)
-  ) {
-    return factoryResult;
-  }
-
   let actualModule = {};
 
   try {
@@ -133,14 +174,69 @@ function mergeFactoryResultWithActual(jestCompat, moduleName, factoryResult) {
     // Some virtual or intentionally missing modules do not have an actual module
   }
 
-  return {
-    ...actualModule,
-    __esModule:
-      factoryResult.__esModule ??
-      actualModule.__esModule ??
-      true,
-    ...factoryResult,
-  };
+  if (
+    !factoryResult ||
+    typeof factoryResult === "function"
+  ) {
+    if (actualModule && typeof actualModule === "object" && "default" in actualModule) {
+      return {
+        ...actualModule,
+        __esModule: actualModule.__esModule ?? true,
+        default: factoryResult,
+      };
+    }
+
+    return factoryResult;
+  }
+
+  if (Array.isArray(factoryResult) || typeof factoryResult !== "object") {
+    return factoryResult;
+  }
+
+  const mergedModule = { ...actualModule };
+  const factoryDescriptors = Object.getOwnPropertyDescriptors(factoryResult);
+  const esModuleDescriptor =
+    factoryDescriptors.__esModule ??
+    Object.getOwnPropertyDescriptor(actualModule, "__esModule") ?? {
+      configurable: true,
+      enumerable: true,
+      value: true,
+      writable: true,
+    };
+
+  delete factoryDescriptors.__esModule;
+
+  for (const [key, descriptor] of Object.entries(factoryDescriptors)) {
+    Object.defineProperty(mergedModule, key, {
+      configurable: true,
+      enumerable: descriptor.enumerable ?? true,
+      ...(descriptor.get || descriptor.set
+        ? {
+            get: descriptor.get,
+            set: descriptor.set,
+          }
+        : {
+            value: descriptor.value,
+            writable: descriptor.writable ?? true,
+          }),
+    });
+  }
+
+  Object.defineProperty(mergedModule, "__esModule", {
+    configurable: true,
+    enumerable: esModuleDescriptor.enumerable ?? true,
+    ...(esModuleDescriptor.get || esModuleDescriptor.set
+      ? {
+          get: esModuleDescriptor.get,
+          set: esModuleDescriptor.set,
+        }
+      : {
+          value: esModuleDescriptor.value,
+          writable: esModuleDescriptor.writable ?? true,
+        }),
+  });
+
+  return mergedModule;
 }
 
 function applyBunJestCompat(bunJest, bunMock) {
@@ -169,6 +265,71 @@ function applyBunJestCompat(bunJest, bunMock) {
   };
 
   jestCompat.mocked = (item) => item;
+  jestCompat.doMock = (moduleName, factory) =>
+    jestCompat.mock(moduleName, factory);
+  jestCompat.useFakeTimers = () => {
+    fakeClock?.uninstall();
+    fakeClock = FakeTimers.withGlobal(globalThis).install({
+      now: Date.now(),
+      shouldAdvanceTime: false,
+    });
+    syncWindowTimerGlobals();
+    return bunJest;
+  };
+  jestCompat.useRealTimers = () => {
+    fakeClock?.uninstall();
+    fakeClock = null;
+    syncWindowTimerGlobals();
+    return bunJest;
+  };
+  jestCompat.advanceTimersByTime = (ms) => {
+    fakeClock?.tick(ms);
+    syncWindowTimerGlobals();
+    return bunJest;
+  };
+  jestCompat.runAllTimers = () => {
+    fakeClock?.runAll();
+    syncWindowTimerGlobals();
+    return bunJest;
+  };
+  jestCompat.runOnlyPendingTimers = () => {
+    fakeClock?.runToLast();
+    syncWindowTimerGlobals();
+    return bunJest;
+  };
+  jestCompat.clearAllTimers = () => {
+    fakeClock?.reset();
+    syncWindowTimerGlobals();
+    return bunJest;
+  };
+  jestCompat.setSystemTime = (value) => {
+    if (fakeClock) {
+      fakeClock.setSystemTime(value);
+      syncWindowTimerGlobals();
+      return bunJest;
+    }
+
+    return bunJest.setSystemTime(value);
+  };
+  jestCompat.now = () => {
+    if (fakeClock) {
+      return fakeClock.now;
+    }
+
+    return bunJest.now();
+  };
+  jestCompat.resetAllMocks = () => {
+    bunJest.clearAllMocks();
+    bunJest.restoreAllMocks();
+    return bunJest;
+  };
+  jestCompat.resetModules = () => {
+    bunMock.restore();
+    return bunJest;
+  };
+  jestCompat.isolateModulesAsync = async (callback) => {
+    return await callback();
+  };
 
   jestCompat.mock = (moduleName, factory) => {
     const { resolvedModule } = resolveModule(moduleName);

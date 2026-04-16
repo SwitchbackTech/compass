@@ -1,16 +1,24 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { act } from "react";
-import { useVersionCheck } from "@web/common/hooks/useVersionCheck";
 
 let mockIsDev = false;
-jest.mock("@web/common/constants/env.constants", () => ({
-  get IS_DEV() {
-    return mockIsDev;
-  },
-}));
 
 const MIN_HIDDEN_DURATION_MS = 30_000;
 const BACKUP_CHECK_INTERVAL_MS = 5 * 60 * 1000;
+
+async function renderVersionCheckHook() {
+  jest.mock("@web/common/constants/env.constants", () => ({
+    IS_DEV: mockIsDev,
+  }));
+
+  const moduleUrl = new URL(
+    `./useVersionCheck.ts?test=${Math.random().toString(36).slice(2)}`,
+    import.meta.url,
+  );
+  const { useVersionCheck } = await import(moduleUrl.href);
+
+  return renderHook(() => useVersionCheck());
+}
 
 describe("useVersionCheck", () => {
   let visibilityState = "visible";
@@ -47,7 +55,7 @@ describe("useVersionCheck", () => {
   });
 
   it("checks version on initial mount", async () => {
-    renderHook(() => useVersionCheck());
+    await renderVersionCheckHook();
     await flushVersionCheckAsync();
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
@@ -65,7 +73,7 @@ describe("useVersionCheck", () => {
     const addEventListenerSpy = jest.spyOn(document, "addEventListener");
     const setIntervalSpy = jest.spyOn(window, "setInterval");
 
-    renderHook(() => useVersionCheck());
+    await renderVersionCheckHook();
     await flushVersionCheckAsync();
 
     expect(global.fetch).not.toHaveBeenCalled();
@@ -88,7 +96,7 @@ describe("useVersionCheck", () => {
       json: async () => ({ version: "1.0.0" }),
     }) as typeof fetch;
 
-    const { result } = renderHook(() => useVersionCheck());
+    const { result } = await renderVersionCheckHook();
 
     await flushVersionCheckAsync();
 
@@ -103,7 +111,7 @@ describe("useVersionCheck", () => {
       json: async () => ({ version: "dev" }),
     }) as typeof fetch;
 
-    const { result } = renderHook(() => useVersionCheck());
+    const { result } = await renderVersionCheckHook();
 
     await flushVersionCheckAsync();
 
@@ -119,7 +127,7 @@ describe("useVersionCheck", () => {
       .fn()
       .mockRejectedValue(new Error("Network down")) as typeof fetch;
 
-    const { result } = renderHook(() => useVersionCheck());
+    const { result } = await renderVersionCheckHook();
 
     await flushVersionCheckAsync();
 
@@ -142,7 +150,7 @@ describe("useVersionCheck", () => {
       json: async () => ({ version: 123 }),
     }) as typeof fetch;
 
-    const { result } = renderHook(() => useVersionCheck());
+    const { result } = await renderVersionCheckHook();
 
     await flushVersionCheckAsync();
 
@@ -153,7 +161,7 @@ describe("useVersionCheck", () => {
   });
 
   it("checks when tab becomes visible after being hidden long enough", async () => {
-    renderHook(() => useVersionCheck());
+    await renderVersionCheckHook();
     await flushVersionCheckAsync();
 
     (global.fetch as jest.Mock).mockClear();
@@ -170,7 +178,7 @@ describe("useVersionCheck", () => {
   });
 
   it("does not check when tab becomes visible after a short hide", async () => {
-    renderHook(() => useVersionCheck());
+    await renderVersionCheckHook();
     await flushVersionCheckAsync();
 
     (global.fetch as jest.Mock).mockClear();
@@ -186,11 +194,11 @@ describe("useVersionCheck", () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
-  it("cleans up the visibility listener on unmount", () => {
+  it("cleans up the visibility listener on unmount", async () => {
     const addEventListenerSpy = jest.spyOn(document, "addEventListener");
     const removeEventListenerSpy = jest.spyOn(document, "removeEventListener");
 
-    const { unmount } = renderHook(() => useVersionCheck());
+    const { unmount } = await renderVersionCheckHook();
 
     const handler = addEventListenerSpy.mock.calls.find(
       ([eventName]) => eventName === "visibilitychange",
@@ -208,7 +216,7 @@ describe("useVersionCheck", () => {
   });
 
   it("runs the backup poll on the interval", async () => {
-    renderHook(() => useVersionCheck());
+    await renderVersionCheckHook();
     await flushVersionCheckAsync();
 
     (global.fetch as jest.Mock).mockClear();
@@ -226,7 +234,7 @@ describe("useVersionCheck", () => {
       resolveFetch = resolve;
     });
 
-    renderHook(() => useVersionCheck());
+    await renderVersionCheckHook();
     await flushVersionCheckAsync();
 
     global.fetch = jest.fn().mockReturnValue(fetchPromise) as typeof fetch;

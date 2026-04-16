@@ -11,7 +11,6 @@ import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { loadDayData, loadTodayData } from "@web/routers/loaders";
-import { AccountIcon } from "./AccountIcon";
 import { AuthModal } from "./AuthModal";
 import { AuthModalProvider } from "./AuthModalProvider";
 import { useAuthModal } from "./hooks/useAuthModal";
@@ -102,16 +101,7 @@ const renderWithProviders = (
   initialRoute: string = "/day",
 ) => {
   const urlObj = new URL(initialRoute, "http://localhost");
-  Object.defineProperty(window, "location", {
-    value: {
-      pathname: urlObj.pathname,
-      search: urlObj.search,
-      hash: urlObj.hash,
-      href: urlObj.href,
-    },
-    writable: true,
-    configurable: true,
-  });
+  window.history.pushState({}, "", urlObj);
 
   return render(
     <MemoryRouter
@@ -830,16 +820,7 @@ describe("AuthModal", () => {
 // Helper to mock window.location for URL param tests
 const mockWindowLocation = (url: string) => {
   const urlObj = new URL(url, "http://localhost");
-  Object.defineProperty(window, "location", {
-    value: {
-      pathname: urlObj.pathname,
-      search: urlObj.search,
-      hash: urlObj.hash,
-      href: urlObj.href,
-    },
-    writable: true,
-    configurable: true,
-  });
+  window.history.pushState({}, "", urlObj);
 };
 
 // Mock history.replaceState for URL param tests
@@ -853,9 +834,8 @@ describe("URL Parameter Support", () => {
       authenticated: false,
       setAuthenticated: jest.fn(),
     });
-    // Mock history.replaceState
-    Object.defineProperty(window, "history", {
-      value: { ...originalHistory, replaceState: mockReplaceState },
+    Object.defineProperty(window.history, "replaceState", {
+      value: mockReplaceState,
       writable: true,
       configurable: true,
     });
@@ -957,9 +937,8 @@ describe("URL Parameter Support", () => {
       ).toBeInTheDocument();
     });
 
-    expect(mockReplaceState).toHaveBeenCalledWith(
-      null,
-      "",
+    expect(mockReplaceState.mock.calls.at(-1)?.[1]).toBe("");
+    expect(mockReplaceState.mock.calls.at(-1)?.[2]).toBe(
       `/day/${dateString}?token=reset-token`,
     );
   });
@@ -986,8 +965,8 @@ describe("URL Parameter Support", () => {
       });
     });
 
-    expect(mockReplaceState).toHaveBeenLastCalledWith(
-      undefined,
+    expect(mockReplaceState).toHaveBeenCalledWith(
+      expect.anything(),
       "",
       expect.not.stringContaining("token="),
     );

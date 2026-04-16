@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import { IS_DEV } from "@web/common/constants/env.constants";
+import * as envConstants from "@web/common/constants/env.constants";
 
 const MIN_HIDDEN_DURATION_MS = 30_000;
 const BACKUP_CHECK_INTERVAL_MS = 5 * 60 * 1000;
@@ -85,7 +85,7 @@ export const useVersionCheck = (): VersionCheckResult => {
   }, []);
 
   useEffect(() => {
-    if (IS_DEV) {
+    if (envConstants.IS_DEV) {
       return;
     }
 
