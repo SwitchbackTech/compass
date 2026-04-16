@@ -29,8 +29,11 @@ jest.mock("@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay", () => ({
 
 // Mock the keyboard shortcuts hook
 const mockUseDayViewShortcuts = jest.fn();
+var actualUseDayViewShortcuts: typeof import("../hooks/shortcuts/useDayViewShortcuts").useDayViewShortcuts;
+
 jest.mock("../hooks/shortcuts/useDayViewShortcuts", () => {
   const actual = jest.requireActual("../hooks/shortcuts/useDayViewShortcuts");
+  actualUseDayViewShortcuts = actual.useDayViewShortcuts;
   return {
     ...actual,
     useDayViewShortcuts: (
@@ -79,12 +82,9 @@ const testDate = dayjs(dateString, dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT); // S
 describe("TodayView Routing", () => {
   beforeEach(() => {
     mockUseDayViewShortcuts.mockReset();
-    mockUseDayViewShortcuts.mockImplementation((config) => {
-      const actual = jest.requireActual(
-        "../hooks/shortcuts/useDayViewShortcuts",
-      );
-      return actual.useDayViewShortcuts(config);
-    });
+    mockUseDayViewShortcuts.mockImplementation((config) =>
+      actualUseDayViewShortcuts(config),
+    );
   });
 
   beforeEach(async () => {

@@ -49,9 +49,11 @@ jest.mock("../components/ShortcutsSidebar/ShortcutsSidebar", () => ({
 
 // Mock the keyboard shortcuts hook
 const mockUseTodayViewShortcuts = jest.fn();
+var actualUseDayViewShortcuts: typeof import("../hooks/shortcuts/useDayViewShortcuts").useDayViewShortcuts;
 
 jest.mock("../hooks/shortcuts/useDayViewShortcuts", () => {
   const actual = jest.requireActual("../hooks/shortcuts/useDayViewShortcuts");
+  actualUseDayViewShortcuts = actual.useDayViewShortcuts;
   return {
     ...actual,
     useDayViewShortcuts: (
@@ -63,13 +65,9 @@ jest.mock("../hooks/shortcuts/useDayViewShortcuts", () => {
 describe("TodayViewContent", () => {
   beforeEach(async () => {
     mockUseTodayViewShortcuts.mockReset();
-    // Set up the mock to call the real implementation
-    mockUseTodayViewShortcuts.mockImplementation((config) => {
-      const actual = jest.requireActual(
-        "../hooks/shortcuts/useDayViewShortcuts",
-      );
-      return actual.useDayViewShortcuts(config);
-    });
+    mockUseTodayViewShortcuts.mockImplementation((config) =>
+      actualUseDayViewShortcuts(config),
+    );
     await prepareEmptyStorageForTests();
   });
 
@@ -98,12 +96,8 @@ describe("TodayViewContent", () => {
   });
 
   it("focuses the add task input when typing the 'c' shortcut", async () => {
-    const actualShortcuts = jest.requireActual(
-      "../hooks/shortcuts/useDayViewShortcuts",
-    );
-
     mockUseTodayViewShortcuts.mockImplementation((config) =>
-      actualShortcuts.useDayViewShortcuts({
+      actualUseDayViewShortcuts({
         ...config,
         onFocusTasks: config.onFocusTasks || jest.fn(),
       }),
