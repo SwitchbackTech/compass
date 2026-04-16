@@ -1,16 +1,41 @@
 import { createElement } from "react";
 import { mockModule } from "@core/__tests__/mock.setup";
 
+type RestorableMock = {
+  mockRestore: () => void;
+};
+
+function mockNavigatorReadonlyValue(
+  key: "platform" | "userAgent",
+  value: string,
+): RestorableMock {
+  const originalDescriptor =
+    Object.getOwnPropertyDescriptor(window.navigator, key) ??
+    Object.getOwnPropertyDescriptor(Object.getPrototypeOf(window.navigator), key);
+
+  Object.defineProperty(window.navigator, key, {
+    configurable: true,
+    get: () => value,
+  });
+
+  return {
+    mockRestore: () => {
+      if (originalDescriptor) {
+        Object.defineProperty(window.navigator, key, originalDescriptor);
+        return;
+      }
+
+      delete (window.navigator as Record<string, unknown>)[key];
+    },
+  };
+}
+
 export function mockUserAgent(userAgent: string) {
-  return jest
-    .spyOn(window.navigator, "userAgent", "get")
-    .mockReturnValue(userAgent);
+  return mockNavigatorReadonlyValue("userAgent", userAgent);
 }
 
 function mockNavigatorPlatformValue(platform: string) {
-  return jest
-    .spyOn(window.navigator, "platform", "get")
-    .mockReturnValue(platform);
+  return mockNavigatorReadonlyValue("platform", platform);
 }
 
 /**
