@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
 type BunRuntime = {
@@ -55,11 +55,28 @@ function assertBackendEnvFile() {
   process.env["BUN_CONFIG_NO_CLEAR_TERMINAL_ON_RELOAD"] = "true";
 }
 
-function runProject(projectName: keyof typeof TEST_PROJECTS) {
-  const project = TEST_PROJECTS[projectName];
+function getWebTestFiles(directoryPath: string): string[] {
+  const testFiles: string[] = [];
 
+  for (const entry of readdirSync(directoryPath, { withFileTypes: true })) {
+    const entryPath = resolve(directoryPath, entry.name);
+
+    if (entry.isDirectory()) {
+      testFiles.push(...getWebTestFiles(entryPath));
+      continue;
+    }
+
+    if (/\.(test|spec)\.[jt]sx?$/.test(entry.name)) {
+      testFiles.push(entryPath);
+    }
+  }
+
+  return testFiles.sort();
+}
+
+function runCommand(cmd: string[]) {
   const result = bunRuntime.spawnSync({
-    cmd: project.cmd,
+    cmd,
     cwd: process.cwd(),
     env: {
       ...process.env,
@@ -74,6 +91,30 @@ function runProject(projectName: keyof typeof TEST_PROJECTS) {
   if (result.exitCode !== 0) {
     process.exit(result.exitCode);
   }
+}
+
+function runWebProject() {
+  const webTestFiles = getWebTestFiles(resolve(process.cwd(), "packages/web/src"));
+
+  for (const [index, testFile] of webTestFiles.entries()) {
+    console.log(`[web ${index + 1}/${webTestFiles.length}] ${testFile}`);
+    runCommand([
+      "bun",
+      "test",
+      testFile,
+      "--preload",
+      "packages/web/src/__tests__/web.bun.preload.ts",
+    ]);
+  }
+}
+
+function runProject(projectName: keyof typeof TEST_PROJECTS) {
+  if (projectName === "web") {
+    runWebProject();
+    return;
+  }
+
+  runCommand(TEST_PROJECTS[projectName].cmd);
 }
 
 function main() {

@@ -93,7 +93,7 @@ describe("storage migrations", () => {
 
       const adapter = createMockStorageAdapter();
 
-      await expect(runExternalMigrations(adapter)).resolves.not.toThrow();
+      await expect(runExternalMigrations(adapter)).resolves.toBeUndefined();
       // localStorage migration should not be marked completed due to invalid JSON
       expect(localStorage.getItem(localStorageMigrationFlagKey)).toBeNull();
     });
