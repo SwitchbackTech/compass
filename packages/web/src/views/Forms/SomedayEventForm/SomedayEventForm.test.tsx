@@ -124,6 +124,7 @@ describe("SomedayEventForm Hotkeys", () => {
   it("should trigger delete flow when delete keyboard shortcut is used and confirmed", async () => {
     // Explicitly confirm deletion
     mockConfirm.mockReturnValue(true);
+    const eventId = sampleSomedayEvent._id;
 
     const { weekProps, dateCalcs, deleteEvent } = setupDraftState(
       sampleSomedayEvent as Schema_WebEvent,
@@ -154,11 +155,12 @@ describe("SomedayEventForm Hotkeys", () => {
     expect(mockConfirm).toHaveBeenCalledWith(
       `Delete ${sampleSomedayEvent.title}?`,
     );
+    expect(eventId).toBeDefined();
     expect(dispatchSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         type: deleteEventSlice.actionNames.request,
         payload: expect.objectContaining({
-          _id: sampleSomedayEvent._id!,
+          _id: eventId,
           applyTo: RecurringEventUpdateScope.THIS_EVENT,
         }),
       }),

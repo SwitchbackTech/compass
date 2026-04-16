@@ -80,21 +80,18 @@ const dateString = "2025-10-19";
 const testDate = dayjs(dateString, dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT); // Sunday
 
 describe("TodayView Routing", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     mockUseDayViewShortcuts.mockReset();
     mockUseDayViewShortcuts.mockImplementation((config) =>
       actualUseDayViewShortcuts(config),
     );
-  });
-
-  beforeEach(async () => {
     await prepareEmptyStorageForTests();
   });
 
   it("should show today's date when navigating to /day", async () => {
     const router = createRouter();
 
-    render(<></>, { router });
+    render(<div />, { router });
 
     // Should show today's date in the header
     const todayHeading = new Date().toLocaleDateString("en-US", {
@@ -108,7 +105,7 @@ describe("TodayView Routing", () => {
     const user = userEvent.setup();
     const router = createRouter();
 
-    render(<></>, { router });
+    render(<div />, { router });
 
     await act(async () => {
       await router.navigate(`${ROOT_ROUTES.DAY}/${dateString}`);
@@ -134,7 +131,7 @@ describe("TodayView Routing", () => {
     const user = userEvent.setup();
     const router = createRouter();
 
-    render(<></>, { router });
+    render(<div />, { router });
 
     await act(async () => {
       await router.navigate(`${ROOT_ROUTES.DAY}/${dateString}`);
@@ -160,7 +157,7 @@ describe("TodayView Routing", () => {
     const user = userEvent.setup();
     const router = createRouter();
 
-    render(<></>, { router });
+    render(<div />, { router });
 
     await act(async () => {
       await router.navigate(`${ROOT_ROUTES.DAY}/${dateString}`);
@@ -199,7 +196,7 @@ describe("TodayView Routing", () => {
 
     const router = createRouter();
 
-    render(<></>, { router });
+    render(<div />, { router });
 
     expect(await screen.findByText("Monday")).toBeInTheDocument();
     expect(await screen.findByText("October 20")).toBeInTheDocument();
@@ -212,7 +209,7 @@ describe("Navigation with URL updates", () => {
     const user = userEvent.setup();
     const router = createRouter();
 
-    render(<></>, { router });
+    render(<div />, { router });
 
     // Wait for the component to render by finding a button
     const nextDayButton = await screen.findByRole("button", {
@@ -238,7 +235,7 @@ describe("Navigation with URL updates", () => {
     const user = userEvent.setup();
     const router = createRouter();
 
-    render(<></>, { router });
+    render(<div />, { router });
 
     // Wait for the component to render by finding a button
     const prevDayButton = await screen.findByRole("button", {
@@ -268,7 +265,7 @@ describe("Navigation with URL updates", () => {
       dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
     );
 
-    render(<></>, { router });
+    render(<div />, { router });
     await act(async () => {
       await router.navigate(`${ROOT_ROUTES.DAY}/${testDateString}`);
     });
@@ -288,7 +285,7 @@ describe("Navigation with URL updates", () => {
 
     const router = createRouter();
 
-    render(<></>, { router });
+    render(<div />, { router });
 
     // Should show today's date
     const todayWeekday = today.format(DAY_HEADING_FORMAT);

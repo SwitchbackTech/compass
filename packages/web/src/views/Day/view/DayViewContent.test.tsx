@@ -25,9 +25,9 @@ const createMatchMedia = (matches: boolean) => {
     // Helper to simulate resize
     _triggerChange: (newMatches: boolean) => {
       mediaQuery.matches = newMatches;
-      listeners.forEach((listener) =>
-        listener({ matches: newMatches } as MediaQueryListEvent),
-      );
+      listeners.forEach((listener) => {
+        listener({ matches: newMatches } as MediaQueryListEvent);
+      });
     },
   };
 

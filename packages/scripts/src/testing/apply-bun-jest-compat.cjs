@@ -175,11 +175,12 @@ function mergeFactoryResultWithActual(jestCompat, moduleName, factoryResult) {
     // Some virtual or intentionally missing modules do not have an actual module
   }
 
-  if (
-    !factoryResult ||
-    typeof factoryResult === "function"
-  ) {
-    if (actualModule && typeof actualModule === "object" && "default" in actualModule) {
+  if (!factoryResult || typeof factoryResult === "function") {
+    if (
+      actualModule &&
+      typeof actualModule === "object" &&
+      "default" in actualModule
+    ) {
       return {
         ...actualModule,
         __esModule: actualModule.__esModule ?? true,
@@ -196,8 +197,7 @@ function mergeFactoryResultWithActual(jestCompat, moduleName, factoryResult) {
 
   const mergedModule = { ...actualModule };
   const factoryDescriptors = Object.getOwnPropertyDescriptors(factoryResult);
-  const esModuleDescriptor =
-    factoryDescriptors.__esModule ??
+  const esModuleDescriptor = factoryDescriptors.__esModule ??
     Object.getOwnPropertyDescriptor(actualModule, "__esModule") ?? {
       configurable: true,
       enumerable: true,
