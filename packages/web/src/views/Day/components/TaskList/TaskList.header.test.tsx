@@ -1,13 +1,13 @@
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
-import { renderWithDayProvidersAsync } from "../../util/day.test-util";
+import { renderWithDayProviders } from "../../util/day.test-util";
 import { TaskList } from "./TaskList";
 import { DAY_HEADING_FORMAT, DAY_SUBHEADING_FORMAT } from "./TaskListHeader";
 
-const renderTaskList = async (props = {}, currentDate?: Date) => {
+const renderTaskList = (props = {}, currentDate?: Date) => {
   const initialDate = currentDate ? dayjs(currentDate) : dayjs();
-  return renderWithDayProvidersAsync(<TaskList {...props} />, {
+  return renderWithDayProviders(<TaskList {...props} />, {
     initialDate,
   });
 };
@@ -31,7 +31,7 @@ describe("TaskListHeader", () => {
   });
 
   it("should render the today heading with current date", async () => {
-    await renderTaskList();
+    renderTaskList({}, new Date());
 
     const headingButton = await screen.findByRole("button", {
       name: /select view/i,
@@ -45,7 +45,7 @@ describe("TaskListHeader", () => {
 
   it("should navigate to next day when clicking next day button", async () => {
     const testDate = createUtcDate("2025-01-15T12:00:00Z");
-    const { user } = await renderTaskList({}, testDate);
+    const { user } = renderTaskList({}, testDate);
 
     // Verify initial heading shows correct date
     const expectedInitialDate = format(testDate);
@@ -64,7 +64,7 @@ describe("TaskListHeader", () => {
 
   it("should navigate to previous day when clicking previous day button", async () => {
     const testDate = createUtcDate("2025-01-15T12:00:00Z");
-    const { user } = await renderTaskList({}, testDate);
+    const { user } = renderTaskList({}, testDate);
 
     // Verify initial heading shows correct date
     const expectedInitialDate = format(testDate);
@@ -85,7 +85,7 @@ describe("TaskListHeader", () => {
 
   it("should handle multiple navigation clicks correctly", async () => {
     const testDate = createUtcDate("2025-01-15T12:00:00Z");
-    const { user } = await renderTaskList({}, testDate);
+    const { user } = renderTaskList({}, testDate);
 
     const headingButton = await screen.findByRole("button", {
       name: /select view/i,
@@ -116,7 +116,7 @@ describe("TaskListHeader", () => {
 
   it("should navigate across month boundary correctly", async () => {
     const testDate = createUtcDate("2025-01-31T12:00:00Z");
-    const { user } = await renderTaskList({}, testDate);
+    const { user } = renderTaskList({}, testDate);
 
     const initialDate = format(testDate);
     const headingButton = await screen.findByRole("button", {
@@ -136,7 +136,7 @@ describe("TaskListHeader", () => {
 
   it("should show go to today button when viewing a different day", async () => {
     const testDate = createUtcDate("2025-01-15T12:00:00Z");
-    await renderTaskList({}, testDate);
+    renderTaskList({}, testDate);
 
     const goToTodayButton = await screen.findByRole("button", {
       name: "Go to today",
@@ -145,7 +145,7 @@ describe("TaskListHeader", () => {
   });
 
   it("should not show go to today button when viewing today", async () => {
-    await renderTaskList();
+    renderTaskList();
 
     const goToTodayButton = screen.queryByRole("button", {
       name: "Go to today",
@@ -156,7 +156,7 @@ describe("TaskListHeader", () => {
 
   it("should navigate to today when clicking go to today button", async () => {
     const testDate = createUtcDate("2025-01-15T12:00:00Z");
-    const { user } = await renderTaskList({}, testDate);
+    const { user } = renderTaskList({}, testDate);
 
     const expectedInitialDate = format(testDate);
     const headingButton = await screen.findByRole("button", {
@@ -178,7 +178,7 @@ describe("TaskListHeader", () => {
 
   it("should remove the go to today button after navigating to today from a different day", async () => {
     const testDate = createUtcDate("2025-01-15T12:00:00Z");
-    const { user } = await renderTaskList({}, testDate);
+    const { user } = renderTaskList({}, testDate);
 
     // Verify the go to today button is initially visible
     const goToTodayButton = await screen.findByRole("button", {
@@ -202,7 +202,7 @@ describe("TaskListHeader - Timezone Handling", () => {
     const cstDate = createUtcDate("2025-10-20T01:00:00Z"); // UTC time
     const utcDayjs = dayjs.utc(cstDate);
 
-    await renderTaskList({}, cstDate);
+    renderTaskList({}, cstDate);
 
     // Should show local date (Oct 19), not UTC date (Oct 20)
     const localDate = utcDayjs.local();

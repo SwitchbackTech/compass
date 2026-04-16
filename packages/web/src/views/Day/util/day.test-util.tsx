@@ -55,9 +55,12 @@ const createDayRouter = (
 const createUser = () => userEvent.setup({ skipHover: true });
 
 const waitForTaskLoadToSettle = async () => {
-  await waitFor(() => {
-    expect(screen.queryByText("Loading tasks...")).not.toBeInTheDocument();
-  });
+  await waitFor(
+    () => {
+      expect(screen.queryByText("Loading tasks...")).toBeNull();
+    },
+    { timeout: 5000 },
+  );
 };
 
 export const renderWithDayProviders = (

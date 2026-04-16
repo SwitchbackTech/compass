@@ -365,3 +365,10 @@ for (const key of [
 globalThis.addEventListener = window.addEventListener.bind(window);
 globalThis.removeEventListener = window.removeEventListener.bind(window);
 globalThis.dispatchEvent = window.dispatchEvent.bind(window);
+Object.defineProperty(globalThis, "confirm", {
+  configurable: true,
+  get: () => window.confirm,
+  set: (value) => {
+    window.confirm = value;
+  },
+});
