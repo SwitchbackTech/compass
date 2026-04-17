@@ -1,43 +1,58 @@
 import "@testing-library/jest-dom";
-import { render, screen, waitFor } from "@testing-library/react";
-import { useSession } from "@web/auth/compass/session/useSession";
-import * as authStateUtil from "@web/auth/compass/state/auth.state.util";
-import { UserProvider } from "@web/auth/compass/user/context/UserProvider";
-import { useUser } from "@web/auth/compass/user/hooks/useUser";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock("@web/auth/compass/session/useSession", () => ({
-  useSession: jest.fn(),
+const { cleanup, render, screen, waitFor } = require("@testing-library/react");
+
+const mockGetLastKnownEmail = mock();
+const mockHasUserEverAuthenticated = mock();
+const mockMarkUserAsAuthenticated = mock();
+const mockGetProfile = mock();
+const mockUseSession = mock();
+
+mock.module("@web/auth/compass/session/useSession", () => ({
+  useSession: mockUseSession,
 }));
-const mockUseSession = jest.mocked(useSession);
 
-jest.mock("@web/auth/compass/state/auth.state.util", () => {
-  const actual = jest.requireActual<typeof authStateUtil>(
-    "@web/auth/compass/state/auth.state.util",
-  );
-  return {
-    ...actual,
-    getLastKnownEmail: jest.fn(),
-    hasUserEverAuthenticated: jest.fn(),
-  };
-});
-const mockGetLastKnownEmail = jest.mocked(authStateUtil.getLastKnownEmail);
-const mockHasUserEverAuthenticated = jest.mocked(
-  authStateUtil.hasUserEverAuthenticated,
-);
+mock.module("@web/auth/compass/state/auth.state.util", () => ({
+  getLastKnownEmail: mockGetLastKnownEmail,
+  hasUserEverAuthenticated: mockHasUserEverAuthenticated,
+  markUserAsAuthenticated: mockMarkUserAsAuthenticated,
+}));
+
+mock.module("@web/common/apis/user.api", () => ({
+  UserApi: {
+    getProfile: mockGetProfile,
+  },
+}));
+
+const { UserProvider } = require("@web/auth/compass/user/context/UserProvider");
+const { useUser } = require("@web/auth/compass/user/hooks/useUser");
 
 const UserEmail = () => <div>{useUser().email ?? "no-email"}</div>;
 
 describe("UserProvider", () => {
   let isAuthenticated = false;
 
+  afterEach(() => {
+    cleanup();
+  });
+
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockGetLastKnownEmail.mockClear();
+    mockGetProfile.mockClear();
+    mockHasUserEverAuthenticated.mockClear();
+    mockMarkUserAsAuthenticated.mockClear();
+    mockUseSession.mockClear();
     isAuthenticated = false;
+    mockGetProfile.mockResolvedValue({
+      userId: "test-user-123",
+      email: "test@example.com",
+    });
     mockGetLastKnownEmail.mockReturnValue("last-known@example.com");
     mockHasUserEverAuthenticated.mockReturnValue(true);
     mockUseSession.mockImplementation(() => ({
       authenticated: isAuthenticated,
-      setAuthenticated: jest.fn(),
+      setAuthenticated: mock(),
     }));
   });
 
