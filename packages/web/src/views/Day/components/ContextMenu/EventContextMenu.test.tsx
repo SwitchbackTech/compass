@@ -1,3 +1,4 @@
+import { afterEach, beforeEach, describe, expect, it, mock, spyOn, vi } from "bun:test";
 import { screen, waitFor } from "@testing-library/react";
 import { ObjectId } from "bson";
 import { Origin, Priorities } from "@core/constants/core.constants";
@@ -19,7 +20,7 @@ describe("EventContextMenu", () => {
   };
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("should open context menu on right-click on an event", async () => {
@@ -103,15 +104,15 @@ describe("EventContextMenu", () => {
   });
 
   it("should work with multiple events", async () => {
-    jest.spyOn(window, "confirm").mockImplementation(() => true);
+    spyOn(window, "confirm").mockImplementation(() => true);
 
     const mockEvents = [
       { ...baseEvent, _id: "event-1", title: "First Event" },
       { ...baseEvent, _id: "event-2", title: "Second Event" },
     ];
 
-    const useDispatchSpy = jest.spyOn(reduxHooks, "useAppDispatch");
-    const mockDispatchFn = jest.fn(() => Promise.resolve());
+    const useDispatchSpy = spyOn(reduxHooks, "useAppDispatch");
+    const mockDispatchFn = mock(() => Promise.resolve());
 
     useDispatchSpy.mockReturnValue(mockDispatchFn as unknown as AppDispatch);
 
