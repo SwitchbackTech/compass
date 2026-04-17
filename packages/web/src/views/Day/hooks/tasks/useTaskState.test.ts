@@ -1,24 +1,33 @@
+import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { renderHook, waitFor } from "@testing-library/react";
 import { act } from "react";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { type TaskRepository } from "@web/common/repositories/task/task.repository";
 import { type Task } from "@web/common/types/task.types";
 import { getDateKey } from "@web/common/utils/storage/storage.util";
-import { useTaskState } from "@web/views/Day/hooks/tasks/useTaskState";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
-const mockGet = jest.fn();
-const mockSave = jest.fn().mockResolvedValue(undefined);
+if (typeof document === "undefined") {
+  GlobalRegistrator.register();
+}
+
+const mockEnsureStorageReady = mock().mockResolvedValue(undefined);
+const mockGet = mock();
+const mockSave = mock().mockResolvedValue(undefined);
 const mockTaskRepository: TaskRepository = {
   get: mockGet,
   save: mockSave,
-  delete: jest.fn().mockResolvedValue(undefined),
-  move: jest.fn().mockResolvedValue(undefined),
-  reorder: jest.fn().mockResolvedValue(undefined),
+  delete: mock().mockResolvedValue(undefined),
+  move: mock().mockResolvedValue(undefined),
+  reorder: mock().mockResolvedValue(undefined),
 };
 
-jest.mock("@web/common/storage/adapter/adapter", () => ({
-  ensureStorageReady: jest.fn().mockResolvedValue(undefined),
+mock.module("@web/common/storage/adapter/adapter", () => ({
+  ensureStorageReady: mockEnsureStorageReady,
 }));
+
+const { useTaskState } =
+  require("@web/views/Day/hooks/tasks/useTaskState") as typeof import("@web/views/Day/hooks/tasks/useTaskState");
 
 interface Deferred<T> {
   promise: Promise<T>;
@@ -52,8 +61,9 @@ describe("useTaskState", () => {
   const dayTwoKey = getDateKey(dayTwoDate);
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockEnsureStorageReady.mockClear();
     mockSave.mockResolvedValue(undefined);
+    mockSave.mockClear();
     mockGet.mockReset();
   });
 
@@ -162,7 +172,9 @@ describe("useTaskState", () => {
 
   it("does not save empty tasks after a load failure", async () => {
     mockGet.mockRejectedValue(new Error("load failed"));
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
+    const consoleErrorSpy = spyOn(console, "error").mockImplementation(
+      () => {},
+    );
 
     const { result } = renderHook(() =>
       useTaskState({
