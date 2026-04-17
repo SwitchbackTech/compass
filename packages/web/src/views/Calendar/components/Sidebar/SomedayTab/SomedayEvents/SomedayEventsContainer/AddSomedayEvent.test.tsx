@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, mock, vi } from "bun:test";
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -6,12 +7,12 @@ import { AddSomedayEvent } from "./AddSomedayEvent";
 
 describe("AddSomedayEvent", () => {
   it("renders the plus sign", () => {
-    render(<AddSomedayEvent onKeyDown={jest.fn()} />);
+    render(<AddSomedayEvent onKeyDown={mock()} />);
     expect(screen.getByText("+")).toBeInTheDocument();
   });
 
   it("has role button and tabIndex 0", () => {
-    render(<AddSomedayEvent onKeyDown={jest.fn()} />);
+    render(<AddSomedayEvent onKeyDown={mock()} />);
     const button = screen.getByRole("button");
     expect(button).toBeInTheDocument();
     expect(button).toHaveAttribute("tabIndex", "0");
@@ -19,7 +20,7 @@ describe("AddSomedayEvent", () => {
 
   it("calls onKeyDown when Enter is pressed", async () => {
     const user = userEvent.setup();
-    const onKeyDown = jest.fn();
+    const onKeyDown = mock();
     render(<AddSomedayEvent onKeyDown={onKeyDown} />);
     const button = screen.getByRole("button");
     button.focus();
@@ -29,7 +30,7 @@ describe("AddSomedayEvent", () => {
 
   it("calls onKeyDown when Space is pressed", async () => {
     const user = userEvent.setup();
-    const onKeyDown = jest.fn();
+    const onKeyDown = mock();
     render(<AddSomedayEvent onKeyDown={onKeyDown} />);
     const button = screen.getByRole("button");
     button.focus();
@@ -39,7 +40,7 @@ describe("AddSomedayEvent", () => {
 
   it("does NOT call onKeyDown for unrelated keys", async () => {
     const user = userEvent.setup();
-    const onKeyDown = jest.fn();
+    const onKeyDown = mock();
     render(<AddSomedayEvent onKeyDown={onKeyDown} />);
     await user.keyboard("a");
     await user.keyboard("{Tab}");
