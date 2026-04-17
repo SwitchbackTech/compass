@@ -1,13 +1,17 @@
 import { type PostHog } from "posthog-js";
-import { usePostHog } from "./posthog-react";
 import "@testing-library/jest-dom";
 import { renderHook, waitFor } from "@testing-library/react";
-import { useIdentifyUser } from "./useIdentifyUser";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock("./posthog-react");
-const mockUsePostHog = jest.mocked(usePostHog);
+const mockIdentify = mock();
+const mockUsePostHog = mock();
 
-const mockIdentify = jest.fn();
+mock.module("./posthog-react", () => ({
+  usePostHog: mockUsePostHog,
+}));
+
+const { useIdentifyUser } =
+  require("./useIdentifyUser") as typeof import("./useIdentifyUser");
 
 function mockPostHogEnabled(overrides?: Partial<PostHog>): void {
   mockUsePostHog.mockReturnValue({
@@ -22,7 +26,8 @@ function mockPostHogDisabled(): void {
 
 describe("useIdentifyUser", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockIdentify.mockClear();
+    mockUsePostHog.mockClear();
     mockPostHogEnabled();
   });
 
