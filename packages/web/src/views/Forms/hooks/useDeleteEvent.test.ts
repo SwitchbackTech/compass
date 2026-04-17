@@ -12,16 +12,21 @@ import {
 } from "@web/common/hooks/useOpenAtCursor";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
 import { eventsStore, setDraft } from "@web/store/events";
-import { useAppDispatch } from "@web/store/store.hooks";
-import { useDeleteEvent } from "./useDeleteEvent";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-// Mock useAppDispatch
-jest.mock("@web/store/store.hooks", () => ({
-  useAppDispatch: jest.fn(),
+const mockDispatch = mock();
+const confirmMock = mock();
+const actualStoreHooks = await import("@web/store/store.hooks");
+
+mock.module("@web/store/store.hooks", () => ({
+  ...actualStoreHooks,
+  useAppDispatch: () => mockDispatch,
 }));
 
+const { useDeleteEvent } =
+  require("./useDeleteEvent") as typeof import("./useDeleteEvent");
+
 describe("useDeleteEvent Integration", () => {
-  const mockDispatch = jest.fn();
   const mockEventId = "event-123";
   const mockEvent = {
     _id: mockEventId,
@@ -33,19 +38,17 @@ describe("useDeleteEvent Integration", () => {
   } as unknown as WithCompassId<Schema_Event>;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockDispatch.mockClear();
+    confirmMock.mockClear();
     eventsStore.reset();
     closeFloatingAtCursor();
-    (useAppDispatch as jest.Mock).mockReturnValue(mockDispatch);
-
-    // Mock window.confirm
-    global.confirm = jest.fn();
+    global.confirm = confirmMock as typeof global.confirm;
   });
 
   it("should dispatch delete action when confirmed and event exists in store", () => {
     // Setup Store
     eventsStore.update(addEntities(mockEvent));
-    (global.confirm as jest.Mock).mockReturnValue(true);
+    confirmMock.mockReturnValue(true);
 
     const { result } = renderHook(() => useDeleteEvent(mockEventId));
 
@@ -66,7 +69,7 @@ describe("useDeleteEvent Integration", () => {
 
   it("should dispatch delete action with correct scope when provided", () => {
     eventsStore.update(addEntities(mockEvent));
-    (global.confirm as jest.Mock).mockReturnValue(true);
+    confirmMock.mockReturnValue(true);
 
     const { result } = renderHook(() => useDeleteEvent(mockEventId));
 
@@ -87,7 +90,7 @@ describe("useDeleteEvent Integration", () => {
 
   it("should NOT dispatch delete action when user cancels confirmation", () => {
     eventsStore.update(addEntities(mockEvent));
-    (global.confirm as jest.Mock).mockReturnValue(false);
+    confirmMock.mockReturnValue(false);
 
     const { result } = renderHook(() => useDeleteEvent(mockEventId));
 
@@ -100,7 +103,7 @@ describe("useDeleteEvent Integration", () => {
   it("should NOT dispatch delete action but should reset draft if event is only a draft (not in store)", () => {
     // Setup Draft instead of entities
     setDraft(mockEvent);
-    (global.confirm as jest.Mock).mockReturnValue(true);
+    confirmMock.mockReturnValue(true);
 
     const { result } = renderHook(() => useDeleteEvent(mockEventId));
 
@@ -119,7 +122,7 @@ describe("useDeleteEvent Integration", () => {
     // Open floating menu to verify it closes
     open$.next(true);
 
-    (global.confirm as jest.Mock).mockReturnValue(true);
+    confirmMock.mockReturnValue(true);
 
     const { result } = renderHook(() => useDeleteEvent(mockEventId));
 
@@ -132,7 +135,7 @@ describe("useDeleteEvent Integration", () => {
   it("should fallback to 'this event' title if title is missing", () => {
     const eventNoTitle = { ...mockEvent, title: undefined };
     eventsStore.update(addEntities(eventNoTitle));
-    (global.confirm as jest.Mock).mockReturnValue(true);
+    confirmMock.mockReturnValue(true);
 
     const { result } = renderHook(() => useDeleteEvent(mockEventId));
 
