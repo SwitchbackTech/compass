@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 
 type BunRuntime = {
@@ -14,6 +14,7 @@ type BunRuntime = {
 
 type ProjectConfig = {
   cmd: string[];
+  cwd?: string;
 };
 
 const bunRuntime = (globalThis as unknown as { Bun: BunRuntime }).Bun;
@@ -35,13 +36,8 @@ const TEST_PROJECTS = {
     cmd: ["./node_modules/.bin/jest", "scripts"],
   },
   web: {
-    cmd: [
-      "bun",
-      "test",
-      "packages/web/src",
-      "--preload",
-      "packages/web/src/__tests__/web.bun.preload.ts",
-    ],
+    cmd: ["bun", "test"],
+    cwd: resolve(process.cwd(), "packages/web"),
   },
 } satisfies Record<string, ProjectConfig>;
 
@@ -55,29 +51,10 @@ function assertBackendEnvFile() {
   process.env["BUN_CONFIG_NO_CLEAR_TERMINAL_ON_RELOAD"] = "true";
 }
 
-function getWebTestFiles(directoryPath: string): string[] {
-  const testFiles: string[] = [];
-
-  for (const entry of readdirSync(directoryPath, { withFileTypes: true })) {
-    const entryPath = resolve(directoryPath, entry.name);
-
-    if (entry.isDirectory()) {
-      testFiles.push(...getWebTestFiles(entryPath));
-      continue;
-    }
-
-    if (/\.(test|spec)\.[jt]sx?$/.test(entry.name)) {
-      testFiles.push(entryPath);
-    }
-  }
-
-  return testFiles.sort();
-}
-
-function runCommand(cmd: string[]) {
+function runCommand(cmd: string[], cwd = process.cwd()) {
   const result = bunRuntime.spawnSync({
     cmd,
-    cwd: process.cwd(),
+    cwd,
     env: {
       ...process.env,
       NODE_ENV: "test",
@@ -94,18 +71,7 @@ function runCommand(cmd: string[]) {
 }
 
 function runWebProject() {
-  const webTestFiles = getWebTestFiles(resolve(process.cwd(), "packages/web/src"));
-
-  for (const [index, testFile] of webTestFiles.entries()) {
-    console.log(`[web ${index + 1}/${webTestFiles.length}] ${testFile}`);
-    runCommand([
-      "bun",
-      "test",
-      testFile,
-      "--preload",
-      "packages/web/src/__tests__/web.bun.preload.ts",
-    ]);
-  }
+  runCommand(TEST_PROJECTS.web.cmd, TEST_PROJECTS.web.cwd);
 }
 
 function runProject(projectName: keyof typeof TEST_PROJECTS) {

@@ -1,11 +1,9 @@
 // sort-imports-ignore — side-effect import order matters
 
 import { JSDOM } from "jsdom";
-import { jest as jestBinding } from "./patched-jest.cjs";
-import { afterAll, afterEach, beforeAll, beforeEach, expect } from "bun:test";
+import { afterAll, afterEach, beforeAll, beforeEach, expect, mock } from "bun:test";
 import { createRequire } from "node:module";
 
-globalThis.jest = jestBinding;
 import "@core/__tests__/core.test.init";
 import "@core/__tests__/core.test.start";
 import "./web.test.init";
@@ -82,6 +80,10 @@ globalThis.sessionStorage = window.sessionStorage;
 globalThis.HTMLElement = window.HTMLElement;
 globalThis.HTMLAnchorElement = window.HTMLAnchorElement;
 globalThis.Node = window.Node;
+globalThis.Event = window.Event;
+globalThis.CustomEvent = window.CustomEvent;
+globalThis.MouseEvent = window.MouseEvent;
+globalThis.KeyboardEvent = window.KeyboardEvent;
 globalThis.self = window;
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -179,6 +181,10 @@ window.fetch = globalThis.fetch.bind(globalThis);
 window.Blob = globalThis.Blob;
 window.File = globalThis.File;
 window.FormData = globalThis.FormData;
+window.Event = globalThis.Event;
+window.CustomEvent = globalThis.CustomEvent;
+window.MouseEvent = globalThis.MouseEvent;
+window.KeyboardEvent = globalThis.KeyboardEvent;
 window.Headers = globalThis.Headers;
 window.Request = globalThis.Request;
 window.Response = globalThis.Response;
@@ -205,6 +211,22 @@ window.IntersectionObserver =
   MockObserver<IntersectionObserverCallback> as unknown as typeof IntersectionObserver;
 window.ResizeObserver =
   MockObserver<ResizeObserverCallback> as unknown as typeof ResizeObserver;
+
+for (const key of Object.getOwnPropertyNames(window)) {
+  if (key in globalThis) {
+    continue;
+  }
+
+  const descriptor = Object.getOwnPropertyDescriptor(window, key);
+
+  if (descriptor) {
+    try {
+      Object.defineProperty(globalThis, key, descriptor);
+    } catch {
+      // Some properties are non-configurable in Bun's globalThis; skip them.
+    }
+  }
+}
 
 Object.defineProperty(window, "matchMedia", {
   writable: true,
@@ -237,17 +259,18 @@ if (typeof globalThis.structuredClone === "undefined") {
 
 mockNodeModules();
 
+const sessionModule = await import("supertokens-web-js/recipe/session");
+const { cleanup } = await import("@testing-library/react");
+
 beforeEach(() => {
-  jestBinding.clearAllMocks();
-  const sessionModule = jestBinding.requireMock(
-    "supertokens-web-js/recipe/session",
-  ) as {
-    doesSessionExist?: { mockResolvedValue: (v: boolean) => void };
-  };
   sessionModule.doesSessionExist?.mockResolvedValue(true);
 });
 
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
-afterEach(() => server.resetHandlers());
+afterEach(async () => {
+  await Promise.resolve();
+  cleanup();
+  server.resetHandlers();
+});
 afterAll(() => server.close());
-afterAll(() => jestBinding.restoreAllMocks());
+afterAll(() => mock.restore());
