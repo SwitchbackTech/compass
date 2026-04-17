@@ -1,46 +1,111 @@
-import { act } from "react";
+import { act, type ReactNode } from "react";
 import { createMemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
+import "fake-indexeddb/auto";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import dayjs from "@core/util/date/dayjs";
-import { render } from "@web/__tests__/__mocks__/mock.render";
-import { prepareEmptyStorageForTests } from "@web/__tests__/utils/storage/indexeddb.test.util";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import {
-  loadDayData,
-  loadSpecificDayData,
-  loadTodayData,
-} from "@web/routers/loaders";
 import {
   DAY_HEADING_FORMAT,
   DAY_SUBHEADING_FORMAT,
 } from "@web/views/Day/components/TaskList/TaskListHeader";
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  setSystemTime,
+} from "bun:test";
 
-// Mock the Agenda component
-jest.mock("../components/Agenda/Agenda", () => ({
+const mockRecipeInit = mock(() => ({}));
+const mockSuperTokensInit = mock();
+
+mock.module("supertokens-web-js", () => ({
+  default: {
+    init: mockSuperTokensInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/emailpassword", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/emailverification", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/thirdparty", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/session", () => ({
+  attemptRefreshingSession: mock(),
+  default: {
+    attemptRefreshingSession: mock(),
+    doesSessionExist: mock().mockResolvedValue(true),
+    getAccessToken: mock().mockResolvedValue("mock-access-token"),
+    getAccessTokenPayloadSecurely: mock().mockResolvedValue({}),
+    getInvalidClaimsFromResponse: mock().mockResolvedValue([]),
+    getUserId: mock().mockResolvedValue("mock-user-id"),
+    init: mockRecipeInit,
+    signOut: mock().mockResolvedValue(undefined),
+    validateClaims: mock().mockResolvedValue([]),
+  },
+}));
+
+mock.module("@react-oauth/google", () => ({
+  GoogleOAuthProvider: ({ children }: { children: ReactNode }) => children,
+  useGoogleLogin: () => mock(),
+}));
+
+mock.module("../components/Agenda/Agenda", () => ({
   Agenda: () => <div className="h-96">Calendar Content</div>,
 }));
 
-// Mock the ShortcutsOverlay component
-jest.mock("@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay", () => ({
-  ShortcutsOverlay: () => <div data-testid="shortcuts-overlay" />,
+mock.module("@web/views/Day/components/Agenda/Agenda", () => ({
+  Agenda: () => <div className="h-96">Calendar Content</div>,
 }));
 
-// Mock the keyboard shortcuts hook
-const mockUseDayViewShortcuts = jest.fn();
-var actualUseDayViewShortcuts: typeof import("../hooks/shortcuts/useDayViewShortcuts").useDayViewShortcuts;
+mock.module(
+  "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay",
+  () => ({
+    ShortcutsOverlay: () => <div data-testid="shortcuts-overlay" />,
+  }),
+);
 
-jest.mock("../hooks/shortcuts/useDayViewShortcuts", () => {
-  const actual = jest.requireActual("../hooks/shortcuts/useDayViewShortcuts");
-  actualUseDayViewShortcuts = actual.useDayViewShortcuts;
-  return {
-    ...actual,
-    useDayViewShortcuts: (
-      ...args: Parameters<typeof actual.useDayViewShortcuts>
-    ) => mockUseDayViewShortcuts(...args),
-  };
-});
+const { useDayViewShortcuts: actualUseDayViewShortcuts } =
+  require("@web/views/Day/hooks/shortcuts/useDayViewShortcuts") as typeof import("@web/views/Day/hooks/shortcuts/useDayViewShortcuts");
+const mockUseDayViewShortcuts = mock(
+  (...args: Parameters<typeof actualUseDayViewShortcuts>) =>
+    actualUseDayViewShortcuts(...args),
+);
+
+mock.module("../hooks/shortcuts/useDayViewShortcuts", () => ({
+  useDayViewShortcuts: mockUseDayViewShortcuts,
+}));
+
+mock.module("@web/views/Day/hooks/shortcuts/useDayViewShortcuts", () => ({
+  useDayViewShortcuts: mockUseDayViewShortcuts,
+}));
+
+mock.module("@web/views/Day/hooks/events/useDayEvents", () => ({
+  useDayEvents: mock(),
+}));
+
+const { render } =
+  require("@web/__tests__/__mocks__/mock.render") as typeof import("@web/__tests__/__mocks__/mock.render");
+const { prepareEmptyStorageForTests } =
+  require("@web/__tests__/utils/storage/indexeddb.test.util") as typeof import("@web/__tests__/utils/storage/indexeddb.test.util");
+const { loadDayData, loadSpecificDayData, loadTodayData } =
+  require("@web/routers/loaders") as typeof import("@web/routers/loaders");
 
 const createRouter = () =>
   createMemoryRouter(
@@ -85,6 +150,12 @@ describe("TodayView Routing", () => {
     mockUseDayViewShortcuts.mockImplementation((config) =>
       actualUseDayViewShortcuts(config),
     );
+    mockRecipeInit.mockClear();
+    mockSuperTokensInit.mockClear();
+    Object.defineProperty(window, "indexedDB", {
+      configurable: true,
+      value: indexedDB,
+    });
     await prepareEmptyStorageForTests();
   });
 
@@ -191,8 +262,7 @@ describe("TodayView Routing", () => {
   });
 
   it("should render specific dates correctly", async () => {
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date("2025-10-20T12:00:00.000Z"));
+    setSystemTime(new Date("2025-10-20T12:00:00.000Z"));
 
     const router = createRouter();
 
@@ -201,7 +271,7 @@ describe("TodayView Routing", () => {
     expect(await screen.findByText("Monday")).toBeInTheDocument();
     expect(await screen.findByText("October 20")).toBeInTheDocument();
 
-    jest.useRealTimers();
+    setSystemTime();
   });
 });
 describe("Navigation with URL updates", () => {
