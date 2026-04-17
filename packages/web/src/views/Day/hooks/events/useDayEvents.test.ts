@@ -2,19 +2,23 @@ import { renderHook } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
 import { Day_AsyncStateContextReason } from "@web/ducks/events/context/day.context";
 import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
-import { useAppDispatch } from "@web/store/store.hooks";
-import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock("@web/store/store.hooks", () => ({
-  useAppDispatch: jest.fn(),
+const dispatchMock = mock();
+const useAppDispatch = mock();
+
+mock.module("@web/store/store.hooks", () => ({
+  useAppDispatch,
 }));
 
-describe("useDayEvents", () => {
-  const dispatchMock = jest.fn();
+const { useDayEvents } =
+  require("@web/views/Day/hooks/events/useDayEvents") as typeof import("@web/views/Day/hooks/events/useDayEvents");
 
+describe("useDayEvents", () => {
   beforeEach(() => {
-    (useAppDispatch as jest.Mock).mockReturnValue(dispatchMock);
+    useAppDispatch.mockReturnValue(dispatchMock);
     dispatchMock.mockClear();
+    useAppDispatch.mockClear();
   });
 
   it("dispatches day events request for the provided date", () => {
