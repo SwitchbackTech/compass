@@ -120,9 +120,6 @@ const renderWithProviders = (
   component: ReactElement,
   initialRoute: string = "/day",
 ) => {
-  const urlObj = new URL(initialRoute, "http://localhost");
-  window.history.pushState({}, "", urlObj);
-
   return render(
     <MemoryRouter
       initialEntries={[initialRoute]}
@@ -847,7 +844,16 @@ describe("AuthModal", () => {
 // Helper to mock window.location for URL param tests
 const mockWindowLocation = (url: string) => {
   const urlObj = new URL(url, "http://localhost");
-  window.history.pushState({}, "", urlObj);
+  const originalLocation = window.location;
+  // @ts-ignore
+  delete window.location;
+  window.location = {
+    ...originalLocation,
+    href: urlObj.href,
+    pathname: urlObj.pathname,
+    search: urlObj.search,
+    hash: urlObj.hash,
+  };
 };
 
 // Mock history.replaceState for URL param tests
@@ -1000,11 +1006,9 @@ describe("URL Parameter Support", () => {
       });
     });
 
-    expect(mockReplaceState).toHaveBeenCalledWith(
-      expect.anything(),
-      "",
-      expect.not.stringContaining("token="),
-    );
+    expect(mockReplaceState.mock.calls.at(-1)?.[0]).toBeNull();
+    expect(mockReplaceState.mock.calls.at(-1)?.[1]).toBe("");
+    expect(mockReplaceState.mock.calls.at(-1)?.[2]).not.toContain("token=");
     expect(screen.getByRole("status")).toHaveTextContent(
       "Password reset successful. Log in with your new password.",
     );
