@@ -1,13 +1,62 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { type ReactNode } from "react";
-import { render } from "@web/__tests__/utils/render.test.util";
 import {
   resetGoogleSyncUIStateForTests,
   setRepairingSyncIndicatorOverride,
 } from "@web/auth/google/state/google.sync.state";
-import { SyncApi } from "@web/common/apis/sync.api";
-import * as eventEmitterUtil from "@web/common/utils/dom/event-emitter.util";
-import { NowCmdPalette } from "@web/views/Now/components/NowCmdPalette";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+
+const actualEventEmitterUtil =
+  require("@web/common/utils/dom/event-emitter.util") as typeof import("@web/common/utils/dom/event-emitter.util");
+const mockImportGCal = mock().mockResolvedValue(undefined);
+const mockLogin = mock();
+const mockPressKey = mock();
+const mockRecipeInit = mock(() => ({}));
+const mockSuperTokensInit = mock();
+
+mock.module("supertokens-web-js", () => ({
+  default: {
+    init: mockSuperTokensInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/emailpassword", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/emailverification", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/thirdparty", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/session", () => ({
+  attemptRefreshingSession: mock(),
+  default: {
+    attemptRefreshingSession: mock(),
+    doesSessionExist: mock().mockResolvedValue(true),
+    getAccessToken: mock().mockResolvedValue("mock-access-token"),
+    getAccessTokenPayloadSecurely: mock().mockResolvedValue({}),
+    getInvalidClaimsFromResponse: mock().mockResolvedValue([]),
+    getUserId: mock().mockResolvedValue("mock-user-id"),
+    init: mockRecipeInit,
+    signOut: mock().mockResolvedValue(undefined),
+    validateClaims: mock().mockResolvedValue([]),
+  },
+}));
+
+mock.module("@react-oauth/google", () => ({
+  GoogleOAuthProvider: ({ children }: { children: ReactNode }) => children,
+  useGoogleLogin: () => mock(),
+}));
 
 type CommandPaletteProps = {
   children: ReactNode;
@@ -32,7 +81,7 @@ type CommandPaletteListItemProps = {
   onClick?: () => void;
 };
 
-jest.mock("react-cmdk", () => {
+mock.module("react-cmdk", () => {
   const MockCommandPalette = ({
     children,
     isOpen,
@@ -68,7 +117,7 @@ jest.mock("react-cmdk", () => {
     disabled,
     onClick,
   }: CommandPaletteListItemProps) => (
-    <button disabled={disabled} onClick={onClick}>
+    <button disabled={disabled} onClick={onClick} type="button">
       {children}
     </button>
   );
@@ -90,35 +139,39 @@ jest.mock("react-cmdk", () => {
 });
 
 // Mock pressKey
-jest.mock("@web/common/utils/dom/event-emitter.util", () => {
-  const actual = jest.requireActual<typeof eventEmitterUtil>(
-    "@web/common/utils/dom/event-emitter.util",
-  );
-
-  return {
-    ...actual,
-    pressKey: jest.fn(),
-  };
-});
+mock.module("@web/common/utils/dom/event-emitter.util", () => ({
+  ...actualEventEmitterUtil,
+  pressKey: mockPressKey,
+}));
 
 // Mock onEventTargetVisibility
-jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
+mock.module("@web/common/utils/dom/event-target-visibility.util", () => ({
   onEventTargetVisibility: (cb: () => void) => () => cb(),
 }));
 
 // Mock useGoogleAuth
-const mockLogin = jest.fn();
-jest.mock("@web/auth/google/hooks/useGoogleAuth/useGoogleAuth", () => ({
+mock.module("@web/auth/google/hooks/useGoogleAuth/useGoogleAuth", () => ({
   useGoogleAuth: () => ({
     login: mockLogin,
   }),
 }));
 
-jest.mock("@web/common/apis/sync.api", () => ({
+mock.module("@web/common/apis/sync.api", () => ({
   SyncApi: {
-    importGCal: jest.fn().mockResolvedValue(undefined),
+    importGCal: mockImportGCal,
   },
 }));
+
+mock.module("@web/common/hooks/useAuthCmdItems", () => ({
+  useAuthCmdItems: () => [],
+}));
+
+const { render } =
+  require("@web/__tests__/utils/render.test.util") as typeof import("@web/__tests__/utils/render.test.util");
+const { SyncApi } =
+  require("@web/common/apis/sync.api") as typeof import("@web/common/apis/sync.api");
+const { NowCmdPalette } =
+  require("@web/views/Now/components/NowCmdPalette") as typeof import("@web/views/Now/components/NowCmdPalette");
 
 describe("NowCmdPalette", () => {
   const initialState = {
@@ -128,7 +181,10 @@ describe("NowCmdPalette", () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockImportGCal.mockClear();
+    mockImportGCal.mockResolvedValue(undefined);
+    mockLogin.mockClear();
+    mockPressKey.mockClear();
     resetGoogleSyncUIStateForTests();
   });
 
@@ -163,33 +219,25 @@ describe("NowCmdPalette", () => {
   it("should trigger pressKey('d') when 'Go to Day' is clicked", async () => {
     render(<NowCmdPalette />, { state: initialState });
     fireEvent.click(screen.getByText("Go to Day [d]"));
-    await waitFor(() =>
-      expect(eventEmitterUtil.pressKey).toHaveBeenCalledWith("d"),
-    );
+    await waitFor(() => expect(mockPressKey).toHaveBeenCalledWith("d"));
   });
 
   it("should trigger pressKey('w') when 'Go to Week' is clicked", async () => {
     render(<NowCmdPalette />, { state: initialState });
     fireEvent.click(screen.getByText("Go to Week [w]"));
-    await waitFor(() =>
-      expect(eventEmitterUtil.pressKey).toHaveBeenCalledWith("w"),
-    );
+    await waitFor(() => expect(mockPressKey).toHaveBeenCalledWith("w"));
   });
 
   it("should trigger pressKey('r') when 'Edit Reminder' is clicked", async () => {
     render(<NowCmdPalette />, { state: initialState });
     fireEvent.click(screen.getByText("Edit Reminder [r]"));
-    await waitFor(() =>
-      expect(eventEmitterUtil.pressKey).toHaveBeenCalledWith("r"),
-    );
+    await waitFor(() => expect(mockPressKey).toHaveBeenCalledWith("r"));
   });
 
   it("should trigger pressKey('z') when 'Log Out' is clicked", async () => {
     render(<NowCmdPalette />, { state: initialState });
     fireEvent.click(screen.getByText("Log Out [z]"));
-    await waitFor(() =>
-      expect(eventEmitterUtil.pressKey).toHaveBeenCalledWith("z"),
-    );
+    await waitFor(() => expect(mockPressKey).toHaveBeenCalledWith("z"));
   });
 
   describe("Google Calendar authentication status", () => {
