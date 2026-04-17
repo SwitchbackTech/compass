@@ -3,26 +3,27 @@ import {
   type MigrateLocalToCloudParams,
   migrateLocalToCloud,
 } from "./task-storage-migration.service";
+import { describe, expect, it, mock } from "bun:test";
 
 describe("migrateLocalToCloud", () => {
-  const createParams = (): MigrateLocalToCloudParams => {
+  const createParams = () => {
     return {
       dateKeys: ["2024-01-01", "2024-01-02"],
       localRepository: {
-        get: jest.fn().mockResolvedValue([]),
-        save: jest.fn().mockResolvedValue(undefined),
-        delete: jest.fn().mockResolvedValue(undefined),
-        move: jest.fn().mockResolvedValue(undefined),
-        reorder: jest.fn().mockResolvedValue(undefined),
+        get: mock().mockResolvedValue([]),
+        save: mock().mockResolvedValue(undefined),
+        delete: mock().mockResolvedValue(undefined),
+        move: mock().mockResolvedValue(undefined),
+        reorder: mock().mockResolvedValue(undefined),
       },
       cloudRepository: {
-        get: jest.fn().mockResolvedValue([]),
-        save: jest.fn().mockResolvedValue(undefined),
-        delete: jest.fn().mockResolvedValue(undefined),
-        move: jest.fn().mockResolvedValue(undefined),
-        reorder: jest.fn().mockResolvedValue(undefined),
+        get: mock().mockResolvedValue([]),
+        save: mock().mockResolvedValue(undefined),
+        delete: mock().mockResolvedValue(undefined),
+        move: mock().mockResolvedValue(undefined),
+        reorder: mock().mockResolvedValue(undefined),
       },
-    };
+    } satisfies MigrateLocalToCloudParams;
   };
 
   it("migrates tasks and clears local data after successful upload", async () => {
@@ -31,7 +32,7 @@ describe("migrateLocalToCloud", () => {
       createMockTask({ _id: "task-1" }),
       createMockTask({ _id: "task-2" }),
     ];
-    (params.localRepository.get as jest.Mock)
+    params.localRepository.get
       .mockResolvedValueOnce(tasks)
       .mockResolvedValueOnce([]);
 
@@ -51,10 +52,10 @@ describe("migrateLocalToCloud", () => {
     const params = createParams();
     const tasks = [createMockTask({ _id: "task-1" })];
     const uploadError = new Error("cloud unavailable");
-    (params.localRepository.get as jest.Mock)
+    params.localRepository.get
       .mockResolvedValueOnce(tasks)
       .mockResolvedValueOnce([]);
-    (params.cloudRepository.save as jest.Mock).mockRejectedValue(uploadError);
+    params.cloudRepository.save.mockRejectedValue(uploadError);
 
     const result = await migrateLocalToCloud(params);
 
@@ -75,7 +76,7 @@ describe("migrateLocalToCloud", () => {
       createMockTask({ _id: "legacy-task-id" }),
     ];
 
-    (params.localRepository.get as jest.Mock)
+    params.localRepository.get
       .mockResolvedValueOnce(tasks)
       .mockResolvedValueOnce([]);
 
