@@ -1,6 +1,7 @@
 import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
-import { renderHook, waitFor } from "@web/__tests__/__mocks__/mock.render";
+import { renderHook, waitFor } from "@testing-library/react";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 function dispatchKeyEvent(
   key: string,
@@ -20,10 +21,10 @@ function dispatchKeyEvent(
 }
 
 describe("useAppHotkey", () => {
-  const mockHandler = jest.fn();
+  const mockHandler = mock();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockHandler.mockClear();
     HotkeyManager.resetInstance();
     document.body.removeAttribute("data-app-locked");
   });
@@ -110,7 +111,7 @@ describe("useAppHotkey", () => {
 
   it("blurs the active element before handling the shortcut when requested", async () => {
     const input = document.createElement("input");
-    const blurSpy = jest.spyOn(input, "blur");
+    const blurSpy = spyOn(input, "blur");
     document.body.appendChild(input);
     input.focus();
 
