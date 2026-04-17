@@ -97,6 +97,11 @@ function getImportStatements(
   const typeOnlyImports: string[] = [];
   const runtimeImports: string[] = [];
 
+  // Skip bun:test imports - these are already provided by TEST_GLOBALS_IMPORT
+  if (moduleSpecifier === '"bun:test"') {
+    return { runtimeImports, typeOnlyImports };
+  }
+
   if (!importClause) {
     if (
       moduleSpecifier === '"@testing-library/jest-dom"' ||
