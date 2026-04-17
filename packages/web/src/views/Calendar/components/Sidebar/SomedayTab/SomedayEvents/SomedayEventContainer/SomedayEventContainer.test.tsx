@@ -2,7 +2,6 @@ import {
   type DraggableProvided,
   type DraggableStateSnapshot,
 } from "@hello-pangea/dnd";
-import React from "react";
 import "@testing-library/jest-dom";
 import { LEARN_CHINESE } from "@core/__mocks__/v1/events/events.misc";
 import {
@@ -13,14 +12,14 @@ import {
 import { createMockBaseEvent } from "@core/util/test/ccal.event.factory";
 import { fireEvent, render } from "@web/__tests__/__mocks__/mock.render";
 import { SidebarDraftContext } from "@web/views/Calendar/components/Draft/sidebar/context/SidebarDraftContext";
-import { SomedayEventContainer } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventContainer/SomedayEventContainer";
+import { describe, expect, it, mock } from "bun:test";
 
-jest.mock(
+mock.module(
   "@web/views/Calendar/components/Draft/hooks/state/useDraftForm",
   () => ({
     useDraftForm: () => ({
       context: {},
-      refs: { setFloating: jest.fn(), setReference: jest.fn() },
+      refs: { setFloating: mock(), setReference: mock() },
       strategy: "absolute",
       x: 0,
       y: 0,
@@ -30,9 +29,12 @@ jest.mock(
   }),
 );
 
+const { SomedayEventContainer } =
+  require("@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventContainer/SomedayEventContainer") as typeof import("@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventContainer/SomedayEventContainer");
+
 describe("SomedayEventContainer keyboard interactions", () => {
   it("opens the form when Enter is pressed", async () => {
-    const onDraft = jest.fn();
+    const onDraft = mock();
     const contextValue = {
       state: {
         draft: null,
@@ -41,15 +43,15 @@ describe("SomedayEventContainer keyboard interactions", () => {
         isSomedayFormOpen: false,
       } as any,
       setters: {
-        setIsSomedayFormOpen: jest.fn(),
+        setIsSomedayFormOpen: mock(),
       } as any,
       actions: {
         onDraft,
-        onMigrate: jest.fn(),
-        discard: jest.fn(),
-        reset: jest.fn(),
-        closeForm: jest.fn(),
-        close: jest.fn(),
+        onMigrate: mock(),
+        discard: mock(),
+        reset: mock(),
+        closeForm: mock(),
+        close: mock(),
       } as any,
     };
 
@@ -61,9 +63,9 @@ describe("SomedayEventContainer keyboard interactions", () => {
           isDrafting={false}
           isDragging={false}
           isOverGrid={false}
-          deleteEvent={jest.fn()}
-          duplicateEvent={jest.fn()}
-          onSubmit={jest.fn()}
+          deleteEvent={mock()}
+          duplicateEvent={mock()}
+          onSubmit={mock()}
           provided={
             {
               draggableProps: {
@@ -72,11 +74,11 @@ describe("SomedayEventContainer keyboard interactions", () => {
                 style: {},
               },
               dragHandleProps: null,
-              innerRef: jest.fn(),
+              innerRef: mock(),
             } as DraggableProvided
           }
           snapshot={{ isDragging: false } as DraggableStateSnapshot}
-          setEvent={jest.fn()}
+          setEvent={mock()}
           weekViewRange={{ startDate: "2020-01-01", endDate: "2020-01-07" }}
         />
       </SidebarDraftContext.Provider>,
@@ -96,7 +98,7 @@ describe("SomedayEventContainer keyboard interactions", () => {
   });
 
   it("migrates event to Someday Week when Meta+Ctrl+ArrowUp is pressed", async () => {
-    const onSubmit = jest.fn();
+    const onSubmit = mock();
     const contextValue = {
       state: {
         draft: null,
@@ -105,15 +107,15 @@ describe("SomedayEventContainer keyboard interactions", () => {
         isSomedayFormOpen: false,
       } as any,
       setters: {
-        setIsSomedayFormOpen: jest.fn(),
+        setIsSomedayFormOpen: mock(),
       } as any,
       actions: {
-        onDraft: jest.fn(),
-        onMigrate: jest.fn(),
-        discard: jest.fn(),
-        reset: jest.fn(),
-        closeForm: jest.fn(),
-        close: jest.fn(),
+        onDraft: mock(),
+        onMigrate: mock(),
+        discard: mock(),
+        reset: mock(),
+        closeForm: mock(),
+        close: mock(),
         onSubmit,
       } as any,
     };
@@ -128,8 +130,8 @@ describe("SomedayEventContainer keyboard interactions", () => {
           isDrafting={false}
           isDragging={false}
           isOverGrid={false}
-          deleteEvent={jest.fn()}
-          duplicateEvent={jest.fn()}
+          deleteEvent={mock()}
+          duplicateEvent={mock()}
           onSubmit={onSubmit}
           provided={
             {
@@ -139,11 +141,11 @@ describe("SomedayEventContainer keyboard interactions", () => {
                 style: {},
               },
               dragHandleProps: null,
-              innerRef: jest.fn(),
+              innerRef: mock(),
             } as DraggableProvided
           }
           snapshot={{ isDragging: false } as DraggableStateSnapshot}
-          setEvent={jest.fn()}
+          setEvent={mock()}
           weekViewRange={weekViewRange}
         />
       </SidebarDraftContext.Provider>,
@@ -161,7 +163,7 @@ describe("SomedayEventContainer keyboard interactions", () => {
   });
 
   it("migrates event to Someday Month when Meta+Ctrl+ArrowDown is pressed", async () => {
-    const onSubmit = jest.fn();
+    const onSubmit = mock();
     const contextValue = {
       state: {
         draft: null,
@@ -170,15 +172,15 @@ describe("SomedayEventContainer keyboard interactions", () => {
         isSomedayFormOpen: false,
       } as any,
       setters: {
-        setIsSomedayFormOpen: jest.fn(),
+        setIsSomedayFormOpen: mock(),
       } as any,
       actions: {
-        onDraft: jest.fn(),
-        onMigrate: jest.fn(),
-        discard: jest.fn(),
-        reset: jest.fn(),
-        closeForm: jest.fn(),
-        close: jest.fn(),
+        onDraft: mock(),
+        onMigrate: mock(),
+        discard: mock(),
+        reset: mock(),
+        closeForm: mock(),
+        close: mock(),
         onSubmit,
       } as any,
     };
@@ -193,8 +195,8 @@ describe("SomedayEventContainer keyboard interactions", () => {
           isDrafting={false}
           isDragging={false}
           isOverGrid={false}
-          deleteEvent={jest.fn()}
-          duplicateEvent={jest.fn()}
+          deleteEvent={mock()}
+          duplicateEvent={mock()}
           onSubmit={onSubmit}
           provided={
             {
@@ -204,11 +206,11 @@ describe("SomedayEventContainer keyboard interactions", () => {
                 style: {},
               },
               dragHandleProps: null,
-              innerRef: jest.fn(),
+              innerRef: mock(),
             } as DraggableProvided
           }
           snapshot={{ isDragging: false } as DraggableStateSnapshot}
-          setEvent={jest.fn()}
+          setEvent={mock()}
           weekViewRange={weekViewRange}
         />
       </SidebarDraftContext.Provider>,
