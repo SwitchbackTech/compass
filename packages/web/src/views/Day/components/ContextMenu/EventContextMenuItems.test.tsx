@@ -1,6 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { Provider } from "react-redux";
-import { type BehaviorSubject } from "rxjs";
+import { BehaviorSubject } from "rxjs";
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -8,23 +8,29 @@ import {
   RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
-import { closeFloatingAtCursor } from "@web/common/hooks/useOpenAtCursor";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
-import { activeEvent$, eventsStore } from "@web/store/events";
-import { EventContextMenuItems } from "@web/views/Day/components/ContextMenu/EventContextMenuItems";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
-jest.mock("@web/store/events", () => {
-  const { BehaviorSubject } = require("rxjs");
-  return {
-    activeEvent$: new BehaviorSubject(null),
-    eventsStore: {
-      query: jest.fn(),
-    },
-    getDraft: jest.fn(),
-    resetDraft: jest.fn(),
-  };
-});
-jest.mock("@web/common/hooks/useOpenAtCursor");
+const activeEvent$ = new BehaviorSubject<Schema_Event | null>(null);
+const closeFloatingAtCursor = mock();
+const mockEventQuery = mock();
+const resetDraft = mock();
+
+mock.module("@web/store/events", () => ({
+  activeEvent$,
+  eventsStore: {
+    query: mockEventQuery,
+  },
+  getDraft: mock(),
+  resetDraft,
+}));
+
+mock.module("@web/common/hooks/useOpenAtCursor", () => ({
+  closeFloatingAtCursor,
+}));
+
+const { EventContextMenuItems } =
+  require("@web/views/Day/components/ContextMenu/EventContextMenuItems") as typeof import("@web/views/Day/components/ContextMenu/EventContextMenuItems");
 
 const mockEvent: Schema_Event = {
   _id: "event-1",
@@ -43,18 +49,22 @@ const createMockStore = () => {
 };
 
 describe("EventContextMenuItems", () => {
-  const mockClose = jest.fn();
+  const mockClose = mock();
+  const confirmMock = mock(() => true);
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (closeFloatingAtCursor as jest.Mock).mockImplementation(mockClose);
-    global.confirm = jest.fn(() => true);
-    (eventsStore.query as jest.Mock).mockReturnValue(mockEvent);
+    closeFloatingAtCursor.mockImplementation(mockClose);
+    confirmMock.mockClear();
+    mockClose.mockClear();
+    mockEventQuery.mockReset();
+    resetDraft.mockClear();
+    global.confirm = confirmMock as typeof global.confirm;
+    mockEventQuery.mockReturnValue(mockEvent);
   });
 
   const renderWithProvider = (event: Schema_Event) => {
     const store = createMockStore();
-    (activeEvent$ as BehaviorSubject<Schema_Event | null>).next(event);
+    activeEvent$.next(event);
     return render(
       <Provider store={store}>
         <EventContextMenuItems id={event._id!} />
@@ -71,9 +81,9 @@ describe("EventContextMenuItems", () => {
   it("should dispatch delete action when clicked", async () => {
     const user = userEvent.setup();
     const store = createMockStore();
-    const dispatchSpy = jest.spyOn(store, "dispatch");
+    const dispatchSpy = spyOn(store, "dispatch");
 
-    (activeEvent$ as BehaviorSubject<Schema_Event | null>).next(mockEvent);
+    activeEvent$.next(mockEvent);
 
     render(
       <Provider store={store}>
@@ -95,9 +105,9 @@ describe("EventContextMenuItems", () => {
 
   it("should handle keyboard Enter key", async () => {
     const store = createMockStore();
-    const dispatchSpy = jest.spyOn(store, "dispatch");
+    const dispatchSpy = spyOn(store, "dispatch");
 
-    (activeEvent$ as BehaviorSubject<Schema_Event | null>).next(mockEvent);
+    activeEvent$.next(mockEvent);
 
     render(
       <Provider store={store}>
@@ -119,9 +129,9 @@ describe("EventContextMenuItems", () => {
 
   it("should handle keyboard Space key", async () => {
     const store = createMockStore();
-    const dispatchSpy = jest.spyOn(store, "dispatch");
+    const dispatchSpy = spyOn(store, "dispatch");
 
-    (activeEvent$ as BehaviorSubject<Schema_Event | null>).next(mockEvent);
+    activeEvent$.next(mockEvent);
 
     render(
       <Provider store={store}>
