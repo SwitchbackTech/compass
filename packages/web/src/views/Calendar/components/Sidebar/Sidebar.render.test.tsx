@@ -1,14 +1,52 @@
-import { type PropsWithChildren } from "react";
+import { type PropsWithChildren, type ReactNode } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor, within } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  setSystemTime,
+  spyOn,
+  vi,
+} from "bun:test";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
 import { DraftProvider } from "@web/views/Calendar/components/Draft/context/DraftProvider";
 import { SidebarDraftProvider } from "@web/views/Calendar/components/Draft/sidebar/context/SidebarDraftProvider";
 import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { Sidebar } from "./Sidebar";
+
+mock.module("@react-oauth/google", () => ({
+  GoogleOAuthProvider: ({ children }: { children: ReactNode }) => children,
+  useGoogleLogin: () => mock(),
+}));
+
+mock.module("@web/common/hooks/useVersionCheck", () => ({
+  useVersionCheck: () => ({
+    currentVersion: "test",
+    isUpdateAvailable: false,
+  }),
+}));
+
+const { BaseApi } =
+  require("@web/common/apis/base/base.api") as typeof import("@web/common/apis/base/base.api");
+const { Sidebar } =
+  require("./Sidebar") as typeof import("./Sidebar");
+
+const mockBaseApiAdapter = mock(async ({ url }) => {
+  return {
+    config: { method: "GET", url },
+    data: url.startsWith("/event") ? [] : {},
+    headers: new Headers(),
+    status: 200,
+    statusText: "OK",
+  };
+});
 
 const mockProps = {
   dateCalcs: {} as DateCalcs,
@@ -20,13 +58,13 @@ const mockProps = {
       isCurrentWeek: true,
     },
     state: {
-      setStartOfView: jest.fn(),
+      setStartOfView: mock(),
     },
     util: {
-      decrementWeek: jest.fn(),
-      incrementWeek: jest.fn(),
-      goToToday: jest.fn(),
-      getLastNavigationSource: jest.fn(() => "manual"),
+      decrementWeek: mock(),
+      incrementWeek: mock(),
+      goToToday: mock(),
+      getLastNavigationSource: mock(() => "manual"),
     },
   } as any,
   gridRefs: {
@@ -50,13 +88,18 @@ const SidebarTestProviders = ({ children }: PropsWithChildren) => (
 );
 
 beforeAll(() => {
-  window.HTMLElement.prototype.scroll = jest.fn();
-  jest.useFakeTimers();
-  jest.setSystemTime(new Date("2025-12-10"));
+  window.HTMLElement.prototype.scroll = mock();
+  setSystemTime(new Date("2025-12-10"));
+});
+
+beforeEach(() => {
+  BaseApi.defaults.adapter = mockBaseApiAdapter;
+  mockBaseApiAdapter.mockClear();
+  vi.clearAllMocks();
 });
 
 afterAll(() => {
-  jest.useRealTimers();
+  setSystemTime();
 });
 
 describe("Sidebar: Display without State", () => {
