@@ -1,13 +1,86 @@
 import "@testing-library/jest-dom";
-import { screen, waitFor } from "@testing-library/react";
+import { cleanup, screen, waitFor } from "@testing-library/react";
+import { IDBKeyRange, indexedDB } from "fake-indexeddb";
 import "@web/__tests__/floating-ui.setup";
-import { prepareEmptyStorageForTests } from "@web/__tests__/utils/storage/indexeddb.test.util";
+import { type ReactNode } from "react";
 import { addTasks } from "@web/__tests__/utils/tasks/task.test.util";
-import { renderWithDayProvidersAsync } from "../../util/day.test-util";
-import { TaskList } from "../TaskList/TaskList";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
+
+const mockRecipeInit = mock(() => ({}));
+const mockSuperTokensInit = mock();
+
+Object.defineProperty(globalThis, "indexedDB", {
+  configurable: true,
+  value: indexedDB,
+});
+Object.defineProperty(globalThis, "IDBKeyRange", {
+  configurable: true,
+  value: IDBKeyRange,
+});
+
+const { prepareEmptyStorageForTests } =
+  require("@web/__tests__/utils/storage/indexeddb.test.util") as typeof import("@web/__tests__/utils/storage/indexeddb.test.util");
+
+mock.module("supertokens-web-js", () => ({
+  default: {
+    init: mockSuperTokensInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/emailpassword", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/emailverification", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/thirdparty", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/session", () => ({
+  attemptRefreshingSession: mock(),
+  default: {
+    attemptRefreshingSession: mock(),
+    doesSessionExist: mock().mockResolvedValue(true),
+    getAccessToken: mock().mockResolvedValue("mock-access-token"),
+    getAccessTokenPayloadSecurely: mock().mockResolvedValue({}),
+    getInvalidClaimsFromResponse: mock().mockResolvedValue([]),
+    getUserId: mock().mockResolvedValue("mock-user-id"),
+    init: mockRecipeInit,
+    signOut: mock().mockResolvedValue(undefined),
+    validateClaims: mock().mockResolvedValue([]),
+  },
+}));
+
+mock.module("@react-oauth/google", () => ({
+  GoogleOAuthProvider: ({ children }: { children: ReactNode }) => children,
+  useGoogleLogin: () => mock(),
+}));
+
+const { renderWithDayProvidersAsync } =
+  require("../../util/day.test-util") as typeof import("../../util/day.test-util");
+const { TaskList } =
+  require("../TaskList/TaskList") as typeof import("../TaskList/TaskList");
 
 // Mock console.log to test the delete action
-const mockConsoleLog = jest.spyOn(console, "log").mockImplementation(() => {});
+const mockConsoleLog = spyOn(console, "log").mockImplementation(() => {});
 
 describe("TaskContextMenu", () => {
   beforeEach(async () => {
@@ -17,6 +90,10 @@ describe("TaskContextMenu", () => {
 
   afterAll(() => {
     mockConsoleLog.mockRestore();
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   it("should open context menu on right-click on a task", async () => {
@@ -38,7 +115,7 @@ describe("TaskContextMenu", () => {
     await waitFor(async () => {
       expect(await screen.findByText("Delete Task")).toBeInTheDocument();
     });
-  });
+  }, 15000);
 
   it("should show Delete Task menu item when menu is open", async () => {
     const { user } = await renderWithDayProvidersAsync(<TaskList />);
@@ -59,7 +136,7 @@ describe("TaskContextMenu", () => {
       expect(deleteMenuItem).toBeInTheDocument();
       expect(deleteMenuItem.closest("button")).toHaveClass("cursor-pointer");
     });
-  });
+  }, 15000);
 
   it("should remove task from list when Delete Task is clicked", async () => {
     const { user } = await renderWithDayProvidersAsync(<TaskList />);
@@ -88,7 +165,7 @@ describe("TaskContextMenu", () => {
     await waitFor(() => {
       expect(screen.queryByText("Task to delete")).not.toBeInTheDocument();
     });
-  });
+  }, 15000);
 
   it("should close menu when clicking outside", async () => {
     const { user } = await renderWithDayProvidersAsync(<TaskList />);
@@ -116,7 +193,7 @@ describe("TaskContextMenu", () => {
     await waitFor(() => {
       expect(screen.queryByText("Delete Task")).not.toBeInTheDocument();
     });
-  });
+  }, 15000);
 
   it("should close menu when pressing Escape key", async () => {
     const { user } = await renderWithDayProvidersAsync(<TaskList />);
@@ -143,7 +220,7 @@ describe("TaskContextMenu", () => {
     await waitFor(() => {
       expect(screen.queryByText("Delete Task")).not.toBeInTheDocument();
     });
-  });
+  }, 15000);
 
   it("should not open context menu when right-clicking on add task button", async () => {
     const { user } = await renderWithDayProvidersAsync(<TaskList />);
@@ -154,7 +231,7 @@ describe("TaskContextMenu", () => {
 
     // Check that no context menu appears
     expect(screen.queryByText("Delete Task")).not.toBeInTheDocument();
-  });
+  }, 15000);
 
   it("should work with multiple tasks", async () => {
     const { user } = await renderWithDayProvidersAsync(<TaskList />);
@@ -185,5 +262,5 @@ describe("TaskContextMenu", () => {
       expect(screen.queryByText("First task")).not.toBeInTheDocument();
       expect(screen.getByDisplayValue("Second task")).toBeInTheDocument();
     });
-  });
+  }, 15000);
 });

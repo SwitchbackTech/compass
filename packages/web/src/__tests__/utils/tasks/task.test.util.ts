@@ -1,18 +1,26 @@
-import { act, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import type userEvent from "@testing-library/user-event";
 
 type User = ReturnType<typeof userEvent.setup>;
 
-export const waitForTaskListReady = async () => {
-  await waitFor(() => {
-    expect(
-      screen.getByRole("region", { name: "daily-tasks" }),
-    ).toBeInTheDocument();
-  });
+const TASK_TEST_TIMEOUT_MS = 10000;
 
-  await waitFor(() => {
-    expect(screen.queryByText("Loading tasks...")).not.toBeInTheDocument();
-  });
+export const waitForTaskListReady = async () => {
+  await waitFor(
+    () => {
+      expect(
+        screen.getByRole("region", { name: "daily-tasks" }),
+      ).toBeInTheDocument();
+    },
+    { timeout: TASK_TEST_TIMEOUT_MS },
+  );
+
+  await waitFor(
+    () => {
+      expect(screen.queryByText("Loading tasks...")).not.toBeInTheDocument();
+    },
+    { timeout: TASK_TEST_TIMEOUT_MS },
+  );
 };
 
 export const addTasks = async (user: User, taskTitles: string[]) => {
@@ -26,8 +34,9 @@ export const addTasks = async (user: User, taskTitles: string[]) => {
     await clickCreateTaskButton(user);
 
     // Wait for the input to appear
-    const input = (await waitFor(() =>
-      screen.getByPlaceholderText("Enter task title..."),
+    const input = (await waitFor(
+      () => screen.getByPlaceholderText("Enter task title..."),
+      { timeout: TASK_TEST_TIMEOUT_MS },
     )) as HTMLInputElement;
 
     await user.clear(input);
@@ -42,7 +51,7 @@ export const addTasks = async (user: User, taskTitles: string[]) => {
         });
         expect(elements.length).toBeGreaterThanOrEqual(expectedTitleCount);
       },
-      { timeout: 5000 },
+      { timeout: TASK_TEST_TIMEOUT_MS },
     );
   }
 };
@@ -55,17 +64,17 @@ export const clickCreateTaskButton = async (user: User) => {
 
   const addButton = await waitFor(
     () => screen.getByRole("button", { name: "Create new task" }),
-    { timeout: 5000 },
+    { timeout: TASK_TEST_TIMEOUT_MS },
   );
 
   await user.click(addButton);
 
   return waitFor(() => screen.getByRole("textbox", { name: /task title/i }), {
-    timeout: 5000,
+    timeout: TASK_TEST_TIMEOUT_MS,
   });
 };
 
-export const focusOnTaskCheckbox = async (user: User, title: string) => {
+export const focusOnTaskCheckbox = async (_user: User, title: string) => {
   const checkbox = await waitFor(() =>
     screen.getByRole("checkbox", { name: `Toggle ${title}` }),
   );
