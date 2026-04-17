@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock, vi } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { act } from "react";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
@@ -19,7 +19,7 @@ const renderForgotPasswordForm = () => {
 
 describe("ForgotPasswordForm", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mock.restore();
   });
 
   describe("blur-only validation", () => {

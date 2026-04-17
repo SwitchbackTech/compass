@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { screen } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import {

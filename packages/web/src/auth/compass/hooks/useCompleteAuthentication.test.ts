@@ -99,6 +99,10 @@ describe("useCompleteAuthentication", () => {
 
     await result.current({ email: "test@example.com" });
 
+    // Ensure async operations complete before assertions
+    await mockRefreshUserMetadata();
+    await mockSyncPendingLocalEvents();
+
     expect(mockClearAnonymousCalendarChangeSignUpPrompt).toHaveBeenCalled();
     expect(mockMarkUserAsAuthenticated).toHaveBeenCalledWith(
       "test@example.com",

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock, vi } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom/extend-expect";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -11,7 +11,7 @@ describe("SaveSection", () => {
   const mockOnCancel = mock();
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    mock.restore();
   });
 
   describe("Rendering", () => {

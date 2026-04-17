@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, mock, spyOn, vi } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { screen, waitFor } from "@testing-library/react";
 import { ObjectId } from "bson";
 import { Origin, Priorities } from "@core/constants/core.constants";
@@ -20,7 +20,7 @@ describe("EventContextMenu", () => {
   };
 
   afterEach(() => {
-    vi.clearAllMocks();
+    mock.restore();
   });
 
   it("should open context menu on right-click on an event", async () => {

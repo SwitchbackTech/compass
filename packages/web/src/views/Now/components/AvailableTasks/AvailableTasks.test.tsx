@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock, vi } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -13,7 +13,7 @@ describe("AvailableTasks", () => {
   const mockTask2 = createMockTask({ _id: "task-2", title: "Another Task" });
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    mock.restore();
   });
 
   it("renders the heading text", () => {

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock, vi } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { afterAll } from "bun:test";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import "@testing-library/jest-dom";
@@ -12,7 +12,7 @@ mock.module("@web/components/SyncEventsOverlay/SyncEventsOverlay", () => ({
 
 describe("AuthenticatedLayout", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mock.restore();
   });
 
   it("should render child routes via Outlet", async () => {

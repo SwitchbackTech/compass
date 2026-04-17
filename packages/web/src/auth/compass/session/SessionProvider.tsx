@@ -63,9 +63,9 @@ let isSessionInitialized = false;
 
 const $authenticated = authenticated$.pipe(skip(1), distinctUntilChanged());
 
-const handleSessionExists = () => {
+const handleSessionExists = async () => {
   markUserAsAuthenticated(getLastKnownEmail());
-  void refreshUserMetadata();
+  await refreshUserMetadata();
 };
 
 const handleSessionMissing = () => {

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock, vi } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { screen } from "@testing-library/react";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { render } from "@web/__tests__/__mocks__/mock.render";
@@ -51,7 +51,7 @@ const mockOnScalerMouseDown = mock();
 
 describe("GridEvent", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mock.restore();
     mockOnEventMouseDown.mockClear();
     mockOnScalerMouseDown.mockClear();
   });

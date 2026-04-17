@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock, vi } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 import { fireEvent, screen } from "@testing-library/react";
 import { Priorities } from "@core/constants/core.constants";
@@ -22,7 +22,7 @@ const baseEvent: Schema_Event = {
 
 describe("RecurrenceSection", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mock.restore();
   });
 
   it("renders without recurrence", () => {

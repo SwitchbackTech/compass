@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock, vi } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { type SetStateAction, useCallback, useState } from "react";
 import "@testing-library/jest-dom";
 import { fireEvent, screen } from "@testing-library/react";
@@ -23,7 +23,7 @@ const baseSomedayEvent: Schema_Event = {
 
 describe("SomedayRecurrenceSection", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mock.restore();
   });
 
   const renderSection = (eventOverride: Schema_Event = baseSomedayEvent) => {

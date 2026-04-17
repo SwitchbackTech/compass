@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock, vi } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { renderHook } from "@testing-library/react";
 import { useAuthUrlParam } from "./useAuthUrlParam";
 
@@ -22,7 +22,7 @@ const mockReplaceState = mock();
 
 describe("useAuthUrlParam", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mock.restore();
     Object.defineProperty(window.history, "replaceState", {
       value: mockReplaceState,
       writable: true,

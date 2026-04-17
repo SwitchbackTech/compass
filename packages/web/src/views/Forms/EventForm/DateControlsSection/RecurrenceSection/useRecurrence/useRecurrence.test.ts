@@ -1,4 +1,4 @@
-import { describe, expect, it, mock, vi } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
 import { Frequency } from "rrule";
