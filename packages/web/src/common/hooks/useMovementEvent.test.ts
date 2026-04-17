@@ -4,14 +4,15 @@ import {
   renderHook,
   screen,
 } from "@web/__tests__/__mocks__/mock.render";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { ID_MAIN, ID_ROOT } from "@web/common/constants/web.constants";
 import { useMovementEvent } from "@web/common/hooks/useMovementEvent";
 
 describe("useMovementEvent", () => {
-  const mockHandler = jest.fn();
+  const mockHandler = mock();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockHandler.mockClear();
   });
 
   it("should call handler when event matches type and selector", () => {
