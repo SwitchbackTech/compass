@@ -19,20 +19,26 @@ import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
 import * as storeHooks from "@web/store/store.hooks";
 import { DraftProvider } from "@web/views/Calendar/components/Draft/context/DraftProvider";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm/SomedayEventForm";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
-jest.mock("@web/ducks/events/event.api");
-
-const mockDispatch = jest.fn();
-const mockOnClose = jest.fn();
-const mockOnMigrate = jest.fn();
-const mockOnSubmit = jest.fn();
-const mockOnDelete = jest.fn();
-const mockSetEvent = jest.fn();
-const mockDuplicateEvent = jest.fn();
+const mockDispatch = mock();
+const mockOnClose = mock();
+const mockOnMigrate = mock();
+const mockOnSubmit = mock();
+const mockOnDelete = mock();
+const mockSetEvent = mock();
+const mockDuplicateEvent = mock();
 const isDraft = true;
 const isExistingEvent = true;
-let dispatchSpy: jest.Mock;
-let mockConfirm: jest.Spied<typeof window.confirm>;
+let dispatchSpy: ReturnType<typeof mock>;
+
+const alertSpy = spyOn(window, "alert");
+const confirmSpy = spyOn(window, "confirm");
+const createEventSpy = spyOn(EventApi, "create");
+const deleteEventSpy = spyOn(EventApi, "delete");
+const editEventSpy = spyOn(EventApi, "edit");
+const getEventSpy = spyOn(EventApi, "get");
+const useAppDispatchSpy = spyOn(storeHooks, "useAppDispatch");
 
 const getModifierShortcut = (key: string) =>
   resolveModifier("Mod") === "Meta"
@@ -45,38 +51,44 @@ const getCtrlMetaArrowShortcut = (arrowWithBraces: string) =>
 
 describe("SomedayEventForm Hotkeys", () => {
   beforeEach(() => {
-    jest.resetAllMocks();
-    mockConfirm = jest.spyOn(window, "confirm").mockImplementation(() => false);
-    jest.spyOn(window, "alert");
-    dispatchSpy = jest.fn();
-    jest.spyOn(storeHooks, "useAppDispatch").mockReturnValue(dispatchSpy);
+    alertSpy.mockReset();
+    confirmSpy.mockReset();
+    createEventSpy.mockReset();
+    deleteEventSpy.mockReset();
+    dispatchSpy = mock();
+    editEventSpy.mockReset();
+    getEventSpy.mockReset();
+    mockDispatch.mockClear();
+    mockDuplicateEvent.mockClear();
+    mockOnClose.mockClear();
+    mockOnDelete.mockClear();
+    mockOnMigrate.mockClear();
+    mockOnSubmit.mockClear();
+    mockSetEvent.mockClear();
+    useAppDispatchSpy.mockReset();
 
-    jest
-      .spyOn(EventApi, "delete")
-      .mockImplementation(() =>
-        Promise.resolve({ status: 200 } as ApiResponse<void>),
-      );
+    confirmSpy.mockImplementation(() => false);
+    alertSpy.mockImplementation(() => {});
+    useAppDispatchSpy.mockReturnValue(dispatchSpy);
 
-    jest
-      .spyOn(EventApi, "create")
-      .mockImplementation(() =>
-        Promise.resolve({ status: 200 } as ApiResponse<void>),
-      );
+    deleteEventSpy.mockImplementation(() =>
+      Promise.resolve({ status: 200 } as ApiResponse<void>),
+    );
 
-    jest
-      .spyOn(EventApi, "edit")
-      .mockImplementation(() =>
-        Promise.resolve({ status: 200 } as ApiResponse<void>),
-      );
+    createEventSpy.mockImplementation(() =>
+      Promise.resolve({ status: 200 } as ApiResponse<void>),
+    );
 
-    jest.spyOn(EventApi, "get").mockImplementation(() =>
+    editEventSpy.mockImplementation(() =>
+      Promise.resolve({ status: 200 } as ApiResponse<void>),
+    );
+
+    getEventSpy.mockImplementation(() =>
       Promise.resolve({
         status: 200,
         data: [],
       } as ApiResponse<Schema_Event[]>),
     );
-
-    jest.spyOn(window, "alert").mockImplementation(() => {});
   });
 
   const now = dayjs();
@@ -118,12 +130,12 @@ describe("SomedayEventForm Hotkeys", () => {
       expect.objectContaining(sampleSomedayEvent),
     );
     expect(toast).not.toHaveBeenCalled();
-    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(confirmSpy).not.toHaveBeenCalled();
   });
 
   it("should trigger delete flow when delete keyboard shortcut is used and confirmed", async () => {
     // Explicitly confirm deletion
-    mockConfirm.mockReturnValue(true);
+    confirmSpy.mockReturnValue(true);
     const eventId = sampleSomedayEvent._id;
 
     const { weekProps, dateCalcs, deleteEvent } = setupDraftState(
@@ -151,8 +163,8 @@ describe("SomedayEventForm Hotkeys", () => {
 
     await userEvent.keyboard("{Delete}");
 
-    expect(mockConfirm).toHaveBeenCalledTimes(1);
-    expect(mockConfirm).toHaveBeenCalledWith(
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(confirmSpy).toHaveBeenCalledWith(
       `Delete ${sampleSomedayEvent.title}?`,
     );
     expect(eventId).toBeDefined();
@@ -171,7 +183,7 @@ describe("SomedayEventForm Hotkeys", () => {
 
   it("should not trigger delete flow when delete keyboard shortcut is used and cancelled", async () => {
     // Explicitly refuse deletion
-    mockConfirm.mockReturnValue(false);
+    confirmSpy.mockReturnValue(false);
 
     const { weekProps, dateCalcs, deleteEvent } = setupDraftState(
       sampleSomedayEvent as Schema_WebEvent,
@@ -198,8 +210,8 @@ describe("SomedayEventForm Hotkeys", () => {
 
     await userEvent.keyboard("{Delete}");
 
-    expect(mockConfirm).toHaveBeenCalledTimes(1);
-    expect(mockConfirm).toHaveBeenCalledWith(
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(confirmSpy).toHaveBeenCalledWith(
       `Delete ${sampleSomedayEvent.title}?`,
     );
 
@@ -246,7 +258,7 @@ describe("SomedayEventForm Hotkeys", () => {
 
     expect(mockOnClose).toHaveBeenCalledTimes(1);
     expect(toast).not.toHaveBeenCalled();
-    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(confirmSpy).not.toHaveBeenCalled();
   });
 
   it("should call onMigrate when migrate backward icon btn is clicked", async () => {
@@ -352,7 +364,7 @@ describe("SomedayEventForm Hotkeys", () => {
     expect(mockOnSubmit).not.toHaveBeenCalled();
     expect(mockDispatch).not.toHaveBeenCalled();
     expect(toast).not.toHaveBeenCalled();
-    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(confirmSpy).not.toHaveBeenCalled();
   });
 
   it("should call onMigrate when mod+left keyboard shortcut is used while ActionsMenu is open", async () => {
@@ -539,7 +551,7 @@ describe("SomedayEventForm Hotkeys", () => {
 
   it("should call onDelete when delete keyboard shortcut is used while ActionsMenu is open", async () => {
     const user = userEvent.setup();
-    mockConfirm.mockReturnValue(true);
+    confirmSpy.mockReturnValue(true);
 
     render(
       <div>
@@ -574,7 +586,7 @@ describe("SomedayEventForm Hotkeys", () => {
 
     expect(mockOnDelete).toHaveBeenCalledTimes(1);
     expect(mockOnClose).toHaveBeenCalledTimes(1);
-    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(confirmSpy).not.toHaveBeenCalled();
     expect(toast).not.toHaveBeenCalled();
   });
 
