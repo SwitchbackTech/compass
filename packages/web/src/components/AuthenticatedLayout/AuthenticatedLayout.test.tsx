@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, mock, vi } from "bun:test";
 import { Route, Routes } from "react-router-dom";
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
@@ -6,7 +7,7 @@ import { AuthenticatedLayout } from "./AuthenticatedLayout";
 
 describe("AuthenticatedLayout", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("should render child routes via Outlet", async () => {
