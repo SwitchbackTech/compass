@@ -1,34 +1,37 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import React, { act } from "react";
-import dayjs from "@core/util/date/dayjs";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { type Task } from "@web/common/types/task.types";
-import * as storageUtil from "@web/common/utils/storage/storage.util";
 import { TaskContext } from "@web/views/Day/context/TaskContext";
-import { useAvailableTasks } from "./useAvailableTasks";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock("@web/common/utils/storage/storage.util", () => ({
-  ...jest.requireActual("@web/common/utils/storage/storage.util"),
-  getDateKey: jest.fn(),
-  loadTasksFromStorage: jest.fn(),
+const actualStorageUtil =
+  require("@web/common/utils/storage/storage.util") as typeof import("@web/common/utils/storage/storage.util");
+const getDateKey = mock();
+const loadTasksFromStorage = mock();
+
+mock.module("@web/common/utils/storage/storage.util", () => ({
+  ...actualStorageUtil,
+  getDateKey,
+  loadTasksFromStorage,
 }));
 
+const storageUtil =
+  require("@web/common/utils/storage/storage.util") as typeof import("@web/common/utils/storage/storage.util");
+const { useAvailableTasks } =
+  require("./useAvailableTasks") as typeof import("./useAvailableTasks");
+
 describe("useAvailableTasks", () => {
-  const mockToday = dayjs("2025-11-15T00:00:00Z").utc();
   const mockDateKey = "2025-11-15";
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (storageUtil.getDateKey as jest.Mock).mockReturnValue(mockDateKey);
-    (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue([]);
-
-    // Use fake timers to control the current time
-    jest.useFakeTimers();
-    jest.setSystemTime(mockToday.toDate());
+    getDateKey.mockClear();
+    loadTasksFromStorage.mockClear();
+    getDateKey.mockReturnValue(mockDateKey);
+    loadTasksFromStorage.mockResolvedValue([]);
   });
 
   afterEach(() => {
-    jest.useRealTimers();
     localStorage.clear();
   });
 
@@ -46,9 +49,7 @@ describe("useAvailableTasks", () => {
       }),
     ];
 
-    (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue(
-      mockTasks,
-    );
+    loadTasksFromStorage.mockResolvedValue(mockTasks);
 
     const { result } = renderHook(() => useAvailableTasks());
 
@@ -82,9 +83,7 @@ describe("useAvailableTasks", () => {
       }),
     ];
 
-    (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue(
-      mockTasks,
-    );
+    loadTasksFromStorage.mockResolvedValue(mockTasks);
 
     const { result } = renderHook(() => useAvailableTasks());
 
@@ -116,9 +115,7 @@ describe("useAvailableTasks", () => {
       }),
     ];
 
-    (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue(
-      mockTasks,
-    );
+    loadTasksFromStorage.mockResolvedValue(mockTasks);
 
     const { result } = renderHook(() => useAvailableTasks());
 
@@ -131,7 +128,7 @@ describe("useAvailableTasks", () => {
   });
 
   it("returns empty array when no tasks exist", async () => {
-    (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue([]);
+    loadTasksFromStorage.mockResolvedValue([]);
 
     const { result } = renderHook(() => useAvailableTasks());
 
@@ -146,7 +143,7 @@ describe("useAvailableTasks", () => {
     const initialTasks: Task[] = [createMockTask()];
     const updatedTasks: Task[] = [createMockTask(), createMockTask()];
 
-    (storageUtil.loadTasksFromStorage as jest.Mock)
+    loadTasksFromStorage
       .mockResolvedValueOnce(initialTasks)
       .mockResolvedValueOnce(updatedTasks);
 
@@ -172,23 +169,18 @@ describe("useAvailableTasks", () => {
   it("does not reload tasks when unrelated storage key changes", async () => {
     const mockTasks: Task[] = [createMockTask()];
 
-    (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue(
-      mockTasks,
-    );
+    loadTasksFromStorage.mockResolvedValue(mockTasks);
 
     const { result } = renderHook(() => useAvailableTasks());
 
-    const initialCallCount = (storageUtil.loadTasksFromStorage as jest.Mock)
-      .mock.calls.length;
+    const initialCallCount = loadTasksFromStorage.mock.calls.length;
 
     act(() => {
       dispatchStorageEvent("compass.reminder");
     });
 
     await waitFor(() => {
-      expect(
-        (storageUtil.loadTasksFromStorage as jest.Mock).mock.calls,
-      ).toHaveLength(initialCallCount);
+      expect(loadTasksFromStorage.mock.calls).toHaveLength(initialCallCount);
       expect(result.current.availableTasks).toHaveLength(1);
     });
   });
@@ -196,7 +188,7 @@ describe("useAvailableTasks", () => {
   it("handles storage clear event", async () => {
     const mockTasks: Task[] = [createMockTask()];
 
-    (storageUtil.loadTasksFromStorage as jest.Mock)
+    loadTasksFromStorage
       .mockResolvedValueOnce(mockTasks)
       .mockResolvedValueOnce([]);
 
@@ -231,9 +223,7 @@ describe("useAvailableTasks", () => {
       }),
     ];
 
-    (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue(
-      mockTasks,
-    );
+    loadTasksFromStorage.mockResolvedValue(mockTasks);
 
     const { result } = renderHook(() => useAvailableTasks());
 
@@ -245,7 +235,7 @@ describe("useAvailableTasks", () => {
   });
 
   it("returns hasCompletedTasks as false when no tasks exist", async () => {
-    (storageUtil.loadTasksFromStorage as jest.Mock).mockResolvedValue([]);
+    loadTasksFromStorage.mockResolvedValue([]);
 
     const { result } = renderHook(() => useAvailableTasks());
 
@@ -275,7 +265,7 @@ describe("useAvailableTasks", () => {
       resolveStaleLoad = resolve;
     });
 
-    (storageUtil.loadTasksFromStorage as jest.Mock)
+    loadTasksFromStorage
       .mockReturnValueOnce(staleLoadPromise)
       .mockResolvedValueOnce(freshTasks);
 
