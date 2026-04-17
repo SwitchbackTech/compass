@@ -1,3 +1,4 @@
+import { mockLocalStorage } from "@web/__tests__/__mocks__/window/mock.localstorage";
 import { DEFAULT_AUTH_STATE } from "@web/common/constants/auth.constants";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import {
@@ -17,6 +18,17 @@ import {
   subscribeToAuthState,
   updateAuthState,
 } from "./auth.state.util";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
+
+mockLocalStorage();
 
 describe("auth-state.util", () => {
   beforeEach(() => {
@@ -114,11 +126,11 @@ describe("auth-state.util", () => {
     });
 
     it("should handle localStorage errors gracefully", () => {
-      const setItemSpy = jest
-        .spyOn(Storage.prototype, "setItem")
-        .mockImplementation(() => {
+      const setItemSpy = spyOn(Storage.prototype, "setItem").mockImplementation(
+        () => {
           throw new Error("Storage quota exceeded");
-        });
+        },
+      );
 
       // Should not throw
       expect(() => updateAuthState({ hasAuthenticated: true })).not.toThrow();
@@ -149,11 +161,11 @@ describe("auth-state.util", () => {
     });
 
     it("should handle localStorage errors gracefully", () => {
-      const setItemSpy = jest
-        .spyOn(Storage.prototype, "setItem")
-        .mockImplementation(() => {
+      const setItemSpy = spyOn(Storage.prototype, "setItem").mockImplementation(
+        () => {
           throw new Error("Storage quota exceeded");
-        });
+        },
+      );
 
       // Should not throw
       expect(() => markUserAsAuthenticated()).not.toThrow();
@@ -181,7 +193,7 @@ describe("auth-state.util", () => {
     });
 
     it("notifies subscribers when auth state changes", () => {
-      const listener = jest.fn();
+      const listener = mock();
       const unsubscribe = subscribeToAuthState(listener);
 
       markAnonymousCalendarChangeForSignUpPrompt();
@@ -211,11 +223,11 @@ describe("auth-state.util", () => {
     });
 
     it("should handle localStorage errors gracefully and return false", () => {
-      const getItemSpy = jest
-        .spyOn(Storage.prototype, "getItem")
-        .mockImplementation(() => {
+      const getItemSpy = spyOn(Storage.prototype, "getItem").mockImplementation(
+        () => {
           throw new Error("localStorage not available");
-        });
+        },
+      );
 
       const result = hasUserEverAuthenticated();
 
@@ -248,11 +260,12 @@ describe("auth-state.util", () => {
     });
 
     it("should handle localStorage errors gracefully", () => {
-      const removeItemSpy = jest
-        .spyOn(Storage.prototype, "removeItem")
-        .mockImplementation(() => {
-          throw new Error("localStorage not available");
-        });
+      const removeItemSpy = spyOn(
+        Storage.prototype,
+        "removeItem",
+      ).mockImplementation(() => {
+        throw new Error("localStorage not available");
+      });
 
       // Should not throw
       expect(() => clearAuthenticationState()).not.toThrow();
