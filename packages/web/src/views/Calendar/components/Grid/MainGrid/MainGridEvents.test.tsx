@@ -6,18 +6,20 @@ import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { MainGridEvents } from "./MainGridEvents";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock(
+mock.module(
   "@web/views/Calendar/components/Event/Grid/GridEvent/GridEvent",
   () => ({
-    GridEventMemo: ({ event }: any) => (
+    GridEventMemo: ({ event }: { event: Schema_GridEvent }) => (
       <div data-testid={`grid-event-${event._id}`} data-event-id={event._id}>
         {event.title}
       </div>
     ),
   }),
 );
+
+const { MainGridEvents } = await import("./MainGridEvents");
 
 const createMockGridEvent = (
   overrides: Partial<Schema_GridEvent> = {},
@@ -29,6 +31,8 @@ const createMockGridEvent = (
     ...overrides,
   } as Schema_GridEvent;
 };
+
+const mockRemeasure = mock();
 
 const mockMeasurements: Measurements_Grid = {
   mainGrid: {
@@ -45,7 +49,7 @@ const mockMeasurements: Measurements_Grid = {
   hourHeight: 60,
   colWidths: Array(7).fill(100),
   allDayRow: null,
-  remeasure: jest.fn(),
+  remeasure: mockRemeasure,
 };
 
 const mockWeekProps: WeekProps = {
@@ -53,12 +57,12 @@ const mockWeekProps: WeekProps = {
     startOfView: "2024-01-15T00:00:00Z",
     endOfView: "2024-01-21T23:59:59Z",
   },
-  hooks: {} as any,
+  hooks: {} as WeekProps["hooks"],
 };
 
 describe("MainGridEvents", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockRemeasure.mockClear();
   });
 
   it("should render timed events", () => {
@@ -75,13 +79,13 @@ describe("MainGridEvents", () => {
       events: {
         entities: {
           value: {
-            [event1._id!]: event1,
-            [event2._id!]: event2,
+            "event-1": event1,
+            "event-2": event2,
           },
         },
         getWeekEvents: {
           value: {
-            data: [event1._id!, event2._id!],
+            data: ["event-1", "event-2"],
             count: 2,
             pageSize: 2,
           },
@@ -118,12 +122,12 @@ describe("MainGridEvents", () => {
       events: {
         entities: {
           value: {
-            [pendingEvent._id!]: pendingEvent,
+            "pending-event-1": pendingEvent,
           },
         },
         getWeekEvents: {
           value: {
-            data: [pendingEvent._id!],
+            data: ["pending-event-1"],
             count: 1,
             pageSize: 1,
           },
@@ -133,7 +137,7 @@ describe("MainGridEvents", () => {
           reason: null,
         },
         pendingEvents: {
-          eventIds: [pendingEvent._id!],
+          eventIds: ["pending-event-1"],
         },
       },
     });
@@ -165,13 +169,13 @@ describe("MainGridEvents", () => {
       events: {
         entities: {
           value: {
-            [pendingEvent._id!]: pendingEvent,
-            [normalEvent._id!]: normalEvent,
+            "pending-event-1": pendingEvent,
+            "normal-event-1": normalEvent,
           },
         },
         getWeekEvents: {
           value: {
-            data: [pendingEvent._id!, normalEvent._id!],
+            data: ["pending-event-1", "normal-event-1"],
             count: 2,
             pageSize: 2,
           },
@@ -181,7 +185,7 @@ describe("MainGridEvents", () => {
           reason: null,
         },
         pendingEvents: {
-          eventIds: [pendingEvent._id!],
+          eventIds: ["pending-event-1"],
         },
       },
     });

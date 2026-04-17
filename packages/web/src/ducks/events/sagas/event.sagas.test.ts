@@ -1,6 +1,5 @@
 import { type Schema_Event } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
-import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import {
   clearAnonymousCalendarChangeSignUpPrompt,
   clearAuthenticationState,
@@ -8,52 +7,106 @@ import {
   updateAuthState,
 } from "@web/auth/compass/state/auth.state.util";
 import { type ApiResponse } from "@web/common/apis/api.types";
-import { session } from "@web/common/classes/Session";
 import {
   ensureStorageReady,
   getStorageAdapter,
 } from "@web/common/storage/adapter/adapter";
-import { sagaMiddleware } from "@web/common/store/middlewares";
 import {
   type Schema_GridEvent,
   type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
-import { EventApi } from "@web/ducks/events/event.api";
-import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
-import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
 import {
-  createEventSlice,
-  editEventSlice,
-} from "@web/ducks/events/slices/event.slice";
-import { sagas } from "@web/store/sagas";
-import { OnSubmitParser } from "@web/views/Calendar/components/Draft/hooks/actions/submit.parser";
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
-jest.mock("@web/ducks/events/event.api");
-jest.mock("@web/common/classes/Session");
+const mockDoesSessionExist = mock();
+const mockEventApiCreate = mock();
+const mockEventApiDelete = mock();
+const mockEventApiEdit = mock();
+const mockEventApiGet = mock();
+const mockEventApiReorder = mock();
+const mockAlert = mock();
+
+mock.module("@web/ducks/events/event.api", () => ({
+  EventApi: {
+    create: mockEventApiCreate,
+    delete: mockEventApiDelete,
+    edit: mockEventApiEdit,
+    get: mockEventApiGet,
+    reorder: mockEventApiReorder,
+  },
+}));
+
+mock.module("@web/common/classes/Session", () => ({
+  session: {
+    doesSessionExist: mockDoesSessionExist,
+  },
+}));
+
+const { createStoreWithEvents } = await import(
+  "@web/__tests__/utils/state/store.test.util"
+);
+const { sagaMiddleware } = await import("@web/common/store/middlewares");
+const { selectEventById } = await import(
+  "@web/ducks/events/selectors/event.selectors"
+);
+const { selectIsEventPending } = await import(
+  "@web/ducks/events/selectors/pending.selectors"
+);
+const { createEventSlice, editEventSlice } = await import(
+  "@web/ducks/events/slices/event.slice"
+);
+const { sagas } = await import("@web/store/sagas");
+const { OnSubmitParser } = await import(
+  "@web/views/Calendar/components/Draft/hooks/actions/submit.parser"
+);
+
+global.alert = mockAlert as typeof global.alert;
+
+const clearApiMocks = () => {
+  mockDoesSessionExist.mockClear();
+  mockEventApiCreate.mockClear();
+  mockEventApiDelete.mockClear();
+  mockEventApiEdit.mockClear();
+  mockEventApiGet.mockClear();
+  mockEventApiReorder.mockClear();
+  mockAlert.mockClear();
+};
+
+let consoleSpies: Array<{ mockRestore: () => void }> = [];
 
 beforeEach(() => {
-  jest.spyOn(console, "log").mockImplementation(() => {});
-  jest.spyOn(console, "warn").mockImplementation(() => {});
-  jest.spyOn(console, "error").mockImplementation(() => {});
-  jest.spyOn(console, "info").mockImplementation(() => {});
-  jest.spyOn(console, "debug").mockImplementation(() => {});
+  consoleSpies = [
+    spyOn(console, "log").mockImplementation(() => {}),
+    spyOn(console, "warn").mockImplementation(() => {}),
+    spyOn(console, "error").mockImplementation(() => {}),
+    spyOn(console, "info").mockImplementation(() => {}),
+    spyOn(console, "debug").mockImplementation(() => {}),
+  ];
 });
 
 afterEach(() => {
-  jest.restoreAllMocks();
+  for (const consoleSpy of consoleSpies) {
+    consoleSpy.mockRestore();
+  }
   clearAuthenticationState();
 });
 
 describe("createEvent saga - optimistic rendering", () => {
   let store: ReturnType<typeof createStoreWithEvents>;
-  let mockCreateApi: jest.SpyInstance;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    clearApiMocks();
     store = createStoreWithEvents([]);
     sagaMiddleware.run(sagas);
 
-    mockCreateApi = jest.spyOn(EventApi, "create").mockImplementation(() => {
+    mockEventApiCreate.mockImplementation(() => {
       return Promise.resolve({
         status: 200,
       } as ApiResponse<void>);
@@ -96,7 +149,7 @@ describe("createEvent saga - optimistic rendering", () => {
       resolveApiCall = resolve;
     });
 
-    mockCreateApi.mockImplementation(() => apiPromise);
+    mockEventApiCreate.mockImplementation(() => apiPromise);
 
     const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
     const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
@@ -132,7 +185,7 @@ describe("createEvent saga - optimistic rendering", () => {
     expect(dayEventIdsDuringCall).toContain(optimisticId);
 
     // Resolve the API call
-    resolveApiCall!({
+    resolveApiCall?.({
       status: 200,
     } as ApiResponse<void>);
 
@@ -153,7 +206,7 @@ describe("createEvent saga - optimistic rendering", () => {
     const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
 
     // Mock API to return success
-    mockCreateApi.mockResolvedValue({
+    mockEventApiCreate.mockResolvedValue({
       status: 200,
     } as ApiResponse<void>);
 
@@ -268,21 +321,19 @@ describe("createEvent saga - optimistic rendering", () => {
 
 describe("pending events state management", () => {
   let store: ReturnType<typeof createStoreWithEvents>;
-  let mockCreateApi: jest.SpyInstance;
-  let mockEditApi: jest.SpyInstance;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    clearApiMocks();
     store = createStoreWithEvents([]);
     sagaMiddleware.run(sagas);
 
-    mockCreateApi = jest.spyOn(EventApi, "create").mockImplementation(() => {
+    mockEventApiCreate.mockImplementation(() => {
       return Promise.resolve({
         status: 200,
       } as ApiResponse<void>);
     });
 
-    mockEditApi = jest.spyOn(EventApi, "edit").mockImplementation(() => {
+    mockEventApiEdit.mockImplementation(() => {
       return Promise.resolve({
         status: 200,
       } as ApiResponse<void>);
@@ -330,7 +381,9 @@ describe("pending events state management", () => {
 
     it("should remove event from pending on creation error", async () => {
       const error = new Error("API Error");
-      mockCreateApi.mockRejectedValue(error);
+      mockEventApiCreate.mockImplementation(async () => {
+        throw error;
+      });
 
       const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
       const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
@@ -439,7 +492,9 @@ describe("pending events state management", () => {
 
       // Mock edit API to fail
       const error = new Error("Edit API Error");
-      mockEditApi.mockRejectedValue(error);
+      mockEventApiEdit.mockImplementation(async () => {
+        throw error;
+      });
 
       // Now edit the event - get the actual event from store
       const existingEvent = selectEventById(
@@ -467,15 +522,11 @@ describe("pending events state management", () => {
   });
 });
 
-// Mock window.alert to prevent jsdom errors
-global.alert = jest.fn();
-
 describe("createEvent saga - unauthenticated users", () => {
   let store: ReturnType<typeof createStoreWithEvents>;
-  let mockCreateApi: jest.SpyInstance;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    clearApiMocks();
     clearAuthenticationState();
     try {
       await ensureStorageReady();
@@ -487,8 +538,7 @@ describe("createEvent saga - unauthenticated users", () => {
     store = createStoreWithEvents([]);
     sagaMiddleware.run(sagas);
 
-    (session.doesSessionExist as jest.Mock).mockResolvedValue(false);
-    mockCreateApi = jest.spyOn(EventApi, "create");
+    mockDoesSessionExist.mockResolvedValue(false);
   });
 
   afterEach(async () => {
@@ -511,7 +561,7 @@ describe("createEvent saga - unauthenticated users", () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Verify API was not called
-    expect(mockCreateApi).not.toHaveBeenCalled();
+    expect(mockEventApiCreate).not.toHaveBeenCalled();
 
     // Verify event was saved to IndexedDB
     const state = store.getState();

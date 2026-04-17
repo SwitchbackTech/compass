@@ -3,35 +3,40 @@ import {
   type Schema_GridEvent,
   type Schema_SomedayEvent,
 } from "@web/common/types/web.event.types";
-import {
-  OnSubmitParser,
-  parseSomedayEventBeforeSubmit,
-  prepEventBeforeSubmit,
-} from "./submit.parser";
+import { describe, expect, it, mock } from "bun:test";
 
-// Mock the validators
-jest.mock("@web/common/validators/grid.event.validator", () => ({
-  validateGridEvent: jest.fn((event) => event as Schema_GridEvent),
+const validateGridEvent = mock(
+  (event: Schema_GridEvent): Schema_GridEvent => event,
+);
+const validateSomedayEvent = mock(
+  (event: Schema_SomedayEvent): Schema_SomedayEvent => event,
+);
+const assembleGridEvent = mock((event: Partial<Schema_GridEvent>) => ({
+  ...event,
+  position: {
+    isOverlapping: false,
+    widthMultiplier: 1,
+    horizontalOrder: 1,
+    dragOffset: { y: 0 },
+    initialX: null,
+    initialY: null,
+  },
 }));
 
-jest.mock("@web/common/validators/someday.event.validator", () => ({
-  validateSomedayEvent: jest.fn((event) => event as Schema_SomedayEvent),
+mock.module("@web/common/validators/grid.event.validator", () => ({
+  validateGridEvent,
 }));
 
-// Mock the event utility
-jest.mock("@web/common/utils/event/event.util", () => ({
-  assembleGridEvent: jest.fn((event) => ({
-    ...event,
-    position: {
-      isOverlapping: false,
-      widthMultiplier: 1,
-      horizontalOrder: 1,
-      dragOffset: { y: 0 },
-      initialX: null,
-      initialY: null,
-    },
-  })),
+mock.module("@web/common/validators/someday.event.validator", () => ({
+  validateSomedayEvent,
 }));
+
+mock.module("@web/common/utils/event/event.util", () => ({
+  assembleGridEvent,
+}));
+
+const { OnSubmitParser, parseSomedayEventBeforeSubmit, prepEventBeforeSubmit } =
+  require("./submit.parser") as typeof import("./submit.parser");
 
 describe("submit.parser", () => {
   const createMockGridEvent = (
@@ -79,7 +84,7 @@ describe("submit.parser", () => {
         const event = createMockGridEvent();
         const parser = new OnSubmitParser(event);
 
-        expect(parser["event"]).toBe(event);
+        expect(parser).toHaveProperty("event", event);
       });
     });
 
@@ -98,7 +103,7 @@ describe("submit.parser", () => {
 
       it("should parse a someday event correctly", () => {
         const event = createMockSomedayEvent();
-        const parser = new OnSubmitParser(event as any);
+        const parser = new OnSubmitParser(event as unknown as Schema_GridEvent);
 
         const result = parser.parse();
 
@@ -244,9 +249,6 @@ describe("submit.parser", () => {
     });
 
     it("should assemble grid event when position is missing", () => {
-      const {
-        assembleGridEvent,
-      } = require("@web/common/utils/event/event.util");
       assembleGridEvent.mockClear();
 
       const draft = createMockGridEvent({
@@ -254,7 +256,7 @@ describe("submit.parser", () => {
       });
       const userId = "test-user-id";
 
-      const result = prepEventBeforeSubmit(draft, userId);
+      prepEventBeforeSubmit(draft, userId);
 
       expect(assembleGridEvent).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -269,9 +271,6 @@ describe("submit.parser", () => {
     });
 
     it("should not assemble grid event when position is present", () => {
-      const {
-        assembleGridEvent,
-      } = require("@web/common/utils/event/event.util");
       assembleGridEvent.mockClear();
 
       const draft = createMockGridEvent({
@@ -286,15 +285,12 @@ describe("submit.parser", () => {
       });
       const userId = "test-user-id";
 
-      const result = prepEventBeforeSubmit(draft, userId);
+      prepEventBeforeSubmit(draft, userId);
 
       expect(assembleGridEvent).not.toHaveBeenCalled();
     });
 
     it("should handle all-day events without position", () => {
-      const {
-        assembleGridEvent,
-      } = require("@web/common/utils/event/event.util");
       assembleGridEvent.mockClear();
 
       const draft = createMockGridEvent({
@@ -303,7 +299,7 @@ describe("submit.parser", () => {
       });
       const userId = "test-user-id";
 
-      const result = prepEventBeforeSubmit(draft, userId);
+      prepEventBeforeSubmit(draft, userId);
 
       expect(assembleGridEvent).toHaveBeenCalledWith(
         expect.objectContaining({

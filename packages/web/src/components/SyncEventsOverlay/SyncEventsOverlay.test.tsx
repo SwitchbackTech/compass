@@ -1,53 +1,79 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
-import { selectIsAuthenticating } from "@web/ducks/auth/selectors/auth.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
+import { configureStore } from "@reduxjs/toolkit";
+import { screen } from "@testing-library/react";
+import { render } from "@web/__tests__/__mocks__/mock.render";
+import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
+import { type AuthStatus, resetAuth } from "@web/ducks/auth/slices/auth.slice";
+import { reducers } from "@web/store/reducers";
 import { SyncEventsOverlay } from "./SyncEventsOverlay";
-
-jest.mock("@web/store/store.hooks", () => ({
-  useAppSelector: jest.fn(),
-}));
-
-const mockUseAppSelector = useAppSelector as jest.MockedFunction<
-  typeof useAppSelector
->;
+import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 describe("SyncEventsOverlay", () => {
-  let authenticatingValue = false;
+  let pendingTimers: Array<() => void> = [];
+  let setTimeoutSpy: ReturnType<typeof spyOn>;
+  let clearTimeoutSpy: ReturnType<typeof spyOn>;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.useFakeTimers();
-    document.body.removeAttribute("data-app-locked");
-    authenticatingValue = false;
-    mockUseAppSelector.mockImplementation((selector) => {
-      if (selector === selectIsAuthenticating) {
-        return authenticatingValue;
+    pendingTimers = [];
+    setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
+      callback: TimerHandler,
+    ) => {
+      if (typeof callback === "function") {
+        pendingTimers.push(() => callback());
       }
-      return false;
-    });
+      return 1 as ReturnType<typeof setTimeout>;
+    }) as typeof setTimeout);
+    clearTimeoutSpy = spyOn(globalThis, "clearTimeout").mockImplementation(
+      (() => undefined) as typeof clearTimeout,
+    );
+    document.body.removeAttribute("data-app-locked");
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    setTimeoutSpy.mockRestore();
+    clearTimeoutSpy.mockRestore();
   });
 
-  it("renders nothing when not authenticating", () => {
-    const { container } = render(<SyncEventsOverlay />);
+  const runPendingTimers = () => {
+    const timers = pendingTimers;
+    pendingTimers = [];
 
-    act(() => {
-      jest.advanceTimersByTime(100);
+    for (const timer of timers) {
+      timer();
+    }
+  };
+
+  const createStore = (status: AuthStatus = "idle") =>
+    configureStore({
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware({
+          immutableCheck: false,
+          serializableCheck: false,
+          thunk: false,
+        }),
+      preloadedState: createInitialState({
+        auth: {
+          error: null,
+          status,
+        },
+      }),
+      reducer: reducers,
     });
 
-    expect(container.firstChild).toBeNull();
+  it("renders nothing when not authenticating", () => {
+    render(<SyncEventsOverlay />, {
+      store: createStore(),
+    });
+
+    expect(screen.queryByText("Complete Google sign-in...")).toBeNull();
     expect(document.body.getAttribute("data-app-locked")).toBeNull();
   });
 
   it("renders OAuth message when authenticating", () => {
-    authenticatingValue = true;
-
-    render(<SyncEventsOverlay />);
+    render(<SyncEventsOverlay />, {
+      store: createStore("authenticating"),
+    });
 
     expect(screen.getByText("Complete Google sign-in...")).toBeInTheDocument();
     expect(
@@ -57,23 +83,23 @@ describe("SyncEventsOverlay", () => {
   });
 
   it("unlocks app when authentication completes", () => {
-    authenticatingValue = true;
+    const store = createStore("authenticating");
 
-    const { rerender, container } = render(<SyncEventsOverlay />);
+    render(<SyncEventsOverlay />, { store });
 
     expect(screen.getByText("Complete Google sign-in...")).toBeInTheDocument();
     expect(document.body.getAttribute("data-app-locked")).toBe("true");
 
-    // Authentication completes
-    authenticatingValue = false;
-    rerender(<SyncEventsOverlay />);
+    act(() => {
+      store.dispatch(resetAuth());
+    });
 
     // Wait for buffered visibility to settle
     act(() => {
-      jest.advanceTimersByTime(100);
+      runPendingTimers();
     });
 
-    expect(container.firstChild).toBeNull();
+    expect(screen.queryByText("Complete Google sign-in...")).toBeNull();
     expect(document.body.getAttribute("data-app-locked")).toBeNull();
   });
 });

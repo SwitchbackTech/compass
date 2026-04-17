@@ -4,40 +4,74 @@ import { runSaga } from "redux-saga";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import {
-  createInitialState,
-  createStoreWithEvents,
-} from "@web/__tests__/utils/state/store.test.util";
 import { type ApiResponse } from "@web/common/apis/api.types";
-import { session } from "@web/common/classes/Session";
 import { type EventRepository } from "@web/common/repositories/event/event.repository.interface";
-import * as eventRepositoryUtil from "@web/common/repositories/event/event.repository.util";
 import {
   ensureStorageReady,
   getStorageAdapter,
 } from "@web/common/storage/adapter/adapter";
-import { sagaMiddleware } from "@web/common/store/middlewares";
 import { type Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
-import * as eventUtil from "@web/common/utils/event/event.util";
-import { EventApi } from "@web/ducks/events/event.api";
-import { deleteSomedayEvent } from "@web/ducks/events/sagas/someday.sagas";
-import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { type RootState } from "@web/store";
-import { reducers } from "@web/store/reducers";
-import { sagas } from "@web/store/sagas";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
-jest.mock("@web/ducks/events/event.api");
-jest.mock("@web/common/classes/Session");
+const mockDoesSessionExist = mock();
+const mockEventApiCreate = mock();
+const mockEventApiDelete = mock();
+const mockEventApiEdit = mock();
+const mockEventApiGet = mock();
+const mockEventApiReorder = mock();
+const mockAlert = mock();
 
-// Mock window.alert to prevent jsdom errors
-global.alert = jest.fn();
+mock.module("@web/ducks/events/event.api", () => ({
+  EventApi: {
+    create: mockEventApiCreate,
+    delete: mockEventApiDelete,
+    edit: mockEventApiEdit,
+    get: mockEventApiGet,
+    reorder: mockEventApiReorder,
+  },
+}));
+
+mock.module("@web/common/classes/Session", () => ({
+  session: {
+    doesSessionExist: mockDoesSessionExist,
+  },
+}));
+
+const { createInitialState, createStoreWithEvents } = await import(
+  "@web/__tests__/utils/state/store.test.util"
+);
+const eventRepositoryUtil = await import(
+  "@web/common/repositories/event/event.repository.util"
+);
+const { sagaMiddleware } = await import("@web/common/store/middlewares");
+const eventUtil = await import("@web/common/utils/event/event.util");
+const { deleteSomedayEvent } = await import(
+  "@web/ducks/events/sagas/someday.sagas"
+);
+const { getSomedayEventsSlice } = await import(
+  "@web/ducks/events/slices/someday.slice"
+);
+const { reducers } = await import("@web/store/reducers");
+const { sagas } = await import("@web/store/sagas");
+
+global.alert = mockAlert as typeof global.alert;
+
+const clearApiMocks = () => {
+  mockDoesSessionExist.mockClear();
+  mockEventApiCreate.mockClear();
+  mockEventApiDelete.mockClear();
+  mockEventApiEdit.mockClear();
+  mockEventApiGet.mockClear();
+  mockEventApiReorder.mockClear();
+  mockAlert.mockClear();
+};
 
 describe("getSomedayEvents saga", () => {
   let store: ReturnType<typeof createStoreWithEvents>;
-  let mockGetApi: jest.SpyInstance;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    clearApiMocks();
     try {
       await ensureStorageReady();
       await getStorageAdapter().clearAllEvents();
@@ -47,8 +81,6 @@ describe("getSomedayEvents saga", () => {
     }
     store = createStoreWithEvents([]);
     sagaMiddleware.run(sagas);
-
-    mockGetApi = jest.spyOn(EventApi, "get");
   });
 
   afterEach(async () => {
@@ -62,7 +94,7 @@ describe("getSomedayEvents saga", () => {
 
   describe("authenticated users", () => {
     beforeEach(() => {
-      (session.doesSessionExist as jest.Mock).mockResolvedValue(true);
+      mockDoesSessionExist.mockResolvedValue(true);
     });
 
     it("should fetch events from API when authenticated", async () => {
@@ -101,7 +133,7 @@ describe("getSomedayEvents saga", () => {
         headers: new Headers(),
         config: {},
       };
-      mockGetApi.mockResolvedValue(mockResponse);
+      mockEventApiGet.mockResolvedValue(mockResponse);
 
       const action = getSomedayEventsSlice.actions.request({
         startDate,
@@ -113,7 +145,7 @@ describe("getSomedayEvents saga", () => {
 
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      expect(mockGetApi).toHaveBeenCalledWith({
+      expect(mockEventApiGet).toHaveBeenCalledWith({
         someday: true,
         startDate,
         endDate,
@@ -127,7 +159,7 @@ describe("getSomedayEvents saga", () => {
 
   describe("unauthenticated users", () => {
     beforeEach(() => {
-      (session.doesSessionExist as jest.Mock).mockResolvedValue(false);
+      mockDoesSessionExist.mockResolvedValue(false);
     });
 
     it("should load events from IndexedDB when not authenticated", async () => {
@@ -160,7 +192,7 @@ describe("getSomedayEvents saga", () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Verify API was not called
-      expect(mockGetApi).not.toHaveBeenCalled();
+      expect(mockEventApiGet).not.toHaveBeenCalled();
 
       // Verify event was loaded from IndexedDB and added to store
       const state = store.getState();
@@ -300,30 +332,29 @@ describe("getSomedayEvents saga", () => {
 
 describe("deleteSomedayEvent saga", () => {
   let store: ReturnType<typeof configureStore>;
-  let getEventRepositorySpy: jest.SpiedFunction<
-    typeof eventRepositoryUtil.getEventRepository
-  >;
-  let handleErrorSpy: jest.SpiedFunction<typeof eventUtil.handleError>;
-  let mockDeleteEvent: jest.Mock;
+  let getEventRepositorySpy: { mockRestore: () => void };
+  let handleErrorSpy: { mockRestore: () => void };
+  let mockDeleteEvent: ReturnType<typeof mock>;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (session.doesSessionExist as jest.Mock).mockResolvedValue(true);
-    mockDeleteEvent = jest.fn().mockResolvedValue(undefined);
+    clearApiMocks();
+    mockDoesSessionExist.mockResolvedValue(true);
+    mockDeleteEvent = mock().mockResolvedValue(undefined);
 
-    handleErrorSpy = jest
-      .spyOn(eventUtil, "handleError")
-      .mockImplementation(() => {});
+    handleErrorSpy = spyOn(eventUtil, "handleError").mockImplementation(
+      () => {},
+    );
 
-    getEventRepositorySpy = jest
-      .spyOn(eventRepositoryUtil, "getEventRepository")
-      .mockReturnValue({
-        create: jest.fn(),
-        get: jest.fn(),
-        edit: jest.fn(),
-        delete: mockDeleteEvent,
-        reorder: jest.fn(),
-      } as unknown as EventRepository);
+    getEventRepositorySpy = spyOn(
+      eventRepositoryUtil,
+      "getEventRepository",
+    ).mockReturnValue({
+      create: mock(),
+      get: mock(),
+      edit: mock(),
+      delete: mockDeleteEvent,
+      reorder: mock(),
+    } as unknown as EventRepository);
 
     const base = createInitialState();
     const eventId = "delete-fail-evt";

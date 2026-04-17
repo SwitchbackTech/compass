@@ -6,15 +6,20 @@ import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { AllDayEvents } from "./AllDayEvents";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock("@web/views/Calendar/components/Grid/AllDayRow/AllDayEvent", () => ({
-  AllDayEventMemo: ({ event }: any) => (
-    <div data-testid={`allday-event-${event._id}`} data-event-id={event._id}>
-      {event.title}
-    </div>
-  ),
-}));
+mock.module(
+  "@web/views/Calendar/components/Grid/AllDayRow/AllDayEvent",
+  () => ({
+    AllDayEventMemo: ({ event }: { event: Schema_GridEvent }) => (
+      <div data-testid={`allday-event-${event._id}`} data-event-id={event._id}>
+        {event.title}
+      </div>
+    ),
+  }),
+);
+
+const { AllDayEvents } = await import("./AllDayEvents");
 
 const createMockGridEvent = (
   overrides: Partial<Schema_GridEvent> = {},
@@ -26,6 +31,8 @@ const createMockGridEvent = (
     ...overrides,
   } as Schema_GridEvent;
 };
+
+const mockRemeasure = mock();
 
 const mockMeasurements: Measurements_Grid = {
   mainGrid: {
@@ -42,7 +49,7 @@ const mockMeasurements: Measurements_Grid = {
   hourHeight: 60,
   colWidths: Array(7).fill(100),
   allDayRow: null,
-  remeasure: jest.fn(),
+  remeasure: mockRemeasure,
 };
 
 const mockWeekProps: WeekProps = {
@@ -50,12 +57,12 @@ const mockWeekProps: WeekProps = {
     startOfView: "2024-01-15T00:00:00Z",
     endOfView: "2024-01-21T23:59:59Z",
   },
-  hooks: {} as any,
+  hooks: {} as WeekProps["hooks"],
 };
 
 describe("AllDayEvents", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockRemeasure.mockClear();
   });
 
   it("should render all-day events", () => {
@@ -74,13 +81,13 @@ describe("AllDayEvents", () => {
       events: {
         entities: {
           value: {
-            [event1._id!]: event1,
-            [event2._id!]: event2,
+            "allday-event-1": event1,
+            "allday-event-2": event2,
           },
         },
         getWeekEvents: {
           value: {
-            data: [event1._id!, event2._id!],
+            data: ["allday-event-1", "allday-event-2"],
             count: 2,
             pageSize: 2,
           },
@@ -123,12 +130,12 @@ describe("AllDayEvents", () => {
       events: {
         entities: {
           value: {
-            [pendingEvent._id!]: pendingEvent,
+            "pending-allday-event-1": pendingEvent,
           },
         },
         getWeekEvents: {
           value: {
-            data: [pendingEvent._id!],
+            data: ["pending-allday-event-1"],
             count: 1,
             pageSize: 1,
           },
@@ -138,7 +145,7 @@ describe("AllDayEvents", () => {
           reason: null,
         },
         pendingEvents: {
-          eventIds: [pendingEvent._id!],
+          eventIds: ["pending-allday-event-1"],
         },
       },
     });
@@ -173,13 +180,13 @@ describe("AllDayEvents", () => {
       events: {
         entities: {
           value: {
-            [pendingEvent._id!]: pendingEvent,
-            [normalEvent._id!]: normalEvent,
+            "pending-allday-event-1": pendingEvent,
+            "normal-allday-event-1": normalEvent,
           },
         },
         getWeekEvents: {
           value: {
-            data: [pendingEvent._id!, normalEvent._id!],
+            data: ["pending-allday-event-1", "normal-allday-event-1"],
             count: 2,
             pageSize: 2,
           },
@@ -189,7 +196,7 @@ describe("AllDayEvents", () => {
           reason: null,
         },
         pendingEvents: {
-          eventIds: [pendingEvent._id!],
+          eventIds: ["pending-allday-event-1"],
         },
       },
     });
