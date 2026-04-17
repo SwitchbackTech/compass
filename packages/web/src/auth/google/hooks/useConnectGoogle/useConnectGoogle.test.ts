@@ -1,66 +1,80 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
-import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
-import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
-import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
-import { useGoogleAuth } from "@web/auth/google/hooks/useGoogleAuth/useGoogleAuth";
+import { renderHook, waitFor } from "@testing-library/react";
+import { act } from "react";
 import {
   resetGoogleSyncUIStateForTests,
   setRepairingSyncIndicatorOverride,
 } from "@web/auth/google/state/google.sync.state";
-import type * as GoogleAuthUtil from "@web/auth/google/util/google.auth.util";
-import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
-import { AuthApi } from "@web/common/apis/auth.api";
-import { SyncApi } from "@web/common/apis/sync.api";
-import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import {
   selectGoogleConnectionState,
   selectUserMetadataStatus,
 } from "@web/ducks/auth/selectors/user-metadata.selectors";
 import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock("@web/auth/google/hooks/useGoogleAuth/useGoogleAuth");
-jest.mock("@web/auth/google/util/google.auth.util", () => ({
-  ...jest.requireActual<typeof GoogleAuthUtil>(
-    "@web/auth/google/util/google.auth.util",
-  ),
-  syncPendingLocalEvents: jest.fn(),
+type UseGoogleAuthArg = NonNullable<
+  Parameters<
+    typeof import("@web/auth/google/hooks/useGoogleAuth/useGoogleAuth").useGoogleAuth
+  >[0]
+>;
+
+const mockConnectGoogle = mock();
+const mockDispatch = mock();
+const mockHandleGoogleRevoked = mock();
+const mockHasUserEverAuthenticated = mock();
+const mockImportGCal = mock();
+const mockLogin = mock();
+const mockRefreshUserMetadata = mock();
+const mockShowErrorToast = mock();
+const mockShowSessionExpiredToast = mock();
+const mockSyncPendingLocalEvents = mock();
+const mockUseAppDispatch = mock();
+const mockUseAppSelector = mock();
+const mockUseGoogleAuth = mock();
+
+mock.module("@web/auth/google/hooks/useGoogleAuth/useGoogleAuth", () => ({
+  useGoogleAuth: mockUseGoogleAuth,
 }));
-jest.mock("@web/auth/compass/user/util/user-metadata.util");
-jest.mock("@web/auth/compass/state/auth.state.util");
-jest.mock("@web/common/apis/auth.api");
-jest.mock("@web/common/apis/sync.api");
-jest.mock("@web/common/utils/toast/error-toast.util");
-jest.mock("@web/store/store.hooks");
 
-const mockUseGoogleAuth = useGoogleAuth as jest.MockedFunction<
-  typeof useGoogleAuth
->;
-const mockSyncPendingLocalEvents =
-  syncPendingLocalEvents as jest.MockedFunction<typeof syncPendingLocalEvents>;
-const mockShowErrorToast = showErrorToast as jest.MockedFunction<
-  typeof showErrorToast
->;
-const mockUseAppDispatch = useAppDispatch as jest.MockedFunction<
-  typeof useAppDispatch
->;
-const mockUseAppSelector = useAppSelector as jest.MockedFunction<
-  typeof useAppSelector
->;
-const mockHasUserEverAuthenticated =
-  hasUserEverAuthenticated as jest.MockedFunction<
-    typeof hasUserEverAuthenticated
-  >;
-const mockAuthApi = AuthApi as jest.Mocked<typeof AuthApi>;
-const mockSyncApi = SyncApi as jest.Mocked<typeof SyncApi>;
-const mockRefreshUserMetadata = refreshUserMetadata as jest.MockedFunction<
-  typeof refreshUserMetadata
->;
+mock.module("@web/auth/google/util/google.auth.util", () => ({
+  handleGoogleRevoked: mockHandleGoogleRevoked,
+  syncPendingLocalEvents: mockSyncPendingLocalEvents,
+}));
 
-const getUseGoogleAuthArg = (): NonNullable<
-  Parameters<typeof useGoogleAuth>[0]
-> => {
+mock.module("@web/auth/compass/user/util/user-metadata.util", () => ({
+  refreshUserMetadata: mockRefreshUserMetadata,
+}));
+
+mock.module("@web/auth/compass/state/auth.state.util", () => ({
+  hasUserEverAuthenticated: mockHasUserEverAuthenticated,
+}));
+
+mock.module("@web/common/apis/auth.api", () => ({
+  AuthApi: {
+    connectGoogle: mockConnectGoogle,
+  },
+}));
+
+mock.module("@web/common/apis/sync.api", () => ({
+  SyncApi: {
+    importGCal: mockImportGCal,
+  },
+}));
+
+mock.module("@web/common/utils/toast/error-toast.util", () => ({
+  showErrorToast: mockShowErrorToast,
+  showSessionExpiredToast: mockShowSessionExpiredToast,
+}));
+
+mock.module("@web/store/store.hooks", () => ({
+  useAppDispatch: mockUseAppDispatch,
+  useAppSelector: mockUseAppSelector,
+}));
+
+const { useConnectGoogle } =
+  require("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle") as typeof import("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle");
+
+const getUseGoogleAuthArg = (): UseGoogleAuthArg => {
   const firstCall = mockUseGoogleAuth.mock.calls.at(0);
 
   if (!firstCall) {
@@ -71,9 +85,6 @@ const getUseGoogleAuthArg = (): NonNullable<
 };
 
 describe("useConnectGoogle", () => {
-  const mockDispatch = jest.fn();
-  const mockLogin = jest.fn();
-
   const setSelectorState = ({
     connectionState = "NOT_CONNECTED",
     userMetadataStatus = "loading",
@@ -100,7 +111,20 @@ describe("useConnectGoogle", () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockConnectGoogle.mockClear();
+    mockDispatch.mockClear();
+    mockHandleGoogleRevoked.mockClear();
+    mockHasUserEverAuthenticated.mockClear();
+    mockImportGCal.mockClear();
+    mockLogin.mockClear();
+    mockRefreshUserMetadata.mockClear();
+    mockShowErrorToast.mockClear();
+    mockShowSessionExpiredToast.mockClear();
+    mockSyncPendingLocalEvents.mockClear();
+    mockUseAppDispatch.mockClear();
+    mockUseAppSelector.mockClear();
+    mockUseGoogleAuth.mockClear();
+
     resetGoogleSyncUIStateForTests();
     mockUseAppDispatch.mockReturnValue(mockDispatch);
     mockUseGoogleAuth.mockReturnValue({
@@ -108,10 +132,10 @@ describe("useConnectGoogle", () => {
       data: null,
       loading: false,
     });
-    mockAuthApi.connectGoogle.mockResolvedValue({ status: "OK" });
-    mockSyncApi.importGCal.mockResolvedValue(undefined);
+    mockConnectGoogle.mockResolvedValue({ status: "OK" });
+    mockImportGCal.mockResolvedValue(undefined);
     mockHasUserEverAuthenticated.mockReturnValue(true);
-    mockRefreshUserMetadata.mockResolvedValue();
+    mockRefreshUserMetadata.mockResolvedValue(undefined);
     mockSyncPendingLocalEvents.mockResolvedValue(true);
     setSelectorState();
   });
@@ -189,13 +213,13 @@ describe("useConnectGoogle", () => {
       settingsSlice.actions.closeCmdPalette(),
     );
     await waitFor(() => {
-      expect(mockSyncApi.importGCal).toHaveBeenCalledWith({ force: true });
+      expect(mockImportGCal).toHaveBeenCalledWith({ force: true });
       expect(result.current.state).toBe("repairing");
     });
   });
 
   it("clears the repair flag and shows a toast if repair start fails", async () => {
-    mockSyncApi.importGCal.mockRejectedValueOnce(new Error("boom"));
+    mockImportGCal.mockRejectedValueOnce(new Error("boom"));
     setSelectorState({
       connectionState: "ATTENTION",
       userMetadataStatus: "loaded",
@@ -247,10 +271,10 @@ describe("useConnectGoogle", () => {
     });
 
     expect(mockSyncPendingLocalEvents).toHaveBeenCalledTimes(1);
-    expect(mockAuthApi.connectGoogle).toHaveBeenCalledWith(payload);
+    expect(mockConnectGoogle).toHaveBeenCalledWith(payload);
     expect(mockRefreshUserMetadata).toHaveBeenCalledTimes(1);
     expect(mockDispatch).toHaveBeenCalledWith(triggerFetch());
-    expect(mockSyncApi.importGCal).not.toHaveBeenCalled();
+    expect(mockImportGCal).not.toHaveBeenCalled();
   });
 
   it("shows syncing UI immediately after Google auth succeeds", async () => {
@@ -291,7 +315,7 @@ describe("useConnectGoogle", () => {
       connectionState: "NOT_CONNECTED",
       userMetadataStatus: "loaded",
     });
-    mockAuthApi.connectGoogle.mockRejectedValueOnce({
+    mockConnectGoogle.mockRejectedValueOnce({
       config: { url: "/auth/google/connect" },
       response: {
         data: {
