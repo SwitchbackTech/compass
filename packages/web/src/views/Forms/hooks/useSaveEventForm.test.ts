@@ -1,75 +1,51 @@
 import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
-import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import {
   createEventSlice,
   editEventSlice,
 } from "@web/ducks/events/slices/event.slice";
-import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
-import { useSaveEventForm } from "@web/views/Forms/hooks/useSaveEventForm";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
-jest.mock("@web/store/store.hooks");
-jest.mock("@web/views/Forms/hooks/useCloseEventForm");
-jest.mock("@web/ducks/events/selectors/event.selectors");
-
-jest.mock("@web/ducks/events/slices/event.slice", () => ({
-  createEventSlice: {
-    actions: {
-      request: jest.fn(),
-    },
-    reducer: jest.fn(() => ({})),
-  },
-  editEventSlice: {
-    actions: {
-      request: jest.fn(),
-    },
-    reducer: jest.fn(() => ({})),
-  },
-  deleteEventSlice: {
-    actions: {
-      request: jest.fn(),
-    },
-    reducer: jest.fn(() => ({})),
-  },
-  eventsEntitiesSlice: {
-    reducer: jest.fn(() => ({})),
-  },
-  getCurrentMonthEventsSlice: {
-    actions: { request: jest.fn() },
-    reducer: jest.fn(() => ({})),
-  },
-  getSomedayEventsSlice: { reducer: jest.fn(() => ({})) },
-  getWeekEventsSlice: {
-    actions: { request: jest.fn() },
-    reducer: jest.fn(() => ({})),
-  },
-  getDayEventsSlice: {
-    actions: { request: jest.fn() },
-    reducer: jest.fn(() => ({})),
-  },
+const mockDispatch = mock();
+mock.module("@web/store/store.hooks", () => ({
+  useAppDispatch: () => mockDispatch,
 }));
 
+const mockCloseEventForm = mock();
+mock.module("@web/views/Forms/hooks/useCloseEventForm", () => ({
+  useCloseEventForm: () => mockCloseEventForm,
+}));
+
+const mockSelectEventById = mock();
+mock.module("@web/ducks/events/selectors/event.selectors", () => ({
+  selectEventById: mockSelectEventById,
+}));
+
+const { useSaveEventForm } =
+  require("@web/views/Forms/hooks/useSaveEventForm") as typeof import("@web/views/Forms/hooks/useSaveEventForm");
+
 describe("useSaveEventForm", () => {
-  const mockDispatch = jest.fn();
-  const mockCloseEventForm = jest.fn();
-  const { useAppDispatch } = jest.requireMock("@web/store/store.hooks");
+  const createEventRequestSpy = spyOn(createEventSlice.actions, "request");
+  const editEventRequestSpy = spyOn(editEventSlice.actions, "request");
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    useAppDispatch.mockReturnValue(mockDispatch);
-    (useCloseEventForm as jest.Mock).mockReturnValue(mockCloseEventForm);
+    createEventRequestSpy.mockClear();
+    editEventRequestSpy.mockClear();
+    mockCloseEventForm.mockClear();
+    mockDispatch.mockClear();
+    mockSelectEventById.mockReset();
   });
 
   it("should dispatch createEventSlice.actions.request when not existing", () => {
-    (selectEventById as jest.Mock).mockReturnValue(null);
+    mockSelectEventById.mockReturnValue(null);
     const { result } = renderHook(() => useSaveEventForm());
 
     const event = createMockStandaloneEvent();
 
     result.current(event);
 
-    expect(createEventSlice.actions.request).toHaveBeenCalledWith(
+    expect(createEventRequestSpy).toHaveBeenCalledWith(
       expect.objectContaining(event),
     );
 
@@ -77,14 +53,14 @@ describe("useSaveEventForm", () => {
   });
 
   it("should dispatch editEventSlice.actions.request when existing", () => {
-    (selectEventById as jest.Mock).mockReturnValue({});
+    mockSelectEventById.mockReturnValue({});
     const { result } = renderHook(() => useSaveEventForm());
 
     const event = createMockStandaloneEvent();
 
     result.current(event);
 
-    expect(editEventSlice.actions.request).toHaveBeenCalledWith({
+    expect(editEventRequestSpy).toHaveBeenCalledWith({
       _id: event._id,
       event: expect.objectContaining(event),
       applyTo: RecurringEventUpdateScope.THIS_EVENT,
@@ -98,8 +74,8 @@ describe("useSaveEventForm", () => {
 
     result.current(null);
 
-    expect(createEventSlice.actions.request).not.toHaveBeenCalled();
-    expect(editEventSlice.actions.request).not.toHaveBeenCalled();
+    expect(createEventRequestSpy).not.toHaveBeenCalled();
+    expect(editEventRequestSpy).not.toHaveBeenCalled();
     expect(mockCloseEventForm).toHaveBeenCalled();
   });
 });
