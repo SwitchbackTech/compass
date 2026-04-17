@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, mock, vi } from "bun:test";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -15,13 +16,13 @@ describe("FocusedTask", () => {
     status: "completed",
   });
 
-  const mockOnCompleteTask = jest.fn();
-  const mockOnPreviousTask = jest.fn();
-  const mockOnNextTask = jest.fn();
-  const mockOnUpdateDescription = jest.fn();
+  const mockOnCompleteTask = mock();
+  const mockOnPreviousTask = mock();
+  const mockOnNextTask = mock();
+  const mockOnUpdateDescription = mock();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("renders the task title", () => {
@@ -291,6 +292,10 @@ describe("FocusedTask", () => {
       const completeButton = screen.getByRole("button", {
         name: "Mark task as complete",
       });
+      const tooltipTrigger = completeButton.parentElement;
+      if (tooltipTrigger == null) {
+        throw new Error("Expected tooltip trigger wrapper");
+      }
 
       // Hover to show tooltip
       await user.hover(completeButton);
@@ -298,6 +303,7 @@ describe("FocusedTask", () => {
         () => {
           expect(screen.getByText("Mark Done")).toBeInTheDocument();
           expect(screen.getByText("Enter")).toBeInTheDocument();
+          expect(tooltipTrigger).toHaveAttribute("data-state", "open");
         },
         { timeout: 500 },
       );
@@ -306,8 +312,7 @@ describe("FocusedTask", () => {
       await user.unhover(completeButton);
       await waitFor(
         () => {
-          expect(screen.queryByText("Mark Done")).not.toBeInTheDocument();
-          expect(screen.queryByText("Enter")).not.toBeInTheDocument();
+          expect(tooltipTrigger).toHaveAttribute("data-state", "closed");
         },
         { timeout: 500 },
       );
