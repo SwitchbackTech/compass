@@ -6,29 +6,7 @@ import {
   pointerState$,
 } from "@web/common/context/pointer-position";
 import { usePointerPosition } from "@web/common/hooks/usePointerPosition";
-
-// Mock @floating-ui/react
-jest.mock("@floating-ui/react", () => ({
-  useFloating: jest.fn(() => ({
-    context: {},
-    x: 0,
-    y: 0,
-    placement: "right-start",
-    strategy: "fixed",
-    refs: {
-      setFloating: jest.fn(),
-      setReference: jest.fn(),
-    },
-  })),
-  useDismiss: jest.fn(),
-  useInteractions: jest.fn(() => ({
-    getFloatingProps: jest.fn(),
-  })),
-  autoUpdate: jest.fn(),
-  flip: jest.fn(),
-  offset: jest.fn(),
-  shift: jest.fn(),
-}));
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 describe("usePointerPosition hooks", () => {
   beforeEach(() => {
@@ -49,9 +27,7 @@ describe("usePointerPosition hooks", () => {
   describe("usePointerPosition", () => {
     it("should throw error when used outside provider", () => {
       // Suppress console.error for the expected error
-      const consoleSpy = jest
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+      const consoleSpy = spyOn(console, "error").mockImplementation(() => {});
 
       expect(() => {
         renderHook(() => usePointerPosition());
@@ -63,7 +39,7 @@ describe("usePointerPosition hooks", () => {
     });
 
     it("should return context value when used within provider", () => {
-      const mockContext = { togglePointerMovementTracking: jest.fn() };
+      const mockContext = { togglePointerMovementTracking: mock() };
       const wrapper = ({ children }: { children: React.ReactNode }) => (
         <PointerPositionContext.Provider value={mockContext}>
           {children}
