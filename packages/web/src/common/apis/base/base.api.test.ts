@@ -1,39 +1,45 @@
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 import { toast } from "react-toastify";
 import { Status } from "@core/errors/status.codes";
 import { setTestWindowUrl } from "@web/__tests__/set-test-window-url";
 import { session } from "@web/common/classes/Session";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
-import {
-  assignLocation,
-  reloadLocation,
-} from "@web/common/utils/browser/browser-navigation.util";
-import { BaseApi } from "./base.api";
+import { type ApiError, type ApiResponse } from "../api.types";
 
-jest.mock("@web/common/utils/browser/browser-navigation.util", () => ({
-  assignLocation: jest.fn(),
-  reloadLocation: jest.fn(),
+// Mock definitions
+const mockAssignLocation = mock();
+const mockReloadLocation = mock();
+
+mock.module("@web/common/utils/browser/browser-navigation.util", () => ({
+  assignLocation: mockAssignLocation,
+  reloadLocation: mockReloadLocation,
 }));
 
-jest.mock("supertokens-web-js/recipe/session", () => {
-  const actual = jest.requireActual("supertokens-web-js/recipe/session");
-  const mockedDefault = {
-    ...actual.default,
-    doesSessionExist: jest.fn(),
-    signOut: jest.fn(),
-  };
+// Mock supertokens session
+const mockSignOut = mock();
+const mockDoesSessionExist = mock();
 
-  return {
-    __esModule: true,
-    ...actual,
-    default: mockedDefault,
-    doesSessionExist: mockedDefault.doesSessionExist,
-    signOut: mockedDefault.signOut,
-  };
-});
+mock.module("supertokens-web-js/recipe/session", () => ({
+  default: {
+    signOut: mockSignOut,
+    doesSessionExist: mockDoesSessionExist,
+  },
+  signOut: mockSignOut,
+  doesSessionExist: mockDoesSessionExist,
+}));
 
-const assignMock = jest.mocked(assignLocation);
-const reloadMock = jest.mocked(reloadLocation);
+// Import BaseApi AFTER mocks
+const { BaseApi } = require("./base.api") as typeof import("./base.api");
+
 const originalAdapter = BaseApi.defaults.adapter;
 
 const setLocationPath = (pathname: string) => {
@@ -45,7 +51,7 @@ const createApiError = (
   url?: string,
   data?: unknown,
 ): ApiError => {
-  const config = { method: "GET", url };
+  const config = { method: "GET", url: url ?? "/test" };
   const response = {
     config,
     data: data ?? {},
@@ -54,13 +60,11 @@ const createApiError = (
     statusText: "Error",
   } as ApiResponse<unknown>;
 
-  return {
-    config,
-    message: "boom",
-    name: "ApiError",
-    response,
-    toJSON: () => ({}),
-  } as ApiError;
+  const error = new Error("boom") as ApiError;
+  error.config = config;
+  error.name = "ApiError";
+  error.response = response;
+  return error;
 };
 
 const triggerErrorResponse = async (
@@ -72,7 +76,11 @@ const triggerErrorResponse = async (
   const adapter = () => Promise.reject(apiError);
   BaseApi.defaults.adapter = adapter;
 
-  await BaseApi.get("/test").catch(() => undefined);
+  try {
+    await BaseApi.get("/test");
+  } catch (e) {
+    // expected
+  }
 };
 
 describe("CompassApi interceptor auth handling", () => {
@@ -80,20 +88,35 @@ describe("CompassApi interceptor auth handling", () => {
     expect(BaseApi.defaults.withCredentials).toBe(true);
   });
 
+  let toastIsActiveSpy: any;
+  let toastErrorSpy: any;
+  let alertSpy: any;
+  let consoleErrorSpy: any;
+  let sessionSignOutSpy: any;
+
   beforeEach(() => {
-    jest.clearAllMocks();
-    assignMock.mockReset();
-    reloadMock.mockReset();
-    (session.signOut as jest.Mock).mockResolvedValue(undefined);
-    jest.spyOn(toast, "isActive").mockReturnValue(false);
-    jest.spyOn(toast, "error").mockReturnValue("toast-id" as never);
+    mockAssignLocation.mockReset();
+    mockReloadLocation.mockReset();
+    mockSignOut.mockResolvedValue(undefined);
+    mockDoesSessionExist.mockResolvedValue(true);
+
+    sessionSignOutSpy = spyOn(session, "signOut").mockResolvedValue(undefined);
+    toastIsActiveSpy = spyOn(toast, "isActive").mockReturnValue(false);
+    toastErrorSpy = spyOn(toast, "error").mockReturnValue("toast-id" as any);
+    alertSpy = spyOn(globalThis, "alert").mockImplementation(() => undefined);
+    consoleErrorSpy = spyOn(console, "error").mockImplementation(
+      () => undefined,
+    );
+
     setLocationPath(ROOT_ROUTES.NOW);
-    jest.spyOn(globalThis, "alert").mockImplementation(() => undefined);
-    jest.spyOn(console, "error").mockImplementation(() => undefined);
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    sessionSignOutSpy.mockRestore();
+    toastIsActiveSpy.mockRestore();
+    toastErrorSpy.mockRestore();
+    alertSpy.mockRestore();
+    consoleErrorSpy.mockRestore();
     BaseApi.defaults.adapter = originalAdapter;
   });
 
@@ -104,16 +127,26 @@ describe("CompassApi interceptor auth handling", () => {
       "Login required, cuz security 😇",
     );
     expect(session.signOut).toHaveBeenCalledTimes(1);
-    expect(assignMock).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
+    expect(mockAssignLocation).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
   });
 
   it("does not redirect if user is already on the day route", async () => {
-    setLocationPath(ROOT_ROUTES.DAY);
+    // We mock the util so we can just check if it was called.
+    // The logic in signOut uses window.location.pathname.
+    // If we can't get window.location.pathname to work, we might need to mock signOut itself,
+    // but the test is supposed to test the interceptor which calls signOut.
+
+    const originalLocation = window.location;
+    // @ts-ignore
+    delete window.location;
+    window.location = { ...originalLocation, pathname: ROOT_ROUTES.DAY };
 
     await triggerErrorResponse(Status.NOT_FOUND);
 
     expect(session.signOut).toHaveBeenCalledTimes(1);
-    expect(assignMock).not.toHaveBeenCalled();
+    expect(mockAssignLocation).not.toHaveBeenCalled();
+
+    window.location = originalLocation;
   });
 
   it("shows session-expired toast and signs out on unauthorized", async () => {
@@ -130,14 +163,11 @@ describe("CompassApi interceptor auth handling", () => {
     );
     expect(globalThis.alert).not.toHaveBeenCalled();
     expect(session.signOut).toHaveBeenCalledTimes(1);
-    expect(assignMock).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
+    expect(mockAssignLocation).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
   });
 
   it("does not enqueue duplicate session-expired toasts when already active", async () => {
-    jest
-      .spyOn(toast, "isActive")
-      .mockReturnValueOnce(false)
-      .mockReturnValue(true);
+    toastIsActiveSpy.mockReturnValueOnce(false).mockReturnValue(true);
 
     await triggerErrorResponse(Status.UNAUTHORIZED);
     await triggerErrorResponse(Status.UNAUTHORIZED);
@@ -148,9 +178,9 @@ describe("CompassApi interceptor auth handling", () => {
   it("reloads the page when redux refresh is needed", async () => {
     await triggerErrorResponse(Status.REDUX_REFRESH_NEEDED);
 
-    expect(reloadMock).toHaveBeenCalledTimes(1);
+    expect(mockReloadLocation).toHaveBeenCalledTimes(1);
     expect(session.signOut).not.toHaveBeenCalled();
-    expect(assignMock).not.toHaveBeenCalled();
+    expect(mockAssignLocation).not.toHaveBeenCalled();
   });
 
   it("logs other errors without forcing a logout", async () => {
@@ -158,7 +188,7 @@ describe("CompassApi interceptor auth handling", () => {
 
     expect(console.error).toHaveBeenCalled();
     expect(session.signOut).not.toHaveBeenCalled();
-    expect(assignMock).not.toHaveBeenCalled();
+    expect(mockAssignLocation).not.toHaveBeenCalled();
   });
 
   it("does not sign out or redirect on /user/profile 404", async () => {
@@ -166,7 +196,7 @@ describe("CompassApi interceptor auth handling", () => {
 
     expect(globalThis.alert).not.toHaveBeenCalled();
     expect(session.signOut).not.toHaveBeenCalled();
-    expect(assignMock).not.toHaveBeenCalled();
+    expect(mockAssignLocation).not.toHaveBeenCalled();
   });
 
   it("does not sign out on 401/410 when response has GOOGLE_REVOKED code", async () => {
@@ -180,7 +210,10 @@ describe("CompassApi interceptor auth handling", () => {
     });
 
     for (const status of [Status.UNAUTHORIZED, Status.GONE]) {
-      jest.clearAllMocks();
+      toastErrorSpy.mockClear();
+      sessionSignOutSpy.mockClear();
+      mockAssignLocation.mockClear();
+
       await triggerErrorResponse(status, undefined, googleRevokedPayload);
 
       expect(toast.error).toHaveBeenCalledWith(
@@ -188,7 +221,7 @@ describe("CompassApi interceptor auth handling", () => {
         toastExpectation,
       );
       expect(session.signOut).not.toHaveBeenCalled();
-      expect(assignMock).not.toHaveBeenCalled();
+      expect(mockAssignLocation).not.toHaveBeenCalled();
     }
   });
 });

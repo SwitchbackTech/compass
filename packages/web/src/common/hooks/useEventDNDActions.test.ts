@@ -1,3 +1,11 @@
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+} from "bun:test";
 import { useDndMonitor } from "@dnd-kit/core";
 import { renderHook } from "@testing-library/react";
 import { Categories_Event } from "@core/types/event.types";
@@ -6,47 +14,49 @@ import {
   ID_GRID_ALLDAY_ROW,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
-import { useEventDNDActions } from "@web/common/hooks/useEventDNDActions";
-import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
-import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
-import { useAppDispatch } from "@web/store/store.hooks";
-import { getSnappedMinutes } from "@web/views/Day/util/agenda/agenda.util";
 
-jest.mock("@dnd-kit/core", () => ({
-  useDndMonitor: jest.fn(),
+// Mock definitions
+const mockUpdateEvent = mock();
+const mockDispatch = mock();
+const mockGetSnappedMinutes = mock();
+const mockSelectEventById = mock();
+
+mock.module("@dnd-kit/core", () => ({
+  useDndMonitor: mock(),
 }));
 
-jest.mock("@web/common/hooks/useUpdateEvent", () => ({
-  useUpdateEvent: jest.fn(),
+mock.module("@web/common/hooks/useUpdateEvent", () => ({
+  useUpdateEvent: mock(() => mockUpdateEvent),
 }));
 
-jest.mock("@web/store/store.hooks", () => ({
-  useAppDispatch: jest.fn(),
+mock.module("@web/store/store.hooks", () => ({
+  useAppDispatch: mock(() => mockDispatch),
 }));
 
-jest.mock("@web/views/Day/util/agenda/agenda.util", () => ({
-  getSnappedMinutes: jest.fn(),
+mock.module("@web/views/Day/util/agenda/agenda.util", () => ({
+  getSnappedMinutes: mockGetSnappedMinutes,
 }));
 
-jest.mock("@web/ducks/events/selectors/event.selectors", () => ({
-  selectEventById: jest.fn(),
+mock.module("@web/ducks/events/selectors/event.selectors", () => ({
+  selectEventById: mockSelectEventById,
 }));
 
-jest.mock("@web/store", () => ({
+mock.module("@web/store", () => ({
   store: {
-    getState: jest.fn(),
+    getState: mock(),
   },
 }));
 
-jest.mock("@web/common/hooks/useOpenAtCursor", () => ({
-  isOpenAtCursor: jest.fn().mockReturnValue(false),
-  setFloatingReferenceAtCursor: jest.fn(),
+mock.module("@web/common/hooks/useOpenAtCursor", () => ({
+  isOpenAtCursor: mock(() => false),
+  setFloatingReferenceAtCursor: mock(),
   CursorItem: { EventForm: "EventForm" },
 }));
 
+// Import the hook after mocks
+const { useEventDNDActions } = require("./useEventDNDActions") as typeof import("./useEventDNDActions");
+
 describe("useEventDNDActions", () => {
-  const mockDispatch = jest.fn();
-  const mockUpdateEvent = jest.fn();
   const mockEvent = {
     _id: "event-1",
     startDate: "2023-01-01T10:00:00.000Z",
@@ -55,10 +65,12 @@ describe("useEventDNDActions", () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (useAppDispatch as jest.Mock).mockReturnValue(mockDispatch);
-    (useUpdateEvent as jest.Mock).mockReturnValue(mockUpdateEvent);
-    (selectEventById as jest.Mock).mockReturnValue(mockEvent);
+    mockUpdateEvent.mockClear();
+    mockDispatch.mockClear();
+    mockGetSnappedMinutes.mockClear();
+    mockSelectEventById.mockClear();
+    
+    mockSelectEventById.mockReturnValue(mockEvent);
   });
 
   it("should register dnd monitor", () => {
@@ -76,11 +88,11 @@ describe("useEventDNDActions", () => {
 
     beforeEach(() => {
       renderHook(() => useEventDNDActions());
-      onDragEnd = (useDndMonitor as jest.Mock).mock.calls[0][0].onDragEnd;
+      onDragEnd = (useDndMonitor as any).mock.calls[0][0].onDragEnd;
     });
 
     it("should handle timed event move in main grid", () => {
-      (getSnappedMinutes as jest.Mock).mockReturnValue(60); // Moved 1 hour
+      mockGetSnappedMinutes.mockReturnValue(60); // Moved 1 hour
 
       const active = {
         data: {
@@ -116,7 +128,7 @@ describe("useEventDNDActions", () => {
     });
 
     it("should handle all-day event move to main grid", () => {
-      (getSnappedMinutes as jest.Mock).mockReturnValue(120); // Moved 2 hours
+      mockGetSnappedMinutes.mockReturnValue(120); // Moved 2 hours
 
       const allDayEvent = { ...mockEvent, isAllDay: true };
       const active = {
