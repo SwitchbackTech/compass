@@ -1,27 +1,35 @@
-import { toast } from "react-toastify";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { SessionExpiredToast } from "@web/common/utils/toast/session-expired.toast";
-import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock("@web/components/AuthModal/hooks/useAuthModal");
+const mockDismiss = mock();
+const mockOpenModal = mock();
+const mockUseAuthModal = mock();
 
-const mockUseAuthModal = useAuthModal as jest.MockedFunction<
-  typeof useAuthModal
->;
+mock.module("react-toastify", () => ({
+  toast: {
+    dismiss: mockDismiss,
+  },
+}));
+mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
+  useAuthModal: mockUseAuthModal,
+}));
+
+const { SessionExpiredToast } =
+  require("@web/common/utils/toast/session-expired.toast") as typeof import("@web/common/utils/toast/session-expired.toast");
 
 describe("SessionExpiredToast", () => {
-  const mockOpenModal = jest.fn();
-
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockDismiss.mockClear();
+    mockOpenModal.mockClear();
+    mockUseAuthModal.mockClear();
     mockUseAuthModal.mockReturnValue({
       isOpen: false,
       currentView: "login",
       openModal: mockOpenModal,
-      closeModal: jest.fn(),
-      setView: jest.fn(),
+      closeModal: mock(),
+      setView: mock(),
     });
   });
 
@@ -45,6 +53,6 @@ describe("SessionExpiredToast", () => {
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(mockOpenModal).toHaveBeenCalledWith("login");
-    expect(toast.dismiss).toHaveBeenCalledWith("session-expired-api");
+    expect(mockDismiss).toHaveBeenCalledWith("session-expired-api");
   });
 });
