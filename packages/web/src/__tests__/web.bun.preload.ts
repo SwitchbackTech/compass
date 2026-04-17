@@ -18,7 +18,7 @@ const { applyBunJestCompat } = require(
   ) => void;
 };
 const TEST_GLOBALS_IMPORT =
-  'import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest, mock, spyOn, test } from "@web/__tests__/bun-test-shim";\nimport { createRequire } from "node:module";\nconst require = createRequire(import.meta.url);\nafterAll(() => {\n  mock.restore();\n  globalThis.__webReapplyModuleMocks?.();\n});';
+  'import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest, mock, setSystemTime, spyOn, test } from "@web/__tests__/bun-test-shim";\nimport { createRequire } from "node:module";\nconst require = createRequire(import.meta.url);\nafterAll(() => {\n  mock.restore();\n  globalThis.__webReapplyModuleMocks?.();\n});';
 const EMPTY_STYLE_STUB_PATH = new URL(
   "./__mocks__/asset-empty-style.js",
   import.meta.url,

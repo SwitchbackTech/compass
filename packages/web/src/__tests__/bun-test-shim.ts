@@ -8,6 +8,7 @@ import {
   it,
   jest,
   mock,
+  setSystemTime,
   spyOn,
   test,
 } from "bun:test";
@@ -35,6 +36,7 @@ export {
   it,
   jest,
   mock,
+  setSystemTime,
   spyOn,
   test,
 };
