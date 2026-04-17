@@ -1,67 +1,80 @@
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { type ReactNode } from "react";
 import { ID_EVENT_FORM_ACTION_MENU } from "@web/common/constants/web.constants";
-import { ActionsMenu } from "@web/views/Forms/ActionsMenu/ActionsMenu";
-import MenuItem from "@web/views/Forms/ActionsMenu/MenuItem";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-// Mock dependencies that require complex setup
 let mockOpen = false;
-let mockActiveIndex: number | null = null;
-let mockListRef = { current: [] as HTMLElement[] };
 
-jest.mock("@phosphor-icons/react", () => ({
+mock.module("@phosphor-icons/react", () => ({
   DotsThreeVerticalIcon: () => <div data-testid="dots-icon" />,
 }));
 
-jest.mock("@floating-ui/react", () => ({
-  FloatingFocusManager: ({ children }: any) => <div>{children}</div>,
-  FloatingPortal: ({ children }: any) => <div>{children}</div>,
-  autoUpdate: jest.fn(),
-  flip: jest.fn(),
-  offset: jest.fn(),
-  shift: jest.fn(),
-  useClick: jest.fn(() => ({
-    onMouseDown: jest.fn(),
-    onMouseUp: jest.fn(),
-    onClick: jest.fn(),
+type FloatingChildrenProps = {
+  children: ReactNode;
+};
+
+type ListNavigationConfig = {
+  activeIndex: number | null;
+  listRef?: {
+    current?: HTMLElement[];
+  };
+  onNavigate?: (index: number) => void;
+};
+
+mock.module("@floating-ui/react", () => ({
+  FloatingFocusManager: ({ children }: FloatingChildrenProps) => (
+    <div>{children}</div>
+  ),
+  FloatingPortal: ({ children }: FloatingChildrenProps) => (
+    <div>{children}</div>
+  ),
+  autoUpdate: mock(),
+  flip: mock(),
+  offset: mock(),
+  shift: mock(),
+  useClick: mock(() => ({
+    onMouseDown: mock(),
+    onMouseUp: mock(),
+    onClick: mock(),
   })),
-  useDismiss: jest.fn(() => ({
-    onMouseDown: jest.fn(),
-    onMouseUp: jest.fn(),
-    onPointerDown: jest.fn(),
-    onPointerUp: jest.fn(),
-    onKeyDown: jest.fn(),
+  useDismiss: mock(() => ({
+    onMouseDown: mock(),
+    onMouseUp: mock(),
+    onPointerDown: mock(),
+    onPointerUp: mock(),
+    onKeyDown: mock(),
   })),
-  useFloating: jest.fn(() => ({
+  useFocus: mock(() => ({})),
+  useFloating: mock(() => ({
     x: 0,
     y: 0,
     refs: {
-      setReference: jest.fn(),
-      setFloating: jest.fn(),
+      setReference: mock(),
+      setFloating: mock(),
     },
     strategy: "absolute",
     context: {},
   })),
-  useInteractions: jest.fn(() => ({
-    getReferenceProps: jest.fn(() => ({
+  useHover: mock(() => ({})),
+  useInteractions: mock(() => ({
+    getReferenceProps: mock(() => ({
       "aria-expanded": mockOpen,
       "aria-haspopup": "menu",
       onClick: () => {
         mockOpen = !mockOpen;
       },
     })),
-    getFloatingProps: jest.fn(() => ({})),
-    getItemProps: jest.fn(() => ({})),
+    getFloatingProps: mock(() => ({})),
+    getItemProps: mock(() => ({})),
   })),
-  useListNavigation: jest.fn((context: any, config: any) => {
-    // Mock implementation that handles our dense array mapping
+  useListNavigation: mock((_context: unknown, config: ListNavigationConfig) => {
     const mockOnNavigate = config.onNavigate || (() => {});
 
     return {
-      onKeyDown: (e: any) => {
+      onKeyDown: (e: Pick<KeyboardEvent, "key">) => {
         if (mockOpen && config.listRef) {
-          // Get the current dense array (filtered non-null items)
           const denseArray = config.listRef.current || [];
           const denseLength = denseArray.length;
 
@@ -83,7 +96,6 @@ jest.mock("@floating-ui/react", () => ({
             newCompactIndex = denseLength - 1;
           }
 
-          // Call the onNavigate callback with the new compact index
           if (newCompactIndex !== config.activeIndex) {
             mockOnNavigate(newCompactIndex);
           }
@@ -91,28 +103,36 @@ jest.mock("@floating-ui/react", () => ({
       },
     };
   }),
-  useRole: jest.fn(() => ({})),
+  useMergeRefs: mock(() => mock()),
+  useRole: mock(() => ({})),
 }));
 
-jest.mock("@web/components/IconButton/IconButton", () => {
-  return function MockIconButton({ children, ...props }: any) {
-    return <button {...props}>{children}</button>;
+mock.module("@web/components/IconButton/IconButton", () => {
+  return {
+    default: function MockIconButton({
+      children,
+      ...props
+    }: FloatingChildrenProps) {
+      return <button {...props}>{children}</button>;
+    },
   };
 });
 
+const { ActionsMenu } =
+  require("@web/views/Forms/ActionsMenu/ActionsMenu") as typeof import("@web/views/Forms/ActionsMenu/ActionsMenu");
+const { default: MenuItem } =
+  require("@web/views/Forms/ActionsMenu/MenuItem") as typeof import("@web/views/Forms/ActionsMenu/MenuItem");
+
 describe("ActionsMenu", () => {
-  let mockAction1: jest.Mock;
-  let mockAction2: jest.Mock;
-  let mockAction3: jest.Mock;
+  let mockAction1: ReturnType<typeof mock>;
+  let mockAction2: ReturnType<typeof mock>;
+  let mockAction3: ReturnType<typeof mock>;
 
   beforeEach(() => {
-    mockAction1 = jest.fn();
-    mockAction2 = jest.fn();
-    mockAction3 = jest.fn();
+    mockAction1 = mock();
+    mockAction2 = mock();
+    mockAction3 = mock();
     mockOpen = false;
-    mockActiveIndex = null;
-    mockListRef = { current: [] };
-    jest.clearAllMocks();
   });
 
   describe("ARIA Compliance", () => {
@@ -242,7 +262,7 @@ describe("ActionsMenu", () => {
 
     it("should support menu item keyboard activation", async () => {
       const user = userEvent.setup();
-      const mockAction = jest.fn();
+      const mockAction = mock();
 
       render(
         <ActionsMenu bgColor="red">
