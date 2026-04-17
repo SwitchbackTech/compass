@@ -3,21 +3,29 @@ import { createMemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {
-  EUROPE_TRIP,
-  LEARN_CHINESE,
-} from "@core/__mocks__/v1/events/events.misc";
+import { EUROPE_TRIP, LEARN_CHINESE } from "@core/__mocks__/v1/events/events.misc";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
 import { findAndUpdateEventInPreloadedState } from "@web/__tests__/utils/state/store.test.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { freshenEventStartEndDate } from "@web/views/Calendar/calendar.render.test.utils";
-import { mock } from "bun:test";
-import { afterAll } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 mock.module("@web/auth/compass/session/session.util", () => ({
   getUserId: async () => "test-user-id",
+}));
+
+mock.module("@web/views/Calendar/components/Dedication/Dedication", () => ({
+  Dedication: () => null,
+}));
+
+mock.module("@web/views/CmdPalette", () => ({
+  CmdPalette: () => null,
+}));
+
+mock.module("@web/views/Day/components/DayCmdPalette", () => ({
+  DayCmdPalette: () => null,
 }));
 
 const { CalendarView } =

@@ -15,7 +15,15 @@ import {
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 import { afterAll } from "bun:test";
 import { setTestWindowUrl } from "@web/__tests__/set-test-window-url";
 
@@ -906,9 +914,8 @@ const mockWindowLocation = (url: string) => {
   setTestWindowUrl(url);
 };
 
-// Mock history.replaceState for URL param tests
-const mockReplaceState = mock();
-const originalHistory = window.history;
+const originalReplaceState = window.history.replaceState.bind(window.history);
+const replaceStateSpy = spyOn(window.history, "replaceState");
 
 describe("URL Parameter Support", () => {
   beforeEach(() => {
@@ -920,27 +927,22 @@ describe("URL Parameter Support", () => {
     mockEmailPassword.sendPasswordResetEmail.mockClear();
     mockEmailPassword.getResetPasswordTokenFromURL.mockClear();
     mockEmailPassword.submitNewPassword.mockClear();
-    mockReplaceState.mockClear();
     mockUseSession.mockReturnValue({
       authenticated: false,
       setAuthenticated: mock(),
     });
-    Object.defineProperty(window.history, "replaceState", {
-      value: mockReplaceState,
-      writable: true,
-      configurable: true,
+    replaceStateSpy.mockClear();
+    replaceStateSpy.mockImplementation((data, title, url) => {
+      originalReplaceState(data, title, url as string | URL | null);
+    });
+    mockEmailPassword.submitNewPassword.mockResolvedValue({
+      status: "OK",
     });
   });
 
   afterEach(() => {
     // Reset window.location to default
     mockWindowLocation("/day");
-    // Restore original history
-    Object.defineProperty(window, "history", {
-      value: originalHistory,
-      writable: true,
-      configurable: true,
-    });
   });
 
   it("opens sign in modal when ?auth=login is present", async () => {
@@ -1028,8 +1030,8 @@ describe("URL Parameter Support", () => {
       ).toBeInTheDocument();
     });
 
-    expect(mockReplaceState.mock.calls.at(-1)?.[1]).toBe("");
-    expect(mockReplaceState.mock.calls.at(-1)?.[2]).toBe(
+    expect(replaceStateSpy.mock.calls.at(-1)?.[1]).toBe("");
+    expect(replaceStateSpy.mock.calls.at(-1)?.[2]).toBe(
       `/day/${dateString}?token=reset-token`,
     );
   });
@@ -1056,9 +1058,12 @@ describe("URL Parameter Support", () => {
       });
     });
 
-    expect(mockReplaceState.mock.calls.at(-1)?.[0]).toBeNull();
-    expect(mockReplaceState.mock.calls.at(-1)?.[1]).toBe("");
-    expect(mockReplaceState.mock.calls.at(-1)?.[2]).not.toContain("token=");
+    expect(
+      replaceStateSpy.mock.calls.find(
+        ([state, title, url]) =>
+          state === window.history.state && title === "" && url === "/day",
+      ),
+    ).toBeDefined();
     expect(screen.getByRole("status")).toHaveTextContent(
       "Password reset successful. Log in with your new password.",
     );

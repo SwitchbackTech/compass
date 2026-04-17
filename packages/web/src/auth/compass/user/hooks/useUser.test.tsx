@@ -1,4 +1,5 @@
 import { renderHook } from "@testing-library/react";
+import { spyOn } from "bun:test";
 import { UserContext } from "../context/UserContext";
 import { useUser } from "./useUser";
 
@@ -19,9 +20,7 @@ describe("useUser", () => {
 
   it("should throw error when used outside UserProvider", () => {
     // Suppress console.error for this test as it's expected to throw
-    const consoleSpy = jest
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
+    const consoleSpy = spyOn(console, "error").mockImplementation(() => {});
 
     expect(() => {
       renderHook(() => useUser());

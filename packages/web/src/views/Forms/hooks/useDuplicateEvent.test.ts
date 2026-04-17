@@ -1,7 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { addEntities } from "@ngneat/elf-entities";
 import { renderHook } from "@testing-library/react";
-import { act } from "react";
 import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import {
   DATA_EVENT_ELEMENT_ID,
@@ -28,15 +27,13 @@ describe("useDuplicateEvent Integration", () => {
     priority: "high",
   } as unknown as WithCompassId<Schema_Event>;
 
+  const wait = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+
   beforeEach(() => {
-    vi.useFakeTimers();
     eventsStore.reset();
     closeFloatingAtCursor();
     document.body.innerHTML = "";
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
   });
 
   it("should duplicate event and open form when event and element exist", async () => {
@@ -52,10 +49,7 @@ describe("useDuplicateEvent Integration", () => {
 
     result.current();
 
-    // Advance timer for lastValueFrom(timer(10))
-    vi.advanceTimersByTime(10);
-    // Allow promise resolution (then block)
-    await Promise.resolve();
+    await wait(12);
 
     // Now draft should be set. Get the new ID.
     const draft = eventsStore.query(getDraft);
@@ -68,16 +62,7 @@ describe("useDuplicateEvent Integration", () => {
     newEventElement.setAttribute(DATA_EVENT_ELEMENT_ID, newId);
     gridMain.appendChild(newEventElement);
 
-    // Allow queueMicrotask to run
-    await Promise.resolve();
-
-    // Advance timer for second timer(10)
-    vi.advanceTimersByTime(10);
-    await Promise.resolve();
-
-    // Advance timer for openFloatingAtCursor (setTimeout 10ms)
-    vi.advanceTimersByTime(10);
-    await Promise.resolve();
+    await wait(25);
 
     // Assert Floating State
     expect(open$.getValue()).toBe(true);
@@ -98,21 +83,14 @@ describe("useDuplicateEvent Integration", () => {
 
     result.current();
 
-    // Advance timer for lastValueFrom(timer(10))
-    vi.advanceTimersByTime(10);
-    await Promise.resolve();
+    await wait(12);
 
     // Assert Draft (should still be created)
     const draft = eventsStore.query(getDraft);
     expect(draft).not.toBeNull();
     expect(draft?._id).not.toBe(mockEventId);
 
-    // Allow queueMicrotask to run
-    await Promise.resolve();
-
-    // Advance timer for openFloatingAtCursor (setTimeout 10ms)
-    vi.advanceTimersByTime(10);
-    await Promise.resolve();
+    await wait(25);
 
     // Assert Floating State (should NOT be open)
     expect(open$.getValue()).toBe(false);
@@ -126,9 +104,7 @@ describe("useDuplicateEvent Integration", () => {
 
     result.current();
 
-    // Advance timer
-    vi.advanceTimersByTime(10);
-    await Promise.resolve();
+    await wait(25);
 
     // Assert Draft
     const draft = eventsStore.query(getDraft);

@@ -1,40 +1,24 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { renderHook } from "@testing-library/react";
+import { setTestWindowUrl } from "@web/__tests__/set-test-window-url";
 import { useAuthUrlParam } from "./useAuthUrlParam";
 
-// Helper to set up window.location for tests
-const setWindowLocation = (url: string) => {
-  const urlObj = new URL(url, "http://localhost");
-  const originalLocation = window.location;
-  // @ts-ignore
-  delete window.location;
-  window.location = {
-    ...originalLocation,
-    href: urlObj.href,
-    pathname: urlObj.pathname,
-    search: urlObj.search,
-    hash: urlObj.hash,
-  };
-};
-
-// Mock history.replaceState
-const mockReplaceState = mock();
+const originalReplaceState = window.history.replaceState.bind(window.history);
+const replaceStateSpy = spyOn(window.history, "replaceState");
 
 describe("useAuthUrlParam", () => {
   beforeEach(() => {
-    mock.restore();
-    Object.defineProperty(window.history, "replaceState", {
-      value: mockReplaceState,
-      writable: true,
-      configurable: true,
+    replaceStateSpy.mockClear();
+    replaceStateSpy.mockImplementation((data, title, url) => {
+      originalReplaceState(data, title, url as string | URL | null);
     });
     // Reset to default location
-    setWindowLocation("/");
+    setTestWindowUrl("/");
   });
 
   describe("opens modal for valid param values", () => {
     it("opens login view for ?auth=login", () => {
-      setWindowLocation("/?auth=login");
+      setTestWindowUrl("/?auth=login");
       const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
@@ -43,7 +27,7 @@ describe("useAuthUrlParam", () => {
     });
 
     it("opens signUp view for ?auth=signup", () => {
-      setWindowLocation("/?auth=signup");
+      setTestWindowUrl("/?auth=signup");
       const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
@@ -52,7 +36,7 @@ describe("useAuthUrlParam", () => {
     });
 
     it("opens forgotPassword view for ?auth=forgot", () => {
-      setWindowLocation("/?auth=forgot");
+      setTestWindowUrl("/?auth=forgot");
       const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
@@ -61,7 +45,7 @@ describe("useAuthUrlParam", () => {
     });
 
     it("opens resetPassword view for ?auth=reset", () => {
-      setWindowLocation("/?auth=reset&token=test-token");
+      setTestWindowUrl("/?auth=reset&token=test-token");
       const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
@@ -81,7 +65,7 @@ describe("useAuthUrlParam", () => {
       ["RESET", "resetPassword"],
       ["Reset", "resetPassword"],
     ] as const)("handles %s as %s", (param, expectedView) => {
-      setWindowLocation(`/?auth=${param}`);
+      setTestWindowUrl(`/?auth=${param}`);
       const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
@@ -91,7 +75,7 @@ describe("useAuthUrlParam", () => {
 
   describe("ignores invalid values", () => {
     it("does not open modal for invalid param value", () => {
-      setWindowLocation("/?auth=invalid");
+      setTestWindowUrl("/?auth=invalid");
       const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
@@ -99,7 +83,7 @@ describe("useAuthUrlParam", () => {
     });
 
     it("does not open modal for empty param value", () => {
-      setWindowLocation("/?auth=");
+      setTestWindowUrl("/?auth=");
       const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
@@ -107,7 +91,7 @@ describe("useAuthUrlParam", () => {
     });
 
     it("does not open modal when no auth param present", () => {
-      setWindowLocation("/");
+      setTestWindowUrl("/");
       const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
@@ -117,19 +101,19 @@ describe("useAuthUrlParam", () => {
 
   describe("clears param after opening", () => {
     it("removes auth param from URL", () => {
-      setWindowLocation("/?auth=login");
+      setTestWindowUrl("/?auth=login");
       const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
-      expect(mockReplaceState).toHaveBeenCalledWith(null, "", "/");
+      expect(replaceStateSpy).toHaveBeenCalledWith(null, "", "/");
     });
 
     it("preserves other query params", () => {
-      setWindowLocation("/?auth=login&other=value&another=param");
+      setTestWindowUrl("/?auth=login&other=value&another=param");
       const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
-      expect(mockReplaceState).toHaveBeenCalledWith(
+      expect(replaceStateSpy).toHaveBeenCalledWith(
         null,
         "",
         "/?other=value&another=param",
@@ -137,17 +121,17 @@ describe("useAuthUrlParam", () => {
     });
 
     it("preserves hash", () => {
-      setWindowLocation("/?auth=login#section");
+      setTestWindowUrl("/?auth=login#section");
       const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
-      expect(mockReplaceState).toHaveBeenCalledWith(null, "", "/#section");
+      expect(replaceStateSpy).toHaveBeenCalledWith(null, "", "/#section");
     });
   });
 
   describe("double-trigger prevention", () => {
     it("only opens modal once even when rerendered", () => {
-      setWindowLocation("/?auth=login");
+      setTestWindowUrl("/?auth=login");
       const openModal = mock();
       const { rerender } = renderHook(() => useAuthUrlParam(openModal));
 
@@ -161,25 +145,29 @@ describe("useAuthUrlParam", () => {
 
   describe("works with different routes", () => {
     it("works on /week route", () => {
-      setWindowLocation("/week?auth=signup");
+      setTestWindowUrl("/week?auth=signup");
       const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
       expect(openModal).toHaveBeenCalledWith("signUp");
-      expect(mockReplaceState).toHaveBeenCalledWith(null, "", "/week");
+      expect(replaceStateSpy).toHaveBeenCalledWith(null, "", "/week");
     });
 
     it("works on /day route with date", () => {
-      setWindowLocation("/day/2026-02-26?auth=forgot");
+      setTestWindowUrl("/day/2026-02-26?auth=forgot");
       const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
       expect(openModal).toHaveBeenCalledWith("forgotPassword");
-      expect(mockReplaceState).toHaveBeenCalledWith(
+      expect(replaceStateSpy).toHaveBeenCalledWith(
         null,
         "",
         "/day/2026-02-26",
       );
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

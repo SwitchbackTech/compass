@@ -1,4 +1,5 @@
 import { render } from "@testing-library/react";
+import { spyOn } from "bun:test";
 import { useDNDTasksContext } from "./useDNDTasks";
 
 describe("useDNDTasksContext", () => {
@@ -9,9 +10,7 @@ describe("useDNDTasksContext", () => {
     };
 
     // Mock console.error to avoid noise in test output
-    const consoleSpy = jest
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
+    const consoleSpy = spyOn(console, "error").mockImplementation(() => {});
 
     expect(() => render(<TestComponent />)).toThrow(
       "useDNDTasksContext must be used within DNDTasksProvider",
