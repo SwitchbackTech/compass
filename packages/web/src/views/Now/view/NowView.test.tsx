@@ -1,20 +1,67 @@
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
-import { renderWithMemoryRouter } from "@web/__tests__/utils/providers/MemoryRouter";
+import { type ReactNode } from "react";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { getModifierKeyTestId } from "@web/common/utils/shortcut/shortcut.util";
-import { NowView } from "@web/views/Now/view/NowView";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
-// Mock the useNowShortcuts hook
-jest.mock("../shortcuts/useNowShortcuts", () => ({
-  useNowShortcuts: jest.fn(),
+const mockRecipeInit = mock(() => ({}));
+const mockSuperTokensInit = mock();
+
+mock.module("supertokens-web-js", () => ({
+  default: {
+    init: mockSuperTokensInit,
+  },
 }));
 
-jest.mock("@web/views/Now/view/NowViewContent", () => ({
+mock.module("supertokens-web-js/recipe/emailpassword", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/emailverification", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/thirdparty", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/session", () => ({
+  attemptRefreshingSession: mock(),
+  default: {
+    attemptRefreshingSession: mock(),
+    doesSessionExist: mock().mockResolvedValue(true),
+    getAccessToken: mock().mockResolvedValue("mock-access-token"),
+    getAccessTokenPayloadSecurely: mock().mockResolvedValue({}),
+    getInvalidClaimsFromResponse: mock().mockResolvedValue([]),
+    getUserId: mock().mockResolvedValue("mock-user-id"),
+    init: mockRecipeInit,
+    signOut: mock().mockResolvedValue(undefined),
+    validateClaims: mock().mockResolvedValue([]),
+  },
+}));
+
+mock.module("@react-oauth/google", () => ({
+  GoogleOAuthProvider: ({ children }: { children: ReactNode }) => children,
+  useGoogleLogin: () => mock(),
+}));
+
+// Mock the useNowShortcuts hook
+mock.module("../shortcuts/useNowShortcuts", () => ({
+  useNowShortcuts: mock(),
+}));
+
+mock.module("@web/views/Now/view/NowViewContent", () => ({
   NowViewContent: () => <div data-testid="now-view-content" />,
 }));
 
-jest.mock("@web/views/Now/hooks/useAvailableTasks", () => ({
+mock.module("@web/views/Now/hooks/useAvailableTasks", () => ({
   useAvailableTasks: () => ({
     availableTasks: [],
     allTasks: [],
@@ -22,16 +69,21 @@ jest.mock("@web/views/Now/hooks/useAvailableTasks", () => ({
   }),
 }));
 
+const { renderWithMemoryRouter } =
+  require("@web/__tests__/utils/providers/MemoryRouter") as typeof import("@web/__tests__/utils/providers/MemoryRouter");
+const { NowView } =
+  require("@web/views/Now/view/NowView") as typeof import("@web/views/Now/view/NowView");
+
 // Mock matchMedia to simulate wide screen (sidebar visible)
 const mockMatchMedia = (matches: boolean) => ({
   matches,
   media: "",
   onchange: null,
-  addListener: jest.fn(),
-  removeListener: jest.fn(),
-  addEventListener: jest.fn(),
-  removeEventListener: jest.fn(),
-  dispatchEvent: jest.fn(),
+  addListener: mock(),
+  removeListener: mock(),
+  addEventListener: mock(),
+  removeEventListener: mock(),
+  dispatchEvent: mock(),
 });
 
 describe("NowView", () => {
@@ -45,7 +97,7 @@ describe("NowView", () => {
       configurable: true,
       value: 1400,
     });
-    window.matchMedia = jest.fn().mockReturnValue(mockMatchMedia(true));
+    window.matchMedia = mock().mockReturnValue(mockMatchMedia(true));
   });
 
   afterEach(() => {
