@@ -1,11 +1,15 @@
-import { useDraggable } from "@dnd-kit/core";
 import { render, screen } from "@testing-library/react";
 import { Categories_Event } from "@core/types/event.types";
-import { Draggable } from "@web/components/DND/Draggable";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock("@dnd-kit/core", () => ({
-  useDraggable: jest.fn(),
+const useDraggable = mock();
+
+mock.module("@dnd-kit/core", () => ({
+  useDraggable,
 }));
+
+const { Draggable } =
+  require("@web/components/DND/Draggable") as typeof import("@web/components/DND/Draggable");
 
 describe("Draggable", () => {
   const mockDndProps = {
@@ -18,10 +22,11 @@ describe("Draggable", () => {
   };
 
   beforeEach(() => {
-    (useDraggable as jest.Mock).mockReturnValue({
+    useDraggable.mockClear();
+    useDraggable.mockReturnValue({
       attributes: {},
       listeners: {},
-      setNodeRef: jest.fn(),
+      setNodeRef: mock(),
       transform: null,
       isDragging: false,
     });
@@ -38,10 +43,10 @@ describe("Draggable", () => {
   });
 
   it("applies dnd attributes and listeners", () => {
-    (useDraggable as jest.Mock).mockReturnValue({
+    useDraggable.mockReturnValue({
       attributes: { "aria-roledescription": "draggable" },
-      listeners: { onKeyDown: jest.fn() },
-      setNodeRef: jest.fn(),
+      listeners: { onKeyDown: mock() },
+      setNodeRef: mock(),
       transform: null,
       isDragging: false,
     });
@@ -57,10 +62,10 @@ describe("Draggable", () => {
   });
 
   it("applies transform style when dragging", () => {
-    (useDraggable as jest.Mock).mockReturnValue({
+    useDraggable.mockReturnValue({
       attributes: {},
       listeners: {},
-      setNodeRef: jest.fn(),
+      setNodeRef: mock(),
       transform: { x: 10, y: 20, scaleX: 1, scaleY: 1 },
       isDragging: true,
     });
@@ -76,8 +81,7 @@ describe("Draggable", () => {
   });
 
   it("updates disabled prop correctly when it changes", () => {
-    const mockUseDraggable = useDraggable as jest.Mock;
-    mockUseDraggable.mockClear();
+    useDraggable.mockClear();
 
     // Initial render with disabled: true (simulating pending event)
     const { rerender } = render(
@@ -91,7 +95,7 @@ describe("Draggable", () => {
     );
 
     // Verify useDraggable was called with disabled: true
-    expect(mockUseDraggable).toHaveBeenCalledWith(
+    expect(useDraggable).toHaveBeenCalledWith(
       expect.objectContaining({
         disabled: true,
       }),
@@ -109,13 +113,13 @@ describe("Draggable", () => {
     );
 
     // Verify useDraggable was called again with disabled: false
-    expect(mockUseDraggable).toHaveBeenCalledWith(
+    expect(useDraggable).toHaveBeenCalledWith(
       expect.objectContaining({
         disabled: false,
       }),
     );
 
     // Verify it was called multiple times (initial + rerender)
-    expect(mockUseDraggable.mock.calls.length).toBeGreaterThan(1);
+    expect(useDraggable.mock.calls.length).toBeGreaterThan(1);
   });
 });

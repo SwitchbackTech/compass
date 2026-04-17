@@ -8,7 +8,7 @@ import {
   type GoogleUiState,
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import { type AuthView } from "@web/components/AuthModal/hooks/useAuthModal";
-import { HeaderInfoIcon } from "./HeaderInfoIcon";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 interface MockConnectGoogleResult {
   commandAction: GoogleUiConfig["commandAction"];
@@ -17,47 +17,67 @@ interface MockConnectGoogleResult {
   state: GoogleUiState;
 }
 
-const mockOpenModal = jest.fn<void, [AuthView?]>();
-const mockGoogleOnSelect = jest.fn<void, []>();
-const mockUseSession = jest.fn<CompassSession, []>();
-const mockUseConnectGoogle = jest.fn<MockConnectGoogleResult, []>();
-const mockShouldShowAnonymousCalendarChangeSignUpPrompt = jest.fn<
-  boolean,
-  []
->();
-const mockSubscribeToAuthState = jest.fn<() => void, [() => void]>(
-  () => () => {},
+const mockOpenModal = mock((_: AuthView | undefined = undefined) => undefined);
+const mockGoogleOnSelect = mock();
+const mockUseSession = mock(
+  (): CompassSession => ({
+    authenticated: false,
+    setAuthenticated: mock(),
+  }),
 );
+const mockUseConnectGoogle = mock(
+  (): MockConnectGoogleResult => ({
+    commandAction: {
+      icon: "CloudArrowUpIcon",
+      isDisabled: false,
+      label: "Reconnect Google Calendar",
+      onSelect: mockGoogleOnSelect,
+    },
+    isRepairing: false,
+    sidebarStatus: {
+      iconColor: "error",
+      isDisabled: false,
+      onSelect: mockGoogleOnSelect,
+      tooltip: "Google Calendar needs reconnecting. Click to reconnect.",
+    },
+    state: "RECONNECT_REQUIRED",
+  }),
+);
+const mockShouldShowAnonymousCalendarChangeSignUpPrompt = mock(() => false);
+const mockSubscribeToAuthState = mock(() => () => {});
 
-jest.mock("@web/auth/compass/session/useSession", () => ({
+mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: (): CompassSession => mockUseSession(),
 }));
 
-jest.mock("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
+mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
   useConnectGoogle: (): MockConnectGoogleResult => mockUseConnectGoogle(),
 }));
 
-jest.mock("@web/auth/compass/state/auth.state.util", () => ({
+mock.module("@web/auth/compass/state/auth.state.util", () => ({
   shouldShowAnonymousCalendarChangeSignUpPrompt: (): boolean =>
     mockShouldShowAnonymousCalendarChangeSignUpPrompt(),
   subscribeToAuthState: (listener: () => void): (() => void) =>
     mockSubscribeToAuthState(listener),
 }));
 
-jest.mock("@web/components/AuthModal/hooks/useAuthModal", () => ({
+mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
   useAuthModal: () => ({
     openModal: mockOpenModal,
   }),
 }));
 
-jest.mock("@phosphor-icons/react", () => ({
+mock.module("@phosphor-icons/react", () => ({
   InfoIcon: ({ className }: { className?: string }) => (
-    <span aria-label="header-info-icon">{className ?? ""}</span>
+    <span role="img" aria-label="header-info-icon">
+      {className ?? ""}
+    </span>
   ),
-  SpinnerGapIcon: () => <span aria-label="spinner-gap" />,
+  SpinnerGapIcon: () => <span role="img" aria-label="spinner-gap" />,
+  SpinnerIcon: () => <span role="img" aria-label="spinner-gap" />,
 }));
 
-jest.mock("@web/components/Tooltip/TooltipWrapper", () => ({
+mock.module("@web/components/Tooltip/TooltipWrapper", () => ({
   TooltipWrapper: ({
     children,
     description,
@@ -80,12 +100,20 @@ jest.mock("@web/components/Tooltip/TooltipWrapper", () => ({
   ),
 }));
 
+const { HeaderInfoIcon } =
+  require("./HeaderInfoIcon") as typeof import("./HeaderInfoIcon");
+
 describe("HeaderInfoIcon", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockOpenModal.mockClear();
+    mockGoogleOnSelect.mockClear();
+    mockUseSession.mockClear();
+    mockUseConnectGoogle.mockClear();
+    mockShouldShowAnonymousCalendarChangeSignUpPrompt.mockClear();
+    mockSubscribeToAuthState.mockClear();
     mockUseSession.mockReturnValue({
       authenticated: false,
-      setAuthenticated: jest.fn(),
+      setAuthenticated: mock(),
     });
     mockUseConnectGoogle.mockReturnValue({
       commandAction: {

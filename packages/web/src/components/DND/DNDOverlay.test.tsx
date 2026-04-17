@@ -1,27 +1,29 @@
-import { useDndContext } from "@dnd-kit/core";
 import { render, screen } from "@testing-library/react";
+import { type ReactNode } from "react";
 import { Categories_Event } from "@core/types/event.types";
-import { DNDOverlay } from "./DNDOverlay";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock("@dnd-kit/core", () => ({
-  useDndContext: jest.fn(),
-  DragOverlay: ({ children }: { children: React.ReactNode }) => (
+const useDndContext = mock();
+
+mock.module("@dnd-kit/core", () => ({
+  useDndContext,
+  DragOverlay: ({ children }: { children: ReactNode }) => (
     <div data-testid="drag-overlay">{children}</div>
   ),
 }));
 
-jest.mock("@dnd-kit/modifiers", () => ({
-  restrictToVerticalAxis: jest.fn(),
+mock.module("@dnd-kit/modifiers", () => ({
+  restrictToVerticalAxis: mock(),
 }));
 
-jest.mock(
+mock.module(
   "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/TimedAgendaEvent",
   () => ({
     TimedAgendaEvent: () => <div data-testid="agenda-event">Agenda Event</div>,
   }),
 );
 
-jest.mock(
+mock.module(
   "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/AllDayAgendaEvent",
   () => ({
     AllDayAgendaEvent: () => (
@@ -30,9 +32,12 @@ jest.mock(
   }),
 );
 
+const { DNDOverlay } = require("./DNDOverlay") as typeof import("./DNDOverlay");
+
 describe("DNDOverlay", () => {
   beforeEach(() => {
-    (useDndContext as jest.Mock).mockReturnValue({
+    useDndContext.mockClear();
+    useDndContext.mockReturnValue({
       active: null,
       over: null,
     });
@@ -44,7 +49,7 @@ describe("DNDOverlay", () => {
   });
 
   it("renders AgendaEvent when dragging TIMED event", () => {
-    (useDndContext as jest.Mock).mockReturnValue({
+    useDndContext.mockReturnValue({
       active: {
         id: "test-id",
         data: {
@@ -63,7 +68,7 @@ describe("DNDOverlay", () => {
   });
 
   it("renders AllDayAgendaEvent when dragging ALLDAY event", () => {
-    (useDndContext as jest.Mock).mockReturnValue({
+    useDndContext.mockReturnValue({
       active: {
         id: "test-id",
         data: {
@@ -82,7 +87,7 @@ describe("DNDOverlay", () => {
   });
 
   it("renders children for unknown types", () => {
-    (useDndContext as jest.Mock).mockReturnValue({
+    useDndContext.mockReturnValue({
       active: {
         id: "test-id",
         data: {

@@ -1,10 +1,14 @@
-import { useDroppable } from "@dnd-kit/core";
 import { render, screen } from "@testing-library/react";
-import { Droppable } from "@web/components/DND/Droppable";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock("@dnd-kit/core", () => ({
-  useDroppable: jest.fn(),
+const useDroppable = mock();
+
+mock.module("@dnd-kit/core", () => ({
+  useDroppable,
 }));
+
+const { Droppable } =
+  require("@web/components/DND/Droppable") as typeof import("@web/components/DND/Droppable");
 
 describe("Droppable", () => {
   const mockDndProps = {
@@ -13,8 +17,9 @@ describe("Droppable", () => {
   };
 
   beforeEach(() => {
-    (useDroppable as jest.Mock).mockReturnValue({
-      setNodeRef: jest.fn(),
+    useDroppable.mockClear();
+    useDroppable.mockReturnValue({
+      setNodeRef: mock(),
       active: null,
       isOver: false,
       node: { current: null },

@@ -1,4 +1,9 @@
-import { type ReactElement, type ReactNode, useLayoutEffect } from "react";
+import {
+  type KeyboardEvent,
+  type ReactElement,
+  type ReactNode,
+  useLayoutEffect,
+} from "react";
 import {
   createMemoryRouter,
   MemoryRouter,
@@ -6,42 +11,49 @@ import {
   RouterProvider,
   useLocation,
 } from "react-router-dom";
-import EmailPassword from "supertokens-web-js/recipe/emailpassword";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { loadDayData, loadTodayData } from "@web/routers/loaders";
-import { AuthModal } from "./AuthModal";
-import { AuthModalProvider } from "./AuthModalProvider";
-import { useAuthModal } from "./hooks/useAuthModal";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 // Mock useSession
-const mockUseSession = jest.fn(() => ({
+const mockUseSession = mock(() => ({
   authenticated: false,
-  setAuthenticated: jest.fn(),
+  setAuthenticated: mock(),
 }));
 
-jest.mock("@web/auth/compass/session/useSession", () => ({
+mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: () => mockUseSession(),
 }));
 
 // Mock useGoogleAuth
-const mockGoogleLogin = jest.fn();
-jest.mock("@web/auth/google/hooks/useGoogleAuth/useGoogleAuth", () => ({
+const mockGoogleLogin = mock();
+mock.module("@web/auth/google/hooks/useGoogleAuth/useGoogleAuth", () => ({
   useGoogleAuth: () => ({
     login: mockGoogleLogin,
   }),
 }));
 
-const mockCompleteAuthentication = jest.fn();
-jest.mock("@web/auth/compass/hooks/useCompleteAuthentication", () => ({
+const mockCompleteAuthentication = mock();
+mock.module("@web/auth/compass/hooks/useCompleteAuthentication", () => ({
   useCompleteAuthentication: () => mockCompleteAuthentication,
 }));
 
-jest.mock("supertokens-web-js/recipe/emailpassword");
+const mockEmailPassword = {
+  getResetPasswordTokenFromURL: mock(),
+  sendPasswordResetEmail: mock(),
+  signIn: mock(),
+  signUp: mock(),
+  submitNewPassword: mock(),
+};
+
+mock.module("supertokens-web-js/recipe/emailpassword", () => ({
+  default: mockEmailPassword,
+  ...mockEmailPassword,
+}));
 
 // Mock GoogleButton - uses button with label for semantic queries (matches real component's aria-label)
-jest.mock("@web/components/AuthModal/components/GoogleButton", () => ({
+mock.module("@web/components/AuthModal/components/GoogleButton", () => ({
   GoogleButton: ({
     onClick,
     label,
@@ -49,14 +61,14 @@ jest.mock("@web/components/AuthModal/components/GoogleButton", () => ({
     onClick: () => void;
     label: string;
   }) => (
-    <button onClick={onClick} aria-label={label}>
+    <button type="button" onClick={onClick} aria-label={label}>
       {label}
     </button>
   ),
 }));
 
 // Mock TooltipWrapper - no data-testid; use semantic queries (role/name/text)
-jest.mock("@web/components/Tooltip/TooltipWrapper", () => ({
+mock.module("@web/components/Tooltip/TooltipWrapper", () => ({
   TooltipWrapper: ({
     children,
     onClick,
@@ -66,11 +78,12 @@ jest.mock("@web/components/Tooltip/TooltipWrapper", () => ({
     onClick?: () => void;
     description?: string;
   }) => (
-    <div
+    <button
+      type="button"
       onClick={onClick}
       onKeyDown={
         onClick
-          ? (e: React.KeyboardEvent) => {
+          ? (e: KeyboardEvent) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 onClick();
@@ -79,22 +92,29 @@ jest.mock("@web/components/Tooltip/TooltipWrapper", () => ({
           : undefined
       }
       tabIndex={onClick ? 0 : undefined}
-      role={onClick ? "button" : undefined}
+      disabled={!onClick}
       title={description}
     >
       {description && <span>{description}</span>}
       {children}
-    </div>
+    </button>
   ),
 }));
+
+const { loadDayData, loadTodayData } = await import("@web/routers/loaders");
+const { AuthModal } = await import("./AuthModal");
+const { AuthModalProvider } = await import("./AuthModalProvider");
+const { useAuthModal } = await import("./hooks/useAuthModal");
 
 // Helper component to trigger modal open
 const ModalTrigger = () => {
   const { openModal } = useAuthModal();
-  return <button onClick={() => openModal("login")}>Open Modal</button>;
+  return (
+    <button type="button" onClick={() => openModal("login")}>
+      Open Modal
+    </button>
+  );
 };
-
-const mockEmailPassword = EmailPassword as jest.Mocked<typeof EmailPassword>;
 
 const renderWithProviders = (
   component: ReactElement,
@@ -182,26 +202,33 @@ const renderWithDayRedirectRoute = (initialRoute: string) => {
 
 describe("AuthModal", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockUseSession.mockClear();
+    mockGoogleLogin.mockClear();
+    mockCompleteAuthentication.mockClear();
+    mockEmailPassword.signUp.mockClear();
+    mockEmailPassword.signIn.mockClear();
+    mockEmailPassword.sendPasswordResetEmail.mockClear();
+    mockEmailPassword.getResetPasswordTokenFromURL.mockClear();
+    mockEmailPassword.submitNewPassword.mockClear();
     mockUseSession.mockReturnValue({
       authenticated: false,
-      setAuthenticated: jest.fn(),
+      setAuthenticated: mock(),
     });
     mockEmailPassword.signUp.mockResolvedValue({
       status: "OK",
       user: { emails: ["test@example.com"] },
-    } as never);
+    });
     mockEmailPassword.signIn.mockResolvedValue({
       status: "OK",
       user: { emails: ["test@example.com"] },
-    } as never);
+    });
     mockEmailPassword.sendPasswordResetEmail.mockResolvedValue({
       status: "OK",
-    } as never);
+    });
     mockEmailPassword.getResetPasswordTokenFromURL.mockReturnValue("token");
     mockEmailPassword.submitNewPassword.mockResolvedValue({
       status: "OK",
-    } as never);
+    });
   });
 
   describe("Modal Open/Close", () => {
@@ -646,7 +673,7 @@ describe("AuthModal", () => {
       mockEmailPassword.sendPasswordResetEmail.mockResolvedValue({
         status: "PASSWORD_RESET_NOT_ALLOWED",
         reason: "Password reset disabled",
-      } as never);
+      });
 
       const user = userEvent.setup();
       renderWithProviders(<ModalTrigger />);
@@ -824,15 +851,23 @@ const mockWindowLocation = (url: string) => {
 };
 
 // Mock history.replaceState for URL param tests
-const mockReplaceState = jest.fn();
+const mockReplaceState = mock();
 const originalHistory = window.history;
 
 describe("URL Parameter Support", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockUseSession.mockClear();
+    mockGoogleLogin.mockClear();
+    mockCompleteAuthentication.mockClear();
+    mockEmailPassword.signUp.mockClear();
+    mockEmailPassword.signIn.mockClear();
+    mockEmailPassword.sendPasswordResetEmail.mockClear();
+    mockEmailPassword.getResetPasswordTokenFromURL.mockClear();
+    mockEmailPassword.submitNewPassword.mockClear();
+    mockReplaceState.mockClear();
     mockUseSession.mockReturnValue({
       authenticated: false,
-      setAuthenticated: jest.fn(),
+      setAuthenticated: mock(),
     });
     Object.defineProperty(window.history, "replaceState", {
       value: mockReplaceState,
@@ -987,7 +1022,7 @@ describe("URL Parameter Support", () => {
     mockWindowLocation("/day?auth=reset&token=reset-token");
     mockEmailPassword.submitNewPassword.mockResolvedValue({
       status: "OK",
-    } as never);
+    });
     renderWithProviders(<div />, "/day?auth=reset&token=reset-token");
 
     await waitFor(() => {

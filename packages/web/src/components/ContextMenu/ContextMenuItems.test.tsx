@@ -8,16 +8,16 @@ import {
 } from "@web/__tests__/utils/state/store.test.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
-import { ContextMenuItems } from "./ContextMenuItems";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-const mockClose = jest.fn();
-const mockOpenForm = jest.fn();
-const mockDuplicateEvent = jest.fn();
-const mockSetDraft = jest.fn();
-const mockSubmit = jest.fn();
-const mockOnDelete = jest.fn();
+const mockClose = mock();
+const mockOpenForm = mock();
+const mockDuplicateEvent = mock();
+const mockSetDraft = mock();
+const mockSubmit = mock();
+const mockOnDelete = mock();
 
-jest.mock(
+mock.module(
   "@web/views/Calendar/components/Draft/context/useDraftContext",
   () => ({
     useDraftContext: () => ({
@@ -36,12 +36,15 @@ jest.mock(
   }),
 );
 
-jest.mock(
+mock.module(
   "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext",
   () => ({
     useSidebarContext: () => null,
   }),
 );
+
+const { ContextMenuItems } =
+  require("./ContextMenuItems") as typeof import("./ContextMenuItems");
 
 const createMockGridEvent = (
   overrides: Partial<Schema_GridEvent> = {},
@@ -71,7 +74,6 @@ const createStateWithPendingEvents = (
 
 describe("ContextMenuItems", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
     mockClose.mockClear();
     mockOpenForm.mockClear();
     mockDuplicateEvent.mockClear();
@@ -122,7 +124,7 @@ describe("ContextMenuItems", () => {
     });
 
     render(<ContextMenuItems event={event} close={mockClose} />, {
-      state: createStateWithPendingEvents([event._id!]),
+      state: createStateWithPendingEvents(["pending-event-1"]),
     });
 
     const deleteButton = screen.getByText("Delete");
@@ -141,7 +143,7 @@ describe("ContextMenuItems", () => {
     });
 
     render(<ContextMenuItems event={event} close={mockClose} />, {
-      state: createStateWithPendingEvents([event._id!]),
+      state: createStateWithPendingEvents(["pending-event-1"]),
     });
 
     const editButton = screen.getByText("Edit");
@@ -161,7 +163,7 @@ describe("ContextMenuItems", () => {
     });
 
     render(<ContextMenuItems event={event} close={mockClose} />, {
-      state: createStateWithPendingEvents([event._id!]),
+      state: createStateWithPendingEvents(["pending-event-1"]),
     });
 
     const duplicateButton = screen.getByText("Duplicate");
@@ -179,7 +181,7 @@ describe("ContextMenuItems", () => {
     });
 
     render(<ContextMenuItems event={event} close={mockClose} />, {
-      state: createStateWithPendingEvents([event._id!]),
+      state: createStateWithPendingEvents(["pending-event-1"]),
     });
 
     const deleteButton = screen.getByText("Delete").closest("li");
