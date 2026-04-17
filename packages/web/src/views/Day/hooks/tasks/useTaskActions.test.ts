@@ -1,44 +1,58 @@
+import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { renderHook, waitFor } from "@testing-library/react";
 import dayjs from "dayjs";
 import { act } from "react";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { type TaskRepository } from "@web/common/repositories/task/task.repository";
 import { type Task } from "@web/common/types/task.types";
-import { showMigrationToast } from "@web/views/Day/components/Toasts/MigrationToast/MigrationToast";
-import { useTaskActions } from "./useTaskActions";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock(
+if (typeof document === "undefined") {
+  GlobalRegistrator.register();
+}
+
+const showMigrationToast = mock();
+
+mock.module(
   "@web/views/Day/components/Toasts/MigrationToast/MigrationToast",
   () => ({
-    showMigrationToast: jest.fn(),
+    showMigrationToast,
   }),
 );
 
+const { useTaskActions } =
+  require("./useTaskActions") as typeof import("./useTaskActions");
+
 describe("useTaskActions - migration", () => {
-  const mockSetTasks = jest.fn();
-  const mockSetUndoState = jest.fn();
-  const mockSetUndoToastId = jest.fn();
+  const mockSetTasks = mock();
+  const mockSetUndoState = mock();
+  const mockSetUndoToastId = mock();
   const mockDateInView = dayjs("2025-10-27");
-  const mockNavigateToNextDay = jest.fn();
-  const mockNavigateToPreviousDay = jest.fn();
-  const mockTaskRepository: jest.Mocked<TaskRepository> = {
-    get: jest.fn().mockResolvedValue([]),
-    save: jest.fn().mockResolvedValue(undefined),
-    delete: jest.fn().mockResolvedValue(undefined),
-    move: jest.fn().mockResolvedValue(undefined),
-    reorder: jest.fn().mockResolvedValue(undefined),
+  const mockNavigateToNextDay = mock();
+  const mockNavigateToPreviousDay = mock();
+  const mockTaskRepository: TaskRepository = {
+    get: mock().mockResolvedValue([]),
+    save: mock().mockResolvedValue(undefined),
+    delete: mock().mockResolvedValue(undefined),
+    move: mock().mockResolvedValue(undefined),
+    reorder: mock().mockResolvedValue(undefined),
   };
 
   const mockTask = createMockTask({ _id: "task-1" });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockNavigateToNextDay.mockClear();
+    mockNavigateToPreviousDay.mockClear();
+    mockSetTasks.mockClear();
+    mockSetUndoState.mockClear();
+    mockSetUndoToastId.mockClear();
     mockTaskRepository.get.mockResolvedValue([]);
     mockTaskRepository.save.mockResolvedValue(undefined);
     mockTaskRepository.delete.mockResolvedValue(undefined);
     mockTaskRepository.move.mockResolvedValue(undefined);
     mockTaskRepository.reorder.mockResolvedValue(undefined);
-    (showMigrationToast as jest.Mock).mockReturnValue("toast-id-123");
+    showMigrationToast.mockClear();
+    showMigrationToast.mockReturnValue("toast-id-123");
   });
 
   it("migrates task forward one day", async () => {
@@ -308,13 +322,13 @@ describe("useTaskActions - migration", () => {
 });
 
 describe("useTaskActions - reorderTasks", () => {
-  const mockSetTasks = jest.fn();
-  const mockTaskRepository: jest.Mocked<TaskRepository> = {
-    get: jest.fn().mockResolvedValue([]),
-    save: jest.fn().mockResolvedValue(undefined),
-    delete: jest.fn().mockResolvedValue(undefined),
-    move: jest.fn().mockResolvedValue(undefined),
-    reorder: jest.fn().mockResolvedValue(undefined),
+  const mockSetTasks = mock();
+  const mockTaskRepository: TaskRepository = {
+    get: mock().mockResolvedValue([]),
+    save: mock().mockResolvedValue(undefined),
+    delete: mock().mockResolvedValue(undefined),
+    move: mock().mockResolvedValue(undefined),
+    reorder: mock().mockResolvedValue(undefined),
   };
 
   const createTask = (
@@ -331,7 +345,12 @@ describe("useTaskActions - reorderTasks", () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockSetTasks.mockClear();
+    mockTaskRepository.get.mockClear();
+    mockTaskRepository.save.mockClear();
+    mockTaskRepository.delete.mockClear();
+    mockTaskRepository.move.mockClear();
+    mockTaskRepository.reorder.mockClear();
   });
 
   it("moves task to new position and updates order within status groups", () => {
