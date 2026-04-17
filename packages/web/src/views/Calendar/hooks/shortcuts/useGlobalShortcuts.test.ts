@@ -1,7 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
 import { act } from "react";
-import { useNavigate } from "react-router-dom";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import {
   mockLinuxUserAgent,
@@ -15,19 +14,21 @@ import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { reducers } from "@web/store/reducers";
 import { sagas } from "@web/store/sagas";
-import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
-// Mock react-router-dom
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
-  useNavigate: jest.fn(),
-  useLocation: jest.fn(),
+const mockNavigate = mock();
+const useLocation = mock();
+const mockLocation = (pathname: string) => ({ pathname });
+const actualReactRouterDom = await import("react-router-dom");
+
+mock.module("react-router-dom", () => ({
+  ...actualReactRouterDom,
+  useLocation,
+  useNavigate: () => mockNavigate,
 }));
 
-const { useLocation } = jest.requireMock("react-router-dom");
-
-const mockNavigate = jest.fn();
-const mockLocation = (pathname: string) => ({ pathname });
+const { useGlobalShortcuts } =
+  require("@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts") as typeof import("@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts");
 
 const pressModifierShortcut = () => {
   const modifierProps =
@@ -52,55 +53,55 @@ const createTestStore = () => {
 
 describe("useGlobalShortcuts", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (useNavigate as jest.Mock).mockReturnValue(mockNavigate);
-    (useLocation as jest.Mock).mockReturnValue(mockLocation("/"));
+    mockNavigate.mockClear();
+    useLocation.mockClear();
+    useLocation.mockReturnValue(mockLocation("/"));
   });
 
   it("should navigate to NOW when 'n' is pressed from different route", () => {
-    (useLocation as jest.Mock).mockReturnValue(mockLocation("/week"));
+    useLocation.mockReturnValue(mockLocation("/week"));
     renderHook(() => useGlobalShortcuts());
     pressKey("n");
     expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.NOW);
   });
 
   it("should NOT navigate to NOW when 'n' is pressed from NOW route", () => {
-    (useLocation as jest.Mock).mockReturnValue(mockLocation(ROOT_ROUTES.NOW));
+    useLocation.mockReturnValue(mockLocation(ROOT_ROUTES.NOW));
     renderHook(() => useGlobalShortcuts());
     pressKey("n");
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it("should navigate to DAY when 'd' is pressed from different route", () => {
-    (useLocation as jest.Mock).mockReturnValue(mockLocation("/week"));
+    useLocation.mockReturnValue(mockLocation("/week"));
     renderHook(() => useGlobalShortcuts());
     pressKey("d");
     expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
   });
 
   it("should NOT navigate to DAY when 'd' is pressed from DAY route", () => {
-    (useLocation as jest.Mock).mockReturnValue(mockLocation(ROOT_ROUTES.DAY));
+    useLocation.mockReturnValue(mockLocation(ROOT_ROUTES.DAY));
     renderHook(() => useGlobalShortcuts());
     pressKey("d");
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it("should NOT navigate to DAY when 'd' is pressed from DAY date route", () => {
-    (useLocation as jest.Mock).mockReturnValue(mockLocation("/day/2024-01-15"));
+    useLocation.mockReturnValue(mockLocation("/day/2024-01-15"));
     renderHook(() => useGlobalShortcuts());
     pressKey("d");
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it("should navigate to WEEK when 'w' is pressed from different route", () => {
-    (useLocation as jest.Mock).mockReturnValue(mockLocation("/now"));
+    useLocation.mockReturnValue(mockLocation("/now"));
     renderHook(() => useGlobalShortcuts());
     pressKey("w");
     expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.WEEK);
   });
 
   it("should NOT navigate to WEEK when 'w' is pressed from WEEK route", () => {
-    (useLocation as jest.Mock).mockReturnValue(mockLocation(ROOT_ROUTES.WEEK));
+    useLocation.mockReturnValue(mockLocation(ROOT_ROUTES.WEEK));
     renderHook(() => useGlobalShortcuts());
     pressKey("w");
     expect(mockNavigate).not.toHaveBeenCalled();
@@ -115,7 +116,7 @@ describe("useGlobalShortcuts", () => {
   it("should open reminder when 'r' is pressed", () => {
     const store = createTestStore();
     // Spy on dispatch
-    const dispatchSpy = jest.spyOn(store, "dispatch");
+    const dispatchSpy = spyOn(store, "dispatch");
 
     renderHook(() => useGlobalShortcuts(), { store });
 
@@ -136,7 +137,7 @@ describe("useGlobalShortcuts", () => {
     const osSpy = mockFn();
     HotkeyManager.resetInstance();
     const store = createTestStore();
-    const dispatchSpy = jest.spyOn(store, "dispatch");
+    const dispatchSpy = spyOn(store, "dispatch");
 
     act(() => renderHook(() => useGlobalShortcuts(), { store }));
 
@@ -155,7 +156,7 @@ describe("useGlobalShortcuts", () => {
     const osSpy = mockMacOSUserAgent();
     HotkeyManager.resetInstance();
     const store = createTestStore();
-    const dispatchSpy = jest.spyOn(store, "dispatch");
+    const dispatchSpy = spyOn(store, "dispatch");
 
     act(() => renderHook(() => useGlobalShortcuts(), { store }));
 
