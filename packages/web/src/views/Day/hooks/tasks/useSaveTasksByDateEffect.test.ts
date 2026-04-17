@@ -1,22 +1,31 @@
+import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { renderHook, waitFor } from "@testing-library/react";
 import { useEffect, useRef } from "react";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { type TaskRepository } from "@web/common/repositories/task/task.repository";
 import { type Task } from "@web/common/types/task.types";
-import { useSaveTasksByDateEffect } from "@web/views/Day/hooks/tasks/useSaveTasksByDateEffect";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
-const mockSave = jest.fn();
+if (typeof document === "undefined") {
+  GlobalRegistrator.register();
+}
+
+const mockEnsureStorageReady = mock().mockResolvedValue(undefined);
+const mockSave = mock();
 const mockTaskRepository: TaskRepository = {
-  get: jest.fn().mockResolvedValue([]),
+  get: mock().mockResolvedValue([]),
   save: mockSave,
-  delete: jest.fn().mockResolvedValue(undefined),
-  move: jest.fn().mockResolvedValue(undefined),
-  reorder: jest.fn().mockResolvedValue(undefined),
+  delete: mock().mockResolvedValue(undefined),
+  move: mock().mockResolvedValue(undefined),
+  reorder: mock().mockResolvedValue(undefined),
 };
 
-jest.mock("@web/common/storage/adapter/adapter", () => ({
-  ensureStorageReady: jest.fn().mockResolvedValue(undefined),
+mock.module("@web/common/storage/adapter/adapter", () => ({
+  ensureStorageReady: mockEnsureStorageReady,
 }));
+
+const { useSaveTasksByDateEffect } =
+  require("@web/views/Day/hooks/tasks/useSaveTasksByDateEffect") as typeof import("@web/views/Day/hooks/tasks/useSaveTasksByDateEffect");
 
 interface SaveHarnessProps {
   dateKey: string;
@@ -58,7 +67,8 @@ function useSaveHarness({
 
 describe("useSaveTasksByDateEffect", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockEnsureStorageReady.mockClear();
+    mockSave.mockClear();
     mockSave.mockResolvedValue(undefined);
   });
 
@@ -137,7 +147,9 @@ describe("useSaveTasksByDateEffect", () => {
   it("keeps dirty flag when save fails", async () => {
     const tasks = [createMockTask({ _id: "task-1" })];
     mockSave.mockRejectedValueOnce(new Error("save failed"));
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
+    const consoleErrorSpy = spyOn(console, "error").mockImplementation(
+      () => {},
+    );
 
     const { result } = renderHook(() =>
       useSaveHarness({
