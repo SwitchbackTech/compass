@@ -6,6 +6,7 @@ import {
   type SomedayFormShortcutsProps,
   useSomedayFormShortcuts,
 } from "@web/views/Forms/SomedayEventForm/useSomedayFormShortcuts";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 /**
  * Helper function to dispatch a keyboard event to the document
@@ -38,14 +39,17 @@ describe("SomedayEventForm shortcuts hook", () => {
   const defaultProps: SomedayFormShortcutsProps = {
     event: baseEvent,
     category: Categories_Event.SOMEDAY_WEEK,
-    onSubmit: jest.fn(),
-    onDelete: jest.fn(),
-    onDuplicate: jest.fn(),
-    onMigrate: jest.fn(),
+    onSubmit: mock(),
+    onDelete: mock(),
+    onDuplicate: mock(),
+    onMigrate: mock(),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    defaultProps.onDelete.mockClear();
+    defaultProps.onDuplicate.mockClear();
+    defaultProps.onMigrate.mockClear();
+    defaultProps.onSubmit.mockClear();
     HotkeyManager.resetInstance();
   });
 
