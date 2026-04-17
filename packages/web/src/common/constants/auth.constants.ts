@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const AuthStateSchema = z.object({
   hasAuthenticated: z.boolean().default(false),
-  lastKnownEmail: z.string().email().optional(),
+  lastKnownEmail: z.string().optional(),
   shouldPromptSignUpAfterAnonymousCalendarChange: z.boolean().default(false),
 });
 
