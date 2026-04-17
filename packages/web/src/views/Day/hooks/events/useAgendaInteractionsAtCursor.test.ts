@@ -1,5 +1,6 @@
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockSafePolygonResult = mock();
 const useClick = mock();
@@ -78,4 +79,8 @@ describe("useAgendaInteractionsAtCursor", () => {
 
     expect(result.current).toBe(mockInteractions);
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

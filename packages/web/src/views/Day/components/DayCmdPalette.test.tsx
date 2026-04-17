@@ -5,6 +5,7 @@ import { type ReactNode } from "react";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const actualReactRouterDom =
   require("react-router-dom") as typeof import("react-router-dom");
@@ -473,4 +474,8 @@ describe("DayCmdPalette", () => {
       expect(SyncApi.importGCal).toHaveBeenCalledWith({ force: true });
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

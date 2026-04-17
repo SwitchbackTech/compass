@@ -1,11 +1,17 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { readFile, writeFile } from "node:fs/promises";
+import { afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 mock.restore();
 
-mock.module("@web/components/OverlayPanel/OverlayPanel", () => ({
+const componentQuery = "?test=sync-events-overlay";
+const overlayPanelQuery = `@web/components/OverlayPanel/OverlayPanel${componentQuery}`;
+const bufferedVisibilityQuery = `@web/common/hooks/useBufferedVisibility${componentQuery}`;
+const storeHooksQuery = `@web/store/store.hooks${componentQuery}`;
+
+mock.module(overlayPanelQuery, () => ({
   OverlayPanel: ({
     title,
     message,
@@ -20,19 +26,51 @@ mock.module("@web/components/OverlayPanel/OverlayPanel", () => ({
   ),
 }));
 
-mock.module("@web/common/hooks/useBufferedVisibility", () => ({
+mock.module(bufferedVisibilityQuery, () => ({
   useBufferedVisibility: (value: boolean) => value,
 }));
 
 let authStatus: "idle" | "authenticating" = "idle";
 
-mock.module("@web/store/store.hooks", () => ({
+mock.module(storeHooksQuery, () => ({
   useAppSelector: (selector: (state: { auth: { status: string } }) => unknown) =>
     selector({ auth: { status: authStatus } }),
 }));
 
-const { SyncEventsOverlay } =
-  require("./SyncEventsOverlay") as typeof import("./SyncEventsOverlay");
+const source = await readFile(
+  new URL("./SyncEventsOverlay.tsx", import.meta.url),
+  "utf8",
+);
+
+const transformedSource = source
+  .replaceAll(
+    '@web/components/OverlayPanel/OverlayPanel',
+    overlayPanelQuery,
+  )
+  .replaceAll(
+    '@web/common/hooks/useBufferedVisibility',
+    bufferedVisibilityQuery,
+  )
+  .replaceAll('@web/store/store.hooks', storeHooksQuery);
+
+const transpiler = new Bun.Transpiler({
+  autoImportJSX: true,
+  tsconfig: {
+    compilerOptions: {
+      jsx: "react-jsxdev",
+      jsxImportSource: "react",
+    },
+  },
+});
+const transformedJavaScript = transpiler.transformSync(transformedSource, "tsx");
+
+const tempModuleUrl = new URL(
+  `./.sync-events-overlay-${process.pid}-${Date.now()}.mjs`,
+  import.meta.url,
+);
+await writeFile(tempModuleUrl, transformedJavaScript);
+
+const { SyncEventsOverlay } = await import(tempModuleUrl.href);
 
 describe("SyncEventsOverlay", () => {
   let pendingTimers: Array<() => void> = [];
@@ -60,6 +98,10 @@ describe("SyncEventsOverlay", () => {
     clearTimeoutSpy.mockRestore();
   });
 
+  afterAll(() => {
+    mock.restore();
+  });
+
   const runPendingTimers = () => {
     const timers = pendingTimers;
     pendingTimers = [];
@@ -69,17 +111,20 @@ describe("SyncEventsOverlay", () => {
     }
   };
 
+  const renderWithAuthStatus = (status: "idle" | "authenticating") => {
+    authStatus = status;
+    return render(<SyncEventsOverlay />);
+  };
+
   it("renders nothing when not authenticating", () => {
-    authStatus = "idle";
-    render(<SyncEventsOverlay />);
+    renderWithAuthStatus("idle");
 
     expect(screen.queryByText("Complete Google sign-in...")).toBeNull();
     expect(document.body.getAttribute("data-app-locked")).toBeNull();
   });
 
   it("renders OAuth message when authenticating", () => {
-    authStatus = "authenticating";
-    render(<SyncEventsOverlay />);
+    renderWithAuthStatus("authenticating");
 
     expect(screen.getByText("Complete Google sign-in...")).toBeInTheDocument();
     expect(

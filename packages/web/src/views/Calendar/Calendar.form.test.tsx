@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 import { CLIMB } from "@core/__mocks__/v1/events/events.misc";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
 import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockRecipeInit = mock(() => ({}));
 const mockSuperTokensInit = mock();
@@ -162,4 +163,8 @@ describe("Event Form", () => {
       );
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

@@ -11,6 +11,7 @@ import {
 import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 type UseGoogleAuthArg = NonNullable<
   Parameters<
@@ -364,4 +365,8 @@ describe("useConnectGoogle", () => {
     expect(mockRefreshUserMetadata).not.toHaveBeenCalled();
     expect(mockDispatch).not.toHaveBeenCalledWith(triggerFetch());
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

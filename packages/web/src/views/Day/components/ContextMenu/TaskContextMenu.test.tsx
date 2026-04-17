@@ -264,3 +264,7 @@ describe("TaskContextMenu", () => {
     });
   }, 15000);
 });
+
+afterAll(() => {
+  mock.restore();
+});

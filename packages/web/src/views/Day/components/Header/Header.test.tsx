@@ -3,6 +3,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type ReactNode } from "react";
 import { describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockRecipeInit = mock(() => ({}));
 const mockSuperTokensInit = mock();
@@ -121,4 +122,8 @@ describe("Header", () => {
       }
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

@@ -6,6 +6,7 @@ import {
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockGetElementAtPointer = mock(() => null);
 const mockIsOverAllDayRow = mock(() => false);
@@ -160,4 +161,8 @@ describe("focus.util", () => {
       expect(result).toBe(allDayEvent);
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

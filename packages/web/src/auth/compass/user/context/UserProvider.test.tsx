@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 import { act } from "react";
 const { cleanup, render, screen, waitFor } =
@@ -122,4 +123,8 @@ describe("UserProvider", () => {
       expect(screen.getByText("test@example.com")).toBeInTheDocument();
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

@@ -1,5 +1,6 @@
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 import { BehaviorSubject } from "rxjs";
 
 const closeFloatingAtCursor = mock();
@@ -57,4 +58,8 @@ describe("useCloseEventForm", () => {
     expect(resetDraft).toHaveBeenCalled();
     expect(resetActiveEvent).toHaveBeenCalled();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

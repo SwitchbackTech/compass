@@ -1,5 +1,6 @@
 import { createElement, isValidElement } from "react";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockIsActive = mock();
 const mockToastDismiss = mock();
@@ -100,4 +101,8 @@ describe("error-toast util", () => {
       }),
     );
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

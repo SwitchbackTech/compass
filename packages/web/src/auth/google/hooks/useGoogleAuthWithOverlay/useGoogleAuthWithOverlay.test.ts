@@ -1,6 +1,7 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { type GoogleAuthConfig } from "../googe.auth.types";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockLogin = mock();
 const mockUseGoogleLogin = mock();
@@ -127,4 +128,8 @@ describe("useGoogleAuthWithOverlay", () => {
 
     expect(onError).toHaveBeenCalledTimes(1);
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

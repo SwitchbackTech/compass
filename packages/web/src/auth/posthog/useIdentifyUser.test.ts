@@ -2,6 +2,7 @@ import { type PostHog } from "posthog-js";
 import "@testing-library/jest-dom";
 import { renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockIdentify = mock();
 const mockUsePostHog = mock();
@@ -92,4 +93,8 @@ describe("useIdentifyUser", () => {
       expect(mockIdentify).not.toHaveBeenCalled();
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

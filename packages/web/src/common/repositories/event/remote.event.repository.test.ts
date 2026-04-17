@@ -5,6 +5,7 @@ import {
   type Schema_Event,
 } from "@core/types/event.types";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockCreate = mock();
 const mockGet = mock();
@@ -212,4 +213,8 @@ describe("RemoteEventRepository", () => {
       expect(mockReorder).toHaveBeenCalledTimes(1);
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

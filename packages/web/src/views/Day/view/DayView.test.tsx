@@ -4,6 +4,7 @@ import { screen, within } from "@testing-library/react";
 import { type ReactNode } from "react";
 import { getModifierKeyTestId } from "@web/common/utils/shortcut/shortcut.util";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockRecipeInit = mock(() => ({}));
 const mockSuperTokensInit = mock();
@@ -202,4 +203,8 @@ describe("DayView", () => {
     expect(screen.getAllByTestId("k-icon").length).toBeGreaterThan(1);
     expect(screen.getByText("Command Palette")).toBeInTheDocument();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

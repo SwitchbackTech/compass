@@ -18,6 +18,7 @@ import {
   mock,
   setSystemTime,
 } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockRecipeInit = mock(() => ({}));
 const mockSuperTokensInit = mock();
@@ -364,4 +365,8 @@ describe("Navigation with URL updates", () => {
     await expect(screen.findByText(todayWeekday)).resolves.toBeInTheDocument();
     await expect(screen.findByText(todayDate)).resolves.toBeInTheDocument();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

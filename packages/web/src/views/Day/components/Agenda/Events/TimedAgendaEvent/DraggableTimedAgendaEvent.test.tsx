@@ -7,6 +7,7 @@ import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 import { BehaviorSubject } from "rxjs";
 
 const CursorItem = {
@@ -296,4 +297,8 @@ describe("DraggableTimedAgendaEvent", () => {
     expect(eventElement).toHaveClass("cursor-pointer");
     expect(eventElement).not.toHaveClass("cursor-wait");
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

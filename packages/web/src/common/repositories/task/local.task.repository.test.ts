@@ -3,6 +3,7 @@ import {
   createTestTasks,
 } from "@web/__tests__/utils/repositories/repository.test.factory";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const getStorageAdapter = mock();
 
@@ -276,4 +277,8 @@ describe("LocalTaskRepository", () => {
       expect(mockAdapter.moveTask).toHaveBeenCalledTimes(1);
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

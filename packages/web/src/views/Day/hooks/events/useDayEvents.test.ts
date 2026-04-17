@@ -3,6 +3,7 @@ import dayjs from "@core/util/date/dayjs";
 import { Day_AsyncStateContextReason } from "@web/ducks/events/context/day.context";
 import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const dispatchMock = mock();
 const useAppDispatch = mock();
@@ -61,4 +62,8 @@ describe("useDayEvents", () => {
       }),
     );
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

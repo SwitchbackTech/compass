@@ -6,6 +6,7 @@ import { type TaskRepository } from "@web/common/repositories/task/task.reposito
 import { type Task } from "@web/common/types/task.types";
 import { getDateKey } from "@web/common/utils/storage/storage.util";
 import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { afterAll } from "bun:test";
 
 if (typeof document === "undefined") {
   GlobalRegistrator.register();
@@ -194,4 +195,8 @@ describe("useTaskState", () => {
     expect(mockSave).not.toHaveBeenCalled();
     consoleErrorSpy.mockRestore();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

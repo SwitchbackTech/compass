@@ -10,6 +10,7 @@ import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
 import { resetIsFetchNeeded } from "@web/ducks/events/slices/sync.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockUseLocation = mock();
 const mockUseParams = mock();
@@ -460,4 +461,8 @@ describe("useRefetch", () => {
       );
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

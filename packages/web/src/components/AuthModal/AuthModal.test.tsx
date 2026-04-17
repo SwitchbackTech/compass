@@ -4,6 +4,7 @@ import {
   type ReactNode,
   useLayoutEffect,
 } from "react";
+import { readFile, writeFile } from "node:fs/promises";
 import {
   createMemoryRouter,
   MemoryRouter,
@@ -15,6 +16,7 @@ import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 // Mock useSession
 const mockUseSession = mock(() => ({
@@ -102,9 +104,66 @@ mock.module("@web/components/Tooltip/TooltipWrapper", () => ({
 }));
 
 const { loadDayData, loadTodayData } = await import("@web/routers/loaders");
-const { AuthModal } = await import("./AuthModal");
-const { AuthModalProvider } = await import("./AuthModalProvider");
-const { useAuthModal } = await import("./hooks/useAuthModal");
+
+const authModalHookUrl = new URL(
+  `./.auth-modal-hook-${process.pid}-${Date.now()}.mjs`,
+  import.meta.url,
+);
+const authModalProviderUrl = new URL(
+  `./.auth-modal-provider-${process.pid}-${Date.now()}.mjs`,
+  import.meta.url,
+);
+const authModalUrl = new URL(
+  `./.auth-modal-${process.pid}-${Date.now()}.mjs`,
+  import.meta.url,
+);
+
+const transpiler = new Bun.Transpiler({
+  autoImportJSX: true,
+  tsconfig: {
+    compilerOptions: {
+      jsx: "react-jsxdev",
+      jsxImportSource: "react",
+    },
+  },
+});
+
+const authModalHookSource = await readFile(
+  new URL("./hooks/useAuthModal.ts", import.meta.url),
+  "utf8",
+);
+const authModalHookJavaScript = transpiler.transformSync(
+  authModalHookSource,
+  "ts",
+);
+await writeFile(authModalHookUrl, authModalHookJavaScript);
+
+const authModalProviderSource = await readFile(
+  new URL("./AuthModalProvider.tsx", import.meta.url),
+  "utf8",
+);
+const authModalProviderJavaScript = transpiler.transformSync(
+  authModalProviderSource.replaceAll(
+    "./hooks/useAuthModal",
+    authModalHookUrl.href,
+  ),
+  "tsx",
+);
+await writeFile(authModalProviderUrl, authModalProviderJavaScript);
+
+const authModalSource = await readFile(
+  new URL("./AuthModal.tsx", import.meta.url),
+  "utf8",
+);
+const authModalJavaScript = transpiler.transformSync(
+  authModalSource.replaceAll("./hooks/useAuthModal", authModalHookUrl.href),
+  "tsx",
+);
+await writeFile(authModalUrl, authModalJavaScript);
+
+const { AuthModal } = await import(authModalUrl.href);
+const { AuthModalProvider } = await import(authModalProviderUrl.href);
+const { useAuthModal } = await import(authModalHookUrl.href);
 
 // Helper component to trigger modal open
 const ModalTrigger = () => {
@@ -1052,4 +1111,8 @@ describe("URL Parameter Support", () => {
       ).toBeInTheDocument();
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

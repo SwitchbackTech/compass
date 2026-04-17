@@ -6,6 +6,7 @@ import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockRecipeInit = mock(() => ({}));
 const mockSuperTokensInit = mock();
@@ -153,4 +154,8 @@ describe("DraggableAllDayAgendaEvent", () => {
     expect(eventButton).toHaveClass("cursor-pointer");
     expect(eventButton).not.toHaveClass("cursor-wait");
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

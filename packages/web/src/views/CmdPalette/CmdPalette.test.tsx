@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { act, type ReactNode } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockGoToToday = mock();
 const mockImportGCal = mock();
@@ -202,4 +203,8 @@ describe("CmdPalette", () => {
       expect(SyncApi.importGCal).toHaveBeenCalledWith({ force: true }),
     );
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

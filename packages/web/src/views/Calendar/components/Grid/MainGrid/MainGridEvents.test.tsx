@@ -7,6 +7,7 @@ import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 mock.module(
   "@web/views/Calendar/components/Event/Grid/GridEvent/GridEvent",
@@ -203,4 +204,8 @@ describe("MainGridEvents", () => {
     ).toBeInTheDocument();
     expect(screen.getByTestId("grid-event-normal-event-1")).toBeInTheDocument();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

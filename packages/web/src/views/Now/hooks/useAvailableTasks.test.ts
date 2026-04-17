@@ -4,6 +4,7 @@ import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { type Task } from "@web/common/types/task.types";
 import { TaskContext } from "@web/views/Day/context/TaskContext";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const actualStorageUtil =
   require("@web/common/utils/storage/storage.util") as typeof import("@web/common/utils/storage/storage.util");
@@ -312,3 +313,7 @@ function dispatchStorageEvent(key: string | null) {
   Object.defineProperty(event, "key", { value: key });
   window.dispatchEvent(event);
 }
+
+afterAll(() => {
+  mock.restore();
+});

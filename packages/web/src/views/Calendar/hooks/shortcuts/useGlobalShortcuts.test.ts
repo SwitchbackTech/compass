@@ -15,6 +15,7 @@ import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { reducers } from "@web/store/reducers";
 import { sagas } from "@web/store/sagas";
 import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockNavigate = mock();
 const useLocation = mock();
@@ -176,4 +177,8 @@ describe("useGlobalShortcuts", () => {
       osSpy.mockRestore();
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

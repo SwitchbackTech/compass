@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { type ReactNode } from "react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 type ActionsMenuProps = {
   bgColor: string;
@@ -460,4 +461,8 @@ describe("SomedayEventActionMenu", () => {
       });
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

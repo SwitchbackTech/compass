@@ -143,3 +143,7 @@ describe("Sidebar: Display with State", () => {
     });
   });
 });
+
+afterAll(() => {
+  mock.restore();
+});

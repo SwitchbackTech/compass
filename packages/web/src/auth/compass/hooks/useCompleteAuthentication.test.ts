@@ -1,4 +1,5 @@
 import { mock, expect, describe, it, beforeEach } from "bun:test";
+import { afterAll } from "bun:test";
 
 // Pre-define mock functions
 const mockSyncPendingLocalEvents = mock();
@@ -120,4 +121,8 @@ describe("useCompleteAuthentication", () => {
 
     expect(mockSyncPendingLocalEvents).toHaveBeenCalledTimes(1);
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

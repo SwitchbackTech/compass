@@ -575,3 +575,7 @@ describe.each([
     });
   });
 });
+
+afterAll(() => {
+  mock.restore();
+});

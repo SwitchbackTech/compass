@@ -1,6 +1,7 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { type GoogleAuthConfig } from "../googe.auth.types";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockAuthenticate = mock();
 const mockCompleteAuthentication = mock();
@@ -499,4 +500,8 @@ describe("useGoogleAuth", () => {
       expect(mockCompleteAuthentication).not.toHaveBeenCalled();
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

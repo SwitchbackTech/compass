@@ -6,6 +6,7 @@ import { type Schema_Event } from "@core/types/event.types";
 import { compareEventsByStartDate } from "@web/common/utils/event/event.util";
 import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockOpenEventForm = mock();
 const mockRecipeInit = mock(() => ({}));
@@ -380,4 +381,8 @@ describe("CalendarAgenda", () => {
     expect(await screen.findByText("Event 1")).toBeInTheDocument();
     expect(screen.queryByText("Event 2")).not.toBeInTheDocument();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

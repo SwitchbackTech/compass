@@ -1,6 +1,7 @@
 import { type ReactNode } from "react";
 import { createMemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, mock, spyOn, vi } from "bun:test";
+import { afterAll } from "bun:test";
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
@@ -80,4 +81,8 @@ describe("Calendar: Display without State", () => {
       screen.getByRole("separator", { name: /now line/i }),
     ).toBeInTheDocument();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

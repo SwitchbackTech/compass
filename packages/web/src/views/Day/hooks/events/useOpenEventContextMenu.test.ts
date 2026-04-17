@@ -1,6 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 import { BehaviorSubject } from "rxjs";
 
 const CursorItem = { EventContextMenu: "event-context-menu" };
@@ -145,4 +146,8 @@ describe("useOpenEventContextMenu", () => {
     expect(setActiveEvent).not.toHaveBeenCalled();
     expect(openFloatingAtCursor).not.toHaveBeenCalled();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

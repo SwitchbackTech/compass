@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { Categories_Event } from "@core/types/event.types";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const useDraggable = mock();
 
@@ -131,4 +132,8 @@ describe("Draggable", () => {
     // Verify it was called multiple times (initial + rerender)
     expect(useDraggable.mock.calls.length).toBeGreaterThan(1);
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

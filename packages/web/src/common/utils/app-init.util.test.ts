@@ -8,6 +8,7 @@ import {
   mock,
   spyOn,
 } from "bun:test";
+import { afterAll } from "bun:test";
 
 // Mock the storage adapter
 const mockInitializeStorage = mock();
@@ -178,4 +179,8 @@ describe("app-init.util", () => {
       expect(mockToastError).not.toHaveBeenCalled();
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

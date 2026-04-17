@@ -1,7 +1,7 @@
 import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
 import { renderHook, waitFor } from "@testing-library/react";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
-import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 function dispatchKeyEvent(
   key: string,
@@ -111,7 +111,11 @@ describe("useAppHotkey", () => {
 
   it("blurs the active element before handling the shortcut when requested", async () => {
     const input = document.createElement("input");
-    const blurSpy = spyOn(input, "blur");
+    const blurSpy = mock();
+    Object.defineProperty(input, "blur", {
+      configurable: true,
+      value: blurSpy,
+    });
     document.body.appendChild(input);
     input.focus();
 

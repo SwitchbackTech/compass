@@ -5,6 +5,7 @@ import { prepareEmptyStorageForTests } from "@web/__tests__/utils/storage/indexe
 import { addTasks } from "@web/__tests__/utils/tasks/task.test.util";
 import { renderWithDayProvidersAsync } from "@web/views/Day/util/day.test-util";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const createMatchMedia = (matches: boolean) => {
   const listeners: Array<(e: MediaQueryListEvent) => void> = [];
@@ -385,4 +386,8 @@ describe("TodayViewContent", () => {
       });
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

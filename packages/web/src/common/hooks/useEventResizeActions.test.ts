@@ -7,6 +7,7 @@ import {
   mock,
   spyOn,
 } from "bun:test";
+import { afterAll } from "bun:test";
 import { renderHook } from "@testing-library/react";
 import { act, type MouseEvent as ReactMouseEvent } from "react";
 import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
@@ -429,4 +430,8 @@ describe("useEventResizeActions", () => {
       expect(mockUpdateEvent).not.toHaveBeenCalled();
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

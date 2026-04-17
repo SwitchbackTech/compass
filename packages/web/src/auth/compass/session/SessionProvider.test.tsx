@@ -1,5 +1,6 @@
 import { waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 import { Subject } from "rxjs";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
@@ -136,4 +137,8 @@ describe("SessionProvider sessionInit", () => {
     );
     expect(closeStream).toHaveBeenCalledTimes(2);
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

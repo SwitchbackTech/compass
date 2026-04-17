@@ -5,6 +5,7 @@ import { act, type ReactNode } from "react";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { type TaskContext } from "@web/views/Day/context/TaskContext";
 import { describe, expect, it, mock, test } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockRecipeInit = mock(() => ({}));
 const mockSuperTokensInit = mock();
@@ -213,4 +214,8 @@ describe("DraggableTask", () => {
       fireEvent.mouseUp(dragHandle);
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

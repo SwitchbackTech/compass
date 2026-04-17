@@ -1,6 +1,7 @@
 import { type ReactNode } from "react";
 import { createMemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, mock, spyOn, vi } from "bun:test";
+import { afterAll } from "bun:test";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -89,4 +90,8 @@ describe("Calendar Interactions", () => {
       expect(nowLine).not.toBeInTheDocument();
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

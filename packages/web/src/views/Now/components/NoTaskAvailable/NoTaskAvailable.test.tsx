@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 // Mock useNavigate
 const actualReactRouterDom =
@@ -87,4 +88,8 @@ describe("NoTaskAvailable", () => {
     expect(mockNavigate).toHaveBeenCalledWith(ROOT_ROUTES.DAY);
     expect(mockNavigate).toHaveBeenCalledTimes(1);
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

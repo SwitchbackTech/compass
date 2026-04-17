@@ -5,6 +5,7 @@ import {
   setRepairingSyncIndicatorOverride,
 } from "@web/auth/google/state/google.sync.state";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const actualEventEmitterUtil =
   require("@web/common/utils/dom/event-emitter.util") as typeof import("@web/common/utils/dom/event-emitter.util");
@@ -358,4 +359,8 @@ describe("NowCmdPalette", () => {
       );
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

@@ -24,6 +24,7 @@ import {
   mock,
   spyOn,
 } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockDoesSessionExist = mock();
 const mockEventApiCreate = mock();
@@ -675,4 +676,8 @@ describe("createEvent saga - unauthenticated users", () => {
 
     expect(shouldShowAnonymousCalendarChangeSignUpPrompt()).toBe(false);
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

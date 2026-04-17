@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, mock, vi } from "bun:test";
+import { afterAll } from "bun:test";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
@@ -61,4 +62,8 @@ describe("AuthenticatedLayout", () => {
     expect(screen.getByTestId("nested-route")).toBeInTheDocument();
     expect(screen.getByText("Nested Content")).toBeInTheDocument();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

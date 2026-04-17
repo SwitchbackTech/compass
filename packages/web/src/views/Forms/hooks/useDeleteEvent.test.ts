@@ -13,6 +13,7 @@ import {
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
 import { eventsStore, setDraft } from "@web/store/events";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockDispatch = mock();
 const confirmMock = mock();
@@ -145,4 +146,8 @@ describe("useDeleteEvent Integration", () => {
       expect.stringContaining("Delete this event?"),
     );
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

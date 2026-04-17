@@ -8,6 +8,7 @@ import {
   DATA_EVENT_ELEMENT_ID,
 } from "@web/common/constants/web.constants";
 import { beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 import { BehaviorSubject } from "rxjs";
 
 const getUserId = mock();
@@ -287,4 +288,8 @@ describe("useOpenEventForm", () => {
     expect(setDraft).not.toHaveBeenCalled();
     expect(openFloatingAtCursor).not.toHaveBeenCalled();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

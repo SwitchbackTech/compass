@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const useDroppable = mock();
 
@@ -46,4 +47,8 @@ describe("Droppable", () => {
 
     expect(screen.getByText("Child Content")).toBeInTheDocument();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

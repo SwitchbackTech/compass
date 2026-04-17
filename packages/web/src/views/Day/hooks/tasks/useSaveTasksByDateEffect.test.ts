@@ -5,6 +5,7 @@ import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { type TaskRepository } from "@web/common/repositories/task/task.repository";
 import { type Task } from "@web/common/types/task.types";
 import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { afterAll } from "bun:test";
 
 if (typeof document === "undefined") {
   GlobalRegistrator.register();
@@ -170,4 +171,8 @@ describe("useSaveTasksByDateEffect", () => {
     expect(result.current.isDirtyRef.current).toBe(true);
     consoleErrorSpy.mockRestore();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

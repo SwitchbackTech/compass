@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockDismiss = mock();
 const mockOpenModal = mock();
@@ -64,4 +64,8 @@ describe("SessionExpiredToast", () => {
     expect(mockOpenModal).toHaveBeenCalledWith("login");
     expect(mockDismiss).toHaveBeenCalledWith("session-expired-api");
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

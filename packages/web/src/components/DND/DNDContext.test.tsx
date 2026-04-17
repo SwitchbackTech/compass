@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { type ReactNode } from "react";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const DndContext = mock(({ children }: { children: ReactNode }) => (
   <div data-testid="dnd-context">{children}</div>
@@ -126,4 +127,8 @@ describe("DNDContext", () => {
     expect(mockTogglePointerMovementTracking).toHaveBeenCalledWith(false);
     expect(isDraggingEvent$.next).toHaveBeenCalledWith(false);
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

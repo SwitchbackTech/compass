@@ -14,6 +14,7 @@ import { findAndUpdateEventInPreloadedState } from "@web/__tests__/utils/state/s
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { freshenEventStartEndDate } from "@web/views/Calendar/calendar.render.test.utils";
 import { mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 mock.module("@web/auth/compass/session/session.util", () => ({
   getUserId: async () => "test-user-id",
@@ -87,4 +88,8 @@ describe("Sidebar: Interactions", () => {
       ).toBeInTheDocument();
     });
   }, 10000);
+});
+
+afterAll(() => {
+  mock.restore();
 });

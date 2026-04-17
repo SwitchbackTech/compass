@@ -10,6 +10,7 @@ import {
 } from "@core/types/event.types";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
 import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { afterAll } from "bun:test";
 
 const activeEvent$ = new BehaviorSubject<Schema_Event | null>(null);
 const closeFloatingAtCursor = mock();
@@ -172,4 +173,8 @@ describe("EventContextMenuItems", () => {
     });
     expect(mockClose).toHaveBeenCalled();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

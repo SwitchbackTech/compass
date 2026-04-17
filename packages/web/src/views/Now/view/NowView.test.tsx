@@ -4,6 +4,7 @@ import { type ReactNode } from "react";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { getModifierKeyTestId } from "@web/common/utils/shortcut/shortcut.util";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockRecipeInit = mock(() => ({}));
 const mockSuperTokensInit = mock();
@@ -178,4 +179,8 @@ describe("NowView", () => {
       "p-8",
     );
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

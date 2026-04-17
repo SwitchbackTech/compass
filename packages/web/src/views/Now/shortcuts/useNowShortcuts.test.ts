@@ -2,6 +2,7 @@ import { type ReactNode } from "react";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const actualReactRouterDom =
   require("react-router-dom") as typeof import("react-router-dom");
@@ -234,4 +235,8 @@ describe("useNowShortcuts", () => {
       expect(defaultProps.onPreviousTask).not.toHaveBeenCalled();
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

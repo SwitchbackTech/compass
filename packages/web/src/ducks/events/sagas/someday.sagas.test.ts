@@ -13,6 +13,7 @@ import {
 import { type Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { type RootState } from "@web/store";
 import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockDoesSessionExist = mock();
 const mockEventApiCreate = mock();
@@ -440,4 +441,8 @@ describe("deleteSomedayEvent saga", () => {
     expect(state.events.entities.value?.[eventId]).toBeUndefined();
     expect(state.events.getSomedayEvents.value?.data).not.toContain(eventId);
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

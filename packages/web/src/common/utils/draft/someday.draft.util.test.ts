@@ -3,6 +3,7 @@ import dayjs from "@core/util/date/dayjs";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { type Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 // Mock assembleDefaultEvent since it makes external calls
 const assembleDefaultEvent = mock(async (_, startDate, endDate) => ({
@@ -106,4 +107,8 @@ describe("createSomedayDraft", () => {
       }),
     );
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

@@ -7,6 +7,7 @@ import {
   mock,
   spyOn,
 } from "bun:test";
+import { afterAll } from "bun:test";
 import { Origin } from "@core/constants/core.constants";
 import {
   clearGoogleRevokedState,
@@ -281,4 +282,8 @@ describe("google-auth.util", () => {
       expect(mockStore.dispatch).toHaveBeenCalledTimes(4);
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

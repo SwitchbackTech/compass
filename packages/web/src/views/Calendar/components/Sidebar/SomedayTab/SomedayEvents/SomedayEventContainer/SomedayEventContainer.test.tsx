@@ -13,6 +13,7 @@ import { createMockBaseEvent } from "@core/util/test/ccal.event.factory";
 import { fireEvent, render } from "@web/__tests__/__mocks__/mock.render";
 import { SidebarDraftContext } from "@web/views/Calendar/components/Draft/sidebar/context/SidebarDraftContext";
 import { describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 mock.module(
   "@web/views/Calendar/components/Draft/hooks/state/useDraftForm",
@@ -300,4 +301,8 @@ describe("SomedayEventContainer deletion behavior", () => {
 
     expect(deleteScope).toBe(RecurringEventUpdateScope.THIS_EVENT);
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

@@ -7,6 +7,7 @@ import {
   mock,
   spyOn,
 } from "bun:test";
+import { afterAll } from "bun:test";
 
 const signOut = mock();
 
@@ -238,4 +239,8 @@ describe("browser.cleanup.util", () => {
       });
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

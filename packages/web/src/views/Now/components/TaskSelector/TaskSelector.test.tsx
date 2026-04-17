@@ -21,6 +21,7 @@ import {
   mock,
   setSystemTime,
 } from "bun:test";
+import { afterAll } from "bun:test";
 
 const actualReactRouterDom = await import("react-router-dom");
 const { MemoryRouter } = actualReactRouterDom;
@@ -451,4 +452,8 @@ describe("TaskSelector", () => {
       ).not.toBeInTheDocument();
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

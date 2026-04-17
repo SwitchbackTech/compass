@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockUseUser = mock();
 const mockUseAuthModal = mock();
@@ -99,4 +99,8 @@ describe("SubCalendarList", () => {
 
     expect(openModal).toHaveBeenCalledWith("signUp");
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

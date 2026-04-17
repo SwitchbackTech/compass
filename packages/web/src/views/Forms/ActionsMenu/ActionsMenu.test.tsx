@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { type ReactNode } from "react";
 import { ID_EVENT_FORM_ACTION_MENU } from "@web/common/constants/web.constants";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 let mockOpen = false;
 
@@ -417,4 +418,8 @@ describe("ActionsMenu", () => {
       expect(trigger).toHaveAttribute("aria-haspopup", "menu");
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

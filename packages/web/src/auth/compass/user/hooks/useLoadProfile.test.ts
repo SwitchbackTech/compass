@@ -2,6 +2,7 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { isValidElement, type ReactElement } from "react";
 import { Status } from "@core/errors/status.codes";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockGetLastKnownEmail = mock();
 const mockGetProfile = mock();
@@ -199,4 +200,8 @@ describe("useLoadProfile", () => {
     expect(toastElement.type).toBe(SessionExpiredToast);
     expect(toastElement.props.toastId).toBe("session-expired-api");
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

@@ -2,6 +2,7 @@ import { renderHook } from "@testing-library/react";
 import { ObjectId } from "bson";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 import { BehaviorSubject } from "rxjs";
 
 const CursorItem = { EventPreview: "event-preview" };
@@ -223,4 +224,8 @@ describe("useOpenAgendaEventPreview", () => {
     expect(setActiveEvent).not.toHaveBeenCalled();
     expect(openFloatingAtCursor).not.toHaveBeenCalled();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

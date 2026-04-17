@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const hasUserEverAuthenticated = mock();
 const clearAnonymousCalendarChangeSignUpPrompt = mock();
@@ -125,4 +126,8 @@ describe("getEventRepository", () => {
       expect(repository).toBeInstanceOf(LocalEventRepository);
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

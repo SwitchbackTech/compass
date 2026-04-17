@@ -1,6 +1,7 @@
 import { Status } from "@core/errors/status.codes";
 import { resetGoogleSyncUIStateForTests } from "@web/auth/google/state/google.sync.state";
 import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockDispatch = mock();
 const mockGetMetadata = mock();
@@ -106,4 +107,8 @@ describe("refreshUserMetadata", () => {
 
     consoleErrorSpy.mockRestore();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

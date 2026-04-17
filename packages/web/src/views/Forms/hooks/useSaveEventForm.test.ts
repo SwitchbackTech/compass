@@ -6,6 +6,7 @@ import {
   editEventSlice,
 } from "@web/ducks/events/slices/event.slice";
 import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockDispatch = mock();
 mock.module("@web/store/store.hooks", () => ({
@@ -78,4 +79,8 @@ describe("useSaveEventForm", () => {
     expect(editEventRequestSpy).not.toHaveBeenCalled();
     expect(mockCloseEventForm).toHaveBeenCalled();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

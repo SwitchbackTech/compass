@@ -11,6 +11,7 @@ import {
   createTestEvent,
 } from "@web/__tests__/utils/repositories/repository.test.factory";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockEvents = new Map<string, Event_Core>();
 const getStorageAdapter = mock();
@@ -311,4 +312,8 @@ describe("LocalEventRepository", () => {
       expect((updatedEvent3 as Event_Core & { order?: number })?.order).toBe(2); // Unchanged
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

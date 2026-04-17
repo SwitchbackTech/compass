@@ -2,6 +2,7 @@ import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import { act } from "react";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const mockGetAgendaEventTime = mock();
 const mockGetNowLinePosition = mock();
@@ -96,4 +97,8 @@ describe("NowLine", () => {
 
     expect(cleanupMock).toHaveBeenCalled();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

@@ -10,6 +10,7 @@ import {
   setSystemTime,
   spyOn,
 } from "bun:test";
+import { afterAll } from "bun:test";
 
 let mockIsDev = false;
 const fetchMock = mock();
@@ -287,4 +288,8 @@ describe("useVersionCheck", () => {
       });
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

@@ -4,6 +4,7 @@ import {
   type Schema_SomedayEvent,
 } from "@web/common/types/web.event.types";
 import { describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const validateGridEvent = mock(
   (event: Schema_GridEvent): Schema_GridEvent => event,
@@ -389,4 +390,8 @@ describe("submit.parser", () => {
       expect(result.user).toBe(userId); // The function sets user to the provided userId
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

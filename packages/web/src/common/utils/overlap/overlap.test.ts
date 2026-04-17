@@ -2,6 +2,7 @@ import { Categories_Event } from "@core/types/event.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { adjustOverlappingEvents, getOverlappingStyles } from "./overlap";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 const getUserId = mock();
 
@@ -259,4 +260,8 @@ describe("getOverlappingStyles", () => {
     // width = min(21, max(21, 20 + 24)) = min(21, 44) = 21
     expect(styles.width).toBe("19px");
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

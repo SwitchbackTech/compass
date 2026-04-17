@@ -6,7 +6,8 @@ import {
   it,
   mock,
 } from "bun:test";
-import { useDndMonitor } from "@dnd-kit/core";
+import { afterAll } from "bun:test";
+import { readFile, writeFile } from "node:fs/promises";
 import { renderHook } from "@testing-library/react";
 import { Categories_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
@@ -17,6 +18,8 @@ import {
 import { BehaviorSubject } from "rxjs";
 
 // Mock definitions
+const useDndMonitor = mock();
+const dndKitQuery = "@dnd-kit/core?test=use-event-dnd-actions";
 const mockUpdateEvent = mock();
 const mockDispatch = mock();
 const mockGetSnappedMinutes = mock();
@@ -29,8 +32,8 @@ const placement$ = new BehaviorSubject("right-start");
 const strategy$ = new BehaviorSubject("absolute");
 const reference$ = new BehaviorSubject(null);
 
-mock.module("@dnd-kit/core", () => ({
-  useDndMonitor: mock(),
+mock.module(dndKitQuery, () => ({
+  useDndMonitor,
 }));
 
 mock.module("@web/common/hooks/useUpdateEvent", () => ({
@@ -77,8 +80,27 @@ mock.module("@web/common/hooks/useOpenAtCursor", () => ({
   useFloatingReferenceAtCursor: mock(),
 }));
 
-// Import the hook after mocks
-const { useEventDNDActions } = require("./useEventDNDActions") as typeof import("./useEventDNDActions");
+const transpiler = new Bun.Transpiler();
+
+const useEventDNDActionsSource = await readFile(
+  new URL("./useEventDNDActions.ts", import.meta.url),
+  "utf8",
+);
+const useEventDNDActionsJavaScript = transpiler.transformSync(
+  useEventDNDActionsSource.replaceAll(
+    "@dnd-kit/core",
+    "@dnd-kit/core?test=use-event-dnd-actions",
+  ),
+  "ts",
+);
+
+const useEventDNDActionsTempUrl = new URL(
+  `./.useEventDNDActions-${process.pid}-${Date.now()}.mjs`,
+  import.meta.url,
+);
+await writeFile(useEventDNDActionsTempUrl, useEventDNDActionsJavaScript);
+
+const { useEventDNDActions } = await import(useEventDNDActionsTempUrl.href);
 
 describe("useEventDNDActions", () => {
   const mockEvent = {
@@ -233,4 +255,8 @@ describe("useEventDNDActions", () => {
       expect(mockUpdateEvent).not.toHaveBeenCalled();
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

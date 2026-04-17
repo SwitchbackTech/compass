@@ -7,6 +7,7 @@ import {
   mock,
   spyOn,
 } from "bun:test";
+import { afterAll } from "bun:test";
 import { toast } from "react-toastify";
 import { Status } from "@core/errors/status.codes";
 import { setTestWindowUrl } from "@web/__tests__/set-test-window-url";
@@ -224,4 +225,8 @@ describe("CompassApi interceptor auth handling", () => {
       expect(mockAssignLocation).not.toHaveBeenCalled();
     }
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

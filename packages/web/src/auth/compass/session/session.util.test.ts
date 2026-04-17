@@ -1,4 +1,5 @@
 import { describe, expect, it, mock, beforeEach } from "bun:test";
+import { afterAll } from "bun:test";
 import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
 import { getUserId } from "./session.util";
 
@@ -43,4 +44,8 @@ describe("session.util", () => {
       expect(mockGetAccessTokenPayloadSecurely).toHaveBeenCalledTimes(1);
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });
