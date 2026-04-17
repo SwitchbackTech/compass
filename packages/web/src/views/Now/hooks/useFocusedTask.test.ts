@@ -16,10 +16,6 @@ describe("useFocusedTask", () => {
   });
   const mockTasks: Task[] = [mockTask, secondTask];
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
   describe("manual focus management", () => {
     it("returns null when no task is focused", () => {
       const { result } = renderHook(() =>
