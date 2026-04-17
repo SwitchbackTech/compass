@@ -1,18 +1,66 @@
-import { type SyntheticEvent } from "react";
+import { type ReactNode, type SyntheticEvent } from "react";
 import { createMemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
-import { screen, waitFor, within } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CLIMB, EUROPE_TRIP } from "@core/__mocks__/v1/events/events.misc";
-import { render } from "@web/__tests__/__mocks__/mock.render";
+import { CLIMB } from "@core/__mocks__/v1/events/events.misc";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
-import {
-  findAndUpdateEventInPreloadedState,
-  InitialReduxState,
-} from "@web/__tests__/utils/state/store.test.util";
-import { RootState } from "@web/store";
-import { CalendarView } from "@web/views/Calendar";
-import { freshenEventStartEndDate } from "./calendar.render.test.utils";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+
+const mockRecipeInit = mock(() => ({}));
+const mockSuperTokensInit = mock();
+const mockUseEventListener = mock();
+const mockBaseApiAdapter = mock(async () => ({
+  config: { method: "GET", url: "" },
+  data: [],
+  headers: new Headers(),
+  status: 200,
+  statusText: "OK",
+}));
+
+mock.module("supertokens-web-js", () => ({
+  default: {
+    init: mockSuperTokensInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/emailpassword", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/emailverification", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/thirdparty", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/session", () => ({
+  attemptRefreshingSession: mock(),
+  default: {
+    attemptRefreshingSession: mock(),
+    doesSessionExist: mock().mockResolvedValue(true),
+    getAccessToken: mock().mockResolvedValue("mock-access-token"),
+    getAccessTokenPayloadSecurely: mock().mockResolvedValue({}),
+    getInvalidClaimsFromResponse: mock().mockResolvedValue([]),
+    getUserId: mock().mockResolvedValue("mock-user-id"),
+    init: mockRecipeInit,
+    signOut: mock().mockResolvedValue(undefined),
+    validateClaims: mock().mockResolvedValue([]),
+  },
+}));
+
+mock.module("@react-oauth/google", () => ({
+  GoogleOAuthProvider: ({ children }: { children: ReactNode }) => children,
+  useGoogleLogin: () => mock(),
+}));
 
 // Mock IntersectionObserver for jsdom
 global.IntersectionObserver = class IntersectionObserver {
@@ -34,11 +82,11 @@ global.IntersectionObserver = class IntersectionObserver {
   }
 } as typeof IntersectionObserver;
 
-jest.mock("@web/views/Calendar/hooks/mouse/useEventListener", () => ({
-  useEventListener: jest.fn(),
+mock.module("@web/views/Calendar/hooks/mouse/useEventListener", () => ({
+  useEventListener: mockUseEventListener,
 }));
 
-jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
+mock.module("@web/common/utils/dom/event-target-visibility.util", () => ({
   onEventTargetVisibility:
     (callback: () => void, visible = false) =>
     (event: SyntheticEvent<Element, Event>) => {
@@ -48,9 +96,23 @@ jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
     },
 }));
 
-jest.mock("@web/auth/compass/session/session.util", () => ({
+mock.module("@web/auth/compass/session/session.util", () => ({
   getUserId: async () => "test-user-id",
 }));
+
+mock.module("@web/common/hooks/useVersionCheck", () => ({
+  useVersionCheck: () => ({
+    currentVersion: "test",
+    isUpdateAvailable: false,
+  }),
+}));
+
+const { render } =
+  require("@web/__tests__/__mocks__/mock.render") as typeof import("@web/__tests__/__mocks__/mock.render");
+const { BaseApi } =
+  require("@web/common/apis/base/base.api") as typeof import("@web/common/apis/base/base.api");
+const { CalendarView } =
+  require("@web/views/Calendar") as typeof import("@web/views/Calendar");
 
 function Component() {
   return <CalendarView />;
@@ -60,11 +122,14 @@ const router = createMemoryRouter([{ index: true, Component }], {
   initialEntries: ["/"],
 });
 
-const mockConfirm = jest.spyOn(window, "confirm");
+const mockConfirm = spyOn(window, "confirm");
 
 describe("Event Form", () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    BaseApi.defaults.adapter = mockBaseApiAdapter;
+    mockConfirm.mockReset();
+    mockBaseApiAdapter.mockClear();
+    mockUseEventListener.mockClear();
   });
   it("closes after clicking outside", async () => {
     render(<></>, { router, state: preloadedState });
