@@ -19,6 +19,11 @@ function createMockAdapter() {
 
 mock.module("@web/common/storage/adapter/adapter", () => ({
   getStorageAdapter,
+  initializeStorage: mock().mockResolvedValue(undefined),
+  isStorageReady: mock().mockReturnValue(true),
+  ensureStorageReady: mock().mockResolvedValue(undefined),
+  resetStorage: mock(),
+  resetStorageAsync: mock().mockResolvedValue(undefined),
 }));
 
 const { LocalTaskRepository } =
