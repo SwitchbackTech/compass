@@ -15,39 +15,50 @@ import {
   resetPosition,
   sortByOrderAndWidthAttribute,
 } from "@web/common/utils/dom/grid-organization.util";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  spyOn,
+} from "bun:test";
 
 describe("grid-organization.util", () => {
   const rectMap = new Map<HTMLElement, DOMRect>();
+  let getBoundingClientRectSpy: ReturnType<typeof spyOn>;
 
   beforeAll(() => {
-    jest
-      .spyOn(Element.prototype, "getBoundingClientRect")
-      .mockImplementation(function (this: HTMLElement) {
-        const rect = rectMap.get(this);
-        return (
-          rect ||
-          ({
-            x: 0,
-            y: 0,
-            width: 0,
-            height: 0,
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            toJSON: () => {},
-          } as DOMRect)
-        );
-      });
+    getBoundingClientRectSpy = spyOn(
+      Element.prototype,
+      "getBoundingClientRect",
+    ).mockImplementation(function (this: HTMLElement) {
+      const rect = rectMap.get(this);
+      return (
+        rect ||
+        ({
+          x: 0,
+          y: 0,
+          width: 0,
+          height: 0,
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          toJSON: () => {},
+        } as DOMRect)
+      );
+    });
   });
 
   afterEach(() => {
     rectMap.clear();
-    jest.clearAllMocks();
+    getBoundingClientRectSpy.mockClear();
   });
 
   afterAll(() => {
-    jest.restoreAllMocks();
+    getBoundingClientRectSpy.mockRestore();
   });
 
   describe("checkAABBCollision", () => {
