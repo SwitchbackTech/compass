@@ -1,22 +1,31 @@
+import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { renderHook, waitFor } from "@testing-library/react";
-import { act, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { type TaskRepository } from "@web/common/repositories/task/task.repository";
 import { type Task } from "@web/common/types/task.types";
-import { useLoadTasksByDateEffect } from "@web/views/Day/hooks/tasks/useLoadTasksByDateEffect";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
-const mockGet = jest.fn();
+if (typeof document === "undefined") {
+  GlobalRegistrator.register();
+}
+
+const mockEnsureStorageReady = mock().mockResolvedValue(undefined);
+const mockGet = mock();
 const mockTaskRepository: TaskRepository = {
   get: mockGet,
-  save: jest.fn().mockResolvedValue(undefined),
-  delete: jest.fn().mockResolvedValue(undefined),
-  move: jest.fn().mockResolvedValue(undefined),
-  reorder: jest.fn().mockResolvedValue(undefined),
+  save: mock().mockResolvedValue(undefined),
+  delete: mock().mockResolvedValue(undefined),
+  move: mock().mockResolvedValue(undefined),
+  reorder: mock().mockResolvedValue(undefined),
 };
 
-jest.mock("@web/common/storage/adapter/adapter", () => ({
-  ensureStorageReady: jest.fn().mockResolvedValue(undefined),
+mock.module("@web/common/storage/adapter/adapter", () => ({
+  ensureStorageReady: mockEnsureStorageReady,
 }));
+
+const { useLoadTasksByDateEffect } =
+  require("@web/views/Day/hooks/tasks/useLoadTasksByDateEffect") as typeof import("@web/views/Day/hooks/tasks/useLoadTasksByDateEffect");
 
 interface Deferred<T> {
   promise: Promise<T>;
@@ -62,7 +71,7 @@ function useLoadHarness(dateKey: string) {
 
 describe("useLoadTasksByDateEffect", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockEnsureStorageReady.mockClear();
     mockGet.mockReset();
   });
 
@@ -128,7 +137,9 @@ describe("useLoadTasksByDateEffect", () => {
 
   it("sets failed state when load throws", async () => {
     mockGet.mockRejectedValueOnce(new Error("load failed"));
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
+    const consoleErrorSpy = spyOn(console, "error").mockImplementation(
+      () => {},
+    );
 
     const { result } = renderHook(() => useLoadHarness("2025-10-27"));
 
