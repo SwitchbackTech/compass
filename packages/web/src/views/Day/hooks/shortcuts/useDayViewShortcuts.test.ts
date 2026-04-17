@@ -1,30 +1,120 @@
 import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
 import userEvent from "@testing-library/user-event";
-import { renderHook } from "@web/__tests__/__mocks__/mock.render";
+import { type ReactNode } from "react";
 import {
   mockLinuxUserAgent,
   mockMacOSUserAgent,
   mockWindowsUserAgent,
 } from "@web/__tests__/__mocks__/mock.setup";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
-import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+} from "bun:test";
 
-// Mock shortcut utility functions
-jest.mock("@web/views/Day/util/day.shortcut.util");
+const getFocusedTaskId = mock();
+const isFocusedOnTaskCheckbox = mock();
+const isFocusedWithinTask = mock();
+const mockRecipeInit = mock(() => ({}));
+const mockSuperTokensInit = mock();
+const toast = {
+  dismiss: mock(),
+};
+
+mock.module("supertokens-web-js", () => ({
+  default: {
+    init: mockSuperTokensInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/emailpassword", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/emailverification", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/thirdparty", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/session", () => ({
+  attemptRefreshingSession: mock(),
+  default: {
+    attemptRefreshingSession: mock(),
+    doesSessionExist: mock().mockResolvedValue(true),
+    getAccessToken: mock().mockResolvedValue("mock-access-token"),
+    getAccessTokenPayloadSecurely: mock().mockResolvedValue({}),
+    getInvalidClaimsFromResponse: mock().mockResolvedValue([]),
+    getUserId: mock().mockResolvedValue("mock-user-id"),
+    init: mockRecipeInit,
+    signOut: mock().mockResolvedValue(undefined),
+    validateClaims: mock().mockResolvedValue([]),
+  },
+}));
+
+mock.module("@react-oauth/google", () => ({
+  GoogleOAuthProvider: ({ children }: { children: ReactNode }) => children,
+  useGoogleLogin: () => mock(),
+}));
+
+mock.module("@web/views/Day/util/day.shortcut.util", () => ({
+  getFocusedTaskId,
+  isFocusedOnTaskCheckbox,
+  isFocusedWithinTask,
+}));
+
+mock.module("react-toastify", () => ({
+  ToastContainer: () => null,
+  toast,
+}));
+
+const { useDayViewShortcuts } =
+  require("@web/views/Day/hooks/shortcuts/useDayViewShortcuts") as typeof import("@web/views/Day/hooks/shortcuts/useDayViewShortcuts");
+const { renderHook } =
+  require("@web/__tests__/__mocks__/mock.render") as typeof import("@web/__tests__/__mocks__/mock.render");
 
 describe.each([
   { os: "Windows", mockFn: mockWindowsUserAgent },
   { os: "Linux", mockFn: mockLinuxUserAgent },
   { os: "MacOS", mockFn: mockMacOSUserAgent },
 ])("useDayViewShortcuts - $os", ({ mockFn }) => {
-  beforeAll(mockFn);
-  afterAll(() => jest.resetAllMocks());
+  let userAgentMock: ReturnType<typeof mockFn> | undefined;
 
-  const { isFocusedOnTaskCheckbox, isFocusedWithinTask, getFocusedTaskId } =
-    jest.requireMock("@web/views/Day/util/day.shortcut.util");
+  beforeAll(() => {
+    userAgentMock = mockFn();
+  });
+  afterAll(() => userAgentMock?.mockRestore());
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    getFocusedTaskId.mockClear();
+    isFocusedOnTaskCheckbox.mockClear();
+    isFocusedWithinTask.mockClear();
+    mockRecipeInit.mockClear();
+    mockSuperTokensInit.mockClear();
+    toast.dismiss.mockClear();
+    for (const value of Object.values(defaultConfig)) {
+      if (
+        typeof value === "function" &&
+        "mockClear" in value &&
+        typeof value.mockClear === "function"
+      ) {
+        value.mockClear();
+      }
+    }
     HotkeyManager.resetInstance();
 
     // Set default mock implementations
@@ -34,7 +124,10 @@ describe.each([
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    getFocusedTaskId.mockClear();
+    isFocusedOnTaskCheckbox.mockClear();
+    isFocusedWithinTask.mockClear();
+    toast.dismiss.mockClear();
   });
 
   const pressModifierShortcut = (
@@ -71,12 +164,12 @@ describe.each([
   };
 
   const defaultConfig = {
-    onAddTask: jest.fn(),
-    onEditTask: jest.fn(),
-    onCompleteTask: jest.fn(),
-    onDeleteTask: jest.fn(),
-    onEscape: jest.fn(),
-    onFocusTasks: jest.fn(),
+    onAddTask: mock(),
+    onEditTask: mock(),
+    onCompleteTask: mock(),
+    onDeleteTask: mock(),
+    onEscape: mock(),
+    onFocusTasks: mock(),
     isEditingTask: false,
     hasFocusedTask: false,
   };
@@ -294,7 +387,7 @@ describe.each([
 
   describe("migration shortcuts", () => {
     it("should call onMigrateTask when Ctrl+Meta+ArrowRight is pressed within a task", async () => {
-      const onMigrateTask = jest.fn();
+      const onMigrateTask = mock();
       const config = { ...defaultConfig, onMigrateTask };
 
       renderHook(() => useDayViewShortcuts(config));
@@ -309,7 +402,7 @@ describe.each([
     });
 
     it("should call onMigrateTask when Ctrl+Meta+ArrowLeft is pressed within a task", async () => {
-      const onMigrateTask = jest.fn();
+      const onMigrateTask = mock();
       const config = { ...defaultConfig, onMigrateTask };
 
       renderHook(() => useDayViewShortcuts(config));
@@ -324,7 +417,7 @@ describe.each([
     });
 
     it("should not trigger migration when only Ctrl is pressed", async () => {
-      const onMigrateTask = jest.fn();
+      const onMigrateTask = mock();
       const config = { ...defaultConfig, onMigrateTask };
 
       renderHook(() => useDayViewShortcuts(config));
@@ -335,7 +428,7 @@ describe.each([
     });
 
     it("should not trigger migration when only Meta is pressed", async () => {
-      const onMigrateTask = jest.fn();
+      const onMigrateTask = mock();
       const config = { ...defaultConfig, onMigrateTask };
 
       renderHook(() => useDayViewShortcuts(config));
@@ -346,7 +439,7 @@ describe.each([
     });
 
     it("should trigger migration even when typing in input (special case)", async () => {
-      const onMigrateTask = jest.fn();
+      const onMigrateTask = mock();
       const config = { ...defaultConfig, onMigrateTask };
 
       renderHook(() => useDayViewShortcuts(config));
@@ -370,12 +463,10 @@ describe.each([
   });
 
   describe("undo shortcuts", () => {
-    const { toast } = jest.requireMock("react-toastify");
-
     beforeEach(() => toast.dismiss.mockClear());
 
     it("should call onRestoreTask when Meta+Z is pressed", async () => {
-      const onRestoreTask = jest.fn();
+      const onRestoreTask = mock();
       const undoToastId = "task-toast-123";
       const config = { ...defaultConfig, onRestoreTask, undoToastId };
 
@@ -387,7 +478,7 @@ describe.each([
     });
 
     it("should dismiss undo toast when Meta+Z is pressed with undoToastId", async () => {
-      const onRestoreTask = jest.fn();
+      const onRestoreTask = mock();
       const undoToastId = "undo-toast-123";
       const config = { ...defaultConfig, onRestoreTask, undoToastId };
 
@@ -400,7 +491,7 @@ describe.each([
     });
 
     it("should work with uppercase Z", async () => {
-      const onRestoreTask = jest.fn();
+      const onRestoreTask = mock();
       const undoToastId = "task-toast-123";
       const config = { ...defaultConfig, onRestoreTask, undoToastId };
 
@@ -412,7 +503,7 @@ describe.each([
     });
 
     it("should not trigger restore when only 'z' is pressed without Meta", async () => {
-      const onRestoreTask = jest.fn();
+      const onRestoreTask = mock();
       const config = { ...defaultConfig, onRestoreTask };
 
       renderHook(() => useDayViewShortcuts(config));
@@ -423,8 +514,8 @@ describe.each([
     });
 
     it("should prioritize event undo over task undo when both exist", async () => {
-      const onRestoreTask = jest.fn();
-      const onRestoreEvent = jest.fn();
+      const onRestoreTask = mock();
+      const onRestoreEvent = mock();
       const undoToastId = "task-toast-123";
       const eventUndoToastId = "event-toast-456";
       const config = {
@@ -448,7 +539,7 @@ describe.each([
 
     it("should call event restore", async () => {
       const windowsUAMock = mockWindowsUserAgent();
-      const onRestoreEvent = jest.fn();
+      const onRestoreEvent = mock();
       const eventUndoToastId = "event-toast-789";
       const config = { ...defaultConfig, onRestoreEvent, eventUndoToastId };
 
@@ -463,8 +554,8 @@ describe.each([
     });
 
     it("should fall back to task undo if no event undo exists", async () => {
-      const onRestoreTask = jest.fn();
-      const onRestoreEvent = jest.fn();
+      const onRestoreTask = mock();
+      const onRestoreEvent = mock();
       const undoToastId = "task-toast-123";
       const config = {
         ...defaultConfig,
