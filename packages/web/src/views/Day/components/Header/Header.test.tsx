@@ -1,8 +1,59 @@
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { renderWithMemoryRouter } from "@web/__tests__/utils/providers/MemoryRouter";
-import { Header } from "./Header";
+import { type ReactNode } from "react";
+import { describe, expect, it, mock } from "bun:test";
+
+const mockRecipeInit = mock(() => ({}));
+const mockSuperTokensInit = mock();
+
+mock.module("supertokens-web-js", () => ({
+  default: {
+    init: mockSuperTokensInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/emailpassword", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/emailverification", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/thirdparty", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/session", () => ({
+  attemptRefreshingSession: mock(),
+  default: {
+    attemptRefreshingSession: mock(),
+    doesSessionExist: mock().mockResolvedValue(true),
+    getAccessToken: mock().mockResolvedValue("mock-access-token"),
+    getAccessTokenPayloadSecurely: mock().mockResolvedValue({}),
+    getInvalidClaimsFromResponse: mock().mockResolvedValue([]),
+    getUserId: mock().mockResolvedValue("mock-user-id"),
+    init: mockRecipeInit,
+    signOut: mock().mockResolvedValue(undefined),
+    validateClaims: mock().mockResolvedValue([]),
+  },
+}));
+
+mock.module("@react-oauth/google", () => ({
+  GoogleOAuthProvider: ({ children }: { children: ReactNode }) => children,
+  useGoogleLogin: () => mock(),
+}));
+
+const { renderWithMemoryRouter } =
+  require("@web/__tests__/utils/providers/MemoryRouter") as typeof import("@web/__tests__/utils/providers/MemoryRouter");
+const { Header } = require("./Header") as typeof import("./Header");
 
 describe("Header", () => {
   it("renders the header with reminder and view selector when showReminder is true", async () => {
@@ -51,7 +102,7 @@ describe("Header", () => {
 
     it("calls onToggleSidebar when toggle button is clicked", async () => {
       const user = userEvent.setup();
-      const mockToggle = jest.fn();
+      const mockToggle = mock();
 
       await renderWithMemoryRouter(
         <Header isSidebarOpen={true} onToggleSidebar={mockToggle} />,
