@@ -1,4 +1,4 @@
-import { renderHook } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
 import { act } from "react";
 import {
   CursorItem,
@@ -10,6 +10,7 @@ import {
   useFloatingStrategyAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
 import { useFloatingAtCursor } from "./useFloatingAtCursor";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 describe("useFloatingAtCursor", () => {
   beforeEach(() => {
@@ -58,7 +59,7 @@ describe("useFloatingAtCursor", () => {
   });
 
   it("should handle onOpenChange callback to close floating", () => {
-    const onOpenChangeSpy = jest.fn();
+    const onOpenChangeSpy = mock();
     const { result } = renderHook(() => useFloatingAtCursor(onOpenChangeSpy));
 
     // Simulate open state
@@ -77,9 +78,8 @@ describe("useFloatingAtCursor", () => {
     expect(open$.getValue()).toBe(false);
   });
 
-  it("should handle onOpenChange callback when already open (mismatch)", () => {
-    jest.useFakeTimers();
-    const onOpenChangeSpy = jest.fn();
+  it("should handle onOpenChange callback when already open (mismatch)", async () => {
+    const onOpenChangeSpy = mock();
     const { result } = renderHook(() => useFloatingAtCursor(onOpenChangeSpy));
 
     // Simulate open state
@@ -98,12 +98,8 @@ describe("useFloatingAtCursor", () => {
     // It calls closeFloatingAtCursor first (setting open$ to false)
     expect(open$.getValue()).toBe(false);
 
-    // Fast-forward timers to trigger the reopen
-    act(() => {
-      jest.runAllTimers();
+    await waitFor(() => {
+      expect(open$.getValue()).toBe(true);
     });
-
-    expect(open$.getValue()).toBe(true);
-    jest.useRealTimers();
   });
 });
