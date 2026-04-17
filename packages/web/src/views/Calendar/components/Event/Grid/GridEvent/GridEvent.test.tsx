@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, mock, vi } from "bun:test";
 import { screen } from "@testing-library/react";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { render } from "@web/__tests__/__mocks__/mock.render";
@@ -34,7 +35,7 @@ const mockMeasurements: Measurements_Grid = {
   hourHeight: 60,
   colWidths: Array(7).fill(100),
   allDayRow: null,
-  remeasure: jest.fn(),
+  remeasure: mock(),
 };
 
 const mockWeekProps: WeekProps = {
@@ -45,12 +46,12 @@ const mockWeekProps: WeekProps = {
   hooks: {} as any,
 };
 
-const mockOnEventMouseDown = jest.fn();
-const mockOnScalerMouseDown = jest.fn();
+const mockOnEventMouseDown = mock();
+const mockOnScalerMouseDown = mock();
 
 describe("GridEvent", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockOnEventMouseDown.mockClear();
     mockOnScalerMouseDown.mockClear();
   });
@@ -183,7 +184,7 @@ describe("GridEvent", () => {
       title: "Event 2",
     });
 
-    const renderSpy = jest.fn();
+    const renderSpy = mock();
 
     const TestWrapper = ({ event }: { event: Schema_GridEvent }) => {
       renderSpy();
