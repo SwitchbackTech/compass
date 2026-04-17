@@ -9,33 +9,40 @@ import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
 import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
 import { resetIsFetchNeeded } from "@web/ducks/events/slices/sync.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
-import { useRefetch } from "@web/views/Calendar/hooks/useRefetch";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-// Mock react-router-dom
-const mockUseLocation = jest.fn();
-const mockUseParams = jest.fn();
-jest.mock("react-router-dom", () => ({
+const mockUseLocation = mock();
+const mockUseParams = mock();
+const actualReactRouterDom = await import("react-router-dom");
+
+mock.module("react-router-dom", () => ({
+  ...actualReactRouterDom,
   useLocation: () => mockUseLocation(),
   useParams: () => mockUseParams(),
 }));
 
-// Mock Redux hooks
-const mockDispatch = jest.fn();
-const mockUseAppSelector = jest.fn();
-jest.mock("@web/store/store.hooks", () => ({
+const mockDispatch = mock();
+const mockUseAppSelector = mock();
+const actualStoreHooks = await import("@web/store/store.hooks");
+
+mock.module("@web/store/store.hooks", () => ({
+  ...actualStoreHooks,
   useAppDispatch: () => mockDispatch,
   useAppSelector: (selector: unknown) => mockUseAppSelector(selector),
 }));
 
-// Mock useDateInView
-const mockUseDateInView = jest.fn();
-jest.mock("@web/views/Day/hooks/navigation/useDateInView", () => ({
+const mockUseDateInView = mock();
+mock.module("@web/views/Day/hooks/navigation/useDateInView", () => ({
   useDateInView: () => mockUseDateInView(),
 }));
 
+const { useRefetch } =
+  require("@web/views/Calendar/hooks/useRefetch") as typeof import("@web/views/Calendar/hooks/useRefetch");
+
 describe("useRefetch", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockUseLocation.mockClear();
+    mockUseParams.mockClear();
     mockDispatch.mockClear();
     mockUseAppSelector.mockReset();
     mockUseDateInView.mockReturnValue(dayjs.utc("2024-01-15")); // Default for week view tests
@@ -88,8 +95,9 @@ describe("useRefetch", () => {
       const weekStart = "2024-01-15T00:00:00Z";
       const weekEnd = "2024-01-21T23:59:59Z";
 
-      mockUseAppSelector.mockImplementation((selector) => {
-        const selectorName = selector?.name || "";
+      mockUseAppSelector.mockImplementation((selector: unknown) => {
+        const selectorName =
+          typeof selector === "function" ? selector.name : "";
         if (
           selectorName.includes("selectImportLatestState") ||
           selector === selectImportLatestState
