@@ -1,5 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { useSidebarState } from "./useSidebarState";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 
 // Helper to create a mock matchMedia
 const createMatchMedia = (matches: boolean) => {
@@ -8,19 +9,19 @@ const createMatchMedia = (matches: boolean) => {
     matches,
     media: "",
     onchange: null,
-    addListener: jest.fn(),
-    removeListener: jest.fn(),
-    addEventListener: jest.fn(
+    addListener: mock(),
+    removeListener: mock(),
+    addEventListener: mock(
       (_event: string, listener: (e: MediaQueryListEvent) => void) => {
         listeners.push(listener);
       },
     ),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
+    removeEventListener: mock(),
+    dispatchEvent: mock(),
     _triggerChange: (newMatches: boolean) => {
-      listeners.forEach((listener) =>
-        listener({ matches: newMatches } as MediaQueryListEvent),
-      );
+      listeners.forEach((listener) => {
+        listener({ matches: newMatches } as MediaQueryListEvent);
+      });
     },
   };
 };
@@ -45,7 +46,7 @@ describe("useSidebarState", () => {
       value: 1400,
     });
     const mockMediaQuery = createMatchMedia(true);
-    window.matchMedia = jest.fn().mockReturnValue(mockMediaQuery);
+    window.matchMedia = mock().mockReturnValue(mockMediaQuery);
 
     const { result } = renderHook(() => useSidebarState());
 
@@ -59,7 +60,7 @@ describe("useSidebarState", () => {
       value: 1000,
     });
     const mockMediaQuery = createMatchMedia(false);
-    window.matchMedia = jest.fn().mockReturnValue(mockMediaQuery);
+    window.matchMedia = mock().mockReturnValue(mockMediaQuery);
 
     const { result } = renderHook(() => useSidebarState());
 
@@ -73,7 +74,7 @@ describe("useSidebarState", () => {
       value: 1400,
     });
     const mockMediaQuery = createMatchMedia(true);
-    window.matchMedia = jest.fn().mockReturnValue(mockMediaQuery);
+    window.matchMedia = mock().mockReturnValue(mockMediaQuery);
 
     const { result } = renderHook(() => useSidebarState());
 
@@ -99,7 +100,7 @@ describe("useSidebarState", () => {
       value: 1400,
     });
     const mockMediaQuery = createMatchMedia(true);
-    window.matchMedia = jest.fn().mockReturnValue(mockMediaQuery);
+    window.matchMedia = mock().mockReturnValue(mockMediaQuery);
 
     const { result } = renderHook(() => useSidebarState());
 
@@ -119,7 +120,7 @@ describe("useSidebarState", () => {
       value: 1000,
     });
     const mockMediaQuery = createMatchMedia(false);
-    window.matchMedia = jest.fn().mockReturnValue(mockMediaQuery);
+    window.matchMedia = mock().mockReturnValue(mockMediaQuery);
 
     const { result } = renderHook(() => useSidebarState());
 
