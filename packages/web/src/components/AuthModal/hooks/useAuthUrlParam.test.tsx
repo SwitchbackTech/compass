@@ -1,18 +1,28 @@
+import { beforeEach, describe, expect, it, mock, vi } from "bun:test";
 import { renderHook } from "@testing-library/react";
 import { useAuthUrlParam } from "./useAuthUrlParam";
 
 // Helper to set up window.location for tests
 const setWindowLocation = (url: string) => {
   const urlObj = new URL(url, "http://localhost");
-  window.history.pushState({}, "", urlObj);
+  const originalLocation = window.location;
+  // @ts-ignore
+  delete window.location;
+  window.location = {
+    ...originalLocation,
+    href: urlObj.href,
+    pathname: urlObj.pathname,
+    search: urlObj.search,
+    hash: urlObj.hash,
+  };
 };
 
 // Mock history.replaceState
-const mockReplaceState = jest.fn();
+const mockReplaceState = mock();
 
 describe("useAuthUrlParam", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     Object.defineProperty(window.history, "replaceState", {
       value: mockReplaceState,
       writable: true,
@@ -25,7 +35,7 @@ describe("useAuthUrlParam", () => {
   describe("opens modal for valid param values", () => {
     it("opens login view for ?auth=login", () => {
       setWindowLocation("/?auth=login");
-      const openModal = jest.fn();
+      const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
       expect(openModal).toHaveBeenCalledWith("login");
@@ -34,7 +44,7 @@ describe("useAuthUrlParam", () => {
 
     it("opens signUp view for ?auth=signup", () => {
       setWindowLocation("/?auth=signup");
-      const openModal = jest.fn();
+      const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
       expect(openModal).toHaveBeenCalledWith("signUp");
@@ -43,7 +53,7 @@ describe("useAuthUrlParam", () => {
 
     it("opens forgotPassword view for ?auth=forgot", () => {
       setWindowLocation("/?auth=forgot");
-      const openModal = jest.fn();
+      const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
       expect(openModal).toHaveBeenCalledWith("forgotPassword");
@@ -52,7 +62,7 @@ describe("useAuthUrlParam", () => {
 
     it("opens resetPassword view for ?auth=reset", () => {
       setWindowLocation("/?auth=reset&token=test-token");
-      const openModal = jest.fn();
+      const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
       expect(openModal).toHaveBeenCalledWith("resetPassword");
@@ -72,7 +82,7 @@ describe("useAuthUrlParam", () => {
       ["Reset", "resetPassword"],
     ] as const)("handles %s as %s", (param, expectedView) => {
       setWindowLocation(`/?auth=${param}`);
-      const openModal = jest.fn();
+      const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
       expect(openModal).toHaveBeenCalledWith(expectedView);
@@ -82,7 +92,7 @@ describe("useAuthUrlParam", () => {
   describe("ignores invalid values", () => {
     it("does not open modal for invalid param value", () => {
       setWindowLocation("/?auth=invalid");
-      const openModal = jest.fn();
+      const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
       expect(openModal).not.toHaveBeenCalled();
@@ -90,7 +100,7 @@ describe("useAuthUrlParam", () => {
 
     it("does not open modal for empty param value", () => {
       setWindowLocation("/?auth=");
-      const openModal = jest.fn();
+      const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
       expect(openModal).not.toHaveBeenCalled();
@@ -98,7 +108,7 @@ describe("useAuthUrlParam", () => {
 
     it("does not open modal when no auth param present", () => {
       setWindowLocation("/");
-      const openModal = jest.fn();
+      const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
       expect(openModal).not.toHaveBeenCalled();
@@ -108,7 +118,7 @@ describe("useAuthUrlParam", () => {
   describe("clears param after opening", () => {
     it("removes auth param from URL", () => {
       setWindowLocation("/?auth=login");
-      const openModal = jest.fn();
+      const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
       expect(mockReplaceState).toHaveBeenCalledWith(null, "", "/");
@@ -116,7 +126,7 @@ describe("useAuthUrlParam", () => {
 
     it("preserves other query params", () => {
       setWindowLocation("/?auth=login&other=value&another=param");
-      const openModal = jest.fn();
+      const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
       expect(mockReplaceState).toHaveBeenCalledWith(
@@ -128,7 +138,7 @@ describe("useAuthUrlParam", () => {
 
     it("preserves hash", () => {
       setWindowLocation("/?auth=login#section");
-      const openModal = jest.fn();
+      const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
       expect(mockReplaceState).toHaveBeenCalledWith(null, "", "/#section");
@@ -138,7 +148,7 @@ describe("useAuthUrlParam", () => {
   describe("double-trigger prevention", () => {
     it("only opens modal once even when rerendered", () => {
       setWindowLocation("/?auth=login");
-      const openModal = jest.fn();
+      const openModal = mock();
       const { rerender } = renderHook(() => useAuthUrlParam(openModal));
 
       // Simulate StrictMode by rerendering
@@ -152,7 +162,7 @@ describe("useAuthUrlParam", () => {
   describe("works with different routes", () => {
     it("works on /week route", () => {
       setWindowLocation("/week?auth=signup");
-      const openModal = jest.fn();
+      const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
       expect(openModal).toHaveBeenCalledWith("signUp");
@@ -161,7 +171,7 @@ describe("useAuthUrlParam", () => {
 
     it("works on /day route with date", () => {
       setWindowLocation("/day/2026-02-26?auth=forgot");
-      const openModal = jest.fn();
+      const openModal = mock();
       renderHook(() => useAuthUrlParam(openModal));
 
       expect(openModal).toHaveBeenCalledWith("forgotPassword");
