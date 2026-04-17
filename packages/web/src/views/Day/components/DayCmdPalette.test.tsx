@@ -1,27 +1,97 @@
 import { resolveModifier } from "@tanstack/react-hotkeys";
 import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { render } from "@web/__tests__/__mocks__/mock.render";
-import * as useGoogleAuthModule from "@web/auth/google/hooks/useGoogleAuth/useGoogleAuth";
-import { SyncApi } from "@web/common/apis/sync.api";
+import { type ReactNode } from "react";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import * as eventUtil from "@web/common/utils/event/event.util";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
-import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
-import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-// Mock react-router-dom
-const mockNavigate = jest.fn();
+const actualReactRouterDom =
+  require("react-router-dom") as typeof import("react-router-dom");
+const actualStoreHooks =
+  require("@web/store/store.hooks") as typeof import("@web/store/store.hooks");
+const actualEventUtil =
+  require("@web/common/utils/event/event.util") as typeof import("@web/common/utils/event/event.util");
+const mockDispatch = mock();
+const mockGoToToday = mock();
+const mockImportGCal = mock().mockResolvedValue(undefined);
+const mockLogin = mock();
 const mockLocation = { pathname: "/" };
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
-  useNavigate: jest.fn(),
-  useLocation: jest.fn(),
+const mockNavigate = mock();
+const mockOpenEventFormCreateEvent = mock();
+const mockOpenEventFormEditEvent = mock();
+const mockRecipeInit = mock(() => ({}));
+const mockSuperTokensInit = mock();
+const mockUseGoogleAuth = mock();
+const mockUseLocation = mock();
+const mockUseNavigate = mock();
+
+mock.module("supertokens-web-js", () => ({
+  default: {
+    init: mockSuperTokensInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/emailpassword", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/emailverification", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/thirdparty", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/session", () => ({
+  attemptRefreshingSession: mock(),
+  default: {
+    attemptRefreshingSession: mock(),
+    doesSessionExist: mock().mockResolvedValue(true),
+    getAccessToken: mock().mockResolvedValue("mock-access-token"),
+    getAccessTokenPayloadSecurely: mock().mockResolvedValue({}),
+    getInvalidClaimsFromResponse: mock().mockResolvedValue([]),
+    getUserId: mock().mockResolvedValue("mock-user-id"),
+    init: mockRecipeInit,
+    signOut: mock().mockResolvedValue(undefined),
+    validateClaims: mock().mockResolvedValue([]),
+  },
+}));
+
+mock.module("@react-oauth/google", () => ({
+  GoogleOAuthProvider: ({ children }: { children: ReactNode }) => children,
+  useGoogleLogin: () => mock(),
+}));
+
+mock.module("react-router-dom", () => ({
+  ...actualReactRouterDom,
+  useLocation: mockUseLocation,
+  useNavigate: mockUseNavigate,
 }));
 
 // Mock react-cmdk (ListItem must accept disabled and render a real button for toBeDisabled())
-jest.mock("react-cmdk", () => {
-  const React = require("react");
+mock.module("react-cmdk", () => {
+  type CommandPaletteProps = {
+    children: ReactNode;
+    isOpen: boolean;
+    onChangeSearch: (value: string) => void;
+    placeholder: string;
+    search: string;
+  };
+
+  type PageProps = { children: ReactNode };
+  type ListProps = PageProps & { heading?: string };
+  type ListItemProps = PageProps & {
+    disabled?: boolean;
+    onClick?: () => void;
+  };
 
   const CommandPalette = ({
     children,
@@ -29,7 +99,7 @@ jest.mock("react-cmdk", () => {
     onChangeSearch,
     placeholder,
     search,
-  }: any) => {
+  }: CommandPaletteProps) => {
     if (!isOpen) {
       return null;
     }
@@ -46,15 +116,19 @@ jest.mock("react-cmdk", () => {
     );
   };
 
-  CommandPalette.Page = ({ children }: any) => <div>{children}</div>;
-  CommandPalette.List = ({ children, heading }: any) => (
+  CommandPalette.Page = ({ children }: PageProps) => <div>{children}</div>;
+  CommandPalette.List = ({ children, heading }: ListProps) => (
     <section>
       <h2>{heading}</h2>
       {children}
     </section>
   );
-  CommandPalette.ListItem = ({ children, disabled, onClick }: any) => (
-    <button disabled={disabled} onClick={onClick}>
+  CommandPalette.ListItem = ({
+    children,
+    disabled,
+    onClick,
+  }: ListItemProps) => (
+    <button disabled={disabled} onClick={onClick} type="button">
       {children}
     </button>
   );
@@ -91,35 +165,58 @@ jest.mock("react-cmdk", () => {
 });
 
 // Mock dayjs
-jest.mock("@core/util/date/dayjs", () => ({
+mock.module("@core/util/date/dayjs", () => ({
   __esModule: true,
-  default: jest.fn(() => ({
-    format: jest.fn(() => "Monday, November 24"),
-    startOf: jest.fn().mockReturnThis(),
-    endOf: jest.fn().mockReturnThis(),
+  default: mock(() => ({
+    format: mock(() => "Monday, November 24"),
+    startOf: mock(function (this: unknown) {
+      return this;
+    }),
+    endOf: mock(function (this: unknown) {
+      return this;
+    }),
   })),
 }));
 
-// Mock dispatch
-const mockDispatch = jest.fn();
-
 // Mock onEventTargetVisibility
-jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
+mock.module("@web/common/utils/dom/event-target-visibility.util", () => ({
   onEventTargetVisibility: (callback: () => void) => callback,
 }));
 
 // Mock event utility functions
-jest.mock("@web/common/utils/event/event.util");
-jest.mock("@web/common/apis/sync.api", () => ({
+mock.module("@web/common/utils/event/event.util", () => ({
+  ...actualEventUtil,
+  openEventFormCreateEvent: mockOpenEventFormCreateEvent,
+  openEventFormEditEvent: mockOpenEventFormEditEvent,
+}));
+
+mock.module("@web/common/apis/sync.api", () => ({
   SyncApi: {
-    importGCal: jest.fn().mockResolvedValue(undefined),
+    importGCal: mockImportGCal,
   },
 }));
 
-jest.mock("@web/store/store.hooks", () => ({
+mock.module("@web/store/store.hooks", () => ({
   useAppDispatch: () => mockDispatch,
-  useAppSelector: jest.requireActual("@web/store/store.hooks").useAppSelector,
+  useAppSelector: actualStoreHooks.useAppSelector,
 }));
+
+mock.module("@web/auth/google/hooks/useGoogleAuth/useGoogleAuth", () => ({
+  useGoogleAuth: mockUseGoogleAuth,
+}));
+
+mock.module("@web/common/hooks/useAuthCmdItems", () => ({
+  useAuthCmdItems: () => [],
+}));
+
+const { render } =
+  require("@web/__tests__/__mocks__/mock.render") as typeof import("@web/__tests__/__mocks__/mock.render");
+const { SyncApi } =
+  require("@web/common/apis/sync.api") as typeof import("@web/common/apis/sync.api");
+const { useGlobalShortcuts } =
+  require("@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts") as typeof import("@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts");
+const { DayCmdPalette } =
+  require("@web/views/Day/components/DayCmdPalette") as typeof import("@web/views/Day/components/DayCmdPalette");
 
 function Component() {
   useGlobalShortcuts();
@@ -128,24 +225,22 @@ function Component() {
 }
 
 describe("DayCmdPalette", () => {
-  const mockOpenEventFormCreateEvent = jest.spyOn(
-    eventUtil,
-    "openEventFormCreateEvent",
-  );
-  const mockOpenEventFormEditEvent = jest.spyOn(
-    eventUtil,
-    "openEventFormEditEvent",
-  );
-
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockDispatch.mockClear();
+    mockGoToToday.mockClear();
+    mockImportGCal.mockClear();
+    mockLogin.mockClear();
+    mockNavigate.mockClear();
+    mockOpenEventFormCreateEvent.mockClear();
+    mockOpenEventFormEditEvent.mockClear();
+    mockUseGoogleAuth.mockClear();
+    mockUseLocation.mockClear();
+    mockUseNavigate.mockClear();
 
-    (require("react-router-dom").useNavigate as jest.Mock).mockReturnValue(
-      mockNavigate,
-    );
-    (require("react-router-dom").useLocation as jest.Mock).mockReturnValue(
-      mockLocation,
-    );
+    mockImportGCal.mockResolvedValue(undefined);
+    mockUseGoogleAuth.mockReturnValue({ login: mockLogin });
+    mockUseNavigate.mockReturnValue(mockNavigate);
+    mockUseLocation.mockReturnValue(mockLocation);
   });
 
   it("renders navigation items when open", async () => {
@@ -215,15 +310,14 @@ describe("DayCmdPalette", () => {
   });
 
   it("calls onGoToToday when Go to Today is clicked", async () => {
-    const mockOnGoToToday = jest.fn();
     const user = userEvent.setup();
-    render(<DayCmdPalette onGoToToday={mockOnGoToToday} />, {
+    render(<DayCmdPalette onGoToToday={mockGoToToday} />, {
       state: { settings: { isCmdPaletteOpen: true } },
     });
 
     await user.click(screen.getByText("Go to Today (Monday, November 24) [t]"));
 
-    expect(mockOnGoToToday).toHaveBeenCalled();
+    expect(mockGoToToday).toHaveBeenCalled();
   });
 
   it("navigates to logout when Log Out is clicked", async () => {
@@ -286,12 +380,8 @@ describe("DayCmdPalette", () => {
   });
 
   describe("Google Calendar authentication status", () => {
-    const mockLogin = jest.fn();
-
     beforeEach(() => {
-      jest.spyOn(useGoogleAuthModule, "useGoogleAuth").mockReturnValue({
-        login: mockLogin,
-      });
+      mockUseGoogleAuth.mockReturnValue({ login: mockLogin });
     });
 
     it("shows 'Connect Google Calendar' when metadata is missing", async () => {
