@@ -1,20 +1,74 @@
 import "@testing-library/jest-dom";
+import "fake-indexeddb/auto";
 import { act, screen, waitFor } from "@testing-library/react";
+import { type ReactNode } from "react";
 import { type Schema_Event } from "@core/types/event.types";
-import {
-  renderAgenda,
-  selectIsDayEventsProcessingSpy,
-} from "@web/__tests__/utils/agenda/agenda.test.util";
 import { compareEventsByStartDate } from "@web/common/utils/event/event.util";
 import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
-import { useOpenEventForm } from "@web/views/Forms/hooks/useOpenEventForm";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock("@web/views/Forms/hooks/useOpenEventForm");
+const mockOpenEventForm = mock();
+const mockRecipeInit = mock(() => ({}));
+const mockSuperTokensInit = mock();
+const mockUseOpenEventForm = mock();
+
+mock.module("supertokens-web-js", () => ({
+  default: {
+    init: mockSuperTokensInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/emailpassword", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/emailverification", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/thirdparty", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/session", () => ({
+  attemptRefreshingSession: mock(),
+  default: {
+    attemptRefreshingSession: mock(),
+    doesSessionExist: mock().mockResolvedValue(true),
+    getAccessToken: mock().mockResolvedValue("mock-access-token"),
+    getAccessTokenPayloadSecurely: mock().mockResolvedValue({}),
+    getInvalidClaimsFromResponse: mock().mockResolvedValue([]),
+    getUserId: mock().mockResolvedValue("mock-user-id"),
+    init: mockRecipeInit,
+    signOut: mock().mockResolvedValue(undefined),
+    validateClaims: mock().mockResolvedValue([]),
+  },
+}));
+
+mock.module("@react-oauth/google", () => ({
+  GoogleOAuthProvider: ({ children }: { children: ReactNode }) => children,
+  useGoogleLogin: () => mock(),
+}));
+
+mock.module("@web/views/Forms/hooks/useOpenEventForm", () => ({
+  useOpenEventForm: mockUseOpenEventForm,
+}));
+
+const { renderAgenda, selectIsDayEventsProcessingSpy } =
+  require("@web/__tests__/utils/agenda/agenda.test.util") as typeof import("@web/__tests__/utils/agenda/agenda.test.util");
 
 describe("CalendarAgenda", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (useOpenEventForm as jest.Mock).mockReturnValue(jest.fn());
+    mockOpenEventForm.mockClear();
+    mockUseOpenEventForm.mockClear();
+    selectIsDayEventsProcessingSpy.mockClear();
+    mockUseOpenEventForm.mockReturnValue(mockOpenEventForm);
   });
 
   it("should render time labels", async () => {
@@ -265,8 +319,8 @@ describe("CalendarAgenda", () => {
   });
 
   it("should open event form when pressing Enter on timed events section", async () => {
-    const openEventFormMock = jest.fn();
-    (useOpenEventForm as jest.Mock).mockReturnValue(openEventFormMock);
+    const openEventFormMock = mock();
+    mockUseOpenEventForm.mockReturnValue(openEventFormMock);
 
     const { user } = renderAgenda();
 
@@ -280,8 +334,8 @@ describe("CalendarAgenda", () => {
   });
 
   it("should open event form when pressing Enter on all-day events section", async () => {
-    const openEventFormMock = jest.fn();
-    (useOpenEventForm as jest.Mock).mockReturnValue(openEventFormMock);
+    const openEventFormMock = mock();
+    mockUseOpenEventForm.mockReturnValue(openEventFormMock);
 
     const { user } = renderAgenda();
 

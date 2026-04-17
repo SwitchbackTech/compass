@@ -4,8 +4,9 @@ import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.uti
 import * as eventSelectors from "@web/ducks/events/selectors/event.selectors";
 import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
 import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
+import { spyOn } from "bun:test";
 
-export const selectIsDayEventsProcessingSpy = jest.spyOn(
+export const selectIsDayEventsProcessingSpy = spyOn(
   eventSelectors,
   "selectIsDayEventsProcessing",
 );
