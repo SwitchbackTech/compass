@@ -1,16 +1,19 @@
 import { type SyntheticEvent } from "react";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 // Mock IntersectionObserver
-const mockIntersectionObserver = jest.fn();
-const mockObserve = jest.fn();
-const mockDisconnect = jest.fn();
+const mockIntersectionObserver = mock();
+const mockObserve = mock();
+const mockDisconnect = mock();
 
 global.IntersectionObserver = mockIntersectionObserver;
 
 describe("onEventTargetVisibility", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockDisconnect.mockClear();
+    mockIntersectionObserver.mockClear();
+    mockObserve.mockClear();
     mockIntersectionObserver.mockImplementation((callback) => ({
       observe: mockObserve,
       disconnect: mockDisconnect,
@@ -19,7 +22,7 @@ describe("onEventTargetVisibility", () => {
   });
 
   it("should create an IntersectionObserver with the correct callback", () => {
-    const mockCallback = jest.fn();
+    const mockCallback = mock();
     const mockEvent = {
       currentTarget: document.createElement("div"),
     } as SyntheticEvent<HTMLDivElement>;
@@ -32,7 +35,7 @@ describe("onEventTargetVisibility", () => {
   });
 
   it("should execute callback when target becomes visible (visible = true)", () => {
-    const mockCallback = jest.fn();
+    const mockCallback = mock();
     const mockEvent = {
       currentTarget: document.createElement("div"),
     } as SyntheticEvent<HTMLDivElement>;
@@ -58,7 +61,7 @@ describe("onEventTargetVisibility", () => {
   });
 
   it("should execute callback when target becomes hidden (visible = false)", () => {
-    const mockCallback = jest.fn();
+    const mockCallback = mock();
     const mockEvent = {
       currentTarget: document.createElement("div"),
     } as SyntheticEvent<HTMLDivElement>;
@@ -84,7 +87,7 @@ describe("onEventTargetVisibility", () => {
   });
 
   it("should not execute callback when visibility state doesn't match expected state", () => {
-    const mockCallback = jest.fn();
+    const mockCallback = mock();
     const mockEvent = {
       currentTarget: document.createElement("div"),
     } as SyntheticEvent<HTMLDivElement>;
@@ -110,7 +113,7 @@ describe("onEventTargetVisibility", () => {
   });
 
   it("should default to visible = false when not specified", () => {
-    const mockCallback = jest.fn();
+    const mockCallback = mock();
     const mockEvent = {
       currentTarget: document.createElement("div"),
     } as SyntheticEvent<HTMLDivElement>;
@@ -136,7 +139,7 @@ describe("onEventTargetVisibility", () => {
   });
 
   it("should handle multiple entries in intersection observer callback", () => {
-    const mockCallback = jest.fn();
+    const mockCallback = mock();
     const mockEvent = {
       currentTarget: document.createElement("div"),
     } as SyntheticEvent<HTMLDivElement>;
@@ -165,7 +168,7 @@ describe("onEventTargetVisibility", () => {
   });
 
   it("should work with different HTML element types", () => {
-    const mockCallback = jest.fn();
+    const mockCallback = mock();
     const buttonEvent = {
       currentTarget: document.createElement("button"),
     } as SyntheticEvent<HTMLButtonElement>;
