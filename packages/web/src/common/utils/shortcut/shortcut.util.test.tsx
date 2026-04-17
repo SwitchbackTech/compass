@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, mock, vi } from "bun:test";
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
@@ -12,7 +13,7 @@ import {
 
 describe("shortcut.util", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("expandModInShortcutDisplay", () => {
