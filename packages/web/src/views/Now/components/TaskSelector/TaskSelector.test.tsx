@@ -1,4 +1,3 @@
-import { MemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
 import {
   type RenderOptions,
@@ -7,55 +6,64 @@ import {
   waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { type ReactElement, type ReactNode } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
-import { getTaskRepository } from "@web/common/repositories/task/task.repository.util";
 import { type Task } from "@web/common/types/task.types";
-import * as storageUtil from "@web/common/utils/storage/storage.util";
 import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
-import { useAvailableTasks } from "@web/views/Now/hooks/useAvailableTasks";
-import { useFocusedTask } from "@web/views/Now/hooks/useFocusedTask";
 import { NowViewProvider } from "../../context/NowViewProvider";
-import { TaskSelector } from "./TaskSelector";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  setSystemTime,
+} from "bun:test";
 
-// Mock useNavigate
-const mockNavigate = jest.fn();
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
+const actualReactRouterDom = await import("react-router-dom");
+const { MemoryRouter } = actualReactRouterDom;
+const mockNavigate = mock();
+mock.module("react-router-dom", () => ({
+  ...actualReactRouterDom,
   useNavigate: () => mockNavigate,
 }));
 
-jest.mock("@web/views/Now/hooks/useFocusedTask");
-jest.mock("@web/views/Now/hooks/useAvailableTasks");
-jest.mock("@web/common/utils/storage/storage.util", () => ({
-  ...jest.requireActual("@web/common/utils/storage/storage.util"),
-  getDateKey: jest.fn(),
+const mockUseFocusedTask = mock();
+mock.module("@web/views/Now/hooks/useFocusedTask", () => ({
+  useFocusedTask: mockUseFocusedTask,
 }));
 
-jest.mock("@web/common/repositories/task/task.repository.util", () => {
-  const mockSave = jest.fn().mockResolvedValue(undefined);
-  return {
-    getTaskRepository: jest.fn(() => ({
-      save: mockSave,
-    })),
-  };
-});
-
-jest.mock("@web/common/storage/adapter/adapter", () => ({
-  ensureStorageReady: jest.fn().mockResolvedValue(undefined),
+const mockUseAvailableTasks = mock();
+mock.module("@web/views/Now/hooks/useAvailableTasks", () => ({
+  useAvailableTasks: mockUseAvailableTasks,
 }));
 
-/** Get the save mock from the mocked getTaskRepository return value */
-const getMockSave = () => (getTaskRepository as jest.Mock)().save as jest.Mock;
+const actualStorageUtil = await import(
+  "@web/common/utils/storage/storage.util"
+);
+const mockGetDateKey = mock();
+mock.module("@web/common/utils/storage/storage.util", () => ({
+  ...actualStorageUtil,
+  getDateKey: mockGetDateKey,
+}));
 
-const mockUseFocusedTask = useFocusedTask as jest.MockedFunction<
-  typeof useFocusedTask
->;
-const mockUseAvailableTasks = useAvailableTasks as jest.MockedFunction<
-  typeof useAvailableTasks
->;
+const mockTaskSave = mock().mockResolvedValue(undefined);
+mock.module("@web/common/repositories/task/task.repository.util", () => ({
+  getTaskRepository: mock(() => ({
+    save: mockTaskSave,
+  })),
+}));
 
-const NowProviders = ({ children }: { children: React.ReactNode }) => {
+mock.module("@web/common/storage/adapter/adapter", () => ({
+  ensureStorageReady: mock().mockResolvedValue(undefined),
+}));
+
+const { TaskSelector } =
+  require("./TaskSelector") as typeof import("./TaskSelector");
+
+const NowProviders = ({ children }: { children: ReactNode }) => {
   return (
     <CompassRequiredProviders>
       <MemoryRouter
@@ -71,14 +79,14 @@ const NowProviders = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const renderWithNowProvider = (
-  component: React.ReactElement,
+  component: ReactElement,
   options?: Omit<RenderOptions, "wrapper">,
 ) => {
   return render(component, { wrapper: NowProviders, ...options });
 };
 
 describe("TaskSelector", () => {
-  const mockSetFocusedTask = jest.fn();
+  const mockSetFocusedTask = mock();
   const mockToday = dayjs("2025-11-15T00:00:00Z").utc();
   const mockDateKey = "2025-11-15";
 
@@ -102,19 +110,18 @@ describe("TaskSelector", () => {
   ];
 
   beforeEach(() => {
-    jest.clearAllMocks();
     mockNavigate.mockClear();
     mockSetFocusedTask.mockClear();
-    getMockSave().mockResolvedValue(undefined);
-    (storageUtil.getDateKey as jest.Mock).mockReturnValue(mockDateKey);
-
-    // Use fake timers to control the current time
-    jest.useFakeTimers();
-    jest.setSystemTime(mockToday.toDate());
+    mockGetDateKey.mockReturnValue(mockDateKey);
+    mockTaskSave.mockClear();
+    mockTaskSave.mockResolvedValue(undefined);
+    mockUseAvailableTasks.mockReset();
+    mockUseFocusedTask.mockReset();
+    setSystemTime(mockToday.toDate());
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    setSystemTime();
   });
 
   it("renders FocusedTask when a task is focused", () => {
@@ -328,8 +335,8 @@ describe("TaskSelector", () => {
       await user.click(checkButton);
 
       await waitFor(() => {
-        expect(getMockSave()).toHaveBeenCalledTimes(1);
-        expect(getMockSave()).toHaveBeenCalledWith(
+        expect(mockTaskSave).toHaveBeenCalledTimes(1);
+        expect(mockTaskSave).toHaveBeenCalledWith(
           mockDateKey,
           expect.objectContaining({ _id: "task-1", status: "completed" }),
         );
@@ -376,8 +383,8 @@ describe("TaskSelector", () => {
       await user.click(checkButton);
 
       await waitFor(() => {
-        expect(getMockSave()).toHaveBeenCalledTimes(1);
-        expect(getMockSave()).toHaveBeenCalledWith(
+        expect(mockTaskSave).toHaveBeenCalledTimes(1);
+        expect(mockTaskSave).toHaveBeenCalledWith(
           mockDateKey,
           expect.objectContaining({ _id: "task-2", status: "completed" }),
         );
@@ -416,8 +423,8 @@ describe("TaskSelector", () => {
       await user.click(checkButton);
 
       await waitFor(() => {
-        expect(getMockSave()).toHaveBeenCalledTimes(1);
-        expect(getMockSave()).toHaveBeenCalledWith(
+        expect(mockTaskSave).toHaveBeenCalledTimes(1);
+        expect(mockTaskSave).toHaveBeenCalledWith(
           mockDateKey,
           expect.objectContaining({ _id: "task-1", status: "completed" }),
         );
