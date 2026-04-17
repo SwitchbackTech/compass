@@ -1,31 +1,43 @@
+import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import { act } from "react";
-import { NowLine } from "@web/views/Day/components/Agenda/NowLine/NowLine";
-import {
-  getAgendaEventTime,
-  getNowLinePosition,
-} from "@web/views/Day/util/agenda/agenda.util";
-import { setupMinuteSync } from "@web/views/Day/util/time/time.util";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-// Mock dependencies
-jest.mock("@web/common/utils/dom/grid-organization.util", () => {
+const mockGetAgendaEventTime = mock();
+const mockGetNowLinePosition = mock();
+const mockSetupMinuteSync = mock();
+
+mock.module("@web/common/utils/dom/grid-organization.util", () => {
   const { BehaviorSubject } = require("rxjs");
+
   return {
     maxAgendaZIndex$: new BehaviorSubject(10),
     maxGridZIndex$: new BehaviorSubject(10),
   };
 });
-jest.mock("@web/views/Day/util/agenda/agenda.util");
-jest.mock("@web/views/Day/util/time/time.util");
+
+mock.module("@web/views/Day/util/agenda/agenda.util", () => ({
+  getAgendaEventTime: mockGetAgendaEventTime,
+  getNowLinePosition: mockGetNowLinePosition,
+}));
+
+mock.module("@web/views/Day/util/time/time.util", () => ({
+  setupMinuteSync: mockSetupMinuteSync,
+}));
+
+const { NowLine } =
+  require("@web/views/Day/components/Agenda/NowLine/NowLine") as typeof import("@web/views/Day/components/Agenda/NowLine/NowLine");
 
 describe("NowLine", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockGetAgendaEventTime.mockClear();
+    mockGetNowLinePosition.mockClear();
+    mockSetupMinuteSync.mockClear();
 
-    (getNowLinePosition as jest.Mock).mockReturnValue(100);
-    (getAgendaEventTime as jest.Mock).mockReturnValue("10:00 AM");
-    (setupMinuteSync as jest.Mock).mockImplementation(() => {
-      return jest.fn();
+    mockGetNowLinePosition.mockReturnValue(100);
+    mockGetAgendaEventTime.mockReturnValue("10:00 AM");
+    mockSetupMinuteSync.mockImplementation(() => {
+      return mock();
     });
   });
 
@@ -53,15 +65,15 @@ describe("NowLine", () => {
 
   it("updates time on minute sync", () => {
     let syncCallback: () => void;
-    (setupMinuteSync as jest.Mock).mockImplementation((cb) => {
+    mockSetupMinuteSync.mockImplementation((cb) => {
       syncCallback = cb;
-      return jest.fn();
+      return mock();
     });
 
     render(<NowLine />);
 
     // Initial render
-    expect(getNowLinePosition).toHaveBeenCalledTimes(1);
+    expect(mockGetNowLinePosition).toHaveBeenCalledTimes(1);
 
     // Simulate minute sync
     act(() => {
@@ -71,12 +83,12 @@ describe("NowLine", () => {
     });
 
     // Should have updated state and re-rendered
-    expect(getNowLinePosition).toHaveBeenCalledTimes(2);
+    expect(mockGetNowLinePosition).toHaveBeenCalledTimes(2);
   });
 
   it("cleans up minute sync on unmount", () => {
-    const cleanupMock = jest.fn();
-    (setupMinuteSync as jest.Mock).mockReturnValue(cleanupMock);
+    const cleanupMock = mock();
+    mockSetupMinuteSync.mockReturnValue(cleanupMock);
 
     const { unmount } = render(<NowLine />);
 
