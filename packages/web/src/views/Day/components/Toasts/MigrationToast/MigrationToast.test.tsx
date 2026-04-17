@@ -12,6 +12,7 @@ const toast = Object.assign(mock(), {
 });
 
 mock.module("react-toastify", () => ({
+  ToastContainer: () => null,
   toast,
 }));
 

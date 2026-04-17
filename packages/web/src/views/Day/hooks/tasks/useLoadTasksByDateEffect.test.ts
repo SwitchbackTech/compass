@@ -22,6 +22,7 @@ const mockTaskRepository: TaskRepository = {
 };
 
 mock.module("@web/common/storage/adapter/adapter", () => ({
+  getStorageAdapter: mock(),
   ensureStorageReady: mockEnsureStorageReady,
 }));
 

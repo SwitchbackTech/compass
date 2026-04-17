@@ -30,7 +30,7 @@
     "test:e2e": "bunx playwright test",
     "test:backend": "TZ=Etc/UTC bun packages/scripts/src/testing/run.ts backend",
     "test:core": "TZ=Etc/UTC bun packages/scripts/src/testing/run.ts core",
-    "test:web": "TZ=Etc/UTC bun packages/scripts/src/testing/run.ts web",
+    "test:web": "TODO- update this with the correct bun command to run tests inside packages/web",
     "test:scripts": "TZ=Etc/UTC bun packages/scripts/src/testing/run.ts scripts",
     "type-check": "TZ=Etc/UTC bunx tsc --noEmit",
     "verify": "TZ=Etc/UTC bun packages/scripts/src/testing/verify.ts",

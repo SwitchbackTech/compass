@@ -9,6 +9,7 @@ toastMock.dismiss = mock();
 toastMock.update = mock();
 
 mock.module("react-toastify", () => ({
+  ToastContainer: () => null,
   toast: toastMock,
 }));
 

@@ -6,13 +6,17 @@ import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { type ApiResponse } from "@web/common/apis/api.types";
 import { type EventRepository } from "@web/common/repositories/event/event.repository.interface";
-import {
-  ensureStorageReady,
-  getStorageAdapter,
-} from "@web/common/storage/adapter/adapter";
 import { type Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { type RootState } from "@web/store";
-import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 import { afterAll } from "bun:test";
 
 const mockDoesSessionExist = mock();
@@ -22,6 +26,8 @@ const mockEventApiEdit = mock();
 const mockEventApiGet = mock();
 const mockEventApiReorder = mock();
 const mockAlert = mock();
+
+mock.restore();
 
 mock.module("@web/ducks/events/event.api", () => ({
   EventApi: {
@@ -41,6 +47,9 @@ mock.module("@web/common/classes/Session", () => ({
 
 const { createInitialState, createStoreWithEvents } = await import(
   "@web/__tests__/utils/state/store.test.util"
+);
+const { ensureStorageReady, getStorageAdapter } = await import(
+  "@web/common/storage/adapter/adapter"
 );
 const eventRepositoryUtil = await import(
   "@web/common/repositories/event/event.repository.util"

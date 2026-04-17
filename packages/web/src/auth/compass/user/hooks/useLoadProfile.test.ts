@@ -49,6 +49,7 @@ mock.module("react-toastify", () => {
   });
 
   return {
+    ToastContainer: () => null,
     default: toast,
     toast,
   };

@@ -52,6 +52,7 @@ mock.module("@web/common/utils/sync/local-event-sync.util", () => ({
   syncLocalEventsToCloud: mockSyncLocalEventsToCloud,
 }));
 mock.module("react-toastify", () => ({
+  ToastContainer: () => null,
   toast: mockToast,
 }));
 mock.module("@web/store", () => ({

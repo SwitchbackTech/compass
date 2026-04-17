@@ -58,6 +58,7 @@ mock.module("@web/common/repositories/task/task.repository.util", () => ({
 }));
 
 mock.module("@web/common/storage/adapter/adapter", () => ({
+  getStorageAdapter: mock(),
   ensureStorageReady: mock().mockResolvedValue(undefined),
 }));
 

@@ -7,6 +7,7 @@ import {
 } from "@web/auth/compass/state/auth.state.util";
 import { session } from "@web/common/classes/Session";
 import { LocalEventRepository } from "@web/common/repositories/event/local.event.repository";
+import { editEventSlice } from "@web/ducks/events/slices/event.slice";
 import { createEvent, editEvent } from "./event.sagas";
 import {
   afterEach,
@@ -30,12 +31,18 @@ describe("event sign-up prompt failure paths", () => {
   let deleteSpy: { mockRestore: () => void };
   let doesSessionExistSpy: { mockRestore: () => void };
   let editSpy: { mockRestore: () => void } | null = null;
+  let alertSpy: { mockRestore: () => void };
+  const originalEditError = editEventSlice.actions.error;
 
   beforeEach(() => {
     clearAnonymousCalendarChangeSignUpPrompt();
     createSpy = null;
     editSpy = null;
     consoleErrorSpy = spyOn(console, "error").mockImplementation(() => {});
+    alertSpy = spyOn(globalThis, "alert").mockImplementation(() => {});
+    editEventSlice.actions.error = (() => ({
+      type: "async/editEvent/error",
+    })) as typeof editEventSlice.actions.error;
     deleteSpy = spyOn(
       LocalEventRepository.prototype,
       "delete",
@@ -51,6 +58,8 @@ describe("event sign-up prompt failure paths", () => {
     deleteSpy.mockRestore();
     doesSessionExistSpy.mockRestore();
     editSpy?.mockRestore();
+    alertSpy.mockRestore();
+    editEventSlice.actions.error = originalEditError;
     clearAnonymousCalendarChangeSignUpPrompt();
   });
 

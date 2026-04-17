@@ -51,6 +51,7 @@ mock.module("@web/store/store.hooks", () => ({
 }));
 
 mock.module("react-toastify", () => ({
+  ToastContainer: () => null,
   default: mockToast,
   toast: mockToast,
 }));

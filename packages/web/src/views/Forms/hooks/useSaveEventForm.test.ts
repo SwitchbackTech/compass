@@ -21,6 +21,13 @@ mock.module("@web/views/Forms/hooks/useCloseEventForm", () => ({
 const mockSelectEventById = mock();
 mock.module("@web/ducks/events/selectors/event.selectors", () => ({
   selectEventById: mockSelectEventById,
+  selectEventEntities: mock(),
+  selectGridEvents: mock(),
+  selectAllDayEvents: mock(),
+  selectRowCount: mock(),
+  selectDayEvents: mock(),
+  selectTimedDayEvents: mock(),
+  selectIsDayEventsProcessing: mock(),
 }));
 
 const { useSaveEventForm } =
