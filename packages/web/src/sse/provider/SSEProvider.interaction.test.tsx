@@ -16,40 +16,41 @@ import {
   resetGoogleSyncUIStateForTests,
   setRepairingSyncIndicatorOverride,
 } from "@web/auth/google/state/google.sync.state";
-import { handleGoogleRevoked } from "@web/auth/google/util/google.auth.util";
-import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { importLatestSlice } from "@web/ducks/events/slices/sync.slice";
-import { useGcalSSE } from "../hooks/useGcalSSE";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock("@web/auth/google/util/google.auth.util", () => ({
-  handleGoogleRevoked: jest.fn(),
+const closeStream = mock();
+const getStream = mock(() => null);
+const mockHandleGoogleRevoked = mock();
+const mockShowErrorToast = mock();
+const openStream = mock();
+const refreshUserMetadata = mock().mockResolvedValue(undefined);
+
+mock.module("@web/auth/google/util/google.auth.util", () => ({
+  handleGoogleRevoked: mockHandleGoogleRevoked,
 }));
-jest.mock("@web/auth/compass/user/util/user-metadata.util", () => ({
-  refreshUserMetadata: jest.fn().mockResolvedValue(undefined),
+mock.module("@web/auth/compass/user/util/user-metadata.util", () => ({
+  refreshUserMetadata,
 }));
-jest.mock("@web/common/utils/toast/error-toast.util", () => ({
-  showErrorToast: jest.fn(),
+mock.module("@web/common/utils/toast/error-toast.util", () => ({
+  showErrorToast: mockShowErrorToast,
 }));
-jest.mock("../client/sse.client", () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
-  const { EventEmitter2 } = require("eventemitter2");
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+mock.module("../client/sse.client", () => {
+  const { EventEmitter2 } = require("eventemitter2") as {
+    EventEmitter2: new (options?: { maxListeners?: number }) => EventEmitter2;
+  };
   const sseEmitter = new EventEmitter2({ maxListeners: 20 });
   return {
-    openStream: jest.fn(),
-    closeStream: jest.fn(),
-    getStream: jest.fn(() => null),
-    sseEmitter: sseEmitter as unknown as EventEmitter2,
+    openStream,
+    closeStream,
+    getStream,
+    sseEmitter,
   };
 });
 
-const mockHandleGoogleRevoked = handleGoogleRevoked as jest.MockedFunction<
-  typeof handleGoogleRevoked
->;
-const mockShowErrorToast = showErrorToast as jest.MockedFunction<
-  typeof showErrorToast
->;
+const { useGcalSSE } =
+  require("../hooks/useGcalSSE") as typeof import("../hooks/useGcalSSE");
 
 const HookHost = () => {
   useGcalSSE();
@@ -57,7 +58,6 @@ const HookHost = () => {
 };
 
 const getSseEmitter = () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   return (require("../client/sse.client") as { sseEmitter: EventEmitter2 })
     .sseEmitter;
 };
@@ -92,7 +92,13 @@ describe("useGcalSSE", () => {
     });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    closeStream.mockClear();
+    getStream.mockClear();
+    getSseEmitter().removeAllListeners();
+    mockHandleGoogleRevoked.mockClear();
+    mockShowErrorToast.mockClear();
+    openStream.mockClear();
+    refreshUserMetadata.mockClear();
     resetGoogleSyncUIStateForTests();
   });
 
