@@ -1,19 +1,27 @@
 import { renderHook } from "@testing-library/react";
-import { closeFloatingAtCursor } from "@web/common/hooks/useOpenAtCursor";
-import { resetActiveEvent, resetDraft } from "@web/store/events";
-import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock("@web/common/hooks/useOpenAtCursor", () => ({
-  closeFloatingAtCursor: jest.fn(),
+const closeFloatingAtCursor = mock();
+const resetActiveEvent = mock();
+const resetDraft = mock();
+
+mock.module("@web/common/hooks/useOpenAtCursor", () => ({
+  closeFloatingAtCursor,
 }));
-jest.mock("@web/store/events", () => ({
-  resetDraft: jest.fn(),
-  resetActiveEvent: jest.fn(),
+
+mock.module("@web/store/events", () => ({
+  resetActiveEvent,
+  resetDraft,
 }));
+
+const { useCloseEventForm } =
+  require("@web/views/Forms/hooks/useCloseEventForm") as typeof import("@web/views/Forms/hooks/useCloseEventForm");
 
 describe("useCloseEventForm", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    closeFloatingAtCursor.mockClear();
+    resetActiveEvent.mockClear();
+    resetDraft.mockClear();
   });
 
   it("should close floating at cursor and set draft to null", () => {
