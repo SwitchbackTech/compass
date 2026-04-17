@@ -1,34 +1,33 @@
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useUser } from "@web/auth/compass/user/hooks/useUser";
-import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
-import { SubCalendarList } from "./SubCalendarList";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock("@web/auth/compass/user/hooks/useUser", () => ({
-  useUser: jest.fn(),
+const mockUseUser = mock();
+const mockUseAuthModal = mock();
+
+mock.module("@web/auth/compass/user/hooks/useUser", () => ({
+  useUser: mockUseUser,
 }));
 
-jest.mock("@web/components/AuthModal/hooks/useAuthModal", () => ({
-  useAuthModal: jest.fn(),
+mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
+  useAuthModal: mockUseAuthModal,
 }));
 
-const mockUseUser = useUser as jest.MockedFunction<typeof useUser>;
-const mockUseAuthModal = useAuthModal as jest.MockedFunction<
-  typeof useAuthModal
->;
+const { SubCalendarList } =
+  require("./SubCalendarList") as typeof import("./SubCalendarList");
 
 describe("SubCalendarList", () => {
-  const openModal = jest.fn();
+  const openModal = mock();
 
   beforeEach(() => {
     openModal.mockReset();
     mockUseAuthModal.mockReturnValue({
-      closeModal: jest.fn(),
+      closeModal: mock(),
       currentView: "login",
       isOpen: false,
       openModal,
-      setView: jest.fn(),
+      setView: mock(),
     });
   });
 
