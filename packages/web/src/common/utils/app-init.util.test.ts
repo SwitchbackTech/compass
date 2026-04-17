@@ -1,34 +1,58 @@
-import { toast } from "react-toastify";
-import { initializeStorage } from "@web/common/storage/adapter/adapter";
 import { DatabaseInitError } from "@web/common/utils/storage/db-errors.util";
 import {
-  initializeDatabaseWithErrorHandling,
-  showDbInitErrorToast,
-} from "./app-init.util";
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 // Mock the storage adapter
-jest.mock("@web/common/storage/adapter/adapter", () => ({
-  initializeStorage: jest.fn(),
+const mockInitializeStorage = mock();
+const mockToastError = mock();
+
+mock.module("@web/common/storage/adapter/adapter", () => ({
+  initializeStorage: mockInitializeStorage,
 }));
 
 // Mock react-toastify
-jest.mock("react-toastify", () => ({
+mock.module("react-toastify", () => ({
   toast: {
-    error: jest.fn(),
+    error: mockToastError,
   },
 }));
 
-const mockInitializeStorage = initializeStorage as jest.Mock;
+const { initializeDatabaseWithErrorHandling, showDbInitErrorToast } =
+  require("./app-init.util") as typeof import("./app-init.util");
 
 describe("app-init.util", () => {
+  const timeoutId = {} as ReturnType<typeof setTimeout>;
+  let setTimeoutSpy: ReturnType<typeof spyOn>;
+  let timeoutCallback: (() => void) | undefined;
+
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.useFakeTimers();
+    mockInitializeStorage.mockClear();
+    mockToastError.mockClear();
+    timeoutCallback = undefined;
+    setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
+      callback: TimerHandler,
+    ) => {
+      if (typeof callback === "function") {
+        timeoutCallback = () => callback();
+      }
+      return timeoutId;
+    }) as typeof setTimeout);
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    setTimeoutSpy.mockRestore();
   });
+
+  const runToastTimeout = () => {
+    timeoutCallback?.();
+  };
 
   describe("initializeDatabaseWithErrorHandling", () => {
     it("should return null error when storage initializes successfully", async () => {
@@ -64,9 +88,9 @@ describe("app-init.util", () => {
       mockInitializeStorage.mockRejectedValue(dbError);
 
       // Should not throw - just return the error
-      await expect(
-        initializeDatabaseWithErrorHandling(),
-      ).resolves.toEqual({ dbInitError: dbError });
+      await expect(initializeDatabaseWithErrorHandling()).resolves.toEqual({
+        dbInitError: dbError,
+      });
     });
   });
 
@@ -77,13 +101,12 @@ describe("app-init.util", () => {
       showDbInitErrorToast(dbError);
 
       // Toast should not be called immediately
-      expect(toast.error).not.toHaveBeenCalled();
+      expect(mockToastError).not.toHaveBeenCalled();
 
-      // Fast-forward timers
-      jest.advanceTimersByTime(100);
+      runToastTimeout();
 
       // Now toast should be called
-      expect(toast.error).toHaveBeenCalledWith(
+      expect(mockToastError).toHaveBeenCalledWith(
         "Offline storage unavailable: Storage quota exceeded. Your data will not be saved locally.",
         {
           autoClose: false,
@@ -96,9 +119,9 @@ describe("app-init.util", () => {
       const dbError = new DatabaseInitError("Database version mismatch");
 
       showDbInitErrorToast(dbError);
-      jest.advanceTimersByTime(100);
+      runToastTimeout();
 
-      expect(toast.error).toHaveBeenCalledWith(
+      expect(mockToastError).toHaveBeenCalledWith(
         expect.stringContaining("Database version mismatch"),
         expect.any(Object),
       );
@@ -108,9 +131,9 @@ describe("app-init.util", () => {
       const dbError = new DatabaseInitError("Test error");
 
       showDbInitErrorToast(dbError);
-      jest.advanceTimersByTime(100);
+      runToastTimeout();
 
-      expect(toast.error).toHaveBeenCalledWith(
+      expect(mockToastError).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({ autoClose: false }),
       );
@@ -131,9 +154,9 @@ describe("app-init.util", () => {
 
       if (dbInitError) {
         showDbInitErrorToast(dbInitError);
-        jest.advanceTimersByTime(100);
+        runToastTimeout();
 
-        expect(toast.error).toHaveBeenCalledWith(
+        expect(mockToastError).toHaveBeenCalledWith(
           "Offline storage unavailable: Failed to initialize IndexedDB after 3 attempts. Your data will not be saved locally.",
           expect.objectContaining({
             autoClose: false,
@@ -151,8 +174,8 @@ describe("app-init.util", () => {
       expect(dbInitError).toBeNull();
 
       // No toast should be shown
-      jest.advanceTimersByTime(100);
-      expect(toast.error).not.toHaveBeenCalled();
+      runToastTimeout();
+      expect(mockToastError).not.toHaveBeenCalled();
     });
   });
 });
