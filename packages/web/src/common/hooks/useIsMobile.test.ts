@@ -1,9 +1,10 @@
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
 import { useIsMobile } from "./useIsMobile";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 // Mock window.matchMedia
-const mockMatchMedia = jest.fn();
+const mockMatchMedia = mock();
 Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: mockMatchMedia,
@@ -17,8 +18,8 @@ describe("useIsMobile", () => {
   it("returns true for mobile viewport widths", () => {
     const mockMediaQuery = {
       matches: true,
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
+      addEventListener: mock(),
+      removeEventListener: mock(),
     };
     mockMatchMedia.mockReturnValue(mockMediaQuery);
 
@@ -31,8 +32,8 @@ describe("useIsMobile", () => {
   it("returns false for desktop viewport widths", () => {
     const mockMediaQuery = {
       matches: false,
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
+      addEventListener: mock(),
+      removeEventListener: mock(),
     };
     mockMatchMedia.mockReturnValue(mockMediaQuery);
 
@@ -46,16 +47,16 @@ describe("useIsMobile", () => {
     let changeHandler: (() => void) | null = null;
     const mockMediaQuery = {
       matches: false,
-      addEventListener: jest.fn((event, handler) => {
+      addEventListener: mock((event, handler) => {
         if (event === "change") {
           changeHandler = handler;
         }
       }),
-      removeEventListener: jest.fn(),
+      removeEventListener: mock(),
     };
     mockMatchMedia.mockReturnValue(mockMediaQuery);
 
-    const { result, rerender } = renderHook(() => useIsMobile());
+    const { result } = renderHook(() => useIsMobile());
 
     expect(result.current).toBe(false);
 
@@ -81,10 +82,10 @@ describe("useIsMobile", () => {
   });
 
   it("cleans up event listener on unmount", () => {
-    const mockRemoveEventListener = jest.fn();
+    const mockRemoveEventListener = mock();
     const mockMediaQuery = {
       matches: false,
-      addEventListener: jest.fn(),
+      addEventListener: mock(),
       removeEventListener: mockRemoveEventListener,
     };
     mockMatchMedia.mockReturnValue(mockMediaQuery);
