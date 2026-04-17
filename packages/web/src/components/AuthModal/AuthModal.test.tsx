@@ -17,6 +17,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { afterAll } from "bun:test";
+import { setTestWindowUrl } from "@web/__tests__/set-test-window-url";
 
 // Mock useSession
 const mockUseSession = mock(() => ({
@@ -902,17 +903,7 @@ describe("AuthModal", () => {
 
 // Helper to mock window.location for URL param tests
 const mockWindowLocation = (url: string) => {
-  const urlObj = new URL(url, "http://localhost");
-  const originalLocation = window.location;
-  // @ts-ignore
-  delete window.location;
-  window.location = {
-    ...originalLocation,
-    href: urlObj.href,
-    pathname: urlObj.pathname,
-    search: urlObj.search,
-    hash: urlObj.hash,
-  };
+  setTestWindowUrl(url);
 };
 
 // Mock history.replaceState for URL param tests
