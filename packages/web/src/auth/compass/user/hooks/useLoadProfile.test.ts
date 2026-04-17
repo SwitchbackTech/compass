@@ -1,62 +1,78 @@
-import { rest } from "msw";
-import { isValidElement, type ReactElement } from "react";
-import { toast } from "react-toastify";
-import "@testing-library/jest-dom";
 import { renderHook, waitFor } from "@testing-library/react";
+import { isValidElement, type ReactElement } from "react";
 import { Status } from "@core/errors/status.codes";
-// eslint-disable-next-line jest/no-mocks-import
-import { server } from "@web/__tests__/__mocks__/server/mock.server";
-import * as authStateUtil from "@web/auth/compass/state/auth.state.util";
-import { UserApi } from "@web/common/apis/user.api";
-import { ENV_WEB } from "@web/common/constants/env.constants";
-import { SessionExpiredToast } from "@web/common/utils/toast/session-expired.toast";
-import { useLoadProfile } from "./useLoadProfile";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock("@web/auth/compass/state/auth.state.util", () => {
-  const actual = jest.requireActual<typeof authStateUtil>(
-    "@web/auth/compass/state/auth.state.util",
-  );
+const mockGetLastKnownEmail = mock();
+const mockGetProfile = mock();
+const mockMarkUserAsAuthenticated = mock();
+const mockToastDismiss = mock();
+const mockToastError = mock();
+const mockToastIsActive = mock();
+
+mock.module("@web/auth/compass/state/auth.state.util", () => ({
+  getLastKnownEmail: mockGetLastKnownEmail,
+  markUserAsAuthenticated: mockMarkUserAsAuthenticated,
+}));
+
+mock.module("@web/common/apis/user.api", () => ({
+  UserApi: {
+    getProfile: mockGetProfile,
+  },
+}));
+
+mock.module("react-toastify", () => {
+  const toast = Object.assign(mock(), {
+    dismiss: mockToastDismiss,
+    error: mockToastError,
+    isActive: mockToastIsActive,
+  });
+
   return {
-    ...actual,
-    getLastKnownEmail: jest.fn(),
+    default: toast,
+    toast,
   };
 });
-const mockGetLastKnownEmail = jest.mocked(authStateUtil.getLastKnownEmail);
 
-const mockToastError = jest.mocked(toast.error);
+const { SessionExpiredToast } =
+  require("@web/common/utils/toast/session-expired.toast") as typeof import("@web/common/utils/toast/session-expired.toast");
+const { useLoadProfile } =
+  require("./useLoadProfile") as typeof import("./useLoadProfile");
 
 describe("useLoadProfile", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockGetLastKnownEmail.mockClear();
+    mockGetProfile.mockClear();
+    mockMarkUserAsAuthenticated.mockClear();
+    mockToastDismiss.mockClear();
+    mockToastError.mockClear();
+    mockToastIsActive.mockClear();
+
+    mockGetProfile.mockResolvedValue({
+      userId: "test-user-123",
+      email: "test@example.com",
+    });
     mockGetLastKnownEmail.mockReturnValue("last-known@example.com");
+    mockToastError.mockReturnValue("mock-toast-id");
+    mockToastIsActive.mockReturnValue(false);
   });
 
   it("does not call getProfile when user has never authenticated", async () => {
-    const getProfileSpy = jest.spyOn(UserApi, "getProfile");
-
     renderHook(() => useLoadProfile(false));
 
     await waitFor(() => {
-      expect(getProfileSpy).not.toHaveBeenCalled();
+      expect(mockGetProfile).not.toHaveBeenCalled();
     });
-
-    getProfileSpy.mockRestore();
   });
 
   it("calls getProfile when hasAuthenticatedBefore is true", async () => {
-    const getProfileSpy = jest.spyOn(UserApi, "getProfile");
-
     renderHook(() => useLoadProfile(true));
 
-    await waitFor(() => expect(getProfileSpy).toHaveBeenCalled());
-    expect(getProfileSpy).toHaveBeenCalledTimes(1);
-
-    getProfileSpy.mockRestore();
+    await waitFor(() => expect(mockGetProfile).toHaveBeenCalled());
+    expect(mockGetProfile).toHaveBeenCalledTimes(1);
   });
 
   it("fetches the profile when hasAuthenticatedBefore becomes true after mount", async () => {
-    const getProfileSpy = jest.spyOn(UserApi, "getProfile");
-
     const { result, rerender } = renderHook(
       ({ hasAuthenticatedBefore }: { hasAuthenticatedBefore: boolean }) =>
         useLoadProfile(hasAuthenticatedBefore),
@@ -66,35 +82,31 @@ describe("useLoadProfile", () => {
     await waitFor(() => {
       expect(result.current.email).toBeNull();
     });
-    expect(getProfileSpy).not.toHaveBeenCalled();
+    expect(mockGetProfile).not.toHaveBeenCalled();
 
     rerender({ hasAuthenticatedBefore: true });
 
-    await waitFor(() => expect(getProfileSpy).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mockGetProfile).toHaveBeenCalledTimes(1));
     await waitFor(() => {
       expect(result.current.email).toBe("test@example.com");
     });
-
-    getProfileSpy.mockRestore();
   });
 
   it("shows the last known email while the profile is loading", async () => {
-    server.use(
-      rest.get(`${ENV_WEB.API_BASEURL}/user/profile`, (_req, res, ctx) => {
-        return res(
-          ctx.delay(100),
-          ctx.status(Status.OK),
-          ctx.json({
-            userId: "test-user-123",
-            email: "test@example.com",
-          }),
-        );
+    let resolveProfile!: (profile: { userId: string; email: string }) => void;
+    mockGetProfile.mockReturnValue(
+      new Promise((resolve) => {
+        resolveProfile = resolve;
       }),
     );
 
     const { result } = renderHook(() => useLoadProfile(true));
 
     expect(result.current.email).toBe("last-known@example.com");
+    resolveProfile({
+      userId: "test-user-123",
+      email: "test@example.com",
+    });
 
     await waitFor(() => {
       expect(result.current.email).toBe("test@example.com");
@@ -102,14 +114,7 @@ describe("useLoadProfile", () => {
   });
 
   it("returns profile without email when the API omits email", async () => {
-    server.use(
-      rest.get(`${ENV_WEB.API_BASEURL}/user/profile`, (_req, res, ctx) => {
-        return res(
-          ctx.status(Status.OK),
-          ctx.json({ userId: "test-user-123" }),
-        );
-      }),
-    );
+    mockGetProfile.mockResolvedValue({ userId: "test-user-123" });
 
     const { result } = renderHook(() => useLoadProfile(true));
 
@@ -121,45 +126,32 @@ describe("useLoadProfile", () => {
   });
 
   it("returns profile without userId when the API omits userId", async () => {
-    const getProfileSpy = jest.spyOn(UserApi, "getProfile");
-    server.use(
-      rest.get(`${ENV_WEB.API_BASEURL}/user/profile`, (_req, res, ctx) => {
-        return res(
-          ctx.status(Status.OK),
-          ctx.json({ email: "test@example.com" }),
-        );
-      }),
-    );
+    mockGetProfile.mockResolvedValue({ email: "test@example.com" });
 
     const { result } = renderHook(() => useLoadProfile(true));
 
-    await waitFor(() => expect(getProfileSpy).toHaveBeenCalled());
-    await getProfileSpy.mock.results[0].value;
+    await waitFor(() => expect(mockGetProfile).toHaveBeenCalled());
+    await mockGetProfile.mock.results[0].value;
 
     await waitFor(() => {
       expect(result.current.profile).not.toBeNull();
     });
     expect(result.current.userId).toBeNull();
     expect(result.current.profileEmail).toBe("test@example.com");
-
-    getProfileSpy.mockRestore();
   });
 
   it("shows a login toast when profile fetch returns unauthorized", async () => {
-    const getProfileSpy = jest.spyOn(UserApi, "getProfile");
-    server.use(
-      rest.get(`${ENV_WEB.API_BASEURL}/user/profile`, (_req, res, ctx) => {
-        return res(ctx.status(Status.UNAUTHORIZED));
-      }),
-    );
+    mockGetProfile.mockRejectedValue({
+      response: { status: Status.UNAUTHORIZED },
+    });
 
     renderHook(() => useLoadProfile(true));
 
-    await waitFor(() => expect(getProfileSpy).toHaveBeenCalled());
+    await waitFor(() => expect(mockGetProfile).toHaveBeenCalled());
     try {
-      await getProfileSpy.mock.results[0].value;
+      await mockGetProfile.mock.results[0].value;
     } catch {
-      // expected — profile fetch rejects on 401
+      // expected: profile fetch rejects on 401
     }
 
     expect(mockToastError).toHaveBeenCalled();
@@ -179,7 +171,5 @@ describe("useLoadProfile", () => {
     const toastElement = toastContent as ReactElement<{ toastId: string }>;
     expect(toastElement.type).toBe(SessionExpiredToast);
     expect(toastElement.props.toastId).toBe("session-expired-api");
-
-    getProfileSpy.mockRestore();
   });
 });
