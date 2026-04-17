@@ -1,28 +1,81 @@
-import { act } from "react";
-import { useNavigate } from "react-router-dom";
-import { renderHook } from "@web/__tests__/__mocks__/mock.render";
+import { type ReactNode } from "react";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
-import { useNowShortcuts } from "@web/views/Now/shortcuts/useNowShortcuts";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-// Mock react-router-dom
-jest.mock("react-router-dom", () => ({
-  useNavigate: jest.fn(),
+const actualReactRouterDom =
+  require("react-router-dom") as typeof import("react-router-dom");
+const mockNavigate = mock();
+const mockRecipeInit = mock(() => ({}));
+const mockSuperTokensInit = mock();
+const mockUseNavigate = mock(() => mockNavigate);
+
+mock.module("supertokens-web-js", () => ({
+  default: {
+    init: mockSuperTokensInit,
+  },
+}));
+mock.module("supertokens-web-js/recipe/emailpassword", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+mock.module("supertokens-web-js/recipe/emailverification", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+mock.module("supertokens-web-js/recipe/session", () => ({
+  attemptRefreshingSession: mock(),
+  default: {
+    attemptRefreshingSession: mock(),
+    doesSessionExist: mock().mockResolvedValue(true),
+    getAccessToken: mock().mockResolvedValue("mock-access-token"),
+    getAccessTokenPayloadSecurely: mock().mockResolvedValue({}),
+    getInvalidClaimsFromResponse: mock().mockResolvedValue([]),
+    getUserId: mock().mockResolvedValue("mock-user-id"),
+    init: mockRecipeInit,
+    signOut: mock().mockResolvedValue(undefined),
+    validateClaims: mock().mockResolvedValue([]),
+  },
+}));
+mock.module("supertokens-web-js/recipe/thirdparty", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+mock.module("@react-oauth/google", () => ({
+  GoogleOAuthProvider: ({ children }: { children: ReactNode }) => children,
+  useGoogleLogin: () => mock(),
+}));
+mock.module("react-router-dom", () => ({
+  ...actualReactRouterDom,
+  useNavigate: mockUseNavigate,
 }));
 
-const mockNavigate = jest.fn();
+const { renderHook } =
+  require("@web/__tests__/__mocks__/mock.render") as typeof import("@web/__tests__/__mocks__/mock.render");
+const { useNowShortcuts } =
+  require("@web/views/Now/shortcuts/useNowShortcuts") as typeof import("@web/views/Now/shortcuts/useNowShortcuts");
 
 describe("useNowShortcuts", () => {
   const mockTask1 = createMockTask();
   const mockTask2 = createMockTask();
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    (useNavigate as jest.Mock).mockReturnValue(mockNavigate);
+  const createDefaultProps = () => ({
+    focusedTask: mockTask1,
+    availableTasks: [mockTask1, mockTask2],
+    onPreviousTask: mock(),
+    onNextTask: mock(),
+    onCompleteTask: mock(),
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
+  beforeEach(() => {
+    mockNavigate.mockClear();
+    mockRecipeInit.mockClear();
+    mockSuperTokensInit.mockClear();
+    mockUseNavigate.mockClear();
+    mockUseNavigate.mockReturnValue(mockNavigate);
   });
 
   describe("global navigation shortcuts", () => {
@@ -44,15 +97,8 @@ describe("useNowShortcuts", () => {
   });
 
   describe("task navigation shortcuts", () => {
-    const defaultProps = {
-      focusedTask: mockTask1,
-      availableTasks: [mockTask1, mockTask2],
-      onPreviousTask: jest.fn(),
-      onNextTask: jest.fn(),
-      onCompleteTask: jest.fn(),
-    };
-
     it("should call onPreviousTask when 'j' is pressed", () => {
+      const defaultProps = createDefaultProps();
       renderHook(() => useNowShortcuts(defaultProps));
 
       pressKey("j");
@@ -61,6 +107,7 @@ describe("useNowShortcuts", () => {
     });
 
     it("should call onNextTask when 'k' is pressed", () => {
+      const defaultProps = createDefaultProps();
       renderHook(() => useNowShortcuts(defaultProps));
 
       pressKey("k");
@@ -69,6 +116,7 @@ describe("useNowShortcuts", () => {
     });
 
     it("should handle case-insensitive key matching for 'j'", () => {
+      const defaultProps = createDefaultProps();
       renderHook(() => useNowShortcuts(defaultProps));
 
       pressKey("J");
@@ -77,6 +125,7 @@ describe("useNowShortcuts", () => {
     });
 
     it("should handle case-insensitive key matching for 'k'", () => {
+      const defaultProps = createDefaultProps();
       renderHook(() => useNowShortcuts(defaultProps));
 
       pressKey("K");
@@ -85,6 +134,7 @@ describe("useNowShortcuts", () => {
     });
 
     it("should not handle task shortcuts when there is no focused task", () => {
+      const defaultProps = createDefaultProps();
       const props = { ...defaultProps, focusedTask: null };
 
       renderHook(() => useNowShortcuts(props));
@@ -95,6 +145,7 @@ describe("useNowShortcuts", () => {
     });
 
     it("should not handle task shortcuts when there are no available tasks", () => {
+      const defaultProps = createDefaultProps();
       const props = { ...defaultProps, availableTasks: [] };
 
       renderHook(() => useNowShortcuts(props));
@@ -105,6 +156,7 @@ describe("useNowShortcuts", () => {
     });
 
     it("should handle task shortcuts when focusedTask exists and availableTasks has items", () => {
+      const defaultProps = createDefaultProps();
       renderHook(() => useNowShortcuts(defaultProps));
 
       pressKey("j");
@@ -113,6 +165,7 @@ describe("useNowShortcuts", () => {
     });
 
     it("should call onCompleteTask when 'Enter' is pressed", () => {
+      const defaultProps = createDefaultProps();
       renderHook(() => useNowShortcuts(defaultProps));
 
       pressKey("Enter");
@@ -121,6 +174,7 @@ describe("useNowShortcuts", () => {
     });
 
     it("should not handle Enter shortcut when there is no focused task", () => {
+      const defaultProps = createDefaultProps();
       const props = { ...defaultProps, focusedTask: null };
 
       renderHook(() => useNowShortcuts(props));
@@ -132,15 +186,8 @@ describe("useNowShortcuts", () => {
   });
 
   describe("editable element handling", () => {
-    const defaultProps = {
-      focusedTask: mockTask1,
-      availableTasks: [mockTask1, mockTask2],
-      onPreviousTask: jest.fn(),
-      onNextTask: jest.fn(),
-      onCompleteTask: jest.fn(),
-    };
-
     it("should not handle shortcuts when typing in input elements", () => {
+      const defaultProps = createDefaultProps();
       renderHook(() => useNowShortcuts(defaultProps));
 
       const input = document.createElement("input");
@@ -155,6 +202,7 @@ describe("useNowShortcuts", () => {
     });
 
     it("should not handle shortcuts when typing in textarea elements", () => {
+      const defaultProps = createDefaultProps();
       renderHook(() => useNowShortcuts(defaultProps));
 
       const textarea = document.createElement("textarea");
@@ -169,6 +217,7 @@ describe("useNowShortcuts", () => {
     });
 
     it("should not handle shortcuts when typing in contenteditable elements", () => {
+      const defaultProps = createDefaultProps();
       renderHook(() => useNowShortcuts(defaultProps));
 
       const div = document.createElement("div");
