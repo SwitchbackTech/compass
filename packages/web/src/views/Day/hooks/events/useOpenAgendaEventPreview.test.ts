@@ -2,6 +2,7 @@ import { renderHook } from "@testing-library/react";
 import { ObjectId } from "bson";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { BehaviorSubject } from "rxjs";
 
 const CursorItem = { EventPreview: "event-preview" };
 const eventsStore = {
@@ -22,6 +23,12 @@ const useAppSelector = mock((selector) => {
   }
   return selector;
 });
+const closeFloatingAtCursor = mock();
+const open$ = new BehaviorSubject(false);
+const nodeId$ = new BehaviorSubject(null);
+const placement$ = new BehaviorSubject("right-start");
+const strategy$ = new BehaviorSubject("absolute");
+const reference$ = new BehaviorSubject(null);
 
 mock.module("@web/store/events", () => ({
   eventsStore,
@@ -31,6 +38,23 @@ mock.module("@web/store/events", () => ({
 mock.module("@web/common/hooks/useOpenAtCursor", () => ({
   CursorItem: { EventPreview: "event-preview" },
   openFloatingAtCursor,
+  closeFloatingAtCursor,
+  open$,
+  nodeId$,
+  placement$,
+  strategy$,
+  reference$,
+  setFloatingOpenAtCursor: mock(),
+  setFloatingNodeIdAtCursor: mock(),
+  setFloatingPlacementAtCursor: mock(),
+  setFloatingReferenceAtCursor: mock(),
+  setFloatingStrategyAtCursor: mock(),
+  isOpenAtCursor: mock(),
+  useFloatingOpenAtCursor: mock(),
+  useFloatingNodeIdAtCursor: mock(),
+  useFloatingPlacementAtCursor: mock(),
+  useFloatingStrategyAtCursor: mock(),
+  useFloatingReferenceAtCursor: mock(),
 }));
 
 mock.module("@web/views/Day/util/agenda/focus.util", () => ({
