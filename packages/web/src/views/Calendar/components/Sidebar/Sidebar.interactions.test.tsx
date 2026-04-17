@@ -12,12 +12,15 @@ import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
 import { findAndUpdateEventInPreloadedState } from "@web/__tests__/utils/state/store.test.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
-import { CalendarView } from "@web/views/Calendar";
 import { freshenEventStartEndDate } from "@web/views/Calendar/calendar.render.test.utils";
+import { mock } from "bun:test";
 
-jest.mock("@web/auth/compass/session/session.util", () => ({
+mock.module("@web/auth/compass/session/session.util", () => ({
   getUserId: async () => "test-user-id",
 }));
+
+const { CalendarView } =
+  require("@web/views/Calendar") as typeof import("@web/views/Calendar");
 
 describe("Sidebar: Interactions", () => {
   const router = createMemoryRouter(
