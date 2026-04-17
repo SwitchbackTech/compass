@@ -4,6 +4,15 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { Task, type TaskProps } from "./Task";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+
+const clearTaskPropsMocks = (props: TaskProps) => {
+  for (const value of Object.values(props)) {
+    if (typeof value === "function" && "mockClear" in value) {
+      value.mockClear();
+    }
+  }
+};
 
 describe("Task - migration", () => {
   const mockTask = createMockTask({ _id: "task-1" });
@@ -13,18 +22,18 @@ describe("Task - migration", () => {
     index: 0,
     title: "Test Task",
     isEditing: false,
-    onCheckboxKeyDown: jest.fn(),
-    onInputBlur: jest.fn(),
-    onInputClick: jest.fn(),
-    onInputKeyDown: jest.fn(),
-    onStatusToggle: jest.fn(),
-    onTitleChange: jest.fn(),
-    onFocus: jest.fn(),
-    onMigrate: jest.fn(),
+    onCheckboxKeyDown: mock(),
+    onInputBlur: mock(),
+    onInputClick: mock(),
+    onInputKeyDown: mock(),
+    onStatusToggle: mock(),
+    onTitleChange: mock(),
+    onFocus: mock(),
+    onMigrate: mock(),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    clearTaskPropsMocks(mockProps);
   });
 
   it("renders migration buttons", () => {
@@ -64,18 +73,18 @@ describe("Task - migration icon visibility on focus", () => {
     index: 0,
     title: "Test Task",
     isEditing: false,
-    onCheckboxKeyDown: jest.fn(),
-    onInputBlur: jest.fn(),
-    onInputClick: jest.fn(),
-    onInputKeyDown: jest.fn(),
-    onStatusToggle: jest.fn(),
-    onTitleChange: jest.fn(),
-    onFocus: jest.fn(),
-    onMigrate: jest.fn(),
+    onCheckboxKeyDown: mock(),
+    onInputBlur: mock(),
+    onInputClick: mock(),
+    onInputKeyDown: mock(),
+    onStatusToggle: mock(),
+    onTitleChange: mock(),
+    onFocus: mock(),
+    onMigrate: mock(),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    clearTaskPropsMocks(mockProps);
   });
 
   it("shows migration icons when checkbox button is focused", async () => {
