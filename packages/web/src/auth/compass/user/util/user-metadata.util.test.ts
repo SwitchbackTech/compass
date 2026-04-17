@@ -1,27 +1,29 @@
 import { Status } from "@core/errors/status.codes";
 import { resetGoogleSyncUIStateForTests } from "@web/auth/google/state/google.sync.state";
-import { UserApi } from "@web/common/apis/user.api";
-import { store } from "@web/store";
-import { refreshUserMetadata } from "./user-metadata.util";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
-jest.mock("@web/common/apis/user.api", () => ({
+const mockDispatch = mock();
+const mockGetMetadata = mock();
+
+mock.module("@web/common/apis/user.api", () => ({
   UserApi: {
-    getMetadata: jest.fn(),
+    getMetadata: mockGetMetadata,
   },
 }));
 
-jest.mock("@web/store", () => ({
+mock.module("@web/store", () => ({
   store: {
-    dispatch: jest.fn(),
+    dispatch: mockDispatch,
   },
 }));
+
+const { refreshUserMetadata } =
+  require("./user-metadata.util") as typeof import("./user-metadata.util");
 
 describe("refreshUserMetadata", () => {
-  const api = UserApi as jest.Mocked<typeof UserApi>;
-  const dispatch = store.dispatch as jest.MockedFunction<typeof store.dispatch>;
-
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockDispatch.mockClear();
+    mockGetMetadata.mockClear();
     resetGoogleSyncUIStateForTests();
   });
 
@@ -31,19 +33,19 @@ describe("refreshUserMetadata", () => {
         connectionState: "HEALTHY" as const,
       },
     };
-    api.getMetadata.mockResolvedValue(metadata);
+    mockGetMetadata.mockResolvedValue(metadata);
 
     await refreshUserMetadata();
 
-    expect(dispatch).toHaveBeenNthCalledWith(
+    expect(mockDispatch).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({ type: "userMetadata/setLoading" }),
     );
-    expect(dispatch).toHaveBeenNthCalledWith(
+    expect(mockDispatch).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({ type: "userMetadata/set", payload: metadata }),
     );
-    expect(dispatch).toHaveBeenCalledTimes(2);
+    expect(mockDispatch).toHaveBeenCalledTimes(2);
   });
 
   it("does not trigger a client-side import when metadata says RESTART", async () => {
@@ -55,19 +57,19 @@ describe("refreshUserMetadata", () => {
         importGCal: "RESTART" as const,
       },
     };
-    api.getMetadata.mockResolvedValue(metadata);
+    mockGetMetadata.mockResolvedValue(metadata);
 
     await refreshUserMetadata();
     await refreshUserMetadata();
 
-    expect(dispatch).toHaveBeenNthCalledWith(
+    expect(mockDispatch).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({ type: "userMetadata/set", payload: metadata }),
     );
   });
 
   it("clears metadata when the request is unauthorized", async () => {
-    api.getMetadata.mockRejectedValue({
+    mockGetMetadata.mockRejectedValue({
       response: {
         status: Status.UNAUTHORIZED,
       },
@@ -75,29 +77,29 @@ describe("refreshUserMetadata", () => {
 
     await refreshUserMetadata();
 
-    expect(dispatch).toHaveBeenNthCalledWith(
+    expect(mockDispatch).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({ type: "userMetadata/setLoading" }),
     );
-    expect(dispatch).toHaveBeenNthCalledWith(
+    expect(mockDispatch).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({ type: "userMetadata/clear" }),
     );
   });
 
   it("finishes loading when the request fails unexpectedly", async () => {
-    api.getMetadata.mockRejectedValue(new Error("boom"));
-    const consoleErrorSpy = jest
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
+    mockGetMetadata.mockRejectedValue(new Error("boom"));
+    const consoleErrorSpy = spyOn(console, "error").mockImplementation(
+      () => {},
+    );
 
     await refreshUserMetadata();
 
-    expect(dispatch).toHaveBeenNthCalledWith(
+    expect(mockDispatch).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({ type: "userMetadata/setLoading" }),
     );
-    expect(dispatch).toHaveBeenNthCalledWith(
+    expect(mockDispatch).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({ type: "userMetadata/finishLoading" }),
     );
