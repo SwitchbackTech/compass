@@ -12,7 +12,6 @@ import {
   mock,
   setSystemTime,
   spyOn,
-  vi,
 } from "bun:test";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
@@ -95,7 +94,7 @@ beforeAll(() => {
 beforeEach(() => {
   BaseApi.defaults.adapter = mockBaseApiAdapter;
   mockBaseApiAdapter.mockClear();
-  vi.clearAllMocks();
+  mock.restore();
 });
 
 afterAll(() => {
