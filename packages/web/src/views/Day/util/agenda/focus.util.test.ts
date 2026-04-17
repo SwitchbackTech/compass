@@ -5,28 +5,39 @@ import {
   ID_GRID_ALLDAY_ROW,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
-import {
-  focusFirstAgendaEvent,
-  getFirstAgendaEvent,
-  getFocusedEvent,
-} from "@web/views/Day/util/agenda/focus.util";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
-// Mocks
-jest.mock("@web/common/context/pointer-position", () => ({
-  getElementAtPointer: jest.fn(() => null),
-  isOverAllDayRow: jest.fn(() => false),
-  isOverMainGrid: jest.fn(() => false),
-  isOverSomedayMonth: jest.fn(() => false),
-  isOverSomedayWeek: jest.fn(() => false),
+const mockGetElementAtPointer = mock(() => null);
+const mockIsOverAllDayRow = mock(() => false);
+const mockIsOverMainGrid = mock(() => false);
+const mockIsOverSomedayMonth = mock(() => false);
+const mockIsOverSomedayWeek = mock(() => false);
+
+mock.module("@web/common/context/pointer-position", () => ({
+  getElementAtPointer: mockGetElementAtPointer,
+  isOverAllDayRow: mockIsOverAllDayRow,
+  isOverMainGrid: mockIsOverMainGrid,
+  isOverSomedayMonth: mockIsOverSomedayMonth,
+  isOverSomedayWeek: mockIsOverSomedayWeek,
 }));
 
+const { focusFirstAgendaEvent, getFirstAgendaEvent, getFocusedEvent } =
+  require("@web/views/Day/util/agenda/focus.util") as typeof import("@web/views/Day/util/agenda/focus.util");
+
 describe("focus.util", () => {
-  const mockFocus = jest.fn();
-  const mockScrollIntoView = jest.fn();
-  const mockGetElementById = jest.spyOn(document, "getElementById");
+  const mockFocus = mock();
+  const mockScrollIntoView = mock();
+  const mockGetElementById = spyOn(document, "getElementById");
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockFocus.mockClear();
+    mockScrollIntoView.mockClear();
+    mockGetElementAtPointer.mockClear();
+    mockIsOverAllDayRow.mockClear();
+    mockIsOverMainGrid.mockClear();
+    mockIsOverSomedayMonth.mockClear();
+    mockIsOverSomedayWeek.mockClear();
+    mockGetElementById.mockClear();
     mockGetElementById.mockReturnValue(null);
   });
 
