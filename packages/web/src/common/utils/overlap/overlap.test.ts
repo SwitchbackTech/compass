@@ -1,17 +1,18 @@
 import { Categories_Event } from "@core/types/event.types";
-import { getUserId } from "@web/auth/compass/session/session.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import {
-  assembleDefaultEvent,
-  gridEventDefaultPosition,
-} from "../event/event.util";
 import { adjustOverlappingEvents, getOverlappingStyles } from "./overlap";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock("@web/auth/compass/session/session.util", () => ({
-  getUserId: jest.fn(),
+const getUserId = mock();
+
+mock.module("@web/auth/compass/session/session.util", () => ({
+  getUserId,
 }));
 
-export const assembleTimedGridEvent = async (
+const { assembleDefaultEvent, gridEventDefaultPosition } =
+  require("../event/event.util") as typeof import("../event/event.util");
+
+const assembleTimedGridEvent = async (
   startTime: string,
   endTime: string,
   id?: string,
@@ -30,10 +31,8 @@ export const assembleTimedGridEvent = async (
 
 describe("adjustOverlappingEvents", () => {
   beforeEach(() => {
-    (getUserId as jest.Mock).mockResolvedValue("mockUser");
-  });
-  afterEach(() => {
-    jest.clearAllMocks();
+    getUserId.mockClear();
+    getUserId.mockResolvedValue("mockUser");
   });
 
   it("Sorts events by start time", async () => {
